@@ -1,0 +1,3 @@
+Línea 57: la clase CATControls.CATTextBox del control txtCod_PerTran no era una clase de control cargada.
+Línea 85: la clase CATControls.CATTextBox del control txtGls_PerTran no era una clase de control cargada.
+Línea 110: la clase MSComCtl2.DTPicker del control dtp_FecDatTran no era una clase de control cargada.

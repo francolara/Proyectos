@@ -1,0 +1,219 @@
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.exe
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.deps.json
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.runtimeconfig.json
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.runtimeconfig.dev.json
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.dll
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.pdb
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\bin\Debug\netcoreapp3.1\Dapper.dll
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\bin\Debug\netcoreapp3.1\System.Data.SqlClient.dll
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\win-arm64\native\sni.dll
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\win-x64\native\sni.dll
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\win-x86\native\sni.dll
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\unix\lib\netcoreapp2.1\System.Data.SqlClient.dll
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\win\lib\netcoreapp2.1\System.Data.SqlClient.dll
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Controladora.dll
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.DAO.dll
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.DTO.dll
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Controladora.pdb
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.DTO.pdb
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.DAO.pdb
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.csprojAssemblyReference.cache
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Frm_ListaGR.resources
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.csproj.GenerateResource.cache
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.AssemblyInfoInputs.cache
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.AssemblyInfo.cs
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.csproj.CoreCompileInputs.cache
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.csproj.CopyComplete
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.dll
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.pdb
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.genruntimeconfig.cache
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\bin\Debug\netcoreapp3.1\Newtonsoft.Json.dll
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\bin\Debug\netcoreapp3.1\RestSharp.dll
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.exe
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.deps.json
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.runtimeconfig.json
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.runtimeconfig.dev.json
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.dll
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.pdb
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\Dapper.dll
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\Newtonsoft.Json.dll
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\RestSharp.dll
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\System.Data.SqlClient.dll
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\win-arm64\native\sni.dll
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\win-x64\native\sni.dll
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\win-x86\native\sni.dll
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\unix\lib\netcoreapp2.1\System.Data.SqlClient.dll
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\win\lib\netcoreapp2.1\System.Data.SqlClient.dll
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Controladora.dll
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.DAO.dll
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.DTO.dll
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Controladora.pdb
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.DTO.pdb
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.DAO.pdb
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.csproj.AssemblyReference.cache
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Frm_ListaGR.resources
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.csproj.GenerateResource.cache
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.AssemblyInfoInputs.cache
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.AssemblyInfo.cs
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.csproj.CoreCompileInputs.cache
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.csproj.CopyComplete
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.dll
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.pdb
+C:\Users\llara\Desktop\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.genruntimeconfig.cache
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.exe
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.deps.json
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.runtimeconfig.json
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.runtimeconfig.dev.json
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.dll
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.pdb
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\Dapper.dll
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\Newtonsoft.Json.dll
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\RestSharp.dll
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\System.Data.SqlClient.dll
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\win-arm64\native\sni.dll
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\win-x64\native\sni.dll
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\win-x86\native\sni.dll
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\unix\lib\netcoreapp2.1\System.Data.SqlClient.dll
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\win\lib\netcoreapp2.1\System.Data.SqlClient.dll
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Controladora.dll
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.DAO.dll
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.DTO.dll
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Controladora.pdb
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.DTO.pdb
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.DAO.pdb
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.csproj.AssemblyReference.cache
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Frm_ListaGR.resources
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.csproj.GenerateResource.cache
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.AssemblyInfoInputs.cache
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.AssemblyInfo.cs
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.csproj.CoreCompileInputs.cache
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.csproj.CopyComplete
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.dll
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.pdb
+C:\GitHub\EFC-FUENTES\VisualStudio .Net\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.genruntimeconfig.cache
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.exe
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.deps.json
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.runtimeconfig.json
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.runtimeconfig.dev.json
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.dll
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.pdb
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\Dapper.dll
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\Newtonsoft.Json.dll
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\RestSharp.dll
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\System.Data.SqlClient.dll
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\win-arm64\native\sni.dll
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\win-x64\native\sni.dll
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\win-x86\native\sni.dll
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\unix\lib\netcoreapp2.1\System.Data.SqlClient.dll
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\win\lib\netcoreapp2.1\System.Data.SqlClient.dll
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Controladora.dll
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.DAO.dll
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.DTO.dll
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Controladora.pdb
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.DTO.pdb
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.DAO.pdb
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.csproj.AssemblyReference.cache
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Frm_ListaGR.resources
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.csproj.GenerateResource.cache
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.AssemblyInfoInputs.cache
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.AssemblyInfo.cs
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.csproj.CoreCompileInputs.cache
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.csproj.CopyComplete
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.dll
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.pdb
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.genruntimeconfig.cache
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.exe
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.deps.json
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.runtimeconfig.json
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.runtimeconfig.dev.json
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.dll
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.pdb
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\Dapper.dll
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\Newtonsoft.Json.dll
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\RestSharp.dll
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\System.Data.SqlClient.dll
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\win-arm64\native\sni.dll
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\win-x64\native\sni.dll
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\win-x86\native\sni.dll
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\unix\lib\netcoreapp2.1\System.Data.SqlClient.dll
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\win\lib\netcoreapp2.1\System.Data.SqlClient.dll
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Controladora.dll
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.DAO.dll
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.DTO.dll
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Controladora.pdb
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.DTO.pdb
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.DAO.pdb
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.csproj.AssemblyReference.cache
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Frm_ListaGR.resources
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.csproj.GenerateResource.cache
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.AssemblyInfoInputs.cache
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.AssemblyInfo.cs
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.csproj.CoreCompileInputs.cache
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.csproj.CopyComplete
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.dll
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.pdb
+C:\Users\Franco Lara\Desktop\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.genruntimeconfig.cache
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ServicioSUNAT.exe
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ServicioSUNAT.deps.json
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ServicioSUNAT.runtimeconfig.json
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ServicioSUNAT.runtimeconfig.dev.json
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ServicioSUNAT.dll
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ServicioSUNAT.pdb
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\Dapper.dll
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\Newtonsoft.Json.dll
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\RestSharp.dll
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\System.Data.SqlClient.dll
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\win-arm64\native\sni.dll
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\win-x64\native\sni.dll
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\win-x86\native\sni.dll
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\unix\lib\netcoreapp2.1\System.Data.SqlClient.dll
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\win\lib\netcoreapp2.1\System.Data.SqlClient.dll
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Controladora.dll
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.DAO.dll
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.DTO.dll
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Controladora.pdb
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.DTO.pdb
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.DAO.pdb
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.csproj.AssemblyReference.cache
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Frm_ListaGR.resources
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.csproj.GenerateResource.cache
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.AssemblyInfoInputs.cache
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.AssemblyInfo.cs
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.csproj.CoreCompileInputs.cache
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.csproj.CopyComplete
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ServicioSUNAT.dll
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ServicioSUNAT.pdb
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\ROCIO\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.genruntimeconfig.cache
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ServicioSUNAT.exe
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ServicioSUNAT.deps.json
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ServicioSUNAT.runtimeconfig.json
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ServicioSUNAT.runtimeconfig.dev.json
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ServicioSUNAT.dll
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ServicioSUNAT.pdb
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\Dapper.dll
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\Newtonsoft.Json.dll
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\RestSharp.dll
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\System.Data.SqlClient.dll
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\win-arm64\native\sni.dll
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\win-x64\native\sni.dll
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\win-x86\native\sni.dll
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\unix\lib\netcoreapp2.1\System.Data.SqlClient.dll
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\runtimes\win\lib\netcoreapp2.1\System.Data.SqlClient.dll
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Controladora.dll
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.DAO.dll
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.DTO.dll
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.Controladora.pdb
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.DTO.pdb
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.DAO.pdb
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.csproj.AssemblyReference.cache
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Frm_ListaGR.resources
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.csproj.GenerateResource.cache
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.AssemblyInfoInputs.cache
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.AssemblyInfo.cs
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.csproj.CoreCompileInputs.cache
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.csproj.CopyComplete
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ServicioSUNAT.dll
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ServicioSUNAT.pdb
+D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Aplicacion.genruntimeconfig.cache

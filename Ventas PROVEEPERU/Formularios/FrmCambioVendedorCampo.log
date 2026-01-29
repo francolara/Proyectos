@@ -1,0 +1,10 @@
+Línea 63: la clase CATControls.CATTextBox del control txtCod_Vendedor no era una clase de control cargada.
+Línea 90: la clase CATControls.CATTextBox del control txtGls_Vendedor no era una clase de control cargada.
+Línea 167: la clase CATControls.CATTextBox del control txtCod_Vendedor_Ori no era una clase de control cargada.
+Línea 194: la clase CATControls.CATTextBox del control txtGls_Vendedor_Ori no era una clase de control cargada.
+Línea 253: la clase CATControls.CATTextBox del control txtCod_Cliente_Ori no era una clase de control cargada.
+Línea 280: la clase CATControls.CATTextBox del control txtGls_Cliente_Ori no era una clase de control cargada.
+Línea 356: la clase CATControls.CATTextBox del control txtCod_Documento no era una clase de control cargada.
+Línea 383: la clase CATControls.CATTextBox del control txtGls_Documento no era una clase de control cargada.
+Línea 408: la clase CATControls.CATTextBox del control txt_numero no era una clase de control cargada.
+Línea 434: la clase CATControls.CATTextBox del control txt_serie no era una clase de control cargada.
