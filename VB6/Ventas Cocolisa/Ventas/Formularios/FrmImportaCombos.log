@@ -1,5 +1,0 @@
-Línea 31: la clase CATControls.CATTextBox del control txt_TextoBuscar no era una clase de control cargada.
-Línea 79: la clase DXDBGRIDLibCtl.dxDBGrid del control gLista no era una clase de control cargada.
-Línea 87: la clase DXDBGRIDLibCtl.dxDBGrid del control gListaDetalle no era una clase de control cargada.
-Línea 96: la clase MSComctlLib.ImageList del control imgDocVentas no era una clase de control cargada.
-Línea 162: la clase MSComctlLib.Toolbar del control Toolbar1 no era una clase de control cargada.

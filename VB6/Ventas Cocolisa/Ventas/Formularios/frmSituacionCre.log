@@ -1,9 +1,0 @@
-Línea 59: la clase DXDBGRIDLibCtl.dxDBGrid del control GRID1 no era una clase de control cargada.
-Línea 85: la clase CATControls.CATTextBox del control TxtLinea_Cre no era una clase de control cargada.
-Línea 111: la clase CATControls.CATTextBox del control txtCtas_Cobrar no era una clase de control cargada.
-Línea 137: la clase CATControls.CATTextBox del control TxtDisponible no era una clase de control cargada.
-Línea 235: la clase DXDBGRIDLibCtl.dxDBGrid del control GRID2 no era una clase de control cargada.
-Línea 253: la clase CATControls.CATTextBox del control txt_Cod_Cli_Linea no era una clase de control cargada.
-Línea 278: la clase CATControls.CATTextBox del control tztGlsLinea no era una clase de control cargada.
-Línea 303: la clase CATControls.CATTextBox del control txtRuc_Linea no era una clase de control cargada.
-Línea 328: la clase CATControls.CATTextBox del control txtfomaPagoLinea no era una clase de control cargada.

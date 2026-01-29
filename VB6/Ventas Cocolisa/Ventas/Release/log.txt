@@ -1,5 +1,0 @@
-Unable to connect to any of the specified MySQL hosts.FEapp2   en FEapp2.MySqlDatabaseHelper.ExecuteToList[T](String commandText, RowMapper`1 rowMapper, List`1 parameters) en d:\SISTEMAS ACTUALIZADOS\FacturacionElectronica\FE_ConsoleApp\FEapp2\FEapp2\MySqlDatabaseHelper.cs:línea 138
-   en FEapp2.MySqlDatabaseHelper.ExecuteToList[T](String commandText, RowMapper`1 rowMapper, MySqlParameter parameter) en d:\SISTEMAS ACTUALIZADOS\FacturacionElectronica\FE_ConsoleApp\FEapp2\FEapp2\MySqlDatabaseHelper.cs:línea 75
-   en FEapp2.Program.ListarParametrosPorGlsParametro(String GlsParametro) en d:\SISTEMAS ACTUALIZADOS\FacturacionElectronica\FE_ConsoleApp\FEapp2\FEapp2\Program.cs:línea 700
-   en FEapp2.Program.ObtenerRutaCarpetaVentasElectronicas() en d:\SISTEMAS ACTUALIZADOS\FacturacionElectronica\FE_ConsoleApp\FEapp2\FEapp2\Program.cs:línea 694
-   en FEapp2.Program.Main(String[] args) en d:\SISTEMAS ACTUALIZADOS\FacturacionElectronica\FE_ConsoleApp\FEapp2\FEapp2\Program.cs:línea 24

@@ -1,8 +1,0 @@
-Línea 20: la clase MSComCtl2.DTPicker del control dtpFecCaja no era una clase de control cargada.
-Línea 50: la clase CATControls.CATTextBox del control txtCod_Caja no era una clase de control cargada.
-Línea 77: la clase MSComctlLib.ImageList del control imgDocVentas no era una clase de control cargada.
-Línea 139: la clase MSComctlLib.Toolbar del control Toolbar1 no era una clase de control cargada.
-Línea 181: la clase CATControls.CATTextBox del control txtGls_Caja no era una clase de control cargada.
-Línea 205: la clase CATControls.CATTextBox del control txtVal_InicialSoles no era una clase de control cargada.
-Línea 235: la clase CATControls.CATTextBox del control txtVal_InicialDolar no era una clase de control cargada.
-Línea 265: la clase CATControls.CATTextBox del control txtCod_MovCaja no era una clase de control cargada.
