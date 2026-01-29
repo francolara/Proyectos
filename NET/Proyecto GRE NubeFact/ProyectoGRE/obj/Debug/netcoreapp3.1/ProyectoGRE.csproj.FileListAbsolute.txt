@@ -1,0 +1,16 @@
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.exe
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.deps.json
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.runtimeconfig.json
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.runtimeconfig.dev.json
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.dll
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\bin\Debug\netcoreapp3.1\ProyectoGRE.pdb
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.csprojAssemblyReference.cache
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.Form1.resources
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.csproj.GenerateResource.cache
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.AssemblyInfoInputs.cache
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.AssemblyInfo.cs
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.csproj.CoreCompileInputs.cache
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.dll
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.pdb
+C:\Users\USUARIO\Desktop\Proyecto GRE\ProyectoGRE\obj\Debug\netcoreapp3.1\ProyectoGRE.genruntimeconfig.cache

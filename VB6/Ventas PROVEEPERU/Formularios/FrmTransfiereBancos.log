@@ -1,0 +1,5 @@
+Línea 144: la clase CATControls.CATTextBox del control txtCod_Usuario no era una clase de control cargada.
+Línea 171: la clase CATControls.CATTextBox del control txtGls_Usuario no era una clase de control cargada.
+Línea 225: la clase MSComCtl2.DTPicker del control dtpDiaTrans no era una clase de control cargada.
+Línea 282: la clase CATControls.CATTextBox del control txtCod_Sucursal no era una clase de control cargada.
+Línea 309: la clase CATControls.CATTextBox del control txtGls_Sucursal no era una clase de control cargada.

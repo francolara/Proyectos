@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>ServicioSUNAT</AssemblyName>
+    <ApplicationIcon>SUNAT.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ProyectoGRE.Controladora\ProyectoGRE.Controladora.csproj" />
+    <ProjectReference Include="..\ProyectoGRE.DTO\ProyectoGRE.DTO.csproj" />
+  </ItemGroup>
+
+</Project>

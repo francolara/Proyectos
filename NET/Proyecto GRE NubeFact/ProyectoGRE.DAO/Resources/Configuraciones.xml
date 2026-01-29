@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Configuraciones
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	xmlns="">
+
+	<Configuracion Nombre="GRE" IpLocal="DESKTOP-LLR14AJ\SQLEXPRESS" IpPublico="DESKTOP-LLR14AJ\SQLEXPRESS" BD="DbSistema_23122025" UserID="sa" Pass="12345678" Estado="TRUE"/>
+
+
+
+	<!--<Configuracion Nombre="ERP" IpLocal="SQL5101.site4now.net" IpPublico="SQL5101.site4now.net" BD="DB_A66D39_myeecommerce" UserID="DB_A66D39_myeecommerce_admin" Pass="cltmyemkt2021" Estado="TRUE"/>-->
+
+</Configuraciones>

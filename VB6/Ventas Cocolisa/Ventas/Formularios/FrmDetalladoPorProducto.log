@@ -1,0 +1,12 @@
+Línea 101: la clase DXDBGRIDLibCtl.dxDBGrid del control gLista no era una clase de control cargada.
+Línea 165: la clase MSComCtl2.DTPicker del control dtpfInicio no era una clase de control cargada.
+Línea 186: la clase MSComCtl2.DTPicker del control dtpFFinal no era una clase de control cargada.
+Línea 257: la clase CATControls.CATTextBox del control txtCod_Sucursal no era una clase de control cargada.
+Línea 285: la clase CATControls.CATTextBox del control txtGls_Sucursal no era una clase de control cargada.
+Línea 310: la clase CATControls.CATTextBox del control txt_Serie no era una clase de control cargada.
+Línea 337: la clase CATControls.CATTextBox del control txtCod_Producto no era una clase de control cargada.
+Línea 365: la clase CATControls.CATTextBox del control txtGls_Producto no era una clase de control cargada.
+Línea 390: la clase CATControls.CATTextBox del control txtCod_Vendedor no era una clase de control cargada.
+Línea 418: la clase CATControls.CATTextBox del control txtGls_Vendedor no era una clase de control cargada.
+Línea 446: la clase CATControls.CATTextBox del control txtCod_Moneda no era una clase de control cargada.
+Línea 473: la clase CATControls.CATTextBox del control txtGls_Moneda no era una clase de control cargada.

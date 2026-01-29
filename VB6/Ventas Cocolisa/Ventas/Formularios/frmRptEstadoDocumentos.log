@@ -1,0 +1,8 @@
+Línea 73: la clase MSComCtl2.DTPicker del control dtpfInicio no era una clase de control cargada.
+Línea 94: la clase MSComCtl2.DTPicker del control dtpFFinal no era una clase de control cargada.
+Línea 192: la clase CATControls.CATTextBox del control txtCod_Sucursal no era una clase de control cargada.
+Línea 219: la clase CATControls.CATTextBox del control txtGls_Sucursal no era una clase de control cargada.
+Línea 244: la clase CATControls.CATTextBox del control txtCod_Documento no era una clase de control cargada.
+Línea 271: la clase CATControls.CATTextBox del control txtGls_Documento no era una clase de control cargada.
+Línea 296: la clase CATControls.CATTextBox del control txtCod_Estado no era una clase de control cargada.
+Línea 323: la clase CATControls.CATTextBox del control txtGls_Estado no era una clase de control cargada.

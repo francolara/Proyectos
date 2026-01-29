@@ -1,0 +1,3 @@
+Línea 163: la clase DXDBGRIDLibCtl.dxDBGrid del control gCabecera no era una clase de control cargada.
+Línea 171: la clase DXDBGRIDLibCtl.dxDBGrid del control gDetalle no era una clase de control cargada.
+Línea 179: la clase DXDBGRIDLibCtl.dxDBGrid del control gTotales no era una clase de control cargada.

@@ -1,0 +1,264 @@
+[Root]
+Most Recent Package=Paquete de instalación POWER SOFT 2.0
+
+
+[Package|Paquete de instalación POWER SOFT 2.0|Root]
+SubWizProgID=PDWizard.SetupPkgSubWiz
+BuildFolder=d:\Sistema Vb6\Sistema vb6\Sql\Ventas PROVEEPERU\INSTALADOR
+
+[Package|Paquete de instalación POWER SOFT 2.0|Configure DAO ISAMs]
+Applicable=No
+
+[Package|Paquete de instalación POWER SOFT 2.0|Configure DAO ODBC]
+JetWorkspace=
+ODBCDirect=
+
+[Package|Paquete de instalación POWER SOFT 2.0|Files Found]
+
+[Package|Paquete de instalación POWER SOFT 2.0|Files Released]
+EXCEL.EXE=
+u2dapp.dll=
+u2dpost.dll=
+u2fxml.dll=
+u2fsepv.dll=
+u2fcr.dll=
+Unicows.dll=
+
+[Package|Paquete de instalación POWER SOFT 2.0|Missing Dependency Information]
+C:\Windows\SysWOW64\CATControls.ocx=
+C:\Windows\SysWOW64\PrinterAPI.dll=
+C:\Windows\System32\SSubTmr6.dll=
+C:\Program Files (x86)\Developer Express Inc\XpressSideBar\dXSBar.dll=
+C:\Program Files (x86)\Developer Express Inc\XpressQuantumGrid\DXDBGrid.dll=
+C:\Program Files (x86)\Common Files\System\ado\msado27.tlb=
+
+[Package|Paquete de instalación POWER SOFT 2.0|Out-of-Date Dependency Information]
+C:\Windows\SysWOW64\msstdfmt.dll=
+
+[Package|Paquete de instalación POWER SOFT 2.0|Files Added]
+
+[Package|Paquete de instalación POWER SOFT 2.0|Files Removed]
+
+[Package|Paquete de instalación POWER SOFT 2.0|Files In Project]
+D:\Sistema Vb6\Sistema vb6\Sql\Ventas PROVEEPERU\Ventas.exe=Yes
+C:\Windows\System32\msvbvm60.dll=Yes
+C:\Program Files (x86)\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEAUT32.DLL=Yes
+C:\Program Files (x86)\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEPRO32.DLL=Yes
+C:\Program Files (x86)\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\ASYCFILT.DLL=Yes
+C:\Program Files (x86)\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\STDOLE2.TLB=Yes
+C:\Program Files (x86)\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=Yes
+C:\Windows\System32\VB6ES.DLL=Yes
+C:\Program Files (x86)\Common Files\System\ado\msado27.tlb=Yes
+C:\Program Files (x86)\Developer Express Inc\XpressQuantumGrid\DXDBGrid.dll=Yes
+C:\Windows\SysWOW64\MSBind.dll=Yes
+C:\Windows\SysWOW64\msstdfmt.dll=Yes
+C:\Windows\SysWOW64\STDFTES.DLL=Yes
+C:\Program Files (x86)\Developer Express Inc\XpressSideBar\dXSBar.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\crystalreportviewers\ActiveXViewer\crviewer9.dll=Yes
+C:\Program Files (x86)\Crystal Decisions\Report Designer Component\craxdrt9.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\craxddrt9.dll=Yes
+C:\Program Files (x86)\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\MSVCRT.DLL=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\crtowords_en.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\ufmanager.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\u2l2000.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\u2lcom.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\u2ldts.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\u2lexch.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\u2lfinra.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\u252000.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\u25dts.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\u25samp1.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\Implode.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\crqe.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\crdb_ado.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\crdb_dao.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\crdb_odbc.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\querybuilder.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\exlate32.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\sscsdk80.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\sscrc.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\sscdlg.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\CRAnalyzer.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\p2ixbse.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\crdb_dictionary.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\filedialog.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\sacommoncontrols.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\crxf_pdf.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\ExportModeller.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\crtslv.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\crxf_rtf.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\crxf_wordw.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\crxf_xls.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\u2ftext.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\u2ddisk.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\keycode.dll=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\CR9Deploy.reg=Yes
+C:\Windows\System32\SSubTmr6.dll=Yes
+C:\Windows\SysWOW64\PrinterAPI.dll=Yes
+C:\Windows\SysWOW64\TabCtl32.Ocx=Yes
+C:\Windows\SysWOW64\TABCTES.DLL=Yes
+C:\Windows\SysWOW64\MSFlxGrd.ocx=Yes
+C:\Windows\SysWOW64\FLXGDES.DLL=Yes
+C:\Windows\SysWOW64\ComDlg32.OCX=Yes
+C:\Windows\SysWOW64\CMDLGES.DLL=Yes
+C:\Windows\SysWOW64\mscomctl.OCX=Yes
+C:\Windows\SysWOW64\MSCMCES.DLL=Yes
+C:\Windows\SysWOW64\mscomct2.ocx=Yes
+C:\Windows\SysWOW64\MSCC2ES.DLL=Yes
+C:\Windows\SysWOW64\MSINET.Ocx=Yes
+C:\Windows\SysWOW64\INETES.DLL=Yes
+C:\Windows\SysWOW64\richtx32.Ocx=Yes
+C:\Program Files (x86)\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\RICHED32.DLL=Yes
+C:\Windows\SysWOW64\RCHTXES.DLL=Yes
+C:\Windows\SysWOW64\MSChrt20.ocx=Yes
+C:\Windows\SysWOW64\MSCH2ES.DLL=Yes
+C:\Windows\SysWOW64\MSWINSCK.ocx=Yes
+C:\Windows\SysWOW64\WINSKES.DLL=Yes
+C:\Windows\SysWOW64\msmapi32.Ocx=Yes
+C:\Windows\SysWOW64\MSMPIES.DLL=Yes
+C:\Windows\SysWOW64\PicClp32.Ocx=Yes
+C:\Windows\SysWOW64\PCCLPES.DLL=Yes
+C:\Windows\SysWOW64\sysinfo.Ocx=Yes
+C:\Windows\SysWOW64\SYSINES.DLL=Yes
+C:\Windows\SysWOW64\MSComm32.Ocx=Yes
+C:\Windows\SysWOW64\MSCOMES.DLL=Yes
+C:\Windows\SysWOW64\msmask32.ocx=Yes
+C:\Windows\SysWOW64\MSMSKES.DLL=Yes
+C:\Windows\SysWOW64\MSDatGrd.ocx=Yes
+C:\Windows\SysWOW64\DATGDES.DLL=Yes
+C:\Windows\SysWOW64\CATControls.ocx=Yes
+C:\Program Files (x86)\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP.EXE=Yes
+C:\Program Files (x86)\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP1.EXE=Yes
+C:\Windows\System32\VB6STKIT.DLL=Yes
+C:\Program Files (x86)\Microsoft Visual Studio\VB98\Wizards\PDWizard\ST6UNST.EXE=Yes
+
+[Package|Paquete de instalación POWER SOFT 2.0|Configure Registry Files]
+Applicable=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\CR9Deploy.reg=Both
+
+[Package|Paquete de instalación POWER SOFT 2.0|Configure Remote Servers]
+Applicable=No
+
+[Package|Paquete de instalación POWER SOFT 2.0|Install Locations]
+D:\Sistema Vb6\Sistema vb6\Sql\Ventas PROVEEPERU\Ventas.exe=$(ProgramFiles)
+C:\Windows\System32\msvbvm60.dll=$(WinSysPathSysFile)
+C:\Program Files (x86)\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEAUT32.DLL=$(WinSysPathSysFile)
+C:\Program Files (x86)\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\OLEPRO32.DLL=$(WinSysPathSysFile)
+C:\Program Files (x86)\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\ASYCFILT.DLL=$(WinSysPathSysFile)
+C:\Program Files (x86)\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\STDOLE2.TLB=$(WinSysPathSysFile)
+C:\Program Files (x86)\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=$(WinSysPathSysFile)
+C:\Windows\System32\VB6ES.DLL=$(WinSysPath)
+C:\Program Files (x86)\Common Files\System\ado\msado27.tlb=$(WinSysPath)
+C:\Program Files (x86)\Developer Express Inc\XpressQuantumGrid\DXDBGrid.dll=$(WinSysPath)
+C:\Windows\SysWOW64\MSBind.dll=$(WinSysPath)
+C:\Windows\SysWOW64\msstdfmt.dll=$(WinSysPath)
+C:\Windows\SysWOW64\STDFTES.DLL=$(WinSysPath)
+C:\Program Files (x86)\Developer Express Inc\XpressSideBar\dXSBar.dll=$(WinSysPath)
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\crystalreportviewers\ActiveXViewer\crviewer9.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Crystal Decisions\Report Designer Component\craxdrt9.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\craxddrt9.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\MSVCRT.DLL=$(WinSysPath)
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\crtowords_en.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\ufmanager.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\u2l2000.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\u2lcom.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\u2ldts.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\u2lexch.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\u2lfinra.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\u252000.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\u25dts.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\u25samp1.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\Implode.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\crqe.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\crdb_ado.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\crdb_dao.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\crdb_odbc.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\querybuilder.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\exlate32.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\sscsdk80.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\sscrc.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\sscdlg.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\CRAnalyzer.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\p2ixbse.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\crdb_dictionary.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\filedialog.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\sacommoncontrols.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\crxf_pdf.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\ExportModeller.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\crtslv.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\crxf_rtf.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\crxf_wordw.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\crxf_xls.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\u2ftext.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\u2ddisk.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\keycode.dll=$(CommonFiles)\Crystal Decisions\2.0\bin
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\CR9Deploy.reg=$(AppPath)
+C:\Windows\System32\SSubTmr6.dll=$(WinSysPath)
+C:\Windows\SysWOW64\PrinterAPI.dll=$(WinSysPath)
+C:\Windows\SysWOW64\TabCtl32.Ocx=$(WinSysPath)
+C:\Windows\SysWOW64\TABCTES.DLL=$(WinSysPath)
+C:\Windows\SysWOW64\MSFlxGrd.ocx=$(WinSysPath)
+C:\Windows\SysWOW64\FLXGDES.DLL=$(WinSysPath)
+C:\Windows\SysWOW64\ComDlg32.OCX=$(WinSysPath)
+C:\Windows\SysWOW64\CMDLGES.DLL=$(WinSysPath)
+C:\Windows\SysWOW64\mscomctl.OCX=$(WinSysPath)
+C:\Windows\SysWOW64\MSCMCES.DLL=$(WinSysPath)
+C:\Windows\SysWOW64\mscomct2.ocx=$(WinSysPath)
+C:\Windows\SysWOW64\MSCC2ES.DLL=$(WinSysPath)
+C:\Windows\SysWOW64\MSINET.Ocx=$(WinSysPath)
+C:\Windows\SysWOW64\INETES.DLL=$(WinSysPath)
+C:\Windows\SysWOW64\richtx32.Ocx=$(WinSysPath)
+C:\Program Files (x86)\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\RICHED32.DLL=$(WinSysPathSysFile)
+C:\Windows\SysWOW64\RCHTXES.DLL=$(WinSysPath)
+C:\Windows\SysWOW64\MSChrt20.ocx=$(WinSysPath)
+C:\Windows\SysWOW64\MSCH2ES.DLL=$(WinSysPath)
+C:\Windows\SysWOW64\MSWINSCK.ocx=$(WinSysPath)
+C:\Windows\SysWOW64\WINSKES.DLL=$(WinSysPath)
+C:\Windows\SysWOW64\msmapi32.Ocx=$(WinSysPath)
+C:\Windows\SysWOW64\MSMPIES.DLL=$(WinSysPath)
+C:\Windows\SysWOW64\PicClp32.Ocx=$(WinSysPath)
+C:\Windows\SysWOW64\PCCLPES.DLL=$(WinSysPath)
+C:\Windows\SysWOW64\sysinfo.Ocx=$(WinSysPath)
+C:\Windows\SysWOW64\SYSINES.DLL=$(WinSysPath)
+C:\Windows\SysWOW64\MSComm32.Ocx=$(WinSysPath)
+C:\Windows\SysWOW64\MSCOMES.DLL=$(WinSysPath)
+C:\Windows\SysWOW64\msmask32.ocx=$(WinSysPath)
+C:\Windows\SysWOW64\MSMSKES.DLL=$(WinSysPath)
+C:\Windows\SysWOW64\MSDatGrd.ocx=$(WinSysPath)
+C:\Windows\SysWOW64\DATGDES.DLL=$(WinSysPath)
+C:\Windows\SysWOW64\CATControls.ocx=$(WinSysPath)
+C:\Program Files (x86)\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP.EXE=$(AppPath)
+C:\Program Files (x86)\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP1.EXE=$(WinPath)
+C:\Windows\System32\VB6STKIT.DLL=$(WinSysPathSysFile)
+C:\Program Files (x86)\Microsoft Visual Studio\VB98\Wizards\PDWizard\ST6UNST.EXE=$(WinPath)
+
+[Package|Paquete de instalación POWER SOFT 2.0|Configure Shared Files]
+Applicable=Yes
+D:\Sistema Vb6\Sistema vb6\Sql\Ventas PROVEEPERU\Ventas.exe=Yes
+C:\Program Files (x86)\Common Files\Crystal Decisions\2.0\bin\CR9Deploy.reg=Yes
+
+[Package|Paquete de instalación POWER SOFT 2.0|Distribution]
+Type=single
+Size=1.44 MB
+Title=POWER SOFT
+
+[Package|Paquete de instalación POWER SOFT 2.0|IconGroups]
+Group0=POWER SOFT
+PrivateGroup0=-1
+Parent0=$(Programs)
+
+[Package|Paquete de instalación POWER SOFT 2.0|POWER SOFT]
+Icon1=Ventas.exe
+Title1=POWER SOFT
+StartIn1=$(AppPath)
+Key1=Icon1
+
+[Package|Paquete de instalación POWER SOFT 2.0|Package]
+PackageFolder=d:\Sistema Vb6\Sistema vb6\Sql\Ventas PROVEEPERU\INSTALADOR
+ProjectFolder=D:\Sistema Vb6\Sistema vb6\Sql\Ventas PROVEEPERU
+ServerSideCab=
+File1=d:\Sistema Vb6\Sistema vb6\Sql\Ventas PROVEEPERU\INSTALADOR\setup.exe
+File2=d:\Sistema Vb6\Sistema vb6\Sql\Ventas PROVEEPERU\INSTALADOR\Setup.Lst
+File3=d:\Sistema Vb6\Sistema vb6\Sql\Ventas PROVEEPERU\INSTALADOR\Ventas.CAB
+Handler1=PDWizard.FolderDplySubWiz
+Handler2=PDWizard.WebPostDplySubWiz

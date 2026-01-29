@@ -1,0 +1,8 @@
+Línea 33: la clase CATControls.CATTextBox del control txt_Usu no era una clase de control cargada.
+Línea 60: la clase CATControls.CATTextBox del control txt_PassAnt no era una clase de control cargada.
+Línea 87: la clase CATControls.CATTextBox del control txt_PassNuevo no era una clase de control cargada.
+Línea 115: la clase CATControls.CATTextBox del control txt_PassAntNuevoN no era una clase de control cargada.
+Línea 224: la clase CATControls.CATTextBox del control txtGls_Persona no era una clase de control cargada.
+Línea 249: la clase CATControls.CATTextBox del control txtCod_Persona no era una clase de control cargada.
+Línea 278: la clase MSComctlLib.ImageList del control imgDocVentas no era una clase de control cargada.
+Línea 340: la clase MSComctlLib.Toolbar del control Toolbar1 no era una clase de control cargada.

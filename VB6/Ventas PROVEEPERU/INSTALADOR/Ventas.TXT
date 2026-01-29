@@ -1,0 +1,3 @@
+Se ha generado el archivo .cab para su aplicación como 'd:\Sistema Vb6\Sistema vb6\Sql\Ventas PROVEEPERU\INSTALADOR\Ventas.CAB'.
+
+También hay un archivo de proceso por lotes en el directorio de soporte (d:\Sistema Vb6\Sistema vb6\Sql\Ventas PROVEEPERU\INSTALADOR\Support\Ventas.BAT) que le permitirá volver a crear el archivo .cab en caso de que modifique alguno de los archivos.

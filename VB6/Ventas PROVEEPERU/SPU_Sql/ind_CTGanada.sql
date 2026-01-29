@@ -1,0 +1,1 @@
+ALTER TABLE docventas ADD ind_CTGanada BIT

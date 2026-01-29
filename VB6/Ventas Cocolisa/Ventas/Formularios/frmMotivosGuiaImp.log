@@ -1,0 +1,4 @@
+Línea 37: la clase CATControls.CATTextBox del control txt_Serie no era una clase de control cargada.
+Línea 63: la clase CATControls.CATTextBox del control txtCod_Documento no era una clase de control cargada.
+Línea 90: la clase CATControls.CATTextBox del control txtGls_Documento no era una clase de control cargada.
+Línea 155: la clase DXDBGRIDLibCtl.dxDBGrid del control gCabecera no era una clase de control cargada.

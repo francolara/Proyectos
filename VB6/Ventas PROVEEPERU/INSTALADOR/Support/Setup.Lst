@@ -1,0 +1,156 @@
+[Bootstrap]
+SetupTitle=Instalar
+SetupText=Copiando archivos, espere.
+CabFile=Ventas.CAB
+Spawn=Setup1.exe
+Uninstal=st6unst.exe
+TmpDir=msftqws.pdw
+Cabs=1
+
+[Bootstrap Files]
+File1=@VB6STKIT.DLL,$(WinSysPathSysFile),,,7/15/00 12:00:00 AM,101888,6.0.84.50
+File2=@COMCAT.DLL,$(WinSysPathSysFile),$(DLLSelfRegister),,6/1/98 12:00:00 AM,22288,4.71.1460.1
+File3=@OLEPRO32.DLL,$(WinSysPathSysFile),$(DLLSelfRegister),,3/8/99 12:00:00 AM,164112,5.0.4275.1
+File4=@VB6ES.DLL,$(WinSysPath),,$(Shared),10/2/00 12:00:00 AM,119568,6.0.89.88
+File5=@STDOLE2.TLB,$(WinSysPathSysFile),$(TLBRegister),,6/3/99 12:00:00 AM,17920,2.40.4275.1
+File6=@ASYCFILT.DLL,$(WinSysPathSysFile),,,3/8/99 12:00:00 AM,147728,2.40.4275.1
+File7=@OLEAUT32.DLL,$(WinSysPathSysFile),$(DLLSelfRegister),,4/12/00 12:00:00 AM,598288,2.40.4275.1
+File8=@msvbvm60.dll,$(WinSysPathSysFile),$(DLLSelfRegister),,12/3/23 9:46:59 PM,1436032,6.0.98.48
+
+[IconGroups]
+Group0=POWER SOFT
+PrivateGroup0=-1
+Parent0=$(Programs)
+
+[POWER SOFT]
+Icon1="Ventas.exe"
+Title1=POWER SOFT
+StartIn1=$(AppPath)
+
+[Setup]
+Title=POWER SOFT
+DefaultDir=$(ProgramFiles)\POWER SOFT
+AppExe=Ventas.exe
+AppToUninstall=Ventas.exe
+
+[Setup1 Files]
+File1=@0.REG,$(AppPath),0.REG,,10/5/24 12:17:38 PM,161,0.0.0.0
+File2=@CATControls.ocx,$(WinSysPath),$(DLLSelfRegister),$(Shared),9/8/06 4:30:26 PM,200704,1.0.0.0
+File3=@DATGDES.DLL,$(WinSysPath),,$(Shared),7/28/98 12:00:00 AM,30208,6.0.81.63
+File4=@STDFTES.DLL,$(WinSysPath),,$(Shared),7/31/98 12:00:00 AM,6656,6.0.81.63
+File5=@msstdfmt.dll,$(WinSysPath),$(DLLSelfRegister),$(Shared),2/16/10 3:22:44 PM,129872,6.1.98.16
+File6=@MSDatGrd.ocx,$(WinSysPath),$(DLLSelfRegister),$(Shared),2/16/10 3:22:44 PM,278352,6.1.98.16
+File7=@MSMSKES.DLL,$(WinSysPath),,$(Shared),7/28/98 12:00:00 AM,20480,6.0.81.63
+File8=@msmask32.ocx,$(WinSysPath),$(DLLSelfRegister),$(Shared),2/16/10 3:22:44 PM,178512,6.1.98.16
+File9=@MSCOMES.DLL,$(WinSysPath),,$(Shared),7/28/98 12:00:00 AM,14336,6.0.81.63
+File10=@MSComm32.Ocx,$(WinSysPath),$(DLLSelfRegister),$(Shared),2/16/10 3:22:44 PM,119616,6.1.98.16
+File11=@SYSINES.DLL,$(WinSysPath),,$(Shared),7/28/98 12:00:00 AM,10240,6.0.81.63
+File12=@sysinfo.Ocx,$(WinSysPath),$(DLLSelfRegister),$(Shared),2/16/10 3:22:44 PM,80208,6.1.98.16
+File13=@PCCLPES.DLL,$(WinSysPath),,$(Shared),7/28/98 12:00:00 AM,9728,6.0.81.63
+File14=@PicClp32.Ocx,$(WinSysPath),$(DLLSelfRegister),$(Shared),2/16/10 3:22:44 PM,100160,6.1.98.16
+File15=@MSMPIES.DLL,$(WinSysPath),,$(Shared),7/28/98 12:00:00 AM,23040,6.0.81.63
+File16=@msmapi32.Ocx,$(WinSysPath),$(DLLSelfRegister),$(Shared),2/16/10 3:22:44 PM,151376,6.1.98.16
+File17=@WINSKES.DLL,$(WinSysPath),,$(Shared),7/28/98 12:00:00 AM,15360,6.0.81.63
+File18=@MSWINSCK.ocx,$(WinSysPath),$(DLLSelfRegister),$(Shared),2/16/10 3:22:44 PM,126800,6.1.98.17
+File19=@MSCH2ES.DLL,$(WinSysPath),,$(Shared),7/28/98 12:00:00 AM,108032,6.0.81.63
+File20=@MSChrt20.ocx,$(WinSysPath),$(DLLSelfRegister),$(Shared),2/16/10 3:22:44 PM,1029968,6.1.98.16
+File21=@RCHTXES.DLL,$(WinSysPath),,$(Shared),7/28/98 12:00:00 AM,34816,6.0.81.63
+File22=@RICHED32.DLL,$(WinSysPathSysFile),,,5/8/98 12:00:00 AM,174352,4.0.993.4
+File23=@richtx32.Ocx,$(WinSysPath),$(DLLSelfRegister),$(Shared),2/16/10 3:22:44 PM,218432,6.1.98.16
+File24=@INETES.DLL,$(WinSysPath),,$(Shared),7/28/98 12:00:00 AM,15872,6.0.81.63
+File25=@MSINET.Ocx,$(WinSysPath),$(DLLSelfRegister),$(Shared),2/16/10 3:22:44 PM,136008,6.1.98.16
+File26=@MSCC2ES.DLL,$(WinSysPath),,$(Shared),7/28/98 12:00:00 AM,60928,6.0.81.63
+File27=@mscomct2.ocx,$(WinSysPath),$(DLLSelfRegister),$(Shared),2/16/10 3:22:44 PM,659264,6.1.98.16
+File28=@MSCMCES.DLL,$(WinSysPath),,$(Shared),7/28/98 12:00:00 AM,140800,6.0.81.63
+File29=@mscomctl.OCX,$(WinSysPath),$(DLLSelfRegister),$(Shared),5/2/12 12:17:12 PM,1070152,6.1.98.34
+File30=@CMDLGES.DLL,$(WinSysPath),,$(Shared),7/28/98 12:00:00 AM,33280,6.0.81.63
+File31=@ComDlg32.OCX,$(WinSysPath),$(DLLSelfRegister),$(Shared),2/16/10 3:22:44 PM,155984,6.1.98.16
+File32=@FLXGDES.DLL,$(WinSysPath),,$(Shared),7/28/98 12:00:00 AM,40448,6.0.81.63
+File33=@MSFlxGrd.ocx,$(WinSysPath),$(DLLSelfRegister),$(Shared),2/16/10 3:22:44 PM,258880,6.1.98.14
+File34=@TABCTES.DLL,$(WinSysPath),,$(Shared),7/28/98 12:00:00 AM,21504,6.0.81.63
+File35=@TabCtl32.Ocx,$(WinSysPath),$(DLLSelfRegister),$(Shared),2/16/10 3:22:44 PM,221504,6.1.98.16
+File36=@PrinterAPI.dll,$(WinSysPath),$(DLLSelfRegister),$(Shared),10/5/07 12:35:56 PM,28672,1.0.0.0
+File37=@SSubTmr6.dll,$(WinSysPath),$(DLLSelfRegister),$(Shared),10/23/07 3:40:38 PM,40960,1.1.0.3
+File38=@CR9Deploy.reg,$(AppPath),,$(Shared),5/17/02 6:57:24 AM,161,0.0.0.0
+File39=@keycode.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,$(dllSelfRegister),$(Shared),7/4/02 11:13:16 PM,221184,9.0.0.147
+File40=@u2ddisk.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,,$(Shared),7/12/02 4:32:22 AM,49152,9.2.0.541
+File41=@u2ftext.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,,$(Shared),7/12/02 4:30:00 AM,155648,9.2.0.548
+File42=@crtslv.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,$(dllSelfRegister),$(Shared),7/4/02 11:12:42 PM,30793,9.2.0.528
+File43=@ExportModeller.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,$(dllSelfRegister),$(Shared),7/12/02 4:26:30 AM,495688,9.2.0.559
+File44=@crxf_xls.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,,$(Shared),7/12/02 4:28:36 AM,405571,9.2.0.650
+File45=@crxf_wordw.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,,$(Shared),7/12/02 4:27:36 AM,163897,9.2.0.566
+File46=@crxf_rtf.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,,$(Shared),7/12/02 4:27:20 AM,163895,9.2.0.566
+File47=@crxf_pdf.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,,$(Shared),7/12/02 4:27:00 AM,389175,9.2.0.563
+File48=@sacommoncontrols.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,$(DLLSelfRegister),$(Shared),7/4/02 9:56:00 PM,793173,9.2.0.528
+File49=@filedialog.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,$(DLLSelfRegister),$(Shared),7/4/02 9:57:08 PM,785988,9.2.0.528
+File50=@crdb_dictionary.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,,$(Shared),7/4/02 7:34:56 PM,1429595,9.2.0.73
+File51=@p2ixbse.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,,$(Shared),7/4/02 7:36:56 PM,270336,8.0.100.1
+File52=@CRAnalyzer.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,$(DLLSelfRegister),$(Shared),7/4/02 10:57:58 PM,172102,9.2.0.439
+File53=@sscdlg.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,,$(Shared),5/3/02 7:56:40 AM,790528,0.4.1.1
+File54=@sscrc.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,,$(Shared),5/6/02 12:34:06 PM,2498560,0.4.0.6
+File55=@sscsdk80.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,,$(Shared),6/26/02 9:00:12 AM,1273856,2.3.6.8
+File56=@exlate32.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,,$(Shared),7/4/02 7:10:40 PM,671801,9.2.0.528
+File57=@querybuilder.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,,$(Shared),7/4/02 6:50:06 PM,163911,9.2.0.498
+File58=@crdb_odbc.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,,$(Shared),7/14/02 6:44:00 PM,373836,9.2.0.564
+File59=@crdb_dao.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,,$(Shared),7/4/02 6:51:56 PM,217152,9.2.0.487
+File60=@crdb_ado.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,,$(Shared),7/16/02 6:44:38 PM,368704,9.2.0.512
+File61=@crqe.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,$(dllSelfRegister),$(Shared),7/5/02 6:44:48 PM,1417289,9.2.0.580
+File62=@Implode.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,,$(Shared),12/1/96 6:00:00 PM,18944,1.0.0.1
+File63=@u25samp1.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,,$(Shared),7/4/02 10:14:36 PM,24576,9.2.0.15
+File64=@u25dts.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,,$(Shared),7/4/02 10:13:28 PM,24576,9.2.0.8
+File65=@u252000.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,,$(Shared),7/4/02 10:13:12 PM,24576,9.2.0.7
+File66=@u2lfinra.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,,$(Shared),7/4/02 10:14:18 PM,69632,9.2.0.4
+File67=@u2lexch.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,,$(Shared),7/4/02 10:14:00 PM,28672,9.2.0.16
+File68=@u2ldts.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,,$(Shared),7/4/02 10:13:40 PM,24576,9.2.0.5
+File69=@u2lcom.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,,$(Shared),7/4/02 10:12:26 PM,106496,9.2.0.5
+File70=@u2l2000.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,,$(Shared),7/4/02 10:12:42 PM,24576,9.2.0.8
+File71=@ufmanager.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,,$(Shared),7/16/02 9:37:38 AM,225280,9.0.0.1
+File72=@crtowords_en.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,,$(Shared),7/4/02 10:14:54 PM,24576,9.2.0.14
+File73=@MSVCRT.DLL,$(WinSysPath),,$(Shared),2/17/04 12:00:00 AM,278581,6.0.9782.0
+File74=@craxddrt9.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,$(DLLSelfRegister),$(Shared),7/14/02 9:13:56 PM,10719298,9.2.0.448
+File75=@craxdrt9.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,$(dllSelfRegister),$(Shared),7/14/02 9:42:22 PM,6135873,9.2.0.448
+File76=@crviewer9.dll,$(CommonFiles)\Crystal Decisions\2.0\bin,$(DLLSelfRegister),$(Shared),7/4/02 11:14:30 PM,770816,9.2.0.528
+File77=@dXSBar.dll,$(WinSysPath),$(DLLSelfRegister),$(Shared),4/11/01 1:01:00 AM,170592,1.1.0.6
+File78=@MSBind.dll,$(WinSysPath),$(DLLSelfRegister),$(Shared),2/16/10 3:22:44 PM,84808,6.1.98.16
+File79=@DXDBGrid.dll,$(WinSysPath),$(DLLSelfRegister),$(Shared),4/11/01 1:05:00 AM,627288,1.5.1.1
+File80=@msado27.tlb,$(WinSysPath),,$(Shared),12/7/19 4:10:02 AM,71168,6.2.19041.1
+File81=@Ventas.exe,$(ProgramFiles),,$(Shared),10/5/24 12:06:50 PM,19050496,1.0.0.0
+
+; Puede eliminar las siguientes líneas para obtener espacio adicional 
+; con el fin de personalizar este archivo en un disco de instalación completa.
+; 
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
