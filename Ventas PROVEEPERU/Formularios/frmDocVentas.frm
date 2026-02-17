@@ -1740,7 +1740,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   132055041
+         Format          =   133693441
          CurrentDate     =   38955
       End
       Begin VB.CommandButton cmbAyudaMotivoNCD 
@@ -2065,7 +2065,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   132055041
+         Format          =   133693441
          CurrentDate     =   38955
       End
       Begin MSComctlLib.ImageList imgDocVentas 
@@ -3347,7 +3347,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   132055041
+         Format          =   133693441
          CurrentDate     =   38955
       End
       Begin CATControls.CATTextBox txtgls_contacto 
@@ -4160,13 +4160,13 @@ Begin VB.Form frmDocVentas
       End
    End
    Begin MSComctlLib.Toolbar Toolbar1 
-      Height          =   1800
+      Height          =   660
       Left            =   120
       TabIndex        =   159
       Top             =   30
       Width           =   15270
       _ExtentX        =   26935
-      _ExtentY        =   3175
+      _ExtentY        =   1164
       ButtonWidth     =   3043
       ButtonHeight    =   1005
       AllowCustomize  =   0   'False
@@ -11070,6 +11070,18 @@ On Error GoTo Err
                 If Val(Trim("" & txt_Bultos.Text)) = 0 And strTipoDoc = "86" Then
                     StrMsgError = "Falta ingresar bultos. Verifique.": GoTo Err
                 End If
+                
+                'Si el número es diferente a su parte entera, tiene decimales
+                
+                If CDbl(txt_OrdenCompra.Text) <> Int(CDbl(txt_OrdenCompra.Text)) And strTipoDoc = "86" Then
+                    StrMsgError = "El peso solo acepta números enteros. Verifique.": GoTo Err
+                End If
+                
+                If strTipoDoc = "86" Then
+                     txt_OrdenCompra.Text = Val("" & txt_OrdenCompra.Text)
+                End If
+                
+
                 
             End If
              

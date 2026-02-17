@@ -1,8 +1,8 @@
 VERSION 5.00
 Object = "{6A24B331-7634-11D3-A5B0-0050044A7E1A}#1.5#0"; "DXDBGrid.dll"
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.1#0"; "mscomctl.OCX"
-Object = "{86CF1D34-0C5F-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomct2.ocx"
-Object = "{20C62CAE-15DA-101B-B9A8-444553540000}#1.1#0"; "msmapi32.Ocx"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.1#0"; "MSCOMCTL.OCX"
+Object = "{86CF1D34-0C5F-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCT2.OCX"
+Object = "{20C62CAE-15DA-101B-B9A8-444553540000}#1.1#0"; "MSMAPI32.OCX"
 Object = "{F41D1D30-7878-4923-8CB3-6CCACDC9C9DE}#1.0#0"; "CATControls.ocx"
 Begin VB.Form frmDocVentas_OC 
    Appearance      =   0  'Flat
@@ -788,13 +788,13 @@ Begin VB.Form frmDocVentas_OC
    End
    Begin MSComctlLib.Toolbar Toolbar1 
       Align           =   1  'Align Top
-      Height          =   1230
+      Height          =   660
       Left            =   0
       TabIndex        =   6
       Top             =   0
       Width           =   13080
       _ExtentX        =   23072
-      _ExtentY        =   2170
+      _ExtentY        =   1164
       ButtonWidth     =   3016
       ButtonHeight    =   1005
       AllowCustomize  =   0   'False
@@ -1244,7 +1244,7 @@ Begin VB.Form frmDocVentas_OC
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   132317185
+         Format          =   133758977
          CurrentDate     =   38955
       End
       Begin MSComCtl2.DTPicker dtp_IniTraslado 
@@ -1267,7 +1267,7 @@ Begin VB.Form frmDocVentas_OC
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   132317185
+         Format          =   133758977
          CurrentDate     =   38955
       End
       Begin CATControls.CATTextBox txtObs 
@@ -1533,7 +1533,7 @@ Begin VB.Form frmDocVentas_OC
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   132317185
+         Format          =   133758977
          CurrentDate     =   38955
       End
       Begin MSComctlLib.ImageList imgDocVentas 
@@ -4374,13 +4374,13 @@ Dim intFila                     As Integer
             strCod = gDetalle.Columns.ColumnByFieldName("idProducto").Value
             strDes = gDetalle.Columns.ColumnByFieldName("GlsProducto").Value
             
-            csql = "Select P.IdProducto,P.GlsProducto,P.idUMVenta " & _
+            csql = "Select P.IdProducto,P.GlsProducto,P.idUMVenta, B.abreUM " & _
                     "FROM Productos p " & _
-                    "INNER JOIN productosproveedor x " & _
-                        "ON p.IdEmpresa = x.IdEmpresa And p.idProducto = x.idProducto and x.idProveedor = '" & Trim(txtCod_Cliente.Text) & "' " & _
+                    "INNER JOIN unidadmedida B ON P.idUMVenta = B.idUM " & _
+                        "" & _
                    "WHERE p.idempresa = '" & glsEmpresa & "' " & _
                    "AND (p.idProducto = '" & strCod & "' OR p.idFabricante = '" & strCod & "' OR p.CodigoRapido = '" & strCod & "') " & _
-                   "Group By p.IdEmpresa,P.IdProducto"
+                   ""
             
             rsp.Open csql, Cn, adOpenForwardOnly, adLockReadOnly
             If rsp.EOF Or rsp.BOF Then
@@ -4395,11 +4395,13 @@ Dim intFila                     As Integer
                 strCod = "" & rsp.Fields("idProducto")
                 strDes = "" & rsp.Fields("GlsProducto")
                 strCodUM = "" & rsp.Fields("idUMVenta")
+                strDesUM = "" & rsp.Fields("abreUM")
             End If
             gDetalle.Dataset.Edit
             gDetalle.Columns.ColumnByFieldName("idProducto").Value = strCod
             gDetalle.Columns.ColumnByFieldName("CodigoRapido").Value = traerCampo("Productos", "CodigoRapido", "IdProducto", strCod, True)
             gDetalle.Columns.ColumnByFieldName("GlsProducto").Value = strDes
+            gDetalle.Columns.ColumnByFieldName("idUM").Value = strCodUM
             If DatosProducto(strCod, strCodFabri, strCodMar, strDesMar, intAfecto, strTipoProd) = False Then
             End If
                 
@@ -4434,9 +4436,9 @@ Dim intFila                     As Integer
                 gDetalle.Columns.FocusedIndex = gDetalle.Columns.ColumnByFieldName("Cantidad").ColIndex '.Index
             End If
             
-            If dblVVUnit = 0# Then
-                MsgBox "El producto NO registra precio. Verifique.", vbCritical, App.Title
-            End If
+'            If dblVVUnit = 0# Then
+'                MsgBox "El producto NO registra precio. Verifique.", vbCritical, App.Title
+'            End If
             calcularTotales
             gDetalle.Dataset.RecNo = intFila
             
@@ -4754,65 +4756,65 @@ Dim indPedido As Boolean
     If Key <> 9 And Key <> 13 And Key <> 27 Then
         Select Case gDetalle.Columns.FocusedColumn.Index
             Case gDetalle.Columns.ColumnByFieldName("idProducto").Index, gDetalle.Columns.ColumnByFieldName("CodigoRapido").Index
-                If glsLeeCodigoBarras = "N" Then
-                    strCod = gDetalle.Columns.ColumnByFieldName("idProducto").Value
-                    strDes = gDetalle.Columns.ColumnByFieldName("GlsProducto").Value
-                    indPedido = False
-                    If strTipoDoc = "94" Or strTipoDoc = "87" Or strTipoDoc = "OS" Then indPedido = True
-                    If strTipoDoc = "94" Or strTipoDoc = "87" Or strTipoDoc = "OS" Then
-                        FrmAyudaProdOCInv.ExecuteReturnTextAlm txtCod_Cliente.Text, txtCod_Almacen.Text, rscd, strCod, strDes, strCodUM, glsValidaStock, txtCod_Lista.Text, True, True, indPedido, StrMsgError
-                        If StrMsgError <> "" Then GoTo Err
-                        If rscd.RecordCount <> 0 Then
-                            mostrarDocImportado2 rscd, StrMsgError
-                            If StrMsgError <> "" Then GoTo Err
-                        End If
-                    Else
-                        mostrarAyudaTextoProdAlm2 txtCod_Almacen.Text, strCod, strDes, strCodUM, glsValidaStock, txtCod_Lista.Text, True, True, indPedido, StrMsgError
-                        If StrMsgError <> "" Then GoTo Err
-                    End If
-                    gDetalle.SetFocus
-                    gDetalle.Dataset.RecNo = intFila
-                    gDetalle.Dataset.Edit
-                    gDetalle.Columns.ColumnByFieldName("idProducto").Value = strCod
-                    gDetalle.Columns.ColumnByFieldName("CodigoRapido").Value = traerCampo("Productos", "CodigoRapido", "IdProducto", strCod, True)
-                    gDetalle.Columns.ColumnByFieldName("GlsProducto").Value = strDes
-                        
-                    If Trim(strCod) = "" Then Exit Sub
-                    If DatosProducto(strCod, strCodFabri, strCodMar, strDesMar, intAfecto, strTipoProd) = False Then
-                    End If
-                    strMoneda = traerCampo("Listaprecios", "idMoneda", "idLista", txtCod_Lista.Text, True)
-                    gDetalle.Columns.ColumnByFieldName("idCodFabricante").Value = strCodFabri
-                    gDetalle.Columns.ColumnByFieldName("idMarca").Value = strCodMar
-                    gDetalle.Columns.ColumnByFieldName("GlsMarca").Value = strDesMar
-                    gDetalle.Columns.ColumnByFieldName("Afecto").Value = intAfecto
-                    gDetalle.Columns.ColumnByFieldName("idTipoProducto").Value = strTipoProd
-                    gDetalle.Columns.ColumnByFieldName("idMoneda").Value = strMoneda 'falta esta columna en el detalle de la grilla
-                    If DatosPrecio(strCod, strTipoProd, strCodUM, strDesUM, dblVVUnit, dblFactor) = False Then
-                    End If
-                    
-                    If strDesUM = "" And strCodUM <> "" Then strDesUM = traerCampo("unidadMedida", "abreUM", "idUM", strCodUM, False)
-                    gDetalle.Columns.ColumnByFieldName("idUM").Value = strCodUM
-                    gDetalle.Columns.ColumnByFieldName("GlsUM").Value = strDesUM
-                    gDetalle.Columns.ColumnByFieldName("Factor").Value = dblFactor
-                    If strTipoProd = "06002" Then gDetalle.Columns.ColumnByFieldName("Cantidad").Value = 1
-                    procesaMoneda strMoneda, txtCod_Moneda.Text, 0, dblVVUnit, intAfecto, dblVVUnit, dblIGVUnit, dblPVUnit
-                    gDetalle.Columns.ColumnByFieldName("VVUnit").Value = dblVVUnit
-                    gDetalle.Columns.ColumnByFieldName("IGVUnit").Value = dblIGVUnit
-                    gDetalle.Columns.ColumnByFieldName("PVUnit").Value = dblPVUnit
-                    gDetalle.Columns.ColumnByFieldName("VVUnitLista").Value = dblVVUnit
-                    gDetalle.Columns.ColumnByFieldName("PVUnitLista").Value = dblPVUnit
-                    gDetalle.Columns.ColumnByFieldName("PorDcto").Value = dblPorDsctoEspecial
-                    gDetalle.Dataset.Post
-            
-                    gDetalle.Dataset.RecNo = intFila
-                    gDetalle.Dataset.Edit
-                    calculaTotalesFila gDetalle.Columns.ColumnByFieldName("Cantidad").Value, dblVVUnit, dblIGVUnit, dblPVUnit, gDetalle.Columns.ColumnByFieldName("PorDcto").Value, gDetalle.Columns.ColumnByFieldName("Afecto").Value
-                    gDetalle.Dataset.Post
-                    
-                    If strCod <> "" Then
-                        gDetalle.Columns.FocusedIndex = gDetalle.Columns.ColumnByFieldName("Cantidad").Index
-                    End If
-                End If
+'                If glsLeeCodigoBarras = "N" Then
+'                    strCod = gDetalle.Columns.ColumnByFieldName("idProducto").Value
+'                    strDes = gDetalle.Columns.ColumnByFieldName("GlsProducto").Value
+'                    indPedido = False
+'                    If strTipoDoc = "94" Or strTipoDoc = "87" Or strTipoDoc = "OS" Then indPedido = True
+'                    If strTipoDoc = "94" Or strTipoDoc = "87" Or strTipoDoc = "OS" Then
+'                        'FrmAyudaProdOCInv.ExecuteReturnTextAlm txtCod_Cliente.Text, txtCod_Almacen.Text, rscd, strCod, strDes, strCodUM, glsValidaStock, txtCod_Lista.Text, True, True, indPedido, StrMsgError
+'                        'If StrMsgError <> "" Then GoTo Err
+'                        'If rscd.RecordCount <> 0 Then
+'                        '    mostrarDocImportado2 rscd, StrMsgError
+'                        '    If StrMsgError <> "" Then GoTo Err
+'                        'End If
+'                    Else
+'                        mostrarAyudaTextoProdAlm2 txtCod_Almacen.Text, strCod, strDes, strCodUM, glsValidaStock, txtCod_Lista.Text, True, True, indPedido, StrMsgError
+'                        If StrMsgError <> "" Then GoTo Err
+'                    End If
+'                    gDetalle.SetFocus
+'                    gDetalle.Dataset.RecNo = intFila
+'                    gDetalle.Dataset.Edit
+'                    gDetalle.Columns.ColumnByFieldName("idProducto").Value = strCod
+'                    gDetalle.Columns.ColumnByFieldName("CodigoRapido").Value = traerCampo("Productos", "CodigoRapido", "IdProducto", strCod, True)
+'                    gDetalle.Columns.ColumnByFieldName("GlsProducto").Value = strDes
+'
+'                    If Trim(strCod) = "" Then Exit Sub
+'                    If DatosProducto(strCod, strCodFabri, strCodMar, strDesMar, intAfecto, strTipoProd) = False Then
+'                    End If
+'                    strMoneda = traerCampo("Listaprecios", "idMoneda", "idLista", txtCod_Lista.Text, True)
+'                    gDetalle.Columns.ColumnByFieldName("idCodFabricante").Value = strCodFabri
+'                    gDetalle.Columns.ColumnByFieldName("idMarca").Value = strCodMar
+'                    gDetalle.Columns.ColumnByFieldName("GlsMarca").Value = strDesMar
+'                    gDetalle.Columns.ColumnByFieldName("Afecto").Value = intAfecto
+'                    gDetalle.Columns.ColumnByFieldName("idTipoProducto").Value = strTipoProd
+'                    gDetalle.Columns.ColumnByFieldName("idMoneda").Value = strMoneda 'falta esta columna en el detalle de la grilla
+'                    If DatosPrecio(strCod, strTipoProd, strCodUM, strDesUM, dblVVUnit, dblFactor) = False Then
+'                    End If
+'
+'                    If strDesUM = "" And strCodUM <> "" Then strDesUM = traerCampo("unidadMedida", "abreUM", "idUM", strCodUM, False)
+'                    gDetalle.Columns.ColumnByFieldName("idUM").Value = strCodUM
+'                    gDetalle.Columns.ColumnByFieldName("GlsUM").Value = strDesUM
+'                    gDetalle.Columns.ColumnByFieldName("Factor").Value = dblFactor
+'                    If strTipoProd = "06002" Then gDetalle.Columns.ColumnByFieldName("Cantidad").Value = 1
+'                    procesaMoneda strMoneda, txtCod_Moneda.Text, 0, dblVVUnit, intAfecto, dblVVUnit, dblIGVUnit, dblPVUnit
+'                    gDetalle.Columns.ColumnByFieldName("VVUnit").Value = dblVVUnit
+'                    gDetalle.Columns.ColumnByFieldName("IGVUnit").Value = dblIGVUnit
+'                    gDetalle.Columns.ColumnByFieldName("PVUnit").Value = dblPVUnit
+'                    gDetalle.Columns.ColumnByFieldName("VVUnitLista").Value = dblVVUnit
+'                    gDetalle.Columns.ColumnByFieldName("PVUnitLista").Value = dblPVUnit
+'                    gDetalle.Columns.ColumnByFieldName("PorDcto").Value = dblPorDsctoEspecial
+'                    gDetalle.Dataset.Post
+'
+'                    gDetalle.Dataset.RecNo = intFila
+'                    gDetalle.Dataset.Edit
+'                    calculaTotalesFila gDetalle.Columns.ColumnByFieldName("Cantidad").Value, dblVVUnit, dblIGVUnit, dblPVUnit, gDetalle.Columns.ColumnByFieldName("PorDcto").Value, gDetalle.Columns.ColumnByFieldName("Afecto").Value
+'                    gDetalle.Dataset.Post
+'
+'                    If strCod <> "" Then
+'                        gDetalle.Columns.FocusedIndex = gDetalle.Columns.ColumnByFieldName("Cantidad").Index
+'                    End If
+'                End If
             
             Case gDetalle.Columns.ColumnByFieldName("idUM").Index
                 strCod = gDetalle.Columns.ColumnByFieldName("idUM").Value
@@ -5807,7 +5809,7 @@ Dim rst As New ADODB.Recordset
         dblFactor = "" & rst.Fields("Factor")
     Else
         DatosPrecio = False
-        strglsum = ""
+        strglsum = strglsum
         dblVVUnit = 0
         dblFactor = 1
     End If
