@@ -1740,7 +1740,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   133693441
+         Format          =   133038081
          CurrentDate     =   38955
       End
       Begin VB.CommandButton cmbAyudaMotivoNCD 
@@ -2065,7 +2065,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   133693441
+         Format          =   133038081
          CurrentDate     =   38955
       End
       Begin MSComctlLib.ImageList imgDocVentas 
@@ -3347,7 +3347,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   133693441
+         Format          =   133038081
          CurrentDate     =   38955
       End
       Begin CATControls.CATTextBox txtgls_contacto 
@@ -11073,15 +11073,15 @@ On Error GoTo Err
                 
                 'Si el número es diferente a su parte entera, tiene decimales
                 
-                If CDbl(txt_OrdenCompra.Text) <> Int(CDbl(txt_OrdenCompra.Text)) And strTipoDoc = "86" Then
-                    StrMsgError = "El peso solo acepta números enteros. Verifique.": GoTo Err
+                If IsNumeric(txt_OrdenCompra.Text) = True Then
+                    If CDbl(txt_OrdenCompra.Text) <> Int(CDbl(txt_OrdenCompra.Text)) And strTipoDoc = "86" Then
+                        StrMsgError = "El peso solo acepta números enteros. Verifique.": GoTo Err
+                    End If
                 End If
                 
                 If strTipoDoc = "86" Then
                      txt_OrdenCompra.Text = Val("" & txt_OrdenCompra.Text)
                 End If
-                
-
                 
             End If
              
