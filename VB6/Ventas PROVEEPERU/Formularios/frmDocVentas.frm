@@ -10872,6 +10872,7 @@ Dim StrCadSql               As String
 Dim X                       As New frmPagosDocVentas
 Dim F                       As New frmDocVentas
 Dim StrRutaExcel            As String
+Dim StrRutaExcelFormateado  As String
 Dim StrCarpetaTemp          As String
 On Error GoTo Err
 
@@ -11476,7 +11477,10 @@ On Error GoTo Err
             ExportarRecordsetCSV RsListaCab, StrRutaExcel, StrMsgError
             If StrMsgError <> "" Then GoTo Err
 
-            ShellEx StrRutaExcel, essSW_MAXIMIZE, , , "open", Me.hwnd
+            FormatearCabeceraArchivoExcel StrRutaExcel, StrRutaExcelFormateado, StrMsgError
+            If StrMsgError <> "" Then GoTo Err
+
+            ShellEx StrRutaExcelFormateado, essSW_MAXIMIZE, , , "open", Me.hwnd
             ' Firma Codex 2026-03-12
             
         Case 11: 'VERSIONES
@@ -11934,6 +11938,57 @@ Err:
         If rsExporta.State = 1 Then rsExporta.Close
         Set rsExporta = Nothing
     End If
+    If StrMsgError = "" Then StrMsgError = Err.Description
+End Sub
+
+Private Sub FormatearCabeceraArchivoExcel(ByVal StrRutaCSV As String, ByRef StrRutaExcelFormateado As String, ByRef StrMsgError As String)
+On Error GoTo Err
+Dim xlApp           As Object
+Dim xlLibro         As Object
+Dim xlHoja          As Object
+Dim rngCabecera     As Object
+Dim lngUltimaCol    As Long
+
+    StrRutaExcelFormateado = Replace(StrRutaCSV, ".csv", ".xlsx")
+
+    Set xlApp = CreateObject("Excel.Application")
+    xlApp.Visible = False
+    xlApp.DisplayAlerts = False
+
+    Set xlLibro = xlApp.Workbooks.Open(StrRutaCSV)
+    Set xlHoja = xlLibro.Worksheets(1)
+
+    lngUltimaCol = xlHoja.Cells(1, xlHoja.Columns.Count).End(-4159).Column
+    If lngUltimaCol > 0 Then
+        Set rngCabecera = xlHoja.Range(xlHoja.Cells(1, 1), xlHoja.Cells(1, lngUltimaCol))
+        With rngCabecera
+            .Font.Bold = True
+            .Interior.Color = RGB(173, 216, 230)
+            .Borders.LineStyle = 1
+            .Borders.Weight = 2
+        End With
+    End If
+
+    xlHoja.Columns.AutoFit
+    xlLibro.SaveAs StrRutaExcelFormateado, 51
+    xlLibro.Close False
+    xlApp.Quit
+
+    Set rngCabecera = Nothing
+    Set xlHoja = Nothing
+    Set xlLibro = Nothing
+    Set xlApp = Nothing
+    Exit Sub
+
+Err:
+    On Error Resume Next
+    If TypeName(xlLibro) <> "Nothing" Then xlLibro.Close False
+    If TypeName(xlApp) <> "Nothing" Then xlApp.Quit
+    Set rngCabecera = Nothing
+    Set xlHoja = Nothing
+    Set xlLibro = Nothing
+    Set xlApp = Nothing
+    On Error GoTo 0
     If StrMsgError = "" Then StrMsgError = Err.Description
 End Sub
 
