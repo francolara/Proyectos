@@ -251,7 +251,7 @@ namespace ProyectoGRE.DAO
                 pr[9] = new SqlParameter("@XML", SqlDbType.VarChar);
                 pr[9].Value = dto.C_CAMPO_RESPUESTA_12;
 
-                if (DesError.ToUpper() == "EN PROCESO")
+                if (EsMensajeTemporalNubeFact(DesError))
                 {
                     return cr;
                 }
@@ -268,6 +268,20 @@ namespace ProyectoGRE.DAO
             }
             return cr;
         }
+
+        private static bool EsMensajeTemporalNubeFact(string desError)
+        {
+            if (string.IsNullOrWhiteSpace(desError))
+            {
+                return false;
+            }
+
+            return desError.Equals("EN PROCESO", StringComparison.OrdinalIgnoreCase)
+                || desError.IndexOf("Existe un Documento igual en Proceso", StringComparison.OrdinalIgnoreCase) >= 0
+                || desError.IndexOf("Ocurrio un error en el batch", StringComparison.OrdinalIgnoreCase) >= 0
+                || desError.IndexOf("Se ha producido un error inesperado", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
         public string ToString(string metodo)
         {
             return "\n\rClase error: " + base.ToString() + "\n\rMetodo error: " + metodo;
