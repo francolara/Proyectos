@@ -98,3 +98,17 @@ D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE Nub
 D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE.Controladora\obj\Debug\netcoreapp3.1\ProyectoGRE.Controladora.csproj.CopyComplete
 D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE.Controladora\obj\Debug\netcoreapp3.1\ProyectoGRE.Controladora.dll
 D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE.Controladora\obj\Debug\netcoreapp3.1\ProyectoGRE.Controladora.pdb
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.Controladora\bin\Debug\netcoreapp3.1\ProyectoGRE.Controladora.deps.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.Controladora\bin\Debug\netcoreapp3.1\ProyectoGRE.Controladora.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.Controladora\bin\Debug\netcoreapp3.1\ProyectoGRE.Controladora.pdb
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.Controladora\bin\Debug\netcoreapp3.1\ProyectoGRE.DAO.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.Controladora\bin\Debug\netcoreapp3.1\ProyectoGRE.DTO.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.Controladora\bin\Debug\netcoreapp3.1\ProyectoGRE.DAO.pdb
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.Controladora\bin\Debug\netcoreapp3.1\ProyectoGRE.DTO.pdb
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.Controladora\obj\Debug\netcoreapp3.1\ProyectoGRE.Controladora.csproj.AssemblyReference.cache
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.Controladora\obj\Debug\netcoreapp3.1\ProyectoGRE.Controladora.AssemblyInfoInputs.cache
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.Controladora\obj\Debug\netcoreapp3.1\ProyectoGRE.Controladora.AssemblyInfo.cs
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.Controladora\obj\Debug\netcoreapp3.1\ProyectoGRE.Controladora.csproj.CoreCompileInputs.cache
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.Controladora\obj\Debug\netcoreapp3.1\ProyectoGRE.Controladora.csproj.CopyComplete
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.Controladora\obj\Debug\netcoreapp3.1\ProyectoGRE.Controladora.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.Controladora\obj\Debug\netcoreapp3.1\ProyectoGRE.Controladora.pdb

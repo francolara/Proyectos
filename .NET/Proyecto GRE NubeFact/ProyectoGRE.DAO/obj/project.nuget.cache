@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "J0zwFB8Y7Gef8R+SUTadKgXj4tlL3ezUt2MkB5OWPEngtMm2V/VIQl+XHsPW+8iZ0ATs3h514UgCfZokQ8sOGw==",
+  "dgSpecHash": "K9hLAyEQEsvm6wzUbla3fdQD6ZKSFGBmhPdSxFmPZymBYUFI2AtHtgdyn1IFyRVOD66GTUoZDxh0krc2+Lc1jw==",
   "success": true,
-  "projectFilePath": "D:\\Sistema Vb6\\Sistema vb6\\Sql\\Facturacion Electronica\\NubeFact\\Proyecto GRE NubeFact\\ProyectoGRE.DAO\\ProyectoGRE.DAO.csproj",
+  "projectFilePath": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET\\Proyecto GRE NubeFact\\ProyectoGRE.DAO\\ProyectoGRE.DAO.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Franco Lara\\.nuget\\packages\\dapper\\2.0.123\\dapper.2.0.123.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\microsoft.netcore.platforms\\3.1.0\\microsoft.netcore.platforms.3.1.0.nupkg.sha512",

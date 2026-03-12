@@ -4,7 +4,7 @@
 	xmlns:xsd="http://www.w3.org/2001/XMLSchema"
 	xmlns="">
 
-	<Configuracion Nombre="GRE" IpLocal="DESKTOP-LLR14AJ\SQLEXPRESS" IpPublico="DESKTOP-LLR14AJ\SQLEXPRESS" BD="DbSistema_23122025" UserID="sa" Pass="12345678" Estado="TRUE"/>
+	<Configuracion Nombre="GRE" IpLocal="LAPTOP-7R5BLG9F\SQLEXPRESS" IpPublico="LAPTOP-7R5BLG9F\SQLEXPRESS" BD="DbSistema" UserID="sa" Pass="12345678" Estado="TRUE"/>
 
 
 

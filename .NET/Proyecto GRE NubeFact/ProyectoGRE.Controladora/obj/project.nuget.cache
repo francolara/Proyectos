@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "Esu3LPr/6rQpQUUpR3AKGDP5iY4C4XR6dpk+zo9yDVwZ4c1ZpBnVi66tG2ZG8HM2a8iH0uGNSEXU9YdaJ1Bf0Q==",
+  "dgSpecHash": "oQt5g4IPWeRqfJ6RR+K11kVA2bBTr2ZFXpn74EsZY2gKDd9wg+KABJZcWKg5NJyT9Nh9XmP93qhEnRis0k1bhA==",
   "success": true,
-  "projectFilePath": "D:\\Sistema Vb6\\Sistema vb6\\Sql\\Facturacion Electronica\\NubeFact\\Proyecto GRE NubeFact\\ProyectoGRE.Controladora\\ProyectoGRE.Controladora.csproj",
+  "projectFilePath": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET\\Proyecto GRE NubeFact\\ProyectoGRE.Controladora\\ProyectoGRE.Controladora.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Franco Lara\\.nuget\\packages\\dapper\\2.0.123\\dapper.2.0.123.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\microsoft.netcore.platforms\\3.1.0\\microsoft.netcore.platforms.3.1.0.nupkg.sha512",

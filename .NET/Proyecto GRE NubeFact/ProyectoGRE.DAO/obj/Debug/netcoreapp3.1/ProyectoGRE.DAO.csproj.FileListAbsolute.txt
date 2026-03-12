@@ -98,3 +98,17 @@ D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE Nub
 D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE.DAO\obj\Debug\netcoreapp3.1\ProyectoGRE.DAO.csproj.CopyComplete
 D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE.DAO\obj\Debug\netcoreapp3.1\ProyectoGRE.DAO.dll
 D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE NubeFact\ProyectoGRE.DAO\obj\Debug\netcoreapp3.1\ProyectoGRE.DAO.pdb
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.DAO\bin\Debug\netcoreapp3.1\ProyectoGRE.DAO.deps.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.DAO\bin\Debug\netcoreapp3.1\ProyectoGRE.DAO.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.DAO\bin\Debug\netcoreapp3.1\ProyectoGRE.DAO.pdb
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.DAO\bin\Debug\netcoreapp3.1\ProyectoGRE.DTO.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.DAO\bin\Debug\netcoreapp3.1\ProyectoGRE.DTO.pdb
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.DAO\obj\Debug\netcoreapp3.1\ProyectoGRE.DAO.csproj.AssemblyReference.cache
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.DAO\obj\Debug\netcoreapp3.1\ProyectoGRE.DAO.Properties.Resources.resources
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.DAO\obj\Debug\netcoreapp3.1\ProyectoGRE.DAO.csproj.GenerateResource.cache
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.DAO\obj\Debug\netcoreapp3.1\ProyectoGRE.DAO.AssemblyInfoInputs.cache
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.DAO\obj\Debug\netcoreapp3.1\ProyectoGRE.DAO.AssemblyInfo.cs
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.DAO\obj\Debug\netcoreapp3.1\ProyectoGRE.DAO.csproj.CoreCompileInputs.cache
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.DAO\obj\Debug\netcoreapp3.1\ProyectoGRE.DAO.csproj.CopyComplete
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.DAO\obj\Debug\netcoreapp3.1\ProyectoGRE.DAO.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.DAO\obj\Debug\netcoreapp3.1\ProyectoGRE.DAO.pdb
