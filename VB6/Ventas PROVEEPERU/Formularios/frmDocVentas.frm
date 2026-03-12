@@ -11452,7 +11452,7 @@ On Error GoTo Err
             If Dir$(StrCarpetaTemp, vbDirectory) = "" Then MkDir StrCarpetaTemp
 
             StrRutaExcel = StrCarpetaTemp & "\Listado_" & Format(Now, "yyyymmdd_hhnnss") & ".csv"
-            ExportarRecordsetCSV gLista.Dataset, StrRutaExcel, StrMsgError
+            ExportarRecordsetCSV RsListaCab, StrRutaExcel, StrMsgError
             If StrMsgError <> "" Then GoTo Err
 
             ShellEx StrRutaExcel, essSW_MAXIMIZE, , , "open", Me.hwnd
