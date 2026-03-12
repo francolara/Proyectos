@@ -16,7 +16,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExposedDropdownMenuDefaults.TrailingIcon
-import androidx.compose.material3.ExposedDropdownMenu
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -102,7 +102,7 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                     trailingIcon = { TrailingIcon(expanded = expandedCliente) },
                     modifier = Modifier.menuAnchor().fillMaxWidth()
                 )
-                ExposedDropdownMenu(expanded = expandedCliente, onDismissRequest = { expandedCliente = false }) {
+                DropdownMenu(expanded = expandedCliente, onDismissRequest = { expandedCliente = false }) {
                     clientes.forEach { cliente ->
                         androidx.compose.material3.DropdownMenuItem(
                             text = { Text("${cliente.nombre} ${cliente.apellido}") },
@@ -126,7 +126,7 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedTipo) },
                     modifier = Modifier.menuAnchor().fillMaxWidth()
                 )
-                ExposedDropdownMenu(expanded = expandedTipo, onDismissRequest = { expandedTipo = false }) {
+                DropdownMenu(expanded = expandedTipo, onDismissRequest = { expandedTipo = false }) {
                     TipoPago.entries.forEach { tipo ->
                         androidx.compose.material3.DropdownMenuItem(
                             text = { Text(tipo.name) },
@@ -300,7 +300,7 @@ private fun <T> DropdownGeneric(
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier.menuAnchor().fillMaxWidth()
         )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { onExpandedChange(false) }) {
+        DropdownMenu(expanded = expanded, onDismissRequest = { onExpandedChange(false) }) {
             options.forEach { option ->
                 androidx.compose.material3.DropdownMenuItem(
                     text = { Text(optionText(option)) },
