@@ -11832,22 +11832,54 @@ End Sub
 
 Private Sub ExportarRecordsetCSV(ByVal RsFuente As ADODB.Recordset, ByVal StrRutaCSV As String, StrMsgError As String)
 On Error GoTo Err
-Dim rsExporta       As ADODB.Recordset
-Dim intCampo        As Integer
-Dim intFile         As Integer
-Dim StrLinea        As String
+Dim rsExporta           As ADODB.Recordset
+Dim intFile             As Integer
+Dim StrLinea            As String
+Dim ArrCampos           As Variant
+Dim ArrCamposTexto      As Variant
+Dim ArrIndices()        As Integer
+Dim ArrNombres()        As String
+Dim intDefinido         As Integer
+Dim intExportado        As Integer
+Dim intCampo            As Integer
+Dim intIndiceCampo      As Integer
+Dim StrValor            As String
 
     If TypeName(RsFuente) = "Nothing" Then Exit Sub
 
     Set rsExporta = RsFuente.Clone(adLockReadOnly)
 
+    ArrCampos = Split("idDocVentas|idSerie|idPerCliente|GlsCliente|RUCCliente|FecEmision|estDocVentas|Moneda|TotalPrecioVenta|DocReferencia|NumOrdenCompra|CostoTotal|Obs|MotivoTras", "|")
+    ArrCamposTexto = Split("idDocVentas|NumOrdenCompra", "|")
+
+    ReDim ArrIndices(0 To UBound(ArrCampos))
+    ReDim ArrNombres(0 To UBound(ArrCampos))
+
+    intExportado = 0
+    For intDefinido = 0 To UBound(ArrCampos)
+        intIndiceCampo = ObtenerIndiceCampoRecordset(rsExporta, CStr(ArrCampos(intDefinido)))
+        If intIndiceCampo >= 0 Then
+            ArrIndices(intExportado) = intIndiceCampo
+            ArrNombres(intExportado) = CStr(ArrCampos(intDefinido))
+            intExportado = intExportado + 1
+        End If
+    Next intDefinido
+
+    If intExportado = 0 Then
+        StrMsgError = "No se encontraron columnas configuradas para exportar."
+        GoTo Err
+    End If
+
+    ReDim Preserve ArrIndices(0 To intExportado - 1)
+    ReDim Preserve ArrNombres(0 To intExportado - 1)
+
     intFile = FreeFile
     Open StrRutaCSV For Output As #intFile
 
     StrLinea = ""
-    For intCampo = 0 To rsExporta.Fields.Count - 1
+    For intCampo = 0 To intExportado - 1
         If intCampo > 0 Then StrLinea = StrLinea & ";"
-        StrLinea = StrLinea & FormatearValorCSV(Trim("" & rsExporta.Fields(intCampo).Name))
+        StrLinea = StrLinea & FormatearValorCSV(ArrNombres(intCampo))
     Next intCampo
     Print #intFile, StrLinea
 
@@ -11856,9 +11888,15 @@ Dim StrLinea        As String
 
         Do While Not rsExporta.EOF
             StrLinea = ""
-            For intCampo = 0 To rsExporta.Fields.Count - 1
+            For intCampo = 0 To intExportado - 1
                 If intCampo > 0 Then StrLinea = StrLinea & ";"
-                StrLinea = StrLinea & FormatearValorCSV(Trim("" & rsExporta.Fields(intCampo).Value))
+
+                StrValor = Trim("" & rsExporta.Fields(ArrIndices(intCampo)).Value)
+                If CampoExportacionTexto(ArrNombres(intCampo), ArrCamposTexto) Then
+                    StrValor = "=" & Chr$(34) & StrValor & Chr$(34)
+                End If
+
+                StrLinea = StrLinea & FormatearValorCSV(StrValor)
             Next intCampo
             Print #intFile, StrLinea
             rsExporta.MoveNext
@@ -11877,6 +11915,30 @@ Err:
     End If
     If StrMsgError = "" Then StrMsgError = Err.Description
 End Sub
+
+Private Function ObtenerIndiceCampoRecordset(ByVal RsFuente As ADODB.Recordset, ByVal StrCampo As String) As Integer
+Dim intCampo As Integer
+
+    ObtenerIndiceCampoRecordset = -1
+    For intCampo = 0 To RsFuente.Fields.Count - 1
+        If UCase$(Trim$(RsFuente.Fields(intCampo).Name)) = UCase$(Trim$(StrCampo)) Then
+            ObtenerIndiceCampoRecordset = intCampo
+            Exit Function
+        End If
+    Next intCampo
+End Function
+
+Private Function CampoExportacionTexto(ByVal StrCampo As String, ByVal ArrCamposTexto As Variant) As Boolean
+Dim intCampo As Integer
+
+    CampoExportacionTexto = False
+    For intCampo = 0 To UBound(ArrCamposTexto)
+        If UCase$(Trim$(CStr(ArrCamposTexto(intCampo)))) = UCase$(Trim$(StrCampo)) Then
+            CampoExportacionTexto = True
+            Exit Function
+        End If
+    Next intCampo
+End Function
 
 Private Function FormatearValorCSV(ByVal StrValor As String) As String
     FormatearValorCSV = Chr$(34) & Replace(StrValor, Chr$(34), Chr$(34) & Chr$(34)) & Chr$(34)
