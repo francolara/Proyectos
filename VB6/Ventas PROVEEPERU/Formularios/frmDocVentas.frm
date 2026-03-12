@@ -10210,6 +10210,8 @@ On Error GoTo Err
                             End With
                             gDetalle.Dataset.Edit
                             gDetalle.Columns.ColumnByFieldName("Item").Value = i
+                            ' Firma Codex 2026-03-12: Se renumera ItemPro tras eliminar para evitar duplicados al insertar.
+                            gDetalle.Columns.ColumnByFieldName("ItemPro").Value = i
                             gDetalle.Dataset.Post
                             
                             gDetalle.Dataset.Next
