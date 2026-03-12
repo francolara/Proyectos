@@ -126,9 +126,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     ) {
         viewModelScope.launch {
             runCatching {
-                val montoDouble = monto.toDouble()
-                val interesDouble = interes.toDouble()
-                val cuotasInt = cuotas.toInt()
+                val montoDouble = monto.toDoubleOrNull() ?: error("Monto inválido")
+                val interesDouble = interes.toDoubleOrNull() ?: error("Interés inválido")
+                val cuotasInt = cuotas.toIntOrNull() ?: error("Cuotas inválidas")
                 require(montoDouble > 0.0) { "Monto debe ser mayor a 0" }
                 require(interesDouble >= 0.0) { "Interés debe ser mayor o igual a 0" }
                 require(cuotasInt > 0) { "Cuotas debe ser mayor a 0" }
@@ -154,7 +154,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 repository.registrarPago(
                     idPrestamo = idPrestamo,
                     idCuota = idCuota,
-                    montoAbono = montoAbono.toDouble(),
+                    montoAbono = montoAbono.toDoubleOrNull() ?: error("Monto abonado inválido"),
                     observacion = observacion
                 )
             }.onSuccess {

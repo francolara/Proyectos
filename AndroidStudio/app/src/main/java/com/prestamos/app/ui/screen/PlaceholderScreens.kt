@@ -196,9 +196,9 @@ fun PagosScreen(viewModel: AppViewModel) {
 
         DropdownGeneric(
             expanded = expandedCliente,
-            onExpandedChange = { expandedCliente = !expandedCliente },
+            onExpandedChange = { expandedCliente = it },
             label = "Cliente",
-            selected = idCliente?.toString() ?: "",
+            selected = clientes.firstOrNull { it.idCliente == idCliente }?.let { "${it.nombre} ${it.apellido}" } ?: "",
             options = clientes,
             optionText = { "${it.nombre} ${it.apellido}" },
             onSelect = {
@@ -211,9 +211,9 @@ fun PagosScreen(viewModel: AppViewModel) {
 
         DropdownGeneric(
             expanded = expandedPrestamo,
-            onExpandedChange = { expandedPrestamo = !expandedPrestamo },
+            onExpandedChange = { expandedPrestamo = it },
             label = "Préstamo",
-            selected = idPrestamo?.let { "#${it}" } ?: "",
+            selected = prestamos.firstOrNull { it.idPrestamo == idPrestamo }?.let { "#${it.idPrestamo} - saldo ${it.montoTotalPrestamo.toMoney()}" } ?: "",
             options = prestamos,
             optionText = { "#${it.idPrestamo} - saldo ${it.montoTotalPrestamo.toMoney()}" },
             onSelect = {
@@ -225,9 +225,9 @@ fun PagosScreen(viewModel: AppViewModel) {
 
         DropdownGeneric(
             expanded = expandedCuota,
-            onExpandedChange = { expandedCuota = !expandedCuota },
+            onExpandedChange = { expandedCuota = it },
             label = "Cuota",
-            selected = idCuota?.let { "#${it}" } ?: "",
+            selected = cuotas.firstOrNull { it.idCuota == idCuota }?.let { "Cuota ${it.numeroCuota} - pendiente ${it.saldoPendiente.toMoney()}" } ?: "",
             options = cuotas.filter { it.saldoPendiente > 0.0 },
             optionText = { "Cuota ${it.numeroCuota} - pendiente ${it.saldoPendiente.toMoney()}" },
             onSelect = { idCuota = it.idCuota }
@@ -284,14 +284,14 @@ fun ReportesScreen(viewModel: AppViewModel) {
 @Composable
 private fun <T> DropdownGeneric(
     expanded: Boolean,
-    onExpandedChange: () -> Unit,
+    onExpandedChange: (Boolean) -> Unit,
     label: String,
     selected: String,
     options: List<T>,
     optionText: (T) -> String,
     onSelect: (T) -> Unit
 ) {
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { onExpandedChange() }) {
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { onExpandedChange(!expanded) }) {
         OutlinedTextField(
             value = selected,
             onValueChange = {},
@@ -300,13 +300,13 @@ private fun <T> DropdownGeneric(
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier.menuAnchor().fillMaxWidth()
         )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { onExpandedChange() }) {
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { onExpandedChange(false) }) {
             options.forEach { option ->
                 androidx.compose.material3.DropdownMenuItem(
                     text = { Text(optionText(option)) },
                     onClick = {
                         onSelect(option)
-                        onExpandedChange()
+                        onExpandedChange(false)
                     }
                 )
             }
