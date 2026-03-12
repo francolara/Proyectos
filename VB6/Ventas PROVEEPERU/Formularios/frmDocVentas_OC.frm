@@ -788,13 +788,13 @@ Begin VB.Form frmDocVentas_OC
    End
    Begin MSComctlLib.Toolbar Toolbar1 
       Align           =   1  'Align Top
-      Height          =   660
+      Height          =   1230
       Left            =   0
       TabIndex        =   6
       Top             =   0
       Width           =   13080
       _ExtentX        =   23072
-      _ExtentY        =   1164
+      _ExtentY        =   2170
       ButtonWidth     =   3016
       ButtonHeight    =   1005
       AllowCustomize  =   0   'False
@@ -1244,7 +1244,7 @@ Begin VB.Form frmDocVentas_OC
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   133758977
+         Format          =   140247041
          CurrentDate     =   38955
       End
       Begin MSComCtl2.DTPicker dtp_IniTraslado 
@@ -1267,7 +1267,7 @@ Begin VB.Form frmDocVentas_OC
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   133758977
+         Format          =   140247041
          CurrentDate     =   38955
       End
       Begin CATControls.CATTextBox txtObs 
@@ -1533,7 +1533,7 @@ Begin VB.Form frmDocVentas_OC
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   133758977
+         Format          =   140247041
          CurrentDate     =   38955
       End
       Begin MSComctlLib.ImageList imgDocVentas 

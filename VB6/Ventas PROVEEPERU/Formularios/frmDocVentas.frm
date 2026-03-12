@@ -1740,7 +1740,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   133038081
+         Format          =   133103617
          CurrentDate     =   38955
       End
       Begin VB.CommandButton cmbAyudaMotivoNCD 
@@ -2065,7 +2065,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   133038081
+         Format          =   133103617
          CurrentDate     =   38955
       End
       Begin MSComctlLib.ImageList imgDocVentas 
@@ -3347,7 +3347,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   133038081
+         Format          =   133103617
          CurrentDate     =   38955
       End
       Begin CATControls.CATTextBox txtgls_contacto 
@@ -4160,13 +4160,13 @@ Begin VB.Form frmDocVentas
       End
    End
    Begin MSComctlLib.Toolbar Toolbar1 
-      Height          =   660
+      Height          =   1800
       Left            =   120
       TabIndex        =   159
       Top             =   30
       Width           =   15270
       _ExtentX        =   26935
-      _ExtentY        =   1164
+      _ExtentY        =   3175
       ButtonWidth     =   3043
       ButtonHeight    =   1005
       AllowCustomize  =   0   'False
@@ -4897,7 +4897,7 @@ Dim producto2               As String
 Dim cantidad1               As Double
 Dim cantidad2               As Double
 Dim indValorAnt             As Boolean
-Dim strValor                As String
+Dim StrValor                As String
 Dim SwF2                    As Boolean
 Dim CTmpDocumentos          As String
 Dim CTmpGuiasNF             As String
@@ -5033,17 +5033,17 @@ Private Sub chkVentaGratuita_Click()
 If traerCampo("Parametros", "ValParametro", "GlsParametro", "CONCEPTO_VENTA_GRATUITA", True) = "S" Then
     
     If indValorAnt = False Then
-     strValor = txtCod_MotivoTraslado.Text
+     StrValor = txtCod_MotivoTraslado.Text
     End If
     
     If chkVentaGratuita.Value Then
         indValorAnt = True
         txtCod_MotivoTraslado.Text = traerCampo("motivostraslados", "idMotivoTraslado", "idConcepto", "30", False, "idDocumento  = '" & strTipoDoc & "'")
     Else
-        If strValor = "" Then
+        If StrValor = "" Then
             txtCod_MotivoTraslado.Text = txtCod_MotivoTraslado.Text = traerCampo("motivostraslados", "idMotivoTraslado", "idConcepto", "30", False, "idDocumento  = '" & strTipoDoc & "'")
         Else
-            txtCod_MotivoTraslado.Text = strValor
+            txtCod_MotivoTraslado.Text = StrValor
         End If
     End If
     
