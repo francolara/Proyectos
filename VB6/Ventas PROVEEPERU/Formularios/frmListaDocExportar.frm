@@ -349,7 +349,7 @@ Begin VB.Form frmListaDocExportar
                Italic          =   0   'False
                Strikethrough   =   0   'False
             EndProperty
-            Format          =   142213121
+            Format          =   132251649
             CurrentDate     =   38955
          End
          Begin MSComCtl2.DTPicker dtp_Hasta 
@@ -370,7 +370,7 @@ Begin VB.Form frmListaDocExportar
                Italic          =   0   'False
                Strikethrough   =   0   'False
             EndProperty
-            Format          =   142213121
+            Format          =   132251649
             CurrentDate     =   38955
          End
          Begin VB.Label Label3 
@@ -700,6 +700,19 @@ Dim F_SoloVta   As String
 '            csql = "Call Spu_ListaDocExportar('" & glsEmpresa & "','','1','" & txtCod_Cliente.Text & "','" & txtCod_Documento.Text & "','','','','" & Format(dtp_Desde.Value, "yyyy-mm-dd") & "','" & Format(dtp_Hasta.Value, "yyyy-mm-dd") & "','C')"
 '
 '        Else
+        If strTDExportar = 94 Then
+        
+            csql = "Select ConCat(IdDocumento,IdDocVentas,IdSerie) As Item,IdFormaPago,IdDocVentas,IdSerie,IdPerVendedor,GlsVendedor,FecEmision," & _
+                    "EstDocVentas,IdMoneda,TotalValorVenta,TotalIGVVenta,TotalPrecioVenta,NumOrdenCompra,Llegada,IdMoneda,FecIniTraslado,TipoCambio," & _
+                    "IdPerChofer,GlsChofer,IdPerEmpTrans,GlsEmpTrans,IdVehiculo,GlsVehiculo,Placa,Marca,Color,Modelo,CodInsCrip,Brevete,RucEmpTrans," & _
+                    "IdCentroCosto,IdLista,IdAlmacen,IdContacto,ubigeollegada,obsdocventas " & _
+                    "From Docventas " & _
+                    "Where IdEmpresa = '" & glsEmpresa & "' And IdSucursal = '" & glsSucursal & "' And IdDocumento = '" & txtCod_Documento.Text & "' " & _
+                    "And EstDocventas <> 'ANU' And IdPerCliente = '" & txtCod_Cliente.Text & "' " & _
+                    "And CAST(FecEmision AS DATE) BetWeen CAST('" & Format(dtp_Desde.Value, "yyyy-mm-dd") & "' AS DATE) And CAST('" & Format(dtp_Hasta.Value, "yyyy-mm-dd") & "' AS DATE) " & _
+                    "" & strFiltroAprob & F_SoloVta
+                    
+        Else
         
             csql = "Select ConCat(IdDocumento,IdDocVentas,IdSerie) As Item,IdFormaPago,IdDocVentas,IdSerie,IdPerVendedor,GlsVendedor,FecEmision," & _
                     "EstDocVentas,IdMoneda,TotalValorVenta,TotalIGVVenta,TotalPrecioVenta,NumOrdenCompra,Llegada,IdMoneda,FecIniTraslado,TipoCambio," & _
@@ -710,7 +723,7 @@ Dim F_SoloVta   As String
                     "And EstDocventas <> 'ANU' And IdPerCliente = '" & txtCod_Cliente.Text & "' " & _
                     "And CAST(FecEmision AS DATE) BetWeen CAST('" & Format(dtp_Desde.Value, "yyyy-mm-dd") & "' AS DATE) And CAST('" & Format(dtp_Hasta.Value, "yyyy-mm-dd") & "' AS DATE) " & _
                     "And EstDocImportado <> 'S'" & strFiltroAprob & F_SoloVta
-                
+        End If
 '        End If
 '
 '
@@ -841,15 +854,24 @@ On Error GoTo Err
 '                csql = "Call Spu_ListaDocExportar('" & glsEmpresa & "','','1','" & txtCod_Cliente.Text & "','" & txtCod_Documento.Text & "','" & strSerie & "','" & strNumDoc & "','','" & Format(dtp_Desde.Value, "yyyy-mm-dd") & "','" & Format(dtp_Hasta.Value, "yyyy-mm-dd") & "','D')"
 '
 '            Else
-            
-                csql = "Select Item,IdProducto,IdCodFabricante,GlsProducto,IdMarca,GlsMarca,IdUM,GlsUM,Factor,Afecto," & _
-                       "(Cantidad - CantidadImp) As Cantidad,VVUnit,IGVUnit,PVUnit,TotalVVBruto,TotalPVBruto,PorDcto,DctoVV,DctoPV,TotalVVNeto," & _
-                       "TotalIGVNeto,TotalPVNeto,IdTipoProducto,IdMoneda,NumLote,FecVencProd,VVUnitLista,PVUnitLista,VVUnitNeto,PVUnitNeto,Cantidad2," & _
-                       "CodigoRapido,IdTallaPeso,ItemPro,IvapUnit,TotalIvapNeto,GlsProveedor,CostoS,CostoD,Margen,CostoSInc " & _
-                       "From DocVentasDet " & _
-                       "Where IdEmpresa = '" & glsEmpresa & "' And IdSucursal = '" & glsSucursal & "' And IdDocumento = '" & txtCod_Documento.Text & "' " & _
-                       "And IdDocVentas = '" & strNumDoc & "' And IdSerie = '" & strSerie & "' And EstDocImportado <> 'S' Order By Item"
-            
+                
+                If strTDExportar = 94 Then
+                    csql = "Select Item,IdProducto,IdCodFabricante,GlsProducto,IdMarca,GlsMarca,IdUM,GlsUM,Factor,Afecto," & _
+                           "(Cantidad) As Cantidad,VVUnit,IGVUnit,PVUnit,TotalVVBruto,TotalPVBruto,PorDcto,DctoVV,DctoPV,TotalVVNeto," & _
+                           "TotalIGVNeto,TotalPVNeto,IdTipoProducto,IdMoneda,NumLote,FecVencProd,VVUnitLista,PVUnitLista,VVUnitNeto,PVUnitNeto,Cantidad2," & _
+                           "CodigoRapido,IdTallaPeso,ItemPro,IvapUnit,TotalIvapNeto,GlsProveedor,CostoS,CostoD,Margen,CostoSInc " & _
+                           "From DocVentasDet " & _
+                           "Where IdEmpresa = '" & glsEmpresa & "' And IdSucursal = '" & glsSucursal & "' And IdDocumento = '" & txtCod_Documento.Text & "' " & _
+                           "And IdDocVentas = '" & strNumDoc & "' And IdSerie = '" & strSerie & "' Order By Item"
+                Else
+                    csql = "Select Item,IdProducto,IdCodFabricante,GlsProducto,IdMarca,GlsMarca,IdUM,GlsUM,Factor,Afecto," & _
+                           "(Cantidad - CantidadImp) As Cantidad,VVUnit,IGVUnit,PVUnit,TotalVVBruto,TotalPVBruto,PorDcto,DctoVV,DctoPV,TotalVVNeto," & _
+                           "TotalIGVNeto,TotalPVNeto,IdTipoProducto,IdMoneda,NumLote,FecVencProd,VVUnitLista,PVUnitLista,VVUnitNeto,PVUnitNeto,Cantidad2," & _
+                           "CodigoRapido,IdTallaPeso,ItemPro,IvapUnit,TotalIvapNeto,GlsProveedor,CostoS,CostoD,Margen,CostoSInc " & _
+                           "From DocVentasDet " & _
+                           "Where IdEmpresa = '" & glsEmpresa & "' And IdSucursal = '" & glsSucursal & "' And IdDocumento = '" & txtCod_Documento.Text & "' " & _
+                           "And IdDocVentas = '" & strNumDoc & "' And IdSerie = '" & strSerie & "' And EstDocImportado <> 'S' Order By Item"
+                End If
 '            End If
 '
 '        End If

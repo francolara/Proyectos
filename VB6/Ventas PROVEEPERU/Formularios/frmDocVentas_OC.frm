@@ -1244,7 +1244,7 @@ Begin VB.Form frmDocVentas_OC
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   133169153
+         Format          =   132579329
          CurrentDate     =   38955
       End
       Begin MSComCtl2.DTPicker dtp_IniTraslado 
@@ -1267,7 +1267,7 @@ Begin VB.Form frmDocVentas_OC
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   133169153
+         Format          =   132579329
          CurrentDate     =   38955
       End
       Begin CATControls.CATTextBox txtObs 
@@ -1533,7 +1533,7 @@ Begin VB.Form frmDocVentas_OC
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   133169153
+         Format          =   132579329
          CurrentDate     =   38955
       End
       Begin MSComctlLib.ImageList imgDocVentas 
@@ -5137,18 +5137,18 @@ Dim strParamImpOC       As String
             If StrMsgError <> "" Then GoTo Err
             
             If strTipoDocImportado <> "" Then
-                If leeParametro("AGRUPAPRODUCTOS") = "N" Then
-                    If leeParametro("RECUPERA_PRECIO_REQUERIMIENTO_COMPRA") = "S" Then
-                        MostrarDocImportadoSinAgrupar2 rscd, rsdd, strTipoDocImportado, StrMsgError
-                        If StrMsgError <> "" Then GoTo Err
-                    Else
+                'If leeParametro("AGRUPAPRODUCTOS") = "N" Then
+                    'If leeParametro("RECUPERA_PRECIO_REQUERIMIENTO_COMPRA") = "S" Then
+                    '    MostrarDocImportadoSinAgrupar2 rscd, rsdd, strTipoDocImportado, StrMsgError
+                    '    If StrMsgError <> "" Then GoTo Err
+                    'Else
                         MostrarDocImportadoSinAgrupar rscd, rsdd, strTipoDocImportado, StrMsgError
                         If StrMsgError <> "" Then GoTo Err
-                    End If
-                Else
-                    mostrarDocImportado rscd, rsdd, strTipoDocImportado, StrMsgError
-                    If StrMsgError <> "" Then GoTo Err
-                End If
+                    'End If
+                'Else
+                '    mostrarDocImportado rscd, rsdd, strTipoDocImportado, StrMsgError
+                '    If StrMsgError <> "" Then GoTo Err
+                'End If
             End If
             Unload frmListaDocExportar
             
@@ -7174,9 +7174,9 @@ Dim cAuxIdProducto              As String
         txtCod_Vendedor.Text = ""
         dtp_Emision.Value = getFechaSistema
     Else
-        txt_Partida.Text = "" & rscd.Fields("Partida")
+        txt_Partida.Text = "" '& rscd.Fields("Partida")
         txtCod_Almacen.Text = "" & rscd.Fields("idAlmacen")
-        txtObs.Text = "" & rscd.Fields("ObsDocVentas")
+        txtObs.Text = "" '& rscd.Fields("ObsDocVentas")
         txtCod_CentroCosto.Text = "" & rscd.Fields("IdCentroCosto")
     End If
         
@@ -7248,13 +7248,13 @@ Dim cAuxIdProducto              As String
             rsg.Fields("idSerieImp") = "" & rsdd.Fields("idSerie")
             rsg.Fields("NumLote") = "" & rsdd.Fields("NumLote")
             rsg.Fields("FecVencProd") = "" & rsdd.Fields("FecVencProd")
-            rsg.Fields("VVUnit") = Val("" & rsdd.Fields("VVUnit"))
-            rsg.Fields("IGVUnit") = Val("" & rsdd.Fields("IGVUnit"))
-            rsg.Fields("PVUnit") = Val("" & rsdd.Fields("PVUnit"))
-            rsg.Fields("VVUnitLista") = Val("" & rsdd.Fields("VVUnitLista"))
-            rsg.Fields("PVUnitLista") = Val("" & rsdd.Fields("PVUnitLista"))
-            rsg.Fields("VVUnitNeto") = Val("" & rsdd.Fields("VVUnitNeto"))
-            rsg.Fields("PVUnitNeto") = Val("" & rsdd.Fields("PVUnitNeto"))
+            rsg.Fields("VVUnit") = 0 'Val("" & rsdd.Fields("VVUnit"))
+            rsg.Fields("IGVUnit") = 0 'Val("" & rsdd.Fields("IGVUnit"))
+            rsg.Fields("PVUnit") = 0 'Val("" & rsdd.Fields("PVUnit"))
+            rsg.Fields("VVUnitLista") = 0 'Val("" & rsdd.Fields("VVUnitLista"))
+            rsg.Fields("PVUnitLista") = 0 'Val("" & rsdd.Fields("PVUnitLista"))
+            rsg.Fields("VVUnitNeto") = 0 'Val("" & rsdd.Fields("VVUnitNeto"))
+            rsg.Fields("PVUnitNeto") = 0 'Val("" & rsdd.Fields("PVUnitNeto"))
             rsg.Fields("IdCentroCosto") = ""
             rsg.Fields("IdSucursalPres") = ""
             rsg.Fields("IdDocumentoPres") = ""
@@ -7262,14 +7262,14 @@ Dim cAuxIdProducto              As String
             rsg.Fields("IdDocVentasPres") = ""
             rsg.Fields("FechaEmision") = getFechaSistema
             rsg.Fields("Cantidad") = Val("" & rsdd.Fields("Cantidad"))
-            rsg.Fields("TotalVVBruto") = Val("" & rsdd.Fields("TotalVVBruto"))
-            rsg.Fields("TotalPVBruto") = Val("" & rsdd.Fields("TotalPVBruto"))
-            rsg.Fields("PorDcto") = Val("" & rsdd.Fields("PorDcto"))
-            rsg.Fields("DctoVV") = Val("" & rsdd.Fields("DctoVV"))
-            rsg.Fields("DctoPV") = Val("" & rsdd.Fields("DctoPV"))
-            rsg.Fields("TotalVVNeto") = Val("" & rsdd.Fields("TotalVVNeto"))
-            rsg.Fields("TotalIGVNeto") = Val("" & rsdd.Fields("TotalIGVNeto"))
-            rsg.Fields("TotalPVNeto") = Val("" & rsdd.Fields("TotalPVNeto"))
+            rsg.Fields("TotalVVBruto") = 0 'Val("" & rsdd.Fields("TotalVVBruto"))
+            rsg.Fields("TotalPVBruto") = 0 'Val("" & rsdd.Fields("TotalPVBruto"))
+            rsg.Fields("PorDcto") = 0 'Val("" & rsdd.Fields("PorDcto"))
+            rsg.Fields("DctoVV") = 0 'Val("" & rsdd.Fields("DctoVV"))
+            rsg.Fields("DctoPV") = 0 'Val("" & rsdd.Fields("DctoPV"))
+            rsg.Fields("TotalVVNeto") = 0 'Val("" & rsdd.Fields("TotalVVNeto"))
+            rsg.Fields("TotalIGVNeto") = 0 'Val("" & rsdd.Fields("TotalIGVNeto"))
+            rsg.Fields("TotalPVNeto") = 0 'Val("" & rsdd.Fields("TotalPVNeto"))
             
             If RsD.RecordCount > 0 Then RsD.MoveFirst
             indExisteDocRef = False

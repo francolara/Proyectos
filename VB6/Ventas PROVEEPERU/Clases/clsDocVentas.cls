@@ -37,7 +37,7 @@ Dim rst As New ADODB.Recordset
 Dim rsCorrela As New ADODB.Recordset
 Dim C           As Object
 Dim csql        As String
-Dim strCampo    As String
+Dim StrCampo    As String
 Dim strTipoDato As String
 Dim strCampos   As String
 Dim strValores  As String
@@ -129,32 +129,32 @@ Dim rstCtrlPre            As New ADODB.Recordset
         If TypeOf C Is CATTextBox Or TypeOf C Is DTPicker Or TypeOf C Is CheckBox Or TypeOf C Is ComboBox Then
             If C.Tag <> "" Then 'And C.Visible = True Then
                 strTipoDato = left(C.Tag, 1)
-                strCampo = right(C.Tag, Len(C.Tag) - 1)
+                StrCampo = right(C.Tag, Len(C.Tag) - 1)
                 
-                If UCase(strCampo) = UCase("idMotivoTraslado") Then
+                If UCase(StrCampo) = UCase("idMotivoTraslado") Then
                     strCodMotivoTranslado = C.Value
                 End If
                 
-                If UCase(strCampo) = UCase("idPerVendedorCampo") Then
+                If UCase(StrCampo) = UCase("idPerVendedorCampo") Then
                     strCodVendedorCampo = C.Value
                 End If
                 
-                If UCase(strCampo) = UCase("idPerCliente") Then
+                If UCase(StrCampo) = UCase("idPerCliente") Then
                     strCodCliente = C.Value
                 End If
                 
-                If UCase(strCampo) = UCase("idMoneda") Then
+                If UCase(StrCampo) = UCase("idMoneda") Then
                     strMoneda = C.Value
                 End If
                 
-                If UCase(strCampo) = UCase("TipoCambio") Then
+                If UCase(StrCampo) = UCase("TipoCambio") Then
                     strtipocambio = Val(C.Value)
                 End If
                 
                 Select Case tipoOperacion
                     Case 0 'inserta
-                        strCampos = strCampos & strCampo & ","
-                        If UCase(strCampo) = UCase("idDocVentas") Then
+                        strCampos = strCampos & StrCampo & ","
+                        If UCase(StrCampo) = UCase("idDocVentas") Then
                             If Trim(C.Value) = "" Then
                                 csql = "SELECT MAX(idDocVentas) FROM docventas WHERE idEmpresa = '" & glsEmpresa & "' AND idDocumento = '" & strTD & "' "
                                 rsCorrela.Open csql, Cn, adOpenStatic, adLockReadOnly
@@ -188,7 +188,7 @@ Dim rstCtrlPre            As New ADODB.Recordset
                         End Select
                     
                     Case 1
-                        If UCase(strCampo) <> UCase("idDocVentas") Then
+                        If UCase(StrCampo) <> UCase("idDocVentas") Then
                             Select Case strTipoDato
                                 Case "N"
                                     strValores = Val(C.Value)
@@ -201,7 +201,7 @@ Dim rstCtrlPre            As New ADODB.Recordset
                                 Case "F"
                                     strValores = "'" & Format(C.Value, "yyyy-mm-dd") & "'"
                             End Select
-                            strCampos = strCampos & strCampo & "=" & strValores & ","
+                            strCampos = strCampos & StrCampo & "=" & strValores & ","
                         Else
                             strValCod = C.Value
                         End If
@@ -242,9 +242,9 @@ Dim rstCtrlPre            As New ADODB.Recordset
             For i = 0 To g.Columns.Count - 1
                 If UCase(left(g.Columns(i).ObjectName, 1)) = "W" Then
                     strTipoDato = Mid(g.Columns(i).ObjectName, 2, 1)
-                    strCampo = Mid(g.Columns(i).ObjectName, 3)
+                    StrCampo = Mid(g.Columns(i).ObjectName, 3)
                     
-                    strCampos = strCampos & strCampo & ","
+                    strCampos = strCampos & StrCampo & ","
                     
                     Select Case strTipoDato
                         Case "N"
@@ -278,8 +278,8 @@ Dim rstCtrlPre            As New ADODB.Recordset
                 For i = 0 To D.Columns.Count - 1
                     If UCase(left(D.Columns(i).ObjectName, 1)) = "W" Then
                         strTipoDato = Mid(D.Columns(i).ObjectName, 2, 1)
-                        strCampo = Mid(D.Columns(i).ObjectName, 3)
-                        strCampos = strCampos & strCampo & ","
+                        StrCampo = Mid(D.Columns(i).ObjectName, 3)
+                        strCampos = strCampos & StrCampo & ","
                         
                         Select Case strTipoDato
                             Case "N"
@@ -320,13 +320,13 @@ Dim rstCtrlPre            As New ADODB.Recordset
         rst.Open csql, Cn, adOpenForwardOnly, adLockReadOnly
         Do While Not rst.EOF
             '--- ACTUALIZAMOS CANTIDAD IMPORTADA
-            csql = "UPDATE docventasdet dd  SET dd.CantidadImp = dd.CantidadImp + " & CStr(rst.Fields("Cantidad")) & " " & _
-                    "WHERE dd.idEmpresa = '" & glsEmpresa & "' AND dd.idSucursal = '" & glsSucursal & "' AND dd.idDocumento = '" & rst.Fields("idDocumentoImp") & "' AND dd.idDocVentas = '" & rst.Fields("idDocVentasImp") & "' AND dd.idSerie = '" & rst.Fields("idSerieImp") & "' " & _
+            csql = "UPDATE  dd  SET dd.CantidadImp = dd.CantidadImp + " & CStr(rst.Fields("Cantidad")) & " " & _
+                    "FROM docventasdet dd WHERE dd.idEmpresa = '" & glsEmpresa & "' AND dd.idSucursal = '" & glsSucursal & "' AND dd.idDocumento = '" & rst.Fields("idDocumentoImp") & "' AND dd.idDocVentas = '" & rst.Fields("idDocVentasImp") & "' AND dd.idSerie = '" & rst.Fields("idSerieImp") & "' " & _
                     "AND dd.idProducto = '" & rst.Fields("idProducto") & "' AND dd.idUM = '" & rst.Fields("idUM") & "'"
             Cn.Execute csql
         
-            csql = "UPDATE docventasdet dd  SET dd.estDocImportado = 'S' " & _
-                    "WHERE dd.idEmpresa = '" & glsEmpresa & "' AND dd.idSucursal = '" & glsSucursal & "' AND dd.idDocumento = '" & rst.Fields("idDocumentoImp") & "' AND dd.idDocVentas = '" & rst.Fields("idDocVentasImp") & "' AND dd.idSerie = '" & rst.Fields("idSerieImp") & "' " & _
+            csql = "UPDATE dd  SET dd.estDocImportado = 'S' " & _
+                    "FROM docventasdet dd WHERE dd.idEmpresa = '" & glsEmpresa & "' AND dd.idSucursal = '" & glsSucursal & "' AND dd.idDocumento = '" & rst.Fields("idDocumentoImp") & "' AND dd.idDocVentas = '" & rst.Fields("idDocVentasImp") & "' AND dd.idSerie = '" & rst.Fields("idSerieImp") & "' " & _
                     "AND dd.idProducto = '" & rst.Fields("idProducto") & "' AND dd.idUM = '" & rst.Fields("idUM") & "' AND dd.CantidadImp >= dd.Cantidad"
             Cn.Execute csql
                 
@@ -339,9 +339,9 @@ Dim rstCtrlPre            As New ADODB.Recordset
         If rst.State = 1 Then rst.Close
         rst.Open csql, Cn, adOpenForwardOnly, adLockReadOnly
         Do While Not rst.EOF
-            csql = "UPDATE docVentas c,docVentasDet d  SET c.estDocImportado = 'S' " & _
-                   "WHERE c.idEmpresa = d.idEmpresa AND c.idSucursal = d.idSucursal AND c.idDocumento = d.idDocumento AND c.idDocVentas = d.idDocVentas AND c.idSerie = d.idSerie " & _
-                   "AND d.idEmpresa = '" & glsEmpresa & "' AND d.idSucursal = '" & glsSucursal & "' AND d.idDocumento = '" & rst.Fields("idDocumentoImp") & "' AND d.idDocVentas = '" & rst.Fields("idDocVentasImp") & "' AND d.idSerie = '" & rst.Fields("idSerieImp") & "'" & _
+            csql = "UPDATE c  SET c.estDocImportado = 'S' from docVentas c inner join docVentasDet d ON c.idEmpresa = d.idEmpresa AND c.idSucursal = d.idSucursal AND c.idDocumento = d.idDocumento AND c.idDocVentas = d.idDocVentas AND c.idSerie = d.idSerie " & _
+                   "WHERE  " & _
+                   " d.idEmpresa = '" & glsEmpresa & "' AND d.idSucursal = '" & glsSucursal & "' AND d.idDocumento = '" & rst.Fields("idDocumentoImp") & "' AND d.idDocVentas = '" & rst.Fields("idDocVentasImp") & "' AND d.idSerie = '" & rst.Fields("idSerieImp") & "'" & _
                    "AND (SELECT count(x.idDocVentas) FROM docVentasDet x WHERE x.idEmpresa = d.idEmpresa AND x.idSucursal = d.idSucursal AND x.idDocumento = d.idDocumento AND x.idDocVentas = d.idDocVentas AND x.idSerie = d.idSerie AND x.estDocImportado <> 'S') = 0"
             Cn.Execute csql
             
@@ -350,52 +350,52 @@ Dim rstCtrlPre            As New ADODB.Recordset
     End If
     
     '--- Si la empresa es ALSISAC UPDATE a docventas  el estado PAR(Parcial),CER(Cerrado)
-    If traerCampo("Empresas", "RUC", "idEmpresa", glsEmpresa, False) = "20430471750" Then
-        If D.Columns.ColumnByFieldName("idDocumento").Value = "87" Then
-            strcant = 0
-            cantReg = 0
-            If TypeName(D) <> "Nothing" Then
-                D.Dataset.First
-                Do While Not D.Dataset.EOF
-                 strcant = 0
-                 cantReg = 0
-                    If Trim(D.Columns.ColumnByFieldName("idDocumento").Value) <> "" And Trim(D.Columns.ColumnByFieldName("idSerie").Value) <> "" And Trim(D.Columns.ColumnByFieldName("idNumDoc").Value) <> "" Then
-               
-                        csql = "SELECT  d.idDocumentoImp,d.idDocVentasImp,d.idSerieImp,d.idProducto,d.idUM,d.Cantidad,d.estDocImportado,d.CantidadImp " & _
-                                "FROM  docVentas c Inner Join docVentasDet d " & _
-                                "On c.idempresa = d.idempresa AND c.idSucursal = d.idSucursal AND c.idDocumento = d.idDocumento AND c.idDocVentas = d.idDocVentas " & _
-                                "WHERE d.idEmpresa = '" & glsEmpresa & "' AND d.idSucursal = '" & glsSucursal & "' AND d.idDocumento = '" & D.Columns.ColumnByFieldName("idDocumento").Value & "'" & _
-                                "AND d.idDocVentas = '" & D.Columns.ColumnByFieldName("idDocventas").Value & "'" & _
-                                "AND d.idSerie = '" & D.Columns.ColumnByFieldName("idSerie").Value & "' "
-                                
-                        If rst.State = 1 Then rst.Close
-                        rst.Open csql, Cn, adOpenForwardOnly, adLockReadOnly
-                        If Not rst.EOF Then
-                            rst.MoveFirst
-                            
-                            Do While Not rst.EOF
-                            cantReg = cantReg + 1
-                                If (rst.Fields("Cantidad") = rst.Fields("CantidadImp") And rst.Fields("estDocImportado") = "S") Then
-                                    strcant = strcant + 1
-                                End If
-                                rst.MoveNext
-                            Loop
-                            
-                            If cantReg = strcant Then
-                                csql = "UPDATE docVentas d Set estDocVentas='CER' WHERE d.idEmpresa = '" & glsEmpresa & "' AND d.idSucursal = '" & glsSucursal & "'" & _
-                                       "AND d.idDocumento = '" & D.Columns.ColumnByFieldName("idDocumento").Value & "' AND d.idDocVentas = '" & D.Columns.ColumnByFieldName("idDocventas").Value & "' AND d.idSerie = '" & D.Columns.ColumnByFieldName("idSerie").Value & "' "
-                            Else
-                               csql = "UPDATE docVentas d Set estDocVentas='PAR' WHERE d.idEmpresa = '" & glsEmpresa & "' AND d.idSucursal = '" & glsSucursal & "' AND d.idDocumento = '" & D.Columns.ColumnByFieldName("idDocumento").Value & "'" & _
-                                      "AND d.idDocVentas = '" & D.Columns.ColumnByFieldName("idDocventas").Value & "' AND d.idSerie = '" & D.Columns.ColumnByFieldName("idSerie").Value & "' "
-                            End If
-                            Cn.Execute csql
-                         End If
-                     End If
-                     D.Dataset.Next
-                  Loop
-            End If
-        End If
-    End If
+'    If traerCampo("Empresas", "RUC", "idEmpresa", glsEmpresa, False) = "20430471750" Then
+'        If D.Columns.ColumnByFieldName("idDocumento").Value = "87" Then
+'            strcant = 0
+'            cantReg = 0
+'            If TypeName(D) <> "Nothing" Then
+'                D.Dataset.First
+'                Do While Not D.Dataset.EOF
+'                 strcant = 0
+'                 cantReg = 0
+'                    If Trim(D.Columns.ColumnByFieldName("idDocumento").Value) <> "" And Trim(D.Columns.ColumnByFieldName("idSerie").Value) <> "" And Trim(D.Columns.ColumnByFieldName("idNumDoc").Value) <> "" Then
+'
+'                        csql = "SELECT  d.idDocumentoImp,d.idDocVentasImp,d.idSerieImp,d.idProducto,d.idUM,d.Cantidad,d.estDocImportado,d.CantidadImp " & _
+'                                "FROM  docVentas c Inner Join docVentasDet d " & _
+'                                "On c.idempresa = d.idempresa AND c.idSucursal = d.idSucursal AND c.idDocumento = d.idDocumento AND c.idDocVentas = d.idDocVentas " & _
+'                                "WHERE d.idEmpresa = '" & glsEmpresa & "' AND d.idSucursal = '" & glsSucursal & "' AND d.idDocumento = '" & D.Columns.ColumnByFieldName("idDocumento").Value & "'" & _
+'                                "AND d.idDocVentas = '" & D.Columns.ColumnByFieldName("idDocventas").Value & "'" & _
+'                                "AND d.idSerie = '" & D.Columns.ColumnByFieldName("idSerie").Value & "' "
+'
+'                        If rst.State = 1 Then rst.Close
+'                        rst.Open csql, Cn, adOpenForwardOnly, adLockReadOnly
+'                        If Not rst.EOF Then
+'                            rst.MoveFirst
+'
+'                            Do While Not rst.EOF
+'                            cantReg = cantReg + 1
+'                                If (rst.Fields("Cantidad") = rst.Fields("CantidadImp") And rst.Fields("estDocImportado") = "S") Then
+'                                    strcant = strcant + 1
+'                                End If
+'                                rst.MoveNext
+'                            Loop
+'
+'                            If cantReg = strcant Then
+'                                csql = "UPDATE docVentas d Set estDocVentas='CER' WHERE d.idEmpresa = '" & glsEmpresa & "' AND d.idSucursal = '" & glsSucursal & "'" & _
+'                                       "AND d.idDocumento = '" & D.Columns.ColumnByFieldName("idDocumento").Value & "' AND d.idDocVentas = '" & D.Columns.ColumnByFieldName("idDocventas").Value & "' AND d.idSerie = '" & D.Columns.ColumnByFieldName("idSerie").Value & "' "
+'                            Else
+'                               csql = "UPDATE docVentas d Set estDocVentas='PAR' WHERE d.idEmpresa = '" & glsEmpresa & "' AND d.idSucursal = '" & glsSucursal & "' AND d.idDocumento = '" & D.Columns.ColumnByFieldName("idDocumento").Value & "'" & _
+'                                      "AND d.idDocVentas = '" & D.Columns.ColumnByFieldName("idDocventas").Value & "' AND d.idSerie = '" & D.Columns.ColumnByFieldName("idSerie").Value & "' "
+'                            End If
+'                            Cn.Execute csql
+'                         End If
+'                     End If
+'                     D.Dataset.Next
+'                  Loop
+'            End If
+'        End If
+'    End If
     '--- Actualizamos la tabla productosproveedor
     StrItem = 0
     StrItem = Val(traerCampo("ProductosProveedor", "Max(Item)", "IdProveedor", strCodCliente, True))
@@ -517,7 +517,7 @@ Public Sub EjecutaSQLFormDocVentas(F As Form, ByVal tipoOperacion As Integer, By
 On Error GoTo Err
 Dim C               As Object
 Dim csql            As String
-Dim strCampo        As String
+Dim StrCampo        As String
 Dim strTipoDato     As String
 Dim strCampos       As String
 Dim strValores      As String
@@ -564,25 +564,25 @@ Dim strCodAlmacen    As String
         If TypeOf C Is CATTextBox Or TypeOf C Is DTPicker Or TypeOf C Is CheckBox Then
             If C.Tag <> "" Then
                 strTipoDato = left(C.Tag, 1)
-                strCampo = right(C.Tag, Len(C.Tag) - 1)
+                StrCampo = right(C.Tag, Len(C.Tag) - 1)
                 
-                If UCase(strCampo) = UCase("idMotivoTraslado") Then
+                If UCase(StrCampo) = UCase("idMotivoTraslado") Then
                     strCodMotivoTranslado = C.Value
                 End If
                 
-                If UCase(strCampo) = UCase("idPerVendedorCampo") Then
+                If UCase(StrCampo) = UCase("idPerVendedorCampo") Then
                     strCodVendedorCampo = C.Value
                 End If
                 
-                If UCase(strCampo) = UCase("idPerCliente") Then
+                If UCase(StrCampo) = UCase("idPerCliente") Then
                     strCodCliente = C.Value
                 End If
     
                 Select Case tipoOperacion
                     Case 0 'inserta
-                        strCampos = strCampos & strCampo & ","
+                        strCampos = strCampos & StrCampo & ","
                         
-                        If UCase(strCampo) = UCase("idDocVentas") Then
+                        If UCase(StrCampo) = UCase("idDocVentas") Then
                             If Trim(C.Value) = "" Then
                                 strCod = generaCorrelativoDocVentas(strTD, strSerie)
                                 C.Text = strCod
@@ -604,7 +604,7 @@ Dim strCodAlmacen    As String
                                 strValores = strValores & "'" & Format(C.Value, "yyyy-mm-dd") & "',"
                         End Select
                     Case 1
-                        If UCase(strCampo) <> UCase("idDocVentas") Then
+                        If UCase(StrCampo) <> UCase("idDocVentas") Then
                             Select Case strTipoDato
                                 Case "N"
                                     strValores = Val(C.Value)
@@ -613,7 +613,7 @@ Dim strCodAlmacen    As String
                                 Case "F"
                                     strValores = "'" & Format(C.Value, "yyyy-mm-dd") & "'"
                             End Select
-                            strCampos = strCampos & strCampo & "=" & strValores & ","
+                            strCampos = strCampos & StrCampo & "=" & strValores & ","
                         Else
                             strValCod = C.Value
                         End If
@@ -654,8 +654,8 @@ Dim strCodAlmacen    As String
             For i = 0 To g.Columns.Count - 1
                 If UCase(left(g.Columns(i).ObjectName, 1)) = "W" Then
                     strTipoDato = Mid(g.Columns(i).ObjectName, 2, 1)
-                    strCampo = Mid(g.Columns(i).ObjectName, 3)
-                    strCampos = strCampos & strCampo & ","
+                    StrCampo = Mid(g.Columns(i).ObjectName, 3)
+                    strCampos = strCampos & StrCampo & ","
                     
                     Select Case strTipoDato
                         Case "N"
@@ -695,10 +695,10 @@ Dim strCodAlmacen    As String
                 For i = 0 To D.Columns.Count - 1
                     If UCase(left(D.Columns(i).ObjectName, 1)) = "W" Then
                         strTipoDato = Mid(D.Columns(i).ObjectName, 2, 1)
-                        strCampo = Mid(D.Columns(i).ObjectName, 3)
+                        StrCampo = Mid(D.Columns(i).ObjectName, 3)
                         
-                        strCampos = strCampos & strCampo & ","
-                        If strCampo = "tipoDocReferencia" Then strCodFacRef = D.Columns(i).Value
+                        strCampos = strCampos & StrCampo & ","
+                        If StrCampo = "tipoDocReferencia" Then strCodFacRef = D.Columns(i).Value
                         Select Case strTipoDato
                             Case "N"
                                 strValores = strValores & D.Columns(i).Value & ","
@@ -1193,7 +1193,7 @@ End Sub
 Public Sub EjecutaSQLFormDocVentasFactura(F As Form, ByVal tipoOperacion As Integer, ByRef StrMsgError As String, ByVal strNum As String, ByVal strSerie As String, ByVal g As dxDBGrid, NArrTotales() As Double)
 On Error GoTo Err
 Dim C As Object
-Dim strCampo As String
+Dim StrCampo As String
 Dim strTipoDato As String
 Dim strCampos As String
 Dim strValores As String
@@ -1207,25 +1207,25 @@ Dim i As Integer
         If TypeOf C Is CATTextBox Or TypeOf C Is DTPicker Or TypeOf C Is CheckBox Then
             If C.Tag <> "" Then
                 strTipoDato = left(C.Tag, 1)
-                strCampo = right(C.Tag, Len(C.Tag) - 1)
+                StrCampo = right(C.Tag, Len(C.Tag) - 1)
                 
-                If UCase(strCampo) = UCase("idMotivoTraslado") Then
+                If UCase(StrCampo) = UCase("idMotivoTraslado") Then
                     strCodMotivoTranslado = C.Value
                 End If
                 
-                If UCase(strCampo) = UCase("idPerVendedorCampo") Then
+                If UCase(StrCampo) = UCase("idPerVendedorCampo") Then
                     strCodVendedorCampo = C.Value
                 End If
                 
-                If UCase(strCampo) = UCase("idPerCliente") Then
+                If UCase(StrCampo) = UCase("idPerCliente") Then
                     strCodCliente = C.Value
                 End If
                 
-                If UCase(strCampo) = UCase("idDocVentas") Or UCase(strCampo) = UCase("idSerie") Then
+                If UCase(StrCampo) = UCase("idDocVentas") Or UCase(StrCampo) = UCase("idSerie") Then
                 Else
                     Select Case tipoOperacion
                         Case 0 'inserta
-                            strCampos = strCampos & strCampo & ","
+                            strCampos = strCampos & StrCampo & ","
                             
                             Select Case strTipoDato
                                 Case "N"
@@ -1236,7 +1236,7 @@ Dim i As Integer
                                     strValores = strValores & "'" & Format(C.Value, "yyyy-mm-dd") & "',"
                             End Select
                         Case 1
-                            If UCase(strCampo) <> UCase("idDocVentas") Or UCase(strCampo) <> UCase("idSerie") Then
+                            If UCase(StrCampo) <> UCase("idDocVentas") Or UCase(StrCampo) <> UCase("idSerie") Then
                                 Select Case strTipoDato
                                     Case "N"
                                         strValores = Val(C.Value)
@@ -1245,7 +1245,7 @@ Dim i As Integer
                                     Case "F"
                                         strValores = "'" & Format(C.Value, "yyyy-mm-dd") & "'"
                                 End Select
-                                strCampos = strCampos & strCampo & "=" & strValores & ","
+                                strCampos = strCampos & StrCampo & "=" & strValores & ","
                             End If
                     End Select
                 End If
@@ -1285,8 +1285,8 @@ Dim i As Integer
             For i = 0 To g.Columns.Count - 1
                 If UCase(left(g.Columns(i).ObjectName, 1)) = "W" Then
                     strTipoDato = Mid(g.Columns(i).ObjectName, 2, 1)
-                    strCampo = Mid(g.Columns(i).ObjectName, 3)
-                    strCampos = strCampos & strCampo & ","
+                    StrCampo = Mid(g.Columns(i).ObjectName, 3)
+                    strCampos = strCampos & StrCampo & ","
                     
                     Select Case strTipoDato
                         Case "N"
@@ -1324,7 +1324,7 @@ End Sub
 Public Sub EjecutaSQLFormPagosDocVentas(F As Form, ByRef StrMsgError As String, strTD As String, strNumDoc As String, strSerie As String, strCodMovCaja As String, g As dxDBGrid, v As dxDBGrid, ByVal strCodCliente As String)
 On Error GoTo Err
 Dim csql As String
-Dim strCampo As String
+Dim StrCampo As String
 Dim strTipoDato As String
 Dim strCampos As String
 Dim strValores As String
@@ -1351,19 +1351,19 @@ Dim i As Integer
             For i = 0 To g.Columns.Count - 1
                 If UCase(left(g.Columns(i).ObjectName, 1)) = "W" Then
                     strTipoDato = Mid(g.Columns(i).ObjectName, 2, 1)
-                    strCampo = Mid(g.Columns(i).ObjectName, 3)
+                    StrCampo = Mid(g.Columns(i).ObjectName, 3)
                     
-                    strCampos = strCampos & strCampo & ","
+                    strCampos = strCampos & StrCampo & ","
                     
-                    If strCampo = "idMoneda" Then
+                    If StrCampo = "idMoneda" Then
                         strCodMoneda = Trim(g.Columns(i).Value)
                     End If
                     
-                    If strCampo = "idFormadePago" Then
+                    If StrCampo = "idFormadePago" Then
                         strCodFormadePago = Trim(g.Columns(i).Value)
                     End If
                     
-                    If strCampo = "MontoOri" Then
+                    If StrCampo = "MontoOri" Then
                         dblValMonto = g.Columns(i).Value
                     End If
                     
@@ -2419,7 +2419,7 @@ Public Sub EjecutaSQLFormDocVentasEmpresas(F As Form, ByVal tipoOperacion As Int
 On Error GoTo Err
 Dim C As Object
 Dim csql As String
-Dim strCampo As String
+Dim StrCampo As String
 Dim strTipoDato As String
 Dim strCampos As String
 Dim strValores As String
@@ -2444,25 +2444,25 @@ Dim rstUpd As New ADODB.Recordset
         If TypeOf C Is CATTextBox Or TypeOf C Is DTPicker Or TypeOf C Is CheckBox Then
             If C.Tag <> "" Then
                 strTipoDato = left(C.Tag, 1)
-                strCampo = right(C.Tag, Len(C.Tag) - 1)
+                StrCampo = right(C.Tag, Len(C.Tag) - 1)
                 
-                If UCase(strCampo) = UCase("idMotivoTraslado") Then
+                If UCase(StrCampo) = UCase("idMotivoTraslado") Then
                     strCodMotivoTranslado = C.Value
                 End If
                 
-                If UCase(strCampo) = UCase("idPerVendedorCampo") Then
+                If UCase(StrCampo) = UCase("idPerVendedorCampo") Then
                     strCodVendedorCampo = C.Value
                 End If
                 
-                If UCase(strCampo) = UCase("idPerCliente") Then
+                If UCase(StrCampo) = UCase("idPerCliente") Then
                     strCodCliente = C.Value
                 End If
     
                 Select Case tipoOperacion
                     Case 0 'inserta
-                        strCampos = strCampos & strCampo & ","
+                        strCampos = strCampos & StrCampo & ","
                         
-                        If UCase(strCampo) = UCase("idDocVentas") Then
+                        If UCase(StrCampo) = UCase("idDocVentas") Then
                             If Trim(C.Value) = "" Then
                                 strCod = generaCorrelativoDocVentas(strTD, strSerie)
                                 C.Text = strCod
@@ -2484,7 +2484,7 @@ Dim rstUpd As New ADODB.Recordset
                                 strValores = strValores & "'" & Format(C.Value, "yyyy-mm-dd") & "',"
                         End Select
                     Case 1
-                        If UCase(strCampo) <> UCase("idDocVentas") Then
+                        If UCase(StrCampo) <> UCase("idDocVentas") Then
                             Select Case strTipoDato
                                 Case "N"
                                     strValores = Val(C.Value)
@@ -2493,7 +2493,7 @@ Dim rstUpd As New ADODB.Recordset
                                 Case "F"
                                     strValores = "'" & Format(C.Value, "yyyy-mm-dd") & "'"
                             End Select
-                            strCampos = strCampos & strCampo & "=" & strValores & ","
+                            strCampos = strCampos & StrCampo & "=" & strValores & ","
                         Else
                             strValCod = C.Value
                         End If
@@ -2534,9 +2534,9 @@ Dim rstUpd As New ADODB.Recordset
             For i = 0 To g.Columns.Count - 1
                 If UCase(left(g.Columns(i).ObjectName, 1)) = "W" Then
                     strTipoDato = Mid(g.Columns(i).ObjectName, 2, 1)
-                    strCampo = Mid(g.Columns(i).ObjectName, 3)
+                    StrCampo = Mid(g.Columns(i).ObjectName, 3)
                     
-                    strCampos = strCampos & strCampo & ","
+                    strCampos = strCampos & StrCampo & ","
                     
                     Select Case strTipoDato
                         Case "N"
@@ -2576,10 +2576,10 @@ Dim rstUpd As New ADODB.Recordset
                 For i = 0 To D.Columns.Count - 1
                     If UCase(left(D.Columns(i).ObjectName, 1)) = "W" Then
                         strTipoDato = Mid(D.Columns(i).ObjectName, 2, 1)
-                        strCampo = Mid(D.Columns(i).ObjectName, 3)
+                        StrCampo = Mid(D.Columns(i).ObjectName, 3)
                         
-                        strCampos = strCampos & strCampo & ","
-                        If strCampo = "tipoDocReferencia" Then strCodFacRef = D.Columns(i).Value
+                        strCampos = strCampos & StrCampo & ","
+                        If StrCampo = "tipoDocReferencia" Then strCodFacRef = D.Columns(i).Value
                         Select Case strTipoDato
                             Case "N"
                                 strValores = strValores & D.Columns(i).Value & ","
