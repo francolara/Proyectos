@@ -6,7 +6,8 @@
 
 ## Codificaciones obligatorias
 - VisualBasic 6/** (archivos .bas, .cls, .frm, .vbp, .vbw):
-  - Mantén la codificación Windows-1252 (ANSI) **sin BOM** y finales de línea CRLF.
+  - Abrir/guardar .frm siempre como Windows-1252 (ANSI).
+  - Evitar editores que auto-conviertan a UTF-8 sin control.
   - Revisa que los acentos y caracteres especiales conserven su grafía original; evita que el editor convierta a UTF-8 o normalice saltos de línea.
   - Si el archivo queda en UTF-8 tras aplicar un parche, reconvierte con:
     iconv -f UTF-8 -t WINDOWS-1252 archivo > tmp && mv tmp archivo
