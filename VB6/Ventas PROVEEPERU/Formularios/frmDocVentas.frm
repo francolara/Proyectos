@@ -1740,7 +1740,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   133103617
+         Format          =   133169153
          CurrentDate     =   38955
       End
       Begin VB.CommandButton cmbAyudaMotivoNCD 
@@ -2065,7 +2065,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   133103617
+         Format          =   133169153
          CurrentDate     =   38955
       End
       Begin MSComctlLib.ImageList imgDocVentas 
@@ -3347,7 +3347,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   133103617
+         Format          =   133169153
          CurrentDate     =   38955
       End
       Begin CATControls.CATTextBox txtgls_contacto 
@@ -9089,6 +9089,7 @@ End Sub
 Private Sub gDetalle_OnEdited(ByVal Node As DXDBGRIDLibCtl.IdxGridNode)
 On Error GoTo Err
 Dim rsp                     As New ADODB.Recordset
+Dim RsDatosC                As New ADODB.Recordset
 Dim sw_dcto                 As Boolean
 Dim StrMsgError             As String
 Dim strCod                  As String
@@ -9156,7 +9157,7 @@ Dim NIvapUnit               As Double
                    "WHERE idempresa = '" & glsEmpresa & "' AND estProducto = 'A' AND (idProducto = '" & strCod & "' OR idFabricante = '" & strCod & "' OR CodigoRapido = '" & strCod & "')"
             rsp.Open csql, Cn, adOpenForwardOnly, adLockReadOnly
             
-            If traerCampo("empresas", "glsempresa", "idempresa", glsEmpresa, False) <> "VERSAUS" Then
+'            If traerCampo("empresas", "glsempresa", "idempresa", glsEmpresa, False) <> "VERSAUS" Then
                 If rsp.EOF Or rsp.BOF Then
                     StrMsgError = "No se encuentra registrado el producto"
                     gDetalle.Dataset.Edit
@@ -9171,33 +9172,33 @@ Dim NIvapUnit               As Double
                     StrCodRapido = Trim("" & rsp.Fields("CodigoRapido"))
                 End If
             
-            Else
-                If rsp.EOF Or rsp.BOF Then
-                    csql = "SELECT idProducto,GlsProducto,idUMVenta FROM Productos " & _
-                            "WHERE instr(CodigRapido,'" & strCod & "') > 0 and idEmpresa = '" & glsEmpresa & "' "
-                    If rsp.State = 1 Then rsp.Close
-                    rsp.Open csql, Cn, adOpenForwardOnly, adLockReadOnly
-                    If rsp.EOF Or rsp.BOF Then
-                        StrMsgError = "No se encuentra registrado el producto"
-                        gDetalle.Dataset.Edit
-                        gDetalle.Columns.ColumnByFieldName("idProducto").Value = ""
-                        gDetalle.Columns.ColumnByFieldName("GlsProducto").Value = ""
-                        gDetalle.Dataset.Post
-                        GoTo Err
-                    Else
-                        strCod = "" & rsp.Fields("idProducto")
-                        strDes = "" & rsp.Fields("GlsProducto")
-                        strCodUM = "" & rsp.Fields("idUMVenta")
-                        StrCodRapido = "" & rsp.Fields("CodigoRapido")
-                    End If
-                Else
-                    strCod = "" & rsp.Fields("idProducto")
-                    strDes = "" & rsp.Fields("GlsProducto")
-                    strCodUM = "" & rsp.Fields("idUMVenta")
-                    StrCodRapido = "" & rsp.Fields("CodigoRapido")
-                End If
+'            Else
+'                If rsp.EOF Or rsp.BOF Then
+'                    csql = "SELECT idProducto,GlsProducto,idUMVenta FROM Productos " & _
+'                            "WHERE instr(CodigRapido,'" & strCod & "') > 0 and idEmpresa = '" & glsEmpresa & "' "
+'                    If rsp.State = 1 Then rsp.Close
+'                    rsp.Open csql, Cn, adOpenForwardOnly, adLockReadOnly
+'                    If rsp.EOF Or rsp.BOF Then
+'                        StrMsgError = "No se encuentra registrado el producto"
+'                        gDetalle.Dataset.Edit
+'                        gDetalle.Columns.ColumnByFieldName("idProducto").Value = ""
+'                        gDetalle.Columns.ColumnByFieldName("GlsProducto").Value = ""
+'                        gDetalle.Dataset.Post
+'                        GoTo Err
+'                    Else
+'                        strCod = "" & rsp.Fields("idProducto")
+'                        strDes = "" & rsp.Fields("GlsProducto")
+'                        strCodUM = "" & rsp.Fields("idUMVenta")
+'                        StrCodRapido = "" & rsp.Fields("CodigoRapido")
+'                    End If
+'                Else
+'                    strCod = "" & rsp.Fields("idProducto")
+'                    strDes = "" & rsp.Fields("GlsProducto")
+'                    strCodUM = "" & rsp.Fields("idUMVenta")
+'                    StrCodRapido = "" & rsp.Fields("CodigoRapido")
+'                End If
                 
-            End If
+'            End If
                 
             gDetalle.Dataset.Edit
             gDetalle.Columns.ColumnByFieldName("idProducto").Value = strCod
@@ -9232,6 +9233,34 @@ Dim NIvapUnit               As Double
             gDetalle.Columns.ColumnByFieldName("idUM").Value = strCodUM
             gDetalle.Columns.ColumnByFieldName("GlsUM").Value = strDesUM
             gDetalle.Columns.ColumnByFieldName("Factor").Value = dblFactor
+            
+            
+            'lUIS 13/01/2025
+            csql = "EXEC spu_Trae_Costo_Precio_Cotizacion '" & glsEmpresa & "','" & strCod & "','" & Trim("" & txtCod_Cliente.Text) & "','" & Trim("" & txtCod_Moneda.Text) & "'," & Val("" & txt_TipoCambio.Text) & ""
+            If RsDatosC.State = 1 Then RsDatosC.Close: Set RsDatosC = Nothing
+            RsDatosC.Open csql, Cn, adOpenStatic, adLockOptimistic
+            
+            If Not RsDatosC.EOF Then
+               gDetalle.Columns.ColumnByFieldName("GlsProveedor").Value = Trim("" & RsDatosC.Fields("Proveedor"))
+               gDetalle.Columns.ColumnByFieldName("CostoS").Value = Val(Format("" & RsDatosC.Fields("CostoS"), "0.00"))
+               gDetalle.Columns.ColumnByFieldName("CostoSInc").Value = Val(Format("" & RsDatosC.Fields("CostoSInc"), "0.00"))
+               gDetalle.Columns.ColumnByFieldName("CostoD").Value = Val(Format("" & RsDatosC.Fields("CostoD"), "0.00"))
+               gDetalle.Columns.ColumnByFieldName("VVunitG").Value = Val(Format("" & RsDatosC.Fields("VvUnitarioG"), "0.00"))
+               
+               If Val("" & RsDatosC.Fields("VvUnitario")) > 0 Then
+                    If Trim("" & RsDatosC.Fields("Moneda")) = Trim("" & txtCod_Moneda.Text) Then
+                        dblVVUnit = Val(Format("" & RsDatosC.Fields("VvUnitario"), "0.00"))
+                    Else
+                        If Val(txt_TipoCambio.Text) > 0 Then
+                            If Trim("" & txtCod_Moneda.Text) = "PEN" Then
+                                dblVVUnit = Val(Format("" & RsDatosC.Fields("VvUnitario") * txt_TipoCambio.Text, "0.00"))
+                            Else
+                                dblVVUnit = Val(Format("" & RsDatosC.Fields("VvUnitario") / txt_TipoCambio.Text, "0.00"))
+                            End If
+                        End If
+                    End If
+               End If
+            End If
             
              'Comentado para Salguero
             'If strTipoProd = "06002" Then GDetalle.Columns.ColumnByFieldName("Cantidad").Value = 1
