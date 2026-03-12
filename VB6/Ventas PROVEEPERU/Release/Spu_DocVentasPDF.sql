@@ -1,4 +1,4 @@
-﻿DELIMITER //
+DELIMITER //
 CREATE PROCEDURE Spu_DocVentasPDF
 (
   VarIdEmpresa CHAR(2),
