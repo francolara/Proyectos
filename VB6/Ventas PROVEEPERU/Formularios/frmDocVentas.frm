@@ -11849,7 +11849,7 @@ Dim StrValor            As String
 
     Set rsExporta = RsFuente.Clone(adLockReadOnly)
 
-    ArrCampos = Split("idDocVentas|idSerie|idPerCliente|GlsCliente|RUCCliente|FecEmision|estDocVentas|Moneda|TotalPrecioVenta|DocReferencia|NumOrdenCompra|CostoTotal|Obs|MotivoTras", "|")
+    ArrCampos = Split("idSerie|idDocVentas|idPerCliente|GlsCliente|RUCCliente|FecEmision|estDocVentas|Moneda|TotalPrecioVenta|DocReferencia|NumOrdenCompra|CostoTotal|Obs|MotivoTras", "|")
     ArrCamposTexto = Split("idDocVentas|NumOrdenCompra", "|")
 
     ReDim ArrIndices(0 To UBound(ArrCampos))
