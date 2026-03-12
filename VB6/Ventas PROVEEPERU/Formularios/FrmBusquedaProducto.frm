@@ -253,7 +253,7 @@ End Sub
 Private Sub fill()
 Dim rsdatos                     As New ADODB.Recordset
 
-sqlCond = Replace(sqlBus, "%X%", "%" & Trim(TxtBusq.Text) & "%") & SqlAdic & " order by 1"
+sqlCond = sqlBus
     
 If rsdatos.State = 1 Then rsdatos.Close: Set rsdatos = Nothing
 rsdatos.Open sqlCond, Cn, adOpenStatic, adLockOptimistic
@@ -300,10 +300,11 @@ End Sub
 
 Private Function setSql(strParAyuda As String) As String
 Dim CCodProducto            As String
+Dim StrBusqueda             As String
 
-    CCodProducto = IIf(leeParametro("VIZUALIZA_CODIGO_RAPIDO") = "S", "CodigoRapido", "IdProducto")
+    StrBusqueda = Replace(TxtBusq.Text, " ", "%")
     Select Case UCase(strParAyuda)
-         Case "PRODUCTOS": setSql = "SELECT " & CCodProducto & " cod,GlsProducto des ,idFabricante,GlsUm From Productos p Inner Join  UnidadMedida u   On p.idUMCompra = u.idUm Where idEmpresa = '" & glsEmpresa & "' AND (GlsProducto like '%X%' or " & CCodProducto & " like '%X%' or idFabricante like '%X%' Or GlsUm like '%X%'  ) "
+         Case "PRODUCTOS": setSql = "EXECUTE spu_Docventa_Lista_Productos_OC '" & glsEmpresa & "','" & StrBusqueda & "' "
     End Select
 
 End Function
@@ -320,7 +321,7 @@ Dim intI As Integer
     End If
     
     SRptBus(0) = ""
-    SqlAdic = strParAdic
+    SqlAdic = "" 'strParAdic
     sqlBus = setSql(strParAyuda)
     fill
     
