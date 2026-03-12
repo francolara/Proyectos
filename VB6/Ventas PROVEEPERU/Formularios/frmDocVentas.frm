@@ -5734,6 +5734,27 @@ Dim rsdd         As New ADODB.Recordset
 On Error GoTo Err
     
     indCargando = False
+
+    lbl_NumDoc.Caption = "N" & Chr$(250) & "mero"
+    lbl_FechaEmision.Caption = "F. Emisi" & Chr$(243) & "n"
+    lbl_Vehiculo.Caption = "Veh" & Chr$(237) & "culo"
+    FraFormatoImp.Caption = " Formato de Impresi" & Chr$(243) & "n "
+    ChkDuplicar.Caption = "Duplicar Cotizaci" & Chr$(243) & "n"
+    ChkfContado.Caption = "Guardar Versi" & Chr$(243) & "n"
+    CmdSituacionCre.Caption = "Situaci" & Chr$(243) & "n Crediticia"
+    lvlvtdireccion.Caption = "Direcci" & Chr$(243) & "n"
+    lbl_Almacen.Caption = "Almac" & Chr$(233) & "n"
+    lbl_Direccion.Caption = "Direcci" & Chr$(243) & "n"
+    Label3.Caption = "A" & Chr$(241) & "o"
+    Label1.Caption = "B" & Chr$(250) & "squeda"
+    Label12.Caption = "REGISTRO DE ATENCI" & Chr$(211) & "N"
+    Label15.Caption = "Almac" & Chr$(233) & "n"
+
+    If Toolbar1.Buttons.Count >= 23 Then
+        Toolbar1.Buttons(23).Caption = "Electr" & Chr$(243) & "nica"
+        Toolbar1.Buttons(23).Description = "Documento Electr" & Chr$(243) & "nico"
+    End If
+    ' Firma Codex 2026-03-12
     
     FraFormatoImp.Visible = False
     indInserta = False
