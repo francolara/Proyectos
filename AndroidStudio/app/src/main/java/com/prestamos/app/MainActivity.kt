@@ -14,26 +14,32 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.prestamos.app.data.local.AppDatabase
 import com.prestamos.app.navigation.AppDestinations
 import com.prestamos.app.ui.screen.ClientesScreen
 import com.prestamos.app.ui.screen.PagosScreen
 import com.prestamos.app.ui.screen.PrestamosScreen
 import com.prestamos.app.ui.screen.ReportesScreen
 import com.prestamos.app.ui.theme.AppPrestamosTheme
+import com.prestamos.app.ui.viewmodel.AppViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        AppDatabase.getInstance(applicationContext)
         enableEdgeToEdge()
         setContent {
             AppPrestamosTheme {
@@ -44,11 +50,21 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun PrestamosApp() {
+private fun PrestamosApp(viewModel: AppViewModel = viewModel()) {
     val navController = rememberNavController()
     val destinations = AppDestinations.entries
+    val snackbarHostState = remember { SnackbarHostState() }
+    val mensaje by viewModel.mensaje.collectAsStateWithLifecycle()
+
+    LaunchedEffect(mensaje) {
+        mensaje?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.limpiarMensaje()
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             NavigationBar {
                 val currentRoute = navController.currentBackStackEntryAsState().value
@@ -84,10 +100,10 @@ private fun PrestamosApp() {
             startDestination = AppDestinations.CLIENTES.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(AppDestinations.CLIENTES.route) { ClientesScreen() }
-            composable(AppDestinations.PRESTAMOS.route) { PrestamosScreen() }
-            composable(AppDestinations.PAGOS.route) { PagosScreen() }
-            composable(AppDestinations.REPORTES.route) { ReportesScreen() }
+            composable(AppDestinations.CLIENTES.route) { ClientesScreen(viewModel) }
+            composable(AppDestinations.PRESTAMOS.route) { PrestamosScreen(viewModel) }
+            composable(AppDestinations.PAGOS.route) { PagosScreen(viewModel) }
+            composable(AppDestinations.REPORTES.route) { ReportesScreen(viewModel) }
         }
     }
 }

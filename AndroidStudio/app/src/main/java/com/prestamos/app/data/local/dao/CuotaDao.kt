@@ -18,4 +18,13 @@ interface CuotaDao {
 
     @Query("SELECT * FROM cuotas WHERE idPrestamo = :idPrestamo ORDER BY numeroCuota")
     fun listarPorPrestamo(idPrestamo: Long): Flow<List<CuotaEntity>>
+
+    @Query("SELECT * FROM cuotas WHERE idPrestamo = :idPrestamo ORDER BY numeroCuota")
+    suspend fun listarPorPrestamoInterno(idPrestamo: Long): List<CuotaEntity>
+
+    @Query("SELECT * FROM cuotas WHERE idCuota = :idCuota LIMIT 1")
+    suspend fun obtenerPorId(idCuota: Long): CuotaEntity?
+
+    @Query("SELECT * FROM cuotas WHERE fechaVencimiento < :fechaActual AND saldoPendiente > 0 ORDER BY fechaVencimiento")
+    fun listarVencidas(fechaActual: Long): Flow<List<CuotaEntity>>
 }

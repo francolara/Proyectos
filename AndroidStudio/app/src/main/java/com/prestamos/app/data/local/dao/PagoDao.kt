@@ -14,4 +14,7 @@ interface PagoDao {
 
     @Query("SELECT * FROM pagos WHERE idCuota = :idCuota ORDER BY fechaPago DESC")
     fun listarPorCuota(idCuota: Long): Flow<List<PagoEntity>>
+
+    @Query("SELECT SUM(montoAbono) FROM pagos")
+    fun totalCobrado(): Flow<Double?>
 }

@@ -1,0 +1,169 @@
+package com.prestamos.app.ui.viewmodel
+
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.prestamos.app.data.local.AppDatabase
+import com.prestamos.app.data.local.entity.ClienteEntity
+import com.prestamos.app.data.local.entity.CuotaEntity
+import com.prestamos.app.data.local.entity.EstadoPrestamo
+import com.prestamos.app.data.local.entity.PrestamoEntity
+import com.prestamos.app.data.local.entity.TipoPago
+import com.prestamos.app.data.repository.PrestamosRepository
+import com.prestamos.app.ui.model.ResumenReporte
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+
+class AppViewModel(application: Application) : AndroidViewModel(application) {
+    private val repository = PrestamosRepository(AppDatabase.getInstance(application))
+
+    val clientes = repository.observarClientes().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    val prestamos = repository.observarPrestamos().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    private val clienteSeleccionadoPagos = MutableStateFlow<Long?>(null)
+    private val prestamoSeleccionadoPagos = MutableStateFlow<Long?>(null)
+
+    val prestamosClientePagos: StateFlow<List<PrestamoEntity>> = clienteSeleccionadoPagos
+        .flatMapLatest { idCliente ->
+            if (idCliente == null) {
+                kotlinx.coroutines.flow.flowOf(emptyList())
+            } else {
+                repository.observarPrestamosPorCliente(idCliente)
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val cuotasPrestamoPagos: StateFlow<List<CuotaEntity>> = prestamoSeleccionadoPagos
+        .flatMapLatest { idPrestamo ->
+            if (idPrestamo == null) {
+                kotlinx.coroutines.flow.flowOf(emptyList())
+            } else {
+                repository.observarCuotasPorPrestamo(idPrestamo)
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val cuotasVencidas = repository.observarCuotasVencidas(System.currentTimeMillis()).stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    val resumenReporte: StateFlow<ResumenReporte> = combine(
+        prestamos,
+        cuotasVencidas,
+        repository.observarTotalCobrado()
+    ) { prestamosList, cuotasVencidasList, totalCobrado ->
+        val totalPrestado = prestamosList.sumOf { it.montoTotalPrestamo }
+        val totalPendiente = prestamosList
+            .filter { it.estadoPrestamo != EstadoPrestamo.PAGADO }
+            .sumOf { it.montoTotalPrestamo }
+        ResumenReporte(
+            totalPrestado = totalPrestado,
+            totalCobrado = totalCobrado ?: 0.0,
+            totalPendiente = totalPendiente,
+            prestamosActivos = prestamosList.count { it.estadoPrestamo == EstadoPrestamo.ACTIVO },
+            prestamosPagados = prestamosList.count { it.estadoPrestamo == EstadoPrestamo.PAGADO },
+            cuotasVencidas = cuotasVencidasList.size
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = ResumenReporte()
+    )
+
+    val mensaje = MutableStateFlow<String?>(null)
+
+    fun seleccionarClientePagos(idCliente: Long?) {
+        clienteSeleccionadoPagos.value = idCliente
+        prestamoSeleccionadoPagos.value = null
+    }
+
+    fun seleccionarPrestamoPagos(idPrestamo: Long?) {
+        prestamoSeleccionadoPagos.value = idPrestamo
+    }
+
+    fun limpiarMensaje() {
+        mensaje.value = null
+    }
+
+    fun registrarCliente(nombre: String, apellido: String, documento: String, nacionalidad: String) {
+        viewModelScope.launch {
+            runCatching {
+                require(nombre.isNotBlank()) { "Nombre obligatorio" }
+                require(apellido.isNotBlank()) { "Apellido obligatorio" }
+                require(documento.isNotBlank()) { "Documento obligatorio" }
+                repository.registrarCliente(nombre.trim(), apellido.trim(), documento.trim(), nacionalidad.trim())
+            }.onSuccess {
+                mensaje.value = "Cliente registrado"
+            }.onFailure {
+                mensaje.value = it.message ?: "No se pudo registrar cliente"
+            }
+        }
+    }
+
+    fun registrarPrestamo(
+        idCliente: Long,
+        monto: String,
+        interes: String,
+        tipoPago: TipoPago,
+        cuotas: String,
+        fechaPrimeraCuota: Long
+    ) {
+        viewModelScope.launch {
+            runCatching {
+                val montoDouble = monto.toDouble()
+                val interesDouble = interes.toDouble()
+                val cuotasInt = cuotas.toInt()
+                require(montoDouble > 0.0) { "Monto debe ser mayor a 0" }
+                require(interesDouble >= 0.0) { "Interés debe ser mayor o igual a 0" }
+                require(cuotasInt > 0) { "Cuotas debe ser mayor a 0" }
+                repository.registrarPrestamo(
+                    idCliente = idCliente,
+                    monto = montoDouble,
+                    interesPorcentaje = interesDouble,
+                    tipoPago = tipoPago,
+                    cantidadCuotas = cuotasInt,
+                    fechaPrimeraCuota = fechaPrimeraCuota
+                )
+            }.onSuccess {
+                mensaje.value = "Préstamo registrado con cuotas generadas"
+            }.onFailure {
+                mensaje.value = it.message ?: "No se pudo registrar préstamo"
+            }
+        }
+    }
+
+    fun registrarPago(idPrestamo: Long, idCuota: Long, montoAbono: String, observacion: String) {
+        viewModelScope.launch {
+            runCatching {
+                repository.registrarPago(
+                    idPrestamo = idPrestamo,
+                    idCuota = idCuota,
+                    montoAbono = montoAbono.toDouble(),
+                    observacion = observacion
+                )
+            }.onSuccess {
+                mensaje.value = "Pago registrado"
+            }.onFailure {
+                mensaje.value = it.message ?: "No se pudo registrar pago"
+            }
+        }
+    }
+
+    fun buscarCliente(idCliente: Long?): ClienteEntity? = clientes.value.firstOrNull { it.idCliente == idCliente }
+}

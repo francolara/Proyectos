@@ -18,4 +18,7 @@ interface ClienteDao {
 
     @Query("SELECT * FROM clientes ORDER BY nombre, apellido")
     fun listar(): Flow<List<ClienteEntity>>
+
+    @Query("SELECT * FROM clientes WHERE idCliente = :idCliente LIMIT 1")
+    suspend fun obtenerPorId(idCliente: Long): ClienteEntity?
 }
