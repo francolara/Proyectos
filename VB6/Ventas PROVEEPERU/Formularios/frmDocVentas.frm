@@ -77,7 +77,7 @@ Begin VB.Form frmDocVentas
       End
    End
    Begin VB.Frame FraFormatoImp 
-      Caption         =   " Formato de Impresión "
+      Caption         =   " Formato de ImpresiÃ³n "
       Height          =   1560
       Left            =   4080
       TabIndex        =   166
@@ -752,7 +752,7 @@ Begin VB.Form frmDocVentas
       Top             =   720
       Width           =   15315
       Begin VB.CheckBox ChkDuplicar 
-         Caption         =   "Duplicar Cotización"
+         Caption         =   "Duplicar CotizaciÃ³n"
          Height          =   315
          Left            =   11490
          TabIndex        =   235
@@ -834,7 +834,7 @@ Begin VB.Form frmDocVentas
          Vacio           =   -1  'True
       End
       Begin VB.CheckBox ChkfContado 
-         Caption         =   "Guardar Versión"
+         Caption         =   "Guardar VersiÃ³n"
          Height          =   315
          Left            =   11550
          TabIndex        =   213
@@ -1324,7 +1324,7 @@ Begin VB.Form frmDocVentas
       End
       Begin VB.CommandButton CmdSituacionCre 
          Appearance      =   0  'Flat
-         Caption         =   "Situación Crediticia"
+         Caption         =   "SituaciÃ³n Crediticia"
          Height          =   510
          Left            =   4590
          TabIndex        =   161
@@ -3625,7 +3625,7 @@ Begin VB.Form frmDocVentas
       Begin VB.Label lvlvtdireccion 
          Appearance      =   0  'Flat
          AutoSize        =   -1  'True
-         Caption         =   "Dirección"
+         Caption         =   "DirecciÃ³n"
          ForeColor       =   &H80000007&
          Height          =   210
          Left            =   5880
@@ -3892,7 +3892,7 @@ Begin VB.Form frmDocVentas
       Begin VB.Label lbl_Vehiculo 
          Appearance      =   0  'Flat
          AutoSize        =   -1  'True
-         Caption         =   "Vehículo"
+         Caption         =   "VehÃ­culo"
          ForeColor       =   &H80000007&
          Height          =   210
          Left            =   75
@@ -3973,7 +3973,7 @@ Begin VB.Form frmDocVentas
       Begin VB.Label lbl_Almacen 
          Appearance      =   0  'Flat
          AutoSize        =   -1  'True
-         Caption         =   "Almacén"
+         Caption         =   "AlmacÃ©n"
          ForeColor       =   &H80000007&
          Height          =   210
          Left            =   6000
@@ -3996,7 +3996,7 @@ Begin VB.Form frmDocVentas
       End
       Begin VB.Label lbl_Direccion 
          Appearance      =   0  'Flat
-         Caption         =   "Dirección"
+         Caption         =   "DirecciÃ³n"
          ForeColor       =   &H80000007&
          Height          =   240
          Left            =   75
@@ -4056,7 +4056,7 @@ Begin VB.Form frmDocVentas
       Begin VB.Label lbl_NumDoc 
          Appearance      =   0  'Flat
          AutoSize        =   -1  'True
-         Caption         =   "Número"
+         Caption         =   "NÃºmero"
          BeginProperty Font 
             Name            =   "Arial"
             Size            =   8.25
@@ -4077,7 +4077,7 @@ Begin VB.Form frmDocVentas
       Begin VB.Label lbl_FechaEmision 
          Appearance      =   0  'Flat
          AutoSize        =   -1  'True
-         Caption         =   "F. Emisión"
+         Caption         =   "F. EmisiÃ³n"
          ForeColor       =   &H80000007&
          Height          =   210
          Left            =   9075
@@ -4284,8 +4284,8 @@ Begin VB.Form frmDocVentas
             ImageIndex      =   15
          EndProperty
          BeginProperty Button23 {66833FEA-8583-11D1-B16A-00C0F0283628} 
-            Caption         =   "Electrónica"
-            Description     =   "Documento Electrónico "
+            Caption         =   "ElectrÃ³nica"
+            Description     =   "Documento ElectrÃ³nico "
             ImageIndex      =   14
          EndProperty
          BeginProperty Button24 {66833FEA-8583-11D1-B16A-00C0F0283628} 
@@ -4437,7 +4437,7 @@ Begin VB.Form frmDocVentas
             Alignment       =   2  'Center
             Appearance      =   0  'Flat
             BackColor       =   &H8000000D&
-            Caption         =   "REGISTRO DE ATENCIÓN"
+            Caption         =   "REGISTRO DE ATENCIÃ“N"
             BeginProperty Font 
                Name            =   "Arial"
                Size            =   9
@@ -4770,7 +4770,7 @@ Begin VB.Form frmDocVentas
          Begin VB.Label Label3 
             Appearance      =   0  'Flat
             AutoSize        =   -1  'True
-            Caption         =   "Año"
+            Caption         =   "AÃ±o"
             ForeColor       =   &H80000008&
             Height          =   210
             Left            =   13080
@@ -4792,7 +4792,7 @@ Begin VB.Form frmDocVentas
          Begin VB.Label Label1 
             Appearance      =   0  'Flat
             AutoSize        =   -1  'True
-            Caption         =   "Búsqueda"
+            Caption         =   "BÃºsqueda"
             ForeColor       =   &H80000008&
             Height          =   210
             Left            =   210
@@ -4832,7 +4832,7 @@ Begin VB.Form frmDocVentas
    Begin VB.Label Label15 
       Appearance      =   0  'Flat
       BackColor       =   &H80000005&
-      Caption         =   "Almacén"
+      Caption         =   "AlmacÃ©n"
       ForeColor       =   &H80000007&
       Height          =   240
       Left            =   6075
@@ -5484,7 +5484,7 @@ End If
 csql = "EXEC spu_Docventas_Reg_AtnDet '" & glsEmpresa & "','" & glsSucursal & "','" & strTipoDoc & "','" & gLista.Columns.ColumnByFieldName("idDocVentas").Value & "','" & gLista.Columns.ColumnByFieldName("idSerie").Value & "'," & Val(txtItmProducto.Text) & "," & Val(Format(TxtcantProducto_Atn.Text, "0.00")) & ""
 Cn.Execute csql
 
-MsgBox "La cantidad se registró satisfactoriamente..", vbInformation, Me.Caption
+MsgBox "La cantidad se registrÃ³ satisfactoriamente..", vbInformation, Me.Caption
 
 FraAtencionPed.Visible = False
 ListaDetalle
@@ -5734,6 +5734,11 @@ Dim rsdd         As New ADODB.Recordset
 On Error GoTo Err
     
     indCargando = False
+
+    lbl_NumDoc.Caption = "N" & Chr$(250) & "mero"
+    lbl_FechaEmision.Caption = "F. Emisi" & Chr$(243) & "n"
+    lbl_Vehiculo.Caption = "Veh" & Chr$(237) & "culo"
+    ' Firma Codex 2026-03-12
     
     FraFormatoImp.Visible = False
     indInserta = False
@@ -5776,7 +5781,7 @@ On Error GoTo Err
         'fraGeneral.Height = traerCampo("documentos", "frameHeight", "idDocumento", strTipoDoc, False)
         strGlsTipoDoc = Trim("" & rsdatos.Fields("GlsDocumento"))
         If IndAtribucionNC = 1 Then
-            strGlsTipoDoc = strGlsTipoDoc & " Nota de Crédito"
+            strGlsTipoDoc = strGlsTipoDoc & " Nota de CrÃ©dito"
         End If
         fraGeneral.Height = rsdatos.Fields("frameHeight")
         
@@ -5801,7 +5806,7 @@ On Error GoTo Err
         
     'If leeParametro("DESCRIPCION_AREA_O_UPP") = "1" Then
     If STR_DESCRIPCION_AREA_O_UPP = "1" Then
-        lbl_upp.Caption = "Área"
+        lbl_upp.Caption = "Ãrea"
     Else
         lbl_upp.Caption = "UUPP"
     End If
@@ -5904,8 +5909,8 @@ On Error GoTo Err
 '        End If
 '    End If
     
-    '--- Parametro que permitira añadir una descripcion adicional al nombre del producto
-    strParamModGlsPro = "N" 'Trim("" & traerCampo("Parametros", "Valparametro", "GlsParametro", "AÑADE_DESCRIPCION_AL_PRODUCTO", True))
+    '--- Parametro que permitira aÃ±adir una descripcion adicional al nombre del producto
+    strParamModGlsPro = "N" 'Trim("" & traerCampo("Parametros", "Valparametro", "GlsParametro", "AÃ‘ADE_DESCRIPCION_AL_PRODUCTO", True))
     
 '    If leeParametro("MODIFICA_CC") = "1" Then
 '
@@ -6003,7 +6008,7 @@ Dim rsValida            As New ADODB.Recordset
 '            If Not RsC.EOF Then
 '                If Val(txt_NumDoc.Text) > 0 Then
 '                    If Val(txt_NumDoc.Text) < Val("" & RsC.Fields("IdDocVentas")) Then
-'                        StrMsgError = "El último Documento ingresado de N° " & Trim("" & RsC.Fields("IdDocVentas")) & " es posterior al que quiere grabar. Verifique.": GoTo Err
+'                        StrMsgError = "El Ãºltimo Documento ingresado de NÂ° " & Trim("" & RsC.Fields("IdDocVentas")) & " es posterior al que quiere grabar. Verifique.": GoTo Err
 '                    End If
 '                End If
 '            End If
@@ -6037,7 +6042,7 @@ Dim rsValida            As New ADODB.Recordset
             
                 If traerCampo("CentrosCosto", "IdCodUNegocio", "IdCentroCosto", gDetalle.Columns.ColumnByFieldName("IdCentroCosto").Value, True) <> txtCod_UnidProd.Text Then
                     
-                    StrMsgError = "La Hoja de Costo del Item " & gDetalle.Columns.ColumnByFieldName("Item").Value & " no coincide con el Área, verificar.": GoTo Err
+                    StrMsgError = "La Hoja de Costo del Item " & gDetalle.Columns.ColumnByFieldName("Item").Value & " no coincide con el Ãrea, verificar.": GoTo Err
                 
                 End If
             
@@ -6172,13 +6177,13 @@ Dim rsValida            As New ADODB.Recordset
                 If rsTempLotes.State = 0 Then
                     If traerCampo("productos", "idTipoProducto", "idproducto", Trim("" & gDetalle.Columns.ColumnByFieldName("idProducto").Value), True) = "06002" Then
                     Else
-                        StrMsgError = StrMsgError & "El Producto con Código " & " " & Trim("" & gDetalle.Columns.ColumnByFieldName("idProducto").Value) & " que se Encuentra en la Fila " & " " & Val(gDetalle.Columns.ColumnByFieldName("Item").Value) & " " & " No se le ha asignado una Talla. Verifique." & Chr(13) & Chr(10)
+                        StrMsgError = StrMsgError & "El Producto con CÃ³digo " & " " & Trim("" & gDetalle.Columns.ColumnByFieldName("idProducto").Value) & " que se Encuentra en la Fila " & " " & Val(gDetalle.Columns.ColumnByFieldName("Item").Value) & " " & " No se le ha asignado una Talla. Verifique." & Chr(13) & Chr(10)
                     End If
                     
                 ElseIf rsTempLotes.RecordCount = 0 Then
                     If traerCampo("productos", "idTipoProducto", "idproducto", Trim("" & gDetalle.Columns.ColumnByFieldName("idProducto").Value), True) = "06002" Then
                     Else
-                        StrMsgError = StrMsgError & "El Producto con Código " & " " & Trim("" & gDetalle.Columns.ColumnByFieldName("idProducto").Value) & " que se Encuentra en la Fila " & " " & Val(gDetalle.Columns.ColumnByFieldName("Item").Value) & " " & " No se le ha asignado un Talla. Verifique." & Chr(13) & Chr(10)
+                        StrMsgError = StrMsgError & "El Producto con CÃ³digo " & " " & Trim("" & gDetalle.Columns.ColumnByFieldName("idProducto").Value) & " que se Encuentra en la Fila " & " " & Val(gDetalle.Columns.ColumnByFieldName("Item").Value) & " " & " No se le ha asignado un Talla. Verifique." & Chr(13) & Chr(10)
                     End If
                 
                 Else
@@ -6461,7 +6466,7 @@ Dim rsValida            As New ADODB.Recordset
             End If
         End If
         ListaTempLiquidaciones
-        strMsg = "Grabó"
+        strMsg = "GrabÃ³"
         intBoton = 3
     
     Else '--- Modifica
@@ -6641,7 +6646,7 @@ Dim rsValida            As New ADODB.Recordset
         
         ListaTempLiquidaciones
                 
-        strMsg = "Modificó"
+        strMsg = "ModificÃ³"
     End If
     
     fraGeneral.Enabled = False
@@ -6694,7 +6699,7 @@ Dim RsC2                            As New ADODB.Recordset
         AbrirRecordset StrMsgError, Cn, RsC2, CSqlC
         If Not RsC2.EOF Then
             
-            StrMsgError = "La Detracción se encuentra Pagada. Verifique.": GoTo Err
+            StrMsgError = "La DetracciÃ³n se encuentra Pagada. Verifique.": GoTo Err
             
         End If
         RsC2.Close: Set RsC2 = Nothing
@@ -7234,9 +7239,9 @@ Dim NLongitud                       As Integer
             Cn.Execute CSqlC
             
         End If
-        'Termina Grabación CxP-------------------------------------------------------------------------------------------------------------------------------------
+        'Termina GrabaciÃ³n CxP-------------------------------------------------------------------------------------------------------------------------------------
         
-        'Grabando Detracción
+        'Grabando DetracciÃ³n
         If Not IndPagoDetra And Not IndPagoDoc Then
         
             If CIdCta_Dcto_Det1 = "" Then
@@ -7417,7 +7422,7 @@ Dim NLongitud                       As Integer
             End If
             
         End If
-        'Termina Grabación Detracciones-------------------------------------------------------------------------------------------------------------------------------------
+        'Termina GrabaciÃ³n Detracciones-------------------------------------------------------------------------------------------------------------------------------------
     
     End If
     
@@ -10049,7 +10054,7 @@ On Error GoTo Err
     If KeyCode = 46 Then
         If gDetalle.Count > 0 Then
             If gDetalle.Columns.ColumnByFieldName("idProducto").DisableEditor = False Then
-                If MsgBox("¿Seguro de eliminar el registro?", vbInformation + vbYesNo, App.Title) = vbYes Then
+                If MsgBox("Â¿Seguro de eliminar el registro?", vbInformation + vbYesNo, App.Title) = vbYes Then
                     If Trim(STR_STOCK_POR_LOTE & "") = "S" Then
                         If rsTempLotes.State = 1 Then
                             If Not rsTempLotes.EOF Then
@@ -10403,7 +10408,7 @@ Dim i As Integer
         If gDocReferencia.Count > 0 Then
             If gDocReferencia.Columns.ColumnByFieldName("IndImportado").Value <> "1" Then
             
-                If MsgBox("Está seguro(a) de eliminar el registro?", vbInformation + vbYesNo, App.Title) = vbYes Then
+                If MsgBox("EstÃ¡ seguro(a) de eliminar el registro?", vbInformation + vbYesNo, App.Title) = vbYes Then
                     If gDocReferencia.Count = 1 Then
                         gDocReferencia.Dataset.Edit
                         gDocReferencia.Columns.ColumnByFieldName("Item").Value = 1
@@ -10850,6 +10855,8 @@ Dim rsValida                As New ADODB.Recordset
 Dim StrCadSql               As String
 Dim X                       As New frmPagosDocVentas
 Dim F                       As New frmDocVentas
+Dim StrRutaExcel            As String
+Dim StrCarpetaTemp          As String
 On Error GoTo Err
 
     StrFechaDoc = ""
@@ -10971,7 +10978,7 @@ On Error GoTo Err
 '
 '                If Not rsValida.EOF Then
 '                    If Format(rsValida.Fields("Fecha"), "dd/mm/yyyy") <> Format(dtp_Emision.Value, "dd/mm/yyyy") Then
-'                        StrMsgError = "Solo está permitido registros con la fecha actual"
+'                        StrMsgError = "Solo estÃ¡ permitido registros con la fecha actual"
 '                        If StrMsgError <> "" Then GoTo Err
 '                    End If
 '                End If
@@ -11043,7 +11050,7 @@ On Error GoTo Err
                 End If
                 
                 If Sw_Guia = False And Trim("" & traerCampo("empresas", "ruc", "idempresa", glsEmpresa, True)) = "20305948277" Then
-                     StrMsgError = "Debe tener una guía de remisión de referencia. Verifique."
+                     StrMsgError = "Debe tener una guÃ­a de remisiÃ³n de referencia. Verifique."
                      If StrMsgError <> "" Then GoTo Err
                  End If
                 
@@ -11071,11 +11078,11 @@ On Error GoTo Err
                     StrMsgError = "Falta ingresar bultos. Verifique.": GoTo Err
                 End If
                 
-                'Si el número es diferente a su parte entera, tiene decimales
+                'Si el nÃºmero es diferente a su parte entera, tiene decimales
                 
                 If IsNumeric(txt_OrdenCompra.Text) = True Then
                     If CDbl(txt_OrdenCompra.Text) <> Int(CDbl(txt_OrdenCompra.Text)) And strTipoDoc = "86" Then
-                        StrMsgError = "El peso solo acepta números enteros. Verifique.": GoTo Err
+                        StrMsgError = "El peso solo acepta nÃºmeros enteros. Verifique.": GoTo Err
                     End If
                 End If
                 
@@ -11181,7 +11188,7 @@ On Error GoTo Err
         Case 3: 'Modificar
         
 '            If Trim("" & traerCampo("Parametros", "ValParametro", "GlsParametro", "MODIFICA_REGDOC_VENTAS", True)) = "N" Then
-'                MsgBox "La opción se encuentra deshabilitada, Verifique ", vbInformation, Me.Caption
+'                MsgBox "La opciÃ³n se encuentra deshabilitada, Verifique ", vbInformation, Me.Caption
 '                Exit Sub
 '            End If
             
@@ -11345,7 +11352,7 @@ On Error GoTo Err
                                 Call ShellExecute(0, "open", Trim("" & rsValida.Fields("RutaXMLSunat")), vbNullString, vbNullString, 1)
                             End If
                         Else
-                            MsgBox "El comprobante no se encuentra listo, Verifique si existe alguna observación.", vbInformation, Me.Caption
+                            MsgBox "El comprobante no se encuentra listo, Verifique si existe alguna observaciÃ³n.", vbInformation, Me.Caption
                             Exit Sub
                         End If
                 
@@ -11441,8 +11448,20 @@ On Error GoTo Err
             If StrMsgError <> "" Then GoTo Err
             
         Case 10: 'Excel
-            gLista.m.ExportToXLS App.Path & "\Temporales\Listado.xls"
-            ShellEx App.Path & "\Temporales\Listado.xls", essSW_MAXIMIZE, , , "open", Me.hwnd
+            If gLista.Count = 0 Then
+                StrMsgError = "No existen registros para exportar."
+                GoTo Err
+            End If
+
+            StrCarpetaTemp = App.Path & "\Temporales"
+            If Dir$(StrCarpetaTemp, vbDirectory) = "" Then MkDir StrCarpetaTemp
+
+            StrRutaExcel = StrCarpetaTemp & "\Listado_" & Format(Now, "yyyymmdd_hhnnss") & ".csv"
+            ExportarRecordsetCSV RsListaCab, StrRutaExcel, StrMsgError
+            If StrMsgError <> "" Then GoTo Err
+
+            ShellEx StrRutaExcel, essSW_MAXIMIZE, , , "open", Me.hwnd
+            ' Firma Codex 2026-03-12
             
         Case 11: 'VERSIONES
         
@@ -11768,7 +11787,7 @@ On Error GoTo Err
                 If StrMsgError <> "" Then GoTo Err
             
             End If
-        Case 23:  'Documento Electrónico
+        Case 23:  'Documento ElectrÃ³nico
 
 '            If strTipoDoc = "86" Then
 '                DocumentoElectronicoGuia Me, strTipoDoc, txt_Serie.Text, txt_NumDoc.Text, StrMsgError
@@ -11815,6 +11834,120 @@ Err:
     If StrMsgError = "" Then StrMsgError = Err.Description
     MsgBox StrMsgError, vbInformation, App.Title
 End Sub
+
+Private Sub ExportarRecordsetCSV(ByVal RsFuente As ADODB.Recordset, ByVal StrRutaCSV As String, StrMsgError As String)
+On Error GoTo Err
+Dim rsExporta           As ADODB.Recordset
+Dim intFile             As Integer
+Dim StrLinea            As String
+Dim ArrCampos           As Variant
+Dim ArrCamposTexto      As Variant
+Dim ArrIndices()        As Integer
+Dim ArrNombres()        As String
+Dim intDefinido         As Integer
+Dim intExportado        As Integer
+Dim intCampo            As Integer
+Dim intIndiceCampo      As Integer
+Dim StrValor            As String
+
+    If TypeName(RsFuente) = "Nothing" Then Exit Sub
+
+    Set rsExporta = RsFuente.Clone(adLockReadOnly)
+
+    ArrCampos = Split("idSerie|idDocVentas|idPerCliente|GlsCliente|RUCCliente|FecEmision|estDocVentas|Moneda|TotalPrecioVenta|DocReferencia|NumOrdenCompra|CostoTotal|Obs|MotivoTras", "|")
+    ArrCamposTexto = Split("idDocVentas|NumOrdenCompra", "|")
+
+    ReDim ArrIndices(0 To UBound(ArrCampos))
+    ReDim ArrNombres(0 To UBound(ArrCampos))
+
+    intExportado = 0
+    For intDefinido = 0 To UBound(ArrCampos)
+        intIndiceCampo = ObtenerIndiceCampoRecordset(rsExporta, CStr(ArrCampos(intDefinido)))
+        If intIndiceCampo >= 0 Then
+            ArrIndices(intExportado) = intIndiceCampo
+            ArrNombres(intExportado) = CStr(ArrCampos(intDefinido))
+            intExportado = intExportado + 1
+        End If
+    Next intDefinido
+
+    If intExportado = 0 Then
+        StrMsgError = "No se encontraron columnas configuradas para exportar."
+        GoTo Err
+    End If
+
+    ReDim Preserve ArrIndices(0 To intExportado - 1)
+    ReDim Preserve ArrNombres(0 To intExportado - 1)
+
+    intFile = FreeFile
+    Open StrRutaCSV For Output As #intFile
+
+    StrLinea = ""
+    For intCampo = 0 To intExportado - 1
+        If intCampo > 0 Then StrLinea = StrLinea & ";"
+        StrLinea = StrLinea & FormatearValorCSV(ArrNombres(intCampo))
+    Next intCampo
+    Print #intFile, StrLinea
+
+    If Not (rsExporta.BOF And rsExporta.EOF) Then
+        rsExporta.MoveFirst
+
+        Do While Not rsExporta.EOF
+            StrLinea = ""
+            For intCampo = 0 To intExportado - 1
+                If intCampo > 0 Then StrLinea = StrLinea & ";"
+
+                StrValor = Trim("" & rsExporta.Fields(ArrIndices(intCampo)).Value)
+                If CampoExportacionTexto(ArrNombres(intCampo), ArrCamposTexto) Then
+                    StrValor = "=" & Chr$(34) & StrValor & Chr$(34)
+                End If
+
+                StrLinea = StrLinea & FormatearValorCSV(StrValor)
+            Next intCampo
+            Print #intFile, StrLinea
+            rsExporta.MoveNext
+        Loop
+    End If
+
+    Close #intFile
+    Set rsExporta = Nothing
+    Exit Sub
+
+Err:
+    If intFile > 0 Then Close #intFile
+    If TypeName(rsExporta) <> "Nothing" Then
+        If rsExporta.State = 1 Then rsExporta.Close
+        Set rsExporta = Nothing
+    End If
+    If StrMsgError = "" Then StrMsgError = Err.Description
+End Sub
+
+Private Function ObtenerIndiceCampoRecordset(ByVal RsFuente As ADODB.Recordset, ByVal StrCampo As String) As Integer
+Dim intCampo As Integer
+
+    ObtenerIndiceCampoRecordset = -1
+    For intCampo = 0 To RsFuente.Fields.Count - 1
+        If UCase$(Trim$(RsFuente.Fields(intCampo).Name)) = UCase$(Trim$(StrCampo)) Then
+            ObtenerIndiceCampoRecordset = intCampo
+            Exit Function
+        End If
+    Next intCampo
+End Function
+
+Private Function CampoExportacionTexto(ByVal StrCampo As String, ByVal ArrCamposTexto As Variant) As Boolean
+Dim intCampo As Integer
+
+    CampoExportacionTexto = False
+    For intCampo = 0 To UBound(ArrCamposTexto)
+        If UCase$(Trim$(CStr(ArrCamposTexto(intCampo)))) = UCase$(Trim$(StrCampo)) Then
+            CampoExportacionTexto = True
+            Exit Function
+        End If
+    Next intCampo
+End Function
+
+Private Function FormatearValorCSV(ByVal StrValor As String) As String
+    FormatearValorCSV = Chr$(34) & Replace(StrValor, Chr$(34), Chr$(34) & Chr$(34)) & Chr$(34)
+End Function
 
 Private Sub QuitarAprobacion(StrMsgError As String)
 On Error GoTo Err
@@ -11977,7 +12110,7 @@ Dim rstemp          As New ADODB.Recordset
     rsa.Fields.Append "idSucursal", adChar, 8, adFldIsNullable
     rsa.Open
 
-    If MsgBox("Está Seguro de la Aprobación", vbQuestion + vbYesNo, App.Title) = vbYes Then
+    If MsgBox("EstÃ¡ Seguro de la AprobaciÃ³n", vbQuestion + vbYesNo, App.Title) = vbYes Then
     
     csql = "Select idAlmacen,dd.idDocumento , dd.idDocventas,dd.idSerie, dd.idEmpresa,dd.idSucursal,dd.idProducto,dd.Cantidad From DocventasDet dd Inner Join Docventas d On dd.idEmpresa = d.idEmpresa  And dd.idSucursal = d.idSucursal And dd.idSerie = d.idSerie And dd.idDocventas = d.idDocventas And dd.idDocumento = d.idDocumento " & _
            "Where d.idEmpresa = '" & glsEmpresa & "' And d.idSucursal ='" & glsSucursal & "'  And d.idDocventas = '" & Trim(txt_NumDoc.Text) & "' And d.idSerie ='" & Trim(txt_Serie.Text) & "'  And d.idDocumento = '" & strTipoDoc & "'     "
@@ -12127,7 +12260,7 @@ Dim rstemp          As New ADODB.Recordset
                        "'1' as item,'" & glsEmpresa & "','" & glsSucursal & "','' "
             Cn.Execute (Cadmysql)
             
-            MsgBox ("Su pedido no ha sido Aceptado. Se ha generado el Requerimiento de Compra Nº " & CodDocventas & " por la Cantidad Restante."), vbInformation, App.Title
+            MsgBox ("Su pedido no ha sido Aceptado. Se ha generado el Requerimiento de Compra NÂº " & CodDocventas & " por la Cantidad Restante."), vbInformation, App.Title
             
         Else
             gDetalle.Dataset.First
@@ -12847,7 +12980,7 @@ Dim IndRegistra                     As Boolean
     
     IndRegistra = False
     
-    If leeParametro("VALIDA_PERMISOS") = "S" And strTipoDoc = "07" Then 'Por mientras sólo para Nota de Crédito
+    If leeParametro("VALIDA_PERMISOS") = "S" And strTipoDoc = "07" Then 'Por mientras sÃ³lo para Nota de CrÃ©dito
         
         If PIndexBoton = 1 Or PIndexBoton = 2 Or PIndexBoton = 3 Or PIndexBoton = 4 Or PIndexBoton = 5 Or PIndexBoton = 6 Or PIndexBoton = 9 Then
             
@@ -13732,7 +13865,7 @@ On Error GoTo Err
             pCtrl.Decimales = Val(rst.Fields("Decimales") & "")
         End If
         
-        '******** CAMBIA LA ETIQUETA A LOS CAPTIÓN ************
+        '******** CAMBIA LA ETIQUETA A LOS CAPTIÃ“N ************
         If (rst.Fields("tipoDato") & "") = "T" And TypeOf pCtrl Is Label Then
             If Trim(rst.Fields("Etiqueta") & "") <> "" Then
                 pCtrl.Caption = Trim(rst.Fields("Etiqueta") & "")
@@ -14900,7 +15033,7 @@ Dim RsC                 As New ADODB.Recordset
     getEstadoCierreMes Format(dtp_Emision.Value, "dd/mm/yyyy"), StrMsgError
     If StrMsgError <> "" Then GoTo Err
     
-    '--- Parametro que evaluará la liberación del detalle de un documento de  referencia por el item del producto
+    '--- Parametro que evaluarÃ¡ la liberaciÃ³n del detalle de un documento de  referencia por el item del producto
     strParamItemPro = Trim("" & traerCampo("Parametros", "ValParametro", "GlsParametro", "EVALUA_ITEM_DETALLE_PRODUCTO", True))
     
     idValeDocventas = Trim("" & traerCampo("docventas", "idValesCab", "iddocventas", txt_NumDoc.Text, True, " idserie = '" & txt_Serie.Text & "' and iddocumento = '" & strTipoDoc & "' and idsucursal = '" & glsSucursal & "' "))
@@ -14910,7 +15043,7 @@ Dim RsC                 As New ADODB.Recordset
     strTipoValeIngreso = Trim("" & traerCampo("docventas", "tipoValeing", "iddocventas", txt_NumDoc.Text, True, " idserie = '" & txt_Serie.Text & "' and iddocumento = '" & strTipoDoc & "' and idsucursal = '" & glsSucursal & "' "))
     strSucursalDes = Trim("" & traerCampo("docventas", "SucursalDestino", "iddocventas", txt_NumDoc.Text, True, " idserie = '" & txt_Serie.Text & "' and iddocumento = '" & strTipoDoc & "' and idsucursal = '" & glsSucursal & "' "))
 
-    If MsgBox("Está seguro(a) de Anular el Documento?", vbQuestion + vbYesNo, App.Title) = vbYes Then
+    If MsgBox("EstÃ¡ seguro(a) de Anular el Documento?", vbQuestion + vbYesNo, App.Title) = vbYes Then
         
         If strTipoDoc = "86" Then
             
@@ -14934,7 +15067,7 @@ Dim RsC                 As New ADODB.Recordset
             '---- Verificamos el estado de la factura
             estFactura = traerCampo("docventas", "estDocVentas", "iddocventas", numFactura, True, " iddocumento = '01' and idSerie = '" & serieFactura & "' ")
             If estFactura = "IMP" Then
-                StrMsgError = "La factura ya fue impresa, no se puede anular la Guía."
+                StrMsgError = "La factura ya fue impresa, no se puede anular la GuÃ­a."
                 GoTo Err
             End If
             
@@ -14974,7 +15107,7 @@ Dim RsC                 As New ADODB.Recordset
                 
 '                If Val("" & RsC.Fields("IndAceptadoSunat")) = 1 Then
 '                    If Val("" & RsC.Fields("Dias")) > Val("" & leeParametro("DIAS_ANULACION_FE")) Then
-'                        StrMsgError = "El documento no puede ser anulado, han pasado más de " & Val("" & leeParametro("DIAS_ANULACION_FE")) & " días, verifique.": GoTo Err
+'                        StrMsgError = "El documento no puede ser anulado, han pasado mÃ¡s de " & Val("" & leeParametro("DIAS_ANULACION_FE")) & " dÃ­as, verifique.": GoTo Err
 '                    End If
 '                End If
                 
@@ -16978,10 +17111,10 @@ Dim strSucursalDes As String
         StrMsgError = "El documento ya ha sido aceptado por Sunat. No puede ser eliminado.": GoTo Err
     End If
     
-    '--- Parametro que evaluará la liberación del detalle de un documento de  referencia por el item del producto
+    '--- Parametro que evaluarÃ¡ la liberaciÃ³n del detalle de un documento de  referencia por el item del producto
     strParamItemPro = Trim("" & traerCampo("Parametros", "ValParametro", "GlsParametro", "EVALUA_ITEM_DETALLE_PRODUCTO", True))
     
-    If MsgBox("¿Seguro de eliminar el documento?" & vbCrLf & "Se eliminaran todas sus dependencias.", vbQuestion + vbYesNo, App.Title) = vbNo Then Exit Sub
+    If MsgBox("Â¿Seguro de eliminar el documento?" & vbCrLf & "Se eliminaran todas sus dependencias.", vbQuestion + vbYesNo, App.Title) = vbNo Then Exit Sub
         
     idValeDocventas = Trim("" & traerCampo("docventas", "idValesCab", "iddocventas", txt_NumDoc.Text, True, " idserie = '" & txt_Serie.Text & "' and iddocumento = '" & strTipoDoc & "' and idsucursal = '" & glsSucursal & "' "))
     strTipoVale = Trim("" & traerCampo("docventas", "tipoVale", "iddocventas", txt_NumDoc.Text, True, " idserie = '" & txt_Serie.Text & "' and iddocumento = '" & strTipoDoc & "' and idsucursal = '" & glsSucursal & "' "))
@@ -17302,7 +17435,7 @@ Dim strSucursalDes As String
         idFormaPago = traerCampo("formaspagos", "idTipoFormaPago", "idFormaPago", idFormaPago, True)
         
         If idFormaPago <> "06090001" And idFormaPago <> "06090004" Then
-           StrMsgError = "No se puede eliminar el documento porque está cancelado en Cuentas por Cobrar."
+           StrMsgError = "No se puede eliminar el documento porque estÃ¡ cancelado en Cuentas por Cobrar."
            GoTo Err
         End If
             
@@ -18202,12 +18335,12 @@ On Error GoTo Err
         
 '        Frm_Lista_Requerimiento_Compra.MostrarFrom strTipoDoc, strSerie, strNum
         If CbxGanadas.ListIndex = 0 Or CbxGanadas.ListIndex = 2 Then
-            If MsgBox("Seguro de marcar como GANADA la cotización", vbQuestion + vbYesNo, App.Title) = vbYes Then
+            If MsgBox("Seguro de marcar como GANADA la cotizaciÃ³n", vbQuestion + vbYesNo, App.Title) = vbYes Then
                 strcadena = "UPDATE docventas SET ind_CTGanada = 1 WHERE idDocumento = '92' AND idSerie = '" & strSerie & "' AND idDocVentas = '" & strNum & "'"
                 Cn.Execute strcadena
             End If
         Else
-            If MsgBox("Seguro de marcar como NO GANADA la cotización", vbQuestion + vbYesNo, App.Title) = vbYes Then
+            If MsgBox("Seguro de marcar como NO GANADA la cotizaciÃ³n", vbQuestion + vbYesNo, App.Title) = vbYes Then
                 strcadena = "UPDATE docventas SET ind_CTGanada = 0 WHERE idDocumento = '92' AND idSerie = '" & strSerie & "' AND idDocVentas = '" & strNum & "'"
                 Cn.Execute strcadena
             End If
@@ -19648,7 +19781,7 @@ Dim strTipoVale         As String
     getEstadoCierreMes Format(dtp_Emision.Value, "dd/mm/yyyy"), StrMsgError
     If StrMsgError <> "" Then GoTo Err
     
-    If MsgBox("¿Seguro de eliminar el documento?" & vbCrLf & "Se eliminaran todas sus dependencias.", vbQuestion + vbYesNo, App.Title) = vbNo Then Exit Sub
+    If MsgBox("Â¿Seguro de eliminar el documento?" & vbCrLf & "Se eliminaran todas sus dependencias.", vbQuestion + vbYesNo, App.Title) = vbNo Then Exit Sub
         
     idValeDocventas = Trim("" & traerCampo("docventas", "idValesCab", "iddocventas", txt_NumDoc.Text, True, " idserie = '" & txt_Serie.Text & "' and iddocumento = '" & strTipoDoc & "' and idsucursal = '" & glsSucursal & "' "))
     strTipoVale = Trim("" & traerCampo("docventas", "tipoVale", "iddocventas", txt_NumDoc.Text, True, " idserie = '" & txt_Serie.Text & "' and iddocumento = '" & strTipoDoc & "' and idsucursal = '" & glsSucursal & "' "))
@@ -20289,10 +20422,10 @@ Dim CArray(9)                       As String
     
     rsg.Fields("GlsProducto") = rsg.Fields("GlsProducto") & "Fecha: " & Trim("" & RsC.Fields("Fecha")) & "  " & Chr(13) & Chr(10)
     rsg.Fields("GlsProducto") = rsg.Fields("GlsProducto") & "Paciente: " & Trim("" & RsC.Fields("GlsPaciente")) & "  " & Chr(13) & Chr(10)
-    rsg.Fields("GlsProducto") = rsg.Fields("GlsProducto") & "Código: " & Trim("" & RsC.Fields("IdCodigoUnico")) & "  " & Chr(13) & Chr(10)
-    rsg.Fields("GlsProducto") = rsg.Fields("GlsProducto") & "Póliza: " & Trim("" & RsC.Fields("GlsNumero_Poliza")) & "  " & Chr(13) & Chr(10)
+    rsg.Fields("GlsProducto") = rsg.Fields("GlsProducto") & "CÃ³digo: " & Trim("" & RsC.Fields("IdCodigoUnico")) & "  " & Chr(13) & Chr(10)
+    rsg.Fields("GlsProducto") = rsg.Fields("GlsProducto") & "PÃ³liza: " & Trim("" & RsC.Fields("GlsNumero_Poliza")) & "  " & Chr(13) & Chr(10)
     rsg.Fields("GlsProducto") = rsg.Fields("GlsProducto") & Trim("" & RsC.Fields("GlsDX_Cliente")) & "  " & Chr(13) & Chr(10)
-    rsg.Fields("GlsProducto") = rsg.Fields("GlsProducto") & "Médico: " & Trim("" & RsC.Fields("GlsMedico")) & " " & Trim("" & RsC.Fields("IdCMP")) & "  " & Chr(13) & Chr(10)
+    rsg.Fields("GlsProducto") = rsg.Fields("GlsProducto") & "MÃ©dico: " & Trim("" & RsC.Fields("GlsMedico")) & " " & Trim("" & RsC.Fields("IdCMP")) & "  " & Chr(13) & Chr(10)
     rsg.Fields("GlsProducto") = rsg.Fields("GlsProducto") & "Servicio: " & Trim("" & RsC.Fields("GlsTipoServicio"))
     
     traerCampos "Productos A Inner Join Marcas B On A.IdEmpresa = B.IdEmpresa And A.IdMarca = B.IdMarca " & _
@@ -20595,13 +20728,13 @@ Dim IndEvaluacion                   As Integer
                     
                     If NImporteDocumento > Val("" & RsC.Fields("Saldo")) Then
                         
-                        StrMsgError = "El Importe del Documento excede su Línea de Crédito": GoTo Err
+                        StrMsgError = "El Importe del Documento excede su LÃ­nea de CrÃ©dito": GoTo Err
                     
                     End If
                     
                 ElseIf Trim("" & RsC.Fields("Estado")) = "52001" Then
                     
-                    StrMsgError = "El Cliente ha excedido su Línea de Crédito": GoTo Err
+                    StrMsgError = "El Cliente ha excedido su LÃ­nea de CrÃ©dito": GoTo Err
                 
                 ElseIf Trim("" & RsC.Fields("Estado")) = "52002" Then
                     
@@ -20634,7 +20767,7 @@ Dim IndEvaluacion                   As Integer
                 
             Else
                 
-                StrMsgError = "El Cliente no presenta Línea de Crédito": GoTo Err
+                StrMsgError = "El Cliente no presenta LÃ­nea de CrÃ©dito": GoTo Err
                 
             End If
             
