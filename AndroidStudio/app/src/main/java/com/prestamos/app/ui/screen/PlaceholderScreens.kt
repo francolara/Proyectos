@@ -426,6 +426,8 @@ fun PagosScreen(viewModel: AppViewModel) {
 fun ReportesScreen(viewModel: AppViewModel) {
     val resumen by viewModel.resumenReporte.collectAsStateWithLifecycle()
     val cuotasVencidas by viewModel.cuotasVencidas.collectAsStateWithLifecycle()
+    val clientes by viewModel.clientes.collectAsStateWithLifecycle()
+    val prestamos by viewModel.prestamos.collectAsStateWithLifecycle()
 
     LazyColumn(
         modifier = Modifier
@@ -449,13 +451,17 @@ fun ReportesScreen(viewModel: AppViewModel) {
         }
 
         items(cuotasVencidas) { cuota ->
+            val prestamo = prestamos.firstOrNull { it.idPrestamo == cuota.idPrestamo }
+            val cliente = clientes.firstOrNull { it.idCliente == prestamo?.idCliente }
             Card(modifier = Modifier.fillMaxWidth()) {
                 Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     Column {
+                        Text("Cliente: ${cliente?.nombre ?: "-"} ${cliente?.apellido ?: ""}".trim())
                         Text("Préstamo #${cuota.idPrestamo} - Cuota ${cuota.numeroCuota}")
+                        Text("Registro préstamo: ${prestamo?.fechaRegistro?.toDateString() ?: "-"}")
                         Text("Vence: ${cuota.fechaVencimiento.toDateString()}")
                     }
-                    Text(cuota.saldoPendiente.toMoney())
+                    Text(cuota.saldoPendiente.toMoney(prestamo?.moneda ?: Moneda.SOLES))
                 }
             }
         }
