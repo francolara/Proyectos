@@ -1,6 +1,9 @@
 package com.prestamos.app.ui.screen
 
 import android.app.DatePickerDialog
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -348,6 +351,53 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                     viewModel.seleccionarPrestamoDetalle(null)
                 }) {
                     Text("Cerrar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    if (prestamo != null) {
+                        val moneda = prestamo.moneda
+                        val totalDeudaPendiente = cuotasDetalle.sumOf { it.saldoPendiente }
+                        val cronograma = if (cuotasDetalle.isEmpty()) {
+                            "Sin cuotas registradas"
+                        } else {
+                            cuotasDetalle.joinToString("\n") { cuota ->
+                                "Cuota ${cuota.numeroCuota}: vence ${cuota.fechaVencimiento.toDateString()} | " +
+                                    "monto ${cuota.montoCuota.toMoney(moneda)} | " +
+                                    "pendiente ${cuota.saldoPendiente.toMoney(moneda)}"
+                            }
+                        }
+                        val mensaje = buildString {
+                            appendLine("Detalle del préstamo")
+                            appendLine("Cliente: ${cliente?.nombre ?: "-"} ${cliente?.apellido ?: ""}".trim())
+                            appendLine("Préstamo #${prestamo.idPrestamo}")
+                            appendLine("Monto prestado: ${prestamo.montoPrestado.toMoney(moneda)}")
+                            appendLine("Monto total: ${prestamo.montoTotalPrestamo.toMoney(moneda)}")
+                            appendLine("Interés: ${prestamo.interes}%")
+                            appendLine("Tipo pago: ${prestamo.tipoPago}")
+                            appendLine("Cuotas: ${prestamo.cantidadCuotas}")
+                            appendLine("Fecha registro préstamo: ${prestamo.fechaRegistro.toDateString()}")
+                            appendLine("\nCronograma de cuotas")
+                            appendLine(cronograma)
+                            appendLine("\nTotal deuda pendiente: ${totalDeudaPendiente.toMoney(moneda)}")
+                        }
+
+                        val whatsappIntent = Intent(Intent.ACTION_VIEW).apply {
+                            data = Uri.parse("https://wa.me/?text=" + Uri.encode(mensaje))
+                        }
+
+                        try {
+                            context.startActivity(whatsappIntent)
+                        } catch (_: ActivityNotFoundException) {
+                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_TEXT, mensaje)
+                            }
+                            context.startActivity(Intent.createChooser(shareIntent, "Compartir detalle"))
+                        }
+                    }
+                }) {
+                    Text("Compartir por WhatsApp")
                 }
             },
             title = { Text("Detalle del préstamo") },
