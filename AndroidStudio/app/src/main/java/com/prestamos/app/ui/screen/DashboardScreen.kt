@@ -15,11 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Logout
 import androidx.compose.material3.Card
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -56,7 +52,6 @@ private enum class DashboardDetalle {
 @Composable
 fun DashboardScreen(
     viewModel: DashboardViewModel,
-    onLogout: () -> Unit,
     isDarkMode: Boolean,
     onToggleDarkMode: (Boolean) -> Unit
 ) {
@@ -83,9 +78,6 @@ fun DashboardScreen(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Modo oscuro")
                     Switch(checked = isDarkMode, onCheckedChange = onToggleDarkMode)
-                    IconButton(onClick = onLogout) {
-                        Icon(Icons.Outlined.Logout, contentDescription = "Cerrar sesión")
-                    }
                 }
             }
         }

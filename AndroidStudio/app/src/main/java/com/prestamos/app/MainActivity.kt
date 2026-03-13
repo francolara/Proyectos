@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Logout
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.RequestPage
 import androidx.compose.material.icons.outlined.Settings
@@ -40,6 +41,7 @@ import androidx.navigation.compose.rememberNavController
 import com.prestamos.app.navigation.AppDestinations
 import com.prestamos.app.ui.screen.ClientesScreen
 import com.prestamos.app.ui.screen.DashboardScreen
+import com.prestamos.app.ui.screen.LogoutScreen
 import com.prestamos.app.ui.screen.PagosScreen
 import com.prestamos.app.ui.screen.BackupScreen
 import com.prestamos.app.ui.screen.PinLoginScreen
@@ -154,7 +156,6 @@ private fun PrestamosApp(
             composable(AppDestinations.DASHBOARD.route) {
                 DashboardScreen(
                     viewModel = dashboardViewModel,
-                    onLogout = { authViewModel.bloquearSesion() },
                     isDarkMode = isDarkMode,
                     onToggleDarkMode = onToggleDarkMode
                 )
@@ -163,6 +164,9 @@ private fun PrestamosApp(
             composable(AppDestinations.PRESTAMOS.route) { PrestamosScreen(appViewModel) }
             composable(AppDestinations.PAGOS.route) { PagosScreen(appViewModel) }
             composable(AppDestinations.BACKUP.route) { BackupScreen() }
+            composable(AppDestinations.LOGOUT.route) {
+                LogoutScreen(onLogout = { authViewModel.bloquearSesion() })
+            }
         }
     }
 }
@@ -174,4 +178,5 @@ private fun iconFor(destination: AppDestinations) = when (destination) {
     AppDestinations.PRESTAMOS -> Icons.Outlined.RequestPage
     AppDestinations.PAGOS -> Icons.Outlined.Payments
     AppDestinations.BACKUP -> Icons.Outlined.Settings
+    AppDestinations.LOGOUT -> Icons.Outlined.Logout
 }
