@@ -89,7 +89,7 @@ fun DashboardScreen(
                 DashboardCard("Capital prestado", state.capitalPrestado.toMoney(state.monedaReferencial), Modifier.weight(1f)) {
                     detalleSeleccionado = DashboardDetalle.CAPITAL
                 }
-                DashboardCard("Capital prestado activo2", capitalPrestadoActivo2.toMoney(state.monedaReferencial), Modifier.weight(1f)) {
+                DashboardCard("Capital prestado activo", capitalPrestadoActivo2.toMoney(state.monedaReferencial), Modifier.weight(1f)) {
                     detalleSeleccionado = DashboardDetalle.CAPITAL_ACTIVO2
                 }
             }
@@ -279,7 +279,7 @@ private fun DashboardDetalle.toDetalleInfo(state: com.prestamos.app.ui.model.Das
                 "• ${it.cliente} | Préstamo #${it.idPrestamo} | Capital ${it.montoPrestado.toMoney(it.moneda)}"
             }.ifBlank { "No hay préstamos activos." }
             DashboardDetalleInfo(
-                title = "Capital prestado activo2",
+                title = "Capital prestado activo",
                 message = "Capital de préstamos activos: ${total.toMoney(state.monedaReferencial)}\n\n$top"
             )
         }
