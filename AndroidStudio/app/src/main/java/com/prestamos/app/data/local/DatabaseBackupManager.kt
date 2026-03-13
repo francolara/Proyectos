@@ -25,13 +25,16 @@ object DatabaseBackupManager {
             val dbFile = context.getDatabasePath(AppDatabase.DATABASE_NAME)
             require(dbFile.exists()) { "No se encontró la base de datos local" }
 
-            AppDatabase.getInstance(context).openHelper.writableDatabase.query("PRAGMA wal_checkpoint(FULL)").close()
-
-            context.contentResolver.openOutputStream(targetUri)?.use { output ->
-                FileInputStream(dbFile).use { input ->
-                    input.copyTo(output)
-                }
-            } ?: error("No se pudo abrir destino de exportación")
+            val snapshotFile = createConsistentSnapshot(context)
+            try {
+                context.contentResolver.openOutputStream(targetUri)?.use { output ->
+                    FileInputStream(snapshotFile).use { input ->
+                        input.copyTo(output)
+                    }
+                } ?: error("No se pudo abrir destino de exportación")
+            } finally {
+                snapshotFile.delete()
+            }
             Unit
         }
     }
@@ -75,12 +78,36 @@ object DatabaseBackupManager {
         exitProcess(0)
     }
 
+    private fun createConsistentSnapshot(context: Context): File {
+        val snapshotFile = File(context.cacheDir, "snapshot_${AppDatabase.DATABASE_NAME}")
+        if (snapshotFile.exists()) snapshotFile.delete()
+
+        val db = AppDatabase.getInstance(context).openHelper.writableDatabase
+        db.query("PRAGMA wal_checkpoint(TRUNCATE)").close()
+
+        val snapshotPath = snapshotFile.absolutePath.replace("'", "''")
+        db.execSQL("VACUUM INTO '$snapshotPath'")
+
+        require(snapshotFile.exists() && snapshotFile.length() > 0L) {
+            "No se pudo generar snapshot de backup"
+        }
+        return snapshotFile
+    }
+
     private fun validarBackup(file: File) {
         require(file.exists() && file.length() > 0L) { "El archivo de backup está vacío o no existe" }
         val db = SQLiteDatabase.openDatabase(file.absolutePath, null, SQLiteDatabase.OPEN_READONLY)
         db.rawQuery("PRAGMA integrity_check", null).use { cursor ->
             require(cursor.moveToFirst() && cursor.getString(0).equals("ok", ignoreCase = true)) {
                 "El backup está corrupto"
+            }
+        }
+
+        db.rawQuery("PRAGMA user_version", null).use { cursor ->
+            require(cursor.moveToFirst()) { "No se pudo validar versión del backup" }
+            val backupVersion = cursor.getInt(0)
+            require(backupVersion == AppDatabase.DATABASE_VERSION) {
+                "El backup corresponde a versión $backupVersion y la app requiere ${AppDatabase.DATABASE_VERSION}"
             }
         }
         db.close()
