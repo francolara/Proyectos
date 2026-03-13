@@ -6,6 +6,11 @@ enum class TipoPago {
     MENSUAL
 }
 
+enum class Moneda {
+    SOLES,
+    DOLARES
+}
+
 enum class EstadoPrestamo {
     ACTIVO,
     PAGADO,

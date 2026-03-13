@@ -23,6 +23,7 @@ data class PrestamoEntity(
     val idCliente: Long,
     val montoPrestado: Double,
     val interes: Double,
+    val moneda: Moneda,
     val tipoPago: TipoPago,
     val cantidadCuotas: Int,
     val fechaPrimeraCuota: Long,

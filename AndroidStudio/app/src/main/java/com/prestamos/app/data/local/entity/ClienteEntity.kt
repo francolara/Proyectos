@@ -14,7 +14,8 @@ data class ClienteEntity(
     val nombre: String,
     val apellido: String,
     val documentoIdentidad: String,
-    val nacionalidad: String,
+    val direccion: String,
+    val telefono: String,
     val fechaRegistro: Long,
     val fechaModificacion: Long
 )

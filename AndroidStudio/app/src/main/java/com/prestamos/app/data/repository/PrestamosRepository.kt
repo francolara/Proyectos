@@ -6,6 +6,7 @@ import com.prestamos.app.data.local.entity.ClienteEntity
 import com.prestamos.app.data.local.entity.CuotaEntity
 import com.prestamos.app.data.local.entity.EstadoCuota
 import com.prestamos.app.data.local.entity.EstadoPrestamo
+import com.prestamos.app.data.local.entity.Moneda
 import com.prestamos.app.data.local.entity.PagoEntity
 import com.prestamos.app.data.local.entity.PrestamoEntity
 import com.prestamos.app.data.local.entity.TipoPago
@@ -26,18 +27,24 @@ class PrestamosRepository(
     fun observarPrestamos(): Flow<List<PrestamoEntity>> = prestamoDao.listarTodos()
     fun observarCuotasVencidas(fechaActual: Long): Flow<List<CuotaEntity>> = cuotaDao.listarVencidas(fechaActual)
     fun observarTotalCobrado(): Flow<Double?> = pagoDao.totalCobrado()
-
     fun observarPrestamosPorCliente(idCliente: Long): Flow<List<PrestamoEntity>> = prestamoDao.listarPorCliente(idCliente)
     fun observarCuotasPorPrestamo(idPrestamo: Long): Flow<List<CuotaEntity>> = cuotaDao.listarPorPrestamo(idPrestamo)
 
-    suspend fun registrarCliente(nombre: String, apellido: String, documento: String, nacionalidad: String) {
+    suspend fun registrarCliente(
+        nombre: String,
+        apellido: String,
+        documento: String,
+        direccion: String,
+        telefono: String
+    ) {
         val ahora = System.currentTimeMillis()
         clienteDao.insertar(
             ClienteEntity(
                 nombre = nombre,
                 apellido = apellido,
                 documentoIdentidad = documento,
-                nacionalidad = nacionalidad,
+                direccion = direccion,
+                telefono = telefono,
                 fechaRegistro = ahora,
                 fechaModificacion = ahora
             )
@@ -48,6 +55,7 @@ class PrestamosRepository(
         idCliente: Long,
         monto: Double,
         interesPorcentaje: Double,
+        moneda: Moneda,
         tipoPago: TipoPago,
         cantidadCuotas: Int,
         fechaPrimeraCuota: Long
@@ -62,6 +70,7 @@ class PrestamosRepository(
                     idCliente = idCliente,
                     montoPrestado = monto,
                     interes = interesPorcentaje,
+                    moneda = moneda,
                     tipoPago = tipoPago,
                     cantidadCuotas = cantidadCuotas,
                     fechaPrimeraCuota = fechaPrimeraCuota,
@@ -105,8 +114,7 @@ class PrestamosRepository(
         require(montoAbono > 0.0) { "El abono debe ser mayor a 0" }
 
         database.withTransaction {
-            val cuota = cuotaDao.obtenerPorId(idCuota)
-                ?: error("Cuota no encontrada")
+            val cuota = cuotaDao.obtenerPorId(idCuota) ?: error("Cuota no encontrada")
             require(cuota.idPrestamo == idPrestamo) { "La cuota no pertenece al préstamo seleccionado" }
             require(cuota.estadoCuota != EstadoCuota.PAGADO) { "La cuota ya está pagada" }
             require(montoAbono <= cuota.saldoPendiente) { "El abono no puede exceder el saldo pendiente" }

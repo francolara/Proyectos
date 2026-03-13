@@ -21,7 +21,7 @@ import com.prestamos.app.data.local.entity.PrestamoEntity
         CuotaEntity::class,
         PagoEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

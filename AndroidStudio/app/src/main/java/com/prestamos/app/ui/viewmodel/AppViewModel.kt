@@ -4,9 +4,9 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.prestamos.app.data.local.AppDatabase
-import com.prestamos.app.data.local.entity.ClienteEntity
 import com.prestamos.app.data.local.entity.CuotaEntity
 import com.prestamos.app.data.local.entity.EstadoPrestamo
+import com.prestamos.app.data.local.entity.Moneda
 import com.prestamos.app.data.local.entity.PrestamoEntity
 import com.prestamos.app.data.local.entity.TipoPago
 import com.prestamos.app.data.repository.PrestamosRepository
@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -38,23 +39,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val prestamoSeleccionadoPagos = MutableStateFlow<Long?>(null)
 
     val prestamosClientePagos: StateFlow<List<PrestamoEntity>> = clienteSeleccionadoPagos
-        .flatMapLatest { idCliente ->
-            if (idCliente == null) {
-                kotlinx.coroutines.flow.flowOf(emptyList())
-            } else {
-                repository.observarPrestamosPorCliente(idCliente)
-            }
-        }
+        .flatMapLatest { idCliente -> if (idCliente == null) flowOf(emptyList()) else repository.observarPrestamosPorCliente(idCliente) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val cuotasPrestamoPagos: StateFlow<List<CuotaEntity>> = prestamoSeleccionadoPagos
-        .flatMapLatest { idPrestamo ->
-            if (idPrestamo == null) {
-                kotlinx.coroutines.flow.flowOf(emptyList())
-            } else {
-                repository.observarCuotasPorPrestamo(idPrestamo)
-            }
-        }
+        .flatMapLatest { idPrestamo -> if (idPrestamo == null) flowOf(emptyList()) else repository.observarCuotasPorPrestamo(idPrestamo) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val cuotasVencidas = repository.observarCuotasVencidas(System.currentTimeMillis()).stateIn(
@@ -101,13 +90,26 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         mensaje.value = null
     }
 
-    fun registrarCliente(nombre: String, apellido: String, documento: String, nacionalidad: String) {
+    fun registrarCliente(nombre: String, apellido: String, documento: String, direccion: String, telefono: String) {
         viewModelScope.launch {
             runCatching {
-                require(nombre.isNotBlank()) { "Nombre obligatorio" }
-                require(apellido.isNotBlank()) { "Apellido obligatorio" }
-                require(documento.isNotBlank()) { "Documento obligatorio" }
-                repository.registrarCliente(nombre.trim(), apellido.trim(), documento.trim(), nacionalidad.trim())
+                val nombreLimpio = cleanSingleLine(nombre)
+                val apellidoLimpio = cleanSingleLine(apellido)
+                val documentoLimpio = cleanSingleLine(documento)
+                val direccionLimpia = cleanSingleLine(direccion)
+                val telefonoLimpio = cleanSingleLine(telefono)
+
+                require(nombreLimpio.isNotBlank()) { "Nombres obligatorio" }
+                require(apellidoLimpio.isNotBlank()) { "Apellido obligatorio" }
+                require(documentoLimpio.isNotBlank()) { "Documento de identidad obligatorio" }
+
+                repository.registrarCliente(
+                    nombre = nombreLimpio,
+                    apellido = apellidoLimpio,
+                    documento = documentoLimpio,
+                    direccion = direccionLimpia,
+                    telefono = telefonoLimpio
+                )
             }.onSuccess {
                 mensaje.value = "Cliente registrado"
             }.onFailure {
@@ -120,6 +122,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         idCliente: Long,
         monto: String,
         interes: String,
+        moneda: Moneda,
         tipoPago: TipoPago,
         cuotas: String,
         fechaPrimeraCuota: Long
@@ -136,6 +139,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                     idCliente = idCliente,
                     monto = montoDouble,
                     interesPorcentaje = interesDouble,
+                    moneda = moneda,
                     tipoPago = tipoPago,
                     cantidadCuotas = cuotasInt,
                     fechaPrimeraCuota = fechaPrimeraCuota
@@ -155,7 +159,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                     idPrestamo = idPrestamo,
                     idCuota = idCuota,
                     montoAbono = montoAbono.toDoubleOrNull() ?: error("Monto abonado inválido"),
-                    observacion = observacion
+                    observacion = cleanSingleLine(observacion)
                 )
             }.onSuccess {
                 mensaje.value = "Pago registrado"
@@ -165,5 +169,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun buscarCliente(idCliente: Long?): ClienteEntity? = clientes.value.firstOrNull { it.idCliente == idCliente }
+    private fun cleanSingleLine(value: String): String =
+        value.replace("\n", " ").replace("\r", " ").trim()
 }
