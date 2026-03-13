@@ -1,5 +1,7 @@
 package com.prestamos.app.ui.screen
 
+import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,15 +27,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.prestamos.app.navigation.AppDestinations
+import com.prestamos.app.ui.screen.export.createDashboardDetalleImage
+import com.prestamos.app.ui.screen.export.createDashboardDetallePdf
 import com.prestamos.app.ui.viewmodel.DashboardViewModel
 import com.prestamos.app.util.toDateString
 import com.prestamos.app.util.toMoney
+import java.io.File
 
 private enum class DashboardDetalle {
     CAPITAL,
@@ -52,6 +59,7 @@ fun DashboardScreen(
     onLogout: () -> Unit,
     onNavigate: (String) -> Unit
 ) {
+    val context = LocalContext.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var detalleSeleccionado by remember { mutableStateOf<DashboardDetalle?>(null) }
 
@@ -167,7 +175,32 @@ fun DashboardScreen(
     }
 
     detalleSeleccionado?.let {
-        DetalleDashboardDialog(it, onClose = { detalleSeleccionado = null })
+        val detalle = it.toDetalleInfo(state)
+        DetalleDashboardDialog(
+            detalle = detalle,
+            onClose = { detalleSeleccionado = null },
+            onShareText = {
+                compartirTextoDetalle(context, detalle)
+            },
+            onShareImage = {
+                runCatching {
+                    createDashboardDetalleImage(context, detalle.title, detalle.message)
+                }.onSuccess { file ->
+                    compartirArchivoDetalle(context, file, "image/png")
+                }.onFailure {
+                    Toast.makeText(context, "No se pudo exportar imagen", Toast.LENGTH_SHORT).show()
+                }
+            },
+            onSharePdf = {
+                runCatching {
+                    createDashboardDetallePdf(context, detalle.title, detalle.message)
+                }.onSuccess { file ->
+                    compartirArchivoDetalle(context, file, "application/pdf")
+                }.onFailure {
+                    Toast.makeText(context, "No se pudo exportar PDF", Toast.LENGTH_SHORT).show()
+                }
+            }
+        )
     }
 }
 
@@ -196,28 +229,101 @@ private fun BarSegment(label: String, ratio: Float, color: Color, onClick: () ->
 }
 
 @Composable
-private fun DetalleDashboardDialog(detalle: DashboardDetalle, onClose: () -> Unit) {
+private fun DetalleDashboardDialog(
+    detalle: DashboardDetalleInfo,
+    onClose: () -> Unit,
+    onShareText: () -> Unit,
+    onShareImage: () -> Unit,
+    onSharePdf: () -> Unit
+) {
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onClose,
         confirmButton = {
-            androidx.compose.material3.TextButton(onClick = onClose) {
-                Text("Cerrar")
+            androidx.compose.material3.TextButton(onClick = onShareText) {
+                Text("Compartir")
             }
         },
-        title = { Text("Detalle") },
-        text = {
-            Text(
-                when (detalle) {
-                    DashboardDetalle.CAPITAL -> "Detalle de préstamos activos"
-                    DashboardDetalle.PENDIENTE -> "Detalle de cuotas pendientes"
-                    DashboardDetalle.COBRADO_HOY -> "Detalle de pagos de hoy"
-                    DashboardDetalle.VENCIDAS -> "Detalle de cuotas vencidas"
-                    DashboardDetalle.CUOTAS_PAGADAS -> "Detalle de cuotas pagadas"
-                    DashboardDetalle.CUOTAS_PENDIENTES -> "Detalle de cuotas pendientes"
-                    DashboardDetalle.CUOTAS_PARCIALES -> "Detalle de cuotas parciales"
-                    DashboardDetalle.CUOTAS_VENCIDAS -> "Detalle de cuotas vencidas"
+        dismissButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                androidx.compose.material3.TextButton(onClick = onShareImage) {
+                    Text("Imagen")
                 }
-            )
-        }
+                androidx.compose.material3.TextButton(onClick = onSharePdf) {
+                    Text("PDF")
+                }
+                androidx.compose.material3.TextButton(onClick = onClose) {
+                    Text("Cerrar")
+                }
+            }
+        },
+        title = { Text(detalle.title) },
+        text = { Text(detalle.message) }
     )
+}
+
+private data class DashboardDetalleInfo(
+    val title: String,
+    val message: String
+)
+
+private fun DashboardDetalle.toDetalleInfo(state: com.prestamos.app.ui.model.DashboardResumen): DashboardDetalleInfo {
+    return when (this) {
+        DashboardDetalle.CAPITAL -> DashboardDetalleInfo(
+            title = "Capital prestado",
+            message = "Total colocado: ${state.capitalPrestado.toMoney(state.monedaReferencial)}"
+        )
+        DashboardDetalle.PENDIENTE -> DashboardDetalleInfo(
+            title = "Saldo pendiente",
+            message = "Pendiente de cobro: ${state.saldoPendiente.toMoney(state.monedaReferencial)}"
+        )
+        DashboardDetalle.COBRADO_HOY -> DashboardDetalleInfo(
+            title = "Cobrado hoy",
+            message = "Recaudado hoy: ${state.cobradoHoy.toMoney(state.monedaReferencial)}"
+        )
+        DashboardDetalle.VENCIDAS -> DashboardDetalleInfo(
+            title = "Cuotas vencidas",
+            message = "Cantidad de cuotas vencidas: ${state.cuotasVencidas}"
+        )
+        DashboardDetalle.CUOTAS_PAGADAS -> DashboardDetalleInfo(
+            title = "Cuotas pagadas",
+            message = "Cuotas pagadas: ${state.estadoCuotas["Pagadas"] ?: 0}"
+        )
+        DashboardDetalle.CUOTAS_PENDIENTES -> DashboardDetalleInfo(
+            title = "Cuotas pendientes",
+            message = "Cuotas pendientes: ${state.estadoCuotas["Pendientes"] ?: 0}"
+        )
+        DashboardDetalle.CUOTAS_PARCIALES -> DashboardDetalleInfo(
+            title = "Cuotas parciales",
+            message = "Cuotas parciales: ${state.estadoCuotas["Parciales"] ?: 0}"
+        )
+        DashboardDetalle.CUOTAS_VENCIDAS -> DashboardDetalleInfo(
+            title = "Estado vencidas",
+            message = "Cuotas con estado vencido: ${state.estadoCuotas["Vencidas"] ?: 0}"
+        )
+    }
+}
+
+private fun compartirTextoDetalle(context: android.content.Context, detalle: DashboardDetalleInfo) {
+    val sendIntent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_SUBJECT, "Detalle dashboard: ${detalle.title}")
+        putExtra(Intent.EXTRA_TEXT, "${detalle.title}\n${detalle.message}")
+    }
+    context.startActivity(Intent.createChooser(sendIntent, "Compartir detalle"))
+}
+
+private fun compartirArchivoDetalle(context: android.content.Context, file: File, mimeType: String) {
+    val uri = FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.fileprovider",
+        file
+    )
+    val sendIntent = Intent(Intent.ACTION_SEND).apply {
+        type = mimeType
+        putExtra(Intent.EXTRA_STREAM, uri)
+        putExtra(Intent.EXTRA_SUBJECT, "Detalle dashboard")
+        putExtra(Intent.EXTRA_TEXT, "Detalle exportado desde dashboard")
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    context.startActivity(Intent.createChooser(sendIntent, "Compartir detalle"))
 }
