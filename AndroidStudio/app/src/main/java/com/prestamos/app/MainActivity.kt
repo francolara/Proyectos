@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Assessment
 import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.RequestPage
 import androidx.compose.material3.CircularProgressIndicator
@@ -35,6 +36,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.prestamos.app.navigation.AppDestinations
 import com.prestamos.app.ui.screen.ClientesScreen
+import com.prestamos.app.ui.screen.DashboardScreen
 import com.prestamos.app.ui.screen.PagosScreen
 import com.prestamos.app.ui.screen.PinLoginScreen
 import com.prestamos.app.ui.screen.PinSetupScreen
@@ -44,6 +46,7 @@ import com.prestamos.app.ui.theme.AppPrestamosTheme
 import com.prestamos.app.ui.viewmodel.AppViewModel
 import com.prestamos.app.ui.viewmodel.AuthState
 import com.prestamos.app.ui.viewmodel.AuthViewModel
+import com.prestamos.app.ui.viewmodel.DashboardViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -86,14 +89,14 @@ private fun AppRoot(
 
                 AuthState.NeedsPinSetup -> PinSetupScreen(authViewModel)
                 AuthState.Locked -> PinLoginScreen(authViewModel)
-                AuthState.Unlocked -> PrestamosApp(appViewModel)
+                AuthState.Unlocked -> PrestamosApp(appViewModel, authViewModel)
             }
         }
     }
 }
 
 @Composable
-private fun PrestamosApp(viewModel: AppViewModel) {
+private fun PrestamosApp(appViewModel: AppViewModel, authViewModel: AuthViewModel, dashboardViewModel: DashboardViewModel = viewModel()) {
     val navController = rememberNavController()
     val destinations = AppDestinations.entries
 
@@ -130,19 +133,27 @@ private fun PrestamosApp(viewModel: AppViewModel) {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = AppDestinations.CLIENTES.route,
+            startDestination = AppDestinations.DASHBOARD.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(AppDestinations.CLIENTES.route) { ClientesScreen(viewModel) }
-            composable(AppDestinations.PRESTAMOS.route) { PrestamosScreen(viewModel) }
-            composable(AppDestinations.PAGOS.route) { PagosScreen(viewModel) }
-            composable(AppDestinations.REPORTES.route) { ReportesScreen(viewModel) }
+            composable(AppDestinations.DASHBOARD.route) {
+                DashboardScreen(
+                    viewModel = dashboardViewModel,
+                    onLogout = { authViewModel.bloquearSesion() },
+                    onNavigate = { route -> navController.navigate(route) }
+                )
+            }
+            composable(AppDestinations.CLIENTES.route) { ClientesScreen(appViewModel) }
+            composable(AppDestinations.PRESTAMOS.route) { PrestamosScreen(appViewModel) }
+            composable(AppDestinations.PAGOS.route) { PagosScreen(appViewModel) }
+            composable(AppDestinations.REPORTES.route) { ReportesScreen(appViewModel) }
         }
     }
 }
 
 @Composable
 private fun iconFor(destination: AppDestinations) = when (destination) {
+    AppDestinations.DASHBOARD -> Icons.Outlined.Home
     AppDestinations.CLIENTES -> Icons.Outlined.Groups
     AppDestinations.PRESTAMOS -> Icons.Outlined.RequestPage
     AppDestinations.PAGOS -> Icons.Outlined.Payments

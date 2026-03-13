@@ -17,4 +17,7 @@ interface PagoDao {
 
     @Query("SELECT SUM(montoAbono) FROM pagos")
     fun totalCobrado(): Flow<Double?>
+
+    @Query("SELECT * FROM pagos ORDER BY fechaPago DESC")
+    fun listarTodos(): Flow<List<PagoEntity>>
 }

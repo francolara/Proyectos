@@ -25,6 +25,8 @@ class PrestamosRepository(
 
     fun observarClientes(): Flow<List<ClienteEntity>> = clienteDao.listar()
     fun observarPrestamos(): Flow<List<PrestamoEntity>> = prestamoDao.listarTodos()
+    fun observarCuotas(): Flow<List<CuotaEntity>> = cuotaDao.listarTodas()
+    fun observarPagos(): Flow<List<PagoEntity>> = pagoDao.listarTodos()
     fun observarCuotasVencidas(fechaActual: Long): Flow<List<CuotaEntity>> = cuotaDao.listarVencidas(fechaActual)
     fun observarTotalCobrado(): Flow<Double?> = pagoDao.totalCobrado()
     fun observarPrestamosPorCliente(idCliente: Long): Flow<List<PrestamoEntity>> = prestamoDao.listarPorCliente(idCliente)

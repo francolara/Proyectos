@@ -78,6 +78,12 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun bloquearSesion() {
+        viewModelScope.launch {
+            authRepository.bloquearSesion()
+        }
+    }
+
     fun limpiarMensaje() {
         mensaje.value = null
     }
