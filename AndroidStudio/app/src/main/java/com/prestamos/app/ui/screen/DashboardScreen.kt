@@ -21,6 +21,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,7 +35,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.prestamos.app.navigation.AppDestinations
 import com.prestamos.app.ui.screen.export.createDashboardDetalleImage
 import com.prestamos.app.ui.screen.export.createDashboardDetallePdf
 import com.prestamos.app.ui.viewmodel.DashboardViewModel
@@ -57,7 +57,8 @@ private enum class DashboardDetalle {
 fun DashboardScreen(
     viewModel: DashboardViewModel,
     onLogout: () -> Unit,
-    onNavigate: (String) -> Unit
+    isDarkMode: Boolean,
+    onToggleDarkMode: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -79,8 +80,12 @@ fun DashboardScreen(
                     Text("Resumen general", style = MaterialTheme.typography.headlineSmall)
                     Text("Fecha: ${System.currentTimeMillis().toDateString()}")
                 }
-                IconButton(onClick = onLogout) {
-                    Icon(Icons.Outlined.Logout, contentDescription = "Cerrar sesión")
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Modo oscuro")
+                    Switch(checked = isDarkMode, onCheckedChange = onToggleDarkMode)
+                    IconButton(onClick = onLogout) {
+                        Icon(Icons.Outlined.Logout, contentDescription = "Cerrar sesión")
+                    }
                 }
             }
         }
@@ -138,7 +143,8 @@ fun DashboardScreen(
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(10.dp)) {
                     Text(cuota.cliente)
-                    Text("Cuota ${cuota.numeroCuota} - Vence ${cuota.fechaVencimiento.toDateString()}")
+                    Text("Préstamo #${cuota.idPrestamo} | Cuota ${cuota.numeroCuota}")
+                    Text("Vence ${cuota.fechaVencimiento.toDateString()}")
                     Text("Saldo: ${cuota.saldoPendiente.toMoney(cuota.moneda)}")
                 }
             }
@@ -151,9 +157,10 @@ fun DashboardScreen(
             }
         }
         items(state.ultimosPagos) { pago ->
-            Card(modifier = Modifier.fillMaxWidth().clickable { onNavigate(AppDestinations.PAGOS.route) }) {
+            Card(modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(10.dp)) {
                     Text(pago.cliente)
+                    Text("Préstamo #${pago.idPrestamo} | Cuota ${pago.numeroCuota}")
                     Text("Fecha: ${pago.fechaPago.toDateString()}")
                     Text("Abono: ${pago.montoAbono.toMoney(pago.moneda)}")
                 }
@@ -282,7 +289,7 @@ private fun DashboardDetalle.toDetalleInfo(state: com.prestamos.app.ui.model.Das
         DashboardDetalle.COBRADO_HOY -> {
             val resumen = state.pagosHoyDetalle
             val top = resumen.take(8).joinToString("\n") {
-                "• ${it.cliente} | Préstamo #${it.idPrestamo} | ${it.fechaPago.toDateString()} | Abono ${it.montoAbono.toMoney(it.moneda)}"
+                "• ${it.cliente} | Préstamo #${it.idPrestamo} | Cuota ${it.numeroCuota} | ${it.fechaPago.toDateString()} | Abono ${it.montoAbono.toMoney(it.moneda)}"
             }.ifBlank { "No se registraron pagos hoy." }
             DashboardDetalleInfo(
                 title = "Cobrado hoy",

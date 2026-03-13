@@ -54,6 +54,7 @@ data class DashboardPagoItem(
     val fechaPago: Long,
     val montoAbono: Double,
     val idPrestamo: Long,
+    val numeroCuota: Int,
     val idPago: Long,
     val moneda: Moneda
 )

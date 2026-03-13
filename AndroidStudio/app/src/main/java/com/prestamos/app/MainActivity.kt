@@ -23,7 +23,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -51,8 +54,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            AppPrestamosTheme {
-                AppRoot()
+            var darkMode by rememberSaveable { mutableStateOf(false) }
+            AppPrestamosTheme(darkTheme = darkMode) {
+                AppRoot(
+                    isDarkMode = darkMode,
+                    onToggleDarkMode = { darkMode = it }
+                )
             }
         }
     }
@@ -60,6 +67,8 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun AppRoot(
+    isDarkMode: Boolean,
+    onToggleDarkMode: (Boolean) -> Unit,
     authViewModel: AuthViewModel = viewModel(),
     appViewModel: AppViewModel = viewModel()
 ) {
@@ -87,14 +96,20 @@ private fun AppRoot(
 
                 AuthState.NeedsPinSetup -> PinSetupScreen(authViewModel)
                 AuthState.Locked -> PinLoginScreen(authViewModel)
-                AuthState.Unlocked -> PrestamosApp(appViewModel, authViewModel)
+                AuthState.Unlocked -> PrestamosApp(appViewModel, authViewModel, isDarkMode, onToggleDarkMode)
             }
         }
     }
 }
 
 @Composable
-private fun PrestamosApp(appViewModel: AppViewModel, authViewModel: AuthViewModel, dashboardViewModel: DashboardViewModel = viewModel()) {
+private fun PrestamosApp(
+    appViewModel: AppViewModel,
+    authViewModel: AuthViewModel,
+    isDarkMode: Boolean,
+    onToggleDarkMode: (Boolean) -> Unit,
+    dashboardViewModel: DashboardViewModel = viewModel()
+) {
     val navController = rememberNavController()
     val destinations = AppDestinations.entries
 
@@ -138,7 +153,8 @@ private fun PrestamosApp(appViewModel: AppViewModel, authViewModel: AuthViewMode
                 DashboardScreen(
                     viewModel = dashboardViewModel,
                     onLogout = { authViewModel.bloquearSesion() },
-                    onNavigate = { route -> navController.navigate(route) }
+                    isDarkMode = isDarkMode,
+                    onToggleDarkMode = onToggleDarkMode
                 )
             }
             composable(AppDestinations.CLIENTES.route) { ClientesScreen(appViewModel) }

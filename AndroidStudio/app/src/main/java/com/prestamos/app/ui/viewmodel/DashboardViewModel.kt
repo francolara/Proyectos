@@ -32,6 +32,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         val prestamoById = prestamos.associateBy { it.idPrestamo }
         val clienteById = clientes.associateBy { it.idCliente }
         val cuotasByPrestamo = cuotas.groupBy { it.idPrestamo }
+        val cuotaById = cuotas.associateBy { it.idCuota }
 
         val now = System.currentTimeMillis()
         val startToday = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
@@ -113,6 +114,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                     fechaPago = pago.fechaPago,
                     montoAbono = pago.montoAbono,
                     idPrestamo = pago.idPrestamo,
+                    numeroCuota = cuotaById[pago.idCuota]?.numeroCuota ?: 0,
                     idPago = pago.idPago,
                     moneda = prestamo?.moneda ?: Moneda.SOLES
                 )
@@ -145,6 +147,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                     fechaPago = pago.fechaPago,
                     montoAbono = pago.montoAbono,
                     idPrestamo = pago.idPrestamo,
+                    numeroCuota = cuotaById[pago.idCuota]?.numeroCuota ?: 0,
                     idPago = pago.idPago,
                     moneda = prestamo?.moneda ?: Moneda.SOLES
                 )

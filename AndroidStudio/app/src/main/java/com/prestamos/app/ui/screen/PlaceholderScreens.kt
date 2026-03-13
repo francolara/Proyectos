@@ -1,9 +1,8 @@
 package com.prestamos.app.ui.screen
 
 import android.app.DatePickerDialog
-import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -39,15 +38,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.prestamos.app.data.local.entity.ClienteEntity
 import com.prestamos.app.data.local.entity.EstadoPrestamo
 import com.prestamos.app.data.local.entity.Moneda
 import com.prestamos.app.data.local.entity.TipoPago
+import com.prestamos.app.ui.screen.export.createDashboardDetalleImage
+import com.prestamos.app.ui.screen.export.createDashboardDetallePdf
 import com.prestamos.app.ui.viewmodel.AppViewModel
 import com.prestamos.app.util.toDateString
 import com.prestamos.app.util.toEpochMillis
 import com.prestamos.app.util.toMoney
+import java.io.File
 import java.time.LocalDate
 
 @Composable
@@ -377,6 +380,32 @@ fun PrestamosScreen(viewModel: AppViewModel) {
     if (mostrarDetallePrestamo && prestamoDetalleId != null) {
         val prestamo = prestamos.firstOrNull { it.idPrestamo == prestamoDetalleId }
         val cliente = clientes.firstOrNull { it.idCliente == prestamo?.idCliente }
+        val moneda = prestamo?.moneda ?: Moneda.SOLES
+        val totalDeudaPendiente = cuotasDetalle.sumOf { it.saldoPendiente }
+        val cronograma = if (cuotasDetalle.isEmpty()) {
+            "Sin cuotas registradas"
+        } else {
+            cuotasDetalle.joinToString("\n") { cuota ->
+                "Cuota ${cuota.numeroCuota}: vence ${cuota.fechaVencimiento.toDateString()} | " +
+                    "monto ${cuota.montoCuota.toMoney(moneda)} | " +
+                    "pendiente ${cuota.saldoPendiente.toMoney(moneda)}"
+            }
+        }
+        val detallePrestamo = buildString {
+            appendLine("Detalle del préstamo")
+            appendLine("Cliente: ${cliente?.nombre ?: "-"} ${cliente?.apellido ?: ""}".trim())
+            appendLine("Préstamo #${prestamo?.idPrestamo ?: "-"}")
+            appendLine("Monto prestado: ${prestamo?.montoPrestado?.toMoney(moneda) ?: "-"}")
+            appendLine("Monto total: ${prestamo?.montoTotalPrestamo?.toMoney(moneda) ?: "-"}")
+            appendLine("Interés: ${prestamo?.interes ?: "-"}%")
+            appendLine("Tipo pago: ${prestamo?.tipoPago ?: "-"}")
+            appendLine("Cuotas: ${prestamo?.cantidadCuotas ?: "-"}")
+            appendLine("Fecha registro préstamo: ${prestamo?.fechaRegistro?.toDateString() ?: "-"}")
+            appendLine("\nCronograma de cuotas")
+            appendLine(cronograma)
+            appendLine("\nTotal deuda pendiente: ${totalDeudaPendiente.toMoney(moneda)}")
+        }
+
         AlertDialog(
             onDismissRequest = {
                 mostrarDetallePrestamo = false
@@ -384,57 +413,41 @@ fun PrestamosScreen(viewModel: AppViewModel) {
             },
             confirmButton = {
                 TextButton(onClick = {
-                    mostrarDetallePrestamo = false
-                    viewModel.seleccionarPrestamoDetalle(null)
+                    compartirTexto(context, "Detalle préstamo", detallePrestamo)
                 }) {
-                    Text("Cerrar")
+                    Text("Compartir")
                 }
             },
             dismissButton = {
-                TextButton(onClick = {
-                    if (prestamo != null) {
-                        val moneda = prestamo.moneda
-                        val totalDeudaPendiente = cuotasDetalle.sumOf { it.saldoPendiente }
-                        val cronograma = if (cuotasDetalle.isEmpty()) {
-                            "Sin cuotas registradas"
-                        } else {
-                            cuotasDetalle.joinToString("\n") { cuota ->
-                                "Cuota ${cuota.numeroCuota}: vence ${cuota.fechaVencimiento.toDateString()} | " +
-                                    "monto ${cuota.montoCuota.toMoney(moneda)} | " +
-                                    "pendiente ${cuota.saldoPendiente.toMoney(moneda)}"
-                            }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = {
+                        runCatching {
+                            createDashboardDetalleImage(context, "Detalle préstamo", detallePrestamo)
+                        }.onSuccess { file ->
+                            compartirArchivo(context, file, "image/png")
+                        }.onFailure {
+                            Toast.makeText(context, "No se pudo exportar imagen", Toast.LENGTH_SHORT).show()
                         }
-                        val mensaje = buildString {
-                            appendLine("Detalle del préstamo")
-                            appendLine("Cliente: ${cliente?.nombre ?: "-"} ${cliente?.apellido ?: ""}".trim())
-                            appendLine("Préstamo #${prestamo.idPrestamo}")
-                            appendLine("Monto prestado: ${prestamo.montoPrestado.toMoney(moneda)}")
-                            appendLine("Monto total: ${prestamo.montoTotalPrestamo.toMoney(moneda)}")
-                            appendLine("Interés: ${prestamo.interes}%")
-                            appendLine("Tipo pago: ${prestamo.tipoPago}")
-                            appendLine("Cuotas: ${prestamo.cantidadCuotas}")
-                            appendLine("Fecha registro préstamo: ${prestamo.fechaRegistro.toDateString()}")
-                            appendLine("\nCronograma de cuotas")
-                            appendLine(cronograma)
-                            appendLine("\nTotal deuda pendiente: ${totalDeudaPendiente.toMoney(moneda)}")
-                        }
-
-                        val whatsappIntent = Intent(Intent.ACTION_VIEW).apply {
-                            data = Uri.parse("https://wa.me/?text=" + Uri.encode(mensaje))
-                        }
-
-                        try {
-                            context.startActivity(whatsappIntent)
-                        } catch (_: ActivityNotFoundException) {
-                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, mensaje)
-                            }
-                            context.startActivity(Intent.createChooser(shareIntent, "Compartir detalle"))
-                        }
+                    }) {
+                        Text("Imagen")
                     }
-                }) {
-                    Text("Compartir por WhatsApp")
+                    TextButton(onClick = {
+                        runCatching {
+                            createDashboardDetallePdf(context, "Detalle préstamo", detallePrestamo)
+                        }.onSuccess { file ->
+                            compartirArchivo(context, file, "application/pdf")
+                        }.onFailure {
+                            Toast.makeText(context, "No se pudo exportar PDF", Toast.LENGTH_SHORT).show()
+                        }
+                    }) {
+                        Text("PDF")
+                    }
+                    TextButton(onClick = {
+                        mostrarDetallePrestamo = false
+                        viewModel.seleccionarPrestamoDetalle(null)
+                    }) {
+                        Text("Cerrar")
+                    }
                 }
             },
             title = { Text("Detalle del préstamo") },
@@ -443,8 +456,8 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                     item {
                         Text("Cliente: ${cliente?.nombre ?: "-"} ${cliente?.apellido ?: ""}".trim())
                         Text("Préstamo #${prestamo?.idPrestamo ?: "-"}")
-                        Text("Monto prestado: ${prestamo?.montoPrestado?.toMoney(prestamo?.moneda ?: Moneda.SOLES) ?: "-"}")
-                        Text("Monto total: ${prestamo?.montoTotalPrestamo?.toMoney(prestamo?.moneda ?: Moneda.SOLES) ?: "-"}")
+                        Text("Monto prestado: ${prestamo?.montoPrestado?.toMoney(moneda) ?: "-"}")
+                        Text("Monto total: ${prestamo?.montoTotalPrestamo?.toMoney(moneda) ?: "-"}")
                         Text("Interés: ${prestamo?.interes ?: "-"}%")
                         Text("Tipo pago: ${prestamo?.tipoPago ?: "-"}")
                         Text("Cuotas: ${prestamo?.cantidadCuotas ?: "-"}")
@@ -455,15 +468,14 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                     items(cuotasDetalle) { cuota ->
                         Text(
                             "Cuota ${cuota.numeroCuota}: vence ${cuota.fechaVencimiento.toDateString()} | " +
-                                "monto ${cuota.montoCuota.toMoney(prestamo?.moneda ?: Moneda.SOLES)} | " +
-                                "pendiente ${cuota.saldoPendiente.toMoney(prestamo?.moneda ?: Moneda.SOLES)}"
+                                "monto ${cuota.montoCuota.toMoney(moneda)} | " +
+                                "pendiente ${cuota.saldoPendiente.toMoney(moneda)}"
                         )
                     }
                     item {
                         HorizontalDivider()
-                        val totalDeudaPendiente = cuotasDetalle.sumOf { it.saldoPendiente }
                         Text(
-                            "Total deuda pendiente: ${totalDeudaPendiente.toMoney(prestamo?.moneda ?: Moneda.SOLES)}",
+                            "Total deuda pendiente: ${totalDeudaPendiente.toMoney(moneda)}",
                             style = MaterialTheme.typography.titleSmall
                         )
                     }
@@ -471,6 +483,7 @@ fun PrestamosScreen(viewModel: AppViewModel) {
             }
         )
     }
+
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -655,6 +668,28 @@ private fun <T> DropdownGeneric(
             }
         }
     }
+}
+
+
+private fun compartirTexto(context: android.content.Context, titulo: String, detalle: String) {
+    val sendIntent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_SUBJECT, titulo)
+        putExtra(Intent.EXTRA_TEXT, detalle)
+    }
+    context.startActivity(Intent.createChooser(sendIntent, "Compartir detalle"))
+}
+
+private fun compartirArchivo(context: android.content.Context, file: File, mimeType: String) {
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+    val sendIntent = Intent(Intent.ACTION_SEND).apply {
+        type = mimeType
+        putExtra(Intent.EXTRA_STREAM, uri)
+        putExtra(Intent.EXTRA_SUBJECT, "Detalle préstamo")
+        putExtra(Intent.EXTRA_TEXT, "Detalle exportado")
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    context.startActivity(Intent.createChooser(sendIntent, "Compartir detalle"))
 }
 
 private fun filtrarClientes(clientes: List<ClienteEntity>, filtro: String): List<ClienteEntity> {
