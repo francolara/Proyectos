@@ -1,6 +1,7 @@
 package com.prestamos.app.ui.screen
 
 import android.app.DatePickerDialog
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
@@ -23,6 +25,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -146,6 +149,10 @@ fun PrestamosScreen(viewModel: AppViewModel) {
     var expandedCliente by remember { mutableStateOf(false) }
     var expandedMoneda by remember { mutableStateOf(false) }
     var expandedTipo by remember { mutableStateOf(false) }
+    var mostrarDetallePrestamo by remember { mutableStateOf(false) }
+    var prestamoDetalleId by remember { mutableStateOf<Long?>(null) }
+
+    val cuotasDetalle by viewModel.cuotasPrestamoDetalle.collectAsStateWithLifecycle()
 
     LazyColumn(
         modifier = Modifier
@@ -303,9 +310,19 @@ fun PrestamosScreen(viewModel: AppViewModel) {
         }
 
         items(prestamos) { prestamo ->
-            Card(modifier = Modifier.fillMaxWidth()) {
+            val cliente = clientes.firstOrNull { it.idCliente == prestamo.idCliente }
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        prestamoDetalleId = prestamo.idPrestamo
+                        viewModel.seleccionarPrestamoDetalle(prestamo.idPrestamo)
+                        mostrarDetallePrestamo = true
+                    }
+            ) {
                 Column(Modifier.padding(12.dp)) {
-                    Text("Préstamo #${prestamo.idPrestamo} - Cliente ${prestamo.idCliente}")
+                    Text("Préstamo #${prestamo.idPrestamo}")
+                    Text("Cliente: ${cliente?.nombre ?: "-"} ${cliente?.apellido ?: ""}".trim())
                     Text(
                         "Total: ${prestamo.montoTotalPrestamo.toMoney(prestamo.moneda)} | " +
                             "Cuota: ${prestamo.montoCuota.toMoney(prestamo.moneda)}"
@@ -315,6 +332,49 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                 }
             }
         }
+    }
+
+    if (mostrarDetallePrestamo && prestamoDetalleId != null) {
+        val prestamo = prestamos.firstOrNull { it.idPrestamo == prestamoDetalleId }
+        val cliente = clientes.firstOrNull { it.idCliente == prestamo?.idCliente }
+        AlertDialog(
+            onDismissRequest = {
+                mostrarDetallePrestamo = false
+                viewModel.seleccionarPrestamoDetalle(null)
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    mostrarDetallePrestamo = false
+                    viewModel.seleccionarPrestamoDetalle(null)
+                }) {
+                    Text("Cerrar")
+                }
+            },
+            title = { Text("Detalle del préstamo") },
+            text = {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    item {
+                        Text("Cliente: ${cliente?.nombre ?: "-"} ${cliente?.apellido ?: ""}".trim())
+                        Text("Préstamo #${prestamo?.idPrestamo ?: "-"}")
+                        Text("Monto prestado: ${prestamo?.montoPrestado?.toMoney(prestamo?.moneda ?: Moneda.SOLES) ?: "-"}")
+                        Text("Monto total: ${prestamo?.montoTotalPrestamo?.toMoney(prestamo?.moneda ?: Moneda.SOLES) ?: "-"}")
+                        Text("Interés: ${prestamo?.interes ?: "-"}%")
+                        Text("Tipo pago: ${prestamo?.tipoPago ?: "-"}")
+                        Text("Cuotas: ${prestamo?.cantidadCuotas ?: "-"}")
+                        Text("Fecha registro préstamo: ${prestamo?.fechaRegistro?.toDateString() ?: "-"}")
+                    }
+                    item { HorizontalDivider() }
+                    item { Text("Cronograma de cuotas", style = MaterialTheme.typography.titleSmall) }
+                    items(cuotasDetalle) { cuota ->
+                        Text(
+                            "Cuota ${cuota.numeroCuota}: vence ${cuota.fechaVencimiento.toDateString()} | " +
+                                "monto ${cuota.montoCuota.toMoney(prestamo?.moneda ?: Moneda.SOLES)} | " +
+                                "pendiente ${cuota.saldoPendiente.toMoney(prestamo?.moneda ?: Moneda.SOLES)}"
+                        )
+                    }
+                }
+            }
+        )
     }
 }
 

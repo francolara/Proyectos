@@ -37,12 +37,18 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     private val clienteSeleccionadoPagos = MutableStateFlow<Long?>(null)
     private val prestamoSeleccionadoPagos = MutableStateFlow<Long?>(null)
+    private val prestamoSeleccionadoDetalle = MutableStateFlow<Long?>(null)
 
     val prestamosClientePagos: StateFlow<List<PrestamoEntity>> = clienteSeleccionadoPagos
         .flatMapLatest { idCliente -> if (idCliente == null) flowOf(emptyList()) else repository.observarPrestamosPorCliente(idCliente) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val cuotasPrestamoPagos: StateFlow<List<CuotaEntity>> = prestamoSeleccionadoPagos
+        .flatMapLatest { idPrestamo -> if (idPrestamo == null) flowOf(emptyList()) else repository.observarCuotasPorPrestamo(idPrestamo) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+
+    val cuotasPrestamoDetalle: StateFlow<List<CuotaEntity>> = prestamoSeleccionadoDetalle
         .flatMapLatest { idPrestamo -> if (idPrestamo == null) flowOf(emptyList()) else repository.observarCuotasPorPrestamo(idPrestamo) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -84,6 +90,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun seleccionarPrestamoPagos(idPrestamo: Long?) {
         prestamoSeleccionadoPagos.value = idPrestamo
+    }
+
+    fun seleccionarPrestamoDetalle(idPrestamo: Long?) {
+        prestamoSeleccionadoDetalle.value = idPrestamo
     }
 
     fun limpiarMensaje() {
