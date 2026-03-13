@@ -1,0 +1,74 @@
+package com.prestamos.app.ui.viewmodel
+
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.prestamos.app.data.security.AuthRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+
+sealed class AuthState {
+    data object Loading : AuthState()
+    data object NeedsPinSetup : AuthState()
+    data object Locked : AuthState()
+    data object Unlocked : AuthState()
+}
+
+class AuthViewModel(application: Application) : AndroidViewModel(application) {
+    private val authRepository = AuthRepository(application)
+
+    val authState: StateFlow<AuthState> = combine(
+        authRepository.pinConfigured,
+        authRepository.sessionUnlocked
+    ) { configured, unlocked ->
+        when {
+            !configured -> AuthState.NeedsPinSetup
+            unlocked -> AuthState.Unlocked
+            else -> AuthState.Locked
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = AuthState.Loading
+    )
+
+    val mensaje = MutableStateFlow<String?>(null)
+
+    fun crearPin(pin: String, confirmPin: String) {
+        viewModelScope.launch {
+            runCatching {
+                require(pin.length == 4 && pin.all { it.isDigit() }) { "El PIN debe tener 4 dígitos" }
+                require(pin == confirmPin) { "Los PIN no coinciden" }
+                authRepository.configurarPin(pin)
+            }.onFailure {
+                mensaje.value = it.message ?: "No se pudo configurar el PIN"
+            }
+        }
+    }
+
+    fun ingresarPin(pin: String) {
+        viewModelScope.launch {
+            runCatching {
+                require(pin.length == 4 && pin.all { it.isDigit() }) { "PIN inválido" }
+                val ok = authRepository.validarPin(pin)
+                require(ok) { "PIN incorrecto" }
+            }.onFailure {
+                mensaje.value = it.message ?: "No se pudo validar el PIN"
+            }
+        }
+    }
+
+    fun desbloquearConHuella() {
+        viewModelScope.launch {
+            authRepository.desbloquearSesion()
+        }
+    }
+
+    fun limpiarMensaje() {
+        mensaje.value = null
+    }
+}
