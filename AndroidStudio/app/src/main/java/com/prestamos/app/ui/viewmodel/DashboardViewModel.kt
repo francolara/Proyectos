@@ -5,9 +5,13 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.prestamos.app.data.local.AppDatabase
 import com.prestamos.app.data.local.entity.EstadoCuota
+import com.prestamos.app.data.local.entity.EstadoPrestamo
+import com.prestamos.app.data.local.entity.Moneda
 import com.prestamos.app.data.repository.PrestamosRepository
+import com.prestamos.app.ui.model.DashboardCuotaDetalleItem
 import com.prestamos.app.ui.model.DashboardCuotaItem
 import com.prestamos.app.ui.model.DashboardPagoItem
+import com.prestamos.app.ui.model.DashboardPrestamoDetalleItem
 import com.prestamos.app.ui.model.DashboardResumen
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -27,6 +31,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     ) { clientes, prestamos, cuotas, pagos ->
         val prestamoById = prestamos.associateBy { it.idPrestamo }
         val clienteById = clientes.associateBy { it.idCliente }
+        val cuotasByPrestamo = cuotas.groupBy { it.idPrestamo }
 
         val now = System.currentTimeMillis()
         val startToday = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
@@ -44,22 +49,88 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             "Vencidas" to cuotas.count { it.estadoCuota == EstadoCuota.VENCIDO || (it.fechaVencimiento < now && it.saldoPendiente > 0.0) }
         )
 
-        val proximosVencimientos = cuotas
-            .filter { it.saldoPendiente > 0.0 && it.fechaVencimiento >= startToday }
+        val prestamosActivosDetalle = prestamos
+            .mapNotNull { prestamo ->
+                val cliente = clienteById[prestamo.idCliente]
+                val cuotasPrestamo = cuotasByPrestamo[prestamo.idPrestamo].orEmpty()
+                val saldoPrestamo = cuotasPrestamo.sumOf { it.saldoPendiente }
+                val cuotasPendientes = cuotasPrestamo.count { it.saldoPendiente > 0.0 }
+                if (prestamo.estadoPrestamo != EstadoPrestamo.ACTIVO && cuotasPendientes == 0) return@mapNotNull null
+                DashboardPrestamoDetalleItem(
+                    cliente = "${cliente?.nombre.orEmpty()} ${cliente?.apellido.orEmpty()}".trim().ifBlank { "-" },
+                    idPrestamo = prestamo.idPrestamo,
+                    montoPrestado = prestamo.montoPrestado,
+                    saldoPendiente = saldoPrestamo,
+                    totalCuotas = prestamo.cantidadCuotas,
+                    cuotasPendientes = cuotasPendientes,
+                    moneda = prestamo.moneda
+                )
+            }
+            .sortedByDescending { it.saldoPendiente }
+
+        val cuotasPendientesDetalle = cuotas
+            .filter { it.saldoPendiente > 0.0 }
             .sortedBy { it.fechaVencimiento }
-            .take(5)
             .map { cuota ->
                 val prestamo = prestamoById[cuota.idPrestamo]
                 val cliente = clienteById[prestamo?.idCliente]
-                DashboardCuotaItem(
+                DashboardCuotaDetalleItem(
                     cliente = "${cliente?.nombre.orEmpty()} ${cliente?.apellido.orEmpty()}".trim().ifBlank { "-" },
+                    idPrestamo = cuota.idPrestamo,
                     numeroCuota = cuota.numeroCuota,
                     fechaVencimiento = cuota.fechaVencimiento,
                     saldoPendiente = cuota.saldoPendiente,
-                    estado = cuota.estadoCuota.name,
+                    estado = cuota.estadoCuota,
+                    moneda = prestamo?.moneda ?: Moneda.SOLES
+                )
+            }
+
+        val cuotasVencidasDetalle = cuotas
+            .filter { it.fechaVencimiento < now && it.saldoPendiente > 0.0 }
+            .sortedBy { it.fechaVencimiento }
+            .map { cuota ->
+                val prestamo = prestamoById[cuota.idPrestamo]
+                val cliente = clienteById[prestamo?.idCliente]
+                DashboardCuotaDetalleItem(
+                    cliente = "${cliente?.nombre.orEmpty()} ${cliente?.apellido.orEmpty()}".trim().ifBlank { "-" },
                     idPrestamo = cuota.idPrestamo,
-                    idCuota = cuota.idCuota,
-                    moneda = prestamo?.moneda ?: com.prestamos.app.data.local.entity.Moneda.SOLES
+                    numeroCuota = cuota.numeroCuota,
+                    fechaVencimiento = cuota.fechaVencimiento,
+                    saldoPendiente = cuota.saldoPendiente,
+                    estado = cuota.estadoCuota,
+                    moneda = prestamo?.moneda ?: Moneda.SOLES
+                )
+            }
+
+        val pagosHoyDetalle = pagos
+            .filter { it.fechaPago in startToday..endToday }
+            .sortedByDescending { it.fechaPago }
+            .map { pago ->
+                val prestamo = prestamoById[pago.idPrestamo]
+                val cliente = clienteById[prestamo?.idCliente]
+                DashboardPagoItem(
+                    cliente = "${cliente?.nombre.orEmpty()} ${cliente?.apellido.orEmpty()}".trim().ifBlank { "-" },
+                    fechaPago = pago.fechaPago,
+                    montoAbono = pago.montoAbono,
+                    idPrestamo = pago.idPrestamo,
+                    idPago = pago.idPago,
+                    moneda = prestamo?.moneda ?: Moneda.SOLES
+                )
+            }
+
+        val proximosVencimientos = cuotasPendientesDetalle
+            .filter { it.fechaVencimiento >= startToday }
+            .take(5)
+            .map {
+                DashboardCuotaItem(
+                    cliente = it.cliente,
+                    numeroCuota = it.numeroCuota,
+                    fechaVencimiento = it.fechaVencimiento,
+                    saldoPendiente = it.saldoPendiente,
+                    estado = it.estado.name,
+                    idPrestamo = it.idPrestamo,
+                    idCuota = 0,
+                    moneda = it.moneda
                 )
             }
 
@@ -75,7 +146,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                     montoAbono = pago.montoAbono,
                     idPrestamo = pago.idPrestamo,
                     idPago = pago.idPago,
-                    moneda = prestamo?.moneda ?: com.prestamos.app.data.local.entity.Moneda.SOLES
+                    moneda = prestamo?.moneda ?: Moneda.SOLES
                 )
             }
 
@@ -87,7 +158,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             estadoCuotas = estadoCuotas,
             proximosVencimientos = proximosVencimientos,
             ultimosPagos = ultimosPagos,
-            monedaReferencial = prestamos.firstOrNull()?.moneda ?: com.prestamos.app.data.local.entity.Moneda.SOLES
+            prestamosActivosDetalle = prestamosActivosDetalle,
+            cuotasPendientesDetalle = cuotasPendientesDetalle,
+            cuotasVencidasDetalle = cuotasVencidasDetalle,
+            pagosHoyDetalle = pagosHoyDetalle,
+            monedaReferencial = prestamos.firstOrNull()?.moneda ?: Moneda.SOLES
         )
     }.stateIn(
         scope = viewModelScope,

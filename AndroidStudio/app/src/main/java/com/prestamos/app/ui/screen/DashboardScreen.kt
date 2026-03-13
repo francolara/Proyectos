@@ -118,13 +118,13 @@ fun DashboardScreen(
         item {
             Text("Estado de cuotas", style = MaterialTheme.typography.titleMedium)
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                DashboardCard("Pagadas", state.estadoCuotas["Pagadas"].toString(), Modifier.weight(1f)) { detalleSeleccionado = DashboardDetalle.CUOTAS_PAGADAS }
-                DashboardCard("Pendientes", state.estadoCuotas["Pendientes"].toString(), Modifier.weight(1f)) { detalleSeleccionado = DashboardDetalle.CUOTAS_PENDIENTES }
+                DashboardCard("Pagadas", (state.estadoCuotas["Pagadas"] ?: 0).toString(), Modifier.weight(1f)) { detalleSeleccionado = DashboardDetalle.CUOTAS_PAGADAS }
+                DashboardCard("Pendientes", (state.estadoCuotas["Pendientes"] ?: 0).toString(), Modifier.weight(1f)) { detalleSeleccionado = DashboardDetalle.CUOTAS_PENDIENTES }
             }
             Spacer(Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                DashboardCard("Parciales", state.estadoCuotas["Parciales"].toString(), Modifier.weight(1f)) { detalleSeleccionado = DashboardDetalle.CUOTAS_PARCIALES }
-                DashboardCard("Vencidas", state.estadoCuotas["Vencidas"].toString(), Modifier.weight(1f)) { detalleSeleccionado = DashboardDetalle.CUOTAS_VENCIDAS }
+                DashboardCard("Parciales", (state.estadoCuotas["Parciales"] ?: 0).toString(), Modifier.weight(1f)) { detalleSeleccionado = DashboardDetalle.CUOTAS_PARCIALES }
+                DashboardCard("Vencidas", (state.estadoCuotas["Vencidas"] ?: 0).toString(), Modifier.weight(1f)) { detalleSeleccionado = DashboardDetalle.CUOTAS_VENCIDAS }
             }
         }
 
@@ -268,38 +268,87 @@ private data class DashboardDetalleInfo(
 
 private fun DashboardDetalle.toDetalleInfo(state: com.prestamos.app.ui.model.DashboardResumen): DashboardDetalleInfo {
     return when (this) {
-        DashboardDetalle.CAPITAL -> DashboardDetalleInfo(
-            title = "Capital prestado",
-            message = "Total colocado: ${state.capitalPrestado.toMoney(state.monedaReferencial)}"
-        )
-        DashboardDetalle.PENDIENTE -> DashboardDetalleInfo(
-            title = "Saldo pendiente",
-            message = "Pendiente de cobro: ${state.saldoPendiente.toMoney(state.monedaReferencial)}"
-        )
-        DashboardDetalle.COBRADO_HOY -> DashboardDetalleInfo(
-            title = "Cobrado hoy",
-            message = "Recaudado hoy: ${state.cobradoHoy.toMoney(state.monedaReferencial)}"
-        )
-        DashboardDetalle.VENCIDAS -> DashboardDetalleInfo(
-            title = "Cuotas vencidas",
-            message = "Cantidad de cuotas vencidas: ${state.cuotasVencidas}"
-        )
+        DashboardDetalle.CAPITAL -> {
+            val resumen = state.prestamosActivosDetalle
+            val totalPrestamos = resumen.size
+            val top = resumen.take(5).joinToString("\n") {
+                "• ${it.cliente} | Prest. ${it.montoPrestado.toMoney(it.moneda)} | Saldo ${it.saldoPendiente.toMoney(it.moneda)} | Cuotas pend. ${it.cuotasPendientes}/${it.totalCuotas}"
+            }.ifBlank { "No hay préstamos activos." }
+            DashboardDetalleInfo(
+                title = "Capital prestado",
+                message = "Préstamos activos: $totalPrestamos\nTotal colocado: ${state.capitalPrestado.toMoney(state.monedaReferencial)}\n\n$top"
+            )
+        }
+
+        DashboardDetalle.PENDIENTE -> {
+            val resumen = state.cuotasPendientesDetalle
+            val top = resumen.take(8).joinToString("\n") {
+                "• ${it.cliente} | Préstamo #${it.idPrestamo} | Cuota ${it.numeroCuota} | Vence ${it.fechaVencimiento.toDateString()} | Saldo ${it.saldoPendiente.toMoney(it.moneda)}"
+            }.ifBlank { "No hay cuotas pendientes." }
+            DashboardDetalleInfo(
+                title = "Saldo pendiente",
+                message = "Cuotas pendientes: ${resumen.size}\nSaldo total pendiente: ${state.saldoPendiente.toMoney(state.monedaReferencial)}\n\n$top"
+            )
+        }
+
+        DashboardDetalle.COBRADO_HOY -> {
+            val resumen = state.pagosHoyDetalle
+            val top = resumen.take(8).joinToString("\n") {
+                "• ${it.cliente} | Préstamo #${it.idPrestamo} | ${it.fechaPago.toDateString()} | Abono ${it.montoAbono.toMoney(it.moneda)}"
+            }.ifBlank { "No se registraron pagos hoy." }
+            DashboardDetalleInfo(
+                title = "Cobrado hoy",
+                message = "Pagos de hoy: ${resumen.size}\nTotal cobrado hoy: ${state.cobradoHoy.toMoney(state.monedaReferencial)}\n\n$top"
+            )
+        }
+
+        DashboardDetalle.VENCIDAS -> {
+            val resumen = state.cuotasVencidasDetalle
+            val top = resumen.take(8).joinToString("\n") {
+                "• ${it.cliente} | Préstamo #${it.idPrestamo} | Cuota ${it.numeroCuota} | Vence ${it.fechaVencimiento.toDateString()} | Saldo ${it.saldoPendiente.toMoney(it.moneda)}"
+            }.ifBlank { "No hay cuotas vencidas." }
+            DashboardDetalleInfo(
+                title = "Cuotas vencidas",
+                message = "Cuotas vencidas: ${state.cuotasVencidas}\n\n$top"
+            )
+        }
+
         DashboardDetalle.CUOTAS_PAGADAS -> DashboardDetalleInfo(
             title = "Cuotas pagadas",
-            message = "Cuotas pagadas: ${state.estadoCuotas["Pagadas"] ?: 0}"
+            message = "Cuotas pagadas: ${state.estadoCuotas["Pagadas"] ?: 0}\nSe consideran canceladas al 100%."
         )
-        DashboardDetalle.CUOTAS_PENDIENTES -> DashboardDetalleInfo(
-            title = "Cuotas pendientes",
-            message = "Cuotas pendientes: ${state.estadoCuotas["Pendientes"] ?: 0}"
-        )
-        DashboardDetalle.CUOTAS_PARCIALES -> DashboardDetalleInfo(
-            title = "Cuotas parciales",
-            message = "Cuotas parciales: ${state.estadoCuotas["Parciales"] ?: 0}"
-        )
-        DashboardDetalle.CUOTAS_VENCIDAS -> DashboardDetalleInfo(
-            title = "Estado vencidas",
-            message = "Cuotas con estado vencido: ${state.estadoCuotas["Vencidas"] ?: 0}"
-        )
+
+        DashboardDetalle.CUOTAS_PENDIENTES -> {
+            val count = state.estadoCuotas["Pendientes"] ?: 0
+            val top = state.cuotasPendientesDetalle.take(6).joinToString("\n") {
+                "• ${it.cliente} | Cuota ${it.numeroCuota} | Saldo ${it.saldoPendiente.toMoney(it.moneda)}"
+            }.ifBlank { "No hay cuotas pendientes." }
+            DashboardDetalleInfo(
+                title = "Cuotas pendientes",
+                message = "Cuotas en estado pendiente: $count\n\n$top"
+            )
+        }
+
+        DashboardDetalle.CUOTAS_PARCIALES -> {
+            val parciales = state.cuotasPendientesDetalle.filter { it.estado.name == "PARCIAL" }
+            val top = parciales.take(6).joinToString("\n") {
+                "• ${it.cliente} | Cuota ${it.numeroCuota} | Saldo ${it.saldoPendiente.toMoney(it.moneda)}"
+            }.ifBlank { "No hay cuotas parciales." }
+            DashboardDetalleInfo(
+                title = "Cuotas parciales",
+                message = "Cuotas parciales: ${state.estadoCuotas["Parciales"] ?: 0}\n\n$top"
+            )
+        }
+
+        DashboardDetalle.CUOTAS_VENCIDAS -> {
+            val top = state.cuotasVencidasDetalle.take(6).joinToString("\n") {
+                "• ${it.cliente} | Cuota ${it.numeroCuota} | Vence ${it.fechaVencimiento.toDateString()} | Saldo ${it.saldoPendiente.toMoney(it.moneda)}"
+            }.ifBlank { "No hay cuotas vencidas." }
+            DashboardDetalleInfo(
+                title = "Estado vencidas",
+                message = "Cuotas en estado vencido: ${state.estadoCuotas["Vencidas"] ?: 0}\n\n$top"
+            )
+        }
     }
 }
 

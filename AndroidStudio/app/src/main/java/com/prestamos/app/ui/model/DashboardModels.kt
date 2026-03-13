@@ -1,5 +1,6 @@
 package com.prestamos.app.ui.model
 
+import com.prestamos.app.data.local.entity.EstadoCuota
 import com.prestamos.app.data.local.entity.Moneda
 
 data class DashboardResumen(
@@ -10,7 +11,21 @@ data class DashboardResumen(
     val estadoCuotas: Map<String, Int> = emptyMap(),
     val proximosVencimientos: List<DashboardCuotaItem> = emptyList(),
     val ultimosPagos: List<DashboardPagoItem> = emptyList(),
+    val prestamosActivosDetalle: List<DashboardPrestamoDetalleItem> = emptyList(),
+    val cuotasPendientesDetalle: List<DashboardCuotaDetalleItem> = emptyList(),
+    val cuotasVencidasDetalle: List<DashboardCuotaDetalleItem> = emptyList(),
+    val pagosHoyDetalle: List<DashboardPagoItem> = emptyList(),
     val monedaReferencial: Moneda = Moneda.SOLES
+)
+
+data class DashboardPrestamoDetalleItem(
+    val cliente: String,
+    val idPrestamo: Long,
+    val montoPrestado: Double,
+    val saldoPendiente: Double,
+    val totalCuotas: Int,
+    val cuotasPendientes: Int,
+    val moneda: Moneda
 )
 
 data class DashboardCuotaItem(
@@ -21,6 +36,16 @@ data class DashboardCuotaItem(
     val estado: String,
     val idPrestamo: Long,
     val idCuota: Long,
+    val moneda: Moneda
+)
+
+data class DashboardCuotaDetalleItem(
+    val cliente: String,
+    val idPrestamo: Long,
+    val numeroCuota: Int,
+    val fechaVencimiento: Long,
+    val saldoPendiente: Double,
+    val estado: EstadoCuota,
     val moneda: Moneda
 )
 
