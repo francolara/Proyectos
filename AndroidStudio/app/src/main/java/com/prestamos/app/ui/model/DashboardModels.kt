@@ -11,6 +11,7 @@ data class DashboardResumen(
     val estadoCuotas: Map<String, Int> = emptyMap(),
     val proximosVencimientos: List<DashboardCuotaItem> = emptyList(),
     val ultimosPagos: List<DashboardPagoItem> = emptyList(),
+    val prestamosCapitalDetalle: List<DashboardPrestamoDetalleItem> = emptyList(),
     val prestamosActivosDetalle: List<DashboardPrestamoDetalleItem> = emptyList(),
     val cuotasPendientesDetalle: List<DashboardCuotaDetalleItem> = emptyList(),
     val cuotasVencidasDetalle: List<DashboardCuotaDetalleItem> = emptyList(),

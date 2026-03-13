@@ -69,6 +69,23 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             }
             .sortedByDescending { it.saldoPendiente }
 
+        val prestamosCapitalDetalle = prestamos
+            .filter { it.estadoPrestamo == EstadoPrestamo.ACTIVO || it.estadoPrestamo == EstadoPrestamo.PAGADO }
+            .map { prestamo ->
+                val cliente = clienteById[prestamo.idCliente]
+                val cuotasPrestamo = cuotasByPrestamo[prestamo.idPrestamo].orEmpty()
+                DashboardPrestamoDetalleItem(
+                    cliente = "${cliente?.nombre.orEmpty()} ${cliente?.apellido.orEmpty()}".trim().ifBlank { "-" },
+                    idPrestamo = prestamo.idPrestamo,
+                    montoPrestado = prestamo.montoPrestado,
+                    saldoPendiente = cuotasPrestamo.sumOf { it.saldoPendiente },
+                    totalCuotas = prestamo.cantidadCuotas,
+                    cuotasPendientes = cuotasPrestamo.count { it.saldoPendiente > 0.0 },
+                    moneda = prestamo.moneda
+                )
+            }
+            .sortedWith(compareByDescending<DashboardPrestamoDetalleItem> { it.montoPrestado }.thenByDescending { it.idPrestamo })
+
         val cuotasPendientesDetalle = cuotas
             .filter { it.saldoPendiente > 0.0 }
             .sortedBy { it.fechaVencimiento }
@@ -161,6 +178,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             estadoCuotas = estadoCuotas,
             proximosVencimientos = proximosVencimientos,
             ultimosPagos = ultimosPagos,
+            prestamosCapitalDetalle = prestamosCapitalDetalle,
             prestamosActivosDetalle = prestamosActivosDetalle,
             cuotasPendientesDetalle = cuotasPendientesDetalle,
             cuotasVencidasDetalle = cuotasVencidasDetalle,

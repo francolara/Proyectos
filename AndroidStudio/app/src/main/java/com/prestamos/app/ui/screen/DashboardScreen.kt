@@ -261,14 +261,14 @@ private data class DashboardDetalleInfo(
 private fun DashboardDetalle.toDetalleInfo(state: com.prestamos.app.ui.model.DashboardResumen): DashboardDetalleInfo {
     return when (this) {
         DashboardDetalle.CAPITAL -> {
-            val resumen = state.prestamosActivosDetalle
+            val resumen = state.prestamosCapitalDetalle
             val totalPrestamos = resumen.size
-            val top = resumen.take(5).joinToString("\n") {
-                "• ${it.cliente} | Prest. ${it.montoPrestado.toMoney(it.moneda)} | Saldo ${it.saldoPendiente.toMoney(it.moneda)} | Cuotas pend. ${it.cuotasPendientes}/${it.totalCuotas}"
-            }.ifBlank { "No hay préstamos activos." }
+            val top = resumen.take(8).joinToString("\n") {
+                "• ${it.cliente} | Préstamo #${it.idPrestamo} | Capital ${it.montoPrestado.toMoney(it.moneda)} | Estado: ${if (it.cuotasPendientes > 0) "ACTIVO" else "PAGADO"}"
+            }.ifBlank { "No hay préstamos activos o pagados." }
             DashboardDetalleInfo(
                 title = "Capital prestado",
-                message = "Préstamos activos: $totalPrestamos\nTotal colocado: ${state.capitalPrestado.toMoney(state.monedaReferencial)}\n\n$top"
+                message = "Préstamos activos o pagados: $totalPrestamos\nTotal colocado: ${state.capitalPrestado.toMoney(state.monedaReferencial)}\n\n$top"
             )
         }
 

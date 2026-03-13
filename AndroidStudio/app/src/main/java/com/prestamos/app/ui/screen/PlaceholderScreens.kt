@@ -320,6 +320,7 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                     monto = ""
                     interes = ""
                     cuotas = ""
+                    fechaPrimeraCuota = LocalDate.now()
                 }
             }) { Text("Guardar préstamo") }
 
