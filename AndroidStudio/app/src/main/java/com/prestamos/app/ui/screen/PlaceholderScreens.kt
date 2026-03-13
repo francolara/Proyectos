@@ -1,5 +1,6 @@
 package com.prestamos.app.ui.screen
 
+import android.app.DatePickerDialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,11 +29,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.prestamos.app.data.local.entity.ClienteEntity
 import com.prestamos.app.data.local.entity.Moneda
-import com.prestamos.app.data.local.entity.PrestamoEntity
 import com.prestamos.app.data.local.entity.TipoPago
 import com.prestamos.app.ui.viewmodel.AppViewModel
 import com.prestamos.app.util.toDateString
@@ -59,37 +62,39 @@ fun ClientesScreen(viewModel: AppViewModel) {
             Text("Clientes", style = MaterialTheme.typography.headlineSmall)
             OutlinedTextField(
                 value = nombre,
-                onValueChange = { nombre = it.filter { ch -> ch != '\n' && ch != '\r' } },
+                onValueChange = { nombre = sanitizeSingleLine(it) },
                 label = { Text("Nombres *") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
                 value = apellido,
-                onValueChange = { apellido = it.filter { ch -> ch != '\n' && ch != '\r' } },
+                onValueChange = { apellido = sanitizeSingleLine(it) },
                 label = { Text("Apellido *") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
                 value = documento,
-                onValueChange = { documento = it.filter { ch -> ch != '\n' && ch != '\r' } },
+                onValueChange = { documento = onlyDigits(it) },
                 label = { Text("Documento de identidad *") },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
                 value = direccion,
-                onValueChange = { direccion = it.filter { ch -> ch != '\n' && ch != '\r' } },
+                onValueChange = { direccion = sanitizeSingleLine(it) },
                 label = { Text("Dirección") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
                 value = telefono,
-                onValueChange = { telefono = it.filter { ch -> ch != '\n' && ch != '\r' } },
+                onValueChange = { telefono = onlyDigits(it) },
                 label = { Text("Nro de teléfono") },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(Modifier.height(8.dp))
@@ -121,6 +126,7 @@ fun ClientesScreen(viewModel: AppViewModel) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrestamosScreen(viewModel: AppViewModel) {
+    val context = LocalContext.current
     val clientes by viewModel.clientes.collectAsStateWithLifecycle()
     val prestamos by viewModel.prestamos.collectAsStateWithLifecycle()
 
@@ -152,7 +158,7 @@ fun PrestamosScreen(viewModel: AppViewModel) {
 
             OutlinedTextField(
                 value = filtroCliente,
-                onValueChange = { filtroCliente = it.filter { ch -> ch != '\n' && ch != '\r' } },
+                onValueChange = { filtroCliente = sanitizeSingleLine(it) },
                 label = { Text("Filtrar cliente (nombre o documento)") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
@@ -182,16 +188,18 @@ fun PrestamosScreen(viewModel: AppViewModel) {
 
             OutlinedTextField(
                 value = monto,
-                onValueChange = { monto = it.filter { ch -> ch != '\n' && ch != '\r' } },
+                onValueChange = { monto = onlyDecimal(it) },
                 label = { Text("Monto") },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
                 value = interes,
-                onValueChange = { interes = it.filter { ch -> ch != '\n' && ch != '\r' } },
+                onValueChange = { interes = onlyDecimal(it) },
                 label = { Text("Interés (%)") },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -222,9 +230,10 @@ fun PrestamosScreen(viewModel: AppViewModel) {
 
             OutlinedTextField(
                 value = cuotas,
-                onValueChange = { cuotas = it.filter { ch -> ch != '\n' && ch != '\r' } },
+                onValueChange = { cuotas = onlyDigits(it) },
                 label = { Text("Cantidad de cuotas") },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -252,14 +261,25 @@ fun PrestamosScreen(viewModel: AppViewModel) {
 
             OutlinedTextField(
                 value = fechaPrimeraCuota.toString(),
-                onValueChange = {
-                    val limpio = it.filter { ch -> ch != '\n' && ch != '\r' }
-                    runCatching { LocalDate.parse(limpio) }.onSuccess { parsed -> fechaPrimeraCuota = parsed }
-                },
-                label = { Text("Fecha primera cuota (yyyy-MM-dd)") },
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Fecha primera cuota") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
+            Button(onClick = {
+                DatePickerDialog(
+                    context,
+                    { _, year, month, dayOfMonth ->
+                        fechaPrimeraCuota = LocalDate.of(year, month + 1, dayOfMonth)
+                    },
+                    fechaPrimeraCuota.year,
+                    fechaPrimeraCuota.monthValue - 1,
+                    fechaPrimeraCuota.dayOfMonth
+                ).show()
+            }) {
+                Text("Seleccionar fecha")
+            }
 
             Button(onClick = {
                 clienteSeleccionado?.let {
@@ -329,7 +349,7 @@ fun PagosScreen(viewModel: AppViewModel) {
 
         OutlinedTextField(
             value = filtroCliente,
-            onValueChange = { filtroCliente = it.filter { ch -> ch != '\n' && ch != '\r' } },
+            onValueChange = { filtroCliente = sanitizeSingleLine(it) },
             label = { Text("Filtrar cliente (nombre o documento)") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
@@ -378,14 +398,15 @@ fun PagosScreen(viewModel: AppViewModel) {
 
         OutlinedTextField(
             value = montoAbono,
-            onValueChange = { montoAbono = it.filter { ch -> ch != '\n' && ch != '\r' } },
+            onValueChange = { montoAbono = onlyDecimal(it) },
             label = { Text("Monto abonado") },
             singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier.fillMaxWidth()
         )
         OutlinedTextField(
             value = observacion,
-            onValueChange = { observacion = it.filter { ch -> ch != '\n' && ch != '\r' } },
+            onValueChange = { observacion = sanitizeSingleLine(it) },
             label = { Text("Observación") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
@@ -482,4 +503,24 @@ private fun filtrarClientes(clientes: List<ClienteEntity>, filtro: String): List
         "${cliente.nombre} ${cliente.apellido}".lowercase().contains(query) ||
             cliente.documentoIdentidad.lowercase().contains(query)
     }
+}
+
+private fun sanitizeSingleLine(value: String): String = value.filter { it != '\n' && it != '\r' }
+
+private fun onlyDigits(value: String): String = value.filter { it.isDigit() }
+
+private fun onlyDecimal(value: String): String {
+    val clean = sanitizeSingleLine(value).replace(',', '.')
+    var hasDot = false
+    val result = StringBuilder()
+    clean.forEach { ch ->
+        when {
+            ch.isDigit() -> result.append(ch)
+            ch == '.' && !hasDot -> {
+                hasDot = true
+                result.append(ch)
+            }
+        }
+    }
+    return result.toString()
 }
