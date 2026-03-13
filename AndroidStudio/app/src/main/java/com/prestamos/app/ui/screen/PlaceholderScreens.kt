@@ -41,6 +41,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.prestamos.app.data.local.entity.ClienteEntity
+import com.prestamos.app.data.local.entity.EstadoPrestamo
 import com.prestamos.app.data.local.entity.Moneda
 import com.prestamos.app.data.local.entity.TipoPago
 import com.prestamos.app.ui.viewmodel.AppViewModel
@@ -129,6 +130,11 @@ fun ClientesScreen(viewModel: AppViewModel) {
     }
 }
 
+private enum class PrestamosFiltroEstado(val estado: EstadoPrestamo, val label: String) {
+    ACTIVOS(EstadoPrestamo.ACTIVO, "ACTIVO"),
+    PAGADOS(EstadoPrestamo.PAGADO, "PAGADO")
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrestamosScreen(viewModel: AppViewModel) {
@@ -154,6 +160,12 @@ fun PrestamosScreen(viewModel: AppViewModel) {
     var expandedTipo by remember { mutableStateOf(false) }
     var mostrarDetallePrestamo by remember { mutableStateOf(false) }
     var prestamoDetalleId by remember { mutableStateOf<Long?>(null) }
+    var filtroEstado by remember { mutableStateOf(PrestamosFiltroEstado.ACTIVOS) }
+    var expandedFiltroEstado by remember { mutableStateOf(false) }
+
+    val prestamosFiltrados = remember(prestamos, filtroEstado) {
+        prestamos.filter { it.estadoPrestamo == filtroEstado.estado }
+    }
 
     val cuotasDetalle by viewModel.cuotasPrestamoDetalle.collectAsStateWithLifecycle()
 
@@ -310,9 +322,34 @@ fun PrestamosScreen(viewModel: AppViewModel) {
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
             Text("Listado", style = MaterialTheme.typography.titleMedium)
+
+            ExposedDropdownMenuBox(
+                expanded = expandedFiltroEstado,
+                onExpandedChange = { expandedFiltroEstado = !expandedFiltroEstado }
+            ) {
+                OutlinedTextField(
+                    value = filtroEstado.label,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Filtro estado") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedFiltroEstado) },
+                    modifier = Modifier.menuAnchor().fillMaxWidth()
+                )
+                DropdownMenu(expanded = expandedFiltroEstado, onDismissRequest = { expandedFiltroEstado = false }) {
+                    PrestamosFiltroEstado.entries.forEach { opcion ->
+                        DropdownMenuItem(
+                            text = { Text(opcion.label) },
+                            onClick = {
+                                filtroEstado = opcion
+                                expandedFiltroEstado = false
+                            }
+                        )
+                    }
+                }
+            }
         }
 
-        items(prestamos) { prestamo ->
+        items(prestamosFiltrados) { prestamo ->
             val cliente = clientes.firstOrNull { it.idCliente == prestamo.idCliente }
             Card(
                 modifier = Modifier

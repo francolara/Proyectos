@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Assessment
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Payments
@@ -41,7 +40,6 @@ import com.prestamos.app.ui.screen.PagosScreen
 import com.prestamos.app.ui.screen.PinLoginScreen
 import com.prestamos.app.ui.screen.PinSetupScreen
 import com.prestamos.app.ui.screen.PrestamosScreen
-import com.prestamos.app.ui.screen.ReportesScreen
 import com.prestamos.app.ui.theme.AppPrestamosTheme
 import com.prestamos.app.ui.viewmodel.AppViewModel
 import com.prestamos.app.ui.viewmodel.AuthState
@@ -146,7 +144,6 @@ private fun PrestamosApp(appViewModel: AppViewModel, authViewModel: AuthViewMode
             composable(AppDestinations.CLIENTES.route) { ClientesScreen(appViewModel) }
             composable(AppDestinations.PRESTAMOS.route) { PrestamosScreen(appViewModel) }
             composable(AppDestinations.PAGOS.route) { PagosScreen(appViewModel) }
-            composable(AppDestinations.REPORTES.route) { ReportesScreen(appViewModel) }
         }
     }
 }
@@ -157,5 +154,4 @@ private fun iconFor(destination: AppDestinations) = when (destination) {
     AppDestinations.CLIENTES -> Icons.Outlined.Groups
     AppDestinations.PRESTAMOS -> Icons.Outlined.RequestPage
     AppDestinations.PAGOS -> Icons.Outlined.Payments
-    AppDestinations.REPORTES -> Icons.Outlined.Assessment
 }

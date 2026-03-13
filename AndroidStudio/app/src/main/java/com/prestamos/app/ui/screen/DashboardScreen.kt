@@ -135,7 +135,7 @@ fun DashboardScreen(
             }
         }
         items(state.proximosVencimientos) { cuota ->
-            Card(modifier = Modifier.fillMaxWidth().clickable { onNavigate(AppDestinations.PRESTAMOS.route) }) {
+            Card(modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(10.dp)) {
                     Text(cuota.cliente)
                     Text("Cuota ${cuota.numeroCuota} - Vence ${cuota.fechaVencimiento.toDateString()}")
@@ -160,18 +160,6 @@ fun DashboardScreen(
             }
         }
 
-        item {
-            Text("Accesos rápidos", style = MaterialTheme.typography.titleMedium)
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                DashboardCard("Nuevo cliente", "Ir", Modifier.weight(1f)) { onNavigate(AppDestinations.CLIENTES.route) }
-                DashboardCard("Nuevo préstamo", "Ir", Modifier.weight(1f)) { onNavigate(AppDestinations.PRESTAMOS.route) }
-            }
-            Spacer(Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                DashboardCard("Registrar pago", "Ir", Modifier.weight(1f)) { onNavigate(AppDestinations.PAGOS.route) }
-                DashboardCard("Ver reportes", "Ir", Modifier.weight(1f)) { onNavigate(AppDestinations.REPORTES.route) }
-            }
-        }
     }
 
     detalleSeleccionado?.let {
