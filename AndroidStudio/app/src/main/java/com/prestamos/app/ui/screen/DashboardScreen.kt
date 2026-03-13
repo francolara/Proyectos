@@ -1,14 +1,10 @@
 package com.prestamos.app.ui.screen
 
 import android.content.Intent
-import android.net.Uri
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,20 +17,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Logout
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
@@ -43,13 +35,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.prestamos.app.data.local.DatabaseBackupManager
 import com.prestamos.app.ui.screen.export.createDashboardDetalleImage
 import com.prestamos.app.ui.screen.export.createDashboardDetallePdf
 import com.prestamos.app.ui.viewmodel.DashboardViewModel
 import com.prestamos.app.util.toDateString
 import com.prestamos.app.util.toMoney
-import kotlinx.coroutines.launch
 import java.io.File
 
 private enum class DashboardDetalle {
@@ -71,195 +61,111 @@ fun DashboardScreen(
     onToggleDarkMode: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var detalleSeleccionado by remember { mutableStateOf<DashboardDetalle?>(null) }
-    var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
 
-    val exportBackupLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("application/octet-stream")
-    ) { uri ->
-        if (uri == null) return@rememberLauncherForActivityResult
-        scope.launch {
-            DatabaseBackupManager.exportDatabase(context, uri)
-                .onSuccess { snackbarHostState.showSnackbar("Backup exportado correctamente") }
-                .onFailure { snackbarHostState.showSnackbar(it.message ?: "No se pudo exportar backup") }
-        }
-    }
-
-    val importBackupLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        if (uri == null) return@rememberLauncherForActivityResult
-        pendingImportUri = uri
-    }
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text("Resumen general", style = MaterialTheme.typography.headlineSmall)
-                        Text("Fecha: ${System.currentTimeMillis().toDateString()}")
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Modo oscuro")
-                        Switch(checked = isDarkMode, onCheckedChange = onToggleDarkMode)
-                        IconButton(onClick = onLogout) {
-                            Icon(Icons.Outlined.Logout, contentDescription = "Cerrar sesión")
-                        }
-                    }
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text("Resumen general", style = MaterialTheme.typography.headlineSmall)
+                    Text("Fecha: ${System.currentTimeMillis().toDateString()}")
                 }
-            }
-
-            item {
-                Text("Backup", style = MaterialTheme.typography.titleMedium)
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(
-                        modifier = Modifier.weight(1f),
-                        onClick = {
-                            exportBackupLauncher.launch(DatabaseBackupManager.buildBackupFileName())
-                        }
-                    ) {
-                        Text("Exportar backup")
-                    }
-                    Button(
-                        modifier = Modifier.weight(1f),
-                        onClick = {
-                            importBackupLauncher.launch(arrayOf("application/octet-stream", "application/x-sqlite3", "*/*"))
-                        }
-                    ) {
-                        Text("Importar backup")
-                    }
-                }
-            }
-
-            item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    DashboardCard("Capital prestado", state.capitalPrestado.toMoney(state.monedaReferencial), Modifier.weight(1f)) {
-                        detalleSeleccionado = DashboardDetalle.CAPITAL
-                    }
-                    DashboardCard("Saldo pendiente", state.saldoPendiente.toMoney(state.monedaReferencial), Modifier.weight(1f)) {
-                        detalleSeleccionado = DashboardDetalle.PENDIENTE
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    DashboardCard("Cobrado hoy", state.cobradoHoy.toMoney(state.monedaReferencial), Modifier.weight(1f)) {
-                        detalleSeleccionado = DashboardDetalle.COBRADO_HOY
-                    }
-                    DashboardCard("Cuotas vencidas", state.cuotasVencidas.toString(), Modifier.weight(1f)) {
-                        detalleSeleccionado = DashboardDetalle.VENCIDAS
-                    }
-                }
-            }
-
-            item {
-                Text("Gráfico comparativo", style = MaterialTheme.typography.titleMedium)
-                val total = (state.capitalPrestado + state.cobradoHoy + state.saldoPendiente).coerceAtLeast(1.0)
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    BarSegment("Prestado", (state.capitalPrestado / total).toFloat(), Color(0xFF1565C0)) { detalleSeleccionado = DashboardDetalle.CAPITAL }
-                    BarSegment("Cobrado", (state.cobradoHoy / total).toFloat(), Color(0xFF2E7D32)) { detalleSeleccionado = DashboardDetalle.COBRADO_HOY }
-                    BarSegment("Pendiente", (state.saldoPendiente / total).toFloat(), Color(0xFFF57C00)) { detalleSeleccionado = DashboardDetalle.PENDIENTE }
-                }
-            }
-
-            item {
-                Text("Estado de cuotas", style = MaterialTheme.typography.titleMedium)
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    DashboardCard("Pagadas", (state.estadoCuotas["Pagadas"] ?: 0).toString(), Modifier.weight(1f)) { detalleSeleccionado = DashboardDetalle.CUOTAS_PAGADAS }
-                    DashboardCard("Pendientes", (state.estadoCuotas["Pendientes"] ?: 0).toString(), Modifier.weight(1f)) { detalleSeleccionado = DashboardDetalle.CUOTAS_PENDIENTES }
-                }
-                Spacer(Modifier.height(8.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    DashboardCard("Parciales", (state.estadoCuotas["Parciales"] ?: 0).toString(), Modifier.weight(1f)) { detalleSeleccionado = DashboardDetalle.CUOTAS_PARCIALES }
-                    DashboardCard("Vencidas", (state.estadoCuotas["Vencidas"] ?: 0).toString(), Modifier.weight(1f)) { detalleSeleccionado = DashboardDetalle.CUOTAS_VENCIDAS }
-                }
-            }
-
-            item {
-                Text("Próximos vencimientos", style = MaterialTheme.typography.titleMedium)
-                if (state.proximosVencimientos.isEmpty()) {
-                    Text("No hay próximos vencimientos")
-                }
-            }
-            items(state.proximosVencimientos) { cuota ->
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(10.dp)) {
-                        Text(cuota.cliente)
-                        Text("Préstamo #${cuota.idPrestamo} | Cuota ${cuota.numeroCuota}")
-                        Text("Vence ${cuota.fechaVencimiento.toDateString()}")
-                        Text("Saldo: ${cuota.saldoPendiente.toMoney(cuota.moneda)}")
-                    }
-                }
-            }
-
-            item {
-                Text("Últimos pagos", style = MaterialTheme.typography.titleMedium)
-                if (state.ultimosPagos.isEmpty()) {
-                    Text("No hay pagos registrados")
-                }
-            }
-            items(state.ultimosPagos) { pago ->
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(10.dp)) {
-                        Text(pago.cliente)
-                        Text("Préstamo #${pago.idPrestamo} | Cuota ${pago.numeroCuota}")
-                        Text("Fecha: ${pago.fechaPago.toDateString()}")
-                        Text("Abono: ${pago.montoAbono.toMoney(pago.moneda)}")
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Modo oscuro")
+                    Switch(checked = isDarkMode, onCheckedChange = onToggleDarkMode)
+                    IconButton(onClick = onLogout) {
+                        Icon(Icons.Outlined.Logout, contentDescription = "Cerrar sesión")
                     }
                 }
             }
         }
 
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(16.dp)
-        )
-    }
-
-    pendingImportUri?.let { uri ->
-        androidx.compose.material3.AlertDialog(
-            onDismissRequest = { pendingImportUri = null },
-            title = { Text("Confirmar restauración") },
-            text = {
-                Text("Restaurar este backup reemplazará todos los datos actuales. ¿Desea continuar?")
-            },
-            confirmButton = {
-                androidx.compose.material3.TextButton(onClick = {
-                    pendingImportUri = null
-                    scope.launch {
-                        DatabaseBackupManager.importDatabase(context, uri)
-                            .onSuccess {
-                                snackbarHostState.showSnackbar("Backup restaurado. Reiniciando app...")
-                                DatabaseBackupManager.restartApplication(context)
-                            }
-                            .onFailure {
-                                snackbarHostState.showSnackbar(it.message ?: "No se pudo restaurar backup")
-                            }
-                    }
-                }) {
-                    Text("Restaurar")
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                DashboardCard("Capital prestado", state.capitalPrestado.toMoney(state.monedaReferencial), Modifier.weight(1f)) {
+                    detalleSeleccionado = DashboardDetalle.CAPITAL
                 }
-            },
-            dismissButton = {
-                androidx.compose.material3.TextButton(onClick = { pendingImportUri = null }) {
-                    Text("Cancelar")
+                DashboardCard("Saldo pendiente", state.saldoPendiente.toMoney(state.monedaReferencial), Modifier.weight(1f)) {
+                    detalleSeleccionado = DashboardDetalle.PENDIENTE
                 }
             }
-        )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                DashboardCard("Cobrado hoy", state.cobradoHoy.toMoney(state.monedaReferencial), Modifier.weight(1f)) {
+                    detalleSeleccionado = DashboardDetalle.COBRADO_HOY
+                }
+                DashboardCard("Cuotas vencidas", state.cuotasVencidas.toString(), Modifier.weight(1f)) {
+                    detalleSeleccionado = DashboardDetalle.VENCIDAS
+                }
+            }
+        }
+
+        item {
+            Text("Gráfico comparativo", style = MaterialTheme.typography.titleMedium)
+            val total = (state.capitalPrestado + state.cobradoHoy + state.saldoPendiente).coerceAtLeast(1.0)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                BarSegment("Prestado", (state.capitalPrestado / total).toFloat(), Color(0xFF1565C0)) { detalleSeleccionado = DashboardDetalle.CAPITAL }
+                BarSegment("Cobrado", (state.cobradoHoy / total).toFloat(), Color(0xFF2E7D32)) { detalleSeleccionado = DashboardDetalle.COBRADO_HOY }
+                BarSegment("Pendiente", (state.saldoPendiente / total).toFloat(), Color(0xFFF57C00)) { detalleSeleccionado = DashboardDetalle.PENDIENTE }
+            }
+        }
+
+        item {
+            Text("Estado de cuotas", style = MaterialTheme.typography.titleMedium)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                DashboardCard("Pagadas", (state.estadoCuotas["Pagadas"] ?: 0).toString(), Modifier.weight(1f)) { detalleSeleccionado = DashboardDetalle.CUOTAS_PAGADAS }
+                DashboardCard("Pendientes", (state.estadoCuotas["Pendientes"] ?: 0).toString(), Modifier.weight(1f)) { detalleSeleccionado = DashboardDetalle.CUOTAS_PENDIENTES }
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                DashboardCard("Parciales", (state.estadoCuotas["Parciales"] ?: 0).toString(), Modifier.weight(1f)) { detalleSeleccionado = DashboardDetalle.CUOTAS_PARCIALES }
+                DashboardCard("Vencidas", (state.estadoCuotas["Vencidas"] ?: 0).toString(), Modifier.weight(1f)) { detalleSeleccionado = DashboardDetalle.CUOTAS_VENCIDAS }
+            }
+        }
+
+        item {
+            Text("Próximos vencimientos", style = MaterialTheme.typography.titleMedium)
+            if (state.proximosVencimientos.isEmpty()) {
+                Text("No hay próximos vencimientos")
+            }
+        }
+        items(state.proximosVencimientos) { cuota ->
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(10.dp)) {
+                    Text(cuota.cliente)
+                    Text("Préstamo #${cuota.idPrestamo} | Cuota ${cuota.numeroCuota}")
+                    Text("Vence ${cuota.fechaVencimiento.toDateString()}")
+                    Text("Saldo: ${cuota.saldoPendiente.toMoney(cuota.moneda)}")
+                }
+            }
+        }
+
+        item {
+            Text("Últimos pagos", style = MaterialTheme.typography.titleMedium)
+            if (state.ultimosPagos.isEmpty()) {
+                Text("No hay pagos registrados")
+            }
+        }
+        items(state.ultimosPagos) { pago ->
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(10.dp)) {
+                    Text(pago.cliente)
+                    Text("Préstamo #${pago.idPrestamo} | Cuota ${pago.numeroCuota}")
+                    Text("Fecha: ${pago.fechaPago.toDateString()}")
+                    Text("Abono: ${pago.montoAbono.toMoney(pago.moneda)}")
+                }
+            }
+        }
     }
 
     detalleSeleccionado?.let {

@@ -32,6 +32,7 @@ object DatabaseBackupManager {
                     input.copyTo(output)
                 }
             } ?: error("No se pudo abrir destino de exportación")
+            Unit
         }
     }
 
@@ -62,6 +63,7 @@ object DatabaseBackupManager {
             }
 
             tempFile.delete()
+            Unit
         }
     }
 

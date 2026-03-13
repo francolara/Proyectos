@@ -12,6 +12,7 @@ import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.RequestPage
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -40,6 +41,7 @@ import com.prestamos.app.navigation.AppDestinations
 import com.prestamos.app.ui.screen.ClientesScreen
 import com.prestamos.app.ui.screen.DashboardScreen
 import com.prestamos.app.ui.screen.PagosScreen
+import com.prestamos.app.ui.screen.BackupScreen
 import com.prestamos.app.ui.screen.PinLoginScreen
 import com.prestamos.app.ui.screen.PinSetupScreen
 import com.prestamos.app.ui.screen.PrestamosScreen
@@ -160,6 +162,7 @@ private fun PrestamosApp(
             composable(AppDestinations.CLIENTES.route) { ClientesScreen(appViewModel) }
             composable(AppDestinations.PRESTAMOS.route) { PrestamosScreen(appViewModel) }
             composable(AppDestinations.PAGOS.route) { PagosScreen(appViewModel) }
+            composable(AppDestinations.BACKUP.route) { BackupScreen() }
         }
     }
 }
@@ -170,4 +173,5 @@ private fun iconFor(destination: AppDestinations) = when (destination) {
     AppDestinations.CLIENTES -> Icons.Outlined.Groups
     AppDestinations.PRESTAMOS -> Icons.Outlined.RequestPage
     AppDestinations.PAGOS -> Icons.Outlined.Payments
+    AppDestinations.BACKUP -> Icons.Outlined.Settings
 }
