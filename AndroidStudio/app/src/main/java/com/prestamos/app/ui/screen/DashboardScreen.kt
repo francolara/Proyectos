@@ -40,6 +40,7 @@ import java.io.File
 
 private enum class DashboardDetalle {
     CAPITAL,
+    CAPITAL_ACTIVO2,
     PENDIENTE,
     COBRADO_HOY,
     VENCIDAS,
@@ -83,22 +84,27 @@ fun DashboardScreen(
         }
 
         item {
+            val capitalPrestadoActivo2 = state.prestamosActivosDetalle.sumOf { it.montoPrestado }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 DashboardCard("Capital prestado", state.capitalPrestado.toMoney(state.monedaReferencial), Modifier.weight(1f)) {
                     detalleSeleccionado = DashboardDetalle.CAPITAL
                 }
-                DashboardCard("Saldo pendiente", state.saldoPendiente.toMoney(state.monedaReferencial), Modifier.weight(1f)) {
-                    detalleSeleccionado = DashboardDetalle.PENDIENTE
+                DashboardCard("Capital prestado activo2", capitalPrestadoActivo2.toMoney(state.monedaReferencial), Modifier.weight(1f)) {
+                    detalleSeleccionado = DashboardDetalle.CAPITAL_ACTIVO2
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                DashboardCard("Saldo pendiente", state.saldoPendiente.toMoney(state.monedaReferencial), Modifier.weight(1f)) {
+                    detalleSeleccionado = DashboardDetalle.PENDIENTE
+                }
                 DashboardCard("Cobrado hoy", state.cobradoHoy.toMoney(state.monedaReferencial), Modifier.weight(1f)) {
                     detalleSeleccionado = DashboardDetalle.COBRADO_HOY
                 }
-                DashboardCard("Cuotas vencidas", state.cuotasVencidas.toString(), Modifier.weight(1f)) {
-                    detalleSeleccionado = DashboardDetalle.VENCIDAS
-                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            DashboardCard("Cuotas vencidas", state.cuotasVencidas.toString(), Modifier.fillMaxWidth()) {
+                detalleSeleccionado = DashboardDetalle.VENCIDAS
             }
         }
 
@@ -263,6 +269,18 @@ private fun DashboardDetalle.toDetalleInfo(state: com.prestamos.app.ui.model.Das
             DashboardDetalleInfo(
                 title = "Capital prestado",
                 message = "Préstamos activos: $totalPrestamos\nTotal colocado: ${state.capitalPrestado.toMoney(state.monedaReferencial)}\n\n$top"
+            )
+        }
+
+        DashboardDetalle.CAPITAL_ACTIVO2 -> {
+            val resumen = state.prestamosActivosDetalle
+            val total = resumen.sumOf { it.montoPrestado }
+            val top = resumen.take(5).joinToString("\n") {
+                "• ${it.cliente} | Préstamo #${it.idPrestamo} | Capital ${it.montoPrestado.toMoney(it.moneda)}"
+            }.ifBlank { "No hay préstamos activos." }
+            DashboardDetalleInfo(
+                title = "Capital prestado activo2",
+                message = "Capital de préstamos activos: ${total.toMoney(state.monedaReferencial)}\n\n$top"
             )
         }
 

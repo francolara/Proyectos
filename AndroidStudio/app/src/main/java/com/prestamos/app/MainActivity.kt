@@ -139,10 +139,10 @@ private fun PrestamosApp(
                         icon = {
                             Icon(
                                 imageVector = iconFor(destination),
-                                contentDescription = destination.title
+                                contentDescription = if (destination.title.isBlank()) destination.route else destination.title
                             )
                         },
-                        label = { Text(destination.title) }
+                        label = if (destination.title.isBlank()) null else { { Text(destination.title) } }
                     )
                 }
             }
