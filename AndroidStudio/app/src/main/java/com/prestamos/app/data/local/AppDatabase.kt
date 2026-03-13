@@ -32,6 +32,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun pagoDao(): PagoDao
 
     companion object {
+        const val DATABASE_NAME = "prestamos.db"
+
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
@@ -40,10 +42,17 @@ abstract class AppDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "prestamos.db"
+                    DATABASE_NAME
                 ).fallbackToDestructiveMigration().build()
                 INSTANCE = instance
                 instance
+            }
+        }
+
+        fun closeInstance() {
+            synchronized(this) {
+                INSTANCE?.close()
+                INSTANCE = null
             }
         }
     }
