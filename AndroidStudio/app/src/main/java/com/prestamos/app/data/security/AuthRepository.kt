@@ -25,6 +25,13 @@ class AuthRepository(context: Context) {
         return ok
     }
 
+
+    suspend fun reiniciarSesionAlAbrirApp() {
+        if (prefs.pinConfigured.first()) {
+            prefs.setSessionUnlocked(false)
+        }
+    }
+
     suspend fun desbloquearSesion() {
         prefs.setSessionUnlocked(true)
     }

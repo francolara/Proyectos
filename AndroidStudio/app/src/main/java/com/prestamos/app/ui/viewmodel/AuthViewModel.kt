@@ -20,12 +20,22 @@ sealed class AuthState {
 
 class AuthViewModel(application: Application) : AndroidViewModel(application) {
     private val authRepository = AuthRepository(application)
+    private val inicializado = MutableStateFlow(false)
+
+    init {
+        viewModelScope.launch {
+            authRepository.reiniciarSesionAlAbrirApp()
+            inicializado.value = true
+        }
+    }
 
     val authState: StateFlow<AuthState> = combine(
+        inicializado,
         authRepository.pinConfigured,
         authRepository.sessionUnlocked
-    ) { configured, unlocked ->
+    ) { listo, configured, unlocked ->
         when {
+            !listo -> AuthState.Loading
             !configured -> AuthState.NeedsPinSetup
             unlocked -> AuthState.Unlocked
             else -> AuthState.Locked
