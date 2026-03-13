@@ -372,6 +372,14 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                                 "pendiente ${cuota.saldoPendiente.toMoney(prestamo?.moneda ?: Moneda.SOLES)}"
                         )
                     }
+                    item {
+                        HorizontalDivider()
+                        val totalDeudaPendiente = cuotasDetalle.sumOf { it.saldoPendiente }
+                        Text(
+                            "Total deuda pendiente: ${totalDeudaPendiente.toMoney(prestamo?.moneda ?: Moneda.SOLES)}",
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                    }
                 }
             }
         )
