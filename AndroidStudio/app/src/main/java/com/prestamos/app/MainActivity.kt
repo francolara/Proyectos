@@ -22,6 +22,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -112,7 +113,10 @@ private fun AppRoot(
         }
     }
 
-    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = androidx.compose.material3.MaterialTheme.colorScheme.background
+    ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             when {
                 activationState.loading || authState is AuthState.Loading -> Box(
@@ -151,8 +155,12 @@ private fun PrestamosApp(
     val activationRoute = "activation_license"
 
     Scaffold(
+        containerColor = androidx.compose.material3.MaterialTheme.colorScheme.background,
         bottomBar = {
-            NavigationBar(modifier = Modifier.navigationBarsPadding()) {
+            NavigationBar(
+                modifier = Modifier.navigationBarsPadding(),
+                containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer
+            ) {
                 val currentRoute = navController.currentBackStackEntryAsState().value
                     ?.destination
                     ?.route
@@ -175,7 +183,12 @@ private fun PrestamosApp(
                                 contentDescription = if (destination.title.isBlank()) destination.route else destination.title
                             )
                         },
-                        label = null
+                        label = null,
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary,
+                            unselectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.onPrimaryContainer,
+                            indicatorColor = androidx.compose.material3.MaterialTheme.colorScheme.primary
+                        )
                     )
                 }
             }

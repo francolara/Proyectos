@@ -34,6 +34,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.prestamos.app.ui.theme.AccentGold
+import com.prestamos.app.ui.theme.PrimaryGreen
+import com.prestamos.app.ui.theme.SecondaryGreen
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -94,7 +97,7 @@ fun DashboardScreen(
                             activationUiState.status.licenseType.name == "ANUAL" -> "Licencia ANUAL activa"
                             else -> "Licencia FULL activa"
                         }
-                        val trialColor = if (activationUiState.status.licenseType.name == "TRIAL") Color.Red else MaterialTheme.colorScheme.primary
+                        val trialColor = if (activationUiState.status.licenseType.name == "TRIAL") MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
                         Text(trialTexto, color = trialColor, style = MaterialTheme.typography.bodyMedium)
                         IconButton(onClick = { mostrarActivacion = true }) {
                             Icon(imageVector = Icons.Outlined.VpnKey, contentDescription = "Activar licencia")
@@ -111,7 +114,7 @@ fun DashboardScreen(
         item {
             val capitalPrestadoActivo2 = state.prestamosActivosDetalle.sumOf { it.montoPrestado }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                DashboardCard("Capital prestado", state.capitalPrestado.toMoney(state.monedaReferencial), Modifier.weight(1f)) {
+                DashboardCard("Capital prestado", state.capitalPrestado.toMoney(state.monedaReferencial), Modifier.weight(1f), highlightValue = true) {
                     detalleSeleccionado = DashboardDetalle.CAPITAL
                 }
                 DashboardCard("Capital prestado activo", capitalPrestadoActivo2.toMoney(state.monedaReferencial), Modifier.weight(1f)) {
@@ -123,7 +126,7 @@ fun DashboardScreen(
                 DashboardCard("Saldo pendiente", state.saldoPendiente.toMoney(state.monedaReferencial), Modifier.weight(1f)) {
                     detalleSeleccionado = DashboardDetalle.PENDIENTE
                 }
-                DashboardCard("Cobrado hoy", state.cobradoHoy.toMoney(state.monedaReferencial), Modifier.weight(1f)) {
+                DashboardCard("Cobrado hoy", state.cobradoHoy.toMoney(state.monedaReferencial), Modifier.weight(1f), highlightValue = true) {
                     detalleSeleccionado = DashboardDetalle.COBRADO_HOY
                 }
             }
@@ -137,9 +140,9 @@ fun DashboardScreen(
             Text("Gráfico comparativo", style = MaterialTheme.typography.titleMedium)
             val total = (state.capitalPrestado + state.cobradoHoy + state.saldoPendiente).coerceAtLeast(1.0)
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                BarSegment("Prestado", (state.capitalPrestado / total).toFloat(), Color(0xFF1565C0)) { detalleSeleccionado = DashboardDetalle.CAPITAL }
-                BarSegment("Cobrado", (state.cobradoHoy / total).toFloat(), Color(0xFF2E7D32)) { detalleSeleccionado = DashboardDetalle.COBRADO_HOY }
-                BarSegment("Pendiente", (state.saldoPendiente / total).toFloat(), Color(0xFFF57C00)) { detalleSeleccionado = DashboardDetalle.PENDIENTE }
+                BarSegment("Prestado", (state.capitalPrestado / total).toFloat(), PrimaryGreen) { detalleSeleccionado = DashboardDetalle.CAPITAL }
+                BarSegment("Cobrado", (state.cobradoHoy / total).toFloat(), AccentGold) { detalleSeleccionado = DashboardDetalle.COBRADO_HOY }
+                BarSegment("Pendiente", (state.saldoPendiente / total).toFloat(), SecondaryGreen) { detalleSeleccionado = DashboardDetalle.PENDIENTE }
             }
         }
 
@@ -184,7 +187,7 @@ fun DashboardScreen(
                                 modifier = Modifier
                                     .height(20.dp)
                                     .fillMaxWidth(ratio)
-                                    .background(Color(0xFF2E7D32), RoundedCornerShape(6.dp))
+                                    .background(PrimaryGreen, RoundedCornerShape(6.dp))
                             )
                         }
                         Text(
@@ -262,7 +265,7 @@ fun DashboardScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
                     if (activationUiState.status.licenseType.name == "TRIAL") {
-                        Text("Días restantes de trial: ${activationUiState.status.trialDaysRemaining}", color = Color.Red)
+                        Text("Días restantes de trial: ${activationUiState.status.trialDaysRemaining}", color = MaterialTheme.colorScheme.tertiary)
                     }
                 }
             }
@@ -291,11 +294,27 @@ fun DashboardScreen(
 }
 
 @Composable
-private fun DashboardCard(title: String, value: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Card(modifier = modifier.clickable(onClick = onClick)) {
+private fun DashboardCard(
+    title: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    highlightValue: Boolean = false,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = modifier.clickable(onClick = onClick),
+        colors = androidx.compose.material3.CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+        )
+    ) {
         Column(Modifier.padding(12.dp)) {
             Text(title, style = MaterialTheme.typography.labelLarge)
-            Text(value, style = MaterialTheme.typography.titleLarge)
+            Text(
+                value,
+                style = MaterialTheme.typography.titleLarge,
+                color = if (highlightValue) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSecondaryContainer
+            )
         }
     }
 }
