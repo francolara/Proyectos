@@ -9,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Groups
@@ -130,7 +131,7 @@ private fun AppRoot(
 
                 authState is AuthState.NeedsPinSetup -> PinSetupScreen(authViewModel)
                 authState is AuthState.Locked -> PinLoginScreen(authViewModel)
-                else -> PrestamosApp(appViewModel, authViewModel, isDarkMode, onToggleDarkMode)
+                else -> PrestamosApp(appViewModel, authViewModel, activationViewModel, isDarkMode, onToggleDarkMode)
             }
         }
     }
@@ -140,16 +141,18 @@ private fun AppRoot(
 private fun PrestamosApp(
     appViewModel: AppViewModel,
     authViewModel: AuthViewModel,
+    activationViewModel: ActivationViewModel,
     isDarkMode: Boolean,
     onToggleDarkMode: (Boolean) -> Unit,
     dashboardViewModel: DashboardViewModel = viewModel()
 ) {
     val navController = rememberNavController()
     val destinations = AppDestinations.entries
+    val activationRoute = "activation_license"
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
+            NavigationBar(modifier = Modifier.navigationBarsPadding()) {
                 val currentRoute = navController.currentBackStackEntryAsState().value
                     ?.destination
                     ?.route
@@ -193,7 +196,18 @@ private fun PrestamosApp(
             composable(AppDestinations.CLIENTES.route) { ClientesScreen(appViewModel) }
             composable(AppDestinations.PRESTAMOS.route) { PrestamosScreen(appViewModel) }
             composable(AppDestinations.PAGOS.route) { PagosScreen(appViewModel) }
-            composable(AppDestinations.BACKUP.route) { BackupScreen() }
+            composable(AppDestinations.BACKUP.route) {
+                BackupScreen(onManageLicense = { navController.navigate(activationRoute) })
+            }
+            composable(activationRoute) {
+                val activationState by activationViewModel.uiState.collectAsStateWithLifecycle()
+                ActivationScreen(
+                    uiState = activationState,
+                    onActivationKeyChanged = activationViewModel::onActivationKeyChanged,
+                    onActivate = activationViewModel::activate,
+                    onRefresh = activationViewModel::refreshStatus
+                )
+            }
             composable(AppDestinations.LOGOUT.route) {
                 LogoutScreen(onLogout = { authViewModel.bloquearSesion() })
             }
