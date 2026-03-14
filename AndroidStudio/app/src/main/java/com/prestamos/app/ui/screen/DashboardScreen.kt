@@ -97,7 +97,7 @@ fun DashboardScreen(
                             activationUiState.status.licenseType.name == "ANUAL" -> "Licencia ANUAL activa"
                             else -> "Licencia FULL activa"
                         }
-                        val trialColor = if (activationUiState.status.licenseType.name == "TRIAL") MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
+                        val trialColor = if (activationUiState.status.licenseType.name == "TRIAL") Color.Red else MaterialTheme.colorScheme.primary
                         Text(trialTexto, color = trialColor, style = MaterialTheme.typography.bodyMedium)
                         IconButton(onClick = { mostrarActivacion = true }) {
                             Icon(imageVector = Icons.Outlined.VpnKey, contentDescription = "Activar licencia")
@@ -117,7 +117,7 @@ fun DashboardScreen(
                 DashboardCard("Capital prestado", state.capitalPrestado.toMoney(state.monedaReferencial), Modifier.weight(1f), highlightValue = true) {
                     detalleSeleccionado = DashboardDetalle.CAPITAL
                 }
-                DashboardCard("Capital prestado activo", capitalPrestadoActivo2.toMoney(state.monedaReferencial), Modifier.weight(1f)) {
+                DashboardCard("Capital prestado activo", capitalPrestadoActivo2.toMoney(state.monedaReferencial), Modifier.weight(1f), highlightValue = true) {
                     detalleSeleccionado = DashboardDetalle.CAPITAL_ACTIVO2
                 }
             }
@@ -265,7 +265,7 @@ fun DashboardScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
                     if (activationUiState.status.licenseType.name == "TRIAL") {
-                        Text("Días restantes de trial: ${activationUiState.status.trialDaysRemaining}", color = MaterialTheme.colorScheme.tertiary)
+                        Text("Días restantes de trial: ${activationUiState.status.trialDaysRemaining}", color = Color.Red)
                     }
                 }
             }
