@@ -29,7 +29,6 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,7 +47,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.WindowInsets
 import com.prestamos.app.navigation.AppDestinations
 import com.prestamos.app.notifications.CuotasVencidasReminderScheduler
@@ -167,14 +165,14 @@ private fun PrestamosApp(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.primaryContainer)
                     .navigationBarsPadding()
             ) {
                 NavigationBar(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(64.dp),
-                    containerColor = Color.Transparent,
+                        .height(48.dp),
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    tonalElevation = 0.dp,
                     windowInsets = WindowInsets(0, 0, 0, 0)
                 ) {
                     val currentRoute = navController.currentBackStackEntryAsState().value
