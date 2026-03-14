@@ -202,7 +202,7 @@ private fun PrestamosApp(
             composable(AppDestinations.PRESTAMOS.route) { PrestamosScreen(appViewModel) }
             composable(AppDestinations.PAGOS.route) { PagosScreen(appViewModel) }
             composable(AppDestinations.BACKUP.route) {
-                BackupScreen(onManageLicense = { navController.navigate(activationRoute) })
+                BackupScreen()
             }
             composable(activationRoute) {
                 val activationState by activationViewModel.uiState.collectAsStateWithLifecycle()

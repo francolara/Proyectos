@@ -29,7 +29,7 @@ import com.prestamos.app.data.local.DatabaseBackupManager
 import kotlinx.coroutines.launch
 
 @Composable
-fun BackupScreen(onManageLicense: () -> Unit = {}) {
+fun BackupScreen() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -67,13 +67,6 @@ fun BackupScreen(onManageLicense: () -> Unit = {}) {
     ) {
         Text("Backup y restauración", style = MaterialTheme.typography.headlineSmall)
         Text("Exporta o restaura una copia local de la base de datos (.db).")
-        Button(
-            modifier = Modifier.fillMaxWidth(),
-            onClick = onManageLicense
-        ) {
-            Text("Activar o revisar licencia")
-        }
-
         Button(
             modifier = Modifier.fillMaxWidth(),
             onClick = {
