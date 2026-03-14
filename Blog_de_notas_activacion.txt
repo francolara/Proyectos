@@ -1,0 +1,50 @@
+BLOG DE NOTAS - ACTIVACIÓN (AndroidStudio)
+Fecha: 2026-03-14
+
+Proyecto analizado:
+- AndroidStudio/app/src/main/java/com/prestamos/app/data/license/LicenseManager.kt
+
+RESUMEN RÁPIDO
+- El sistema maneja 3 estados: TRIAL, ANUAL (year) y FULL.
+- TRIAL dura 30 días y no usa clave.
+- ANUAL usa clave y vence a los 365 días desde la activación.
+- FULL usa clave y no tiene vencimiento.
+
+CÓMO FUNCIONA LA ACTIVACIÓN
+1) El equipo genera un "deviceCode" único (12 caracteres hex), basado en:
+   - ANDROID_ID
+   - packageName
+   - firstInstallTime
+
+2) La clave válida debe tener este formato exacto:
+   - ANUAL-XXXX-XXXX-XXXX-XXXX
+   - FULL-XXXX-XXXX-XXXX-XXXX
+   (5 bloques separados por guiones)
+
+3) Validación de clave:
+   - Se toma el prefijo (ANUAL o FULL).
+   - Se calcula un token SHA-256 con: deviceCode + type + LICENSE_SECRET.
+   - Se recortan 16 caracteres hex y se comparan con la clave ingresada.
+
+4) Si coincide:
+   - ANUAL: activa y guarda expiración a 365 días.
+   - FULL: activa sin fecha de expiración.
+
+POR QUÉ PUEDE FALLAR UNA CLAVE (CASOS COMUNES)
+- El código fue generado con otro deviceCode (otro teléfono o reinstalación).
+- Se usó prefijo incorrecto (YEAR en vez de ANUAL, o typo en FULL).
+- Formato inválido (sin 5 bloques o con guiones mal puestos).
+- Letras en minúscula o espacios extra (normalmente se normaliza, pero conviene pegar limpio).
+- Se detectó manipulación de fecha del dispositivo y pide reactivar.
+
+YEAR O FULL (RESPUESTA DIRECTA)
+- "YEAR" en tu app equivale a "ANUAL".
+- Si quieres licencia por tiempo limitado (1 año): ANUAL.
+- Si quieres licencia permanente: FULL.
+
+CHECKLIST PARA ACTIVAR BIEN
+1) Copia el deviceCode que muestra la app en ese dispositivo.
+2) Genera la clave para ESE deviceCode y con tipo exacto ANUAL o FULL.
+3) Pega la clave en formato: TIPO-####-####-####-####.
+4) Verifica que la fecha/hora del teléfono sea correcta (sin manipulación).
+5) Si reinstalaste la app, vuelve a confirmar deviceCode antes de regenerar.
