@@ -48,12 +48,14 @@ class CuotasVencidasNotificationWorker(
         val prestamoDao = db.prestamoDao()
         val clienteDao = db.clienteDao()
 
-        val preview = cuotasVencidas.take(3).joinToString("\n") { cuota ->
+        val previewItems = mutableListOf<String>()
+        for (cuota in cuotasVencidas.take(3)) {
             val prestamo = prestamoDao.obtenerPorId(cuota.idPrestamo)
             val cliente = prestamo?.let { clienteDao.obtenerPorId(it.idCliente) }
             val nombreCliente = "${cliente?.nombre.orEmpty()} ${cliente?.apellido.orEmpty()}".trim().ifBlank { "Cliente" }
-            "• $nombreCliente - Préstamo #${cuota.idPrestamo} cuota ${cuota.numeroCuota}"
+            previewItems += "• $nombreCliente - Préstamo #${cuota.idPrestamo} cuota ${cuota.numeroCuota}"
         }
+        val preview = previewItems.joinToString("\n")
 
         val intent = Intent(applicationContext, MainActivity::class.java)
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
