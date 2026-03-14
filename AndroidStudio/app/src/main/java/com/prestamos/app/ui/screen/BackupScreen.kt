@@ -16,6 +16,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -25,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.prestamos.app.data.license.LicenseManager
+import com.prestamos.app.data.license.LicenseType
 import com.prestamos.app.data.local.DatabaseBackupManager
 import kotlinx.coroutines.launch
 
@@ -35,6 +37,13 @@ fun BackupScreen() {
     val snackbarHostState = remember { SnackbarHostState() }
     val licenseManager = remember(context) { LicenseManager(context) }
     var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
+    var licenciaActivaBackup by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        val status = runCatching { licenseManager.evaluateStatus() }.getOrNull()
+        licenciaActivaBackup = status?.isValid == true && status.isActivated &&
+            (status.licenseType == LicenseType.ANUAL || status.licenseType == LicenseType.FULL)
+    }
 
     val exportBackupLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/octet-stream")
@@ -42,7 +51,7 @@ fun BackupScreen() {
         if (uri == null) return@rememberLauncherForActivityResult
         scope.launch {
             val status = runCatching { licenseManager.evaluateStatus() }.getOrNull()
-            if (status?.isValid != true) {
+            if (!licenciaActivaBackup || status?.isValid != true) {
                 snackbarHostState.showSnackbar("Licencia inválida o vencida. No se permite exportar backup.")
                 return@launch
             }
@@ -69,15 +78,9 @@ fun BackupScreen() {
         Text("Exporta o restaura una copia local de la base de datos (.db).")
         Button(
             modifier = Modifier.fillMaxWidth(),
+            enabled = licenciaActivaBackup,
             onClick = {
-                scope.launch {
-                    val status = runCatching { licenseManager.evaluateStatus() }.getOrNull()
-                    if (status?.isValid != true) {
-                        snackbarHostState.showSnackbar("Licencia inválida o vencida. No se permite exportar backup.")
-                        return@launch
-                    }
-                    exportBackupLauncher.launch(DatabaseBackupManager.buildBackupFileName())
-                }
+                exportBackupLauncher.launch(DatabaseBackupManager.buildBackupFileName())
             }
         ) {
             Text("Exportar backup")
@@ -85,18 +88,20 @@ fun BackupScreen() {
 
         Button(
             modifier = Modifier.fillMaxWidth(),
+            enabled = licenciaActivaBackup,
             onClick = {
-                scope.launch {
-                    val status = runCatching { licenseManager.evaluateStatus() }.getOrNull()
-                    if (status?.isValid != true) {
-                        snackbarHostState.showSnackbar("Licencia inválida o vencida. No se permite restaurar backup.")
-                        return@launch
-                    }
-                    importBackupLauncher.launch(arrayOf("application/octet-stream", "application/x-sqlite3", "*/*"))
-                }
+                importBackupLauncher.launch(arrayOf("application/octet-stream", "application/x-sqlite3", "*/*"))
             }
         ) {
             Text("Importar backup")
+        }
+
+        if (!licenciaActivaBackup) {
+            Text(
+                "Para usar esta opción debe tener una licencia activa",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium
+            )
         }
 
         SnackbarHost(hostState = snackbarHostState)
@@ -112,7 +117,7 @@ fun BackupScreen() {
                     pendingImportUri = null
                     scope.launch {
                         val status = runCatching { licenseManager.evaluateStatus() }.getOrNull()
-                        if (status?.isValid != true) {
+                        if (!licenciaActivaBackup || status?.isValid != true) {
                             snackbarHostState.showSnackbar("Licencia inválida o vencida. No se permite restaurar backup.")
                             return@launch
                         }
