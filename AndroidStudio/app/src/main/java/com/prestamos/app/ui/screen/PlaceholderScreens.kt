@@ -503,7 +503,6 @@ fun PagosScreen(viewModel: AppViewModel) {
     var idPrestamo by remember { mutableStateOf<Long?>(null) }
     var idCuota by remember { mutableStateOf<Long?>(null) }
     var montoAbono by remember { mutableStateOf("") }
-    var observacion by remember { mutableStateOf("") }
 
     var expandedCliente by remember { mutableStateOf(false) }
     var expandedPrestamo by remember { mutableStateOf(false) }
@@ -573,19 +572,10 @@ fun PagosScreen(viewModel: AppViewModel) {
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier.fillMaxWidth()
         )
-        OutlinedTextField(
-            value = observacion,
-            onValueChange = { observacion = sanitizeSingleLine(it) },
-            label = { Text("Observación") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth()
-        )
-
         Button(onClick = {
             if (idPrestamo != null && idCuota != null) {
-                viewModel.registrarPago(idPrestamo!!, idCuota!!, montoAbono, observacion)
+                viewModel.registrarPago(idPrestamo!!, idCuota!!, montoAbono)
                 montoAbono = ""
-                observacion = ""
             }
         }) { Text("Registrar pago") }
     }

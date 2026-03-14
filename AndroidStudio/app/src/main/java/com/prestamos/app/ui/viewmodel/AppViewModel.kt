@@ -162,14 +162,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun registrarPago(idPrestamo: Long, idCuota: Long, montoAbono: String, observacion: String) {
+    fun registrarPago(idPrestamo: Long, idCuota: Long, montoAbono: String) {
         viewModelScope.launch {
             runCatching {
                 repository.registrarPago(
                     idPrestamo = idPrestamo,
                     idCuota = idCuota,
                     montoAbono = montoAbono.toDoubleOrNull() ?: error("Monto abonado inválido"),
-                    observacion = cleanSingleLine(observacion)
+                    observacion = null
                 )
             }.onSuccess {
                 mensaje.value = "Pago registrado"
