@@ -44,7 +44,6 @@ import com.prestamos.app.data.local.entity.ClienteEntity
 import com.prestamos.app.data.local.entity.EstadoPrestamo
 import com.prestamos.app.data.local.entity.Moneda
 import com.prestamos.app.data.local.entity.TipoPago
-import com.prestamos.app.ui.screen.export.createDashboardDetalleImage
 import com.prestamos.app.ui.screen.export.createDashboardDetallePdf
 import com.prestamos.app.ui.viewmodel.AppViewModel
 import com.prestamos.app.util.toDateString
@@ -421,17 +420,6 @@ fun PrestamosScreen(viewModel: AppViewModel) {
             },
             dismissButton = {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextButton(onClick = {
-                        runCatching {
-                            createDashboardDetalleImage(context, "Detalle préstamo", detallePrestamo)
-                        }.onSuccess { file ->
-                            compartirArchivo(context, file, "image/png")
-                        }.onFailure {
-                            Toast.makeText(context, "No se pudo exportar imagen", Toast.LENGTH_SHORT).show()
-                        }
-                    }) {
-                        Text("Imagen")
-                    }
                     TextButton(onClick = {
                         runCatching {
                             createDashboardDetallePdf(context, "Detalle préstamo", detallePrestamo)

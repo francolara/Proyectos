@@ -16,8 +16,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.VpnKey
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,8 +37,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.prestamos.app.ui.screen.export.createDashboardDetalleImage
 import com.prestamos.app.ui.screen.export.createDashboardDetallePdf
+import com.prestamos.app.ui.viewmodel.ActivationUiState
 import com.prestamos.app.ui.viewmodel.DashboardViewModel
 import com.prestamos.app.util.toDateString
 import com.prestamos.app.util.toMoney
@@ -56,11 +61,16 @@ private enum class DashboardDetalle {
 fun DashboardScreen(
     viewModel: DashboardViewModel,
     isDarkMode: Boolean,
-    onToggleDarkMode: (Boolean) -> Unit
+    onToggleDarkMode: (Boolean) -> Unit,
+    activationUiState: ActivationUiState,
+    onActivationKeyChanged: (String) -> Unit,
+    onActivateLicense: () -> Unit,
+    onRefreshLicenseStatus: () -> Unit
 ) {
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var detalleSeleccionado by remember { mutableStateOf<DashboardDetalle?>(null) }
+    var mostrarActivacion by remember { mutableStateOf(false) }
 
     LazyColumn(
         modifier = Modifier
@@ -77,6 +87,19 @@ fun DashboardScreen(
                 Column {
                     Text("Resumen general", style = MaterialTheme.typography.headlineSmall)
                     Text("Fecha: ${System.currentTimeMillis().toDateString()}")
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        val trialTexto = when {
+                            activationUiState.status.licenseType.name == "TRIAL" && !activationUiState.status.trialExpired -> "Trial: ${activationUiState.status.trialDaysRemaining} día(s) restantes"
+                            activationUiState.status.licenseType.name == "TRIAL" && activationUiState.status.trialExpired -> "Trial expirado"
+                            activationUiState.status.licenseType.name == "ANUAL" -> "Licencia ANUAL activa"
+                            else -> "Licencia FULL activa"
+                        }
+                        val trialColor = if (activationUiState.status.licenseType.name == "TRIAL") Color.Red else MaterialTheme.colorScheme.primary
+                        Text(trialTexto, color = trialColor, style = MaterialTheme.typography.bodyMedium)
+                        IconButton(onClick = { mostrarActivacion = true }) {
+                            Icon(imageVector = Icons.Outlined.VpnKey, contentDescription = "Activar licencia")
+                        }
+                    }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Modo oscuro")
@@ -208,6 +231,44 @@ fun DashboardScreen(
         }
     }
 
+    if (mostrarActivacion) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { mostrarActivacion = false },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    onActivateLicense()
+                    onRefreshLicenseStatus()
+                }) { Text("Activar") }
+            },
+            dismissButton = {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    androidx.compose.material3.TextButton(onClick = onRefreshLicenseStatus) { Text("Revalidar") }
+                    androidx.compose.material3.TextButton(onClick = { mostrarActivacion = false }) { Text("Cerrar") }
+                }
+            },
+            title = { Text("Activación de licencia") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Código del equipo: ${activationUiState.status.deviceCode}")
+                    androidx.compose.material3.TextButton(onClick = {
+                        val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+                        clipboard?.setPrimaryClip(android.content.ClipData.newPlainText("device_code", activationUiState.status.deviceCode))
+                    }) { Text("Copiar código") }
+                    OutlinedTextField(
+                        value = activationUiState.activationKey,
+                        onValueChange = onActivationKeyChanged,
+                        label = { Text("Clave de activación") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (activationUiState.status.licenseType.name == "TRIAL") {
+                        Text("Días restantes de trial: ${activationUiState.status.trialDaysRemaining}", color = Color.Red)
+                    }
+                }
+            }
+        )
+    }
+
     detalleSeleccionado?.let {
         val detalle = it.toDetalleInfo(state)
         DetalleDashboardDialog(
@@ -215,15 +276,6 @@ fun DashboardScreen(
             onClose = { detalleSeleccionado = null },
             onShareText = {
                 compartirTextoDetalle(context, detalle)
-            },
-            onShareImage = {
-                runCatching {
-                    createDashboardDetalleImage(context, detalle.title, detalle.message)
-                }.onSuccess { file ->
-                    compartirArchivoDetalle(context, file, "image/png")
-                }.onFailure {
-                    Toast.makeText(context, "No se pudo exportar imagen", Toast.LENGTH_SHORT).show()
-                }
             },
             onSharePdf = {
                 runCatching {
@@ -267,7 +319,6 @@ private fun DetalleDashboardDialog(
     detalle: DashboardDetalleInfo,
     onClose: () -> Unit,
     onShareText: () -> Unit,
-    onShareImage: () -> Unit,
     onSharePdf: () -> Unit
 ) {
     androidx.compose.material3.AlertDialog(
@@ -279,9 +330,6 @@ private fun DetalleDashboardDialog(
         },
         dismissButton = {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                androidx.compose.material3.TextButton(onClick = onShareImage) {
-                    Text("Imagen")
-                }
                 androidx.compose.material3.TextButton(onClick = onSharePdf) {
                     Text("PDF")
                 }

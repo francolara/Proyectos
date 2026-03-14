@@ -187,10 +187,15 @@ private fun PrestamosApp(
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(AppDestinations.DASHBOARD.route) {
+                val activationState by activationViewModel.uiState.collectAsStateWithLifecycle()
                 DashboardScreen(
                     viewModel = dashboardViewModel,
                     isDarkMode = isDarkMode,
-                    onToggleDarkMode = onToggleDarkMode
+                    onToggleDarkMode = onToggleDarkMode,
+                    activationUiState = activationState,
+                    onActivationKeyChanged = activationViewModel::onActivationKeyChanged,
+                    onActivateLicense = activationViewModel::activate,
+                    onRefreshLicenseStatus = activationViewModel::refreshStatus
                 )
             }
             composable(AppDestinations.CLIENTES.route) { ClientesScreen(appViewModel) }
