@@ -1,5 +1,8 @@
 package com.prestamos.app
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -31,6 +34,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -39,6 +43,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.prestamos.app.navigation.AppDestinations
+import com.prestamos.app.notifications.CuotasVencidasReminderScheduler
 import com.prestamos.app.ui.screen.ClientesScreen
 import com.prestamos.app.ui.screen.DashboardScreen
 import com.prestamos.app.ui.screen.LogoutScreen
@@ -56,6 +61,8 @@ import com.prestamos.app.ui.viewmodel.DashboardViewModel
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        CuotasVencidasReminderScheduler.schedule(this)
+        requestNotificationPermissionIfNeeded()
         enableEdgeToEdge()
         setContent {
             var darkMode by rememberSaveable { mutableStateOf(false) }
@@ -65,6 +72,14 @@ class MainActivity : ComponentActivity() {
                     onToggleDarkMode = { darkMode = it }
                 )
             }
+        }
+    }
+
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val granted = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+        if (!granted) {
+            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 3001)
         }
     }
 }

@@ -28,6 +28,9 @@ interface CuotaDao {
     @Query("SELECT * FROM cuotas WHERE fechaVencimiento < :fechaActual AND saldoPendiente > 0 ORDER BY fechaVencimiento")
     fun listarVencidas(fechaActual: Long): Flow<List<CuotaEntity>>
 
+    @Query("SELECT * FROM cuotas WHERE fechaVencimiento <= :fechaLimite AND saldoPendiente > 0 ORDER BY fechaVencimiento")
+    suspend fun listarVencidasParaNotificacion(fechaLimite: Long): List<CuotaEntity>
+
     @Query("SELECT * FROM cuotas ORDER BY fechaVencimiento")
     fun listarTodas(): Flow<List<CuotaEntity>>
 }

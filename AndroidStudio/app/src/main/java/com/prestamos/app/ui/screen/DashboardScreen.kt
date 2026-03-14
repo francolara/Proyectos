@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -47,7 +48,8 @@ private enum class DashboardDetalle {
     CUOTAS_PAGADAS,
     CUOTAS_PENDIENTES,
     CUOTAS_PARCIALES,
-    CUOTAS_VENCIDAS
+    CUOTAS_VENCIDAS,
+    GANANCIAS
 }
 
 @Composable
@@ -128,6 +130,46 @@ fun DashboardScreen(
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 DashboardCard("Parciales", (state.estadoCuotas["Parciales"] ?: 0).toString(), Modifier.weight(1f)) { detalleSeleccionado = DashboardDetalle.CUOTAS_PARCIALES }
                 DashboardCard("Vencidas", (state.estadoCuotas["Vencidas"] ?: 0).toString(), Modifier.weight(1f)) { detalleSeleccionado = DashboardDetalle.CUOTAS_VENCIDAS }
+            }
+        }
+
+        item {
+            Text("Ganancias de préstamos pagados", style = MaterialTheme.typography.titleMedium)
+            DashboardCard(
+                "Ganancia acumulada",
+                state.gananciaAcumulada.toMoney(state.monedaReferencial),
+                Modifier.fillMaxWidth()
+            ) {
+                detalleSeleccionado = DashboardDetalle.GANANCIAS
+            }
+
+            Spacer(Modifier.height(8.dp))
+            if (state.gananciasPrestamosPagados.isEmpty()) {
+                Text("No hay préstamos pagados aún")
+            } else {
+                val maxGanancia = state.gananciasPrestamosPagados.maxOf { it.ganancia }.coerceAtLeast(1.0)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    state.gananciasPrestamosPagados.take(8).forEach { item ->
+                        val ratio = (item.ganancia / maxGanancia).toFloat().coerceIn(0.1f, 1f)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text("#${item.idPrestamo}", modifier = Modifier.width(44.dp), style = MaterialTheme.typography.labelMedium)
+                            Spacer(
+                                modifier = Modifier
+                                    .height(20.dp)
+                                    .fillMaxWidth(ratio)
+                                    .background(Color(0xFF2E7D32), RoundedCornerShape(6.dp))
+                            )
+                        }
+                        Text(
+                            "${item.cliente}: ganancia ${item.ganancia.toMoney(item.moneda)}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
             }
         }
 
@@ -351,6 +393,16 @@ private fun DashboardDetalle.toDetalleInfo(state: com.prestamos.app.ui.model.Das
             DashboardDetalleInfo(
                 title = "Estado vencidas",
                 message = "Cuotas en estado vencido: ${state.estadoCuotas["Vencidas"] ?: 0}\n\n$top"
+            )
+        }
+
+        DashboardDetalle.GANANCIAS -> {
+            val top = state.gananciasPrestamosPagados.take(12).joinToString("\n") {
+                "• ${it.cliente} | Préstamo #${it.idPrestamo} | Prestado ${it.montoPrestado.toMoney(it.moneda)} | Cobrado ${it.montoCobrado.toMoney(it.moneda)} | Ganancia ${it.ganancia.toMoney(it.moneda)}"
+            }.ifBlank { "No hay préstamos pagados." }
+            DashboardDetalleInfo(
+                title = "Ganancias por préstamos pagados",
+                message = "Préstamos pagados: ${state.gananciasPrestamosPagados.size}\nGanancia acumulada: ${state.gananciaAcumulada.toMoney(state.monedaReferencial)}\n\n$top"
             )
         }
     }

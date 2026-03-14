@@ -10,6 +10,7 @@ import com.prestamos.app.data.local.entity.Moneda
 import com.prestamos.app.data.repository.PrestamosRepository
 import com.prestamos.app.ui.model.DashboardCuotaDetalleItem
 import com.prestamos.app.ui.model.DashboardCuotaItem
+import com.prestamos.app.ui.model.DashboardGananciaPrestamoItem
 import com.prestamos.app.ui.model.DashboardPagoItem
 import com.prestamos.app.ui.model.DashboardPrestamoDetalleItem
 import com.prestamos.app.ui.model.DashboardResumen
@@ -41,7 +42,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         val capitalPrestado = prestamos.sumOf { it.montoPrestado }
         val saldoPendiente = cuotas.sumOf { it.saldoPendiente }
         val cobradoHoy = pagos.filter { it.fechaPago in startToday..endToday }.sumOf { it.montoAbono }
-        val cuotasVencidas = cuotas.count { it.fechaVencimiento < now && it.saldoPendiente > 0.0 }
+        val cuotasVencidas = cuotas.count { it.fechaVencimiento <= endToday && it.saldoPendiente > 0.0 }
 
         val estadoCuotas = mapOf(
             "Pagadas" to cuotas.count { it.estadoCuota == EstadoCuota.PAGADO },
@@ -86,6 +87,24 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             }
             .sortedWith(compareByDescending<DashboardPrestamoDetalleItem> { it.montoPrestado }.thenByDescending { it.idPrestamo })
 
+        val gananciasPrestamosPagados = prestamos
+            .filter { it.estadoPrestamo == EstadoPrestamo.PAGADO }
+            .map { prestamo ->
+                val cliente = clienteById[prestamo.idCliente]
+                val montoCobrado = prestamo.montoTotalPrestamo
+                DashboardGananciaPrestamoItem(
+                    cliente = "${cliente?.nombre.orEmpty()} ${cliente?.apellido.orEmpty()}".trim().ifBlank { "-" },
+                    idPrestamo = prestamo.idPrestamo,
+                    montoPrestado = prestamo.montoPrestado,
+                    montoCobrado = montoCobrado,
+                    ganancia = montoCobrado - prestamo.montoPrestado,
+                    moneda = prestamo.moneda
+                )
+            }
+            .sortedByDescending { it.ganancia }
+
+        val gananciaAcumulada = gananciasPrestamosPagados.sumOf { it.ganancia }
+
         val cuotasPendientesDetalle = cuotas
             .filter { it.saldoPendiente > 0.0 }
             .sortedBy { it.fechaVencimiento }
@@ -104,7 +123,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             }
 
         val cuotasVencidasDetalle = cuotas
-            .filter { it.fechaVencimiento < now && it.saldoPendiente > 0.0 }
+            .filter { it.fechaVencimiento <= endToday && it.saldoPendiente > 0.0 }
             .sortedBy { it.fechaVencimiento }
             .map { cuota ->
                 val prestamo = prestamoById[cuota.idPrestamo]
@@ -183,6 +202,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             cuotasPendientesDetalle = cuotasPendientesDetalle,
             cuotasVencidasDetalle = cuotasVencidasDetalle,
             pagosHoyDetalle = pagosHoyDetalle,
+            gananciasPrestamosPagados = gananciasPrestamosPagados,
+            gananciaAcumulada = gananciaAcumulada,
             monedaReferencial = prestamos.firstOrNull()?.moneda ?: Moneda.SOLES
         )
     }.stateIn(
