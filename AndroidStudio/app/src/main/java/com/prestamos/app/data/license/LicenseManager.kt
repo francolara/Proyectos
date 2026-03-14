@@ -136,25 +136,35 @@ class LicenseManager(private val context: Context) {
     }
 
     fun validateActivationKey(deviceCode: String, key: String): LicenseType? {
-        val parts = key.split("-")
-        if (parts.size != 3) return null
-        val type = parts[0]
-        val keyDevice = parts[1]
-        val signature = parts[2]
-        if (keyDevice != deviceCode) return null
+        val normalizedKey = key.trim().uppercase()
+        val parts = normalizedKey.split("-")
+        if (parts.size != 5) return null
 
-        val expected = when (type) {
-            "ANUAL" -> buildSignature("ANUAL", deviceCode)
-            "FULL" -> buildSignature("FULL", deviceCode)
+        val type = parts.first()
+        val keyToken = parts.drop(1).joinToString("")
+
+        val expectedToken = when (type) {
+            "ANUAL" -> buildActivationToken(deviceCode, "ANUAL")
+            "FULL" -> buildActivationToken(deviceCode, "FULL")
             else -> return null
         }
 
-        if (signature != expected) return null
+        if (keyToken != expectedToken) return null
         return if (type == "ANUAL") LicenseType.ANUAL else LicenseType.FULL
     }
 
-    private fun buildSignature(type: String, deviceCode: String): String {
-        return sha256("$type|$deviceCode|$LICENSE_SECRET").take(16).uppercase()
+    fun generateActivationKey(deviceCode: String, type: LicenseType): String {
+        val typeText = when (type) {
+            LicenseType.ANUAL -> "ANUAL"
+            LicenseType.FULL -> "FULL"
+            LicenseType.TRIAL -> error("No existe clave de activación para TRIAL")
+        }
+        val token = buildActivationToken(deviceCode, typeText)
+        return "$typeText-${token.chunked(4).joinToString("-")}"
+    }
+
+    private fun buildActivationToken(deviceCode: String, typeText: String): String {
+        return sha256("$deviceCode$typeText$LICENSE_SECRET").take(16).uppercase()
     }
 
     private fun sha256(value: String): String {
@@ -164,6 +174,6 @@ class LicenseManager(private val context: Context) {
 
     companion object {
         private const val TRIAL_DAYS = 30L
-        private const val LICENSE_SECRET = "PRESTAMOS_APP_OFFLINE_LICENSE_v1"
+        private const val LICENSE_SECRET = "PRST_APP_LICENSE_PRIVATE_2026_#84KF92@A"
     }
 }
