@@ -51,7 +51,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     fun crearPin(pin: String, confirmPin: String) {
         viewModelScope.launch {
             runCatching {
-                require(pin.length == 4 && pin.all { it.isDigit() }) { "El PIN debe tener 4 dígitos" }
+                require(pin.length == 6 && pin.all { it.isDigit() }) { "El PIN debe tener 6 dígitos" }
                 require(pin == confirmPin) { "Los PIN no coinciden" }
                 authRepository.configurarPin(pin)
             }.onFailure {
@@ -63,7 +63,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     fun ingresarPin(pin: String) {
         viewModelScope.launch {
             runCatching {
-                require(pin.length == 4 && pin.all { it.isDigit() }) { "PIN inválido" }
+                require(pin.length == 6 && pin.all { it.isDigit() }) { "PIN inválido" }
                 val ok = authRepository.validarPin(pin)
                 require(ok) { "PIN incorrecto" }
             }.onFailure {
@@ -72,11 +72,6 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun desbloquearConHuella() {
-        viewModelScope.launch {
-            authRepository.desbloquearSesion()
-        }
-    }
 
     fun bloquearSesion() {
         viewModelScope.launch {

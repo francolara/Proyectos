@@ -1,8 +1,5 @@
 package com.prestamos.app.ui.screen
 
-import android.content.Context
-import androidx.biometric.BiometricManager
-import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,10 +16,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.FragmentActivity
 import com.prestamos.app.ui.viewmodel.AuthViewModel
 
 @Composable
@@ -39,15 +34,15 @@ fun PinSetupScreen(authViewModel: AuthViewModel) {
         Text("Configurar PIN", style = MaterialTheme.typography.headlineSmall)
         OutlinedTextField(
             value = pin,
-            onValueChange = { pin = it.filter { c -> c.isDigit() }.take(4) },
-            label = { Text("PIN (4 dígitos)") },
+            onValueChange = { pin = it.filter { c -> c.isDigit() }.take(6) },
+            label = { Text("PIN (6 dígitos)") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
         OutlinedTextField(
             value = confirm,
-            onValueChange = { confirm = it.filter { c -> c.isDigit() }.take(4) },
+            onValueChange = { confirm = it.filter { c -> c.isDigit() }.take(6) },
             label = { Text("Confirmar PIN") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
             singleLine = true,
@@ -61,7 +56,6 @@ fun PinSetupScreen(authViewModel: AuthViewModel) {
 
 @Composable
 fun PinLoginScreen(authViewModel: AuthViewModel) {
-    val context = LocalContext.current
     var pin by remember { mutableStateOf("") }
 
     Column(
@@ -73,7 +67,7 @@ fun PinLoginScreen(authViewModel: AuthViewModel) {
         Text("Ingresar PIN", style = MaterialTheme.typography.headlineSmall)
         OutlinedTextField(
             value = pin,
-            onValueChange = { pin = it.filter { c -> c.isDigit() }.take(4) },
+            onValueChange = { pin = it.filter { c -> c.isDigit() }.take(6) },
             label = { Text("PIN") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
             singleLine = true,
@@ -83,38 +77,5 @@ fun PinLoginScreen(authViewModel: AuthViewModel) {
             Text("Ingresar")
         }
 
-        if (puedeUsarHuella(context)) {
-            Button(onClick = {
-                mostrarPromptBiometrico(context) {
-                    authViewModel.desbloquearConHuella()
-                }
-            }) {
-                Text("Usar huella")
-            }
-        }
     }
-}
-
-private fun puedeUsarHuella(context: Context): Boolean {
-    val biometricManager = BiometricManager.from(context)
-    return biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) ==
-        BiometricManager.BIOMETRIC_SUCCESS
-}
-
-private fun mostrarPromptBiometrico(context: Context, onSuccess: () -> Unit) {
-    val activity = context as? FragmentActivity ?: return
-    val executor = activity.mainExecutor
-    val callback = object : BiometricPrompt.AuthenticationCallback() {
-        override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-            super.onAuthenticationSucceeded(result)
-            onSuccess()
-        }
-    }
-    val prompt = BiometricPrompt(activity, executor, callback)
-    val promptInfo = BiometricPrompt.PromptInfo.Builder()
-        .setTitle("Autenticación biométrica")
-        .setSubtitle("Usa tu huella para ingresar")
-        .setNegativeButtonText("Cancelar")
-        .build()
-    prompt.authenticate(promptInfo)
 }

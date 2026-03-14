@@ -15,6 +15,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -65,7 +66,7 @@ fun ActivationScreen(
             }
 
             status.licenseType == LicenseType.TRIAL && !status.trialExpired -> {
-                Text("Trial activo. Días restantes: ${status.trialDaysRemaining}")
+                Text("Trial activo. Días restantes: ${status.trialDaysRemaining}", color = Color.Red)
             }
 
             status.licenseType == LicenseType.TRIAL && status.trialExpired -> {
