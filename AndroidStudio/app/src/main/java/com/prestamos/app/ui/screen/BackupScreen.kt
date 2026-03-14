@@ -24,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.prestamos.app.data.license.LicenseManager
 import com.prestamos.app.data.local.DatabaseBackupManager
 import kotlinx.coroutines.launch
 
@@ -32,6 +33,7 @@ fun BackupScreen() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val licenseManager = remember(context) { LicenseManager(context) }
     var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
 
     val exportBackupLauncher = rememberLauncherForActivityResult(
@@ -39,6 +41,11 @@ fun BackupScreen() {
     ) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
         scope.launch {
+            val status = runCatching { licenseManager.evaluateStatus() }.getOrNull()
+            if (status?.isValid != true) {
+                snackbarHostState.showSnackbar("Licencia inválida o vencida. No se permite exportar backup.")
+                return@launch
+            }
             DatabaseBackupManager.exportDatabase(context, uri)
                 .onSuccess { snackbarHostState.showSnackbar("Backup exportado correctamente") }
                 .onFailure { snackbarHostState.showSnackbar(it.message ?: "No se pudo exportar backup") }
@@ -63,14 +70,32 @@ fun BackupScreen() {
 
         Button(
             modifier = Modifier.fillMaxWidth(),
-            onClick = { exportBackupLauncher.launch(DatabaseBackupManager.buildBackupFileName()) }
+            onClick = {
+                scope.launch {
+                    val status = runCatching { licenseManager.evaluateStatus() }.getOrNull()
+                    if (status?.isValid != true) {
+                        snackbarHostState.showSnackbar("Licencia inválida o vencida. No se permite exportar backup.")
+                        return@launch
+                    }
+                    exportBackupLauncher.launch(DatabaseBackupManager.buildBackupFileName())
+                }
+            }
         ) {
             Text("Exportar backup")
         }
 
         Button(
             modifier = Modifier.fillMaxWidth(),
-            onClick = { importBackupLauncher.launch(arrayOf("application/octet-stream", "application/x-sqlite3", "*/*")) }
+            onClick = {
+                scope.launch {
+                    val status = runCatching { licenseManager.evaluateStatus() }.getOrNull()
+                    if (status?.isValid != true) {
+                        snackbarHostState.showSnackbar("Licencia inválida o vencida. No se permite restaurar backup.")
+                        return@launch
+                    }
+                    importBackupLauncher.launch(arrayOf("application/octet-stream", "application/x-sqlite3", "*/*"))
+                }
+            }
         ) {
             Text("Importar backup")
         }
@@ -87,6 +112,11 @@ fun BackupScreen() {
                 TextButton(onClick = {
                     pendingImportUri = null
                     scope.launch {
+                        val status = runCatching { licenseManager.evaluateStatus() }.getOrNull()
+                        if (status?.isValid != true) {
+                            snackbarHostState.showSnackbar("Licencia inválida o vencida. No se permite restaurar backup.")
+                            return@launch
+                        }
                         DatabaseBackupManager.importDatabase(context, uri)
                             .onSuccess {
                                 snackbarHostState.showSnackbar("Backup restaurado. Reiniciando app...")
