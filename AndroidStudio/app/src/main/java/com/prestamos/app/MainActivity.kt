@@ -48,10 +48,12 @@ import com.prestamos.app.ui.screen.DashboardScreen
 import com.prestamos.app.ui.screen.LogoutScreen
 import com.prestamos.app.ui.screen.PagosScreen
 import com.prestamos.app.ui.screen.BackupScreen
+import com.prestamos.app.ui.screen.ActivationScreen
 import com.prestamos.app.ui.screen.PinLoginScreen
 import com.prestamos.app.ui.screen.PinSetupScreen
 import com.prestamos.app.ui.screen.PrestamosScreen
 import com.prestamos.app.ui.theme.AppPrestamosTheme
+import com.prestamos.app.ui.viewmodel.ActivationViewModel
 import com.prestamos.app.ui.viewmodel.AppViewModel
 import com.prestamos.app.ui.viewmodel.AuthState
 import com.prestamos.app.ui.viewmodel.AuthViewModel
@@ -88,33 +90,47 @@ private fun AppRoot(
     isDarkMode: Boolean,
     onToggleDarkMode: (Boolean) -> Unit,
     authViewModel: AuthViewModel = viewModel(),
-    appViewModel: AppViewModel = viewModel()
+    appViewModel: AppViewModel = viewModel(),
+    activationViewModel: ActivationViewModel = viewModel()
 ) {
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
     val authMensaje by authViewModel.mensaje.collectAsStateWithLifecycle()
     val appMensaje by appViewModel.mensaje.collectAsStateWithLifecycle()
+    val activationState by activationViewModel.uiState.collectAsStateWithLifecycle()
+    val activationMensaje by activationViewModel.mensaje.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(authMensaje, appMensaje) {
-        val mensaje = authMensaje ?: appMensaje
+    LaunchedEffect(authMensaje, appMensaje, activationMensaje) {
+        val mensaje = authMensaje ?: appMensaje ?: activationMensaje
         if (!mensaje.isNullOrBlank()) {
             snackbarHostState.showSnackbar(mensaje)
             authViewModel.limpiarMensaje()
             appViewModel.limpiarMensaje()
+            activationViewModel.limpiarMensaje()
         }
     }
 
     Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-            when (authState) {
-                AuthState.Loading -> Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+            when {
+                activationState.loading || authState is AuthState.Loading -> Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxSize()
+                ) {
                     CircularProgressIndicator()
                 }
 
-                AuthState.NeedsPinSetup -> PinSetupScreen(authViewModel)
-                AuthState.Locked -> PinLoginScreen(authViewModel)
-                AuthState.Unlocked -> PrestamosApp(appViewModel, authViewModel, isDarkMode, onToggleDarkMode)
+                !activationState.canAccessApp -> ActivationScreen(
+                    uiState = activationState,
+                    onActivationKeyChanged = activationViewModel::onActivationKeyChanged,
+                    onActivate = activationViewModel::activate,
+                    onRefresh = activationViewModel::refreshStatus
+                )
+
+                authState is AuthState.NeedsPinSetup -> PinSetupScreen(authViewModel)
+                authState is AuthState.Locked -> PinLoginScreen(authViewModel)
+                else -> PrestamosApp(appViewModel, authViewModel, isDarkMode, onToggleDarkMode)
             }
         }
     }
