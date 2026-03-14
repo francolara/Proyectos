@@ -5,6 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme = darkColorScheme(
     primary = DarkPrimaryGreen,
@@ -16,7 +17,7 @@ private val DarkColorScheme = darkColorScheme(
     secondaryContainer = DarkSurface,
     onSecondaryContainer = DarkText,
     tertiary = DarkAccentGold,
-    onTertiary = ColorBlack,
+    onTertiary = Color.Black,
     background = DarkBackground,
     onBackground = DarkText,
     surface = DarkSurface,
@@ -25,7 +26,7 @@ private val DarkColorScheme = darkColorScheme(
 
 private val LightColorScheme = lightColorScheme(
     primary = PrimaryGreen,
-    onPrimary = ColorWhite,
+    onPrimary = Color.White,
     primaryContainer = SecondaryGreen,
     onPrimaryContainer = AppText,
     secondary = SecondaryGreen,
@@ -36,14 +37,12 @@ private val LightColorScheme = lightColorScheme(
     onTertiary = AppText,
     background = AppBackground,
     onBackground = AppText,
-    surface = ColorWhite,
+    surface = Color.White,
     onSurface = AppText,
     surfaceVariant = SecondaryGreen.copy(alpha = 0.12f),
     onSurfaceVariant = AppText
 )
 
-private val ColorWhite = androidx.compose.ui.graphics.Color(0xFFFFFFFF)
-private val ColorBlack = androidx.compose.ui.graphics.Color(0xFF000000)
 
 @Composable
 fun AppPrestamosTheme(
