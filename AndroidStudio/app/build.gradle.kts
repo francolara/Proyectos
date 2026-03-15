@@ -41,11 +41,15 @@ android {
 }
 
 dependencies {
-    val androidxLifecycleRuntimeCompose = libs.findLibrary("androidx-lifecycle-runtime-compose").get()
-    val androidxComposeBom = libs.findLibrary("androidx-compose-bom").get()
-    val androidxComposeMaterialIconsExtended = libs.findLibrary("androidx-compose-material-icons-extended").get()
-    val androidxNavigationCompose = libs.findLibrary("androidx-navigation-compose").get()
-    val androidxLifecycleViewmodelCompose = libs.findLibrary("androidx-lifecycle-viewmodel-compose").get()
+    val libsCatalog = extensions
+        .getByType(org.gradle.api.artifacts.VersionCatalogsExtension::class.java)
+        .named("libs")
+
+    val androidxLifecycleRuntimeCompose = libsCatalog.findLibrary("androidx-lifecycle-runtime-compose").get()
+    val androidxComposeBom = libsCatalog.findLibrary("androidx-compose-bom").get()
+    val androidxComposeMaterialIconsExtended = libsCatalog.findLibrary("androidx-compose-material-icons-extended").get()
+    val androidxNavigationCompose = libsCatalog.findLibrary("androidx-navigation-compose").get()
+    val androidxLifecycleViewmodelCompose = libsCatalog.findLibrary("androidx-lifecycle-viewmodel-compose").get()
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
