@@ -1,259 +1,126 @@
 package com.prestamos.app
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.os.Build
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Groups
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Logout
-import androidx.compose.material.icons.outlined.Payments
-import androidx.compose.material.icons.outlined.RequestPage
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
-import androidx.compose.foundation.layout.WindowInsets
-import com.prestamos.app.navigation.AppDestinations
-import com.prestamos.app.notifications.CuotasVencidasReminderScheduler
-import com.prestamos.app.ui.screen.ClientesScreen
-import com.prestamos.app.ui.screen.DashboardScreen
-import com.prestamos.app.ui.screen.LogoutScreen
-import com.prestamos.app.ui.screen.PagosScreen
-import com.prestamos.app.ui.screen.BackupScreen
-import com.prestamos.app.ui.screen.ActivationScreen
-import com.prestamos.app.ui.screen.PinLoginScreen
-import com.prestamos.app.ui.screen.PinSetupScreen
-import com.prestamos.app.ui.screen.PrestamosScreen
-import com.prestamos.app.ui.theme.AppPrestamosTheme
-import com.prestamos.app.ui.viewmodel.ActivationViewModel
-import com.prestamos.app.ui.viewmodel.AppViewModel
-import com.prestamos.app.ui.viewmodel.AuthState
-import com.prestamos.app.ui.viewmodel.AuthViewModel
-import com.prestamos.app.ui.viewmodel.DashboardViewModel
+import android.text.Editable
+import android.text.InputFilter
+import android.text.TextWatcher
+import android.widget.ArrayAdapter
+import android.widget.Button
+import android.widget.EditText
+import android.widget.Spinner
+import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import java.security.MessageDigest
+import java.util.Locale
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
+
+    companion object {
+        private const val LICENSE_SECRET = "PRST_APP_LICENSE_PRIVATE_2026_#84KF92@A"
+        private val TIPOS_VALIDOS = setOf("ANUAL", "FULL")
+    }
+
+    private lateinit var etDeviceCode: EditText
+    private lateinit var spinnerTipo: Spinner
+    private lateinit var tvResultadoValor: TextView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        CuotasVencidasReminderScheduler.schedule(this)
-        requestNotificationPermissionIfNeeded()
-        enableEdgeToEdge()
-        setContent {
-            var darkMode by rememberSaveable { mutableStateOf(false) }
-            AppPrestamosTheme(darkTheme = darkMode) {
-                AppRoot(
-                    isDarkMode = darkMode,
-                    onToggleDarkMode = { darkMode = it }
-                )
-            }
-        }
+        setContentView(R.layout.activity_main)
+
+        etDeviceCode = findViewById(R.id.etDeviceCode)
+        spinnerTipo = findViewById(R.id.spinnerTipo)
+        tvResultadoValor = findViewById(R.id.tvResultadoValor)
+        val btnGenerar: Button = findViewById(R.id.btnGenerar)
+        val btnCopiar: Button = findViewById(R.id.btnCopiar)
+        val btnLimpiar: Button = findViewById(R.id.btnLimpiar)
+
+        configurarTipoLicencia()
+        configurarMayusculasAutomaticas()
+
+        btnGenerar.setOnClickListener { generarYMostrarClave() }
+        btnCopiar.setOnClickListener { copiarClave() }
+        btnLimpiar.setOnClickListener { limpiarCampos() }
     }
 
-    private fun requestNotificationPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
-        val granted = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-        if (!granted) {
-            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 3001)
-        }
-    }
-}
-
-@Composable
-private fun AppRoot(
-    isDarkMode: Boolean,
-    onToggleDarkMode: (Boolean) -> Unit,
-    authViewModel: AuthViewModel = viewModel(),
-    appViewModel: AppViewModel = viewModel(),
-    activationViewModel: ActivationViewModel = viewModel()
-) {
-    val authState by authViewModel.authState.collectAsStateWithLifecycle()
-    val authMensaje by authViewModel.mensaje.collectAsStateWithLifecycle()
-    val appMensaje by appViewModel.mensaje.collectAsStateWithLifecycle()
-    val activationState by activationViewModel.uiState.collectAsStateWithLifecycle()
-    val activationMensaje by activationViewModel.mensaje.collectAsStateWithLifecycle()
-
-    val snackbarHostState = remember { SnackbarHostState() }
-
-    LaunchedEffect(authMensaje, appMensaje, activationMensaje) {
-        val mensaje = authMensaje ?: appMensaje ?: activationMensaje
-        if (!mensaje.isNullOrBlank()) {
-            snackbarHostState.showSnackbar(mensaje)
-            authViewModel.limpiarMensaje()
-            appViewModel.limpiarMensaje()
-            activationViewModel.limpiarMensaje()
-        }
+    private fun configurarTipoLicencia() {
+        val tipos = listOf("ANUAL", "FULL")
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, tipos)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerTipo.adapter = adapter
+        spinnerTipo.setSelection(0)
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = androidx.compose.material3.MaterialTheme.colorScheme.background
-    ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-            when {
-                activationState.loading || authState is AuthState.Loading -> Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    CircularProgressIndicator()
-                }
+    private fun configurarMayusculasAutomaticas() {
+        etDeviceCode.filters = arrayOf(InputFilter.AllCaps())
+        etDeviceCode.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
 
-                !activationState.canAccessApp -> ActivationScreen(
-                    uiState = activationState,
-                    onActivationKeyChanged = activationViewModel::onActivationKeyChanged,
-                    onActivate = activationViewModel::activate,
-                    onRefresh = activationViewModel::refreshStatus
-                )
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
 
-                authState is AuthState.NeedsPinSetup -> PinSetupScreen(authViewModel)
-                authState is AuthState.Locked -> PinLoginScreen(authViewModel)
-                else -> PrestamosApp(appViewModel, authViewModel, activationViewModel, isDarkMode, onToggleDarkMode)
-            }
-        }
-    }
-}
-
-@Composable
-private fun PrestamosApp(
-    appViewModel: AppViewModel,
-    authViewModel: AuthViewModel,
-    activationViewModel: ActivationViewModel,
-    isDarkMode: Boolean,
-    onToggleDarkMode: (Boolean) -> Unit,
-    dashboardViewModel: DashboardViewModel = viewModel()
-) {
-    val navController = rememberNavController()
-    val destinations = AppDestinations.entries
-    val activationRoute = "activation_license"
-
-    Scaffold(
-        containerColor = androidx.compose.material3.MaterialTheme.colorScheme.background,
-        bottomBar = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-            ) {
-                NavigationBar(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    tonalElevation = 0.dp,
-                    windowInsets = WindowInsets(0, 0, 0, 0)
-                ) {
-                    val currentRoute = navController.currentBackStackEntryAsState().value
-                        ?.destination
-                        ?.route
-
-                    destinations.forEach { destination ->
-                        NavigationBarItem(
-                            selected = currentRoute == destination.route,
-                            onClick = {
-                                navController.navigate(destination.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = {
-                                Icon(
-                                    imageVector = iconFor(destination),
-                                    contentDescription = if (destination.title.isBlank()) destination.route else destination.title
-                                )
-                            },
-                            label = null,
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary,
-                                unselectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.onPrimaryContainer,
-                                indicatorColor = androidx.compose.material3.MaterialTheme.colorScheme.primary
-                            )
-                        )
-                    }
+            override fun afterTextChanged(s: Editable?) {
+                val textoActual = s?.toString().orEmpty()
+                val textoMayuscula = textoActual.uppercase(Locale.ROOT)
+                if (textoActual != textoMayuscula) {
+                    etDeviceCode.setText(textoMayuscula)
+                    etDeviceCode.setSelection(textoMayuscula.length)
                 }
             }
-        }
-    ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = AppDestinations.DASHBOARD.route,
-            modifier = Modifier.padding(innerPadding)
-        ) {
-            composable(AppDestinations.DASHBOARD.route) {
-                val activationState by activationViewModel.uiState.collectAsStateWithLifecycle()
-                DashboardScreen(
-                    viewModel = dashboardViewModel,
-                    isDarkMode = isDarkMode,
-                    onToggleDarkMode = onToggleDarkMode,
-                    activationUiState = activationState,
-                    onActivationKeyChanged = activationViewModel::onActivationKeyChanged,
-                    onActivateLicense = activationViewModel::activate,
-                    onRefreshLicenseStatus = activationViewModel::refreshStatus
-                )
-            }
-            composable(AppDestinations.CLIENTES.route) { ClientesScreen(appViewModel) }
-            composable(AppDestinations.PRESTAMOS.route) { PrestamosScreen(appViewModel) }
-            composable(AppDestinations.PAGOS.route) { PagosScreen(appViewModel) }
-            composable(AppDestinations.BACKUP.route) {
-                BackupScreen()
-            }
-            composable(activationRoute) {
-                val activationState by activationViewModel.uiState.collectAsStateWithLifecycle()
-                ActivationScreen(
-                    uiState = activationState,
-                    onActivationKeyChanged = activationViewModel::onActivationKeyChanged,
-                    onActivate = activationViewModel::activate,
-                    onRefresh = activationViewModel::refreshStatus
-                )
-            }
-            composable(AppDestinations.LOGOUT.route) {
-                LogoutScreen(onLogout = { authViewModel.bloquearSesion() })
-            }
-        }
+        })
     }
-}
 
-@Composable
-private fun iconFor(destination: AppDestinations) = when (destination) {
-    AppDestinations.DASHBOARD -> Icons.Outlined.Home
-    AppDestinations.CLIENTES -> Icons.Outlined.Groups
-    AppDestinations.PRESTAMOS -> Icons.Outlined.RequestPage
-    AppDestinations.PAGOS -> Icons.Outlined.Payments
-    AppDestinations.BACKUP -> Icons.Outlined.Settings
-    AppDestinations.LOGOUT -> Icons.Outlined.Logout
+    private fun generarYMostrarClave() {
+        val deviceCode = etDeviceCode.text.toString().trim().uppercase(Locale.ROOT)
+        val tipo = spinnerTipo.selectedItem.toString()
+
+        if (deviceCode.isEmpty()) {
+            etDeviceCode.error = getString(R.string.error_device_code_vacio)
+            etDeviceCode.requestFocus()
+            return
+        }
+
+        val clave = generarClave(deviceCode, tipo)
+        tvResultadoValor.text = clave
+    }
+
+    private fun copiarClave() {
+        val clave = tvResultadoValor.text.toString().trim()
+        if (clave.isEmpty()) {
+            Toast.makeText(this, getString(R.string.error_sin_clave), Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clip = ClipData.newPlainText(getString(R.string.etiqueta_clave_generada), clave)
+        clipboard.setPrimaryClip(clip)
+        Toast.makeText(this, getString(R.string.clave_copiada), Toast.LENGTH_SHORT).show()
+    }
+
+    private fun limpiarCampos() {
+        etDeviceCode.text.clear()
+        spinnerTipo.setSelection(0)
+        tvResultadoValor.text = ""
+        etDeviceCode.error = null
+    }
+
+    fun generarClave(deviceCode: String, tipo: String): String {
+        val tipoNormalizado = tipo.uppercase(Locale.ROOT)
+        require(tipoNormalizado in TIPOS_VALIDOS) { "Tipo de licencia inválido. Solo se permite ANUAL o FULL." }
+
+        val texto = deviceCode.uppercase(Locale.ROOT) + tipoNormalizado + LICENSE_SECRET
+        val hash = sha256(texto)
+        val primeros16 = hash.take(16).uppercase(Locale.ROOT)
+        val bloques = primeros16.chunked(4).joinToString("-")
+        return "$tipoNormalizado-$bloques"
+    }
+
+    private fun sha256(texto: String): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        val hash = digest.digest(texto.toByteArray(Charsets.UTF_8))
+        return hash.joinToString(separator = "") { "%02x".format(it) }
+    }
 }

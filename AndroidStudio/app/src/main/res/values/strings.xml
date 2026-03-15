@@ -1,3 +1,12 @@
 <resources>
-    <string name="app_name">ControlPrest</string>
+    <string name="app_name">Generador de Licencias</string>
+    <string name="titulo">Generador de licencias</string>
+    <string name="hint_device_code">Ingrese deviceCode</string>
+    <string name="boton_generar">Generar clave</string>
+    <string name="boton_copiar">Copiar</string>
+    <string name="boton_limpiar">Limpiar</string>
+    <string name="etiqueta_clave_generada">Clave generada</string>
+    <string name="clave_copiada">Clave copiada</string>
+    <string name="error_device_code_vacio">El deviceCode no puede estar vacío</string>
+    <string name="error_sin_clave">Primero genere una clave</string>
 </resources>
