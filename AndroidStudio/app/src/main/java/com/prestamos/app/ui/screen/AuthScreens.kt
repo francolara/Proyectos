@@ -1,10 +1,13 @@
 package com.prestamos.app.ui.screen
 
+import android.app.KeyguardManager
 import android.content.Context
 import android.content.ContextWrapper
+import android.hardware.biometrics.BiometricPrompt
+import android.hardware.fingerprint.FingerprintManager
 import android.os.Build
-import androidx.biometric.BiometricManager
-import androidx.biometric.BiometricPrompt
+import android.os.CancellationSignal
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -41,7 +44,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import androidx.fragment.app.FragmentActivity
 import com.prestamos.app.BuildConfig
 import com.prestamos.app.R
 import com.prestamos.app.ui.viewmodel.AuthViewModel
@@ -122,14 +124,8 @@ fun PinSetupScreen(authViewModel: AuthViewModel) {
 @Composable
 fun PinLoginScreen(authViewModel: AuthViewModel) {
     val context = LocalContext.current
-    val activity = remember(context) { context.findFragmentActivity() }
-    val allowedAuthenticators = remember {
-        BiometricManager.Authenticators.BIOMETRIC_WEAK or
-            BiometricManager.Authenticators.DEVICE_CREDENTIAL
-    }
-    val canUseBiometric = remember(context) {
-        BiometricManager.from(context).canAuthenticate(allowedAuthenticators) == BiometricManager.BIOMETRIC_SUCCESS
-    }
+    val activity = remember(context) { context.findComponentActivity() }
+    val canUseBiometric = remember(context) { isBiometricAvailable(context) }
     var pin by remember { mutableStateOf("") }
 
     Box(
@@ -188,13 +184,7 @@ fun PinLoginScreen(authViewModel: AuthViewModel) {
 
                 if (canUseBiometric && activity != null) {
                     Button(
-                        onClick = {
-                            launchBiometricPrompt(
-                                activity = activity,
-                                authViewModel = authViewModel,
-                                allowedAuthenticators = allowedAuthenticators
-                            )
-                        },
+                        onClick = { launchBiometricPrompt(activity, authViewModel) },
                         shape = RoundedCornerShape(14.dp),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -212,42 +202,65 @@ fun PinLoginScreen(authViewModel: AuthViewModel) {
     }
 }
 
-private fun launchBiometricPrompt(
-    activity: FragmentActivity,
-    authViewModel: AuthViewModel,
-    allowedAuthenticators: Int
-) {
+private fun isBiometricAvailable(context: Context): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return false
+
+    val keyguardManager = context.getSystemService(KeyguardManager::class.java)
+    if (keyguardManager?.isDeviceSecure != true) return false
+
+    return when {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> {
+            val biometricManager = context.getSystemService(android.hardware.biometrics.BiometricManager::class.java)
+            biometricManager?.canAuthenticate(
+                android.hardware.biometrics.BiometricManager.Authenticators.BIOMETRIC_WEAK or
+                    android.hardware.biometrics.BiometricManager.Authenticators.DEVICE_CREDENTIAL
+            ) == android.hardware.biometrics.BiometricManager.BIOMETRIC_SUCCESS
+        }
+
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> {
+            val biometricManager = context.getSystemService(android.hardware.biometrics.BiometricManager::class.java)
+            biometricManager?.canAuthenticate() == android.hardware.biometrics.BiometricManager.BIOMETRIC_SUCCESS
+        }
+
+        else -> {
+            val fingerprintManager = context.getSystemService(FingerprintManager::class.java)
+            fingerprintManager?.isHardwareDetected == true && fingerprintManager.hasEnrolledFingerprints()
+        }
+    }
+}
+
+private fun launchBiometricPrompt(activity: ComponentActivity, authViewModel: AuthViewModel) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return
+
     val executor = ContextCompat.getMainExecutor(activity)
-    val prompt = BiometricPrompt(
-        activity,
+    val builder = BiometricPrompt.Builder(activity)
+        .setTitle("Autenticacion biometrica")
+        .setSubtitle("Confirma tu identidad para ingresar")
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        builder.setDeviceCredentialAllowed(true)
+    } else {
+        builder.setNegativeButton("Usar PIN", executor) { _, _ -> }
+    }
+
+    val prompt = builder.build()
+    val cancellationSignal = CancellationSignal()
+    prompt.authenticate(
+        cancellationSignal,
         executor,
         object : BiometricPrompt.AuthenticationCallback() {
-            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult?) {
                 super.onAuthenticationSucceeded(result)
                 authViewModel.desbloquearConBiometria()
             }
         }
     )
-
-    val info = BiometricPrompt.PromptInfo.Builder()
-        .setTitle("Autenticacion biometrica")
-        .setSubtitle("Confirma tu identidad para ingresar")
-        .apply {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                setAllowedAuthenticators(allowedAuthenticators)
-            } else {
-                setNegativeButtonText("Usar PIN")
-            }
-        }
-        .build()
-
-    prompt.authenticate(info)
 }
 
-private fun Context.findFragmentActivity(): FragmentActivity? {
+private fun Context.findComponentActivity(): ComponentActivity? {
     var current: Context? = this
     while (current is ContextWrapper) {
-        if (current is FragmentActivity) return current
+        if (current is ComponentActivity) return current
         current = current.baseContext
     }
     return null

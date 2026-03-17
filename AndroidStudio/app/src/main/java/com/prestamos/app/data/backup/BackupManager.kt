@@ -45,6 +45,7 @@ class BackupManager(private val context: Context) {
             if (persistPermission) persistUriPermissions(folderUri)
             val fileUri = createOrFindBackupFileInFolder(folderUri)
             exportBackup(fileUri, persistPermission = false).getOrThrow()
+            prefs.saveBackupUri(folderUri.toString())
         }
     }
     suspend fun exportBackupToSavedLocation(): Result<Unit> = withContext(Dispatchers.IO) {

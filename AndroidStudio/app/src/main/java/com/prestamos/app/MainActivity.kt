@@ -2,12 +2,13 @@ package com.prestamos.app
 
 import android.Manifest
 import android.app.Activity
+import android.app.KeyguardManager
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.view.MotionEvent
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.fragment.app.FragmentActivity
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -94,7 +95,7 @@ import kotlinx.coroutines.delay
 
 private const val INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000L
 
-class MainActivity : FragmentActivity() {
+class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         CuotasVencidasReminderScheduler.schedule(this)
@@ -160,12 +161,15 @@ private fun AppRoot(
 
     val sesionActivaActual by rememberUpdatedState(sesionActiva)
     val lifecycleOwner = LocalLifecycleOwner.current
-    val activity = LocalContext.current as? Activity
+    val context = LocalContext.current
+    val activity = context as? Activity
+    val keyguardManager = context.getSystemService(KeyguardManager::class.java)
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_STOP &&
                 sesionActivaActual &&
-                activity?.isChangingConfigurations != true
+                activity?.isChangingConfigurations != true &&
+                keyguardManager?.isDeviceLocked == true
             ) {
                 authViewModel.bloquearSesion()
             }
