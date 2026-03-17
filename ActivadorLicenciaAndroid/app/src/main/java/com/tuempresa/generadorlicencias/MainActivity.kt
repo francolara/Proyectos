@@ -44,7 +44,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun configurarSpinner() {
-        val tipos = listOf("ANUAL", "FULL")
+        val tipos = listOf("MENSUAL", "ANUAL", "FULL")
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, tipos)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerTipo.adapter = adapter
@@ -60,8 +60,8 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        if (tipo != "ANUAL" && tipo != "FULL") {
-            Toast.makeText(this, "El tipo debe ser ANUAL o FULL", Toast.LENGTH_SHORT).show()
+        if (tipo != "MENSUAL" && tipo != "ANUAL" && tipo != "FULL") {
+            Toast.makeText(this, "El tipo debe ser MENSUAL, ANUAL o FULL", Toast.LENGTH_SHORT).show()
             return
         }
 

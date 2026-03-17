@@ -5,6 +5,8 @@
     android:orientation="vertical"
     android:padding="16dp">
 
+    <!-- Firma Codex 2026-03-17 -->
+
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
