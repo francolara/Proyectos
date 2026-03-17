@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -115,14 +116,14 @@ fun ClientesScreen(viewModel: AppViewModel) {
             OutlinedTextField(
                 value = direccion,
                 onValueChange = { direccion = sanitizeSingleLine(it) },
-                label = { Text("DirecciÃ³n") },
+                label = { Text("Dirección") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
                 value = telefono,
                 onValueChange = { telefono = onlyDigits(it) },
-                label = { Text("Nro de telÃ©fono") },
+                label = { Text("Nro de teléfono") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 modifier = Modifier.fillMaxWidth()
@@ -153,8 +154,8 @@ fun ClientesScreen(viewModel: AppViewModel) {
                 Column(Modifier.padding(12.dp)) {
                     Text("${cliente.nombre} ${cliente.apellido}")
                     Text("Doc: ${cliente.documentoIdentidad}")
-                    Text("DirecciÃ³n: ${cliente.direccion.ifBlank { "-" }}")
-                    Text("TelÃ©fono: ${cliente.telefono.ifBlank { "-" }}")
+                    Text("Dirección: ${cliente.direccion.ifBlank { "-" }}")
+                    Text("Teléfono: ${cliente.telefono.ifBlank { "-" }}")
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         TextButton(onClick = {
                             clienteEditando = cliente
@@ -224,14 +225,14 @@ fun ClientesScreen(viewModel: AppViewModel) {
                     OutlinedTextField(
                         value = direccionEdit,
                         onValueChange = { direccionEdit = sanitizeSingleLine(it) },
-                        label = { Text("DirecciÃ³n") },
+                        label = { Text("Dirección") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = telefonoEdit,
                         onValueChange = { telefonoEdit = onlyDigits(it) },
-                        label = { Text("TelÃ©fono") },
+                        label = { Text("Teléfono") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                         modifier = Modifier.fillMaxWidth()
@@ -255,7 +256,7 @@ fun ClientesScreen(viewModel: AppViewModel) {
                 TextButton(onClick = { clienteAEliminar = null }) { Text("Cancelar") }
             },
             title = { Text("Eliminar cliente") },
-            text = { Text("Solo se eliminarÃ¡ si no tiene prÃ©stamos creados.") }
+            text = { Text("Solo se eliminará si no tiene préstamos creados.") }
         )
     }
 }
@@ -304,7 +305,7 @@ fun PrestamosScreen(viewModel: AppViewModel) {
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         item {
-            Text("PrÃ©stamos", style = MaterialTheme.typography.headlineSmall)
+            Text("Préstamos", style = MaterialTheme.typography.headlineSmall)
 
             ClienteAutocompleteField(
                 clientes = clientes,
@@ -318,7 +319,7 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                     clienteSeleccionado = it
                     busquedaCliente = "${it.nombre} ${it.apellido} (${it.documentoIdentidad})"
                 },
-                label = "Cliente (nombre o documento)"
+                label = "Cliente"
             )
 
             OutlinedTextField(
@@ -332,7 +333,7 @@ fun PrestamosScreen(viewModel: AppViewModel) {
             OutlinedTextField(
                 value = interes,
                 onValueChange = { interes = onlyDecimal(it) },
-                label = { Text("InterÃ©s (%)") },
+                label = { Text("Interés (%)") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth()
@@ -342,7 +343,7 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                 OutlinedTextField(
                     value = when (moneda) {
                         Moneda.SOLES -> "Soles"
-                        Moneda.DOLARES -> "DÃ³lares"
+                        Moneda.DOLARES -> "Dólares"
                     },
                     onValueChange = {},
                     readOnly = true,
@@ -353,7 +354,7 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                 DropdownMenu(expanded = expandedMoneda, onDismissRequest = { expandedMoneda = false }) {
                     Moneda.entries.forEach { opcion ->
                         DropdownMenuItem(
-                            text = { Text(if (opcion == Moneda.SOLES) "Soles" else "DÃ³lares") },
+                            text = { Text(if (opcion == Moneda.SOLES) "Soles" else "Dólares") },
                             onClick = {
                                 moneda = opcion
                                 expandedMoneda = false
@@ -467,7 +468,7 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                         mostrarRegistroOk = true
                     }
                 }
-            }) { Text("Guardar prÃ©stamo") }
+            }) { Text("Guardar préstamo") }
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
             Text("Listado", style = MaterialTheme.typography.titleMedium)
@@ -510,17 +511,17 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                     }
             ) {
                 Column(Modifier.padding(12.dp)) {
-                    Text("PrÃ©stamo #${prestamo.idPrestamo}")
+                    Text("Préstamo #${prestamo.idPrestamo}")
                     Text("Cliente: ${cliente?.nombre ?: "-"} ${cliente?.apellido ?: ""}".trim())
                     Text(
                         "Total: ${prestamo.montoTotalPrestamo.toMoney(prestamo.moneda)} | " +
                             "Cuota: ${prestamo.montoCuota.toMoney(prestamo.moneda)}"
                     )
-                    Text("Moneda: ${if (prestamo.moneda == Moneda.SOLES) "Soles" else "DÃ³lares"}")
+                    Text("Moneda: ${if (prestamo.moneda == Moneda.SOLES) "Soles" else "Dólares"}")
                     Text("Estado: ${prestamo.estadoPrestamo}")
                     Spacer(Modifier.height(8.dp))
                     TextButton(onClick = { viewModel.eliminarPrestamo(prestamo.idPrestamo) }) {
-                        Text("Eliminar prÃ©stamo")
+                        Text("Eliminar préstamo")
                     }
                 }
             }
@@ -554,15 +555,15 @@ fun PrestamosScreen(viewModel: AppViewModel) {
             }
         }
         val detallePrestamo = buildString {
-            appendLine("Detalle del prÃ©stamo")
+            appendLine("Detalle del préstamo")
             appendLine("Cliente: ${cliente?.nombre ?: "-"} ${cliente?.apellido ?: ""}".trim())
-            appendLine("PrÃ©stamo #${prestamo?.idPrestamo ?: "-"}")
+            appendLine("Préstamo #${prestamo?.idPrestamo ?: "-"}")
             appendLine("Monto prestado: ${prestamo?.montoPrestado?.toMoney(moneda) ?: "-"}")
             appendLine("Monto total: ${prestamo?.montoTotalPrestamo?.toMoney(moneda) ?: "-"}")
-            appendLine("InterÃ©s: ${prestamo?.interes ?: "-"}%")
+            appendLine("Interés: ${prestamo?.interes ?: "-"}%")
             appendLine("Tipo pago: $tipoPagoDetalle")
             appendLine("Cuotas: ${prestamo?.cantidadCuotas ?: "-"}")
-            appendLine("Fecha registro prÃ©stamo: ${prestamo?.fechaRegistro?.toDateString() ?: "-"}")
+            appendLine("Fecha registro préstamo: ${prestamo?.fechaRegistro?.toDateString() ?: "-"}")
             appendLine("\nCronograma de cuotas")
             appendLine(cronograma)
             appendLine("\nTotal deuda pendiente: ${totalDeudaPendiente.toMoney(moneda)}")
@@ -575,7 +576,7 @@ fun PrestamosScreen(viewModel: AppViewModel) {
             },
             confirmButton = {
                 TextButton(onClick = {
-                    compartirTexto(context, "Detalle prÃ©stamo", detallePrestamo)
+                    compartirTexto(context, "Detalle préstamo", detallePrestamo)
                 }) {
                     Text("Compartir")
                 }
@@ -584,7 +585,7 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TextButton(onClick = {
                         runCatching {
-                            createDashboardDetallePdf(context, "Detalle prÃ©stamo", detallePrestamo)
+                            createDashboardDetallePdf(context, "Detalle préstamo", detallePrestamo)
                         }.onSuccess { file ->
                             compartirArchivo(context, file, "application/pdf")
                         }.onFailure {
@@ -601,18 +602,18 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                     }
                 }
             },
-            title = { Text("Detalle del prÃ©stamo") },
+            title = { Text("Detalle del préstamo") },
             text = {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     item {
                         Text("Cliente: ${cliente?.nombre ?: "-"} ${cliente?.apellido ?: ""}".trim())
-                        Text("PrÃ©stamo #${prestamo?.idPrestamo ?: "-"}")
+                        Text("Préstamo #${prestamo?.idPrestamo ?: "-"}")
                         Text("Monto prestado: ${prestamo?.montoPrestado?.toMoney(moneda) ?: "-"}")
                         Text("Monto total: ${prestamo?.montoTotalPrestamo?.toMoney(moneda) ?: "-"}")
-                        Text("InterÃ©s: ${prestamo?.interes ?: "-"}%")
+                        Text("Interés: ${prestamo?.interes ?: "-"}%")
                         Text("Tipo pago: $tipoPagoDetalle")
                         Text("Cuotas: ${prestamo?.cantidadCuotas ?: "-"}")
-                        Text("Fecha registro prÃ©stamo: ${prestamo?.fechaRegistro?.toDateString() ?: "-"}")
+                        Text("Fecha registro préstamo: ${prestamo?.fechaRegistro?.toDateString() ?: "-"}")
                     }
                     item { HorizontalDivider() }
                     item { Text("Cronograma de cuotas", style = MaterialTheme.typography.titleSmall) }
@@ -689,13 +690,13 @@ fun PagosScreen(viewModel: AppViewModel) {
                 busquedaCliente = "${it.nombre} ${it.apellido} (${it.documentoIdentidad})"
                 viewModel.seleccionarClientePagos(it.idCliente)
             },
-            label = "Cliente (nombre o documento)"
+            label = "Cliente"
         )
 
         DropdownGeneric(
             expanded = expandedPrestamo,
             onExpandedChange = { expandedPrestamo = it },
-            label = "PrÃ©stamo",
+            label = "Préstamo",
             selected = prestamos.firstOrNull { it.idPrestamo == idPrestamo }
                 ?.let { "#${it.idPrestamo} - saldo ${it.montoTotalPrestamo.toMoney(it.moneda)}" } ?: "",
             options = prestamos,
@@ -773,8 +774,8 @@ fun ReportesScreen(viewModel: AppViewModel) {
                     Text("Total prestado: ${resumen.totalPrestado.toMoney()}")
                     Text("Total cobrado: ${resumen.totalCobrado.toMoney()}")
                     Text("Total pendiente: ${resumen.totalPendiente.toMoney()}")
-                    Text("PrÃ©stamos activos: ${resumen.prestamosActivos}")
-                    Text("PrÃ©stamos pagados: ${resumen.prestamosPagados}")
+                    Text("Préstamos activos: ${resumen.prestamosActivos}")
+                    Text("Préstamos pagados: ${resumen.prestamosPagados}")
                     Text("Cuotas vencidas: ${resumen.cuotasVencidas}")
                 }
             }
@@ -788,8 +789,8 @@ fun ReportesScreen(viewModel: AppViewModel) {
                 Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     Column {
                         Text("Cliente: ${cliente?.nombre ?: "-"} ${cliente?.apellido ?: ""}".trim())
-                        Text("PrÃ©stamo #${cuota.idPrestamo} - Cuota ${cuota.numeroCuota}")
-                        Text("Registro prÃ©stamo: ${prestamo?.fechaRegistro?.toDateString() ?: "-"}")
+                        Text("Préstamo #${cuota.idPrestamo} - Cuota ${cuota.numeroCuota}")
+                        Text("Registro préstamo: ${prestamo?.fechaRegistro?.toDateString() ?: "-"}")
                         Text("Vence: ${cuota.fechaVencimiento.toDateString()}")
                     }
                     Text(cuota.saldoPendiente.toMoney(prestamo?.moneda ?: Moneda.SOLES))
@@ -846,10 +847,7 @@ private fun ClienteAutocompleteField(
     var expanded by remember { mutableStateOf(false) }
     val clientesFiltrados = remember(clientes, query) { filtrarClientes(clientes, query).take(12) }
 
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = !expanded }
-    ) {
+    Box(modifier = Modifier.fillMaxWidth()) {
         OutlinedTextField(
             value = query,
             onValueChange = {
@@ -865,14 +863,13 @@ private fun ClienteAutocompleteField(
                         onQueryChange("")
                         expanded = false
                     }) {
-                        Icon(Icons.Outlined.Close, contentDescription = "Limpiar bÃºsqueda")
+                        Icon(Icons.Outlined.Close, contentDescription = "Limpiar búsqueda")
                     }
                 } else {
                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                 }
             },
             modifier = Modifier
-                .menuAnchor()
                 .fillMaxWidth()
         )
         DropdownMenu(
@@ -914,7 +911,7 @@ private fun compartirArchivo(context: android.content.Context, file: File, mimeT
     val sendIntent = Intent(Intent.ACTION_SEND).apply {
         type = mimeType
         putExtra(Intent.EXTRA_STREAM, uri)
-        putExtra(Intent.EXTRA_SUBJECT, "Detalle prÃ©stamo")
+        putExtra(Intent.EXTRA_SUBJECT, "Detalle préstamo")
         putExtra(Intent.EXTRA_TEXT, "Detalle exportado")
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
