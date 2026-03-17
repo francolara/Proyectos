@@ -2,6 +2,7 @@ package com.prestamos.app.ui.screen
 
 import android.content.Context
 import android.content.ContextWrapper
+import android.os.Build
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.Image
@@ -81,11 +82,11 @@ fun PinSetupScreen(authViewModel: AuthViewModel) {
                         .align(Alignment.CenterHorizontally)
                 )
                 Text("Configura tu PIN", style = MaterialTheme.typography.headlineSmall)
-                Text("Primera vez en la app. Crea tu PIN de 6 dígitos.", style = MaterialTheme.typography.bodyMedium)
+                Text("Primera vez en la app. Crea tu PIN de 6 digitos.", style = MaterialTheme.typography.bodyMedium)
                 OutlinedTextField(
                     value = pin,
                     onValueChange = { pin = it.filter { c -> c.isDigit() }.take(6) },
-                    label = { Text("PIN (6 dígitos)") },
+                    label = { Text("PIN (6 digitos)") },
                     leadingIcon = { Icon(imageVector = Icons.Outlined.Lock, contentDescription = "PIN") },
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
@@ -122,8 +123,12 @@ fun PinSetupScreen(authViewModel: AuthViewModel) {
 fun PinLoginScreen(authViewModel: AuthViewModel) {
     val context = LocalContext.current
     val activity = remember(context) { context.findFragmentActivity() }
+    val allowedAuthenticators = remember {
+        BiometricManager.Authenticators.BIOMETRIC_WEAK or
+            BiometricManager.Authenticators.DEVICE_CREDENTIAL
+    }
     val canUseBiometric = remember(context) {
-        BiometricManager.from(context).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK) == BiometricManager.BIOMETRIC_SUCCESS
+        BiometricManager.from(context).canAuthenticate(allowedAuthenticators) == BiometricManager.BIOMETRIC_SUCCESS
     }
     var pin by remember { mutableStateOf("") }
 
@@ -157,7 +162,7 @@ fun PinLoginScreen(authViewModel: AuthViewModel) {
                 )
                 Text("Bienvenido", style = MaterialTheme.typography.headlineSmall)
                 Text("Ingresa tu PIN para continuar", style = MaterialTheme.typography.bodyMedium)
-                Text("Versión ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.bodySmall)
+                Text("Version ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.bodySmall)
 
                 OutlinedTextField(
                     value = pin,
@@ -184,7 +189,11 @@ fun PinLoginScreen(authViewModel: AuthViewModel) {
                 if (canUseBiometric && activity != null) {
                     Button(
                         onClick = {
-                            launchBiometricPrompt(activity, authViewModel)
+                            launchBiometricPrompt(
+                                activity = activity,
+                                authViewModel = authViewModel,
+                                allowedAuthenticators = allowedAuthenticators
+                            )
                         },
                         shape = RoundedCornerShape(14.dp),
                         modifier = Modifier
@@ -193,9 +202,9 @@ fun PinLoginScreen(authViewModel: AuthViewModel) {
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Fingerprint,
-                            contentDescription = "Biometría"
+                            contentDescription = "Biometria"
                         )
-                        Text("  Acceder con biometría")
+                        Text("  Acceder con biometria")
                     }
                 }
             }
@@ -203,7 +212,11 @@ fun PinLoginScreen(authViewModel: AuthViewModel) {
     }
 }
 
-private fun launchBiometricPrompt(activity: FragmentActivity, authViewModel: AuthViewModel) {
+private fun launchBiometricPrompt(
+    activity: FragmentActivity,
+    authViewModel: AuthViewModel,
+    allowedAuthenticators: Int
+) {
     val executor = ContextCompat.getMainExecutor(activity)
     val prompt = BiometricPrompt(
         activity,
@@ -217,9 +230,15 @@ private fun launchBiometricPrompt(activity: FragmentActivity, authViewModel: Aut
     )
 
     val info = BiometricPrompt.PromptInfo.Builder()
-        .setTitle("Autenticación biométrica")
+        .setTitle("Autenticacion biometrica")
         .setSubtitle("Confirma tu identidad para ingresar")
-        .setNegativeButtonText("Usar PIN")
+        .apply {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                setAllowedAuthenticators(allowedAuthenticators)
+            } else {
+                setNegativeButtonText("Usar PIN")
+            }
+        }
         .build()
 
     prompt.authenticate(info)

@@ -48,6 +48,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.PopupProperties
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.prestamos.app.data.local.entity.ClienteEntity
@@ -874,7 +875,8 @@ private fun ClienteAutocompleteField(
         )
         DropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false }
+            onDismissRequest = { expanded = false },
+            properties = PopupProperties(focusable = false)
         ) {
             if (clientesFiltrados.isEmpty()) {
                 DropdownMenuItem(

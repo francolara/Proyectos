@@ -5,8 +5,8 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.view.MotionEvent
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.fragment.app.FragmentActivity
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -55,7 +55,9 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.pointerInteropFilter
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -85,7 +87,7 @@ import kotlinx.coroutines.delay
 
 private const val INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000L
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         CuotasVencidasReminderScheduler.schedule(this)
@@ -319,11 +321,23 @@ private fun SideMenu(
                     )
                 }
                 if (expanded) {
-                    Text(
-                        text = "Control de Creditos",
-                        style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp)
-                    )
+                    Surface(
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "Control de Creditos",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.4.sp
+                            ),
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp)
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.height(6.dp))
                 destinations.forEach { destination ->
@@ -356,7 +370,7 @@ private fun SideMenu(
             if (expanded) {
                 Text(
                     text = "Contacto: franko.laras@gmail.com",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
                     modifier = Modifier
                         .align(Alignment.BottomStart)
                         .padding(horizontal = 14.dp, vertical = 12.dp)
