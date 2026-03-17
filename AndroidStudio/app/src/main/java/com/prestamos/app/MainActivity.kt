@@ -313,6 +313,13 @@ private fun SideMenu(
                     contentDescription = "Expandir menu"
                 )
             }
+            if (expanded) {
+                Text(
+                    text = "Control de Creditos",
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp)
+                )
+            }
             Spacer(modifier = Modifier.height(6.dp))
             destinations.forEach { destination ->
                 val selected = currentRoute == destination.route

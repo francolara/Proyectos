@@ -87,7 +87,7 @@ fun DashboardScreen(
                     Text("Fecha: ${System.currentTimeMillis().toDateString()}")
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         val trialTexto = when {
-                            activationUiState.status.licenseType.name == "TRIAL" && !activationUiState.status.trialExpired -> "Trial: ${activationUiState.status.trialDaysRemaining} día(s) restantes"
+                            activationUiState.status.licenseType.name == "TRIAL" && !activationUiState.status.trialExpired -> "Trial: ${activationUiState.status.trialDaysRemaining} dÃƒÂ­a(s) restantes"
                             activationUiState.status.licenseType.name == "TRIAL" && activationUiState.status.trialExpired -> "Trial expirado"
                             activationUiState.status.licenseType.name == "ANUAL" -> "Licencia ANUAL activa"
                             else -> "Licencia FULL activa"
@@ -126,7 +126,7 @@ fun DashboardScreen(
         }
 
         item {
-            Text("Gráfico comparativo", style = MaterialTheme.typography.titleMedium)
+            Text("GrÃƒÂ¡fico comparativo", style = MaterialTheme.typography.titleMedium)
             val capitalPrestadoActivo = state.prestamosActivosDetalle.sumOf { it.montoPrestado }
             val total = (capitalPrestadoActivo + state.cobradoHoy + state.saldoPendiente).coerceAtLeast(1.0)
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -150,7 +150,7 @@ fun DashboardScreen(
         }
 
         item {
-            Text("Ganancias de préstamos pagados", style = MaterialTheme.typography.titleMedium)
+            Text("Ganancias de prÃƒÂ©stamos pagados", style = MaterialTheme.typography.titleMedium)
             DashboardCard(
                 "Ganancia acumulada",
                 state.gananciaAcumulada.toMoney(state.monedaReferencial),
@@ -161,7 +161,7 @@ fun DashboardScreen(
 
             Spacer(Modifier.height(8.dp))
             if (state.gananciasPrestamosPagados.isEmpty()) {
-                Text("No hay préstamos pagados aún")
+                Text("No hay prÃƒÂ©stamos pagados aÃƒÂºn")
             } else {
                 val maxGanancia = state.gananciasPrestamosPagados.maxOf { it.ganancia }.coerceAtLeast(1.0)
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -190,16 +190,16 @@ fun DashboardScreen(
         }
 
         item {
-            Text("Próximos vencimientos", style = MaterialTheme.typography.titleMedium)
+            Text("PrÃƒÂ³ximos vencimientos", style = MaterialTheme.typography.titleMedium)
             if (state.proximosVencimientos.isEmpty()) {
-                Text("No hay próximos vencimientos")
+                Text("No hay prÃƒÂ³ximos vencimientos")
             }
         }
         items(state.proximosVencimientos) { cuota ->
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(10.dp)) {
                     Text(cuota.cliente)
-                    Text("Préstamo #${cuota.idPrestamo} | Cuota ${cuota.numeroCuota}")
+                    Text("PrÃƒÂ©stamo #${cuota.idPrestamo} | Cuota ${cuota.numeroCuota}")
                     Text("Vence ${cuota.fechaVencimiento.toDateString()}")
                     Text("Saldo: ${cuota.saldoPendiente.toMoney(cuota.moneda)}")
                 }
@@ -207,7 +207,7 @@ fun DashboardScreen(
         }
 
         item {
-            Text("Últimos pagos", style = MaterialTheme.typography.titleMedium)
+            Text("ÃƒÅ¡ltimos pagos", style = MaterialTheme.typography.titleMedium)
             if (state.ultimosPagos.isEmpty()) {
                 Text("No hay pagos registrados")
             }
@@ -216,7 +216,7 @@ fun DashboardScreen(
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(10.dp)) {
                     Text(pago.cliente)
-                    Text("Préstamo #${pago.idPrestamo} | Cuota ${pago.numeroCuota}")
+                    Text("PrÃƒÂ©stamo #${pago.idPrestamo} | Cuota ${pago.numeroCuota}")
                     Text("Fecha: ${pago.fechaPago.toDateString()}")
                     Text("Abono: ${pago.montoAbono.toMoney(pago.moneda)}")
                 }
@@ -326,11 +326,11 @@ private fun DashboardDetalle.toDetalleInfo(state: com.prestamos.app.ui.model.Das
             val totalPrestamos = resumen.size
             val totalActivo = resumen.sumOf { it.montoPrestado }
             val top = resumen.take(8).joinToString("\n") {
-                "• ${it.cliente} | Préstamo #${it.idPrestamo} | Capital ${it.montoPrestado.toMoney(it.moneda)} | Estado: ACTIVO"
-            }.ifBlank { "No hay préstamos activos." }
+                "Ã¢â‚¬Â¢ ${it.cliente} | PrÃƒÂ©stamo #${it.idPrestamo} | Capital ${it.montoPrestado.toMoney(it.moneda)} | Estado: ACTIVO"
+            }.ifBlank { "No hay prÃƒÂ©stamos activos." }
             DashboardDetalleInfo(
                 title = "Capital prestado",
-                message = "Préstamos activos: $totalPrestamos\nTotal activo: ${totalActivo.toMoney(state.monedaReferencial)}\n\n$top"
+                message = "PrÃƒÂ©stamos activos: $totalPrestamos\nTotal activo: ${totalActivo.toMoney(state.monedaReferencial)}\n\n$top"
             )
         }
 
@@ -340,12 +340,13 @@ private fun DashboardDetalle.toDetalleInfo(state: com.prestamos.app.ui.model.Das
                 .filter { it.cuotasPendientes == 0 }
                 .sortedByDescending { it.idPrestamo }
             val totalCobrado = historial.sumOf { it.montoCobrado }
+            val totalGanado = historial.sumOf { it.montoCobrado - it.montoPrestado }
             val top = historial.take(20).joinToString("\n") {
-                "• ${it.cliente} | Préstamo #${it.idPrestamo} | Capital ${it.montoPrestado.toMoney(it.moneda)} | Cobrado ${it.montoCobrado.toMoney(it.moneda)} | Estado: PAGADO"
-            }.ifBlank { "No hay préstamos cerrados todavía." }
+                "Ã¢â‚¬Â¢ ${it.cliente} | PrÃƒÂ©stamo #${it.idPrestamo} | Capital ${it.montoPrestado.toMoney(it.moneda)} | Cobrado ${it.montoCobrado.toMoney(it.moneda)} | Estado: PAGADO"
+            }.ifBlank { "No hay prÃƒÂ©stamos cerrados todavÃƒÂ­a." }
             DashboardDetalleInfo(
-                title = "Historial de préstamos",
-                message = "Préstamos no activos o pagados: ${historial.size}\nTotal cobrado: ${totalCobrado.toMoney(state.monedaReferencial)}\n\n$top"
+                title = "Historial de prÃƒÂ©stamos",
+                message = "PrÃƒÂ©stamos no activos o pagados: ${historial.size}\nTotal cobrado: ${totalCobrado.toMoney(state.monedaReferencial)}\nTotal ganado: ${totalGanado.toMoney(state.monedaReferencial)}\n\n$top"
             )
         }
 
@@ -353,18 +354,18 @@ private fun DashboardDetalle.toDetalleInfo(state: com.prestamos.app.ui.model.Das
             val resumen = state.prestamosActivosDetalle
             val total = resumen.sumOf { it.montoPrestado }
             val top = resumen.take(5).joinToString("\n") {
-                "• ${it.cliente} | Préstamo #${it.idPrestamo} | Capital ${it.montoPrestado.toMoney(it.moneda)}"
-            }.ifBlank { "No hay préstamos activos." }
+                "Ã¢â‚¬Â¢ ${it.cliente} | PrÃƒÂ©stamo #${it.idPrestamo} | Capital ${it.montoPrestado.toMoney(it.moneda)}"
+            }.ifBlank { "No hay prÃƒÂ©stamos activos." }
             DashboardDetalleInfo(
                 title = "Capital prestado activo",
-                message = "Capital de préstamos activos: ${total.toMoney(state.monedaReferencial)}\n\n$top"
+                message = "Capital de prÃƒÂ©stamos activos: ${total.toMoney(state.monedaReferencial)}\n\n$top"
             )
         }
 
         DashboardDetalle.PENDIENTE -> {
             val resumen = state.cuotasPendientesDetalle
             val top = resumen.take(8).joinToString("\n") {
-                "• ${it.cliente} | Préstamo #${it.idPrestamo} | Cuota ${it.numeroCuota} | Vence ${it.fechaVencimiento.toDateString()} | Saldo ${it.saldoPendiente.toMoney(it.moneda)}"
+                "Ã¢â‚¬Â¢ ${it.cliente} | PrÃƒÂ©stamo #${it.idPrestamo} | Cuota ${it.numeroCuota} | Vence ${it.fechaVencimiento.toDateString()} | Saldo ${it.saldoPendiente.toMoney(it.moneda)}"
             }.ifBlank { "No hay cuotas pendientes." }
             DashboardDetalleInfo(
                 title = "Saldo pendiente",
@@ -375,7 +376,7 @@ private fun DashboardDetalle.toDetalleInfo(state: com.prestamos.app.ui.model.Das
         DashboardDetalle.COBRADO_HOY -> {
             val resumen = state.pagosHoyDetalle
             val top = resumen.take(8).joinToString("\n") {
-                "• ${it.cliente} | Préstamo #${it.idPrestamo} | Cuota ${it.numeroCuota} | ${it.fechaPago.toDateString()} | Abono ${it.montoAbono.toMoney(it.moneda)}"
+                "Ã¢â‚¬Â¢ ${it.cliente} | PrÃƒÂ©stamo #${it.idPrestamo} | Cuota ${it.numeroCuota} | ${it.fechaPago.toDateString()} | Abono ${it.montoAbono.toMoney(it.moneda)}"
             }.ifBlank { "No se registraron pagos hoy." }
             DashboardDetalleInfo(
                 title = "Cobrado hoy",
@@ -386,7 +387,7 @@ private fun DashboardDetalle.toDetalleInfo(state: com.prestamos.app.ui.model.Das
         DashboardDetalle.VENCIDAS -> {
             val resumen = state.cuotasVencidasDetalle
             val top = resumen.take(8).joinToString("\n") {
-                "• ${it.cliente} | Préstamo #${it.idPrestamo} | Cuota ${it.numeroCuota} | Vence ${it.fechaVencimiento.toDateString()} | Saldo ${it.saldoPendiente.toMoney(it.moneda)}"
+                "Ã¢â‚¬Â¢ ${it.cliente} | PrÃƒÂ©stamo #${it.idPrestamo} | Cuota ${it.numeroCuota} | Vence ${it.fechaVencimiento.toDateString()} | Saldo ${it.saldoPendiente.toMoney(it.moneda)}"
             }.ifBlank { "No hay cuotas vencidas." }
             DashboardDetalleInfo(
                 title = "Cuotas vencidas",
@@ -402,7 +403,7 @@ private fun DashboardDetalle.toDetalleInfo(state: com.prestamos.app.ui.model.Das
         DashboardDetalle.CUOTAS_PENDIENTES -> {
             val count = state.estadoCuotas["Pendientes"] ?: 0
             val top = state.cuotasPendientesDetalle.take(6).joinToString("\n") {
-                "• ${it.cliente} | Cuota ${it.numeroCuota} | Saldo ${it.saldoPendiente.toMoney(it.moneda)}"
+                "Ã¢â‚¬Â¢ ${it.cliente} | Cuota ${it.numeroCuota} | Saldo ${it.saldoPendiente.toMoney(it.moneda)}"
             }.ifBlank { "No hay cuotas pendientes." }
             DashboardDetalleInfo(
                 title = "Cuotas pendientes",
@@ -413,7 +414,7 @@ private fun DashboardDetalle.toDetalleInfo(state: com.prestamos.app.ui.model.Das
         DashboardDetalle.CUOTAS_PARCIALES -> {
             val parciales = state.cuotasPendientesDetalle.filter { it.estado.name == "PARCIAL" }
             val top = parciales.take(6).joinToString("\n") {
-                "• ${it.cliente} | Cuota ${it.numeroCuota} | Saldo ${it.saldoPendiente.toMoney(it.moneda)}"
+                "Ã¢â‚¬Â¢ ${it.cliente} | Cuota ${it.numeroCuota} | Saldo ${it.saldoPendiente.toMoney(it.moneda)}"
             }.ifBlank { "No hay cuotas parciales." }
             DashboardDetalleInfo(
                 title = "Cuotas parciales",
@@ -423,7 +424,7 @@ private fun DashboardDetalle.toDetalleInfo(state: com.prestamos.app.ui.model.Das
 
         DashboardDetalle.CUOTAS_VENCIDAS -> {
             val top = state.cuotasVencidasDetalle.take(6).joinToString("\n") {
-                "• ${it.cliente} | Cuota ${it.numeroCuota} | Vence ${it.fechaVencimiento.toDateString()} | Saldo ${it.saldoPendiente.toMoney(it.moneda)}"
+                "Ã¢â‚¬Â¢ ${it.cliente} | Cuota ${it.numeroCuota} | Vence ${it.fechaVencimiento.toDateString()} | Saldo ${it.saldoPendiente.toMoney(it.moneda)}"
             }.ifBlank { "No hay cuotas vencidas." }
             DashboardDetalleInfo(
                 title = "Estado vencidas",
@@ -433,11 +434,11 @@ private fun DashboardDetalle.toDetalleInfo(state: com.prestamos.app.ui.model.Das
 
         DashboardDetalle.GANANCIAS -> {
             val top = state.gananciasPrestamosPagados.take(12).joinToString("\n") {
-                "• ${it.cliente} | Préstamo #${it.idPrestamo} | Prestado ${it.montoPrestado.toMoney(it.moneda)} | Cobrado ${it.montoCobrado.toMoney(it.moneda)} | Ganancia ${it.ganancia.toMoney(it.moneda)}"
-            }.ifBlank { "No hay préstamos pagados." }
+                "Ã¢â‚¬Â¢ ${it.cliente} | PrÃƒÂ©stamo #${it.idPrestamo} | Prestado ${it.montoPrestado.toMoney(it.moneda)} | Cobrado ${it.montoCobrado.toMoney(it.moneda)} | Ganancia ${it.ganancia.toMoney(it.moneda)}"
+            }.ifBlank { "No hay prÃƒÂ©stamos pagados." }
             DashboardDetalleInfo(
-                title = "Ganancias por préstamos pagados",
-                message = "Préstamos pagados: ${state.gananciasPrestamosPagados.size}\nGanancia acumulada: ${state.gananciaAcumulada.toMoney(state.monedaReferencial)}\n\n$top"
+                title = "Ganancias por prÃƒÂ©stamos pagados",
+                message = "PrÃƒÂ©stamos pagados: ${state.gananciasPrestamosPagados.size}\nGanancia acumulada: ${state.gananciaAcumulada.toMoney(state.monedaReferencial)}\n\n$top"
             )
         }
     }
