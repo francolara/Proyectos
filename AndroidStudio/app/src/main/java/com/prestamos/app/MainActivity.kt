@@ -22,14 +22,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.KeyboardArrowLeft
+import androidx.compose.material.icons.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Logout
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.RequestPage
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.VpnKey
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -161,10 +164,13 @@ private fun PrestamosApp(
     dashboardViewModel: DashboardViewModel = viewModel()
 ) {
     val navController = rememberNavController()
-    val destinations = AppDestinations.entries
     val activationRoute = "activation_license"
+    val menuItems = buildList {
+        addAll(AppDestinations.entries.map { SideMenuItem(it.route, if (it.title.isBlank()) "Salir" else it.title) })
+        add(SideMenuItem(activationRoute, "Licencia"))
+    }
     var menuExpanded by rememberSaveable { mutableStateOf(false) }
-    val sideMenuWidth by animateDpAsState(targetValue = if (menuExpanded) 220.dp else 72.dp, label = "side_menu_width")
+    val sideMenuWidth by animateDpAsState(targetValue = if (menuExpanded) 170.dp else 52.dp, label = "side_menu_width")
 
     Scaffold(
         containerColor = androidx.compose.material3.MaterialTheme.colorScheme.background
@@ -178,7 +184,7 @@ private fun PrestamosApp(
                 width = sideMenuWidth,
                 expanded = menuExpanded,
                 currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route,
-                destinations = destinations,
+                destinations = menuItems,
                 onToggleExpanded = { menuExpanded = !menuExpanded },
                 onNavigate = { route ->
                     navController.navigate(route) {
@@ -196,7 +202,7 @@ private fun PrestamosApp(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .padding(start = 8.dp)
+                    .padding(start = 4.dp)
             ) {
                 composable(AppDestinations.DASHBOARD.route) {
                     val activationState by activationViewModel.uiState.collectAsStateWithLifecycle()
@@ -238,7 +244,7 @@ private fun SideMenu(
     width: androidx.compose.ui.unit.Dp,
     expanded: Boolean,
     currentRoute: String?,
-    destinations: List<AppDestinations>,
+    destinations: List<SideMenuItem>,
     onToggleExpanded: () -> Unit,
     onNavigate: (String) -> Unit
 ) {
@@ -253,10 +259,13 @@ private fun SideMenu(
         Column(
             modifier = Modifier
                 .fillMaxHeight()
-                .padding(horizontal = 8.dp, vertical = 10.dp)
+                .padding(horizontal = if (expanded) 8.dp else 4.dp, vertical = 8.dp)
         ) {
-            TextButton(onClick = onToggleExpanded, modifier = Modifier.fillMaxWidth()) {
-                Text(if (expanded) "Ocultar" else "Menu")
+            IconButton(onClick = onToggleExpanded, modifier = Modifier.fillMaxWidth()) {
+                Icon(
+                    imageVector = if (expanded) Icons.Outlined.KeyboardArrowLeft else Icons.Outlined.KeyboardArrowRight,
+                    contentDescription = "Expandir menu"
+                )
             }
             Spacer(modifier = Modifier.height(6.dp))
             destinations.forEach { destination ->
@@ -275,12 +284,12 @@ private fun SideMenu(
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp)
                     ) {
                         Icon(
-                            imageVector = iconFor(destination),
+                            imageVector = iconForRoute(destination.route),
                             contentDescription = destination.route
                         )
                         if (expanded) {
                             Spacer(modifier = Modifier.width(12.dp))
-                            Text(if (destination.title.isBlank()) "Salir" else destination.title)
+                            Text(destination.title)
                         }
                     }
                 }
@@ -297,4 +306,21 @@ private fun iconFor(destination: AppDestinations) = when (destination) {
     AppDestinations.PAGOS -> Icons.Outlined.Payments
     AppDestinations.BACKUP -> Icons.Outlined.Settings
     AppDestinations.LOGOUT -> Icons.Outlined.Logout
+}
+
+private data class SideMenuItem(
+    val route: String,
+    val title: String
+)
+
+@Composable
+private fun iconForRoute(route: String) = when (route) {
+    AppDestinations.DASHBOARD.route -> Icons.Outlined.Home
+    AppDestinations.CLIENTES.route -> Icons.Outlined.Groups
+    AppDestinations.PRESTAMOS.route -> Icons.Outlined.RequestPage
+    AppDestinations.PAGOS.route -> Icons.Outlined.Payments
+    AppDestinations.BACKUP.route -> Icons.Outlined.Settings
+    AppDestinations.LOGOUT.route -> Icons.Outlined.Logout
+    "activation_license" -> Icons.Outlined.VpnKey
+    else -> Icons.Outlined.Home
 }
