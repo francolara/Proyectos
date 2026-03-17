@@ -51,7 +51,10 @@ import com.prestamos.app.util.toDateString
 import com.prestamos.app.util.toEpochMillis
 import com.prestamos.app.util.toMoney
 import java.io.File
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 
 // Firma Codex 2026-03-17
 
@@ -251,6 +254,7 @@ fun PrestamosScreen(viewModel: AppViewModel) {
     var monto by remember { mutableStateOf("") }
     var interes by remember { mutableStateOf("") }
     var cuotas by remember { mutableStateOf("") }
+    var intervaloDiasPersonalizado by remember { mutableStateOf("") }
     var fechaPrimeraCuota by remember { mutableStateOf(LocalDate.now()) }
     var moneda by remember { mutableStateOf(Moneda.SOLES) }
     var tipoPago by remember { mutableStateOf(TipoPago.SEMANAL) }
@@ -372,7 +376,17 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                 DropdownMenu(expanded = expandedTipo, onDismissRequest = { expandedTipo = false }) {
                     TipoPago.entries.forEach { tipo ->
                         DropdownMenuItem(
-                            text = { Text(tipo.name) },
+                            text = {
+                                Text(
+                                    when (tipo) {
+                                        TipoPago.DIARIO -> "DIARIO"
+                                        TipoPago.SEMANAL -> "SEMANAL"
+                                        TipoPago.QUINCENAL -> "QUINCENAL"
+                                        TipoPago.MENSUAL -> "MENSUAL"
+                                        TipoPago.PERSONALIZADO -> "PERSONALIZADO"
+                                    }
+                                )
+                            },
                             onClick = {
                                 tipoPago = tipo
                                 expandedTipo = false
@@ -380,6 +394,17 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                         )
                     }
                 }
+            }
+
+            if (tipoPago == TipoPago.PERSONALIZADO) {
+                OutlinedTextField(
+                    value = intervaloDiasPersonalizado,
+                    onValueChange = { intervaloDiasPersonalizado = onlyDigits(it) },
+                    label = { Text("Cada cuantos dias") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
             OutlinedTextField(
@@ -412,12 +437,14 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                         interes = interes,
                         moneda = moneda,
                         tipoPago = tipoPago,
+                        intervaloDiasPersonalizado = intervaloDiasPersonalizado,
                         cuotas = cuotas,
                         fechaPrimeraCuota = fechaPrimeraCuota.toEpochMillis()
                     ) {
                         monto = ""
                         interes = ""
                         cuotas = ""
+                        intervaloDiasPersonalizado = ""
                         fechaPrimeraCuota = LocalDate.now()
                         mostrarRegistroOk = true
                     }
@@ -497,6 +524,7 @@ fun PrestamosScreen(viewModel: AppViewModel) {
         val prestamo = prestamos.firstOrNull { it.idPrestamo == prestamoDetalleId }
         val cliente = clientes.firstOrNull { it.idCliente == prestamo?.idCliente }
         val moneda = prestamo?.moneda ?: Moneda.SOLES
+        val tipoPagoDetalle = tipoPagoDetalle(prestamo?.tipoPago, cuotasDetalle)
         val totalDeudaPendiente = cuotasDetalle.sumOf { it.saldoPendiente }
         val cronograma = if (cuotasDetalle.isEmpty()) {
             "Sin cuotas registradas"
@@ -514,7 +542,7 @@ fun PrestamosScreen(viewModel: AppViewModel) {
             appendLine("Monto prestado: ${prestamo?.montoPrestado?.toMoney(moneda) ?: "-"}")
             appendLine("Monto total: ${prestamo?.montoTotalPrestamo?.toMoney(moneda) ?: "-"}")
             appendLine("Interés: ${prestamo?.interes ?: "-"}%")
-            appendLine("Tipo pago: ${prestamo?.tipoPago ?: "-"}")
+            appendLine("Tipo pago: $tipoPagoDetalle")
             appendLine("Cuotas: ${prestamo?.cantidadCuotas ?: "-"}")
             appendLine("Fecha registro préstamo: ${prestamo?.fechaRegistro?.toDateString() ?: "-"}")
             appendLine("\nCronograma de cuotas")
@@ -564,7 +592,7 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                         Text("Monto prestado: ${prestamo?.montoPrestado?.toMoney(moneda) ?: "-"}")
                         Text("Monto total: ${prestamo?.montoTotalPrestamo?.toMoney(moneda) ?: "-"}")
                         Text("Interés: ${prestamo?.interes ?: "-"}%")
-                        Text("Tipo pago: ${prestamo?.tipoPago ?: "-"}")
+                        Text("Tipo pago: $tipoPagoDetalle")
                         Text("Cuotas: ${prestamo?.cantidadCuotas ?: "-"}")
                         Text("Fecha registro préstamo: ${prestamo?.fechaRegistro?.toDateString() ?: "-"}")
                     }
@@ -842,4 +870,26 @@ private fun onlyDecimal(value: String): String {
         }
     }
     return result.toString()
+}
+
+private fun tipoPagoDetalle(tipoPago: TipoPago?, cuotas: List<com.prestamos.app.data.local.entity.CuotaEntity>): String {
+    if (tipoPago == null) return "-"
+    return when (tipoPago) {
+        TipoPago.DIARIO -> "DIARIO"
+        TipoPago.SEMANAL -> "SEMANAL"
+        TipoPago.QUINCENAL -> "QUINCENAL"
+        TipoPago.MENSUAL -> "MENSUAL"
+        TipoPago.PERSONALIZADO -> {
+            val dias = intervaloDiasEntreCuotas(cuotas)
+            if (dias != null && dias > 0) "PERSONALIZADO ($dias DIAS)" else "PERSONALIZADO"
+        }
+    }
+}
+
+private fun intervaloDiasEntreCuotas(cuotas: List<com.prestamos.app.data.local.entity.CuotaEntity>): Long? {
+    if (cuotas.size < 2) return null
+    val ordenadas = cuotas.sortedBy { it.numeroCuota }
+    val primera = Instant.ofEpochMilli(ordenadas[0].fechaVencimiento).atZone(ZoneId.systemDefault()).toLocalDate()
+    val segunda = Instant.ofEpochMilli(ordenadas[1].fechaVencimiento).atZone(ZoneId.systemDefault()).toLocalDate()
+    return ChronoUnit.DAYS.between(primera, segunda).coerceAtLeast(0L)
 }

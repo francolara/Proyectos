@@ -142,6 +142,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         interes: String,
         moneda: Moneda,
         tipoPago: TipoPago,
+        intervaloDiasPersonalizado: String,
         cuotas: String,
         fechaPrimeraCuota: Long,
         onSuccess: () -> Unit = {}
@@ -151,15 +152,24 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 val montoDouble = monto.toDoubleOrNull() ?: error("Monto invalido")
                 val interesDouble = interes.toDoubleOrNull() ?: error("Interes invalido")
                 val cuotasInt = cuotas.toIntOrNull() ?: error("Cuotas invalidas")
+                val intervaloPersonalizadoInt = if (tipoPago == TipoPago.PERSONALIZADO) {
+                    intervaloDiasPersonalizado.toIntOrNull() ?: error("Intervalo personalizado invalido")
+                } else {
+                    null
+                }
                 require(montoDouble > 0.0) { "Monto debe ser mayor a 0" }
                 require(interesDouble >= 0.0) { "Interes debe ser mayor o igual a 0" }
                 require(cuotasInt > 0) { "Cuotas debe ser mayor a 0" }
+                if (tipoPago == TipoPago.PERSONALIZADO) {
+                    require((intervaloPersonalizadoInt ?: 0) > 0) { "Intervalo personalizado invalido" }
+                }
                 repository.registrarPrestamo(
                     idCliente = idCliente,
                     monto = montoDouble,
                     interesPorcentaje = interesDouble,
                     moneda = moneda,
                     tipoPago = tipoPago,
+                    intervaloDiasPersonalizado = intervaloPersonalizadoInt,
                     cantidadCuotas = cuotasInt,
                     fechaPrimeraCuota = fechaPrimeraCuota
                 )

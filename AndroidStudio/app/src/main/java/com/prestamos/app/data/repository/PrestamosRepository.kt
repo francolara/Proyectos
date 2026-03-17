@@ -85,6 +85,7 @@ class PrestamosRepository(
         interesPorcentaje: Double,
         moneda: Moneda,
         tipoPago: TipoPago,
+        intervaloDiasPersonalizado: Int?,
         cantidadCuotas: Int,
         fechaPrimeraCuota: Long
     ) {
@@ -111,11 +112,19 @@ class PrestamosRepository(
             )
 
             val primeraFecha = millisToLocalDate(fechaPrimeraCuota)
+            val diasPersonalizado = if (tipoPago == TipoPago.PERSONALIZADO) {
+                require((intervaloDiasPersonalizado ?: 0) > 0) { "Intervalo personalizado invalido" }
+                intervaloDiasPersonalizado
+            } else {
+                null
+            }
             val cuotas = (1..cantidadCuotas).map { numero ->
                 val fechaCuota = when (tipoPago) {
                     TipoPago.DIARIO -> primeraFecha.plusDays((numero - 1).toLong())
                     TipoPago.SEMANAL -> primeraFecha.plusWeeks((numero - 1).toLong())
+                    TipoPago.QUINCENAL -> primeraFecha.plusDays((numero - 1).toLong() * 15L)
                     TipoPago.MENSUAL -> primeraFecha.plusMonths((numero - 1).toLong())
+                    TipoPago.PERSONALIZADO -> primeraFecha.plusDays((numero - 1).toLong() * diasPersonalizado!!.toLong())
                 }
                 CuotaEntity(
                     idPrestamo = idPrestamo,

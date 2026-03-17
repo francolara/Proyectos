@@ -28,6 +28,7 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Logout
+import androidx.compose.material.icons.outlined.NightsStay
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.RequestPage
 import androidx.compose.material.icons.outlined.Settings
@@ -360,7 +361,7 @@ private data class SideMenuItem(
 
 @Composable
 private fun iconForRoute(route: String) = when (route) {
-    "__toggle_dark_mode__" -> Icons.Outlined.Settings
+    "__toggle_dark_mode__" -> Icons.Outlined.NightsStay
     AppDestinations.DASHBOARD.route -> Icons.Outlined.Home
     AppDestinations.CLIENTES.route -> Icons.Outlined.Groups
     AppDestinations.PRESTAMOS.route -> Icons.Outlined.RequestPage

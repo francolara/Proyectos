@@ -3,7 +3,9 @@ package com.prestamos.app.data.local.entity
 enum class TipoPago {
     DIARIO,
     SEMANAL,
-    MENSUAL
+    QUINCENAL,
+    MENSUAL,
+    PERSONALIZADO
 }
 
 enum class Moneda {
