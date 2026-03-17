@@ -34,6 +34,7 @@ data class DashboardPrestamoDetalleItem(
     val cliente: String,
     val idPrestamo: Long,
     val montoPrestado: Double,
+    val montoTotalConInteres: Double,
     val montoCobrado: Double,
     val saldoPendiente: Double,
     val totalCuotas: Int,

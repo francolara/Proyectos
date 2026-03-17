@@ -143,14 +143,14 @@ fun DashboardScreen(
 
         item {
             Text("Gráfico comparativo", style = MaterialTheme.typography.titleMedium)
-            val capitalPrestadoActivo = state.prestamosActivosDetalle.sumOf { it.montoPrestado }.coerceAtLeast(0.0)
+            val capitalPrestadoActivo = state.prestamosActivosDetalle.sumOf { it.montoTotalConInteres }.coerceAtLeast(0.0)
             val pendienteActivo = state.prestamosActivosDetalle
                 .sumOf { it.saldoPendiente }
                 .coerceIn(0.0, capitalPrestadoActivo)
             val cobradoActivo = (capitalPrestadoActivo - pendienteActivo).coerceAtLeast(0.0)
 
             HorizontalMetricBar(
-                label = "Prestado activo",
+                label = "Prestado activo + interes",
                 amount = capitalPrestadoActivo,
                 percent = 1f,
                 color = PrimaryGreen,
@@ -159,7 +159,7 @@ fun DashboardScreen(
             )
             Spacer(Modifier.height(6.dp))
             HorizontalMetricBar(
-                label = "Cobrado activo",
+                label = "Cobrado activo + interes",
                 amount = cobradoActivo,
                 percent = if (capitalPrestadoActivo > 0.0) (cobradoActivo / capitalPrestadoActivo).toFloat() else 0f,
                 color = AccentGold,
@@ -168,26 +168,13 @@ fun DashboardScreen(
             )
             Spacer(Modifier.height(6.dp))
             HorizontalMetricBar(
-                label = "Pendiente activo",
+                label = "Pendiente activo + interes",
                 amount = pendienteActivo,
                 percent = if (capitalPrestadoActivo > 0.0) (pendienteActivo / capitalPrestadoActivo).toFloat() else 0f,
                 color = SecondaryGreen,
                 moneda = state.monedaReferencial,
                 onClick = { detalleSeleccionado = DashboardDetalle.PENDIENTE }
             )
-        }
-
-        item {
-            Text("Estado de cuotas", style = MaterialTheme.typography.titleMedium)
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                DashboardCard("Pagadas", (state.estadoCuotas["Pagadas"] ?: 0).toString(), Modifier.weight(1f)) { detalleSeleccionado = DashboardDetalle.CUOTAS_PAGADAS }
-                DashboardCard("Pendientes", (state.estadoCuotas["Pendientes"] ?: 0).toString(), Modifier.weight(1f)) { detalleSeleccionado = DashboardDetalle.CUOTAS_PENDIENTES }
-            }
-            Spacer(Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                DashboardCard("Parciales", (state.estadoCuotas["Parciales"] ?: 0).toString(), Modifier.weight(1f)) { detalleSeleccionado = DashboardDetalle.CUOTAS_PARCIALES }
-                DashboardCard("Vencidas", (state.estadoCuotas["Vencidas"] ?: 0).toString(), Modifier.weight(1f)) { detalleSeleccionado = DashboardDetalle.CUOTAS_VENCIDAS }
-            }
         }
 
         item {
@@ -459,16 +446,16 @@ private fun DashboardDetalle.toDetalleInfo(state: com.prestamos.app.ui.model.Das
 
         DashboardDetalle.COBRADO_ACTIVO -> {
             val resumen = state.prestamosActivosDetalle
-            val totalCapitalActivo = resumen.sumOf { it.montoPrestado }.coerceAtLeast(0.0)
+            val totalCapitalActivo = resumen.sumOf { it.montoTotalConInteres }.coerceAtLeast(0.0)
             val totalPendienteActivo = resumen.sumOf { it.saldoPendiente }.coerceIn(0.0, totalCapitalActivo)
             val totalCobradoActivo = (totalCapitalActivo - totalPendienteActivo).coerceAtLeast(0.0)
             val top = resumen.take(12).joinToString("\n") {
-                val cobradoPrestamo = (it.montoPrestado - it.saldoPendiente).coerceAtLeast(0.0)
-                "• ${it.cliente} | Préstamo #${it.idPrestamo} | Cobrado activo ${cobradoPrestamo.toMoney(it.moneda)} | Pendiente ${it.saldoPendiente.toMoney(it.moneda)}"
+                val cobradoPrestamo = (it.montoTotalConInteres - it.saldoPendiente).coerceAtLeast(0.0)
+                "• ${it.cliente} | Préstamo #${it.idPrestamo} | Cobrado c/interes ${cobradoPrestamo.toMoney(it.moneda)} | Pendiente c/interes ${it.saldoPendiente.toMoney(it.moneda)}"
             }.ifBlank { "No hay préstamos activos." }
             DashboardDetalleInfo(
                 title = "Cobrado activo",
-                message = "Prestamos activos: ${resumen.size}\nTotal cobrado activo: ${totalCobradoActivo.toMoney(state.monedaReferencial)}\n\n$top"
+                message = "Prestamos activos: ${resumen.size}\nTotal cobrado activo c/interes: ${totalCobradoActivo.toMoney(state.monedaReferencial)}\n\n$top"
             )
         }
 
