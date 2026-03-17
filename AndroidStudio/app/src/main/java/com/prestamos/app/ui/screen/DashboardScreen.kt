@@ -4,6 +4,7 @@ import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -41,6 +42,7 @@ import com.prestamos.app.ui.viewmodel.DashboardViewModel
 import com.prestamos.app.util.toDateString
 import com.prestamos.app.util.toMoney
 import java.io.File
+import java.util.Locale
 
 private enum class DashboardDetalle {
     CAPITAL,
@@ -108,7 +110,13 @@ fun DashboardScreen(
                 modifier = Modifier.clickable { detalleSeleccionado = DashboardDetalle.HISTORIAL }
             )
             Spacer(modifier = Modifier.height(8.dp))
-            DashboardCard("Capital prestado activo", capitalPrestadoActivo2.toMoney(state.monedaReferencial), Modifier.fillMaxWidth(), highlightValue = true) {
+            DashboardCard(
+                "Capital prestado activo",
+                capitalPrestadoActivo2.toMoney(state.monedaReferencial),
+                Modifier.fillMaxWidth(),
+                highlightValue = true,
+                valueColor = MaterialTheme.colorScheme.onSecondaryContainer
+            ) {
                 detalleSeleccionado = DashboardDetalle.CAPITAL_ACTIVO2
             }
             Spacer(modifier = Modifier.height(8.dp))
@@ -116,7 +124,13 @@ fun DashboardScreen(
                 DashboardCard("Saldo pendiente", state.saldoPendiente.toMoney(state.monedaReferencial), Modifier.weight(1f)) {
                     detalleSeleccionado = DashboardDetalle.PENDIENTE
                 }
-                DashboardCard("Cobrado hoy", state.cobradoHoy.toMoney(state.monedaReferencial), Modifier.weight(1f), highlightValue = true) {
+                DashboardCard(
+                    "Cobrado hoy",
+                    state.cobradoHoy.toMoney(state.monedaReferencial),
+                    Modifier.weight(1f),
+                    highlightValue = true,
+                    valueColor = MaterialTheme.colorScheme.onSecondaryContainer
+                ) {
                     detalleSeleccionado = DashboardDetalle.COBRADO_HOY
                 }
             }
@@ -128,13 +142,38 @@ fun DashboardScreen(
 
         item {
             Text("Gráfico comparativo", style = MaterialTheme.typography.titleMedium)
-            val capitalPrestadoActivo = state.prestamosActivosDetalle.sumOf { it.montoPrestado }
-            val total = (capitalPrestadoActivo + state.cobradoHoy + state.saldoPendiente).coerceAtLeast(1.0)
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                BarSegment("Prestado", (capitalPrestadoActivo / total).toFloat(), PrimaryGreen) { detalleSeleccionado = DashboardDetalle.CAPITAL }
-                BarSegment("Cobrado", (state.cobradoHoy / total).toFloat(), AccentGold) { detalleSeleccionado = DashboardDetalle.COBRADO_HOY }
-                BarSegment("Pendiente", (state.saldoPendiente / total).toFloat(), SecondaryGreen) { detalleSeleccionado = DashboardDetalle.PENDIENTE }
-            }
+            val capitalPrestadoActivo = state.prestamosActivosDetalle.sumOf { it.montoPrestado }.coerceAtLeast(0.0)
+            val pendienteActivo = state.prestamosActivosDetalle
+                .sumOf { it.saldoPendiente }
+                .coerceIn(0.0, capitalPrestadoActivo)
+            val cobradoActivo = (capitalPrestadoActivo - pendienteActivo).coerceAtLeast(0.0)
+
+            HorizontalMetricBar(
+                label = "Prestado activo",
+                amount = capitalPrestadoActivo,
+                percent = 1f,
+                color = PrimaryGreen,
+                moneda = state.monedaReferencial,
+                onClick = { detalleSeleccionado = DashboardDetalle.CAPITAL }
+            )
+            Spacer(Modifier.height(6.dp))
+            HorizontalMetricBar(
+                label = "Cobrado activo",
+                amount = cobradoActivo,
+                percent = if (capitalPrestadoActivo > 0.0) (cobradoActivo / capitalPrestadoActivo).toFloat() else 0f,
+                color = AccentGold,
+                moneda = state.monedaReferencial,
+                onClick = { detalleSeleccionado = DashboardDetalle.COBRADO_HOY }
+            )
+            Spacer(Modifier.height(6.dp))
+            HorizontalMetricBar(
+                label = "Pendiente activo",
+                amount = pendienteActivo,
+                percent = if (capitalPrestadoActivo > 0.0) (pendienteActivo / capitalPrestadoActivo).toFloat() else 0f,
+                color = SecondaryGreen,
+                moneda = state.monedaReferencial,
+                onClick = { detalleSeleccionado = DashboardDetalle.PENDIENTE }
+            )
         }
 
         item {
@@ -252,6 +291,7 @@ private fun DashboardCard(
     value: String,
     modifier: Modifier = Modifier,
     highlightValue: Boolean = false,
+    valueColor: Color? = null,
     onClick: () -> Unit
 ) {
     Card(
@@ -266,23 +306,54 @@ private fun DashboardCard(
             Text(
                 value,
                 style = MaterialTheme.typography.titleLarge,
-                color = if (highlightValue) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSecondaryContainer
+                color = valueColor ?: if (highlightValue) {
+                    MaterialTheme.colorScheme.tertiary
+                } else {
+                    MaterialTheme.colorScheme.onSecondaryContainer
+                }
             )
         }
     }
 }
 
 @Composable
-private fun BarSegment(label: String, ratio: Float, color: Color, onClick: () -> Unit) {
-    val height = (80 * ratio.coerceIn(0.15f, 1f)).dp
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable(onClick = onClick)) {
-        Spacer(
-            Modifier
-                .height(height)
-                .fillMaxWidth(0.28f)
-                .background(color, RoundedCornerShape(8.dp))
-        )
-        Text(label, style = MaterialTheme.typography.labelSmall)
+private fun HorizontalMetricBar(
+    label: String,
+    amount: Double,
+    percent: Float,
+    color: Color,
+    moneda: com.prestamos.app.data.local.entity.Moneda,
+    onClick: () -> Unit
+) {
+    val progress = percent.coerceIn(0f, 1f)
+    val percentText = String.format(Locale.US, "%.1f%%", progress * 100f)
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(label, style = MaterialTheme.typography.labelMedium)
+            Text("$percentText  ${amount.toMoney(moneda)}", style = MaterialTheme.typography.labelMedium)
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(12.dp)
+                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(progress)
+                    .height(12.dp)
+                    .background(color, RoundedCornerShape(8.dp))
+            )
+        }
     }
 }
 
