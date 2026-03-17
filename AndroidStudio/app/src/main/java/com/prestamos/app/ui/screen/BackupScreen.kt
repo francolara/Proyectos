@@ -79,6 +79,13 @@ fun BackupScreen(viewModel: BackupViewModel = viewModel()) {
 
         Button(
             modifier = Modifier.fillMaxWidth(),
+            onClick = { folderBackupLauncher.launch(null) }
+        ) {
+            Text("Configurar ubicación")
+        }
+
+        Button(
+            modifier = Modifier.fillMaxWidth(),
             onClick = {
                 if (uiState.hasSavedLocation) {
                     viewModel.generarRespaldoEnUbicacionGuardada(
@@ -92,13 +99,6 @@ fun BackupScreen(viewModel: BackupViewModel = viewModel()) {
             }
         ) {
             Text("Generar respaldo")
-        }
-
-        Button(
-            modifier = Modifier.fillMaxWidth(),
-            onClick = { folderBackupLauncher.launch(null) }
-        ) {
-            Text("Configurar ubicación")
         }
 
         Button(

@@ -26,7 +26,9 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExposedDropdownMenuDefaults.TrailingIcon
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DateRange
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -251,10 +253,7 @@ fun PrestamosScreen(viewModel: AppViewModel) {
     val clientes by viewModel.clientes.collectAsStateWithLifecycle()
     val prestamos by viewModel.prestamos.collectAsStateWithLifecycle()
 
-    var filtroCliente by remember { mutableStateOf("") }
-    val clientesFiltrados = remember(clientes, filtroCliente) {
-        filtrarClientes(clientes, filtroCliente)
-    }
+    var busquedaCliente by remember { mutableStateOf("") }
 
     var clienteSeleccionado by remember { mutableStateOf<ClienteEntity?>(null) }
     var monto by remember { mutableStateOf("") }
@@ -265,7 +264,6 @@ fun PrestamosScreen(viewModel: AppViewModel) {
     var moneda by remember { mutableStateOf(Moneda.SOLES) }
     var tipoPago by remember { mutableStateOf(TipoPago.SEMANAL) }
 
-    var expandedCliente by remember { mutableStateOf(false) }
     var expandedMoneda by remember { mutableStateOf(false) }
     var expandedTipo by remember { mutableStateOf(false) }
     var mostrarDetallePrestamo by remember { mutableStateOf(false) }
@@ -289,35 +287,20 @@ fun PrestamosScreen(viewModel: AppViewModel) {
         item {
             Text("Préstamos", style = MaterialTheme.typography.headlineSmall)
 
-            OutlinedTextField(
-                value = filtroCliente,
-                onValueChange = { filtroCliente = sanitizeSingleLine(it) },
-                label = { Text("Filtrar cliente (nombre o documento)") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+            ClienteAutocompleteField(
+                clientes = clientes,
+                query = busquedaCliente,
+                onQueryChange = {
+                    busquedaCliente = it
+                    clienteSeleccionado = null
+                },
+                selectedCliente = clienteSeleccionado,
+                onSelectCliente = {
+                    clienteSeleccionado = it
+                    busquedaCliente = "${it.nombre} ${it.apellido} (${it.documentoIdentidad})"
+                },
+                label = "Cliente (nombre o documento)"
             )
-
-            ExposedDropdownMenuBox(expanded = expandedCliente, onExpandedChange = { expandedCliente = !expandedCliente }) {
-                OutlinedTextField(
-                    value = clienteSeleccionado?.let { "${it.nombre} ${it.apellido}" } ?: "",
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Cliente") },
-                    trailingIcon = { TrailingIcon(expanded = expandedCliente) },
-                    modifier = Modifier.menuAnchor().fillMaxWidth()
-                )
-                DropdownMenu(expanded = expandedCliente, onDismissRequest = { expandedCliente = false }) {
-                    clientesFiltrados.forEach { cliente ->
-                        DropdownMenuItem(
-                            text = { Text("${cliente.nombre} ${cliente.apellido} (${cliente.documentoIdentidad})") },
-                            onClick = {
-                                clienteSeleccionado = cliente
-                                expandedCliente = false
-                            }
-                        )
-                    }
-                }
-            }
 
             OutlinedTextField(
                 value = monto,
@@ -460,6 +443,8 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                         cuotas = ""
                         intervaloDiasPersonalizado = ""
                         fechaPrimeraCuota = LocalDate.now()
+                        busquedaCliente = ""
+                        clienteSeleccionado = null
                         mostrarRegistroOk = true
                     }
                 }
@@ -640,17 +625,13 @@ fun PagosScreen(viewModel: AppViewModel) {
     val prestamos by viewModel.prestamosClientePagos.collectAsStateWithLifecycle()
     val cuotas by viewModel.cuotasPrestamoPagos.collectAsStateWithLifecycle()
 
-    var filtroCliente by remember { mutableStateOf("") }
-    val clientesFiltrados = remember(clientes, filtroCliente) {
-        filtrarClientes(clientes, filtroCliente)
-    }
+    var busquedaCliente by remember { mutableStateOf("") }
 
     var idCliente by remember { mutableStateOf<Long?>(null) }
     var idPrestamo by remember { mutableStateOf<Long?>(null) }
     var idCuota by remember { mutableStateOf<Long?>(null) }
     var montoAbono by remember { mutableStateOf("") }
 
-    var expandedCliente by remember { mutableStateOf(false) }
     var expandedPrestamo by remember { mutableStateOf(false) }
     var expandedCuota by remember { mutableStateOf(false) }
     var mostrarRegistroOk by remember { mutableStateOf(false) }
@@ -671,27 +652,25 @@ fun PagosScreen(viewModel: AppViewModel) {
     ) {
         Text("Pagos", style = MaterialTheme.typography.headlineSmall)
 
-        OutlinedTextField(
-            value = filtroCliente,
-            onValueChange = { filtroCliente = sanitizeSingleLine(it) },
-            label = { Text("Filtrar cliente (nombre o documento)") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        DropdownGeneric(
-            expanded = expandedCliente,
-            onExpandedChange = { expandedCliente = it },
-            label = "Cliente",
-            selected = clientes.firstOrNull { it.idCliente == idCliente }?.let { "${it.nombre} ${it.apellido}" } ?: "",
-            options = clientesFiltrados,
-            optionText = { "${it.nombre} ${it.apellido} (${it.documentoIdentidad})" },
-            onSelect = {
+        ClienteAutocompleteField(
+            clientes = clientes,
+            query = busquedaCliente,
+            onQueryChange = {
+                busquedaCliente = it
+                idCliente = null
+                idPrestamo = null
+                idCuota = null
+                viewModel.seleccionarClientePagos(null)
+            },
+            selectedCliente = clientes.firstOrNull { it.idCliente == idCliente },
+            onSelectCliente = {
                 idCliente = it.idCliente
                 idPrestamo = null
                 idCuota = null
+                busquedaCliente = "${it.nombre} ${it.apellido} (${it.documentoIdentidad})"
                 viewModel.seleccionarClientePagos(it.idCliente)
-            }
+            },
+            label = "Cliente (nombre o documento)"
         )
 
         DropdownGeneric(
@@ -731,7 +710,7 @@ fun PagosScreen(viewModel: AppViewModel) {
         Button(onClick = {
             if (idPrestamo != null && idCuota != null) {
                 viewModel.registrarPago(idPrestamo!!, idCuota!!, montoAbono) {
-                    filtroCliente = ""
+                    busquedaCliente = ""
                     idCliente = null
                     idPrestamo = null
                     idCuota = null
@@ -830,6 +809,72 @@ private fun <T> DropdownGeneric(
                         onExpandedChange(false)
                     }
                 )
+            }
+        }
+    }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun ClienteAutocompleteField(
+    clientes: List<ClienteEntity>,
+    query: String,
+    onQueryChange: (String) -> Unit,
+    selectedCliente: ClienteEntity?,
+    onSelectCliente: (ClienteEntity) -> Unit,
+    label: String
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val clientesFiltrados = remember(clientes, query) { filtrarClientes(clientes, query).take(12) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = {
+                onQueryChange(sanitizeSingleLine(it))
+                expanded = true
+            },
+            label = { Text(label) },
+            singleLine = true,
+            leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = "Buscar cliente") },
+            trailingIcon = {
+                if (query.isNotBlank() || selectedCliente != null) {
+                    IconButton(onClick = {
+                        onQueryChange("")
+                        expanded = false
+                    }) {
+                        Icon(Icons.Outlined.Close, contentDescription = "Limpiar búsqueda")
+                    }
+                } else {
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                }
+            },
+            modifier = Modifier
+                .menuAnchor()
+                .fillMaxWidth()
+        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            if (clientesFiltrados.isEmpty()) {
+                DropdownMenuItem(
+                    text = { Text("Sin resultados") },
+                    onClick = { expanded = false }
+                )
+            } else {
+                clientesFiltrados.forEach { cliente ->
+                    DropdownMenuItem(
+                        text = { Text("${cliente.nombre} ${cliente.apellido} (${cliente.documentoIdentidad})") },
+                        onClick = {
+                            onSelectCliente(cliente)
+                            expanded = false
+                        }
+                    )
+                }
             }
         }
     }
