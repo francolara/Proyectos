@@ -41,11 +41,11 @@ fun BackupScreen(viewModel: BackupViewModel = viewModel()) {
     val snackbarHostState = remember { SnackbarHostState() }
     var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
 
-    val createBackupLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("application/json")
+    val folderBackupLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
     ) { uri ->
         if (uri != null) {
-            viewModel.generarRespaldoEnUri(uri = uri, persistPermission = true)
+            viewModel.generarRespaldoEnCarpeta(uri = uri, persistPermission = true)
         } else {
             viewModel.limpiarMensaje()
         }
@@ -83,15 +83,22 @@ fun BackupScreen(viewModel: BackupViewModel = viewModel()) {
                 if (uiState.hasSavedLocation) {
                     viewModel.generarRespaldoEnUbicacionGuardada(
                         onLocationMissing = {
-                            createBackupLauncher.launch(BackupManager.BACKUP_FILE_NAME)
+                            folderBackupLauncher.launch(null)
                         }
                     )
                 } else {
-                    createBackupLauncher.launch(BackupManager.BACKUP_FILE_NAME)
+                    folderBackupLauncher.launch(null)
                 }
             }
         ) {
             Text("Generar respaldo")
+        }
+
+        Button(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = { folderBackupLauncher.launch(null) }
+        ) {
+            Text("Configurar ubicación")
         }
 
         Button(

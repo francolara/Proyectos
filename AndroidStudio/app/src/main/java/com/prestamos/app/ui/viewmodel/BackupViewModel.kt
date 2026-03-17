@@ -85,6 +85,20 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    fun generarRespaldoEnCarpeta(uri: Uri, persistPermission: Boolean, startedFromUi: Boolean = true) {
+        viewModelScope.launch {
+            if (startedFromUi) mensaje.value = "Generando respaldo..."
+            backupManager.exportBackupToFolder(uri, persistPermission = persistPermission)
+                .onSuccess {
+                    refreshSavedLocation()
+                    mensaje.value = "Respaldo creado correctamente"
+                }
+                .onFailure {
+                    mensaje.value = it.message ?: "Error al crear respaldo"
+                }
+        }
+    }
+
     fun getSavedBackupUri(onResult: (Uri?) -> Unit) {
         viewModelScope.launch {
             onResult(backupManager.getSavedBackupUri())

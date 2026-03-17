@@ -54,6 +54,7 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.8.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation("androidx.documentfile:documentfile:1.1.0")
     implementation("androidx.biometric:biometric:1.1.0")
     implementation("androidx.work:work-runtime-ktx:2.10.3")
     testImplementation(libs.junit)

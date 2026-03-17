@@ -3,6 +3,7 @@ package com.prestamos.app.data.backup
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.documentfile.provider.DocumentFile
 import androidx.room.withTransaction
 import com.prestamos.app.data.local.AppDatabase
 import com.prestamos.app.data.local.entity.ClienteEntity
@@ -37,6 +38,13 @@ class BackupManager(private val context: Context) {
         }
     }
 
+    suspend fun exportBackupToFolder(folderUri: Uri, persistPermission: Boolean): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            if (persistPermission) persistUriPermissions(folderUri)
+            val fileUri = createOrFindBackupFileInFolder(folderUri)
+            exportBackup(fileUri, persistPermission = false).getOrThrow()
+        }
+    }
     suspend fun exportBackupToSavedLocation(): Result<Unit> = withContext(Dispatchers.IO) {
         val uri = getSavedBackupUri() ?: return@withContext Result.failure(IllegalStateException("Primero elige una ubicación para el respaldo"))
         exportBackup(uri, persistPermission = false)
@@ -126,6 +134,15 @@ class BackupManager(private val context: Context) {
         runCatching {
             context.contentResolver.takePersistableUriPermission(uri, flags)
         }
+    }
+
+    private fun createOrFindBackupFileInFolder(folderUri: Uri): Uri {
+        val folder = DocumentFile.fromTreeUri(context, folderUri)
+            ?: throw IllegalStateException("Error al crear respaldo")
+        require(folder.isDirectory) { "Error al crear respaldo" }
+        val existing = folder.findFile(BACKUP_FILE_NAME)
+        val file = existing ?: folder.createFile("application/json", BACKUP_FILE_NAME)
+        return file?.uri ?: throw IllegalStateException("Error al crear respaldo")
     }
 
     private fun clienteToJson(item: ClienteEntity): JSONObject = JSONObject()
