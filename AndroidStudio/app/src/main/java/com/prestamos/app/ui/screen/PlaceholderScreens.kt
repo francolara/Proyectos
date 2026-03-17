@@ -4,6 +4,7 @@ import android.app.DatePickerDialog
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,6 +25,10 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExposedDropdownMenuDefaults.TrailingIcon
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.DateRange
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -35,6 +40,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
@@ -407,24 +413,33 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                 )
             }
 
+            val abrirCalendario = {
+                DatePickerDialog(
+                    context,
+                    { _, year, month, dayOfMonth ->
+                        fechaPrimeraCuota = LocalDate.of(year, month + 1, dayOfMonth)
+                    },
+                    fechaPrimeraCuota.year,
+                    fechaPrimeraCuota.monthValue - 1,
+                    fechaPrimeraCuota.dayOfMonth
+                ).show()
+            }
+
             OutlinedTextField(
                 value = fechaPrimeraCuota.toString(),
                 onValueChange = {},
                 readOnly = true,
                 label = { Text("Fecha primera cuota") },
                 singleLine = true,
+                trailingIcon = {
+                    IconButton(onClick = abrirCalendario) {
+                        Icon(imageVector = Icons.Outlined.DateRange, contentDescription = "Abrir calendario")
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable {
-                        DatePickerDialog(
-                            context,
-                            { _, year, month, dayOfMonth ->
-                                fechaPrimeraCuota = LocalDate.of(year, month + 1, dayOfMonth)
-                            },
-                            fechaPrimeraCuota.year,
-                            fechaPrimeraCuota.monthValue - 1,
-                            fechaPrimeraCuota.dayOfMonth
-                        ).show()
+                    .pointerInput(fechaPrimeraCuota) {
+                        detectTapGestures(onTap = { abrirCalendario() })
                     }
             )
 
