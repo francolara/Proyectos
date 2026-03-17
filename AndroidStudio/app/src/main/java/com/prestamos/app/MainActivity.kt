@@ -164,7 +164,7 @@ private fun PrestamosApp(
             NavigationBar(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(64.dp),
+                    .height(56.dp),
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 tonalElevation = 0.dp,
                 windowInsets = WindowInsets(0, 0, 0, 0)
