@@ -18,8 +18,10 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = PrestamosRepository(AppDatabase.getInstance(application))
 
@@ -46,7 +48,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     val cuotasPrestamoPagos: StateFlow<List<CuotaEntity>> = prestamoSeleccionadoPagos
         .flatMapLatest { idPrestamo -> if (idPrestamo == null) flowOf(emptyList()) else repository.observarCuotasPorPrestamo(idPrestamo) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
 
     val cuotasPrestamoDetalle: StateFlow<List<CuotaEntity>> = prestamoSeleccionadoDetalle
         .flatMapLatest { idPrestamo -> if (idPrestamo == null) flowOf(emptyList()) else repository.observarCuotasPorPrestamo(idPrestamo) }
@@ -100,7 +101,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         mensaje.value = null
     }
 
-    fun registrarCliente(nombre: String, apellido: String, documento: String, direccion: String, telefono: String) {
+    fun registrarCliente(
+        nombre: String,
+        apellido: String,
+        documento: String,
+        direccion: String,
+        telefono: String,
+        onSuccess: () -> Unit = {}
+    ) {
         viewModelScope.launch {
             runCatching {
                 val nombreLimpio = cleanSingleLine(nombre)
@@ -121,7 +129,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                     telefono = telefonoLimpio
                 )
             }.onSuccess {
-                mensaje.value = "Cliente registrado"
+                onSuccess()
             }.onFailure {
                 mensaje.value = it.message ?: "No se pudo registrar cliente"
             }
@@ -135,15 +143,16 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         moneda: Moneda,
         tipoPago: TipoPago,
         cuotas: String,
-        fechaPrimeraCuota: Long
+        fechaPrimeraCuota: Long,
+        onSuccess: () -> Unit = {}
     ) {
         viewModelScope.launch {
             runCatching {
-                val montoDouble = monto.toDoubleOrNull() ?: error("Monto inválido")
-                val interesDouble = interes.toDoubleOrNull() ?: error("Interés inválido")
-                val cuotasInt = cuotas.toIntOrNull() ?: error("Cuotas inválidas")
+                val montoDouble = monto.toDoubleOrNull() ?: error("Monto invalido")
+                val interesDouble = interes.toDoubleOrNull() ?: error("Interes invalido")
+                val cuotasInt = cuotas.toIntOrNull() ?: error("Cuotas invalidas")
                 require(montoDouble > 0.0) { "Monto debe ser mayor a 0" }
-                require(interesDouble >= 0.0) { "Interés debe ser mayor o igual a 0" }
+                require(interesDouble >= 0.0) { "Interes debe ser mayor o igual a 0" }
                 require(cuotasInt > 0) { "Cuotas debe ser mayor a 0" }
                 repository.registrarPrestamo(
                     idCliente = idCliente,
@@ -155,26 +164,43 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                     fechaPrimeraCuota = fechaPrimeraCuota
                 )
             }.onSuccess {
-                mensaje.value = "Préstamo registrado con cuotas generadas"
+                onSuccess()
             }.onFailure {
-                mensaje.value = it.message ?: "No se pudo registrar préstamo"
+                mensaje.value = it.message ?: "No se pudo registrar prestamo"
             }
         }
     }
 
-    fun registrarPago(idPrestamo: Long, idCuota: Long, montoAbono: String) {
+    fun registrarPago(
+        idPrestamo: Long,
+        idCuota: Long,
+        montoAbono: String,
+        onSuccess: () -> Unit = {}
+    ) {
         viewModelScope.launch {
             runCatching {
                 repository.registrarPago(
                     idPrestamo = idPrestamo,
                     idCuota = idCuota,
-                    montoAbono = montoAbono.toDoubleOrNull() ?: error("Monto abonado inválido"),
+                    montoAbono = montoAbono.toDoubleOrNull() ?: error("Monto abonado invalido"),
                     observacion = null
                 )
             }.onSuccess {
-                mensaje.value = "Pago registrado"
+                onSuccess()
             }.onFailure {
                 mensaje.value = it.message ?: "No se pudo registrar pago"
+            }
+        }
+    }
+
+    fun eliminarPrestamo(idPrestamo: Long) {
+        viewModelScope.launch {
+            runCatching {
+                repository.eliminarPrestamoSiNoTienePagos(idPrestamo)
+            }.onSuccess {
+                mensaje.value = "Prestamo eliminado correctamente"
+            }.onFailure {
+                mensaje.value = it.message ?: "No se pudo eliminar el prestamo"
             }
         }
     }

@@ -117,9 +117,16 @@ class PrestamosRepository(
 
         database.withTransaction {
             val cuota = cuotaDao.obtenerPorId(idCuota) ?: error("Cuota no encontrada")
-            require(cuota.idPrestamo == idPrestamo) { "La cuota no pertenece al préstamo seleccionado" }
-            require(cuota.estadoCuota != EstadoCuota.PAGADO) { "La cuota ya está pagada" }
+            require(cuota.idPrestamo == idPrestamo) { "La cuota no pertenece al prestamo seleccionado" }
+            require(cuota.estadoCuota != EstadoCuota.PAGADO) { "La cuota ya esta pagada" }
             require(montoAbono <= cuota.saldoPendiente) { "El abono no puede exceder el saldo pendiente" }
+
+            val siguienteCuotaPendiente = cuotaDao.listarPorPrestamoInterno(idPrestamo)
+                .firstOrNull { it.saldoPendiente > 0.0 }
+            require(siguienteCuotaPendiente != null) { "El prestamo no tiene cuotas pendientes" }
+            require(cuota.idCuota == siguienteCuotaPendiente.idCuota) {
+                "Debe registrar primero la cuota ${siguienteCuotaPendiente.numeroCuota}"
+            }
 
             val ahora = System.currentTimeMillis()
             val nuevoMontoPagado = cuota.montoPagado + montoAbono
@@ -159,6 +166,15 @@ class PrestamosRepository(
                 EstadoPrestamo.ACTIVO
             }
             prestamoDao.actualizar(prestamo.copy(estadoPrestamo = estadoPrestamo, fechaModificacion = ahora))
+        }
+    }
+
+    suspend fun eliminarPrestamoSiNoTienePagos(idPrestamo: Long) {
+        database.withTransaction {
+            val prestamo = prestamoDao.obtenerPorId(idPrestamo) ?: error("Prestamo no encontrado")
+            val totalPagos = pagoDao.contarPorPrestamo(idPrestamo)
+            require(totalPagos == 0) { "No se puede eliminar: el prestamo ya tiene pagos registrados" }
+            prestamoDao.eliminarPorId(prestamo.idPrestamo)
         }
     }
 

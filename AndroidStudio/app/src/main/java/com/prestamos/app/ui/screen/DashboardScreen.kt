@@ -49,6 +49,7 @@ import java.io.File
 
 private enum class DashboardDetalle {
     CAPITAL,
+    HISTORIAL,
     CAPITAL_ACTIVO2,
     PENDIENTE,
     COBRADO_HOY,
@@ -113,13 +114,14 @@ fun DashboardScreen(
 
         item {
             val capitalPrestadoActivo2 = state.prestamosActivosDetalle.sumOf { it.montoPrestado }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                DashboardCard("Capital prestado", state.capitalPrestado.toMoney(state.monedaReferencial), Modifier.weight(1f), highlightValue = true) {
-                    detalleSeleccionado = DashboardDetalle.CAPITAL
-                }
-                DashboardCard("Capital prestado activo", capitalPrestadoActivo2.toMoney(state.monedaReferencial), Modifier.weight(1f), highlightValue = true) {
-                    detalleSeleccionado = DashboardDetalle.CAPITAL_ACTIVO2
-                }
+            Text(
+                text = "Historial de prestamos",
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.clickable { detalleSeleccionado = DashboardDetalle.HISTORIAL }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            DashboardCard("Capital prestado activo", capitalPrestadoActivo2.toMoney(state.monedaReferencial), Modifier.fillMaxWidth(), highlightValue = true) {
+                detalleSeleccionado = DashboardDetalle.CAPITAL_ACTIVO2
             }
             Spacer(modifier = Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
@@ -378,6 +380,20 @@ private fun DashboardDetalle.toDetalleInfo(state: com.prestamos.app.ui.model.Das
             DashboardDetalleInfo(
                 title = "Capital prestado",
                 message = "Préstamos activos o pagados: $totalPrestamos\nTotal colocado: ${state.capitalPrestado.toMoney(state.monedaReferencial)}\n\n$top"
+            )
+        }
+
+
+        DashboardDetalle.HISTORIAL -> {
+            val historial = state.prestamosCapitalDetalle
+                .filter { it.cuotasPendientes == 0 }
+                .sortedByDescending { it.idPrestamo }
+            val top = historial.take(20).joinToString("\n") {
+                "• ${it.cliente} | Préstamo #${it.idPrestamo} | Capital ${it.montoPrestado.toMoney(it.moneda)} | Estado: PAGADO"
+            }.ifBlank { "No hay préstamos cerrados todavía." }
+            DashboardDetalleInfo(
+                title = "Historial de préstamos",
+                message = "Préstamos no activos o pagados: ${historial.size}\n\n$top"
             )
         }
 

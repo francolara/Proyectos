@@ -24,4 +24,7 @@ interface PrestamoDao {
 
     @Query("SELECT * FROM prestamos WHERE idPrestamo = :idPrestamo LIMIT 1")
     suspend fun obtenerPorId(idPrestamo: Long): PrestamoEntity?
+
+    @Query("DELETE FROM prestamos WHERE idPrestamo = :idPrestamo")
+    suspend fun eliminarPorId(idPrestamo: Long)
 }

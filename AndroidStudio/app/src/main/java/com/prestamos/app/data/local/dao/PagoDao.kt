@@ -20,4 +20,7 @@ interface PagoDao {
 
     @Query("SELECT * FROM pagos ORDER BY fechaPago DESC")
     fun listarTodos(): Flow<List<PagoEntity>>
+
+    @Query("SELECT COUNT(*) FROM pagos WHERE idPrestamo = :idPrestamo")
+    suspend fun contarPorPrestamo(idPrestamo: Long): Int
 }

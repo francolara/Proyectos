@@ -29,6 +29,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,6 +53,8 @@ import com.prestamos.app.util.toMoney
 import java.io.File
 import java.time.LocalDate
 
+// Firma Codex 2026-03-17
+
 @Composable
 fun ClientesScreen(viewModel: AppViewModel) {
     val clientes by viewModel.clientes.collectAsStateWithLifecycle()
@@ -60,6 +63,7 @@ fun ClientesScreen(viewModel: AppViewModel) {
     var documento by remember { mutableStateOf("") }
     var direccion by remember { mutableStateOf("") }
     var telefono by remember { mutableStateOf("") }
+    var mostrarRegistroOk by remember { mutableStateOf(false) }
 
     LazyColumn(
         modifier = Modifier
@@ -108,12 +112,20 @@ fun ClientesScreen(viewModel: AppViewModel) {
             )
             Spacer(Modifier.height(8.dp))
             Button(onClick = {
-                viewModel.registrarCliente(nombre, apellido, documento, direccion, telefono)
-                nombre = ""
-                apellido = ""
-                documento = ""
-                direccion = ""
-                telefono = ""
+                viewModel.registrarCliente(
+                    nombre = nombre,
+                    apellido = apellido,
+                    documento = documento,
+                    direccion = direccion,
+                    telefono = telefono
+                ) {
+                    nombre = ""
+                    apellido = ""
+                    documento = ""
+                    direccion = ""
+                    telefono = ""
+                    mostrarRegistroOk = true
+                }
             }) { Text("Guardar cliente") }
             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
             Text("Listado", style = MaterialTheme.typography.titleMedium)
@@ -129,6 +141,17 @@ fun ClientesScreen(viewModel: AppViewModel) {
                 }
             }
         }
+    }
+
+    if (mostrarRegistroOk) {
+        AlertDialog(
+            onDismissRequest = { mostrarRegistroOk = false },
+            confirmButton = {
+                TextButton(onClick = { mostrarRegistroOk = false }) { Text("Aceptar") }
+            },
+            title = { Text("Registro") },
+            text = { Text("Se realizo el registro correctamente") }
+        )
     }
 }
 
@@ -164,6 +187,7 @@ fun PrestamosScreen(viewModel: AppViewModel) {
     var prestamoDetalleId by remember { mutableStateOf<Long?>(null) }
     var filtroEstado by remember { mutableStateOf(PrestamosFiltroEstado.ACTIVOS) }
     var expandedFiltroEstado by remember { mutableStateOf(false) }
+    var mostrarRegistroOk by remember { mutableStateOf(false) }
 
     val prestamosFiltrados = remember(prestamos, filtroEstado) {
         prestamos.filter { it.estadoPrestamo == filtroEstado.estado }
@@ -315,11 +339,13 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                         tipoPago = tipoPago,
                         cuotas = cuotas,
                         fechaPrimeraCuota = fechaPrimeraCuota.toEpochMillis()
-                    )
-                    monto = ""
-                    interes = ""
-                    cuotas = ""
-                    fechaPrimeraCuota = LocalDate.now()
+                    ) {
+                        monto = ""
+                        interes = ""
+                        cuotas = ""
+                        fechaPrimeraCuota = LocalDate.now()
+                        mostrarRegistroOk = true
+                    }
                 }
             }) { Text("Guardar préstamo") }
 
@@ -372,9 +398,24 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                     )
                     Text("Moneda: ${if (prestamo.moneda == Moneda.SOLES) "Soles" else "Dólares"}")
                     Text("Estado: ${prestamo.estadoPrestamo}")
+                    Spacer(Modifier.height(8.dp))
+                    TextButton(onClick = { viewModel.eliminarPrestamo(prestamo.idPrestamo) }) {
+                        Text("Eliminar préstamo")
+                    }
                 }
             }
         }
+    }
+
+    if (mostrarRegistroOk) {
+        AlertDialog(
+            onDismissRequest = { mostrarRegistroOk = false },
+            confirmButton = {
+                TextButton(onClick = { mostrarRegistroOk = false }) { Text("Aceptar") }
+            },
+            title = { Text("Registro") },
+            text = { Text("Se realizo el registro correctamente") }
+        )
     }
 
     if (mostrarDetallePrestamo && prestamoDetalleId != null) {
@@ -495,6 +536,16 @@ fun PagosScreen(viewModel: AppViewModel) {
     var expandedCliente by remember { mutableStateOf(false) }
     var expandedPrestamo by remember { mutableStateOf(false) }
     var expandedCuota by remember { mutableStateOf(false) }
+    var mostrarRegistroOk by remember { mutableStateOf(false) }
+
+    val cuotaProxima = cuotas
+        .filter { it.saldoPendiente > 0.0 }
+        .minByOrNull { it.numeroCuota }
+    val opcionesCuota = listOfNotNull(cuotaProxima)
+
+    LaunchedEffect(idPrestamo, cuotaProxima?.idCuota) {
+        idCuota = cuotaProxima?.idCuota
+    }
 
     Column(
         modifier = Modifier
@@ -547,7 +598,7 @@ fun PagosScreen(viewModel: AppViewModel) {
             label = "Cuota",
             selected = cuotas.firstOrNull { it.idCuota == idCuota }
                 ?.let { "Cuota ${it.numeroCuota} - pendiente ${it.saldoPendiente.toMoney()}" } ?: "",
-            options = cuotas.filter { it.saldoPendiente > 0.0 },
+            options = opcionesCuota,
             optionText = { "Cuota ${it.numeroCuota} - pendiente ${it.saldoPendiente.toMoney()}" },
             onSelect = { idCuota = it.idCuota }
         )
@@ -562,10 +613,28 @@ fun PagosScreen(viewModel: AppViewModel) {
         )
         Button(onClick = {
             if (idPrestamo != null && idCuota != null) {
-                viewModel.registrarPago(idPrestamo!!, idCuota!!, montoAbono)
-                montoAbono = ""
+                viewModel.registrarPago(idPrestamo!!, idCuota!!, montoAbono) {
+                    filtroCliente = ""
+                    idCliente = null
+                    idPrestamo = null
+                    idCuota = null
+                    montoAbono = ""
+                    viewModel.seleccionarClientePagos(null)
+                    mostrarRegistroOk = true
+                }
             }
         }) { Text("Registrar pago") }
+    }
+
+    if (mostrarRegistroOk) {
+        AlertDialog(
+            onDismissRequest = { mostrarRegistroOk = false },
+            confirmButton = {
+                TextButton(onClick = { mostrarRegistroOk = false }) { Text("Aceptar") }
+            },
+            title = { Text("Registro") },
+            text = { Text("Se realizo el registro correctamente") }
+        )
     }
 }
 
