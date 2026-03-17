@@ -339,12 +339,13 @@ private fun DashboardDetalle.toDetalleInfo(state: com.prestamos.app.ui.model.Das
             val historial = state.prestamosCapitalDetalle
                 .filter { it.cuotasPendientes == 0 }
                 .sortedByDescending { it.idPrestamo }
+            val totalCobrado = historial.sumOf { it.montoCobrado }
             val top = historial.take(20).joinToString("\n") {
-                "• ${it.cliente} | Préstamo #${it.idPrestamo} | Capital ${it.montoPrestado.toMoney(it.moneda)} | Estado: PAGADO"
+                "• ${it.cliente} | Préstamo #${it.idPrestamo} | Capital ${it.montoPrestado.toMoney(it.moneda)} | Cobrado ${it.montoCobrado.toMoney(it.moneda)} | Estado: PAGADO"
             }.ifBlank { "No hay préstamos cerrados todavía." }
             DashboardDetalleInfo(
                 title = "Historial de préstamos",
-                message = "Préstamos no activos o pagados: ${historial.size}\n\n$top"
+                message = "Préstamos no activos o pagados: ${historial.size}\nTotal cobrado: ${totalCobrado.toMoney(state.monedaReferencial)}\n\n$top"
             )
         }
 

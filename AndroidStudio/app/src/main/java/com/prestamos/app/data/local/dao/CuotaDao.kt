@@ -33,4 +33,13 @@ interface CuotaDao {
 
     @Query("SELECT * FROM cuotas ORDER BY fechaVencimiento")
     fun listarTodas(): Flow<List<CuotaEntity>>
+
+    @Query("SELECT * FROM cuotas ORDER BY idCuota")
+    suspend fun listarTodasInterno(): List<CuotaEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertarTodos(cuotas: List<CuotaEntity>)
+
+    @Query("DELETE FROM cuotas")
+    suspend fun eliminarTodos()
 }

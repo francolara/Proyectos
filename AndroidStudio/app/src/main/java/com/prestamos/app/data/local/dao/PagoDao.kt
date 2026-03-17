@@ -21,6 +21,15 @@ interface PagoDao {
     @Query("SELECT * FROM pagos ORDER BY fechaPago DESC")
     fun listarTodos(): Flow<List<PagoEntity>>
 
+    @Query("SELECT * FROM pagos ORDER BY idPago")
+    suspend fun listarTodosInterno(): List<PagoEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertarTodos(pagos: List<PagoEntity>)
+
+    @Query("DELETE FROM pagos")
+    suspend fun eliminarTodos()
+
     @Query("SELECT COUNT(*) FROM pagos WHERE idPrestamo = :idPrestamo")
     suspend fun contarPorPrestamo(idPrestamo: Long): Int
 }

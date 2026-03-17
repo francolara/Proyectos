@@ -22,6 +22,15 @@ interface ClienteDao {
     @Query("SELECT * FROM clientes WHERE idCliente = :idCliente LIMIT 1")
     suspend fun obtenerPorId(idCliente: Long): ClienteEntity?
 
+    @Query("SELECT * FROM clientes ORDER BY idCliente")
+    suspend fun listarTodosInterno(): List<ClienteEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertarTodos(clientes: List<ClienteEntity>)
+
+    @Query("DELETE FROM clientes")
+    suspend fun eliminarTodos()
+
     @Query("SELECT COUNT(*) FROM clientes WHERE documentoIdentidad = :documento")
     suspend fun contarPorDocumento(documento: String): Int
 

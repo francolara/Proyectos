@@ -33,6 +33,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         val prestamoById = prestamos.associateBy { it.idPrestamo }
         val clienteById = clientes.associateBy { it.idCliente }
         val cuotasByPrestamo = cuotas.groupBy { it.idPrestamo }
+        val pagosByPrestamo = pagos.groupBy { it.idPrestamo }
         val cuotaById = cuotas.associateBy { it.idCuota }
 
         val now = System.currentTimeMillis()
@@ -62,6 +63,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                     cliente = "${cliente?.nombre.orEmpty()} ${cliente?.apellido.orEmpty()}".trim().ifBlank { "-" },
                     idPrestamo = prestamo.idPrestamo,
                     montoPrestado = prestamo.montoPrestado,
+                    montoCobrado = pagosByPrestamo[prestamo.idPrestamo].orEmpty().sumOf { it.montoAbono },
                     saldoPendiente = saldoPrestamo,
                     totalCuotas = prestamo.cantidadCuotas,
                     cuotasPendientes = cuotasPendientes,
@@ -79,6 +81,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                     cliente = "${cliente?.nombre.orEmpty()} ${cliente?.apellido.orEmpty()}".trim().ifBlank { "-" },
                     idPrestamo = prestamo.idPrestamo,
                     montoPrestado = prestamo.montoPrestado,
+                    montoCobrado = pagosByPrestamo[prestamo.idPrestamo].orEmpty().sumOf { it.montoAbono },
                     saldoPendiente = cuotasPrestamo.sumOf { it.saldoPendiente },
                     totalCuotas = prestamo.cantidadCuotas,
                     cuotasPendientes = cuotasPrestamo.count { it.saldoPendiente > 0.0 },
