@@ -50,6 +50,7 @@ private enum class DashboardDetalle {
     CAPITAL_ACTIVO2,
     PENDIENTE,
     COBRADO_HOY,
+    COBRADO_ACTIVO,
     VENCIDAS,
     CUOTAS_PAGADAS,
     CUOTAS_PENDIENTES,
@@ -163,7 +164,7 @@ fun DashboardScreen(
                 percent = if (capitalPrestadoActivo > 0.0) (cobradoActivo / capitalPrestadoActivo).toFloat() else 0f,
                 color = AccentGold,
                 moneda = state.monedaReferencial,
-                onClick = { detalleSeleccionado = DashboardDetalle.COBRADO_HOY }
+                onClick = { detalleSeleccionado = DashboardDetalle.COBRADO_ACTIVO }
             )
             Spacer(Modifier.height(6.dp))
             HorizontalMetricBar(
@@ -453,6 +454,21 @@ private fun DashboardDetalle.toDetalleInfo(state: com.prestamos.app.ui.model.Das
             DashboardDetalleInfo(
                 title = "Cobrado hoy",
                 message = "Pagos de hoy: ${resumen.size}\nTotal cobrado hoy: ${state.cobradoHoy.toMoney(state.monedaReferencial)}\n\n$top"
+            )
+        }
+
+        DashboardDetalle.COBRADO_ACTIVO -> {
+            val resumen = state.prestamosActivosDetalle
+            val totalCapitalActivo = resumen.sumOf { it.montoPrestado }.coerceAtLeast(0.0)
+            val totalPendienteActivo = resumen.sumOf { it.saldoPendiente }.coerceIn(0.0, totalCapitalActivo)
+            val totalCobradoActivo = (totalCapitalActivo - totalPendienteActivo).coerceAtLeast(0.0)
+            val top = resumen.take(12).joinToString("\n") {
+                val cobradoPrestamo = (it.montoPrestado - it.saldoPendiente).coerceAtLeast(0.0)
+                "• ${it.cliente} | Préstamo #${it.idPrestamo} | Cobrado activo ${cobradoPrestamo.toMoney(it.moneda)} | Pendiente ${it.saldoPendiente.toMoney(it.moneda)}"
+            }.ifBlank { "No hay préstamos activos." }
+            DashboardDetalleInfo(
+                title = "Cobrado activo",
+                message = "Prestamos activos: ${resumen.size}\nTotal cobrado activo: ${totalCobradoActivo.toMoney(state.monedaReferencial)}\n\n$top"
             )
         }
 
