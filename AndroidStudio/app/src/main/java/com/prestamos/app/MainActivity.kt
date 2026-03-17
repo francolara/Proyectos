@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.view.MotionEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.core.animateDpAsState
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -47,7 +49,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -74,6 +79,9 @@ import com.prestamos.app.ui.viewmodel.AppViewModel
 import com.prestamos.app.ui.viewmodel.AuthState
 import com.prestamos.app.ui.viewmodel.AuthViewModel
 import com.prestamos.app.ui.viewmodel.DashboardViewModel
+import kotlinx.coroutines.delay
+
+private const val INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000L
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -100,6 +108,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun AppRoot(
     isDarkMode: Boolean,
@@ -115,6 +124,8 @@ private fun AppRoot(
     val activationMensaje by activationViewModel.mensaje.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
+    var interactionTick by remember { mutableStateOf(0) }
+    val sesionActiva = authState is AuthState.Unlocked
 
     LaunchedEffect(authMensaje, appMensaje, activationMensaje) {
         val mensaje = authMensaje ?: appMensaje ?: activationMensaje
@@ -126,11 +137,32 @@ private fun AppRoot(
         }
     }
 
+    LaunchedEffect(sesionActiva) {
+        if (sesionActiva) interactionTick++
+    }
+
+    LaunchedEffect(sesionActiva, interactionTick) {
+        if (!sesionActiva) return@LaunchedEffect
+        delay(INACTIVITY_TIMEOUT_MS)
+        authViewModel.bloquearSesion()
+    }
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = androidx.compose.material3.MaterialTheme.colorScheme.background
+        containerColor = androidx.compose.material3.MaterialTheme.colorScheme.background,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .pointerInteropFilter { event ->
+                    if (sesionActiva && (event.actionMasked == MotionEvent.ACTION_DOWN || event.actionMasked == MotionEvent.ACTION_UP)) {
+                        interactionTick++
+                    }
+                    false
+                }
+        ) {
             when {
                 activationState.loading || authState is AuthState.Loading -> Box(
                     contentAlignment = Alignment.Center,
@@ -173,7 +205,8 @@ private fun PrestamosApp(
     val sideMenuWidth by animateDpAsState(targetValue = if (menuExpanded) 170.dp else 52.dp, label = "side_menu_width")
 
     Scaffold(
-        containerColor = androidx.compose.material3.MaterialTheme.colorScheme.background
+        containerColor = androidx.compose.material3.MaterialTheme.colorScheme.background,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
         Row(
             modifier = Modifier
