@@ -200,8 +200,12 @@ private fun PrestamosApp(
     val navController = rememberNavController()
     val activationRoute = "activation_license"
     val menuItems = buildList {
-        addAll(AppDestinations.entries.map { SideMenuItem(it.route, if (it.title.isBlank()) "Salir" else it.title) })
-        add(SideMenuItem(activationRoute, "Licencia"))
+        AppDestinations.entries.forEach { destination ->
+            if (destination == AppDestinations.LOGOUT) {
+                add(SideMenuItem(activationRoute, "Licencia"))
+            }
+            add(SideMenuItem(destination.route, if (destination.title.isBlank()) "Salir" else destination.title))
+        }
     }
     var menuExpanded by rememberSaveable { mutableStateOf(false) }
     val sideMenuWidth by animateDpAsState(targetValue = if (menuExpanded) 170.dp else 52.dp, label = "side_menu_width")

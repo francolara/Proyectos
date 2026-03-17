@@ -27,4 +27,7 @@ interface PrestamoDao {
 
     @Query("DELETE FROM prestamos WHERE idPrestamo = :idPrestamo")
     suspend fun eliminarPorId(idPrestamo: Long)
+
+    @Query("SELECT COUNT(*) FROM prestamos WHERE idCliente = :idCliente")
+    suspend fun contarPorCliente(idCliente: Long): Int
 }

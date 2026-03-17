@@ -205,6 +205,40 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun actualizarClienteContacto(
+        idCliente: Long,
+        direccion: String,
+        telefono: String
+    ) {
+        viewModelScope.launch {
+            runCatching {
+                val direccionLimpia = cleanSingleLine(direccion)
+                val telefonoLimpio = cleanSingleLine(telefono)
+                repository.actualizarClienteContacto(
+                    idCliente = idCliente,
+                    direccion = direccionLimpia,
+                    telefono = telefonoLimpio
+                )
+            }.onSuccess {
+                mensaje.value = "Cliente actualizado correctamente"
+            }.onFailure {
+                mensaje.value = it.message ?: "No se pudo actualizar cliente"
+            }
+        }
+    }
+
+    fun eliminarCliente(idCliente: Long) {
+        viewModelScope.launch {
+            runCatching {
+                repository.eliminarClienteSiNoTienePrestamos(idCliente)
+            }.onSuccess {
+                mensaje.value = "Cliente eliminado correctamente"
+            }.onFailure {
+                mensaje.value = it.message ?: "No se pudo eliminar cliente"
+            }
+        }
+    }
+
     private fun cleanSingleLine(value: String): String =
         value.replace("\n", " ").replace("\r", " ").trim()
 }

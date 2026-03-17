@@ -40,6 +40,7 @@ class PrestamosRepository(
         telefono: String
     ) {
         val ahora = System.currentTimeMillis()
+        require(clienteDao.contarPorDocumento(documento) == 0) { "Ya existe un cliente con ese documento" }
         clienteDao.insertar(
             ClienteEntity(
                 nombre = nombre,
@@ -51,6 +52,31 @@ class PrestamosRepository(
                 fechaModificacion = ahora
             )
         )
+    }
+
+    suspend fun actualizarClienteContacto(
+        idCliente: Long,
+        direccion: String,
+        telefono: String
+    ) {
+        val ahora = System.currentTimeMillis()
+        val cliente = clienteDao.obtenerPorId(idCliente) ?: error("Cliente no encontrado")
+        clienteDao.actualizar(
+            cliente.copy(
+                direccion = direccion,
+                telefono = telefono,
+                fechaModificacion = ahora
+            )
+        )
+    }
+
+    suspend fun eliminarClienteSiNoTienePrestamos(idCliente: Long) {
+        database.withTransaction {
+            val cliente = clienteDao.obtenerPorId(idCliente) ?: error("Cliente no encontrado")
+            val totalPrestamos = prestamoDao.contarPorCliente(idCliente)
+            require(totalPrestamos == 0) { "No se puede eliminar: el cliente tiene prestamos registrados" }
+            clienteDao.eliminarPorId(cliente.idCliente)
+        }
     }
 
     suspend fun registrarPrestamo(

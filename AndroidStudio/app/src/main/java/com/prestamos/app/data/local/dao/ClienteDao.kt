@@ -21,4 +21,10 @@ interface ClienteDao {
 
     @Query("SELECT * FROM clientes WHERE idCliente = :idCliente LIMIT 1")
     suspend fun obtenerPorId(idCliente: Long): ClienteEntity?
+
+    @Query("SELECT COUNT(*) FROM clientes WHERE documentoIdentidad = :documento")
+    suspend fun contarPorDocumento(documento: String): Int
+
+    @Query("DELETE FROM clientes WHERE idCliente = :idCliente")
+    suspend fun eliminarPorId(idCliente: Long)
 }

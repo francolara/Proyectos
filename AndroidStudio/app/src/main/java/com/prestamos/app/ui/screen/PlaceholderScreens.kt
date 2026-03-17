@@ -64,6 +64,10 @@ fun ClientesScreen(viewModel: AppViewModel) {
     var direccion by remember { mutableStateOf("") }
     var telefono by remember { mutableStateOf("") }
     var mostrarRegistroOk by remember { mutableStateOf(false) }
+    var clienteEditando by remember { mutableStateOf<ClienteEntity?>(null) }
+    var direccionEdit by remember { mutableStateOf("") }
+    var telefonoEdit by remember { mutableStateOf("") }
+    var clienteAEliminar by remember { mutableStateOf<ClienteEntity?>(null) }
 
     LazyColumn(
         modifier = Modifier
@@ -138,6 +142,18 @@ fun ClientesScreen(viewModel: AppViewModel) {
                     Text("Doc: ${cliente.documentoIdentidad}")
                     Text("Dirección: ${cliente.direccion.ifBlank { "-" }}")
                     Text("Teléfono: ${cliente.telefono.ifBlank { "-" }}")
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = {
+                            clienteEditando = cliente
+                            direccionEdit = cliente.direccion
+                            telefonoEdit = cliente.telefono
+                        }) {
+                            Text("Editar")
+                        }
+                        TextButton(onClick = { clienteAEliminar = cliente }) {
+                            Text("Eliminar")
+                        }
+                    }
                 }
             }
         }
@@ -151,6 +167,65 @@ fun ClientesScreen(viewModel: AppViewModel) {
             },
             title = { Text("Registro") },
             text = { Text("Se realizo el registro correctamente") }
+        )
+    }
+
+    if (clienteEditando != null) {
+        AlertDialog(
+            onDismissRequest = { clienteEditando = null },
+            confirmButton = {
+                TextButton(onClick = {
+                    val cliente = clienteEditando ?: return@TextButton
+                    viewModel.actualizarClienteContacto(
+                        idCliente = cliente.idCliente,
+                        direccion = direccionEdit,
+                        telefono = telefonoEdit
+                    )
+                    clienteEditando = null
+                }) { Text("Guardar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { clienteEditando = null }) { Text("Cancelar") }
+            },
+            title = { Text("Actualizar cliente") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Solo puedes modificar dirección y teléfono")
+                    OutlinedTextField(
+                        value = direccionEdit,
+                        onValueChange = { direccionEdit = sanitizeSingleLine(it) },
+                        label = { Text("Dirección") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = telefonoEdit,
+                        onValueChange = { telefonoEdit = onlyDigits(it) },
+                        label = { Text("Teléfono") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        )
+    }
+
+    if (clienteAEliminar != null) {
+        AlertDialog(
+            onDismissRequest = { clienteAEliminar = null },
+            confirmButton = {
+                TextButton(onClick = {
+                    val cliente = clienteAEliminar ?: return@TextButton
+                    viewModel.eliminarCliente(cliente.idCliente)
+                    clienteAEliminar = null
+                }) { Text("Eliminar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { clienteAEliminar = null }) { Text("Cancelar") }
+            },
+            title = { Text("Eliminar cliente") },
+            text = { Text("Solo se eliminará si no tiene préstamos creados.") }
         )
     }
 }
