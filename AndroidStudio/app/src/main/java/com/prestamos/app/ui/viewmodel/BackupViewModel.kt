@@ -6,6 +6,8 @@ import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.prestamos.app.data.backup.BackupManager
+import com.prestamos.app.data.license.LicenseManager
+import com.prestamos.app.data.license.LicenseType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -15,22 +17,27 @@ import kotlinx.coroutines.launch
 
 data class BackupUiState(
     val hasSavedLocation: Boolean = false,
-    val lastBackupTimestamp: Long? = null
+    val lastBackupTimestamp: Long? = null,
+    val licenseActive: Boolean = false
 )
 
 class BackupViewModel(application: Application) : AndroidViewModel(application) {
     private val backupManager = BackupManager(application)
+    private val licenseManager = LicenseManager(application)
     val mensaje = MutableStateFlow<String?>(null)
 
     private val hasSavedLocation = MutableStateFlow(false)
+    private val licenseActive = MutableStateFlow(false)
 
     val uiState: StateFlow<BackupUiState> = combine(
         hasSavedLocation,
-        backupManager.observeLastBackupTimestamp()
-    ) { hasLocation, lastTimestamp ->
+        backupManager.observeLastBackupTimestamp(),
+        licenseActive
+    ) { hasLocation, lastTimestamp, isLicenseActive ->
         BackupUiState(
             hasSavedLocation = hasLocation,
-            lastBackupTimestamp = lastTimestamp
+            lastBackupTimestamp = lastTimestamp,
+            licenseActive = isLicenseActive
         )
     }.stateIn(
         scope = viewModelScope,
@@ -40,10 +47,12 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
 
     init {
         refreshSavedLocation()
+        refreshLicenseStatus()
     }
 
     fun generarRespaldoEnUri(uri: Uri, persistPermission: Boolean, startedFromUi: Boolean = true) {
         viewModelScope.launch {
+            if (!ensureLicenseActive()) return@launch
             if (startedFromUi) mensaje.value = "Generando respaldo..."
             backupManager.exportBackup(uri, persistPermission = persistPermission)
                 .onSuccess {
@@ -58,6 +67,7 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
 
     fun generarRespaldoEnUbicacionGuardada(startedFromUi: Boolean = true, onLocationMissing: () -> Unit = {}) {
         viewModelScope.launch {
+            if (!ensureLicenseActive()) return@launch
             if (startedFromUi) mensaje.value = "Generando respaldo..."
             backupManager.exportBackupToSavedLocation()
                 .onSuccess {
@@ -76,6 +86,7 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
 
     fun restaurarRespaldo(uri: Uri, onSuccess: () -> Unit = {}) {
         viewModelScope.launch {
+            if (!ensureLicenseActive()) return@launch
             backupManager.importBackup(uri)
                 .onSuccess {
                     mensaje.value = "Restauración completada. Reiniciando app..."
@@ -87,6 +98,7 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
 
     fun generarRespaldoEnCarpeta(uri: Uri, persistPermission: Boolean, startedFromUi: Boolean = true) {
         viewModelScope.launch {
+            if (!ensureLicenseActive()) return@launch
             if (startedFromUi) mensaje.value = "Generando respaldo..."
             backupManager.exportBackupToFolder(uri, persistPermission = persistPermission)
                 .onSuccess {
@@ -111,6 +123,12 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    fun refreshLicenseStatus() {
+        viewModelScope.launch {
+            licenseActive.value = isPaidLicenseActive()
+        }
+    }
+
     fun persistReadPermission(uri: Uri) {
         runCatching {
             getApplication<Application>().contentResolver.takePersistableUriPermission(
@@ -122,5 +140,22 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
 
     fun limpiarMensaje() {
         mensaje.value = null
+    }
+
+    private suspend fun ensureLicenseActive(): Boolean {
+        val active = isPaidLicenseActive()
+        licenseActive.value = active
+        if (!active) {
+            mensaje.value = "Licencia activa requerida para respaldo y restauración"
+        }
+        return active
+    }
+
+    private suspend fun isPaidLicenseActive(): Boolean {
+        val status = licenseManager.evaluateStatus()
+        val paidType = status.licenseType == LicenseType.MENSUAL ||
+            status.licenseType == LicenseType.ANUAL ||
+            status.licenseType == LicenseType.FULL
+        return status.isValid && status.isActivated && paidType
     }
 }

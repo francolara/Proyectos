@@ -4,6 +4,8 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.prestamos.app.data.backup.BackupManager
+import com.prestamos.app.data.license.LicenseManager
+import com.prestamos.app.data.license.LicenseType
 import com.prestamos.app.data.security.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -22,6 +24,7 @@ sealed class AuthState {
 class AuthViewModel(application: Application) : AndroidViewModel(application) {
     private val authRepository = AuthRepository(application)
     private val backupManager = BackupManager(application)
+    private val licenseManager = LicenseManager(application)
     private val inicializado = MutableStateFlow(false)
 
     init {
@@ -86,10 +89,20 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     fun bloquearSesion() {
         viewModelScope.launch {
-            mensaje.value = "Generando respaldo..."
-            backupManager.exportBackupToSavedLocation().onFailure {
-                mensaje.value = it.message ?: "Error al crear respaldo"
+            val status = licenseManager.evaluateStatus()
+            val paidType = status.licenseType == LicenseType.MENSUAL ||
+                status.licenseType == LicenseType.ANUAL ||
+                status.licenseType == LicenseType.FULL
+
+            if (status.isValid && status.isActivated && paidType) {
+                mensaje.value = "Generando respaldo..."
+                backupManager.exportBackupToSavedLocation().onFailure {
+                    mensaje.value = it.message ?: "Error al crear respaldo"
+                }
+            } else {
+                mensaje.value = "Licencia activa requerida para respaldo y restauración"
             }
+
             authRepository.bloquearSesion()
         }
     }

@@ -302,50 +302,65 @@ private fun SideMenu(
         color = MaterialTheme.colorScheme.primaryContainer,
         shape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp)
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxHeight()
-                .padding(horizontal = if (expanded) 8.dp else 4.dp, vertical = 8.dp)
         ) {
-            IconButton(onClick = onToggleExpanded, modifier = Modifier.fillMaxWidth()) {
-                Icon(
-                    imageVector = if (expanded) Icons.Outlined.KeyboardArrowLeft else Icons.Outlined.KeyboardArrowRight,
-                    contentDescription = "Expandir menu"
-                )
-            }
-            if (expanded) {
-                Text(
-                    text = "Control de Creditos",
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp)
-                )
-            }
-            Spacer(modifier = Modifier.height(6.dp))
-            destinations.forEach { destination ->
-                val selected = currentRoute == destination.route
-                Surface(
-                    color = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                    contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimaryContainer,
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                        .clickable { onNavigate(destination.route) }
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp)
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth()
+                    .padding(horizontal = if (expanded) 8.dp else 4.dp, vertical = 8.dp)
+            ) {
+                IconButton(onClick = onToggleExpanded, modifier = Modifier.fillMaxWidth()) {
+                    Icon(
+                        imageVector = if (expanded) Icons.Outlined.KeyboardArrowLeft else Icons.Outlined.KeyboardArrowRight,
+                        contentDescription = "Expandir menu"
+                    )
+                }
+                if (expanded) {
+                    Text(
+                        text = "Control de Creditos",
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(6.dp))
+                destinations.forEach { destination ->
+                    val selected = currentRoute == destination.route
+                    Surface(
+                        color = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                        contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimaryContainer,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                            .clickable { onNavigate(destination.route) }
                     ) {
-                        Icon(
-                            imageVector = iconForRoute(destination.route),
-                            contentDescription = destination.route
-                        )
-                        if (expanded) {
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(destination.title)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp)
+                        ) {
+                            Icon(
+                                imageVector = iconForRoute(destination.route),
+                                contentDescription = destination.route
+                            )
+                            if (expanded) {
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(destination.title)
+                            }
                         }
                     }
                 }
+            }
+            if (expanded) {
+                Text(
+                    text = "Contacto: franko.laras@gmail.com",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(horizontal = 14.dp, vertical = 12.dp)
+                )
             }
         }
     }

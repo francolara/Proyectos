@@ -60,6 +60,10 @@ fun BackupScreen(viewModel: BackupViewModel = viewModel()) {
         }
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.refreshLicenseStatus()
+    }
+
     LaunchedEffect(mensaje) {
         val text = mensaje ?: return@LaunchedEffect
         snackbarHostState.showSnackbar(text)
@@ -77,8 +81,17 @@ fun BackupScreen(viewModel: BackupViewModel = viewModel()) {
         Text("Último respaldo realizado: ${uiState.lastBackupTimestamp.toDisplayDateTime()}")
         Text("Estado: ${if (uiState.hasSavedLocation) "Ubicación configurada" else "Sin ubicación configurada"}")
 
+        if (!uiState.licenseActive) {
+            Text(
+                "Licencia activa requerida para respaldo y restauración",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+
         Button(
             modifier = Modifier.fillMaxWidth(),
+            enabled = uiState.licenseActive,
             onClick = { folderBackupLauncher.launch(null) }
         ) {
             Text("Configurar ubicación")
@@ -86,6 +99,7 @@ fun BackupScreen(viewModel: BackupViewModel = viewModel()) {
 
         Button(
             modifier = Modifier.fillMaxWidth(),
+            enabled = uiState.licenseActive,
             onClick = {
                 if (uiState.hasSavedLocation) {
                     viewModel.generarRespaldoEnUbicacionGuardada(
@@ -103,6 +117,7 @@ fun BackupScreen(viewModel: BackupViewModel = viewModel()) {
 
         Button(
             modifier = Modifier.fillMaxWidth(),
+            enabled = uiState.licenseActive,
             onClick = { restoreBackupLauncher.launch(arrayOf("application/json", "text/plain", "*/*")) }
         ) {
             Text("Restaurar respaldo")
@@ -110,7 +125,7 @@ fun BackupScreen(viewModel: BackupViewModel = viewModel()) {
 
         Button(
             modifier = Modifier.fillMaxWidth(),
-            enabled = uiState.hasSavedLocation,
+            enabled = uiState.licenseActive && uiState.hasSavedLocation,
             onClick = {
                 viewModel.getSavedBackupUri { uri ->
                     if (uri == null) {
