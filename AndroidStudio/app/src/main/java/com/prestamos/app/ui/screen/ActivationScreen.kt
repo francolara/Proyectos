@@ -77,6 +77,10 @@ fun ActivationScreen(
                 Text("Licencia ANUAL activa hasta: ${status.expirationDate.toDateString()}")
             }
 
+            status.licenseType == LicenseType.MENSUAL && status.expirationDate != null -> {
+                Text("Licencia MENSUAL activa hasta: ${status.expirationDate.toDateString()}")
+            }
+
             status.licenseType == LicenseType.FULL -> {
                 Text("Licencia FULL activa (sin vencimiento)")
             }

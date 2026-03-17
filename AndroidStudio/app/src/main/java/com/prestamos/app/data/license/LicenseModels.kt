@@ -2,6 +2,7 @@ package com.prestamos.app.data.license
 
 enum class LicenseType {
     TRIAL,
+    MENSUAL,
     ANUAL,
     FULL
 }

@@ -78,6 +78,22 @@ class LicenseManager(private val context: Context) {
                 )
             }
 
+            isActivated && storedType == LicenseType.MENSUAL -> {
+                val isMonthlyValid = expirationDate != null && now <= expirationDate
+                LicenseStatus(
+                    isValid = isMonthlyValid,
+                    deviceCode = storedDeviceCode,
+                    licenseType = LicenseType.MENSUAL,
+                    isActivated = true,
+                    trialDaysRemaining = 0,
+                    trialExpired = !isMonthlyValid,
+                    activationDate = activationDate,
+                    expirationDate = expirationDate,
+                    manipulatedDateDetected = false,
+                    message = if (isMonthlyValid) "Licencia MENSUAL activa" else "La licencia MENSUAL venció"
+                )
+            }
+
             else -> {
                 val remainingMillis = trialEndDate - now
                 val daysRemaining = if (remainingMillis <= 0L) 0L else TimeUnit.MILLISECONDS.toDays(remainingMillis).coerceAtLeast(1)
@@ -112,6 +128,7 @@ class LicenseManager(private val context: Context) {
             ?: error("Clave inválida para este equipo")
 
         val expiration = when (activationType) {
+            LicenseType.MENSUAL -> now + TimeUnit.DAYS.toMillis(30)
             LicenseType.ANUAL -> now + TimeUnit.DAYS.toMillis(365)
             LicenseType.FULL -> null
             LicenseType.TRIAL -> null
@@ -144,17 +161,24 @@ class LicenseManager(private val context: Context) {
         val keyToken = parts.drop(1).joinToString("")
 
         val expectedToken = when (type) {
+            "MENSUAL" -> buildActivationToken(deviceCode, "MENSUAL")
             "ANUAL" -> buildActivationToken(deviceCode, "ANUAL")
             "FULL" -> buildActivationToken(deviceCode, "FULL")
             else -> return null
         }
 
         if (keyToken != expectedToken) return null
-        return if (type == "ANUAL") LicenseType.ANUAL else LicenseType.FULL
+        return when (type) {
+            "MENSUAL" -> LicenseType.MENSUAL
+            "ANUAL" -> LicenseType.ANUAL
+            "FULL" -> LicenseType.FULL
+            else -> null
+        }
     }
 
     fun generateActivationKey(deviceCode: String, type: LicenseType): String {
         val typeText = when (type) {
+            LicenseType.MENSUAL -> "MENSUAL"
             LicenseType.ANUAL -> "ANUAL"
             LicenseType.FULL -> "FULL"
             LicenseType.TRIAL -> error("No existe clave de activación para TRIAL")

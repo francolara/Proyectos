@@ -16,8 +16,9 @@ android {
         applicationId = "com.prestamos.app"
         minSdk = 24
         targetSdk = 36
+        // Versionado de publicación: actualiza estos 2 valores en cada release.
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -37,6 +38,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

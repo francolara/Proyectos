@@ -74,6 +74,15 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun desbloquearConBiometria() {
+        viewModelScope.launch {
+            runCatching {
+                authRepository.desbloquearSesion()
+            }.onFailure {
+                mensaje.value = it.message ?: "No se pudo validar biometría"
+            }
+        }
+    }
 
     fun bloquearSesion() {
         viewModelScope.launch {

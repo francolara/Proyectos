@@ -1,5 +1,9 @@
 package com.prestamos.app.ui.screen
 
+import android.content.Context
+import android.content.ContextWrapper
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -14,6 +18,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Fingerprint
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -29,10 +34,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentActivity
+import com.prestamos.app.BuildConfig
 import com.prestamos.app.R
 import com.prestamos.app.ui.viewmodel.AuthViewModel
 
@@ -111,6 +120,11 @@ fun PinSetupScreen(authViewModel: AuthViewModel) {
 
 @Composable
 fun PinLoginScreen(authViewModel: AuthViewModel) {
+    val context = LocalContext.current
+    val activity = remember(context) { context.findFragmentActivity() }
+    val canUseBiometric = remember(context) {
+        BiometricManager.from(context).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK) == BiometricManager.BIOMETRIC_SUCCESS
+    }
     var pin by remember { mutableStateOf("") }
 
     Box(
@@ -143,6 +157,7 @@ fun PinLoginScreen(authViewModel: AuthViewModel) {
                 )
                 Text("Bienvenido", style = MaterialTheme.typography.headlineSmall)
                 Text("Ingresa tu PIN para continuar", style = MaterialTheme.typography.bodyMedium)
+                Text("Versión ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.bodySmall)
 
                 OutlinedTextField(
                     value = pin,
@@ -165,7 +180,56 @@ fun PinLoginScreen(authViewModel: AuthViewModel) {
                 ) {
                     Text("Acceder")
                 }
+
+                if (canUseBiometric && activity != null) {
+                    Button(
+                        onClick = {
+                            launchBiometricPrompt(activity, authViewModel)
+                        },
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(54.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Fingerprint,
+                            contentDescription = "Biometría"
+                        )
+                        Text("  Acceder con biometría")
+                    }
+                }
             }
         }
     }
+}
+
+private fun launchBiometricPrompt(activity: FragmentActivity, authViewModel: AuthViewModel) {
+    val executor = ContextCompat.getMainExecutor(activity)
+    val prompt = BiometricPrompt(
+        activity,
+        executor,
+        object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                super.onAuthenticationSucceeded(result)
+                authViewModel.desbloquearConBiometria()
+            }
+        }
+    )
+
+    val info = BiometricPrompt.PromptInfo.Builder()
+        .setTitle("Autenticación biométrica")
+        .setSubtitle("Confirma tu identidad para ingresar")
+        .setNegativeButtonText("Usar PIN")
+        .build()
+
+    prompt.authenticate(info)
+}
+
+private fun Context.findFragmentActivity(): FragmentActivity? {
+    var current: Context? = this
+    while (current is ContextWrapper) {
+        if (current is FragmentActivity) return current
+        current = current.baseContext
+    }
+    return null
 }
