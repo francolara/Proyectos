@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material.icons.Icons
@@ -161,7 +162,9 @@ private fun PrestamosApp(
         containerColor = androidx.compose.material3.MaterialTheme.colorScheme.background,
         bottomBar = {
             NavigationBar(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp),
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 tonalElevation = 0.dp,
                 windowInsets = WindowInsets(0, 0, 0, 0)
