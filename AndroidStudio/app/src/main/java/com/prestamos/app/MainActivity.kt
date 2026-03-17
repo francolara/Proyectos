@@ -267,6 +267,7 @@ private fun PrestamosApp(
                             restoreState = true
                         }
                     }
+                    menuExpanded = false
                 }
             )
             NavHost(

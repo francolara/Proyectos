@@ -77,13 +77,13 @@ fun BackupScreen(viewModel: BackupViewModel = viewModel()) {
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text("Respaldo", style = MaterialTheme.typography.headlineSmall)
-        Text("Archivo único: ${BackupManager.BACKUP_FILE_NAME}")
-        Text("Último respaldo realizado: ${uiState.lastBackupTimestamp.toDisplayDateTime()}")
-        Text("Estado: ${if (uiState.hasSavedLocation) "Ubicación configurada" else "Sin ubicación configurada"}")
+        Text("Archivo unico: ${BackupManager.BACKUP_FILE_NAME}")
+        Text("Ultimo respaldo realizado: ${uiState.lastBackupTimestamp.toDisplayDateTime()}")
+        Text("Estado: ${if (uiState.hasSavedLocation) "Ubicacion configurada" else "Sin ubicacion configurada"}")
 
         if (!uiState.licenseActive) {
             Text(
-                "Licencia activa requerida para respaldo y restauración",
+                "Licencia activa requerida para respaldo y restauracion",
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodyMedium
             )
@@ -94,7 +94,7 @@ fun BackupScreen(viewModel: BackupViewModel = viewModel()) {
             enabled = uiState.licenseActive,
             onClick = { folderBackupLauncher.launch(null) }
         ) {
-            Text("Configurar ubicación")
+            Text("Configurar ubicacion")
         }
 
         Button(
@@ -135,10 +135,14 @@ fun BackupScreen(viewModel: BackupViewModel = viewModel()) {
                     val sendIntent = Intent(Intent.ACTION_SEND).apply {
                         type = "application/json"
                         putExtra(Intent.EXTRA_STREAM, uri)
-                        putExtra(Intent.EXTRA_SUBJECT, "Respaldo de préstamos")
+                        putExtra(Intent.EXTRA_SUBJECT, "Respaldo de prestamos")
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
-                    context.startActivity(Intent.createChooser(sendIntent, "Compartir respaldo"))
+                    runCatching {
+                        context.startActivity(Intent.createChooser(sendIntent, "Compartir respaldo"))
+                    }.onFailure {
+                        viewModel.reportarError("Error al compartir respaldo")
+                    }
                 }
             }
         ) {
@@ -151,8 +155,8 @@ fun BackupScreen(viewModel: BackupViewModel = viewModel()) {
     pendingImportUri?.let { uri ->
         AlertDialog(
             onDismissRequest = { pendingImportUri = null },
-            title = { Text("Confirmar restauración") },
-            text = { Text("Esta acción reemplazará todos los datos actuales. ¿Desea continuar?") },
+            title = { Text("Confirmar restauracion") },
+            text = { Text("Esta accion reemplazara todos los datos actuales. Desea continuar?") },
             confirmButton = {
                 TextButton(onClick = {
                     pendingImportUri = null

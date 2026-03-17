@@ -3,6 +3,7 @@ package com.prestamos.app.data.backup
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.provider.DocumentsContract
 import androidx.documentfile.provider.DocumentFile
 import androidx.room.withTransaction
 import com.prestamos.app.data.local.AppDatabase
@@ -19,7 +20,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
-import kotlin.system.exitProcess
 
 class BackupManager(private val context: Context) {
     private val db = AppDatabase.getInstance(context)
@@ -30,7 +30,9 @@ class BackupManager(private val context: Context) {
             if (persistPermission) persistUriPermissions(targetUri)
             val data = buildBackupData()
             val json = serialize(data)
-            context.contentResolver.openOutputStream(targetUri, "wt")?.use { output ->
+            val stream = context.contentResolver.openOutputStream(targetUri, "wt")
+                ?: context.contentResolver.openOutputStream(targetUri, "w")
+            stream?.use { output ->
                 output.write(json.toByteArray(Charsets.UTF_8))
             } ?: error("Error al crear respaldo")
             prefs.saveBackupUri(targetUri.toString())
@@ -46,14 +48,18 @@ class BackupManager(private val context: Context) {
         }
     }
     suspend fun exportBackupToSavedLocation(): Result<Unit> = withContext(Dispatchers.IO) {
-        val uri = getSavedBackupUri() ?: return@withContext Result.failure(IllegalStateException("Primero elige una ubicación para el respaldo"))
-        exportBackup(uri, persistPermission = false)
+        runCatching {
+            val savedUri = getSavedBackupUri()
+                ?: throw IllegalStateException("Primero elige una ubicacion para el respaldo")
+            val targetUri = resolveSavedTargetUri(savedUri)
+            exportBackup(targetUri, persistPermission = false).getOrThrow()
+        }
     }
 
     suspend fun importBackup(sourceUri: Uri): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
             val rawJson = context.contentResolver.openInputStream(sourceUri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
-                ?: error("Archivo inválido")
+                ?: error("Archivo invalido")
             val parsed = deserialize(rawJson)
 
             db.withTransaction {
@@ -102,17 +108,17 @@ class BackupManager(private val context: Context) {
     }
 
     private fun deserialize(rawJson: String): BackupData {
-        val root = runCatching { JSONObject(rawJson) }.getOrElse { throw IllegalArgumentException("Archivo inválido") }
+        val root = runCatching { JSONObject(rawJson) }.getOrElse { throw IllegalArgumentException("Archivo invalido") }
         val version = root.optInt("version", -1)
-        require(version == BACKUP_VERSION) { "Archivo inválido" }
+        require(version == BACKUP_VERSION) { "Archivo invalido" }
 
         val fechaBackup = root.optLong("fechaBackup", -1L)
-        require(fechaBackup > 0L) { "Archivo inválido" }
+        require(fechaBackup > 0L) { "Archivo invalido" }
 
-        val clientesJson = root.optJSONArray("clientes") ?: throw IllegalArgumentException("Archivo inválido")
-        val prestamosJson = root.optJSONArray("prestamos") ?: throw IllegalArgumentException("Archivo inválido")
-        val cuotasJson = root.optJSONArray("cuotas") ?: throw IllegalArgumentException("Archivo inválido")
-        val pagosJson = root.optJSONArray("pagos") ?: throw IllegalArgumentException("Archivo inválido")
+        val clientesJson = root.optJSONArray("clientes") ?: throw IllegalArgumentException("Archivo invalido")
+        val prestamosJson = root.optJSONArray("prestamos") ?: throw IllegalArgumentException("Archivo invalido")
+        val cuotasJson = root.optJSONArray("cuotas") ?: throw IllegalArgumentException("Archivo invalido")
+        val pagosJson = root.optJSONArray("pagos") ?: throw IllegalArgumentException("Archivo invalido")
 
         val clientes = (0 until clientesJson.length()).map { idx -> jsonToCliente(clientesJson.getJSONObject(idx)) }
         val prestamos = (0 until prestamosJson.length()).map { idx -> jsonToPrestamo(prestamosJson.getJSONObject(idx)) }
@@ -143,6 +149,14 @@ class BackupManager(private val context: Context) {
         val existing = folder.findFile(BACKUP_FILE_NAME)
         val file = existing ?: folder.createFile("application/json", BACKUP_FILE_NAME)
         return file?.uri ?: throw IllegalStateException("Error al crear respaldo")
+    }
+
+    private fun resolveSavedTargetUri(savedUri: Uri): Uri {
+        return if (DocumentsContract.isTreeUri(savedUri)) {
+            createOrFindBackupFileInFolder(savedUri)
+        } else {
+            savedUri
+        }
     }
 
     private fun clienteToJson(item: ClienteEntity): JSONObject = JSONObject()
@@ -244,28 +258,28 @@ class BackupManager(private val context: Context) {
     )
 
     private inline fun <reified T : Enum<T>> enumValueOfOrThrow(value: String): T {
-        return runCatching { enumValueOf<T>(value) }.getOrElse { throw IllegalArgumentException("Archivo inválido") }
+        return runCatching { enumValueOf<T>(value) }.getOrElse { throw IllegalArgumentException("Archivo invalido") }
     }
 
     private fun JSONObject.optStringStrict(key: String): String {
         val value = optString(key, "")
-        require(value.isNotBlank()) { "Archivo inválido" }
+        require(value.isNotBlank()) { "Archivo invalido" }
         return value
     }
 
     private fun JSONObject.optLongStrict(key: String): Long {
-        require(has(key)) { "Archivo inválido" }
-        return optLong(key, Long.MIN_VALUE).also { require(it != Long.MIN_VALUE) { "Archivo inválido" } }
+        require(has(key)) { "Archivo invalido" }
+        return optLong(key, Long.MIN_VALUE).also { require(it != Long.MIN_VALUE) { "Archivo invalido" } }
     }
 
     private fun JSONObject.optIntStrict(key: String): Int {
-        require(has(key)) { "Archivo inválido" }
-        return optInt(key, Int.MIN_VALUE).also { require(it != Int.MIN_VALUE) { "Archivo inválido" } }
+        require(has(key)) { "Archivo invalido" }
+        return optInt(key, Int.MIN_VALUE).also { require(it != Int.MIN_VALUE) { "Archivo invalido" } }
     }
 
     private fun JSONObject.optDoubleStrict(key: String): Double {
-        require(has(key)) { "Archivo inválido" }
-        return optDouble(key, Double.NaN).also { require(!it.isNaN()) { "Archivo inválido" } }
+        require(has(key)) { "Archivo invalido" }
+        return optDouble(key, Double.NaN).also { require(!it.isNaN()) { "Archivo invalido" } }
     }
 
     object IntentFlags {
@@ -282,7 +296,6 @@ class BackupManager(private val context: Context) {
                 ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                 ?: return
             context.startActivity(launchIntent)
-            exitProcess(0)
         }
     }
 }

@@ -89,7 +89,7 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
             if (!ensureLicenseActive()) return@launch
             backupManager.importBackup(uri)
                 .onSuccess {
-                    mensaje.value = "Restauración completada. Reiniciando app..."
+                    mensaje.value = "Restauracion completada. Reiniciando app..."
                     onSuccess()
                 }
                 .onFailure { mensaje.value = it.message ?: "Error al restaurar respaldo" }
@@ -142,11 +142,15 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
         mensaje.value = null
     }
 
+    fun reportarError(texto: String) {
+        mensaje.value = texto
+    }
+
     private suspend fun ensureLicenseActive(): Boolean {
         val active = isPaidLicenseActive()
         licenseActive.value = active
         if (!active) {
-            mensaje.value = "Licencia activa requerida para respaldo y restauración"
+            mensaje.value = "Licencia activa requerida para respaldo y restauracion"
         }
         return active
     }
