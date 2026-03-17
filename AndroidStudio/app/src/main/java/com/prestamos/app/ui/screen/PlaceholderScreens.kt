@@ -413,21 +413,20 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                 readOnly = true,
                 label = { Text("Fecha primera cuota") },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        DatePickerDialog(
+                            context,
+                            { _, year, month, dayOfMonth ->
+                                fechaPrimeraCuota = LocalDate.of(year, month + 1, dayOfMonth)
+                            },
+                            fechaPrimeraCuota.year,
+                            fechaPrimeraCuota.monthValue - 1,
+                            fechaPrimeraCuota.dayOfMonth
+                        ).show()
+                    }
             )
-            Button(onClick = {
-                DatePickerDialog(
-                    context,
-                    { _, year, month, dayOfMonth ->
-                        fechaPrimeraCuota = LocalDate.of(year, month + 1, dayOfMonth)
-                    },
-                    fechaPrimeraCuota.year,
-                    fechaPrimeraCuota.monthValue - 1,
-                    fechaPrimeraCuota.dayOfMonth
-                ).show()
-            }) {
-                Text("Seleccionar fecha")
-            }
 
             Button(onClick = {
                 clienteSeleccionado?.let {
