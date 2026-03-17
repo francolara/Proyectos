@@ -215,17 +215,25 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun actualizarClienteContacto(
+    fun actualizarCliente(
         idCliente: Long,
+        nombre: String,
+        apellido: String,
         direccion: String,
         telefono: String
     ) {
         viewModelScope.launch {
             runCatching {
+                val nombreLimpio = cleanSingleLine(nombre)
+                val apellidoLimpio = cleanSingleLine(apellido)
                 val direccionLimpia = cleanSingleLine(direccion)
                 val telefonoLimpio = cleanSingleLine(telefono)
-                repository.actualizarClienteContacto(
+                require(nombreLimpio.isNotBlank()) { "Nombres obligatorio" }
+                require(apellidoLimpio.isNotBlank()) { "Apellido obligatorio" }
+                repository.actualizarCliente(
                     idCliente = idCliente,
+                    nombre = nombreLimpio,
+                    apellido = apellidoLimpio,
                     direccion = direccionLimpia,
                     telefono = telefonoLimpio
                 )

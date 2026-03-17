@@ -54,15 +54,21 @@ class PrestamosRepository(
         )
     }
 
-    suspend fun actualizarClienteContacto(
+    suspend fun actualizarCliente(
         idCliente: Long,
+        nombre: String,
+        apellido: String,
         direccion: String,
         telefono: String
     ) {
         val ahora = System.currentTimeMillis()
         val cliente = clienteDao.obtenerPorId(idCliente) ?: error("Cliente no encontrado")
+        require(nombre.isNotBlank()) { "Nombres obligatorio" }
+        require(apellido.isNotBlank()) { "Apellido obligatorio" }
         clienteDao.actualizar(
             cliente.copy(
+                nombre = nombre,
+                apellido = apellido,
                 direccion = direccion,
                 telefono = telefono,
                 fechaModificacion = ahora
