@@ -6,17 +6,11 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Groups
@@ -28,6 +22,7 @@ import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
@@ -42,7 +37,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -75,7 +69,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         CuotasVencidasReminderScheduler.schedule(this)
         requestNotificationPermissionIfNeeded()
-        enableEdgeToEdge()
         setContent {
             var darkMode by rememberSaveable { mutableStateOf(false) }
             AppPrestamosTheme(darkTheme = darkMode) {
@@ -166,57 +159,42 @@ private fun PrestamosApp(
     Scaffold(
         containerColor = androidx.compose.material3.MaterialTheme.colorScheme.background,
         bottomBar = {
-            val density = LocalDensity.current
-            val bottomInset = with(density) { WindowInsets.navigationBars.getBottom(this).toDp() }
-            Column(
+            NavigationBar(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .height(56.dp),
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                tonalElevation = 0.dp,
+                windowInsets = NavigationBarDefaults.windowInsets
             ) {
-                NavigationBar(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    tonalElevation = 0.dp,
-                    windowInsets = WindowInsets(0, 0, 0, 0)
-                ) {
-                    val currentRoute = navController.currentBackStackEntryAsState().value
-                        ?.destination
-                        ?.route
+                val currentRoute = navController.currentBackStackEntryAsState().value
+                    ?.destination
+                    ?.route
 
-                    destinations.forEach { destination ->
-                        NavigationBarItem(
-                            selected = currentRoute == destination.route,
-                            onClick = {
-                                navController.navigate(destination.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
+                destinations.forEach { destination ->
+                    NavigationBarItem(
+                        selected = currentRoute == destination.route,
+                        onClick = {
+                            navController.navigate(destination.route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
                                 }
-                            },
-                            icon = {
-                                Icon(
-                                    imageVector = iconFor(destination),
-                                    contentDescription = if (destination.title.isBlank()) destination.route else destination.title
-                                )
-                            },
-                            label = null,
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary,
-                                unselectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.onPrimaryContainer,
-                                indicatorColor = androidx.compose.material3.MaterialTheme.colorScheme.primary
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        icon = {
+                            Icon(
+                                imageVector = iconFor(destination),
+                                contentDescription = if (destination.title.isBlank()) destination.route else destination.title
                             )
+                        },
+                        label = null,
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.onPrimary,
+                            unselectedIconColor = androidx.compose.material3.MaterialTheme.colorScheme.onPrimaryContainer,
+                            indicatorColor = androidx.compose.material3.MaterialTheme.colorScheme.primary
                         )
-                    }
-                }
-                if (bottomInset > 0.dp) {
-                    Spacer(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(bottomInset)
                     )
                 }
             }
