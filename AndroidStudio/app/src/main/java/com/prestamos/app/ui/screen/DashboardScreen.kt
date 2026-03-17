@@ -19,7 +19,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -97,10 +96,6 @@ fun DashboardScreen(
                         Text(trialTexto, color = trialColor, style = MaterialTheme.typography.bodyMedium)
                     }
                 }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Modo oscuro")
-                    Switch(checked = isDarkMode, onCheckedChange = onToggleDarkMode)
-                }
             }
         }
 
@@ -132,9 +127,10 @@ fun DashboardScreen(
 
         item {
             Text("Gráfico comparativo", style = MaterialTheme.typography.titleMedium)
-            val total = (state.capitalPrestado + state.cobradoHoy + state.saldoPendiente).coerceAtLeast(1.0)
+            val capitalPrestadoActivo = state.prestamosActivosDetalle.sumOf { it.montoPrestado }
+            val total = (capitalPrestadoActivo + state.cobradoHoy + state.saldoPendiente).coerceAtLeast(1.0)
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                BarSegment("Prestado", (state.capitalPrestado / total).toFloat(), PrimaryGreen) { detalleSeleccionado = DashboardDetalle.CAPITAL }
+                BarSegment("Prestado", (capitalPrestadoActivo / total).toFloat(), PrimaryGreen) { detalleSeleccionado = DashboardDetalle.CAPITAL }
                 BarSegment("Cobrado", (state.cobradoHoy / total).toFloat(), AccentGold) { detalleSeleccionado = DashboardDetalle.COBRADO_HOY }
                 BarSegment("Pendiente", (state.saldoPendiente / total).toFloat(), SecondaryGreen) { detalleSeleccionado = DashboardDetalle.PENDIENTE }
             }
@@ -326,14 +322,15 @@ private data class DashboardDetalleInfo(
 private fun DashboardDetalle.toDetalleInfo(state: com.prestamos.app.ui.model.DashboardResumen): DashboardDetalleInfo {
     return when (this) {
         DashboardDetalle.CAPITAL -> {
-            val resumen = state.prestamosCapitalDetalle
+            val resumen = state.prestamosActivosDetalle
             val totalPrestamos = resumen.size
+            val totalActivo = resumen.sumOf { it.montoPrestado }
             val top = resumen.take(8).joinToString("\n") {
-                "• ${it.cliente} | Préstamo #${it.idPrestamo} | Capital ${it.montoPrestado.toMoney(it.moneda)} | Estado: ${if (it.cuotasPendientes > 0) "ACTIVO" else "PAGADO"}"
-            }.ifBlank { "No hay préstamos activos o pagados." }
+                "• ${it.cliente} | Préstamo #${it.idPrestamo} | Capital ${it.montoPrestado.toMoney(it.moneda)} | Estado: ACTIVO"
+            }.ifBlank { "No hay préstamos activos." }
             DashboardDetalleInfo(
                 title = "Capital prestado",
-                message = "Préstamos activos o pagados: $totalPrestamos\nTotal colocado: ${state.capitalPrestado.toMoney(state.monedaReferencial)}\n\n$top"
+                message = "Préstamos activos: $totalPrestamos\nTotal activo: ${totalActivo.toMoney(state.monedaReferencial)}\n\n$top"
             )
         }
 

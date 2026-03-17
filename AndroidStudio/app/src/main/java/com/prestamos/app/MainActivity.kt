@@ -199,7 +199,9 @@ private fun PrestamosApp(
 ) {
     val navController = rememberNavController()
     val activationRoute = "activation_license"
+    val modoNocheRoute = "__toggle_dark_mode__"
     val menuItems = buildList {
+        add(SideMenuItem(modoNocheRoute, "Modo Noche"))
         AppDestinations.entries.forEach { destination ->
             if (destination == AppDestinations.LOGOUT) {
                 add(SideMenuItem(activationRoute, "Licencia"))
@@ -226,12 +228,16 @@ private fun PrestamosApp(
                 destinations = menuItems,
                 onToggleExpanded = { menuExpanded = !menuExpanded },
                 onNavigate = { route ->
-                    navController.navigate(route) {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
+                    if (route == modoNocheRoute) {
+                        onToggleDarkMode(!isDarkMode)
+                    } else {
+                        navController.navigate(route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
                         }
-                        launchSingleTop = true
-                        restoreState = true
                     }
                 }
             )
@@ -354,6 +360,7 @@ private data class SideMenuItem(
 
 @Composable
 private fun iconForRoute(route: String) = when (route) {
+    "__toggle_dark_mode__" -> Icons.Outlined.Settings
     AppDestinations.DASHBOARD.route -> Icons.Outlined.Home
     AppDestinations.CLIENTES.route -> Icons.Outlined.Groups
     AppDestinations.PRESTAMOS.route -> Icons.Outlined.RequestPage
