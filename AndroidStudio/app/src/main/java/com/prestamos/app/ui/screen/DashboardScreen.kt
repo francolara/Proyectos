@@ -105,6 +105,7 @@ fun DashboardScreen(
 
         item {
             val capitalPrestadoActivo2 = state.prestamosActivosDetalle.sumOf { it.montoPrestado }
+            val prestadoActivoConInteres = state.prestamosActivosDetalle.sumOf { it.montoTotalConInteres }
             Text(
                 text = "Historial de prestamos",
                 color = MaterialTheme.colorScheme.primary,
@@ -119,6 +120,16 @@ fun DashboardScreen(
                 valueColor = MaterialTheme.colorScheme.onSecondaryContainer
             ) {
                 detalleSeleccionado = DashboardDetalle.CAPITAL_ACTIVO2
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            DashboardCard(
+                "Prestado activo + intereses",
+                prestadoActivoConInteres.toMoney(state.monedaReferencial),
+                Modifier.fillMaxWidth(),
+                highlightValue = true,
+                valueColor = MaterialTheme.colorScheme.onSecondaryContainer
+            ) {
+                detalleSeleccionado = DashboardDetalle.CAPITAL
             }
             Spacer(modifier = Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
@@ -384,13 +395,13 @@ private fun DashboardDetalle.toDetalleInfo(state: com.prestamos.app.ui.model.Das
         DashboardDetalle.CAPITAL -> {
             val resumen = state.prestamosActivosDetalle
             val totalPrestamos = resumen.size
-            val totalActivo = resumen.sumOf { it.montoPrestado }
+            val totalActivo = resumen.sumOf { it.montoTotalConInteres }
             val top = resumen.take(8).joinToString("\n") {
-                "• ${it.cliente} | Préstamo #${it.idPrestamo} | Capital ${it.montoPrestado.toMoney(it.moneda)} | Estado: ACTIVO"
+                "• ${it.cliente} | Préstamo #${it.idPrestamo} | Prestado c/interes ${it.montoTotalConInteres.toMoney(it.moneda)} | Estado: ACTIVO"
             }.ifBlank { "No hay préstamos activos." }
             DashboardDetalleInfo(
-                title = "Capital prestado",
-                message = "Préstamos activos: $totalPrestamos\nTotal activo: ${totalActivo.toMoney(state.monedaReferencial)}\n\n$top"
+                title = "Prestado activo + interes",
+                message = "Préstamos activos: $totalPrestamos\nTotal activo c/interes: ${totalActivo.toMoney(state.monedaReferencial)}\n\n$top"
             )
         }
 
