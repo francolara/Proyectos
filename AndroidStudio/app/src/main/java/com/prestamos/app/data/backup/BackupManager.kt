@@ -26,7 +26,11 @@ class BackupManager(private val context: Context) {
     private val db = AppDatabase.getInstance(context)
     private val prefs = BackupPreferences(context)
 
-    suspend fun exportBackup(targetUri: Uri, persistPermission: Boolean): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun exportBackup(
+        targetUri: Uri,
+        persistPermission: Boolean,
+        updateSavedUri: Boolean = true
+    ): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
             if (persistPermission) persistUriPermissions(targetUri)
             val data = buildBackupData()
@@ -36,7 +40,9 @@ class BackupManager(private val context: Context) {
             stream?.use { output ->
                 output.write(json.toByteArray(Charsets.UTF_8))
             } ?: error("Error al crear respaldo")
-            prefs.saveBackupUri(targetUri.toString())
+            if (updateSavedUri) {
+                prefs.saveBackupUri(targetUri.toString())
+            }
             prefs.saveLastBackupTimestamp(data.fechaBackup)
         }
     }
@@ -45,7 +51,7 @@ class BackupManager(private val context: Context) {
         runCatching {
             if (persistPermission) persistUriPermissions(folderUri)
             val fileUri = createOrFindBackupFileInFolder(folderUri)
-            exportBackup(fileUri, persistPermission = false).getOrThrow()
+            exportBackup(fileUri, persistPermission = false, updateSavedUri = false).getOrThrow()
             prefs.saveBackupUri(folderUri.toString())
         }
     }
@@ -54,7 +60,7 @@ class BackupManager(private val context: Context) {
             val savedUri = getSavedBackupUri()
                 ?: throw IllegalStateException("Primero elige una ubicacion para el respaldo")
             val targetUri = resolveSavedTargetUri(savedUri)
-            exportBackup(targetUri, persistPermission = false).getOrElse { error ->
+            exportBackup(targetUri, persistPermission = false, updateSavedUri = false).getOrElse { error ->
                 if (shouldResetSavedLocation(error)) {
                     prefs.clearBackupUri()
                     throw IllegalStateException("La ubicacion de respaldo ya no es valida. Configura la ubicacion nuevamente.")
