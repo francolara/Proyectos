@@ -88,6 +88,7 @@ import com.prestamos.app.ui.screen.LogoutScreen
 import com.prestamos.app.ui.screen.PagosScreen
 import com.prestamos.app.ui.screen.BackupScreen
 import com.prestamos.app.ui.screen.ActivationScreen
+import com.prestamos.app.ui.screen.OnboardingScreen
 import com.prestamos.app.ui.screen.PinLoginScreen
 import com.prestamos.app.ui.screen.PinSetupScreen
 import com.prestamos.app.ui.screen.PrestamosScreen
@@ -97,6 +98,7 @@ import com.prestamos.app.ui.viewmodel.AppViewModel
 import com.prestamos.app.ui.viewmodel.AuthState
 import com.prestamos.app.ui.viewmodel.AuthViewModel
 import com.prestamos.app.ui.viewmodel.DashboardViewModel
+import com.prestamos.app.ui.viewmodel.OnboardingViewModel
 import kotlinx.coroutines.delay
 
 private const val INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000L
@@ -131,10 +133,12 @@ class MainActivity : ComponentActivity() {
 private fun AppRoot(
     isDarkMode: Boolean,
     onToggleDarkMode: (Boolean) -> Unit,
+    onboardingViewModel: OnboardingViewModel = viewModel(),
     authViewModel: AuthViewModel = viewModel(),
     appViewModel: AppViewModel = viewModel(),
     activationViewModel: ActivationViewModel = viewModel()
 ) {
+    val onboardingState by onboardingViewModel.uiState.collectAsStateWithLifecycle()
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
     val authMensaje by authViewModel.mensaje.collectAsStateWithLifecycle()
     val appMensaje by appViewModel.mensaje.collectAsStateWithLifecycle()
@@ -204,12 +208,21 @@ private fun AppRoot(
                 }
         ) {
             when {
-                activationState.loading || authState is AuthState.Loading -> Box(
+                onboardingState.loading || activationState.loading || authState is AuthState.Loading -> Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier.fillMaxSize()
                 ) {
                     CircularProgressIndicator()
                 }
+
+                onboardingState.showOnboarding -> OnboardingScreen(
+                    uiState = onboardingState,
+                    onComenzar = onboardingViewModel::comenzar,
+                    onBusinessNameChange = onboardingViewModel::updateBusinessName,
+                    onMainCurrencySelected = onboardingViewModel::selectMainCurrency,
+                    onSecondaryCurrencySelected = onboardingViewModel::selectSecondaryCurrency,
+                    onFinalizar = onboardingViewModel::finalizarConfiguracion
+                )
 
                 !activationState.canAccessApp -> ActivationScreen(
                     uiState = activationState,

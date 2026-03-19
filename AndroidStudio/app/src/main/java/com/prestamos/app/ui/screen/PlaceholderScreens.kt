@@ -45,12 +45,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.prestamos.app.data.config.InitialSetupPreferences
 import com.prestamos.app.data.local.entity.ClienteEntity
 import com.prestamos.app.data.local.entity.EstadoPrestamo
 import com.prestamos.app.data.local.entity.Moneda
@@ -65,12 +67,20 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
+import java.util.Locale
 
 // Firma Codex 2026-03-17
 
 @Composable
 fun ClientesScreen(viewModel: AppViewModel) {
     val context = LocalContext.current
+    val setupPrefs = remember { InitialSetupPreferences(context) }
+    val visibleCurrencies = remember {
+        resolveVisibleCurrencies(
+            setupPrefs.getMainCurrencyCode(),
+            setupPrefs.getSecondaryCurrencyCode()
+        )
+    }
     val clientes by viewModel.clientes.collectAsStateWithLifecycle()
     val prestamos by viewModel.prestamos.collectAsStateWithLifecycle()
     val cuotas by viewModel.cuotas.collectAsStateWithLifecycle()
@@ -160,21 +170,42 @@ fun ClientesScreen(viewModel: AppViewModel) {
                     Text("\uD83D\uDC64 ${cliente.nombre} ${cliente.apellido} / \uD83D\uDCC4 ${cliente.documentoIdentidad}")
                     Text("\uD83D\uDCCD ${cliente.direccion.ifBlank { "-" }}")
                     Text("\uD83D\uDCDE ${cliente.telefono.ifBlank { "-" }}")
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
                         TextButton(onClick = {
                             clienteEditando = cliente
                             nombreEdit = cliente.nombre
                             apellidoEdit = cliente.apellido
                             direccionEdit = cliente.direccion
                             telefonoEdit = cliente.telefono
-                        }) {
-                            Text("\u270F\uFE0F Editar")
+                        }, modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Editar",
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
-                        TextButton(onClick = { clienteAEliminar = cliente }) {
-                            Text("\uD83D\uDDD1 Eliminar")
+                        TextButton(
+                            onClick = { clienteAEliminar = cliente },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = "Eliminar",
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
-                        TextButton(onClick = { clienteHistorial = cliente }) {
-                            Text("\uD83D\uDD52 Historial")
+                        TextButton(
+                            onClick = { clienteHistorial = cliente },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = "Historial",
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
                     }
                 }
@@ -273,10 +304,24 @@ fun ClientesScreen(viewModel: AppViewModel) {
             .filter { it.idCliente == cliente.idCliente && (it.estadoPrestamo == EstadoPrestamo.ACTIVO || it.estadoPrestamo == EstadoPrestamo.PAGADO) }
             .sortedByDescending { it.fechaRegistro }
 
+        val totalCapitalPorMoneda = prestamosCliente.groupBy { it.moneda }.mapValues { (_, v) -> v.sumOf { it.montoPrestado } }
+        val totalCapitalConInteresPorMoneda = prestamosCliente.groupBy { it.moneda }.mapValues { (_, v) -> v.sumOf { it.montoTotalPrestamo } }
+        val totalPendientePorMoneda = prestamosCliente.groupBy { it.moneda }.mapValues { (moneda, v) ->
+            v.sumOf { prestamo ->
+                cuotas.filter { it.idPrestamo == prestamo.idPrestamo }.sumOf { it.saldoPendiente }
+            }
+        }
+
         val historialTexto = buildString {
             appendLine("Historial de prestamos")
             appendLine("Cliente: ${cliente.nombre} ${cliente.apellido}".trim())
             appendLine("Documento: ${cliente.documentoIdentidad}")
+            appendLine("Total capital:")
+            appendLine(totalCapitalPorMoneda.toTotalsText(visibleCurrencies))
+            appendLine("Total capital + intereses:")
+            appendLine(totalCapitalConInteresPorMoneda.toTotalsText(visibleCurrencies))
+            appendLine("Total saldo pendiente + intereses:")
+            appendLine(totalPendientePorMoneda.toTotalsText(visibleCurrencies))
             appendLine()
 
             if (prestamosCliente.isEmpty()) {
@@ -341,6 +386,18 @@ fun ClientesScreen(viewModel: AppViewModel) {
                     Text("No hay prestamos activos o pagados para este cliente.")
                 } else {
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        item {
+                            Card(modifier = Modifier.fillMaxWidth()) {
+                                Column(
+                                    modifier = Modifier.padding(10.dp),
+                                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                                ) {
+                                    Text("Total capital:\n${totalCapitalPorMoneda.toTotalsText(visibleCurrencies)}")
+                                    Text("Total capital + intereses:\n${totalCapitalConInteresPorMoneda.toTotalsText(visibleCurrencies)}")
+                                    Text("Total saldo pendiente + intereses:\n${totalPendientePorMoneda.toTotalsText(visibleCurrencies)}")
+                                }
+                            }
+                        }
                         items(prestamosCliente) { prestamo ->
                             val saldoPendienteConInteres = cuotas
                                 .filter { it.idPrestamo == prestamo.idPrestamo }
@@ -366,6 +423,27 @@ fun ClientesScreen(viewModel: AppViewModel) {
             }
         )
     }
+}
+
+private fun Map<Moneda, Double>.toTotalsText(visibleCurrencies: List<Moneda>): String {
+    val ordered = visibleCurrencies.ifEmpty { listOf(Moneda.SOLES) }
+    return ordered.joinToString("\n") { moneda ->
+        val total = this[moneda] ?: 0.0
+        val label = if (moneda == Moneda.SOLES) "Totales en Soles" else "Totales en Dolares"
+        "$label: ${total.toMoney(moneda)}"
+    }
+}
+
+private fun resolveVisibleCurrencies(mainCode: String?, secondaryCode: String?): List<Moneda> {
+    val mapped = listOfNotNull(mainCode.toMonedaOrNull(), secondaryCode.toMonedaOrNull())
+        .distinct()
+    return if (mapped.isEmpty()) listOf(Moneda.SOLES) else mapped
+}
+
+private fun String?.toMonedaOrNull(): Moneda? = when (this?.uppercase(Locale.US)) {
+    "PEN" -> Moneda.SOLES
+    "USD" -> Moneda.DOLARES
+    else -> null
 }
 
 private enum class PrestamosFiltroEstado(val estado: EstadoPrestamo, val label: String) {

@@ -37,6 +37,8 @@ import com.prestamos.app.ui.theme.SecondaryGreen
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.prestamos.app.data.config.InitialSetupPreferences
+import com.prestamos.app.data.local.entity.Moneda
 import com.prestamos.app.ui.screen.export.createDashboardDetallePdf
 import com.prestamos.app.ui.viewmodel.ActivationUiState
 import com.prestamos.app.ui.viewmodel.DashboardViewModel
@@ -76,6 +78,13 @@ fun DashboardScreen(
 ) {
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val setupPrefs = remember { InitialSetupPreferences(context) }
+    val visibleCurrencies = remember {
+        resolveVisibleCurrencies(
+            setupPrefs.getMainCurrencyCode(),
+            setupPrefs.getSecondaryCurrencyCode()
+        )
+    }
     var detalleSeleccionado by remember { mutableStateOf<DashboardDetalle?>(null) }
 
     LazyColumn(
@@ -109,8 +118,8 @@ fun DashboardScreen(
         }
 
         item {
-            val capitalPrestadoActivo2 = state.prestamosActivosDetalle.sumOf { it.montoPrestado }
-            val prestadoActivoConInteres = state.prestamosActivosDetalle.sumOf { it.montoTotalConInteres }
+            val capitalPrestadoActivo2 = state.prestamosActivosDetalle.sumByCurrency { it.montoPrestado }
+            val prestadoActivoConInteres = state.prestamosActivosDetalle.sumByCurrency { it.montoTotalConInteres }
             Text(
                 text = "Historial de prestamos",
                 color = MaterialTheme.colorScheme.primary,
@@ -119,7 +128,7 @@ fun DashboardScreen(
             Spacer(modifier = Modifier.height(8.dp))
             DashboardCard(
                 "Capital prestado activo",
-                capitalPrestadoActivo2.toMoney(state.monedaReferencial),
+                capitalPrestadoActivo2.toTotalsText(visibleCurrencies),
                 Modifier.fillMaxWidth(),
                 highlightValue = true,
                 valueColor = MaterialTheme.colorScheme.onSecondaryContainer
@@ -129,7 +138,7 @@ fun DashboardScreen(
             Spacer(modifier = Modifier.height(8.dp))
             DashboardCard(
                 "Prestado activo + intereses",
-                prestadoActivoConInteres.toMoney(state.monedaReferencial),
+                prestadoActivoConInteres.toTotalsText(visibleCurrencies),
                 Modifier.fillMaxWidth(),
                 highlightValue = true,
                 valueColor = MaterialTheme.colorScheme.onSecondaryContainer
@@ -138,12 +147,16 @@ fun DashboardScreen(
             }
             Spacer(modifier = Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                DashboardCard("Saldo pendiente", state.saldoPendiente.toMoney(state.monedaReferencial), Modifier.weight(1f)) {
+                DashboardCard(
+                    "Saldo pendiente",
+                    state.cuotasPendientesDetalle.sumByCurrency { it.saldoPendiente }.toTotalsText(visibleCurrencies),
+                    Modifier.weight(1f)
+                ) {
                     detalleSeleccionado = DashboardDetalle.PENDIENTE
                 }
                 DashboardCard(
                     "Cobrado hoy",
-                    state.cobradoHoy.toMoney(state.monedaReferencial),
+                    state.pagosHoyDetalle.sumByCurrency { it.montoAbono }.toTotalsText(visibleCurrencies),
                     Modifier.weight(1f),
                     highlightValue = true,
                     valueColor = MaterialTheme.colorScheme.onSecondaryContainer
@@ -197,7 +210,7 @@ fun DashboardScreen(
             Text("Ganancias de prestamos pagados", style = MaterialTheme.typography.titleMedium)
             DashboardCard(
                 "Ganancia acumulada",
-                state.gananciaAcumulada.toMoney(state.monedaReferencial),
+                state.gananciasPrestamosPagados.sumByCurrency { it.ganancia }.toTotalsText(visibleCurrencies),
                 Modifier.fillMaxWidth()
             ) {
                 detalleSeleccionado = DashboardDetalle.GANANCIAS
@@ -255,7 +268,7 @@ fun DashboardScreen(
     }
 
     detalleSeleccionado?.let {
-        val detalle = it.toDetalleInfo(state)
+        val detalle = it.toDetalleInfo(state, visibleCurrencies)
         DetalleDashboardDialog(
             detalle = detalle,
             onClose = { detalleSeleccionado = null },
@@ -458,18 +471,21 @@ private data class DashboardDetalleInfo(
     val message: String
 )
 
-private fun DashboardDetalle.toDetalleInfo(state: com.prestamos.app.ui.model.DashboardResumen): DashboardDetalleInfo {
+private fun DashboardDetalle.toDetalleInfo(
+    state: com.prestamos.app.ui.model.DashboardResumen,
+    visibleCurrencies: List<Moneda>
+): DashboardDetalleInfo {
     return when (this) {
         DashboardDetalle.CAPITAL -> {
             val resumen = state.prestamosActivosDetalle
             val totalPrestamos = resumen.size
-            val totalActivo = resumen.sumOf { it.montoTotalConInteres }
+            val totalActivo = resumen.sumByCurrency { it.montoTotalConInteres }
             val top = resumen.take(8).joinToString("\n") {
                 "- ${it.cliente} | Prestamo #${it.idPrestamo} | Prestado c/interes ${it.montoTotalConInteres.toMoney(it.moneda)} | Estado: ACTIVO"
             }.ifBlank { "No hay prestamos activos." }
             DashboardDetalleInfo(
                 title = "Prestado activo + interes",
-                message = "Prestamos activos: $totalPrestamos\nTotal activo c/interes: ${totalActivo.toMoney(state.monedaReferencial)}\n\n$top"
+                message = "Prestamos activos: $totalPrestamos\n${totalActivo.toTotalsText(visibleCurrencies)}\n\n$top"
             )
         }
 
@@ -477,26 +493,26 @@ private fun DashboardDetalle.toDetalleInfo(state: com.prestamos.app.ui.model.Das
             val historial = state.prestamosCapitalDetalle
                 .filter { it.cuotasPendientes == 0 }
                 .sortedByDescending { it.idPrestamo }
-            val totalCobrado = historial.sumOf { it.montoCobrado }
-            val totalGanado = historial.sumOf { it.montoCobrado - it.montoPrestado }
+            val totalCobrado = historial.sumByCurrency { it.montoCobrado }
+            val totalGanado = historial.sumByCurrency { it.montoCobrado - it.montoPrestado }
             val top = historial.take(20).joinToString("\n") {
                 "- ${it.cliente} | Prestamo #${it.idPrestamo} | Capital ${it.montoPrestado.toMoney(it.moneda)} | Cobrado ${it.montoCobrado.toMoney(it.moneda)} | Estado: PAGADO"
             }.ifBlank { "No hay prestamos cerrados todavia." }
             DashboardDetalleInfo(
                 title = "Historial de prestamos",
-                message = "Prestamos no activos o pagados: ${historial.size}\nTotal cobrado: ${totalCobrado.toMoney(state.monedaReferencial)}\nTotal ganado: ${totalGanado.toMoney(state.monedaReferencial)}\n\n$top"
+                message = "Prestamos no activos o pagados: ${historial.size}\nTotal cobrado:\n${totalCobrado.toTotalsText(visibleCurrencies)}\nTotal ganado:\n${totalGanado.toTotalsText(visibleCurrencies)}\n\n$top"
             )
         }
 
         DashboardDetalle.CAPITAL_ACTIVO2 -> {
             val resumen = state.prestamosActivosDetalle
-            val total = resumen.sumOf { it.montoPrestado }
+            val total = resumen.sumByCurrency { it.montoPrestado }
             val top = resumen.take(5).joinToString("\n") {
                 "- ${it.cliente} | Prestamo #${it.idPrestamo} | Capital ${it.montoPrestado.toMoney(it.moneda)}"
             }.ifBlank { "No hay prestamos activos." }
             DashboardDetalleInfo(
                 title = "Capital prestado activo",
-                message = "Capital de prestamos activos: ${total.toMoney(state.monedaReferencial)}\n\n$top"
+                message = "Capital de prestamos activos:\n${total.toTotalsText(visibleCurrencies)}\n\n$top"
             )
         }
 
@@ -507,7 +523,7 @@ private fun DashboardDetalle.toDetalleInfo(state: com.prestamos.app.ui.model.Das
             }.ifBlank { "No hay cuotas pendientes." }
             DashboardDetalleInfo(
                 title = "Saldo pendiente",
-                message = "Cuotas pendientes: ${resumen.size}\nSaldo total pendiente: ${state.saldoPendiente.toMoney(state.monedaReferencial)}\n\n$top"
+                message = "Cuotas pendientes: ${resumen.size}\nSaldo total pendiente:\n${resumen.sumByCurrency { it.saldoPendiente }.toTotalsText(visibleCurrencies)}\n\n$top"
             )
         }
 
@@ -518,22 +534,20 @@ private fun DashboardDetalle.toDetalleInfo(state: com.prestamos.app.ui.model.Das
             }.ifBlank { "No se registraron pagos hoy." }
             DashboardDetalleInfo(
                 title = "Cobrado hoy",
-                message = "Pagos de hoy: ${resumen.size}\nTotal cobrado hoy: ${state.cobradoHoy.toMoney(state.monedaReferencial)}\n\n$top"
+                message = "Pagos de hoy: ${resumen.size}\nTotal cobrado hoy:\n${resumen.sumByCurrency { it.montoAbono }.toTotalsText(visibleCurrencies)}\n\n$top"
             )
         }
 
         DashboardDetalle.COBRADO_ACTIVO -> {
             val resumen = state.prestamosActivosDetalle
-            val totalCapitalActivo = resumen.sumOf { it.montoTotalConInteres }.coerceAtLeast(0.0)
-            val totalPendienteActivo = resumen.sumOf { it.saldoPendiente }.coerceIn(0.0, totalCapitalActivo)
-            val totalCobradoActivo = (totalCapitalActivo - totalPendienteActivo).coerceAtLeast(0.0)
+            val totalCobradoActivo = resumen.sumByCurrency { (it.montoTotalConInteres - it.saldoPendiente).coerceAtLeast(0.0) }
             val top = resumen.take(12).joinToString("\n") {
                 val cobradoPrestamo = (it.montoTotalConInteres - it.saldoPendiente).coerceAtLeast(0.0)
                 "- ${it.cliente} | Prestamo #${it.idPrestamo} | Cobrado c/interes ${cobradoPrestamo.toMoney(it.moneda)} | Pendiente c/interes ${it.saldoPendiente.toMoney(it.moneda)}"
             }.ifBlank { "No hay prestamos activos." }
             DashboardDetalleInfo(
                 title = "Cobrado activo",
-                message = "Prestamos activos: ${resumen.size}\nTotal cobrado activo c/interes: ${totalCobradoActivo.toMoney(state.monedaReferencial)}\n\n$top"
+                message = "Prestamos activos: ${resumen.size}\nTotal cobrado activo c/interes:\n${totalCobradoActivo.toTotalsText(visibleCurrencies)}\n\n$top"
             )
         }
 
@@ -586,15 +600,54 @@ private fun DashboardDetalle.toDetalleInfo(state: com.prestamos.app.ui.model.Das
         }
 
         DashboardDetalle.GANANCIAS -> {
+            val gananciaPorMoneda = state.gananciasPrestamosPagados.sumByCurrency { it.ganancia }
             val top = state.gananciasPrestamosPagados.take(12).joinToString("\n") {
                 "- ${it.cliente} | Prestamo #${it.idPrestamo} | Prestado ${it.montoPrestado.toMoney(it.moneda)} | Cobrado ${it.montoCobrado.toMoney(it.moneda)} | Ganancia ${it.ganancia.toMoney(it.moneda)}"
             }.ifBlank { "No hay prestamos pagados." }
             DashboardDetalleInfo(
                 title = "Ganancias por prestamos pagados",
-                message = "Prestamos pagados: ${state.gananciasPrestamosPagados.size}\nGanancia acumulada: ${state.gananciaAcumulada.toMoney(state.monedaReferencial)}\n\n$top"
+                message = "Prestamos pagados: ${state.gananciasPrestamosPagados.size}\nGanancia acumulada:\n${gananciaPorMoneda.toTotalsText(visibleCurrencies)}\n\n$top"
             )
         }
     }
+}
+
+private fun <T> List<T>.sumByCurrency(
+    currencySelector: (T) -> Moneda = { item ->
+        when (item) {
+            is com.prestamos.app.ui.model.DashboardPrestamoDetalleItem -> item.moneda
+            is com.prestamos.app.ui.model.DashboardCuotaDetalleItem -> item.moneda
+            is com.prestamos.app.ui.model.DashboardPagoItem -> item.moneda
+            is com.prestamos.app.ui.model.DashboardGananciaPrestamoItem -> item.moneda
+            else -> Moneda.SOLES
+        }
+    },
+    amountSelector: (T) -> Double
+): Map<Moneda, Double> {
+    if (isEmpty()) return mapOf(Moneda.SOLES to 0.0)
+    return groupBy(currencySelector)
+        .mapValues { (_, values) -> values.sumOf(amountSelector) }
+}
+
+private fun Map<Moneda, Double>.toTotalsText(visibleCurrencies: List<Moneda>): String {
+    val ordered = visibleCurrencies.ifEmpty { listOf(Moneda.SOLES) }
+    return ordered.joinToString("\n") { moneda ->
+        val total = this[moneda] ?: 0.0
+        val label = if (moneda == Moneda.SOLES) "Totales en Soles" else "Totales en Dolares"
+        "$label: ${total.toMoney(moneda)}"
+    }
+}
+
+private fun resolveVisibleCurrencies(mainCode: String?, secondaryCode: String?): List<Moneda> {
+    val mapped = listOfNotNull(mainCode.toMonedaOrNull(), secondaryCode.toMonedaOrNull())
+        .distinct()
+    return if (mapped.isEmpty()) listOf(Moneda.SOLES) else mapped
+}
+
+private fun String?.toMonedaOrNull(): Moneda? = when (this?.uppercase(Locale.US)) {
+    "PEN" -> Moneda.SOLES
+    "USD" -> Moneda.DOLARES
+    else -> null
 }
 private fun compartirTextoDetalle(context: android.content.Context, detalle: DashboardDetalleInfo) {
     val sendIntent = Intent(Intent.ACTION_SEND).apply {
