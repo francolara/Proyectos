@@ -318,7 +318,7 @@ private fun PrestamosApp(
                     )
                 }
                 composable(AppDestinations.LOGOUT.route) {
-                    LogoutScreen(onLogout = { authViewModel.bloquearSesion() })
+                    LogoutScreen(onLogout = { authViewModel.cerrarSesionConRespaldo() })
                 }
             }
         }
