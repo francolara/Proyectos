@@ -15,6 +15,7 @@ import com.prestamos.app.data.local.entity.Moneda
 import com.prestamos.app.data.local.entity.PagoEntity
 import com.prestamos.app.data.local.entity.PrestamoEntity
 import com.prestamos.app.data.local.entity.TipoPago
+import java.io.FileNotFoundException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -53,7 +54,13 @@ class BackupManager(private val context: Context) {
             val savedUri = getSavedBackupUri()
                 ?: throw IllegalStateException("Primero elige una ubicacion para el respaldo")
             val targetUri = resolveSavedTargetUri(savedUri)
-            exportBackup(targetUri, persistPermission = false).getOrThrow()
+            exportBackup(targetUri, persistPermission = false).getOrElse { error ->
+                if (shouldResetSavedLocation(error)) {
+                    prefs.clearBackupUri()
+                    throw IllegalStateException("La ubicacion de respaldo ya no es valida. Configura la ubicacion nuevamente.")
+                }
+                throw error
+            }
         }
     }
 
@@ -137,10 +144,23 @@ class BackupManager(private val context: Context) {
     }
 
     private fun persistUriPermissions(uri: Uri) {
-        val flags = IntentFlags.READ or IntentFlags.WRITE
-        runCatching {
-            context.contentResolver.takePersistableUriPermission(uri, flags)
+        val resolver = context.contentResolver
+        val candidates = listOf(
+            IntentFlags.READ or IntentFlags.WRITE,
+            IntentFlags.READ,
+            IntentFlags.WRITE
+        )
+        candidates.forEach { flags ->
+            runCatching {
+                resolver.takePersistableUriPermission(uri, flags)
+            }
         }
+    }
+
+    private fun shouldResetSavedLocation(error: Throwable): Boolean {
+        return error is SecurityException ||
+            error is FileNotFoundException ||
+            (error is IllegalStateException && error.message?.contains("no valida", ignoreCase = true) == true)
     }
 
     private fun createOrFindBackupFileInFolder(folderUri: Uri): Uri {

@@ -29,4 +29,10 @@ class BackupPreferences(private val context: Context) {
             prefs[lastBackupTimestampKey] = timestamp
         }
     }
+
+    suspend fun clearBackupUri() {
+        context.backupDataStore.edit { prefs: MutablePreferences ->
+            prefs.remove(backupUriKey)
+        }
+    }
 }

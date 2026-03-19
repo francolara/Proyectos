@@ -76,6 +76,8 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
                 }
                 .onFailure {
                     if (it is IllegalStateException) {
+                        refreshSavedLocation()
+                        mensaje.value = it.message ?: "Ubicacion de respaldo no valida"
                         onLocationMissing()
                     } else {
                         mensaje.value = it.message ?: "Error al crear respaldo"

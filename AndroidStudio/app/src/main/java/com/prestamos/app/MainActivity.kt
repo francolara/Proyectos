@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
@@ -23,6 +24,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Groups
@@ -38,6 +40,7 @@ import androidx.compose.material.icons.outlined.VpnKey
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -56,11 +59,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -256,6 +262,8 @@ private fun PrestamosApp(
             SideMenu(
                 width = sideMenuWidth,
                 expanded = menuExpanded,
+                darkModeRoute = modoNocheRoute,
+                isDarkMode = isDarkMode,
                 currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route,
                 destinations = menuItems,
                 onToggleExpanded = { menuExpanded = !menuExpanded },
@@ -321,90 +329,151 @@ private fun PrestamosApp(
 private fun SideMenu(
     width: androidx.compose.ui.unit.Dp,
     expanded: Boolean,
+    darkModeRoute: String,
+    isDarkMode: Boolean,
     currentRoute: String?,
     destinations: List<SideMenuItem>,
     onToggleExpanded: () -> Unit,
     onNavigate: (String) -> Unit
 ) {
-    Surface(
+    Box(
         modifier = Modifier
             .fillMaxHeight()
             .width(width)
-            .padding(end = 6.dp),
-        color = MaterialTheme.colorScheme.primaryContainer,
-        shape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp)
+            .padding(end = 6.dp)
+            .clip(RoundedCornerShape(topEnd = 18.dp, bottomEnd = 18.dp))
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(Color(0xFF66BB6A), Color(0xFF1B5E20))
+                )
+            )
     ) {
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxHeight()
+                .fillMaxWidth()
+                .padding(horizontal = if (expanded) 10.dp else 5.dp, vertical = 10.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth()
-                    .padding(horizontal = if (expanded) 8.dp else 4.dp, vertical = 8.dp)
-            ) {
-                IconButton(onClick = onToggleExpanded, modifier = Modifier.fillMaxWidth()) {
-                    Icon(
-                        imageVector = if (expanded) Icons.Outlined.KeyboardArrowLeft else Icons.Outlined.KeyboardArrowRight,
-                        contentDescription = "Expandir menu"
-                    )
-                }
-                if (expanded) {
-                    Surface(
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                    ) {
-                        Text(
-                            text = "Control de Creditos",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 0.4.sp
-                            ),
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp)
+            Box(modifier = Modifier.fillMaxWidth()) {
+                Surface(
+                    color = Color.White.copy(alpha = 0.16f),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .align(if (expanded) Alignment.CenterEnd else Alignment.Center)
+                        .size(36.dp)
+                ) {
+                    IconButton(onClick = onToggleExpanded) {
+                        Icon(
+                            imageVector = if (expanded) Icons.Outlined.KeyboardArrowLeft else Icons.Outlined.KeyboardArrowRight,
+                            contentDescription = "Expandir menu",
+                            tint = Color.White
                         )
                     }
                 }
-                Spacer(modifier = Modifier.height(6.dp))
+            }
+            if (expanded) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = "Control de Creditos",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = 0.3.sp
+                        ),
+                        color = Color(0xFFF5FFF5)
+                    )
+                    Text(
+                        text = "CrediControl",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.88f)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(if (expanded) 8.dp else 6.dp))
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
                 destinations.forEach { destination ->
-                    val selected = currentRoute == destination.route
+                    val isModeNight = destination.route == darkModeRoute
+                    val selected = if (isModeNight) isDarkMode else currentRoute == destination.route
+                    val itemColor = when {
+                        selected -> Color.White.copy(alpha = 0.24f)
+                        isModeNight -> Color.White.copy(alpha = 0.10f)
+                        else -> Color.Transparent
+                    }
                     Surface(
-                        color = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                        contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimaryContainer,
-                        shape = RoundedCornerShape(12.dp),
+                        color = itemColor,
+                        contentColor = Color(0xFFF7FFF7),
+                        shape = RoundedCornerShape(13.dp),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 4.dp)
+                            .padding(vertical = 5.dp)
                             .clickable { onNavigate(destination.route) }
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp)
+                            modifier = Modifier.padding(
+                                horizontal = if (expanded) 12.dp else 8.dp,
+                                vertical = if (expanded) 11.dp else 10.dp
+                            )
                         ) {
+                            Box(
+                                modifier = Modifier
+                                    .width(3.dp)
+                                    .height(22.dp)
+                                    .background(
+                                        color = if (selected) Color.White else Color.Transparent,
+                                        shape = RoundedCornerShape(50)
+                                    )
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
                             Icon(
                                 imageVector = iconForRoute(destination.route),
-                                contentDescription = destination.route
+                                contentDescription = destination.route,
+                                tint = Color(0xFFF7FFF7)
                             )
                             if (expanded) {
                                 Spacer(modifier = Modifier.width(12.dp))
-                                Text(destination.title)
+                                Text(
+                                    destination.title,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
+                                    ),
+                                    color = Color(0xFFF7FFF7)
+                                )
                             }
                         }
                     }
                 }
             }
             if (expanded) {
-                Text(
-                    text = "Contacto: franko.laras@gmail.com",
-                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                Column(
                     modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(horizontal = 14.dp, vertical = 12.dp)
-                )
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    HorizontalDivider(color = Color.White.copy(alpha = 0.24f))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Contacto",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.90f)
+                    )
+                    Text(
+                        text = "franko.laras@gmail.com",
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = Color.White.copy(alpha = 0.96f)
+                    )
+                }
             }
         }
     }
