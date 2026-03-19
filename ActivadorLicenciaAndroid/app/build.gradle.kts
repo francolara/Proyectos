@@ -7,7 +7,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.tuempresa.generadorlicencias"
+        applicationId = "com.prestamos.appactivadorlicencias"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
