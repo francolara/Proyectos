@@ -38,6 +38,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         initialValue = emptyList()
     )
 
+    val cuotas = repository.observarCuotas().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
     private val clienteSeleccionadoPagos = MutableStateFlow<Long?>(null)
     private val prestamoSeleccionadoPagos = MutableStateFlow<Long?>(null)
     private val prestamoSeleccionadoDetalle = MutableStateFlow<Long?>(null)

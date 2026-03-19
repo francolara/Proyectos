@@ -70,7 +70,10 @@ import java.time.temporal.ChronoUnit
 
 @Composable
 fun ClientesScreen(viewModel: AppViewModel) {
+    val context = LocalContext.current
     val clientes by viewModel.clientes.collectAsStateWithLifecycle()
+    val prestamos by viewModel.prestamos.collectAsStateWithLifecycle()
+    val cuotas by viewModel.cuotas.collectAsStateWithLifecycle()
     var nombre by remember { mutableStateOf("") }
     var apellido by remember { mutableStateOf("") }
     var documento by remember { mutableStateOf("") }
@@ -83,6 +86,7 @@ fun ClientesScreen(viewModel: AppViewModel) {
     var direccionEdit by remember { mutableStateOf("") }
     var telefonoEdit by remember { mutableStateOf("") }
     var clienteAEliminar by remember { mutableStateOf<ClienteEntity?>(null) }
+    var clienteHistorial by remember { mutableStateOf<ClienteEntity?>(null) }
 
     LazyColumn(
         modifier = Modifier
@@ -168,6 +172,9 @@ fun ClientesScreen(viewModel: AppViewModel) {
                         }
                         TextButton(onClick = { clienteAEliminar = cliente }) {
                             Text("\uD83D\uDDD1 Eliminar")
+                        }
+                        TextButton(onClick = { clienteHistorial = cliente }) {
+                            Text("\uD83D\uDD52 Historial")
                         }
                     }
                 }
@@ -257,6 +264,106 @@ fun ClientesScreen(viewModel: AppViewModel) {
             },
             title = { Text("Eliminar cliente") },
             text = { Text("Solo se eliminara si no tiene prestamos creados.") }
+        )
+    }
+
+    if (clienteHistorial != null) {
+        val cliente = clienteHistorial ?: return
+        val prestamosCliente = prestamos
+            .filter { it.idCliente == cliente.idCliente && (it.estadoPrestamo == EstadoPrestamo.ACTIVO || it.estadoPrestamo == EstadoPrestamo.PAGADO) }
+            .sortedByDescending { it.fechaRegistro }
+
+        val historialTexto = buildString {
+            appendLine("Historial de prestamos")
+            appendLine("Cliente: ${cliente.nombre} ${cliente.apellido}".trim())
+            appendLine("Documento: ${cliente.documentoIdentidad}")
+            appendLine()
+
+            if (prestamosCliente.isEmpty()) {
+                appendLine("No hay prestamos activos o pagados para este cliente.")
+            } else {
+                prestamosCliente.forEach { prestamo ->
+                    val saldoPendienteConInteres = cuotas
+                        .filter { it.idPrestamo == prestamo.idPrestamo }
+                        .sumOf { it.saldoPendiente }
+                        .coerceAtLeast(0.0)
+
+                    val estadoTexto = if (prestamo.estadoPrestamo == EstadoPrestamo.ACTIVO) "ACTIVO" else "PAGADO"
+                    appendLine(
+                        "#${prestamo.idPrestamo} | ${prestamo.fechaRegistro.toDateString()} | " +
+                            "Capital ${prestamo.montoPrestado.toMoney(prestamo.moneda)} | " +
+                            "Capital + intereses ${prestamo.montoTotalPrestamo.toMoney(prestamo.moneda)} | " +
+                            "Saldo pendiente + intereses ${saldoPendienteConInteres.toMoney(prestamo.moneda)} | " +
+                            "Estado: $estadoTexto"
+                    )
+                }
+            }
+        }
+
+        AlertDialog(
+            onDismissRequest = { clienteHistorial = null },
+            confirmButton = {
+                TextButton(onClick = {
+                    compartirTexto(
+                        context = context,
+                        titulo = "Historial de prestamos - ${cliente.nombre} ${cliente.apellido}",
+                        detalle = historialTexto
+                    )
+                }) {
+                    Text("Compartir")
+                }
+            },
+            dismissButton = {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = {
+                        runCatching {
+                            createDashboardDetallePdf(
+                                context,
+                                "Historial de prestamos - ${cliente.nombre} ${cliente.apellido}",
+                                historialTexto
+                            )
+                        }.onSuccess { file ->
+                            compartirArchivo(context, file, "application/pdf")
+                        }.onFailure {
+                            Toast.makeText(context, "No se pudo exportar PDF", Toast.LENGTH_SHORT).show()
+                        }
+                    }) {
+                        Text("PDF")
+                    }
+                    TextButton(onClick = { clienteHistorial = null }) {
+                        Text("Cerrar")
+                    }
+                }
+            },
+            title = { Text("Historial de prestamos") },
+            text = {
+                if (prestamosCliente.isEmpty()) {
+                    Text("No hay prestamos activos o pagados para este cliente.")
+                } else {
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(prestamosCliente) { prestamo ->
+                            val saldoPendienteConInteres = cuotas
+                                .filter { it.idPrestamo == prestamo.idPrestamo }
+                                .sumOf { it.saldoPendiente }
+                                .coerceAtLeast(0.0)
+                            val estadoTexto = if (prestamo.estadoPrestamo == EstadoPrestamo.ACTIVO) "ACTIVO" else "PAGADO"
+
+                            Card(modifier = Modifier.fillMaxWidth()) {
+                                Column(
+                                    modifier = Modifier.padding(10.dp),
+                                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                                ) {
+                                    Text("Prestamo #${prestamo.idPrestamo} - $estadoTexto", style = MaterialTheme.typography.titleSmall)
+                                    Text("Fecha: ${prestamo.fechaRegistro.toDateString()}")
+                                    Text("Capital: ${prestamo.montoPrestado.toMoney(prestamo.moneda)}")
+                                    Text("Capital + intereses: ${prestamo.montoTotalPrestamo.toMoney(prestamo.moneda)}")
+                                    Text("Saldo pendiente + intereses: ${saldoPendienteConInteres.toMoney(prestamo.moneda)}")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         )
     }
 }
