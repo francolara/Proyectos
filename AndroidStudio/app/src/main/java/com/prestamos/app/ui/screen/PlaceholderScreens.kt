@@ -37,6 +37,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,6 +52,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
 import androidx.core.content.FileProvider
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.prestamos.app.data.config.InitialSetupPreferences
 import com.prestamos.app.data.local.entity.ClienteEntity
@@ -429,7 +433,7 @@ private fun Map<Moneda, Double>.toTotalsText(visibleCurrencies: List<Moneda>): S
     val ordered = visibleCurrencies.ifEmpty { listOf(Moneda.SOLES) }
     return ordered.joinToString("\n") { moneda ->
         val total = this[moneda] ?: 0.0
-        val label = if (moneda == Moneda.SOLES) "Totales en Soles" else "Totales en Dolares"
+        val label = "Totales en ${moneda.displayName}"
         "$label: ${total.toMoney(moneda)}"
     }
 }
@@ -440,11 +444,9 @@ private fun resolveVisibleCurrencies(mainCode: String?, secondaryCode: String?):
     return if (mapped.isEmpty()) listOf(Moneda.SOLES) else mapped
 }
 
-private fun String?.toMonedaOrNull(): Moneda? = when (this?.uppercase(Locale.US)) {
-    "PEN" -> Moneda.SOLES
-    "USD" -> Moneda.DOLARES
-    else -> null
-}
+private fun String?.toMonedaOrNull(): Moneda? = Moneda.fromCode(this)
+
+private fun Moneda.toDisplayName(): String = "${symbol} - $displayName"
 
 private enum class PrestamosFiltroEstado(val estado: EstadoPrestamo, val label: String) {
     ACTIVOS(EstadoPrestamo.ACTIVO, "ACTIVO"),
@@ -455,6 +457,32 @@ private enum class PrestamosFiltroEstado(val estado: EstadoPrestamo, val label: 
 @Composable
 fun PrestamosScreen(viewModel: AppViewModel) {
     val context = LocalContext.current
+    val setupPrefs = remember { InitialSetupPreferences(context) }
+    var monedasDisponibles by remember {
+        mutableStateOf(
+            resolveVisibleCurrencies(
+                setupPrefs.getMainCurrencyCode(),
+                setupPrefs.getSecondaryCurrencyCode()
+            )
+        )
+    }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val refreshMonedas: () -> Unit = {
+        monedasDisponibles = resolveVisibleCurrencies(
+            setupPrefs.getMainCurrencyCode(),
+            setupPrefs.getSecondaryCurrencyCode()
+        )
+    }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                refreshMonedas()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     val clientes by viewModel.clientes.collectAsStateWithLifecycle()
     val prestamos by viewModel.prestamos.collectAsStateWithLifecycle()
 
@@ -466,8 +494,14 @@ fun PrestamosScreen(viewModel: AppViewModel) {
     var cuotas by remember { mutableStateOf("") }
     var intervaloDiasPersonalizado by remember { mutableStateOf("") }
     var fechaPrimeraCuota by remember { mutableStateOf(LocalDate.now()) }
-    var moneda by remember { mutableStateOf(Moneda.SOLES) }
+    var moneda by remember { mutableStateOf(monedasDisponibles.firstOrNull() ?: Moneda.SOLES) }
     var tipoPago by remember { mutableStateOf(TipoPago.SEMANAL) }
+
+    LaunchedEffect(monedasDisponibles) {
+        if (moneda !in monedasDisponibles) {
+            moneda = monedasDisponibles.firstOrNull() ?: Moneda.SOLES
+        }
+    }
 
     var expandedMoneda by remember { mutableStateOf(false) }
     var expandedTipo by remember { mutableStateOf(false) }
@@ -526,10 +560,7 @@ fun PrestamosScreen(viewModel: AppViewModel) {
 
             ExposedDropdownMenuBox(expanded = expandedMoneda, onExpandedChange = { expandedMoneda = !expandedMoneda }) {
                 OutlinedTextField(
-                    value = when (moneda) {
-                        Moneda.SOLES -> "Soles"
-                        Moneda.DOLARES -> "Dolares"
-                    },
+                    value = moneda.toDisplayName(),
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Moneda") },
@@ -537,9 +568,9 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                     modifier = Modifier.menuAnchor().fillMaxWidth()
                 )
                 DropdownMenu(expanded = expandedMoneda, onDismissRequest = { expandedMoneda = false }) {
-                    Moneda.entries.forEach { opcion ->
+                    monedasDisponibles.forEach { opcion ->
                         DropdownMenuItem(
-                            text = { Text(if (opcion == Moneda.SOLES) "Soles" else "Dolares") },
+                            text = { Text(opcion.toDisplayName()) },
                             onClick = {
                                 moneda = opcion
                                 expandedMoneda = false

@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.prestamos.app.BuildConfig
 import com.prestamos.app.R
+import com.prestamos.app.data.config.InitialSetupPreferences
 import com.prestamos.app.ui.viewmodel.AuthViewModel
 
 // Firma Codex 2026-03-17
@@ -124,6 +125,8 @@ fun PinSetupScreen(authViewModel: AuthViewModel) {
 @Composable
 fun PinLoginScreen(authViewModel: AuthViewModel) {
     val context = LocalContext.current
+    val setupPrefs = remember { InitialSetupPreferences(context) }
+    val businessName = remember { setupPrefs.getBusinessName().trim() }
     val activity = remember(context) { context.findComponentActivity() }
     val canUseBiometric = remember(context) { isBiometricAvailable(context) }
     var pin by remember { mutableStateOf("") }
@@ -157,6 +160,13 @@ fun PinLoginScreen(authViewModel: AuthViewModel) {
                         .align(Alignment.CenterHorizontally)
                 )
                 Text("Bienvenido", style = MaterialTheme.typography.headlineSmall)
+                if (businessName.isNotBlank()) {
+                    Text(
+                        businessName,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
                 Text("Ingresa tu PIN para continuar", style = MaterialTheme.typography.bodyMedium)
                 Text("Version ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.bodySmall)
 

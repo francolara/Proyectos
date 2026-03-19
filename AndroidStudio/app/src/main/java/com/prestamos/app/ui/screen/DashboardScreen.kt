@@ -128,7 +128,7 @@ fun DashboardScreen(
             Spacer(modifier = Modifier.height(8.dp))
             DashboardCard(
                 "Capital prestado activo",
-                capitalPrestadoActivo2.toTotalsText(visibleCurrencies),
+                capitalPrestadoActivo2.toSymbolTotalsText(visibleCurrencies),
                 Modifier.fillMaxWidth(),
                 highlightValue = true,
                 valueColor = MaterialTheme.colorScheme.onSecondaryContainer
@@ -138,7 +138,7 @@ fun DashboardScreen(
             Spacer(modifier = Modifier.height(8.dp))
             DashboardCard(
                 "Prestado activo + intereses",
-                prestadoActivoConInteres.toTotalsText(visibleCurrencies),
+                prestadoActivoConInteres.toSymbolTotalsText(visibleCurrencies),
                 Modifier.fillMaxWidth(),
                 highlightValue = true,
                 valueColor = MaterialTheme.colorScheme.onSecondaryContainer
@@ -149,14 +149,14 @@ fun DashboardScreen(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 DashboardCard(
                     "Saldo pendiente",
-                    state.cuotasPendientesDetalle.sumByCurrency { it.saldoPendiente }.toTotalsText(visibleCurrencies),
+                    state.cuotasPendientesDetalle.sumByCurrency { it.saldoPendiente }.toSymbolTotalsText(visibleCurrencies),
                     Modifier.weight(1f)
                 ) {
                     detalleSeleccionado = DashboardDetalle.PENDIENTE
                 }
                 DashboardCard(
                     "Cobrado hoy",
-                    state.pagosHoyDetalle.sumByCurrency { it.montoAbono }.toTotalsText(visibleCurrencies),
+                    state.pagosHoyDetalle.sumByCurrency { it.montoAbono }.toSymbolTotalsText(visibleCurrencies),
                     Modifier.weight(1f),
                     highlightValue = true,
                     valueColor = MaterialTheme.colorScheme.onSecondaryContainer
@@ -210,7 +210,7 @@ fun DashboardScreen(
             Text("Ganancias de prestamos pagados", style = MaterialTheme.typography.titleMedium)
             DashboardCard(
                 "Ganancia acumulada",
-                state.gananciasPrestamosPagados.sumByCurrency { it.ganancia }.toTotalsText(visibleCurrencies),
+                state.gananciasPrestamosPagados.sumByCurrency { it.ganancia }.toSymbolTotalsText(visibleCurrencies),
                 Modifier.fillMaxWidth()
             ) {
                 detalleSeleccionado = DashboardDetalle.GANANCIAS
@@ -633,8 +633,16 @@ private fun Map<Moneda, Double>.toTotalsText(visibleCurrencies: List<Moneda>): S
     val ordered = visibleCurrencies.ifEmpty { listOf(Moneda.SOLES) }
     return ordered.joinToString("\n") { moneda ->
         val total = this[moneda] ?: 0.0
-        val label = if (moneda == Moneda.SOLES) "Totales en Soles" else "Totales en Dolares"
+        val label = "Totales en ${moneda.displayName}"
         "$label: ${total.toMoney(moneda)}"
+    }
+}
+
+private fun Map<Moneda, Double>.toSymbolTotalsText(visibleCurrencies: List<Moneda>): String {
+    val ordered = visibleCurrencies.ifEmpty { listOf(Moneda.SOLES) }
+    return ordered.joinToString("\n") { moneda ->
+        val total = this[moneda] ?: 0.0
+        total.toMoney(moneda)
     }
 }
 
@@ -644,11 +652,7 @@ private fun resolveVisibleCurrencies(mainCode: String?, secondaryCode: String?):
     return if (mapped.isEmpty()) listOf(Moneda.SOLES) else mapped
 }
 
-private fun String?.toMonedaOrNull(): Moneda? = when (this?.uppercase(Locale.US)) {
-    "PEN" -> Moneda.SOLES
-    "USD" -> Moneda.DOLARES
-    else -> null
-}
+private fun String?.toMonedaOrNull(): Moneda? = Moneda.fromCode(this)
 private fun compartirTextoDetalle(context: android.content.Context, detalle: DashboardDetalleInfo) {
     val sendIntent = Intent(Intent.ACTION_SEND).apply {
         type = "text/plain"

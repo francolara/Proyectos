@@ -28,6 +28,7 @@ import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.outlined.KeyboardArrowRight
@@ -88,6 +89,7 @@ import com.prestamos.app.ui.screen.LogoutScreen
 import com.prestamos.app.ui.screen.PagosScreen
 import com.prestamos.app.ui.screen.BackupScreen
 import com.prestamos.app.ui.screen.ActivationScreen
+import com.prestamos.app.ui.screen.ConfiguracionScreen
 import com.prestamos.app.ui.screen.OnboardingScreen
 import com.prestamos.app.ui.screen.PinLoginScreen
 import com.prestamos.app.ui.screen.PinSetupScreen
@@ -249,12 +251,14 @@ private fun PrestamosApp(
 ) {
     val navController = rememberNavController()
     val activationRoute = "activation_license"
+    val configuracionRoute = "settings_configuracion"
     val modoNocheRoute = "__toggle_dark_mode__"
     val menuItems = buildList {
         add(SideMenuItem(modoNocheRoute, "Modo Noche"))
         AppDestinations.entries.forEach { destination ->
             if (destination == AppDestinations.LOGOUT) {
                 add(SideMenuItem(activationRoute, "Licencia"))
+                add(SideMenuItem(configuracionRoute, "Configuracion"))
             }
             add(SideMenuItem(destination.route, if (destination.title.isBlank()) "Salir" else destination.title))
         }
@@ -327,6 +331,9 @@ private fun PrestamosApp(
                         onActivationKeyChanged = activationViewModel::onActivationKeyChanged,
                         onActivate = activationViewModel::activate
                     )
+                }
+                composable(configuracionRoute) {
+                    ConfiguracionScreen(appViewModel)
                 }
                 composable(AppDestinations.LOGOUT.route) {
                     LogoutScreen(onLogout = { authViewModel.cerrarSesionConRespaldo() })
@@ -496,7 +503,7 @@ private fun iconFor(destination: AppDestinations) = when (destination) {
     AppDestinations.CLIENTES -> Icons.Outlined.Groups
     AppDestinations.PRESTAMOS -> Icons.Outlined.RequestPage
     AppDestinations.PAGOS -> Icons.Outlined.Payments
-    AppDestinations.BACKUP -> Icons.Outlined.Settings
+    AppDestinations.BACKUP -> Icons.Outlined.Inventory2
     AppDestinations.LOGOUT -> Icons.Outlined.Logout
 }
 
@@ -512,8 +519,9 @@ private fun iconForRoute(route: String) = when (route) {
     AppDestinations.CLIENTES.route -> Icons.Outlined.Groups
     AppDestinations.PRESTAMOS.route -> Icons.Outlined.RequestPage
     AppDestinations.PAGOS.route -> Icons.Outlined.Payments
-    AppDestinations.BACKUP.route -> Icons.Outlined.Settings
+    AppDestinations.BACKUP.route -> Icons.Outlined.Inventory2
     AppDestinations.LOGOUT.route -> Icons.Outlined.Logout
     "activation_license" -> Icons.Outlined.VpnKey
+    "settings_configuracion" -> Icons.Outlined.Settings
     else -> Icons.Outlined.Home
 }

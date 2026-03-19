@@ -24,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -41,6 +42,7 @@ fun ActivationScreen(
 ) {
     val context = LocalContext.current
     val status = uiState.status
+    val dark = isSystemInDarkTheme()
 
     Column(
         modifier = Modifier
@@ -62,13 +64,20 @@ fun ActivationScreen(
         if (status.licenseType == LicenseType.TRIAL && !status.trialExpired) {
             Card(
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF8EF))
+                colors = CardDefaults.cardColors(
+                    containerColor = if (dark) Color(0xFF1F2D21) else Color(0xFFEFF8EF)
+                )
             ) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Periodo de prueba activo", style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        "Periodo de prueba activo",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                     Text(
                         "Te quedan ${status.trialDaysRemaining} dia(s) para activar la version Pro.",
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -76,7 +85,9 @@ fun ActivationScreen(
 
         Card(
             shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
+            colors = CardDefaults.cardColors(
+                containerColor = if (dark) Color(0xFF1F1F2A) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+            )
         ) {
             Column(
                 modifier = Modifier
@@ -90,7 +101,8 @@ fun ActivationScreen(
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold
-                    )
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     OutlinedButton(onClick = { copyToClipboard(context, status.deviceCode) }) {
@@ -104,7 +116,9 @@ fun ActivationScreen(
         if (showActivationForm) {
             Card(
                 shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                colors = CardDefaults.cardColors(
+                    containerColor = if (dark) Color(0xFF1C2226) else MaterialTheme.colorScheme.surface
+                )
             ) {
                 Column(
                     modifier = Modifier
@@ -166,9 +180,9 @@ fun ActivationScreen(
         }
 
         val statusContainerColor = when {
-            status.manipulatedDateDetected || (status.licenseType == LicenseType.TRIAL && status.trialExpired) -> Color(0xFFFFECEC)
-            status.isValid && status.isActivated -> Color(0xFFEAF7EA)
-            else -> Color(0xFFFFF7E6)
+            status.manipulatedDateDetected || (status.licenseType == LicenseType.TRIAL && status.trialExpired) -> if (dark) Color(0xFF3A2323) else Color(0xFFFFECEC)
+            status.isValid && status.isActivated -> if (dark) Color(0xFF1F3021) else Color(0xFFEAF7EA)
+            else -> if (dark) Color(0xFF352D1F) else Color(0xFFFFF7E6)
         }
 
         Card(
@@ -181,9 +195,13 @@ fun ActivationScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Text(statusTitle, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
-                Text("Plan: $planText", style = MaterialTheme.typography.bodyMedium)
-                Text("Valida hasta: $vigenciaText", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    statusTitle,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text("Plan: $planText", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                Text("Valida hasta: $vigenciaText", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
                 if (status.manipulatedDateDetected) {
                     Text(
                         "Se detecto un cambio de fecha en el dispositivo. Verifica la fecha y reactiva la licencia.",

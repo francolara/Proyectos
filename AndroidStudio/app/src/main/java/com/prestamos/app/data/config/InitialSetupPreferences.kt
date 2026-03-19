@@ -6,6 +6,7 @@ class InitialSetupPreferences(context: Context) {
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     fun isFirstRun(): Boolean = prefs.getBoolean(KEY_FIRST_RUN, true)
+    fun getBusinessName(): String = prefs.getString(KEY_BUSINESS_NAME, "").orEmpty()
     fun getMainCurrencyCode(): String? = prefs.getString(KEY_MAIN_CURRENCY_CODE, null)
     fun getSecondaryCurrencyCode(): String? = prefs.getString(KEY_SECONDARY_CURRENCY_CODE, null)
 
@@ -16,6 +17,18 @@ class InitialSetupPreferences(context: Context) {
     ) {
         prefs.edit()
             .putBoolean(KEY_FIRST_RUN, false)
+            .putString(KEY_BUSINESS_NAME, businessName.trim())
+            .putString(KEY_MAIN_CURRENCY_CODE, mainCurrencyCode)
+            .putString(KEY_SECONDARY_CURRENCY_CODE, secondaryCurrencyCode)
+            .apply()
+    }
+
+    fun updateConfiguration(
+        businessName: String,
+        mainCurrencyCode: String,
+        secondaryCurrencyCode: String?
+    ) {
+        prefs.edit()
             .putString(KEY_BUSINESS_NAME, businessName.trim())
             .putString(KEY_MAIN_CURRENCY_CODE, mainCurrencyCode)
             .putString(KEY_SECONDARY_CURRENCY_CODE, secondaryCurrencyCode)

@@ -13,11 +13,7 @@ private val decimalFormat = DecimalFormat("#,##0.00", DecimalFormatSymbols(Local
 private val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
 fun Double.toMoney(moneda: Moneda = Moneda.SOLES): String {
-    val simbolo = when (moneda) {
-        Moneda.SOLES -> "S/"
-        Moneda.DOLARES -> "$"
-    }
-    return "$simbolo ${decimalFormat.format(this)}"
+    return "${moneda.symbol} ${decimalFormat.format(this)}"
 }
 
 fun Long.toDateString(): String = Instant.ofEpochMilli(this)
