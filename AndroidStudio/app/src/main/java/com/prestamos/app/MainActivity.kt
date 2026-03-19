@@ -214,8 +214,7 @@ private fun AppRoot(
                 !activationState.canAccessApp -> ActivationScreen(
                     uiState = activationState,
                     onActivationKeyChanged = activationViewModel::onActivationKeyChanged,
-                    onActivate = activationViewModel::activate,
-                    onRefresh = activationViewModel::refreshStatus
+                    onActivate = activationViewModel::activate
                 )
 
                 authState is AuthState.NeedsPinSetup -> PinSetupScreen(authViewModel)
@@ -313,8 +312,7 @@ private fun PrestamosApp(
                     ActivationScreen(
                         uiState = activationState,
                         onActivationKeyChanged = activationViewModel::onActivationKeyChanged,
-                        onActivate = activationViewModel::activate,
-                        onRefresh = activationViewModel::refreshStatus
+                        onActivate = activationViewModel::activate
                     )
                 }
                 composable(AppDestinations.LOGOUT.route) {

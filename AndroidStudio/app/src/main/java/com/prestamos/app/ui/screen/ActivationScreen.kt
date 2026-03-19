@@ -22,7 +22,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -38,8 +37,7 @@ import com.prestamos.app.util.toDateString
 fun ActivationScreen(
     uiState: ActivationUiState,
     onActivationKeyChanged: (String) -> Unit,
-    onActivate: () -> Unit,
-    onRefresh: () -> Unit
+    onActivate: () -> Unit
 ) {
     val context = LocalContext.current
     val status = uiState.status
@@ -196,13 +194,6 @@ fun ActivationScreen(
             }
         }
 
-        OutlinedButton(
-            onClick = onRefresh,
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.align(Alignment.End)
-        ) {
-            Text("Verificar licencia")
-        }
     }
 }
 
