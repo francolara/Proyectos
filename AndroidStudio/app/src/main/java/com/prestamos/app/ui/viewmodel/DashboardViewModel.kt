@@ -181,7 +181,6 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             }
 
         val proximosVencimientos = cuotasPendientesDetalle
-            .filter { it.fechaVencimiento >= startToday }
             .take(5)
             .map {
                 DashboardCuotaItem(
