@@ -329,6 +329,28 @@ fun DashboardScreen(
                     }
                 }
             )
+        } else if (it == DashboardDetalle.PENDIENTE) {
+            val pendienteDetalle = it.toPendienteDetalleUi(state, visibleCurrencies)
+            PendienteDetalleDialog(
+                detalle = pendienteDetalle,
+                onClose = { detalleSeleccionado = null },
+                onShareText = {
+                    compartirTextoPlano(
+                        context = context,
+                        titulo = pendienteDetalle.title,
+                        detalle = pendienteDetalle.toShareText()
+                    )
+                },
+                onSharePdf = {
+                    runCatching {
+                        createDashboardDetallePdf(context, pendienteDetalle.title, pendienteDetalle.toShareText())
+                    }.onSuccess { file ->
+                        compartirArchivoDetalle(context, file, "application/pdf")
+                    }.onFailure {
+                        Toast.makeText(context, "No se pudo exportar PDF", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            )
         } else {
             val detalle = it.toDetalleInfo(state, visibleCurrencies)
             DetalleDashboardDialog(
@@ -552,6 +574,23 @@ private data class CapitalDetalleUi(
     val items: List<CapitalDetalleItem>
 )
 
+private data class PendienteDetalleItem(
+    val cliente: String,
+    val idPrestamo: Long,
+    val numeroCuota: Int,
+    val fechaVencimiento: Long,
+    val saldoPendiente: Double,
+    val moneda: Moneda
+)
+
+private data class PendienteDetalleUi(
+    val title: String,
+    val totalCuotas: Int,
+    val totalsByCurrency: Map<Moneda, Double>,
+    val visibleCurrencies: List<Moneda>,
+    val items: List<PendienteDetalleItem>
+)
+
 private fun CapitalDetalleUi.toShareText(): String = buildString {
     appendLine(title)
     visibleCurrencies.forEach { moneda ->
@@ -564,6 +603,23 @@ private fun CapitalDetalleUi.toShareText(): String = buildString {
     } else {
         items.forEach { item ->
             appendLine("${item.cliente} | Prestamo #${item.idPrestamo} | ${item.monto.toMoney(item.moneda)} ${item.moneda.displayName}")
+        }
+    }
+}
+
+private fun PendienteDetalleUi.toShareText(): String = buildString {
+    appendLine(title)
+    appendLine("Cuotas pendientes: $totalCuotas")
+    visibleCurrencies.forEach { moneda ->
+        appendLine("Total pendiente ${moneda.displayName}: ${(totalsByCurrency[moneda] ?: 0.0).toMoney(moneda)}")
+    }
+    appendLine()
+    appendLine("Detalle")
+    if (items.isEmpty()) {
+        appendLine("No hay cuotas pendientes.")
+    } else {
+        items.forEach { item ->
+            appendLine("${item.cliente} | Prestamo #${item.idPrestamo} | Cuota ${item.numeroCuota} | Vence ${item.fechaVencimiento.toDateString()} | Saldo ${item.saldoPendiente.toMoney(item.moneda)} ${item.moneda.displayName}")
         }
     }
 }
@@ -635,6 +691,93 @@ private fun CapitalDetalleDialog(
                                     Text("👤 ${item.cliente}", style = MaterialTheme.typography.bodyMedium)
                                     Text("💰 ${item.monto.toMoney(item.moneda)} ${item.moneda.displayName}", style = MaterialTheme.typography.bodySmall)
                                     Text("📄 Prestamo #${item.idPrestamo}", style = MaterialTheme.typography.bodySmall)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    )
+}
+
+@Composable
+private fun PendienteDetalleDialog(
+    detalle: PendienteDetalleUi,
+    onClose: () -> Unit,
+    onShareText: () -> Unit,
+    onSharePdf: () -> Unit
+) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onClose,
+        confirmButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                androidx.compose.material3.TextButton(onClick = onSharePdf) {
+                    Text("PDF")
+                }
+                androidx.compose.material3.TextButton(onClick = onClose) {
+                    Text("Cerrar")
+                }
+                androidx.compose.material3.TextButton(onClick = onShareText) {
+                    Text("Compartir")
+                }
+            }
+        },
+        title = { Text(detalle.title) },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .heightIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Text("\uD83D\uDCCC Resumen", style = MaterialTheme.typography.labelLarge)
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+                    )
+                ) {
+                    Text(
+                        text = "\uD83D\uDD22 Cuotas pendientes: ${detalle.totalCuotas}",
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                detalle.visibleCurrencies.forEach { moneda ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+                        )
+                    ) {
+                        Text(
+                            text = "\uD83D\uDCB0 Total pendiente ${moneda.displayName}: ${(detalle.totalsByCurrency[moneda] ?: 0.0).toMoney(moneda)}",
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+                Text("\uD83D\uDCCB Detalle", style = MaterialTheme.typography.labelLarge)
+                if (detalle.items.isEmpty()) {
+                    Text("No hay cuotas pendientes.")
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        detalle.items.forEach { item ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
+                                )
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Text("\uD83D\uDC64 ${item.cliente}", style = MaterialTheme.typography.bodyMedium)
+                                    Text("\uD83D\uDCC4 Prestamo #${item.idPrestamo} \u00B7 Cuota ${item.numeroCuota}", style = MaterialTheme.typography.bodySmall)
+                                    Text("\uD83D\uDCC5 Vence ${item.fechaVencimiento.toDateString()}", style = MaterialTheme.typography.bodySmall)
+                                    Text("\uD83D\uDCB0 Saldo ${item.saldoPendiente.toMoney(item.moneda)} ${item.moneda.displayName}", style = MaterialTheme.typography.bodySmall)
                                 }
                             }
                         }
@@ -831,6 +974,34 @@ private fun DashboardDetalle.toCapitalDetalleUi(
 
     return CapitalDetalleUi(
         title = if (this == DashboardDetalle.CAPITAL) "Capital prestado activo + intereses" else "Capital prestado activo",
+        totalsByCurrency = totals,
+        visibleCurrencies = visibleCurrencies,
+        items = items
+    )
+}
+
+private fun DashboardDetalle.toPendienteDetalleUi(
+    state: com.prestamos.app.ui.model.DashboardResumen,
+    visibleCurrencies: List<Moneda>
+): PendienteDetalleUi {
+    val items = state.cuotasPendientesDetalle.map { detalle ->
+        PendienteDetalleItem(
+            cliente = detalle.cliente,
+            idPrestamo = detalle.idPrestamo,
+            numeroCuota = detalle.numeroCuota,
+            fechaVencimiento = detalle.fechaVencimiento,
+            saldoPendiente = detalle.saldoPendiente,
+            moneda = detalle.moneda
+        )
+    }.sortedBy { it.fechaVencimiento }
+
+    val totals = items
+        .groupBy { it.moneda }
+        .mapValues { (_, values) -> values.sumOf { it.saldoPendiente } }
+
+    return PendienteDetalleUi(
+        title = "Saldo pendiente",
+        totalCuotas = items.size,
         totalsByCurrency = totals,
         visibleCurrencies = visibleCurrencies,
         items = items
