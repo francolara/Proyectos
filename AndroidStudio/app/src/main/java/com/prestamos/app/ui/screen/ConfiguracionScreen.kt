@@ -68,11 +68,13 @@ fun ConfiguracionScreen(viewModel: AppViewModel) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = remember { InitialSetupPreferences(context) }
     val prestamos by viewModel.prestamos.collectAsStateWithLifecycle()
-    val hasPrestamos = prestamos.isNotEmpty()
+    val usedCurrencyCodes = remember(prestamos) { prestamos.map { it.moneda.code.uppercase() }.toSet() }
 
     var businessName by remember { mutableStateOf("") }
     var mainCurrencyCode by remember { mutableStateOf<String?>(null) }
     var secondaryCurrencyCode by remember { mutableStateOf<String?>(null) }
+    var originalMainCurrencyCode by remember { mutableStateOf<String?>(null) }
+    var originalSecondaryCurrencyCode by remember { mutableStateOf<String?>(null) }
     var showMainCurrencyPicker by remember { mutableStateOf(false) }
     var showSecondaryCurrencyPicker by remember { mutableStateOf(false) }
     var loaded by remember { mutableStateOf(false) }
@@ -81,6 +83,8 @@ fun ConfiguracionScreen(viewModel: AppViewModel) {
         businessName = prefs.getBusinessName()
         mainCurrencyCode = prefs.getMainCurrencyCode()
         secondaryCurrencyCode = prefs.getSecondaryCurrencyCode()
+        originalMainCurrencyCode = mainCurrencyCode
+        originalSecondaryCurrencyCode = secondaryCurrencyCode
         loaded = true
     }
 
@@ -116,16 +120,31 @@ fun ConfiguracionScreen(viewModel: AppViewModel) {
                     label = "Moneda principal",
                     value = mainCurrencyCode.toConfigCurrencyDisplay(),
                     placeholder = "Selecciona una moneda",
-                    enabled = !hasPrestamos,
-                    helper = if (hasPrestamos) "No se puede cambiar si ya existen prestamos creados" else null,
-                    onClick = { if (!hasPrestamos) showMainCurrencyPicker = true }
+                    enabled = originalMainCurrencyCode.isNullOrBlank() || !usedCurrencyCodes.contains(originalMainCurrencyCode?.uppercase()),
+                    helper = if (!originalMainCurrencyCode.isNullOrBlank() && usedCurrencyCodes.contains(originalMainCurrencyCode?.uppercase())) {
+                        "No se puede cambiar porque ya existen prestamos en esa moneda"
+                    } else {
+                        null
+                    },
+                    onClick = {
+                        val mainLocked = !originalMainCurrencyCode.isNullOrBlank() && usedCurrencyCodes.contains(originalMainCurrencyCode?.uppercase())
+                        if (!mainLocked) showMainCurrencyPicker = true
+                    }
                 )
                 CurrencyField(
                     label = "Moneda secundaria (opcional)",
                     value = secondaryCurrencyCode.toConfigCurrencyDisplay(),
                     placeholder = "Opcional",
-                    enabled = true,
-                    onClick = { showSecondaryCurrencyPicker = true }
+                    enabled = originalSecondaryCurrencyCode.isNullOrBlank() || !usedCurrencyCodes.contains(originalSecondaryCurrencyCode?.uppercase()),
+                    helper = if (!originalSecondaryCurrencyCode.isNullOrBlank() && usedCurrencyCodes.contains(originalSecondaryCurrencyCode?.uppercase())) {
+                        "No se puede cambiar porque ya existen prestamos en esa moneda"
+                    } else {
+                        null
+                    },
+                    onClick = {
+                        val secondaryLocked = !originalSecondaryCurrencyCode.isNullOrBlank() && usedCurrencyCodes.contains(originalSecondaryCurrencyCode?.uppercase())
+                        if (!secondaryLocked) showSecondaryCurrencyPicker = true
+                    }
                 )
                 Button(
                     onClick = {
@@ -137,6 +156,16 @@ fun ConfiguracionScreen(viewModel: AppViewModel) {
                         }
                         if (main.isNullOrBlank()) {
                             Toast.makeText(context, "Selecciona una moneda principal", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+                        val mainLocked = !originalMainCurrencyCode.isNullOrBlank() && usedCurrencyCodes.contains(originalMainCurrencyCode?.uppercase())
+                        if (mainLocked && main != originalMainCurrencyCode) {
+                            Toast.makeText(context, "No se puede cambiar la moneda principal porque ya tiene prestamos creados", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+                        val secondaryLocked = !originalSecondaryCurrencyCode.isNullOrBlank() && usedCurrencyCodes.contains(originalSecondaryCurrencyCode?.uppercase())
+                        if (secondaryLocked && secondaryCurrencyCode != originalSecondaryCurrencyCode) {
+                            Toast.makeText(context, "No se puede modificar la moneda secundaria porque ya tiene prestamos creados", Toast.LENGTH_SHORT).show()
                             return@Button
                         }
                         prefs.updateConfiguration(
