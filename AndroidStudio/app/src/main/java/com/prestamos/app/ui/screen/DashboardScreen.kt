@@ -35,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import com.prestamos.app.ui.theme.AccentGold
 import com.prestamos.app.ui.theme.PrimaryGreen
 import com.prestamos.app.ui.theme.SecondaryGreen
@@ -165,7 +166,9 @@ fun DashboardScreen(
                     title = "Saldo pendiente",
                     totals = state.cuotasPendientesDetalle.sumByCurrency { it.saldoPendiente },
                     visibleCurrencies = visibleCurrencies,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    stacked = true,
+                    compact = true
                 ) {
                     detalleSeleccionado = DashboardDetalle.PENDIENTE
                 }
@@ -175,13 +178,20 @@ fun DashboardScreen(
                     visibleCurrencies = visibleCurrencies,
                     modifier = Modifier.weight(1f),
                     highlightValue = true,
-                    valueColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    valueColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    stacked = true,
+                    compact = true
                 ) {
                     detalleSeleccionado = DashboardDetalle.COBRADO_HOY
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
-            DashboardCard("Cuotas vencidas", state.cuotasVencidas.toString(), Modifier.fillMaxWidth()) {
+            DashboardCard(
+                title = "Cuotas vencidas",
+                value = state.cuotasVencidas.toString(),
+                modifier = Modifier.fillMaxWidth(),
+                centerContent = true
+            ) {
                 detalleSeleccionado = DashboardDetalle.VENCIDAS
             }
         }
@@ -468,6 +478,7 @@ private fun DashboardCard(
     modifier: Modifier = Modifier,
     highlightValue: Boolean = false,
     valueColor: Color? = null,
+    centerContent: Boolean = false,
     onClick: () -> Unit
 ) {
     Card(
@@ -477,8 +488,16 @@ private fun DashboardCard(
             contentColor = MaterialTheme.colorScheme.onSecondaryContainer
         )
     ) {
-        Column(Modifier.padding(12.dp)) {
-            Text(title, style = MaterialTheme.typography.labelLarge)
+        Column(
+            modifier = Modifier.padding(12.dp),
+            horizontalAlignment = if (centerContent) Alignment.CenterHorizontally else Alignment.Start
+        ) {
+            Text(
+                title,
+                style = MaterialTheme.typography.labelLarge,
+                textAlign = if (centerContent) TextAlign.Center else TextAlign.Start,
+                modifier = if (centerContent) Modifier.fillMaxWidth() else Modifier
+            )
             Text(
                 value,
                 style = MaterialTheme.typography.titleLarge,
@@ -486,7 +505,9 @@ private fun DashboardCard(
                     MaterialTheme.colorScheme.tertiary
                 } else {
                     MaterialTheme.colorScheme.onSecondaryContainer
-                }
+                },
+                textAlign = if (centerContent) TextAlign.Center else TextAlign.Start,
+                modifier = if (centerContent) Modifier.fillMaxWidth() else Modifier
             )
         }
     }
@@ -1674,9 +1695,16 @@ private fun DashboardMoneyCard(
     modifier: Modifier = Modifier,
     highlightValue: Boolean = false,
     valueColor: Color? = null,
+    stacked: Boolean = false,
+    compact: Boolean = false,
     onClick: () -> Unit
 ) {
     val ordered = visibleCurrencies.ifEmpty { listOf(Moneda.SOLES) }
+    val outerPadding = if (compact) 8.dp else 12.dp
+    val innerPadding = if (compact) 6.dp else 8.dp
+    val titleStyle = if (compact) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelLarge
+    val amountStyle = if (compact) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleMedium
+    val nameStyle = if (compact) MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelSmall
     Card(
         modifier = modifier.clickable(onClick = onClick),
         colors = androidx.compose.material3.CardDefaults.cardColors(
@@ -1685,28 +1713,25 @@ private fun DashboardMoneyCard(
         )
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(outerPadding),
+            verticalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 8.dp)
         ) {
-            Text(title, style = MaterialTheme.typography.labelLarge)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            Text(title, style = titleStyle)
+            val subCardContent: @Composable () -> Unit = {
                 ordered.forEach { moneda ->
                     androidx.compose.material3.Surface(
-                        modifier = Modifier.weight(1f),
+                        modifier = if (stacked) Modifier.fillMaxWidth() else Modifier.weight(1f),
                         shape = RoundedCornerShape(10.dp),
                         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.42f)
                     ) {
                         Column(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+                            modifier = Modifier.padding(horizontal = innerPadding, vertical = innerPadding),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                            verticalArrangement = Arrangement.spacedBy(if (compact) 1.dp else 2.dp)
                         ) {
                             Text(
                                 text = (totals[moneda] ?: 0.0).toMoney(moneda),
-                                style = MaterialTheme.typography.titleMedium,
+                                style = amountStyle,
                                 color = valueColor ?: if (highlightValue) {
                                     MaterialTheme.colorScheme.tertiary
                                 } else {
@@ -1716,13 +1741,28 @@ private fun DashboardMoneyCard(
                             )
                             Text(
                                 text = moneda.displayName,
-                                style = MaterialTheme.typography.labelSmall,
+                                style = nameStyle,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.72f),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
+                }
+            }
+            if (stacked) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(if (compact) 4.dp else 6.dp)
+                ) {
+                    subCardContent()
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    subCardContent()
                 }
             }
         }
