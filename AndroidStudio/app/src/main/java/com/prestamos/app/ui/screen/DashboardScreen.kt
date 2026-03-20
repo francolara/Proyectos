@@ -373,6 +373,72 @@ fun DashboardScreen(
                     }
                 }
             )
+        } else if (it == DashboardDetalle.GANANCIAS) {
+            val gananciasDetalle = it.toGananciasDetalleUi(state, visibleCurrencies)
+            GananciasDetalleDialog(
+                detalle = gananciasDetalle,
+                onClose = { detalleSeleccionado = null },
+                onShareText = {
+                    compartirTextoPlano(
+                        context = context,
+                        titulo = gananciasDetalle.title,
+                        detalle = gananciasDetalle.toShareText()
+                    )
+                },
+                onSharePdf = {
+                    runCatching {
+                        createDashboardDetallePdf(context, gananciasDetalle.title, gananciasDetalle.toShareText())
+                    }.onSuccess { file ->
+                        compartirArchivoDetalle(context, file, "application/pdf")
+                    }.onFailure {
+                        Toast.makeText(context, "No se pudo exportar PDF", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            )
+        } else if (it == DashboardDetalle.VENCIDAS) {
+            val vencidasDetalle = it.toVencidasDetalleUi(state)
+            VencidasDetalleDialog(
+                detalle = vencidasDetalle,
+                onClose = { detalleSeleccionado = null },
+                onShareText = {
+                    compartirTextoPlano(
+                        context = context,
+                        titulo = vencidasDetalle.title,
+                        detalle = vencidasDetalle.toShareText()
+                    )
+                },
+                onSharePdf = {
+                    runCatching {
+                        createDashboardDetallePdf(context, vencidasDetalle.title, vencidasDetalle.toShareText())
+                    }.onSuccess { file ->
+                        compartirArchivoDetalle(context, file, "application/pdf")
+                    }.onFailure {
+                        Toast.makeText(context, "No se pudo exportar PDF", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            )
+        } else if (it == DashboardDetalle.COBRADO_ACTIVO) {
+            val cobradoActivoDetalle = it.toCobradoActivoDetalleUi(state, visibleCurrencies)
+            CobradoActivoDetalleDialog(
+                detalle = cobradoActivoDetalle,
+                onClose = { detalleSeleccionado = null },
+                onShareText = {
+                    compartirTextoPlano(
+                        context = context,
+                        titulo = cobradoActivoDetalle.title,
+                        detalle = cobradoActivoDetalle.toShareText()
+                    )
+                },
+                onSharePdf = {
+                    runCatching {
+                        createDashboardDetallePdf(context, cobradoActivoDetalle.title, cobradoActivoDetalle.toShareText())
+                    }.onSuccess { file ->
+                        compartirArchivoDetalle(context, file, "application/pdf")
+                    }.onFailure {
+                        Toast.makeText(context, "No se pudo exportar PDF", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            )
         } else {
             val detalle = it.toDetalleInfo(state, visibleCurrencies)
             DetalleDashboardDialog(
@@ -630,6 +696,55 @@ private data class CobradoHoyDetalleUi(
     val items: List<CobradoHoyDetalleItem>
 )
 
+private data class GananciaDetalleItem(
+    val cliente: String,
+    val idPrestamo: Long,
+    val numeroCuota: Int,
+    val fechaPago: Long,
+    val ganancia: Double,
+    val moneda: Moneda
+)
+
+private data class GananciasDetalleUi(
+    val title: String,
+    val totalPrestamosPagados: Int,
+    val totalsByCurrency: Map<Moneda, Double>,
+    val visibleCurrencies: List<Moneda>,
+    val items: List<GananciaDetalleItem>
+)
+
+private data class VencidaDetalleItem(
+    val cliente: String,
+    val idPrestamo: Long,
+    val numeroCuota: Int,
+    val fechaVencimiento: Long,
+    val saldoPendiente: Double,
+    val moneda: Moneda
+)
+
+private data class VencidasDetalleUi(
+    val title: String,
+    val totalCuotasVencidas: Int,
+    val items: List<VencidaDetalleItem>
+)
+
+private data class CobradoActivoDetalleItem(
+    val cliente: String,
+    val idPrestamo: Long,
+    val numeroCuota: Int,
+    val fechaPago: Long,
+    val montoAbono: Double,
+    val moneda: Moneda
+)
+
+private data class CobradoActivoDetalleUi(
+    val title: String,
+    val totalPrestamosActivos: Int,
+    val totalsByCurrency: Map<Moneda, Double>,
+    val visibleCurrencies: List<Moneda>,
+    val items: List<CobradoActivoDetalleItem>
+)
+
 private fun CapitalDetalleUi.toShareText(): String = buildString {
     appendLine(title)
     visibleCurrencies.forEach { moneda ->
@@ -642,6 +757,54 @@ private fun CapitalDetalleUi.toShareText(): String = buildString {
     } else {
         items.forEach { item ->
             appendLine("${item.cliente} | Prestamo #${item.idPrestamo} | ${item.monto.toMoney(item.moneda)} ${item.moneda.displayName}")
+        }
+    }
+}
+
+private fun CobradoActivoDetalleUi.toShareText(): String = buildString {
+    appendLine(title)
+    appendLine("Prestamos activos: $totalPrestamosActivos")
+    visibleCurrencies.forEach { moneda ->
+        appendLine("Total ${moneda.displayName}: ${(totalsByCurrency[moneda] ?: 0.0).toMoney(moneda)}")
+    }
+    appendLine()
+    appendLine("Detalle")
+    if (items.isEmpty()) {
+        appendLine("No hay cobros registrados en prestamos activos.")
+    } else {
+        items.forEach { item ->
+            appendLine("${item.cliente} | Prestamo #${item.idPrestamo} | Cuota ${item.numeroCuota} | Fecha ${item.fechaPago.toDateString()} | Cobro ${item.montoAbono.toMoney(item.moneda)} ${item.moneda.displayName}")
+        }
+    }
+}
+
+private fun VencidasDetalleUi.toShareText(): String = buildString {
+    appendLine(title)
+    appendLine("Cuotas vencidas: $totalCuotasVencidas")
+    appendLine()
+    appendLine("Detalle")
+    if (items.isEmpty()) {
+        appendLine("No hay cuotas vencidas.")
+    } else {
+        items.forEach { item ->
+            appendLine("${item.cliente} | Prestamo #${item.idPrestamo} | Cuota ${item.numeroCuota} | Vence ${item.fechaVencimiento.toDateString()} | Saldo ${item.saldoPendiente.toMoney(item.moneda)} ${item.moneda.displayName}")
+        }
+    }
+}
+
+private fun GananciasDetalleUi.toShareText(): String = buildString {
+    appendLine(title)
+    appendLine("Prestamos pagados: $totalPrestamosPagados")
+    visibleCurrencies.forEach { moneda ->
+        appendLine("Total ganado ${moneda.displayName}: ${(totalsByCurrency[moneda] ?: 0.0).toMoney(moneda)}")
+    }
+    appendLine()
+    appendLine("Detalle")
+    if (items.isEmpty()) {
+        appendLine("No hay prestamos pagados.")
+    } else {
+        items.forEach { item ->
+            appendLine("${item.cliente} | Prestamo #${item.idPrestamo} | Cuota ${item.numeroCuota} | Fecha ${item.fechaPago.toDateString()} | Ganancia ${item.ganancia.toMoney(item.moneda)} ${item.moneda.displayName}")
         }
     }
 }
@@ -931,6 +1094,253 @@ private fun CobradoHoyDetalleDialog(
     )
 }
 
+@Composable
+private fun GananciasDetalleDialog(
+    detalle: GananciasDetalleUi,
+    onClose: () -> Unit,
+    onShareText: () -> Unit,
+    onSharePdf: () -> Unit
+) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onClose,
+        confirmButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                androidx.compose.material3.TextButton(onClick = onSharePdf) {
+                    Text("PDF")
+                }
+                androidx.compose.material3.TextButton(onClick = onClose) {
+                    Text("Cerrar")
+                }
+                androidx.compose.material3.TextButton(onClick = onShareText) {
+                    Text("Compartir")
+                }
+            }
+        },
+        title = { Text(detalle.title) },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .heightIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Text("\uD83D\uDCCC Resumen", style = MaterialTheme.typography.labelLarge)
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+                    )
+                ) {
+                    Text(
+                        text = "\uD83D\uDD22 Prestamos pagados: ${detalle.totalPrestamosPagados}",
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                detalle.visibleCurrencies.forEach { moneda ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+                        )
+                    ) {
+                        Text(
+                            text = "\uD83D\uDCB0 Total ganado ${moneda.displayName}: ${(detalle.totalsByCurrency[moneda] ?: 0.0).toMoney(moneda)}",
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+                Text("\uD83D\uDCCB Detalle", style = MaterialTheme.typography.labelLarge)
+                if (detalle.items.isEmpty()) {
+                    Text("No hay prestamos pagados.")
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        detalle.items.forEach { item ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
+                                )
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Text("\uD83D\uDC64 ${item.cliente}", style = MaterialTheme.typography.bodyMedium)
+                                    Text("\uD83D\uDCC4 Prestamo #${item.idPrestamo} \u00B7 Cuota ${item.numeroCuota}", style = MaterialTheme.typography.bodySmall)
+                                    Text("\uD83D\uDCC5 Fecha ${item.fechaPago.toDateString()}", style = MaterialTheme.typography.bodySmall)
+                                    Text("\uD83D\uDCB0 Ganancia ${item.ganancia.toMoney(item.moneda)} ${item.moneda.displayName}", style = MaterialTheme.typography.bodySmall)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    )
+}
+
+@Composable
+private fun VencidasDetalleDialog(
+    detalle: VencidasDetalleUi,
+    onClose: () -> Unit,
+    onShareText: () -> Unit,
+    onSharePdf: () -> Unit
+) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onClose,
+        confirmButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                androidx.compose.material3.TextButton(onClick = onSharePdf) {
+                    Text("PDF")
+                }
+                androidx.compose.material3.TextButton(onClick = onClose) {
+                    Text("Cerrar")
+                }
+                androidx.compose.material3.TextButton(onClick = onShareText) {
+                    Text("Compartir")
+                }
+            }
+        },
+        title = { Text(detalle.title) },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .heightIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Text("\uD83D\uDCCC Resumen", style = MaterialTheme.typography.labelLarge)
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+                    )
+                ) {
+                    Text(
+                        text = "\uD83D\uDD22 Cuotas vencidas: ${detalle.totalCuotasVencidas}",
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                Text("\uD83D\uDCCB Detalle", style = MaterialTheme.typography.labelLarge)
+                if (detalle.items.isEmpty()) {
+                    Text("No hay cuotas vencidas.")
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        detalle.items.forEach { item ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
+                                )
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Text("\uD83D\uDC64 ${item.cliente}", style = MaterialTheme.typography.bodyMedium)
+                                    Text("\uD83D\uDCC4 Prestamo #${item.idPrestamo} \u00B7 Cuota ${item.numeroCuota}", style = MaterialTheme.typography.bodySmall)
+                                    Text("\uD83D\uDCC5 Vence ${item.fechaVencimiento.toDateString()}", style = MaterialTheme.typography.bodySmall)
+                                    Text("\uD83D\uDCB0 Saldo ${item.saldoPendiente.toMoney(item.moneda)} ${item.moneda.displayName}", style = MaterialTheme.typography.bodySmall)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    )
+}
+
+@Composable
+private fun CobradoActivoDetalleDialog(
+    detalle: CobradoActivoDetalleUi,
+    onClose: () -> Unit,
+    onShareText: () -> Unit,
+    onSharePdf: () -> Unit
+) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onClose,
+        confirmButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                androidx.compose.material3.TextButton(onClick = onSharePdf) {
+                    Text("PDF")
+                }
+                androidx.compose.material3.TextButton(onClick = onClose) {
+                    Text("Cerrar")
+                }
+                androidx.compose.material3.TextButton(onClick = onShareText) {
+                    Text("Compartir")
+                }
+            }
+        },
+        title = { Text(detalle.title) },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .heightIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Text("\uD83D\uDCCC Resumen", style = MaterialTheme.typography.labelLarge)
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+                    )
+                ) {
+                    Text(
+                        text = "\uD83D\uDD22 Prestamos activos: ${detalle.totalPrestamosActivos}",
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                detalle.visibleCurrencies.forEach { moneda ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+                        )
+                    ) {
+                        Text(
+                            text = "\uD83D\uDCB0 Total ${moneda.displayName}: ${(detalle.totalsByCurrency[moneda] ?: 0.0).toMoney(moneda)}",
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+                Text("\uD83D\uDCCB Detalle", style = MaterialTheme.typography.labelLarge)
+                if (detalle.items.isEmpty()) {
+                    Text("No hay cobros registrados en prestamos activos.")
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        detalle.items.forEach { item ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
+                                )
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Text("\uD83D\uDC64 ${item.cliente}", style = MaterialTheme.typography.bodyMedium)
+                                    Text("\uD83D\uDCC4 Prestamo #${item.idPrestamo} \u00B7 Cuota ${item.numeroCuota}", style = MaterialTheme.typography.bodySmall)
+                                    Text("\uD83D\uDCC5 Fecha ${item.fechaPago.toDateString()}", style = MaterialTheme.typography.bodySmall)
+                                    Text("\uD83D\uDCB0 Cobro ${item.montoAbono.toMoney(item.moneda)} ${item.moneda.displayName}", style = MaterialTheme.typography.bodySmall)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    )
+}
+
 private fun DashboardDetalle.toDetalleInfo(
     state: com.prestamos.app.ui.model.DashboardResumen,
     visibleCurrencies: List<Moneda>
@@ -1173,6 +1583,83 @@ private fun DashboardDetalle.toCobradoHoyDetalleUi(
     return CobradoHoyDetalleUi(
         title = "Cobrado hoy",
         totalPagos = items.size,
+        totalsByCurrency = totals,
+        visibleCurrencies = visibleCurrencies,
+        items = items
+    )
+}
+
+private fun DashboardDetalle.toGananciasDetalleUi(
+    state: com.prestamos.app.ui.model.DashboardResumen,
+    visibleCurrencies: List<Moneda>
+): GananciasDetalleUi {
+    val items = state.gananciasPrestamosPagados.map { detalle ->
+        GananciaDetalleItem(
+            cliente = detalle.cliente,
+            idPrestamo = detalle.idPrestamo,
+            numeroCuota = detalle.numeroCuota,
+            fechaPago = detalle.fechaPago,
+            ganancia = detalle.ganancia,
+            moneda = detalle.moneda
+        )
+    }.sortedByDescending { it.fechaPago }
+
+    val totals = items
+        .groupBy { it.moneda }
+        .mapValues { (_, values) -> values.sumOf { it.ganancia } }
+
+    return GananciasDetalleUi(
+        title = "Ganancias por prestamos pagados",
+        totalPrestamosPagados = items.size,
+        totalsByCurrency = totals,
+        visibleCurrencies = visibleCurrencies,
+        items = items
+    )
+}
+
+private fun DashboardDetalle.toVencidasDetalleUi(
+    state: com.prestamos.app.ui.model.DashboardResumen
+): VencidasDetalleUi {
+    val items = state.cuotasVencidasDetalle.map { detalle ->
+        VencidaDetalleItem(
+            cliente = detalle.cliente,
+            idPrestamo = detalle.idPrestamo,
+            numeroCuota = detalle.numeroCuota,
+            fechaVencimiento = detalle.fechaVencimiento,
+            saldoPendiente = detalle.saldoPendiente,
+            moneda = detalle.moneda
+        )
+    }.sortedBy { it.fechaVencimiento }
+
+    return VencidasDetalleUi(
+        title = "Cuotas vencidas",
+        totalCuotasVencidas = items.size,
+        items = items
+    )
+}
+
+private fun DashboardDetalle.toCobradoActivoDetalleUi(
+    state: com.prestamos.app.ui.model.DashboardResumen,
+    visibleCurrencies: List<Moneda>
+): CobradoActivoDetalleUi {
+    val items = state.pagosActivosDetalle.map { detalle ->
+        CobradoActivoDetalleItem(
+            cliente = detalle.cliente,
+            idPrestamo = detalle.idPrestamo,
+            numeroCuota = detalle.numeroCuota,
+            fechaPago = detalle.fechaPago,
+            montoAbono = detalle.montoAbono,
+            moneda = detalle.moneda
+        )
+    }.sortedByDescending { it.fechaPago }
+
+    val totals = items
+        .groupBy { it.moneda }
+        .mapValues { (_, values) -> values.sumOf { it.montoAbono } }
+
+    return CobradoActivoDetalleUi(
+        title = "Cobrado activo + intereses",
+        totalPrestamosActivos = state.prestamosActivosDetalle.size,
         totalsByCurrency = totals,
         visibleCurrencies = visibleCurrencies,
         items = items
