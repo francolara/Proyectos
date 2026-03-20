@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -170,47 +171,53 @@ fun ClientesScreen(viewModel: AppViewModel) {
 
         items(clientes) { cliente ->
             Card(modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("\uD83D\uDC64 ${cliente.nombre} ${cliente.apellido} / \uD83D\uDCC4 ${cliente.documentoIdentidad}")
-                    Text("\uD83D\uDCCD ${cliente.direccion.ifBlank { "-" }}")
-                    Text("\uD83D\uDCDE ${cliente.telefono.ifBlank { "-" }}")
+                Column(Modifier.padding(7.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        "\uD83D\uDC64 ${cliente.nombre} ${cliente.apellido} / \uD83D\uDCC4 ${cliente.documentoIdentidad}",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text("\uD83D\uDCCD ${cliente.direccion.ifBlank { "-" }}", style = MaterialTheme.typography.bodySmall)
+                    Text("\uD83D\uDCDE ${cliente.telefono.ifBlank { "-" }}", style = MaterialTheme.typography.bodySmall)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        TextButton(onClick = {
+                        Text(
+                            text = "Editar",
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.labelSmall,
+                            maxLines = 1,
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable {
                             clienteEditando = cliente
                             nombreEdit = cliente.nombre
                             apellidoEdit = cliente.apellido
                             direccionEdit = cliente.direccion
                             telefonoEdit = cliente.telefono
-                        }, modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Editar",
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                        TextButton(
-                            onClick = { clienteAEliminar = cliente },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(
-                                text = "Eliminar",
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                        TextButton(
-                            onClick = { clienteHistorial = cliente },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(
-                                text = "Historial",
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
+                                }
+                                .padding(vertical = 1.dp)
+                        )
+                        Text(
+                            text = "Eliminar",
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.labelSmall,
+                            maxLines = 1,
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { clienteAEliminar = cliente }
+                                .padding(vertical = 1.dp)
+                        )
+                        Text(
+                            text = "Historial",
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.labelSmall,
+                            maxLines = 1,
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { clienteHistorial = cliente }
+                                .padding(vertical = 1.dp)
+                        )
                     }
                 }
             }
@@ -728,21 +735,30 @@ fun PrestamosScreen(viewModel: AppViewModel) {
             ) {
                 val estadoLabel = if (prestamo.estadoPrestamo == EstadoPrestamo.ACTIVO) "\uD83D\uDFE2 ACTIVO" else "\uD83D\uDD35 PAGADO"
                 val clienteLabel = "${cliente?.nombre ?: "-"} ${cliente?.apellido ?: ""}".trim()
-                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(Modifier.padding(7.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("\uD83D\uDCB3 Prestamo #${prestamo.idPrestamo}")
-                        Text(estadoLabel)
+                        Text("\uD83D\uDCB3 Prestamo #${prestamo.idPrestamo}", style = MaterialTheme.typography.bodyMedium)
+                        Text(estadoLabel, style = MaterialTheme.typography.labelSmall)
                     }
-                    Text("\uD83D\uDC64 $clienteLabel")
-                    Text("\uD83D\uDCB0 ${prestamo.montoTotalPrestamo.toMoney(prestamo.moneda)}")
-                    Text("\uD83D\uDCCA Cuota: ${prestamo.montoCuota.toMoney(prestamo.moneda)}")
-                    Spacer(Modifier.height(8.dp))
-                    TextButton(onClick = { viewModel.eliminarPrestamo(prestamo.idPrestamo) }) {
-                        Text("\uD83D\uDDD1 Eliminar")
-                    }
+                    Text("\uD83D\uDC64 $clienteLabel", style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        "\uD83D\uDCB0 ${prestamo.montoTotalPrestamo.toMoney(prestamo.moneda)} ${prestamo.moneda.displayName}",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        "\uD83D\uDCCA Cuota: ${prestamo.montoCuota.toMoney(prestamo.moneda)} ${prestamo.moneda.displayName}",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "\uD83D\uDDD1 Eliminar",
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier
+                            .clickable { viewModel.eliminarPrestamo(prestamo.idPrestamo) }
+                            .padding(top = 1.dp, bottom = 0.dp)
+                    )
                 }
             }
         }
@@ -824,32 +840,95 @@ fun PrestamosScreen(viewModel: AppViewModel) {
             },
             title = { Text("Detalle del prestamo") },
             text = {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.heightIn(max = 430.dp)
+                ) {
                     item {
-                        Text("Cliente: ${cliente?.nombre ?: "-"} ${cliente?.apellido ?: ""}".trim())
-                        Text("Prestamo #${prestamo?.idPrestamo ?: "-"}")
-                        Text("Monto prestado: ${prestamo?.montoPrestado?.toMoney(moneda) ?: "-"}")
-                        Text("Monto total: ${prestamo?.montoTotalPrestamo?.toMoney(moneda) ?: "-"}")
-                        Text("Interes: ${prestamo?.interes ?: "-"}%")
-                        Text("Tipo pago: $tipoPagoDetalle")
-                        Text("Cuotas: ${prestamo?.cantidadCuotas ?: "-"}")
-                        Text("Fecha registro prestamo: ${prestamo?.fechaRegistro?.toDateString() ?: "-"}")
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(3.dp)
+                            ) {
+                                Text("👤 Cliente", style = MaterialTheme.typography.labelLarge)
+                                Text(
+                                    "${cliente?.nombre ?: "-"} ${cliente?.apellido ?: ""}".trim(),
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                                Text("📄 Prestamo #${prestamo?.idPrestamo ?: "-"}", style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
                     }
-                    item { HorizontalDivider() }
-                    item { Text("Cronograma de cuotas", style = MaterialTheme.typography.titleSmall) }
+                    item {
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(3.dp)
+                            ) {
+                                Text("💰 Resumen", style = MaterialTheme.typography.labelLarge)
+                                Text(
+                                    "💵 Monto prestado: ${prestamo?.montoPrestado?.toMoney(moneda) ?: "-"}",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                Text(
+                                    "💸 Total a pagar: ${prestamo?.montoTotalPrestamo?.toMoney(moneda) ?: "-"}",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                Text(
+                                    "🧾 Deuda pendiente: ${totalDeudaPendiente.toMoney(moneda)} ${moneda.displayName}",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+                    }
+                    item {
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(3.dp)
+                            ) {
+                                Text("⚙️ Condiciones", style = MaterialTheme.typography.labelLarge)
+                                Text("📊 Interes: ${prestamo?.interes ?: "-"}%", style = MaterialTheme.typography.bodySmall)
+                                Text("🔁 Frecuencia: $tipoPagoDetalle", style = MaterialTheme.typography.bodySmall)
+                                Text("🔢 Cuotas: ${prestamo?.cantidadCuotas ?: "-"}", style = MaterialTheme.typography.bodySmall)
+                                Text("📅 Fecha de registro: ${prestamo?.fechaRegistro?.toDateString() ?: "-"}", style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+                    item {
+                        Text("📋 Cronograma de cuotas", style = MaterialTheme.typography.titleSmall)
+                    }
                     items(cuotasDetalle) { cuota ->
-                        Text(
-                            "Cuota ${cuota.numeroCuota}: vence ${cuota.fechaVencimiento.toDateString()} | " +
-                                "monto ${cuota.montoCuota.toMoney(moneda)} | " +
-                                "pendiente ${cuota.saldoPendiente.toMoney(moneda)}"
-                        )
-                    }
-                    item {
-                        HorizontalDivider()
-                        Text(
-                            "Total deuda pendiente: ${totalDeudaPendiente.toMoney(moneda)}",
-                            style = MaterialTheme.typography.titleSmall
-                        )
+                        val estadoTexto = when (cuota.estadoCuota.name) {
+                            "PAGADO" -> "🟢 Pagado"
+                            "PARCIAL" -> "🟠 Parcial"
+                            "VENCIDO" -> "🔴 Vencido"
+                            else -> "🟡 Pendiente"
+                        }
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = androidx.compose.material3.CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.55f)
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                Text("📌 Cuota ${cuota.numeroCuota}", style = MaterialTheme.typography.labelMedium)
+                                Text("📅 ${cuota.fechaVencimiento.toDateString()}", style = MaterialTheme.typography.labelSmall)
+                                Text("💰 ${cuota.montoCuota.toMoney(moneda)}", style = MaterialTheme.typography.labelSmall)
+                                Text(estadoTexto, style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
                     }
                 }
             }

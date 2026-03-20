@@ -17,6 +17,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.contentColorFor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -24,7 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -42,7 +43,7 @@ fun ActivationScreen(
 ) {
     val context = LocalContext.current
     val status = uiState.status
-    val dark = isSystemInDarkTheme()
+    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
 
     Column(
         modifier = Modifier
@@ -184,10 +185,14 @@ fun ActivationScreen(
             status.isValid && status.isActivated -> if (dark) Color(0xFF1F3021) else Color(0xFFEAF7EA)
             else -> if (dark) Color(0xFF352D1F) else Color(0xFFFFF7E6)
         }
+        val statusTextColor = contentColorFor(statusContainerColor)
 
         Card(
             shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = statusContainerColor)
+            colors = CardDefaults.cardColors(
+                containerColor = statusContainerColor,
+                contentColor = statusTextColor
+            )
         ) {
             Column(
                 modifier = Modifier
@@ -197,11 +202,10 @@ fun ActivationScreen(
             ) {
                 Text(
                     statusTitle,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurface
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                 )
-                Text("Plan: $planText", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
-                Text("Valida hasta: $vigenciaText", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                Text("Plan: $planText", style = MaterialTheme.typography.bodyMedium)
+                Text("Valida hasta: $vigenciaText", style = MaterialTheme.typography.bodyMedium)
                 if (status.manipulatedDateDetected) {
                     Text(
                         "Se detecto un cambio de fecha en el dispositivo. Verifica la fecha y reactiva la licencia.",

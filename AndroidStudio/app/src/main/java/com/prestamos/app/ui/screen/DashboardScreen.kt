@@ -12,11 +12,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -80,6 +83,7 @@ fun DashboardScreen(
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val setupPrefs = remember { InitialSetupPreferences(context) }
+    val businessName = remember { setupPrefs.getBusinessName().trim() }
     val visibleCurrencies = remember {
         resolveVisibleCurrencies(
             setupPrefs.getMainCurrencyCode(),
@@ -102,6 +106,13 @@ fun DashboardScreen(
             ) {
                 Column {
                     Text("Resumen general", style = MaterialTheme.typography.headlineSmall)
+                    if (businessName.isNotBlank()) {
+                        Text(
+                            businessName,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                     Text("Fecha: ${System.currentTimeMillis().toDateString()}")
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         val trialTexto = when {
@@ -185,37 +196,50 @@ fun DashboardScreen(
                         .sumOf { it.saldoPendiente }
                         .coerceIn(0.0, capitalPrestadoActivo)
                     val cobradoActivo = (capitalPrestadoActivo - pendienteActivo).coerceAtLeast(0.0)
-
-                    Text(
-                        text = "Totales en ${moneda.displayName}",
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                    HorizontalMetricBar(
-                        label = "Prestado activo + interes",
-                        amount = capitalPrestadoActivo,
-                        percent = 1f,
-                        color = PrimaryGreen,
-                        moneda = moneda,
-                        onClick = { detalleSeleccionado = DashboardDetalle.CAPITAL }
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    HorizontalMetricBar(
-                        label = "Cobrado activo + interes",
-                        amount = cobradoActivo,
-                        percent = if (capitalPrestadoActivo > 0.0) (cobradoActivo / capitalPrestadoActivo).toFloat() else 0f,
-                        color = AccentGold,
-                        moneda = moneda,
-                        onClick = { detalleSeleccionado = DashboardDetalle.COBRADO_ACTIVO }
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    HorizontalMetricBar(
-                        label = "Pendiente activo + interes",
-                        amount = pendienteActivo,
-                        percent = if (capitalPrestadoActivo > 0.0) (pendienteActivo / capitalPrestadoActivo).toFloat() else 0f,
-                        color = SecondaryGreen,
-                        moneda = moneda,
-                        onClick = { detalleSeleccionado = DashboardDetalle.PENDIENTE }
-                    )
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.55f),
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = "Totales en ${moneda.displayName}",
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                            HorizontalMetricBar(
+                                label = "Prestado activo + interes",
+                                amount = capitalPrestadoActivo,
+                                percent = 1f,
+                                color = PrimaryGreen,
+                                moneda = moneda,
+                                onClick = { detalleSeleccionado = DashboardDetalle.CAPITAL }
+                            )
+                            HorizontalMetricBar(
+                                label = "Cobrado activo + interes",
+                                amount = cobradoActivo,
+                                percent = if (capitalPrestadoActivo > 0.0) (cobradoActivo / capitalPrestadoActivo).toFloat() else 0f,
+                                color = AccentGold,
+                                moneda = moneda,
+                                onClick = { detalleSeleccionado = DashboardDetalle.COBRADO_ACTIVO }
+                            )
+                            HorizontalMetricBar(
+                                label = "Pendiente activo + interes",
+                                amount = pendienteActivo,
+                                percent = if (capitalPrestadoActivo > 0.0) (pendienteActivo / capitalPrestadoActivo).toFloat() else 0f,
+                                color = SecondaryGreen,
+                                moneda = moneda,
+                                onClick = { detalleSeleccionado = DashboardDetalle.PENDIENTE }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -283,23 +307,47 @@ fun DashboardScreen(
     }
 
     detalleSeleccionado?.let {
-        val detalle = it.toDetalleInfo(state, visibleCurrencies)
-        DetalleDashboardDialog(
-            detalle = detalle,
-            onClose = { detalleSeleccionado = null },
-            onShareText = {
-                compartirTextoDetalle(context, detalle)
-            },
-            onSharePdf = {
-                runCatching {
-                    createDashboardDetallePdf(context, detalle.title, detalle.message)
-                }.onSuccess { file ->
-                    compartirArchivoDetalle(context, file, "application/pdf")
-                }.onFailure {
-                    Toast.makeText(context, "No se pudo exportar PDF", Toast.LENGTH_SHORT).show()
+        if (it == DashboardDetalle.CAPITAL_ACTIVO2 || it == DashboardDetalle.CAPITAL) {
+            val capitalDetalle = it.toCapitalDetalleUi(state, visibleCurrencies)
+            CapitalDetalleDialog(
+                detalle = capitalDetalle,
+                onClose = { detalleSeleccionado = null },
+                onShareText = {
+                    compartirTextoPlano(
+                        context = context,
+                        titulo = capitalDetalle.title,
+                        detalle = capitalDetalle.toShareText()
+                    )
+                },
+                onSharePdf = {
+                    runCatching {
+                        createDashboardDetallePdf(context, capitalDetalle.title, capitalDetalle.toShareText())
+                    }.onSuccess { file ->
+                        compartirArchivoDetalle(context, file, "application/pdf")
+                    }.onFailure {
+                        Toast.makeText(context, "No se pudo exportar PDF", Toast.LENGTH_SHORT).show()
+                    }
                 }
-            }
-        )
+            )
+        } else {
+            val detalle = it.toDetalleInfo(state, visibleCurrencies)
+            DetalleDashboardDialog(
+                detalle = detalle,
+                onClose = { detalleSeleccionado = null },
+                onShareText = {
+                    compartirTextoDetalle(context, detalle)
+                },
+                onSharePdf = {
+                    runCatching {
+                        createDashboardDetallePdf(context, detalle.title, detalle.message)
+                    }.onSuccess { file ->
+                        compartirArchivoDetalle(context, file, "application/pdf")
+                    }.onFailure {
+                        Toast.makeText(context, "No se pudo exportar PDF", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            )
+        }
     }
 }
 
@@ -490,6 +538,113 @@ private data class DashboardDetalleInfo(
     val message: String
 )
 
+private data class CapitalDetalleItem(
+    val cliente: String,
+    val idPrestamo: Long,
+    val moneda: Moneda,
+    val monto: Double
+)
+
+private data class CapitalDetalleUi(
+    val title: String,
+    val totalsByCurrency: Map<Moneda, Double>,
+    val visibleCurrencies: List<Moneda>,
+    val items: List<CapitalDetalleItem>
+)
+
+private fun CapitalDetalleUi.toShareText(): String = buildString {
+    appendLine(title)
+    visibleCurrencies.forEach { moneda ->
+        appendLine("Total ${moneda.displayName}: ${(totalsByCurrency[moneda] ?: 0.0).toMoney(moneda)}")
+    }
+    appendLine()
+    appendLine("Detalle de prestamos")
+    if (items.isEmpty()) {
+        appendLine("No hay prestamos activos.")
+    } else {
+        items.forEach { item ->
+            appendLine("${item.cliente} | Prestamo #${item.idPrestamo} | ${item.monto.toMoney(item.moneda)} ${item.moneda.displayName}")
+        }
+    }
+}
+
+@Composable
+private fun CapitalDetalleDialog(
+    detalle: CapitalDetalleUi,
+    onClose: () -> Unit,
+    onShareText: () -> Unit,
+    onSharePdf: () -> Unit
+) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onClose,
+        confirmButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                androidx.compose.material3.TextButton(onClick = onSharePdf) {
+                    Text("PDF")
+                }
+                androidx.compose.material3.TextButton(onClick = onClose) {
+                    Text("Cerrar")
+                }
+                androidx.compose.material3.TextButton(onClick = onShareText) {
+                    Text("Compartir")
+                }
+            }
+        },
+        title = { Text(detalle.title) },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .heightIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                detalle.visibleCurrencies.forEach { moneda ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp, vertical = 6.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("💰 Total ${moneda.displayName}", style = MaterialTheme.typography.bodyMedium)
+                            Text((detalle.totalsByCurrency[moneda] ?: 0.0).toMoney(moneda), style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+                Text("📄 Detalle de prestamos", style = MaterialTheme.typography.labelLarge)
+                if (detalle.items.isEmpty()) {
+                    Text("No hay prestamos activos.")
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        detalle.items.forEach { item ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
+                                )
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Text("👤 ${item.cliente}", style = MaterialTheme.typography.bodyMedium)
+                                    Text("💰 ${item.monto.toMoney(item.moneda)} ${item.moneda.displayName}", style = MaterialTheme.typography.bodySmall)
+                                    Text("📄 Prestamo #${item.idPrestamo}", style = MaterialTheme.typography.bodySmall)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    )
+}
+
 private fun DashboardDetalle.toDetalleInfo(
     state: com.prestamos.app.ui.model.DashboardResumen,
     visibleCurrencies: List<Moneda>
@@ -657,6 +812,31 @@ private fun Map<Moneda, Double>.toTotalsText(visibleCurrencies: List<Moneda>): S
     }
 }
 
+private fun DashboardDetalle.toCapitalDetalleUi(
+    state: com.prestamos.app.ui.model.DashboardResumen,
+    visibleCurrencies: List<Moneda>
+): CapitalDetalleUi {
+    val items = state.prestamosActivosDetalle.map { detalle ->
+        CapitalDetalleItem(
+            cliente = detalle.cliente,
+            idPrestamo = detalle.idPrestamo,
+            moneda = detalle.moneda,
+            monto = if (this == DashboardDetalle.CAPITAL) detalle.montoTotalConInteres else detalle.montoPrestado
+        )
+    }.sortedByDescending { it.idPrestamo }
+
+    val totals = items
+        .groupBy { it.moneda }
+        .mapValues { (_, values) -> values.sumOf { it.monto } }
+
+    return CapitalDetalleUi(
+        title = if (this == DashboardDetalle.CAPITAL) "Capital prestado activo + intereses" else "Capital prestado activo",
+        totalsByCurrency = totals,
+        visibleCurrencies = visibleCurrencies,
+        items = items
+    )
+}
+
 @Composable
 private fun DashboardMoneyCard(
     title: String,
@@ -732,6 +912,15 @@ private fun compartirTextoDetalle(context: android.content.Context, detalle: Das
         type = "text/plain"
         putExtra(Intent.EXTRA_SUBJECT, "Detalle dashboard: ${detalle.title}")
         putExtra(Intent.EXTRA_TEXT, "${detalle.title}\n${detalle.message}")
+    }
+    context.startActivity(Intent.createChooser(sendIntent, "Compartir detalle"))
+}
+
+private fun compartirTextoPlano(context: android.content.Context, titulo: String, detalle: String) {
+    val sendIntent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_SUBJECT, titulo)
+        putExtra(Intent.EXTRA_TEXT, detalle)
     }
     context.startActivity(Intent.createChooser(sendIntent, "Compartir detalle"))
 }
