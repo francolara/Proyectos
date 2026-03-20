@@ -36,6 +36,7 @@ data class DashboardGananciaPrestamoItem(
 data class DashboardPrestamoDetalleItem(
     val cliente: String,
     val idPrestamo: Long,
+    val fechaRegistro: Long,
     val montoPrestado: Double,
     val montoTotalConInteres: Double,
     val montoCobrado: Double,

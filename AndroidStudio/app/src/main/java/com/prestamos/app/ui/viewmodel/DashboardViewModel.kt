@@ -62,6 +62,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 DashboardPrestamoDetalleItem(
                     cliente = "${cliente?.nombre.orEmpty()} ${cliente?.apellido.orEmpty()}".trim().ifBlank { "-" },
                     idPrestamo = prestamo.idPrestamo,
+                    fechaRegistro = prestamo.fechaRegistro,
                     montoPrestado = prestamo.montoPrestado,
                     montoTotalConInteres = prestamo.montoTotalPrestamo,
                     montoCobrado = pagosByPrestamo[prestamo.idPrestamo].orEmpty().sumOf { it.montoAbono },
@@ -81,6 +82,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 DashboardPrestamoDetalleItem(
                     cliente = "${cliente?.nombre.orEmpty()} ${cliente?.apellido.orEmpty()}".trim().ifBlank { "-" },
                     idPrestamo = prestamo.idPrestamo,
+                    fechaRegistro = prestamo.fechaRegistro,
                     montoPrestado = prestamo.montoPrestado,
                     montoTotalConInteres = prestamo.montoTotalPrestamo,
                     montoCobrado = pagosByPrestamo[prestamo.idPrestamo].orEmpty().sumOf { it.montoAbono },

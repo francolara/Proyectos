@@ -339,6 +339,28 @@ fun DashboardScreen(
                     }
                 }
             )
+        } else if (it == DashboardDetalle.HISTORIAL) {
+            val historialDetalle = it.toHistorialDetalleUi(state, visibleCurrencies)
+            HistorialDetalleDialog(
+                detalle = historialDetalle,
+                onClose = { detalleSeleccionado = null },
+                onShareText = {
+                    compartirTextoPlano(
+                        context = context,
+                        titulo = historialDetalle.title,
+                        detalle = historialDetalle.toShareText()
+                    )
+                },
+                onSharePdf = {
+                    runCatching {
+                        createDashboardDetallePdf(context, historialDetalle.title, historialDetalle.toShareText())
+                    }.onSuccess { file ->
+                        compartirArchivoDetalle(context, file, "application/pdf")
+                    }.onFailure {
+                        Toast.makeText(context, "No se pudo exportar PDF", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            )
         } else if (it == DashboardDetalle.PENDIENTE) {
             val pendienteDetalle = it.toPendienteDetalleUi(state, visibleCurrencies)
             PendienteDetalleDialog(
@@ -683,6 +705,24 @@ private data class CapitalDetalleUi(
     val items: List<CapitalDetalleItem>
 )
 
+private data class HistorialDetalleItem(
+    val cliente: String,
+    val idPrestamo: Long,
+    val fechaRegistro: Long,
+    val montoCobrado: Double,
+    val montoGanado: Double,
+    val moneda: Moneda
+)
+
+private data class HistorialDetalleUi(
+    val title: String,
+    val totalPrestamosPagados: Int,
+    val totalCobradoByCurrency: Map<Moneda, Double>,
+    val totalGanadoByCurrency: Map<Moneda, Double>,
+    val visibleCurrencies: List<Moneda>,
+    val items: List<HistorialDetalleItem>
+)
+
 private data class PendienteDetalleItem(
     val cliente: String,
     val idPrestamo: Long,
@@ -778,6 +818,28 @@ private fun CapitalDetalleUi.toShareText(): String = buildString {
     } else {
         items.forEach { item ->
             appendLine("${item.cliente} | Prestamo #${item.idPrestamo} | ${item.monto.toMoney(item.moneda)} ${item.moneda.displayName}")
+        }
+    }
+}
+
+private fun HistorialDetalleUi.toShareText(): String = buildString {
+    appendLine(title)
+    appendLine("Prestamos pagados: $totalPrestamosPagados")
+    appendLine("Total cobrado:")
+    visibleCurrencies.forEach { moneda ->
+        appendLine("- ${moneda.displayName}: ${(totalCobradoByCurrency[moneda] ?: 0.0).toMoney(moneda)}")
+    }
+    appendLine("Total ganado:")
+    visibleCurrencies.forEach { moneda ->
+        appendLine("- ${moneda.displayName}: ${(totalGanadoByCurrency[moneda] ?: 0.0).toMoney(moneda)}")
+    }
+    appendLine()
+    appendLine("Detalle")
+    if (items.isEmpty()) {
+        appendLine("No hay prestamos pagados.")
+    } else {
+        items.forEach { item ->
+            appendLine("${item.cliente} | Prestamo #${item.idPrestamo} | Fecha ${item.fechaRegistro.toDateString()} | Cobrado ${item.montoCobrado.toMoney(item.moneda)} ${item.moneda.displayName} | Ganado ${item.montoGanado.toMoney(item.moneda)} ${item.moneda.displayName}")
         }
     }
 }
@@ -931,6 +993,113 @@ private fun CapitalDetalleDialog(
                                     Text("👤 ${item.cliente}", style = MaterialTheme.typography.bodyMedium)
                                     Text("💰 ${item.monto.toMoney(item.moneda)} ${item.moneda.displayName}", style = MaterialTheme.typography.bodySmall)
                                     Text("📄 Prestamo #${item.idPrestamo}", style = MaterialTheme.typography.bodySmall)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    )
+}
+
+@Composable
+private fun HistorialDetalleDialog(
+    detalle: HistorialDetalleUi,
+    onClose: () -> Unit,
+    onShareText: () -> Unit,
+    onSharePdf: () -> Unit
+) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onClose,
+        confirmButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                androidx.compose.material3.TextButton(onClick = onSharePdf) {
+                    Text("PDF")
+                }
+                androidx.compose.material3.TextButton(onClick = onClose) {
+                    Text("Cerrar")
+                }
+                androidx.compose.material3.TextButton(onClick = onShareText) {
+                    Text("Compartir")
+                }
+            }
+        },
+        title = { Text(detalle.title) },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .heightIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Text("\uD83D\uDCCC Resumen", style = MaterialTheme.typography.labelLarge)
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+                    )
+                ) {
+                    Text(
+                        text = "\uD83D\uDD22 Prestamos pagados: ${detalle.totalPrestamosPagados}",
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+
+                Text("Total cobrado", style = MaterialTheme.typography.labelLarge)
+                detalle.visibleCurrencies.forEach { moneda ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+                        )
+                    ) {
+                        Text(
+                            text = "\uD83D\uDCB0 Total ${moneda.displayName}: ${(detalle.totalCobradoByCurrency[moneda] ?: 0.0).toMoney(moneda)}",
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+
+                Text("Total ganado", style = MaterialTheme.typography.labelLarge)
+                detalle.visibleCurrencies.forEach { moneda ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+                        )
+                    ) {
+                        Text(
+                            text = "\uD83D\uDCB0 Total ${moneda.displayName}: ${(detalle.totalGanadoByCurrency[moneda] ?: 0.0).toMoney(moneda)}",
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+
+                Text("\uD83D\uDCCB Detalle", style = MaterialTheme.typography.labelLarge)
+                if (detalle.items.isEmpty()) {
+                    Text("No hay prestamos pagados.")
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        detalle.items.forEach { item ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
+                                )
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Text("\uD83D\uDC64 ${item.cliente}", style = MaterialTheme.typography.bodyMedium)
+                                    Text("\uD83D\uDCC4 Prestamo #${item.idPrestamo}", style = MaterialTheme.typography.bodySmall)
+                                    Text("\uD83D\uDCC5 Fecha ${item.fechaRegistro.toDateString()}", style = MaterialTheme.typography.bodySmall)
+                                    Text("\uD83D\uDCB0 Cobrado ${item.montoCobrado.toMoney(item.moneda)} ${item.moneda.displayName}", style = MaterialTheme.typography.bodySmall)
+                                    Text("\uD83D\uDCB0 Ganado ${item.montoGanado.toMoney(item.moneda)} ${item.moneda.displayName}", style = MaterialTheme.typography.bodySmall)
                                 }
                             }
                         }
@@ -1549,6 +1718,42 @@ private fun DashboardDetalle.toCapitalDetalleUi(
     return CapitalDetalleUi(
         title = if (this == DashboardDetalle.CAPITAL) "Capital prestado activo + intereses" else "Capital prestado activo",
         totalsByCurrency = totals,
+        visibleCurrencies = visibleCurrencies,
+        items = items
+    )
+}
+
+private fun DashboardDetalle.toHistorialDetalleUi(
+    state: com.prestamos.app.ui.model.DashboardResumen,
+    visibleCurrencies: List<Moneda>
+): HistorialDetalleUi {
+    val items = state.prestamosCapitalDetalle
+        .filter { it.cuotasPendientes == 0 }
+        .map { detalle ->
+            HistorialDetalleItem(
+                cliente = detalle.cliente,
+                idPrestamo = detalle.idPrestamo,
+                fechaRegistro = detalle.fechaRegistro,
+                montoCobrado = detalle.montoCobrado,
+                montoGanado = (detalle.montoCobrado - detalle.montoPrestado).coerceAtLeast(0.0),
+                moneda = detalle.moneda
+            )
+        }
+        .sortedByDescending { it.fechaRegistro }
+
+    val totalCobrado = items
+        .groupBy { it.moneda }
+        .mapValues { (_, values) -> values.sumOf { it.montoCobrado } }
+
+    val totalGanado = items
+        .groupBy { it.moneda }
+        .mapValues { (_, values) -> values.sumOf { it.montoGanado } }
+
+    return HistorialDetalleUi(
+        title = "Historial de prestamos",
+        totalPrestamosPagados = items.size,
+        totalCobradoByCurrency = totalCobrado,
+        totalGanadoByCurrency = totalGanado,
         visibleCurrencies = visibleCurrencies,
         items = items
     )
