@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import com.prestamos.app.ui.theme.AccentGold
 import com.prestamos.app.ui.theme.PrimaryGreen
 import com.prestamos.app.ui.theme.SecondaryGreen
@@ -126,20 +127,22 @@ fun DashboardScreen(
                 modifier = Modifier.clickable { detalleSeleccionado = DashboardDetalle.HISTORIAL }
             )
             Spacer(modifier = Modifier.height(8.dp))
-            DashboardCard(
-                "Capital prestado activo",
-                capitalPrestadoActivo2.toSymbolTotalsText(visibleCurrencies),
-                Modifier.fillMaxWidth(),
+            DashboardMoneyCard(
+                title = "Capital prestado activo",
+                totals = capitalPrestadoActivo2,
+                visibleCurrencies = visibleCurrencies,
+                modifier = Modifier.fillMaxWidth(),
                 highlightValue = true,
                 valueColor = MaterialTheme.colorScheme.onSecondaryContainer
             ) {
                 detalleSeleccionado = DashboardDetalle.CAPITAL_ACTIVO2
             }
             Spacer(modifier = Modifier.height(8.dp))
-            DashboardCard(
-                "Prestado activo + intereses",
-                prestadoActivoConInteres.toSymbolTotalsText(visibleCurrencies),
-                Modifier.fillMaxWidth(),
+            DashboardMoneyCard(
+                title = "Prestado activo + intereses",
+                totals = prestadoActivoConInteres,
+                visibleCurrencies = visibleCurrencies,
+                modifier = Modifier.fillMaxWidth(),
                 highlightValue = true,
                 valueColor = MaterialTheme.colorScheme.onSecondaryContainer
             ) {
@@ -147,17 +150,19 @@ fun DashboardScreen(
             }
             Spacer(modifier = Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                DashboardCard(
-                    "Saldo pendiente",
-                    state.cuotasPendientesDetalle.sumByCurrency { it.saldoPendiente }.toSymbolTotalsText(visibleCurrencies),
-                    Modifier.weight(1f)
+                DashboardMoneyCard(
+                    title = "Saldo pendiente",
+                    totals = state.cuotasPendientesDetalle.sumByCurrency { it.saldoPendiente },
+                    visibleCurrencies = visibleCurrencies,
+                    modifier = Modifier.weight(1f)
                 ) {
                     detalleSeleccionado = DashboardDetalle.PENDIENTE
                 }
-                DashboardCard(
-                    "Cobrado hoy",
-                    state.pagosHoyDetalle.sumByCurrency { it.montoAbono }.toSymbolTotalsText(visibleCurrencies),
-                    Modifier.weight(1f),
+                DashboardMoneyCard(
+                    title = "Cobrado hoy",
+                    totals = state.pagosHoyDetalle.sumByCurrency { it.montoAbono },
+                    visibleCurrencies = visibleCurrencies,
+                    modifier = Modifier.weight(1f),
                     highlightValue = true,
                     valueColor = MaterialTheme.colorScheme.onSecondaryContainer
                 ) {
@@ -172,46 +177,56 @@ fun DashboardScreen(
 
         item {
             Text("Grafico comparativo", style = MaterialTheme.typography.titleMedium)
-            val capitalPrestadoActivo = state.prestamosActivosDetalle.sumOf { it.montoTotalConInteres }.coerceAtLeast(0.0)
-            val pendienteActivo = state.prestamosActivosDetalle
-                .sumOf { it.saldoPendiente }
-                .coerceIn(0.0, capitalPrestadoActivo)
-            val cobradoActivo = (capitalPrestadoActivo - pendienteActivo).coerceAtLeast(0.0)
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                visibleCurrencies.forEach { moneda ->
+                    val activosMoneda = state.prestamosActivosDetalle.filter { it.moneda == moneda }
+                    val capitalPrestadoActivo = activosMoneda.sumOf { it.montoTotalConInteres }.coerceAtLeast(0.0)
+                    val pendienteActivo = activosMoneda
+                        .sumOf { it.saldoPendiente }
+                        .coerceIn(0.0, capitalPrestadoActivo)
+                    val cobradoActivo = (capitalPrestadoActivo - pendienteActivo).coerceAtLeast(0.0)
 
-            HorizontalMetricBar(
-                label = "Prestado activo + interes",
-                amount = capitalPrestadoActivo,
-                percent = 1f,
-                color = PrimaryGreen,
-                moneda = state.monedaReferencial,
-                onClick = { detalleSeleccionado = DashboardDetalle.CAPITAL }
-            )
-            Spacer(Modifier.height(6.dp))
-            HorizontalMetricBar(
-                label = "Cobrado activo + interes",
-                amount = cobradoActivo,
-                percent = if (capitalPrestadoActivo > 0.0) (cobradoActivo / capitalPrestadoActivo).toFloat() else 0f,
-                color = AccentGold,
-                moneda = state.monedaReferencial,
-                onClick = { detalleSeleccionado = DashboardDetalle.COBRADO_ACTIVO }
-            )
-            Spacer(Modifier.height(6.dp))
-            HorizontalMetricBar(
-                label = "Pendiente activo + interes",
-                amount = pendienteActivo,
-                percent = if (capitalPrestadoActivo > 0.0) (pendienteActivo / capitalPrestadoActivo).toFloat() else 0f,
-                color = SecondaryGreen,
-                moneda = state.monedaReferencial,
-                onClick = { detalleSeleccionado = DashboardDetalle.PENDIENTE }
-            )
+                    Text(
+                        text = "Totales en ${moneda.displayName}",
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                    HorizontalMetricBar(
+                        label = "Prestado activo + interes",
+                        amount = capitalPrestadoActivo,
+                        percent = 1f,
+                        color = PrimaryGreen,
+                        moneda = moneda,
+                        onClick = { detalleSeleccionado = DashboardDetalle.CAPITAL }
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    HorizontalMetricBar(
+                        label = "Cobrado activo + interes",
+                        amount = cobradoActivo,
+                        percent = if (capitalPrestadoActivo > 0.0) (cobradoActivo / capitalPrestadoActivo).toFloat() else 0f,
+                        color = AccentGold,
+                        moneda = moneda,
+                        onClick = { detalleSeleccionado = DashboardDetalle.COBRADO_ACTIVO }
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    HorizontalMetricBar(
+                        label = "Pendiente activo + interes",
+                        amount = pendienteActivo,
+                        percent = if (capitalPrestadoActivo > 0.0) (pendienteActivo / capitalPrestadoActivo).toFloat() else 0f,
+                        color = SecondaryGreen,
+                        moneda = moneda,
+                        onClick = { detalleSeleccionado = DashboardDetalle.PENDIENTE }
+                    )
+                }
+            }
         }
 
         item {
             Text("Ganancias de prestamos pagados", style = MaterialTheme.typography.titleMedium)
-            DashboardCard(
-                "Ganancia acumulada",
-                state.gananciasPrestamosPagados.sumByCurrency { it.ganancia }.toSymbolTotalsText(visibleCurrencies),
-                Modifier.fillMaxWidth()
+            DashboardMoneyCard(
+                title = "Ganancia acumulada",
+                totals = state.gananciasPrestamosPagados.sumByCurrency { it.ganancia },
+                visibleCurrencies = visibleCurrencies,
+                modifier = Modifier.fillMaxWidth()
             ) {
                 detalleSeleccionado = DashboardDetalle.GANANCIAS
             }
@@ -407,7 +422,11 @@ private fun VencimientoCard(cuota: com.prestamos.app.ui.model.DashboardCuotaItem
             Text("${cuota.cliente} - $estadoTexto", style = MaterialTheme.typography.titleSmall, color = Color(0xFF1F1F1F))
             Text("$iconPin Cuota ${cuota.numeroCuota} \u2022 Prestamo #${cuota.idPrestamo}", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF1F1F1F))
             Text("$iconCal ${cuota.fechaVencimiento.toDateString()}", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF1F1F1F))
-            Text("$iconMoney ${cuota.saldoPendiente.toMoney(cuota.moneda)}", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF1F1F1F))
+            Text(
+                "$iconMoney ${cuota.saldoPendiente.toMoney(cuota.moneda)} ${cuota.moneda.displayName}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color(0xFF1F1F1F)
+            )
         }
     }
 }
@@ -432,7 +451,7 @@ private fun PagoRecienteCard(pago: com.prestamos.app.ui.model.DashboardPagoItem)
             Text(pago.cliente, style = MaterialTheme.typography.titleSmall)
             Text("$iconPin Cuota ${pago.numeroCuota} \u2022 Prestamo #${pago.idPrestamo}", style = MaterialTheme.typography.bodyMedium)
             Text("$iconCal ${pago.fechaPago.toDateString()}", style = MaterialTheme.typography.bodyMedium)
-            Text("$iconMoney ${pago.montoAbono.toMoney(pago.moneda)}", style = MaterialTheme.typography.bodyMedium)
+            Text("$iconMoney ${pago.montoAbono.toMoney(pago.moneda)} ${pago.moneda.displayName}", style = MaterialTheme.typography.bodyMedium)
         }
     }
 }
@@ -638,11 +657,66 @@ private fun Map<Moneda, Double>.toTotalsText(visibleCurrencies: List<Moneda>): S
     }
 }
 
-private fun Map<Moneda, Double>.toSymbolTotalsText(visibleCurrencies: List<Moneda>): String {
+@Composable
+private fun DashboardMoneyCard(
+    title: String,
+    totals: Map<Moneda, Double>,
+    visibleCurrencies: List<Moneda>,
+    modifier: Modifier = Modifier,
+    highlightValue: Boolean = false,
+    valueColor: Color? = null,
+    onClick: () -> Unit
+) {
     val ordered = visibleCurrencies.ifEmpty { listOf(Moneda.SOLES) }
-    return ordered.joinToString("\n") { moneda ->
-        val total = this[moneda] ?: 0.0
-        total.toMoney(moneda)
+    Card(
+        modifier = modifier.clickable(onClick = onClick),
+        colors = androidx.compose.material3.CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(title, style = MaterialTheme.typography.labelLarge)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ordered.forEach { moneda ->
+                    androidx.compose.material3.Surface(
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.42f)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text(
+                                text = (totals[moneda] ?: 0.0).toMoney(moneda),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = valueColor ?: if (highlightValue) {
+                                    MaterialTheme.colorScheme.tertiary
+                                } else {
+                                    MaterialTheme.colorScheme.onSecondaryContainer
+                                },
+                                maxLines = 1
+                            )
+                            Text(
+                                text = moneda.displayName,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.72f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
