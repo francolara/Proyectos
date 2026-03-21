@@ -74,7 +74,7 @@ import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 
-// Firma Codex 2026-03-17
+// Firma Codex 2026-03-21
 
 @Composable
 fun ClientesScreen(viewModel: AppViewModel) {
@@ -314,44 +314,51 @@ fun ClientesScreen(viewModel: AppViewModel) {
         val prestamosCliente = prestamos
             .filter { it.idCliente == cliente.idCliente && (it.estadoPrestamo == EstadoPrestamo.ACTIVO || it.estadoPrestamo == EstadoPrestamo.PAGADO) }
             .sortedByDescending { it.fechaRegistro }
+        val saldoPendienteConInteresPorPrestamo = prestamosCliente.associate { prestamo ->
+            prestamo.idPrestamo to cuotas
+                .filter { it.idPrestamo == prestamo.idPrestamo }
+                .sumOf { it.saldoPendiente }
+                .coerceAtLeast(0.0)
+        }
 
         val totalCapitalPorMoneda = prestamosCliente.groupBy { it.moneda }.mapValues { (_, v) -> v.sumOf { it.montoPrestado } }
         val totalCapitalConInteresPorMoneda = prestamosCliente.groupBy { it.moneda }.mapValues { (_, v) -> v.sumOf { it.montoTotalPrestamo } }
-        val totalPendientePorMoneda = prestamosCliente.groupBy { it.moneda }.mapValues { (moneda, v) ->
+        val totalPendienteConInteresPorMoneda = prestamosCliente.groupBy { it.moneda }.mapValues { (_, v) ->
             v.sumOf { prestamo ->
-                cuotas.filter { it.idPrestamo == prestamo.idPrestamo }.sumOf { it.saldoPendiente }
+                saldoPendienteConInteresPorPrestamo[prestamo.idPrestamo] ?: 0.0
             }
         }
+        val monedasConPrestamos = prestamosCliente.map { it.moneda }
+        val monedasResumen = (visibleCurrencies + monedasConPrestamos)
+            .distinct()
+            .ifEmpty { listOf(Moneda.SOLES) }
 
         val historialTexto = buildString {
             appendLine("Historial de prestamos")
             appendLine("Cliente: ${cliente.nombre} ${cliente.apellido}".trim())
             appendLine("Documento: ${cliente.documentoIdentidad}")
-            appendLine("Total capital:")
-            appendLine(totalCapitalPorMoneda.toTotalsText(visibleCurrencies))
-            appendLine("Total capital + intereses:")
-            appendLine(totalCapitalConInteresPorMoneda.toTotalsText(visibleCurrencies))
-            appendLine("Total saldo pendiente + intereses:")
-            appendLine(totalPendientePorMoneda.toTotalsText(visibleCurrencies))
-            appendLine()
-
             if (prestamosCliente.isEmpty()) {
                 appendLine("No hay prestamos activos o pagados para este cliente.")
             } else {
-                prestamosCliente.forEach { prestamo ->
-                    val saldoPendienteConInteres = cuotas
-                        .filter { it.idPrestamo == prestamo.idPrestamo }
-                        .sumOf { it.saldoPendiente }
-                        .coerceAtLeast(0.0)
+                appendLine()
+                appendLine("Resumen general (por moneda)")
+                monedasResumen.forEach { moneda ->
+                    appendLine("Moneda: ${moneda.displayName}")
+                    appendLine("  Capital: ${(totalCapitalPorMoneda[moneda] ?: 0.0).toMoney(moneda)}")
+                    appendLine("  Capital + intereses: ${(totalCapitalConInteresPorMoneda[moneda] ?: 0.0).toMoney(moneda)}")
+                    appendLine("  Saldo pendiente + intereses: ${(totalPendienteConInteresPorMoneda[moneda] ?: 0.0).toMoney(moneda)}")
+                    appendLine("  Pendiente: ${(totalPendienteConInteresPorMoneda[moneda] ?: 0.0).toMoney(moneda)}")
+                }
+                appendLine()
 
+                prestamosCliente.forEach { prestamo ->
+                    val saldoPendienteConInteres = saldoPendienteConInteresPorPrestamo[prestamo.idPrestamo] ?: 0.0
                     val estadoTexto = if (prestamo.estadoPrestamo == EstadoPrestamo.ACTIVO) "ACTIVO" else "PAGADO"
-                    appendLine(
-                        "#${prestamo.idPrestamo} | ${prestamo.fechaRegistro.toDateString()} | " +
-                            "Capital ${prestamo.montoPrestado.toMoney(prestamo.moneda)} | " +
-                            "Capital + intereses ${prestamo.montoTotalPrestamo.toMoney(prestamo.moneda)} | " +
-                            "Saldo pendiente + intereses ${saldoPendienteConInteres.toMoney(prestamo.moneda)} | " +
-                            "Estado: $estadoTexto"
-                    )
+                    appendLine("Prestamo #${prestamo.idPrestamo} - $estadoTexto")
+                    appendLine("  Fecha: ${prestamo.fechaRegistro.toDateString()}")
+                    appendLine("  Capital: ${prestamo.montoPrestado.toMoney(prestamo.moneda)}")
+                    appendLine("  Capital + intereses: ${prestamo.montoTotalPrestamo.toMoney(prestamo.moneda)}")
+                    appendLine("  Pendiente + intereses: ${saldoPendienteConInteres.toMoney(prestamo.moneda)}")
                 }
             }
         }
@@ -393,39 +400,53 @@ fun ClientesScreen(viewModel: AppViewModel) {
             },
             title = { Text("Historial de prestamos") },
             text = {
-                if (prestamosCliente.isEmpty()) {
-                    Text("No hay prestamos activos o pagados para este cliente.")
-                } else {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 440.dp)
+                ) {
+                    if (prestamosCliente.isEmpty()) {
                         item {
+                            Text("No hay prestamos activos o pagados para este cliente.")
+                        }
+                    } else {
+                        item {
+                            Text("📊 Resumen general", style = MaterialTheme.typography.labelLarge)
+                        }
+                        items(monedasResumen) { moneda ->
                             Card(modifier = Modifier.fillMaxWidth()) {
                                 Column(
                                     modifier = Modifier.padding(10.dp),
                                     verticalArrangement = Arrangement.spacedBy(3.dp)
                                 ) {
-                                    Text("Total capital:\n${totalCapitalPorMoneda.toTotalsText(visibleCurrencies)}")
-                                    Text("Total capital + intereses:\n${totalCapitalConInteresPorMoneda.toTotalsText(visibleCurrencies)}")
-                                    Text("Total saldo pendiente + intereses:\n${totalPendientePorMoneda.toTotalsText(visibleCurrencies)}")
+                                    Text("💱 ${moneda.displayName}", style = MaterialTheme.typography.titleSmall)
+                                    Text("💰 Capital: ${(totalCapitalPorMoneda[moneda] ?: 0.0).toMoney(moneda)}")
+                                    Text("💰 Capital + intereses: ${(totalCapitalConInteresPorMoneda[moneda] ?: 0.0).toMoney(moneda)}")
+                                    Text("💵 Saldo pendiente + intereses: ${(totalPendienteConInteresPorMoneda[moneda] ?: 0.0).toMoney(moneda)}")
+                                    Text("🧾 Pendiente: ${(totalPendienteConInteresPorMoneda[moneda] ?: 0.0).toMoney(moneda)}")
                                 }
                             }
                         }
-                        items(prestamosCliente) { prestamo ->
-                            val saldoPendienteConInteres = cuotas
-                                .filter { it.idPrestamo == prestamo.idPrestamo }
-                                .sumOf { it.saldoPendiente }
-                                .coerceAtLeast(0.0)
-                            val estadoTexto = if (prestamo.estadoPrestamo == EstadoPrestamo.ACTIVO) "ACTIVO" else "PAGADO"
+                        item {
+                            Text("📄 Lista", style = MaterialTheme.typography.labelLarge)
+                        }
+                        items(prestamosCliente, key = { it.idPrestamo }) { prestamo ->
+                            val saldoPendienteConInteres = saldoPendienteConInteresPorPrestamo[prestamo.idPrestamo] ?: 0.0
+                            val activo = prestamo.estadoPrestamo == EstadoPrestamo.ACTIVO
+                            val estadoTexto = if (activo) "🟡 ACTIVO" else "🟢 PAGADO"
+                            val estadoColor = if (activo) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
 
                             Card(modifier = Modifier.fillMaxWidth()) {
                                 Column(
                                     modifier = Modifier.padding(10.dp),
                                     verticalArrangement = Arrangement.spacedBy(3.dp)
                                 ) {
-                                    Text("Prestamo #${prestamo.idPrestamo} - $estadoTexto", style = MaterialTheme.typography.titleSmall)
-                                    Text("Fecha: ${prestamo.fechaRegistro.toDateString()}")
-                                    Text("Capital: ${prestamo.montoPrestado.toMoney(prestamo.moneda)}")
-                                    Text("Capital + intereses: ${prestamo.montoTotalPrestamo.toMoney(prestamo.moneda)}")
-                                    Text("Saldo pendiente + intereses: ${saldoPendienteConInteres.toMoney(prestamo.moneda)}")
+                                    Text("📄 Prestamo #${prestamo.idPrestamo}        $estadoTexto", style = MaterialTheme.typography.titleSmall, color = estadoColor)
+                                    Text("📅 ${prestamo.fechaRegistro.toDateString()}")
+                                    Text("💰 ${prestamo.montoPrestado.toMoney(prestamo.moneda)}  ${prestamo.moneda.displayName}")
+                                    Text("💵 ${prestamo.montoTotalPrestamo.toMoney(prestamo.moneda)}")
+                                    Text("${if (activo) "🟡" else "✔️"} ${saldoPendienteConInteres.toMoney(prestamo.moneda)}")
                                 }
                             }
                         }

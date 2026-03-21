@@ -487,7 +487,7 @@ private fun SideMenu(
                         color = Color.White.copy(alpha = 0.90f)
                     )
                     Text(
-                        text = "franko.laras@gmail.com",
+                        text = "larasoft.dev@gmail.com",
                         style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
