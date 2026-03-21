@@ -42,7 +42,7 @@ class LicenseManager(private val context: Context) {
                 activationDate = activationDate,
                 expirationDate = expirationDate,
                 manipulatedDateDetected = true,
-                message = "Se detectó manipulación de fecha. Reactiva la licencia."
+                message = "Se detecto manipulacion de fecha. Reactiva la licencia."
             )
         }
 
@@ -74,7 +74,23 @@ class LicenseManager(private val context: Context) {
                     activationDate = activationDate,
                     expirationDate = expirationDate,
                     manipulatedDateDetected = false,
-                    message = if (isAnnualValid) "Licencia ANUAL activa" else "La licencia ANUAL venció"
+                    message = if (isAnnualValid) "Licencia ANUAL activa" else "La licencia ANUAL vencio"
+                )
+            }
+
+            isActivated && storedType == LicenseType.MENSUAL -> {
+                val isMonthlyValid = expirationDate != null && now <= expirationDate
+                LicenseStatus(
+                    isValid = isMonthlyValid,
+                    deviceCode = storedDeviceCode,
+                    licenseType = LicenseType.MENSUAL,
+                    isActivated = true,
+                    trialDaysRemaining = 0,
+                    trialExpired = !isMonthlyValid,
+                    activationDate = activationDate,
+                    expirationDate = expirationDate,
+                    manipulatedDateDetected = false,
+                    message = if (isMonthlyValid) "Licencia MENSUAL activa" else "La licencia MENSUAL vencio"
                 )
             }
 
@@ -92,7 +108,7 @@ class LicenseManager(private val context: Context) {
                     activationDate = activationDate,
                     expirationDate = expirationDate,
                     manipulatedDateDetected = false,
-                    message = if (trialValid) "Trial activo: quedan $daysRemaining día(s)" else "El período de prueba expiró"
+                    message = if (trialValid) "Trial activo: quedan $daysRemaining dia(s)" else "El periodo de prueba expiro"
                 )
             }
         }
@@ -109,9 +125,10 @@ class LicenseManager(private val context: Context) {
         val status = evaluateStatus()
         val normalized = key.trim().uppercase()
         val activationType = validateActivationKey(status.deviceCode, normalized)
-            ?: error("Clave inválida para este equipo")
+            ?: error("Clave invalida para este equipo")
 
         val expiration = when (activationType) {
+            LicenseType.MENSUAL -> now + TimeUnit.DAYS.toMillis(30)
             LicenseType.ANUAL -> now + TimeUnit.DAYS.toMillis(365)
             LicenseType.FULL -> null
             LicenseType.TRIAL -> null
@@ -136,31 +153,47 @@ class LicenseManager(private val context: Context) {
     }
 
     fun validateActivationKey(deviceCode: String, key: String): LicenseType? {
-        val normalizedKey = key.trim().uppercase()
-        val parts = normalizedKey.split("-")
-        if (parts.size != 5) return null
+        val normalizedKey = key.trim().uppercase().replace(" ", "")
 
-        val type = parts.first()
-        val keyToken = parts.drop(1).joinToString("")
-
-        val expectedToken = when (type) {
-            "ANUAL" -> buildActivationToken(deviceCode, "ANUAL")
-            "FULL" -> buildActivationToken(deviceCode, "FULL")
-            else -> return null
+        // Compatibilidad: acepta formato antiguo con prefijo y formato nuevo solo codigo.
+        val prefixedType = when {
+            normalizedKey.startsWith("MENSUAL-") -> LicenseType.MENSUAL
+            normalizedKey.startsWith("ANUAL-") -> LicenseType.ANUAL
+            normalizedKey.startsWith("FULL-") -> LicenseType.FULL
+            else -> null
         }
 
-        if (keyToken != expectedToken) return null
-        return if (type == "ANUAL") LicenseType.ANUAL else LicenseType.FULL
+        val keyToken = if (prefixedType != null) {
+            normalizedKey.substringAfter("-").replace("-", "")
+        } else {
+            normalizedKey.replace("-", "")
+        }
+
+        if (keyToken.length != 16) return null
+
+        val expectedByType = listOf(
+            LicenseType.MENSUAL to buildActivationToken(deviceCode, "MENSUAL"),
+            LicenseType.ANUAL to buildActivationToken(deviceCode, "ANUAL"),
+            LicenseType.FULL to buildActivationToken(deviceCode, "FULL")
+        )
+
+        if (prefixedType != null) {
+            val expected = expectedByType.firstOrNull { it.first == prefixedType }?.second ?: return null
+            return if (keyToken == expected) prefixedType else null
+        }
+
+        return expectedByType.firstOrNull { it.second == keyToken }?.first
     }
 
     fun generateActivationKey(deviceCode: String, type: LicenseType): String {
         val typeText = when (type) {
+            LicenseType.MENSUAL -> "MENSUAL"
             LicenseType.ANUAL -> "ANUAL"
             LicenseType.FULL -> "FULL"
-            LicenseType.TRIAL -> error("No existe clave de activación para TRIAL")
+            LicenseType.TRIAL -> error("No existe clave de activacion para TRIAL")
         }
         val token = buildActivationToken(deviceCode, typeText)
-        return "$typeText-${token.chunked(4).joinToString("-")}"
+        return token.chunked(4).joinToString("-")
     }
 
     private fun buildActivationToken(deviceCode: String, typeText: String): String {

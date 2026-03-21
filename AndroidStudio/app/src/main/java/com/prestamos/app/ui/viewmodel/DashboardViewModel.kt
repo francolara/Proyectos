@@ -33,6 +33,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         val prestamoById = prestamos.associateBy { it.idPrestamo }
         val clienteById = clientes.associateBy { it.idCliente }
         val cuotasByPrestamo = cuotas.groupBy { it.idPrestamo }
+        val pagosByPrestamo = pagos.groupBy { it.idPrestamo }
         val cuotaById = cuotas.associateBy { it.idCuota }
 
         val now = System.currentTimeMillis()
@@ -61,7 +62,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 DashboardPrestamoDetalleItem(
                     cliente = "${cliente?.nombre.orEmpty()} ${cliente?.apellido.orEmpty()}".trim().ifBlank { "-" },
                     idPrestamo = prestamo.idPrestamo,
+                    fechaRegistro = prestamo.fechaRegistro,
                     montoPrestado = prestamo.montoPrestado,
+                    montoTotalConInteres = prestamo.montoTotalPrestamo,
+                    montoCobrado = pagosByPrestamo[prestamo.idPrestamo].orEmpty().sumOf { it.montoAbono },
                     saldoPendiente = saldoPrestamo,
                     totalCuotas = prestamo.cantidadCuotas,
                     cuotasPendientes = cuotasPendientes,
@@ -78,7 +82,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 DashboardPrestamoDetalleItem(
                     cliente = "${cliente?.nombre.orEmpty()} ${cliente?.apellido.orEmpty()}".trim().ifBlank { "-" },
                     idPrestamo = prestamo.idPrestamo,
+                    fechaRegistro = prestamo.fechaRegistro,
                     montoPrestado = prestamo.montoPrestado,
+                    montoTotalConInteres = prestamo.montoTotalPrestamo,
+                    montoCobrado = pagosByPrestamo[prestamo.idPrestamo].orEmpty().sumOf { it.montoAbono },
                     saldoPendiente = cuotasPrestamo.sumOf { it.saldoPendiente },
                     totalCuotas = prestamo.cantidadCuotas,
                     cuotasPendientes = cuotasPrestamo.count { it.saldoPendiente > 0.0 },
@@ -95,6 +102,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 DashboardGananciaPrestamoItem(
                     cliente = "${cliente?.nombre.orEmpty()} ${cliente?.apellido.orEmpty()}".trim().ifBlank { "-" },
                     idPrestamo = prestamo.idPrestamo,
+                    numeroCuota = prestamo.cantidadCuotas,
+                    fechaPago = prestamo.fechaModificacion,
                     montoPrestado = prestamo.montoPrestado,
                     montoCobrado = montoCobrado,
                     ganancia = montoCobrado - prestamo.montoPrestado,
@@ -156,8 +165,24 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 )
             }
 
+        val pagosActivosDetalle = pagos
+            .filter { pago -> prestamoById[pago.idPrestamo]?.estadoPrestamo == EstadoPrestamo.ACTIVO }
+            .sortedByDescending { it.fechaPago }
+            .map { pago ->
+                val prestamo = prestamoById[pago.idPrestamo]
+                val cliente = clienteById[prestamo?.idCliente]
+                DashboardPagoItem(
+                    cliente = "${cliente?.nombre.orEmpty()} ${cliente?.apellido.orEmpty()}".trim().ifBlank { "-" },
+                    fechaPago = pago.fechaPago,
+                    montoAbono = pago.montoAbono,
+                    idPrestamo = pago.idPrestamo,
+                    numeroCuota = cuotaById[pago.idCuota]?.numeroCuota ?: 0,
+                    idPago = pago.idPago,
+                    moneda = prestamo?.moneda ?: Moneda.SOLES
+                )
+            }
+
         val proximosVencimientos = cuotasPendientesDetalle
-            .filter { it.fechaVencimiento >= startToday }
             .take(5)
             .map {
                 DashboardCuotaItem(
@@ -202,6 +227,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             cuotasPendientesDetalle = cuotasPendientesDetalle,
             cuotasVencidasDetalle = cuotasVencidasDetalle,
             pagosHoyDetalle = pagosHoyDetalle,
+            pagosActivosDetalle = pagosActivosDetalle,
             gananciasPrestamosPagados = gananciasPrestamosPagados,
             gananciaAcumulada = gananciaAcumulada,
             monedaReferencial = prestamos.firstOrNull()?.moneda ?: Moneda.SOLES

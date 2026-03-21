@@ -17,9 +17,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = PrestamosRepository(AppDatabase.getInstance(application))
 
@@ -35,18 +38,26 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         initialValue = emptyList()
     )
 
+    val cuotas = repository.observarCuotas().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
     private val clienteSeleccionadoPagos = MutableStateFlow<Long?>(null)
     private val prestamoSeleccionadoPagos = MutableStateFlow<Long?>(null)
     private val prestamoSeleccionadoDetalle = MutableStateFlow<Long?>(null)
 
     val prestamosClientePagos: StateFlow<List<PrestamoEntity>> = clienteSeleccionadoPagos
         .flatMapLatest { idCliente -> if (idCliente == null) flowOf(emptyList()) else repository.observarPrestamosPorCliente(idCliente) }
+        .map { prestamosCliente ->
+            prestamosCliente.filter { it.estadoPrestamo == EstadoPrestamo.ACTIVO }
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val cuotasPrestamoPagos: StateFlow<List<CuotaEntity>> = prestamoSeleccionadoPagos
         .flatMapLatest { idPrestamo -> if (idPrestamo == null) flowOf(emptyList()) else repository.observarCuotasPorPrestamo(idPrestamo) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
 
     val cuotasPrestamoDetalle: StateFlow<List<CuotaEntity>> = prestamoSeleccionadoDetalle
         .flatMapLatest { idPrestamo -> if (idPrestamo == null) flowOf(emptyList()) else repository.observarCuotasPorPrestamo(idPrestamo) }
@@ -100,7 +111,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         mensaje.value = null
     }
 
-    fun registrarCliente(nombre: String, apellido: String, documento: String, direccion: String, telefono: String) {
+    fun registrarCliente(
+        nombre: String,
+        apellido: String,
+        documento: String,
+        direccion: String,
+        telefono: String,
+        onSuccess: () -> Unit = {}
+    ) {
         viewModelScope.launch {
             runCatching {
                 val nombreLimpio = cleanSingleLine(nombre)
@@ -121,7 +139,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                     telefono = telefonoLimpio
                 )
             }.onSuccess {
-                mensaje.value = "Cliente registrado"
+                onSuccess()
             }.onFailure {
                 mensaje.value = it.message ?: "No se pudo registrar cliente"
             }
@@ -134,47 +152,117 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         interes: String,
         moneda: Moneda,
         tipoPago: TipoPago,
+        intervaloDiasPersonalizado: String,
         cuotas: String,
-        fechaPrimeraCuota: Long
+        fechaPrimeraCuota: Long,
+        onSuccess: () -> Unit = {}
     ) {
         viewModelScope.launch {
             runCatching {
-                val montoDouble = monto.toDoubleOrNull() ?: error("Monto inválido")
-                val interesDouble = interes.toDoubleOrNull() ?: error("Interés inválido")
-                val cuotasInt = cuotas.toIntOrNull() ?: error("Cuotas inválidas")
+                val montoDouble = monto.toDoubleOrNull() ?: error("Monto invalido")
+                val interesDouble = interes.toDoubleOrNull() ?: error("Interes invalido")
+                val cuotasInt = cuotas.toIntOrNull() ?: error("Cuotas invalidas")
+                val intervaloPersonalizadoInt = if (tipoPago == TipoPago.PERSONALIZADO) {
+                    intervaloDiasPersonalizado.toIntOrNull() ?: error("Intervalo personalizado invalido")
+                } else {
+                    null
+                }
                 require(montoDouble > 0.0) { "Monto debe ser mayor a 0" }
-                require(interesDouble >= 0.0) { "Interés debe ser mayor o igual a 0" }
+                require(interesDouble >= 0.0) { "Interes debe ser mayor o igual a 0" }
                 require(cuotasInt > 0) { "Cuotas debe ser mayor a 0" }
+                if (tipoPago == TipoPago.PERSONALIZADO) {
+                    require((intervaloPersonalizadoInt ?: 0) > 0) { "Intervalo personalizado invalido" }
+                }
                 repository.registrarPrestamo(
                     idCliente = idCliente,
                     monto = montoDouble,
                     interesPorcentaje = interesDouble,
                     moneda = moneda,
                     tipoPago = tipoPago,
+                    intervaloDiasPersonalizado = intervaloPersonalizadoInt,
                     cantidadCuotas = cuotasInt,
                     fechaPrimeraCuota = fechaPrimeraCuota
                 )
             }.onSuccess {
-                mensaje.value = "Préstamo registrado con cuotas generadas"
+                onSuccess()
             }.onFailure {
-                mensaje.value = it.message ?: "No se pudo registrar préstamo"
+                mensaje.value = it.message ?: "No se pudo registrar prestamo"
             }
         }
     }
 
-    fun registrarPago(idPrestamo: Long, idCuota: Long, montoAbono: String) {
+    fun registrarPago(
+        idPrestamo: Long,
+        idCuota: Long,
+        montoAbono: String,
+        onSuccess: () -> Unit = {}
+    ) {
         viewModelScope.launch {
             runCatching {
                 repository.registrarPago(
                     idPrestamo = idPrestamo,
                     idCuota = idCuota,
-                    montoAbono = montoAbono.toDoubleOrNull() ?: error("Monto abonado inválido"),
+                    montoAbono = montoAbono.toDoubleOrNull() ?: error("Monto abonado invalido"),
                     observacion = null
                 )
             }.onSuccess {
-                mensaje.value = "Pago registrado"
+                onSuccess()
             }.onFailure {
                 mensaje.value = it.message ?: "No se pudo registrar pago"
+            }
+        }
+    }
+
+    fun eliminarPrestamo(idPrestamo: Long) {
+        viewModelScope.launch {
+            runCatching {
+                repository.eliminarPrestamoSiNoTienePagos(idPrestamo)
+            }.onSuccess {
+                mensaje.value = "Prestamo eliminado correctamente"
+            }.onFailure {
+                mensaje.value = it.message ?: "No se pudo eliminar el prestamo"
+            }
+        }
+    }
+
+    fun actualizarCliente(
+        idCliente: Long,
+        nombre: String,
+        apellido: String,
+        direccion: String,
+        telefono: String
+    ) {
+        viewModelScope.launch {
+            runCatching {
+                val nombreLimpio = cleanSingleLine(nombre)
+                val apellidoLimpio = cleanSingleLine(apellido)
+                val direccionLimpia = cleanSingleLine(direccion)
+                val telefonoLimpio = cleanSingleLine(telefono)
+                require(nombreLimpio.isNotBlank()) { "Nombres obligatorio" }
+                require(apellidoLimpio.isNotBlank()) { "Apellido obligatorio" }
+                repository.actualizarCliente(
+                    idCliente = idCliente,
+                    nombre = nombreLimpio,
+                    apellido = apellidoLimpio,
+                    direccion = direccionLimpia,
+                    telefono = telefonoLimpio
+                )
+            }.onSuccess {
+                mensaje.value = "Cliente actualizado correctamente"
+            }.onFailure {
+                mensaje.value = it.message ?: "No se pudo actualizar cliente"
+            }
+        }
+    }
+
+    fun eliminarCliente(idCliente: Long) {
+        viewModelScope.launch {
+            runCatching {
+                repository.eliminarClienteSiNoTienePrestamos(idCliente)
+            }.onSuccess {
+                mensaje.value = "Cliente eliminado correctamente"
+            }.onFailure {
+                mensaje.value = it.message ?: "No se pudo eliminar cliente"
             }
         }
     }

@@ -40,6 +40,7 @@ class PrestamosRepository(
         telefono: String
     ) {
         val ahora = System.currentTimeMillis()
+        require(clienteDao.contarPorDocumento(documento) == 0) { "Ya existe un cliente con ese documento" }
         clienteDao.insertar(
             ClienteEntity(
                 nombre = nombre,
@@ -53,12 +54,44 @@ class PrestamosRepository(
         )
     }
 
+    suspend fun actualizarCliente(
+        idCliente: Long,
+        nombre: String,
+        apellido: String,
+        direccion: String,
+        telefono: String
+    ) {
+        val ahora = System.currentTimeMillis()
+        val cliente = clienteDao.obtenerPorId(idCliente) ?: error("Cliente no encontrado")
+        require(nombre.isNotBlank()) { "Nombres obligatorio" }
+        require(apellido.isNotBlank()) { "Apellido obligatorio" }
+        clienteDao.actualizar(
+            cliente.copy(
+                nombre = nombre,
+                apellido = apellido,
+                direccion = direccion,
+                telefono = telefono,
+                fechaModificacion = ahora
+            )
+        )
+    }
+
+    suspend fun eliminarClienteSiNoTienePrestamos(idCliente: Long) {
+        database.withTransaction {
+            val cliente = clienteDao.obtenerPorId(idCliente) ?: error("Cliente no encontrado")
+            val totalPrestamos = prestamoDao.contarPorCliente(idCliente)
+            require(totalPrestamos == 0) { "No se puede eliminar: el cliente tiene prestamos registrados" }
+            clienteDao.eliminarPorId(cliente.idCliente)
+        }
+    }
+
     suspend fun registrarPrestamo(
         idCliente: Long,
         monto: Double,
         interesPorcentaje: Double,
         moneda: Moneda,
         tipoPago: TipoPago,
+        intervaloDiasPersonalizado: Int?,
         cantidadCuotas: Int,
         fechaPrimeraCuota: Long
     ) {
@@ -85,11 +118,19 @@ class PrestamosRepository(
             )
 
             val primeraFecha = millisToLocalDate(fechaPrimeraCuota)
+            val diasPersonalizado = if (tipoPago == TipoPago.PERSONALIZADO) {
+                require((intervaloDiasPersonalizado ?: 0) > 0) { "Intervalo personalizado invalido" }
+                intervaloDiasPersonalizado
+            } else {
+                null
+            }
             val cuotas = (1..cantidadCuotas).map { numero ->
                 val fechaCuota = when (tipoPago) {
                     TipoPago.DIARIO -> primeraFecha.plusDays((numero - 1).toLong())
                     TipoPago.SEMANAL -> primeraFecha.plusWeeks((numero - 1).toLong())
+                    TipoPago.QUINCENAL -> primeraFecha.plusDays((numero - 1).toLong() * 15L)
                     TipoPago.MENSUAL -> primeraFecha.plusMonths((numero - 1).toLong())
+                    TipoPago.PERSONALIZADO -> primeraFecha.plusDays((numero - 1).toLong() * diasPersonalizado!!.toLong())
                 }
                 CuotaEntity(
                     idPrestamo = idPrestamo,
@@ -117,9 +158,16 @@ class PrestamosRepository(
 
         database.withTransaction {
             val cuota = cuotaDao.obtenerPorId(idCuota) ?: error("Cuota no encontrada")
-            require(cuota.idPrestamo == idPrestamo) { "La cuota no pertenece al préstamo seleccionado" }
-            require(cuota.estadoCuota != EstadoCuota.PAGADO) { "La cuota ya está pagada" }
+            require(cuota.idPrestamo == idPrestamo) { "La cuota no pertenece al prestamo seleccionado" }
+            require(cuota.estadoCuota != EstadoCuota.PAGADO) { "La cuota ya esta pagada" }
             require(montoAbono <= cuota.saldoPendiente) { "El abono no puede exceder el saldo pendiente" }
+
+            val siguienteCuotaPendiente = cuotaDao.listarPorPrestamoInterno(idPrestamo)
+                .firstOrNull { it.saldoPendiente > 0.0 }
+            require(siguienteCuotaPendiente != null) { "El prestamo no tiene cuotas pendientes" }
+            require(cuota.idCuota == siguienteCuotaPendiente.idCuota) {
+                "Debe registrar primero la cuota ${siguienteCuotaPendiente.numeroCuota}"
+            }
 
             val ahora = System.currentTimeMillis()
             val nuevoMontoPagado = cuota.montoPagado + montoAbono
@@ -159,6 +207,15 @@ class PrestamosRepository(
                 EstadoPrestamo.ACTIVO
             }
             prestamoDao.actualizar(prestamo.copy(estadoPrestamo = estadoPrestamo, fechaModificacion = ahora))
+        }
+    }
+
+    suspend fun eliminarPrestamoSiNoTienePagos(idPrestamo: Long) {
+        database.withTransaction {
+            val prestamo = prestamoDao.obtenerPorId(idPrestamo) ?: error("Prestamo no encontrado")
+            val totalPagos = pagoDao.contarPorPrestamo(idPrestamo)
+            require(totalPagos == 0) { "No se puede eliminar: el prestamo ya tiene pagos registrados" }
+            prestamoDao.eliminarPorId(prestamo.idPrestamo)
         }
     }
 

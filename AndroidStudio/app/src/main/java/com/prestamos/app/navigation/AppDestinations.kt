@@ -5,6 +5,6 @@ enum class AppDestinations(val route: String, val title: String) {
     CLIENTES("clientes", "Clientes"),
     PRESTAMOS("prestamos", "Préstamos"),
     PAGOS("pagos", "Pagos"),
-    BACKUP("backup", "Backup"),
+    BACKUP("backup", "Respaldo"),
     LOGOUT("logout", "")
 }

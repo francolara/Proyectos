@@ -16,6 +16,7 @@ data class DashboardResumen(
     val cuotasPendientesDetalle: List<DashboardCuotaDetalleItem> = emptyList(),
     val cuotasVencidasDetalle: List<DashboardCuotaDetalleItem> = emptyList(),
     val pagosHoyDetalle: List<DashboardPagoItem> = emptyList(),
+    val pagosActivosDetalle: List<DashboardPagoItem> = emptyList(),
     val gananciasPrestamosPagados: List<DashboardGananciaPrestamoItem> = emptyList(),
     val gananciaAcumulada: Double = 0.0,
     val monedaReferencial: Moneda = Moneda.SOLES
@@ -24,6 +25,8 @@ data class DashboardResumen(
 data class DashboardGananciaPrestamoItem(
     val cliente: String,
     val idPrestamo: Long,
+    val numeroCuota: Int,
+    val fechaPago: Long,
     val montoPrestado: Double,
     val montoCobrado: Double,
     val ganancia: Double,
@@ -33,7 +36,10 @@ data class DashboardGananciaPrestamoItem(
 data class DashboardPrestamoDetalleItem(
     val cliente: String,
     val idPrestamo: Long,
+    val fechaRegistro: Long,
     val montoPrestado: Double,
+    val montoTotalConInteres: Double,
+    val montoCobrado: Double,
     val saldoPendiente: Double,
     val totalCuotas: Int,
     val cuotasPendientes: Int,

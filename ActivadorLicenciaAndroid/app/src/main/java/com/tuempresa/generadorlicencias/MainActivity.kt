@@ -44,7 +44,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun configurarSpinner() {
-        val tipos = listOf("ANUAL", "FULL")
+        val tipos = listOf("MENSUAL", "ANUAL", "FULL")
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, tipos)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerTipo.adapter = adapter
@@ -55,13 +55,13 @@ class MainActivity : AppCompatActivity() {
         val tipo = spinnerTipo.selectedItem?.toString()?.uppercase(Locale.ROOT).orEmpty()
 
         if (deviceCode.isBlank()) {
-            Toast.makeText(this, "El deviceCode es obligatorio", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "El codigo de dispositivo es obligatorio", Toast.LENGTH_SHORT).show()
             etDeviceCode.requestFocus()
             return
         }
 
-        if (tipo != "ANUAL" && tipo != "FULL") {
-            Toast.makeText(this, "El tipo debe ser ANUAL o FULL", Toast.LENGTH_SHORT).show()
+        if (tipo != "MENSUAL" && tipo != "ANUAL" && tipo != "FULL") {
+            Toast.makeText(this, "El tipo debe ser MENSUAL, ANUAL o FULL", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -78,9 +78,7 @@ class MainActivity : AppCompatActivity() {
         val hashHex = hashBytes.joinToString(separator = "") { "%02x".format(it) }.uppercase(Locale.ROOT)
 
         val primeros16 = hashHex.substring(0, 16)
-        val bloques = primeros16.chunked(4).joinToString("-")
-
-        return "$tipo-$bloques"
+        return primeros16.chunked(4).joinToString("-")
     }
 
     private fun copiarResultado() {
@@ -92,7 +90,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        clipboard.setPrimaryClip(ClipData.newPlainText("Clave de activación", resultado))
+        clipboard.setPrimaryClip(ClipData.newPlainText("Codigo de activacion", resultado))
         Toast.makeText(this, "Clave copiada", Toast.LENGTH_SHORT).show()
     }
 

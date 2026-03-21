@@ -1,7 +1,34 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     id("com.google.devtools.ksp")
+}
+
+val versionPropertiesFile = rootProject.file("version.properties")
+val versionProperties = Properties().apply {
+    if (versionPropertiesFile.exists()) {
+        versionPropertiesFile.inputStream().use(::load)
+    } else {
+        setProperty("VERSION_CODE", "1")
+        setProperty("VERSION_NAME", "1.0.0")
+        versionPropertiesFile.outputStream().use { store(it, "Configuracion de version de la app") }
+    }
+}
+
+val isReleaseBuildRequested = gradle.startParameter.taskNames.any { taskName ->
+    val lower = taskName.lowercase()
+    lower.contains("release") && (lower.contains("assemble") || lower.contains("bundle"))
+}
+
+var computedVersionCode = versionProperties.getProperty("VERSION_CODE", "1").toIntOrNull() ?: 1
+val computedVersionName = versionProperties.getProperty("VERSION_NAME", "1.0.0")
+
+if (isReleaseBuildRequested) {
+    computedVersionCode += 1
+    versionProperties.setProperty("VERSION_CODE", computedVersionCode.toString())
+    versionPropertiesFile.outputStream().use { versionProperties.store(it, "Configuracion de version de la app") }
 }
 
 android {
@@ -16,8 +43,11 @@ android {
         applicationId = "com.prestamos.app"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        // Versionado de publicacion:
+        // - VERSION_CODE sube automaticamente al ejecutar assembleRelease/bundleRelease.
+        // - VERSION_NAME se cambia manualmente en AndroidStudio/version.properties.
+        versionCode = computedVersionCode
+        versionName = computedVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -37,6 +67,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -54,6 +85,7 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.8.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation("androidx.documentfile:documentfile:1.1.0")
     implementation("androidx.biometric:biometric:1.1.0")
     implementation("androidx.work:work-runtime-ktx:2.10.3")
     testImplementation(libs.junit)

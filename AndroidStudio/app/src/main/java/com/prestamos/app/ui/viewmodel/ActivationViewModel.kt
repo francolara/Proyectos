@@ -51,7 +51,7 @@ class ActivationViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch {
             val key = _uiState.value.activationKey
             runCatching {
-                require(key.isNotBlank()) { "Ingresa la clave de activación" }
+                require(key.isNotBlank()) { "Ingresa la clave de activaciÃ³n" }
                 licenseManager.activate(key)
             }.onSuccess { status ->
                 _uiState.value = _uiState.value.copy(status = status, activationKey = "")
@@ -66,3 +66,4 @@ class ActivationViewModel(application: Application) : AndroidViewModel(applicati
         mensaje.value = null
     }
 }
+
