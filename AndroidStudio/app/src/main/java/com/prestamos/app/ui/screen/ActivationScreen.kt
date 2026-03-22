@@ -33,8 +33,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Chat
 import androidx.compose.material.icons.outlined.Email
-import androidx.compose.material.icons.outlined.Message
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -246,11 +246,15 @@ fun ActivationScreen(
                             .height(44.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.Message,
+                            imageVector = Icons.Outlined.Chat,
                             contentDescription = null
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("WhatsApp", style = requestButtonTextStyle)
+                        Text(
+                            text = "WhatsApp",
+                            style = requestButtonTextStyle,
+                            maxLines = 1
+                        )
                     }
                     OutlinedButton(
                         onClick = {
@@ -400,7 +404,8 @@ private fun copyToClipboard(context: Context, value: String): Boolean {
 }
 
 private fun openWhatsAppForLicense(context: Context, deviceCode: String, selectedPlan: String) {
-    val message = "Hola, quiero activar la app.\nPlan: $selectedPlan\nCodigo de dispositivo: $deviceCode"
+    val planText = selectedPlan.toRequestPlanWithPrice()
+    val message = "Hola, solicito activacion Pro.\nPlan: $planText\nCodigo: $deviceCode\n\nQuedo atento(a) a los datos de pago. Gracias."
     val uri = Uri.parse("https://wa.me/$LICENSE_WHATSAPP_NUMBER?text=${Uri.encode(message)}")
     val whatsappIntent = Intent(Intent.ACTION_VIEW, uri).apply { `package` = "com.whatsapp" }
     val whatsappBusinessIntent = Intent(Intent.ACTION_VIEW, uri).apply { `package` = "com.whatsapp.w4b" }
@@ -424,7 +429,8 @@ private fun tryStartActivity(context: Context, intent: Intent): Boolean = try {
 
 private fun openEmailForLicense(context: Context, deviceCode: String, selectedPlan: String) {
     val subject = "Solicitud de licencia"
-    val body = "Hola, quiero solicitar una licencia.\nPlan: $selectedPlan\nCodigo de dispositivo: $deviceCode"
+    val planText = selectedPlan.toRequestPlanWithPrice()
+    val body = "Hola, solicito activacion Pro.\nPlan: $planText\nCodigo: $deviceCode\n\nQuedo atento(a) a los datos de pago. Gracias."
     val intent = Intent(Intent.ACTION_SENDTO).apply {
         data = Uri.parse("mailto:")
         putExtra(Intent.EXTRA_EMAIL, arrayOf(LICENSE_SUPPORT_EMAIL))
@@ -444,6 +450,13 @@ private fun LicenseType.toRequestPlanLabel(): String = when (this) {
     LicenseType.ANUAL -> "Anual"
     LicenseType.FULL -> "Full"
     LicenseType.TRIAL -> "Prueba"
+}
+
+private fun String.toRequestPlanWithPrice(): String = when (this) {
+    "Mensual" -> "Mensual (S/ 10, ≈ $ 2.70)"
+    "Anual" -> "Anual (S/ 80, ≈ $ 22)"
+    "Full" -> "Full (S/ 180, ≈ $ 50)"
+    else -> this
 }
 
 private data class RequestPlanCardUi(

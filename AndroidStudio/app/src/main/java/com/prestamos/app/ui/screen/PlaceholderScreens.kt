@@ -500,12 +500,16 @@ fun PrestamosScreen(viewModel: AppViewModel) {
             )
         )
     }
+    var tiposPagoDisponibles by remember { mutableStateOf(setupPrefs.getAllowedPaymentTypes().toList()) }
+    var interesPorDefecto by remember { mutableStateOf(setupPrefs.getDefaultInterest()) }
     val lifecycleOwner = LocalLifecycleOwner.current
     val refreshMonedas: () -> Unit = {
         monedasDisponibles = resolveVisibleCurrencies(
             setupPrefs.getMainCurrencyCode(),
             setupPrefs.getSecondaryCurrencyCode()
         )
+        tiposPagoDisponibles = setupPrefs.getAllowedPaymentTypes().toList()
+        interesPorDefecto = setupPrefs.getDefaultInterest()
     }
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -524,16 +528,29 @@ fun PrestamosScreen(viewModel: AppViewModel) {
 
     var clienteSeleccionado by remember { mutableStateOf<ClienteEntity?>(null) }
     var monto by remember { mutableStateOf("") }
-    var interes by remember { mutableStateOf("") }
+    var interes by remember { mutableStateOf(interesPorDefecto) }
     var cuotas by remember { mutableStateOf("") }
     var intervaloDiasPersonalizado by remember { mutableStateOf("") }
     var fechaPrimeraCuota by remember { mutableStateOf(LocalDate.now()) }
     var moneda by remember { mutableStateOf(monedasDisponibles.firstOrNull() ?: Moneda.SOLES) }
-    var tipoPago by remember { mutableStateOf(TipoPago.SEMANAL) }
+    var tipoPago by remember { mutableStateOf(tiposPagoDisponibles.firstOrNull() ?: TipoPago.SEMANAL) }
 
     LaunchedEffect(monedasDisponibles) {
         if (moneda !in monedasDisponibles) {
             moneda = monedasDisponibles.firstOrNull() ?: Moneda.SOLES
+        }
+    }
+    LaunchedEffect(tiposPagoDisponibles) {
+        if (tiposPagoDisponibles.isNotEmpty() && tipoPago !in tiposPagoDisponibles) {
+            tipoPago = tiposPagoDisponibles.first()
+        }
+        if (interes.isBlank()) {
+            interes = interesPorDefecto
+        }
+    }
+    LaunchedEffect(interesPorDefecto) {
+        if (interes.isBlank()) {
+            interes = interesPorDefecto
         }
     }
 
@@ -580,6 +597,7 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                 onValueChange = { monto = onlyDecimal(it) },
                 label = { Text("Monto") },
                 singleLine = true,
+                textStyle = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.End),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -623,34 +641,34 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                 modifier = Modifier.fillMaxWidth()
             )
 
-            ExposedDropdownMenuBox(expanded = expandedTipo, onExpandedChange = { expandedTipo = !expandedTipo }) {
+            if (tiposPagoDisponibles.size <= 1) {
                 OutlinedTextField(
-                    value = tipoPago.name,
+                    value = tipoPago.toUiLabel(),
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Tipo de pago") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedTipo) },
-                    modifier = Modifier.menuAnchor().fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth()
                 )
-                DropdownMenu(expanded = expandedTipo, onDismissRequest = { expandedTipo = false }) {
-                    TipoPago.entries.forEach { tipo ->
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    when (tipo) {
-                                        TipoPago.DIARIO -> "DIARIO"
-                                        TipoPago.SEMANAL -> "SEMANAL"
-                                        TipoPago.QUINCENAL -> "QUINCENAL"
-                                        TipoPago.MENSUAL -> "MENSUAL"
-                                        TipoPago.PERSONALIZADO -> "PERSONALIZADO"
-                                    }
-                                )
-                            },
-                            onClick = {
-                                tipoPago = tipo
-                                expandedTipo = false
-                            }
-                        )
+            } else {
+                ExposedDropdownMenuBox(expanded = expandedTipo, onExpandedChange = { expandedTipo = !expandedTipo }) {
+                    OutlinedTextField(
+                        value = tipoPago.toUiLabel(),
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Tipo de pago") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedTipo) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                    )
+                    DropdownMenu(expanded = expandedTipo, onDismissRequest = { expandedTipo = false }) {
+                        tiposPagoDisponibles.forEach { tipo ->
+                            DropdownMenuItem(
+                                text = { Text(tipo.toUiLabel()) },
+                                onClick = {
+                                    tipoPago = tipo
+                                    expandedTipo = false
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -701,7 +719,7 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                     viewModel.registrarPrestamo(
                         idCliente = it.idCliente,
                         monto = monto,
-                        interes = interes,
+                        interes = interes.ifBlank { "0" },
                         moneda = moneda,
                         tipoPago = tipoPago,
                         intervaloDiasPersonalizado = intervaloDiasPersonalizado,
@@ -709,7 +727,7 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                         fechaPrimeraCuota = fechaPrimeraCuota.toEpochMillis()
                     ) {
                         monto = ""
-                        interes = ""
+                        interes = interesPorDefecto
                         cuotas = ""
                         intervaloDiasPersonalizado = ""
                         fechaPrimeraCuota = LocalDate.now()
@@ -767,7 +785,7 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("\uD83D\uDCB3 Prestamo #${prestamo.idPrestamo}", style = MaterialTheme.typography.bodyMedium)
+                        Text("📄 Prestamo #${prestamo.idPrestamo}", style = MaterialTheme.typography.bodyMedium)
                         Text(estadoLabel, style = MaterialTheme.typography.labelSmall)
                     }
                     Text("\uD83D\uDC64 $clienteLabel", style = MaterialTheme.typography.bodySmall)
@@ -776,7 +794,7 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                         style = MaterialTheme.typography.bodySmall
                     )
                     Text(
-                        "\uD83D\uDCCA Cuota: ${prestamo.montoCuota.toMoney(prestamo.moneda)} ${prestamo.moneda.displayName}",
+                        "📌 Cuota: ${prestamo.montoCuota.toMoney(prestamo.moneda)} ${prestamo.moneda.displayName}",
                         style = MaterialTheme.typography.bodySmall
                     )
                     Text(
@@ -924,13 +942,13 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                                 Text("⚙️ Condiciones", style = MaterialTheme.typography.labelLarge)
                                 Text("📊 Interes: ${prestamo?.interes ?: "-"}%", style = MaterialTheme.typography.bodySmall)
                                 Text("🔁 Frecuencia: $tipoPagoDetalle", style = MaterialTheme.typography.bodySmall)
-                                Text("🔢 Cuotas: ${prestamo?.cantidadCuotas ?: "-"}", style = MaterialTheme.typography.bodySmall)
+                                Text("📌 Cuotas: ${prestamo?.cantidadCuotas ?: "-"}", style = MaterialTheme.typography.bodySmall)
                                 Text("📅 Fecha de registro: ${prestamo?.fechaRegistro?.toDateString() ?: "-"}", style = MaterialTheme.typography.bodySmall)
                             }
                         }
                     }
                     item {
-                        Text("📋 Cronograma de cuotas", style = MaterialTheme.typography.titleSmall)
+                        Text("📌 Cronograma de cuotas", style = MaterialTheme.typography.titleSmall)
                     }
                     items(cuotasDetalle) { cuota ->
                         val estadoTexto = when (cuota.estadoCuota.name) {
@@ -1152,7 +1170,7 @@ fun PagosScreen(viewModel: AppViewModel) {
                                 color = pagoTextColor
                             )
                             Text(
-                                text = "\uD83D\uDCC4 Cuota ${pago.numeroCuota}",
+                                text = "📌 Cuota ${pago.numeroCuota}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = pagoTextColor
                             )
@@ -1266,7 +1284,7 @@ fun ReportesScreen(viewModel: AppViewModel) {
                 Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     Column {
                         Text("Cliente: ${cliente?.nombre ?: "-"} ${cliente?.apellido ?: ""}".trim())
-                        Text("Prestamo #${cuota.idPrestamo} - Cuota ${cuota.numeroCuota}")
+                        Text("📄 Prestamo #${cuota.idPrestamo} - 📌 Cuota ${cuota.numeroCuota}")
                         Text("Registro prestamo: ${prestamo?.fechaRegistro?.toDateString() ?: "-"}")
                         Text("Vence: ${cuota.fechaVencimiento.toDateString()}")
                     }
@@ -1423,6 +1441,14 @@ private fun onlyDecimal(value: String): String {
         }
     }
     return result.toString()
+}
+
+private fun TipoPago.toUiLabel(): String = when (this) {
+    TipoPago.DIARIO -> "DIARIO"
+    TipoPago.SEMANAL -> "SEMANAL"
+    TipoPago.QUINCENAL -> "QUINCENAL"
+    TipoPago.MENSUAL -> "MENSUAL"
+    TipoPago.PERSONALIZADO -> "PERSONALIZADO"
 }
 
 private fun tipoPagoDetalle(tipoPago: TipoPago?, cuotas: List<com.prestamos.app.data.local.entity.CuotaEntity>): String {

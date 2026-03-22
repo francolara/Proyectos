@@ -159,7 +159,7 @@ fun DashboardScreen(
             }
             Spacer(modifier = Modifier.height(8.dp))
             DashboardMoneyCard(
-                title = "Total activo (con intereses)",
+                title = "Total prestado activo (con intereses)",
                 totals = prestadoActivoConInteres,
                 visibleCurrencies = visibleCurrencies,
                 modifier = Modifier.fillMaxWidth(),
@@ -727,7 +727,7 @@ private fun VencimientoCard(cuota: com.prestamos.app.ui.model.DashboardCuotaItem
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text("${cuota.cliente} - $estadoTexto", style = MaterialTheme.typography.titleSmall, color = Color(0xFF1F1F1F))
-            Text("$iconPin Cuota ${cuota.numeroCuota} \u2022 Prestamo #${cuota.idPrestamo}", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF1F1F1F))
+            Text("$iconPin Cuota ${cuota.numeroCuota} \u2022 📄 Prestamo #${cuota.idPrestamo}", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF1F1F1F))
             Text("$iconCal ${cuota.fechaVencimiento.toDateString()}", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF1F1F1F))
             Text(
                 "$iconMoney ${cuota.saldoPendiente.toMoney(cuota.moneda)} ${cuota.moneda.displayName}",
@@ -756,7 +756,7 @@ private fun PagoRecienteCard(pago: com.prestamos.app.ui.model.DashboardPagoItem)
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(pago.cliente, style = MaterialTheme.typography.titleSmall)
-            Text("$iconPin Cuota ${pago.numeroCuota} \u2022 Prestamo #${pago.idPrestamo}", style = MaterialTheme.typography.bodyMedium)
+            Text("$iconPin Cuota ${pago.numeroCuota} \u2022 📄 Prestamo #${pago.idPrestamo}", style = MaterialTheme.typography.bodyMedium)
             Text("$iconCal ${pago.fechaPago.toDateString()}", style = MaterialTheme.typography.bodyMedium)
             Text("$iconMoney ${pago.montoAbono.toMoney(pago.moneda)} ${pago.moneda.displayName}", style = MaterialTheme.typography.bodyMedium)
         }
@@ -1254,7 +1254,7 @@ private fun PendienteDetalleDialog(
                     )
                 ) {
                     Text(
-                        text = "\uD83D\uDD22 Cuotas pendientes: ${detalle.totalCuotas}",
+                        text = "📌 Cuotas pendientes: ${detalle.totalCuotas}",
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -1290,7 +1290,7 @@ private fun PendienteDetalleDialog(
                                     verticalArrangement = Arrangement.spacedBy(2.dp)
                                 ) {
                                     Text("\uD83D\uDC64 ${item.cliente}", style = MaterialTheme.typography.bodyMedium)
-                                    Text("\uD83D\uDCC4 Prestamo #${item.idPrestamo} \u00B7 Cuota ${item.numeroCuota}", style = MaterialTheme.typography.bodySmall)
+                                    Text("\uD83D\uDCC4 Prestamo #${item.idPrestamo} \u00B7 📌 Cuota ${item.numeroCuota}", style = MaterialTheme.typography.bodySmall)
                                     Text("\uD83D\uDCC5 Vence ${item.fechaVencimiento.toDateString()}", style = MaterialTheme.typography.bodySmall)
                                     Text("\uD83D\uDCB0 Saldo ${item.saldoPendiente.toMoney(item.moneda)} ${item.moneda.displayName}", style = MaterialTheme.typography.bodySmall)
                                 }
@@ -1377,7 +1377,7 @@ private fun CobradoHoyDetalleDialog(
                                     verticalArrangement = Arrangement.spacedBy(2.dp)
                                 ) {
                                     Text("\uD83D\uDC64 ${item.cliente}", style = MaterialTheme.typography.bodyMedium)
-                                    Text("\uD83D\uDCC4 Prestamo #${item.idPrestamo} \u00B7 Cuota ${item.numeroCuota}", style = MaterialTheme.typography.bodySmall)
+                                    Text("\uD83D\uDCC4 Prestamo #${item.idPrestamo} \u00B7 📌 Cuota ${item.numeroCuota}", style = MaterialTheme.typography.bodySmall)
                                     Text("\uD83D\uDCC5 Fecha ${item.fechaPago.toDateString()}", style = MaterialTheme.typography.bodySmall)
                                     Text("\uD83D\uDCB0 Cobro ${item.montoAbono.toMoney(item.moneda)} ${item.moneda.displayName}", style = MaterialTheme.typography.bodySmall)
                                 }
@@ -1464,7 +1464,7 @@ private fun GananciasDetalleDialog(
                                     verticalArrangement = Arrangement.spacedBy(2.dp)
                                 ) {
                                     Text("\uD83D\uDC64 ${item.cliente}", style = MaterialTheme.typography.bodyMedium)
-                                    Text("\uD83D\uDCC4 Prestamo #${item.idPrestamo} \u00B7 Cuota ${item.numeroCuota}", style = MaterialTheme.typography.bodySmall)
+                                    Text("\uD83D\uDCC4 Prestamo #${item.idPrestamo} \u00B7 📌 Cuota ${item.numeroCuota}", style = MaterialTheme.typography.bodySmall)
                                     Text("\uD83D\uDCC5 Fecha ${item.fechaPago.toDateString()}", style = MaterialTheme.typography.bodySmall)
                                     Text("\uD83D\uDCB0 Ganancia ${item.ganancia.toMoney(item.moneda)} ${item.moneda.displayName}", style = MaterialTheme.typography.bodySmall)
                                 }
@@ -1515,7 +1515,7 @@ private fun VencidasDetalleDialog(
                     )
                 ) {
                     Text(
-                        text = "\uD83D\uDD22 Cuotas vencidas: ${detalle.totalCuotasVencidas}",
+                        text = "📌 Cuotas vencidas: ${detalle.totalCuotasVencidas}",
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -1537,7 +1537,7 @@ private fun VencidasDetalleDialog(
                                     verticalArrangement = Arrangement.spacedBy(2.dp)
                                 ) {
                                     Text("\uD83D\uDC64 ${item.cliente}", style = MaterialTheme.typography.bodyMedium)
-                                    Text("\uD83D\uDCC4 Prestamo #${item.idPrestamo} \u00B7 Cuota ${item.numeroCuota}", style = MaterialTheme.typography.bodySmall)
+                                    Text("\uD83D\uDCC4 Prestamo #${item.idPrestamo} \u00B7 📌 Cuota ${item.numeroCuota}", style = MaterialTheme.typography.bodySmall)
                                     Text("\uD83D\uDCC5 Vence ${item.fechaVencimiento.toDateString()}", style = MaterialTheme.typography.bodySmall)
                                     Text("\uD83D\uDCB0 Saldo ${item.saldoPendiente.toMoney(item.moneda)} ${item.moneda.displayName}", style = MaterialTheme.typography.bodySmall)
                                 }
@@ -1624,7 +1624,7 @@ private fun CobradoActivoDetalleDialog(
                                     verticalArrangement = Arrangement.spacedBy(2.dp)
                                 ) {
                                     Text("\uD83D\uDC64 ${item.cliente}", style = MaterialTheme.typography.bodyMedium)
-                                    Text("\uD83D\uDCC4 Prestamo #${item.idPrestamo} \u00B7 Cuota ${item.numeroCuota}", style = MaterialTheme.typography.bodySmall)
+                                    Text("\uD83D\uDCC4 Prestamo #${item.idPrestamo} \u00B7 📌 Cuota ${item.numeroCuota}", style = MaterialTheme.typography.bodySmall)
                                     Text("\uD83D\uDCC5 Fecha ${item.fechaPago.toDateString()}", style = MaterialTheme.typography.bodySmall)
                                     Text("\uD83D\uDCB0 Cobro ${item.montoAbono.toMoney(item.moneda)} ${item.moneda.displayName}", style = MaterialTheme.typography.bodySmall)
                                 }
@@ -2130,8 +2130,8 @@ private fun resolveDashboardTitleVisual(title: String): DashboardTitleVisual = w
         color = Color(0xFF1B5E20)
     )
 
-    "Total activo (con intereses)", "Prestado activo + intereses" -> DashboardTitleVisual(
-        text = "Total activo (con intereses)",
+    "Total prestado activo (con intereses)", "Total activo (con intereses)", "Prestado activo + intereses" -> DashboardTitleVisual(
+        text = "Total prestado activo (con intereses)",
         icon = Icons.Outlined.TrendingUp,
         color = Color(0xFF1B5E20)
     )

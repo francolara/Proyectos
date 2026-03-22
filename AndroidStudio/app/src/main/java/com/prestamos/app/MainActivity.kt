@@ -226,6 +226,8 @@ private fun AppRoot(
                     onBusinessNameChange = onboardingViewModel::updateBusinessName,
                     onMainCurrencySelected = onboardingViewModel::selectMainCurrency,
                     onSecondaryCurrencySelected = onboardingViewModel::selectSecondaryCurrency,
+                    onDefaultInterestChange = onboardingViewModel::updateDefaultInterest,
+                    onTogglePaymentType = onboardingViewModel::toggleAllowedPaymentType,
                     onFinalizar = onboardingViewModel::finalizarConfiguracion
                 )
 

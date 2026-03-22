@@ -18,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -31,9 +32,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.foundation.text.KeyboardOptions
+import com.prestamos.app.data.local.entity.TipoPago
 import com.prestamos.app.ui.viewmodel.OnboardingUiState
 
 private data class CurrencyOption(
@@ -68,6 +72,8 @@ fun OnboardingScreen(
     onBusinessNameChange: (String) -> Unit,
     onMainCurrencySelected: (String) -> Unit,
     onSecondaryCurrencySelected: (String?) -> Unit,
+    onDefaultInterestChange: (String) -> Unit,
+    onTogglePaymentType: (TipoPago) -> Unit,
     onFinalizar: () -> Unit
 ) {
     var showMainCurrencyPicker by remember { mutableStateOf(false) }
@@ -155,6 +161,53 @@ fun OnboardingScreen(
                         onClick = { showSecondaryCurrencyPicker = true }
                     )
 
+                    OutlinedTextField(
+                        value = uiState.defaultInterest,
+                        onValueChange = { value ->
+                            val clean = value.replace(',', '.')
+                            val filtered = buildString {
+                                var hasDot = false
+                                clean.forEach { ch ->
+                                    when {
+                                        ch.isDigit() -> append(ch)
+                                        ch == '.' && !hasDot -> {
+                                            hasDot = true
+                                            append(ch)
+                                        }
+                                    }
+                                }
+                            }
+                            onDefaultInterestChange(filtered)
+                        },
+                        label = { Text("Interes por defecto (%) - opcional") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Text("Tipos de pago permitidos (elige al menos 1)", style = MaterialTheme.typography.labelLarge)
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        TipoPago.entries.forEach { tipo ->
+                            val selected = tipo in uiState.allowedPaymentTypes
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onTogglePaymentType(tipo) },
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Checkbox(
+                                    checked = selected,
+                                    onCheckedChange = { onTogglePaymentType(tipo) }
+                                )
+                                Text(
+                                    text = tipo.toOnboardingLabel(),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    }
+
                     if (!uiState.errorMessage.isNullOrBlank()) {
                         Text(
                             text = uiState.errorMessage,
@@ -200,6 +253,14 @@ fun OnboardingScreen(
             }
         )
     }
+}
+
+private fun TipoPago.toOnboardingLabel(): String = when (this) {
+    TipoPago.DIARIO -> "Diario"
+    TipoPago.SEMANAL -> "Semanal"
+    TipoPago.QUINCENAL -> "Quincenal"
+    TipoPago.MENSUAL -> "Mensual"
+    TipoPago.PERSONALIZADO -> "Personalizado"
 }
 
 @Composable

@@ -18,7 +18,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.prestamos.app.data.config.InitialSetupPreferences
+import com.prestamos.app.data.local.entity.TipoPago
 import com.prestamos.app.ui.viewmodel.AppViewModel
 
 private data class ConfigCurrencyOption(
@@ -73,6 +76,8 @@ fun ConfiguracionScreen(viewModel: AppViewModel) {
     var businessName by remember { mutableStateOf("") }
     var mainCurrencyCode by remember { mutableStateOf<String?>(null) }
     var secondaryCurrencyCode by remember { mutableStateOf<String?>(null) }
+    var defaultInterest by remember { mutableStateOf("") }
+    var allowedPaymentTypes by remember { mutableStateOf(setOf<TipoPago>()) }
     var originalMainCurrencyCode by remember { mutableStateOf<String?>(null) }
     var originalSecondaryCurrencyCode by remember { mutableStateOf<String?>(null) }
     var showMainCurrencyPicker by remember { mutableStateOf(false) }
@@ -83,6 +88,8 @@ fun ConfiguracionScreen(viewModel: AppViewModel) {
         businessName = prefs.getBusinessName()
         mainCurrencyCode = prefs.getMainCurrencyCode()
         secondaryCurrencyCode = prefs.getSecondaryCurrencyCode()
+        defaultInterest = prefs.getDefaultInterest()
+        allowedPaymentTypes = prefs.getAllowedPaymentTypes()
         originalMainCurrencyCode = mainCurrencyCode
         originalSecondaryCurrencyCode = secondaryCurrencyCode
         loaded = true
@@ -146,6 +153,62 @@ fun ConfiguracionScreen(viewModel: AppViewModel) {
                         if (!secondaryLocked) showSecondaryCurrencyPicker = true
                     }
                 )
+                OutlinedTextField(
+                    value = defaultInterest,
+                    onValueChange = { value ->
+                        val clean = value.replace(',', '.')
+                        val filtered = buildString {
+                            var hasDot = false
+                            clean.forEach { ch ->
+                                when {
+                                    ch.isDigit() -> append(ch)
+                                    ch == '.' && !hasDot -> {
+                                        hasDot = true
+                                        append(ch)
+                                    }
+                                }
+                            }
+                        }
+                        defaultInterest = filtered
+                    },
+                    label = { Text("Interes por defecto (%) - opcional") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Text("Tipos de pago habilitados", style = MaterialTheme.typography.labelLarge)
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    TipoPago.entries.forEach { tipo ->
+                        val selected = tipo in allowedPaymentTypes
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    allowedPaymentTypes = if (selected) {
+                                        allowedPaymentTypes - tipo
+                                    } else {
+                                        allowedPaymentTypes + tipo
+                                    }
+                                },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = selected,
+                                onCheckedChange = {
+                                    allowedPaymentTypes = if (selected) {
+                                        allowedPaymentTypes - tipo
+                                    } else {
+                                        allowedPaymentTypes + tipo
+                                    }
+                                }
+                            )
+                            Text(
+                                text = tipo.toConfigPaymentTypeLabel(),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }
                 Button(
                     onClick = {
                         val name = businessName.trim()
@@ -156,6 +219,10 @@ fun ConfiguracionScreen(viewModel: AppViewModel) {
                         }
                         if (main.isNullOrBlank()) {
                             Toast.makeText(context, "Selecciona una moneda principal", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+                        if (allowedPaymentTypes.isEmpty()) {
+                            Toast.makeText(context, "Selecciona al menos un tipo de pago", Toast.LENGTH_SHORT).show()
                             return@Button
                         }
                         val mainLocked = !originalMainCurrencyCode.isNullOrBlank() && usedCurrencyCodes.contains(originalMainCurrencyCode?.uppercase())
@@ -171,7 +238,9 @@ fun ConfiguracionScreen(viewModel: AppViewModel) {
                         prefs.updateConfiguration(
                             businessName = name,
                             mainCurrencyCode = main,
-                            secondaryCurrencyCode = secondaryCurrencyCode
+                            secondaryCurrencyCode = secondaryCurrencyCode,
+                            defaultInterest = defaultInterest,
+                            allowedPaymentTypes = allowedPaymentTypes
                         )
                         Toast.makeText(context, "Configuracion actualizada", Toast.LENGTH_SHORT).show()
                     },
@@ -370,4 +439,12 @@ private fun CurrencyOptionRow(
 private fun String?.toConfigCurrencyDisplay(): String {
     if (this.isNullOrBlank()) return ""
     return configCurrencyOptions.firstOrNull { it.code == this }?.displayText.orEmpty()
+}
+
+private fun TipoPago.toConfigPaymentTypeLabel(): String = when (this) {
+    TipoPago.DIARIO -> "Diario"
+    TipoPago.SEMANAL -> "Semanal"
+    TipoPago.QUINCENAL -> "Quincenal"
+    TipoPago.MENSUAL -> "Mensual"
+    TipoPago.PERSONALIZADO -> "Personalizado"
 }

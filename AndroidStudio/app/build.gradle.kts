@@ -1,4 +1,5 @@
 import java.util.Properties
+import java.io.File
 
 plugins {
     alias(libs.plugins.android.application)
@@ -19,16 +20,33 @@ val versionProperties = Properties().apply {
 
 val isReleaseBuildRequested = gradle.startParameter.taskNames.any { taskName ->
     val lower = taskName.lowercase()
-    lower.contains("release") && (lower.contains("assemble") || lower.contains("bundle"))
+    lower.contains("release") && (
+        lower.contains("assemble") ||
+            lower.contains("bundle") ||
+            lower.contains("package") ||
+            lower.contains("install")
+        )
+}
+val isDebugBuildRequested = gradle.startParameter.taskNames.any { taskName ->
+    val lower = taskName.lowercase()
+    lower.contains("debug") && (
+        lower.contains("assemble") ||
+            lower.contains("install") ||
+            lower.contains("package")
+        )
 }
 
 var computedVersionCode = versionProperties.getProperty("VERSION_CODE", "1").toIntOrNull() ?: 1
-val computedVersionName = versionProperties.getProperty("VERSION_NAME", "1.0.0")
+var computedVersionName = versionProperties.getProperty("VERSION_NAME", "1.0.0")
 
 if (isReleaseBuildRequested) {
     computedVersionCode += 1
     versionProperties.setProperty("VERSION_CODE", computedVersionCode.toString())
     versionPropertiesFile.outputStream().use { versionProperties.store(it, "Configuracion de version de la app") }
+} else if (isDebugBuildRequested) {
+    val debugAutoCode = (System.currentTimeMillis() / 60000L).toInt()
+    computedVersionCode = maxOf(computedVersionCode, debugAutoCode)
+    computedVersionName = "$computedVersionName-debug.$computedVersionCode"
 }
 
 android {
@@ -43,9 +61,10 @@ android {
         applicationId = "com.prestamos.app"
         minSdk = 24
         targetSdk = 36
-        // Versionado de publicacion:
-        // - VERSION_CODE sube automaticamente al ejecutar assembleRelease/bundleRelease.
-        // - VERSION_NAME se cambia manualmente en AndroidStudio/version.properties.
+        // Versionado:
+        // - Release: VERSION_CODE sube automaticamente en assembleRelease/bundleRelease.
+        // - Debug: VERSION_CODE usa marca de tiempo (minutos) para actualizar siempre.
+        // - VERSION_NAME base se define en AndroidStudio/version.properties.
         versionCode = computedVersionCode
         versionName = computedVersionName
 
@@ -70,6 +89,28 @@ android {
         compose = true
         buildConfig = true
     }
+}
+
+fun copyVersionedApk(buildType: String) {
+    val safeVersionName = computedVersionName.replace(Regex("[^A-Za-z0-9._-]"), "_")
+    val apkDir = layout.buildDirectory.dir("outputs/apk/$buildType").get().asFile
+    if (!apkDir.exists()) return
+    val targetName = "AppPrestamos-$buildType-v${safeVersionName}(${computedVersionCode}).apk"
+    apkDir.listFiles()
+        ?.filter { it.isFile && it.extension.equals("apk", ignoreCase = true) }
+        ?.forEach { apk ->
+            if (apk.name != targetName) {
+                apk.copyTo(File(apkDir, targetName), overwrite = true)
+            }
+        }
+}
+
+tasks.matching { it.name == "assembleRelease" }.configureEach {
+    doLast { copyVersionedApk("release") }
+}
+
+tasks.matching { it.name == "assembleDebug" }.configureEach {
+    doLast { copyVersionedApk("debug") }
 }
 
 dependencies {
