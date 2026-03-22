@@ -135,7 +135,7 @@ fun OnboardingScreen(
                     OutlinedTextField(
                         value = uiState.businessName,
                         onValueChange = onBusinessNameChange,
-                        label = { Text("Nombre del negocio o prestamista") },
+                        label = { Text("Nombre del Negocio") },
                         singleLine = true,
                         shape = RoundedCornerShape(14.dp),
                         modifier = Modifier.fillMaxWidth()

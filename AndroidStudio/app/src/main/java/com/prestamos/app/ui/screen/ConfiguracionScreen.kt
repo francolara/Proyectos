@@ -111,7 +111,7 @@ fun ConfiguracionScreen(viewModel: AppViewModel) {
                 androidx.compose.material3.OutlinedTextField(
                     value = businessName,
                     onValueChange = { businessName = it },
-                    label = { Text("Nombre del negocio o prestamista") },
+                    label = { Text("Nombre del Negocio") },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()

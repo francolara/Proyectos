@@ -7,6 +7,7 @@ import com.prestamos.app.data.local.AppDatabase
 import com.prestamos.app.data.local.entity.CuotaEntity
 import com.prestamos.app.data.local.entity.EstadoPrestamo
 import com.prestamos.app.data.local.entity.Moneda
+import com.prestamos.app.data.local.entity.PagoEntity
 import com.prestamos.app.data.local.entity.PrestamoEntity
 import com.prestamos.app.data.local.entity.TipoPago
 import com.prestamos.app.data.repository.PrestamosRepository
@@ -42,6 +43,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
+    )
+
+    val pagos = repository.observarPagos().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList<PagoEntity>()
     )
 
     private val clienteSeleccionadoPagos = MutableStateFlow<Long?>(null)
@@ -221,6 +228,19 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 mensaje.value = "Prestamo eliminado correctamente"
             }.onFailure {
                 mensaje.value = it.message ?: "No se pudo eliminar el prestamo"
+            }
+        }
+    }
+
+    fun eliminarPago(idPago: Long, onSuccess: () -> Unit = {}) {
+        viewModelScope.launch {
+            runCatching {
+                repository.eliminarPagoSiEsUltimo(idPago)
+            }.onSuccess {
+                mensaje.value = "Pago eliminado correctamente"
+                onSuccess()
+            }.onFailure {
+                mensaje.value = it.message ?: "No se pudo eliminar el pago"
             }
         }
     }

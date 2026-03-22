@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,9 +23,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AttachMoney
+import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.TrendingUp
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,15 +43,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import com.prestamos.app.ui.theme.AccentGold
 import com.prestamos.app.ui.theme.PrimaryGreen
 import com.prestamos.app.ui.theme.SecondaryGreen
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.prestamos.app.data.config.InitialSetupPreferences
+import com.prestamos.app.data.license.LicenseType
 import com.prestamos.app.data.local.entity.Moneda
 import com.prestamos.app.ui.screen.export.createDashboardDetallePdf
 import com.prestamos.app.ui.viewmodel.ActivationUiState
@@ -79,7 +92,8 @@ fun DashboardScreen(
     activationUiState: ActivationUiState,
     onActivationKeyChanged: (String) -> Unit,
     onActivateLicense: () -> Unit,
-    onRefreshLicenseStatus: () -> Unit
+    onRefreshLicenseStatus: () -> Unit,
+    onGoToActivation: () -> Unit
 ) {
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -109,23 +123,17 @@ fun DashboardScreen(
                     Text("Resumen general", style = MaterialTheme.typography.headlineSmall)
                     if (businessName.isNotBlank()) {
                         Text(
-                            businessName,
+                            "👤 $businessName",
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
-                    Text("Fecha: ${System.currentTimeMillis().toDateString()}")
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        val trialTexto = when {
-                            activationUiState.status.licenseType.name == "TRIAL" && !activationUiState.status.trialExpired -> "Trial: ${activationUiState.status.trialDaysRemaining} dia(s) restantes"
-                            activationUiState.status.licenseType.name == "TRIAL" && activationUiState.status.trialExpired -> "Trial expirado"
-                            activationUiState.status.licenseType.name == "MENSUAL" -> "Licencia MENSUAL activa"
-                            activationUiState.status.licenseType.name == "ANUAL" -> "Licencia ANUAL activa"
-                            else -> "Licencia FULL activa"
-                        }
-                        val trialColor = if (activationUiState.status.licenseType.name == "TRIAL") Color.Red else MaterialTheme.colorScheme.primary
-                        Text(trialTexto, color = trialColor, style = MaterialTheme.typography.bodyMedium)
-                    }
+                    Text("📅 ${System.currentTimeMillis().toDateString()}")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    DashboardLicenseStatusCard(
+                        activationUiState = activationUiState,
+                        onGoToActivation = onGoToActivation
+                    )
                 }
             }
         }
@@ -134,13 +142,13 @@ fun DashboardScreen(
             val capitalPrestadoActivo2 = state.prestamosActivosDetalle.sumByCurrency { it.montoPrestado }
             val prestadoActivoConInteres = state.prestamosActivosDetalle.sumByCurrency { it.montoTotalConInteres }
             Text(
-                text = "Historial de prestamos",
+                text = "📜 Historial de prestamos",
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.clickable { detalleSeleccionado = DashboardDetalle.HISTORIAL }
             )
             Spacer(modifier = Modifier.height(8.dp))
             DashboardMoneyCard(
-                title = "Capital prestado activo",
+                title = "Capital prestado (activo)",
                 totals = capitalPrestadoActivo2,
                 visibleCurrencies = visibleCurrencies,
                 modifier = Modifier.fillMaxWidth(),
@@ -151,7 +159,7 @@ fun DashboardScreen(
             }
             Spacer(modifier = Modifier.height(8.dp))
             DashboardMoneyCard(
-                title = "Prestado activo + intereses",
+                title = "Total activo (con intereses)",
                 totals = prestadoActivoConInteres,
                 visibleCurrencies = visibleCurrencies,
                 modifier = Modifier.fillMaxWidth(),
@@ -163,7 +171,7 @@ fun DashboardScreen(
             Spacer(modifier = Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 DashboardMoneyCard(
-                    title = "Saldo pendiente",
+                    title = "Pendiente",
                     totals = state.cuotasPendientesDetalle.sumByCurrency { it.saldoPendiente },
                     visibleCurrencies = visibleCurrencies,
                     modifier = Modifier.weight(1f),
@@ -494,6 +502,105 @@ fun DashboardScreen(
 }
 
 @Composable
+private fun DashboardLicenseStatusCard(
+    activationUiState: ActivationUiState,
+    onGoToActivation: () -> Unit
+) {
+    val statusUi = activationUiState.status.toDashboardLicenseUi()
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = statusUi.containerColor)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = statusUi.title,
+                style = MaterialTheme.typography.labelLarge,
+                color = statusUi.titleColor
+            )
+            Text(
+                text = statusUi.subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = statusUi.subtitleColor
+            )
+            if (statusUi.showActivateButton) {
+                Button(
+                    onClick = onGoToActivation,
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Activar version Pro")
+                }
+            }
+        }
+    }
+}
+
+private data class DashboardLicenseUi(
+    val title: String,
+    val subtitle: String,
+    val containerColor: Color,
+    val showActivateButton: Boolean,
+    val titleColor: Color,
+    val subtitleColor: Color
+)
+
+private fun com.prestamos.app.data.license.LicenseStatus.toDashboardLicenseUi(): DashboardLicenseUi {
+    if (licenseType == LicenseType.TRIAL && !trialExpired) {
+        val trialTitle = if (trialDaysRemaining <= 3L) "Ultimos dias de prueba" else "Version de prueba"
+        val trialColor = when {
+            trialDaysRemaining <= 3L -> Color(0xFFFFDCA8)
+            trialDaysRemaining <= 10L -> Color(0xFFFFE9BD)
+            else -> Color(0xFFFFF3CC)
+        }
+        return DashboardLicenseUi(
+            title = trialTitle,
+            subtitle = "Te quedan $trialDaysRemaining dias",
+            containerColor = trialColor,
+            showActivateButton = true,
+            titleColor = Color(0xFF7A4F01),
+            subtitleColor = Color(0xFF8A5A00)
+        )
+    }
+
+    if (isValid && isActivated) {
+        val plan = when (licenseType) {
+            LicenseType.MENSUAL -> "Mensual"
+            LicenseType.ANUAL -> "Anual"
+            LicenseType.FULL -> "Full"
+            LicenseType.TRIAL -> "Prueba"
+        }
+        val vigencia = if (licenseType == LicenseType.FULL) {
+            "Sin vencimiento"
+        } else {
+            expirationDate?.toDateString() ?: "No disponible"
+        }
+        return DashboardLicenseUi(
+            title = "Licencia activa",
+            subtitle = "Plan $plan - Valida hasta $vigencia",
+            containerColor = Color(0xFFDDF3E1),
+            showActivateButton = false,
+            titleColor = Color(0xFF1B5E20),
+            subtitleColor = Color(0xFF2E7D32)
+        )
+    }
+
+    return DashboardLicenseUi(
+        title = "Licencia expirada",
+        subtitle = "Tu acceso completo termino",
+        containerColor = Color(0xFFFFDCDC),
+        showActivateButton = true,
+        titleColor = Color(0xFF8E1F1F),
+        subtitleColor = Color(0xFF9D2B2B)
+    )
+}
+
+@Composable
 private fun DashboardCard(
     title: String,
     value: String,
@@ -514,11 +621,10 @@ private fun DashboardCard(
             modifier = Modifier.padding(12.dp),
             horizontalAlignment = if (centerContent) Alignment.CenterHorizontally else Alignment.Start
         ) {
-            Text(
-                title,
-                style = MaterialTheme.typography.labelLarge,
-                textAlign = if (centerContent) TextAlign.Center else TextAlign.Start,
-                modifier = if (centerContent) Modifier.fillMaxWidth() else Modifier
+            DashboardCardTitle(
+                title = title,
+                centerContent = centerContent,
+                compact = false
             )
             Text(
                 value,
@@ -1907,7 +2013,6 @@ private fun DashboardMoneyCard(
     val ordered = visibleCurrencies.ifEmpty { listOf(Moneda.SOLES) }
     val outerPadding = if (compact) 8.dp else 12.dp
     val innerPadding = if (compact) 6.dp else 8.dp
-    val titleStyle = if (compact) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelLarge
     val amountStyle = if (compact) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleMedium
     val nameStyle = if (compact) MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelSmall
     Card(
@@ -1921,7 +2026,10 @@ private fun DashboardMoneyCard(
             modifier = Modifier.padding(outerPadding),
             verticalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 8.dp)
         ) {
-            Text(title, style = titleStyle)
+            DashboardCardTitle(
+                title = title,
+                compact = compact
+            )
             val subCardContent: @Composable () -> Unit = {
                 ordered.forEach { moneda ->
                     androidx.compose.material3.Surface(
@@ -1972,6 +2080,85 @@ private fun DashboardMoneyCard(
             }
         }
     }
+}
+
+@Composable
+private fun DashboardCardTitle(
+    title: String,
+    centerContent: Boolean = false,
+    compact: Boolean = false
+) {
+    val visual = resolveDashboardTitleVisual(title)
+    val iconSize = if (compact) 16.dp else 18.dp
+    val textStyle = MaterialTheme.typography.labelLarge.copy(
+        fontSize = if (compact) 13.sp else 14.sp,
+        fontWeight = FontWeight.SemiBold
+    )
+    Row(
+        modifier = if (centerContent) Modifier.fillMaxWidth() else Modifier,
+        horizontalArrangement = if (centerContent) Arrangement.Center else Arrangement.Start,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        visual.icon?.let { icon ->
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = visual.color,
+                modifier = Modifier.size(iconSize)
+            )
+            Spacer(modifier = Modifier.width(7.dp))
+        }
+        Text(
+            text = visual.text,
+            style = textStyle,
+            color = visual.color,
+            textAlign = if (centerContent) TextAlign.Center else TextAlign.Start
+        )
+    }
+}
+
+private data class DashboardTitleVisual(
+    val text: String,
+    val icon: ImageVector?,
+    val color: Color
+)
+
+private fun resolveDashboardTitleVisual(title: String): DashboardTitleVisual = when (title) {
+    "Capital prestado (activo)", "Capital prestado activo" -> DashboardTitleVisual(
+        text = "Capital prestado (activo)",
+        icon = Icons.Outlined.AttachMoney,
+        color = Color(0xFF1B5E20)
+    )
+
+    "Total activo (con intereses)", "Prestado activo + intereses" -> DashboardTitleVisual(
+        text = "Total activo (con intereses)",
+        icon = Icons.Outlined.TrendingUp,
+        color = Color(0xFF1B5E20)
+    )
+
+    "Pendiente", "Saldo pendiente" -> DashboardTitleVisual(
+        text = "Pendiente",
+        icon = Icons.Outlined.Schedule,
+        color = Color(0xFFF57F17)
+    )
+
+    "Cobrado hoy" -> DashboardTitleVisual(
+        text = "Cobrado hoy",
+        icon = Icons.Outlined.Payments,
+        color = Color(0xFF2E7D32)
+    )
+
+    "Cuotas vencidas" -> DashboardTitleVisual(
+        text = "Cuotas vencidas",
+        icon = Icons.Outlined.Warning,
+        color = Color(0xFFC62828)
+    )
+
+    else -> DashboardTitleVisual(
+        text = title,
+        icon = null,
+        color = Color(0xFF1F1F1F)
+    )
 }
 
 private fun resolveVisibleCurrencies(mainCode: String?, secondaryCode: String?): List<Moneda> {

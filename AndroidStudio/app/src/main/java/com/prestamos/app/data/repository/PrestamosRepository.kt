@@ -219,6 +219,46 @@ class PrestamosRepository(
         }
     }
 
+    suspend fun eliminarPagoSiEsUltimo(idPago: Long) {
+        database.withTransaction {
+            val pago = pagoDao.obtenerPorId(idPago) ?: error("Pago no encontrado")
+            val ultimoPago = pagoDao.obtenerUltimoPorPrestamo(pago.idPrestamo)
+                ?: error("No hay pagos para este prestamo")
+            require(ultimoPago.idPago == pago.idPago) {
+                "Solo se puede eliminar el ultimo pago del prestamo"
+            }
+
+            val cuota = cuotaDao.obtenerPorId(pago.idCuota) ?: error("Cuota no encontrada")
+            val ahora = System.currentTimeMillis()
+            val nuevoMontoPagado = (cuota.montoPagado - pago.montoAbono).coerceAtLeast(0.0)
+            val nuevoSaldo = (cuota.montoCuota - nuevoMontoPagado).coerceAtLeast(0.0)
+            val nuevoEstado = when {
+                nuevoMontoPagado <= 0.0 -> EstadoCuota.PENDIENTE
+                nuevoSaldo <= 0.0 -> EstadoCuota.PAGADO
+                else -> EstadoCuota.PARCIAL
+            }
+
+            cuotaDao.actualizar(
+                cuota.copy(
+                    montoPagado = nuevoMontoPagado,
+                    saldoPendiente = nuevoSaldo,
+                    estadoCuota = nuevoEstado,
+                    fechaModificacion = ahora
+                )
+            )
+            pagoDao.eliminarPorId(pago.idPago)
+
+            val cuotasPrestamo = cuotaDao.listarPorPrestamoInterno(pago.idPrestamo)
+            val prestamo = prestamoDao.obtenerPorId(pago.idPrestamo) ?: return@withTransaction
+            val estadoPrestamo = if (cuotasPrestamo.all { it.saldoPendiente <= 0.0 }) {
+                EstadoPrestamo.PAGADO
+            } else {
+                EstadoPrestamo.ACTIVO
+            }
+            prestamoDao.actualizar(prestamo.copy(estadoPrestamo = estadoPrestamo, fechaModificacion = ahora))
+        }
+    }
+
     private fun millisToLocalDate(millis: Long): LocalDate =
         Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
 

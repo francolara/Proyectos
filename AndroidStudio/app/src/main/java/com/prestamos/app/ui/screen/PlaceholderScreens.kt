@@ -5,6 +5,7 @@ import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +21,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,11 +46,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
@@ -74,7 +80,7 @@ import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 
-// Firma Codex 2026-03-17
+// Firma Codex 2026-03-21
 
 @Composable
 fun ClientesScreen(viewModel: AppViewModel) {
@@ -183,7 +189,7 @@ fun ClientesScreen(viewModel: AppViewModel) {
                         horizontalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
                         Text(
-                            text = "Editar",
+                            text = "✏ Editar",
                             textAlign = TextAlign.Center,
                             style = MaterialTheme.typography.labelSmall,
                             maxLines = 1,
@@ -199,7 +205,7 @@ fun ClientesScreen(viewModel: AppViewModel) {
                                 .padding(vertical = 1.dp)
                         )
                         Text(
-                            text = "Eliminar",
+                            text = "🗑 Eliminar",
                             textAlign = TextAlign.Center,
                             style = MaterialTheme.typography.labelSmall,
                             maxLines = 1,
@@ -209,7 +215,7 @@ fun ClientesScreen(viewModel: AppViewModel) {
                                 .padding(vertical = 1.dp)
                         )
                         Text(
-                            text = "Historial",
+                            text = "📜 Historial",
                             textAlign = TextAlign.Center,
                             style = MaterialTheme.typography.labelSmall,
                             maxLines = 1,
@@ -314,44 +320,51 @@ fun ClientesScreen(viewModel: AppViewModel) {
         val prestamosCliente = prestamos
             .filter { it.idCliente == cliente.idCliente && (it.estadoPrestamo == EstadoPrestamo.ACTIVO || it.estadoPrestamo == EstadoPrestamo.PAGADO) }
             .sortedByDescending { it.fechaRegistro }
+        val saldoPendienteConInteresPorPrestamo = prestamosCliente.associate { prestamo ->
+            prestamo.idPrestamo to cuotas
+                .filter { it.idPrestamo == prestamo.idPrestamo }
+                .sumOf { it.saldoPendiente }
+                .coerceAtLeast(0.0)
+        }
 
         val totalCapitalPorMoneda = prestamosCliente.groupBy { it.moneda }.mapValues { (_, v) -> v.sumOf { it.montoPrestado } }
         val totalCapitalConInteresPorMoneda = prestamosCliente.groupBy { it.moneda }.mapValues { (_, v) -> v.sumOf { it.montoTotalPrestamo } }
-        val totalPendientePorMoneda = prestamosCliente.groupBy { it.moneda }.mapValues { (moneda, v) ->
+        val totalPendienteConInteresPorMoneda = prestamosCliente.groupBy { it.moneda }.mapValues { (_, v) ->
             v.sumOf { prestamo ->
-                cuotas.filter { it.idPrestamo == prestamo.idPrestamo }.sumOf { it.saldoPendiente }
+                saldoPendienteConInteresPorPrestamo[prestamo.idPrestamo] ?: 0.0
             }
         }
+        val monedasConPrestamos = prestamosCliente.map { it.moneda }
+        val monedasResumen = (visibleCurrencies + monedasConPrestamos)
+            .distinct()
+            .ifEmpty { listOf(Moneda.SOLES) }
 
         val historialTexto = buildString {
             appendLine("Historial de prestamos")
             appendLine("Cliente: ${cliente.nombre} ${cliente.apellido}".trim())
             appendLine("Documento: ${cliente.documentoIdentidad}")
-            appendLine("Total capital:")
-            appendLine(totalCapitalPorMoneda.toTotalsText(visibleCurrencies))
-            appendLine("Total capital + intereses:")
-            appendLine(totalCapitalConInteresPorMoneda.toTotalsText(visibleCurrencies))
-            appendLine("Total saldo pendiente + intereses:")
-            appendLine(totalPendientePorMoneda.toTotalsText(visibleCurrencies))
-            appendLine()
-
             if (prestamosCliente.isEmpty()) {
                 appendLine("No hay prestamos activos o pagados para este cliente.")
             } else {
-                prestamosCliente.forEach { prestamo ->
-                    val saldoPendienteConInteres = cuotas
-                        .filter { it.idPrestamo == prestamo.idPrestamo }
-                        .sumOf { it.saldoPendiente }
-                        .coerceAtLeast(0.0)
+                appendLine()
+                appendLine("Resumen general (por moneda)")
+                monedasResumen.forEach { moneda ->
+                    appendLine("Moneda: ${moneda.displayName}")
+                    appendLine("  Capital: ${(totalCapitalPorMoneda[moneda] ?: 0.0).toMoney(moneda)}")
+                    appendLine("  Capital + intereses: ${(totalCapitalConInteresPorMoneda[moneda] ?: 0.0).toMoney(moneda)}")
+                    appendLine("  Saldo pendiente + intereses: ${(totalPendienteConInteresPorMoneda[moneda] ?: 0.0).toMoney(moneda)}")
+                    appendLine("  Pendiente: ${(totalPendienteConInteresPorMoneda[moneda] ?: 0.0).toMoney(moneda)}")
+                }
+                appendLine()
 
+                prestamosCliente.forEach { prestamo ->
+                    val saldoPendienteConInteres = saldoPendienteConInteresPorPrestamo[prestamo.idPrestamo] ?: 0.0
                     val estadoTexto = if (prestamo.estadoPrestamo == EstadoPrestamo.ACTIVO) "ACTIVO" else "PAGADO"
-                    appendLine(
-                        "#${prestamo.idPrestamo} | ${prestamo.fechaRegistro.toDateString()} | " +
-                            "Capital ${prestamo.montoPrestado.toMoney(prestamo.moneda)} | " +
-                            "Capital + intereses ${prestamo.montoTotalPrestamo.toMoney(prestamo.moneda)} | " +
-                            "Saldo pendiente + intereses ${saldoPendienteConInteres.toMoney(prestamo.moneda)} | " +
-                            "Estado: $estadoTexto"
-                    )
+                    appendLine("Prestamo #${prestamo.idPrestamo} - $estadoTexto")
+                    appendLine("  Fecha: ${prestamo.fechaRegistro.toDateString()}")
+                    appendLine("  Capital: ${prestamo.montoPrestado.toMoney(prestamo.moneda)}")
+                    appendLine("  Capital + intereses: ${prestamo.montoTotalPrestamo.toMoney(prestamo.moneda)}")
+                    appendLine("  Pendiente + intereses: ${saldoPendienteConInteres.toMoney(prestamo.moneda)}")
                 }
             }
         }
@@ -393,39 +406,53 @@ fun ClientesScreen(viewModel: AppViewModel) {
             },
             title = { Text("Historial de prestamos") },
             text = {
-                if (prestamosCliente.isEmpty()) {
-                    Text("No hay prestamos activos o pagados para este cliente.")
-                } else {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 440.dp)
+                ) {
+                    if (prestamosCliente.isEmpty()) {
                         item {
+                            Text("No hay prestamos activos o pagados para este cliente.")
+                        }
+                    } else {
+                        item {
+                            Text("📊 Resumen general", style = MaterialTheme.typography.labelLarge)
+                        }
+                        items(monedasResumen) { moneda ->
                             Card(modifier = Modifier.fillMaxWidth()) {
                                 Column(
                                     modifier = Modifier.padding(10.dp),
                                     verticalArrangement = Arrangement.spacedBy(3.dp)
                                 ) {
-                                    Text("Total capital:\n${totalCapitalPorMoneda.toTotalsText(visibleCurrencies)}")
-                                    Text("Total capital + intereses:\n${totalCapitalConInteresPorMoneda.toTotalsText(visibleCurrencies)}")
-                                    Text("Total saldo pendiente + intereses:\n${totalPendientePorMoneda.toTotalsText(visibleCurrencies)}")
+                                    Text("💱 ${moneda.displayName}", style = MaterialTheme.typography.titleSmall)
+                                    Text("💰 Capital: ${(totalCapitalPorMoneda[moneda] ?: 0.0).toMoney(moneda)}")
+                                    Text("💰 Capital + intereses: ${(totalCapitalConInteresPorMoneda[moneda] ?: 0.0).toMoney(moneda)}")
+                                    Text("💵 Saldo pendiente + intereses: ${(totalPendienteConInteresPorMoneda[moneda] ?: 0.0).toMoney(moneda)}")
+                                    Text("🧾 Pendiente: ${(totalPendienteConInteresPorMoneda[moneda] ?: 0.0).toMoney(moneda)}")
                                 }
                             }
                         }
-                        items(prestamosCliente) { prestamo ->
-                            val saldoPendienteConInteres = cuotas
-                                .filter { it.idPrestamo == prestamo.idPrestamo }
-                                .sumOf { it.saldoPendiente }
-                                .coerceAtLeast(0.0)
-                            val estadoTexto = if (prestamo.estadoPrestamo == EstadoPrestamo.ACTIVO) "ACTIVO" else "PAGADO"
+                        item {
+                            Text("📄 Lista", style = MaterialTheme.typography.labelLarge)
+                        }
+                        items(prestamosCliente, key = { it.idPrestamo }) { prestamo ->
+                            val saldoPendienteConInteres = saldoPendienteConInteresPorPrestamo[prestamo.idPrestamo] ?: 0.0
+                            val activo = prestamo.estadoPrestamo == EstadoPrestamo.ACTIVO
+                            val estadoTexto = if (activo) "🟡 ACTIVO" else "🟢 PAGADO"
+                            val estadoColor = if (activo) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
 
                             Card(modifier = Modifier.fillMaxWidth()) {
                                 Column(
                                     modifier = Modifier.padding(10.dp),
                                     verticalArrangement = Arrangement.spacedBy(3.dp)
                                 ) {
-                                    Text("Prestamo #${prestamo.idPrestamo} - $estadoTexto", style = MaterialTheme.typography.titleSmall)
-                                    Text("Fecha: ${prestamo.fechaRegistro.toDateString()}")
-                                    Text("Capital: ${prestamo.montoPrestado.toMoney(prestamo.moneda)}")
-                                    Text("Capital + intereses: ${prestamo.montoTotalPrestamo.toMoney(prestamo.moneda)}")
-                                    Text("Saldo pendiente + intereses: ${saldoPendienteConInteres.toMoney(prestamo.moneda)}")
+                                    Text("📄 Prestamo #${prestamo.idPrestamo}        $estadoTexto", style = MaterialTheme.typography.titleSmall, color = estadoColor)
+                                    Text("📅 ${prestamo.fechaRegistro.toDateString()}")
+                                    Text("💰 ${prestamo.montoPrestado.toMoney(prestamo.moneda)}  ${prestamo.moneda.displayName}")
+                                    Text("💵 ${prestamo.montoTotalPrestamo.toMoney(prestamo.moneda)}")
+                                    Text("${if (activo) "🟡" else "✔️"} ${saldoPendienteConInteres.toMoney(prestamo.moneda)}")
                                 }
                             }
                         }
@@ -756,6 +783,7 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                         text = "\uD83D\uDDD1 Eliminar",
                         style = MaterialTheme.typography.labelSmall,
                         modifier = Modifier
+                            .align(Alignment.End)
                             .clickable { viewModel.eliminarPrestamo(prestamo.idPrestamo) }
                             .padding(top = 1.dp, bottom = 0.dp)
                     )
@@ -941,8 +969,11 @@ fun PrestamosScreen(viewModel: AppViewModel) {
 @Composable
 fun PagosScreen(viewModel: AppViewModel) {
     val clientes by viewModel.clientes.collectAsStateWithLifecycle()
-    val prestamos by viewModel.prestamosClientePagos.collectAsStateWithLifecycle()
+    val prestamosCliente by viewModel.prestamosClientePagos.collectAsStateWithLifecycle()
     val cuotas by viewModel.cuotasPrestamoPagos.collectAsStateWithLifecycle()
+    val prestamosTodos by viewModel.prestamos.collectAsStateWithLifecycle()
+    val cuotasTodas by viewModel.cuotas.collectAsStateWithLifecycle()
+    val pagos by viewModel.pagos.collectAsStateWithLifecycle()
 
     var busquedaCliente by remember { mutableStateOf("") }
 
@@ -954,11 +985,43 @@ fun PagosScreen(viewModel: AppViewModel) {
     var expandedPrestamo by remember { mutableStateOf(false) }
     var expandedCuota by remember { mutableStateOf(false) }
     var mostrarRegistroOk by remember { mutableStateOf(false) }
+    var pagoAEliminar by remember { mutableStateOf<PagoListadoItem?>(null) }
 
     val cuotaProxima = cuotas
         .filter { it.saldoPendiente > 0.0 }
         .minByOrNull { it.numeroCuota }
     val opcionesCuota = listOfNotNull(cuotaProxima)
+    val clienteById = remember(clientes) { clientes.associateBy { it.idCliente } }
+    val prestamoById = remember(prestamosTodos) { prestamosTodos.associateBy { it.idPrestamo } }
+    val cuotaById = remember(cuotasTodas) { cuotasTodas.associateBy { it.idCuota } }
+    val ultimoPagoIdPorPrestamo = remember(pagos) {
+        pagos.groupBy { it.idPrestamo }.mapValues { (_, lista) -> lista.firstOrNull()?.idPago }
+    }
+    val pagosListado = remember(pagos, prestamoById, clienteById, cuotaById) {
+        pagos.mapNotNull { pago ->
+            val prestamo = prestamoById[pago.idPrestamo] ?: return@mapNotNull null
+            val cliente = clienteById[prestamo.idCliente]
+            val cuota = cuotaById[pago.idCuota]
+            PagoListadoItem(
+                idPago = pago.idPago,
+                idPrestamo = pago.idPrestamo,
+                numeroCuota = cuota?.numeroCuota ?: 0,
+                clienteNombre = cliente?.let { "${it.nombre} ${it.apellido}".trim() } ?: "Cliente no disponible",
+                montoAbono = pago.montoAbono,
+                fechaPago = pago.fechaPago,
+                moneda = prestamo.moneda,
+                cuotaPagada = (cuota?.saldoPendiente ?: 0.0) <= 0.0
+            )
+        }
+    }
+    val darkTheme = isSystemInDarkTheme()
+    val pagoCardColor = if (darkTheme) {
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+    } else {
+        Color(0xFFE9E6EF)
+    }
+    val pagoTextColor = if (darkTheme) MaterialTheme.colorScheme.onSurface else Color(0xFF1F1F1F)
+    val pagoSecondaryTextColor = if (darkTheme) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF2F2F2F)
 
     LaunchedEffect(idPrestamo, cuotaProxima?.idCuota) {
         idCuota = cuotaProxima?.idCuota
@@ -996,9 +1059,9 @@ fun PagosScreen(viewModel: AppViewModel) {
             expanded = expandedPrestamo,
             onExpandedChange = { expandedPrestamo = it },
             label = "Prestamo",
-            selected = prestamos.firstOrNull { it.idPrestamo == idPrestamo }
+            selected = prestamosCliente.firstOrNull { it.idPrestamo == idPrestamo }
                 ?.let { "#${it.idPrestamo} - saldo ${it.montoTotalPrestamo.toMoney(it.moneda)}" } ?: "",
-            options = prestamos,
+            options = prestamosCliente,
             optionText = { "#${it.idPrestamo} - saldo ${it.montoTotalPrestamo.toMoney(it.moneda)}" },
             onSelect = {
                 idPrestamo = it.idPrestamo
@@ -1023,6 +1086,7 @@ fun PagosScreen(viewModel: AppViewModel) {
             onValueChange = { montoAbono = onlyDecimal(it) },
             label = { Text("Monto abonado") },
             singleLine = true,
+            textStyle = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.End),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier.fillMaxWidth()
         )
@@ -1039,6 +1103,89 @@ fun PagosScreen(viewModel: AppViewModel) {
                 }
             }
         }) { Text("Registrar pago") }
+
+        Spacer(modifier = Modifier.height(12.dp))
+        Text("Listado", style = MaterialTheme.typography.titleMedium)
+        Spacer(modifier = Modifier.height(8.dp))
+        if (pagosListado.isEmpty()) {
+            Text("No hay pagos registrados.")
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                items(pagosListado, key = { it.idPago }) { pago ->
+                    val puedeEliminar = ultimoPagoIdPorPrestamo[pago.idPrestamo] == pago.idPago
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = pagoCardColor
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(7.dp),
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "\uD83D\uDC64 ${pago.clienteNombre}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = pagoTextColor
+                                )
+                                Text(
+                                    text = "\uD83D\uDCC5 ${pago.fechaPago.toDateString()}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = pagoSecondaryTextColor
+                                )
+                            }
+                            Text(
+                                text = "\uD83D\uDCB3 Pr\u00E9stamo #${pago.idPrestamo}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = pagoTextColor
+                            )
+                            Text(
+                                text = "\uD83D\uDCC4 Cuota ${pago.numeroCuota}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = pagoTextColor
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "\uD83D\uDCB0 ${pago.montoAbono.toMoney(pago.moneda)}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = pagoTextColor
+                                )
+                                Text(
+                                    text = if (pago.cuotaPagada) "\u2705 Pagado" else "\uD83D\uDFE1 Parcial",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (pago.cuotaPagada) Color(0xFF2E7D32) else Color(0xFFF57F17)
+                                )
+                            }
+                            Text(
+                                text = "\uD83D\uDDD1 Eliminar",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (puedeEliminar) MaterialTheme.colorScheme.error else pagoSecondaryTextColor,
+                                modifier = Modifier
+                                    .align(Alignment.End)
+                                    .alpha(if (puedeEliminar) 1f else 0.45f)
+                                    .clickable(enabled = puedeEliminar) { pagoAEliminar = pago }
+                                    .padding(top = 1.dp, bottom = 0.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 
     if (mostrarRegistroOk) {
@@ -1051,7 +1198,38 @@ fun PagosScreen(viewModel: AppViewModel) {
             text = { Text("Se realizo el registro correctamente") }
         )
     }
+
+    if (pagoAEliminar != null) {
+        val pago = pagoAEliminar ?: return
+        AlertDialog(
+            onDismissRequest = { pagoAEliminar = null },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.eliminarPago(pago.idPago)
+                    pagoAEliminar = null
+                }) {
+                    Text("Eliminar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pagoAEliminar = null }) { Text("Cancelar") }
+            },
+            title = { Text("Eliminar pago") },
+            text = { Text("Solo se puede eliminar el ultimo pago del prestamo.\n\nSe eliminara el pago #${pago.idPago}.") }
+        )
+    }
 }
+
+private data class PagoListadoItem(
+    val idPago: Long,
+    val idPrestamo: Long,
+    val numeroCuota: Int,
+    val clienteNombre: String,
+    val montoAbono: Double,
+    val fechaPago: Long,
+    val moneda: Moneda,
+    val cuotaPagada: Boolean
+)
 
 @Composable
 fun ReportesScreen(viewModel: AppViewModel) {
@@ -1268,3 +1446,4 @@ private fun intervaloDiasEntreCuotas(cuotas: List<com.prestamos.app.data.local.e
     val segunda = Instant.ofEpochMilli(ordenadas[1].fechaVencimiento).atZone(ZoneId.systemDefault()).toLocalDate()
     return ChronoUnit.DAYS.between(primera, segunda).coerceAtLeast(0L)
 }
+
