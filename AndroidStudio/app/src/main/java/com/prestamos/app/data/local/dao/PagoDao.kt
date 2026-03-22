@@ -18,7 +18,7 @@ interface PagoDao {
     @Query("SELECT SUM(montoAbono) FROM pagos")
     fun totalCobrado(): Flow<Double?>
 
-    @Query("SELECT * FROM pagos ORDER BY fechaPago DESC")
+    @Query("SELECT * FROM pagos ORDER BY fechaPago DESC, idPago DESC")
     fun listarTodos(): Flow<List<PagoEntity>>
 
     @Query("SELECT * FROM pagos ORDER BY idPago")
@@ -32,4 +32,13 @@ interface PagoDao {
 
     @Query("SELECT COUNT(*) FROM pagos WHERE idPrestamo = :idPrestamo")
     suspend fun contarPorPrestamo(idPrestamo: Long): Int
+
+    @Query("SELECT * FROM pagos WHERE idPago = :idPago LIMIT 1")
+    suspend fun obtenerPorId(idPago: Long): PagoEntity?
+
+    @Query("SELECT * FROM pagos WHERE idPrestamo = :idPrestamo ORDER BY fechaPago DESC, idPago DESC LIMIT 1")
+    suspend fun obtenerUltimoPorPrestamo(idPrestamo: Long): PagoEntity?
+
+    @Query("DELETE FROM pagos WHERE idPago = :idPago")
+    suspend fun eliminarPorId(idPago: Long)
 }

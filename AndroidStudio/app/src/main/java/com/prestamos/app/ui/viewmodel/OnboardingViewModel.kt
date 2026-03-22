@@ -68,7 +68,7 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
         val mainCurrency = current.mainCurrencyCode
 
         if (businessName.isBlank()) {
-            _uiState.value = current.copy(errorMessage = "Ingresa el nombre del negocio o prestamista")
+            _uiState.value = current.copy(errorMessage = "Ingresa el Nombre del Negocio")
             return
         }
         if (mainCurrency.isNullOrBlank()) {

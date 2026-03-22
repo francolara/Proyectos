@@ -206,7 +206,7 @@ class LicenseManager(private val context: Context) {
     }
 
     companion object {
-        private const val TRIAL_DAYS = 30L
+        private const val TRIAL_DAYS = 15L
         private const val LICENSE_SECRET = "PRST_APP_LICENSE_PRIVATE_2026_#84KF92@A"
     }
 }

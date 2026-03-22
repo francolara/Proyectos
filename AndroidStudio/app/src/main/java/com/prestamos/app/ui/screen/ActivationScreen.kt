@@ -113,29 +113,6 @@ fun ActivationScreen(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-
-        if (status.licenseType == LicenseType.TRIAL && !status.trialExpired) {
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = if (dark) Color(0xFF1F2D21) else Color(0xFFEFF8EF)
-                )
-            ) {
-                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        "Periodo de prueba activo",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        "Te quedan ${status.trialDaysRemaining} dia(s) para activar la version Pro.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-
         Card(
             shape = RoundedCornerShape(18.dp),
             colors = CardDefaults.cardColors(
@@ -425,21 +402,24 @@ private fun copyToClipboard(context: Context, value: String): Boolean {
 private fun openWhatsAppForLicense(context: Context, deviceCode: String, selectedPlan: String) {
     val message = "Hola, quiero activar la app.\nPlan: $selectedPlan\nCodigo de dispositivo: $deviceCode"
     val uri = Uri.parse("https://wa.me/$LICENSE_WHATSAPP_NUMBER?text=${Uri.encode(message)}")
-    val intent = Intent(Intent.ACTION_VIEW, uri)
-    val packageManager = context.packageManager
-    val hasWhatsApp = packageManager.getLaunchIntentForPackage("com.whatsapp") != null ||
-        packageManager.getLaunchIntentForPackage("com.whatsapp.w4b") != null
+    val whatsappIntent = Intent(Intent.ACTION_VIEW, uri).apply { `package` = "com.whatsapp" }
+    val whatsappBusinessIntent = Intent(Intent.ACTION_VIEW, uri).apply { `package` = "com.whatsapp.w4b" }
+    val fallbackIntent = Intent(Intent.ACTION_VIEW, uri)
 
-    if (!hasWhatsApp) {
-        Toast.makeText(context, "WhatsApp no esta instalado", Toast.LENGTH_SHORT).show()
-        return
-    }
+    val opened = tryStartActivity(context, whatsappIntent) ||
+        tryStartActivity(context, whatsappBusinessIntent) ||
+        tryStartActivity(context, fallbackIntent)
 
-    try {
-        context.startActivity(intent)
-    } catch (_: ActivityNotFoundException) {
+    if (!opened) {
         Toast.makeText(context, "WhatsApp no esta instalado", Toast.LENGTH_SHORT).show()
     }
+}
+
+private fun tryStartActivity(context: Context, intent: Intent): Boolean = try {
+    context.startActivity(intent)
+    true
+} catch (_: ActivityNotFoundException) {
+    false
 }
 
 private fun openEmailForLicense(context: Context, deviceCode: String, selectedPlan: String) {

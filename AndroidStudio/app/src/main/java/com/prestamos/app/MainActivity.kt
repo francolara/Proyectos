@@ -12,6 +12,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -265,6 +266,8 @@ private fun PrestamosApp(
             add(SideMenuItem(destination.route, if (destination.title.isBlank()) "Salir" else destination.title))
         }
     }
+    val activationState by activationViewModel.uiState.collectAsStateWithLifecycle()
+
     var menuExpanded by rememberSaveable { mutableStateOf(false) }
     val sideMenuWidth by animateDpAsState(targetValue = if (menuExpanded) 170.dp else 52.dp, label = "side_menu_width")
 
@@ -272,44 +275,19 @@ private fun PrestamosApp(
         containerColor = androidx.compose.material3.MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
-        Row(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            SideMenu(
-                width = sideMenuWidth,
-                expanded = menuExpanded,
-                darkModeRoute = modoNocheRoute,
-                isDarkMode = isDarkMode,
-                currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route,
-                destinations = menuItems,
-                onToggleExpanded = { menuExpanded = !menuExpanded },
-                onNavigate = { route ->
-                    if (route == modoNocheRoute) {
-                        onToggleDarkMode(!isDarkMode)
-                    } else {
-                        navController.navigate(route) {
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    }
-                    menuExpanded = false
-                }
-            )
             NavHost(
                 navController = navController,
                 startDestination = AppDestinations.DASHBOARD.route,
                 modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .padding(start = 4.dp)
+                    .fillMaxSize()
+                    .padding(start = 58.dp)
             ) {
                 composable(AppDestinations.DASHBOARD.route) {
-                    val activationState by activationViewModel.uiState.collectAsStateWithLifecycle()
                     DashboardScreen(
                         viewModel = dashboardViewModel,
                         isDarkMode = isDarkMode,
@@ -317,7 +295,12 @@ private fun PrestamosApp(
                         activationUiState = activationState,
                         onActivationKeyChanged = activationViewModel::onActivationKeyChanged,
                         onActivateLicense = activationViewModel::activate,
-                        onRefreshLicenseStatus = activationViewModel::refreshStatus
+                        onRefreshLicenseStatus = activationViewModel::refreshStatus,
+                        onGoToActivation = {
+                            navController.navigate(activationRoute) {
+                                launchSingleTop = true
+                            }
+                        }
                     )
                 }
                 composable(AppDestinations.CLIENTES.route) { ClientesScreen(appViewModel) }
@@ -341,6 +324,50 @@ private fun PrestamosApp(
                     LogoutScreen(onLogout = { authViewModel.cerrarSesionConRespaldo() })
                 }
             }
+
+            if (menuExpanded) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.22f))
+                        .clickable { menuExpanded = false }
+                )
+            }
+
+            SideMenu(
+                width = sideMenuWidth,
+                expanded = menuExpanded,
+                darkModeRoute = modoNocheRoute,
+                isDarkMode = isDarkMode,
+                currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route,
+                destinations = menuItems,
+                onToggleExpanded = { menuExpanded = !menuExpanded },
+                onNavigate = { route ->
+                    if (route == modoNocheRoute) {
+                        onToggleDarkMode(!isDarkMode)
+                    } else if (route == AppDestinations.DASHBOARD.route) {
+                        val restored = navController.popBackStack(AppDestinations.DASHBOARD.route, false)
+                        if (!restored) {
+                            navController.navigate(AppDestinations.DASHBOARD.route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    } else {
+                        navController.navigate(route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                    menuExpanded = false
+                }
+            )
         }
     }
 }
@@ -527,3 +554,4 @@ private fun iconForRoute(route: String) = when (route) {
     "settings_configuracion" -> Icons.Outlined.Settings
     else -> Icons.Outlined.Home
 }
+
