@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.prestamos.app.data.backup.BackupManager
+import com.prestamos.app.data.backup.BackupStorageDestination
 import com.prestamos.app.data.license.LicenseManager
 import com.prestamos.app.data.license.LicenseType
 import com.prestamos.app.data.security.AuthRepository
@@ -110,8 +111,34 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
                 if (status.isValid && status.isActivated && paidType) {
                     mensaje.value = "Generando respaldo..."
-                    backupManager.exportBackupToSavedLocation().onFailure {
-                        mensaje.value = it.message ?: "Error al crear respaldo"
+                    val driveConfigured = backupManager.hasSavedLocation(BackupStorageDestination.DRIVE)
+                    val localConfigured = backupManager.hasSavedLocation(BackupStorageDestination.LOCAL)
+
+                    when {
+                        driveConfigured -> {
+                            backupManager.exportBackupToSavedLocation(BackupStorageDestination.DRIVE)
+                                .onFailure { driveError ->
+                                    if (localConfigured) {
+                                        backupManager.exportBackupToSavedLocation(BackupStorageDestination.LOCAL)
+                                            .onFailure { localError ->
+                                                mensaje.value = localError.message
+                                                    ?: driveError.message
+                                                    ?: "Error al crear respaldo"
+                                            }
+                                    } else {
+                                        mensaje.value = driveError.message ?: "Error al crear respaldo"
+                                    }
+                                }
+                        }
+                        localConfigured -> {
+                            backupManager.exportBackupToSavedLocation(BackupStorageDestination.LOCAL)
+                                .onFailure {
+                                    mensaje.value = it.message ?: "Error al crear respaldo"
+                                }
+                        }
+                        else -> {
+                            mensaje.value = "Primero configura una ubicacion de respaldo"
+                        }
                     }
                 } else {
                     mensaje.value = "Licencia activa requerida para respaldo y restauracion"

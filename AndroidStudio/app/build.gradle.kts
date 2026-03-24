@@ -39,9 +39,20 @@ val isDebugBuildRequested = gradle.startParameter.taskNames.any { taskName ->
 var computedVersionCode = versionProperties.getProperty("VERSION_CODE", "1").toIntOrNull() ?: 1
 var computedVersionName = versionProperties.getProperty("VERSION_NAME", "1.0.0")
 
+fun bumpPatchVersion(versionName: String): String {
+    val parts = versionName.split(".")
+    if (parts.size < 3) return "1.0.1"
+    val major = parts[0].toIntOrNull() ?: 1
+    val minor = parts[1].toIntOrNull() ?: 0
+    val patch = parts[2].toIntOrNull() ?: 0
+    return "$major.$minor.${patch + 1}"
+}
+
 if (isReleaseBuildRequested) {
     computedVersionCode += 1
+    computedVersionName = bumpPatchVersion(computedVersionName)
     versionProperties.setProperty("VERSION_CODE", computedVersionCode.toString())
+    versionProperties.setProperty("VERSION_NAME", computedVersionName)
     versionPropertiesFile.outputStream().use { versionProperties.store(it, "Configuracion de version de la app") }
 } else if (isDebugBuildRequested) {
     val debugAutoCode = (System.currentTimeMillis() / 60000L).toInt()
@@ -95,7 +106,7 @@ fun copyVersionedApk(buildType: String) {
     val safeVersionName = computedVersionName.replace(Regex("[^A-Za-z0-9._-]"), "_")
     val apkDir = layout.buildDirectory.dir("outputs/apk/$buildType").get().asFile
     if (!apkDir.exists()) return
-    val targetName = "AppPrestamos-$buildType-v${safeVersionName}(${computedVersionCode}).apk"
+    val targetName = "AppPrestamos-$buildType-v${safeVersionName}-vc${computedVersionCode}.apk"
     apkDir.listFiles()
         ?.filter { it.isFile && it.extension.equals("apk", ignoreCase = true) }
         ?.forEach { apk ->

@@ -6,6 +6,7 @@ import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.prestamos.app.data.backup.BackupManager
+import com.prestamos.app.data.backup.BackupStorageDestination
 import com.prestamos.app.data.license.LicenseManager
 import com.prestamos.app.data.license.LicenseType
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,7 +17,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 data class BackupUiState(
-    val hasSavedLocation: Boolean = false,
+    val hasSavedLocationLocal: Boolean = false,
+    val hasSavedLocationDrive: Boolean = false,
     val lastBackupTimestamp: Long? = null,
     val licenseActive: Boolean = false
 )
@@ -26,16 +28,19 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
     private val licenseManager = LicenseManager(application)
     val mensaje = MutableStateFlow<String?>(null)
 
-    private val hasSavedLocation = MutableStateFlow(false)
+    private val hasSavedLocationLocal = MutableStateFlow(false)
+    private val hasSavedLocationDrive = MutableStateFlow(false)
     private val licenseActive = MutableStateFlow(false)
 
     val uiState: StateFlow<BackupUiState> = combine(
-        hasSavedLocation,
+        hasSavedLocationLocal,
+        hasSavedLocationDrive,
         backupManager.observeLastBackupTimestamp(),
         licenseActive
-    ) { hasLocation, lastTimestamp, isLicenseActive ->
+    ) { hasLocationLocal, hasLocationDrive, lastTimestamp, isLicenseActive ->
         BackupUiState(
-            hasSavedLocation = hasLocation,
+            hasSavedLocationLocal = hasLocationLocal,
+            hasSavedLocationDrive = hasLocationDrive,
             lastBackupTimestamp = lastTimestamp,
             licenseActive = isLicenseActive
         )
@@ -50,11 +55,16 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
         refreshLicenseStatus()
     }
 
-    fun generarRespaldoEnUri(uri: Uri, persistPermission: Boolean, startedFromUi: Boolean = true) {
+    fun generarRespaldoEnUri(
+        uri: Uri,
+        persistPermission: Boolean,
+        destination: BackupStorageDestination,
+        startedFromUi: Boolean = true
+    ) {
         viewModelScope.launch {
             if (!ensureLicenseActive()) return@launch
             if (startedFromUi) mensaje.value = "Generando respaldo..."
-            backupManager.exportBackup(uri, persistPermission = persistPermission)
+            backupManager.exportBackup(uri, persistPermission = persistPermission, destination = destination)
                 .onSuccess {
                     refreshSavedLocation()
                     mensaje.value = "Respaldo creado correctamente"
@@ -65,11 +75,15 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun generarRespaldoEnUbicacionGuardada(startedFromUi: Boolean = true, onLocationMissing: () -> Unit = {}) {
+    fun generarRespaldoEnUbicacionGuardada(
+        destination: BackupStorageDestination,
+        startedFromUi: Boolean = true,
+        onLocationMissing: () -> Unit = {}
+    ) {
         viewModelScope.launch {
             if (!ensureLicenseActive()) return@launch
             if (startedFromUi) mensaje.value = "Generando respaldo..."
-            backupManager.exportBackupToSavedLocation()
+            backupManager.exportBackupToSavedLocation(destination)
                 .onSuccess {
                     refreshSavedLocation()
                     mensaje.value = "Respaldo creado correctamente"
@@ -98,11 +112,16 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun generarRespaldoEnCarpeta(uri: Uri, persistPermission: Boolean, startedFromUi: Boolean = true) {
+    fun generarRespaldoEnCarpeta(
+        uri: Uri,
+        persistPermission: Boolean,
+        destination: BackupStorageDestination,
+        startedFromUi: Boolean = true
+    ) {
         viewModelScope.launch {
             if (!ensureLicenseActive()) return@launch
             if (startedFromUi) mensaje.value = "Generando respaldo..."
-            backupManager.exportBackupToFolder(uri, persistPermission = persistPermission)
+            backupManager.exportBackupToFolder(uri, persistPermission = persistPermission, destination = destination)
                 .onSuccess {
                     refreshSavedLocation()
                     mensaje.value = "Respaldo creado correctamente"
@@ -113,15 +132,16 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun getSavedBackupUri(onResult: (Uri?) -> Unit) {
+    fun getSavedBackupUri(destination: BackupStorageDestination, onResult: (Uri?) -> Unit) {
         viewModelScope.launch {
-            onResult(backupManager.getSavedBackupUri())
+            onResult(backupManager.getSavedBackupUri(destination))
         }
     }
 
     fun refreshSavedLocation() {
         viewModelScope.launch {
-            hasSavedLocation.value = backupManager.hasSavedLocation()
+            hasSavedLocationLocal.value = backupManager.hasSavedLocation(BackupStorageDestination.LOCAL)
+            hasSavedLocationDrive.value = backupManager.hasSavedLocation(BackupStorageDestination.DRIVE)
         }
     }
 

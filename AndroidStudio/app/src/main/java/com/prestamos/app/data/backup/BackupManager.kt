@@ -29,9 +29,13 @@ class BackupManager(private val context: Context) {
     suspend fun exportBackup(
         targetUri: Uri,
         persistPermission: Boolean,
-        updateSavedUri: Boolean = true
+        updateSavedUri: Boolean = true,
+        destination: BackupStorageDestination = BackupStorageDestination.LOCAL
     ): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
+            if (destination == BackupStorageDestination.DRIVE && !isDriveUri(targetUri)) {
+                throw IllegalStateException("Selecciona un archivo de Google Drive")
+            }
             if (persistPermission) persistUriPermissions(targetUri)
             val data = buildBackupData()
             val json = serialize(data)
@@ -41,28 +45,42 @@ class BackupManager(private val context: Context) {
                 output.write(json.toByteArray(Charsets.UTF_8))
             } ?: error("Error al crear respaldo")
             if (updateSavedUri) {
-                prefs.saveBackupUri(targetUri.toString())
+                prefs.saveBackupUri(targetUri.toString(), destination)
             }
             prefs.saveLastBackupTimestamp(data.fechaBackup)
         }
     }
 
-    suspend fun exportBackupToFolder(folderUri: Uri, persistPermission: Boolean): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun exportBackupToFolder(
+        folderUri: Uri,
+        persistPermission: Boolean,
+        destination: BackupStorageDestination = BackupStorageDestination.LOCAL
+    ): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
+            if (destination == BackupStorageDestination.DRIVE && !isDriveUri(folderUri)) {
+                throw IllegalStateException("Selecciona una carpeta de Google Drive")
+            }
             if (persistPermission) persistUriPermissions(folderUri)
             val fileUri = createOrFindBackupFileInFolder(folderUri)
-            exportBackup(fileUri, persistPermission = false, updateSavedUri = false).getOrThrow()
-            prefs.saveBackupUri(folderUri.toString())
+            exportBackup(fileUri, persistPermission = false, updateSavedUri = false, destination = destination).getOrThrow()
+            prefs.saveBackupUri(folderUri.toString(), destination)
         }
     }
-    suspend fun exportBackupToSavedLocation(): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun exportBackupToSavedLocation(
+        destination: BackupStorageDestination = BackupStorageDestination.LOCAL
+    ): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
-            val savedUri = getSavedBackupUri()
+            val savedUri = getSavedBackupUri(destination)
                 ?: throw IllegalStateException("Primero elige una ubicacion para el respaldo")
             val targetUri = resolveSavedTargetUri(savedUri)
-            exportBackup(targetUri, persistPermission = false, updateSavedUri = false).getOrElse { error ->
+            exportBackup(
+                targetUri,
+                persistPermission = false,
+                updateSavedUri = false,
+                destination = destination
+            ).getOrElse { error ->
                 if (shouldResetSavedLocation(error)) {
-                    prefs.clearBackupUri()
+                    prefs.clearBackupUri(destination)
                     throw IllegalStateException("La ubicacion de respaldo ya no es valida. Configura la ubicacion nuevamente.")
                 }
                 throw error
@@ -90,12 +108,21 @@ class BackupManager(private val context: Context) {
         }
     }
 
-    suspend fun getSavedBackupUri(): Uri? {
-        val value = prefs.backupUri.first() ?: return null
+    suspend fun getSavedBackupUri(destination: BackupStorageDestination = BackupStorageDestination.LOCAL): Uri? {
+        val value = prefs.backupUri(destination).first() ?: return null
         return runCatching { Uri.parse(value) }.getOrNull()
     }
 
-    suspend fun hasSavedLocation(): Boolean = getSavedBackupUri() != null
+    suspend fun hasSavedLocation(destination: BackupStorageDestination = BackupStorageDestination.LOCAL): Boolean {
+        val uri = getSavedBackupUri(destination) ?: return false
+        if (destination == BackupStorageDestination.DRIVE && !isDriveUri(uri)) return false
+        return true
+    }
+
+    fun isDriveUri(uri: Uri): Boolean {
+        val authority = uri.authority.orEmpty().lowercase()
+        return authority.contains("com.google.android.apps.docs")
+    }
 
     fun observeLastBackupTimestamp() = prefs.lastBackupTimestamp
 

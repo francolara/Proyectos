@@ -12,15 +12,29 @@ import kotlinx.coroutines.flow.map
 private val Context.backupDataStore by preferencesDataStore(name = "backup_preferences")
 
 class BackupPreferences(private val context: Context) {
-    private val backupUriKey = stringPreferencesKey("backup_uri")
+    private val backupUriLegacyKey = stringPreferencesKey("backup_uri")
+    private val backupUriLocalKey = stringPreferencesKey("backup_uri_local")
+    private val backupUriDriveKey = stringPreferencesKey("backup_uri_drive")
     private val lastBackupTimestampKey = longPreferencesKey("last_backup_timestamp")
 
-    val backupUri: Flow<String?> = context.backupDataStore.data.map { it[backupUriKey] }
     val lastBackupTimestamp: Flow<Long?> = context.backupDataStore.data.map { it[lastBackupTimestampKey] }
 
-    suspend fun saveBackupUri(uri: String) {
+    fun backupUri(destination: BackupStorageDestination): Flow<String?> = context.backupDataStore.data.map { prefs ->
+        when (destination) {
+            BackupStorageDestination.LOCAL -> prefs[backupUriLocalKey] ?: prefs[backupUriLegacyKey]
+            BackupStorageDestination.DRIVE -> prefs[backupUriDriveKey]
+        }
+    }
+
+    suspend fun saveBackupUri(uri: String, destination: BackupStorageDestination) {
         context.backupDataStore.edit { prefs: MutablePreferences ->
-            prefs[backupUriKey] = uri
+            when (destination) {
+                BackupStorageDestination.LOCAL -> {
+                    prefs[backupUriLocalKey] = uri
+                    prefs[backupUriLegacyKey] = uri
+                }
+                BackupStorageDestination.DRIVE -> prefs[backupUriDriveKey] = uri
+            }
         }
     }
 
@@ -30,9 +44,15 @@ class BackupPreferences(private val context: Context) {
         }
     }
 
-    suspend fun clearBackupUri() {
+    suspend fun clearBackupUri(destination: BackupStorageDestination) {
         context.backupDataStore.edit { prefs: MutablePreferences ->
-            prefs.remove(backupUriKey)
+            when (destination) {
+                BackupStorageDestination.LOCAL -> {
+                    prefs.remove(backupUriLocalKey)
+                    prefs.remove(backupUriLegacyKey)
+                }
+                BackupStorageDestination.DRIVE -> prefs.remove(backupUriDriveKey)
+            }
         }
     }
 }
