@@ -237,7 +237,8 @@ private fun AppRoot(
                 !activationState.canAccessApp -> ActivationScreen(
                     uiState = activationState,
                     onActivationKeyChanged = activationViewModel::onActivationKeyChanged,
-                    onActivate = activationViewModel::activate
+                    onActivate = activationViewModel::activate,
+                    onBuyInPlay = activationViewModel::startPlayPurchase
                 )
 
                 authState is AuthState.NeedsPinSetup -> PinSetupScreen(authViewModel)
@@ -325,7 +326,8 @@ private fun PrestamosApp(
                     ActivationScreen(
                         uiState = activationState,
                         onActivationKeyChanged = activationViewModel::onActivationKeyChanged,
-                        onActivate = activationViewModel::activate
+                        onActivate = activationViewModel::activate,
+                        onBuyInPlay = activationViewModel::startPlayPurchase
                     )
                 }
                 composable(configuracionRoute) {

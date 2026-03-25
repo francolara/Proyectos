@@ -190,23 +190,40 @@ fun OnboardingScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    Text("Tipos de pago permitidos (elige al menos 1)", style = MaterialTheme.typography.labelLarge)
+                    Text("Frecuencia de Pagos", style = MaterialTheme.typography.labelLarge)
+                    if (!uiState.isLicenseActive) {
+                        Text(
+                            "Sin licencia activa: solo disponible Semanal y Mensual.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         TipoPago.entries.forEach { tipo ->
-                            val selected = tipo in uiState.allowedPaymentTypes
+                            val selected = if (uiState.isLicenseActive) {
+                                tipo in uiState.allowedPaymentTypes
+                            } else {
+                                tipo == TipoPago.SEMANAL || tipo == TipoPago.MENSUAL
+                            }
+                            val enabled = uiState.isLicenseActive
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { onTogglePaymentType(tipo) },
+                                    .clickable(enabled = enabled) { onTogglePaymentType(tipo) },
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Checkbox(
                                     checked = selected,
-                                    onCheckedChange = { onTogglePaymentType(tipo) }
+                                    onCheckedChange = if (enabled) {
+                                        { onTogglePaymentType(tipo) }
+                                    } else {
+                                        null
+                                    }
                                 )
                                 Text(
                                     text = tipo.toOnboardingLabel(),
-                                    style = MaterialTheme.typography.bodyMedium
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -229,7 +246,7 @@ fun OnboardingScreen(
                         TextButton(onClick = {
                             onAddCollectionType(newCollectionType)
                             newCollectionType = ""
-                        }) {
+                        }, enabled = uiState.isLicenseActive || uiState.collectionTypes.isEmpty()) {
                             Text("Agregar")
                         }
                     }

@@ -185,55 +185,59 @@ fun ClientesScreen(viewModel: AppViewModel) {
             Text("Listado", style = MaterialTheme.typography.titleMedium)
         }
 
-        items(clientes) { cliente ->
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(7.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        "\uD83D\uDC64 ${cliente.nombre} ${cliente.apellido} / \uD83D\uDCC4 ${cliente.documentoIdentidad}",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Text("\uD83D\uDCCD ${cliente.direccion.ifBlank { "-" }}", style = MaterialTheme.typography.bodySmall)
-                    Text("\uD83D\uDCDE ${cliente.telefono.ifBlank { "-" }}", style = MaterialTheme.typography.bodySmall)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
+        if (clientes.isEmpty()) {
+            item { Text("No hay clientes registrados.") }
+        } else {
+            items(clientes) { cliente ->
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(7.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(
-                            text = "\u270F\uFE0F Editar",
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.labelSmall,
-                            maxLines = 1,
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable {
-                            clienteEditando = cliente
-                            nombreEdit = cliente.nombre
-                            apellidoEdit = cliente.apellido
-                            direccionEdit = cliente.direccion
-                            telefonoEdit = cliente.telefono
-                                }
-                                .padding(vertical = 1.dp)
+                            "\uD83D\uDC64 ${cliente.nombre} ${cliente.apellido} / \uD83D\uDCC4 ${cliente.documentoIdentidad}",
+                            style = MaterialTheme.typography.bodyMedium
                         )
-                        Text(
-                            text = "\uD83D\uDDD1 Eliminar",
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.labelSmall,
-                            maxLines = 1,
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable { clienteAEliminar = cliente }
-                                .padding(vertical = 1.dp)
-                        )
-                        Text(
-                            text = "\uD83D\uDCDC Historial",
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.labelSmall,
-                            maxLines = 1,
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable { clienteHistorial = cliente }
-                                .padding(vertical = 1.dp)
-                        )
+                        Text("\uD83D\uDCCD ${cliente.direccion.ifBlank { "-" }}", style = MaterialTheme.typography.bodySmall)
+                        Text("\uD83D\uDCDE ${cliente.telefono.ifBlank { "-" }}", style = MaterialTheme.typography.bodySmall)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text(
+                                text = "\u270F\uFE0F Editar",
+                                textAlign = TextAlign.Center,
+                                style = MaterialTheme.typography.labelSmall,
+                                maxLines = 1,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable {
+                                clienteEditando = cliente
+                                nombreEdit = cliente.nombre
+                                apellidoEdit = cliente.apellido
+                                direccionEdit = cliente.direccion
+                                telefonoEdit = cliente.telefono
+                                    }
+                                    .padding(vertical = 1.dp)
+                            )
+                            Text(
+                                text = "\uD83D\uDDD1 Eliminar",
+                                textAlign = TextAlign.Center,
+                                style = MaterialTheme.typography.labelSmall,
+                                maxLines = 1,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { clienteAEliminar = cliente }
+                                    .padding(vertical = 1.dp)
+                            )
+                            Text(
+                                text = "\uD83D\uDCDC Historial",
+                                textAlign = TextAlign.Center,
+                                style = MaterialTheme.typography.labelSmall,
+                                maxLines = 1,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { clienteHistorial = cliente }
+                                    .padding(vertical = 1.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -791,44 +795,48 @@ fun PrestamosScreen(viewModel: AppViewModel) {
             }
         }
 
-        items(prestamosFiltrados) { prestamo ->
-            val cliente = clientes.firstOrNull { it.idCliente == prestamo.idCliente }
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        prestamoDetalleId = prestamo.idPrestamo
-                        viewModel.seleccionarPrestamoDetalle(prestamo.idPrestamo)
-                        mostrarDetallePrestamo = true
+        if (prestamosFiltrados.isEmpty()) {
+            item { Text("No hay prestamos registrados.") }
+        } else {
+            items(prestamosFiltrados) { prestamo ->
+                val cliente = clientes.firstOrNull { it.idCliente == prestamo.idCliente }
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            prestamoDetalleId = prestamo.idPrestamo
+                            viewModel.seleccionarPrestamoDetalle(prestamo.idPrestamo)
+                            mostrarDetallePrestamo = true
+                        }
+                ) {
+                    val estadoLabel = if (prestamo.estadoPrestamo == EstadoPrestamo.ACTIVO) "\uD83D\uDFE2 ACTIVO" else "\uD83D\uDD35 PAGADO"
+                    val clienteLabel = "${cliente?.nombre ?: "-"} ${cliente?.apellido ?: ""}".trim()
+                    Column(Modifier.padding(7.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("\uD83D\uDCC4 Prestamo #${prestamo.idPrestamo}", style = MaterialTheme.typography.bodyMedium)
+                            Text(estadoLabel, style = MaterialTheme.typography.labelSmall)
+                        }
+                        Text("\uD83D\uDC64 $clienteLabel", style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            "\uD83D\uDCB0 ${prestamo.montoTotalPrestamo.toMoney(prestamo.moneda)} ${prestamo.moneda.displayName}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(
+                            "\uD83D\uDCCC Cuota: ${prestamo.montoCuota.toMoney(prestamo.moneda)} ${prestamo.moneda.displayName}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(
+                            text = "\uD83D\uDDD1 Eliminar",
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier
+                                .align(Alignment.End)
+                                .clickable { viewModel.eliminarPrestamo(prestamo.idPrestamo) }
+                                .padding(top = 1.dp, bottom = 0.dp)
+                        )
                     }
-            ) {
-                val estadoLabel = if (prestamo.estadoPrestamo == EstadoPrestamo.ACTIVO) "\uD83D\uDFE2 ACTIVO" else "\uD83D\uDD35 PAGADO"
-                val clienteLabel = "${cliente?.nombre ?: "-"} ${cliente?.apellido ?: ""}".trim()
-                Column(Modifier.padding(7.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("\uD83D\uDCC4 Prestamo #${prestamo.idPrestamo}", style = MaterialTheme.typography.bodyMedium)
-                        Text(estadoLabel, style = MaterialTheme.typography.labelSmall)
-                    }
-                    Text("\uD83D\uDC64 $clienteLabel", style = MaterialTheme.typography.bodySmall)
-                    Text(
-                        "\uD83D\uDCB0 ${prestamo.montoTotalPrestamo.toMoney(prestamo.moneda)} ${prestamo.moneda.displayName}",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    Text(
-                        "\uD83D\uDCCC Cuota: ${prestamo.montoCuota.toMoney(prestamo.moneda)} ${prestamo.moneda.displayName}",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    Text(
-                        text = "\uD83D\uDDD1 Eliminar",
-                        style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier
-                            .align(Alignment.End)
-                            .clickable { viewModel.eliminarPrestamo(prestamo.idPrestamo) }
-                            .padding(top = 1.dp, bottom = 0.dp)
-                    )
                 }
             }
         }
@@ -1486,11 +1494,18 @@ fun ReportesScreen(
                 Text("Generar reporte")
             }
             if (!isLicenseActive) {
-                Text(
-                    "Activa tu licencia para habilitar la exportacion de reportes.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.tertiary
-                )
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFE8E8)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        "Licencia activa requerida para generar reportes",
+                        color = Color(0xFF9D2B2B),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(12.dp)
+                    )
+                }
             } else if (prestamosFiltrados.isEmpty()) {
                 Text(
                     "No hay prestamos para el filtro seleccionado.",

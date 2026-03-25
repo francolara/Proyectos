@@ -5,6 +5,7 @@ import com.prestamos.app.data.local.entity.TipoPago
 
 class InitialSetupPreferences(context: Context) {
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val defaultFreePaymentTypes = setOf(TipoPago.SEMANAL, TipoPago.MENSUAL)
 
     fun isFirstRun(): Boolean = prefs.getBoolean(KEY_FIRST_RUN, true)
     fun getBusinessName(): String = prefs.getString(KEY_BUSINESS_NAME, "").orEmpty()
@@ -13,10 +14,10 @@ class InitialSetupPreferences(context: Context) {
     fun getDefaultInterest(): String = prefs.getString(KEY_DEFAULT_INTEREST, "").orEmpty()
     fun getAllowedPaymentTypes(): Set<TipoPago> {
         val raw = prefs.getStringSet(KEY_ALLOWED_PAYMENT_TYPES, null)
-        if (raw.isNullOrEmpty()) return TipoPago.entries.toSet()
+        if (raw.isNullOrEmpty()) return defaultFreePaymentTypes
         return raw.mapNotNull { value ->
             runCatching { TipoPago.valueOf(value) }.getOrNull()
-        }.toSet().ifEmpty { TipoPago.entries.toSet() }
+        }.toSet().ifEmpty { defaultFreePaymentTypes }
     }
 
     fun saveInitialSetup(

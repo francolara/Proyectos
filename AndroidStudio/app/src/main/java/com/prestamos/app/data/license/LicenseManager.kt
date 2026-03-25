@@ -95,20 +95,17 @@ class LicenseManager(private val context: Context) {
             }
 
             else -> {
-                val remainingMillis = trialEndDate - now
-                val daysRemaining = if (remainingMillis <= 0L) 0L else TimeUnit.MILLISECONDS.toDays(remainingMillis).coerceAtLeast(1)
-                val trialValid = now <= trialEndDate
                 LicenseStatus(
-                    isValid = trialValid,
+                    isValid = true,
                     deviceCode = storedDeviceCode,
                     licenseType = LicenseType.TRIAL,
                     isActivated = false,
-                    trialDaysRemaining = daysRemaining,
-                    trialExpired = !trialValid,
+                    trialDaysRemaining = 0,
+                    trialExpired = false,
                     activationDate = activationDate,
                     expirationDate = expirationDate,
                     manipulatedDateDetected = false,
-                    message = if (trialValid) "Trial activo: quedan $daysRemaining dia(s)" else "El periodo de prueba expiro"
+                    message = "Versión Lite activa"
                 )
             }
         }
@@ -141,6 +138,28 @@ class LicenseManager(private val context: Context) {
             expirationDate = expiration
         )
 
+        return evaluateStatus()
+    }
+
+    suspend fun activateFromPlay(type: LicenseType, purchaseToken: String?): LicenseStatus {
+        require(type == LicenseType.MENSUAL || type == LicenseType.ANUAL || type == LicenseType.FULL) {
+            "Tipo de licencia no valido para Google Play"
+        }
+        val now = System.currentTimeMillis()
+        val expiration = when (type) {
+            LicenseType.MENSUAL -> now + TimeUnit.DAYS.toMillis(30)
+            LicenseType.ANUAL -> now + TimeUnit.DAYS.toMillis(365)
+            LicenseType.FULL -> null
+            LicenseType.TRIAL -> null
+        }
+        val tokenPart = purchaseToken?.takeLast(12)?.uppercase().orEmpty()
+        val playKey = "PLAY-${type.name}-$tokenPart".trimEnd('-')
+        prefs.saveActivation(
+            type = type,
+            licenseKey = playKey,
+            activationDate = now,
+            expirationDate = expiration
+        )
         return evaluateStatus()
     }
 

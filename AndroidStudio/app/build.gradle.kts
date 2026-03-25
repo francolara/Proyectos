@@ -96,6 +96,21 @@ android {
         versionName = computedVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("boolean", "USE_PLAY_BILLING", "false")
+    }
+
+    flavorDimensions += "dist"
+    productFlavors {
+        create("direct") {
+            dimension = "dist"
+            buildConfigField("boolean", "USE_PLAY_BILLING", "false")
+            resValue("string", "distribution_channel", "direct")
+        }
+        create("play") {
+            dimension = "dist"
+            buildConfigField("boolean", "USE_PLAY_BILLING", "true")
+            resValue("string", "distribution_channel", "play")
+        }
     }
 
     signingConfigs {
@@ -129,6 +144,7 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+        resValues = true
     }
     packaging {
         resources {
@@ -141,11 +157,11 @@ android {
     }
 }
 
-fun copyVersionedApk(buildType: String) {
+fun copyVersionedApk(variantDir: String, variantName: String) {
     val safeVersionName = computedVersionName.replace(Regex("[^A-Za-z0-9._-]"), "_")
-    val apkDir = layout.buildDirectory.dir("outputs/apk/$buildType").get().asFile
+    val apkDir = layout.buildDirectory.dir("outputs/apk/$variantDir").get().asFile
     if (!apkDir.exists()) return
-    val targetName = "AppPrestamos-$buildType-v${safeVersionName}-vc${computedVersionCode}.apk"
+    val targetName = "AppPrestamos-$variantName-v${safeVersionName}-vc${computedVersionCode}.apk"
     apkDir.listFiles()
         ?.filter { it.isFile && it.extension.equals("apk", ignoreCase = true) }
         ?.forEach { apk ->
@@ -155,12 +171,79 @@ fun copyVersionedApk(buildType: String) {
         }
 }
 
+val validateNoMojibake = tasks.register("validateNoMojibake") {
+    group = "verification"
+    description = "Falla el build si detecta texto con codificacion corrupta (mojibake) en app/src/main."
+    doLast {
+        val root = project.file("src/main")
+        val allowedExtensions = setOf("kt", "kts", "xml", "properties", "md")
+        val mojibakeTokens = listOf(
+            "\u00C3", // Ã
+            "\u00C2", // Â
+            "\u00F0\u0178", // ðŸ
+            "\u00E2\u20AC", // â€
+            "\u00E2\u0153", // âœ
+            "\uFFFD" // caracter de reemplazo �
+        )
+        val findings = mutableListOf<String>()
+
+        if (!root.exists()) return@doLast
+
+        root.walkTopDown()
+            .filter { file -> file.isFile && file.extension.lowercase() in allowedExtensions }
+            .forEach { file ->
+                file.readLines().forEachIndexed { index, line ->
+                    if (mojibakeTokens.any { token -> line.contains(token) }) {
+                        val relative = file.relativeTo(project.projectDir).invariantSeparatorsPath
+                        findings += "$relative:${index + 1}: $line"
+                    }
+                }
+            }
+
+        if (findings.isNotEmpty()) {
+            val preview = findings.take(40).joinToString(separator = "\n")
+            throw GradleException(
+                buildString {
+                    appendLine("Se detecto texto con posible codificacion corrupta (mojibake).")
+                    appendLine("Corrige los archivos en UTF-8 sin BOM antes de compilar.")
+                    appendLine()
+                    appendLine(preview)
+                    if (findings.size > 40) {
+                        appendLine()
+                        appendLine("... y ${findings.size - 40} coincidencias adicionales.")
+                    }
+                }
+            )
+        }
+    }
+}
+
+tasks.named("preBuild") {
+    dependsOn(validateNoMojibake)
+}
+
 tasks.matching { it.name == "assembleRelease" }.configureEach {
-    doLast { copyVersionedApk("release") }
+    doLast { copyVersionedApk("release", "release") }
 }
 
 tasks.matching { it.name == "assembleDebug" }.configureEach {
-    doLast { copyVersionedApk("debug") }
+    doLast { copyVersionedApk("debug", "debug") }
+}
+
+tasks.matching { it.name == "assembleDirectRelease" }.configureEach {
+    doLast { copyVersionedApk("direct/release", "direct-release") }
+}
+
+tasks.matching { it.name == "assemblePlayRelease" }.configureEach {
+    doLast { copyVersionedApk("play/release", "play-release") }
+}
+
+tasks.matching { it.name == "assembleDirectDebug" }.configureEach {
+    doLast { copyVersionedApk("direct/debug", "direct-debug") }
+}
+
+tasks.matching { it.name == "assemblePlayDebug" }.configureEach {
+    doLast { copyVersionedApk("play/debug", "play-debug") }
 }
 
 dependencies {
@@ -182,6 +265,7 @@ dependencies {
     implementation("androidx.biometric:biometric:1.1.0")
     implementation("androidx.work:work-runtime-ktx:2.10.3")
     implementation("com.google.android.gms:play-services-auth:21.2.0")
+    implementation("com.android.billingclient:billing-ktx:7.1.1")
     implementation("com.google.api-client:google-api-client-android:2.7.2")
     implementation("com.google.apis:google-api-services-drive:v3-rev20220815-2.0.0")
     testImplementation(libs.junit)

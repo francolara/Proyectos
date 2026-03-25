@@ -1,5 +1,6 @@
 package com.prestamos.app.ui.screen
 
+import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -48,6 +49,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.prestamos.app.BuildConfig
 import com.prestamos.app.data.license.LicenseType
 import com.prestamos.app.ui.viewmodel.ActivationUiState
 import com.prestamos.app.util.toDateString
@@ -61,11 +63,13 @@ private const val LICENSE_SUPPORT_EMAIL = "controlprestamos.app@gmail.com"
 fun ActivationScreen(
     uiState: ActivationUiState,
     onActivationKeyChanged: (String) -> Unit,
-    onActivate: () -> Unit
+    onActivate: () -> Unit,
+    onBuyInPlay: (Activity, LicenseType) -> Unit = { _, _ -> }
 ) {
     val context = LocalContext.current
     val status = uiState.status
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val usePlayBilling = BuildConfig.USE_PLAY_BILLING
     val requestPlanOptions = remember {
         listOf(
             RequestPlanCardUi(
@@ -146,6 +150,7 @@ fun ActivationScreen(
             }
         }
 
+        if (!usePlayBilling) {
         Card(
             shape = RoundedCornerShape(18.dp),
             colors = CardDefaults.cardColors(
@@ -206,7 +211,7 @@ fun ActivationScreen(
                                     }
                                 }
                                 Text(
-                                    option.primaryPrice,
+                                    uiState.playPlanPrices[option.type] ?: option.primaryPrice,
                                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
                                 )
                                 Text(
@@ -280,8 +285,97 @@ fun ActivationScreen(
                 }
             }
         }
+        } else {
+            Card(
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (dark) Color(0xFF1F2D21) else Color(0xFFEFF8EF)
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Suscripcion en Google Play",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                    )
+                    Text(
+                        text = "Esta version se activa mediante Google Play Billing. La activacion manual por codigo no esta disponible.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "Selecciona un plan y continua con la compra en Google Play.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text("Plan", style = MaterialTheme.typography.labelLarge)
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        requestPlanOptions.forEach { option ->
+                            val isSelected = selectedRequestPlan == option.type
+                            val available = option.type in uiState.playAvailablePlans
+                            val selectedContainer = if (dark) Color(0xFF2B4A2F) else Color(0xFFDDF2DE)
+                            val normalContainer = if (dark) Color(0xFF1B2820) else Color(0xFFF3FAF3)
+                            val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.45f)
+                            Card(
+                                shape = RoundedCornerShape(14.dp),
+                                colors = CardDefaults.cardColors(containerColor = if (isSelected) selectedContainer else normalContainer),
+                                border = BorderStroke(1.4.dp, borderColor),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable(enabled = available) { selectedRequestPlan = option.type }
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(14.dp),
+                                    verticalArrangement = Arrangement.spacedBy(5.dp)
+                                ) {
+                                    Text(
+                                        option.title,
+                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                        color = if (available) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        uiState.playPlanPrices[option.type] ?: option.primaryPrice,
+                                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = if (available) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    if (!available) {
+                                        Text(
+                                            "No disponible en Play Console",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.error
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Button(
+                        onClick = {
+                            val selectedPlan = selectedRequestPlan
+                            val activity = context as? Activity
+                            when {
+                                selectedPlan == null -> Toast.makeText(context, "Selecciona un plan antes de continuar", Toast.LENGTH_SHORT).show()
+                                activity == null -> Toast.makeText(context, "No se pudo iniciar la compra", Toast.LENGTH_SHORT).show()
+                                else -> onBuyInPlay(activity, selectedPlan)
+                            }
+                        },
+                        enabled = uiState.playBillingReady,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(44.dp)
+                    ) {
+                        Text("Comprar con Google Play")
+                    }
+                }
+            }
+        }
 
-        val showActivationForm = status.licenseType == LicenseType.TRIAL || !status.isActivated || !status.isValid
+        val showActivationForm = !usePlayBilling && (status.licenseType == LicenseType.TRIAL || !status.isActivated || !status.isValid)
         if (showActivationForm) {
             Card(
                 shape = RoundedCornerShape(18.dp),
@@ -329,7 +423,7 @@ fun ActivationScreen(
         val statusTitle = when {
             status.manipulatedDateDetected -> "Estado de licencia"
             status.licenseType == LicenseType.TRIAL && status.trialExpired -> "Licencia inactiva"
-            status.licenseType == LicenseType.TRIAL -> "Periodo de prueba"
+            status.licenseType == LicenseType.TRIAL -> "Versión Lite"
             status.isValid && status.isActivated -> "Licencia activa"
             else -> "Licencia inactiva"
         }
@@ -344,7 +438,7 @@ fun ActivationScreen(
         val vigenciaText = when {
             status.licenseType == LicenseType.FULL && status.isActivated -> "Sin vencimiento"
             status.expirationDate != null -> status.expirationDate.toDateString()
-            status.licenseType == LicenseType.TRIAL && !status.trialExpired -> "${status.trialDaysRemaining} dia(s) restantes"
+            status.licenseType == LicenseType.TRIAL && !status.trialExpired -> "No aplica"
             else -> "No disponible"
         }
 

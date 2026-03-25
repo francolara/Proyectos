@@ -4,12 +4,16 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.prestamos.app.data.config.InitialSetupPreferences
+import com.prestamos.app.data.license.LicenseManager
+import com.prestamos.app.data.license.LicenseType
 import com.prestamos.app.data.local.AppDatabase
 import com.prestamos.app.data.local.entity.TipoCobroEntity
 import com.prestamos.app.data.local.entity.TipoPago
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+
+private val FREE_PAYMENT_TYPES = setOf(TipoPago.SEMANAL, TipoPago.MENSUAL)
 
 data class OnboardingUiState(
     val loading: Boolean = true,
@@ -19,13 +23,15 @@ data class OnboardingUiState(
     val mainCurrencyCode: String? = null,
     val secondaryCurrencyCode: String? = null,
     val defaultInterest: String = "",
-    val allowedPaymentTypes: Set<TipoPago> = TipoPago.entries.toSet(),
+    val allowedPaymentTypes: Set<TipoPago> = FREE_PAYMENT_TYPES,
     val collectionTypes: List<String> = emptyList(),
+    val isLicenseActive: Boolean = false,
     val errorMessage: String? = null
 )
 
 class OnboardingViewModel(application: Application) : AndroidViewModel(application) {
     private val prefs = InitialSetupPreferences(application)
+    private val licenseManager = LicenseManager(application)
     private val tipoCobroDao = AppDatabase.getInstance(application).tipoCobroDao()
 
     private val _uiState = MutableStateFlow(OnboardingUiState())
@@ -34,10 +40,13 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
     init {
         viewModelScope.launch {
             val isFirstRun = prefs.isFirstRun()
+            val isLicenseActive = hasPaidLicenseActive()
             _uiState.value = _uiState.value.copy(
                 loading = false,
                 showOnboarding = isFirstRun,
-                step = 0
+                step = 0,
+                isLicenseActive = isLicenseActive,
+                allowedPaymentTypes = if (isLicenseActive) _uiState.value.allowedPaymentTypes else FREE_PAYMENT_TYPES
             )
         }
     }
@@ -77,6 +86,13 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun toggleAllowedPaymentType(type: TipoPago) {
+        if (!_uiState.value.isLicenseActive) {
+            _uiState.value = _uiState.value.copy(
+                allowedPaymentTypes = FREE_PAYMENT_TYPES,
+                errorMessage = "En version Lite solo estan habilitadas Semanal y Mensual"
+            )
+            return
+        }
         val current = _uiState.value.allowedPaymentTypes.toMutableSet()
         if (type in current) current.remove(type) else current.add(type)
         _uiState.value = _uiState.value.copy(
@@ -88,6 +104,12 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
     fun addCollectionType(nombre: String) {
         val clean = nombre.trim()
         if (clean.isBlank()) return
+        if (!_uiState.value.isLicenseActive && _uiState.value.collectionTypes.size >= 1) {
+            _uiState.value = _uiState.value.copy(
+                errorMessage = "Sin licencia solo puedes registrar un tipo de cobro"
+            )
+            return
+        }
         val exists = _uiState.value.collectionTypes.any { it.equals(clean, ignoreCase = true) }
         if (exists) {
             _uiState.value = _uiState.value.copy(errorMessage = "Ese tipo de cobro ya fue agregado")
@@ -113,7 +135,9 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun finalizarConfiguracion() {
-        val current = _uiState.value
+        val current = _uiState.value.let {
+            if (it.isLicenseActive) it else it.copy(allowedPaymentTypes = FREE_PAYMENT_TYPES)
+        }
         val businessName = current.businessName.trim()
         val mainCurrency = current.mainCurrencyCode
 
@@ -126,7 +150,7 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
             return
         }
         if (current.allowedPaymentTypes.isEmpty()) {
-            _uiState.value = current.copy(errorMessage = "Selecciona al menos un tipo de pago")
+            _uiState.value = current.copy(errorMessage = "Selecciona al menos una frecuencia de pago")
             return
         }
         if (current.collectionTypes.isEmpty()) {
@@ -161,4 +185,13 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
             )
         }
     }
+
+    private suspend fun hasPaidLicenseActive(): Boolean {
+        val status = licenseManager.evaluateStatus()
+        val paidType = status.licenseType == LicenseType.MENSUAL ||
+            status.licenseType == LicenseType.ANUAL ||
+            status.licenseType == LicenseType.FULL
+        return status.isValid && status.isActivated && paidType
+    }
+
 }

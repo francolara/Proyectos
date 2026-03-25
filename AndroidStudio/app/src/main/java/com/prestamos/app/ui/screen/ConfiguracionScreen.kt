@@ -38,6 +38,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.prestamos.app.data.config.InitialSetupPreferences
+import com.prestamos.app.data.license.LicenseManager
+import com.prestamos.app.data.license.LicenseType
 import com.prestamos.app.data.local.entity.TipoPago
 import com.prestamos.app.ui.viewmodel.AppViewModel
 
@@ -70,6 +72,7 @@ private val primaryCurrencyCodes = setOf("PEN", "USD")
 fun ConfiguracionScreen(viewModel: AppViewModel) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = remember { InitialSetupPreferences(context) }
+    val licenseManager = remember { LicenseManager(context) }
     val prestamos by viewModel.prestamos.collectAsStateWithLifecycle()
     val pagos by viewModel.pagos.collectAsStateWithLifecycle()
     val tiposCobro by viewModel.tiposCobro.collectAsStateWithLifecycle()
@@ -87,15 +90,36 @@ fun ConfiguracionScreen(viewModel: AppViewModel) {
     var showSecondaryCurrencyPicker by remember { mutableStateOf(false) }
     var newCollectionType by remember { mutableStateOf("") }
     var loaded by remember { mutableStateOf(false) }
+    var isLicenseActive by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
+        val status = licenseManager.evaluateStatus()
+        val paidType = status.licenseType == LicenseType.MENSUAL ||
+            status.licenseType == LicenseType.ANUAL ||
+            status.licenseType == LicenseType.FULL
+        isLicenseActive = status.isValid && status.isActivated && paidType
+
         businessName = prefs.getBusinessName()
         mainCurrencyCode = prefs.getMainCurrencyCode()
         secondaryCurrencyCode = prefs.getSecondaryCurrencyCode()
         defaultInterest = prefs.getDefaultInterest()
-        allowedPaymentTypes = prefs.getAllowedPaymentTypes()
+        allowedPaymentTypes = if (isLicenseActive) {
+            prefs.getAllowedPaymentTypes()
+        } else {
+            FREE_PAYMENT_TYPES
+        }
         originalMainCurrencyCode = mainCurrencyCode
         originalSecondaryCurrencyCode = secondaryCurrencyCode
+        if (!isLicenseActive && allowedPaymentTypes != FREE_PAYMENT_TYPES) {
+            prefs.updateConfiguration(
+                businessName = businessName,
+                mainCurrencyCode = mainCurrencyCode ?: "PEN",
+                secondaryCurrencyCode = secondaryCurrencyCode,
+                defaultInterest = defaultInterest,
+                allowedPaymentTypes = FREE_PAYMENT_TYPES
+            )
+            allowedPaymentTypes = FREE_PAYMENT_TYPES
+        }
         loaded = true
     }
 
@@ -180,14 +204,26 @@ fun ConfiguracionScreen(viewModel: AppViewModel) {
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
-                Text("Tipos de pago habilitados", style = MaterialTheme.typography.labelLarge)
+                Text("Frecuencia de Pagos", style = MaterialTheme.typography.labelLarge)
+                if (!isLicenseActive) {
+                    Text(
+                        "Sin licencia activa: se aplican solo Semanal y Mensual.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     TipoPago.entries.forEach { tipo ->
-                        val selected = tipo in allowedPaymentTypes
+                        val selected = if (isLicenseActive) {
+                            tipo in allowedPaymentTypes
+                        } else {
+                            tipo == TipoPago.SEMANAL || tipo == TipoPago.MENSUAL
+                        }
+                        val enabled = isLicenseActive
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable {
+                                .clickable(enabled = enabled) {
                                     allowedPaymentTypes = if (selected) {
                                         allowedPaymentTypes - tipo
                                     } else {
@@ -198,17 +234,22 @@ fun ConfiguracionScreen(viewModel: AppViewModel) {
                         ) {
                             Checkbox(
                                 checked = selected,
-                                onCheckedChange = {
+                                onCheckedChange = if (enabled) {
+                                    {
                                     allowedPaymentTypes = if (selected) {
                                         allowedPaymentTypes - tipo
                                     } else {
                                         allowedPaymentTypes + tipo
                                     }
+                                    }
+                                } else {
+                                    null
                                 }
                             )
                             Text(
                                 text = tipo.toConfigPaymentTypeLabel(),
-                                style = MaterialTheme.typography.bodyMedium
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -229,6 +270,10 @@ fun ConfiguracionScreen(viewModel: AppViewModel) {
                     )
                     Button(
                         onClick = {
+                            if (!isLicenseActive && tiposCobro.size >= 1) {
+                                Toast.makeText(context, "Sin licencia solo puedes tener un tipo de cobro", Toast.LENGTH_SHORT).show()
+                                return@Button
+                            }
                             viewModel.registrarTipoCobro(newCollectionType) {
                                 newCollectionType = ""
                             }
@@ -268,7 +313,7 @@ fun ConfiguracionScreen(viewModel: AppViewModel) {
                             return@Button
                         }
                         if (allowedPaymentTypes.isEmpty()) {
-                            Toast.makeText(context, "Selecciona al menos un tipo de pago", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Selecciona al menos una frecuencia de pago", Toast.LENGTH_SHORT).show()
                             return@Button
                         }
                         val mainLocked = !originalMainCurrencyCode.isNullOrBlank() && usedCurrencyCodes.contains(originalMainCurrencyCode?.uppercase())
@@ -286,7 +331,7 @@ fun ConfiguracionScreen(viewModel: AppViewModel) {
                             mainCurrencyCode = main,
                             secondaryCurrencyCode = secondaryCurrencyCode,
                             defaultInterest = defaultInterest,
-                            allowedPaymentTypes = allowedPaymentTypes
+                            allowedPaymentTypes = if (isLicenseActive) allowedPaymentTypes else FREE_PAYMENT_TYPES
                         )
                         Toast.makeText(context, "Configuracion actualizada", Toast.LENGTH_SHORT).show()
                     },
@@ -494,3 +539,5 @@ private fun TipoPago.toConfigPaymentTypeLabel(): String = when (this) {
     TipoPago.MENSUAL -> "Mensual"
     TipoPago.PERSONALIZADO -> "Personalizado"
 }
+
+private val FREE_PAYMENT_TYPES = setOf(TipoPago.SEMANAL, TipoPago.MENSUAL)
