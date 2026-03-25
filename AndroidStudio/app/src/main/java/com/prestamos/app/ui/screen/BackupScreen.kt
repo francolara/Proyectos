@@ -31,6 +31,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.BorderStroke
@@ -63,6 +65,9 @@ fun BackupScreen(viewModel: BackupViewModel = viewModel()) {
     var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
     var pendingDriveRestore by remember { mutableStateOf(false) }
     var selectedDestination by remember { mutableStateOf(BackupDestination.LOCAL) }
+    var showPasswordDialog by remember { mutableStateOf(false) }
+    var backupPassword by remember { mutableStateOf("") }
+    var backupPasswordConfirm by remember { mutableStateOf("") }
     val isLocalSelected = selectedDestination == BackupDestination.LOCAL
     val hasSavedLocation = if (isLocalSelected) uiState.hasSavedLocationLocal else uiState.driveConnected
 
@@ -153,6 +158,20 @@ fun BackupScreen(viewModel: BackupViewModel = viewModel()) {
                         )
                         Text(
                             text = if (hasSavedLocation) "Ubicacion configurada" else "Sin ubicacion configurada",
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Box(
+                            modifier = Modifier
+                                .size(9.dp)
+                                .background(
+                                    color = if (uiState.hasBackupPassword) Color(0xFF2E7D32) else Color(0xFFC62828),
+                                    shape = RoundedCornerShape(50)
+                                )
+                        )
+                        Text(
+                            text = if (uiState.hasBackupPassword) "Clave de respaldo configurada" else "Clave de respaldo no configurada",
                             style = MaterialTheme.typography.labelMedium
                         )
                     }
@@ -309,22 +328,39 @@ fun BackupScreen(viewModel: BackupViewModel = viewModel()) {
                             onClick = { folderBackupLauncher.launch(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)) }
                         ) { Text("Configurar ubicacion") }
                     }
+                    OutlinedButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = uiState.licenseActive,
+                        onClick = { showPasswordDialog = true }
+                    ) { Text(if (uiState.hasBackupPassword) "Cambiar clave de respaldo" else "Configurar clave de respaldo") }
+                    if (uiState.hasBackupPassword) {
+                        OutlinedButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = uiState.licenseActive,
+                            onClick = { viewModel.eliminarClaveRespaldo() }
+                        ) { Text("Eliminar clave de respaldo") }
+                    }
 
                     Button(
                         modifier = Modifier.fillMaxWidth(),
                         enabled = uiState.licenseActive,
                         onClick = {
-                            if (isLocalSelected) {
-                                if (uiState.hasSavedLocationLocal) {
-                                    viewModel.generarRespaldoEnUbicacionGuardada(
-                                        destination = BackupStorageDestination.LOCAL,
-                                        onLocationMissing = { folderBackupLauncher.launch(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)) }
-                                    )
-                                } else {
-                                    folderBackupLauncher.launch(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE))
-                                }
+                            if (!uiState.hasBackupPassword) {
+                                showPasswordDialog = true
+                                viewModel.reportarError("Configura tu clave de respaldo antes de continuar")
                             } else {
-                                viewModel.generarRespaldoDrive()
+                                if (isLocalSelected) {
+                                    if (uiState.hasSavedLocationLocal) {
+                                        viewModel.generarRespaldoEnUbicacionGuardada(
+                                            destination = BackupStorageDestination.LOCAL,
+                                            onLocationMissing = { folderBackupLauncher.launch(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)) }
+                                        )
+                                    } else {
+                                        folderBackupLauncher.launch(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE))
+                                    }
+                                } else {
+                                    viewModel.generarRespaldoDrive()
+                                }
                             }
                         }
                     ) { Text("Crear respaldo ahora") }
@@ -333,10 +369,15 @@ fun BackupScreen(viewModel: BackupViewModel = viewModel()) {
                         modifier = Modifier.fillMaxWidth(),
                         enabled = uiState.licenseActive,
                         onClick = {
-                            if (isLocalSelected) {
-                                restoreBackupLauncher.launch(arrayOf("application/octet-stream", "application/x-sqlite3", "*/*"))
+                            if (!uiState.hasBackupPassword) {
+                                showPasswordDialog = true
+                                viewModel.reportarError("Configura tu clave de respaldo antes de continuar")
                             } else {
-                                pendingDriveRestore = true
+                                if (isLocalSelected) {
+                                    restoreBackupLauncher.launch(arrayOf("application/octet-stream", "application/x-sqlite3", "*/*"))
+                                } else {
+                                    pendingDriveRestore = true
+                                }
                             }
                         }
                     ) { Text("Restaurar respaldo") }
@@ -414,6 +455,49 @@ fun BackupScreen(viewModel: BackupViewModel = viewModel()) {
             },
             dismissButton = {
                 TextButton(onClick = { pendingDriveRestore = false }) { Text("Cancelar") }
+            }
+        )
+    }
+
+    if (showPasswordDialog) {
+        AlertDialog(
+            onDismissRequest = { showPasswordDialog = false },
+            title = { Text("Clave de respaldo") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Esta clave se usara para cifrar y restaurar respaldos en cualquier dispositivo.")
+                    OutlinedTextField(
+                        value = backupPassword,
+                        onValueChange = { backupPassword = it },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        label = { Text("Clave") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = backupPasswordConfirm,
+                        onValueChange = { backupPasswordConfirm = it },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        label = { Text("Confirmar clave") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.guardarClaveRespaldo(backupPassword, backupPasswordConfirm)
+                    backupPassword = ""
+                    backupPasswordConfirm = ""
+                    showPasswordDialog = false
+                }) { Text("Guardar") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    backupPassword = ""
+                    backupPasswordConfirm = ""
+                    showPasswordDialog = false
+                }) { Text("Cancelar") }
             }
         )
     }

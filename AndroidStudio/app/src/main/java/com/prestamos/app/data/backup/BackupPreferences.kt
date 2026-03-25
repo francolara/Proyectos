@@ -16,8 +16,10 @@ class BackupPreferences(private val context: Context) {
     private val backupUriLocalKey = stringPreferencesKey("backup_uri_local")
     private val backupUriDriveKey = stringPreferencesKey("backup_uri_drive")
     private val lastBackupTimestampKey = longPreferencesKey("last_backup_timestamp")
+    private val backupPasswordKey = stringPreferencesKey("backup_password")
 
     val lastBackupTimestamp: Flow<Long?> = context.backupDataStore.data.map { it[lastBackupTimestampKey] }
+    val backupPassword: Flow<String?> = context.backupDataStore.data.map { it[backupPasswordKey] }
 
     fun backupUri(destination: BackupStorageDestination): Flow<String?> = context.backupDataStore.data.map { prefs ->
         when (destination) {
@@ -53,6 +55,18 @@ class BackupPreferences(private val context: Context) {
                 }
                 BackupStorageDestination.DRIVE -> prefs.remove(backupUriDriveKey)
             }
+        }
+    }
+
+    suspend fun saveBackupPassword(password: String) {
+        context.backupDataStore.edit { prefs: MutablePreferences ->
+            prefs[backupPasswordKey] = password
+        }
+    }
+
+    suspend fun clearBackupPassword() {
+        context.backupDataStore.edit { prefs: MutablePreferences ->
+            prefs.remove(backupPasswordKey)
         }
     }
 }

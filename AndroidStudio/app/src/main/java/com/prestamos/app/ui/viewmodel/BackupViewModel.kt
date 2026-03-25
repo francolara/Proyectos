@@ -27,7 +27,8 @@ data class BackupUiState(
     val driveConnected: Boolean = false,
     val driveAccountEmail: String? = null,
     val lastBackupTimestamp: Long? = null,
-    val licenseActive: Boolean = false
+    val licenseActive: Boolean = false,
+    val hasBackupPassword: Boolean = false
 )
 
 class BackupViewModel(application: Application) : AndroidViewModel(application) {
@@ -49,19 +50,28 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
         GoogleSignIn.getClient(getApplication(), options)
     }
 
-    val uiState: StateFlow<BackupUiState> = combine(
+    private val baseUiState = combine(
         hasSavedLocationLocal,
         driveConnected,
         driveAccountEmail,
-        backupManager.observeLastBackupTimestamp(),
-        licenseActive
-    ) { hasLocationLocal, isDriveConnected, driveEmail, lastTimestamp, isLicenseActive ->
+        backupManager.observeLastBackupTimestamp()
+    ) { hasLocationLocal, isDriveConnected, driveEmail, lastTimestamp ->
         BackupUiState(
             hasSavedLocationLocal = hasLocationLocal,
             driveConnected = isDriveConnected,
             driveAccountEmail = driveEmail,
-            lastBackupTimestamp = lastTimestamp,
-            licenseActive = isLicenseActive
+            lastBackupTimestamp = lastTimestamp
+        )
+    }
+
+    val uiState: StateFlow<BackupUiState> = combine(
+        baseUiState,
+        licenseActive,
+        backupManager.observeHasBackupPassword()
+    ) { base, isLicenseActive, hasPassword ->
+        base.copy(
+            licenseActive = isLicenseActive,
+            hasBackupPassword = hasPassword
         )
     }.stateIn(
         scope = viewModelScope,
@@ -120,7 +130,7 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
                     mensaje.value = "Respaldo en Drive creado correctamente"
                 }
                 .onFailure {
-                    mensaje.value = it.message ?: "Error al crear respaldo en Drive"
+                    mensaje.value = sanitizeBackupError(it, "Error al crear respaldo en Drive")
                 }
         }
     }
@@ -135,7 +145,7 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
                     onSuccess()
                 }
                 .onFailure {
-                    mensaje.value = it.message ?: "Error al restaurar desde Drive"
+                    mensaje.value = sanitizeBackupError(it, "Error al restaurar desde Drive")
                 }
         }
     }
@@ -155,7 +165,7 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
                     mensaje.value = "Respaldo creado correctamente"
                 }
                 .onFailure {
-                    mensaje.value = it.message ?: "Error al crear respaldo"
+                    mensaje.value = sanitizeBackupError(it, "Error al crear respaldo")
                 }
         }
     }
@@ -180,10 +190,10 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
                 .onFailure {
                     if (it is IllegalStateException) {
                         refreshSavedLocation()
-                        mensaje.value = it.message ?: "Ubicacion de respaldo no valida"
+                        mensaje.value = sanitizeBackupError(it, "Ubicacion de respaldo no valida")
                         onLocationMissing()
                     } else {
-                        mensaje.value = it.message ?: "Error al crear respaldo"
+                        mensaje.value = sanitizeBackupError(it, "Error al crear respaldo")
                     }
                 }
         }
@@ -197,7 +207,7 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
                     mensaje.value = "Restauracion completada. Reiniciando app..."
                     onSuccess()
                 }
-                .onFailure { mensaje.value = it.message ?: "Error al restaurar respaldo" }
+                .onFailure { mensaje.value = sanitizeBackupError(it, "Error al restaurar respaldo") }
         }
     }
 
@@ -216,7 +226,7 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
                     mensaje.value = "Respaldo creado correctamente"
                 }
                 .onFailure {
-                    mensaje.value = it.message ?: "Error al crear respaldo"
+                    mensaje.value = sanitizeBackupError(it, "Error al crear respaldo")
                 }
         }
     }
@@ -261,6 +271,29 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
         mensaje.value = texto
     }
 
+    fun guardarClaveRespaldo(password: String, confirmPassword: String) {
+        viewModelScope.launch {
+            if (password != confirmPassword) {
+                mensaje.value = "Las claves no coinciden"
+                return@launch
+            }
+            runCatching {
+                backupManager.setBackupPassword(password.trim())
+            }.onSuccess {
+                mensaje.value = "Clave de respaldo guardada"
+            }.onFailure {
+                mensaje.value = it.message ?: "No se pudo guardar la clave de respaldo"
+            }
+        }
+    }
+
+    fun eliminarClaveRespaldo() {
+        viewModelScope.launch {
+            backupManager.clearBackupPassword()
+            mensaje.value = "Clave de respaldo eliminada"
+        }
+    }
+
     private fun refreshDriveConnection() {
         val account = GoogleSignIn.getLastSignedInAccount(getApplication())
         val hasScope = account?.grantedScopes?.any { it.scopeUri == DriveScopes.DRIVE_FILE } == true
@@ -295,5 +328,24 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
             status.licenseType == LicenseType.ANUAL ||
             status.licenseType == LicenseType.FULL
         return status.isValid && status.isActivated && paidType
+    }
+
+    private fun sanitizeBackupError(error: Throwable, fallback: String): String {
+        val raw = error.message.orEmpty()
+        val normalized = raw.lowercase()
+        return when {
+            raw.isBlank() -> fallback
+            "insufficientscopes" in normalized || "403" in normalized ->
+                "Permisos de Drive insuficientes. Reconecta tu cuenta de Drive."
+            "access_denied" in normalized || "acceso bloqueado" in normalized ->
+                "No se pudo autorizar Drive con esta cuenta."
+            "unable to resolve host" in normalized || "network" in normalized || "timeout" in normalized ->
+                "No hay conexion estable. Intenta nuevamente."
+            "clave de respaldo" in normalized || "tag mismatch" in normalized ->
+                "Clave de respaldo incorrecta o respaldo invalido."
+            "googleapis.com/drive" in normalized || normalized.trimStart().startsWith("{") ->
+                fallback
+            else -> raw
+        }
     }
 }

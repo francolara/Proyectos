@@ -1345,6 +1345,12 @@ private enum class ReporteTipo(val label: String) {
     DETALLADO("Prestamos por cliente - Detallado")
 }
 
+private enum class ReporteEstadoFiltro(val label: String) {
+    TODOS("Todos"),
+    PENDIENTE("Pendiente"),
+    PAGADO("Pagado")
+}
+
 private data class ReporteClienteFiltro(
     val idCliente: Long?,
     val label: String
@@ -1364,8 +1370,10 @@ fun ReportesScreen(
 
     var expandedCliente by remember { mutableStateOf(false) }
     var expandedTipoReporte by remember { mutableStateOf(false) }
+    var expandedEstadoReporte by remember { mutableStateOf(false) }
     var filtroClienteId by remember { mutableStateOf<Long?>(null) }
     var tipoReporte by remember { mutableStateOf(ReporteTipo.RESUMEN) }
+    var estadoReporte by remember { mutableStateOf(ReporteEstadoFiltro.TODOS) }
 
     val opcionesCliente = remember(clientes) {
         listOf(ReporteClienteFiltro(null, "Todos los clientes")) +
@@ -1380,9 +1388,16 @@ fun ReportesScreen(
         opcionesCliente.firstOrNull { it.idCliente == filtroClienteId } ?: opcionesCliente.first()
     }
 
-    val prestamosFiltrados = remember(prestamos, filtroClienteId) {
+    val prestamosFiltrados = remember(prestamos, filtroClienteId, estadoReporte) {
         prestamos
             .filter { filtroClienteId == null || it.idCliente == filtroClienteId }
+            .filter { prestamo ->
+                when (estadoReporte) {
+                    ReporteEstadoFiltro.TODOS -> true
+                    ReporteEstadoFiltro.PENDIENTE -> prestamo.estadoPrestamo != EstadoPrestamo.PAGADO
+                    ReporteEstadoFiltro.PAGADO -> prestamo.estadoPrestamo == EstadoPrestamo.PAGADO
+                }
+            }
             .sortedByDescending { it.fechaRegistro }
     }
     val cuotasPorPrestamo = remember(cuotas) { cuotas.groupBy { it.idPrestamo } }
@@ -1402,6 +1417,7 @@ fun ReportesScreen(
             ReporteTipo.RESUMEN -> buildReportePrestamosResumenPayload(
                 prestamos = prestamosFiltrados,
                 cuotasPorPrestamo = cuotasPorPrestamo,
+                pagosPorPrestamo = pagosPorPrestamo,
                 clienteById = clienteById,
                 filtroCliente = clienteSeleccionado.label
             )
@@ -1445,6 +1461,16 @@ fun ReportesScreen(
                 onSelect = { tipoReporte = it }
             )
             Spacer(modifier = Modifier.height(8.dp))
+            DropdownGeneric(
+                expanded = expandedEstadoReporte,
+                onExpandedChange = { expandedEstadoReporte = it },
+                label = "Estado",
+                selected = estadoReporte.label,
+                options = ReporteEstadoFiltro.entries,
+                optionText = { it.label },
+                onSelect = { estadoReporte = it }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
             Button(
                 onClick = {
                     runCatching {
@@ -1478,6 +1504,7 @@ fun ReportesScreen(
 private fun buildReportePrestamosResumenPayload(
     prestamos: List<com.prestamos.app.data.local.entity.PrestamoEntity>,
     cuotasPorPrestamo: Map<Long, List<com.prestamos.app.data.local.entity.CuotaEntity>>,
+    pagosPorPrestamo: Map<Long, List<PagoEntity>>,
     clienteById: Map<Long, ClienteEntity>,
     filtroCliente: String
 ): ReportPdfPayload {
@@ -1501,8 +1528,11 @@ private fun buildReportePrestamosResumenPayload(
     val rows = prestamos.map { prestamo ->
         val cliente = clienteById[prestamo.idCliente]
         val cuotas = cuotasPorPrestamo[prestamo.idPrestamo].orEmpty()
+        val pagosPrestamo = pagosPorPrestamo[prestamo.idPrestamo].orEmpty()
         val saldoPendiente = cuotas.sumOf { it.saldoPendiente + it.moraPendiente }
         val moraPendiente = cuotas.sumOf { it.moraPendiente }
+        val moraCobrada = pagosPrestamo.sumOf { it.moraCobrada }
+        val moraTotal = moraPendiente + moraCobrada
         val tipo = if (prestamo.estadoPrestamo == EstadoPrestamo.PAGADO) "Pagado" else "Pendiente"
         val frecuencia = tipoPagoDetalle(prestamo.tipoPago, cuotas)
         val cuotasPendientes = cuotas.count { (it.saldoPendiente + it.moraPendiente) > 0.0 }
@@ -1517,7 +1547,7 @@ private fun buildReportePrestamosResumenPayload(
                     prestamo.cantidadCuotas.toString(),
                     prestamo.montoPrestado.toMoney(prestamo.moneda),
                     prestamo.montoTotalPrestamo.toMoney(prestamo.moneda),
-                    moraPendiente.toMoney(prestamo.moneda),
+                    moraTotal.toMoney(prestamo.moneda),
                     tipo,
                     cuotasPendientes.toString(),
                     saldoPendiente.toMoney(prestamo.moneda)
@@ -1582,6 +1612,8 @@ private fun buildReportePrestamosDetalladoPayload(
         val pagosPrestamo = pagosPorPrestamo[prestamo.idPrestamo].orEmpty()
         val saldoPendiente = cuotas.sumOf { it.saldoPendiente + it.moraPendiente }
         val moraPendiente = cuotas.sumOf { it.moraPendiente }
+        val moraCobrada = pagosPrestamo.sumOf { it.moraCobrada }
+        val moraTotalPrestamo = moraPendiente + moraCobrada
         val tipo = if (prestamo.estadoPrestamo == EstadoPrestamo.PAGADO) "Pagado" else "Pendiente"
         val frecuencia = tipoPagoDetalle(prestamo.tipoPago, cuotas)
         val cuotaBase = if (prestamo.cantidadCuotas > 0) prestamo.montoPrestado / prestamo.cantidadCuotas else 0.0
@@ -1603,7 +1635,7 @@ private fun buildReportePrestamosDetalladoPayload(
                         prestamo.cantidadCuotas.toString(),
                         prestamo.montoPrestado.toMoney(prestamo.moneda),
                         prestamo.montoTotalPrestamo.toMoney(prestamo.moneda),
-                        moraPendiente.toMoney(prestamo.moneda),
+                        moraTotalPrestamo.toMoney(prestamo.moneda),
                         tipo,
                         cuotasPendientes.toString(),
                         saldoPendiente.toMoney(prestamo.moneda)

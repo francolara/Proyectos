@@ -127,19 +127,20 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                                     if (localConfigured) {
                                         backupManager.exportBackupToSavedLocation(BackupStorageDestination.LOCAL)
                                             .onFailure { localError ->
-                                                mensaje.value = localError.message
-                                                    ?: driveError.message
-                                                    ?: "Error al crear respaldo"
+                                                mensaje.value = sanitizeBackupError(
+                                                    localError,
+                                                    sanitizeBackupError(driveError, "Error al crear respaldo")
+                                                )
                                             }
                                     } else {
-                                        mensaje.value = driveError.message ?: "Error al crear respaldo"
+                                        mensaje.value = sanitizeBackupError(driveError, "Error al crear respaldo")
                                     }
                                 }
                         }
                         localConfigured -> {
                             backupManager.exportBackupToSavedLocation(BackupStorageDestination.LOCAL)
                                 .onFailure {
-                                    mensaje.value = it.message ?: "Error al crear respaldo"
+                                    mensaje.value = sanitizeBackupError(it, "Error al crear respaldo")
                                 }
                         }
                         else -> {
@@ -159,5 +160,24 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     fun limpiarMensaje() {
         mensaje.value = null
+    }
+
+    private fun sanitizeBackupError(error: Throwable, fallback: String): String {
+        val raw = error.message.orEmpty()
+        val normalized = raw.lowercase()
+        return when {
+            raw.isBlank() -> fallback
+            "insufficientscopes" in normalized || "403" in normalized ->
+                "Permisos de Drive insuficientes. Reconecta tu cuenta de Drive."
+            "access_denied" in normalized || "acceso bloqueado" in normalized ->
+                "No se pudo autorizar Drive con esta cuenta."
+            "unable to resolve host" in normalized || "network" in normalized || "timeout" in normalized ->
+                "No hay conexion estable. Intenta nuevamente."
+            "clave de respaldo" in normalized || "tag mismatch" in normalized ->
+                "Clave de respaldo no configurada o invalida."
+            "googleapis.com/drive" in normalized || normalized.trimStart().startsWith("{") ->
+                fallback
+            else -> raw
+        }
     }
 }

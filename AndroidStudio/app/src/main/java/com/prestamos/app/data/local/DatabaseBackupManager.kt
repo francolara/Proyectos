@@ -56,26 +56,30 @@ object DatabaseBackupManager {
     suspend fun importDatabaseFromBytes(context: Context, backupBytes: ByteArray): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
             val tempFile = File(context.cacheDir, "restore_temp.db")
-            FileOutputStream(tempFile).use { it.write(backupBytes) }
+            try {
+                FileOutputStream(tempFile).use { it.write(backupBytes) }
 
-            validarBackup(tempFile)
+                validarBackup(tempFile)
 
-            val dbFile = context.getDatabasePath(AppDatabase.DATABASE_NAME)
-            val dbDir = dbFile.parentFile
-            if (dbDir != null && !dbDir.exists()) dbDir.mkdirs()
+                val dbFile = context.getDatabasePath(AppDatabase.DATABASE_NAME)
+                val dbDir = dbFile.parentFile
+                if (dbDir != null && !dbDir.exists()) dbDir.mkdirs()
 
-            AppDatabase.closeInstance()
-            File(dbFile.absolutePath + "-wal").delete()
-            File(dbFile.absolutePath + "-shm").delete()
+                AppDatabase.closeInstance()
+                File(dbFile.absolutePath + "-wal").delete()
+                File(dbFile.absolutePath + "-shm").delete()
 
-            FileInputStream(tempFile).use { input ->
-                FileOutputStream(dbFile, false).use { output ->
-                    input.copyTo(output)
+                FileInputStream(tempFile).use { input ->
+                    FileOutputStream(dbFile, false).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                Unit
+            } finally {
+                if (tempFile.exists()) {
+                    tempFile.delete()
                 }
             }
-
-            tempFile.delete()
-            Unit
         }
     }
 
