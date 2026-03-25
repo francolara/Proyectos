@@ -228,6 +228,8 @@ private fun AppRoot(
                     onSecondaryCurrencySelected = onboardingViewModel::selectSecondaryCurrency,
                     onDefaultInterestChange = onboardingViewModel::updateDefaultInterest,
                     onTogglePaymentType = onboardingViewModel::toggleAllowedPaymentType,
+                    onAddCollectionType = onboardingViewModel::addCollectionType,
+                    onRemoveCollectionType = onboardingViewModel::removeCollectionType,
                     onFinalizar = onboardingViewModel::finalizarConfiguracion
                 )
 

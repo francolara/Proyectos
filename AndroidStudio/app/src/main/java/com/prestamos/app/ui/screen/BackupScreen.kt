@@ -2,7 +2,7 @@ package com.prestamos.app.ui.screen
 
 import android.content.Intent
 import android.net.Uri
-import android.provider.DocumentsContract
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -10,13 +10,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -24,8 +24,9 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -40,7 +41,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.BorderStroke
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.prestamos.app.data.backup.BackupManager
@@ -58,10 +61,10 @@ fun BackupScreen(viewModel: BackupViewModel = viewModel()) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scrollState = rememberScrollState()
     var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
+    var pendingDriveRestore by remember { mutableStateOf(false) }
     var selectedDestination by remember { mutableStateOf(BackupDestination.LOCAL) }
     val isLocalSelected = selectedDestination == BackupDestination.LOCAL
-    val storageDestination = if (isLocalSelected) BackupStorageDestination.LOCAL else BackupStorageDestination.DRIVE
-    val hasSavedLocation = if (isLocalSelected) uiState.hasSavedLocationLocal else uiState.hasSavedLocationDrive
+    val hasSavedLocation = if (isLocalSelected) uiState.hasSavedLocationLocal else uiState.driveConnected
 
     val folderBackupLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -71,38 +74,7 @@ fun BackupScreen(viewModel: BackupViewModel = viewModel()) {
             viewModel.generarRespaldoEnCarpeta(
                 uri = uri,
                 persistPermission = true,
-                destination = storageDestination
-            )
-        } else {
-            viewModel.limpiarMensaje()
-        }
-    }
-
-    val driveFileBackupLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result: ActivityResult ->
-        val uri = result.data?.data
-        if (uri != null) {
-            viewModel.generarRespaldoEnUri(
-                uri = uri,
-                persistPermission = true,
-                destination = BackupStorageDestination.DRIVE
-            )
-        } else {
-            viewModel.limpiarMensaje()
-        }
-    }
-
-    val driveExistingFileLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result: ActivityResult ->
-        val uri = result.data?.data
-        if (uri != null) {
-            viewModel.persistReadPermission(uri)
-            viewModel.generarRespaldoEnUri(
-                uri = uri,
-                persistPermission = true,
-                destination = BackupStorageDestination.DRIVE
+                destination = BackupStorageDestination.LOCAL
             )
         } else {
             viewModel.limpiarMensaje()
@@ -118,12 +90,22 @@ fun BackupScreen(viewModel: BackupViewModel = viewModel()) {
         }
     }
 
+    val driveSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result: ActivityResult ->
+        viewModel.handleDriveSignInResult(result.data)
+    }
+
     LaunchedEffect(Unit) {
         viewModel.refreshLicenseStatus()
+        viewModel.refreshSavedLocation()
     }
 
     LaunchedEffect(mensaje) {
         val text = mensaje ?: return@LaunchedEffect
+        if (text.startsWith("Drive conectado:")) {
+            Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
+        }
         snackbarHostState.showSnackbar(text)
         viewModel.limpiarMensaje()
     }
@@ -195,47 +177,99 @@ fun BackupScreen(viewModel: BackupViewModel = viewModel()) {
                     ) {
                         Button(
                             onClick = { selectedDestination = BackupDestination.LOCAL },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Local")
-                        }
-                        OutlinedButton(
-                            onClick = { selectedDestination = BackupDestination.DRIVE },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Drive")
-                        }
-                    }
-                    Text(
-                        text = if (isLocalSelected) {
-                            "Usando respaldo local del dispositivo."
-                        } else {
-                            "Usando Google Drive mediante selector de archivos del sistema."
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    if (!isLocalSelected) {
-                        OutlinedButton(
-                            onClick = {
-                                if (hasSavedLocation) {
-                                    launchDriveOpenFile(
-                                        context = context,
-                                        launcher = driveExistingFileLauncher,
-                                        onError = viewModel::reportarError
-                                    )
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(52.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isLocalSelected) {
+                                    MaterialTheme.colorScheme.primary
                                 } else {
-                                    launchDriveCreateFile(
-                                        context = context,
-                                        launcher = driveFileBackupLauncher,
-                                        onError = viewModel::reportarError
+                                    MaterialTheme.colorScheme.surfaceVariant
+                                },
+                                contentColor = if (isLocalSelected) {
+                                    MaterialTheme.colorScheme.onPrimary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                            ),
+                            border = if (isLocalSelected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                        ) { Text("Local") }
+                        Button(
+                            onClick = { selectedDestination = BackupDestination.DRIVE },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(52.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (!isLocalSelected) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceVariant
+                                },
+                                contentColor = if (!isLocalSelected) {
+                                    MaterialTheme.colorScheme.onPrimary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                            ),
+                            border = if (!isLocalSelected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                        ) { Text("Drive") }
+                    }
+                    if (isLocalSelected) {
+                        Text(
+                            "Usando respaldo local del dispositivo.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        Text(
+                            if (uiState.driveConnected) {
+                                "Drive conectado: ${uiState.driveAccountEmail ?: "Cuenta Google"}"
+                            } else {
+                                "Conecta tu cuenta Google para usar respaldo en Drive."
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedButton(
+                                onClick = {
+                                    if (uiState.driveConnected) {
+                                        viewModel.cambiarCuentaDrive { intent ->
+                                            driveSignInLauncher.launch(intent)
+                                        }
+                                    } else {
+                                        driveSignInLauncher.launch(viewModel.getDriveSignInIntent())
+                                    }
+                                },
+                                enabled = uiState.licenseActive,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(52.dp)
+                            ) {
+                                Text(
+                                    text = if (uiState.driveConnected) "Cambiar cuenta" else "Conectar Drive",
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            if (uiState.driveConnected) {
+                                OutlinedButton(
+                                    onClick = { viewModel.desconectarDrive() },
+                                    enabled = uiState.licenseActive,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(52.dp)
+                                ) {
+                                    Text(
+                                        text = "Desconectar",
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
-                            },
-                            enabled = uiState.licenseActive,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(if (hasSavedLocation) "Cambiar archivo de Drive" else "Conectar Drive")
+                            }
                         }
                     }
                 }
@@ -268,75 +302,29 @@ fun BackupScreen(viewModel: BackupViewModel = viewModel()) {
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text("Acciones", style = MaterialTheme.typography.titleSmall)
-                    OutlinedButton(
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = uiState.licenseActive,
-                        onClick = {
-                            if (isLocalSelected) {
-                                folderBackupLauncher.launch(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE))
-                            } else {
-                                if (hasSavedLocation) {
-                                    launchDriveOpenFile(
-                                        context = context,
-                                        launcher = driveExistingFileLauncher,
-                                        onError = viewModel::reportarError
-                                    )
-                                } else {
-                                    launchDriveCreateFile(
-                                        context = context,
-                                        launcher = driveFileBackupLauncher,
-                                        onError = viewModel::reportarError
-                                    )
-                                }
-                            }
-                        }
-                    ) { Text(if (isLocalSelected) "Configurar ubicacion" else "Conectar Drive") }
+                    if (isLocalSelected) {
+                        OutlinedButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = uiState.licenseActive,
+                            onClick = { folderBackupLauncher.launch(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)) }
+                        ) { Text("Configurar ubicacion") }
+                    }
 
                     Button(
                         modifier = Modifier.fillMaxWidth(),
                         enabled = uiState.licenseActive,
                         onClick = {
-                            if (hasSavedLocation) {
-                                viewModel.generarRespaldoEnUbicacionGuardada(
-                                    destination = storageDestination,
-                                    onLocationMissing = {
-                                        if (isLocalSelected) {
-                                            folderBackupLauncher.launch(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE))
-                                        } else {
-                                            if (hasSavedLocation) {
-                                                launchDriveOpenFile(
-                                                    context = context,
-                                                    launcher = driveExistingFileLauncher,
-                                                    onError = viewModel::reportarError
-                                                )
-                                            } else {
-                                                launchDriveCreateFile(
-                                                    context = context,
-                                                    launcher = driveFileBackupLauncher,
-                                                    onError = viewModel::reportarError
-                                                )
-                                            }
-                                        }
-                                    }
-                                )
-                            } else {
-                                if (isLocalSelected) {
-                                    folderBackupLauncher.launch(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE))
+                            if (isLocalSelected) {
+                                if (uiState.hasSavedLocationLocal) {
+                                    viewModel.generarRespaldoEnUbicacionGuardada(
+                                        destination = BackupStorageDestination.LOCAL,
+                                        onLocationMissing = { folderBackupLauncher.launch(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)) }
+                                    )
                                 } else {
-                                    if (hasSavedLocation) {
-                                        launchDriveOpenFile(
-                                            context = context,
-                                            launcher = driveExistingFileLauncher,
-                                            onError = viewModel::reportarError
-                                        )
-                                    } else {
-                                        launchDriveCreateFile(
-                                            context = context,
-                                            launcher = driveFileBackupLauncher,
-                                            onError = viewModel::reportarError
-                                        )
-                                    }
+                                    folderBackupLauncher.launch(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE))
                                 }
+                            } else {
+                                viewModel.generarRespaldoDrive()
                             }
                         }
                     ) { Text("Crear respaldo ahora") }
@@ -344,52 +332,40 @@ fun BackupScreen(viewModel: BackupViewModel = viewModel()) {
                     OutlinedButton(
                         modifier = Modifier.fillMaxWidth(),
                         enabled = uiState.licenseActive,
-                        onClick = { restoreBackupLauncher.launch(arrayOf("application/json", "text/plain", "*/*")) }
+                        onClick = {
+                            if (isLocalSelected) {
+                                restoreBackupLauncher.launch(arrayOf("application/octet-stream", "application/x-sqlite3", "*/*"))
+                            } else {
+                                pendingDriveRestore = true
+                            }
+                        }
                     ) { Text("Restaurar respaldo") }
 
-                    OutlinedButton(
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = uiState.licenseActive && hasSavedLocation,
-                        onClick = {
-                            viewModel.getSavedBackupUri(storageDestination) { uri ->
-                                if (uri == null) {
-                                    viewModel.reportarError("No hay respaldo para compartir")
-                                    return@getSavedBackupUri
-                                }
-                                val sendIntent = Intent(Intent.ACTION_SEND).apply {
-                                    type = "application/json"
-                                    putExtra(Intent.EXTRA_STREAM, uri)
-                                    putExtra(Intent.EXTRA_SUBJECT, "Respaldo de prestamos")
-                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                }
-                                runCatching {
-                                    context.startActivity(Intent.createChooser(sendIntent, "Compartir respaldo"))
-                                }.onFailure {
-                                    viewModel.reportarError("Error al compartir respaldo")
+                    if (isLocalSelected) {
+                        OutlinedButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = uiState.licenseActive && uiState.hasSavedLocationLocal,
+                            onClick = {
+                                viewModel.getSavedBackupUri(BackupStorageDestination.LOCAL) { uri ->
+                                    if (uri == null) {
+                                        viewModel.reportarError("No hay respaldo para compartir")
+                                        return@getSavedBackupUri
+                                    }
+                                    val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "application/octet-stream"
+                                        putExtra(Intent.EXTRA_STREAM, uri)
+                                        putExtra(Intent.EXTRA_SUBJECT, "Respaldo de prestamos")
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    }
+                                    runCatching {
+                                        context.startActivity(Intent.createChooser(sendIntent, "Compartir respaldo"))
+                                    }.onFailure {
+                                        viewModel.reportarError("Error al compartir respaldo")
+                                    }
                                 }
                             }
-                        }
-                    ) { Text("Compartir archivo de respaldo") }
-
-                    OutlinedButton(
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = uiState.licenseActive && hasSavedLocation,
-                        onClick = {
-                            viewModel.getSavedBackupUri(storageDestination) { uri ->
-                                if (uri == null) {
-                                    viewModel.reportarError("No hay ubicacion configurada")
-                                    return@getSavedBackupUri
-                                }
-                                val openIntent = Intent(Intent.ACTION_VIEW).apply {
-                                    setData(uri)
-                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                }
-                                runCatching { context.startActivity(openIntent) }
-                                    .onFailure { viewModel.reportarError("No se pudo abrir la ubicacion") }
-                            }
-                        }
-                    ) { Text("Abrir ubicacion de respaldo") }
+                        ) { Text("Compartir archivo de respaldo") }
+                    }
                 }
             }
 
@@ -415,14 +391,29 @@ fun BackupScreen(viewModel: BackupViewModel = viewModel()) {
                     viewModel.restaurarRespaldo(uri) {
                         BackupManager.restartApplication(context)
                     }
-                }) {
-                    Text("Restaurar")
-                }
+                }) { Text("Restaurar") }
             },
             dismissButton = {
-                TextButton(onClick = { pendingImportUri = null }) {
-                    Text("Cancelar")
-                }
+                TextButton(onClick = { pendingImportUri = null }) { Text("Cancelar") }
+            }
+        )
+    }
+
+    if (pendingDriveRestore) {
+        AlertDialog(
+            onDismissRequest = { pendingDriveRestore = false },
+            title = { Text("Restaurar desde Drive") },
+            text = { Text("Se restaurara el ultimo respaldo disponible en tu Drive y se reiniciara la app. Deseas continuar?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingDriveRestore = false
+                    viewModel.restaurarRespaldoDrive {
+                        BackupManager.restartApplication(context)
+                    }
+                }) { Text("Restaurar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDriveRestore = false }) { Text("Cancelar") }
             }
         )
     }
@@ -431,53 +422,6 @@ fun BackupScreen(viewModel: BackupViewModel = viewModel()) {
 private enum class BackupDestination {
     LOCAL,
     DRIVE
-}
-
-private fun launchDriveCreateFile(
-    context: android.content.Context,
-    launcher: androidx.activity.result.ActivityResultLauncher<Intent>,
-    onError: (String) -> Unit
-) {
-    val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-        addCategory(Intent.CATEGORY_OPENABLE)
-        type = "application/json"
-        setPackage("com.google.android.apps.docs")
-        putExtra(Intent.EXTRA_TITLE, BackupManager.BACKUP_FILE_NAME)
-        val driveRoot = DocumentsContract.buildRootUri("com.google.android.apps.docs.storage", "root")
-        putExtra(DocumentsContract.EXTRA_INITIAL_URI, driveRoot)
-    }
-
-    if (intent.resolveActivity(context.packageManager) == null) {
-        onError("No se pudo abrir Google Drive. Verifica la app de Drive.")
-        return
-    }
-    runCatching { launcher.launch(intent) }
-        .onFailure { onError("No se pudo abrir Google Drive") }
-}
-
-private fun launchDriveOpenFile(
-    context: android.content.Context,
-    launcher: androidx.activity.result.ActivityResultLauncher<Intent>,
-    onError: (String) -> Unit
-) {
-    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-        addCategory(Intent.CATEGORY_OPENABLE)
-        type = "application/json"
-        putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("application/json", "text/plain"))
-        setPackage("com.google.android.apps.docs")
-        val driveRoot = DocumentsContract.buildRootUri("com.google.android.apps.docs.storage", "root")
-        putExtra(DocumentsContract.EXTRA_INITIAL_URI, driveRoot)
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-        addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
-    }
-
-    if (intent.resolveActivity(context.packageManager) == null) {
-        onError("No se pudo abrir Google Drive. Verifica la app de Drive.")
-        return
-    }
-    runCatching { launcher.launch(intent) }
-        .onFailure { onError("No se pudo abrir Google Drive") }
 }
 
 private fun Long?.toDisplayDateTime(): String {

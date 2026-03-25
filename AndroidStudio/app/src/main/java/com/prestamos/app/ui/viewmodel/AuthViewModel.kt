@@ -5,6 +5,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.prestamos.app.data.backup.BackupManager
 import com.prestamos.app.data.backup.BackupStorageDestination
+import com.prestamos.app.data.backup.DriveBackupManager
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.api.services.drive.DriveScopes
 import com.prestamos.app.data.license.LicenseManager
 import com.prestamos.app.data.license.LicenseType
 import com.prestamos.app.data.security.AuthRepository
@@ -25,6 +28,7 @@ sealed class AuthState {
 class AuthViewModel(application: Application) : AndroidViewModel(application) {
     private val authRepository = AuthRepository(application)
     private val backupManager = BackupManager(application)
+    private val driveBackupManager = DriveBackupManager(application, backupManager)
     private val licenseManager = LicenseManager(application)
     private val inicializado = MutableStateFlow(false)
 
@@ -111,12 +115,14 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
                 if (status.isValid && status.isActivated && paidType) {
                     mensaje.value = "Generando respaldo..."
-                    val driveConfigured = backupManager.hasSavedLocation(BackupStorageDestination.DRIVE)
                     val localConfigured = backupManager.hasSavedLocation(BackupStorageDestination.LOCAL)
+                    val driveAccount = GoogleSignIn.getLastSignedInAccount(getApplication())
+                    val driveConnected = driveAccount != null &&
+                        driveAccount.grantedScopes.any { it.scopeUri == DriveScopes.DRIVE_FILE }
 
                     when {
-                        driveConfigured -> {
-                            backupManager.exportBackupToSavedLocation(BackupStorageDestination.DRIVE)
+                        driveConnected -> {
+                            driveBackupManager.subirRespaldo(driveAccount!!)
                                 .onFailure { driveError ->
                                     if (localConfigured) {
                                         backupManager.exportBackupToSavedLocation(BackupStorageDestination.LOCAL)

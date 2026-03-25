@@ -23,6 +23,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -74,10 +75,13 @@ fun OnboardingScreen(
     onSecondaryCurrencySelected: (String?) -> Unit,
     onDefaultInterestChange: (String) -> Unit,
     onTogglePaymentType: (TipoPago) -> Unit,
+    onAddCollectionType: (String) -> Unit,
+    onRemoveCollectionType: (String) -> Unit,
     onFinalizar: () -> Unit
 ) {
     var showMainCurrencyPicker by remember { mutableStateOf(false) }
     var showSecondaryCurrencyPicker by remember { mutableStateOf(false) }
+    var newCollectionType by remember { mutableStateOf("") }
 
     Box(
         modifier = Modifier
@@ -208,6 +212,45 @@ fun OnboardingScreen(
                         }
                     }
 
+                    Text("Tipos de cobro (creados por ti)", style = MaterialTheme.typography.labelLarge)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = newCollectionType,
+                            onValueChange = { newCollectionType = it },
+                            label = { Text("Ej: Yape, Abono en cuenta") },
+                            singleLine = true,
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier.weight(1f)
+                        )
+                        TextButton(onClick = {
+                            onAddCollectionType(newCollectionType)
+                            newCollectionType = ""
+                        }) {
+                            Text("Agregar")
+                        }
+                    }
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        uiState.collectionTypes.forEach { type ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(type, style = MaterialTheme.typography.bodyMedium)
+                                Text(
+                                    text = "Eliminar",
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    modifier = Modifier.clickable { onRemoveCollectionType(type) }
+                                )
+                            }
+                        }
+                    }
+
                     if (!uiState.errorMessage.isNullOrBlank()) {
                         Text(
                             text = uiState.errorMessage,
@@ -218,6 +261,7 @@ fun OnboardingScreen(
 
                     Button(
                         onClick = onFinalizar,
+                        enabled = uiState.collectionTypes.isNotEmpty(),
                         shape = RoundedCornerShape(14.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {

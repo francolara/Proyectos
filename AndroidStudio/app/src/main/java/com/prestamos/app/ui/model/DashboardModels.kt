@@ -30,6 +30,7 @@ data class DashboardGananciaPrestamoItem(
     val montoPrestado: Double,
     val montoCobrado: Double,
     val ganancia: Double,
+    val moraCobrada: Double = 0.0,
     val moneda: Moneda
 )
 
@@ -59,6 +60,7 @@ data class DashboardCuotaItem(
 
 data class DashboardCuotaDetalleItem(
     val cliente: String,
+    val idCuota: Long,
     val idPrestamo: Long,
     val numeroCuota: Int,
     val fechaVencimiento: Long,
@@ -74,5 +76,6 @@ data class DashboardPagoItem(
     val idPrestamo: Long,
     val numeroCuota: Int,
     val idPago: Long,
-    val moneda: Moneda
+    val moneda: Moneda,
+    val tipoCobro: String
 )

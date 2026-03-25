@@ -28,6 +28,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AttachMoney
 import androidx.compose.material.icons.outlined.Payments
@@ -45,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import com.prestamos.app.ui.theme.AccentGold
@@ -266,7 +268,7 @@ fun DashboardScreen(
             Text("Ganancias de prestamos pagados", style = MaterialTheme.typography.titleMedium)
             DashboardMoneyCard(
                 title = "Ganancia acumulada",
-                totals = state.gananciasPrestamosPagados.sumByCurrency { it.ganancia },
+                totals = state.gananciasPrestamosPagados.sumByCurrency { it.ganancia + it.moraCobrada },
                 visibleCurrencies = visibleCurrencies,
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -277,10 +279,11 @@ fun DashboardScreen(
             if (state.gananciasPrestamosPagados.isEmpty()) {
                 Text("No hay prestamos pagados aun")
             } else {
-                val maxGanancia = state.gananciasPrestamosPagados.maxOf { it.ganancia }.coerceAtLeast(1.0)
+                val maxGanancia = state.gananciasPrestamosPagados.maxOf { it.ganancia + it.moraCobrada }.coerceAtLeast(1.0)
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     state.gananciasPrestamosPagados.take(8).forEach { item ->
-                        val ratio = (item.ganancia / maxGanancia).toFloat().coerceIn(0.1f, 1f)
+                        val totalGanado = item.ganancia + item.moraCobrada
+                        val ratio = (totalGanado / maxGanancia).toFloat().coerceIn(0.1f, 1f)
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
@@ -295,7 +298,7 @@ fun DashboardScreen(
                             )
                         }
                         Text(
-                            "${item.cliente}: ganancia ${item.ganancia.toMoney(item.moneda)}",
+                            "${item.cliente}: total ganado ${totalGanado.toMoney(item.moneda)}",
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -440,6 +443,19 @@ fun DashboardScreen(
             VencidasDetalleDialog(
                 detalle = vencidasDetalle,
                 onClose = { detalleSeleccionado = null },
+                onApplyMora = { idCuota, montoMora, onDone ->
+                    viewModel.aplicarMoraCuotaVencida(
+                        idCuota = idCuota,
+                        montoMora = montoMora,
+                        onSuccess = {
+                            Toast.makeText(context, "Mora aplicada correctamente", Toast.LENGTH_SHORT).show()
+                            onDone()
+                        },
+                        onError = {
+                            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                        }
+                    )
+                },
                 onShareText = {
                     compartirTextoPlano(
                         context = context,
@@ -743,6 +759,7 @@ private fun PagoRecienteCard(pago: com.prestamos.app.ui.model.DashboardPagoItem)
     val iconPin = "\uD83D\uDCCC"
     val iconCal = "\uD83D\uDCC5"
     val iconMoney = "\uD83D\uDCB0"
+    val iconTipoCobro = "\uD83D\uDCB8"
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -756,8 +773,9 @@ private fun PagoRecienteCard(pago: com.prestamos.app.ui.model.DashboardPagoItem)
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(pago.cliente, style = MaterialTheme.typography.titleSmall)
-            Text("$iconPin Cuota ${pago.numeroCuota} \u2022 📄 Prestamo #${pago.idPrestamo}", style = MaterialTheme.typography.bodyMedium)
+            Text("$iconPin Cuota ${pago.numeroCuota} • 📄 Prestamo #${pago.idPrestamo}", style = MaterialTheme.typography.bodyMedium)
             Text("$iconCal ${pago.fechaPago.toDateString()}", style = MaterialTheme.typography.bodyMedium)
+            Text("$iconTipoCobro ${pago.tipoCobro}", style = MaterialTheme.typography.bodyMedium)
             Text("$iconMoney ${pago.montoAbono.toMoney(pago.moneda)} ${pago.moneda.displayName}", style = MaterialTheme.typography.bodyMedium)
         }
     }
@@ -852,7 +870,8 @@ private data class CobradoHoyDetalleItem(
     val numeroCuota: Int,
     val fechaPago: Long,
     val montoAbono: Double,
-    val moneda: Moneda
+    val moneda: Moneda,
+    val tipoCobro: String
 )
 
 private data class CobradoHoyDetalleUi(
@@ -869,6 +888,7 @@ private data class GananciaDetalleItem(
     val numeroCuota: Int,
     val fechaPago: Long,
     val ganancia: Double,
+    val moraCobrada: Double,
     val moneda: Moneda
 )
 
@@ -882,6 +902,7 @@ private data class GananciasDetalleUi(
 
 private data class VencidaDetalleItem(
     val cliente: String,
+    val idCuota: Long,
     val idPrestamo: Long,
     val numeroCuota: Int,
     val fechaVencimiento: Long,
@@ -901,7 +922,8 @@ private data class CobradoActivoDetalleItem(
     val numeroCuota: Int,
     val fechaPago: Long,
     val montoAbono: Double,
-    val moneda: Moneda
+    val moneda: Moneda,
+    val tipoCobro: String
 )
 
 private data class CobradoActivoDetalleUi(
@@ -962,7 +984,7 @@ private fun CobradoActivoDetalleUi.toShareText(): String = buildString {
         appendLine("No hay cobros registrados en prestamos activos.")
     } else {
         items.forEach { item ->
-            appendLine("${item.cliente} | Prestamo #${item.idPrestamo} | Cuota ${item.numeroCuota} | Fecha ${item.fechaPago.toDateString()} | Cobro ${item.montoAbono.toMoney(item.moneda)} ${item.moneda.displayName}")
+            appendLine("${item.cliente} | Prestamo #${item.idPrestamo} | Cuota ${item.numeroCuota} | Fecha ${item.fechaPago.toDateString()} | Tipo cobro ${item.tipoCobro} | Cobro ${item.montoAbono.toMoney(item.moneda)} ${item.moneda.displayName}")
         }
     }
 }
@@ -993,7 +1015,7 @@ private fun GananciasDetalleUi.toShareText(): String = buildString {
         appendLine("No hay prestamos pagados.")
     } else {
         items.forEach { item ->
-            appendLine("${item.cliente} | Prestamo #${item.idPrestamo} | Cuota ${item.numeroCuota} | Fecha ${item.fechaPago.toDateString()} | Ganancia ${item.ganancia.toMoney(item.moneda)} ${item.moneda.displayName}")
+            appendLine("${item.cliente} | Prestamo #${item.idPrestamo} | Cuota ${item.numeroCuota} | Fecha ${item.fechaPago.toDateString()} | Ganancia ${item.ganancia.toMoney(item.moneda)} | Mora ${item.moraCobrada.toMoney(item.moneda)} ${item.moneda.displayName}")
         }
     }
 }
@@ -1010,7 +1032,7 @@ private fun CobradoHoyDetalleUi.toShareText(): String = buildString {
         appendLine("No hay pagos registrados hoy.")
     } else {
         items.forEach { item ->
-            appendLine("${item.cliente} | Prestamo #${item.idPrestamo} | Cuota ${item.numeroCuota} | Fecha ${item.fechaPago.toDateString()} | Cobro ${item.montoAbono.toMoney(item.moneda)} ${item.moneda.displayName}")
+            appendLine("${item.cliente} | Prestamo #${item.idPrestamo} | Cuota ${item.numeroCuota} | Fecha ${item.fechaPago.toDateString()} | Tipo cobro ${item.tipoCobro} | Cobro ${item.montoAbono.toMoney(item.moneda)} ${item.moneda.displayName}")
         }
     }
 }
@@ -1379,6 +1401,7 @@ private fun CobradoHoyDetalleDialog(
                                     Text("\uD83D\uDC64 ${item.cliente}", style = MaterialTheme.typography.bodyMedium)
                                     Text("\uD83D\uDCC4 Prestamo #${item.idPrestamo} \u00B7 📌 Cuota ${item.numeroCuota}", style = MaterialTheme.typography.bodySmall)
                                     Text("\uD83D\uDCC5 Fecha ${item.fechaPago.toDateString()}", style = MaterialTheme.typography.bodySmall)
+                                    Text("\uD83D\uDCB8 ${item.tipoCobro}", style = MaterialTheme.typography.bodySmall)
                                     Text("\uD83D\uDCB0 Cobro ${item.montoAbono.toMoney(item.moneda)} ${item.moneda.displayName}", style = MaterialTheme.typography.bodySmall)
                                 }
                             }
@@ -1467,6 +1490,7 @@ private fun GananciasDetalleDialog(
                                     Text("\uD83D\uDCC4 Prestamo #${item.idPrestamo} \u00B7 📌 Cuota ${item.numeroCuota}", style = MaterialTheme.typography.bodySmall)
                                     Text("\uD83D\uDCC5 Fecha ${item.fechaPago.toDateString()}", style = MaterialTheme.typography.bodySmall)
                                     Text("\uD83D\uDCB0 Ganancia ${item.ganancia.toMoney(item.moneda)} ${item.moneda.displayName}", style = MaterialTheme.typography.bodySmall)
+                                    Text("\uD83D\uDCB8 Mora cobrada ${item.moraCobrada.toMoney(item.moneda)} ${item.moneda.displayName}", style = MaterialTheme.typography.bodySmall)
                                 }
                             }
                         }
@@ -1481,9 +1505,13 @@ private fun GananciasDetalleDialog(
 private fun VencidasDetalleDialog(
     detalle: VencidasDetalleUi,
     onClose: () -> Unit,
+    onApplyMora: (idCuota: Long, montoMora: String, onDone: () -> Unit) -> Unit,
     onShareText: () -> Unit,
     onSharePdf: () -> Unit
 ) {
+    var cuotaSeleccionadaMora by remember { mutableStateOf<VencidaDetalleItem?>(null) }
+    var montoMoraInput by remember { mutableStateOf("") }
+
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onClose,
         confirmButton = {
@@ -1538,8 +1566,23 @@ private fun VencidasDetalleDialog(
                                 ) {
                                     Text("\uD83D\uDC64 ${item.cliente}", style = MaterialTheme.typography.bodyMedium)
                                     Text("\uD83D\uDCC4 Prestamo #${item.idPrestamo} \u00B7 📌 Cuota ${item.numeroCuota}", style = MaterialTheme.typography.bodySmall)
+                                    val fechaVenc = Instant.ofEpochMilli(item.fechaVencimiento).atZone(ZoneId.systemDefault()).toLocalDate()
+                                    val diasVencida = ChronoUnit.DAYS.between(fechaVenc, LocalDate.now()).coerceAtLeast(0L)
                                     Text("\uD83D\uDCC5 Vence ${item.fechaVencimiento.toDateString()}", style = MaterialTheme.typography.bodySmall)
+                                    Text(
+                                        text = if (diasVencida == 0L) "\u23F0 Vence hoy" else "\u23F0 Vencida hace $diasVencida ${if (diasVencida == 1L) "dia" else "dias"}",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
                                     Text("\uD83D\uDCB0 Saldo ${item.saldoPendiente.toMoney(item.moneda)} ${item.moneda.displayName}", style = MaterialTheme.typography.bodySmall)
+                                    androidx.compose.material3.TextButton(
+                                        onClick = {
+                                            cuotaSeleccionadaMora = item
+                                            montoMoraInput = ""
+                                        },
+                                        modifier = Modifier.align(Alignment.End)
+                                    ) {
+                                        Text("Aplicar mora")
+                                    }
                                 }
                             }
                         }
@@ -1548,6 +1591,68 @@ private fun VencidasDetalleDialog(
             }
         }
     )
+
+    if (cuotaSeleccionadaMora != null) {
+        val cuota = cuotaSeleccionadaMora ?: return
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { cuotaSeleccionadaMora = null },
+            confirmButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        onApplyMora(cuota.idCuota, montoMoraInput) {
+                            cuotaSeleccionadaMora = null
+                            montoMoraInput = ""
+                        }
+                    }
+                ) {
+                    Text("Aplicar")
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { cuotaSeleccionadaMora = null }) {
+                    Text("Cancelar")
+                }
+            },
+            title = { Text("Aplicar mora") },
+            text = {
+                val fechaVenc = Instant.ofEpochMilli(cuota.fechaVencimiento).atZone(ZoneId.systemDefault()).toLocalDate()
+                val diasVencida = ChronoUnit.DAYS.between(fechaVenc, LocalDate.now()).coerceAtLeast(0L)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("📄 Prestamo #${cuota.idPrestamo} · 📌 Cuota ${cuota.numeroCuota}")
+                    Text("👤 Cliente: ${cuota.cliente}")
+                    Text(
+                        if (diasVencida == 0L) "⏰ Dias de vencimiento: vence hoy"
+                        else "⏰ Dias de vencimiento: $diasVencida"
+                    )
+                    Text("Saldo actual: ${cuota.saldoPendiente.toMoney(cuota.moneda)}")
+                    OutlinedTextField(
+                        value = montoMoraInput,
+                        onValueChange = { value ->
+                            val clean = value.replace(',', '.')
+                            val filtered = buildString {
+                                var hasDot = false
+                                clean.forEach { ch ->
+                                    when {
+                                        ch.isDigit() -> append(ch)
+                                        ch == '.' && !hasDot -> {
+                                            hasDot = true
+                                            append(ch)
+                                        }
+                                    }
+                                }
+                            }
+                            montoMoraInput = filtered
+                        },
+                        label = { Text("Monto mora") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.End)
+                    )
+                }
+            }
+        )
+    }
 }
 
 @Composable
@@ -1626,6 +1731,7 @@ private fun CobradoActivoDetalleDialog(
                                     Text("\uD83D\uDC64 ${item.cliente}", style = MaterialTheme.typography.bodyMedium)
                                     Text("\uD83D\uDCC4 Prestamo #${item.idPrestamo} \u00B7 📌 Cuota ${item.numeroCuota}", style = MaterialTheme.typography.bodySmall)
                                     Text("\uD83D\uDCC5 Fecha ${item.fechaPago.toDateString()}", style = MaterialTheme.typography.bodySmall)
+                                    Text("\uD83D\uDCB8 ${item.tipoCobro}", style = MaterialTheme.typography.bodySmall)
                                     Text("\uD83D\uDCB0 Cobro ${item.montoAbono.toMoney(item.moneda)} ${item.moneda.displayName}", style = MaterialTheme.typography.bodySmall)
                                 }
                             }
@@ -1696,7 +1802,7 @@ private fun DashboardDetalle.toDetalleInfo(
         DashboardDetalle.COBRADO_HOY -> {
             val resumen = state.pagosHoyDetalle
             val top = resumen.take(8).joinToString("\n") {
-                "- ${it.cliente} | Prestamo #${it.idPrestamo} | Cuota ${it.numeroCuota} | ${it.fechaPago.toDateString()} | Abono ${it.montoAbono.toMoney(it.moneda)}"
+                "- ${it.cliente} | Prestamo #${it.idPrestamo} | Cuota ${it.numeroCuota} | ${it.fechaPago.toDateString()} | Tipo cobro ${it.tipoCobro} | Abono ${it.montoAbono.toMoney(it.moneda)}"
             }.ifBlank { "No se registraron pagos hoy." }
             DashboardDetalleInfo(
                 title = "Cobrado hoy",
@@ -1766,9 +1872,9 @@ private fun DashboardDetalle.toDetalleInfo(
         }
 
         DashboardDetalle.GANANCIAS -> {
-            val gananciaPorMoneda = state.gananciasPrestamosPagados.sumByCurrency { it.ganancia }
+            val gananciaPorMoneda = state.gananciasPrestamosPagados.sumByCurrency { it.ganancia + it.moraCobrada }
             val top = state.gananciasPrestamosPagados.take(12).joinToString("\n") {
-                "- ${it.cliente} | Prestamo #${it.idPrestamo} | Prestado ${it.montoPrestado.toMoney(it.moneda)} | Cobrado ${it.montoCobrado.toMoney(it.moneda)} | Ganancia ${it.ganancia.toMoney(it.moneda)}"
+                "- ${it.cliente} | Prestamo #${it.idPrestamo} | Prestado ${it.montoPrestado.toMoney(it.moneda)} | Cobrado ${it.montoCobrado.toMoney(it.moneda)} | Ganancia ${it.ganancia.toMoney(it.moneda)} | Mora ${it.moraCobrada.toMoney(it.moneda)}"
             }.ifBlank { "No hay prestamos pagados." }
             DashboardDetalleInfo(
                 title = "Ganancias por prestamos pagados",
@@ -1904,7 +2010,8 @@ private fun DashboardDetalle.toCobradoHoyDetalleUi(
             numeroCuota = detalle.numeroCuota,
             fechaPago = detalle.fechaPago,
             montoAbono = detalle.montoAbono,
-            moneda = detalle.moneda
+            moneda = detalle.moneda,
+            tipoCobro = detalle.tipoCobro
         )
     }.sortedByDescending { it.fechaPago }
 
@@ -1932,13 +2039,14 @@ private fun DashboardDetalle.toGananciasDetalleUi(
             numeroCuota = detalle.numeroCuota,
             fechaPago = detalle.fechaPago,
             ganancia = detalle.ganancia,
+            moraCobrada = detalle.moraCobrada,
             moneda = detalle.moneda
         )
     }.sortedByDescending { it.fechaPago }
 
     val totals = items
         .groupBy { it.moneda }
-        .mapValues { (_, values) -> values.sumOf { it.ganancia } }
+        .mapValues { (_, values) -> values.sumOf { it.ganancia + it.moraCobrada } }
 
     return GananciasDetalleUi(
         title = "Ganancias por prestamos pagados",
@@ -1955,6 +2063,7 @@ private fun DashboardDetalle.toVencidasDetalleUi(
     val items = state.cuotasVencidasDetalle.map { detalle ->
         VencidaDetalleItem(
             cliente = detalle.cliente,
+            idCuota = detalle.idCuota,
             idPrestamo = detalle.idPrestamo,
             numeroCuota = detalle.numeroCuota,
             fechaVencimiento = detalle.fechaVencimiento,
@@ -1981,7 +2090,8 @@ private fun DashboardDetalle.toCobradoActivoDetalleUi(
             numeroCuota = detalle.numeroCuota,
             fechaPago = detalle.fechaPago,
             montoAbono = detalle.montoAbono,
-            moneda = detalle.moneda
+            moneda = detalle.moneda,
+            tipoCobro = detalle.tipoCobro
         )
     }.sortedByDescending { it.fechaPago }
 

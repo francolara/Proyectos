@@ -39,6 +39,9 @@ interface PagoDao {
     @Query("SELECT * FROM pagos WHERE idPrestamo = :idPrestamo ORDER BY fechaPago DESC, idPago DESC LIMIT 1")
     suspend fun obtenerUltimoPorPrestamo(idPrestamo: Long): PagoEntity?
 
+    @Query("SELECT COUNT(*) FROM pagos WHERE idTipoCobro = :idTipoCobro")
+    suspend fun contarPorTipoCobro(idTipoCobro: Long): Int
+
     @Query("DELETE FROM pagos WHERE idPago = :idPago")
     suspend fun eliminarPorId(idPago: Long)
 }

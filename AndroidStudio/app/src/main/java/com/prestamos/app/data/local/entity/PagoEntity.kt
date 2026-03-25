@@ -23,7 +23,8 @@ import androidx.room.PrimaryKey
     ],
     indices = [
         Index(value = ["idPrestamo"]),
-        Index(value = ["idCuota"])
+        Index(value = ["idCuota"]),
+        Index(value = ["idTipoCobro"])
     ]
 )
 data class PagoEntity(
@@ -31,8 +32,10 @@ data class PagoEntity(
     val idPago: Long = 0,
     val idPrestamo: Long,
     val idCuota: Long,
+    val idTipoCobro: Long?,
     val fechaPago: Long,
     val montoAbono: Double,
+    val moraCobrada: Double = 0.0,
     val observacion: String?,
     val fechaRegistro: Long,
     val fechaModificacion: Long

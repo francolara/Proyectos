@@ -71,7 +71,10 @@ fun ConfiguracionScreen(viewModel: AppViewModel) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = remember { InitialSetupPreferences(context) }
     val prestamos by viewModel.prestamos.collectAsStateWithLifecycle()
+    val pagos by viewModel.pagos.collectAsStateWithLifecycle()
+    val tiposCobro by viewModel.tiposCobro.collectAsStateWithLifecycle()
     val usedCurrencyCodes = remember(prestamos) { prestamos.map { it.moneda.code.uppercase() }.toSet() }
+    val usedCollectionTypeIds = remember(pagos) { pagos.mapNotNull { it.idTipoCobro }.toSet() }
 
     var businessName by remember { mutableStateOf("") }
     var mainCurrencyCode by remember { mutableStateOf<String?>(null) }
@@ -82,6 +85,7 @@ fun ConfiguracionScreen(viewModel: AppViewModel) {
     var originalSecondaryCurrencyCode by remember { mutableStateOf<String?>(null) }
     var showMainCurrencyPicker by remember { mutableStateOf(false) }
     var showSecondaryCurrencyPicker by remember { mutableStateOf(false) }
+    var newCollectionType by remember { mutableStateOf("") }
     var loaded by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -205,6 +209,48 @@ fun ConfiguracionScreen(viewModel: AppViewModel) {
                             Text(
                                 text = tipo.toConfigPaymentTypeLabel(),
                                 style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }
+                Text("Tipos de cobro", style = MaterialTheme.typography.labelLarge)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = newCollectionType,
+                        onValueChange = { newCollectionType = it },
+                        label = { Text("Nuevo tipo de cobro") },
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f)
+                    )
+                    Button(
+                        onClick = {
+                            viewModel.registrarTipoCobro(newCollectionType) {
+                                newCollectionType = ""
+                            }
+                        },
+                        shape = RoundedCornerShape(10.dp)
+                    ) { Text("Agregar") }
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    tiposCobro.forEach { tipo ->
+                        val used = tipo.idTipoCobro in usedCollectionTypeIds
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(tipo.nombre, style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                text = "Eliminar",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = if (used) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error,
+                                modifier = Modifier
+                                    .clickable(enabled = !used) { viewModel.eliminarTipoCobro(tipo.idTipoCobro) }
                             )
                         }
                     }

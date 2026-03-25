@@ -5,8 +5,14 @@ import android.content.Intent
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+import com.google.api.services.drive.DriveScopes
 import com.prestamos.app.data.backup.BackupManager
 import com.prestamos.app.data.backup.BackupStorageDestination
+import com.prestamos.app.data.backup.DriveBackupManager
 import com.prestamos.app.data.license.LicenseManager
 import com.prestamos.app.data.license.LicenseType
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,29 +24,42 @@ import kotlinx.coroutines.launch
 
 data class BackupUiState(
     val hasSavedLocationLocal: Boolean = false,
-    val hasSavedLocationDrive: Boolean = false,
+    val driveConnected: Boolean = false,
+    val driveAccountEmail: String? = null,
     val lastBackupTimestamp: Long? = null,
     val licenseActive: Boolean = false
 )
 
 class BackupViewModel(application: Application) : AndroidViewModel(application) {
     private val backupManager = BackupManager(application)
+    private val driveBackupManager = DriveBackupManager(application, backupManager)
     private val licenseManager = LicenseManager(application)
     val mensaje = MutableStateFlow<String?>(null)
 
     private val hasSavedLocationLocal = MutableStateFlow(false)
-    private val hasSavedLocationDrive = MutableStateFlow(false)
+    private val driveConnected = MutableStateFlow(false)
+    private val driveAccountEmail = MutableStateFlow<String?>(null)
     private val licenseActive = MutableStateFlow(false)
+
+    private val signInClient by lazy {
+        val options = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestEmail()
+            .requestScopes(com.google.android.gms.common.api.Scope(DriveScopes.DRIVE_FILE))
+            .build()
+        GoogleSignIn.getClient(getApplication(), options)
+    }
 
     val uiState: StateFlow<BackupUiState> = combine(
         hasSavedLocationLocal,
-        hasSavedLocationDrive,
+        driveConnected,
+        driveAccountEmail,
         backupManager.observeLastBackupTimestamp(),
         licenseActive
-    ) { hasLocationLocal, hasLocationDrive, lastTimestamp, isLicenseActive ->
+    ) { hasLocationLocal, isDriveConnected, driveEmail, lastTimestamp, isLicenseActive ->
         BackupUiState(
             hasSavedLocationLocal = hasLocationLocal,
-            hasSavedLocationDrive = hasLocationDrive,
+            driveConnected = isDriveConnected,
+            driveAccountEmail = driveEmail,
             lastBackupTimestamp = lastTimestamp,
             licenseActive = isLicenseActive
         )
@@ -53,6 +72,72 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
     init {
         refreshSavedLocation()
         refreshLicenseStatus()
+        refreshDriveConnection()
+    }
+
+    fun getDriveSignInIntent(): Intent = signInClient.signInIntent
+
+    fun handleDriveSignInResult(data: Intent?) {
+        runCatching {
+            val account = GoogleSignIn.getSignedInAccountFromIntent(data).getResult(ApiException::class.java)
+            requireNotNull(account) { "No se pudo conectar con Google Drive" }
+            account
+        }.onSuccess { account ->
+            driveConnected.value = true
+            driveAccountEmail.value = account.email
+            mensaje.value = "Drive conectado: ${account.email ?: "Cuenta Google"}"
+        }.onFailure {
+            driveConnected.value = false
+            driveAccountEmail.value = null
+            mensaje.value = "No se pudo conectar con Google Drive"
+        }
+    }
+
+    fun desconectarDrive() {
+        signInClient.signOut().addOnCompleteListener {
+            driveConnected.value = false
+            driveAccountEmail.value = null
+            mensaje.value = "Drive desconectado"
+        }
+    }
+
+    fun cambiarCuentaDrive(onReady: (Intent) -> Unit) {
+        signInClient.signOut().addOnCompleteListener {
+            driveConnected.value = false
+            driveAccountEmail.value = null
+            onReady(signInClient.signInIntent)
+        }
+    }
+
+    fun generarRespaldoDrive(startedFromUi: Boolean = true) {
+        viewModelScope.launch {
+            if (!ensureLicenseActive()) return@launch
+            val account = requireDriveAccount() ?: return@launch
+            if (startedFromUi) mensaje.value = "Generando respaldo en Drive..."
+            driveBackupManager.subirRespaldo(account)
+                .onSuccess {
+                    refreshSavedLocation()
+                    mensaje.value = "Respaldo en Drive creado correctamente"
+                }
+                .onFailure {
+                    mensaje.value = it.message ?: "Error al crear respaldo en Drive"
+                }
+        }
+    }
+
+    fun restaurarRespaldoDrive(onSuccess: () -> Unit = {}) {
+        viewModelScope.launch {
+            if (!ensureLicenseActive()) return@launch
+            val account = requireDriveAccount() ?: return@launch
+            driveBackupManager.restaurarRespaldo(account)
+                .onSuccess {
+                    mensaje.value = "Restauracion desde Drive completada. Reiniciando app..."
+                    onSuccess()
+                }
+                .onFailure {
+                    mensaje.value = it.message ?: "Error al restaurar desde Drive"
+                }
+        }
     }
 
     fun generarRespaldoEnUri(
@@ -82,6 +167,10 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
     ) {
         viewModelScope.launch {
             if (!ensureLicenseActive()) return@launch
+            if (destination == BackupStorageDestination.DRIVE) {
+                generarRespaldoDrive(startedFromUi = startedFromUi)
+                return@launch
+            }
             if (startedFromUi) mensaje.value = "Generando respaldo..."
             backupManager.exportBackupToSavedLocation(destination)
                 .onSuccess {
@@ -134,14 +223,18 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
 
     fun getSavedBackupUri(destination: BackupStorageDestination, onResult: (Uri?) -> Unit) {
         viewModelScope.launch {
-            onResult(backupManager.getSavedBackupUri(destination))
+            if (destination == BackupStorageDestination.DRIVE) {
+                onResult(null)
+            } else {
+                onResult(backupManager.getSavedBackupUri(destination))
+            }
         }
     }
 
     fun refreshSavedLocation() {
         viewModelScope.launch {
             hasSavedLocationLocal.value = backupManager.hasSavedLocation(BackupStorageDestination.LOCAL)
-            hasSavedLocationDrive.value = backupManager.hasSavedLocation(BackupStorageDestination.DRIVE)
+            refreshDriveConnection()
         }
     }
 
@@ -166,6 +259,25 @@ class BackupViewModel(application: Application) : AndroidViewModel(application) 
 
     fun reportarError(texto: String) {
         mensaje.value = texto
+    }
+
+    private fun refreshDriveConnection() {
+        val account = GoogleSignIn.getLastSignedInAccount(getApplication())
+        val hasScope = account?.grantedScopes?.any { it.scopeUri == DriveScopes.DRIVE_FILE } == true
+        driveConnected.value = account != null && hasScope
+        driveAccountEmail.value = account?.email
+    }
+
+    private fun requireDriveAccount(): GoogleSignInAccount? {
+        val account = GoogleSignIn.getLastSignedInAccount(getApplication())
+        val hasScope = account?.grantedScopes?.any { it.scopeUri == DriveScopes.DRIVE_FILE } == true
+        if (account == null || !hasScope) {
+            driveConnected.value = false
+            driveAccountEmail.value = null
+            mensaje.value = "Reconecta tu cuenta de Drive para otorgar permisos"
+            return null
+        }
+        return account
     }
 
     private suspend fun ensureLicenseActive(): Boolean {

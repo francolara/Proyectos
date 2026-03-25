@@ -4,14 +4,14 @@ import android.content.Context
 import android.content.Intent
 import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.system.exitProcess
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 object DatabaseBackupManager {
     private val backupDateFormat = DateTimeFormatter.ofPattern("yyyy_MM_dd_HHmm")
@@ -22,31 +22,41 @@ object DatabaseBackupManager {
 
     suspend fun exportDatabase(context: Context, targetUri: Uri): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
-            val dbFile = context.getDatabasePath(AppDatabase.DATABASE_NAME)
-            require(dbFile.exists()) { "No se encontró la base de datos local" }
-
-            val snapshotFile = createConsistentSnapshot(context)
-            try {
-                context.contentResolver.openOutputStream(targetUri)?.use { output ->
-                    FileInputStream(snapshotFile).use { input ->
-                        input.copyTo(output)
-                    }
-                } ?: error("No se pudo abrir destino de exportación")
-            } finally {
-                snapshotFile.delete()
-            }
+            val backupBytes = exportDatabaseBytes(context).getOrThrow()
+            context.contentResolver.openOutputStream(targetUri)?.use { output ->
+                output.write(backupBytes)
+            } ?: error("No se pudo abrir destino de exportacion")
             Unit
         }
     }
 
     suspend fun importDatabase(context: Context, sourceUri: Uri): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
+            val backupBytes = context.contentResolver.openInputStream(sourceUri)?.use { it.readBytes() }
+                ?: error("No se pudo abrir archivo de backup")
+            importDatabaseFromBytes(context, backupBytes).getOrThrow()
+            Unit
+        }
+    }
+
+    suspend fun exportDatabaseBytes(context: Context): Result<ByteArray> = withContext(Dispatchers.IO) {
+        runCatching {
+            val dbFile = context.getDatabasePath(AppDatabase.DATABASE_NAME)
+            require(dbFile.exists()) { "No se encontro la base de datos local" }
+
+            val snapshotFile = createConsistentSnapshot(context)
+            try {
+                FileInputStream(snapshotFile).use { it.readBytes() }
+            } finally {
+                snapshotFile.delete()
+            }
+        }
+    }
+
+    suspend fun importDatabaseFromBytes(context: Context, backupBytes: ByteArray): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
             val tempFile = File(context.cacheDir, "restore_temp.db")
-            context.contentResolver.openInputStream(sourceUri)?.use { input ->
-                FileOutputStream(tempFile).use { output ->
-                    input.copyTo(output)
-                }
-            } ?: error("No se pudo abrir archivo de backup")
+            FileOutputStream(tempFile).use { it.write(backupBytes) }
 
             validarBackup(tempFile)
 
@@ -55,7 +65,6 @@ object DatabaseBackupManager {
             if (dbDir != null && !dbDir.exists()) dbDir.mkdirs()
 
             AppDatabase.closeInstance()
-
             File(dbFile.absolutePath + "-wal").delete()
             File(dbFile.absolutePath + "-shm").delete()
 
@@ -95,19 +104,19 @@ object DatabaseBackupManager {
     }
 
     private fun validarBackup(file: File) {
-        require(file.exists() && file.length() > 0L) { "El archivo de backup está vacío o no existe" }
+        require(file.exists() && file.length() > 0L) { "El archivo de backup esta vacio o no existe" }
         val db = SQLiteDatabase.openDatabase(file.absolutePath, null, SQLiteDatabase.OPEN_READONLY)
         db.rawQuery("PRAGMA integrity_check", null).use { cursor ->
             require(cursor.moveToFirst() && cursor.getString(0).equals("ok", ignoreCase = true)) {
-                "El backup está corrupto"
+                "El backup esta corrupto"
             }
         }
 
         db.rawQuery("PRAGMA user_version", null).use { cursor ->
-            require(cursor.moveToFirst()) { "No se pudo validar versión del backup" }
+            require(cursor.moveToFirst()) { "No se pudo validar version del backup" }
             val backupVersion = cursor.getInt(0)
-            require(backupVersion == AppDatabase.DATABASE_VERSION) {
-                "El backup corresponde a versión $backupVersion y la app requiere ${AppDatabase.DATABASE_VERSION}"
+            require(backupVersion in 1..AppDatabase.DATABASE_VERSION) {
+                "El backup corresponde a version $backupVersion y la app requiere hasta ${AppDatabase.DATABASE_VERSION}"
             }
         }
         db.close()

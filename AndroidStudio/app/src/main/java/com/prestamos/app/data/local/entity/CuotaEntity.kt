@@ -25,6 +25,7 @@ data class CuotaEntity(
     val fechaVencimiento: Long,
     val montoCuota: Double,
     val montoPagado: Double,
+    val moraPendiente: Double = 0.0,
     val saldoPendiente: Double,
     val estadoCuota: EstadoCuota,
     val fechaRegistro: Long,
