@@ -853,6 +853,7 @@ private data class PendienteDetalleItem(
     val numeroCuota: Int,
     val fechaVencimiento: Long,
     val saldoPendiente: Double,
+    val moraPendiente: Double,
     val moneda: Moneda
 )
 
@@ -907,6 +908,7 @@ private data class VencidaDetalleItem(
     val numeroCuota: Int,
     val fechaVencimiento: Long,
     val saldoPendiente: Double,
+    val moraPendiente: Double,
     val moneda: Moneda
 )
 
@@ -998,7 +1000,12 @@ private fun VencidasDetalleUi.toShareText(): String = buildString {
         appendLine("No hay cuotas vencidas.")
     } else {
         items.forEach { item ->
-            appendLine("${item.cliente} | Prestamo #${item.idPrestamo} | Cuota ${item.numeroCuota} | Vence ${item.fechaVencimiento.toDateString()} | Saldo ${item.saldoPendiente.toMoney(item.moneda)} ${item.moneda.displayName}")
+            if (item.moraPendiente > 0.0) {
+                val saldoFinal = item.saldoPendiente + item.moraPendiente
+                appendLine("${item.cliente} | Prestamo #${item.idPrestamo} | Cuota ${item.numeroCuota} | Vence ${item.fechaVencimiento.toDateString()} | Saldo ${item.saldoPendiente.toMoney(item.moneda)} | Mora ${item.moraPendiente.toMoney(item.moneda)} | Saldo final ${saldoFinal.toMoney(item.moneda)} ${item.moneda.displayName}")
+            } else {
+                appendLine("${item.cliente} | Prestamo #${item.idPrestamo} | Cuota ${item.numeroCuota} | Vence ${item.fechaVencimiento.toDateString()} | Saldo ${item.saldoPendiente.toMoney(item.moneda)} ${item.moneda.displayName}")
+            }
         }
     }
 }
@@ -1049,7 +1056,12 @@ private fun PendienteDetalleUi.toShareText(): String = buildString {
         appendLine("No hay cuotas pendientes.")
     } else {
         items.forEach { item ->
-            appendLine("${item.cliente} | Prestamo #${item.idPrestamo} | Cuota ${item.numeroCuota} | Vence ${item.fechaVencimiento.toDateString()} | Saldo ${item.saldoPendiente.toMoney(item.moneda)} ${item.moneda.displayName}")
+            if (item.moraPendiente > 0.0) {
+                val saldoFinal = item.saldoPendiente + item.moraPendiente
+                appendLine("${item.cliente} | Prestamo #${item.idPrestamo} | Cuota ${item.numeroCuota} | Vence ${item.fechaVencimiento.toDateString()} | Saldo ${item.saldoPendiente.toMoney(item.moneda)} | Mora ${item.moraPendiente.toMoney(item.moneda)} | Saldo final ${saldoFinal.toMoney(item.moneda)} ${item.moneda.displayName}")
+            } else {
+                appendLine("${item.cliente} | Prestamo #${item.idPrestamo} | Cuota ${item.numeroCuota} | Vence ${item.fechaVencimiento.toDateString()} | Saldo ${item.saldoPendiente.toMoney(item.moneda)} ${item.moneda.displayName}")
+            }
         }
     }
 }
@@ -1315,6 +1327,11 @@ private fun PendienteDetalleDialog(
                                     Text("\uD83D\uDCC4 Prestamo #${item.idPrestamo} \u00B7 📌 Cuota ${item.numeroCuota}", style = MaterialTheme.typography.bodySmall)
                                     Text("\uD83D\uDCC5 Vence ${item.fechaVencimiento.toDateString()}", style = MaterialTheme.typography.bodySmall)
                                     Text("\uD83D\uDCB0 Saldo ${item.saldoPendiente.toMoney(item.moneda)} ${item.moneda.displayName}", style = MaterialTheme.typography.bodySmall)
+                                    if (item.moraPendiente > 0.0) {
+                                        val saldoFinal = item.saldoPendiente + item.moraPendiente
+                                        Text("\uD83D\uDCB8 Mora ${item.moraPendiente.toMoney(item.moneda)} ${item.moneda.displayName}", style = MaterialTheme.typography.bodySmall)
+                                        Text("\uD83D\uDCB5 Saldo final ${saldoFinal.toMoney(item.moneda)} ${item.moneda.displayName}", style = MaterialTheme.typography.bodySmall)
+                                    }
                                 }
                             }
                         }
@@ -1573,7 +1590,14 @@ private fun VencidasDetalleDialog(
                                         text = if (diasVencida == 0L) "\u23F0 Vence hoy" else "\u23F0 Vencida hace $diasVencida ${if (diasVencida == 1L) "dia" else "dias"}",
                                         style = MaterialTheme.typography.bodySmall
                                     )
-                                    Text("\uD83D\uDCB0 Saldo ${item.saldoPendiente.toMoney(item.moneda)} ${item.moneda.displayName}", style = MaterialTheme.typography.bodySmall)
+                                    if (item.moraPendiente > 0.0) {
+                                        val saldoFinal = item.saldoPendiente + item.moraPendiente
+                                        Text("\uD83D\uDCB0 Saldo: ${item.saldoPendiente.toMoney(item.moneda)} ${item.moneda.displayName}", style = MaterialTheme.typography.bodySmall)
+                                        Text("\uD83D\uDCB8 Mora: ${item.moraPendiente.toMoney(item.moneda)} ${item.moneda.displayName}", style = MaterialTheme.typography.bodySmall)
+                                        Text("\uD83D\uDCB5 Saldo final: ${saldoFinal.toMoney(item.moneda)} ${item.moneda.displayName}", style = MaterialTheme.typography.bodySmall)
+                                    } else {
+                                        Text("\uD83D\uDCB0 Saldo: ${item.saldoPendiente.toMoney(item.moneda)} ${item.moneda.displayName}", style = MaterialTheme.typography.bodySmall)
+                                    }
                                     androidx.compose.material3.TextButton(
                                         onClick = {
                                             cuotaSeleccionadaMora = item
@@ -1982,6 +2006,7 @@ private fun DashboardDetalle.toPendienteDetalleUi(
             numeroCuota = detalle.numeroCuota,
             fechaVencimiento = detalle.fechaVencimiento,
             saldoPendiente = detalle.saldoPendiente,
+            moraPendiente = detalle.moraPendiente,
             moneda = detalle.moneda
         )
     }.sortedBy { it.fechaVencimiento }
@@ -2068,6 +2093,7 @@ private fun DashboardDetalle.toVencidasDetalleUi(
             numeroCuota = detalle.numeroCuota,
             fechaVencimiento = detalle.fechaVencimiento,
             saldoPendiente = detalle.saldoPendiente,
+            moraPendiente = detalle.moraPendiente,
             moneda = detalle.moneda
         )
     }.sortedBy { it.fechaVencimiento }

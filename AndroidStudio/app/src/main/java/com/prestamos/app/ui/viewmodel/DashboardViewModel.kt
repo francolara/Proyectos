@@ -134,6 +134,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                     numeroCuota = cuota.numeroCuota,
                     fechaVencimiento = cuota.fechaVencimiento,
                     saldoPendiente = cuota.saldoPendiente,
+                    moraPendiente = cuota.moraPendiente,
                     estado = cuota.estadoCuota,
                     moneda = prestamo?.moneda ?: Moneda.SOLES
                 )
@@ -152,6 +153,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                     numeroCuota = cuota.numeroCuota,
                     fechaVencimiento = cuota.fechaVencimiento,
                     saldoPendiente = cuota.saldoPendiente,
+                    moraPendiente = cuota.moraPendiente,
                     estado = cuota.estadoCuota,
                     moneda = prestamo?.moneda ?: Moneda.SOLES
                 )

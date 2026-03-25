@@ -65,6 +65,7 @@ data class DashboardCuotaDetalleItem(
     val numeroCuota: Int,
     val fechaVencimiento: Long,
     val saldoPendiente: Double,
+    val moraPendiente: Double = 0.0,
     val estado: EstadoCuota,
     val moneda: Moneda
 )

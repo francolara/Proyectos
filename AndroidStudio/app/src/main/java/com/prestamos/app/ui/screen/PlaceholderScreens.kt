@@ -67,17 +67,27 @@ import com.prestamos.app.data.config.InitialSetupPreferences
 import com.prestamos.app.data.local.entity.ClienteEntity
 import com.prestamos.app.data.local.entity.EstadoPrestamo
 import com.prestamos.app.data.local.entity.Moneda
+import com.prestamos.app.data.local.entity.PagoEntity
 import com.prestamos.app.data.local.entity.TipoPago
+import com.prestamos.app.data.local.entity.TipoCobroEntity
+import com.prestamos.app.ui.screen.export.ReportPdfPayload
+import com.prestamos.app.ui.screen.export.ReportPdfSection
+import com.prestamos.app.ui.screen.export.ReportTable
+import com.prestamos.app.ui.screen.export.ReportTableColumn
+import com.prestamos.app.ui.screen.export.TableAlign
+import com.prestamos.app.ui.screen.export.createReportesPdf
 import com.prestamos.app.ui.screen.export.createDashboardDetallePdf
 import com.prestamos.app.ui.viewmodel.AppViewModel
 import com.prestamos.app.util.toDateString
 import com.prestamos.app.util.toEpochMillis
 import com.prestamos.app.util.toMoney
 import java.io.File
+import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
+import java.util.Date
 import java.util.Locale
 
 // Firma Codex 2026-03-21
@@ -866,11 +876,19 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                 } else {
                     ""
                 }
+                val moraTexto = if (moraTotal > 0.0) {
+                    " | mora ${moraTotal.toMoney(moneda)}"
+                } else {
+                    ""
+                }
+                val totalCuotaConMoraTexto = if (moraTotal > 0.0) {
+                    " | total cuota + mora ${totalCuotaConMora.toMoney(moneda)}"
+                } else {
+                    ""
+                }
                 "Cuota ${cuota.numeroCuota}: vence ${cuota.fechaVencimiento.toDateString()} | " +
                     "monto ${cuota.montoCuota.toMoney(moneda)} | " +
-                    "mora ${moraTotal.toMoney(moneda)} | " +
-                    "total ${totalCuotaConMora.toMoney(moneda)} | " +
-                    "pendiente ${pendienteConMora.toMoney(moneda)}$tipoCobroTexto"
+                    "pendiente ${pendienteConMora.toMoney(moneda)}$moraTexto$totalCuotaConMoraTexto$tipoCobroTexto"
             }
         }
         val detallePrestamo = buildString {
@@ -1018,11 +1036,13 @@ fun PrestamosScreen(viewModel: AppViewModel) {
                                 Text("\uD83D\uDCB0 Cuota base: ${cuota.montoCuota.toMoney(moneda)}", style = MaterialTheme.typography.labelSmall)
                                 if (moraTotal > 0.0) {
                                     Text(
-                                        "\uD83D\uDCB8 Mora: ${moraTotal.toMoney(moneda)} (cobrada ${moraCobrada.toMoney(moneda)} / pendiente ${moraPendiente.toMoney(moneda)})",
+                                        "\uD83D\uDCB8 Mora: ${moraTotal.toMoney(moneda)}",
                                         style = MaterialTheme.typography.labelSmall
                                     )
                                 }
-                                Text("\uD83D\uDCB5 Total cuota + mora: ${totalCuotaConMora.toMoney(moneda)}", style = MaterialTheme.typography.labelSmall)
+                                if (moraTotal > 0.0) {
+                                    Text("\uD83D\uDCB5 Total cuota + mora: ${totalCuotaConMora.toMoney(moneda)}", style = MaterialTheme.typography.labelSmall)
+                                }
                                 Text("\uD83E\uDDFE Pendiente: ${pendienteConMora.toMoney(moneda)}", style = MaterialTheme.typography.labelSmall)
                                 if (cuota.estadoCuota.name == "PAGADO") {
                                     Text("\u2705 Cobrado: ${(cuota.montoPagado + moraCobrada).toMoney(moneda)}", style = MaterialTheme.typography.labelSmall)
@@ -1320,12 +1340,82 @@ private data class PagoListadoItem(
     val tipoCobro: String
 )
 
+private enum class ReporteTipo(val label: String) {
+    RESUMEN("Prestamos por cliente"),
+    DETALLADO("Prestamos por cliente - Detallado")
+}
+
+private data class ReporteClienteFiltro(
+    val idCliente: Long?,
+    val label: String
+)
+
 @Composable
-fun ReportesScreen(viewModel: AppViewModel) {
-    val resumen by viewModel.resumenReporte.collectAsStateWithLifecycle()
-    val cuotasVencidas by viewModel.cuotasVencidas.collectAsStateWithLifecycle()
+fun ReportesScreen(
+    viewModel: AppViewModel,
+    isLicenseActive: Boolean
+) {
+    val context = LocalContext.current
     val clientes by viewModel.clientes.collectAsStateWithLifecycle()
     val prestamos by viewModel.prestamos.collectAsStateWithLifecycle()
+    val cuotas by viewModel.cuotas.collectAsStateWithLifecycle()
+    val pagos by viewModel.pagos.collectAsStateWithLifecycle()
+    val tiposCobro by viewModel.tiposCobro.collectAsStateWithLifecycle()
+
+    var expandedCliente by remember { mutableStateOf(false) }
+    var expandedTipoReporte by remember { mutableStateOf(false) }
+    var filtroClienteId by remember { mutableStateOf<Long?>(null) }
+    var tipoReporte by remember { mutableStateOf(ReporteTipo.RESUMEN) }
+
+    val opcionesCliente = remember(clientes) {
+        listOf(ReporteClienteFiltro(null, "Todos los clientes")) +
+            clientes.map {
+                ReporteClienteFiltro(
+                    idCliente = it.idCliente,
+                    label = "${it.nombre} ${it.apellido} / ${it.documentoIdentidad}"
+                )
+            }
+    }
+    val clienteSeleccionado = remember(opcionesCliente, filtroClienteId) {
+        opcionesCliente.firstOrNull { it.idCliente == filtroClienteId } ?: opcionesCliente.first()
+    }
+
+    val prestamosFiltrados = remember(prestamos, filtroClienteId) {
+        prestamos
+            .filter { filtroClienteId == null || it.idCliente == filtroClienteId }
+            .sortedByDescending { it.fechaRegistro }
+    }
+    val cuotasPorPrestamo = remember(cuotas) { cuotas.groupBy { it.idPrestamo } }
+    val pagosPorPrestamo = remember(pagos) { pagos.groupBy { it.idPrestamo } }
+    val tipoCobroById = remember(tiposCobro) { tiposCobro.associateBy { it.idTipoCobro } }
+    val clienteById = remember(clientes) { clientes.associateBy { it.idCliente } }
+
+    val reportePayload = remember(
+        tipoReporte,
+        prestamosFiltrados,
+        cuotasPorPrestamo,
+        pagosPorPrestamo,
+        tipoCobroById,
+        clienteById
+    ) {
+        when (tipoReporte) {
+            ReporteTipo.RESUMEN -> buildReportePrestamosResumenPayload(
+                prestamos = prestamosFiltrados,
+                cuotasPorPrestamo = cuotasPorPrestamo,
+                clienteById = clienteById,
+                filtroCliente = clienteSeleccionado.label
+            )
+
+            ReporteTipo.DETALLADO -> buildReportePrestamosDetalladoPayload(
+                prestamos = prestamosFiltrados,
+                cuotasPorPrestamo = cuotasPorPrestamo,
+                pagosPorPrestamo = pagosPorPrestamo,
+                tipoCobroById = tipoCobroById,
+                clienteById = clienteById,
+                filtroCliente = clienteSeleccionado.label
+            )
+        }
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -1335,35 +1425,231 @@ fun ReportesScreen(viewModel: AppViewModel) {
     ) {
         item {
             Text("Reportes", style = MaterialTheme.typography.headlineSmall)
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(12.dp)) {
-                    Text("Total prestado: ${resumen.totalPrestado.toMoney()}")
-                    Text("Total cobrado: ${resumen.totalCobrado.toMoney()}")
-                    Text("Total pendiente: ${resumen.totalPendiente.toMoney()}")
-                    Text("Prestamos activos: ${resumen.prestamosActivos}")
-                    Text("Prestamos pagados: ${resumen.prestamosPagados}")
-                    Text("Cuotas vencidas: ${resumen.cuotasVencidas}")
-                }
-            }
-            Text("Detalle de cuotas vencidas", style = MaterialTheme.typography.titleMedium)
-        }
-
-        items(cuotasVencidas) { cuota ->
-            val prestamo = prestamos.firstOrNull { it.idPrestamo == cuota.idPrestamo }
-            val cliente = clientes.firstOrNull { it.idCliente == prestamo?.idCliente }
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Column {
-                        Text("Cliente: ${cliente?.nombre ?: "-"} ${cliente?.apellido ?: ""}".trim())
-                        Text("\uD83D\uDCC4 Prestamo #${cuota.idPrestamo} - \uD83D\uDCCC Cuota ${cuota.numeroCuota}")
-                        Text("Registro prestamo: ${prestamo?.fechaRegistro?.toDateString() ?: "-"}")
-                        Text("Vence: ${cuota.fechaVencimiento.toDateString()}")
+            DropdownGeneric(
+                expanded = expandedCliente,
+                onExpandedChange = { expandedCliente = it },
+                label = "Cliente",
+                selected = clienteSeleccionado.label,
+                options = opcionesCliente,
+                optionText = { it.label },
+                onSelect = { filtroClienteId = it.idCliente }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            DropdownGeneric(
+                expanded = expandedTipoReporte,
+                onExpandedChange = { expandedTipoReporte = it },
+                label = "Tipo de reporte",
+                selected = tipoReporte.label,
+                options = ReporteTipo.entries,
+                optionText = { it.label },
+                onSelect = { tipoReporte = it }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = {
+                    runCatching {
+                        createReportesPdf(context, reportePayload)
+                    }.onSuccess { file ->
+                        compartirArchivo(context, file, "application/pdf")
+                    }.onFailure {
+                        Toast.makeText(context, "No se pudo exportar PDF", Toast.LENGTH_SHORT).show()
                     }
-                    Text(cuota.saldoPendiente.toMoney(prestamo?.moneda ?: Moneda.SOLES))
-                }
+                },
+                enabled = isLicenseActive && prestamosFiltrados.isNotEmpty()
+            ) {
+                Text("Generar reporte")
+            }
+            if (!isLicenseActive) {
+                Text(
+                    "Activa tu licencia para habilitar la exportacion de reportes.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.tertiary
+                )
+            } else if (prestamosFiltrados.isEmpty()) {
+                Text(
+                    "No hay prestamos para el filtro seleccionado.",
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
         }
     }
+}
+
+private fun buildReportePrestamosResumenPayload(
+    prestamos: List<com.prestamos.app.data.local.entity.PrestamoEntity>,
+    cuotasPorPrestamo: Map<Long, List<com.prestamos.app.data.local.entity.CuotaEntity>>,
+    clienteById: Map<Long, ClienteEntity>,
+    filtroCliente: String
+): ReportPdfPayload {
+    val columns = listOf(
+        ReportTableColumn("Cliente", 2.6f),
+        ReportTableColumn("Documento", 1.6f),
+        ReportTableColumn("Telefono", 1.5f),
+        ReportTableColumn("Prestamo", 1.0f, TableAlign.CENTER),
+        ReportTableColumn("Fecha", 1.5f, TableAlign.CENTER),
+        ReportTableColumn("Frecuencia", 1.6f),
+        ReportTableColumn("Porcentaje", 1.1f, TableAlign.RIGHT),
+        ReportTableColumn("Cuotas", 0.9f, TableAlign.CENTER),
+        ReportTableColumn("Capital", 1.4f, TableAlign.RIGHT),
+        ReportTableColumn("Capital+Interes", 1.7f, TableAlign.RIGHT),
+        ReportTableColumn("Mora", 1.2f, TableAlign.RIGHT),
+        ReportTableColumn("Tipo", 1.2f, TableAlign.CENTER),
+        ReportTableColumn("Cuotas Pend.", 1.3f, TableAlign.CENTER),
+        ReportTableColumn("Saldo", 1.3f, TableAlign.RIGHT)
+    )
+
+    val rows = prestamos.map { prestamo ->
+        val cliente = clienteById[prestamo.idCliente]
+        val cuotas = cuotasPorPrestamo[prestamo.idPrestamo].orEmpty()
+        val saldoPendiente = cuotas.sumOf { it.saldoPendiente + it.moraPendiente }
+        val moraPendiente = cuotas.sumOf { it.moraPendiente }
+        val tipo = if (prestamo.estadoPrestamo == EstadoPrestamo.PAGADO) "Pagado" else "Pendiente"
+        val frecuencia = tipoPagoDetalle(prestamo.tipoPago, cuotas)
+        val cuotasPendientes = cuotas.count { (it.saldoPendiente + it.moraPendiente) > 0.0 }
+        listOf(
+            "${cliente?.nombre.orEmpty()} ${cliente?.apellido.orEmpty()}".trim().ifBlank { "-" },
+            cliente?.documentoIdentidad ?: "-",
+            cliente?.telefono ?: "-",
+            "#${prestamo.idPrestamo}",
+            prestamo.fechaRegistro.toDateString(),
+            frecuencia,
+            "${prestamo.interes}%",
+                    prestamo.cantidadCuotas.toString(),
+                    prestamo.montoPrestado.toMoney(prestamo.moneda),
+                    prestamo.montoTotalPrestamo.toMoney(prestamo.moneda),
+                    moraPendiente.toMoney(prestamo.moneda),
+                    tipo,
+                    cuotasPendientes.toString(),
+                    saldoPendiente.toMoney(prestamo.moneda)
+        )
+    }
+
+    val generatedAt = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
+    return ReportPdfPayload(
+        appName = "AppPrestamos",
+        reportType = "Prestamos por cliente",
+        filter = filtroCliente,
+        generatedAt = generatedAt,
+        sections = listOf(
+            ReportPdfSection(
+                title = "Resumen por prestamo",
+                table = ReportTable(columns = columns, rows = rows)
+            )
+        )
+    )
+}
+
+private fun buildReportePrestamosDetalladoPayload(
+    prestamos: List<com.prestamos.app.data.local.entity.PrestamoEntity>,
+    cuotasPorPrestamo: Map<Long, List<com.prestamos.app.data.local.entity.CuotaEntity>>,
+    pagosPorPrestamo: Map<Long, List<PagoEntity>>,
+    tipoCobroById: Map<Long, TipoCobroEntity>,
+    clienteById: Map<Long, ClienteEntity>,
+    filtroCliente: String
+): ReportPdfPayload {
+    val baseColumns = listOf(
+        ReportTableColumn("Cliente", 2.6f),
+        ReportTableColumn("Documento", 1.6f),
+        ReportTableColumn("Telefono", 1.5f),
+        ReportTableColumn("Prestamo", 1.0f, TableAlign.CENTER),
+        ReportTableColumn("Fecha", 1.5f, TableAlign.CENTER),
+        ReportTableColumn("Frecuencia", 1.6f),
+        ReportTableColumn("Porcentaje", 1.1f, TableAlign.RIGHT),
+        ReportTableColumn("Cuotas", 0.9f, TableAlign.CENTER),
+        ReportTableColumn("Capital", 1.4f, TableAlign.RIGHT),
+        ReportTableColumn("Capital+Interes", 1.7f, TableAlign.RIGHT),
+        ReportTableColumn("Mora", 1.2f, TableAlign.RIGHT),
+        ReportTableColumn("Tipo", 1.2f, TableAlign.CENTER),
+        ReportTableColumn("Cuotas Pend.", 1.3f, TableAlign.CENTER),
+        ReportTableColumn("Saldo", 1.3f, TableAlign.RIGHT)
+    )
+    val cuotaColumns = listOf(
+        ReportTableColumn("Cuota", 0.8f, TableAlign.CENTER),
+        ReportTableColumn("Fec.Venc", 1.5f, TableAlign.CENTER),
+        ReportTableColumn("Cuota", 1.2f, TableAlign.RIGHT),
+        ReportTableColumn("Cuota+Int", 1.4f, TableAlign.RIGHT),
+        ReportTableColumn("Mora", 1.1f, TableAlign.RIGHT),
+        ReportTableColumn("Cuota+Int+Mora", 1.8f, TableAlign.RIGHT),
+        ReportTableColumn("Tipo", 1.0f, TableAlign.CENTER),
+        ReportTableColumn("Tipo cobro", 1.4f),
+        ReportTableColumn("Fec.Cobro", 1.5f, TableAlign.CENTER)
+    )
+
+    val sections = mutableListOf<ReportPdfSection>()
+    prestamos.forEach { prestamo ->
+        val cliente = clienteById[prestamo.idCliente]
+        val cuotas = cuotasPorPrestamo[prestamo.idPrestamo].orEmpty().sortedBy { it.numeroCuota }
+        val pagosPrestamo = pagosPorPrestamo[prestamo.idPrestamo].orEmpty()
+        val saldoPendiente = cuotas.sumOf { it.saldoPendiente + it.moraPendiente }
+        val moraPendiente = cuotas.sumOf { it.moraPendiente }
+        val tipo = if (prestamo.estadoPrestamo == EstadoPrestamo.PAGADO) "Pagado" else "Pendiente"
+        val frecuencia = tipoPagoDetalle(prestamo.tipoPago, cuotas)
+        val cuotaBase = if (prestamo.cantidadCuotas > 0) prestamo.montoPrestado / prestamo.cantidadCuotas else 0.0
+        val cuotasPendientes = cuotas.count { (it.saldoPendiente + it.moraPendiente) > 0.0 }
+
+        sections += ReportPdfSection(
+            title = "Prestamo #${prestamo.idPrestamo}",
+            table = ReportTable(
+                columns = baseColumns,
+                rows = listOf(
+                    listOf(
+                        "${cliente?.nombre.orEmpty()} ${cliente?.apellido.orEmpty()}".trim().ifBlank { "-" },
+                        cliente?.documentoIdentidad ?: "-",
+                        cliente?.telefono ?: "-",
+                        "#${prestamo.idPrestamo}",
+                        prestamo.fechaRegistro.toDateString(),
+                        frecuencia,
+                        "${prestamo.interes}%",
+                        prestamo.cantidadCuotas.toString(),
+                        prestamo.montoPrestado.toMoney(prestamo.moneda),
+                        prestamo.montoTotalPrestamo.toMoney(prestamo.moneda),
+                        moraPendiente.toMoney(prestamo.moneda),
+                        tipo,
+                        cuotasPendientes.toString(),
+                        saldoPendiente.toMoney(prestamo.moneda)
+                    )
+                )
+            )
+        )
+
+        val cuotaRows = cuotas.map { cuota ->
+            val pagosCuota = pagosPrestamo
+                .filter { it.idCuota == cuota.idCuota }
+                .sortedByDescending { it.fechaPago }
+            val moraCobrada = pagosCuota.sumOf { it.moraCobrada }
+            val moraTotal = cuota.moraPendiente + moraCobrada
+            val cuotaConInteres = cuota.montoCuota
+            val cuotaConInteresMora = cuotaConInteres + moraTotal
+            val tipoCuota = if ((cuota.saldoPendiente + cuota.moraPendiente) <= 0.0) "Pagado" else "Pendiente"
+            val ultimoPago = pagosCuota.firstOrNull()
+            val tipoCobro = ultimoPago?.idTipoCobro?.let { tipoCobroById[it]?.nombre } ?: "-"
+            val fechaCobro = ultimoPago?.fechaPago?.toDateString() ?: "-"
+                listOf(
+                    cuota.numeroCuota.toString(),
+                    cuota.fechaVencimiento.toDateString(),
+                    cuotaBase.toMoney(prestamo.moneda),
+                    cuotaConInteres.toMoney(prestamo.moneda),
+                    moraTotal.toMoney(prestamo.moneda),
+                    cuotaConInteresMora.toMoney(prestamo.moneda),
+                    tipoCuota,
+                    tipoCobro,
+                fechaCobro
+            )
+        }
+        sections += ReportPdfSection(
+            title = "Cuotas del prestamo #${prestamo.idPrestamo}",
+            table = ReportTable(columns = cuotaColumns, rows = cuotaRows)
+        )
+    }
+
+    val generatedAt = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
+    return ReportPdfPayload(
+        appName = "AppPrestamos",
+        reportType = "Prestamos por cliente - Detallado",
+        filter = filtroCliente,
+        generatedAt = generatedAt,
+        sections = sections
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
