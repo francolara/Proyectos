@@ -10,6 +10,7 @@ import com.prestamos.app.data.local.entity.Moneda
 import com.prestamos.app.data.local.entity.PagoEntity
 import com.prestamos.app.data.local.entity.PrestamoEntity
 import com.prestamos.app.data.local.entity.TipoPago
+import com.prestamos.app.data.local.entity.TipoCobroEntity
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
 import java.time.LocalDate
@@ -22,6 +23,7 @@ class PrestamosRepository(
     private val prestamoDao = database.prestamoDao()
     private val cuotaDao = database.cuotaDao()
     private val pagoDao = database.pagoDao()
+    private val tipoCobroDao = database.tipoCobroDao()
 
     fun observarClientes(): Flow<List<ClienteEntity>> = clienteDao.listar()
     fun observarPrestamos(): Flow<List<PrestamoEntity>> = prestamoDao.listarTodos()
@@ -31,6 +33,7 @@ class PrestamosRepository(
     fun observarTotalCobrado(): Flow<Double?> = pagoDao.totalCobrado()
     fun observarPrestamosPorCliente(idCliente: Long): Flow<List<PrestamoEntity>> = prestamoDao.listarPorCliente(idCliente)
     fun observarCuotasPorPrestamo(idPrestamo: Long): Flow<List<CuotaEntity>> = cuotaDao.listarPorPrestamo(idPrestamo)
+    fun observarTiposCobro(): Flow<List<TipoCobroEntity>> = tipoCobroDao.listar()
 
     suspend fun registrarCliente(
         nombre: String,
@@ -138,6 +141,7 @@ class PrestamosRepository(
                     fechaVencimiento = localDateToMillis(fechaCuota),
                     montoCuota = montoCuota,
                     montoPagado = 0.0,
+                    moraPendiente = 0.0,
                     saldoPendiente = montoCuota,
                     estadoCuota = EstadoCuota.PENDIENTE,
                     fechaRegistro = ahora,
@@ -152,6 +156,7 @@ class PrestamosRepository(
         idPrestamo: Long,
         idCuota: Long,
         montoAbono: Double,
+        idTipoCobro: Long,
         observacion: String?
     ) {
         require(montoAbono > 0.0) { "El abono debe ser mayor a 0" }
@@ -168,10 +173,16 @@ class PrestamosRepository(
             require(cuota.idCuota == siguienteCuotaPendiente.idCuota) {
                 "Debe registrar primero la cuota ${siguienteCuotaPendiente.numeroCuota}"
             }
+            val tipoCobro = tipoCobroDao.obtenerPorId(idTipoCobro) ?: error("Tipo de cobro no encontrado")
 
             val ahora = System.currentTimeMillis()
-            val nuevoMontoPagado = cuota.montoPagado + montoAbono
-            val nuevoSaldo = cuota.montoCuota - nuevoMontoPagado
+            val capitalPendiente = (cuota.montoCuota - cuota.montoPagado).coerceAtLeast(0.0)
+            val moraCobrada = montoAbono.coerceAtMost(cuota.moraPendiente)
+            val abonoCapital = (montoAbono - moraCobrada).coerceAtLeast(0.0)
+            val nuevoMontoPagado = (cuota.montoPagado + abonoCapital).coerceAtMost(cuota.montoCuota)
+            val nuevaMoraPendiente = (cuota.moraPendiente - moraCobrada).coerceAtLeast(0.0)
+            val nuevoCapitalPendiente = (capitalPendiente - abonoCapital).coerceAtLeast(0.0)
+            val nuevoSaldo = nuevoCapitalPendiente + nuevaMoraPendiente
             val nuevoEstado = when {
                 nuevoSaldo <= 0.0 -> EstadoCuota.PAGADO
                 nuevoMontoPagado > 0.0 -> EstadoCuota.PARCIAL
@@ -182,8 +193,10 @@ class PrestamosRepository(
                 PagoEntity(
                     idPrestamo = idPrestamo,
                     idCuota = idCuota,
+                    idTipoCobro = tipoCobro.idTipoCobro,
                     fechaPago = ahora,
                     montoAbono = montoAbono,
+                    moraCobrada = moraCobrada,
                     observacion = observacion?.takeIf { it.isNotBlank() },
                     fechaRegistro = ahora,
                     fechaModificacion = ahora
@@ -193,6 +206,7 @@ class PrestamosRepository(
             cuotaDao.actualizar(
                 cuota.copy(
                     montoPagado = nuevoMontoPagado,
+                    moraPendiente = nuevaMoraPendiente,
                     saldoPendiente = nuevoSaldo.coerceAtLeast(0.0),
                     estadoCuota = nuevoEstado,
                     fechaModificacion = ahora
@@ -207,6 +221,29 @@ class PrestamosRepository(
                 EstadoPrestamo.ACTIVO
             }
             prestamoDao.actualizar(prestamo.copy(estadoPrestamo = estadoPrestamo, fechaModificacion = ahora))
+        }
+    }
+
+    suspend fun registrarTipoCobro(nombre: String) {
+        val nombreLimpio = nombre.trim()
+        require(nombreLimpio.isNotBlank()) { "Ingresa un tipo de cobro valido" }
+        require(tipoCobroDao.contarPorNombre(nombreLimpio) == 0) { "Ese tipo de cobro ya existe" }
+        val ahora = System.currentTimeMillis()
+        tipoCobroDao.insertar(
+            TipoCobroEntity(
+                nombre = nombreLimpio,
+                fechaRegistro = ahora,
+                fechaModificacion = ahora
+            )
+        )
+    }
+
+    suspend fun eliminarTipoCobroSiNoTienePagos(idTipoCobro: Long) {
+        database.withTransaction {
+            val tipo = tipoCobroDao.obtenerPorId(idTipoCobro) ?: error("Tipo de cobro no encontrado")
+            val usos = pagoDao.contarPorTipoCobro(idTipoCobro)
+            require(usos == 0) { "No se puede eliminar: ya fue usado en cobros" }
+            tipoCobroDao.eliminarPorId(tipo.idTipoCobro)
         }
     }
 
@@ -230,8 +267,10 @@ class PrestamosRepository(
 
             val cuota = cuotaDao.obtenerPorId(pago.idCuota) ?: error("Cuota no encontrada")
             val ahora = System.currentTimeMillis()
-            val nuevoMontoPagado = (cuota.montoPagado - pago.montoAbono).coerceAtLeast(0.0)
-            val nuevoSaldo = (cuota.montoCuota - nuevoMontoPagado).coerceAtLeast(0.0)
+            val abonoCapitalRevertido = (pago.montoAbono - pago.moraCobrada).coerceAtLeast(0.0)
+            val nuevoMontoPagado = (cuota.montoPagado - abonoCapitalRevertido).coerceAtLeast(0.0)
+            val nuevaMoraPendiente = (cuota.moraPendiente + pago.moraCobrada).coerceAtLeast(0.0)
+            val nuevoSaldo = (cuota.montoCuota - nuevoMontoPagado).coerceAtLeast(0.0) + nuevaMoraPendiente
             val nuevoEstado = when {
                 nuevoMontoPagado <= 0.0 -> EstadoCuota.PENDIENTE
                 nuevoSaldo <= 0.0 -> EstadoCuota.PAGADO
@@ -241,6 +280,7 @@ class PrestamosRepository(
             cuotaDao.actualizar(
                 cuota.copy(
                     montoPagado = nuevoMontoPagado,
+                    moraPendiente = nuevaMoraPendiente,
                     saldoPendiente = nuevoSaldo,
                     estadoCuota = nuevoEstado,
                     fechaModificacion = ahora
@@ -256,6 +296,31 @@ class PrestamosRepository(
                 EstadoPrestamo.ACTIVO
             }
             prestamoDao.actualizar(prestamo.copy(estadoPrestamo = estadoPrestamo, fechaModificacion = ahora))
+        }
+    }
+
+    suspend fun aplicarMoraManualCuotaVencida(
+        idCuota: Long,
+        montoMora: Double
+    ) {
+        require(montoMora > 0.0) { "La mora debe ser mayor a 0" }
+        database.withTransaction {
+            val cuota = cuotaDao.obtenerPorId(idCuota) ?: error("Cuota no encontrada")
+            require(cuota.saldoPendiente > 0.0) { "La cuota no tiene saldo pendiente" }
+            val hoy = System.currentTimeMillis()
+            require(cuota.fechaVencimiento < hoy) { "La cuota aun no esta vencida" }
+
+            val ahora = System.currentTimeMillis()
+            val nuevaMora = cuota.moraPendiente + montoMora
+            val nuevoSaldo = cuota.saldoPendiente + montoMora
+            cuotaDao.actualizar(
+                cuota.copy(
+                    moraPendiente = nuevaMora,
+                    saldoPendiente = nuevoSaldo,
+                    fechaModificacion = ahora
+                )
+            )
+
         }
     }
 

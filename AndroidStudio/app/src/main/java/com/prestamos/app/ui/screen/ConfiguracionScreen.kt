@@ -18,7 +18,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,6 +38,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.prestamos.app.data.config.InitialSetupPreferences
+import com.prestamos.app.data.license.LicenseManager
+import com.prestamos.app.data.license.LicenseType
+import com.prestamos.app.data.local.entity.TipoPago
 import com.prestamos.app.ui.viewmodel.AppViewModel
 
 private data class ConfigCurrencyOption(
@@ -67,24 +72,54 @@ private val primaryCurrencyCodes = setOf("PEN", "USD")
 fun ConfiguracionScreen(viewModel: AppViewModel) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = remember { InitialSetupPreferences(context) }
+    val licenseManager = remember { LicenseManager(context) }
     val prestamos by viewModel.prestamos.collectAsStateWithLifecycle()
+    val pagos by viewModel.pagos.collectAsStateWithLifecycle()
+    val tiposCobro by viewModel.tiposCobro.collectAsStateWithLifecycle()
     val usedCurrencyCodes = remember(prestamos) { prestamos.map { it.moneda.code.uppercase() }.toSet() }
+    val usedCollectionTypeIds = remember(pagos) { pagos.mapNotNull { it.idTipoCobro }.toSet() }
 
     var businessName by remember { mutableStateOf("") }
     var mainCurrencyCode by remember { mutableStateOf<String?>(null) }
     var secondaryCurrencyCode by remember { mutableStateOf<String?>(null) }
+    var defaultInterest by remember { mutableStateOf("") }
+    var allowedPaymentTypes by remember { mutableStateOf(setOf<TipoPago>()) }
     var originalMainCurrencyCode by remember { mutableStateOf<String?>(null) }
     var originalSecondaryCurrencyCode by remember { mutableStateOf<String?>(null) }
     var showMainCurrencyPicker by remember { mutableStateOf(false) }
     var showSecondaryCurrencyPicker by remember { mutableStateOf(false) }
+    var newCollectionType by remember { mutableStateOf("") }
     var loaded by remember { mutableStateOf(false) }
+    var isLicenseActive by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
+        val status = licenseManager.evaluateStatus()
+        val paidType = status.licenseType == LicenseType.MENSUAL ||
+            status.licenseType == LicenseType.ANUAL ||
+            status.licenseType == LicenseType.FULL
+        isLicenseActive = status.isValid && status.isActivated && paidType
+
         businessName = prefs.getBusinessName()
         mainCurrencyCode = prefs.getMainCurrencyCode()
         secondaryCurrencyCode = prefs.getSecondaryCurrencyCode()
+        defaultInterest = prefs.getDefaultInterest()
+        allowedPaymentTypes = if (isLicenseActive) {
+            prefs.getAllowedPaymentTypes()
+        } else {
+            FREE_PAYMENT_TYPES
+        }
         originalMainCurrencyCode = mainCurrencyCode
         originalSecondaryCurrencyCode = secondaryCurrencyCode
+        if (!isLicenseActive && allowedPaymentTypes != FREE_PAYMENT_TYPES) {
+            prefs.updateConfiguration(
+                businessName = businessName,
+                mainCurrencyCode = mainCurrencyCode ?: "PEN",
+                secondaryCurrencyCode = secondaryCurrencyCode,
+                defaultInterest = defaultInterest,
+                allowedPaymentTypes = FREE_PAYMENT_TYPES
+            )
+            allowedPaymentTypes = FREE_PAYMENT_TYPES
+        }
         loaded = true
     }
 
@@ -146,6 +181,125 @@ fun ConfiguracionScreen(viewModel: AppViewModel) {
                         if (!secondaryLocked) showSecondaryCurrencyPicker = true
                     }
                 )
+                OutlinedTextField(
+                    value = defaultInterest,
+                    onValueChange = { value ->
+                        val clean = value.replace(',', '.')
+                        val filtered = buildString {
+                            var hasDot = false
+                            clean.forEach { ch ->
+                                when {
+                                    ch.isDigit() -> append(ch)
+                                    ch == '.' && !hasDot -> {
+                                        hasDot = true
+                                        append(ch)
+                                    }
+                                }
+                            }
+                        }
+                        defaultInterest = filtered
+                    },
+                    label = { Text("Interes por defecto (%) - opcional") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Text("Frecuencia de Pagos", style = MaterialTheme.typography.labelLarge)
+                if (!isLicenseActive) {
+                    Text(
+                        "Sin licencia activa: se aplican solo Semanal y Mensual.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    TipoPago.entries.forEach { tipo ->
+                        val selected = if (isLicenseActive) {
+                            tipo in allowedPaymentTypes
+                        } else {
+                            tipo == TipoPago.SEMANAL || tipo == TipoPago.MENSUAL
+                        }
+                        val enabled = isLicenseActive
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(enabled = enabled) {
+                                    allowedPaymentTypes = if (selected) {
+                                        allowedPaymentTypes - tipo
+                                    } else {
+                                        allowedPaymentTypes + tipo
+                                    }
+                                },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = selected,
+                                onCheckedChange = if (enabled) {
+                                    {
+                                    allowedPaymentTypes = if (selected) {
+                                        allowedPaymentTypes - tipo
+                                    } else {
+                                        allowedPaymentTypes + tipo
+                                    }
+                                    }
+                                } else {
+                                    null
+                                }
+                            )
+                            Text(
+                                text = tipo.toConfigPaymentTypeLabel(),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+                Text("Tipos de cobro", style = MaterialTheme.typography.labelLarge)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = newCollectionType,
+                        onValueChange = { newCollectionType = it },
+                        label = { Text("Nuevo tipo de cobro") },
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f)
+                    )
+                    Button(
+                        onClick = {
+                            if (!isLicenseActive && tiposCobro.size >= 1) {
+                                Toast.makeText(context, "Sin licencia solo puedes tener un tipo de cobro", Toast.LENGTH_SHORT).show()
+                                return@Button
+                            }
+                            viewModel.registrarTipoCobro(newCollectionType) {
+                                newCollectionType = ""
+                            }
+                        },
+                        shape = RoundedCornerShape(10.dp)
+                    ) { Text("Agregar") }
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    tiposCobro.forEach { tipo ->
+                        val used = tipo.idTipoCobro in usedCollectionTypeIds
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(tipo.nombre, style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                text = "Eliminar",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = if (used) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error,
+                                modifier = Modifier
+                                    .clickable(enabled = !used) { viewModel.eliminarTipoCobro(tipo.idTipoCobro) }
+                            )
+                        }
+                    }
+                }
                 Button(
                     onClick = {
                         val name = businessName.trim()
@@ -156,6 +310,10 @@ fun ConfiguracionScreen(viewModel: AppViewModel) {
                         }
                         if (main.isNullOrBlank()) {
                             Toast.makeText(context, "Selecciona una moneda principal", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+                        if (allowedPaymentTypes.isEmpty()) {
+                            Toast.makeText(context, "Selecciona al menos una frecuencia de pago", Toast.LENGTH_SHORT).show()
                             return@Button
                         }
                         val mainLocked = !originalMainCurrencyCode.isNullOrBlank() && usedCurrencyCodes.contains(originalMainCurrencyCode?.uppercase())
@@ -171,7 +329,9 @@ fun ConfiguracionScreen(viewModel: AppViewModel) {
                         prefs.updateConfiguration(
                             businessName = name,
                             mainCurrencyCode = main,
-                            secondaryCurrencyCode = secondaryCurrencyCode
+                            secondaryCurrencyCode = secondaryCurrencyCode,
+                            defaultInterest = defaultInterest,
+                            allowedPaymentTypes = if (isLicenseActive) allowedPaymentTypes else FREE_PAYMENT_TYPES
                         )
                         Toast.makeText(context, "Configuracion actualizada", Toast.LENGTH_SHORT).show()
                     },
@@ -371,3 +531,13 @@ private fun String?.toConfigCurrencyDisplay(): String {
     if (this.isNullOrBlank()) return ""
     return configCurrencyOptions.firstOrNull { it.code == this }?.displayText.orEmpty()
 }
+
+private fun TipoPago.toConfigPaymentTypeLabel(): String = when (this) {
+    TipoPago.DIARIO -> "Diario"
+    TipoPago.SEMANAL -> "Semanal"
+    TipoPago.QUINCENAL -> "Quincenal"
+    TipoPago.MENSUAL -> "Mensual"
+    TipoPago.PERSONALIZADO -> "Personalizado"
+}
+
+private val FREE_PAYMENT_TYPES = setOf(TipoPago.SEMANAL, TipoPago.MENSUAL)

@@ -10,6 +10,7 @@ import com.prestamos.app.data.local.entity.Moneda
 import com.prestamos.app.data.local.entity.PagoEntity
 import com.prestamos.app.data.local.entity.PrestamoEntity
 import com.prestamos.app.data.local.entity.TipoPago
+import com.prestamos.app.data.local.entity.TipoCobroEntity
 import com.prestamos.app.data.repository.PrestamosRepository
 import com.prestamos.app.ui.model.ResumenReporte
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,6 +50,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList<PagoEntity>()
+    )
+
+    val tiposCobro = repository.observarTiposCobro().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList<TipoCobroEntity>()
     )
 
     private val clienteSeleccionadoPagos = MutableStateFlow<Long?>(null)
@@ -201,14 +208,17 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun registrarPago(
         idPrestamo: Long,
         idCuota: Long,
+        idTipoCobro: Long?,
         montoAbono: String,
         onSuccess: () -> Unit = {}
     ) {
         viewModelScope.launch {
             runCatching {
+                val tipoCobroId = idTipoCobro ?: error("Selecciona un tipo de cobro")
                 repository.registrarPago(
                     idPrestamo = idPrestamo,
                     idCuota = idCuota,
+                    idTipoCobro = tipoCobroId,
                     montoAbono = montoAbono.toDoubleOrNull() ?: error("Monto abonado invalido"),
                     observacion = null
                 )
@@ -216,6 +226,32 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 onSuccess()
             }.onFailure {
                 mensaje.value = it.message ?: "No se pudo registrar pago"
+            }
+        }
+    }
+
+    fun registrarTipoCobro(nombre: String, onSuccess: () -> Unit = {}) {
+        viewModelScope.launch {
+            runCatching {
+                repository.registrarTipoCobro(nombre)
+            }.onSuccess {
+                mensaje.value = "Tipo de cobro registrado"
+                onSuccess()
+            }.onFailure {
+                mensaje.value = it.message ?: "No se pudo registrar tipo de cobro"
+            }
+        }
+    }
+
+    fun eliminarTipoCobro(idTipoCobro: Long, onSuccess: () -> Unit = {}) {
+        viewModelScope.launch {
+            runCatching {
+                repository.eliminarTipoCobroSiNoTienePagos(idTipoCobro)
+            }.onSuccess {
+                mensaje.value = "Tipo de cobro eliminado"
+                onSuccess()
+            }.onFailure {
+                mensaje.value = it.message ?: "No se pudo eliminar tipo de cobro"
             }
         }
     }
@@ -241,6 +277,27 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 onSuccess()
             }.onFailure {
                 mensaje.value = it.message ?: "No se pudo eliminar el pago"
+            }
+        }
+    }
+
+    fun aplicarMoraCuotaVencida(
+        idCuota: Long,
+        montoMora: String,
+        onSuccess: () -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            runCatching {
+                val monto = montoMora.toDoubleOrNull() ?: error("Monto de mora invalido")
+                repository.aplicarMoraManualCuotaVencida(
+                    idCuota = idCuota,
+                    montoMora = monto
+                )
+            }.onSuccess {
+                mensaje.value = "Mora aplicada correctamente"
+                onSuccess()
+            }.onFailure {
+                mensaje.value = it.message ?: "No se pudo aplicar mora"
             }
         }
     }

@@ -90,6 +90,7 @@ import com.prestamos.app.ui.screen.DashboardScreen
 import com.prestamos.app.ui.screen.LogoutScreen
 import com.prestamos.app.ui.screen.PagosScreen
 import com.prestamos.app.ui.screen.BackupScreen
+import com.prestamos.app.ui.screen.ReportesScreen
 import com.prestamos.app.ui.screen.ActivationScreen
 import com.prestamos.app.ui.screen.ConfiguracionScreen
 import com.prestamos.app.ui.screen.OnboardingScreen
@@ -226,13 +227,18 @@ private fun AppRoot(
                     onBusinessNameChange = onboardingViewModel::updateBusinessName,
                     onMainCurrencySelected = onboardingViewModel::selectMainCurrency,
                     onSecondaryCurrencySelected = onboardingViewModel::selectSecondaryCurrency,
+                    onDefaultInterestChange = onboardingViewModel::updateDefaultInterest,
+                    onTogglePaymentType = onboardingViewModel::toggleAllowedPaymentType,
+                    onAddCollectionType = onboardingViewModel::addCollectionType,
+                    onRemoveCollectionType = onboardingViewModel::removeCollectionType,
                     onFinalizar = onboardingViewModel::finalizarConfiguracion
                 )
 
                 !activationState.canAccessApp -> ActivationScreen(
                     uiState = activationState,
                     onActivationKeyChanged = activationViewModel::onActivationKeyChanged,
-                    onActivate = activationViewModel::activate
+                    onActivate = activationViewModel::activate,
+                    onBuyInPlay = activationViewModel::startPlayPurchase
                 )
 
                 authState is AuthState.NeedsPinSetup -> PinSetupScreen(authViewModel)
@@ -306,6 +312,12 @@ private fun PrestamosApp(
                 composable(AppDestinations.CLIENTES.route) { ClientesScreen(appViewModel) }
                 composable(AppDestinations.PRESTAMOS.route) { PrestamosScreen(appViewModel) }
                 composable(AppDestinations.PAGOS.route) { PagosScreen(appViewModel) }
+                composable(AppDestinations.REPORTES.route) {
+                    ReportesScreen(
+                        viewModel = appViewModel,
+                        isLicenseActive = activationState.status.isValid && activationState.status.isActivated
+                    )
+                }
                 composable(AppDestinations.BACKUP.route) {
                     BackupScreen()
                 }
@@ -314,7 +326,8 @@ private fun PrestamosApp(
                     ActivationScreen(
                         uiState = activationState,
                         onActivationKeyChanged = activationViewModel::onActivationKeyChanged,
-                        onActivate = activationViewModel::activate
+                        onActivate = activationViewModel::activate,
+                        onBuyInPlay = activationViewModel::startPlayPurchase
                     )
                 }
                 composable(configuracionRoute) {
@@ -532,6 +545,7 @@ private fun iconFor(destination: AppDestinations) = when (destination) {
     AppDestinations.CLIENTES -> Icons.Outlined.Groups
     AppDestinations.PRESTAMOS -> Icons.Outlined.RequestPage
     AppDestinations.PAGOS -> Icons.Outlined.Payments
+    AppDestinations.REPORTES -> Icons.Outlined.RequestPage
     AppDestinations.BACKUP -> Icons.Outlined.Inventory2
     AppDestinations.LOGOUT -> Icons.Outlined.Logout
 }
@@ -548,6 +562,7 @@ private fun iconForRoute(route: String) = when (route) {
     AppDestinations.CLIENTES.route -> Icons.Outlined.Groups
     AppDestinations.PRESTAMOS.route -> Icons.Outlined.RequestPage
     AppDestinations.PAGOS.route -> Icons.Outlined.Payments
+    AppDestinations.REPORTES.route -> Icons.Outlined.RequestPage
     AppDestinations.BACKUP.route -> Icons.Outlined.Inventory2
     AppDestinations.LOGOUT.route -> Icons.Outlined.Logout
     "activation_license" -> Icons.Outlined.VpnKey

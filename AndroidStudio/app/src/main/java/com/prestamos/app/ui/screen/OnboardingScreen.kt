@@ -18,10 +18,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,9 +33,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.foundation.text.KeyboardOptions
+import com.prestamos.app.data.local.entity.TipoPago
 import com.prestamos.app.ui.viewmodel.OnboardingUiState
 
 private data class CurrencyOption(
@@ -68,10 +73,15 @@ fun OnboardingScreen(
     onBusinessNameChange: (String) -> Unit,
     onMainCurrencySelected: (String) -> Unit,
     onSecondaryCurrencySelected: (String?) -> Unit,
+    onDefaultInterestChange: (String) -> Unit,
+    onTogglePaymentType: (TipoPago) -> Unit,
+    onAddCollectionType: (String) -> Unit,
+    onRemoveCollectionType: (String) -> Unit,
     onFinalizar: () -> Unit
 ) {
     var showMainCurrencyPicker by remember { mutableStateOf(false) }
     var showSecondaryCurrencyPicker by remember { mutableStateOf(false) }
+    var newCollectionType by remember { mutableStateOf("") }
 
     Box(
         modifier = Modifier
@@ -155,6 +165,109 @@ fun OnboardingScreen(
                         onClick = { showSecondaryCurrencyPicker = true }
                     )
 
+                    OutlinedTextField(
+                        value = uiState.defaultInterest,
+                        onValueChange = { value ->
+                            val clean = value.replace(',', '.')
+                            val filtered = buildString {
+                                var hasDot = false
+                                clean.forEach { ch ->
+                                    when {
+                                        ch.isDigit() -> append(ch)
+                                        ch == '.' && !hasDot -> {
+                                            hasDot = true
+                                            append(ch)
+                                        }
+                                    }
+                                }
+                            }
+                            onDefaultInterestChange(filtered)
+                        },
+                        label = { Text("Interes por defecto (%) - opcional") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Text("Frecuencia de Pagos", style = MaterialTheme.typography.labelLarge)
+                    if (!uiState.isLicenseActive) {
+                        Text(
+                            "Sin licencia activa: solo disponible Semanal y Mensual.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        TipoPago.entries.forEach { tipo ->
+                            val selected = if (uiState.isLicenseActive) {
+                                tipo in uiState.allowedPaymentTypes
+                            } else {
+                                tipo == TipoPago.SEMANAL || tipo == TipoPago.MENSUAL
+                            }
+                            val enabled = uiState.isLicenseActive
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable(enabled = enabled) { onTogglePaymentType(tipo) },
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Checkbox(
+                                    checked = selected,
+                                    onCheckedChange = if (enabled) {
+                                        { onTogglePaymentType(tipo) }
+                                    } else {
+                                        null
+                                    }
+                                )
+                                Text(
+                                    text = tipo.toOnboardingLabel(),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+
+                    Text("Tipos de cobro (creados por ti)", style = MaterialTheme.typography.labelLarge)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = newCollectionType,
+                            onValueChange = { newCollectionType = it },
+                            label = { Text("Ej: Yape, Abono en cuenta") },
+                            singleLine = true,
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier.weight(1f)
+                        )
+                        TextButton(onClick = {
+                            onAddCollectionType(newCollectionType)
+                            newCollectionType = ""
+                        }, enabled = uiState.isLicenseActive || uiState.collectionTypes.isEmpty()) {
+                            Text("Agregar")
+                        }
+                    }
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        uiState.collectionTypes.forEach { type ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(type, style = MaterialTheme.typography.bodyMedium)
+                                Text(
+                                    text = "Eliminar",
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    modifier = Modifier.clickable { onRemoveCollectionType(type) }
+                                )
+                            }
+                        }
+                    }
+
                     if (!uiState.errorMessage.isNullOrBlank()) {
                         Text(
                             text = uiState.errorMessage,
@@ -165,6 +278,7 @@ fun OnboardingScreen(
 
                     Button(
                         onClick = onFinalizar,
+                        enabled = uiState.collectionTypes.isNotEmpty(),
                         shape = RoundedCornerShape(14.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -200,6 +314,14 @@ fun OnboardingScreen(
             }
         )
     }
+}
+
+private fun TipoPago.toOnboardingLabel(): String = when (this) {
+    TipoPago.DIARIO -> "Diario"
+    TipoPago.SEMANAL -> "Semanal"
+    TipoPago.QUINCENAL -> "Quincenal"
+    TipoPago.MENSUAL -> "Mensual"
+    TipoPago.PERSONALIZADO -> "Personalizado"
 }
 
 @Composable

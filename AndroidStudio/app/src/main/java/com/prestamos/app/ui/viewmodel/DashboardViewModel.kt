@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -28,13 +29,15 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         repository.observarClientes(),
         repository.observarPrestamos(),
         repository.observarCuotas(),
-        repository.observarPagos()
-    ) { clientes, prestamos, cuotas, pagos ->
+        repository.observarPagos(),
+        repository.observarTiposCobro()
+    ) { clientes, prestamos, cuotas, pagos, tiposCobro ->
         val prestamoById = prestamos.associateBy { it.idPrestamo }
         val clienteById = clientes.associateBy { it.idCliente }
         val cuotasByPrestamo = cuotas.groupBy { it.idPrestamo }
         val pagosByPrestamo = pagos.groupBy { it.idPrestamo }
         val cuotaById = cuotas.associateBy { it.idCuota }
+        val tipoCobroById = tiposCobro.associateBy { it.idTipoCobro }
 
         val now = System.currentTimeMillis()
         val startToday = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
@@ -98,7 +101,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             .filter { it.estadoPrestamo == EstadoPrestamo.PAGADO }
             .map { prestamo ->
                 val cliente = clienteById[prestamo.idCliente]
-                val montoCobrado = prestamo.montoTotalPrestamo
+                val pagosPrestamo = pagosByPrestamo[prestamo.idPrestamo].orEmpty()
+                val montoCobrado = pagosPrestamo.sumOf { it.montoAbono }
+                val moraCobrada = pagosPrestamo.sumOf { it.moraCobrada }
+                val gananciaSinMora = (montoCobrado - moraCobrada - prestamo.montoPrestado).coerceAtLeast(0.0)
                 DashboardGananciaPrestamoItem(
                     cliente = "${cliente?.nombre.orEmpty()} ${cliente?.apellido.orEmpty()}".trim().ifBlank { "-" },
                     idPrestamo = prestamo.idPrestamo,
@@ -106,7 +112,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                     fechaPago = prestamo.fechaModificacion,
                     montoPrestado = prestamo.montoPrestado,
                     montoCobrado = montoCobrado,
-                    ganancia = montoCobrado - prestamo.montoPrestado,
+                    ganancia = gananciaSinMora,
+                    moraCobrada = moraCobrada,
                     moneda = prestamo.moneda
                 )
             }
@@ -122,10 +129,12 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 val cliente = clienteById[prestamo?.idCliente]
                 DashboardCuotaDetalleItem(
                     cliente = "${cliente?.nombre.orEmpty()} ${cliente?.apellido.orEmpty()}".trim().ifBlank { "-" },
+                    idCuota = cuota.idCuota,
                     idPrestamo = cuota.idPrestamo,
                     numeroCuota = cuota.numeroCuota,
                     fechaVencimiento = cuota.fechaVencimiento,
                     saldoPendiente = cuota.saldoPendiente,
+                    moraPendiente = cuota.moraPendiente,
                     estado = cuota.estadoCuota,
                     moneda = prestamo?.moneda ?: Moneda.SOLES
                 )
@@ -139,10 +148,12 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 val cliente = clienteById[prestamo?.idCliente]
                 DashboardCuotaDetalleItem(
                     cliente = "${cliente?.nombre.orEmpty()} ${cliente?.apellido.orEmpty()}".trim().ifBlank { "-" },
+                    idCuota = cuota.idCuota,
                     idPrestamo = cuota.idPrestamo,
                     numeroCuota = cuota.numeroCuota,
                     fechaVencimiento = cuota.fechaVencimiento,
                     saldoPendiente = cuota.saldoPendiente,
+                    moraPendiente = cuota.moraPendiente,
                     estado = cuota.estadoCuota,
                     moneda = prestamo?.moneda ?: Moneda.SOLES
                 )
@@ -161,7 +172,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                     idPrestamo = pago.idPrestamo,
                     numeroCuota = cuotaById[pago.idCuota]?.numeroCuota ?: 0,
                     idPago = pago.idPago,
-                    moneda = prestamo?.moneda ?: Moneda.SOLES
+                    moneda = prestamo?.moneda ?: Moneda.SOLES,
+                    tipoCobro = pago.idTipoCobro?.let { tipoCobroById[it]?.nombre } ?: "-"
                 )
             }
 
@@ -178,7 +190,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                     idPrestamo = pago.idPrestamo,
                     numeroCuota = cuotaById[pago.idCuota]?.numeroCuota ?: 0,
                     idPago = pago.idPago,
-                    moneda = prestamo?.moneda ?: Moneda.SOLES
+                    moneda = prestamo?.moneda ?: Moneda.SOLES,
+                    tipoCobro = pago.idTipoCobro?.let { tipoCobroById[it]?.nombre } ?: "-"
                 )
             }
 
@@ -192,7 +205,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                     saldoPendiente = it.saldoPendiente,
                     estado = it.estado.name,
                     idPrestamo = it.idPrestamo,
-                    idCuota = 0,
+                    idCuota = it.idCuota,
                     moneda = it.moneda
                 )
             }
@@ -210,7 +223,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                     idPrestamo = pago.idPrestamo,
                     numeroCuota = cuotaById[pago.idCuota]?.numeroCuota ?: 0,
                     idPago = pago.idPago,
-                    moneda = prestamo?.moneda ?: Moneda.SOLES
+                    moneda = prestamo?.moneda ?: Moneda.SOLES,
+                    tipoCobro = pago.idTipoCobro?.let { tipoCobroById[it]?.nombre } ?: "-"
                 )
             }
 
@@ -237,4 +251,24 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = DashboardResumen()
     )
+    fun aplicarMoraCuotaVencida(
+        idCuota: Long,
+        montoMora: String,
+        onSuccess: () -> Unit = {},
+        onError: (String) -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            runCatching {
+                val monto = montoMora.toDoubleOrNull() ?: error("Monto de mora invalido")
+                repository.aplicarMoraManualCuotaVencida(
+                    idCuota = idCuota,
+                    montoMora = monto
+                )
+            }.onSuccess {
+                onSuccess()
+            }.onFailure {
+                onError(it.message ?: "No se pudo aplicar mora")
+            }
+        }
+    }
 }
