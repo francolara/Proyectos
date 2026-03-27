@@ -1,0 +1,65 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobantesIndexViewModel
+
+@{
+    ViewData["Title"] = "Comprobantes";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h4 mb-1">Comprobantes electronicos</h1>
+        <p class="text-muted mb-0">@Model.NegocioNombre | Rol: @Model.RolActual</p>
+    </div>
+    <div class="d-flex gap-2">
+        @if (Model.PuedeCrear)
+        {
+            <a class="btn btn-primary" asp-action="Create" asp-route-negocioId="@Model.NegocioId">Emitir comprobante</a>
+        }
+        <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Panel</a>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-sm table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Tipo</th>
+                <th>Numero</th>
+                <th>Fecha</th>
+                <th>Cliente</th>
+                <th>Total</th>
+                <th>Estado</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Comprobantes)
+            {
+                <tr>
+                    <td>@item.Id</td>
+                    <td>@item.Tipo</td>
+                    <td>@item.SerieNumero</td>
+                    <td>@item.FechaEmision.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>@item.Cliente</td>
+                    <td>S/ @item.Total.ToString("N2")</td>
+                    <td>@item.Estado</td>
+                    <td class="text-end">
+                        @if (Model.PuedeEditar)
+                        {
+                            <a class="btn btn-sm btn-outline-warning" asp-action="Edit" asp-route-negocioId="@Model.NegocioId" asp-route-id="@item.Id">Editar</a>
+                        }
+                        @if (Model.PuedeEliminar)
+                        {
+                            <form asp-action="Delete" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                                <input type="hidden" name="id" value="@item.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Anular</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

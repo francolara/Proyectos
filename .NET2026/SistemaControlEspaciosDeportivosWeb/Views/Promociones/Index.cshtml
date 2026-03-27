@@ -1,0 +1,65 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.PromocionesIndexViewModel
+
+@{
+    ViewData["Title"] = "Promociones";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h4 mb-1">Promociones</h1>
+        <p class="text-muted mb-0">@Model.NegocioNombre | Rol: @Model.RolActual</p>
+    </div>
+    <div class="d-flex gap-2">
+        @if (Model.PuedeCrear)
+        {
+            <a class="btn btn-primary" asp-action="Create" asp-route-negocioId="@Model.NegocioId">Nueva promocion</a>
+        }
+        <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Panel</a>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-sm table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Sede</th>
+                <th>Espacio</th>
+                <th>Vigencia</th>
+                <th>Horario</th>
+                <th>Descuento</th>
+                <th>Estado</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Promociones)
+            {
+                <tr>
+                    <td>@item.Nombre</td>
+                    <td>@item.Sede</td>
+                    <td>@item.Espacio</td>
+                    <td>@item.FechaInicio.ToString("dd/MM/yyyy") - @item.FechaFin.ToString("dd/MM/yyyy")</td>
+                    <td>@item.HoraInicio.ToString("HH\\:mm") - @item.HoraFin.ToString("HH\\:mm")</td>
+                    <td>@item.PorcentajeDescuento.ToString("N2")%</td>
+                    <td>@(item.Activo ? "Activa" : "Inactiva")</td>
+                    <td class="text-end">
+                        @if (Model.PuedeEditar)
+                        {
+                            <a class="btn btn-sm btn-outline-warning" asp-action="Edit" asp-route-negocioId="@Model.NegocioId" asp-route-id="@item.Id">Editar</a>
+                        }
+                        @if (Model.PuedeEliminar)
+                        {
+                            <form asp-action="Delete" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                                <input type="hidden" name="id" value="@item.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Desactivar</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

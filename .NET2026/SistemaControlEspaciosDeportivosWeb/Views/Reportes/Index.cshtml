@@ -1,0 +1,99 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.ReportesIndexViewModel
+
+@{
+    ViewData["Title"] = "Reportes";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h4 mb-1">Reportes</h1>
+        <p class="text-muted mb-0">@Model.NegocioNombre | Rol: @Model.RolActual</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-success"
+           asp-action="ExportCsv"
+           asp-route-negocioId="@Model.NegocioId"
+           asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")"
+           asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")">
+            Exportar CSV
+        </a>
+        <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Panel</a>
+    </div>
+</div>
+
+<form method="get" asp-action="Index" class="card card-body shadow-sm mb-3">
+    <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+    <div class="row g-2 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label">Desde</label>
+            <input type="date" class="form-control" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Hasta</label>
+            <input type="date" class="form-control" name="fechaHasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-2 d-grid">
+            <button type="submit" class="btn btn-primary">Consultar</button>
+        </div>
+    </div>
+</form>
+
+<section class="card border-0 shadow-sm mb-3">
+    <div class="card-body">
+        <h2 class="h6 mb-3">Ocupacion por espacio</h2>
+        <div class="table-responsive">
+            <table class="table table-sm table-striped align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Sede</th>
+                        <th>Espacio</th>
+                        <th>Reservas</th>
+                        <th>Horas reservadas</th>
+                        <th>Monto reservado</th>
+                        <th>Monto cobrado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Ocupacion)
+                    {
+                        <tr>
+                            <td>@item.Sede</td>
+                            <td>@item.Espacio</td>
+                            <td>@item.CantidadReservas</td>
+                            <td>@item.HorasReservadas.ToString("N2")</td>
+                            <td>S/ @item.MontoReservado.ToString("N2")</td>
+                            <td>S/ @item.MontoCobrado.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<section class="card border-0 shadow-sm">
+    <div class="card-body">
+        <h2 class="h6 mb-3">Ingresos por dia</h2>
+        <div class="table-responsive">
+            <table class="table table-sm table-striped align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Reservas</th>
+                        <th>Ingresos</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Ingresos)
+                    {
+                        <tr>
+                            <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
+                            <td>@item.CantidadReservas</td>
+                            <td>S/ @item.Ingresos.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

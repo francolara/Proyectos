@@ -1,0 +1,157 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.PanelDashboardViewModel
+<!-- Firma: Codex - 27/03/2026 -->
+
+@functions {
+    private static string? ObtenerControlador(string codigo) => codigo switch
+    {
+        "SEDES" => "Sedes",
+        "CLIENTES" => "Clientes",
+        "ESPACIOS" => "Espacios",
+        "RESERVAS" => "Reservas",
+        "SOLICITUDES" => "Solicitudes",
+        "PROMOCIONES" => "Promociones",
+        "USUARIOS" => "Usuarios",
+        "PAGOS" => "Pagos",
+        "COMPROBANTES" => "Comprobantes",
+        "REPORTES" => "Reportes",
+        _ => null
+    };
+}
+
+@{
+    ViewData["Title"] = "Panel de negocio";
+}
+
+@if (!string.IsNullOrWhiteSpace(Model.Mensaje))
+{
+    <div class="alert alert-warning">
+        @Model.Mensaje
+    </div>
+}
+else
+{
+    <section class="mb-4">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+                <h1 class="h3 mb-1">Panel privado</h1>
+                <p class="mb-0 text-muted">Rol actual: <strong>@Model.RolActual</strong></p>
+            </div>
+            <form asp-action="Index" method="get" class="d-flex gap-2">
+                <select name="negocioId" class="form-select">
+                    @foreach (var negocio in Model.Negocios)
+                    {
+                        <option value="@negocio.NegocioId" selected="@(negocio.NegocioId == Model.NegocioSeleccionadoId)">
+                            @negocio.NombreNegocio (@negocio.Rol)
+                        </option>
+                    }
+                </select>
+                <button type="submit" class="btn btn-outline-primary">Cambiar</button>
+            </form>
+        </div>
+    </section>
+
+    <section class="row g-3 mb-4">
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Sedes</p>
+                    <p class="h4 mb-0">@Model.TotalSedes</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Espacios</p>
+                    <p class="h4 mb-0">@Model.TotalEspacios</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Reservas hoy</p>
+                    <p class="h4 mb-0">@Model.ReservasHoy</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Ingresos hoy</p>
+                    <p class="h4 mb-0">S/ @Model.IngresosHoy.ToString("N2")</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Ocupacion hoy</p>
+                    <p class="h4 mb-0">@Model.OcupacionHoyPct.ToString("N2")%</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1">No show del mes</p>
+                    <p class="h4 mb-0">@Model.NoShowMes</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-12 col-xl-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Ticket promedio del mes</p>
+                    <p class="h4 mb-0">S/ @Model.TicketPromedioMes.ToString("N2")</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="card border-0 shadow-sm">
+        <div class="card-body">
+            <h2 class="h5 mb-3">Modulos habilitados</h2>
+            <div class="row g-3">
+                @foreach (var modulo in Model.Modulos)
+                {
+                    var controlador = ObtenerControlador(modulo.ModuloCodigo);
+                    <div class="col-md-6 col-xl-4">
+                        <article class="card border-light h-100">
+                            <div class="card-body">
+                                <h3 class="h6 mb-2">@modulo.ModuloNombre</h3>
+                                <div class="d-flex flex-wrap gap-1">
+                                    @if (modulo.PuedeCrear)
+                                    {
+                                        <span class="badge text-bg-primary">Crear</span>
+                                    }
+                                    @if (modulo.PuedeEditar)
+                                    {
+                                        <span class="badge text-bg-warning">Editar</span>
+                                    }
+                                    @if (modulo.PuedeEliminar)
+                                    {
+                                        <span class="badge text-bg-danger">Eliminar</span>
+                                    }
+                                    @if (!modulo.PuedeCrear && !modulo.PuedeEditar && !modulo.PuedeEliminar)
+                                    {
+                                        <span class="badge text-bg-secondary">Solo lectura</span>
+                                    }
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(controlador))
+                                {
+                                    <a class="btn btn-sm btn-outline-primary mt-3"
+                                       asp-controller="@controlador"
+                                       asp-action="Index"
+                                       asp-route-negocioId="@Model.NegocioSeleccionadoId">
+                                        Abrir modulo
+                                    </a>
+                                }
+                            </div>
+                        </article>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}

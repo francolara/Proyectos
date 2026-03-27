@@ -1,0 +1,37 @@
+:root {
+  --sc-primary: #0d3b66;
+  --sc-accent: #17a2b8;
+  --sc-bg: #f4f7fb;
+}
+
+html {
+  font-size: 15px;
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  background: linear-gradient(180deg, #ffffff 0%, var(--sc-bg) 100%);
+  color: #1f2937;
+}
+
+.navbar-brand {
+  color: var(--sc-primary) !important;
+}
+
+.hero-publico {
+  background: linear-gradient(135deg, var(--sc-primary) 0%, #164f86 50%, var(--sc-accent) 100%);
+  color: #fff;
+}
+
+.card {
+  border-radius: 14px;
+}
+
+.badge {
+  font-weight: 600;
+}
+
+.footer {
+  background: #ffffff;
+}

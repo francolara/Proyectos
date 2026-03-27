@@ -1,0 +1,66 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.SolicitudPublicaSeguimientoViewModel
+
+@{
+    ViewData["Title"] = "Consultar solicitud";
+}
+
+<section class="card border-0 shadow-sm mb-3">
+    <div class="card-body">
+        <h1 class="h4 mb-1">Consultar estado de solicitud</h1>
+        <p class="text-muted mb-3">Ingresa tu codigo de solicitud y telefono.</p>
+
+        <form asp-action="ConsultarSolicitud" method="post" class="row g-3">
+            @Html.AntiForgeryToken()
+            <div class="col-md-4">
+                <label asp-for="CodigoSolicitud" class="form-label">Codigo</label>
+                <input asp-for="CodigoSolicitud" class="form-control" />
+                <span asp-validation-for="CodigoSolicitud" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Telefono" class="form-label">Telefono</label>
+                <input asp-for="Telefono" class="form-control" />
+                <span asp-validation-for="Telefono" class="text-danger"></span>
+            </div>
+            <div class="col-md-2 d-grid align-items-end">
+                <button type="submit" class="btn btn-primary">Consultar</button>
+            </div>
+            <div class="col-md-2 d-grid align-items-end">
+                <a asp-action="Index" class="btn btn-outline-secondary">Volver</a>
+            </div>
+        </form>
+    </div>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(Model.Mensaje))
+{
+    <div class="alert alert-warning">@Model.Mensaje</div>
+}
+
+@if (Model.Resultado is not null)
+{
+    <section class="card border-0 shadow-sm">
+        <div class="card-body">
+            <h2 class="h6 mb-3">Resultado</h2>
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Codigo</dt>
+                <dd class="col-sm-9">@Model.Resultado.CodigoSolicitud</dd>
+
+                <dt class="col-sm-3">Estado</dt>
+                <dd class="col-sm-9">@Model.Resultado.EstadoTexto</dd>
+
+                <dt class="col-sm-3">Sede / Espacio</dt>
+                <dd class="col-sm-9">@Model.Resultado.Sede - @Model.Resultado.Espacio</dd>
+
+                <dt class="col-sm-3">Fecha / Hora</dt>
+                <dd class="col-sm-9">@Model.Resultado.Fecha.ToString("dd/MM/yyyy") | @Model.Resultado.HoraInicio.ToString("HH\\:mm") - @Model.Resultado.HoraFin.ToString("HH\\:mm")</dd>
+
+                <dt class="col-sm-3">Solicitante</dt>
+                <dd class="col-sm-9">@Model.Resultado.NombreSolicitante</dd>
+            </dl>
+        </div>
+    </section>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

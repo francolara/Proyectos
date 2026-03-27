@@ -1,0 +1,431 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.ReservasIndexViewModel
+<!-- Firma: Codex - 27/03/2026 -->
+@{
+    ViewData["Title"] = "Reservas";
+}
+
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.14/index.global.min.css" rel="stylesheet" />
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h4 mb-1">Reservas y calendario</h1>
+        <p class="text-muted mb-0">@Model.NegocioNombre | Rol: @Model.RolActual</p>
+    </div>
+    <div class="d-flex gap-2">
+        @if (Model.PuedeCrear)
+        {
+            <a class="btn btn-primary" asp-action="Create" asp-route-negocioId="@Model.NegocioId">Nueva reserva</a>
+        }
+        <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Panel</a>
+    </div>
+</div>
+
+@if (TempData["ReservasError"] is string reservasError && !string.IsNullOrWhiteSpace(reservasError))
+{
+    <div class="alert alert-danger">@reservasError</div>
+}
+
+<form method="get" asp-action="Index" class="card card-body shadow-sm mb-3" id="filtrosForm">
+    <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+    <div class="row g-2 align-items-end">
+        <div class="col-md-2">
+            <label class="form-label">Desde</label>
+            <input id="fechaDesde" type="date" class="form-control" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Hasta</label>
+            <input id="fechaHasta" type="date" class="form-control" name="fechaHasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Sede</label>
+            <select id="sedeId" class="form-select" name="sedeId">
+                <option value="">Todas</option>
+                @foreach (var s in Model.SedesFiltro)
+                {
+                    <option value="@s.Value" selected="@(Model.SedeId?.ToString() == s.Value)">@s.Text</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Espacio</label>
+            <select id="espacioDeportivoId" class="form-select" name="espacioDeportivoId">
+                <option value="">Todos</option>
+                @foreach (var e in Model.EspaciosFiltro)
+                {
+                    <option value="@e.Value" selected="@(Model.EspacioDeportivoId?.ToString() == e.Value)">@e.Text</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Estado</label>
+            <select id="estado" class="form-select" name="estado">
+                @foreach (var est in Model.EstadosFiltro)
+                {
+                    <option value="@est.Value" selected="@(Model.Estado?.ToString() == est.Value)">@est.Text</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-1 d-grid">
+            <button type="submit" class="btn btn-outline-primary">Filtrar</button>
+        </div>
+    </div>
+</form>
+
+<section class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h6 mb-0">Calendario operativo</h2>
+            <small class="text-muted">Arrastra una reserva para cambiar horario. Los bloqueos no son movibles.</small>
+        </div>
+        <div id="calendarioReservas"></div>
+    </div>
+</section>
+
+<section class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <h2 class="h6 mb-3">Bloquear horario</h2>
+        @if (Model.PuedeEditar)
+        {
+            <form asp-action="CrearBloqueo" method="post" class="row g-2 align-items-end">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="NegocioId" value="@Model.NegocioId" />
+                <div class="col-md-3">
+                    <label class="form-label">Espacio</label>
+                    <select name="EspacioDeportivoId" class="form-select" required>
+                        @foreach (var e in Model.BloqueoForm.Espacios)
+                        {
+                            <option value="@e.Value">@e.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Fecha</label>
+                    <input type="date" class="form-control" name="Fecha" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" required />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Inicio</label>
+                    <input type="time" class="form-control" name="HoraInicio" value="08:00" required />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Fin</label>
+                    <input type="time" class="form-control" name="HoraFin" value="09:00" required />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Motivo</label>
+                    <input type="text" class="form-control" name="Motivo" maxlength="250" required />
+                </div>
+                <div class="col-md-1 d-grid">
+                    <button type="submit" class="btn btn-outline-danger">Bloquear</button>
+                </div>
+            </form>
+        }
+        else
+        {
+            <p class="text-muted mb-0">No tienes permisos para crear bloqueos.</p>
+        }
+    </div>
+</section>
+
+<div class="row g-3">
+    <div class="col-xl-8">
+        <div class="table-responsive">
+            <table class="table table-sm table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Cliente</th>
+                        <th>Sede</th>
+                        <th>Espacio</th>
+                        <th>Fecha</th>
+                        <th>Horario</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Reservas)
+                    {
+                        <tr>
+                            <td>@item.Id</td>
+                            <td>@item.Cliente</td>
+                            <td>@item.Sede</td>
+                            <td>@item.Espacio</td>
+                            <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
+                            <td>@item.HoraInicio.ToString("HH\\:mm") - @item.HoraFin.ToString("HH\\:mm")</td>
+                            <td>S/ @item.Total.ToString("N2")</td>
+                            <td>
+                                @{
+                                    var estadoTexto = item.Estado switch
+                                    {
+                                        "1" => "Pendiente",
+                                        "2" => "Confirmada",
+                                        "3" => "En uso",
+                                        "4" => "Finalizada",
+                                        "5" => "Cancelada",
+                                        "6" => "No asistio",
+                                        _ => item.Estado
+                                    };
+                                }
+                                @estadoTexto
+                            </td>
+                            <td class="text-end">
+                                @if (Model.PuedeEditar)
+                                {
+                                    <a class="btn btn-sm btn-outline-warning" asp-action="Edit" asp-route-negocioId="@Model.NegocioId" asp-route-id="@item.Id">Editar</a>
+                                    @if (item.Estado == "1" || item.Estado == "2")
+                                    {
+                                        <form asp-action="CambiarEstadoTabla" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <input type="hidden" name="nuevoEstado" value="3" />
+                                            <input type="hidden" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
+                                            <input type="hidden" name="fechaHasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
+                                            <input type="hidden" name="sedeId" value="@Model.SedeId" />
+                                            <input type="hidden" name="espacioDeportivoId" value="@Model.EspacioDeportivoId" />
+                                            <input type="hidden" name="estado" value="@Model.Estado" />
+                                            <button type="submit" class="btn btn-sm btn-outline-success">Check-in</button>
+                                        </form>
+                                        <form asp-action="CambiarEstadoTabla" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <input type="hidden" name="nuevoEstado" value="6" />
+                                            <input type="hidden" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
+                                            <input type="hidden" name="fechaHasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
+                                            <input type="hidden" name="sedeId" value="@Model.SedeId" />
+                                            <input type="hidden" name="espacioDeportivoId" value="@Model.EspacioDeportivoId" />
+                                            <input type="hidden" name="estado" value="@Model.Estado" />
+                                            <button type="submit" class="btn btn-sm btn-outline-dark">No show</button>
+                                        </form>
+                                    }
+                                    else if (item.Estado == "3")
+                                    {
+                                        <form asp-action="CambiarEstadoTabla" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <input type="hidden" name="nuevoEstado" value="4" />
+                                            <input type="hidden" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
+                                            <input type="hidden" name="fechaHasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
+                                            <input type="hidden" name="sedeId" value="@Model.SedeId" />
+                                            <input type="hidden" name="espacioDeportivoId" value="@Model.EspacioDeportivoId" />
+                                            <input type="hidden" name="estado" value="@Model.Estado" />
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">Check-out</button>
+                                        </form>
+                                    }
+                                }
+                                @if (Model.PuedeEliminar)
+                                {
+                                    <form asp-action="Delete" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Cancelar</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h2 class="h6 mb-3">Bloqueos activos</h2>
+                @if (Model.Bloqueos.Count == 0)
+                {
+                    <p class="text-muted mb-0">No hay bloqueos en el rango seleccionado.</p>
+                }
+                else
+                {
+                    <div class="d-flex flex-column gap-2">
+                        @foreach (var b in Model.Bloqueos)
+                        {
+                            <div class="border rounded p-2">
+                                <div class="small text-muted">@b.Fecha.ToString("dd/MM/yyyy") @b.HoraInicio.ToString("HH\\:mm") - @b.HoraFin.ToString("HH\\:mm")</div>
+                                <div class="fw-semibold">@b.Sede - @b.Espacio</div>
+                                <div class="small">@b.Motivo</div>
+                                @if (Model.PuedeEliminar)
+                                {
+                                    <form asp-action="EliminarBloqueo" method="post" class="mt-2">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                                        <input type="hidden" name="id" value="@b.Id" />
+                                        <input type="hidden" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
+                                        <input type="hidden" name="fechaHasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
+                                        <input type="hidden" name="sedeId" value="@Model.SedeId" />
+                                        <input type="hidden" name="espacioDeportivoId" value="@Model.EspacioDeportivoId" />
+                                        <input type="hidden" name="estado" value="@Model.Estado" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Quitar bloqueo</button>
+                                    </form>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.14/index.global.min.js"></script>
+    <script>
+        (() => {
+            const negocioId = @Model.NegocioId;
+            const calendarioEl = document.getElementById('calendarioReservas');
+            const formFiltros = document.getElementById('filtrosForm');
+
+            function armarUrlEventos(info) {
+                const sedeId = document.getElementById('sedeId').value;
+                const espacioDeportivoId = document.getElementById('espacioDeportivoId').value;
+                const estado = document.getElementById('estado').value;
+                const params = new URLSearchParams();
+                params.append('negocioId', negocioId);
+                params.append('start', info.startStr);
+                params.append('end', info.endStr);
+                if (sedeId) params.append('sedeId', sedeId);
+                if (espacioDeportivoId) params.append('espacioDeportivoId', espacioDeportivoId);
+                if (estado) params.append('estado', estado);
+                return '@Url.Action("CalendarioEventos", "Reservas")' + '?' + params.toString();
+            }
+
+            const calendar = new FullCalendar.Calendar(calendarioEl, {
+                initialView: 'timeGridWeek',
+                locale: 'es',
+                firstDay: 1,
+                allDaySlot: false,
+                slotMinTime: '06:00:00',
+                slotMaxTime: '24:00:00',
+                nowIndicator: true,
+                editable: true,
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'timeGridWeek,timeGridDay,dayGridMonth'
+                },
+                events: function(info, success, failure) {
+                    fetch(armarUrlEventos(info))
+                        .then(r => r.json())
+                        .then(data => success(data))
+                        .catch(err => failure(err));
+                },
+                eventDrop: function(info) {
+                    if (!info.event.extendedProps.reservaId) {
+                        info.revert();
+                        return;
+                    }
+
+                    fetch('@Url.Action("MoverEvento", "Reservas")', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            negocioId: negocioId,
+                            reservaId: info.event.extendedProps.reservaId,
+                            inicio: info.event.start.toISOString(),
+                            fin: info.event.end ? info.event.end.toISOString() : info.event.start.toISOString()
+                        })
+                    })
+                    .then(async r => {
+                        const payload = await r.json();
+                        if (!r.ok || !payload.ok) {
+                            throw new Error(payload.mensaje || 'No se pudo mover la reserva.');
+                        }
+                    })
+                    .catch(err => {
+                        alert(err.message);
+                        info.revert();
+                    });
+                },
+                eventResize: function(info) {
+                    if (!info.event.extendedProps.reservaId) {
+                        info.revert();
+                        return;
+                    }
+
+                    fetch('@Url.Action("MoverEvento", "Reservas")', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            negocioId: negocioId,
+                            reservaId: info.event.extendedProps.reservaId,
+                            inicio: info.event.start.toISOString(),
+                            fin: info.event.end ? info.event.end.toISOString() : info.event.start.toISOString()
+                        })
+                    })
+                    .then(async r => {
+                        const payload = await r.json();
+                        if (!r.ok || !payload.ok) {
+                            throw new Error(payload.mensaje || 'No se pudo redimensionar la reserva.');
+                        }
+                    })
+                    .catch(err => {
+                        alert(err.message);
+                        info.revert();
+                    });
+                },
+                eventClick: function(info) {
+                    if (!info.event.extendedProps.reservaId) {
+                        return;
+                    }
+
+                    const estado = info.event.extendedProps.estado;
+                    let nuevoEstado = null;
+                    let accion = '';
+
+                    if (estado === 1 || estado === 2) {
+                        nuevoEstado = 3;
+                        accion = 'Check-in';
+                    } else if (estado === 3) {
+                        nuevoEstado = 4;
+                        accion = 'Check-out';
+                    } else {
+                        return;
+                    }
+
+                    if (!confirm('Deseas ejecutar ' + accion + ' para esta reserva?')) {
+                        return;
+                    }
+
+                    fetch('@Url.Action("CambiarEstadoRapido", "Reservas")', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            negocioId: negocioId,
+                            reservaId: info.event.extendedProps.reservaId,
+                            nuevoEstado: nuevoEstado
+                        })
+                    })
+                    .then(async r => {
+                        const payload = await r.json();
+                        if (!r.ok || !payload.ok) {
+                            throw new Error(payload.mensaje || 'No se pudo cambiar el estado.');
+                        }
+                        calendar.refetchEvents();
+                    })
+                    .catch(err => {
+                        alert(err.message);
+                    });
+                }
+            });
+
+            calendar.render();
+            formFiltros.addEventListener('submit', () => {
+                const inicio = document.getElementById('fechaDesde').value;
+                if (inicio) {
+                    calendar.gotoDate(inicio);
+                }
+            });
+        })();
+    </script>
+}

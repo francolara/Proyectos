@@ -1,0 +1,192 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.HomeIndexViewModel
+@using System.Linq
+<!-- Firma: Codex - 27/03/2026 -->
+
+@{
+    ViewData["Title"] = "Portal deportivo";
+}
+
+<section class="hero-publico p-4 p-md-5 rounded-4 mb-4">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="display-6 fw-bold mb-3">Reserva tu cancha en minutos</h1>
+            <p class="mb-0">
+                Busca espacios por sede, horario y deporte. Si te conviene uno, envia tu solicitud y te confirmamos por telefono/correo.
+            </p>
+        </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+            <a class="btn btn-light fw-semibold" asp-area="Identity" asp-page="/Account/Login">Iniciar sesion</a>
+            <a class="btn btn-outline-light fw-semibold ms-2" asp-action="ConsultarSolicitud">Consultar solicitud</a>
+        </div>
+    </div>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(Model.MensajeSolicitud))
+{
+    <div class="alert alert-success">@Model.MensajeSolicitud</div>
+}
+@if (!ViewData.ModelState.IsValid)
+{
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+}
+
+<section id="buscar" class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <h2 class="h5 mb-3">Buscar disponibilidad</h2>
+        <form asp-action="Index" method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Fecha</label>
+                <input class="form-control" type="date" name="fecha" value="@Model.Fecha.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Hora inicio</label>
+                <input class="form-control" type="time" name="horaInicio" value="@Model.HoraInicio.ToString("HH\\:mm")" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Hora fin</label>
+                <input class="form-control" type="time" name="horaFin" value="@Model.HoraFin.ToString("HH\\:mm")" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Sede</label>
+                <select class="form-select" name="sedeId">
+                    <option value="">Todas</option>
+                    @foreach (var sede in Model.Sedes)
+                    {
+                        <option value="@sede.Id" selected="@(Model.SedeId == sede.Id)">@sede.Nombre</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Deporte</label>
+                <select class="form-select" name="tipoDeporteId">
+                    <option value="">Todos</option>
+                    @foreach (var deporte in Model.TiposDeporte)
+                    {
+                        <option value="@deporte.Id" selected="@(Model.TipoDeporteId == deporte.Id)">@deporte.Nombre</option>
+                    }
+                </select>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">Buscar</button>
+            </div>
+        </form>
+    </div>
+</section>
+
+<section class="mb-4">
+    <h2 class="h5 mb-3">Espacios disponibles</h2>
+    @if (Model.Disponibles.Count == 0)
+    {
+        <div class="alert alert-warning mb-0">
+            No hay espacios disponibles con los filtros seleccionados.
+        </div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var item in Model.Disponibles)
+            {
+                var collapseId = $"solicitud-{item.EspacioDeportivoId}";
+                var numeroWhatsappEspacio = string.IsNullOrWhiteSpace(item.WhatsappContacto)
+                    ? string.Empty
+                    : new string(item.WhatsappContacto.Where(char.IsDigit).ToArray());
+                var mensajeWhatsappEspacio = Uri.EscapeDataString($"Hola, quiero reservar {item.NombreEspacio} en la sede {item.SedeNombre} para {Model.Fecha:dd/MM/yyyy} de {Model.HoraInicio:HH\\:mm} a {Model.HoraFin:HH\\:mm}.");
+                var enlaceWhatsappEspacio = string.IsNullOrWhiteSpace(numeroWhatsappEspacio)
+                    ? string.Empty
+                    : $"https://wa.me/{numeroWhatsappEspacio}?text={mensajeWhatsappEspacio}";
+                <div class="col-md-6 col-xl-4">
+                    <article class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+                            <span class="badge text-bg-success mb-2">Disponible</span>
+                            <h3 class="h6 fw-bold mb-1">@item.NombreEspacio (@item.Codigo)</h3>
+                            <p class="mb-1"><strong>Sede:</strong> @item.SedeNombre</p>
+                            <p class="mb-1"><strong>Deporte:</strong> @item.TipoDeporteNombre</p>
+                            <p class="mb-2">
+                                <strong>Caracteristicas:</strong>
+                                @(item.Techada ? "Techada" : "No techada"),
+                                @(item.TieneIluminacion ? "con iluminacion" : "sin iluminacion")
+                            </p>
+
+                            <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#@collapseId" aria-expanded="false">
+                                Solicitar reserva
+                            </button>
+                            @if (item.PermiteChatWhatsapp && !string.IsNullOrWhiteSpace(numeroWhatsappEspacio))
+                            {
+                                <a class="btn btn-success btn-sm ms-2"
+                                   href="@enlaceWhatsappEspacio"
+                                   target="_blank"
+                                   rel="noopener noreferrer">
+                                    Chatear por WhatsApp
+                                </a>
+                            }
+
+                            <div class="collapse mt-3" id="@collapseId">
+                                <form asp-action="SolicitarReservaPublica" method="post" class="border rounded p-2">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="EspacioDeportivoId" value="@item.EspacioDeportivoId" />
+                                    <input type="hidden" name="Fecha" value="@Model.Fecha.ToString("yyyy-MM-dd")" />
+                                    <input type="hidden" name="HoraInicio" value="@Model.HoraInicio.ToString("HH\\:mm")" />
+                                    <input type="hidden" name="HoraFin" value="@Model.HoraFin.ToString("HH\\:mm")" />
+                                    <input type="hidden" name="SedeId" value="@Model.SedeId" />
+                                    <input type="hidden" name="TipoDeporteId" value="@Model.TipoDeporteId" />
+
+                                    <div class="mb-2">
+                                        <label class="form-label small">Nombre completo</label>
+                                        <input name="NombreSolicitante" class="form-control form-control-sm" required />
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small">Telefono</label>
+                                        <input name="Telefono" class="form-control form-control-sm" required />
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small">Correo (opcional)</label>
+                                        <input name="Correo" type="email" class="form-control form-control-sm" />
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small">Comentario (opcional)</label>
+                                        <textarea name="Comentario" class="form-control form-control-sm" rows="2"></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-sm btn-primary">Enviar solicitud</button>
+                                </form>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            }
+        </div>
+    }
+</section>
+
+<section class="mb-2">
+    <h2 class="h5 mb-3">Sedes registradas</h2>
+    <div class="row g-3">
+        @foreach (var sede in Model.Sedes)
+        {
+            var numeroWhatsapp = string.IsNullOrWhiteSpace(sede.WhatsappContacto)
+                ? string.Empty
+                : new string(sede.WhatsappContacto.Where(char.IsDigit).ToArray());
+            var mensajeWhatsapp = Uri.EscapeDataString($"Hola, quiero informacion sobre horarios y reservas en la sede {sede.Nombre}.");
+            var enlaceWhatsapp = string.IsNullOrWhiteSpace(numeroWhatsapp)
+                ? string.Empty
+                : $"https://wa.me/{numeroWhatsapp}?text={mensajeWhatsapp}";
+            <div class="col-md-6 col-xl-4">
+                <article class="card h-100 border-0 shadow-sm">
+                    <div class="card-body">
+                        <h3 class="h6 fw-bold mb-1">@sede.Nombre</h3>
+                        <p class="mb-1">@sede.Direccion</p>
+                        <p class="mb-2">@(string.IsNullOrWhiteSpace(sede.Telefono) ? "Sin telefono registrado" : sede.Telefono)</p>
+                        @if (sede.PermiteChatWhatsapp && !string.IsNullOrWhiteSpace(numeroWhatsapp))
+                        {
+                            <a class="btn btn-sm btn-success"
+                               href="@enlaceWhatsapp"
+                               target="_blank"
+                               rel="noopener noreferrer">
+                                Chatear por WhatsApp
+                            </a>
+                        }
+                    </div>
+                </article>
+            </div>
+        }
+    </div>
+</section>

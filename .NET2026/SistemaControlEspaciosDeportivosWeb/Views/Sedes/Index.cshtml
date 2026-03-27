@@ -1,0 +1,76 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.SedesIndexViewModel
+
+@{
+    ViewData["Title"] = "Sedes";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h4 mb-1">Sedes</h1>
+        <p class="text-muted mb-0">@Model.NegocioNombre | Rol: @Model.RolActual</p>
+    </div>
+    <div class="d-flex gap-2">
+        @if (Model.PuedeCrear)
+        {
+            <a class="btn btn-primary" asp-action="Create" asp-route-negocioId="@Model.NegocioId">Nueva sede</a>
+        }
+        <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Panel</a>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-sm table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Direccion</th>
+                <th>Servicios</th>
+                <th>Notificaciones</th>
+                <th>Contacto</th>
+                <th>Estado</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Sedes)
+            {
+                <tr>
+                    <td>@item.Nombre</td>
+                    <td>@item.Direccion</td>
+                    <td>@(string.IsNullOrWhiteSpace(item.Servicios) ? "-" : item.Servicios)</td>
+                    <td>
+                        @if (item.NotificacionesActivas)
+                        {
+                            <span class="badge text-bg-success">Activas</span>
+                            <div class="small text-muted">@item.MinutosAnticipacionRecordatorio min antes | No-show @item.MinutosToleranciaNoShow min</div>
+                        }
+                        else
+                        {
+                            <span class="badge text-bg-secondary">Inactivas</span>
+                        }
+                    </td>
+                    <td>
+                        <div class="small">Correo: @(string.IsNullOrWhiteSpace(item.CorreoNotificacion) ? "-" : item.CorreoNotificacion)</div>
+                        <div class="small">WhatsApp: @(string.IsNullOrWhiteSpace(item.WhatsappContacto) ? "-" : item.WhatsappContacto)</div>
+                    </td>
+                    <td>@(item.Activo ? "Activa" : "Inactiva")</td>
+                    <td class="text-end">
+                        @if (Model.PuedeEditar)
+                        {
+                            <a class="btn btn-sm btn-outline-warning" asp-action="Edit" asp-route-negocioId="@Model.NegocioId" asp-route-id="@item.Id">Editar</a>
+                        }
+                        @if (Model.PuedeEliminar)
+                        {
+                            <form asp-action="Delete" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                                <input type="hidden" name="id" value="@item.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

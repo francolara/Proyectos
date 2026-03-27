@@ -1,0 +1,49 @@
+@using SistemaControlEspaciosDeportivosWeb.Models
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.PagoFormViewModel
+
+@{
+    ViewData["Title"] = "Editar pago";
+}
+
+<h1 class="h4 mb-3">Editar pago</h1>
+
+<form asp-action="Edit" method="post" class="card card-body shadow-sm">
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="NegocioId" />
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label asp-for="ReservaId" class="form-label">Reserva</label>
+            <select asp-for="ReservaId" asp-items="Model.Reservas" class="form-select"></select>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Monto" class="form-label"></label>
+            <input asp-for="Monto" class="form-control" />
+        </div>
+        <div class="col-md-3">
+            <label asp-for="FormaPago" class="form-label"></label>
+            <select asp-for="FormaPago" asp-items="Html.GetEnumSelectList<FormaPago>()" class="form-select"></select>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="FechaPago" class="form-label"></label>
+            <input asp-for="FechaPago" class="form-control" type="datetime-local" />
+        </div>
+        <div class="col-md-4">
+            <label asp-for="NumeroOperacion" class="form-label"></label>
+            <input asp-for="NumeroOperacion" class="form-control" />
+        </div>
+        <div class="col-md-12">
+            <label asp-for="Observacion" class="form-label"></label>
+            <input asp-for="Observacion" class="form-control" />
+        </div>
+    </div>
+    <div class="mt-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+        <a class="btn btn-outline-secondary" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Cancelar</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+

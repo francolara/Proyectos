@@ -1,0 +1,61 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.ClientesIndexViewModel
+
+@{
+    ViewData["Title"] = "Clientes";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h4 mb-1">Clientes</h1>
+        <p class="text-muted mb-0">@Model.NegocioNombre | Rol: @Model.RolActual</p>
+    </div>
+    <div class="d-flex gap-2">
+        @if (Model.PuedeCrear)
+        {
+            <a class="btn btn-primary" asp-action="Create" asp-route-negocioId="@Model.NegocioId">Nuevo cliente</a>
+        }
+        <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Panel</a>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-sm table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Nombre / Razon social</th>
+                <th>Documento</th>
+                <th>Telefono</th>
+                <th>Correo</th>
+                <th>Estado</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Clientes)
+            {
+                <tr>
+                    <td>@item.NombresORazonSocial</td>
+                    <td>@item.TipoDocumento @item.NumeroDocumento</td>
+                    <td>@(string.IsNullOrWhiteSpace(item.Telefono) ? "-" : item.Telefono)</td>
+                    <td>@(string.IsNullOrWhiteSpace(item.Correo) ? "-" : item.Correo)</td>
+                    <td>@(item.Activo ? "Activo" : "Inactivo")</td>
+                    <td class="text-end">
+                        @if (Model.PuedeEditar)
+                        {
+                            <a class="btn btn-sm btn-outline-warning" asp-action="Edit" asp-route-negocioId="@Model.NegocioId" asp-route-id="@item.Id">Editar</a>
+                        }
+                        @if (Model.PuedeEliminar)
+                        {
+                            <form asp-action="Delete" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                                <input type="hidden" name="id" value="@item.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

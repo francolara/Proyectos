@@ -1,0 +1,112 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.SolicitudesIndexViewModel
+
+@{
+    ViewData["Title"] = "Solicitudes publicas";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h4 mb-1">Solicitudes publicas</h1>
+        <p class="text-muted mb-0">@Model.NegocioNombre | Rol: @Model.RolActual</p>
+    </div>
+    <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Panel</a>
+</div>
+
+@if (TempData["MensajeSolicitudInterna"] is string okMsg)
+{
+    <div class="alert alert-success">@okMsg</div>
+}
+@if (TempData["MensajeSolicitudInternaError"] is string errMsg)
+{
+    <div class="alert alert-danger">@errMsg</div>
+}
+
+<form method="get" asp-action="Index" class="card card-body shadow-sm mb-3">
+    <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+    <div class="row g-2 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label">Desde</label>
+            <input type="date" class="form-control" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Hasta</label>
+            <input type="date" class="form-control" name="fechaHasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Estado</label>
+            <select class="form-select" name="estado">
+                <option value="">Todos</option>
+                <option value="1" selected="@(Model.Estado == 1)">Pendiente</option>
+                <option value="2" selected="@(Model.Estado == 2)">Aprobada</option>
+                <option value="3" selected="@(Model.Estado == 3)">Rechazada</option>
+                <option value="4" selected="@(Model.Estado == 4)">Convertida</option>
+            </select>
+        </div>
+        <div class="col-md-2 d-grid">
+            <button type="submit" class="btn btn-primary">Filtrar</button>
+        </div>
+    </div>
+</form>
+
+<div class="table-responsive">
+    <table class="table table-sm table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Codigo</th>
+                <th>Sede / Espacio</th>
+                <th>Fecha / Hora</th>
+                <th>Solicitante</th>
+                <th>Estado</th>
+                <th class="text-end">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Solicitudes)
+            {
+                var estadoTxt = item.Estado switch
+                {
+                    1 => "Pendiente",
+                    2 => "Aprobada",
+                    3 => "Rechazada",
+                    4 => $"Convertida (#{item.ReservaId})",
+                    _ => item.Estado.ToString()
+                };
+
+                <tr>
+                    <td>@item.CodigoSolicitud</td>
+                    <td>@item.Sede<br /><span class="text-muted">@item.Espacio</span></td>
+                    <td>@item.Fecha.ToString("dd/MM/yyyy")<br /><span class="text-muted">@item.HoraInicio.ToString("HH\\:mm") - @item.HoraFin.ToString("HH\\:mm")</span></td>
+                    <td>@item.NombreSolicitante<br /><span class="text-muted">@item.Telefono</span></td>
+                    <td>@estadoTxt</td>
+                    <td class="text-end">
+                        @if (Model.PuedeEditar && item.Estado == 1)
+                        {
+                            <form asp-action="Aprobar" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="NegocioId" value="@Model.NegocioId" />
+                                <input type="hidden" name="Id" value="@item.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-success">Aprobar</button>
+                            </form>
+                            <form asp-action="Rechazar" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="NegocioId" value="@Model.NegocioId" />
+                                <input type="hidden" name="Id" value="@item.Id" />
+                                <input type="hidden" name="ComentarioGestion" value="Rechazada por operador" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Rechazar</button>
+                            </form>
+                            <form asp-action="Convertir" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="NegocioId" value="@Model.NegocioId" />
+                                <input type="hidden" name="Id" value="@item.Id" />
+                                <input type="hidden" name="EstadoReserva" value="1" />
+                                <input type="hidden" name="Total" value="0" />
+                                <input type="hidden" name="Adelanto" value="0" />
+                                <button type="submit" class="btn btn-sm btn-outline-primary">Convertir</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
