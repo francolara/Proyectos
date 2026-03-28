@@ -1,8 +1,43 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.PanelDashboardViewModel
 <!-- Firma: Codex - 27/03/2026 -->
+@{
+    ViewData["Title"] = "Panel administrativo";
+    ViewData["AdminShell"] = true;
+    ViewData["AdminNegocioId"] = Model.NegocioSeleccionadoId;
+    string? controller = null;
 
-@functions {
-    private static string? ObtenerControlador(string codigo) => codigo switch
+    string moduloIcon(string codigo) => codigo switch
+    {
+        "DASHBOARD" => "bi-speedometer2",
+        "RESERVAS" => "bi-calendar-check",
+        "CLIENTES" => "bi-people",
+        "ESPACIOS" => "bi-grid-1x2",
+        "PROMOCIONES" => "bi-tags",
+        "PAGOS" => "bi-wallet2",
+        "REPORTES" => "bi-graph-up-arrow",
+        "USUARIOS" => "bi-person-gear",
+        "SEDES" => "bi-geo-alt",
+        "SOLICITUDES" => "bi-inboxes",
+        "COMPROBANTES" => "bi-receipt",
+        _ => "bi-app-indicator"
+    };
+
+    string moduloDescripcion(string codigo) => codigo switch
+    {
+        "RESERVAS" => "Gestiona agenda, horarios y estado de reservas.",
+        "CLIENTES" => "Administra el padron de clientes y su historial.",
+        "ESPACIOS" => "Configura canchas, capacidad y disponibilidad.",
+        "PROMOCIONES" => "Define tarifas, descuentos y promociones horarias.",
+        "PAGOS" => "Registra cobros, adelantos y conciliacion diaria.",
+        "REPORTES" => "Analiza ingresos, ocupacion y rendimiento.",
+        "USUARIOS" => "Controla acceso, roles y permisos internos.",
+        "SEDES" => "Configura sedes, servicios y notificaciones.",
+        "SOLICITUDES" => "Atiende solicitudes publicas pendientes.",
+        "COMPROBANTES" => "Emite y consulta boletas/facturas.",
+        _ => "Accede a la operacion del modulo seleccionado."
+    };
+
+    string? moduloController(string codigo) => codigo switch
     {
         "SEDES" => "Sedes",
         "CLIENTES" => "Clientes",
@@ -18,140 +53,155 @@
     };
 }
 
-@{
-    ViewData["Title"] = "Panel de negocio";
-}
+<section>
+        <header class="sc-admin-topbar">
+            <div class="sc-admin-topbar-head">
+                <h1>Panel administrativo</h1>
+                <p>Resumen general del negocio</p>
+            </div>
 
-@if (!string.IsNullOrWhiteSpace(Model.Mensaje))
-{
-    <div class="alert alert-warning">
-        @Model.Mensaje
-    </div>
-}
-else
-{
-    <section class="mb-4">
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-            <div>
-                <h1 class="h3 mb-1">Panel privado</h1>
-                <p class="mb-0 text-muted">Rol actual: <strong>@Model.RolActual</strong></p>
-            </div>
-            <form asp-action="Index" method="get" class="d-flex gap-2">
-                <select name="negocioId" class="form-select">
-                    @foreach (var negocio in Model.Negocios)
-                    {
-                        <option value="@negocio.NegocioId" selected="@(negocio.NegocioId == Model.NegocioSeleccionadoId)">
-                            @negocio.NombreNegocio (@negocio.Rol)
-                        </option>
-                    }
-                </select>
-                <button type="submit" class="btn btn-outline-primary">Cambiar</button>
-            </form>
-        </div>
-    </section>
-
-    <section class="row g-3 mb-4">
-        <div class="col-md-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <p class="text-muted mb-1">Sedes</p>
-                    <p class="h4 mb-0">@Model.TotalSedes</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <p class="text-muted mb-1">Espacios</p>
-                    <p class="h4 mb-0">@Model.TotalEspacios</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <p class="text-muted mb-1">Reservas hoy</p>
-                    <p class="h4 mb-0">@Model.ReservasHoy</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <p class="text-muted mb-1">Ingresos hoy</p>
-                    <p class="h4 mb-0">S/ @Model.IngresosHoy.ToString("N2")</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6 col-xl-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <p class="text-muted mb-1">Ocupacion hoy</p>
-                    <p class="h4 mb-0">@Model.OcupacionHoyPct.ToString("N2")%</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6 col-xl-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <p class="text-muted mb-1">No show del mes</p>
-                    <p class="h4 mb-0">@Model.NoShowMes</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-12 col-xl-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <p class="text-muted mb-1">Ticket promedio del mes</p>
-                    <p class="h4 mb-0">S/ @Model.TicketPromedioMes.ToString("N2")</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="card border-0 shadow-sm">
-        <div class="card-body">
-            <h2 class="h5 mb-3">Modulos habilitados</h2>
-            <div class="row g-3">
-                @foreach (var modulo in Model.Modulos)
-                {
-                    var controlador = ObtenerControlador(modulo.ModuloCodigo);
-                    <div class="col-md-6 col-xl-4">
-                        <article class="card border-light h-100">
-                            <div class="card-body">
-                                <h3 class="h6 mb-2">@modulo.ModuloNombre</h3>
-                                <div class="d-flex flex-wrap gap-1">
-                                    @if (modulo.PuedeCrear)
-                                    {
-                                        <span class="badge text-bg-primary">Crear</span>
-                                    }
-                                    @if (modulo.PuedeEditar)
-                                    {
-                                        <span class="badge text-bg-warning">Editar</span>
-                                    }
-                                    @if (modulo.PuedeEliminar)
-                                    {
-                                        <span class="badge text-bg-danger">Eliminar</span>
-                                    }
-                                    @if (!modulo.PuedeCrear && !modulo.PuedeEditar && !modulo.PuedeEliminar)
-                                    {
-                                        <span class="badge text-bg-secondary">Solo lectura</span>
-                                    }
-                                </div>
-                                @if (!string.IsNullOrWhiteSpace(controlador))
-                                {
-                                    <a class="btn btn-sm btn-outline-primary mt-3"
-                                       asp-controller="@controlador"
-                                       asp-action="Index"
-                                       asp-route-negocioId="@Model.NegocioSeleccionadoId">
-                                        Abrir modulo
-                                    </a>
-                                }
-                            </div>
-                        </article>
+            <div class="sc-admin-topbar-actions">
+                <form asp-action="Index" method="get" class="sc-admin-switcher">
+                    <label for="negocioIdSelect">Club / negocio</label>
+                    <div class="sc-admin-switcher-controls">
+                        <select id="negocioIdSelect" name="negocioId" class="form-select">
+                            @foreach (var negocio in Model.Negocios)
+                            {
+                                <option value="@negocio.NegocioId" selected="@(negocio.NegocioId == Model.NegocioSeleccionadoId)">
+                                    @negocio.NombreNegocio (@negocio.Rol)
+                                </option>
+                            }
+                        </select>
+                        <button type="submit" class="btn btn-primary">Cambiar</button>
                     </div>
-                }
+                </form>
+                <div class="sc-admin-userbox">
+                    <i class="bi bi-person-circle"></i>
+                    <div>
+                        <strong>@(User.Identity?.Name ?? "Usuario")</strong>
+                        <span>Rol: @Model.RolActual</span>
+                    </div>
+                    <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })" method="post">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-secondary">Cerrar sesion</button>
+                    </form>
+                </div>
             </div>
+        </header>
+
+        <div class="sc-admin-content">
+            @if (!string.IsNullOrWhiteSpace(Model.Mensaje))
+            {
+                <div class="alert alert-warning sc-admin-alert">@Model.Mensaje</div>
+            }
+
+            <section class="sc-kpi-grid-primary">
+                <article class="sc-kpi-card sc-kpi-emerald">
+                    <div class="sc-kpi-icon"><i class="bi bi-cash-coin"></i></div>
+                    <p>Ingresos hoy</p>
+                    <h2>S/ @Model.IngresosHoy.ToString("N2")</h2>
+                </article>
+                <article class="sc-kpi-card sc-kpi-indigo">
+                    <div class="sc-kpi-icon"><i class="bi bi-calendar-event"></i></div>
+                    <p>Reservas hoy</p>
+                    <h2>@Model.ReservasHoy</h2>
+                </article>
+                <article class="sc-kpi-card sc-kpi-cyan">
+                    <div class="sc-kpi-icon"><i class="bi bi-pie-chart"></i></div>
+                    <p>Ocupacion hoy</p>
+                    <h2>@Model.OcupacionHoyPct.ToString("N2")%</h2>
+                </article>
+                <article class="sc-kpi-card sc-kpi-amber">
+                    <div class="sc-kpi-icon"><i class="bi bi-graph-up"></i></div>
+                    <p>Ticket promedio</p>
+                    <h2>S/ @Model.TicketPromedioMes.ToString("N2")</h2>
+                </article>
+            </section>
+
+            <section class="sc-kpi-grid-secondary">
+                <article class="sc-mini-kpi">
+                    <i class="bi bi-person-x"></i>
+                    <div>
+                        <p>No show del mes</p>
+                        <strong>@Model.NoShowMes</strong>
+                    </div>
+                </article>
+                <article class="sc-mini-kpi">
+                    <i class="bi bi-grid"></i>
+                    <div>
+                        <p>Espacios activos</p>
+                        <strong>@Model.TotalEspacios</strong>
+                    </div>
+                </article>
+                <article class="sc-mini-kpi">
+                    <i class="bi bi-people-fill"></i>
+                    <div>
+                        <p>Clientes registrados</p>
+                        <strong>--</strong>
+                    </div>
+                </article>
+                <article class="sc-mini-kpi">
+                    <i class="bi bi-hourglass-split"></i>
+                    <div>
+                        <p>Pendientes por confirmar</p>
+                        <strong>--</strong>
+                    </div>
+                </article>
+            </section>
+
+            <section class="sc-module-section">
+                <div class="sc-section-head">
+                    <h3>Modulos principales</h3>
+                    <p>Accede rapidamente a las herramientas de operacion diaria y configuracion del negocio.</p>
+                </div>
+
+                <div class="sc-module-grid">
+                    @foreach (var modulo in Model.Modulos)
+                    {
+                        controller = moduloController(modulo.ModuloCodigo);
+                        <article class="sc-module-card">
+                            <div class="sc-module-icon">
+                                <i class="bi @moduloIcon(modulo.ModuloCodigo)"></i>
+                            </div>
+                            <h4>@modulo.ModuloNombre</h4>
+                            <p>@moduloDescripcion(modulo.ModuloCodigo)</p>
+                            @if (!string.IsNullOrWhiteSpace(controller))
+                            {
+                                <a class="btn btn-primary" asp-controller="@controller" asp-action="Index" asp-route-negocioId="@Model.NegocioSeleccionadoId">Abrir modulo</a>
+                            }
+                        </article>
+                    }
+                </div>
+            </section>
+
+            <section class="sc-activity-section">
+                <div class="sc-section-head">
+                    <h3>Actividad reciente</h3>
+                    <p>Resumen rapido de eventos clave del negocio.</p>
+                </div>
+                <div class="sc-activity-list">
+                    <article class="sc-activity-item">
+                        <span class="dot dot-warning"></span>
+                        <div>
+                            <h5>Solicitudes pendientes</h5>
+                            <p>Revisa el modulo de solicitudes para confirmar reservas publicas.</p>
+                        </div>
+                    </article>
+                    <article class="sc-activity-item">
+                        <span class="dot dot-success"></span>
+                        <div>
+                            <h5>Pagos del dia</h5>
+                            <p>Ingresos acumulados hoy: <strong>S/ @Model.IngresosHoy.ToString("N2")</strong>.</p>
+                        </div>
+                    </article>
+                    <article class="sc-activity-item">
+                        <span class="dot dot-info"></span>
+                        <div>
+                            <h5>Ocupacion operativa</h5>
+                            <p>Ocupacion actual del dia: <strong>@Model.OcupacionHoyPct.ToString("N2")%</strong>.</p>
+                        </div>
+                    </article>
+                </div>
+            </section>
         </div>
     </section>
-}

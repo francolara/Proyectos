@@ -1,4 +1,5 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.SolicitudesIndexViewModel
+<!-- Firma: Codex - 27/03/2026 -->
 
 @{
     ViewData["Title"] = "Solicitudes publicas";
@@ -9,7 +10,10 @@
         <h1 class="h4 mb-1">Solicitudes publicas</h1>
         <p class="text-muted mb-0">@Model.NegocioNombre | Rol: @Model.RolActual</p>
     </div>
-    <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Panel</a>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-primary" asp-controller="AltasClubes" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Altas de clubes</a>
+        <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Panel</a>
+    </div>
 </div>
 
 @if (TempData["MensajeSolicitudInterna"] is string okMsg)

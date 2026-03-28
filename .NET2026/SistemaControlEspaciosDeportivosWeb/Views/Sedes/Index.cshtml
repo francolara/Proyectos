@@ -1,4 +1,5 @@
-@model SistemaControlEspaciosDeportivosWeb.ViewModels.SedesIndexViewModel
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.SedesIndexViewModel
+<!-- Firma: Codex - 28/03/2026 | Mejora visual de botones de accion Editar/Eliminar con estilo premium reusable -->
 
 @{
     ViewData["Title"] = "Sedes";
@@ -25,6 +26,7 @@
                 <th>Nombre</th>
                 <th>Direccion</th>
                 <th>Servicios</th>
+                <th>Atencion</th>
                 <th>Notificaciones</th>
                 <th>Contacto</th>
                 <th>Estado</th>
@@ -38,6 +40,11 @@
                     <td>@item.Nombre</td>
                     <td>@item.Direccion</td>
                     <td>@(string.IsNullOrWhiteSpace(item.Servicios) ? "-" : item.Servicios)</td>
+                    <td>
+                        <div class="small fw-semibold">@(string.IsNullOrWhiteSpace(item.DiasAtencion) ? "-" : item.DiasAtencion)</div>
+                        <div class="small text-muted">@item.HorarioAtencion</div>
+                        <div class="small text-muted">Fechas no laborables: @item.FechasNoLaborablesCount</div>
+                    </td>
                     <td>
                         @if (item.NotificacionesActivas)
                         {
@@ -57,7 +64,9 @@
                     <td class="text-end">
                         @if (Model.PuedeEditar)
                         {
-                            <a class="btn btn-sm btn-outline-warning" asp-action="Edit" asp-route-negocioId="@Model.NegocioId" asp-route-id="@item.Id">Editar</a>
+                            <a class="btn btn-sm sc-action-btn sc-action-edit" asp-action="Edit" asp-route-negocioId="@Model.NegocioId" asp-route-id="@item.Id">
+                                <i class="bi bi-pencil-square"></i> Editar
+                            </a>
                         }
                         @if (Model.PuedeEliminar)
                         {
@@ -65,7 +74,9 @@
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="negocioId" value="@Model.NegocioId" />
                                 <input type="hidden" name="id" value="@item.Id" />
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                                <button type="submit" class="btn btn-sm sc-action-btn sc-action-delete">
+                                    <i class="bi bi-trash3"></i> Eliminar
+                                </button>
                             </form>
                         }
                     </td>
@@ -74,3 +85,4 @@
         </tbody>
     </table>
 </div>
+

@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace SistemaControlEspaciosDeportivosWeb.ViewModels;
 
@@ -46,31 +46,31 @@ public class EspacioDisponibleViewModel
 
 public class SolicitudReservaPublicaFormViewModel
 {
-    [Required]
+    [Required(ErrorMessage = "Este campo es obligatorio.")]
     public int EspacioDeportivoId { get; set; }
 
-    [Required]
+    [Required(ErrorMessage = "Este campo es obligatorio.")]
     public DateOnly Fecha { get; set; }
 
-    [Required]
+    [Required(ErrorMessage = "Este campo es obligatorio.")]
     public TimeOnly HoraInicio { get; set; }
 
-    [Required]
+    [Required(ErrorMessage = "Este campo es obligatorio.")]
     public TimeOnly HoraFin { get; set; }
 
-    [Required]
-    [StringLength(200)]
+    [Required(ErrorMessage = "Este campo es obligatorio.")]
+    [StringLength(200, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string NombreSolicitante { get; set; } = string.Empty;
 
-    [Required]
-    [StringLength(30)]
+    [Required(ErrorMessage = "Este campo es obligatorio.")]
+    [StringLength(30, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string Telefono { get; set; } = string.Empty;
 
-    [StringLength(200)]
-    [EmailAddress]
+    [StringLength(200, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+    [EmailAddress(ErrorMessage = "Ingresa un correo electronico valido.")]
     public string? Correo { get; set; }
 
-    [StringLength(300)]
+    [StringLength(300, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string? Comentario { get; set; }
 
     public int? SedeId { get; set; }
@@ -96,12 +96,12 @@ public class SolicitudPublicaDetalleViewModel
 
 public class SolicitudPublicaSeguimientoViewModel
 {
-    [Required]
-    [StringLength(20)]
+    [Required(ErrorMessage = "Este campo es obligatorio.")]
+    [StringLength(20, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string CodigoSolicitud { get; set; } = string.Empty;
 
-    [Required]
-    [StringLength(30)]
+    [Required(ErrorMessage = "Este campo es obligatorio.")]
+    [StringLength(30, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string Telefono { get; set; } = string.Empty;
 
     public SolicitudPublicaDetalleViewModel? Resultado { get; set; }

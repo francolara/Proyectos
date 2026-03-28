@@ -15,12 +15,33 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = false)
+    .AddErrorDescriber<SpanishIdentityErrorDescriber>()
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
-builder.Services.AddControllersWithViews()
+builder.Services.AddControllersWithViews(options =>
+    {
+        options.ModelBindingMessageProvider.SetValueMustNotBeNullAccessor(_ => "Este campo es obligatorio.");
+        options.ModelBindingMessageProvider.SetAttemptedValueIsInvalidAccessor((valor, campo) => $"El valor '{valor}' no es valido para {campo}.");
+        options.ModelBindingMessageProvider.SetMissingBindRequiredValueAccessor(campo => $"El campo {campo} es obligatorio.");
+        options.ModelBindingMessageProvider.SetMissingKeyOrValueAccessor(() => "Se requiere un valor.");
+        options.ModelBindingMessageProvider.SetMissingRequestBodyRequiredValueAccessor(() => "El cuerpo de la solicitud es obligatorio.");
+        options.ModelBindingMessageProvider.SetNonPropertyAttemptedValueIsInvalidAccessor(valor => $"El valor '{valor}' no es valido.");
+        options.ModelBindingMessageProvider.SetNonPropertyUnknownValueIsInvalidAccessor(() => "El valor proporcionado no es valido.");
+        options.ModelBindingMessageProvider.SetNonPropertyValueMustBeANumberAccessor(() => "El valor debe ser numerico.");
+        options.ModelBindingMessageProvider.SetUnknownValueIsInvalidAccessor(campo => $"El valor proporcionado no es valido para {campo}.");
+        options.ModelBindingMessageProvider.SetValueIsInvalidAccessor(valor => $"El valor '{valor}' no es valido.");
+        options.ModelBindingMessageProvider.SetValueMustBeANumberAccessor(campo => $"El campo {campo} debe ser numerico.");
+    })
     .AddViewLocalization()
     .AddDataAnnotationsLocalization();
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.IdleTimeout = TimeSpan.FromMinutes(20);
+});
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.Configure<AutomationSettings>(builder.Configuration.GetSection("AutomationSettings"));
 builder.Services.AddScoped<IModuloPermisoService, ModuloPermisoService>();
@@ -58,6 +79,7 @@ else
 app.UseHttpsRedirection();
 app.UseRequestLocalization(localizationOptions);
 app.UseRouting();
+app.UseSession();
 
 app.UseAuthentication();
 app.UseAuthorization();

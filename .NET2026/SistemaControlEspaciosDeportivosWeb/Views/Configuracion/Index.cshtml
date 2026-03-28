@@ -1,0 +1,75 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.ConfiguracionClubViewModel
+<!-- Firma: Codex - 27/03/2026 | Configuracion del club editable con combo de moneda desde tabla Maestra -->
+<!-- Firma: Codex - 28/03/2026 | Se agrega Tipo de Documento, Numero Documento y Direccion Fiscal en configuracion del club -->
+@{
+    ViewData["Title"] = "Configuracion";
+}
+
+<header class="page-header">
+    <div>
+        <h1>Configuracion del club</h1>
+        <p class="page-subtitle">Edita los datos principales del negocio y la moneda de trabajo.</p>
+    </div>
+    <div class="action-toolbar">
+        <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">
+            <i class="bi bi-arrow-left"></i> Volver al panel
+        </a>
+    </div>
+</header>
+
+@if (TempData["ConfiguracionOk"] is string mensajeOk && !string.IsNullOrWhiteSpace(mensajeOk))
+{
+    <div class="alert alert-success">@mensajeOk</div>
+}
+
+<form asp-action="Index" method="post" class="sc-form-shell">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="NegocioId" />
+    <input type="hidden" asp-for="Id" />
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger shadow-sm mb-0"></div>
+
+    <section class="sc-form-card">
+        <div class="sc-form-section">
+            <h2 class="sc-form-title"><i class="bi bi-building"></i> Datos del club</h2>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label asp-for="NombreComercial" class="form-label">Nombre comercial</label>
+                    <input asp-for="NombreComercial" class="form-control" maxlength="200" required />
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="RazonSocial" class="form-label">Razon social</label>
+                    <input asp-for="RazonSocial" class="form-control" maxlength="200" />
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="TipoDocumento" class="form-label">Tipo de documento</label>
+                    <select asp-for="TipoDocumento" asp-items="Model.TiposDocumento" class="form-select"></select>
+                    <span asp-validation-for="TipoDocumento" class="text-danger"></span>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="NumeroDocumento" class="form-label">Numero documento</label>
+                    <input asp-for="NumeroDocumento" class="form-control" maxlength="20" />
+                    <span asp-validation-for="NumeroDocumento" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="MonedaId" class="form-label">Moneda de trabajo</label>
+                    <select asp-for="MonedaId" asp-items="Model.Monedas" class="form-select"></select>
+                </div>
+                <div class="col-12">
+                    <label asp-for="DireccionFiscal" class="form-label">Direccion fiscal</label>
+                    <input asp-for="DireccionFiscal" class="form-control" maxlength="250" />
+                    <span asp-validation-for="DireccionFiscal" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="sc-form-actions">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check2-circle me-1"></i> Guardar configuracion
+        </button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

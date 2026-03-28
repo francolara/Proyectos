@@ -7,9 +7,12 @@ namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 public class ClientesController(IModuloPermisoService moduloPermisoService, ISportCenterStoredProcedureService spService)
     : ModuloControllerBase(moduloPermisoService)
 {
-    public async Task<IActionResult> Index(int negocioId)
+    public async Task<IActionResult> Index(int? negocioId)
     {
-        var baseVm = await ObtenerBaseAsync(negocioId, "CLIENTES");
+        var resolvedNegocioId = await ResolverNegocioIdAsync(negocioId, spService);
+        if (!resolvedNegocioId.HasValue) return Forbid();
+
+        var baseVm = await ObtenerBaseAsync(resolvedNegocioId.Value, "CLIENTES");
         if (baseVm is null || !string.IsNullOrWhiteSpace(baseVm.Mensaje)) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "Acceso denegado." });
 
         var vm = new ClientesIndexViewModel
@@ -22,19 +25,22 @@ public class ClientesController(IModuloPermisoService moduloPermisoService, ISpo
             PuedeCrear = baseVm.PuedeCrear,
             PuedeEditar = baseVm.PuedeEditar,
             PuedeEliminar = baseVm.PuedeEliminar,
-            Clientes = await spService.ClientesListarAsync(negocioId)
+            Clientes = await spService.ClientesListarAsync(resolvedNegocioId.Value)
         };
         return View(vm);
     }
 
-    public async Task<IActionResult> Create(int negocioId)
+    public async Task<IActionResult> Create(int? negocioId)
     {
-        var baseVm = await ObtenerBaseAsync(negocioId, "CLIENTES");
+        var resolvedNegocioId = await ResolverNegocioIdAsync(negocioId, spService);
+        if (!resolvedNegocioId.HasValue) return Forbid();
+
+        var baseVm = await ObtenerBaseAsync(resolvedNegocioId.Value, "CLIENTES");
         if (baseVm is null || !baseVm.PuedeCrear) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
         return View(new ClienteFormViewModel
         {
-            NegocioId = negocioId,
+            NegocioId = resolvedNegocioId.Value,
             NegocioNombre = baseVm.NegocioNombre,
             RolActual = baseVm.RolActual,
             Activo = true
@@ -53,12 +59,15 @@ public class ClientesController(IModuloPermisoService moduloPermisoService, ISpo
         return RedirectToAction(nameof(Index), new { negocioId = model.NegocioId });
     }
 
-    public async Task<IActionResult> Edit(int negocioId, int id)
+    public async Task<IActionResult> Edit(int id, int? negocioId)
     {
-        var baseVm = await ObtenerBaseAsync(negocioId, "CLIENTES");
+        var resolvedNegocioId = await ResolverNegocioIdAsync(negocioId, spService);
+        if (!resolvedNegocioId.HasValue) return Forbid();
+
+        var baseVm = await ObtenerBaseAsync(resolvedNegocioId.Value, "CLIENTES");
         if (baseVm is null || !baseVm.PuedeEditar) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
-        var vm = await spService.ClientesObtenerAsync(negocioId, id);
+        var vm = await spService.ClientesObtenerAsync(resolvedNegocioId.Value, id);
         if (vm is null) return NotFound();
         vm.NegocioNombre = baseVm.NegocioNombre;
         vm.RolActual = baseVm.RolActual;
@@ -74,7 +83,11 @@ public class ClientesController(IModuloPermisoService moduloPermisoService, ISpo
         if (!ModelState.IsValid) return View(model);
 
         var ok = await spService.ClientesActualizarAsync(model, User.Identity?.Name ?? "sistema");
-        if (!ok) return NotFound();
+        if (!ok)
+        {
+            ModelState.AddModelError(string.Empty, "No se pudo guardar el cliente. Verifica el negocio seleccionado.");
+            return View(model);
+        }
         return RedirectToAction(nameof(Index), new { negocioId = model.NegocioId });
     }
 

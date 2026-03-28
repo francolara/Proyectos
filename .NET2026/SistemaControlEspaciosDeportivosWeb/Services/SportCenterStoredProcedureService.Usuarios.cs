@@ -46,6 +46,10 @@ public partial class SportCenterStoredProcedureService
 
     public async Task<bool> UsuariosNegocioActualizarRolAsync(int negocioId, int usuarioNegocioId, int rolNegocio, string usuario)
     {
+        var usuarioActual = (await UsuariosNegocioListarAsync(negocioId))
+            .FirstOrDefault(x => x.UsuarioNegocioId == usuarioNegocioId);
+        if (usuarioActual is null) return false;
+
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_UsuariosNegocio_ActualizarRol", cn) { CommandType = CommandType.StoredProcedure };
@@ -53,18 +57,24 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@UsuarioNegocioId", usuarioNegocioId, SqlDbType.Int);
         AddParam(cmd, "@RolNegocio", rolNegocio, SqlDbType.Int);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        return await cmd.ExecuteNonQueryAsync() > 0;
+        await cmd.ExecuteNonQueryAsync();
+        return true;
     }
 
     public async Task<bool> UsuariosNegocioDesactivarAsync(int negocioId, int usuarioNegocioId, string usuario)
     {
+        var usuarioActual = (await UsuariosNegocioListarAsync(negocioId))
+            .FirstOrDefault(x => x.UsuarioNegocioId == usuarioNegocioId);
+        if (usuarioActual is null) return false;
+
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_UsuariosNegocio_Desactivar", cn) { CommandType = CommandType.StoredProcedure };
         AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
         AddParam(cmd, "@UsuarioNegocioId", usuarioNegocioId, SqlDbType.Int);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        return await cmd.ExecuteNonQueryAsync() > 0;
+        await cmd.ExecuteNonQueryAsync();
+        return true;
     }
 
     public async Task<List<UsuarioNegocioPermisoModuloViewModel>> UsuariosNegocioPermisosListarAsync(int negocioId, int usuarioNegocioId)

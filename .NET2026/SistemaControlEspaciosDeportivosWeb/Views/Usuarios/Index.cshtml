@@ -1,4 +1,5 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.UsuariosNegocioIndexViewModel
+<!-- Firma: Codex - 28/03/2026 | Mejora visual de botones de accion Editar/Eliminar con estilo premium reusable -->
 
 @{
     ViewData["Title"] = "Usuarios del negocio";
@@ -87,7 +88,9 @@
                     <td class="text-end">
                         @if (Model.PuedeEditar)
                         {
-                            <a class="btn btn-sm btn-outline-warning" asp-action="Permisos" asp-route-negocioId="@Model.NegocioId" asp-route-usuarioNegocioId="@item.UsuarioNegocioId">Permisos</a>
+                            <a class="btn btn-sm sc-action-btn sc-action-edit" asp-action="Permisos" asp-route-negocioId="@Model.NegocioId" asp-route-usuarioNegocioId="@item.UsuarioNegocioId">
+                                <i class="bi bi-pencil-square"></i> Permisos
+                            </a>
                         }
                         @if (Model.PuedeEliminar && item.Activo)
                         {
@@ -95,7 +98,9 @@
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="negocioId" value="@Model.NegocioId" />
                                 <input type="hidden" name="usuarioNegocioId" value="@item.UsuarioNegocioId" />
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Desactivar</button>
+                                <button type="submit" class="btn btn-sm sc-action-btn sc-action-delete">
+                                    <i class="bi bi-trash3"></i> Desactivar
+                                </button>
                             </form>
                         }
                     </td>

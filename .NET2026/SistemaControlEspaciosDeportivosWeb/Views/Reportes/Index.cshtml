@@ -1,29 +1,39 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ReportesIndexViewModel
-
+<!-- Firma: Codex - 27/03/2026 -->
 @{
     ViewData["Title"] = "Reportes";
+
+    var totalReservasPeriodo = Model.Ocupacion.Sum(x => x.CantidadReservas);
+    var totalHorasPeriodo = Model.Ocupacion.Sum(x => x.HorasReservadas);
+    var totalCobradoPeriodo = Model.Ingresos.Sum(x => x.Ingresos);
+    var ticketPromedio = totalReservasPeriodo > 0 ? totalCobradoPeriodo / totalReservasPeriodo : 0m;
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+<header class="page-header">
     <div>
-        <h1 class="h4 mb-1">Reportes</h1>
-        <p class="text-muted mb-0">@Model.NegocioNombre | Rol: @Model.RolActual</p>
+        <h1>Reportes</h1>
+        <p class="page-subtitle">
+            Analiza la operacion del negocio por periodo. @Model.NegocioNombre | Rol: @Model.RolActual
+        </p>
     </div>
-    <div class="d-flex gap-2">
+    <div class="action-toolbar">
         <a class="btn btn-outline-success"
            asp-action="ExportCsv"
            asp-route-negocioId="@Model.NegocioId"
            asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")"
            asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")">
-            Exportar CSV
+            <i class="bi bi-filetype-csv"></i> Exportar CSV
         </a>
-        <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Panel</a>
+        <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">
+            <i class="bi bi-arrow-left"></i> Panel
+        </a>
     </div>
-</div>
+</header>
 
-<form method="get" asp-action="Index" class="card card-body shadow-sm mb-3">
+<form method="get" asp-action="Index" class="filter-card mb-3">
     <input type="hidden" name="negocioId" value="@Model.NegocioId" />
-    <div class="row g-2 align-items-end">
+    <h2 class="section-title mb-3">Filtros del reporte</h2>
+    <div class="row g-3 align-items-end">
         <div class="col-md-3">
             <label class="form-label">Desde</label>
             <input type="date" class="form-control" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
@@ -33,16 +43,43 @@
             <input type="date" class="form-control" name="fechaHasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
         </div>
         <div class="col-md-2 d-grid">
-            <button type="submit" class="btn btn-primary">Consultar</button>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Consultar</button>
         </div>
     </div>
 </form>
 
-<section class="card border-0 shadow-sm mb-3">
-    <div class="card-body">
-        <h2 class="h6 mb-3">Ocupacion por espacio</h2>
+<section class="kpi-grid">
+    <article class="kpi-card">
+        <p class="kpi-card-label">Reservas del periodo</p>
+        <h2 class="kpi-card-value">@totalReservasPeriodo</h2>
+    </article>
+    <article class="kpi-card">
+        <p class="kpi-card-label">Horas reservadas</p>
+        <h2 class="kpi-card-value">@totalHorasPeriodo.ToString("N2")</h2>
+    </article>
+    <article class="kpi-card">
+        <p class="kpi-card-label">Ingresos del periodo</p>
+        <h2 class="kpi-card-value">S/ @totalCobradoPeriodo.ToString("N2")</h2>
+    </article>
+    <article class="kpi-card">
+        <p class="kpi-card-label">Ticket promedio</p>
+        <h2 class="kpi-card-value">S/ @ticketPromedio.ToString("N2")</h2>
+    </article>
+</section>
+
+<section class="table-card mb-3">
+    <h2 class="section-title">Ocupacion por espacio</h2>
+    @if (Model.Ocupacion.Count == 0)
+    {
+        <div class="empty-state">
+            <i class="bi bi-inboxes"></i>
+            <span>No hay datos de ocupacion para el rango seleccionado.</span>
+        </div>
+    }
+    else
+    {
         <div class="table-responsive">
-            <table class="table table-sm table-striped align-middle mb-0">
+            <table class="table table-sm table-hover align-middle">
                 <thead>
                     <tr>
                         <th>Sede</th>
@@ -66,16 +103,33 @@
                         </tr>
                     }
                 </tbody>
+                <tfoot>
+                    <tr class="fw-semibold">
+                        <td colspan="2">Totales</td>
+                        <td>@totalReservasPeriodo</td>
+                        <td>@totalHorasPeriodo.ToString("N2")</td>
+                        <td>S/ @Model.Ocupacion.Sum(x => x.MontoReservado).ToString("N2")</td>
+                        <td>S/ @Model.Ocupacion.Sum(x => x.MontoCobrado).ToString("N2")</td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
-    </div>
+    }
 </section>
 
-<section class="card border-0 shadow-sm">
-    <div class="card-body">
-        <h2 class="h6 mb-3">Ingresos por dia</h2>
+<section class="table-card">
+    <h2 class="section-title">Ingresos por dia</h2>
+    @if (Model.Ingresos.Count == 0)
+    {
+        <div class="empty-state">
+            <i class="bi bi-graph-down"></i>
+            <span>No hay movimientos de ingresos en el rango consultado.</span>
+        </div>
+    }
+    else
+    {
         <div class="table-responsive">
-            <table class="table table-sm table-striped align-middle mb-0">
+            <table class="table table-sm table-hover align-middle">
                 <thead>
                     <tr>
                         <th>Fecha</th>
@@ -93,7 +147,14 @@
                         </tr>
                     }
                 </tbody>
+                <tfoot>
+                    <tr class="fw-semibold">
+                        <td>Totales</td>
+                        <td>@Model.Ingresos.Sum(x => x.CantidadReservas)</td>
+                        <td>S/ @totalCobradoPeriodo.ToString("N2")</td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
-    </div>
+    }
 </section>

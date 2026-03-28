@@ -1,0 +1,98 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.AltasClubesIndexViewModel
+<!-- Firma: Codex - 27/03/2026 -->
+@{
+    ViewData["Title"] = "Altas de clubes";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h4 mb-1">Altas de clubes</h1>
+        <p class="text-muted mb-0">@Model.NegocioNombre | Rol: @Model.RolActual</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" asp-controller="Solicitudes" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Solicitudes publicas</a>
+        <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Panel</a>
+    </div>
+</div>
+
+@if (TempData["MensajeAltaClub"] is string okMsg)
+{
+    <div class="alert alert-success">@okMsg</div>
+}
+@if (TempData["MensajeAltaClubError"] is string errMsg)
+{
+    <div class="alert alert-danger">@errMsg</div>
+}
+
+<form method="get" asp-action="Index" class="card card-body shadow-sm mb-3">
+    <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+    <div class="row g-2 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label">Estado</label>
+            <select class="form-select" name="estado">
+                <option value="">Todos</option>
+                <option value="1" selected="@(Model.Estado == 1)">Pendiente</option>
+                <option value="2" selected="@(Model.Estado == 2)">Aprobada</option>
+                <option value="3" selected="@(Model.Estado == 3)">Rechazada</option>
+            </select>
+        </div>
+        <div class="col-md-2 d-grid">
+            <button type="submit" class="btn btn-primary">Filtrar</button>
+        </div>
+    </div>
+</form>
+
+<div class="table-responsive">
+    <table class="table table-sm table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Codigo</th>
+                <th>Contacto</th>
+                <th>Club</th>
+                <th>Ubicacion</th>
+                <th>Estado</th>
+                <th class="text-end">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Solicitudes)
+            {
+                var estadoTxt = item.Estado switch
+                {
+                    1 => "Pendiente",
+                    2 => $"Aprobada (Negocio #{item.NegocioId})",
+                    3 => "Rechazada",
+                    _ => item.Estado.ToString()
+                };
+                <tr>
+                    <td>@item.CodigoSolicitud</td>
+                    <td>@item.NombreContacto<br /><span class="text-muted">@item.Correo | @item.Telefono</span></td>
+                    <td>@item.NombreClub<br /><span class="text-muted">@item.RelacionClub</span></td>
+                    <td>@item.Pais - @item.ProvinciaEstado - @item.Ciudad<br /><span class="text-muted">@item.Direccion</span></td>
+                    <td>@estadoTxt</td>
+                    <td class="text-end">
+                        @if (Model.PuedeEditar && item.Estado == 1)
+                        {
+                            <form asp-action="Aprobar" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                                <input type="hidden" name="estado" value="@Model.Estado" />
+                                <input type="hidden" name="Id" value="@item.Id" />
+                                <input type="hidden" name="ComentarioGestion" value="Aprobada desde panel." />
+                                <button type="submit" class="btn btn-sm btn-outline-success">Aprobar</button>
+                            </form>
+                            <form asp-action="Rechazar" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                                <input type="hidden" name="estado" value="@Model.Estado" />
+                                <input type="hidden" name="Id" value="@item.Id" />
+                                <input type="hidden" name="ComentarioGestion" value="Rechazada desde panel." />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Rechazar</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

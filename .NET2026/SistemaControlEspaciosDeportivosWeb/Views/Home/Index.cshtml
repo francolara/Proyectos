@@ -15,7 +15,15 @@
             </p>
         </div>
         <div class="col-md-4 text-md-end mt-3 mt-md-0">
-            <a class="btn btn-light fw-semibold" asp-area="Identity" asp-page="/Account/Login">Iniciar sesion</a>
+            <a class="btn btn-success fw-semibold" asp-action="SoftwareClubes">Software para Clubes</a>
+            @if (User?.Identity?.IsAuthenticated ?? false)
+            {
+                <a class="btn btn-light fw-semibold" asp-controller="Panel" asp-action="Index">Administrar mi sede</a>
+            }
+            else
+            {
+                <a class="btn btn-light fw-semibold" asp-area="Identity" asp-page="/Account/Login">Iniciar sesion</a>
+            }
             <a class="btn btn-outline-light fw-semibold ms-2" asp-action="ConsultarSolicitud">Consultar solicitud</a>
         </div>
     </div>

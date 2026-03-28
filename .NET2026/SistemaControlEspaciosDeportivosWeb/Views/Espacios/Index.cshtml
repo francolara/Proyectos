@@ -1,4 +1,5 @@
-@model SistemaControlEspaciosDeportivosWeb.ViewModels.EspaciosIndexViewModel
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.EspaciosIndexViewModel
+<!-- Firma: Codex - 28/03/2026 | Mejora visual de botones de accion Editar/Eliminar con estilo premium reusable -->
 
 @{
     ViewData["Title"] = "Espacios";
@@ -26,6 +27,7 @@
                 <th>Nombre</th>
                 <th>Sede</th>
                 <th>Deporte</th>
+                <th>Suelo</th>
                 <th>Estado</th>
                 <th></th>
             </tr>
@@ -38,11 +40,14 @@
                     <td>@item.Nombre</td>
                     <td>@item.SedeNombre</td>
                     <td>@item.TipoDeporteNombre</td>
+                    <td>@item.TipoSueloNombre</td>
                     <td>@item.Estado</td>
                     <td class="text-end">
                         @if (Model.PuedeEditar)
                         {
-                            <a class="btn btn-sm btn-outline-warning" asp-action="Edit" asp-route-negocioId="@Model.NegocioId" asp-route-id="@item.Id">Editar</a>
+                            <a class="btn btn-sm sc-action-btn sc-action-edit" asp-action="Edit" asp-route-negocioId="@Model.NegocioId" asp-route-id="@item.Id">
+                                <i class="bi bi-pencil-square"></i> Editar
+                            </a>
                         }
                         @if (Model.PuedeEliminar)
                         {
@@ -50,7 +55,9 @@
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="negocioId" value="@Model.NegocioId" />
                                 <input type="hidden" name="id" value="@item.Id" />
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Inactivar</button>
+                                <button type="submit" class="btn btn-sm sc-action-btn sc-action-delete">
+                                    <i class="bi bi-trash3"></i> Inactivar
+                                </button>
                             </form>
                         }
                     </td>
@@ -59,3 +66,4 @@
         </tbody>
     </table>
 </div>
+

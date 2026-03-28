@@ -1,56 +1,77 @@
 @using SistemaControlEspaciosDeportivosWeb.Models
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ReservaFormViewModel
+<!-- Firma: Codex - 27/03/2026 | Estandar visual pro para formulario de reservas y bloqueo de fechas pasadas -->
 
 @{
     ViewData["Title"] = "Nueva reserva";
 }
 
-<h1 class="h4 mb-3">Nueva reserva</h1>
+<div class="admin-page-frame">
+    <section class="page-header">
+        <div>
+            <h1>Nueva reserva</h1>
+            <p class="page-subtitle">Programa fecha, horario, cliente y datos economicos de la reserva.</p>
+        </div>
+        <div class="action-toolbar">
+            <a class="btn btn-outline-secondary" asp-action="Index" asp-route-negocioId="@Model.NegocioId">
+                <i class="bi bi-arrow-left me-1"></i> Volver al listado
+            </a>
+        </div>
+    </section>
 
-<form asp-action="Create" method="post" class="card card-body shadow-sm">
-    <input type="hidden" asp-for="NegocioId" />
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-    <div class="row g-3">
-        <div class="col-md-6">
-            <label asp-for="EspacioDeportivoId" class="form-label">Espacio</label>
-            <select asp-for="EspacioDeportivoId" asp-items="Model.Espacios" class="form-select"></select>
+    <form asp-action="Create" method="post" class="sc-form-shell">
+        <input type="hidden" asp-for="NegocioId" />
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger shadow-sm mb-0"></div>
+
+        <section class="sc-form-card">
+            <div class="sc-form-section">
+                <h2 class="sc-form-title"><i class="bi bi-calendar2-check"></i> Datos de la reserva</h2>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="EspacioDeportivoId" class="form-label">Espacio</label>
+                        <select asp-for="EspacioDeportivoId" asp-items="Model.Espacios" class="form-select"></select>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="ClienteId" class="form-label">Cliente</label>
+                        <select asp-for="ClienteId" asp-items="Model.Clientes" class="form-select"></select>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Fecha" class="form-label"></label>
+                        <input asp-for="Fecha" class="form-control" type="date" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="HoraInicio" class="form-label"></label>
+                        <input asp-for="HoraInicio" class="form-control" type="time" />
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="HoraFin" class="form-label"></label>
+                        <input asp-for="HoraFin" class="form-control" type="time" />
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Estado" class="form-label"></label>
+                        <select asp-for="Estado" asp-items="Html.GetEnumSelectList<EstadoReserva>()" class="form-select"></select>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Total" class="form-label"></label>
+                        <input asp-for="Total" class="form-control" />
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Adelanto" class="form-label"></label>
+                        <input asp-for="Adelanto" class="form-control" />
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="sc-form-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check2-circle me-1"></i> Guardar reserva
+            </button>
+            <a class="btn btn-outline-secondary" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Cancelar</a>
         </div>
-        <div class="col-md-6">
-            <label asp-for="ClienteId" class="form-label">Cliente</label>
-            <select asp-for="ClienteId" asp-items="Model.Clientes" class="form-select"></select>
-        </div>
-        <div class="col-md-3">
-            <label asp-for="Fecha" class="form-label"></label>
-            <input asp-for="Fecha" class="form-control" type="date" />
-        </div>
-        <div class="col-md-3">
-            <label asp-for="HoraInicio" class="form-label"></label>
-            <input asp-for="HoraInicio" class="form-control" type="time" />
-        </div>
-        <div class="col-md-3">
-            <label asp-for="HoraFin" class="form-label"></label>
-            <input asp-for="HoraFin" class="form-control" type="time" />
-        </div>
-        <div class="col-md-3">
-            <label asp-for="Estado" class="form-label"></label>
-            <select asp-for="Estado" asp-items="Html.GetEnumSelectList<EstadoReserva>()" class="form-select"></select>
-        </div>
-        <div class="col-md-4">
-            <label asp-for="Total" class="form-label"></label>
-            <input asp-for="Total" class="form-control" />
-        </div>
-        <div class="col-md-4">
-            <label asp-for="Adelanto" class="form-label"></label>
-            <input asp-for="Adelanto" class="form-control" />
-        </div>
-    </div>
-    <div class="mt-3 d-flex gap-2">
-        <button type="submit" class="btn btn-primary">Guardar</button>
-        <a class="btn btn-outline-secondary" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Cancelar</a>
-    </div>
-</form>
+    </form>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }
-

@@ -1,4 +1,4 @@
-namespace SistemaControlEspaciosDeportivosWeb.ViewModels;
+﻿namespace SistemaControlEspaciosDeportivosWeb.ViewModels;
 
 public class ReportesIndexViewModel : ModuloBaseViewModel
 {

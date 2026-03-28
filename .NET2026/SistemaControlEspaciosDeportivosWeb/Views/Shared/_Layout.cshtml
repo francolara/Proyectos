@@ -5,45 +5,107 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - SportCenter</title>
     <script type="importmap"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/SistemaControlEspaciosDeportivosWeb.styles.css" asp-append-version="true" />
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm">
-            <div class="container">
-                <a class="navbar-brand fw-bold" asp-area="" asp-controller="Home" asp-action="Index">SportCenter</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div id="mainNav" class="collapse navbar-collapse">
-                    <ul class="navbar-nav me-auto">
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Inicio</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="buscar">Disponibilidad</a>
-                        </li>
-                    </ul>
-                    <partial name="_LoginPartial" />
+@{
+    var adminShell = ViewData["AdminShell"] as bool? ?? false;
+    var contentClass = adminShell ? "flex-fill p-0" : "container py-4 flex-fill";
+    var currentController = (ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty).ToUpperInvariant();
+    var negocioIdRaw = ViewData["AdminNegocioId"]?.ToString()
+        ?? ViewContext.RouteData.Values["negocioId"]?.ToString()
+        ?? Context.Request.Query["negocioId"].FirstOrDefault();
+    var hasNegocioId = int.TryParse(negocioIdRaw, out var adminNegocioId);
+    string menuClass(string controller) => currentController == controller.ToUpperInvariant() ? "sc-admin-navlink active" : "sc-admin-navlink";
+    string menuUrl(string controller)
+    {
+        return hasNegocioId
+            ? (Url.Action("Index", controller, new { negocioId = adminNegocioId }) ?? "#")
+            : (Url.Action("Index", controller) ?? "#");
+    }
+}
+<body class="d-flex flex-column min-vh-100">
+    @if (!adminShell)
+    {
+        <header>
+            <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm">
+                <div class="container">
+                    <a class="navbar-brand fw-bold" asp-area="" asp-controller="Home" asp-action="Index">SportCenter</a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav"
+                            aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div id="mainNav" class="collapse navbar-collapse">
+                        <ul class="navbar-nav me-auto">
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Inicio</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="buscar">Disponibilidad</a>
+                            </li>
+                        </ul>
+                        <partial name="_LoginPartial" />
+                    </div>
                 </div>
-            </div>
-        </nav>
-    </header>
+            </nav>
+        </header>
+    }
 
-    <div class="container py-4">
-        <main role="main">
-            @RenderBody()
-        </main>
-    </div>
+    @if (adminShell)
+    {
+        <div class="sc-admin-shell">
+            <aside class="sc-admin-sidebar">
+                <div class="sc-admin-brand">
+                    <span class="sc-admin-brand-logo">SC</span>
+                    <div>
+                        <p class="sc-admin-brand-title">SportCenter</p>
+                        <p class="sc-admin-brand-subtitle">Admin SaaS</p>
+                    </div>
+                </div>
 
-    <footer class="border-top footer text-muted py-3">
-        <div class="container">
-            &copy; 2026 - SportCenter
+                <nav class="sc-admin-nav">
+                    <a class="@menuClass("Panel")" href="@menuUrl("Panel")"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
+                    <a class="@menuClass("Sedes")" href="@menuUrl("Sedes")"><i class="bi bi-geo-alt"></i><span>Sedes</span></a>
+                    <a class="@menuClass("Espacios")" href="@menuUrl("Espacios")"><i class="bi bi-grid-1x2"></i><span>Espacio deportivo</span></a>
+                    <a class="@menuClass("Clientes")" href="@menuUrl("Clientes")"><i class="bi bi-people"></i><span>Clientes</span></a>
+                    <a class="@menuClass("Promociones")" href="@menuUrl("Promociones")"><i class="bi bi-tags"></i><span>Promociones</span></a>
+                    <a class="@menuClass("Reservas")" href="@menuUrl("Reservas")"><i class="bi bi-calendar-check"></i><span>Reservas</span></a>
+                    <a class="@menuClass("Pagos")" href="@menuUrl("Pagos")"><i class="bi bi-wallet2"></i><span>Pagos</span></a>
+                    <a class="@menuClass("Reportes")" href="@menuUrl("Reportes")"><i class="bi bi-graph-up-arrow"></i><span>Reportes</span></a>
+                    <a class="@menuClass("Usuarios")" href="@menuUrl("Usuarios")"><i class="bi bi-person-gear"></i><span>Usuarios</span></a>
+                    <a class="@menuClass("Configuracion")" href="@menuUrl("Configuracion")"><i class="bi bi-sliders2-vertical"></i><span>Configuracion</span></a>
+                </nav>
+            </aside>
+
+            <section class="sc-admin-main">
+                <main role="main" class="admin-page-frame">
+                    @RenderBody()
+                </main>
+            </section>
         </div>
-    </footer>
+    }
+    else
+    {
+        <div class="@contentClass">
+            <main role="main">
+                @RenderBody()
+            </main>
+        </div>
+    }
+
+    @if (!adminShell)
+    {
+        <footer class="border-top footer text-muted py-3 mt-auto">
+            <div class="container">
+                &copy; 2026 - SportCenter
+            </div>
+        </footer>
+    }
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

@@ -82,6 +82,9 @@ public partial class SportCenterStoredProcedureService
 
     public async Task<bool> PromocionesActualizarAsync(PromocionFormViewModel model, string usuario)
     {
+        var promocionActual = await PromocionesObtenerAsync(model.NegocioId, model.Id);
+        if (promocionActual is null) return false;
+
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_Promociones_Actualizar", cn) { CommandType = CommandType.StoredProcedure };
@@ -97,17 +100,22 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@PorcentajeDescuento", model.PorcentajeDescuento, SqlDbType.Decimal);
         AddParam(cmd, "@Activo", model.Activo, SqlDbType.Bit);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        return await cmd.ExecuteNonQueryAsync() > 0;
+        await cmd.ExecuteNonQueryAsync();
+        return true;
     }
 
     public async Task<bool> PromocionesEliminarAsync(int negocioId, int id, string usuario)
     {
+        var promocionActual = await PromocionesObtenerAsync(negocioId, id);
+        if (promocionActual is null) return false;
+
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_Promociones_Eliminar", cn) { CommandType = CommandType.StoredProcedure };
         AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
         AddParam(cmd, "@Id", id, SqlDbType.Int);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        return await cmd.ExecuteNonQueryAsync() > 0;
+        await cmd.ExecuteNonQueryAsync();
+        return true;
     }
 }

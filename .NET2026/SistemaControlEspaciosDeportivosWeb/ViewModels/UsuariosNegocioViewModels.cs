@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace SistemaControlEspaciosDeportivosWeb.ViewModels;
@@ -24,11 +24,11 @@ public class UsuarioNegocioAsignarFormViewModel
 {
     public int NegocioId { get; set; }
 
-    [Required]
-    [EmailAddress]
+    [Required(ErrorMessage = "Este campo es obligatorio.")]
+    [EmailAddress(ErrorMessage = "Ingresa un correo electronico valido.")]
     public string Correo { get; set; } = string.Empty;
 
-    [Range(1, 5)]
+    [Range(1, 5, ErrorMessage = "El campo {0} debe estar entre {1} y {2}.")]
     public int RolNegocio { get; set; } = 2;
 }
 
@@ -36,7 +36,7 @@ public class UsuarioNegocioRolFormViewModel
 {
     public int NegocioId { get; set; }
     public int UsuarioNegocioId { get; set; }
-    [Range(1, 5)]
+    [Range(1, 5, ErrorMessage = "El campo {0} debe estar entre {1} y {2}.")]
     public int RolNegocio { get; set; }
 }
 

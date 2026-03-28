@@ -7,9 +7,12 @@ namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 public class PagosController(IModuloPermisoService moduloPermisoService, ISportCenterStoredProcedureService spService)
     : ModuloControllerBase(moduloPermisoService)
 {
-    public async Task<IActionResult> Index(int negocioId)
+    public async Task<IActionResult> Index(int? negocioId)
     {
-        var baseVm = await ObtenerBaseAsync(negocioId, "PAGOS");
+        var resolvedNegocioId = await ResolverNegocioIdAsync(negocioId, spService);
+        if (!resolvedNegocioId.HasValue) return Forbid();
+
+        var baseVm = await ObtenerBaseAsync(resolvedNegocioId.Value, "PAGOS");
         if (baseVm is null || !string.IsNullOrWhiteSpace(baseVm.Mensaje)) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "Acceso denegado." });
 
         var vm = new PagosIndexViewModel
@@ -22,18 +25,21 @@ public class PagosController(IModuloPermisoService moduloPermisoService, ISportC
             PuedeCrear = baseVm.PuedeCrear,
             PuedeEditar = baseVm.PuedeEditar,
             PuedeEliminar = baseVm.PuedeEliminar,
-            Pagos = await spService.PagosListarAsync(negocioId)
+            Pagos = await spService.PagosListarAsync(resolvedNegocioId.Value)
         };
         return View(vm);
     }
 
-    public async Task<IActionResult> Create(int negocioId)
+    public async Task<IActionResult> Create(int? negocioId)
     {
-        var baseVm = await ObtenerBaseAsync(negocioId, "PAGOS");
+        var resolvedNegocioId = await ResolverNegocioIdAsync(negocioId, spService);
+        if (!resolvedNegocioId.HasValue) return Forbid();
+
+        var baseVm = await ObtenerBaseAsync(resolvedNegocioId.Value, "PAGOS");
         if (baseVm is null || !baseVm.PuedeCrear) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
-        var vm = new PagoFormViewModel { NegocioId = negocioId, NegocioNombre = baseVm.NegocioNombre, RolActual = baseVm.RolActual };
-        vm.Reservas = await spService.PagosComboReservasAsync(negocioId);
+        var vm = new PagoFormViewModel { NegocioId = resolvedNegocioId.Value, NegocioNombre = baseVm.NegocioNombre, RolActual = baseVm.RolActual };
+        vm.Reservas = await spService.PagosComboReservasAsync(resolvedNegocioId.Value);
         return View(vm);
     }
 
@@ -59,16 +65,19 @@ public class PagosController(IModuloPermisoService moduloPermisoService, ISportC
         }
     }
 
-    public async Task<IActionResult> Edit(int negocioId, int id)
+    public async Task<IActionResult> Edit(int id, int? negocioId)
     {
-        var baseVm = await ObtenerBaseAsync(negocioId, "PAGOS");
+        var resolvedNegocioId = await ResolverNegocioIdAsync(negocioId, spService);
+        if (!resolvedNegocioId.HasValue) return Forbid();
+
+        var baseVm = await ObtenerBaseAsync(resolvedNegocioId.Value, "PAGOS");
         if (baseVm is null || !baseVm.PuedeEditar) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
-        var vm = await spService.PagosObtenerAsync(negocioId, id);
+        var vm = await spService.PagosObtenerAsync(resolvedNegocioId.Value, id);
         if (vm is null) return NotFound();
         vm.NegocioNombre = baseVm.NegocioNombre;
         vm.RolActual = baseVm.RolActual;
-        vm.Reservas = await spService.PagosComboReservasAsync(negocioId);
+        vm.Reservas = await spService.PagosComboReservasAsync(resolvedNegocioId.Value);
         return View(vm);
     }
 
@@ -85,7 +94,11 @@ public class PagosController(IModuloPermisoService moduloPermisoService, ISportC
         try
         {
             var ok = await spService.PagosActualizarAsync(model, User.Identity?.Name ?? "sistema");
-            if (!ok) return NotFound();
+            if (!ok)
+            {
+                ModelState.AddModelError(string.Empty, "No se pudo guardar el pago. Verifica el negocio seleccionado.");
+                return View(model);
+            }
             return RedirectToAction(nameof(Index), new { negocioId = model.NegocioId });
         }
         catch (Exception ex)

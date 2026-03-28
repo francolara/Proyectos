@@ -18,6 +18,24 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
         p.Value = value ?? DBNull.Value;
     }
 
+    private static bool ReadBool(SqlDataReader dr, int ordinal)
+    {
+        if (dr.IsDBNull(ordinal)) return false;
+
+        var value = dr.GetValue(ordinal);
+        return value switch
+        {
+            bool b => b,
+            byte bt => bt != 0,
+            short s => s != 0,
+            int i => i != 0,
+            long l => l != 0,
+            string text when bool.TryParse(text, out var parsedBool) => parsedBool,
+            string text when int.TryParse(text, out var parsedInt) => parsedInt != 0,
+            _ => Convert.ToInt32(value) != 0
+        };
+    }
+
     private async Task<List<SelectListItem>> ComboAsync(string spName, params (string Name, object? Value, SqlDbType Type)[] parameters)
     {
         var list = new List<SelectListItem>();
@@ -46,7 +64,7 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
                 Direccion = dr.GetString(2),
                 Telefono = dr.IsDBNull(3) ? null : dr.GetString(3),
                 WhatsappContacto = dr.IsDBNull(4) ? null : dr.GetString(4),
-                PermiteChatWhatsapp = dr.GetBoolean(5)
+                PermiteChatWhatsapp = ReadBool(dr, 5)
             });
         }
         return list;
@@ -87,10 +105,10 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
                 Codigo = dr.GetString(2),
                 SedeNombre = dr.GetString(3),
                 TipoDeporteNombre = dr.GetString(4),
-                TieneIluminacion = dr.GetBoolean(5),
-                Techada = dr.GetBoolean(6),
+                TieneIluminacion = ReadBool(dr, 5),
+                Techada = ReadBool(dr, 6),
                 WhatsappContacto = dr.IsDBNull(7) ? null : dr.GetString(7),
-                PermiteChatWhatsapp = dr.GetBoolean(8)
+                PermiteChatWhatsapp = ReadBool(dr, 8)
             });
         }
         return list;
@@ -160,7 +178,7 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
             Fecha = DateOnly.FromDateTime(dr.GetDateTime(5)),
             HoraInicio = TimeOnly.FromTimeSpan(dr.GetTimeSpan(6)),
             HoraFin = TimeOnly.FromTimeSpan(dr.GetTimeSpan(7)),
-            NotificadoCliente = dr.GetBoolean(8)
+            NotificadoCliente = ReadBool(dr, 8)
         };
     }
 
@@ -170,7 +188,8 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_Home_MarcarSolicitudNotificada", cn) { CommandType = CommandType.StoredProcedure };
         AddParam(cmd, "@CodigoSolicitud", codigoSolicitud, SqlDbType.NVarChar);
-        return await cmd.ExecuteNonQueryAsync() > 0;
+        await cmd.ExecuteNonQueryAsync();
+        return true;
     }
 
     public async Task<List<NegocioAccesoViewModel>> PanelListarNegociosUsuarioAsync(string usuarioId)

@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace SistemaControlEspaciosDeportivosWeb.ViewModels;
 
@@ -33,7 +33,7 @@ public class SolicitudEstadoFormViewModel
     public int Id { get; set; }
     public int Estado { get; set; }
 
-    [StringLength(300)]
+    [StringLength(300, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string? ComentarioGestion { get; set; }
 }
 
@@ -42,12 +42,12 @@ public class SolicitudConvertirFormViewModel
     public int NegocioId { get; set; }
     public int Id { get; set; }
 
-    [Range(0, 999999)]
+    [Range(0, 999999, ErrorMessage = "El campo {0} debe estar entre {1} y {2}.")]
     public decimal Total { get; set; }
 
-    [Range(0, 999999)]
+    [Range(0, 999999, ErrorMessage = "El campo {0} debe estar entre {1} y {2}.")]
     public decimal Adelanto { get; set; }
 
-    [Range(1, 6)]
+    [Range(1, 6, ErrorMessage = "El campo {0} debe estar entre {1} y {2}.")]
     public int EstadoReserva { get; set; } = 1;
 }

@@ -83,6 +83,9 @@ public partial class SportCenterStoredProcedureService
 
     public async Task<bool> ReservasActualizarAsync(ReservaFormViewModel model, string usuario)
     {
+        var reservaActual = await ReservasObtenerAsync(model.NegocioId, model.Id);
+        if (reservaActual is null) return false;
+
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_Reservas_Actualizar", cn) { CommandType = CommandType.StoredProcedure };
@@ -97,22 +100,30 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@Adelanto", model.Adelanto, SqlDbType.Decimal);
         AddParam(cmd, "@Estado", (int)model.Estado, SqlDbType.Int);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        return await cmd.ExecuteNonQueryAsync() > 0;
+        await cmd.ExecuteNonQueryAsync();
+        return true;
     }
 
     public async Task<bool> ReservasEliminarAsync(int negocioId, int id, string usuario)
     {
+        var reservaActual = await ReservasObtenerAsync(negocioId, id);
+        if (reservaActual is null) return false;
+
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_Reservas_Eliminar", cn) { CommandType = CommandType.StoredProcedure };
         AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
         AddParam(cmd, "@Id", id, SqlDbType.Int);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        return await cmd.ExecuteNonQueryAsync() > 0;
+        await cmd.ExecuteNonQueryAsync();
+        return true;
     }
 
     public async Task<bool> ReservasCambiarEstadoRapidoAsync(int negocioId, int id, int nuevoEstado, string usuario)
     {
+        var reservaActual = await ReservasObtenerAsync(negocioId, id);
+        if (reservaActual is null) return false;
+
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_Reservas_CambiarEstadoRapido", cn) { CommandType = CommandType.StoredProcedure };
@@ -120,7 +131,8 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@Id", id, SqlDbType.Int);
         AddParam(cmd, "@NuevoEstado", nuevoEstado, SqlDbType.Int);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        return await cmd.ExecuteNonQueryAsync() > 0;
+        await cmd.ExecuteNonQueryAsync();
+        return true;
     }
 
     public async Task<List<ReservaCalendarioEventoViewModel>> ReservasCalendarioEventosAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null, int? espacioDeportivoId = null, int? estado = null)
@@ -158,6 +170,9 @@ public partial class SportCenterStoredProcedureService
 
     public async Task<bool> ReservasMoverAsync(int negocioId, int id, DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin, string usuario)
     {
+        var reservaActual = await ReservasObtenerAsync(negocioId, id);
+        if (reservaActual is null) return false;
+
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_Reservas_Mover", cn) { CommandType = CommandType.StoredProcedure };
@@ -167,7 +182,53 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@HoraInicio", horaInicio.ToTimeSpan(), SqlDbType.Time);
         AddParam(cmd, "@HoraFin", horaFin.ToTimeSpan(), SqlDbType.Time);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        return await cmd.ExecuteNonQueryAsync() > 0;
+        await cmd.ExecuteNonQueryAsync();
+        return true;
+    }
+
+    public async Task<ReservaDisponibilidadValidacionViewModel> ReservasValidarDisponibilidadAsync(int negocioId, int? reservaId, int espacioDeportivoId, DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin)
+    {
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_Reservas_ValidarDisponibilidad", cn) { CommandType = CommandType.StoredProcedure };
+        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+        AddParam(cmd, "@ReservaId", reservaId, SqlDbType.Int);
+        AddParam(cmd, "@EspacioDeportivoId", espacioDeportivoId, SqlDbType.Int);
+        AddParam(cmd, "@Fecha", fecha.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
+        AddParam(cmd, "@HoraInicio", horaInicio.ToTimeSpan(), SqlDbType.Time);
+        AddParam(cmd, "@HoraFin", horaFin.ToTimeSpan(), SqlDbType.Time);
+
+        await using var dr = await cmd.ExecuteReaderAsync();
+        if (!await dr.ReadAsync())
+        {
+            return new ReservaDisponibilidadValidacionViewModel
+            {
+                Disponible = false,
+                Mensaje = "No se pudo validar disponibilidad."
+            };
+        }
+
+        var disponible = ReadBool(dr, 0);
+        var mensaje = dr.IsDBNull(1) ? (disponible ? "Disponible." : "Horario no disponible.") : dr.GetString(1);
+
+        string? conflictoTipo = null;
+        int? conflictoId = null;
+        if (dr.FieldCount > 2 && !dr.IsDBNull(2))
+        {
+            conflictoTipo = dr.GetString(2);
+        }
+        if (dr.FieldCount > 3 && !dr.IsDBNull(3))
+        {
+            conflictoId = dr.GetInt32(3);
+        }
+
+        return new ReservaDisponibilidadValidacionViewModel
+        {
+            Disponible = disponible,
+            Mensaje = mensaje,
+            ConflictoTipo = conflictoTipo,
+            ConflictoId = conflictoId
+        };
     }
 
     public async Task<List<BloqueoHorarioItemViewModel>> BloqueosListarAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null, int? espacioDeportivoId = null)
@@ -222,7 +283,8 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
         AddParam(cmd, "@Id", id, SqlDbType.Int);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        return await cmd.ExecuteNonQueryAsync() > 0;
+        await cmd.ExecuteNonQueryAsync();
+        return true;
     }
 
     public Task<List<SelectListItem>> ReservasComboEspaciosAsync(int negocioId) => ComboAsync("Sp_Combos_EspaciosPorNegocio", ("@NegocioId", (object?)negocioId, SqlDbType.Int));
@@ -280,6 +342,9 @@ public partial class SportCenterStoredProcedureService
 
     public async Task<bool> PagosActualizarAsync(PagoFormViewModel model, string usuario)
     {
+        var pagoActual = await PagosObtenerAsync(model.NegocioId, model.Id);
+        if (pagoActual is null) return false;
+
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_Pagos_Actualizar", cn) { CommandType = CommandType.StoredProcedure };
@@ -292,18 +357,23 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@NumeroOperacion", model.NumeroOperacion, SqlDbType.NVarChar);
         AddParam(cmd, "@Observacion", model.Observacion, SqlDbType.NVarChar);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        return await cmd.ExecuteNonQueryAsync() > 0;
+        await cmd.ExecuteNonQueryAsync();
+        return true;
     }
 
     public async Task<bool> PagosEliminarAsync(int negocioId, int id, string usuario)
     {
+        var pagoActual = await PagosObtenerAsync(negocioId, id);
+        if (pagoActual is null) return false;
+
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_Pagos_Eliminar", cn) { CommandType = CommandType.StoredProcedure };
         AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
         AddParam(cmd, "@Id", id, SqlDbType.Int);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        return await cmd.ExecuteNonQueryAsync() > 0;
+        await cmd.ExecuteNonQueryAsync();
+        return true;
     }
 
     public Task<List<SelectListItem>> PagosComboReservasAsync(int negocioId) => ComboAsync("Sp_Combos_ReservasPorNegocio", ("@NegocioId", (object?)negocioId, SqlDbType.Int));
@@ -380,6 +450,9 @@ public partial class SportCenterStoredProcedureService
 
     public async Task<bool> ComprobantesActualizarAsync(ComprobanteFormViewModel model, string usuario)
     {
+        var comprobanteActual = await ComprobantesObtenerAsync(model.NegocioId, model.Id);
+        if (comprobanteActual is null) return false;
+
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_Comprobantes_Actualizar", cn) { CommandType = CommandType.StoredProcedure };
@@ -396,18 +469,23 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@Total", model.Total, SqlDbType.Decimal);
         AddParam(cmd, "@Estado", (int)model.Estado, SqlDbType.Int);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        return await cmd.ExecuteNonQueryAsync() > 0;
+        await cmd.ExecuteNonQueryAsync();
+        return true;
     }
 
     public async Task<bool> ComprobantesEliminarAsync(int negocioId, int id, string usuario)
     {
+        var comprobanteActual = await ComprobantesObtenerAsync(negocioId, id);
+        if (comprobanteActual is null) return false;
+
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_Comprobantes_Eliminar", cn) { CommandType = CommandType.StoredProcedure };
         AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
         AddParam(cmd, "@Id", id, SqlDbType.Int);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        return await cmd.ExecuteNonQueryAsync() > 0;
+        await cmd.ExecuteNonQueryAsync();
+        return true;
     }
 
     public Task<List<SelectListItem>> ComprobantesComboReservasAsync(int negocioId) => ComboAsync("Sp_Combos_ReservasPorNegocio", ("@NegocioId", (object?)negocioId, SqlDbType.Int));

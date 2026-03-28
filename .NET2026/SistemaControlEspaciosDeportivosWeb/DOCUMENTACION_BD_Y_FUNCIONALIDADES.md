@@ -209,6 +209,42 @@
   - `PermiteChatWhatsapp`
 - Permite mostrar boton "Chatear por WhatsApp" directamente en tarjetas de espacios disponibles.
 
+### 21_Altas_Clubes.sql
+- Tabla:
+  - `SolicitudesAltaClub`
+- Flujo publico:
+  - `Sp_Home_SolicitarAltaClub`
+- Gestion interna:
+  - `Sp_AltasClubes_Listar`
+  - `Sp_AltasClubes_Aprobar`
+  - `Sp_AltasClubes_Rechazar`
+- Al aprobar:
+  - crea `Negocio`
+  - crea primera `Sede`
+  - intenta vincular usuario existente por correo como `RolNegocio = 1`
+
+### 22_Registro_Club_Prueba.sql
+- Tabla:
+  - `NegociosSuscripcion`
+- Flujo publico directo:
+  - `Sp_Home_RegistrarClubConPrueba`
+- Al registrar:
+  - crea `Negocio`
+  - crea primera `Sede`
+  - asocia al usuario nuevo como `RolNegocio = 1`
+  - activa prueba automatica de 30 dias
+  - registra alta como solicitud autoaprobada (si existe `SolicitudesAltaClub`)
+
+### 23_Suscripcion_Bloqueo_Operacion.sql
+- Reglas de bloqueo:
+  - auto cambia a `Vencida` cuando la prueba o plan supera su fecha fin.
+  - bloquea acceso a modulos cuando estado de suscripcion es `Vencida` o `Suspendida`.
+- SP actualizados:
+  - `Sp_Seguridad_ObtenerContextoModulo`
+  - `Sp_Panel_ListarModulosPermitidos`
+- SP nuevo:
+  - `Sp_NegociosSuscripcion_ActivarPlan` (reactiva acceso y define vigencia en dias)
+
 ## Flujo recomendado de despliegue SQL
 1. Ejecutar `00_Auditoria.sql`.
 2. Ejecutar `01_Seguridad_Panel.sql`.
@@ -231,7 +267,10 @@
 19. Ejecutar `18_Sedes_Config_Notificaciones.sql`.
 20. Ejecutar `19_Home_Whatsapp_Publico.sql`.
 21. Ejecutar `20_Home_Espacios_Whatsapp.sql`.
-22. Ejecutar `EXEC dbo.Sp_Seguridad_SeedModulosPermisosBase;` una vez.
+22. Ejecutar `21_Altas_Clubes.sql`.
+23. Ejecutar `22_Registro_Club_Prueba.sql`.
+24. Ejecutar `23_Suscripcion_Bloqueo_Operacion.sql`.
+25. Ejecutar `EXEC dbo.Sp_Seguridad_SeedModulosPermisosBase;` una vez.
 
 ## Observaciones funcionales
 - CRUD de modulos internos ejecuta operaciones por SP.
@@ -255,3 +294,11 @@
 - Portal publico:
   - boton de WhatsApp visible solo si la sede habilito chat y registro numero.
   - boton tambien visible en tarjetas de espacios disponibles para iniciar chat inmediato.
+- Boton publico "Software para Clubes":
+  - pide contrasena para crear la cuenta del dueno
+  - valida codigo CAPTCHA
+  - crea negocio/sede en el registro inicial
+  - activa prueba automatica de 1 mes
+- Control de suscripcion:
+  - al vencer prueba o plan, el negocio queda bloqueado para operar modulos.
+  - para reactivar se usa `Sp_NegociosSuscripcion_ActivarPlan`.

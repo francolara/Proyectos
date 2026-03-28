@@ -37,13 +37,17 @@ public partial class SportCenterStoredProcedureService
 
     public async Task<bool> ReservasMarcarRecordatorioEnviadoAsync(int negocioId, int reservaId, string usuario)
     {
+        var reservaActual = await ReservasObtenerAsync(negocioId, reservaId);
+        if (reservaActual is null) return false;
+
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_Reservas_MarcarRecordatorioEnviado", cn) { CommandType = CommandType.StoredProcedure };
         AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
         AddParam(cmd, "@ReservaId", reservaId, SqlDbType.Int);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        return await cmd.ExecuteNonQueryAsync() > 0;
+        await cmd.ExecuteNonQueryAsync();
+        return true;
     }
 
     public async Task<int> ReservasAutoNoShowAsync(DateTime fechaHoraActual, string usuario)

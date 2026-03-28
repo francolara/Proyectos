@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
+using System.Security.Claims;
 
 namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 
@@ -10,6 +11,9 @@ public abstract class ModuloControllerBase(IModuloPermisoService moduloPermisoSe
 {
     protected async Task<ModuloBaseViewModel?> ObtenerBaseAsync(int negocioId, string moduloCodigo)
     {
+        ViewData["AdminShell"] = true;
+        ViewData["AdminNegocioId"] = negocioId;
+
         var contexto = await moduloPermisoService.ObtenerContextoAsync(User, negocioId, moduloCodigo);
         if (!contexto.Autorizado)
         {
@@ -35,5 +39,15 @@ public abstract class ModuloControllerBase(IModuloPermisoService moduloPermisoSe
     }
 
     protected IActionResult SinAcceso(ModuloBaseViewModel vm) => View("~/Views/Shared/ModuloSinAcceso.cshtml", vm);
-}
 
+    protected async Task<int?> ResolverNegocioIdAsync(int? negocioId, ISportCenterStoredProcedureService spService)
+    {
+        if (negocioId.HasValue && negocioId.Value > 0) return negocioId.Value;
+
+        var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(usuarioId)) return null;
+
+        var negocios = await spService.PanelListarNegociosUsuarioAsync(usuarioId);
+        return negocios.FirstOrDefault()?.NegocioId;
+    }
+}

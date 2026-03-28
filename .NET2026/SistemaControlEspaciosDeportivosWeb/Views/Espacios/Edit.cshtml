@@ -1,57 +1,166 @@
 @using SistemaControlEspaciosDeportivosWeb.Models
+@using System.Text.Json
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.EspacioFormViewModel
+<!-- Firma: Codex - 27/03/2026 | Estandar visual pro para formulario de espacios -->
+<!-- Firma: Codex - 28/03/2026 | Edicion de multiples tarifas por dia y rango horario en espacio deportivo -->
 
 @{
     ViewData["Title"] = "Editar espacio";
 }
 
-<h1 class="h4 mb-3">Editar espacio deportivo</h1>
+<div class="admin-page-frame">
+    <section class="page-header">
+        <div>
+            <h1>Editar espacio deportivo</h1>
+            <p class="page-subtitle">Actualiza configuracion, tipo de deporte y atributos del espacio.</p>
+        </div>
+        <div class="action-toolbar">
+            <a class="btn btn-outline-secondary" asp-action="Index" asp-route-negocioId="@Model.NegocioId">
+                <i class="bi bi-arrow-left me-1"></i> Volver al listado
+            </a>
+        </div>
+    </section>
 
-<form asp-action="Edit" method="post" class="card card-body shadow-sm">
-    <input type="hidden" asp-for="Id" />
-    <input type="hidden" asp-for="NegocioId" />
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-    <div class="row g-3">
-        <div class="col-md-4">
-            <label asp-for="SedeId" class="form-label">Sede</label>
-            <select asp-for="SedeId" asp-items="Model.Sedes" class="form-select"></select>
+    <form asp-action="Edit" method="post" class="sc-form-shell">
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="NegocioId" />
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger shadow-sm mb-0"></div>
+
+        <section class="sc-form-card">
+            <div class="sc-form-section">
+                <h2 class="sc-form-title"><i class="bi bi-grid-1x2"></i> Datos del espacio</h2>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label asp-for="SedeId" class="form-label">Sede</label>
+                        <select asp-for="SedeId" asp-items="Model.Sedes" class="form-select"></select>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="TipoDeporteId" class="form-label">Deporte</label>
+                        <select asp-for="TipoDeporteId" asp-items="Model.TiposDeporte" class="form-select"></select>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="TipoSueloId" class="form-label">Tipo de suelo</label>
+                        <select asp-for="TipoSueloId" asp-items="Model.TiposSuelo" class="form-select"></select>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Estado" class="form-label"></label>
+                        <select asp-for="Estado" asp-items="Html.GetEnumSelectList<EstadoEspacioDeportivo>()" class="form-select"></select>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Codigo" class="form-label"></label>
+                        <input asp-for="Codigo" class="form-control" />
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Nombre" class="form-label"></label>
+                        <input asp-for="Nombre" class="form-control" />
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Capacidad" class="form-label"></label>
+                        <input asp-for="Capacidad" class="form-control" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="sc-check-chip">
+                            <input asp-for="TieneIluminacion" class="form-check-input mt-0" />
+                            <span>Tiene iluminacion</span>
+                        </label>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="sc-check-chip">
+                            <input asp-for="Techada" class="form-check-input mt-0" />
+                            <span>Espacio techado</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="sc-form-card">
+            <div class="sc-form-section">
+                <h2 class="sc-form-title"><i class="bi bi-cash-coin"></i> Tarifas por dia y rango horario</h2>
+                <input type="hidden" asp-for="TarifasJson" id="tarifasJson" />
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-2" id="tablaTarifasEspacio">
+                        <thead>
+                            <tr>
+                                <th>Dia</th>
+                                <th>Hora inicio</th>
+                                <th>Hora fin</th>
+                                <th>Precio</th>
+                                <th class="text-end">Accion</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <button type="button" class="btn btn-outline-primary btn-sm" id="btnAgregarTarifa">
+                    <i class="bi bi-plus-circle"></i> Agregar rango
+                </button>
+                <div class="form-text mt-2">Puedes registrar varios rangos por dia. Evita superponer horarios del mismo dia.</div>
+            </div>
+        </section>
+
+        <div class="sc-form-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check2-circle me-1"></i> Guardar cambios
+            </button>
+            <a class="btn btn-outline-secondary" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Cancelar</a>
         </div>
-        <div class="col-md-4">
-            <label asp-for="TipoDeporteId" class="form-label">Deporte</label>
-            <select asp-for="TipoDeporteId" asp-items="Model.TiposDeporte" class="form-select"></select>
-        </div>
-        <div class="col-md-4">
-            <label asp-for="Estado" class="form-label"></label>
-            <select asp-for="Estado" asp-items="Html.GetEnumSelectList<EstadoEspacioDeportivo>()" class="form-select"></select>
-        </div>
-        <div class="col-md-3">
-            <label asp-for="Codigo" class="form-label"></label>
-            <input asp-for="Codigo" class="form-control" />
-        </div>
-        <div class="col-md-6">
-            <label asp-for="Nombre" class="form-label"></label>
-            <input asp-for="Nombre" class="form-control" />
-        </div>
-        <div class="col-md-3">
-            <label asp-for="Capacidad" class="form-label"></label>
-            <input asp-for="Capacidad" class="form-control" />
-        </div>
-        <div class="col-md-3 form-check ms-2">
-            <input asp-for="TieneIluminacion" class="form-check-input" />
-            <label asp-for="TieneIluminacion" class="form-check-label"></label>
-        </div>
-        <div class="col-md-3 form-check ms-2">
-            <input asp-for="Techada" class="form-check-input" />
-            <label asp-for="Techada" class="form-check-label"></label>
-        </div>
-    </div>
-    <div class="mt-3 d-flex gap-2">
-        <button type="submit" class="btn btn-primary">Guardar cambios</button>
-        <a class="btn btn-outline-secondary" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Cancelar</a>
-    </div>
-</form>
+    </form>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-}
+    <script>
+        (() => {
+            const tarifasIniciales = @Html.Raw(JsonSerializer.Serialize(Model.Tarifas));
+            const dias = @Html.Raw(JsonSerializer.Serialize(Model.TarifaDiasSemana.Select(d => new { value = d.Value, text = d.Text })));
+            const tabla = document.querySelector('#tablaTarifasEspacio tbody');
+            const inputJson = document.getElementById('tarifasJson');
+            const btnAgregar = document.getElementById('btnAgregarTarifa');
+            const form = document.querySelector('form.sc-form-shell');
 
+            function optionDias(selected) {
+                return dias.map(d => `<option value="${d.value}" ${String(selected) === String(d.value) ? 'selected' : ''}>${d.text}</option>`).join('');
+            }
+
+            function nuevaFila(tarifa) {
+                const horaInicio = (tarifa.horaInicio ?? '08:00').toString().substring(0, 5);
+                const horaFin = (tarifa.horaFin ?? '09:00').toString().substring(0, 5);
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><select class="form-select form-select-sm js-dia">${optionDias(tarifa.diaSemana ?? 1)}</select></td>
+                    <td><input type="time" class="form-control form-control-sm js-hora-inicio" value="${horaInicio}"></td>
+                    <td><input type="time" class="form-control form-control-sm js-hora-fin" value="${horaFin}"></td>
+                    <td><input type="number" min="0.01" step="0.01" class="form-control form-control-sm js-precio" value="${tarifa.precio ?? '0.01'}"></td>
+                    <td class="text-end"><button type="button" class="btn btn-sm sc-action-btn sc-action-delete js-quitar"><i class="bi bi-trash3"></i> Quitar</button></td>`;
+                row.querySelector('.js-quitar').addEventListener('click', () => {
+                    row.remove();
+                    sincronizarJson();
+                });
+                row.querySelectorAll('select,input').forEach(el => el.addEventListener('change', sincronizarJson));
+                tabla.appendChild(row);
+            }
+
+            function sincronizarJson() {
+                const data = [...tabla.querySelectorAll('tr')].map(tr => ({
+                    diaSemana: Number(tr.querySelector('.js-dia').value),
+                    horaInicio: tr.querySelector('.js-hora-inicio').value,
+                    horaFin: tr.querySelector('.js-hora-fin').value,
+                    precio: Number(tr.querySelector('.js-precio').value || 0)
+                }));
+                inputJson.value = JSON.stringify(data);
+            }
+
+            btnAgregar.addEventListener('click', () => {
+                nuevaFila({ diaSemana: 1, horaInicio: '08:00', horaFin: '09:00', precio: 0.01 });
+                sincronizarJson();
+            });
+
+            (tarifasIniciales && tarifasIniciales.length ? tarifasIniciales : [{ diaSemana: 1, horaInicio: '08:00', horaFin: '09:00', precio: 0.01 }])
+                .forEach(nuevaFila);
+            sincronizarJson();
+
+            form.addEventListener('submit', sincronizarJson);
+        })();
+    </script>
+}

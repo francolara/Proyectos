@@ -7,10 +7,12 @@ using SistemaControlEspaciosDeportivosWeb.ViewModels;
 namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 
 [Authorize]
-public class PanelController(ISportCenterStoredProcedureService spService) : Controller
+public class PanelController(ISportCenterStoredProcedureService spService, IModuloPermisoService moduloPermisoService) : Controller
 {
     public async Task<IActionResult> Index(int? negocioId)
     {
+        ViewData["AdminShell"] = true;
+
         var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(usuarioId))
         {
@@ -28,6 +30,19 @@ public class PanelController(ISportCenterStoredProcedureService spService) : Con
         }
 
         var negocioSeleccionadoId = negocioId ?? membresias[0].NegocioId;
+        ViewData["AdminNegocioId"] = negocioSeleccionadoId;
+
+        var contextoDashboard = await moduloPermisoService.ObtenerContextoAsync(User, negocioSeleccionadoId, "DASHBOARD");
+        if (!contextoDashboard.Autorizado)
+        {
+            return View(new PanelDashboardViewModel
+            {
+                Mensaje = contextoDashboard.Mensaje,
+                NegocioSeleccionadoId = negocioSeleccionadoId,
+                Negocios = membresias
+            });
+        }
+
         var rolActual = await spService.PanelObtenerRolAsync(usuarioId, negocioSeleccionadoId);
         if (string.IsNullOrWhiteSpace(rolActual))
         {

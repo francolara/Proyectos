@@ -1,4 +1,5 @@
-@model SistemaControlEspaciosDeportivosWeb.ViewModels.PromocionesIndexViewModel
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.PromocionesIndexViewModel
+<!-- Firma: Codex - 28/03/2026 | Mejora visual de botones de accion Editar/Eliminar con estilo premium reusable -->
 
 @{
     ViewData["Title"] = "Promociones";
@@ -46,7 +47,9 @@
                     <td class="text-end">
                         @if (Model.PuedeEditar)
                         {
-                            <a class="btn btn-sm btn-outline-warning" asp-action="Edit" asp-route-negocioId="@Model.NegocioId" asp-route-id="@item.Id">Editar</a>
+                            <a class="btn btn-sm sc-action-btn sc-action-edit" asp-action="Edit" asp-route-negocioId="@Model.NegocioId" asp-route-id="@item.Id">
+                                <i class="bi bi-pencil-square"></i> Editar
+                            </a>
                         }
                         @if (Model.PuedeEliminar)
                         {
@@ -54,7 +57,9 @@
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="negocioId" value="@Model.NegocioId" />
                                 <input type="hidden" name="id" value="@item.Id" />
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Desactivar</button>
+                                <button type="submit" class="btn btn-sm sc-action-btn sc-action-delete">
+                                    <i class="bi bi-trash3"></i> Desactivar
+                                </button>
                             </form>
                         }
                     </td>
@@ -63,3 +68,4 @@
         </tbody>
     </table>
 </div>
+

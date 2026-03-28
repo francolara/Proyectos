@@ -7,9 +7,12 @@ namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 public class SedesController(IModuloPermisoService moduloPermisoService, ISportCenterStoredProcedureService spService)
     : ModuloControllerBase(moduloPermisoService)
 {
-    public async Task<IActionResult> Index(int negocioId)
+    public async Task<IActionResult> Index(int? negocioId)
     {
-        var baseVm = await ObtenerBaseAsync(negocioId, "SEDES");
+        var resolvedNegocioId = await ResolverNegocioIdAsync(negocioId, spService);
+        if (!resolvedNegocioId.HasValue) return Forbid();
+
+        var baseVm = await ObtenerBaseAsync(resolvedNegocioId.Value, "SEDES");
         if (baseVm is null || !string.IsNullOrWhiteSpace(baseVm.Mensaje)) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "Acceso denegado." });
 
         var vm = new SedesIndexViewModel
@@ -22,17 +25,20 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
             PuedeCrear = baseVm.PuedeCrear,
             PuedeEditar = baseVm.PuedeEditar,
             PuedeEliminar = baseVm.PuedeEliminar,
-            Sedes = await spService.SedesListarAsync(negocioId)
+            Sedes = await spService.SedesListarAsync(resolvedNegocioId.Value)
         };
         return View(vm);
     }
 
-    public async Task<IActionResult> Create(int negocioId)
+    public async Task<IActionResult> Create(int? negocioId)
     {
-        var baseVm = await ObtenerBaseAsync(negocioId, "SEDES");
+        var resolvedNegocioId = await ResolverNegocioIdAsync(negocioId, spService);
+        if (!resolvedNegocioId.HasValue) return Forbid();
+
+        var baseVm = await ObtenerBaseAsync(resolvedNegocioId.Value, "SEDES");
         if (baseVm is null || !baseVm.PuedeCrear) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
-        var vm = new SedeFormViewModel { NegocioId = negocioId, NegocioNombre = baseVm.NegocioNombre, RolActual = baseVm.RolActual, Activo = true };
+        var vm = new SedeFormViewModel { NegocioId = resolvedNegocioId.Value, NegocioNombre = baseVm.NegocioNombre, RolActual = baseVm.RolActual, Activo = true };
         await CargarCatalogoServiciosAsync(vm);
         return View(vm);
     }
@@ -53,12 +59,15 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
         return RedirectToAction(nameof(Index), new { negocioId = model.NegocioId });
     }
 
-    public async Task<IActionResult> Edit(int negocioId, int id)
+    public async Task<IActionResult> Edit(int id, int? negocioId)
     {
-        var baseVm = await ObtenerBaseAsync(negocioId, "SEDES");
+        var resolvedNegocioId = await ResolverNegocioIdAsync(negocioId, spService);
+        if (!resolvedNegocioId.HasValue) return Forbid();
+
+        var baseVm = await ObtenerBaseAsync(resolvedNegocioId.Value, "SEDES");
         if (baseVm is null || !baseVm.PuedeEditar) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
-        var vm = await spService.SedesObtenerAsync(negocioId, id);
+        var vm = await spService.SedesObtenerAsync(resolvedNegocioId.Value, id);
         if (vm is null) return NotFound();
         vm.NegocioNombre = baseVm.NegocioNombre;
         vm.RolActual = baseVm.RolActual;
@@ -79,7 +88,12 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
         }
 
         var ok = await spService.SedesActualizarAsync(model, User.Identity?.Name ?? "sistema");
-        if (!ok) return NotFound();
+        if (!ok)
+        {
+            ModelState.AddModelError(string.Empty, "No se pudo actualizar la sede. Verifica el negocio seleccionado.");
+            await CargarCatalogoServiciosAsync(model);
+            return View(model);
+        }
         return RedirectToAction(nameof(Index), new { negocioId = model.NegocioId });
     }
 
@@ -99,4 +113,5 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
     {
         model.ServiciosDisponibles = await spService.SedesComboServiciosAsync();
     }
+
 }

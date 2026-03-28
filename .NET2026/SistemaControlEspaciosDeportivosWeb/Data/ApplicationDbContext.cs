@@ -9,6 +9,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Negocio> Negocios => Set<Negocio>();
     public DbSet<Sede> Sedes => Set<Sede>();
     public DbSet<TipoDeporte> TiposDeporte => Set<TipoDeporte>();
+    public DbSet<TipoSuelo> TiposSuelo => Set<TipoSuelo>();
     public DbSet<EspacioDeportivo> EspaciosDeportivos => Set<EspacioDeportivo>();
     public DbSet<Cliente> Clientes => Set<Cliente>();
     public DbSet<Tarifa> Tarifas => Set<Tarifa>();

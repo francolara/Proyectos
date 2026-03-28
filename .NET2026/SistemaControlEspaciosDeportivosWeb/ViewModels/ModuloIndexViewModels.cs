@@ -1,4 +1,5 @@
-using Microsoft.AspNetCore.Mvc.Rendering;
+﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using System.ComponentModel.DataAnnotations;
 
 namespace SistemaControlEspaciosDeportivosWeb.ViewModels;
 
@@ -13,6 +14,34 @@ public class ModuloBaseViewModel
     public bool PuedeEditar { get; set; }
     public bool PuedeEliminar { get; set; }
     public string? Mensaje { get; set; }
+}
+
+public class ConfiguracionClubViewModel : ModuloBaseViewModel
+{
+    public int Id { get; set; }
+
+    [Required(ErrorMessage = "El nombre comercial es obligatorio.")]
+    [StringLength(200, ErrorMessage = "El nombre comercial no puede superar los 200 caracteres.")]
+    public string NombreComercial { get; set; } = string.Empty;
+
+    [StringLength(200, ErrorMessage = "La razón social no puede superar los 200 caracteres.")]
+    public string? RazonSocial { get; set; }
+
+    [StringLength(20, ErrorMessage = "El numero de documento no puede superar los 20 caracteres.")]
+    public string? NumeroDocumento { get; set; }
+
+    [Required(ErrorMessage = "El tipo de documento es obligatorio.")]
+    [StringLength(20, ErrorMessage = "El tipo de documento no puede superar los 20 caracteres.")]
+    public string TipoDocumento { get; set; } = "DNI";
+
+    [StringLength(250, ErrorMessage = "La direccion fiscal no puede superar los 250 caracteres.")]
+    public string? DireccionFiscal { get; set; }
+
+    [Range(1, int.MaxValue, ErrorMessage = "Debes seleccionar una moneda válida.")]
+    public int MonedaId { get; set; } = 1;
+
+    public List<SelectListItem> TiposDocumento { get; set; } = new();
+    public List<SelectListItem> Monedas { get; set; } = new();
 }
 
 public class SedesIndexViewModel : ModuloBaseViewModel
@@ -32,6 +61,9 @@ public class SedeItemViewModel
     public bool PermiteChatWhatsapp { get; set; }
     public int MinutosAnticipacionRecordatorio { get; set; }
     public int MinutosToleranciaNoShow { get; set; }
+    public string DiasAtencion { get; set; } = string.Empty;
+    public string HorarioAtencion { get; set; } = string.Empty;
+    public int FechasNoLaborablesCount { get; set; }
     public bool Activo { get; set; }
 }
 
@@ -47,6 +79,7 @@ public class EspacioItemViewModel
     public string Nombre { get; set; } = string.Empty;
     public string SedeNombre { get; set; } = string.Empty;
     public string TipoDeporteNombre { get; set; } = string.Empty;
+    public string TipoSueloNombre { get; set; } = string.Empty;
     public string Estado { get; set; } = string.Empty;
 }
 
@@ -62,7 +95,19 @@ public class ReservasIndexViewModel : ModuloBaseViewModel
     public List<SelectListItem> SedesFiltro { get; set; } = new();
     public List<SelectListItem> EspaciosFiltro { get; set; } = new();
     public List<SelectListItem> EstadosFiltro { get; set; } = new();
+    public List<SelectListItem> ClientesFiltro { get; set; } = new();
     public BloqueoHorarioFormViewModel BloqueoForm { get; set; } = new();
+    public bool CalendarioUsaHorarioSede { get; set; }
+    public bool AtiendeLunes { get; set; } = true;
+    public bool AtiendeMartes { get; set; } = true;
+    public bool AtiendeMiercoles { get; set; } = true;
+    public bool AtiendeJueves { get; set; } = true;
+    public bool AtiendeViernes { get; set; } = true;
+    public bool AtiendeSabado { get; set; } = true;
+    public bool AtiendeDomingo { get; set; } = true;
+    public TimeOnly HoraApertura { get; set; } = new(6, 0);
+    public TimeOnly HoraCierre { get; set; } = new(23, 0);
+    public List<string> FechasNoLaborables { get; set; } = new();
 }
 
 public class ReservaItemViewModel
