@@ -1,7 +1,8 @@
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   27/03/2026
--- Description:   Sprint 5 - Calendario avanzado de reservas con drag/drop y bloqueos operativos.
+-- Description:   Sprint 5 - Calendario avanzado de reservas con drag/drop y bloqueos operativos. Devuelve todos los estados de reserva.
+-- Firma:         Codex - 28/03/2026 | Ajuste de estados en calendario (incluye canceladas/no show) y color bloqueado unificado (#64748b).
 -- =============================================
 
 IF OBJECT_ID(N'dbo.BloqueosHorario', N'U') IS NULL
@@ -68,7 +69,6 @@ BEGIN
           AND (@SedeId IS NULL OR s.Id = @SedeId)
           AND (@EspacioDeportivoId IS NULL OR e.Id = @EspacioDeportivoId)
           AND (@Estado IS NULL OR r.Estado = @Estado)
-          AND r.Estado NOT IN (5, 6)
 
         UNION ALL
 
@@ -80,7 +80,7 @@ BEGIN
             b.HoraInicio,
             b.HoraFin,
             NULL AS Estado,
-            CAST(N'#e03131' AS NVARCHAR(20)) AS Color,
+            CAST(N'#64748b' AS NVARCHAR(20)) AS Color,
             e.Id AS EspacioDeportivoId,
             e.Nombre AS Espacio,
             s.Nombre AS Sede

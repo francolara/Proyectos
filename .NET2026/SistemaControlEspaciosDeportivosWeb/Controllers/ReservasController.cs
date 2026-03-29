@@ -195,6 +195,8 @@ public class ReservasController(IModuloPermisoService moduloPermisoService, ISpo
             start = new DateTime(r.Fecha.Year, r.Fecha.Month, r.Fecha.Day, r.HoraInicio.Hour, r.HoraInicio.Minute, 0),
             end = new DateTime(r.Fecha.Year, r.Fecha.Month, r.Fecha.Day, r.HoraFin.Hour, r.HoraFin.Minute, 0),
             estado = r.Estado,
+            estadoCodigo = ObtenerCodigoEstado(r.Estado, r.TipoEvento),
+            estadoTexto = ObtenerTextoEstado(r.Estado, r.TipoEvento),
             espacioDeportivoId = r.EspacioDeportivoId,
             backgroundColor = r.Color,
             borderColor = r.Color,
@@ -209,12 +211,14 @@ public class ReservasController(IModuloPermisoService moduloPermisoService, ISpo
     {
         var baseVm = await ObtenerBaseAsync(request.NegocioId, "RESERVAS");
         if (baseVm is null || !baseVm.PuedeEditar) return Forbid();
+        var inicioLocal = NormalizarFechaHoraLocal(request.Inicio);
+        var finLocal = NormalizarFechaHoraLocal(request.Fin);
 
-        if (request.Inicio >= request.Fin)
+        if (inicioLocal >= finLocal)
         {
             return BadRequest(new { ok = false, mensaje = "El horario no es valido." });
         }
-        if (EsFechaPasada(DateOnly.FromDateTime(request.Inicio)))
+        if (EsFechaPasada(DateOnly.FromDateTime(inicioLocal)))
         {
             return BadRequest(new { ok = false, mensaje = "No se permite mover reservas a fechas pasadas." });
         }
@@ -224,9 +228,9 @@ public class ReservasController(IModuloPermisoService moduloPermisoService, ISpo
             var ok = await spService.ReservasMoverAsync(
                 request.NegocioId,
                 request.ReservaId,
-                DateOnly.FromDateTime(request.Inicio),
-                TimeOnly.FromDateTime(request.Inicio),
-                TimeOnly.FromDateTime(request.Fin),
+                DateOnly.FromDateTime(inicioLocal),
+                TimeOnly.FromDateTime(inicioLocal),
+                TimeOnly.FromDateTime(finLocal),
                 User.Identity?.Name ?? "sistema");
 
             if (!ok) return NotFound(new { ok = false, mensaje = "No se encontro la reserva." });
@@ -446,5 +450,53 @@ public class ReservasController(IModuloPermisoService moduloPermisoService, ISpo
     private static bool EsFechaPasada(DateOnly fecha)
     {
         return fecha < DateOnly.FromDateTime(DateTime.Today);
+    }
+
+    private static DateTime NormalizarFechaHoraLocal(DateTime value)
+    {
+        return value.Kind switch
+        {
+            DateTimeKind.Utc => value.ToLocalTime(),
+            DateTimeKind.Unspecified => DateTime.SpecifyKind(value, DateTimeKind.Local),
+            _ => value
+        };
+    }
+
+    private static string? ObtenerCodigoEstado(int? estado, string? tipoEvento)
+    {
+        if (string.Equals(tipoEvento, "NO_ATENCION", StringComparison.OrdinalIgnoreCase))
+            return "BLOQUEADO_NO_ATENCION";
+        if (string.Equals(tipoEvento, "BLOQUEO", StringComparison.OrdinalIgnoreCase))
+            return "BLOQUEADO";
+
+        return estado switch
+        {
+            1 => "PENDIENTE",
+            2 => "CONFIRMADA",
+            3 => "EN_USO",
+            4 => "FINALIZADA",
+            5 => "CANCELADA",
+            6 => "NO_SHOW",
+            _ => null
+        };
+    }
+
+    private static string? ObtenerTextoEstado(int? estado, string? tipoEvento)
+    {
+        if (string.Equals(tipoEvento, "NO_ATENCION", StringComparison.OrdinalIgnoreCase))
+            return "Bloqueado/No atención";
+        if (string.Equals(tipoEvento, "BLOQUEO", StringComparison.OrdinalIgnoreCase))
+            return "Bloqueado";
+
+        return estado switch
+        {
+            1 => "Pendiente",
+            2 => "Confirmada",
+            3 => "En uso",
+            4 => "Finalizada",
+            5 => "Cancelada",
+            6 => "No show",
+            _ => null
+        };
     }
 }

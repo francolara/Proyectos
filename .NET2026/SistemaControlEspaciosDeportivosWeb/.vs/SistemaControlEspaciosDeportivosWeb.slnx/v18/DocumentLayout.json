@@ -1,12 +1,37 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\",
-  "Documents": [],
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{B38B87E0-A314-2550-8AD5-A553BE378447}|SistemaControlEspaciosDeportivosWeb.csproj|c:\\users\\franco lara\\desktop\\github proyectos\\proyectos\\.net2026\\sistemacontrolespaciosdeportivosweb\\controllers\\reservascontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B38B87E0-A314-2550-8AD5-A553BE378447}|SistemaControlEspaciosDeportivosWeb.csproj|solutionrelative:controllers\\reservascontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
       "VerticalTabListWidth": 256,
-      "DocumentGroups": []
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "ReservasController.cs",
+              "DocumentMoniker": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\Controllers\\ReservasController.cs",
+              "RelativeDocumentMoniker": "Controllers\\ReservasController.cs",
+              "ToolTip": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\Controllers\\ReservasController.cs",
+              "RelativeToolTip": "Controllers\\ReservasController.cs",
+              "ViewState": "AgIAAHIAAAAAAAAAAAAAAH8AAAAvAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-28T14:58:19.694Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
     }
   ]
 }

@@ -1,8 +1,9 @@
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   27/03/2026
--- Description:   Incluye eventos de no atencion de sede en calendario (dias no laborables y fechas inhabilitadas).
+-- Description:   Incluye eventos de no atencion de sede en calendario (dias no laborables y fechas inhabilitadas) y devuelve todos los estados de reserva.
 -- Firma:         Codex - 27/03/2026
+-- Firma:         Codex - 28/03/2026 | Ajuste de estados en calendario (incluye canceladas/no show), correccion de Id NO_ATENCION, franjas fuera de horario y color bloqueado unificado (#64748b).
 -- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.Sp_Reservas_CalendarioEventos
@@ -54,7 +55,6 @@ BEGIN
           AND (@SedeId IS NULL OR s.Id = @SedeId)
           AND (@EspacioDeportivoId IS NULL OR e.Id = @EspacioDeportivoId)
           AND (@Estado IS NULL OR r.Estado = @Estado)
-          AND r.Estado NOT IN (5, 6)
 
         UNION ALL
 
@@ -66,7 +66,7 @@ BEGIN
             b.HoraInicio,
             b.HoraFin,
             NULL AS Estado,
-            CAST(N'#e03131' AS NVARCHAR(20)) AS Color,
+            CAST(N'#64748b' AS NVARCHAR(20)) AS Color,
             e.Id AS EspacioDeportivoId,
             e.Nombre AS Espacio,
             s.Nombre AS Sede
@@ -82,14 +82,18 @@ BEGIN
         UNION ALL
 
         SELECT
-            CONVERT(INT, CONVERT(CHAR(8), sfi.Fecha, 112) + RIGHT('00000' + CONVERT(VARCHAR(5), e.Id), 5)),
+            (
+                110000000
+                + (DATEDIFF(DAY, '2020-01-01', sfi.Fecha) * 10000)
+                + (e.Id % 10000)
+            ),
             CAST(N'NO_ATENCION' AS NVARCHAR(20)),
             CAST(N'Sede sin atencion (fecha inhabilitada)' AS NVARCHAR(200)),
             sfi.Fecha,
             CAST('00:00' AS TIME),
             CAST('23:59' AS TIME),
             NULL,
-            CAST(N'#6b7280' AS NVARCHAR(20)),
+            CAST(N'#64748b' AS NVARCHAR(20)),
             e.Id,
             e.Nombre,
             s.Nombre
@@ -105,14 +109,18 @@ BEGIN
         UNION ALL
 
         SELECT
-            CONVERT(INT, CONVERT(CHAR(8), f.Fecha, 112) + RIGHT('00000' + CONVERT(VARCHAR(5), e.Id), 5)),
+            (
+                120000000
+                + (DATEDIFF(DAY, '2020-01-01', f.Fecha) * 10000)
+                + (e.Id % 10000)
+            ),
             CAST(N'NO_ATENCION' AS NVARCHAR(20)),
             CAST(N'Sede sin atencion (dia no laborable)' AS NVARCHAR(200)),
             f.Fecha,
             CAST('00:00' AS TIME),
             CAST('23:59' AS TIME),
             NULL,
-            CAST(N'#9ca3af' AS NVARCHAR(20)),
+            CAST(N'#64748b' AS NVARCHAR(20)),
             e.Id,
             e.Nombre,
             s.Nombre
@@ -120,8 +128,10 @@ BEGIN
         INNER JOIN dbo.Sedes s ON s.NegocioId = @NegocioId
         INNER JOIN dbo.EspaciosDeportivos e ON e.SedeId = s.Id
         LEFT JOIN dbo.SedeHorarioAtencion sha ON sha.SedeId = s.Id
+        LEFT JOIN dbo.SedeFechasInhabilitadas sfi ON sfi.SedeId = s.Id AND sfi.Activo = 1 AND sfi.Fecha = f.Fecha
         WHERE (@SedeId IS NULL OR s.Id = @SedeId)
           AND (@EspacioDeportivoId IS NULL OR e.Id = @EspacioDeportivoId)
+          AND sfi.SedeId IS NULL
           AND CASE ((DATEDIFF(DAY, '19000101', f.Fecha) % 7) + 1)
                 WHEN 1 THEN COALESCE(sha.AtiendeLunes, 1)
                 WHEN 2 THEN COALESCE(sha.AtiendeMartes, 1)
@@ -131,6 +141,80 @@ BEGIN
                 WHEN 6 THEN COALESCE(sha.AtiendeSabado, 1)
                 WHEN 7 THEN COALESCE(sha.AtiendeDomingo, 1)
               END = 0
+
+        UNION ALL
+
+        SELECT
+            (
+                130000000
+                + (DATEDIFF(DAY, '2020-01-01', f.Fecha) * 10000)
+                + (e.Id % 10000)
+            ),
+            CAST(N'NO_ATENCION' AS NVARCHAR(20)),
+            CAST(N'Sede sin atencion (fuera de horario)' AS NVARCHAR(200)),
+            f.Fecha,
+            CAST('00:00' AS TIME),
+            COALESCE(sha.HoraApertura, CAST('08:00' AS TIME)),
+            NULL,
+            CAST(N'#64748b' AS NVARCHAR(20)),
+            e.Id,
+            e.Nombre,
+            s.Nombre
+        FROM Fechas f
+        INNER JOIN dbo.Sedes s ON s.NegocioId = @NegocioId
+        INNER JOIN dbo.EspaciosDeportivos e ON e.SedeId = s.Id
+        LEFT JOIN dbo.SedeHorarioAtencion sha ON sha.SedeId = s.Id
+        LEFT JOIN dbo.SedeFechasInhabilitadas sfi ON sfi.SedeId = s.Id AND sfi.Activo = 1 AND sfi.Fecha = f.Fecha
+        WHERE (@SedeId IS NULL OR s.Id = @SedeId)
+          AND (@EspacioDeportivoId IS NULL OR e.Id = @EspacioDeportivoId)
+          AND sfi.SedeId IS NULL
+          AND CASE ((DATEDIFF(DAY, '19000101', f.Fecha) % 7) + 1)
+                WHEN 1 THEN COALESCE(sha.AtiendeLunes, 1)
+                WHEN 2 THEN COALESCE(sha.AtiendeMartes, 1)
+                WHEN 3 THEN COALESCE(sha.AtiendeMiercoles, 1)
+                WHEN 4 THEN COALESCE(sha.AtiendeJueves, 1)
+                WHEN 5 THEN COALESCE(sha.AtiendeViernes, 1)
+                WHEN 6 THEN COALESCE(sha.AtiendeSabado, 1)
+                WHEN 7 THEN COALESCE(sha.AtiendeDomingo, 1)
+              END = 1
+          AND COALESCE(sha.HoraApertura, CAST('08:00' AS TIME)) > CAST('00:00' AS TIME)
+
+        UNION ALL
+
+        SELECT
+            (
+                140000000
+                + (DATEDIFF(DAY, '2020-01-01', f.Fecha) * 10000)
+                + (e.Id % 10000)
+            ),
+            CAST(N'NO_ATENCION' AS NVARCHAR(20)),
+            CAST(N'Sede sin atencion (fuera de horario)' AS NVARCHAR(200)),
+            f.Fecha,
+            COALESCE(sha.HoraCierre, CAST('23:00' AS TIME)),
+            CAST('23:59' AS TIME),
+            NULL,
+            CAST(N'#64748b' AS NVARCHAR(20)),
+            e.Id,
+            e.Nombre,
+            s.Nombre
+        FROM Fechas f
+        INNER JOIN dbo.Sedes s ON s.NegocioId = @NegocioId
+        INNER JOIN dbo.EspaciosDeportivos e ON e.SedeId = s.Id
+        LEFT JOIN dbo.SedeHorarioAtencion sha ON sha.SedeId = s.Id
+        LEFT JOIN dbo.SedeFechasInhabilitadas sfi ON sfi.SedeId = s.Id AND sfi.Activo = 1 AND sfi.Fecha = f.Fecha
+        WHERE (@SedeId IS NULL OR s.Id = @SedeId)
+          AND (@EspacioDeportivoId IS NULL OR e.Id = @EspacioDeportivoId)
+          AND sfi.SedeId IS NULL
+          AND CASE ((DATEDIFF(DAY, '19000101', f.Fecha) % 7) + 1)
+                WHEN 1 THEN COALESCE(sha.AtiendeLunes, 1)
+                WHEN 2 THEN COALESCE(sha.AtiendeMartes, 1)
+                WHEN 3 THEN COALESCE(sha.AtiendeMiercoles, 1)
+                WHEN 4 THEN COALESCE(sha.AtiendeJueves, 1)
+                WHEN 5 THEN COALESCE(sha.AtiendeViernes, 1)
+                WHEN 6 THEN COALESCE(sha.AtiendeSabado, 1)
+                WHEN 7 THEN COALESCE(sha.AtiendeDomingo, 1)
+              END = 1
+          AND COALESCE(sha.HoraCierre, CAST('23:00' AS TIME)) < CAST('23:59' AS TIME)
 
         ORDER BY Fecha, HoraInicio
         OPTION (MAXRECURSION 400);

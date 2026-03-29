@@ -1,4 +1,4 @@
-<!-- Firma: Codex - 28/03/2026 | Ajustes visuales de acciones y calendario 100% backend, con tooltip en franjas bloqueadas/no atencion -->
+<!-- Firma: Codex - 28/03/2026 | Ajustes visuales de acciones y calendario backend; tooltip y etiquetas visibles de estado/motivo en franjas bloqueadas; fix horario drag/drop y color bloqueado tomado del backend -->
 @using System.Text.Json
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ReservasIndexViewModel
 <!-- Firma: Codex - 27/03/2026 | Calendario en espanol, bloqueos por sede, gestion por modal, bloqueo de fechas pasadas y rediseno visual SaaS del calendario -->
@@ -457,6 +457,20 @@
 
             function formatTime(h, m) {
                 return `${pad2(h)}:${pad2(m)}`;
+            }
+
+            function hexToRgba(hexColor, alpha) {
+                const hex = String(hexColor || '').trim().replace('#', '');
+                if (hex.length !== 6) return `rgba(100,116,139,${alpha})`;
+                const r = parseInt(hex.slice(0, 2), 16);
+                const g = parseInt(hex.slice(2, 4), 16);
+                const b = parseInt(hex.slice(4, 6), 16);
+                if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return `rgba(100,116,139,${alpha})`;
+                return `rgba(${r},${g},${b},${alpha})`;
+            }
+
+            function toLocalDateTimeString(date) {
+                return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}T${pad2(date.getHours())}:${pad2(date.getMinutes())}:${pad2(date.getSeconds())}`;
             }
 
             function renderToolbarSubtitle(fechaInicio, fechaFinExclusiva) {
@@ -927,6 +941,25 @@
                     if (arg.event.display === 'background') {
                         const tipo = String(arg.event.extendedProps.tipoEvento || '').toUpperCase();
                         if (tipo === 'NO_ATENCION' || tipo === 'BLOQUEO') {
+                            const colorBloqueo = String(arg.event.backgroundColor || arg.event.borderColor || '#64748b').trim();
+                            arg.el.style.background = `repeating-linear-gradient(-45deg, ${hexToRgba(colorBloqueo, 0.24)}, ${hexToRgba(colorBloqueo, 0.24)} 8px, ${hexToRgba(colorBloqueo, 0.14)} 8px, ${hexToRgba(colorBloqueo, 0.14)} 16px)`;
+                            arg.el.style.borderColor = hexToRgba(colorBloqueo, 0.45);
+                            const motivoTexto = String(arg.event.title || '').trim();
+                            if (motivoTexto) {
+                                const motivo = document.createElement('span');
+                                motivo.className = 'sc-bg-motivo-inline';
+                                motivo.textContent = motivoTexto;
+                                arg.el.appendChild(motivo);
+                            }
+                            const estadoTexto = String(arg.event.extendedProps.estadoTexto || '').trim();
+                            if (estadoTexto) {
+                                arg.el.setAttribute('data-estado-label', estadoTexto);
+                                arg.el.classList.add('sc-bg-estado-label');
+                                const badge = document.createElement('span');
+                                badge.className = 'sc-bg-estado-inline';
+                                badge.textContent = estadoTexto;
+                                arg.el.appendChild(badge);
+                            }
                             const textoTooltip = obtenerTooltipBloqueo(arg);
                             if (textoTooltip) {
                                 arg.el.setAttribute('title', textoTooltip);
@@ -967,16 +1000,17 @@
                         .then(data => {
                             const eventosApi = data.flatMap(ev => {
                                 const tipo = String(ev.tipoEvento || '');
+                                const colorEvento = ev.backgroundColor || ev.borderColor || ev.color || '#64748b';
                                 const base = { ...ev };
                                 delete base.backgroundColor;
                                 delete base.borderColor;
                                 delete base.textColor;
                                 delete base.color;
                                 if (tipo === 'NO_ATENCION') {
-                                    return [{ ...base, display: 'background', classNames: ['sc-no-atencion-bg'], editable: false, overlap: false }];
+                                    return [{ ...base, display: 'background', classNames: ['sc-no-atencion-bg'], editable: false, overlap: false, backgroundColor: colorEvento, borderColor: colorEvento }];
                                 }
                                 if (tipo === 'BLOQUEO') {
-                                    return [{ ...base, display: 'background', classNames: ['sc-bloqueo-bg'], editable: false, overlap: false }];
+                                    return [{ ...base, display: 'background', classNames: ['sc-bloqueo-bg'], editable: false, overlap: false, backgroundColor: colorEvento, borderColor: colorEvento }];
                                 }
                                 const estadoClase = classByEstado(base.estado, base.tipoEvento);
                                 const fondoEstado = {
@@ -1034,8 +1068,8 @@
                         body: JSON.stringify({
                             negocioId: negocioId,
                             reservaId: info.event.extendedProps.reservaId,
-                            inicio: info.event.start.toISOString(),
-                            fin: info.event.end ? info.event.end.toISOString() : info.event.start.toISOString()
+                            inicio: toLocalDateTimeString(info.event.start),
+                            fin: toLocalDateTimeString(info.event.end ? info.event.end : info.event.start)
                         })
                     })
                     .then(async r => {
@@ -1065,8 +1099,8 @@
                         body: JSON.stringify({
                             negocioId: negocioId,
                             reservaId: info.event.extendedProps.reservaId,
-                            inicio: info.event.start.toISOString(),
-                            fin: info.event.end ? info.event.end.toISOString() : info.event.start.toISOString()
+                            inicio: toLocalDateTimeString(info.event.start),
+                            fin: toLocalDateTimeString(info.event.end ? info.event.end : info.event.start)
                         })
                     })
                     .then(async r => {

@@ -1041,30 +1041,65 @@ body {
 .sc-legend-pill.is-noshow i { background: #8b5cf6; }
 .sc-legend-pill.is-bloqueada i { background: #64748b; }
 
-.sc-calendar-card #calendarioReservas .fc .fc-bg-event.sc-no-atencion-bg {
-  background: repeating-linear-gradient(
-    -45deg,
-    rgba(203, 213, 225, 0.36),
-    rgba(203, 213, 225, 0.36) 8px,
-    rgba(226, 232, 240, 0.22) 8px,
-    rgba(226, 232, 240, 0.22) 16px
-  );
-  opacity: 1;
-  pointer-events: auto;
-  cursor: not-allowed;
-}
-
+.sc-calendar-card #calendarioReservas .fc .fc-bg-event.sc-no-atencion-bg,
 .sc-calendar-card #calendarioReservas .fc .fc-bg-event.sc-bloqueo-bg {
   background: repeating-linear-gradient(
     -45deg,
-    rgba(254, 202, 202, 0.45),
-    rgba(254, 202, 202, 0.45) 8px,
-    rgba(252, 231, 243, 0.22) 8px,
-    rgba(252, 231, 243, 0.22) 16px
+    rgba(100, 116, 139, 0.22),
+    rgba(100, 116, 139, 0.22) 8px,
+    rgba(148, 163, 184, 0.16) 8px,
+    rgba(148, 163, 184, 0.16) 16px
   );
   opacity: 1;
   pointer-events: auto;
   cursor: not-allowed;
+  border: 1px solid rgba(100, 116, 139, 0.24);
+}
+
+.sc-calendar-card #calendarioReservas .fc .fc-bg-event.sc-bg-estado-label {
+  position: relative;
+  overflow: hidden;
+}
+
+.sc-calendar-card #calendarioReservas .fc .fc-bg-event.sc-bg-estado-label .sc-bg-estado-inline {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #e2e8f0;
+  background: rgba(51, 65, 85, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.42);
+  border-radius: 8px;
+  padding: 2px 6px;
+  max-width: min(260px, calc(100% - 12px));
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  text-transform: none;
+}
+
+.sc-calendar-card #calendarioReservas .fc .fc-bg-event.sc-bg-estado-label .sc-bg-motivo-inline {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 2;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #0f172a;
+  background: rgba(241, 245, 249, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 8px;
+  padding: 2px 7px;
+  max-width: min(360px, calc(100% - 112px));
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  pointer-events: none;
 }
 
 .tooltip.sc-tooltip .tooltip-inner {
