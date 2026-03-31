@@ -9,6 +9,8 @@ namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 public class EspaciosController(IModuloPermisoService moduloPermisoService, ISportCenterStoredProcedureService spService)
     : ModuloControllerBase(moduloPermisoService)
 {
+    private static readonly JsonSerializerOptions TarifaJsonSerializerOptions = new(JsonSerializerDefaults.Web);
+
     public async Task<IActionResult> Index(int? negocioId)
     {
         var resolvedNegocioId = await ResolverNegocioIdAsync(negocioId, spService);
@@ -22,12 +24,14 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
             NegocioId = baseVm.NegocioId,
             NegocioNombre = baseVm.NegocioNombre,
             RolActual = baseVm.RolActual,
+            SedeIdAsignada = baseVm.SedeIdAsignada,
+            EsAdministrador = baseVm.EsAdministrador,
             ModuloCodigo = baseVm.ModuloCodigo,
             ModuloNombre = baseVm.ModuloNombre,
             PuedeCrear = baseVm.PuedeCrear,
             PuedeEditar = baseVm.PuedeEditar,
             PuedeEliminar = baseVm.PuedeEliminar,
-            Espacios = await spService.EspaciosListarAsync(resolvedNegocioId.Value)
+            Espacios = await spService.EspaciosListarAsync(resolvedNegocioId.Value, AplicarSedeAsignada(baseVm, null))
         };
         return View(vm);
     }
@@ -41,7 +45,7 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
         if (baseVm is null || !baseVm.PuedeCrear) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
         var vm = new EspacioFormViewModel { NegocioId = resolvedNegocioId.Value, NegocioNombre = baseVm.NegocioNombre, RolActual = baseVm.RolActual };
-        await CargarCombosEspacioAsync(vm);
+        await CargarCombosEspacioAsync(vm, AplicarSedeAsignada(baseVm, null));
         return View(vm);
     }
 
@@ -52,10 +56,23 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
         var baseVm = await ObtenerBaseAsync(model.NegocioId, "ESPACIOS");
         if (baseVm is null || !baseVm.PuedeCrear) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
-        await CargarCombosEspacioAsync(model);
-        CargarTarifasDesdeJson(model);
-        ValidarTarifas(model);
+        await CargarCombosEspacioAsync(model, AplicarSedeAsignada(baseVm, null));
+        if (!model.PuedeEditarTarifas)
+            ModelState.AddModelError(string.Empty, "Debes configurar la moneda del club en Configuracion antes de registrar precios para espacios.");
+        if (model.PuedeEditarTarifas)
+        {
+            CargarTarifasDesdeJson(model);
+            ValidarTarifas(model);
+        }
+        else
+        {
+            model.Tarifas = new List<EspacioTarifaRangoViewModel>();
+            model.TarifasJson = "[]";
+        }
         if (!ModelState.IsValid) return View(model);
+
+        if (!baseVm.EsAdministrador && baseVm.SedeIdAsignada.HasValue)
+            model.SedeId = baseVm.SedeIdAsignada.Value;
 
         await spService.EspaciosCrearAsync(model, User.Identity?.Name ?? "sistema");
         return RedirectToAction(nameof(Index), new { negocioId = model.NegocioId });
@@ -71,9 +88,11 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
 
         var vm = await spService.EspaciosObtenerAsync(resolvedNegocioId.Value, id);
         if (vm is null) return NotFound();
+        if (!SedePermitida(baseVm, vm.SedeId))
+            return Forbid();
         vm.NegocioNombre = baseVm.NegocioNombre;
         vm.RolActual = baseVm.RolActual;
-        await CargarCombosEspacioAsync(vm);
+        await CargarCombosEspacioAsync(vm, AplicarSedeAsignada(baseVm, null));
         return View(vm);
     }
 
@@ -84,9 +103,21 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
         var baseVm = await ObtenerBaseAsync(model.NegocioId, "ESPACIOS");
         if (baseVm is null || !baseVm.PuedeEditar) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
-        await CargarCombosEspacioAsync(model);
-        CargarTarifasDesdeJson(model);
-        ValidarTarifas(model);
+        if (!baseVm.EsAdministrador && baseVm.SedeIdAsignada.HasValue)
+            model.SedeId = baseVm.SedeIdAsignada.Value;
+        await CargarCombosEspacioAsync(model, AplicarSedeAsignada(baseVm, null));
+        if (!model.PuedeEditarTarifas)
+            ModelState.AddModelError(string.Empty, "Debes configurar la moneda del club en Configuracion antes de registrar precios para espacios.");
+        if (model.PuedeEditarTarifas)
+        {
+            CargarTarifasDesdeJson(model);
+            ValidarTarifas(model);
+        }
+        else
+        {
+            model.Tarifas = new List<EspacioTarifaRangoViewModel>();
+            model.TarifasJson = "[]";
+        }
         if (!ModelState.IsValid) return View(model);
 
         var ok = await spService.EspaciosActualizarAsync(model, User.Identity?.Name ?? "sistema");
@@ -110,11 +141,18 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
         return RedirectToAction(nameof(Index), new { negocioId });
     }
 
-    private async Task CargarCombosEspacioAsync(EspacioFormViewModel model)
+    private async Task CargarCombosEspacioAsync(EspacioFormViewModel model, int? sedeIdFiltro)
     {
-        model.Sedes = await spService.EspaciosComboSedesAsync(model.NegocioId);
+        var tarifasJsonOriginal = model.TarifasJson;
+        var tieneTarifasJson = !string.IsNullOrWhiteSpace(tarifasJsonOriginal);
+
+        model.Sedes = await spService.EspaciosComboSedesAsync(model.NegocioId, sedeIdFiltro);
         model.TiposDeporte = await spService.EspaciosComboTiposDeporteAsync();
         model.TiposSuelo = await spService.EspaciosComboTiposSueloAsync();
+        InsertarOpcionSeleccione(model.Sedes, "Seleccione sede");
+        InsertarOpcionSeleccione(model.TiposDeporte, "Seleccione deporte");
+        InsertarOpcionSeleccione(model.TiposSuelo, "Seleccione tipo de suelo");
+        await CargarMonedaConfiguradaAsync(model);
         model.TarifaDiasSemana =
         [
             new("Lunes", "1"),
@@ -126,7 +164,14 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
             new("Domingo", "0")
         ];
 
-        if (model.Tarifas.Count == 0)
+        if (!model.PuedeEditarTarifas)
+        {
+            model.Tarifas = new List<EspacioTarifaRangoViewModel>();
+            model.TarifasJson = "[]";
+            return;
+        }
+
+        if (model.Tarifas.Count == 0 && !tieneTarifasJson)
         {
             model.Tarifas =
             [
@@ -140,7 +185,42 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
             ];
         }
 
-        model.TarifasJson = JsonSerializer.Serialize(model.Tarifas);
+        if (!tieneTarifasJson)
+            model.TarifasJson = JsonSerializer.Serialize(model.Tarifas, TarifaJsonSerializerOptions);
+    }
+
+    private static void InsertarOpcionSeleccione(List<SelectListItem> items, string texto)
+    {
+        if (items.Any(x => x.Value == "0"))
+            return;
+
+        items.Insert(0, new SelectListItem(texto, "0"));
+    }
+
+    private async Task CargarMonedaConfiguradaAsync(EspacioFormViewModel model)
+    {
+        var configuracion = await spService.ConfiguracionClubObtenerAsync(model.NegocioId);
+        var monedas = await spService.ConfiguracionClubComboMonedasAsync();
+        var monedaSeleccionada = configuracion is null
+            ? null
+            : monedas.FirstOrDefault(x => x.Value == configuracion.MonedaId.ToString());
+
+        model.MonedaIdConfigurada = monedaSeleccionada is null ? null : configuracion!.MonedaId;
+        model.MonedaEtiqueta = ResolverEtiquetaMoneda(monedaSeleccionada);
+        model.PuedeEditarTarifas = model.MonedaIdConfigurada.HasValue && !string.IsNullOrWhiteSpace(model.MonedaEtiqueta);
+    }
+
+    private static string ResolverEtiquetaMoneda(SelectListItem? monedaSeleccionada)
+    {
+        if (monedaSeleccionada is null || string.IsNullOrWhiteSpace(monedaSeleccionada.Text))
+            return string.Empty;
+
+        var texto = monedaSeleccionada.Text;
+        if (texto.Contains("(PEN)", StringComparison.OrdinalIgnoreCase))
+            return "S/";
+        if (texto.Contains("(USD)", StringComparison.OrdinalIgnoreCase))
+            return "$";
+        return texto;
     }
 
     private void CargarTarifasDesdeJson(EspacioFormViewModel model)
@@ -150,9 +230,8 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
 
         try
         {
-            var tarifas = JsonSerializer.Deserialize<List<EspacioTarifaRangoViewModel>>(model.TarifasJson);
-            if (tarifas is { Count: > 0 })
-                model.Tarifas = tarifas;
+            var tarifas = JsonSerializer.Deserialize<List<EspacioTarifaRangoViewModel>>(model.TarifasJson, TarifaJsonSerializerOptions);
+            model.Tarifas = tarifas ?? new List<EspacioTarifaRangoViewModel>();
         }
         catch
         {
@@ -194,6 +273,6 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
             }
         }
 
-        model.TarifasJson = JsonSerializer.Serialize(model.Tarifas);
+        model.TarifasJson = JsonSerializer.Serialize(model.Tarifas, TarifaJsonSerializerOptions);
     }
 }

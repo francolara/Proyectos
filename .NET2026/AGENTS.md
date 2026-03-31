@@ -3,7 +3,7 @@
 ## Alcance general
 1. Revisa estas pautas antes de trabajar en cualquier archivo de este repositorio.
 2. Limita los cambios a la lógica de negocio. La interfaz gráfica de los proyectos WinForms (VB6 o .NET) no debe alterarse.
-
+3. Manten siempre el modelo del proyecto ADO.NET + SP
 ## Codificaciones obligatorias
 - VisualBasic 6/** (archivos .bas, .cls, .frm, .vbp, .vbw):
   - Abrir/guardar .frm siempre como Windows-1252 (ANSI) **sin BOM** y finales de línea CRLF.

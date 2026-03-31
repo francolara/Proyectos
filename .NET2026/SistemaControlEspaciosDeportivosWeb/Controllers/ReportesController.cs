@@ -16,12 +16,15 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
         var desde = fechaDesde ?? DateOnly.FromDateTime(DateTime.Today.AddDays(-6));
         var hasta = fechaHasta ?? DateOnly.FromDateTime(DateTime.Today);
         if (hasta < desde) hasta = desde;
+        var sedeFiltro = AplicarSedeAsignada(baseVm, null);
 
         var vm = new ReportesIndexViewModel
         {
             NegocioId = baseVm.NegocioId,
             NegocioNombre = baseVm.NegocioNombre,
             RolActual = baseVm.RolActual,
+            SedeIdAsignada = baseVm.SedeIdAsignada,
+            EsAdministrador = baseVm.EsAdministrador,
             ModuloCodigo = baseVm.ModuloCodigo,
             ModuloNombre = baseVm.ModuloNombre,
             PuedeCrear = baseVm.PuedeCrear,
@@ -29,8 +32,8 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
             PuedeEliminar = baseVm.PuedeEliminar,
             FechaDesde = desde,
             FechaHasta = hasta,
-            Ocupacion = await spService.ReportesOcupacionPorEspacioAsync(negocioId, desde, hasta),
-            Ingresos = await spService.ReportesIngresosPorDiaAsync(negocioId, desde, hasta)
+            Ocupacion = await spService.ReportesOcupacionPorEspacioAsync(negocioId, desde, hasta, sedeFiltro),
+            Ingresos = await spService.ReportesIngresosPorDiaAsync(negocioId, desde, hasta, sedeFiltro)
         };
 
         return View(vm);
@@ -45,9 +48,10 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
         var desde = fechaDesde ?? DateOnly.FromDateTime(DateTime.Today.AddDays(-6));
         var hasta = fechaHasta ?? DateOnly.FromDateTime(DateTime.Today);
         if (hasta < desde) hasta = desde;
+        var sedeFiltro = AplicarSedeAsignada(baseVm, null);
 
-        var ocupacion = await spService.ReportesOcupacionPorEspacioAsync(negocioId, desde, hasta);
-        var ingresos = await spService.ReportesIngresosPorDiaAsync(negocioId, desde, hasta);
+        var ocupacion = await spService.ReportesOcupacionPorEspacioAsync(negocioId, desde, hasta, sedeFiltro);
+        var ingresos = await spService.ReportesIngresosPorDiaAsync(negocioId, desde, hasta, sedeFiltro);
 
         var sb = new StringBuilder();
         sb.AppendLine("Tipo,Sede,Espacio,Fecha,CantidadReservas,HorasReservadas,MontoReservado,MontoCobrado,Ingresos");

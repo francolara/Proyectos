@@ -56,7 +56,9 @@ public class ModuloPermisoService(IConfiguration configuration) : IModuloPermiso
             PuedeCrear = dr.GetBoolean(7),
             PuedeEditar = dr.GetBoolean(8),
             PuedeEliminar = dr.GetBoolean(9),
-            Mensaje = dr.IsDBNull(10) ? string.Empty : dr.GetString(10)
+            Mensaje = dr.IsDBNull(10) ? string.Empty : dr.GetString(10),
+            SedeIdAsignada = dr.FieldCount > 11 && !dr.IsDBNull(11) ? dr.GetInt32(11) : null,
+            EsAdministrador = dr.FieldCount > 12 && !dr.IsDBNull(12) && dr.GetBoolean(12)
         };
     }
 }
@@ -70,6 +72,8 @@ public class ModuloPermisoContexto
     public string ModuloCodigo { get; set; } = string.Empty;
     public string ModuloNombre { get; set; } = string.Empty;
     public string RolActual { get; set; } = string.Empty;
+    public int? SedeIdAsignada { get; set; }
+    public bool EsAdministrador { get; set; }
     public bool PuedeVer { get; set; }
     public bool PuedeCrear { get; set; }
     public bool PuedeEditar { get; set; }

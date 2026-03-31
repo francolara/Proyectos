@@ -2,6 +2,7 @@
 -- Author:        FRANCO LARA
 -- Create date:   27/03/2026
 -- Description:   Gestion de usuarios internos por negocio y permisos por modulo.
+-- Firma:         Codex - 30/03/2026 | Sp_UsuariosNegocio_Desactivar devuelve error cuando no existe el usuario negocio.
 -- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.Sp_Seguridad_SeedModulosPermisosBase
@@ -191,6 +192,9 @@ BEGIN
         SET Activo = 0
         WHERE Id = @UsuarioNegocioId
           AND NegocioId = @NegocioId;
+
+        IF @@ROWCOUNT = 0
+            RAISERROR('No se encontro el usuario del negocio para desactivar.', 16, 1);
 
         IF @@ROWCOUNT > 0
         BEGIN

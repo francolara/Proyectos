@@ -2,6 +2,7 @@
 -- Author:        FRANCO LARA
 -- Create date:   27/03/2026
 -- Description:   Sprint 6 - Cambio rapido de estado de reservas (check-in/check-out/no-show).
+-- Firma:         Codex - 30/03/2026 | Sp_Reservas_CambiarEstadoRapido ahora devuelve error si la reserva no existe para el negocio.
 -- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.Sp_Reservas_CambiarEstadoRapido
@@ -23,7 +24,7 @@ BEGIN
           AND s.NegocioId = @NegocioId;
 
         IF @EstadoActual IS NULL
-            RETURN;
+            RAISERROR('No se encontro la reserva para cambio de estado.', 16, 1);
 
         IF @NuevoEstado NOT IN (3, 4, 6)
             RAISERROR('Estado no permitido para cambio rapido.', 16, 1);

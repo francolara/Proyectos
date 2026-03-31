@@ -4,6 +4,7 @@
 -- Description:   Incluye eventos de no atencion de sede en calendario (dias no laborables y fechas inhabilitadas) y devuelve todos los estados de reserva.
 -- Firma:         Codex - 27/03/2026
 -- Firma:         Codex - 28/03/2026 | Ajuste de estados en calendario (incluye canceladas/no show), correccion de Id NO_ATENCION, franjas fuera de horario y color bloqueado unificado (#64748b).
+-- Firma:         Codex - 30/03/2026 | Calendario backend-driven: agrega Motivo, EstadoCodigo y EstadoTexto para eliminar fallback en C#/FrontEnd.
 -- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.Sp_Reservas_CalendarioEventos
@@ -45,7 +46,32 @@ BEGIN
             ) AS Color,
             e.Id AS EspacioDeportivoId,
             e.Nombre AS Espacio,
-            s.Nombre AS Sede
+            s.Nombre AS Sede,
+            CAST(NULL AS NVARCHAR(200)) AS Motivo,
+            CAST(
+                CASE r.Estado
+                    WHEN 1 THEN N'PENDIENTE'
+                    WHEN 2 THEN N'CONFIRMADA'
+                    WHEN 3 THEN N'EN_USO'
+                    WHEN 4 THEN N'FINALIZADA'
+                    WHEN 5 THEN N'CANCELADA'
+                    WHEN 6 THEN N'NO_SHOW'
+                    ELSE N'RESERVADA'
+                END
+                AS NVARCHAR(40)
+            ) AS EstadoCodigo,
+            CAST(
+                CASE r.Estado
+                    WHEN 1 THEN N'Pendiente'
+                    WHEN 2 THEN N'Confirmada'
+                    WHEN 3 THEN N'En uso'
+                    WHEN 4 THEN N'Finalizada'
+                    WHEN 5 THEN N'Cancelada'
+                    WHEN 6 THEN N'No show'
+                    ELSE N'Reservada'
+                END
+                AS NVARCHAR(80)
+            ) AS EstadoTexto
         FROM dbo.Reservas r
         INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
@@ -69,7 +95,10 @@ BEGIN
             CAST(N'#64748b' AS NVARCHAR(20)) AS Color,
             e.Id AS EspacioDeportivoId,
             e.Nombre AS Espacio,
-            s.Nombre AS Sede
+            s.Nombre AS Sede,
+            b.Motivo AS Motivo,
+            CAST(N'BLOQUEADO' AS NVARCHAR(40)) AS EstadoCodigo,
+            CAST(N'Bloqueado' AS NVARCHAR(80)) AS EstadoTexto
         FROM dbo.BloqueosHorario b
         INNER JOIN dbo.EspaciosDeportivos e ON e.Id = b.EspacioDeportivoId
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
@@ -96,7 +125,10 @@ BEGIN
             CAST(N'#64748b' AS NVARCHAR(20)),
             e.Id,
             e.Nombre,
-            s.Nombre
+            s.Nombre,
+            CAST(N'Sede sin atencion (fecha inhabilitada)' AS NVARCHAR(200)),
+            CAST(N'BLOQUEADO_NO_ATENCION' AS NVARCHAR(40)),
+            CAST(N'Bloqueado/No atencion' AS NVARCHAR(80))
         FROM dbo.SedeFechasInhabilitadas sfi
         INNER JOIN dbo.Sedes s ON s.Id = sfi.SedeId
         INNER JOIN dbo.EspaciosDeportivos e ON e.SedeId = s.Id
@@ -123,7 +155,10 @@ BEGIN
             CAST(N'#64748b' AS NVARCHAR(20)),
             e.Id,
             e.Nombre,
-            s.Nombre
+            s.Nombre,
+            CAST(N'Sede sin atencion (dia no laborable)' AS NVARCHAR(200)),
+            CAST(N'BLOQUEADO_NO_ATENCION' AS NVARCHAR(40)),
+            CAST(N'Bloqueado/No atencion' AS NVARCHAR(80))
         FROM Fechas f
         INNER JOIN dbo.Sedes s ON s.NegocioId = @NegocioId
         INNER JOIN dbo.EspaciosDeportivos e ON e.SedeId = s.Id
@@ -159,7 +194,10 @@ BEGIN
             CAST(N'#64748b' AS NVARCHAR(20)),
             e.Id,
             e.Nombre,
-            s.Nombre
+            s.Nombre,
+            CAST(N'Sede sin atencion (fuera de horario)' AS NVARCHAR(200)),
+            CAST(N'BLOQUEADO_NO_ATENCION' AS NVARCHAR(40)),
+            CAST(N'Bloqueado/No atencion' AS NVARCHAR(80))
         FROM Fechas f
         INNER JOIN dbo.Sedes s ON s.NegocioId = @NegocioId
         INNER JOIN dbo.EspaciosDeportivos e ON e.SedeId = s.Id
@@ -196,7 +234,10 @@ BEGIN
             CAST(N'#64748b' AS NVARCHAR(20)),
             e.Id,
             e.Nombre,
-            s.Nombre
+            s.Nombre,
+            CAST(N'Sede sin atencion (fuera de horario)' AS NVARCHAR(200)),
+            CAST(N'BLOQUEADO_NO_ATENCION' AS NVARCHAR(40)),
+            CAST(N'Bloqueado/No atencion' AS NVARCHAR(80))
         FROM Fechas f
         INNER JOIN dbo.Sedes s ON s.NegocioId = @NegocioId
         INNER JOIN dbo.EspaciosDeportivos e ON e.SedeId = s.Id

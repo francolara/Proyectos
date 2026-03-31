@@ -9,13 +9,16 @@ namespace SistemaControlEspaciosDeportivosWeb.Services;
 
 public partial class SportCenterStoredProcedureService
 {
-    public async Task<List<SedeItemViewModel>> SedesListarAsync(int negocioId)
+    private static readonly JsonSerializerOptions TarifaJsonSerializerOptions = new(JsonSerializerDefaults.Web);
+
+    public async Task<List<SedeItemViewModel>> SedesListarAsync(int negocioId, int? sedeId = null)
     {
         var list = new List<SedeItemViewModel>();
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_Sedes_Listar", cn) { CommandType = CommandType.StoredProcedure };
         AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+        AddParam(cmd, "@SedeId", sedeId, SqlDbType.Int);
         await using var dr = await cmd.ExecuteReaderAsync();
         while (await dr.ReadAsync())
         {
@@ -57,39 +60,39 @@ public partial class SportCenterStoredProcedureService
             Direccion = dr.GetString(3),
             Telefono = dr.IsDBNull(4) ? null : dr.GetString(4),
             Activo = ReadBool(dr, 5),
-            ServiciosSeleccionados = dr.IsDBNull(6)
-                ? new List<int>()
-                : dr.GetString(6)
+            ServiciosSeleccionados = dr.FieldCount > 6 && !dr.IsDBNull(6)
+                ? dr.GetString(6)
                     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .Where(x => int.TryParse(x, out _))
                     .Select(int.Parse)
                     .Distinct()
-                    .ToList(),
-            NotificacionesActivas = ReadBool(dr, 7),
-            MinutosAnticipacionRecordatorio = dr.GetInt32(8),
-            MinutosToleranciaNoShow = dr.GetInt32(9),
-            CorreoNotificacion = dr.IsDBNull(10) ? null : dr.GetString(10),
-            WhatsappContacto = dr.IsDBNull(11) ? null : dr.GetString(11),
-            PermiteChatWhatsapp = ReadBool(dr, 12),
-            AtiendeLunes = ReadBool(dr, 13),
-            AtiendeMartes = ReadBool(dr, 14),
-            AtiendeMiercoles = ReadBool(dr, 15),
-            AtiendeJueves = ReadBool(dr, 16),
-            AtiendeViernes = ReadBool(dr, 17),
-            AtiendeSabado = ReadBool(dr, 18),
-            AtiendeDomingo = ReadBool(dr, 19),
-            HoraApertura = TimeOnly.FromTimeSpan(dr.GetTimeSpan(20)),
-            HoraCierre = TimeOnly.FromTimeSpan(dr.GetTimeSpan(21)),
-            FechasInhabilitadasCsv = dr.IsDBNull(22) ? null : dr.GetString(22),
-            FechasInhabilitadas = dr.IsDBNull(22)
-                ? new List<DateOnly>()
-                : dr.GetString(22)
+                    .ToList()
+                : new List<int>(),
+            NotificacionesActivas = dr.FieldCount > 7 ? ReadBool(dr, 7) : true,
+            MinutosAnticipacionRecordatorio = dr.FieldCount > 8 && !dr.IsDBNull(8) ? dr.GetInt32(8) : 90,
+            MinutosToleranciaNoShow = dr.FieldCount > 9 && !dr.IsDBNull(9) ? dr.GetInt32(9) : 30,
+            CorreoNotificacion = dr.FieldCount > 10 && !dr.IsDBNull(10) ? dr.GetString(10) : null,
+            WhatsappContacto = dr.FieldCount > 11 && !dr.IsDBNull(11) ? dr.GetString(11) : null,
+            PermiteChatWhatsapp = dr.FieldCount > 12 && ReadBool(dr, 12),
+            AtiendeLunes = dr.FieldCount > 13 ? ReadBool(dr, 13) : true,
+            AtiendeMartes = dr.FieldCount > 14 ? ReadBool(dr, 14) : true,
+            AtiendeMiercoles = dr.FieldCount > 15 ? ReadBool(dr, 15) : true,
+            AtiendeJueves = dr.FieldCount > 16 ? ReadBool(dr, 16) : true,
+            AtiendeViernes = dr.FieldCount > 17 ? ReadBool(dr, 17) : true,
+            AtiendeSabado = dr.FieldCount > 18 ? ReadBool(dr, 18) : true,
+            AtiendeDomingo = dr.FieldCount > 19 ? ReadBool(dr, 19) : true,
+            HoraApertura = dr.FieldCount > 20 && !dr.IsDBNull(20) ? TimeOnly.FromTimeSpan(dr.GetTimeSpan(20)) : new TimeOnly(8, 0),
+            HoraCierre = dr.FieldCount > 21 && !dr.IsDBNull(21) ? TimeOnly.FromTimeSpan(dr.GetTimeSpan(21)) : new TimeOnly(23, 0),
+            FechasInhabilitadasCsv = dr.FieldCount > 22 && !dr.IsDBNull(22) ? dr.GetString(22) : null,
+            FechasInhabilitadas = dr.FieldCount > 22 && !dr.IsDBNull(22)
+                ? dr.GetString(22)
                     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .Where(x => DateOnly.TryParse(x, out _))
                     .Select(DateOnly.Parse)
                     .Distinct()
                     .OrderBy(x => x)
                     .ToList()
+                : new List<DateOnly>()
         };
     }
 
@@ -126,65 +129,74 @@ public partial class SportCenterStoredProcedureService
 
     public async Task<bool> SedesActualizarAsync(SedeFormViewModel model, string usuario)
     {
-        var sedeActual = await SedesObtenerAsync(model.NegocioId, model.Id);
-        if (sedeActual is null) return false;
-
-        await using var cn = CreateConnection();
-        await cn.OpenAsync();
-        await using var cmd = new SqlCommand("Sp_Sedes_Actualizar", cn) { CommandType = CommandType.StoredProcedure };
-        AddParam(cmd, "@Id", model.Id, SqlDbType.Int);
-        AddParam(cmd, "@NegocioId", model.NegocioId, SqlDbType.Int);
-        AddParam(cmd, "@Nombre", model.Nombre, SqlDbType.NVarChar);
-        AddParam(cmd, "@Direccion", model.Direccion, SqlDbType.NVarChar);
-        AddParam(cmd, "@Telefono", model.Telefono, SqlDbType.NVarChar);
-        AddParam(cmd, "@Activo", model.Activo, SqlDbType.Bit);
-        AddParam(cmd, "@ServiciosIdsCsv", ToCsv(model.ServiciosSeleccionados), SqlDbType.NVarChar);
-        AddParam(cmd, "@NotificacionesActivas", model.NotificacionesActivas, SqlDbType.Bit);
-        AddParam(cmd, "@MinutosAnticipacionRecordatorio", model.MinutosAnticipacionRecordatorio, SqlDbType.Int);
-        AddParam(cmd, "@MinutosToleranciaNoShow", model.MinutosToleranciaNoShow, SqlDbType.Int);
-        AddParam(cmd, "@CorreoNotificacion", model.CorreoNotificacion, SqlDbType.NVarChar);
-        AddParam(cmd, "@WhatsappContacto", model.WhatsappContacto, SqlDbType.NVarChar);
-        AddParam(cmd, "@PermiteChatWhatsapp", model.PermiteChatWhatsapp, SqlDbType.Bit);
-        AddParam(cmd, "@AtiendeLunes", model.AtiendeLunes, SqlDbType.Bit);
-        AddParam(cmd, "@AtiendeMartes", model.AtiendeMartes, SqlDbType.Bit);
-        AddParam(cmd, "@AtiendeMiercoles", model.AtiendeMiercoles, SqlDbType.Bit);
-        AddParam(cmd, "@AtiendeJueves", model.AtiendeJueves, SqlDbType.Bit);
-        AddParam(cmd, "@AtiendeViernes", model.AtiendeViernes, SqlDbType.Bit);
-        AddParam(cmd, "@AtiendeSabado", model.AtiendeSabado, SqlDbType.Bit);
-        AddParam(cmd, "@AtiendeDomingo", model.AtiendeDomingo, SqlDbType.Bit);
-        AddParam(cmd, "@HoraApertura", model.HoraApertura, SqlDbType.Time);
-        AddParam(cmd, "@HoraCierre", model.HoraCierre, SqlDbType.Time);
-        AddParam(cmd, "@FechasInhabilitadasCsv", model.FechasInhabilitadasCsv, SqlDbType.NVarChar);
-        AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        await cmd.ExecuteNonQueryAsync();
-
-        var sedeActualizada = await SedesObtenerAsync(model.NegocioId, model.Id);
-        return sedeActualizada is not null;
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_Sedes_Actualizar", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@Id", model.Id, SqlDbType.Int);
+            AddParam(cmd, "@NegocioId", model.NegocioId, SqlDbType.Int);
+            AddParam(cmd, "@Nombre", model.Nombre, SqlDbType.NVarChar);
+            AddParam(cmd, "@Direccion", model.Direccion, SqlDbType.NVarChar);
+            AddParam(cmd, "@Telefono", model.Telefono, SqlDbType.NVarChar);
+            AddParam(cmd, "@Activo", model.Activo, SqlDbType.Bit);
+            AddParam(cmd, "@ServiciosIdsCsv", ToCsv(model.ServiciosSeleccionados), SqlDbType.NVarChar);
+            AddParam(cmd, "@NotificacionesActivas", model.NotificacionesActivas, SqlDbType.Bit);
+            AddParam(cmd, "@MinutosAnticipacionRecordatorio", model.MinutosAnticipacionRecordatorio, SqlDbType.Int);
+            AddParam(cmd, "@MinutosToleranciaNoShow", model.MinutosToleranciaNoShow, SqlDbType.Int);
+            AddParam(cmd, "@CorreoNotificacion", model.CorreoNotificacion, SqlDbType.NVarChar);
+            AddParam(cmd, "@WhatsappContacto", model.WhatsappContacto, SqlDbType.NVarChar);
+            AddParam(cmd, "@PermiteChatWhatsapp", model.PermiteChatWhatsapp, SqlDbType.Bit);
+            AddParam(cmd, "@AtiendeLunes", model.AtiendeLunes, SqlDbType.Bit);
+            AddParam(cmd, "@AtiendeMartes", model.AtiendeMartes, SqlDbType.Bit);
+            AddParam(cmd, "@AtiendeMiercoles", model.AtiendeMiercoles, SqlDbType.Bit);
+            AddParam(cmd, "@AtiendeJueves", model.AtiendeJueves, SqlDbType.Bit);
+            AddParam(cmd, "@AtiendeViernes", model.AtiendeViernes, SqlDbType.Bit);
+            AddParam(cmd, "@AtiendeSabado", model.AtiendeSabado, SqlDbType.Bit);
+            AddParam(cmd, "@AtiendeDomingo", model.AtiendeDomingo, SqlDbType.Bit);
+            AddParam(cmd, "@HoraApertura", model.HoraApertura, SqlDbType.Time);
+            AddParam(cmd, "@HoraCierre", model.HoraCierre, SqlDbType.Time);
+            AddParam(cmd, "@FechasInhabilitadasCsv", model.FechasInhabilitadasCsv, SqlDbType.NVarChar);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (SqlException ex) when (EsErrorNoEncontrado(ex.Message))
+        {
+            return false;
+        }
     }
 
     public async Task<bool> SedesEliminarAsync(int negocioId, int id, string usuario)
     {
-        var sedeActual = await SedesObtenerAsync(negocioId, id);
-        if (sedeActual is null) return false;
-
-        await using var cn = CreateConnection();
-        await cn.OpenAsync();
-        await using var cmd = new SqlCommand("Sp_Sedes_Eliminar", cn) { CommandType = CommandType.StoredProcedure };
-        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
-        AddParam(cmd, "@Id", id, SqlDbType.Int);
-        AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        await cmd.ExecuteNonQueryAsync();
-        return true;
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_Sedes_Eliminar", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+            AddParam(cmd, "@Id", id, SqlDbType.Int);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (SqlException ex) when (EsErrorNoEncontrado(ex.Message))
+        {
+            return false;
+        }
     }
 
-    public async Task<List<EspacioItemViewModel>> EspaciosListarAsync(int negocioId)
+    public async Task<List<EspacioItemViewModel>> EspaciosListarAsync(int negocioId, int? sedeId = null)
     {
         var list = new List<EspacioItemViewModel>();
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_Espacios_Listar", cn) { CommandType = CommandType.StoredProcedure };
         AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+        AddParam(cmd, "@SedeId", sedeId, SqlDbType.Int);
         await using var dr = await cmd.ExecuteReaderAsync();
+        if (dr.FieldCount < 8)
+            throw new InvalidOperationException("El SP Sp_Espacios_Listar no devuelve la columna TarifaResumen. Ejecuta el script SQL actualizado.");
         while (await dr.ReadAsync())
         {
             list.Add(new EspacioItemViewModel
@@ -195,7 +207,10 @@ public partial class SportCenterStoredProcedureService
                 SedeNombre = dr.GetString(3),
                 TipoDeporteNombre = dr.GetString(4),
                 TipoSueloNombre = dr.GetString(5),
-                Estado = dr.GetString(6)
+                Estado = dr.GetString(6),
+                TarifaResumen = dr.IsDBNull(7)
+                    ? "Sin tarifa configurada"
+                    : dr.GetString(7)
             });
         }
         return list;
@@ -224,7 +239,7 @@ public partial class SportCenterStoredProcedureService
             Estado = (EstadoEspacioDeportivo)dr.GetInt32(9),
             Tarifas = dr.IsDBNull(10)
                 ? new List<EspacioTarifaRangoViewModel>()
-                : JsonSerializer.Deserialize<List<EspacioTarifaRangoViewModel>>(dr.GetString(10)) ?? new List<EspacioTarifaRangoViewModel>(),
+                : JsonSerializer.Deserialize<List<EspacioTarifaRangoViewModel>>(dr.GetString(10), TarifaJsonSerializerOptions) ?? new List<EspacioTarifaRangoViewModel>(),
             NegocioId = negocioId
         };
     }
@@ -244,54 +259,60 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@TieneIluminacion", model.TieneIluminacion, SqlDbType.Bit);
         AddParam(cmd, "@Techada", model.Techada, SqlDbType.Bit);
         AddParam(cmd, "@Estado", (int)model.Estado, SqlDbType.Int);
-        AddParam(cmd, "@TarifasJson", JsonSerializer.Serialize(model.Tarifas), SqlDbType.NVarChar);
+        AddParam(cmd, "@TarifasJson", ObtenerTarifasJson(model), SqlDbType.NVarChar);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
         return Convert.ToInt32(await cmd.ExecuteScalarAsync());
     }
 
     public async Task<bool> EspaciosActualizarAsync(EspacioFormViewModel model, string usuario)
     {
-        var espacioActual = await EspaciosObtenerAsync(model.NegocioId, model.Id);
-        if (espacioActual is null) return false;
-
-        await using var cn = CreateConnection();
-        await cn.OpenAsync();
-        await using var cmd = new SqlCommand("Sp_Espacios_Actualizar", cn) { CommandType = CommandType.StoredProcedure };
-        AddParam(cmd, "@Id", model.Id, SqlDbType.Int);
-        AddParam(cmd, "@NegocioId", model.NegocioId, SqlDbType.Int);
-        AddParam(cmd, "@SedeId", model.SedeId, SqlDbType.Int);
-        AddParam(cmd, "@TipoDeporteId", model.TipoDeporteId, SqlDbType.Int);
-        AddParam(cmd, "@TipoSueloId", model.TipoSueloId, SqlDbType.Int);
-        AddParam(cmd, "@Codigo", model.Codigo, SqlDbType.NVarChar);
-        AddParam(cmd, "@Nombre", model.Nombre, SqlDbType.NVarChar);
-        AddParam(cmd, "@Capacidad", model.Capacidad, SqlDbType.Int);
-        AddParam(cmd, "@TieneIluminacion", model.TieneIluminacion, SqlDbType.Bit);
-        AddParam(cmd, "@Techada", model.Techada, SqlDbType.Bit);
-        AddParam(cmd, "@Estado", (int)model.Estado, SqlDbType.Int);
-        AddParam(cmd, "@TarifasJson", JsonSerializer.Serialize(model.Tarifas), SqlDbType.NVarChar);
-        AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        await cmd.ExecuteNonQueryAsync();
-
-        var espacioActualizado = await EspaciosObtenerAsync(model.NegocioId, model.Id);
-        return espacioActualizado is not null;
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_Espacios_Actualizar", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@Id", model.Id, SqlDbType.Int);
+            AddParam(cmd, "@NegocioId", model.NegocioId, SqlDbType.Int);
+            AddParam(cmd, "@SedeId", model.SedeId, SqlDbType.Int);
+            AddParam(cmd, "@TipoDeporteId", model.TipoDeporteId, SqlDbType.Int);
+            AddParam(cmd, "@TipoSueloId", model.TipoSueloId, SqlDbType.Int);
+            AddParam(cmd, "@Codigo", model.Codigo, SqlDbType.NVarChar);
+            AddParam(cmd, "@Nombre", model.Nombre, SqlDbType.NVarChar);
+            AddParam(cmd, "@Capacidad", model.Capacidad, SqlDbType.Int);
+            AddParam(cmd, "@TieneIluminacion", model.TieneIluminacion, SqlDbType.Bit);
+            AddParam(cmd, "@Techada", model.Techada, SqlDbType.Bit);
+            AddParam(cmd, "@Estado", (int)model.Estado, SqlDbType.Int);
+            AddParam(cmd, "@TarifasJson", ObtenerTarifasJson(model), SqlDbType.NVarChar);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (SqlException ex) when (EsErrorNoEncontrado(ex.Message))
+        {
+            return false;
+        }
     }
 
     public async Task<bool> EspaciosEliminarAsync(int negocioId, int id, string usuario)
     {
-        var espacioActual = await EspaciosObtenerAsync(negocioId, id);
-        if (espacioActual is null) return false;
-
-        await using var cn = CreateConnection();
-        await cn.OpenAsync();
-        await using var cmd = new SqlCommand("Sp_Espacios_Eliminar", cn) { CommandType = CommandType.StoredProcedure };
-        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
-        AddParam(cmd, "@Id", id, SqlDbType.Int);
-        AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        await cmd.ExecuteNonQueryAsync();
-        return true;
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_Espacios_Eliminar", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+            AddParam(cmd, "@Id", id, SqlDbType.Int);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (SqlException ex) when (EsErrorNoEncontrado(ex.Message))
+        {
+            return false;
+        }
     }
 
-    public Task<List<SelectListItem>> EspaciosComboSedesAsync(int negocioId) => ComboAsync("Sp_Combos_Sedes", ("@NegocioId", (object?)negocioId, SqlDbType.Int));
+    public Task<List<SelectListItem>> EspaciosComboSedesAsync(int negocioId, int? sedeId = null) => ComboAsync("Sp_Combos_Sedes", ("@NegocioId", (object?)negocioId, SqlDbType.Int), ("@SedeId", sedeId, SqlDbType.Int));
     public Task<List<SelectListItem>> SedesComboServiciosAsync() => ComboAsync("Sp_Combos_ServiciosSede");
     public Task<List<SelectListItem>> EspaciosComboTiposDeporteAsync() => ComboAsync("Sp_Combos_TiposDeporte");
     public Task<List<SelectListItem>> EspaciosComboTiposSueloAsync() => ComboAsync("Sp_Combos_TiposSuelo");
@@ -302,4 +323,9 @@ public partial class SportCenterStoredProcedureService
         var normalized = values.Where(v => v > 0).Distinct().OrderBy(v => v).ToArray();
         return normalized.Length == 0 ? null : string.Join(",", normalized);
     }
+
+    private static string ObtenerTarifasJson(EspacioFormViewModel model)
+        => string.IsNullOrWhiteSpace(model.TarifasJson)
+            ? JsonSerializer.Serialize(model.Tarifas, TarifaJsonSerializerOptions)
+            : model.TarifasJson;
 }

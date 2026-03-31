@@ -1,5 +1,6 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.SedeFormViewModel
 <!-- Firma: Codex - 27/03/2026 | Rediseño visual pro del formulario de sedes (estructura SaaS y jerarquia por secciones) -->
+<!-- Firma: Codex - 30/03/2026 | Selector de codigo pais para telefonos de sede y WhatsApp -->
 
 @{
     ViewData["Title"] = "Editar sede";
@@ -34,8 +35,13 @@
                     </div>
                     <div class="col-md-6">
                         <label asp-for="Telefono" class="form-label"></label>
-                        <input asp-for="Telefono" class="form-control" />
-                        <span asp-validation-for="Telefono" class="text-danger"></span>
+                        <input asp-for="Telefono" type="hidden" />
+                        <div class="input-group">
+                            <select asp-for="TelefonoCodigoPais" asp-items="Model.CodigosPais" class="form-select" style="max-width: 180px;"></select>
+                            <input asp-for="TelefonoNumeroLocal" class="form-control" inputmode="numeric" placeholder="999999999" />
+                        </div>
+                        <span asp-validation-for="TelefonoCodigoPais" class="text-danger"></span>
+                        <span asp-validation-for="TelefonoNumeroLocal" class="text-danger"></span>
                     </div>
                     <div class="col-12">
                         <label asp-for="Direccion" class="form-label"></label>
@@ -100,8 +106,13 @@
                     </div>
                     <div class="col-md-6">
                         <label asp-for="WhatsappContacto" class="form-label">WhatsApp de contacto</label>
-                        <input asp-for="WhatsappContacto" class="form-control" placeholder="+51999999999" />
-                        <span asp-validation-for="WhatsappContacto" class="text-danger"></span>
+                        <input asp-for="WhatsappContacto" type="hidden" />
+                        <div class="input-group">
+                            <select asp-for="WhatsappCodigoPais" asp-items="Model.CodigosPais" class="form-select" style="max-width: 180px;"></select>
+                            <input asp-for="WhatsappNumeroLocal" class="form-control" inputmode="numeric" placeholder="999999999" />
+                        </div>
+                        <span asp-validation-for="WhatsappCodigoPais" class="text-danger"></span>
+                        <span asp-validation-for="WhatsappNumeroLocal" class="text-danger"></span>
                     </div>
                 </div>
             </div>

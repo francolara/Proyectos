@@ -1,69 +1,171 @@
-﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.EspaciosIndexViewModel
-<!-- Firma: Codex - 28/03/2026 | Mejora visual de botones de accion Editar/Eliminar con estilo premium reusable -->
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.EspaciosIndexViewModel
+<!-- Firma: Codex - 29/03/2026 | Rediseno del listado de espacios con detalle operativo, estados visuales y filtro rapido -->
+<!-- Firma: Codex - 30/03/2026 | Incorporacion de resumen breve de tarifas por dias y horarios en la lista detallada -->
 
 @{
     ViewData["Title"] = "Espacios";
+    var totalEspacios = Model.Espacios.Count;
+    var totalActivos = Model.Espacios.Count(e => string.Equals(e.Estado, "Activo", StringComparison.OrdinalIgnoreCase));
+    var totalMantenimiento = Model.Espacios.Count(e => string.Equals(e.Estado, "EnMantenimiento", StringComparison.OrdinalIgnoreCase) || string.Equals(e.Estado, "En mantenimiento", StringComparison.OrdinalIgnoreCase));
+    var totalInactivos = Math.Max(0, totalEspacios - totalActivos - totalMantenimiento);
+
+    string estadoClase(string estado)
+    {
+        if (string.Equals(estado, "Activo", StringComparison.OrdinalIgnoreCase))
+            return "bg-success-subtle text-success-emphasis border border-success-subtle";
+        if (string.Equals(estado, "EnMantenimiento", StringComparison.OrdinalIgnoreCase) || string.Equals(estado, "En mantenimiento", StringComparison.OrdinalIgnoreCase))
+            return "bg-warning-subtle text-warning-emphasis border border-warning-subtle";
+        return "bg-danger-subtle text-danger-emphasis border border-danger-subtle";
+    }
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-        <h1 class="h4 mb-1">Espacios deportivos</h1>
-        <p class="text-muted mb-0">@Model.NegocioNombre | Rol: @Model.RolActual</p>
-    </div>
-    <div class="d-flex gap-2">
-        @if (Model.PuedeCrear)
-        {
-            <a class="btn btn-primary" asp-action="Create" asp-route-negocioId="@Model.NegocioId">Nuevo espacio</a>
-        }
-        <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Panel</a>
-    </div>
-</div>
-
-<div class="table-responsive">
-    <table class="table table-sm table-striped align-middle">
-        <thead>
-            <tr>
-                <th>Codigo</th>
-                <th>Nombre</th>
-                <th>Sede</th>
-                <th>Deporte</th>
-                <th>Suelo</th>
-                <th>Estado</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model.Espacios)
+<div class="admin-page-frame">
+    <section class="page-header">
+        <div>
+            <h1>Espacios deportivos</h1>
+            <p class="page-subtitle">@Model.NegocioNombre | Rol: @Model.RolActual</p>
+        </div>
+        <div class="action-toolbar">
+            @if (Model.PuedeCrear)
             {
-                <tr>
-                    <td>@item.Codigo</td>
-                    <td>@item.Nombre</td>
-                    <td>@item.SedeNombre</td>
-                    <td>@item.TipoDeporteNombre</td>
-                    <td>@item.TipoSueloNombre</td>
-                    <td>@item.Estado</td>
-                    <td class="text-end">
-                        @if (Model.PuedeEditar)
-                        {
-                            <a class="btn btn-sm sc-action-btn sc-action-edit" asp-action="Edit" asp-route-negocioId="@Model.NegocioId" asp-route-id="@item.Id">
-                                <i class="bi bi-pencil-square"></i> Editar
-                            </a>
-                        }
-                        @if (Model.PuedeEliminar)
-                        {
-                            <form asp-action="Delete" method="post" class="d-inline">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="negocioId" value="@Model.NegocioId" />
-                                <input type="hidden" name="id" value="@item.Id" />
-                                <button type="submit" class="btn btn-sm sc-action-btn sc-action-delete">
-                                    <i class="bi bi-trash3"></i> Inactivar
-                                </button>
-                            </form>
-                        }
-                    </td>
-                </tr>
+                <a class="btn btn-primary" asp-action="Create" asp-route-negocioId="@Model.NegocioId">
+                    <i class="bi bi-plus-circle me-1"></i> Nuevo espacio
+                </a>
             }
-        </tbody>
-    </table>
+            <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">
+                <i class="bi bi-arrow-left me-1"></i> Panel
+            </a>
+        </div>
+    </section>
+
+    <section class="kpi-grid mb-3">
+        <article class="kpi-card">
+            <p class="kpi-card-label">Total espacios</p>
+            <h3 class="kpi-card-value">@totalEspacios</h3>
+        </article>
+        <article class="kpi-card">
+            <p class="kpi-card-label">Espacios activos</p>
+            <h3 class="kpi-card-value">@totalActivos</h3>
+        </article>
+        <article class="kpi-card">
+            <p class="kpi-card-label">En mantenimiento</p>
+            <h3 class="kpi-card-value">@totalMantenimiento</h3>
+        </article>
+        <article class="kpi-card">
+            <p class="kpi-card-label">Inactivos</p>
+            <h3 class="kpi-card-value">@totalInactivos</h3>
+        </article>
+    </section>
+
+    <section class="filter-card mb-3">
+        <h2 class="section-title">Filtro rapido</h2>
+        <div class="row g-2 align-items-end px-3 pb-3">
+            <div class="col-lg-8 col-md-7">
+                <label class="form-label">Buscar por codigo, nombre, sede, deporte o suelo</label>
+                <input type="text" id="filtroEspacios" class="form-control" placeholder="Ejemplo: FUTBOL, CANCHA 1, PRINCIPAL..." />
+            </div>
+            <div class="col-lg-4 col-md-5">
+                <label class="form-label">Registros visibles</label>
+                <div class="form-control bg-light" id="contadorEspacios">@totalEspacios</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="table-card">
+        <h2 class="section-title">Listado detallado de espacios</h2>
+        @if (!Model.Espacios.Any())
+        {
+            <div class="empty-state">
+                <i class="bi bi-info-circle"></i>
+                <span>No hay espacios registrados para este negocio.</span>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm align-middle" id="tablaEspaciosDetallada">
+                    <thead>
+                        <tr>
+                            <th>Espacio</th>
+                            <th>Detalle operativo</th>
+                            <th>Estado</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Espacios)
+                        {
+                            <tr data-search="@($"{item.Codigo} {item.Nombre} {item.SedeNombre} {item.TipoDeporteNombre} {item.TipoSueloNombre} {item.Estado} {item.TarifaResumen}".ToLowerInvariant())">
+                                <td>
+                                    <div class="sc-espacio-main">
+                                        <span class="sc-espacio-code">@item.Codigo</span>
+                                        <div class="sc-espacio-name">@item.Nombre</div>
+                                        <small class="text-muted">ID: @item.Id</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <span class="badge bg-light text-dark border"><i class="bi bi-geo-alt me-1"></i>@item.SedeNombre</span>
+                                        <span class="badge bg-light text-dark border"><i class="bi bi-dribbble me-1"></i>@item.TipoDeporteNombre</span>
+                                        <span class="badge bg-light text-dark border"><i class="bi bi-grid-3x3-gap me-1"></i>@item.TipoSueloNombre</span>
+                                    </div>
+                                    <div class="small text-muted mt-2">
+                                        <i class="bi bi-cash-coin me-1"></i>@item.TarifaResumen
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge @estadoClase(item.Estado) sc-estado-pill">@item.Estado</span>
+                                </td>
+                                <td class="text-end">
+                                    @if (Model.PuedeEditar)
+                                    {
+                                        <a class="btn btn-sm sc-action-btn sc-action-edit" asp-action="Edit" asp-route-negocioId="@Model.NegocioId" asp-route-id="@item.Id">
+                                            <i class="bi bi-pencil-square"></i> Editar
+                                        </a>
+                                    }
+                                    @if (Model.PuedeEliminar)
+                                    {
+                                        <form asp-action="Delete" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <button type="submit" class="btn btn-sm sc-action-btn sc-action-delete">
+                                                <i class="bi bi-trash3"></i> Inactivar
+                                            </button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
 </div>
 
+@section Scripts {
+    <script>
+        (() => {
+            const filtro = document.getElementById('filtroEspacios');
+            const tabla = document.getElementById('tablaEspaciosDetallada');
+            const contador = document.getElementById('contadorEspacios');
+            if (!filtro || !tabla || !contador) return;
+
+            function aplicarFiltro() {
+                const valor = (filtro.value || '').trim().toLowerCase();
+                let visibles = 0;
+                tabla.querySelectorAll('tbody tr').forEach(row => {
+                    const texto = row.getAttribute('data-search') || '';
+                    const mostrar = !valor || texto.includes(valor);
+                    row.style.display = mostrar ? '' : 'none';
+                    if (mostrar) visibles++;
+                });
+                contador.textContent = String(visibles);
+            }
+
+            filtro.addEventListener('input', aplicarFiltro);
+            aplicarFiltro();
+        })();
+    </script>
+}

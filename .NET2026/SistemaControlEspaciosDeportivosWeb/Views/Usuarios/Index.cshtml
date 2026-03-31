@@ -1,5 +1,6 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.UsuariosNegocioIndexViewModel
 <!-- Firma: Codex - 28/03/2026 | Mejora visual de botones de accion Editar/Eliminar con estilo premium reusable -->
+<!-- Firma: Codex - 29/03/2026 | Asignacion de sede obligatoria para usuarios no administradores y visualizacion de sede en gestion de usuarios. -->
 
 @{
     ViewData["Title"] = "Usuarios del negocio";
@@ -42,6 +43,16 @@
                     <option value="5">Supervisor</option>
                 </select>
             </div>
+            <div class="col-md-2">
+                <label class="form-label">Sede</label>
+                <select class="form-select js-sede-selector" name="SedeId">
+                    <option value="">Selecciona</option>
+                    @foreach (var sede in Model.Sedes)
+                    {
+                        <option value="@sede.Value" selected="@(Model.SedeIdAsignada.HasValue && Model.SedeIdAsignada.Value.ToString() == sede.Value)">@sede.Text</option>
+                    }
+                </select>
+            </div>
             <div class="col-md-2 d-grid">
                 <button type="submit" class="btn btn-primary">Asignar</button>
             </div>
@@ -56,6 +67,7 @@
                 <th>Usuario</th>
                 <th>Correo</th>
                 <th>Rol</th>
+                <th>Sede</th>
                 <th>Estado</th>
                 <th class="text-end">Acciones</th>
             </tr>
@@ -71,12 +83,19 @@
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="NegocioId" value="@Model.NegocioId" />
                             <input type="hidden" name="UsuarioNegocioId" value="@item.UsuarioNegocioId" />
-                            <select class="form-select form-select-sm" name="RolNegocio">
+                            <select class="form-select form-select-sm js-rol-edicion" name="RolNegocio">
                                 <option value="1" selected="@(item.RolNegocio == 1)">Administrador</option>
                                 <option value="2" selected="@(item.RolNegocio == 2)">Trabajador</option>
                                 <option value="3" selected="@(item.RolNegocio == 3)">Recepcion</option>
                                 <option value="4" selected="@(item.RolNegocio == 4)">Caja</option>
                                 <option value="5" selected="@(item.RolNegocio == 5)">Supervisor</option>
+                            </select>
+                            <select class="form-select form-select-sm js-sede-edicion" name="SedeId">
+                                <option value="">Selecciona</option>
+                                @foreach (var sede in Model.Sedes)
+                                {
+                                    <option value="@sede.Value" selected="@(item.SedeId.HasValue && item.SedeId.Value.ToString() == sede.Value)">@sede.Text</option>
+                                }
                             </select>
                             @if (Model.PuedeEditar)
                             {
@@ -84,6 +103,7 @@
                             }
                         </form>
                     </td>
+                    <td>@(string.IsNullOrWhiteSpace(item.SedeNombre) ? "-" : item.SedeNombre)</td>
                     <td>@(item.Activo ? "Activo" : "Inactivo")</td>
                     <td class="text-end">
                         @if (Model.PuedeEditar)
@@ -109,3 +129,41 @@
         </tbody>
     </table>
 </div>
+
+@section Scripts
+{
+    <script>
+        (function () {
+            const esAdminActual = @Model.EsAdministrador.ToString().ToLowerInvariant();
+            const sedeFija = '@(Model.SedeIdAsignada?.ToString() ?? string.Empty)';
+
+            function toggleSede(rolSelect, sedeSelect) {
+                const esAdminRol = (rolSelect.value === "1");
+                if (!esAdminActual && sedeFija) {
+                    sedeSelect.value = sedeFija;
+                }
+                sedeSelect.disabled = esAdminRol || (!esAdminActual && !!sedeFija);
+                sedeSelect.required = !esAdminRol;
+                if (esAdminRol) {
+                    sedeSelect.value = "";
+                }
+            }
+
+            const rolAlta = document.querySelector('form[asp-action="Asignar"] select[name="RolNegocio"]')
+                || document.querySelector('form[action$="/Asignar"] select[name="RolNegocio"]');
+            const sedeAlta = document.querySelector('form[action$="/Asignar"] select[name="SedeId"]');
+            if (rolAlta && sedeAlta) {
+                toggleSede(rolAlta, sedeAlta);
+                rolAlta.addEventListener('change', function () { toggleSede(rolAlta, sedeAlta); });
+            }
+
+            document.querySelectorAll('form[action$="/CambiarRol"]').forEach(function (form) {
+                const rol = form.querySelector('.js-rol-edicion');
+                const sede = form.querySelector('.js-sede-edicion');
+                if (!rol || !sede) return;
+                toggleSede(rol, sede);
+                rol.addEventListener('change', function () { toggleSede(rol, sede); });
+            });
+        })();
+    </script>
+}

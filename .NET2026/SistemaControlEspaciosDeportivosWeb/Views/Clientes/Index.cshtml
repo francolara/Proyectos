@@ -1,67 +1,166 @@
-﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.ClientesIndexViewModel
-<!-- Firma: Codex - 28/03/2026 | Mejora visual de botones de accion Editar/Eliminar con estilo premium reusable -->
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.ClientesIndexViewModel
+<!-- Firma: Codex - 29/03/2026 | Rediseno del listado de clientes con KPIs, filtro rapido y tabla detallada -->
 
 @{
     ViewData["Title"] = "Clientes";
+    var totalClientes = Model.Clientes.Count;
+    var totalActivos = Model.Clientes.Count(x => x.Activo);
+    var totalInactivos = Math.Max(0, totalClientes - totalActivos);
+    var totalConCorreo = Model.Clientes.Count(x => !string.IsNullOrWhiteSpace(x.Correo));
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-        <h1 class="h4 mb-1">Clientes</h1>
-        <p class="text-muted mb-0">@Model.NegocioNombre | Rol: @Model.RolActual</p>
-    </div>
-    <div class="d-flex gap-2">
-        @if (Model.PuedeCrear)
-        {
-            <a class="btn btn-primary" asp-action="Create" asp-route-negocioId="@Model.NegocioId">Nuevo cliente</a>
-        }
-        <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Panel</a>
-    </div>
-</div>
-
-<div class="table-responsive">
-    <table class="table table-sm table-striped align-middle">
-        <thead>
-            <tr>
-                <th>Nombre / Razon social</th>
-                <th>Documento</th>
-                <th>Telefono</th>
-                <th>Correo</th>
-                <th>Estado</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model.Clientes)
+<div class="admin-page-frame">
+    <section class="page-header">
+        <div>
+            <h1>Clientes</h1>
+            <p class="page-subtitle">@Model.NegocioNombre | Rol: @Model.RolActual</p>
+        </div>
+        <div class="action-toolbar">
+            @if (Model.PuedeCrear)
             {
-                <tr>
-                    <td>@item.NombresORazonSocial</td>
-                    <td>@item.TipoDocumento @item.NumeroDocumento</td>
-                    <td>@(string.IsNullOrWhiteSpace(item.Telefono) ? "-" : item.Telefono)</td>
-                    <td>@(string.IsNullOrWhiteSpace(item.Correo) ? "-" : item.Correo)</td>
-                    <td>@(item.Activo ? "Activo" : "Inactivo")</td>
-                    <td class="text-end">
-                        @if (Model.PuedeEditar)
-                        {
-                            <a class="btn btn-sm sc-action-btn sc-action-edit" asp-action="Edit" asp-route-negocioId="@Model.NegocioId" asp-route-id="@item.Id">
-                                <i class="bi bi-pencil-square"></i> Editar
-                            </a>
-                        }
-                        @if (Model.PuedeEliminar)
-                        {
-                            <form asp-action="Delete" method="post" class="d-inline">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="negocioId" value="@Model.NegocioId" />
-                                <input type="hidden" name="id" value="@item.Id" />
-                                <button type="submit" class="btn btn-sm sc-action-btn sc-action-delete">
-                                    <i class="bi bi-trash3"></i> Eliminar
-                                </button>
-                            </form>
-                        }
-                    </td>
-                </tr>
+                <a class="btn btn-primary" asp-action="Create" asp-route-negocioId="@Model.NegocioId">
+                    <i class="bi bi-plus-circle me-1"></i> Nuevo cliente
+                </a>
             }
-        </tbody>
-    </table>
+            <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">
+                <i class="bi bi-arrow-left me-1"></i> Panel
+            </a>
+        </div>
+    </section>
+
+    <section class="kpi-grid mb-3">
+        <article class="kpi-card">
+            <p class="kpi-card-label">Total clientes</p>
+            <h3 class="kpi-card-value">@totalClientes</h3>
+        </article>
+        <article class="kpi-card">
+            <p class="kpi-card-label">Clientes activos</p>
+            <h3 class="kpi-card-value">@totalActivos</h3>
+        </article>
+        <article class="kpi-card">
+            <p class="kpi-card-label">Clientes inactivos</p>
+            <h3 class="kpi-card-value">@totalInactivos</h3>
+        </article>
+        <article class="kpi-card">
+            <p class="kpi-card-label">Con correo</p>
+            <h3 class="kpi-card-value">@totalConCorreo</h3>
+        </article>
+    </section>
+
+    <section class="filter-card mb-3">
+        <h2 class="section-title">Filtro rapido</h2>
+        <div class="row g-2 align-items-end px-3 pb-3">
+            <div class="col-lg-8 col-md-7">
+                <label class="form-label">Buscar por nombre, documento, telefono o correo</label>
+                <input type="text" id="filtroClientes" class="form-control" placeholder="Ejemplo: BORIS, 12345678, gmail.com..." />
+            </div>
+            <div class="col-lg-4 col-md-5">
+                <label class="form-label">Registros visibles</label>
+                <div class="form-control bg-light" id="contadorClientes">@totalClientes</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="table-card">
+        <h2 class="section-title">Listado detallado de clientes</h2>
+        @if (!Model.Clientes.Any())
+        {
+            <div class="empty-state">
+                <i class="bi bi-info-circle"></i>
+                <span>No hay clientes registrados para este negocio.</span>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm align-middle" id="tablaClientesDetallada">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Documento y contacto</th>
+                            <th>Estado</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Clientes)
+                        {
+                            var telefono = string.IsNullOrWhiteSpace(item.Telefono) ? "-" : item.Telefono!;
+                            var correo = string.IsNullOrWhiteSpace(item.Correo) ? "-" : item.Correo!;
+                            <tr data-search="@($"{item.NombresORazonSocial} {item.TipoDocumento} {item.NumeroDocumento} {telefono} {correo} {(item.Activo ? "Activo" : "Inactivo")}".ToLowerInvariant())">
+                                <td>
+                                    <div class="sc-list-main">
+                                        <div class="sc-list-title">@item.NombresORazonSocial</div>
+                                        <small class="text-muted">ID: @item.Id</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <span class="badge bg-light text-dark border"><i class="bi bi-credit-card-2-front me-1"></i>@item.TipoDocumento @item.NumeroDocumento</span>
+                                        <span class="badge bg-light text-dark border"><i class="bi bi-telephone me-1"></i>@telefono</span>
+                                        <span class="badge bg-light text-dark border"><i class="bi bi-envelope me-1"></i>@correo</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (item.Activo)
+                                    {
+                                        <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle sc-estado-pill">Activo</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle sc-estado-pill">Inactivo</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    @if (Model.PuedeEditar)
+                                    {
+                                        <a class="btn btn-sm sc-action-btn sc-action-edit" asp-action="Edit" asp-route-negocioId="@Model.NegocioId" asp-route-id="@item.Id">
+                                            <i class="bi bi-pencil-square"></i> Editar
+                                        </a>
+                                    }
+                                    @if (Model.PuedeEliminar)
+                                    {
+                                        <form asp-action="Delete" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <button type="submit" class="btn btn-sm sc-action-btn sc-action-delete">
+                                                <i class="bi bi-trash3"></i> Eliminar
+                                            </button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
 </div>
 
+@section Scripts {
+    <script>
+        (() => {
+            const filtro = document.getElementById('filtroClientes');
+            const tabla = document.getElementById('tablaClientesDetallada');
+            const contador = document.getElementById('contadorClientes');
+            if (!filtro || !tabla || !contador) return;
+
+            function aplicarFiltro() {
+                const valor = (filtro.value || '').trim().toLowerCase();
+                let visibles = 0;
+                tabla.querySelectorAll('tbody tr').forEach(row => {
+                    const texto = row.getAttribute('data-search') || '';
+                    const mostrar = !valor || texto.includes(valor);
+                    row.style.display = mostrar ? '' : 'none';
+                    if (mostrar) visibles++;
+                });
+                contador.textContent = String(visibles);
+            }
+
+            filtro.addEventListener('input', aplicarFiltro);
+            aplicarFiltro();
+        })();
+    </script>
+}

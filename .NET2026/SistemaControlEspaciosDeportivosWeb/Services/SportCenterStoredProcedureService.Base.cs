@@ -242,13 +242,14 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
         return list;
     }
 
-    public async Task<(int TotalSedes, int TotalEspacios, int ReservasHoy, decimal IngresosHoy, decimal OcupacionHoyPct, int NoShowMes, decimal TicketPromedioMes)> PanelObtenerMetricasAsync(int negocioId, DateOnly fecha)
+    public async Task<(int TotalSedes, int TotalEspacios, int ReservasHoy, decimal IngresosHoy, decimal OcupacionHoyPct, int NoShowMes, decimal TicketPromedioMes)> PanelObtenerMetricasAsync(int negocioId, DateOnly fecha, int? sedeId = null)
     {
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_Panel_ObtenerMetricas", cn) { CommandType = CommandType.StoredProcedure };
         AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
         AddParam(cmd, "@Fecha", fecha.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
+        AddParam(cmd, "@SedeId", sedeId, SqlDbType.Int);
         await using var dr = await cmd.ExecuteReaderAsync();
         if (await dr.ReadAsync())
         {

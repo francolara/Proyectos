@@ -17,7 +17,9 @@
 
   <ItemGroup>
     <Content Remove="artifacts\**" />
+    <Content Remove="out-temp\**" />
     <None Remove="artifacts\**" />
+    <None Remove="out-temp\**" />
   </ItemGroup>
 
 </Project>

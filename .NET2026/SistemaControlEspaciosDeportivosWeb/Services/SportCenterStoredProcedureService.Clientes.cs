@@ -72,38 +72,46 @@ public partial class SportCenterStoredProcedureService
 
     public async Task<bool> ClientesActualizarAsync(ClienteFormViewModel model, string usuario)
     {
-        var clienteActual = await ClientesObtenerAsync(model.NegocioId, model.Id);
-        if (clienteActual is null) return false;
-
-        await using var cn = CreateConnection();
-        await cn.OpenAsync();
-        await using var cmd = new SqlCommand("Sp_Clientes_Actualizar", cn) { CommandType = CommandType.StoredProcedure };
-        AddParam(cmd, "@Id", model.Id, SqlDbType.Int);
-        AddParam(cmd, "@NegocioId", model.NegocioId, SqlDbType.Int);
-        AddParam(cmd, "@NombresORazonSocial", model.NombresORazonSocial, SqlDbType.NVarChar);
-        AddParam(cmd, "@TipoDocumento", model.TipoDocumento, SqlDbType.NVarChar);
-        AddParam(cmd, "@NumeroDocumento", model.NumeroDocumento, SqlDbType.NVarChar);
-        AddParam(cmd, "@Telefono", model.Telefono, SqlDbType.NVarChar);
-        AddParam(cmd, "@Correo", model.Correo, SqlDbType.NVarChar);
-        AddParam(cmd, "@DireccionFiscal", model.DireccionFiscal, SqlDbType.NVarChar);
-        AddParam(cmd, "@Activo", model.Activo, SqlDbType.Bit);
-        AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        await cmd.ExecuteNonQueryAsync();
-        return true;
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_Clientes_Actualizar", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@Id", model.Id, SqlDbType.Int);
+            AddParam(cmd, "@NegocioId", model.NegocioId, SqlDbType.Int);
+            AddParam(cmd, "@NombresORazonSocial", model.NombresORazonSocial, SqlDbType.NVarChar);
+            AddParam(cmd, "@TipoDocumento", model.TipoDocumento, SqlDbType.NVarChar);
+            AddParam(cmd, "@NumeroDocumento", model.NumeroDocumento, SqlDbType.NVarChar);
+            AddParam(cmd, "@Telefono", model.Telefono, SqlDbType.NVarChar);
+            AddParam(cmd, "@Correo", model.Correo, SqlDbType.NVarChar);
+            AddParam(cmd, "@DireccionFiscal", model.DireccionFiscal, SqlDbType.NVarChar);
+            AddParam(cmd, "@Activo", model.Activo, SqlDbType.Bit);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (SqlException ex) when (EsErrorNoEncontrado(ex.Message))
+        {
+            return false;
+        }
     }
 
     public async Task<bool> ClientesEliminarAsync(int negocioId, int id, string usuario)
     {
-        var clienteActual = await ClientesObtenerAsync(negocioId, id);
-        if (clienteActual is null) return false;
-
-        await using var cn = CreateConnection();
-        await cn.OpenAsync();
-        await using var cmd = new SqlCommand("Sp_Clientes_Eliminar", cn) { CommandType = CommandType.StoredProcedure };
-        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
-        AddParam(cmd, "@Id", id, SqlDbType.Int);
-        AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        await cmd.ExecuteNonQueryAsync();
-        return true;
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_Clientes_Eliminar", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+            AddParam(cmd, "@Id", id, SqlDbType.Int);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (SqlException ex) when (EsErrorNoEncontrado(ex.Message))
+        {
+            return false;
+        }
     }
 }

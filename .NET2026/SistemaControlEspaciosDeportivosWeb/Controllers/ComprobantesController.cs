@@ -20,12 +20,14 @@ public class ComprobantesController(IModuloPermisoService moduloPermisoService, 
             NegocioId = baseVm.NegocioId,
             NegocioNombre = baseVm.NegocioNombre,
             RolActual = baseVm.RolActual,
+            SedeIdAsignada = baseVm.SedeIdAsignada,
+            EsAdministrador = baseVm.EsAdministrador,
             ModuloCodigo = baseVm.ModuloCodigo,
             ModuloNombre = baseVm.ModuloNombre,
             PuedeCrear = baseVm.PuedeCrear,
             PuedeEditar = baseVm.PuedeEditar,
             PuedeEliminar = baseVm.PuedeEliminar,
-            Comprobantes = await spService.ComprobantesListarAsync(resolvedNegocioId.Value)
+            Comprobantes = await spService.ComprobantesListarAsync(resolvedNegocioId.Value, AplicarSedeAsignada(baseVm, null))
         };
         return View(vm);
     }
@@ -39,7 +41,7 @@ public class ComprobantesController(IModuloPermisoService moduloPermisoService, 
         if (baseVm is null || !baseVm.PuedeCrear) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
         var vm = new ComprobanteFormViewModel { NegocioId = resolvedNegocioId.Value, NegocioNombre = baseVm.NegocioNombre, RolActual = baseVm.RolActual };
-        vm.Reservas = await spService.ComprobantesComboReservasAsync(resolvedNegocioId.Value);
+        vm.Reservas = await spService.ComprobantesComboReservasAsync(resolvedNegocioId.Value, AplicarSedeAsignada(baseVm, null));
         return View(vm);
     }
 
@@ -50,7 +52,7 @@ public class ComprobantesController(IModuloPermisoService moduloPermisoService, 
         var baseVm = await ObtenerBaseAsync(model.NegocioId, "COMPROBANTES");
         if (baseVm is null || !baseVm.PuedeCrear) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
-        model.Reservas = await spService.ComprobantesComboReservasAsync(model.NegocioId);
+        model.Reservas = await spService.ComprobantesComboReservasAsync(model.NegocioId, AplicarSedeAsignada(baseVm, null));
         if (!ModelState.IsValid) return View(model);
 
         await spService.ComprobantesCrearAsync(model, User.Identity?.Name ?? "sistema");
@@ -69,7 +71,7 @@ public class ComprobantesController(IModuloPermisoService moduloPermisoService, 
         if (vm is null) return NotFound();
         vm.NegocioNombre = baseVm.NegocioNombre;
         vm.RolActual = baseVm.RolActual;
-        vm.Reservas = await spService.ComprobantesComboReservasAsync(resolvedNegocioId.Value);
+        vm.Reservas = await spService.ComprobantesComboReservasAsync(resolvedNegocioId.Value, AplicarSedeAsignada(baseVm, null));
         return View(vm);
     }
 
@@ -80,7 +82,7 @@ public class ComprobantesController(IModuloPermisoService moduloPermisoService, 
         var baseVm = await ObtenerBaseAsync(model.NegocioId, "COMPROBANTES");
         if (baseVm is null || !baseVm.PuedeEditar) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
-        model.Reservas = await spService.ComprobantesComboReservasAsync(model.NegocioId);
+        model.Reservas = await spService.ComprobantesComboReservasAsync(model.NegocioId, AplicarSedeAsignada(baseVm, null));
         if (!ModelState.IsValid) return View(model);
 
         var ok = await spService.ComprobantesActualizarAsync(model, User.Identity?.Name ?? "sistema");

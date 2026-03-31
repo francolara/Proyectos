@@ -80,31 +80,39 @@ public partial class SportCenterStoredProcedureService
 
     public async Task<bool> AltasClubesAprobarAsync(int id, string usuario, string? comentarioGestion = null)
     {
-        var solicitudActual = (await AltasClubesListarAsync()).FirstOrDefault(x => x.Id == id);
-        if (solicitudActual is null) return false;
-
-        await using var cn = CreateConnection();
-        await cn.OpenAsync();
-        await using var cmd = new SqlCommand("Sp_AltasClubes_Aprobar", cn) { CommandType = CommandType.StoredProcedure };
-        AddParam(cmd, "@Id", id, SqlDbType.Int);
-        AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        AddParam(cmd, "@ComentarioGestion", comentarioGestion, SqlDbType.NVarChar);
-        await cmd.ExecuteNonQueryAsync();
-        return true;
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_AltasClubes_Aprobar", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@Id", id, SqlDbType.Int);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            AddParam(cmd, "@ComentarioGestion", comentarioGestion, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (SqlException ex) when (EsErrorNoEncontrado(ex.Message))
+        {
+            return false;
+        }
     }
 
     public async Task<bool> AltasClubesRechazarAsync(int id, string usuario, string? comentarioGestion = null)
     {
-        var solicitudActual = (await AltasClubesListarAsync()).FirstOrDefault(x => x.Id == id);
-        if (solicitudActual is null) return false;
-
-        await using var cn = CreateConnection();
-        await cn.OpenAsync();
-        await using var cmd = new SqlCommand("Sp_AltasClubes_Rechazar", cn) { CommandType = CommandType.StoredProcedure };
-        AddParam(cmd, "@Id", id, SqlDbType.Int);
-        AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        AddParam(cmd, "@ComentarioGestion", comentarioGestion, SqlDbType.NVarChar);
-        await cmd.ExecuteNonQueryAsync();
-        return true;
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_AltasClubes_Rechazar", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@Id", id, SqlDbType.Int);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            AddParam(cmd, "@ComentarioGestion", comentarioGestion, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (SqlException ex) when (EsErrorNoEncontrado(ex.Message))
+        {
+            return false;
+        }
     }
 }

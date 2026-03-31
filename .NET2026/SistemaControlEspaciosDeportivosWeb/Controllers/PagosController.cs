@@ -20,12 +20,14 @@ public class PagosController(IModuloPermisoService moduloPermisoService, ISportC
             NegocioId = baseVm.NegocioId,
             NegocioNombre = baseVm.NegocioNombre,
             RolActual = baseVm.RolActual,
+            SedeIdAsignada = baseVm.SedeIdAsignada,
+            EsAdministrador = baseVm.EsAdministrador,
             ModuloCodigo = baseVm.ModuloCodigo,
             ModuloNombre = baseVm.ModuloNombre,
             PuedeCrear = baseVm.PuedeCrear,
             PuedeEditar = baseVm.PuedeEditar,
             PuedeEliminar = baseVm.PuedeEliminar,
-            Pagos = await spService.PagosListarAsync(resolvedNegocioId.Value)
+            Pagos = await spService.PagosListarAsync(resolvedNegocioId.Value, AplicarSedeAsignada(baseVm, null))
         };
         return View(vm);
     }
@@ -39,7 +41,7 @@ public class PagosController(IModuloPermisoService moduloPermisoService, ISportC
         if (baseVm is null || !baseVm.PuedeCrear) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
         var vm = new PagoFormViewModel { NegocioId = resolvedNegocioId.Value, NegocioNombre = baseVm.NegocioNombre, RolActual = baseVm.RolActual };
-        vm.Reservas = await spService.PagosComboReservasAsync(resolvedNegocioId.Value);
+        vm.Reservas = await spService.PagosComboReservasAsync(resolvedNegocioId.Value, AplicarSedeAsignada(baseVm, null));
         return View(vm);
     }
 
@@ -50,7 +52,7 @@ public class PagosController(IModuloPermisoService moduloPermisoService, ISportC
         var baseVm = await ObtenerBaseAsync(model.NegocioId, "PAGOS");
         if (baseVm is null || !baseVm.PuedeCrear) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
-        model.Reservas = await spService.PagosComboReservasAsync(model.NegocioId);
+        model.Reservas = await spService.PagosComboReservasAsync(model.NegocioId, AplicarSedeAsignada(baseVm, null));
         if (!ModelState.IsValid) return View(model);
 
         try
@@ -77,7 +79,7 @@ public class PagosController(IModuloPermisoService moduloPermisoService, ISportC
         if (vm is null) return NotFound();
         vm.NegocioNombre = baseVm.NegocioNombre;
         vm.RolActual = baseVm.RolActual;
-        vm.Reservas = await spService.PagosComboReservasAsync(resolvedNegocioId.Value);
+        vm.Reservas = await spService.PagosComboReservasAsync(resolvedNegocioId.Value, AplicarSedeAsignada(baseVm, null));
         return View(vm);
     }
 
@@ -88,7 +90,7 @@ public class PagosController(IModuloPermisoService moduloPermisoService, ISportC
         var baseVm = await ObtenerBaseAsync(model.NegocioId, "PAGOS");
         if (baseVm is null || !baseVm.PuedeEditar) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
-        model.Reservas = await spService.PagosComboReservasAsync(model.NegocioId);
+        model.Reservas = await spService.PagosComboReservasAsync(model.NegocioId, AplicarSedeAsignada(baseVm, null));
         if (!ModelState.IsValid) return View(model);
 
         try

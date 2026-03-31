@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
 
@@ -43,7 +44,8 @@ public class ClientesController(IModuloPermisoService moduloPermisoService, ISpo
             NegocioId = resolvedNegocioId.Value,
             NegocioNombre = baseVm.NegocioNombre,
             RolActual = baseVm.RolActual,
-            Activo = true
+            Activo = true,
+            CodigosPais = TelefonoInternacionalHelper.ObtenerCodigosPais("+51")
         });
     }
 
@@ -53,10 +55,24 @@ public class ClientesController(IModuloPermisoService moduloPermisoService, ISpo
     {
         var baseVm = await ObtenerBaseAsync(model.NegocioId, "CLIENTES");
         if (baseVm is null || !baseVm.PuedeCrear) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
-        if (!ModelState.IsValid) return View(model);
+        ComponerTelefono(model);
+        if (!ModelState.IsValid)
+        {
+            model.CodigosPais = TelefonoInternacionalHelper.ObtenerCodigosPais(model.TelefonoCodigoPais);
+            return View(model);
+        }
 
-        await spService.ClientesCrearAsync(model, User.Identity?.Name ?? "sistema");
-        return RedirectToAction(nameof(Index), new { negocioId = model.NegocioId });
+        try
+        {
+            await spService.ClientesCrearAsync(model, User.Identity?.Name ?? "sistema");
+            return RedirectToAction(nameof(Index), new { negocioId = model.NegocioId });
+        }
+        catch (SqlException ex) when (EsErrorClienteDuplicado(ex.Message))
+        {
+            ModelState.AddModelError(string.Empty, "Cliente ya se encuentra registrado.");
+            model.CodigosPais = TelefonoInternacionalHelper.ObtenerCodigosPais(model.TelefonoCodigoPais);
+            return View(model);
+        }
     }
 
     public async Task<IActionResult> Edit(int id, int? negocioId)
@@ -71,6 +87,7 @@ public class ClientesController(IModuloPermisoService moduloPermisoService, ISpo
         if (vm is null) return NotFound();
         vm.NegocioNombre = baseVm.NegocioNombre;
         vm.RolActual = baseVm.RolActual;
+        InicializarTelefonoParaVista(vm);
         return View(vm);
     }
 
@@ -80,15 +97,30 @@ public class ClientesController(IModuloPermisoService moduloPermisoService, ISpo
     {
         var baseVm = await ObtenerBaseAsync(model.NegocioId, "CLIENTES");
         if (baseVm is null || !baseVm.PuedeEditar) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
-        if (!ModelState.IsValid) return View(model);
-
-        var ok = await spService.ClientesActualizarAsync(model, User.Identity?.Name ?? "sistema");
-        if (!ok)
+        ComponerTelefono(model);
+        if (!ModelState.IsValid)
         {
-            ModelState.AddModelError(string.Empty, "No se pudo guardar el cliente. Verifica el negocio seleccionado.");
+            model.CodigosPais = TelefonoInternacionalHelper.ObtenerCodigosPais(model.TelefonoCodigoPais);
             return View(model);
         }
-        return RedirectToAction(nameof(Index), new { negocioId = model.NegocioId });
+
+        try
+        {
+            var ok = await spService.ClientesActualizarAsync(model, User.Identity?.Name ?? "sistema");
+            if (!ok)
+            {
+                ModelState.AddModelError(string.Empty, "No se pudo guardar el cliente. Verifica el negocio seleccionado.");
+                model.CodigosPais = TelefonoInternacionalHelper.ObtenerCodigosPais(model.TelefonoCodigoPais);
+                return View(model);
+            }
+            return RedirectToAction(nameof(Index), new { negocioId = model.NegocioId });
+        }
+        catch (SqlException ex) when (EsErrorClienteDuplicado(ex.Message))
+        {
+            ModelState.AddModelError(string.Empty, "Cliente ya se encuentra registrado.");
+            model.CodigosPais = TelefonoInternacionalHelper.ObtenerCodigosPais(model.TelefonoCodigoPais);
+            return View(model);
+        }
     }
 
     [HttpPost]
@@ -101,5 +133,24 @@ public class ClientesController(IModuloPermisoService moduloPermisoService, ISpo
         var ok = await spService.ClientesEliminarAsync(negocioId, id, User.Identity?.Name ?? "sistema");
         if (!ok) return NotFound();
         return RedirectToAction(nameof(Index), new { negocioId });
+    }
+
+    private static void InicializarTelefonoParaVista(ClienteFormViewModel model)
+    {
+        TelefonoInternacionalHelper.Descomponer(model.Telefono, out var codigoPais, out var numeroLocal);
+        model.TelefonoCodigoPais = codigoPais;
+        model.TelefonoNumeroLocal = numeroLocal;
+        model.CodigosPais = TelefonoInternacionalHelper.ObtenerCodigosPais(model.TelefonoCodigoPais);
+    }
+
+    private static void ComponerTelefono(ClienteFormViewModel model)
+    {
+        model.Telefono = TelefonoInternacionalHelper.Componer(model.TelefonoCodigoPais, model.TelefonoNumeroLocal);
+    }
+
+    private static bool EsErrorClienteDuplicado(string? mensaje)
+    {
+        return !string.IsNullOrWhiteSpace(mensaje) &&
+               mensaje.Contains("Cliente ya se encuentra registrado", StringComparison.OrdinalIgnoreCase);
     }
 }

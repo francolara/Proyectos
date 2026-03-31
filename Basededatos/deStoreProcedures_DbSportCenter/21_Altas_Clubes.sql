@@ -3,6 +3,12 @@
 -- Create date:   27/03/2026
 -- Description:   Sprint 8 - Alta publica "Software para Clubes" y aprobacion interna.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   30/03/2026
+-- Description:   Ajusta rechazo de altas para devolver error controlado cuando la solicitud no existe o ya fue gestionada.
+-- Firma:         Codex - 30/03/2026 | Elimina pre-chequeos de existencia en C# y valida en SP.
+-- =============================================
 
 IF OBJECT_ID(N'dbo.SolicitudesAltaClub', N'U') IS NULL
 BEGIN
@@ -221,6 +227,9 @@ BEGIN
             UsuarioGestion = @Usuario
         WHERE Id = @Id
           AND Estado = 1;
+
+        IF @@ROWCOUNT = 0
+            RAISERROR('No se encontro la solicitud pendiente para rechazar.', 16, 1);
     END TRY
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;

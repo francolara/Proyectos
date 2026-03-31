@@ -7,6 +7,7 @@
 -- Author:        FRANCO LARA
 -- Create date:   27/03/2026
 -- Description:   Ajuste de llamadas de auditoria con parametros nombrados para evitar errores de sintaxis.
+-- Firma:         Codex - 30/03/2026 | Sedes/Espacios eliminar ahora devuelve error cuando no existe registro para el negocio.
 -- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.Sp_Combos_Sedes
@@ -135,6 +136,9 @@ BEGIN
             UsuarioActualizacion = @Usuario
         WHERE Id = @Id
           AND NegocioId = @NegocioId;
+
+        IF @@ROWCOUNT = 0
+            RAISERROR('No se encontro la sede para eliminar.', 16, 1);
 
         IF @@ROWCOUNT > 0
         BEGIN
@@ -314,6 +318,9 @@ BEGIN
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
         WHERE e.Id = @Id
           AND s.NegocioId = @NegocioId;
+
+        IF @@ROWCOUNT = 0
+            RAISERROR('No se encontro el espacio deportivo para eliminar.', 16, 1);
 
         IF @@ROWCOUNT > 0
         BEGIN

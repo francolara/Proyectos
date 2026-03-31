@@ -2,6 +2,7 @@
 -- Author:        FRANCO LARA
 -- Create date:   27/03/2026
 -- Description:   Reglas de negocio sprint 2 para reservas y pagos (validaciones, saldo, estado).
+-- Firma:         Codex - 30/03/2026 | Ajusta Sp_Reservas_Actualizar y Sp_Pagos_Actualizar/Eliminar para devolver error cuando no existe el registro en el negocio.
 -- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.Sp_Reservas_Crear
@@ -140,6 +141,9 @@ BEGIN
         WHERE r.Id = @Id
           AND s.NegocioId = @NegocioId;
 
+        IF @@ROWCOUNT = 0
+            RAISERROR('No se encontro la reserva para actualizar.', 16, 1);
+
         IF @@ROWCOUNT > 0
         BEGIN
             DECLARE @EntidadIdAudit NVARCHAR(80);
@@ -257,7 +261,7 @@ BEGIN
         SELECT @ReservaAnteriorId = p.ReservaId FROM dbo.Pagos p WHERE p.Id = @Id;
 
         IF @ReservaAnteriorId IS NULL
-            RETURN;
+            RAISERROR('No se encontro el pago para actualizar en el negocio.', 16, 1);
 
         IF NOT EXISTS (
             SELECT 1
@@ -351,7 +355,7 @@ BEGIN
           AND s.NegocioId = @NegocioId;
 
         IF @ReservaId IS NULL
-            RETURN;
+            RAISERROR('No se encontro el pago para eliminar en el negocio.', 16, 1);
 
         BEGIN TRANSACTION;
 

@@ -3,6 +3,12 @@
 -- Create date:   27/03/2026
 -- Description:   Sprint 4 - KPIs avanzados de panel y modulo de promociones horarias.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   30/03/2026
+-- Description:   Ajusta update/delete de promociones para devolver error controlado cuando no existe registro para el negocio.
+-- Firma:         Codex - 30/03/2026 | Elimina pre-chequeos de existencia en C# y centraliza validacion en SP.
+-- =============================================
 
 IF OBJECT_ID(N'dbo.PromocionesHorario', N'U') IS NULL
 BEGIN
@@ -351,12 +357,12 @@ BEGIN
         WHERE Id = @Id
           AND NegocioId = @NegocioId;
 
-        IF @@ROWCOUNT > 0
-        BEGIN
-            DECLARE @EntidadIdAudit NVARCHAR(80);
-            SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
-            EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'PROMOCIONES', @Accion = N'EDIT', @Entidad = N'PromocionHorario', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
-        END;
+        IF @@ROWCOUNT = 0
+            RAISERROR('No se encontro la promocion para actualizar en el negocio.', 16, 1);
+
+        DECLARE @EntidadIdAudit NVARCHAR(80);
+        SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
+        EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'PROMOCIONES', @Accion = N'EDIT', @Entidad = N'PromocionHorario', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
     END TRY
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
@@ -381,12 +387,12 @@ BEGIN
         WHERE Id = @Id
           AND NegocioId = @NegocioId;
 
-        IF @@ROWCOUNT > 0
-        BEGIN
-            DECLARE @EntidadIdAudit NVARCHAR(80);
-            SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
-            EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'PROMOCIONES', @Accion = N'DELETE', @Entidad = N'PromocionHorario', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
-        END;
+        IF @@ROWCOUNT = 0
+            RAISERROR('No se encontro la promocion para eliminar en el negocio.', 16, 1);
+
+        DECLARE @EntidadIdAudit NVARCHAR(80);
+        SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
+        EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'PROMOCIONES', @Accion = N'DELETE', @Entidad = N'PromocionHorario', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
     END TRY
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;

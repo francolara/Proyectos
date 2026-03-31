@@ -7,6 +7,7 @@ public class UsuariosNegocioIndexViewModel : ModuloBaseViewModel
 {
     public List<UsuarioNegocioItemViewModel> Usuarios { get; set; } = new();
     public UsuarioNegocioAsignarFormViewModel AsignarForm { get; set; } = new();
+    public List<SelectListItem> Sedes { get; set; } = new();
 }
 
 public class UsuarioNegocioItemViewModel
@@ -17,6 +18,8 @@ public class UsuarioNegocioItemViewModel
     public string Apellidos { get; set; } = string.Empty;
     public string Correo { get; set; } = string.Empty;
     public int RolNegocio { get; set; }
+    public int? SedeId { get; set; }
+    public string SedeNombre { get; set; } = string.Empty;
     public bool Activo { get; set; }
 }
 
@@ -30,6 +33,8 @@ public class UsuarioNegocioAsignarFormViewModel
 
     [Range(1, 5, ErrorMessage = "El campo {0} debe estar entre {1} y {2}.")]
     public int RolNegocio { get; set; } = 2;
+
+    public int? SedeId { get; set; }
 }
 
 public class UsuarioNegocioRolFormViewModel
@@ -38,6 +43,7 @@ public class UsuarioNegocioRolFormViewModel
     public int UsuarioNegocioId { get; set; }
     [Range(1, 5, ErrorMessage = "El campo {0} debe estar entre {1} y {2}.")]
     public int RolNegocio { get; set; }
+    public int? SedeId { get; set; }
 }
 
 public class UsuarioNegocioPermisosViewModel : ModuloBaseViewModel

@@ -68,6 +68,7 @@
 - `Sp_Espacios_Crear`
 - `Sp_Espacios_Actualizar`
 - `Sp_Espacios_Eliminar`
+- `Sp_Sedes_Eliminar` y `Sp_Espacios_Eliminar` ahora retornan error cuando no existe el registro para el negocio.
 
 ### 04_Reservas_Pagos_Comprobantes.sql
 - `Sp_Combos_EspaciosPorNegocio`
@@ -78,16 +79,19 @@
 - `Sp_Reservas_Crear`
 - `Sp_Reservas_Actualizar`
 - `Sp_Reservas_Eliminar`
+- `Sp_Reservas_Eliminar` valida `@NegocioId` por join con `Sedes` y devuelve error si no encuentra la reserva.
 - `Sp_Pagos_Listar`
 - `Sp_Pagos_ObtenerPorId`
 - `Sp_Pagos_Crear`
 - `Sp_Pagos_Actualizar`
 - `Sp_Pagos_Eliminar`
+- `Sp_Pagos_Actualizar` y `Sp_Pagos_Eliminar` devuelven error si no existe el pago para el negocio (evita falso positivo en C#).
 - `Sp_Comprobantes_Listar`
 - `Sp_Comprobantes_ObtenerPorId`
 - `Sp_Comprobantes_Crear`
 - `Sp_Comprobantes_Actualizar`
 - `Sp_Comprobantes_Eliminar`
+- `Sp_Comprobantes_Actualizar` y `Sp_Comprobantes_Eliminar` devuelven error si no existe el comprobante para el negocio.
 
 ### 05_Sedes_Servicios.sql
 - Tablas:
@@ -109,16 +113,19 @@
 - `Sp_Clientes_Crear`
 - `Sp_Clientes_Actualizar`
 - `Sp_Clientes_Eliminar`
+- `Sp_Clientes_Actualizar` y `Sp_Clientes_Eliminar` devuelven error si no existe el cliente para el negocio.
+- `Sp_Clientes_Crear` y `Sp_Clientes_Actualizar` validan duplicado por `NumeroDocumento` dentro del mismo `NegocioId` (si el documento fue informado) y retornan: `Cliente ya se encuentra registrado.`
 
 ### 07_Reservas_Pagos_Reglas.sql
 - `Sp_Reservas_Crear` (valida cruce, horas y montos)
-- `Sp_Reservas_Actualizar` (valida cruce, horas y montos)
+- `Sp_Reservas_Actualizar` (valida cruce, horas y montos; retorna error si no afecta filas)
 - `Sp_Pagos_Crear` (valida monto y evita sobrepago)
 - `Sp_Pagos_Actualizar` (recalcula saldo en reserva nueva/anterior)
 - `Sp_Pagos_Eliminar` (recalcula saldo de la reserva)
+- `Sp_Pagos_Actualizar` y `Sp_Pagos_Eliminar` retornan error cuando el pago no existe para el negocio.
 
 ### 08_Reservas_Calendario_Filtros.sql
-- `Sp_Reservas_Listar` (filtros por rango fecha, sede, espacio y estado)
+- `Sp_Reservas_Listar` (filtros por rango fecha, sede, espacio y estado simple `@Estado` o multiple `@EstadosCsv`)
 
 ### 09_Reportes_Ocupacion_Ingresos.sql
 - `Sp_Seguridad_SeedModulosPermisosBase` (agrega modulo `REPORTES`)
@@ -135,6 +142,7 @@
 - `Sp_SolicitudesPublicas_Listar`
 - `Sp_SolicitudesPublicas_ActualizarEstado`
 - `Sp_SolicitudesPublicas_ConvertirAReserva`
+- `Sp_SolicitudesPublicas_ActualizarEstado` devuelve error si la solicitud no existe o no pertenece al negocio.
 
 ### 12_Home_Notificaciones_Seguimiento.sql
 - `Sp_Home_ConsultarSolicitudPublica`
@@ -147,6 +155,7 @@
 - `Sp_UsuariosNegocio_AsignarPorCorreo`
 - `Sp_UsuariosNegocio_ActualizarRol`
 - `Sp_UsuariosNegocio_Desactivar`
+- `Sp_UsuariosNegocio_Desactivar` retorna error si no existe el usuario del negocio.
 - `Sp_UsuariosNegocio_PermisosListar`
 - `Sp_UsuariosNegocio_PermisoGuardar`
 
@@ -160,6 +169,7 @@
 - `Sp_Promociones_Crear`
 - `Sp_Promociones_Actualizar`
 - `Sp_Promociones_Eliminar`
+- `Sp_Promociones_Actualizar` y `Sp_Promociones_Eliminar` devuelven error si no existe la promoción para el negocio.
 
 ### 15_Calendario_Bloqueos.sql
 - Tabla:
@@ -172,6 +182,7 @@
 
 ### 16_Reservas_CheckIn_CheckOut.sql
 - `Sp_Reservas_CambiarEstadoRapido`
+- `Sp_Reservas_CambiarEstadoRapido` retorna error si la reserva no existe para el negocio.
 - Reglas:
   - `Check-in` (3) desde `Pendiente` (1) o `Confirmada` (2)
   - `Check-out` (4) solo desde `En uso` (3)
@@ -184,6 +195,7 @@
 - `Sp_Reservas_RecordatoriosPendientes`
 - `Sp_Reservas_MarcarRecordatorioEnviado`
 - `Sp_Reservas_AutoNoShow`
+- `Sp_Reservas_MarcarRecordatorioEnviado` devuelve error si la reserva no existe para el negocio.
 
 ### 18_Sedes_Config_Notificaciones.sql
 - Tabla:
@@ -218,6 +230,7 @@
   - `Sp_AltasClubes_Listar`
   - `Sp_AltasClubes_Aprobar`
   - `Sp_AltasClubes_Rechazar`
+- `Sp_AltasClubes_Rechazar` devuelve error cuando la solicitud no existe o ya fue gestionada.
 - Al aprobar:
   - crea `Negocio`
   - crea primera `Sede`
@@ -245,6 +258,105 @@
 - SP nuevo:
   - `Sp_NegociosSuscripcion_ActivarPlan` (reactiva acceso y define vigencia en dias)
 
+### 24_Sedes_Horario_NoLaborable.sql
+- Tablas:
+  - `SedeHorarioAtencion`
+  - `SedeFechasInhabilitadas`
+- SP actualizados:
+  - `Sp_Sedes_Listar`
+  - `Sp_Sedes_ObtenerPorId`
+
+### 25_Sedes_Horario_Crear_Actualizar.sql
+- SP actualizados:
+  - `Sp_Sedes_Crear`
+  - `Sp_Sedes_Actualizar`
+- Incluye persistencia de horario, servicios, notificaciones y fechas no laborables.
+
+### 26_Reservas_Validacion_Horario_Sede.sql
+- SP actualizados:
+- `Sp_Reservas_Crear`
+- `Sp_Reservas_Mover`
+- Valida horario/dias de atencion y fechas no laborables por sede.
+- `Sp_Reservas_Mover` retorna error si no encuentra la reserva o no afecta filas.
+
+### 27_Calendario_No_Atencion_Sede.sql
+- SP actualizado:
+  - `Sp_Reservas_CalendarioEventos`
+- Incluye bloques `NO_ATENCION` por dia no laborable y fuera de horario.
+- Devuelve metadatos backend para UI:
+  - `Motivo`
+  - `EstadoCodigo`
+  - `EstadoTexto`
+- El calendario queda backend-driven para estado y motivo (sin fallback de reglas en frontend).
+
+### 28_Espacios_Deporte_Suelo_Catalogos.sql
+- Catalogos:
+  - `TiposDeporte` (seed base)
+  - `TiposSuelo` (seed base)
+- SP actualizados:
+  - `Sp_Combos_TiposDeporte`
+  - `Sp_Combos_TiposSuelo`
+  - `Sp_Espacios_Listar`
+  - `Sp_Espacios_ObtenerPorId`
+  - `Sp_Espacios_Crear`
+  - `Sp_Espacios_Actualizar`
+
+### 29_Reservas_ValidarDisponibilidad_Modal.sql
+- SP:
+  - `Sp_Reservas_ValidarDisponibilidad`
+- Usado por modal de reservas para validar colision y restricciones de sede.
+
+### 30_Configuracion_Club_Monedas.sql
+- Catalogo:
+  - `MonedasSistema`
+- SP:
+  - `Sp_Combos_Monedas`
+  - `Sp_ConfiguracionClub_Obtener`
+  - `Sp_ConfiguracionClub_Actualizar`
+
+### 31_Espacios_Tarifas_Base.sql
+- Tabla:
+  - `Tarifas`
+- SP actualizados:
+  - `Sp_Espacios_ObtenerPorId`
+  - `Sp_Espacios_Crear`
+  - `Sp_Espacios_Actualizar`
+
+### 32_Usuarios_Sede_Restriccion_Filtros.sql
+- Alter tabla:
+  - `UsuariosNegocio.SedeId` (FK a `Sedes`)
+- SP actualizados:
+  - `Sp_Seguridad_ObtenerContextoModulo` (devuelve `SedeIdAsignada` y `EsAdministrador`)
+  - `Sp_UsuariosNegocio_Listar` (nuevo parametro `@SedeId` para filtrar en backend)
+  - `Sp_UsuariosNegocio_AsignarPorCorreo`
+  - `Sp_UsuariosNegocio_ActualizarRol`
+  - `Sp_Combos_Sedes`
+  - `Sp_Sedes_Listar`
+  - `Sp_Espacios_Listar`
+  - `Sp_Combos_EspaciosPorNegocio`
+  - `Sp_Combos_ReservasPorNegocio`
+  - `Sp_Pagos_Listar`
+  - `Sp_Comprobantes_Listar`
+  - `Sp_Reportes_OcupacionPorEspacio`
+  - `Sp_Reportes_IngresosPorDia`
+  - `Sp_Panel_ObtenerMetricas`
+  - `Sp_Promociones_Listar`
+- Regla funcional:
+  - usuarios no administradores trabajan con una sola sede asignada y los filtros/listados se restringen en backend.
+  - `Sp_Espacios_Listar` devuelve `TarifaResumen` (dias + rango horario + precio con simbolo de moneda del negocio) para mostrar resumen tarifario en la lista detallada sin calculo en frontend.
+  - `Sp_Combos_EspaciosPorNegocio` devuelve etiqueta de combo en formato: `Codigo - Nombre (Tipo suelo)`.
+  - `Sp_UsuariosNegocio_ActualizarRol` devuelve error si no encuentra filas para el negocio.
+
+### 99_SP_Finales.sql
+- Script consolidado con la **ultima version efectiva** de cada `CREATE OR ALTER PROCEDURE`.
+- Se genera automaticamente desde todos los `.sql` de la carpeta `deStoreProcedures_DbSportCenter`.
+- Uso recomendado:
+  - ejecutar `00..32` normalmente
+  - ejecutar `99_SP_Finales.sql` al final para evitar sobreescritura accidental por orden.
+- Generacion:
+  - ejecutar `Generate-99_SP_Finales.ps1`
+  - el script recorre la carpeta, detecta SP duplicados y conserva la version del archivo de mayor orden (ultimas capas funcionales).
+
 ## Flujo recomendado de despliegue SQL
 1. Ejecutar `00_Auditoria.sql`.
 2. Ejecutar `01_Seguridad_Panel.sql`.
@@ -269,8 +381,17 @@
 21. Ejecutar `20_Home_Espacios_Whatsapp.sql`.
 22. Ejecutar `21_Altas_Clubes.sql`.
 23. Ejecutar `22_Registro_Club_Prueba.sql`.
-24. Ejecutar `23_Suscripcion_Bloqueo_Operacion.sql`.
-25. Ejecutar `EXEC dbo.Sp_Seguridad_SeedModulosPermisosBase;` una vez.
+24. Ejecutar `24_Sedes_Horario_NoLaborable.sql`.
+25. Ejecutar `25_Sedes_Horario_Crear_Actualizar.sql`.
+26. Ejecutar `26_Reservas_Validacion_Horario_Sede.sql`.
+27. Ejecutar `27_Calendario_No_Atencion_Sede.sql`.
+28. Ejecutar `28_Espacios_Deporte_Suelo_Catalogos.sql`.
+29. Ejecutar `29_Reservas_ValidarDisponibilidad_Modal.sql`.
+30. Ejecutar `30_Configuracion_Club_Monedas.sql`.
+31. Ejecutar `31_Espacios_Tarifas_Base.sql`.
+32. Ejecutar `32_Usuarios_Sede_Restriccion_Filtros.sql`.
+33. Ejecutar `EXEC dbo.Sp_Seguridad_SeedModulosPermisosBase;` una vez.
+34. Ejecutar `99_SP_Finales.sql` como post-deploy para asegurar contrato final de SP.
 
 ## Observaciones funcionales
 - CRUD de modulos internos ejecuta operaciones por SP.
@@ -302,3 +423,6 @@
 - Control de suscripcion:
   - al vencer prueba o plan, el negocio queda bloqueado para operar modulos.
   - para reactivar se usa `Sp_NegociosSuscripcion_ActivarPlan`.
+- Usuarios por sede:
+  - si el rol es no administrador, la sede es obligatoria.
+  - el backend restringe combos/listados/reportes/metricas a la sede asignada.

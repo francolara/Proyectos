@@ -3,6 +3,12 @@
 -- Create date:   27/03/2026
 -- Description:   Modulo clientes por negocio (seguridad + CRUD + combos filtrados) y columnas de auditoria.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   30/03/2026
+-- Description:   Ajusta update/delete de clientes para devolver error controlado cuando no existe registro para el negocio y valida duplicado por numero de documento dentro del negocio.
+-- Firma:         Codex - 30/03/2026 | Centraliza validacion de existencia y duplicidad (numero de documento) en SP para crear/actualizar cliente.
+-- =============================================
 
 IF COL_LENGTH('dbo.Clientes', 'DireccionFiscal') IS NULL
 BEGIN
@@ -236,6 +242,23 @@ AS
 BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
+        DECLARE @NumeroDocumentoNormalizado NVARCHAR(20);
+        SET @NumeroDocumentoNormalizado = NULLIF(LTRIM(RTRIM(@NumeroDocumento)), N'');
+        SET @NumeroDocumento = COALESCE(@NumeroDocumentoNormalizado, N'');
+
+        IF @NumeroDocumentoNormalizado IS NOT NULL
+           AND EXISTS
+           (
+               SELECT 1
+               FROM dbo.Clientes c
+               INNER JOIN dbo.NegocioClientes nc ON nc.ClienteId = c.Id
+               WHERE nc.NegocioId = @NegocioId
+                 AND nc.Activo = 1
+                 AND c.Activo = 1
+                 AND LTRIM(RTRIM(c.NumeroDocumento)) = @NumeroDocumentoNormalizado
+           )
+            RAISERROR('Cliente ya se encuentra registrado.', 16, 1);
+
         BEGIN TRANSACTION;
 
         INSERT INTO dbo.Clientes
@@ -289,6 +312,24 @@ AS
 BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
+        DECLARE @NumeroDocumentoNormalizado NVARCHAR(20);
+        SET @NumeroDocumentoNormalizado = NULLIF(LTRIM(RTRIM(@NumeroDocumento)), N'');
+        SET @NumeroDocumento = COALESCE(@NumeroDocumentoNormalizado, N'');
+
+        IF @NumeroDocumentoNormalizado IS NOT NULL
+           AND EXISTS
+           (
+               SELECT 1
+               FROM dbo.Clientes c
+               INNER JOIN dbo.NegocioClientes nc ON nc.ClienteId = c.Id
+               WHERE nc.NegocioId = @NegocioId
+                 AND nc.Activo = 1
+                 AND c.Activo = 1
+                 AND c.Id <> @Id
+                 AND LTRIM(RTRIM(c.NumeroDocumento)) = @NumeroDocumentoNormalizado
+           )
+            RAISERROR('Cliente ya se encuentra registrado.', 16, 1);
+
         UPDATE c
         SET
             c.NombresORazonSocial = @NombresORazonSocial,
@@ -306,12 +347,12 @@ BEGIN
           AND nc.NegocioId = @NegocioId
           AND nc.Activo = 1;
 
-        IF @@ROWCOUNT > 0
-        BEGIN
-            DECLARE @EntidadIdAudit NVARCHAR(80);
-            SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
-            EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'CLIENTES', @Accion = N'EDIT', @Entidad = N'Cliente', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
-        END;
+        IF @@ROWCOUNT = 0
+            RAISERROR('No se encontro el cliente para actualizar en el negocio.', 16, 1);
+
+        DECLARE @EntidadIdAudit NVARCHAR(80);
+        SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
+        EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'CLIENTES', @Accion = N'EDIT', @Entidad = N'Cliente', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
     END TRY
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
@@ -336,21 +377,21 @@ BEGIN
           AND nc.ClienteId = @Id
           AND nc.Activo = 1;
 
-        IF @@ROWCOUNT > 0
-        BEGIN
-            IF NOT EXISTS (SELECT 1 FROM dbo.NegocioClientes WHERE ClienteId = @Id AND Activo = 1)
-            BEGIN
-                UPDATE dbo.Clientes
-                SET Activo = 0,
-                    FechaActualizacion = SYSUTCDATETIME(),
-                    UsuarioActualizacion = @Usuario
-                WHERE Id = @Id;
-            END;
+        IF @@ROWCOUNT = 0
+            RAISERROR('No se encontro el cliente para eliminar en el negocio.', 16, 1);
 
-            DECLARE @EntidadIdAudit NVARCHAR(80);
-            SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
-            EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'CLIENTES', @Accion = N'DELETE', @Entidad = N'Cliente', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
+        IF NOT EXISTS (SELECT 1 FROM dbo.NegocioClientes WHERE ClienteId = @Id AND Activo = 1)
+        BEGIN
+            UPDATE dbo.Clientes
+            SET Activo = 0,
+                FechaActualizacion = SYSUTCDATETIME(),
+                UsuarioActualizacion = @Usuario
+            WHERE Id = @Id;
         END;
+
+        DECLARE @EntidadIdAudit NVARCHAR(80);
+        SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
+        EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'CLIENTES', @Accion = N'DELETE', @Entidad = N'Cliente', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
     END TRY
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;

@@ -20,12 +20,14 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
             NegocioId = baseVm.NegocioId,
             NegocioNombre = baseVm.NegocioNombre,
             RolActual = baseVm.RolActual,
+            SedeIdAsignada = baseVm.SedeIdAsignada,
+            EsAdministrador = baseVm.EsAdministrador,
             ModuloCodigo = baseVm.ModuloCodigo,
             ModuloNombre = baseVm.ModuloNombre,
             PuedeCrear = baseVm.PuedeCrear,
             PuedeEditar = baseVm.PuedeEditar,
             PuedeEliminar = baseVm.PuedeEliminar,
-            Sedes = await spService.SedesListarAsync(resolvedNegocioId.Value)
+            Sedes = await spService.SedesListarAsync(resolvedNegocioId.Value, AplicarSedeAsignada(baseVm, null))
         };
         return View(vm);
     }
@@ -40,6 +42,7 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
 
         var vm = new SedeFormViewModel { NegocioId = resolvedNegocioId.Value, NegocioNombre = baseVm.NegocioNombre, RolActual = baseVm.RolActual, Activo = true };
         await CargarCatalogoServiciosAsync(vm);
+        InicializarTelefonosParaVista(vm);
         return View(vm);
     }
 
@@ -49,9 +52,11 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
     {
         var baseVm = await ObtenerBaseAsync(model.NegocioId, "SEDES");
         if (baseVm is null || !baseVm.PuedeCrear) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
+        ComponerTelefonos(model);
         if (!ModelState.IsValid)
         {
             await CargarCatalogoServiciosAsync(model);
+            model.CodigosPais = TelefonoInternacionalHelper.ObtenerCodigosPais(model.TelefonoCodigoPais);
             return View(model);
         }
 
@@ -69,9 +74,12 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
 
         var vm = await spService.SedesObtenerAsync(resolvedNegocioId.Value, id);
         if (vm is null) return NotFound();
+        if (!SedePermitida(baseVm, vm.Id))
+            return Forbid();
         vm.NegocioNombre = baseVm.NegocioNombre;
         vm.RolActual = baseVm.RolActual;
         await CargarCatalogoServiciosAsync(vm);
+        InicializarTelefonosParaVista(vm);
         return View(vm);
     }
 
@@ -81,9 +89,13 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
     {
         var baseVm = await ObtenerBaseAsync(model.NegocioId, "SEDES");
         if (baseVm is null || !baseVm.PuedeEditar) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
+        if (!SedePermitida(baseVm, model.Id))
+            return Forbid();
+        ComponerTelefonos(model);
         if (!ModelState.IsValid)
         {
             await CargarCatalogoServiciosAsync(model);
+            model.CodigosPais = TelefonoInternacionalHelper.ObtenerCodigosPais(model.TelefonoCodigoPais);
             return View(model);
         }
 
@@ -92,6 +104,7 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
         {
             ModelState.AddModelError(string.Empty, "No se pudo actualizar la sede. Verifica el negocio seleccionado.");
             await CargarCatalogoServiciosAsync(model);
+            model.CodigosPais = TelefonoInternacionalHelper.ObtenerCodigosPais(model.TelefonoCodigoPais);
             return View(model);
         }
         return RedirectToAction(nameof(Index), new { negocioId = model.NegocioId });
@@ -114,4 +127,21 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
         model.ServiciosDisponibles = await spService.SedesComboServiciosAsync();
     }
 
+    private static void InicializarTelefonosParaVista(SedeFormViewModel model)
+    {
+        TelefonoInternacionalHelper.Descomponer(model.Telefono, out var telefonoCodigoPais, out var telefonoNumeroLocal);
+        model.TelefonoCodigoPais = telefonoCodigoPais;
+        model.TelefonoNumeroLocal = telefonoNumeroLocal;
+
+        TelefonoInternacionalHelper.Descomponer(model.WhatsappContacto, out var whatsappCodigoPais, out var whatsappNumeroLocal);
+        model.WhatsappCodigoPais = whatsappCodigoPais;
+        model.WhatsappNumeroLocal = whatsappNumeroLocal;
+        model.CodigosPais = TelefonoInternacionalHelper.ObtenerCodigosPais(model.TelefonoCodigoPais);
+    }
+
+    private static void ComponerTelefonos(SedeFormViewModel model)
+    {
+        model.Telefono = TelefonoInternacionalHelper.Componer(model.TelefonoCodigoPais, model.TelefonoNumeroLocal);
+        model.WhatsappContacto = TelefonoInternacionalHelper.Componer(model.WhatsappCodigoPais, model.WhatsappNumeroLocal);
+    }
 }

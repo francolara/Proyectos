@@ -19,14 +19,23 @@ public class UsuariosController(IModuloPermisoService moduloPermisoService, ISpo
             NegocioId = baseVm.NegocioId,
             NegocioNombre = baseVm.NegocioNombre,
             RolActual = baseVm.RolActual,
+            SedeIdAsignada = baseVm.SedeIdAsignada,
+            EsAdministrador = baseVm.EsAdministrador,
             ModuloCodigo = baseVm.ModuloCodigo,
             ModuloNombre = baseVm.ModuloNombre,
             PuedeCrear = baseVm.PuedeCrear,
             PuedeEditar = baseVm.PuedeEditar,
             PuedeEliminar = baseVm.PuedeEliminar,
-            Usuarios = await spService.UsuariosNegocioListarAsync(negocioId),
             AsignarForm = new UsuarioNegocioAsignarFormViewModel { NegocioId = negocioId }
         };
+
+        var sedeFiltro = AplicarSedeAsignada(baseVm, null);
+        vm.Usuarios = await spService.UsuariosNegocioListarAsync(negocioId, sedeFiltro);
+        vm.Sedes = await spService.EspaciosComboSedesAsync(negocioId, sedeFiltro);
+        if (!baseVm.EsAdministrador && baseVm.SedeIdAsignada.HasValue)
+        {
+            vm.AsignarForm.SedeId = baseVm.SedeIdAsignada;
+        }
 
         return View(vm);
     }
@@ -40,7 +49,16 @@ public class UsuariosController(IModuloPermisoService moduloPermisoService, ISpo
 
         try
         {
-            await spService.UsuariosNegocioAsignarPorCorreoAsync(model.NegocioId, model.Correo, model.RolNegocio, User.Identity?.Name ?? "sistema");
+            if (!baseVm.EsAdministrador && model.RolNegocio == 1)
+                throw new InvalidOperationException("Solo un administrador puede asignar el rol Administrador.");
+
+            var sedeAsignada = baseVm.EsAdministrador ? model.SedeId : baseVm.SedeIdAsignada;
+            if (RolRequiereSede(model.RolNegocio) && !sedeAsignada.HasValue)
+                throw new InvalidOperationException("Debes seleccionar una sede para usuarios no administradores.");
+            if (!SedePermitida(baseVm, sedeAsignada))
+                throw new InvalidOperationException("No puedes asignar una sede distinta a la que tienes permitida.");
+
+            await spService.UsuariosNegocioAsignarPorCorreoAsync(model.NegocioId, model.Correo, model.RolNegocio, sedeAsignada, User.Identity?.Name ?? "sistema");
             TempData["UsuariosMsg"] = "Usuario asignado correctamente.";
         }
         catch (Exception ex)
@@ -60,7 +78,22 @@ public class UsuariosController(IModuloPermisoService moduloPermisoService, ISpo
 
         try
         {
-            await spService.UsuariosNegocioActualizarRolAsync(model.NegocioId, model.UsuarioNegocioId, model.RolNegocio, User.Identity?.Name ?? "sistema");
+            var sedeFiltro = AplicarSedeAsignada(baseVm, null);
+            var usuarioObjetivo = (await spService.UsuariosNegocioListarAsync(model.NegocioId, sedeFiltro))
+                .FirstOrDefault(x => x.UsuarioNegocioId == model.UsuarioNegocioId);
+            if (usuarioObjetivo is null)
+                throw new InvalidOperationException("No puedes editar usuarios fuera de tu sede asignada.");
+
+            if (!baseVm.EsAdministrador && model.RolNegocio == 1)
+                throw new InvalidOperationException("Solo un administrador puede asignar el rol Administrador.");
+
+            var sedeAsignada = baseVm.EsAdministrador ? model.SedeId : baseVm.SedeIdAsignada;
+            if (RolRequiereSede(model.RolNegocio) && !sedeAsignada.HasValue)
+                throw new InvalidOperationException("Debes seleccionar una sede para usuarios no administradores.");
+            if (!SedePermitida(baseVm, sedeAsignada))
+                throw new InvalidOperationException("No puedes asignar una sede distinta a la que tienes permitida.");
+
+            await spService.UsuariosNegocioActualizarRolAsync(model.NegocioId, model.UsuarioNegocioId, model.RolNegocio, sedeAsignada, User.Identity?.Name ?? "sistema");
             TempData["UsuariosMsg"] = "Rol actualizado correctamente.";
         }
         catch (Exception ex)
@@ -80,6 +113,12 @@ public class UsuariosController(IModuloPermisoService moduloPermisoService, ISpo
 
         try
         {
+            var sedeFiltro = AplicarSedeAsignada(baseVm, null);
+            var usuarioObjetivo = (await spService.UsuariosNegocioListarAsync(negocioId, sedeFiltro))
+                .FirstOrDefault(x => x.UsuarioNegocioId == usuarioNegocioId);
+            if (usuarioObjetivo is null)
+                throw new InvalidOperationException("No puedes desactivar usuarios fuera de tu sede asignada.");
+
             await spService.UsuariosNegocioDesactivarAsync(negocioId, usuarioNegocioId, User.Identity?.Name ?? "sistema");
             TempData["UsuariosMsg"] = "Usuario desactivado correctamente.";
         }
@@ -96,7 +135,7 @@ public class UsuariosController(IModuloPermisoService moduloPermisoService, ISpo
         var baseVm = await ObtenerBaseAsync(negocioId, "USUARIOS");
         if (baseVm is null || !baseVm.PuedeEditar) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
-        var usuarios = await spService.UsuariosNegocioListarAsync(negocioId);
+        var usuarios = await spService.UsuariosNegocioListarAsync(negocioId, AplicarSedeAsignada(baseVm, null));
         var usuario = usuarios.FirstOrDefault(x => x.UsuarioNegocioId == usuarioNegocioId);
         if (usuario is null) return NotFound();
 
@@ -130,6 +169,10 @@ public class UsuariosController(IModuloPermisoService moduloPermisoService, ISpo
 
         try
         {
+            var usuarios = await spService.UsuariosNegocioListarAsync(negocioId, AplicarSedeAsignada(baseVm, null));
+            if (!usuarios.Any(x => x.UsuarioNegocioId == usuarioNegocioId))
+                throw new InvalidOperationException("No puedes modificar permisos fuera de tu sede asignada.");
+
             foreach (var modulo in modulos)
             {
                 await spService.UsuariosNegocioPermisoGuardarAsync(negocioId, usuarioNegocioId, modulo, User.Identity?.Name ?? "sistema");
@@ -155,4 +198,6 @@ public class UsuariosController(IModuloPermisoService moduloPermisoService, ISpo
             new("Supervisor", "5")
         };
     }
+
+    private static bool RolRequiereSede(int rolNegocio) => rolNegocio != 1;
 }

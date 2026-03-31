@@ -1,5 +1,6 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ClienteFormViewModel
 <!-- Firma: Codex - 27/03/2026 | Estandar visual pro para formulario de clientes -->
+<!-- Firma: Codex - 30/03/2026 | Selector de codigo pais para telefono de cliente -->
 
 @{
     ViewData["Title"] = "Nuevo cliente";
@@ -48,8 +49,13 @@
                     </div>
                     <div class="col-md-4">
                         <label asp-for="Telefono" class="form-label"></label>
-                        <input asp-for="Telefono" class="form-control" />
-                        <span asp-validation-for="Telefono" class="text-danger"></span>
+                        <input asp-for="Telefono" type="hidden" />
+                        <div class="input-group">
+                            <select asp-for="TelefonoCodigoPais" asp-items="Model.CodigosPais" class="form-select" style="max-width: 180px;"></select>
+                            <input asp-for="TelefonoNumeroLocal" class="form-control" inputmode="numeric" placeholder="999999999" />
+                        </div>
+                        <span asp-validation-for="TelefonoCodigoPais" class="text-danger"></span>
+                        <span asp-validation-for="TelefonoNumeroLocal" class="text-danger"></span>
                     </div>
                     <div class="col-md-4">
                         <label asp-for="Correo" class="form-label"></label>

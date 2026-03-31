@@ -41,20 +41,23 @@ public partial class SportCenterStoredProcedureService
 
     public async Task<bool> SolicitudesPublicasActualizarEstadoAsync(SolicitudEstadoFormViewModel model, string usuario)
     {
-        var solicitudActual = (await SolicitudesPublicasListarAsync(model.NegocioId))
-            .FirstOrDefault(x => x.Id == model.Id);
-        if (solicitudActual is null) return false;
-
-        await using var cn = CreateConnection();
-        await cn.OpenAsync();
-        await using var cmd = new SqlCommand("Sp_SolicitudesPublicas_ActualizarEstado", cn) { CommandType = CommandType.StoredProcedure };
-        AddParam(cmd, "@NegocioId", model.NegocioId, SqlDbType.Int);
-        AddParam(cmd, "@Id", model.Id, SqlDbType.Int);
-        AddParam(cmd, "@Estado", model.Estado, SqlDbType.Int);
-        AddParam(cmd, "@ComentarioGestion", model.ComentarioGestion, SqlDbType.NVarChar);
-        AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        await cmd.ExecuteNonQueryAsync();
-        return true;
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_SolicitudesPublicas_ActualizarEstado", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@NegocioId", model.NegocioId, SqlDbType.Int);
+            AddParam(cmd, "@Id", model.Id, SqlDbType.Int);
+            AddParam(cmd, "@Estado", model.Estado, SqlDbType.Int);
+            AddParam(cmd, "@ComentarioGestion", model.ComentarioGestion, SqlDbType.NVarChar);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (SqlException ex) when (EsErrorNoEncontrado(ex.Message))
+        {
+            return false;
+        }
     }
 
     public async Task<int> SolicitudesPublicasConvertirAReservaAsync(SolicitudConvertirFormViewModel model, string usuario)

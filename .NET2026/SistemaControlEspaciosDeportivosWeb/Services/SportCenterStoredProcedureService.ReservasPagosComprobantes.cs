@@ -8,7 +8,7 @@ namespace SistemaControlEspaciosDeportivosWeb.Services;
 
 public partial class SportCenterStoredProcedureService
 {
-    public async Task<List<ReservaItemViewModel>> ReservasListarAsync(int negocioId, DateOnly? fechaDesde = null, DateOnly? fechaHasta = null, int? sedeId = null, int? espacioDeportivoId = null, int? estado = null)
+    public async Task<List<ReservaItemViewModel>> ReservasListarAsync(int negocioId, DateOnly? fechaDesde = null, DateOnly? fechaHasta = null, int? sedeId = null, int? espacioDeportivoId = null, int? estado = null, string? estadosCsv = null)
     {
         var list = new List<ReservaItemViewModel>();
         await using var cn = CreateConnection();
@@ -20,6 +20,7 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@SedeId", sedeId, SqlDbType.Int);
         AddParam(cmd, "@EspacioDeportivoId", espacioDeportivoId, SqlDbType.Int);
         AddParam(cmd, "@Estado", estado, SqlDbType.Int);
+        AddParam(cmd, "@EstadosCsv", string.IsNullOrWhiteSpace(estadosCsv) ? null : estadosCsv, SqlDbType.NVarChar);
         await using var dr = await cmd.ExecuteReaderAsync();
         while (await dr.ReadAsync())
         {
@@ -83,56 +84,68 @@ public partial class SportCenterStoredProcedureService
 
     public async Task<bool> ReservasActualizarAsync(ReservaFormViewModel model, string usuario)
     {
-        var reservaActual = await ReservasObtenerAsync(model.NegocioId, model.Id);
-        if (reservaActual is null) return false;
-
-        await using var cn = CreateConnection();
-        await cn.OpenAsync();
-        await using var cmd = new SqlCommand("Sp_Reservas_Actualizar", cn) { CommandType = CommandType.StoredProcedure };
-        AddParam(cmd, "@Id", model.Id, SqlDbType.Int);
-        AddParam(cmd, "@NegocioId", model.NegocioId, SqlDbType.Int);
-        AddParam(cmd, "@EspacioDeportivoId", model.EspacioDeportivoId, SqlDbType.Int);
-        AddParam(cmd, "@ClienteId", model.ClienteId, SqlDbType.Int);
-        AddParam(cmd, "@Fecha", model.Fecha.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
-        AddParam(cmd, "@HoraInicio", model.HoraInicio.ToTimeSpan(), SqlDbType.Time);
-        AddParam(cmd, "@HoraFin", model.HoraFin.ToTimeSpan(), SqlDbType.Time);
-        AddParam(cmd, "@Total", model.Total, SqlDbType.Decimal);
-        AddParam(cmd, "@Adelanto", model.Adelanto, SqlDbType.Decimal);
-        AddParam(cmd, "@Estado", (int)model.Estado, SqlDbType.Int);
-        AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        await cmd.ExecuteNonQueryAsync();
-        return true;
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_Reservas_Actualizar", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@Id", model.Id, SqlDbType.Int);
+            AddParam(cmd, "@NegocioId", model.NegocioId, SqlDbType.Int);
+            AddParam(cmd, "@EspacioDeportivoId", model.EspacioDeportivoId, SqlDbType.Int);
+            AddParam(cmd, "@ClienteId", model.ClienteId, SqlDbType.Int);
+            AddParam(cmd, "@Fecha", model.Fecha.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
+            AddParam(cmd, "@HoraInicio", model.HoraInicio.ToTimeSpan(), SqlDbType.Time);
+            AddParam(cmd, "@HoraFin", model.HoraFin.ToTimeSpan(), SqlDbType.Time);
+            AddParam(cmd, "@Total", model.Total, SqlDbType.Decimal);
+            AddParam(cmd, "@Adelanto", model.Adelanto, SqlDbType.Decimal);
+            AddParam(cmd, "@Estado", (int)model.Estado, SqlDbType.Int);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (SqlException ex) when (EsErrorNoEncontrado(ex.Message))
+        {
+            return false;
+        }
     }
 
     public async Task<bool> ReservasEliminarAsync(int negocioId, int id, string usuario)
     {
-        var reservaActual = await ReservasObtenerAsync(negocioId, id);
-        if (reservaActual is null) return false;
-
-        await using var cn = CreateConnection();
-        await cn.OpenAsync();
-        await using var cmd = new SqlCommand("Sp_Reservas_Eliminar", cn) { CommandType = CommandType.StoredProcedure };
-        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
-        AddParam(cmd, "@Id", id, SqlDbType.Int);
-        AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        await cmd.ExecuteNonQueryAsync();
-        return true;
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_Reservas_Eliminar", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+            AddParam(cmd, "@Id", id, SqlDbType.Int);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (SqlException ex) when (EsErrorNoEncontrado(ex.Message))
+        {
+            return false;
+        }
     }
 
     public async Task<bool> ReservasCambiarEstadoRapidoAsync(int negocioId, int id, int nuevoEstado, string usuario)
     {
-        var reservaActual = await ReservasObtenerAsync(negocioId, id);
-        if (reservaActual is null) return false;
-
-        await using var cn = CreateConnection();
-        await cn.OpenAsync();
-        await using var cmd = new SqlCommand("Sp_Reservas_CambiarEstadoRapido", cn) { CommandType = CommandType.StoredProcedure };
-        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
-        AddParam(cmd, "@Id", id, SqlDbType.Int);
-        AddParam(cmd, "@NuevoEstado", nuevoEstado, SqlDbType.Int);
-        AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        await cmd.ExecuteNonQueryAsync();
-        return true;
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_Reservas_CambiarEstadoRapido", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+            AddParam(cmd, "@Id", id, SqlDbType.Int);
+            AddParam(cmd, "@NuevoEstado", nuevoEstado, SqlDbType.Int);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (SqlException ex) when (EsErrorNoEncontrado(ex.Message))
+        {
+            return false;
+        }
     }
 
     public async Task<List<ReservaCalendarioEventoViewModel>> ReservasCalendarioEventosAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null, int? espacioDeportivoId = null, int? estado = null)
@@ -162,7 +175,10 @@ public partial class SportCenterStoredProcedureService
                 Color = dr.IsDBNull(7) ? null : dr.GetString(7),
                 EspacioDeportivoId = dr.IsDBNull(8) ? null : dr.GetInt32(8),
                 Espacio = dr.IsDBNull(9) ? string.Empty : dr.GetString(9),
-                Sede = dr.IsDBNull(10) ? string.Empty : dr.GetString(10)
+                Sede = dr.IsDBNull(10) ? string.Empty : dr.GetString(10),
+                Motivo = dr.FieldCount > 11 && !dr.IsDBNull(11) ? dr.GetString(11) : null,
+                EstadoCodigo = dr.FieldCount > 12 && !dr.IsDBNull(12) ? dr.GetString(12) : null,
+                EstadoTexto = dr.FieldCount > 13 && !dr.IsDBNull(13) ? dr.GetString(13) : null
             });
         }
         return list;
@@ -170,20 +186,24 @@ public partial class SportCenterStoredProcedureService
 
     public async Task<bool> ReservasMoverAsync(int negocioId, int id, DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin, string usuario)
     {
-        var reservaActual = await ReservasObtenerAsync(negocioId, id);
-        if (reservaActual is null) return false;
-
-        await using var cn = CreateConnection();
-        await cn.OpenAsync();
-        await using var cmd = new SqlCommand("Sp_Reservas_Mover", cn) { CommandType = CommandType.StoredProcedure };
-        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
-        AddParam(cmd, "@Id", id, SqlDbType.Int);
-        AddParam(cmd, "@Fecha", fecha.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
-        AddParam(cmd, "@HoraInicio", horaInicio.ToTimeSpan(), SqlDbType.Time);
-        AddParam(cmd, "@HoraFin", horaFin.ToTimeSpan(), SqlDbType.Time);
-        AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        await cmd.ExecuteNonQueryAsync();
-        return true;
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_Reservas_Mover", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+            AddParam(cmd, "@Id", id, SqlDbType.Int);
+            AddParam(cmd, "@Fecha", fecha.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
+            AddParam(cmd, "@HoraInicio", horaInicio.ToTimeSpan(), SqlDbType.Time);
+            AddParam(cmd, "@HoraFin", horaFin.ToTimeSpan(), SqlDbType.Time);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (SqlException ex) when (EsErrorNoEncontrado(ex.Message))
+        {
+            return false;
+        }
     }
 
     public async Task<ReservaDisponibilidadValidacionViewModel> ReservasValidarDisponibilidadAsync(int negocioId, int? reservaId, int espacioDeportivoId, DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin)
@@ -287,16 +307,17 @@ public partial class SportCenterStoredProcedureService
         return true;
     }
 
-    public Task<List<SelectListItem>> ReservasComboEspaciosAsync(int negocioId) => ComboAsync("Sp_Combos_EspaciosPorNegocio", ("@NegocioId", (object?)negocioId, SqlDbType.Int));
+    public Task<List<SelectListItem>> ReservasComboEspaciosAsync(int negocioId, int? sedeId = null) => ComboAsync("Sp_Combos_EspaciosPorNegocio", ("@NegocioId", (object?)negocioId, SqlDbType.Int), ("@SedeId", sedeId, SqlDbType.Int));
     public Task<List<SelectListItem>> ReservasComboClientesAsync(int negocioId) => ComboAsync("Sp_Combos_Clientes", ("@NegocioId", (object?)negocioId, SqlDbType.Int));
 
-    public async Task<List<PagoItemViewModel>> PagosListarAsync(int negocioId)
+    public async Task<List<PagoItemViewModel>> PagosListarAsync(int negocioId, int? sedeId = null)
     {
         var list = new List<PagoItemViewModel>();
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_Pagos_Listar", cn) { CommandType = CommandType.StoredProcedure };
         AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+        AddParam(cmd, "@SedeId", sedeId, SqlDbType.Int);
         await using var dr = await cmd.ExecuteReaderAsync();
         while (await dr.ReadAsync()) list.Add(new PagoItemViewModel { Id = dr.GetInt32(0), ReservaId = dr.GetInt32(1), FechaPago = dr.GetDateTime(2), Monto = dr.GetDecimal(3), FormaPago = dr.GetString(4) });
         return list;
@@ -342,49 +363,58 @@ public partial class SportCenterStoredProcedureService
 
     public async Task<bool> PagosActualizarAsync(PagoFormViewModel model, string usuario)
     {
-        var pagoActual = await PagosObtenerAsync(model.NegocioId, model.Id);
-        if (pagoActual is null) return false;
-
-        await using var cn = CreateConnection();
-        await cn.OpenAsync();
-        await using var cmd = new SqlCommand("Sp_Pagos_Actualizar", cn) { CommandType = CommandType.StoredProcedure };
-        AddParam(cmd, "@Id", model.Id, SqlDbType.Int);
-        AddParam(cmd, "@NegocioId", model.NegocioId, SqlDbType.Int);
-        AddParam(cmd, "@ReservaId", model.ReservaId, SqlDbType.Int);
-        AddParam(cmd, "@FechaPago", model.FechaPago, SqlDbType.DateTime2);
-        AddParam(cmd, "@Monto", model.Monto, SqlDbType.Decimal);
-        AddParam(cmd, "@FormaPago", (int)model.FormaPago, SqlDbType.Int);
-        AddParam(cmd, "@NumeroOperacion", model.NumeroOperacion, SqlDbType.NVarChar);
-        AddParam(cmd, "@Observacion", model.Observacion, SqlDbType.NVarChar);
-        AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        await cmd.ExecuteNonQueryAsync();
-        return true;
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_Pagos_Actualizar", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@Id", model.Id, SqlDbType.Int);
+            AddParam(cmd, "@NegocioId", model.NegocioId, SqlDbType.Int);
+            AddParam(cmd, "@ReservaId", model.ReservaId, SqlDbType.Int);
+            AddParam(cmd, "@FechaPago", model.FechaPago, SqlDbType.DateTime2);
+            AddParam(cmd, "@Monto", model.Monto, SqlDbType.Decimal);
+            AddParam(cmd, "@FormaPago", (int)model.FormaPago, SqlDbType.Int);
+            AddParam(cmd, "@NumeroOperacion", model.NumeroOperacion, SqlDbType.NVarChar);
+            AddParam(cmd, "@Observacion", model.Observacion, SqlDbType.NVarChar);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (SqlException ex) when (EsErrorNoEncontrado(ex.Message))
+        {
+            return false;
+        }
     }
 
     public async Task<bool> PagosEliminarAsync(int negocioId, int id, string usuario)
     {
-        var pagoActual = await PagosObtenerAsync(negocioId, id);
-        if (pagoActual is null) return false;
-
-        await using var cn = CreateConnection();
-        await cn.OpenAsync();
-        await using var cmd = new SqlCommand("Sp_Pagos_Eliminar", cn) { CommandType = CommandType.StoredProcedure };
-        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
-        AddParam(cmd, "@Id", id, SqlDbType.Int);
-        AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        await cmd.ExecuteNonQueryAsync();
-        return true;
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_Pagos_Eliminar", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+            AddParam(cmd, "@Id", id, SqlDbType.Int);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (SqlException ex) when (EsErrorNoEncontrado(ex.Message))
+        {
+            return false;
+        }
     }
 
-    public Task<List<SelectListItem>> PagosComboReservasAsync(int negocioId) => ComboAsync("Sp_Combos_ReservasPorNegocio", ("@NegocioId", (object?)negocioId, SqlDbType.Int));
+    public Task<List<SelectListItem>> PagosComboReservasAsync(int negocioId, int? sedeId = null) => ComboAsync("Sp_Combos_ReservasPorNegocio", ("@NegocioId", (object?)negocioId, SqlDbType.Int), ("@SedeId", sedeId, SqlDbType.Int));
 
-    public async Task<List<ComprobanteItemViewModel>> ComprobantesListarAsync(int negocioId)
+    public async Task<List<ComprobanteItemViewModel>> ComprobantesListarAsync(int negocioId, int? sedeId = null)
     {
         var list = new List<ComprobanteItemViewModel>();
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_Comprobantes_Listar", cn) { CommandType = CommandType.StoredProcedure };
         AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+        AddParam(cmd, "@SedeId", sedeId, SqlDbType.Int);
         await using var dr = await cmd.ExecuteReaderAsync();
         while (await dr.ReadAsync())
         {
@@ -450,43 +480,59 @@ public partial class SportCenterStoredProcedureService
 
     public async Task<bool> ComprobantesActualizarAsync(ComprobanteFormViewModel model, string usuario)
     {
-        var comprobanteActual = await ComprobantesObtenerAsync(model.NegocioId, model.Id);
-        if (comprobanteActual is null) return false;
-
-        await using var cn = CreateConnection();
-        await cn.OpenAsync();
-        await using var cmd = new SqlCommand("Sp_Comprobantes_Actualizar", cn) { CommandType = CommandType.StoredProcedure };
-        AddParam(cmd, "@Id", model.Id, SqlDbType.Int);
-        AddParam(cmd, "@NegocioId", model.NegocioId, SqlDbType.Int);
-        AddParam(cmd, "@ReservaId", model.ReservaId, SqlDbType.Int);
-        AddParam(cmd, "@TipoComprobante", (int)model.TipoComprobante, SqlDbType.Int);
-        AddParam(cmd, "@Serie", model.Serie, SqlDbType.NVarChar);
-        AddParam(cmd, "@Numero", model.Numero, SqlDbType.Int);
-        AddParam(cmd, "@FechaEmision", model.FechaEmision, SqlDbType.DateTime2);
-        AddParam(cmd, "@TipoMoneda", (int)model.TipoMoneda, SqlDbType.Int);
-        AddParam(cmd, "@SubTotal", model.SubTotal, SqlDbType.Decimal);
-        AddParam(cmd, "@Igv", model.Igv, SqlDbType.Decimal);
-        AddParam(cmd, "@Total", model.Total, SqlDbType.Decimal);
-        AddParam(cmd, "@Estado", (int)model.Estado, SqlDbType.Int);
-        AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        await cmd.ExecuteNonQueryAsync();
-        return true;
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_Comprobantes_Actualizar", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@Id", model.Id, SqlDbType.Int);
+            AddParam(cmd, "@NegocioId", model.NegocioId, SqlDbType.Int);
+            AddParam(cmd, "@ReservaId", model.ReservaId, SqlDbType.Int);
+            AddParam(cmd, "@TipoComprobante", (int)model.TipoComprobante, SqlDbType.Int);
+            AddParam(cmd, "@Serie", model.Serie, SqlDbType.NVarChar);
+            AddParam(cmd, "@Numero", model.Numero, SqlDbType.Int);
+            AddParam(cmd, "@FechaEmision", model.FechaEmision, SqlDbType.DateTime2);
+            AddParam(cmd, "@TipoMoneda", (int)model.TipoMoneda, SqlDbType.Int);
+            AddParam(cmd, "@SubTotal", model.SubTotal, SqlDbType.Decimal);
+            AddParam(cmd, "@Igv", model.Igv, SqlDbType.Decimal);
+            AddParam(cmd, "@Total", model.Total, SqlDbType.Decimal);
+            AddParam(cmd, "@Estado", (int)model.Estado, SqlDbType.Int);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (SqlException ex) when (EsErrorNoEncontrado(ex.Message))
+        {
+            return false;
+        }
     }
 
     public async Task<bool> ComprobantesEliminarAsync(int negocioId, int id, string usuario)
     {
-        var comprobanteActual = await ComprobantesObtenerAsync(negocioId, id);
-        if (comprobanteActual is null) return false;
-
-        await using var cn = CreateConnection();
-        await cn.OpenAsync();
-        await using var cmd = new SqlCommand("Sp_Comprobantes_Eliminar", cn) { CommandType = CommandType.StoredProcedure };
-        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
-        AddParam(cmd, "@Id", id, SqlDbType.Int);
-        AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        await cmd.ExecuteNonQueryAsync();
-        return true;
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_Comprobantes_Eliminar", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+            AddParam(cmd, "@Id", id, SqlDbType.Int);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (SqlException ex) when (EsErrorNoEncontrado(ex.Message))
+        {
+            return false;
+        }
     }
 
-    public Task<List<SelectListItem>> ComprobantesComboReservasAsync(int negocioId) => ComboAsync("Sp_Combos_ReservasPorNegocio", ("@NegocioId", (object?)negocioId, SqlDbType.Int));
+    public Task<List<SelectListItem>> ComprobantesComboReservasAsync(int negocioId, int? sedeId = null) => ComboAsync("Sp_Combos_ReservasPorNegocio", ("@NegocioId", (object?)negocioId, SqlDbType.Int), ("@SedeId", sedeId, SqlDbType.Int));
+
+    private static bool EsErrorNoEncontrado(string? mensaje)
+    {
+        if (string.IsNullOrWhiteSpace(mensaje)) return false;
+        return mensaje.Contains("No se encontro", StringComparison.OrdinalIgnoreCase)
+               || mensaje.Contains("no encontrada", StringComparison.OrdinalIgnoreCase)
+               || mensaje.Contains("no encontrado", StringComparison.OrdinalIgnoreCase);
+    }
 }

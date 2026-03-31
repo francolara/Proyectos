@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using SistemaControlEspaciosDeportivosWeb.Models;
 
@@ -22,6 +22,12 @@ public class SedeFormViewModel
     [StringLength(20, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string? Telefono { get; set; }
 
+    [RegularExpression(@"^\+\d{1,4}$", ErrorMessage = "Selecciona un codigo de pais valido.")]
+    public string TelefonoCodigoPais { get; set; } = "+51";
+
+    [RegularExpression(@"^$|^\d{6,15}$", ErrorMessage = "Ingresa un numero telefonico valido (solo digitos).")]
+    public string? TelefonoNumeroLocal { get; set; }
+
     public bool Activo { get; set; } = true;
 
     public List<int> ServiciosSeleccionados { get; set; } = new();
@@ -42,6 +48,12 @@ public class SedeFormViewModel
     [StringLength(20, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string? WhatsappContacto { get; set; }
 
+    [RegularExpression(@"^\+\d{1,4}$", ErrorMessage = "Selecciona un codigo de pais valido.")]
+    public string WhatsappCodigoPais { get; set; } = "+51";
+
+    [RegularExpression(@"^$|^\d{6,15}$", ErrorMessage = "Ingresa un numero de WhatsApp valido (solo digitos).")]
+    public string? WhatsappNumeroLocal { get; set; }
+
     public bool PermiteChatWhatsapp { get; set; }
 
     public bool AtiendeLunes { get; set; } = true;
@@ -60,6 +72,7 @@ public class SedeFormViewModel
 
     public string? FechasInhabilitadasCsv { get; set; }
     public List<DateOnly> FechasInhabilitadas { get; set; } = new();
+    public List<SelectListItem> CodigosPais { get; set; } = new();
 }
 
 public class EspacioFormViewModel
@@ -69,13 +82,13 @@ public class EspacioFormViewModel
     public string NegocioNombre { get; set; } = string.Empty;
     public string RolActual { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Este campo es obligatorio.")]
+    [Range(1, int.MaxValue, ErrorMessage = "Debes seleccionar una sede.")]
     public int SedeId { get; set; }
 
-    [Required(ErrorMessage = "Este campo es obligatorio.")]
+    [Range(1, int.MaxValue, ErrorMessage = "Debes seleccionar un deporte.")]
     public int TipoDeporteId { get; set; }
 
-    [Required(ErrorMessage = "Este campo es obligatorio.")]
+    [Range(1, int.MaxValue, ErrorMessage = "Debes seleccionar un tipo de suelo.")]
     public int TipoSueloId { get; set; }
 
     [Required(ErrorMessage = "Este campo es obligatorio.")]
@@ -94,6 +107,9 @@ public class EspacioFormViewModel
     public EstadoEspacioDeportivo Estado { get; set; } = EstadoEspacioDeportivo.Activo;
     public string? TarifasJson { get; set; }
     public List<EspacioTarifaRangoViewModel> Tarifas { get; set; } = new();
+    public int? MonedaIdConfigurada { get; set; }
+    public string MonedaEtiqueta { get; set; } = string.Empty;
+    public bool PuedeEditarTarifas { get; set; }
 
     public List<SelectListItem> Sedes { get; set; } = new();
     public List<SelectListItem> TiposDeporte { get; set; } = new();
@@ -251,6 +267,12 @@ public class ClienteFormViewModel
     [StringLength(20, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string? Telefono { get; set; }
 
+    [RegularExpression(@"^\+\d{1,4}$", ErrorMessage = "Selecciona un codigo de pais valido.")]
+    public string TelefonoCodigoPais { get; set; } = "+51";
+
+    [RegularExpression(@"^$|^\d{6,15}$", ErrorMessage = "Ingresa un numero telefonico valido (solo digitos).")]
+    public string? TelefonoNumeroLocal { get; set; }
+
     [StringLength(200, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     [EmailAddress(ErrorMessage = "Ingresa un correo electronico valido.")]
     public string? Correo { get; set; }
@@ -259,6 +281,7 @@ public class ClienteFormViewModel
     public string? DireccionFiscal { get; set; }
 
     public bool Activo { get; set; } = true;
+    public List<SelectListItem> CodigosPais { get; set; } = new();
 }
 
 public class PromocionFormViewModel

@@ -3,6 +3,12 @@
 -- Create date:   27/03/2026
 -- Description:   Gestion interna de solicitudes publicas y conversion a reserva.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   30/03/2026
+-- Description:   Ajusta actualizacion de estado para devolver error controlado cuando la solicitud no existe o no pertenece al negocio.
+-- Firma:         Codex - 30/03/2026 | Valida existencia en SP y evita pre-chequeo en C#.
+-- =============================================
 
 IF COL_LENGTH('dbo.SolicitudesReservaPublica', 'ReservaId') IS NULL
 BEGIN
@@ -172,12 +178,12 @@ BEGIN
           AND se.NegocioId = @NegocioId
           AND s.Estado IN (1, 2, 3);
 
-        IF @@ROWCOUNT > 0
-        BEGIN
-            DECLARE @EntidadIdAudit NVARCHAR(80);
-            SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
-            EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'SOLICITUDES', @Accion = N'EDIT', @Entidad = N'SolicitudReservaPublica', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
-        END;
+        IF @@ROWCOUNT = 0
+            RAISERROR('No se encontro la solicitud para actualizar en el negocio.', 16, 1);
+
+        DECLARE @EntidadIdAudit NVARCHAR(80);
+        SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
+        EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'SOLICITUDES', @Accion = N'EDIT', @Entidad = N'SolicitudReservaPublica', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
     END TRY
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;

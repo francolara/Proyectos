@@ -3,6 +3,7 @@
 -- Create date:   27/03/2026
 -- Description:   Valida reservas segun dias/horario de sede y fechas no laborables.
 -- Firma:         Codex - 27/03/2026
+-- Firma:         Codex - 30/03/2026 | Sp_Reservas_Mover devuelve error cuando no encuentra reserva o no afecta filas.
 -- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.Sp_Reservas_Crear
@@ -128,7 +129,7 @@ BEGIN
           AND r.Estado NOT IN (5, 6);
 
         IF @EspacioDeportivoId IS NULL
-            RETURN;
+            RAISERROR('No se encontro la reserva para mover.', 16, 1);
 
         IF EXISTS (SELECT 1 FROM dbo.SedeFechasInhabilitadas sfi WHERE sfi.SedeId = @SedeId AND sfi.Fecha = @Fecha AND sfi.Activo = 1)
             RAISERROR('La sede no atiende en la fecha seleccionada.', 16, 1);
@@ -157,6 +158,9 @@ BEGIN
         UPDATE dbo.Reservas
         SET Fecha = @Fecha, HoraInicio = @HoraInicio, HoraFin = @HoraFin, FechaActualizacion = SYSUTCDATETIME(), UsuarioActualizacion = @Usuario
         WHERE Id = @Id;
+
+        IF @@ROWCOUNT = 0
+            RAISERROR('No se encontro la reserva para mover.', 16, 1);
 
         IF @@ROWCOUNT > 0
         BEGIN

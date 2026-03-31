@@ -1,67 +1,158 @@
-﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.PagosIndexViewModel
-<!-- Firma: Codex - 28/03/2026 | Mejora visual de botones de accion Editar/Eliminar con estilo premium reusable -->
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.PagosIndexViewModel
+<!-- Firma: Codex - 29/03/2026 | Rediseno del listado de pagos con KPIs, filtro rapido y tabla detallada -->
 
 @{
     ViewData["Title"] = "Pagos";
+    var totalPagos = Model.Pagos.Count;
+    var totalMonto = Model.Pagos.Sum(x => x.Monto);
+    var hoy = DateTime.Today;
+    var totalHoy = Model.Pagos.Count(x => x.FechaPago.Date == hoy);
+    var montoHoy = Model.Pagos.Where(x => x.FechaPago.Date == hoy).Sum(x => x.Monto);
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-        <h1 class="h4 mb-1">Pagos</h1>
-        <p class="text-muted mb-0">@Model.NegocioNombre | Rol: @Model.RolActual</p>
-    </div>
-    <div class="d-flex gap-2">
-        @if (Model.PuedeCrear)
-        {
-            <a class="btn btn-primary" asp-action="Create" asp-route-negocioId="@Model.NegocioId">Registrar pago</a>
-        }
-        <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Panel</a>
-    </div>
-</div>
-
-<div class="table-responsive">
-    <table class="table table-sm table-striped align-middle">
-        <thead>
-            <tr>
-                <th>Id</th>
-                <th>Reserva</th>
-                <th>Fecha</th>
-                <th>Monto</th>
-                <th>Forma</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model.Pagos)
+<div class="admin-page-frame">
+    <section class="page-header">
+        <div>
+            <h1>Pagos</h1>
+            <p class="page-subtitle">@Model.NegocioNombre | Rol: @Model.RolActual</p>
+        </div>
+        <div class="action-toolbar">
+            @if (Model.PuedeCrear)
             {
-                <tr>
-                    <td>@item.Id</td>
-                    <td>#@item.ReservaId</td>
-                    <td>@item.FechaPago.ToString("dd/MM/yyyy HH:mm")</td>
-                    <td>S/ @item.Monto.ToString("N2")</td>
-                    <td>@item.FormaPago</td>
-                    <td class="text-end">
-                        @if (Model.PuedeEditar)
-                        {
-                            <a class="btn btn-sm sc-action-btn sc-action-edit" asp-action="Edit" asp-route-negocioId="@Model.NegocioId" asp-route-id="@item.Id">
-                                <i class="bi bi-pencil-square"></i> Editar
-                            </a>
-                        }
-                        @if (Model.PuedeEliminar)
-                        {
-                            <form asp-action="Delete" method="post" class="d-inline">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="negocioId" value="@Model.NegocioId" />
-                                <input type="hidden" name="id" value="@item.Id" />
-                                <button type="submit" class="btn btn-sm sc-action-btn sc-action-delete">
-                                    <i class="bi bi-trash3"></i> Eliminar
-                                </button>
-                            </form>
-                        }
-                    </td>
-                </tr>
+                <a class="btn btn-primary" asp-action="Create" asp-route-negocioId="@Model.NegocioId">
+                    <i class="bi bi-plus-circle me-1"></i> Registrar pago
+                </a>
             }
-        </tbody>
-    </table>
+            <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">
+                <i class="bi bi-arrow-left me-1"></i> Panel
+            </a>
+        </div>
+    </section>
+
+    <section class="kpi-grid mb-3">
+        <article class="kpi-card">
+            <p class="kpi-card-label">Total pagos</p>
+            <h3 class="kpi-card-value">@totalPagos</h3>
+        </article>
+        <article class="kpi-card">
+            <p class="kpi-card-label">Monto total</p>
+            <h3 class="kpi-card-value">S/ @totalMonto.ToString("N2")</h3>
+        </article>
+        <article class="kpi-card">
+            <p class="kpi-card-label">Pagos de hoy</p>
+            <h3 class="kpi-card-value">@totalHoy</h3>
+        </article>
+        <article class="kpi-card">
+            <p class="kpi-card-label">Monto de hoy</p>
+            <h3 class="kpi-card-value">S/ @montoHoy.ToString("N2")</h3>
+        </article>
+    </section>
+
+    <section class="filter-card mb-3">
+        <h2 class="section-title">Filtro rapido</h2>
+        <div class="row g-2 align-items-end px-3 pb-3">
+            <div class="col-lg-8 col-md-7">
+                <label class="form-label">Buscar por ID, reserva, forma de pago o fecha</label>
+                <input type="text" id="filtroPagos" class="form-control" placeholder="Ejemplo: #12, Efectivo, 29/03/2026..." />
+            </div>
+            <div class="col-lg-4 col-md-5">
+                <label class="form-label">Registros visibles</label>
+                <div class="form-control bg-light" id="contadorPagos">@totalPagos</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="table-card">
+        <h2 class="section-title">Listado detallado de pagos</h2>
+        @if (!Model.Pagos.Any())
+        {
+            <div class="empty-state">
+                <i class="bi bi-info-circle"></i>
+                <span>No hay pagos registrados para este negocio.</span>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm align-middle" id="tablaPagosDetallada">
+                    <thead>
+                        <tr>
+                            <th>Pago</th>
+                            <th>Referencia y forma</th>
+                            <th>Monto</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Pagos)
+                        {
+                            var fechaTexto = item.FechaPago.ToString("dd/MM/yyyy HH:mm");
+                            <tr data-search="@($"{item.Id} {item.ReservaId} {item.FormaPago} {fechaTexto} {item.Monto:N2}".ToLowerInvariant())">
+                                <td>
+                                    <div class="sc-list-main">
+                                        <span class="sc-list-code">PAGO #@item.Id</span>
+                                        <div class="sc-list-title">@fechaTexto</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <span class="badge bg-light text-dark border"><i class="bi bi-calendar-check me-1"></i>Reserva #@item.ReservaId</span>
+                                        <span class="badge bg-light text-dark border"><i class="bi bi-wallet2 me-1"></i>@item.FormaPago</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle sc-estado-pill">S/ @item.Monto.ToString("N2")</span>
+                                </td>
+                                <td class="text-end">
+                                    @if (Model.PuedeEditar)
+                                    {
+                                        <a class="btn btn-sm sc-action-btn sc-action-edit" asp-action="Edit" asp-route-negocioId="@Model.NegocioId" asp-route-id="@item.Id">
+                                            <i class="bi bi-pencil-square"></i> Editar
+                                        </a>
+                                    }
+                                    @if (Model.PuedeEliminar)
+                                    {
+                                        <form asp-action="Delete" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <button type="submit" class="btn btn-sm sc-action-btn sc-action-delete">
+                                                <i class="bi bi-trash3"></i> Eliminar
+                                            </button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
 </div>
 
+@section Scripts {
+    <script>
+        (() => {
+            const filtro = document.getElementById('filtroPagos');
+            const tabla = document.getElementById('tablaPagosDetallada');
+            const contador = document.getElementById('contadorPagos');
+            if (!filtro || !tabla || !contador) return;
+
+            function aplicarFiltro() {
+                const valor = (filtro.value || '').trim().toLowerCase();
+                let visibles = 0;
+                tabla.querySelectorAll('tbody tr').forEach(row => {
+                    const texto = row.getAttribute('data-search') || '';
+                    const mostrar = !valor || texto.includes(valor);
+                    row.style.display = mostrar ? '' : 'none';
+                    if (mostrar) visibles++;
+                });
+                contador.textContent = String(visibles);
+            }
+
+            filtro.addEventListener('input', aplicarFiltro);
+            aplicarFiltro();
+        })();
+    </script>
+}

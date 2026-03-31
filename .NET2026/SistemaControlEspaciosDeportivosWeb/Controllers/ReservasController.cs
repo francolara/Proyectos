@@ -7,7 +7,7 @@ namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 public class ReservasController(IModuloPermisoService moduloPermisoService, ISportCenterStoredProcedureService spService)
     : ModuloControllerBase(moduloPermisoService)
 {
-    public async Task<IActionResult> Index(int? negocioId, DateOnly? fechaDesde, DateOnly? fechaHasta, int? sedeId, int? espacioDeportivoId, int? estado)
+    public async Task<IActionResult> Index(int? negocioId, DateOnly? fechaDesde, DateOnly? fechaHasta, int? sedeId, int? espacioDeportivoId, int? estado, DateOnly? listadoDesde, DateOnly? listadoHasta, List<int>? estadosListado)
     {
         var resolvedNegocioId = await ResolverNegocioIdAsync(negocioId, spService);
         if (!resolvedNegocioId.HasValue) return Forbid();
@@ -18,19 +18,41 @@ public class ReservasController(IModuloPermisoService moduloPermisoService, ISpo
         var desde = fechaDesde ?? DateOnly.FromDateTime(DateTime.Today);
         var hasta = fechaHasta ?? DateOnly.FromDateTime(DateTime.Today.AddDays(6));
         if (hasta < desde) hasta = desde;
+        sedeId = AplicarSedeAsignada(baseVm, sedeId);
 
-        var sedes = await spService.EspaciosComboSedesAsync(resolvedNegocioId.Value);
+        // Firma Codex 30/03/2026: el combo de sedes no debe colapsar a la sede seleccionada en filtros.
+        var sedes = await spService.EspaciosComboSedesAsync(resolvedNegocioId.Value, baseVm.SedeIdAsignada);
         if (!sedeId.HasValue && sedes.Count == 1 && int.TryParse(sedes[0].Value, out var sedeUnicaId))
             sedeId = sedeUnicaId;
-        var espacios = await spService.ReservasComboEspaciosAsync(resolvedNegocioId.Value);
+        var espacios = await spService.ReservasComboEspaciosAsync(resolvedNegocioId.Value, sedeId);
+        if (espacioDeportivoId.HasValue && !espacios.Any(x => x.Value == espacioDeportivoId.Value.ToString()))
+            espacioDeportivoId = null;
         var clientes = await spService.ReservasComboClientesAsync(resolvedNegocioId.Value);
-        var reservas = await spService.ReservasListarAsync(resolvedNegocioId.Value, desde, hasta, sedeId, espacioDeportivoId, estado);
+        var filtroListadoDesde = listadoDesde ?? desde;
+        var filtroListadoHasta = listadoHasta ?? hasta;
+        if (filtroListadoHasta < filtroListadoDesde) filtroListadoHasta = filtroListadoDesde;
+        var estadosListadoLimpios = (estadosListado ?? new List<int>())
+            .Where(x => x is >= 1 and <= 6)
+            .Distinct()
+            .OrderBy(x => x)
+            .ToList();
+        var estadosListadoCsv = estadosListadoLimpios.Count == 0 ? null : string.Join(",", estadosListadoLimpios);
+        var reservas = await spService.ReservasListarAsync(
+            resolvedNegocioId.Value,
+            filtroListadoDesde,
+            filtroListadoHasta,
+            sedeId,
+            espacioDeportivoId,
+            null,
+            estadosListadoCsv);
 
         var vm = new ReservasIndexViewModel
         {
             NegocioId = baseVm.NegocioId,
             NegocioNombre = baseVm.NegocioNombre,
             RolActual = baseVm.RolActual,
+            SedeIdAsignada = baseVm.SedeIdAsignada,
+            EsAdministrador = baseVm.EsAdministrador,
             ModuloCodigo = baseVm.ModuloCodigo,
             ModuloNombre = baseVm.ModuloNombre,
             PuedeCrear = baseVm.PuedeCrear,
@@ -38,9 +60,12 @@ public class ReservasController(IModuloPermisoService moduloPermisoService, ISpo
             PuedeEliminar = baseVm.PuedeEliminar,
             FechaDesde = desde,
             FechaHasta = hasta,
+            ListadoFechaDesde = filtroListadoDesde,
+            ListadoFechaHasta = filtroListadoHasta,
             SedeId = sedeId,
             EspacioDeportivoId = espacioDeportivoId,
             Estado = estado,
+            EstadosListadoSeleccionados = estadosListadoLimpios,
             SedesFiltro = sedes,
             EspaciosFiltro = espacios,
             ClientesFiltro = clientes,
@@ -81,6 +106,25 @@ public class ReservasController(IModuloPermisoService moduloPermisoService, ISpo
     }
 
     [HttpGet]
+    public async Task<IActionResult> ObtenerEspaciosFiltro(int negocioId, int? sedeId)
+    {
+        var baseVm = await ObtenerBaseAsync(negocioId, "RESERVAS");
+        if (baseVm is null || !string.IsNullOrWhiteSpace(baseVm.Mensaje))
+            return Json(new { ok = false, mensaje = "No autorizado." });
+
+        sedeId = AplicarSedeAsignada(baseVm, sedeId);
+        if (!sedeId.HasValue)
+            return Json(new { ok = true, items = Array.Empty<object>() });
+
+        var espacios = await spService.ReservasComboEspaciosAsync(negocioId, sedeId);
+        return Json(new
+        {
+            ok = true,
+            items = espacios.Select(x => new { value = x.Value, text = x.Text })
+        });
+    }
+
+    [HttpGet]
     public async Task<IActionResult> ObtenerReservaModal(int negocioId, int id)
     {
         var baseVm = await ObtenerBaseAsync(negocioId, "RESERVAS");
@@ -88,6 +132,8 @@ public class ReservasController(IModuloPermisoService moduloPermisoService, ISpo
 
         var vm = await spService.ReservasObtenerAsync(negocioId, id);
         if (vm is null) return NotFound(new { ok = false, mensaje = "No se encontro la reserva." });
+        if (!await EspacioPermitidoAsync(baseVm, negocioId, vm.EspacioDeportivoId))
+            return Forbid();
 
         return Json(new
         {
@@ -120,6 +166,17 @@ public class ReservasController(IModuloPermisoService moduloPermisoService, ISpo
                 conflictoId = (int?)null
             });
         }
+        if (!await EspacioPermitidoAsync(baseVm, negocioId, espacioDeportivoId))
+        {
+            return Json(new
+            {
+                ok = true,
+                disponible = false,
+                mensaje = "No tienes acceso a la sede del espacio seleccionado.",
+                conflictoTipo = (string?)null,
+                conflictoId = (int?)null
+            });
+        }
 
         var validacion = await spService.ReservasValidarDisponibilidadAsync(negocioId, reservaId, espacioDeportivoId, fecha, horaInicio, horaFin);
         return Json(new
@@ -143,6 +200,7 @@ public class ReservasController(IModuloPermisoService moduloPermisoService, ISpo
                          ((requiereEditar && baseVm.PuedeEditar) || (!requiereEditar && baseVm.PuedeCrear));
 
         if (!autorizado) return Forbid();
+        var contexto = baseVm!;
         if (!ModelState.IsValid)
         {
             var errores = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
@@ -151,6 +209,10 @@ public class ReservasController(IModuloPermisoService moduloPermisoService, ISpo
         if (EsFechaPasada(model.Fecha))
         {
             return BadRequest(new { ok = false, mensaje = "No se permite registrar reservas en fechas pasadas." });
+        }
+        if (!await EspacioPermitidoAsync(contexto, model.NegocioId, model.EspacioDeportivoId))
+        {
+            return BadRequest(new { ok = false, mensaje = "No tienes acceso a la sede del espacio seleccionado." });
         }
 
         try
@@ -183,6 +245,7 @@ public class ReservasController(IModuloPermisoService moduloPermisoService, ISpo
         var desde = DateOnly.FromDateTime(start?.Date ?? DateTime.Today);
         var hasta = DateOnly.FromDateTime((end?.Date ?? DateTime.Today.AddDays(7)).AddDays(-1));
         if (hasta < desde) hasta = desde;
+        sedeId = AplicarSedeAsignada(baseVm, sedeId);
 
         var items = await spService.ReservasCalendarioEventosAsync(negocioId, desde, hasta, sedeId, espacioDeportivoId, estado);
         var eventos = items.Select(r => new
@@ -195,8 +258,9 @@ public class ReservasController(IModuloPermisoService moduloPermisoService, ISpo
             start = new DateTime(r.Fecha.Year, r.Fecha.Month, r.Fecha.Day, r.HoraInicio.Hour, r.HoraInicio.Minute, 0),
             end = new DateTime(r.Fecha.Year, r.Fecha.Month, r.Fecha.Day, r.HoraFin.Hour, r.HoraFin.Minute, 0),
             estado = r.Estado,
-            estadoCodigo = ObtenerCodigoEstado(r.Estado, r.TipoEvento),
-            estadoTexto = ObtenerTextoEstado(r.Estado, r.TipoEvento),
+            estadoCodigo = r.EstadoCodigo,
+            estadoTexto = r.EstadoTexto,
+            motivo = r.Motivo,
             espacioDeportivoId = r.EspacioDeportivoId,
             backgroundColor = r.Color,
             borderColor = r.Color,
@@ -204,6 +268,77 @@ public class ReservasController(IModuloPermisoService moduloPermisoService, ISpo
         });
 
         return Json(eventos);
+    }
+
+    [HttpGet]
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public async Task<IActionResult> ResumenDiaOperativo(int negocioId, DateOnly fecha, int? sedeId, int? espacioDeportivoId)
+    {
+        var baseVm = await ObtenerBaseAsync(negocioId, "RESERVAS");
+        if (baseVm is null || !string.IsNullOrWhiteSpace(baseVm.Mensaje)) return Forbid();
+
+        sedeId = AplicarSedeAsignada(baseVm, sedeId);
+        if (!sedeId.HasValue || !espacioDeportivoId.HasValue)
+            return BadRequest(new { ok = false, mensaje = "Debes seleccionar sede y espacio." });
+
+        if (!await EspacioPermitidoAsync(baseVm, negocioId, espacioDeportivoId.Value))
+            return Forbid();
+
+        var eventos = await spService.ReservasCalendarioEventosAsync(negocioId, fecha, fecha, sedeId, espacioDeportivoId, null);
+
+        static int ToMinutes(TimeOnly t) => (t.Hour * 60) + t.Minute;
+        static bool Cruza((int Inicio, int Fin) a, (int Inicio, int Fin) b) => a.Inicio < b.Fin && b.Inicio < a.Fin;
+
+        var ocupados = eventos
+            .Where(e =>
+            {
+                var tipo = (e.TipoEvento ?? string.Empty).ToUpperInvariant();
+                if (tipo == "NO_ATENCION" || tipo == "BLOQUEO") return true;
+                if (tipo != "RESERVA") return false;
+                if (!e.Estado.HasValue) return true;
+                return e.Estado.Value != 5 && e.Estado.Value != 6;
+            })
+            .Select(e => (Inicio: ToMinutes(e.HoraInicio), Fin: ToMinutes(e.HoraFin)))
+            .Where(x => x.Fin > x.Inicio)
+            .ToList();
+
+        var slotsDisponibles = new List<object>();
+        const int inicioDia = 6 * 60;
+        const int finDia = 24 * 60;
+        for (var minuto = inicioDia; minuto < finDia; minuto += 60)
+        {
+            var tramo = (Inicio: minuto, Fin: minuto + 60);
+            if (ocupados.Any(o => Cruza(tramo, o))) continue;
+            var horaInicio = TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(tramo.Inicio)).ToString("HH\\:mm");
+            var horaFin = TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(tramo.Fin)).ToString("HH\\:mm");
+            slotsDisponibles.Add(new
+            {
+                horaInicio,
+                horaFin
+            });
+        }
+
+        var pendientes = eventos
+            .Where(e => string.Equals(e.TipoEvento, "RESERVA", StringComparison.OrdinalIgnoreCase) && e.Estado == 1)
+            .OrderBy(e => e.HoraInicio)
+            .Select(e => new
+            {
+                reservaId = e.Id,
+                titulo = e.Titulo,
+                horaInicio = e.HoraInicio.ToString("HH\\:mm"),
+                horaFin = e.HoraFin.ToString("HH\\:mm")
+            })
+            .ToList();
+
+        return Json(new
+        {
+            ok = true,
+            fecha = fecha.ToString("yyyy-MM-dd"),
+            slotsDisponibles,
+            pendientes,
+            totalSlotsDisponibles = slotsDisponibles.Count,
+            totalPendientes = pendientes.Count
+        });
     }
 
     [HttpPost]
@@ -222,6 +357,8 @@ public class ReservasController(IModuloPermisoService moduloPermisoService, ISpo
         {
             return BadRequest(new { ok = false, mensaje = "No se permite mover reservas a fechas pasadas." });
         }
+        if (!await ReservaPermitidaAsync(baseVm, request.NegocioId, request.ReservaId))
+            return Forbid();
 
         try
         {
@@ -247,6 +384,8 @@ public class ReservasController(IModuloPermisoService moduloPermisoService, ISpo
     {
         var baseVm = await ObtenerBaseAsync(request.NegocioId, "RESERVAS");
         if (baseVm is null || !baseVm.PuedeEditar) return Forbid();
+        if (!await ReservaPermitidaAsync(baseVm, request.NegocioId, request.ReservaId))
+            return Forbid();
 
         try
         {
@@ -271,6 +410,8 @@ public class ReservasController(IModuloPermisoService moduloPermisoService, ISpo
     {
         var baseVm = await ObtenerBaseAsync(negocioId, "RESERVAS");
         if (baseVm is null || !baseVm.PuedeEditar) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
+        if (!await ReservaPermitidaAsync(baseVm, negocioId, id))
+            return Forbid();
 
         try
         {
@@ -286,14 +427,20 @@ public class ReservasController(IModuloPermisoService moduloPermisoService, ISpo
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> CrearBloqueo(BloqueoHorarioFormViewModel model)
+    public async Task<IActionResult> CrearBloqueo(BloqueoHorarioFormViewModel model, DateOnly? fechaDesde, DateOnly? fechaHasta, int? sedeId, int? espacioDeportivoId, int? estado)
     {
         var baseVm = await ObtenerBaseAsync(model.NegocioId, "RESERVAS");
         if (baseVm is null || !baseVm.PuedeEditar) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
+        if (!await EspacioPermitidoAsync(baseVm, model.NegocioId, model.EspacioDeportivoId))
+            return Forbid();
+        sedeId = AplicarSedeAsignada(baseVm, sedeId);
+        var desde = fechaDesde ?? DateOnly.FromDateTime(DateTime.Today);
+        var hasta = fechaHasta ?? desde.AddDays(6);
+        if (hasta < desde) hasta = desde;
 
         if (!ModelState.IsValid)
         {
-            return RedirectToAction(nameof(Index), new { negocioId = model.NegocioId });
+            return RedirectToAction(nameof(Index), new { negocioId = model.NegocioId, fechaDesde = desde, fechaHasta = hasta, sedeId, espacioDeportivoId, estado });
         }
 
         try
@@ -305,7 +452,7 @@ public class ReservasController(IModuloPermisoService moduloPermisoService, ISpo
             TempData["ReservasError"] = ex.Message;
         }
 
-        return RedirectToAction(nameof(Index), new { negocioId = model.NegocioId, fechaDesde = model.Fecha, fechaHasta = model.Fecha });
+        return RedirectToAction(nameof(Index), new { negocioId = model.NegocioId, fechaDesde = desde, fechaHasta = hasta, sedeId, espacioDeportivoId, estado });
     }
 
     [HttpPost]
@@ -336,7 +483,8 @@ public class ReservasController(IModuloPermisoService moduloPermisoService, ISpo
             HoraInicio = horaInicio ?? new TimeOnly(18, 0),
             HoraFin = horaFin ?? (horaInicio?.AddHours(1) ?? new TimeOnly(19, 0))
         };
-        vm.Espacios = await spService.ReservasComboEspaciosAsync(resolvedNegocioId.Value);
+        var sedeFiltro = AplicarSedeAsignada(baseVm, null);
+        vm.Espacios = await spService.ReservasComboEspaciosAsync(resolvedNegocioId.Value, sedeFiltro);
         vm.Clientes = await spService.ReservasComboClientesAsync(resolvedNegocioId.Value);
         if (espacioDeportivoId.HasValue && vm.Espacios.Any(x => x.Value == espacioDeportivoId.Value.ToString()))
         {
@@ -352,13 +500,19 @@ public class ReservasController(IModuloPermisoService moduloPermisoService, ISpo
         var baseVm = await ObtenerBaseAsync(model.NegocioId, "RESERVAS");
         if (baseVm is null || !baseVm.PuedeCrear) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
-        model.Espacios = await spService.ReservasComboEspaciosAsync(model.NegocioId);
+        var sedeFiltro = AplicarSedeAsignada(baseVm, null);
+        model.Espacios = await spService.ReservasComboEspaciosAsync(model.NegocioId, sedeFiltro);
         model.Clientes = await spService.ReservasComboClientesAsync(model.NegocioId);
         if (EsFechaPasada(model.Fecha))
         {
             ModelState.AddModelError(nameof(model.Fecha), "No se permite registrar reservas en fechas pasadas.");
         }
         if (!ModelState.IsValid) return View(model);
+        if (!await EspacioPermitidoAsync(baseVm, model.NegocioId, model.EspacioDeportivoId))
+        {
+            ModelState.AddModelError(string.Empty, "No tienes acceso a la sede del espacio seleccionado.");
+            return View(model);
+        }
 
         try
         {
@@ -382,9 +536,12 @@ public class ReservasController(IModuloPermisoService moduloPermisoService, ISpo
 
         var vm = await spService.ReservasObtenerAsync(resolvedNegocioId.Value, id);
         if (vm is null) return NotFound();
+        if (!await EspacioPermitidoAsync(baseVm, resolvedNegocioId.Value, vm.EspacioDeportivoId))
+            return Forbid();
         vm.NegocioNombre = baseVm.NegocioNombre;
         vm.RolActual = baseVm.RolActual;
-        vm.Espacios = await spService.ReservasComboEspaciosAsync(resolvedNegocioId.Value);
+        var sedeFiltro = AplicarSedeAsignada(baseVm, null);
+        vm.Espacios = await spService.ReservasComboEspaciosAsync(resolvedNegocioId.Value, sedeFiltro);
         vm.Clientes = await spService.ReservasComboClientesAsync(resolvedNegocioId.Value);
         return View(vm);
     }
@@ -396,13 +553,19 @@ public class ReservasController(IModuloPermisoService moduloPermisoService, ISpo
         var baseVm = await ObtenerBaseAsync(model.NegocioId, "RESERVAS");
         if (baseVm is null || !baseVm.PuedeEditar) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
-        model.Espacios = await spService.ReservasComboEspaciosAsync(model.NegocioId);
+        var sedeFiltro = AplicarSedeAsignada(baseVm, null);
+        model.Espacios = await spService.ReservasComboEspaciosAsync(model.NegocioId, sedeFiltro);
         model.Clientes = await spService.ReservasComboClientesAsync(model.NegocioId);
         if (EsFechaPasada(model.Fecha))
         {
             ModelState.AddModelError(nameof(model.Fecha), "No se permite registrar reservas en fechas pasadas.");
         }
         if (!ModelState.IsValid) return View(model);
+        if (!await EspacioPermitidoAsync(baseVm, model.NegocioId, model.EspacioDeportivoId))
+        {
+            ModelState.AddModelError(string.Empty, "No tienes acceso a la sede del espacio seleccionado.");
+            return View(model);
+        }
 
         try
         {
@@ -427,6 +590,8 @@ public class ReservasController(IModuloPermisoService moduloPermisoService, ISpo
     {
         var baseVm = await ObtenerBaseAsync(negocioId, "RESERVAS");
         if (baseVm is null || !baseVm.PuedeEliminar) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
+        if (!await ReservaPermitidaAsync(baseVm, negocioId, id))
+            return Forbid();
 
         var ok = await spService.ReservasEliminarAsync(negocioId, id, User.Identity?.Name ?? "sistema");
         if (!ok) return NotFound();
@@ -462,41 +627,18 @@ public class ReservasController(IModuloPermisoService moduloPermisoService, ISpo
         };
     }
 
-    private static string? ObtenerCodigoEstado(int? estado, string? tipoEvento)
+    private async Task<bool> EspacioPermitidoAsync(ModuloBaseViewModel baseVm, int negocioId, int espacioDeportivoId)
     {
-        if (string.Equals(tipoEvento, "NO_ATENCION", StringComparison.OrdinalIgnoreCase))
-            return "BLOQUEADO_NO_ATENCION";
-        if (string.Equals(tipoEvento, "BLOQUEO", StringComparison.OrdinalIgnoreCase))
-            return "BLOQUEADO";
-
-        return estado switch
-        {
-            1 => "PENDIENTE",
-            2 => "CONFIRMADA",
-            3 => "EN_USO",
-            4 => "FINALIZADA",
-            5 => "CANCELADA",
-            6 => "NO_SHOW",
-            _ => null
-        };
+        if (baseVm.EsAdministrador || !baseVm.SedeIdAsignada.HasValue) return true;
+        var espacios = await spService.ReservasComboEspaciosAsync(negocioId, baseVm.SedeIdAsignada);
+        return espacios.Any(x => x.Value == espacioDeportivoId.ToString());
     }
 
-    private static string? ObtenerTextoEstado(int? estado, string? tipoEvento)
+    private async Task<bool> ReservaPermitidaAsync(ModuloBaseViewModel baseVm, int negocioId, int reservaId)
     {
-        if (string.Equals(tipoEvento, "NO_ATENCION", StringComparison.OrdinalIgnoreCase))
-            return "Bloqueado/No atención";
-        if (string.Equals(tipoEvento, "BLOQUEO", StringComparison.OrdinalIgnoreCase))
-            return "Bloqueado";
-
-        return estado switch
-        {
-            1 => "Pendiente",
-            2 => "Confirmada",
-            3 => "En uso",
-            4 => "Finalizada",
-            5 => "Cancelada",
-            6 => "No show",
-            _ => null
-        };
+        if (baseVm.EsAdministrador || !baseVm.SedeIdAsignada.HasValue) return true;
+        var reserva = await spService.ReservasObtenerAsync(negocioId, reservaId);
+        if (reserva is null) return false;
+        return await EspacioPermitidoAsync(baseVm, negocioId, reserva.EspacioDeportivoId);
     }
 }

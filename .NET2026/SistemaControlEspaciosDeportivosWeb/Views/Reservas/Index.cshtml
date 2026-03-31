@@ -1,14 +1,365 @@
-<!-- Firma: Codex - 28/03/2026 | Ajustes visuales de acciones y calendario backend; tooltip y etiquetas visibles de estado/motivo en franjas bloqueadas; fix horario drag/drop y color bloqueado tomado del backend -->
-@using System.Text.Json
+<!-- Firma: Codex - 28/03/2026 | Ajustes visuales de acciones y calendario backend; tooltip y etiquetas visibles de estado/motivo en franjas bloqueadas; fix horario drag/drop, color bloqueado tomado del backend, eliminacion de texto duplicado en NO_ATENCION/BLOQUEO, cabecera del calendario en dos filas obligatorias y estilos centralizados en site.css. -->
+<!-- Firma: Codex - 30/03/2026 | Calendario backend-driven: disponibilidad y pendientes por dia consultan BD via endpoint diario; panel operativo condicionado a sede+espacio; persistencia de filtros; nueva seccion "Pendiente de confirmar por dia"; listado general con filtro propio de rango y estados multiples (backend); refuerzo visual Fase 1 aplicado tambien por JS para evitar cache/orden de CSS, incluyendo toolbar, botones, grilla, columna horaria y fines de semana. -->
+<!-- Firma: Codex - 31/03/2026 | Fase 2/3 del calendario: leyenda interactiva por estado, modos visuales (compacto/contraste), grilla operativa con cabecera y eje horario sticky, realce de columna por hover, drawer de detalle y ajuste robusto del eje horario (ancho fijo en colgroup/frame/cushion/shrink, titulo sin corte y horas centradas/legibles, re-aplicado tras filtrar/refetch). -->
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ReservasIndexViewModel
 <!-- Firma: Codex - 27/03/2026 | Calendario en espanol, bloqueos por sede, gestion por modal, bloqueo de fechas pasadas y rediseno visual SaaS del calendario -->
 @{
     ViewData["Title"] = "Reservas";
     var sedeSeleccionadaTexto = Model.SedesFiltro.FirstOrDefault(x => x.Value == Model.SedeId?.ToString())?.Text ?? "Todas las sedes";
     var espacioSeleccionadoTexto = Model.EspaciosFiltro.FirstOrDefault(x => x.Value == Model.EspacioDeportivoId?.ToString())?.Text ?? "Todos los espacios";
+    var mostrarPanelOperativo = Model.SedeId.HasValue && Model.EspacioDeportivoId.HasValue;
+    var totalMontoReservas = Model.Reservas.Sum(x => x.Total);
+    var totalBloqueos = Model.Bloqueos.Count;
+    var diasRango = (Model.FechaHasta.DayNumber - Model.FechaDesde.DayNumber) + 1;
+    var habilitarFiltroEspacio = Model.SedeId.HasValue;
+    var estadosListadoCatalogo = Model.EstadosFiltro.Where(x => !string.IsNullOrWhiteSpace(x.Value)).ToList();
 }
 
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.14/index.global.min.css" rel="stylesheet" />
+<style>
+    /* Firma: Codex - 30/03/2026 | Fase 1 calendario aplicada en la propia vista para asegurar prioridad visual sobre FullCalendar. */
+    .sc-calendar-card #calendarioReservas {
+        border: 1px solid #c9d8eb !important;
+        border-radius: 1rem !important;
+        background: linear-gradient(180deg, #fdfefe 0%, #f4f8ff 100%) !important;
+        box-shadow: 0 14px 28px rgba(15, 23, 42, 0.07) !important;
+        padding: 0.65rem !important;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc .fc-toolbar {
+        background: linear-gradient(180deg, #f9fbff 0%, #eaf2ff 100%) !important;
+        border: 1px solid #d2dff2 !important;
+        border-radius: 0.92rem !important;
+        padding: 0.62rem 0.75rem !important;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc .fc-toolbar-title {
+        font-size: 2rem !important;
+        font-weight: 800 !important;
+        letter-spacing: -0.02em !important;
+        color: #0f172a !important;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc .fc-button-primary {
+        background: #ffffff !important;
+        border-color: #c9d8eb !important;
+        color: #0f2f5f !important;
+        border-radius: 0.7rem !important;
+        font-weight: 700 !important;
+        box-shadow: none !important;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc .fc-button-primary:hover {
+        background: #eaf2ff !important;
+        border-color: #9fc2ee !important;
+        color: #0b2b55 !important;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc .fc-button-primary.fc-button-active,
+    .sc-calendar-card #calendarioReservas .fc .fc-button-primary:active {
+        background: #dbeafe !important;
+        border-color: #86b7f0 !important;
+        color: #0b2b55 !important;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc .fc-today-button {
+        background: #64748b !important;
+        border-color: #64748b !important;
+        color: #ffffff !important;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc .fc-nuevaReserva-button {
+        background: linear-gradient(180deg, #0f4ac0 0%, #2563eb 100%) !important;
+        border-color: #2563eb !important;
+        color: #ffffff !important;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc .fc-timegrid-axis {
+        width: 122px !important;
+        min-width: 122px !important;
+        max-width: 122px !important;
+        background: #f7faff !important;
+        border-color: #dce6f3 !important;
+        border-right: 1px solid #cddcf0 !important;
+        text-align: center !important;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc .fc-col-header .fc-timegrid-axis {
+        width: 122px !important;
+        min-width: 122px !important;
+        max-width: 122px !important;
+        background: linear-gradient(180deg, #0f2d57 0%, #173f73 100%) !important;
+        border-color: #264a79 !important;
+        border-right: 1px solid #264a79 !important;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc .fc-timegrid-slot-label {
+        width: 122px !important;
+        min-width: 122px !important;
+        max-width: 122px !important;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc .fc-timegrid-axis.fc-scrollgrid-shrink,
+    .sc-calendar-card #calendarioReservas .fc .fc-timegrid-slot-label.fc-scrollgrid-shrink {
+        width: 122px !important;
+        min-width: 122px !important;
+        max-width: 122px !important;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc table colgroup col:first-child {
+        width: 122px !important;
+        min-width: 122px !important;
+        max-width: 122px !important;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc .fc-timegrid-axis-frame,
+    .sc-calendar-card #calendarioReservas .fc .fc-timegrid-slot-label-frame {
+        width: 122px !important;
+        min-width: 122px !important;
+        max-width: 122px !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        text-align: center !important;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc .fc-timegrid-axis-cushion,
+    .sc-calendar-card #calendarioReservas .fc .fc-timegrid-slot-label-cushion {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        width: 100% !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc .fc-timegrid-slot-label-cushion {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        width: 100% !important;
+        text-align: center !important;
+        font-size: 0.85rem !important;
+        font-weight: 700 !important;
+        color: #243244 !important;
+        letter-spacing: 0.01em !important;
+        padding: 0.16rem 0 !important;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc .sc-time-axis-header .fc-col-header-cell-cushion,
+    .sc-calendar-card #calendarioReservas .fc .fc-col-header .fc-timegrid-axis .fc-col-header-cell-cushion {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        width: 100% !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+        overflow-wrap: normal !important;
+        word-break: keep-all !important;
+        font-size: 0.82rem !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.01em !important;
+        color: #f8fafc !important;
+        padding: 0.48rem 0.25rem !important;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc .sc-axis-header-label {
+        display: inline-block !important;
+        white-space: nowrap !important;
+        text-align: center !important;
+        width: 100% !important;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc .fc-timegrid-slot {
+        border-color: #e4ebf5 !important;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc .fc-timegrid-slot-minor {
+        border-top-style: solid !important;
+        border-top-color: #edf2f8 !important;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc .fc-timegrid-col {
+        background: #ffffff !important;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc .fc-day-sat,
+    .sc-calendar-card #calendarioReservas .fc .fc-day-sun {
+        background: #f6f9ff !important;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc .fc-day-today {
+        background: #eef5ff !important;
+        box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.24) !important;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc .sc-fc-event {
+        border-radius: 0.58rem !important;
+        box-shadow: 0 7px 14px rgba(15, 23, 42, 0.12) !important;
+        border-width: 1px !important;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc .sc-fc-event .sc-fc-event-title {
+        font-size: 0.82rem !important;
+        font-weight: 800 !important;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc .sc-fc-event .sc-fc-event-time {
+        font-size: 0.75rem !important;
+        font-weight: 700 !important;
+    }
+
+    .sc-calendar-legend-actions {
+        display: flex;
+        gap: 0.45rem;
+        align-items: center;
+    }
+
+    .sc-calendar-legend-actions .btn {
+        border-radius: 999px;
+        font-size: 0.76rem;
+        font-weight: 700;
+        padding: 0.2rem 0.65rem;
+    }
+
+    .sc-calendar-legend-list .sc-legend-pill {
+        appearance: none;
+        cursor: pointer;
+        background: #f8fafc;
+        color: #334155;
+        font-size: 0.76rem;
+        font-weight: 600;
+        padding: 0.3rem 0.62rem;
+        border-radius: 999px;
+        border: 1px solid #dbe4f2;
+        transition: all .18s ease;
+    }
+
+    .sc-calendar-legend-list .sc-legend-pill.is-off {
+        opacity: 0.42;
+        filter: grayscale(.35);
+        text-decoration: line-through;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc .fc-scrollgrid {
+        border-radius: .8rem;
+        overflow: hidden;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc .fc-col-header {
+        position: sticky;
+        top: 0;
+        z-index: 7;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc .fc-timegrid-axis {
+        position: sticky;
+        left: 0;
+        z-index: 6;
+    }
+
+    .sc-calendar-card #calendarioReservas .fc .fc-timegrid-col.sc-col-hover {
+        background: #f0f7ff !important;
+    }
+
+    .sc-calendar-card #calendarioReservas.sc-mode-compact .fc .fc-timegrid-slot {
+        height: 1.65rem !important;
+    }
+
+    .sc-calendar-card #calendarioReservas.sc-mode-compact .fc .sc-fc-event .sc-fc-event-title {
+        font-size: 0.74rem !important;
+    }
+
+    .sc-calendar-card #calendarioReservas.sc-mode-compact .fc .sc-fc-event .sc-fc-event-time {
+        font-size: 0.68rem !important;
+    }
+
+    .sc-calendar-card #calendarioReservas.sc-mode-contrast .fc .fc-timegrid-slot {
+        border-color: #cedbec !important;
+    }
+
+    .sc-calendar-card #calendarioReservas.sc-mode-contrast .fc .fc-timegrid-col {
+        background: #fdfefe !important;
+    }
+
+    .sc-calendar-card #calendarioReservas.sc-hide-pendiente .sc-fc-event.is-pendiente,
+    .sc-calendar-card #calendarioReservas.sc-hide-confirmada .sc-fc-event.is-confirmada,
+    .sc-calendar-card #calendarioReservas.sc-hide-enuso .sc-fc-event.is-enuso,
+    .sc-calendar-card #calendarioReservas.sc-hide-finalizada .sc-fc-event.is-finalizada,
+    .sc-calendar-card #calendarioReservas.sc-hide-cancelada .sc-fc-event.is-cancelada,
+    .sc-calendar-card #calendarioReservas.sc-hide-noshow .sc-fc-event.is-noshow,
+    .sc-calendar-card #calendarioReservas.sc-hide-bloqueada .fc-bg-event.sc-no-atencion-bg,
+    .sc-calendar-card #calendarioReservas.sc-hide-bloqueada .fc-bg-event.sc-bloqueo-bg,
+    .sc-calendar-card #calendarioReservas.sc-hide-pendiente .fc-bg-event.sc-reserva-slot-bg.is-pendiente,
+    .sc-calendar-card #calendarioReservas.sc-hide-confirmada .fc-bg-event.sc-reserva-slot-bg.is-confirmada,
+    .sc-calendar-card #calendarioReservas.sc-hide-enuso .fc-bg-event.sc-reserva-slot-bg.is-enuso,
+    .sc-calendar-card #calendarioReservas.sc-hide-finalizada .fc-bg-event.sc-reserva-slot-bg.is-finalizada,
+    .sc-calendar-card #calendarioReservas.sc-hide-cancelada .fc-bg-event.sc-reserva-slot-bg.is-cancelada,
+    .sc-calendar-card #calendarioReservas.sc-hide-noshow .fc-bg-event.sc-reserva-slot-bg.is-noshow {
+        display: none !important;
+    }
+
+    .sc-reserva-drawer .offcanvas-header {
+        border-bottom: 1px solid #e5ecf6;
+        background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+    }
+
+    .sc-reserva-drawer .offcanvas-title {
+        font-weight: 800;
+        color: #0f172a;
+    }
+
+    .sc-drawer-kv {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: .35rem .75rem;
+        font-size: .86rem;
+        margin-bottom: .7rem;
+    }
+
+    .sc-drawer-kv dt {
+        margin: 0;
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    .sc-drawer-kv dd {
+        margin: 0;
+        color: #0f172a;
+        font-weight: 700;
+    }
+
+    .sc-drawer-state-badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        border: 1px solid #d4deee;
+        padding: .2rem .58rem;
+        font-size: .78rem;
+        font-weight: 700;
+        width: fit-content;
+    }
+
+    .sc-drawer-state-badge.is-pendiente { background: #fef3c7; color: #7c2d12; border-color: #fde68a; }
+    .sc-drawer-state-badge.is-confirmada { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+    .sc-drawer-state-badge.is-enuso { background: #dbeafe; color: #1d4ed8; border-color: #93c5fd; }
+    .sc-drawer-state-badge.is-finalizada { background: #ecfeff; color: #0f4e63; border-color: #a5f3fc; }
+    .sc-drawer-state-badge.is-cancelada { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+    .sc-drawer-state-badge.is-noshow { background: #ede9fe; color: #5b21b6; border-color: #ddd6fe; }
+
+    .sc-drawer-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: .5rem;
+    }
+
+    .sc-drawer-actions .btn {
+        border-radius: .7rem;
+        font-weight: 700;
+        font-size: .82rem;
+    }
+</style>
 
 <header class="page-header">
     <div>
@@ -31,59 +382,58 @@
     <div class="alert alert-danger">@reservasError</div>
 }
 
-<div class="sc-calendar-legend-card mb-3">
-    <div class="sc-calendar-legend-header">
-        <h2 class="h6 mb-0"><i class="bi bi-palette2"></i> Estado de reservas</h2>
-        <small class="text-muted">Vista rapida por color para lectura inmediata del calendario.</small>
-    </div>
-    <div class="sc-calendar-legend-list">
-        <span class="sc-legend-pill is-pendiente"><i></i>Pendiente</span>
-        <span class="sc-legend-pill is-confirmada"><i></i>Confirmada</span>
-        <span class="sc-legend-pill is-enuso"><i></i>En uso</span>
-        <span class="sc-legend-pill is-finalizada"><i></i>Finalizada</span>
-        <span class="sc-legend-pill is-cancelada"><i></i>Cancelada</span>
-        <span class="sc-legend-pill is-noshow"><i></i>No show</span>
-        <span class="sc-legend-pill is-bloqueada"><i></i>Bloqueada / No atencion</span>
-    </div>
-</div>
-
 <form method="get" asp-action="Index" class="card card-body shadow-sm mb-3 sc-calendar-filter-card" id="filtrosForm">
     <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+    <input id="fechaDesde" type="hidden" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
+    <input id="fechaHasta" type="hidden" name="fechaHasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
     <div class="row g-2 align-items-end">
-        <div class="col-md-2">
-            <label class="form-label">Desde</label>
-            <input id="fechaDesde" type="date" class="form-control" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
-        </div>
-        <div class="col-md-2">
-            <label class="form-label">Hasta</label>
-            <input id="fechaHasta" type="date" class="form-control" name="fechaHasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
-        </div>
-        <div class="col-md-2">
+        <div class="col-md-4">
             <label class="form-label">Sede</label>
             <select id="sedeId" class="form-select" name="sedeId">
                 <option value="">Todas</option>
                 @foreach (var s in Model.SedesFiltro)
                 {
-                    <option value="@s.Value" selected="@(Model.SedeId?.ToString() == s.Value)">@s.Text</option>
+                    if (Model.SedeId?.ToString() == s.Value)
+                    {
+                        <option value="@s.Value" selected="selected">@s.Text</option>
+                    }
+                    else
+                    {
+                        <option value="@s.Value">@s.Text</option>
+                    }
+                }
+            </select>
+        </div>
+        <div id="espacioFiltroCol" class="col-md-4">
+            <label class="form-label">Espacio</label>
+            <select id="espacioDeportivoId" class="form-select" name="espacioDeportivoId" @(habilitarFiltroEspacio ? "" : "disabled")>
+                <option value="">@(habilitarFiltroEspacio ? "Selecciona espacio" : "Selecciona sede primero")</option>
+                @foreach (var e in Model.EspaciosFiltro)
+                {
+                    if (Model.EspacioDeportivoId?.ToString() == e.Value)
+                    {
+                        <option value="@e.Value" selected="selected">@e.Text</option>
+                    }
+                    else
+                    {
+                        <option value="@e.Value">@e.Text</option>
+                    }
                 }
             </select>
         </div>
         <div class="col-md-3">
-            <label class="form-label">Espacio</label>
-            <select id="espacioDeportivoId" class="form-select" name="espacioDeportivoId">
-                <option value="">Todos</option>
-                @foreach (var e in Model.EspaciosFiltro)
-                {
-                    <option value="@e.Value" selected="@(Model.EspacioDeportivoId?.ToString() == e.Value)">@e.Text</option>
-                }
-            </select>
-        </div>
-        <div class="col-md-2">
             <label class="form-label">Estado</label>
             <select id="estado" class="form-select" name="estado">
                 @foreach (var est in Model.EstadosFiltro)
                 {
-                    <option value="@est.Value" selected="@(Model.Estado?.ToString() == est.Value)">@est.Text</option>
+                    if (Model.Estado?.ToString() == est.Value)
+                    {
+                        <option value="@est.Value" selected="selected">@est.Text</option>
+                    }
+                    else
+                    {
+                        <option value="@est.Value">@est.Text</option>
+                    }
                 }
             </select>
         </div>
@@ -93,82 +443,230 @@
     </div>
 </form>
 
-<section class="card border-0 shadow-sm mb-3 sc-calendar-card">
-    <div class="card-body">
-        <div class="sc-calendar-heading">
+@if (mostrarPanelOperativo)
+{
+    <div class="sc-calendar-legend-card mb-3">
+        <div class="sc-calendar-legend-header">
+            <h2 class="h6 mb-0"><i class="bi bi-palette2"></i> Estado de reservas</h2>
+            <div class="sc-calendar-legend-actions">
+                <small class="text-muted me-1">Vista rapida por color para lectura inmediata del calendario.</small>
+                <button type="button" class="btn btn-outline-primary btn-sm" id="btnModoCompactoCalendario">Compacto</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="btnModoContrasteCalendario">Contraste</button>
+            </div>
+        </div>
+        <div class="sc-calendar-legend-list">
+            <button type="button" class="sc-legend-pill is-pendiente" data-legend-estado="pendiente" aria-pressed="true"><i></i>Pendiente</button>
+            <button type="button" class="sc-legend-pill is-confirmada" data-legend-estado="confirmada" aria-pressed="true"><i></i>Confirmada</button>
+            <button type="button" class="sc-legend-pill is-enuso" data-legend-estado="enuso" aria-pressed="true"><i></i>En uso</button>
+            <button type="button" class="sc-legend-pill is-finalizada" data-legend-estado="finalizada" aria-pressed="true"><i></i>Finalizada</button>
+            <button type="button" class="sc-legend-pill is-cancelada" data-legend-estado="cancelada" aria-pressed="true"><i></i>Cancelada</button>
+            <button type="button" class="sc-legend-pill is-noshow" data-legend-estado="noshow" aria-pressed="true"><i></i>No show</button>
+            <button type="button" class="sc-legend-pill is-bloqueada" data-legend-estado="bloqueada" aria-pressed="true"><i></i>Bloqueada / No atencion</button>
+        </div>
+    </div>
+
+    <section class="table-card sc-calendar-card sc-operativa-card mb-3">
+        <div class="sc-reservas-list-head">
             <div>
-                <h2 class="h6 mb-1">Agenda operativa</h2>
+                <h2 class="section-title"><i class="bi bi-calendar-week me-1"></i>Agenda operativa</h2>
                 <p class="mb-0 text-muted small">Haz clic en un dia/hora para ver disponibilidad. Arrastra reservas para mover horario.</p>
             </div>
-            <div class="sc-calendar-context-wrap">
-                <span class="sc-context-chip"><i class="bi bi-geo-alt"></i><strong>Sede:</strong> @sedeSeleccionadaTexto</span>
-                <span class="sc-context-chip"><i class="bi bi-grid-3x3-gap"></i><strong>Espacio:</strong> @espacioSeleccionadoTexto</span>
+            <div class="sc-reservas-metrics">
+                <div class="sc-reservas-metric">
+                    <span>Rango</span>
+                    <strong>@diasRango dia(s)</strong>
+                </div>
+                <div class="sc-reservas-metric">
+                    <span>Sede</span>
+                    <strong>@sedeSeleccionadaTexto</strong>
+                </div>
+                <div class="sc-reservas-metric">
+                    <span>Espacio</span>
+                    <strong>@espacioSeleccionadoTexto</strong>
+                </div>
             </div>
         </div>
-        <div id="calendarioReservas"></div>
-    </div>
-</section>
-
-<section class="card border-0 shadow-sm mb-4" id="panelDisponibilidadDia">
-    <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h2 class="h6 mb-0">Disponibilidad por dia</h2>
-            <small class="text-muted">Selecciona fecha en el calendario para ver horas libres.</small>
+        <div class="sc-calendar-body">
+            <div id="calendarioReservas"></div>
         </div>
-        <div id="disponibilidadMensaje" class="text-muted small">Aun no has seleccionado una fecha.</div>
-        <div id="disponibilidadSlots" class="d-flex flex-wrap gap-2 mt-2"></div>
-    </div>
-</section>
+    </section>
 
-<section class="card border-0 shadow-sm mb-4">
-    <div class="card-body">
-        <h2 class="h6 mb-3">Bloquear horario</h2>
-        @if (Model.PuedeEditar)
-        {
-            <form asp-action="CrearBloqueo" method="post" class="row g-2 align-items-end">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="NegocioId" value="@Model.NegocioId" />
-                <div class="col-md-3">
-                    <label class="form-label">Espacio</label>
-                    <select name="EspacioDeportivoId" class="form-select" required>
-                        @foreach (var e in Model.BloqueoForm.Espacios)
-                        {
-                            <option value="@e.Value">@e.Text</option>
-                        }
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Fecha</label>
-                    <input type="date" class="form-control" name="Fecha" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" required />
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Inicio</label>
-                    <input type="time" class="form-control" name="HoraInicio" value="08:00" required />
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Fin</label>
-                    <input type="time" class="form-control" name="HoraFin" value="09:00" required />
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Motivo</label>
-                    <input type="text" class="form-control" name="Motivo" maxlength="250" required />
-                </div>
-                <div class="col-md-1 d-grid">
-                    <button type="submit" class="btn btn-outline-danger">Bloquear</button>
-                </div>
-            </form>
-        }
-        else
-        {
-            <p class="text-muted mb-0">No tienes permisos para crear bloqueos.</p>
-        }
-    </div>
-</section>
+    <section class="table-card sc-disponibilidad-card mb-4" id="panelDisponibilidadDia">
+        <div class="sc-reservas-list-head">
+            <div>
+                <h2 class="section-title"><i class="bi bi-clock-history me-1"></i>Disponibilidad por dia</h2>
+                <p class="mb-0 text-muted small">La disponibilidad se calcula con los eventos activos del calendario (reservas y bloqueos).</p>
+            </div>
+            <div class="sc-disponibilidad-date-filter">
+                <label for="disponibilidadFechaFiltro" class="form-label mb-1">Filtrar fecha</label>
+                <input type="date" id="disponibilidadFechaFiltro" class="form-control form-control-sm" value="@DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd")" />
+            </div>
+        </div>
+        <div class="sc-disponibilidad-body">
+            <div id="disponibilidadMensaje" class="sc-disponibilidad-msg">Aun no has seleccionado una fecha.</div>
+            <div id="disponibilidadSlots" class="d-flex flex-wrap gap-2 mt-2"></div>
+        </div>
+    </section>
 
-<div class="row g-3">
-    <div class="col-xl-8">
+    <section class="table-card sc-pendientes-card mb-4" id="panelPendientesDia">
+        <div class="sc-reservas-list-head">
+            <div>
+                <h2 class="section-title"><i class="bi bi-hourglass-split me-1"></i>Pendiente de confirmar por dia</h2>
+                <p class="mb-0 text-muted small">Muestra las reservas en estado pendiente para la fecha seleccionada. Haz clic para abrir el detalle en el pop-up.</p>
+            </div>
+            <div class="sc-disponibilidad-date-filter">
+                <label for="pendientesFechaFiltro" class="form-label mb-1">Filtrar fecha</label>
+                <input type="date" id="pendientesFechaFiltro" class="form-control form-control-sm" value="@DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd")" />
+            </div>
+        </div>
+        <div class="sc-disponibilidad-body">
+            <div id="pendientesMensaje" class="sc-pendientes-msg">Aun no has seleccionado una fecha.</div>
+            <div id="pendientesSlots" class="d-flex flex-wrap gap-2 mt-2"></div>
+        </div>
+    </section>
+
+    <section class="table-card sc-bloqueo-form-card mb-4">
+        <div class="sc-reservas-list-head">
+            <div>
+                <h2 class="section-title"><i class="bi bi-shield-lock me-1"></i>Bloquear horario</h2>
+                <p class="mb-0 text-muted small">Registra cortes por mantenimiento, torneo o eventos internos para evitar sobre-reserva.</p>
+            </div>
+            <div class="sc-reservas-metrics">
+                <div class="sc-reservas-metric">
+                    <span>Bloqueos en rango</span>
+                    <strong>@totalBloqueos</strong>
+                </div>
+            </div>
+        </div>
+        <div class="sc-bloqueo-form-body">
+            @if (Model.PuedeEditar)
+            {
+                <form asp-action="CrearBloqueo" method="post" class="row g-2 align-items-end sc-bloqueo-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="NegocioId" value="@Model.NegocioId" />
+                    <input type="hidden" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
+                    <input type="hidden" name="fechaHasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
+                    <input type="hidden" name="sedeId" value="@Model.SedeId" />
+                    <input type="hidden" name="espacioDeportivoId" value="@Model.EspacioDeportivoId" />
+                    <input type="hidden" name="estado" value="@Model.Estado" />
+                    <div class="col-md-3">
+                        <label class="form-label">Espacio</label>
+                        <select name="EspacioDeportivoId" class="form-select" required>
+                            @foreach (var e in Model.BloqueoForm.Espacios)
+                            {
+                                if (Model.EspacioDeportivoId?.ToString() == e.Value)
+                                {
+                                    <option value="@e.Value" selected="selected">@e.Text</option>
+                                }
+                                else
+                                {
+                                    <option value="@e.Value">@e.Text</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Fecha</label>
+                        <input type="date" class="form-control" name="Fecha" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" required />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Inicio</label>
+                        <input type="time" class="form-control" name="HoraInicio" value="08:00" required />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Fin</label>
+                        <input type="time" class="form-control" name="HoraFin" value="09:00" required />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Motivo</label>
+                        <input type="text" class="form-control" name="Motivo" maxlength="250" required />
+                    </div>
+                    <div class="col-md-1 d-grid">
+                        <button type="submit" class="btn btn-outline-danger"><i class="bi bi-lock"></i> Bloquear</button>
+                    </div>
+                </form>
+            }
+            else
+            {
+                <p class="text-muted mb-0">No tienes permisos para crear bloqueos.</p>
+            }
+        </div>
+    </section>
+}
+else
+{
+    <section class="content-card mb-3">
+        <h2 class="section-title"><i class="bi bi-funnel"></i> Seleccion requerida para panel operativo</h2>
+        <div class="empty-state mb-0">
+            <i class="bi bi-info-circle"></i>
+            <span>Para mostrar <strong>Agenda operativa</strong>, <strong>Disponibilidad por dia</strong>, <strong>Bloquear horario</strong> y <strong>Bloqueos activos</strong>, selecciona primero una <strong>Sede</strong> y un <strong>Espacio</strong> en los filtros superiores.</span>
+        </div>
+    </section>
+}
+
+<section class="table-card sc-reservas-list-card mb-3">
+    <div class="sc-reservas-list-head">
+        <div>
+            <h2 class="section-title"><i class="bi bi-list-check me-1"></i>Listado general de reservas</h2>
+            <p class="mb-0 text-muted small">Consulta backend con filtro independiente de rango y estados multiples.</p>
+        </div>
+        <div class="sc-reservas-metrics">
+            <div class="sc-reservas-metric">
+                <span>Registros</span>
+                <strong>@Model.Reservas.Count</strong>
+            </div>
+            <div class="sc-reservas-metric">
+                <span>Monto total</span>
+                <strong>S/ @totalMontoReservas.ToString("N2")</strong>
+            </div>
+        </div>
+    </div>
+    <form method="get" asp-action="Index" class="sc-listado-filtro-form">
+        <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+        <input type="hidden" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
+        <input type="hidden" name="fechaHasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
+        <input type="hidden" name="sedeId" value="@Model.SedeId" />
+        <input type="hidden" name="espacioDeportivoId" value="@Model.EspacioDeportivoId" />
+        <input type="hidden" name="estado" value="@Model.Estado" />
+        <div class="row g-2 align-items-end">
+            <div class="col-md-2">
+                <label class="form-label">Desde (listado)</label>
+                <input type="date" class="form-control" name="listadoDesde" value="@Model.ListadoFechaDesde.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Hasta (listado)</label>
+                <input type="date" class="form-control" name="listadoHasta" value="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-7">
+                <label class="form-label d-block mb-1">Estados (puedes elegir varios)</label>
+                <div class="sc-listado-estados-grid">
+                    @foreach (var estadoItem in estadosListadoCatalogo)
+                    {
+                        var estadoValor = int.Parse(estadoItem.Value);
+                        var checkedAttr = Model.EstadosListadoSeleccionados.Contains(estadoValor) ? "checked" : null;
+                        <label class="sc-estado-check">
+                            <input type="checkbox" name="estadosListado" value="@estadoItem.Value" @checkedAttr />
+                            <span>@estadoItem.Text</span>
+                        </label>
+                    }
+                </div>
+            </div>
+            <div class="col-md-1 d-grid">
+                <button type="submit" class="btn btn-outline-primary">Aplicar</button>
+            </div>
+        </div>
+    </form>
+    @if (Model.Reservas.Count == 0)
+    {
+        <div class="empty-state">
+            <i class="bi bi-calendar-x"></i>
+            <span>No hay reservas registradas con los filtros seleccionados.</span>
+        </div>
+    }
+    else
+    {
         <div class="table-responsive">
-            <table class="table table-sm table-striped align-middle">
+            <table id="tablaReservasDetallada" class="table table-sm align-middle">
                 <thead>
                     <tr>
                         <th>Id</th>
@@ -179,7 +677,7 @@
                         <th>Horario</th>
                         <th>Total</th>
                         <th>Estado</th>
-                        <th></th>
+                        <th class="text-end">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -274,43 +772,101 @@
                 </tbody>
             </table>
         </div>
-    </div>
-    <div class="col-xl-4">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <h2 class="h6 mb-3">Bloqueos activos</h2>
-                @if (Model.Bloqueos.Count == 0)
-                {
-                    <p class="text-muted mb-0">No hay bloqueos en el rango seleccionado.</p>
-                }
-                else
-                {
-                    <div class="d-flex flex-column gap-2">
-                        @foreach (var b in Model.Bloqueos)
-                        {
-                            <div class="border rounded p-2">
-                                <div class="small text-muted">@b.Fecha.ToString("dd/MM/yyyy") @b.HoraInicio.ToString("HH\\:mm") - @b.HoraFin.ToString("HH\\:mm")</div>
-                                <div class="fw-semibold">@b.Sede - @b.Espacio</div>
-                                <div class="small">@b.Motivo</div>
-                                @if (Model.PuedeEliminar)
-                                {
-                                    <form asp-action="EliminarBloqueo" method="post" class="mt-2">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="negocioId" value="@Model.NegocioId" />
-                                        <input type="hidden" name="id" value="@b.Id" />
-                                        <input type="hidden" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
-                                        <input type="hidden" name="fechaHasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
-                                        <input type="hidden" name="sedeId" value="@Model.SedeId" />
-                                        <input type="hidden" name="espacioDeportivoId" value="@Model.EspacioDeportivoId" />
-                                        <input type="hidden" name="estado" value="@Model.Estado" />
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">Quitar bloqueo</button>
-                                    </form>
-                                }
-                            </div>
-                        }
-                    </div>
-                }
+    }
+</section>
+
+@if (mostrarPanelOperativo)
+{
+    <section class="table-card sc-bloqueos-card mb-4">
+        <div class="sc-reservas-list-head">
+            <div>
+                <h2 class="section-title"><i class="bi bi-ban me-1"></i>Bloqueos activos</h2>
+                <p class="mb-0 text-muted small">Listado de franjas bloqueadas en el periodo filtrado para la sede y espacio seleccionados.</p>
             </div>
+            <div class="sc-reservas-metrics">
+                <div class="sc-reservas-metric">
+                    <span>Total bloqueos</span>
+                    <strong>@totalBloqueos</strong>
+                </div>
+            </div>
+        </div>
+        <div class="sc-bloqueos-body">
+            @if (Model.Bloqueos.Count == 0)
+            {
+                <div class="empty-state mb-0">
+                    <i class="bi bi-check2-circle"></i>
+                    <span>No hay bloqueos en el rango seleccionado.</span>
+                </div>
+            }
+            else
+            {
+                <div class="d-flex flex-column gap-2">
+                    @foreach (var b in Model.Bloqueos)
+                    {
+                        <div class="sc-bloqueo-item">
+                            <div class="small text-muted"><i class="bi bi-calendar-event"></i> @b.Fecha.ToString("dd/MM/yyyy") @b.HoraInicio.ToString("HH\\:mm") - @b.HoraFin.ToString("HH\\:mm")</div>
+                            <div class="fw-semibold"><i class="bi bi-geo-alt"></i> @b.Sede - @b.Espacio</div>
+                            <div class="small">@b.Motivo</div>
+                            @if (Model.PuedeEliminar)
+                            {
+                                <form asp-action="EliminarBloqueo" method="post" class="mt-2">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                                    <input type="hidden" name="id" value="@b.Id" />
+                                    <input type="hidden" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
+                                    <input type="hidden" name="fechaHasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
+                                    <input type="hidden" name="sedeId" value="@Model.SedeId" />
+                                    <input type="hidden" name="espacioDeportivoId" value="@Model.EspacioDeportivoId" />
+                                    <input type="hidden" name="estado" value="@Model.Estado" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash3"></i> Quitar bloqueo</button>
+                                </form>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </section>
+}
+
+<div class="offcanvas offcanvas-end sc-reserva-drawer" tabindex="-1" id="reservaDrawer" aria-labelledby="reservaDrawerTitle">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="reservaDrawerTitle">Detalle de reserva</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+    </div>
+    <div class="offcanvas-body">
+        <div id="reservaDrawerError" class="alert alert-danger py-2 d-none"></div>
+        <dl class="sc-drawer-kv">
+            <dt>Reserva</dt><dd id="drawerReservaId">-</dd>
+            <dt>Estado</dt><dd><span id="drawerEstadoBadge" class="sc-drawer-state-badge">-</span></dd>
+            <dt>Fecha</dt><dd id="drawerFecha">-</dd>
+            <dt>Horario</dt><dd id="drawerHorario">-</dd>
+            <dt>Espacio</dt><dd id="drawerEspacio">-</dd>
+            <dt>Cliente</dt><dd id="drawerCliente">-</dd>
+            <dt>Total</dt><dd id="drawerTotal">-</dd>
+            <dt>Adelanto</dt><dd id="drawerAdelanto">-</dd>
+        </dl>
+
+        @if (Model.PuedeEditar)
+        {
+            <div class="mb-3">
+                <div class="small text-muted mb-2">Acciones rápidas</div>
+                <div class="sc-drawer-actions">
+                    <button type="button" class="btn btn-outline-warning" data-drawer-estado="1">Pendiente</button>
+                    <button type="button" class="btn btn-outline-success" data-drawer-estado="2">Confirmar</button>
+                    <button type="button" class="btn btn-outline-primary" data-drawer-estado="3">En uso</button>
+                    <button type="button" class="btn btn-outline-info" data-drawer-estado="4">Finalizar</button>
+                    <button type="button" class="btn btn-outline-danger" data-drawer-estado="5">Cancelar</button>
+                    <button type="button" class="btn btn-outline-secondary" data-drawer-estado="6">No show</button>
+                </div>
+            </div>
+        }
+
+        <div class="d-grid gap-2">
+            <button type="button" id="btnDrawerEditarCompleto" class="btn btn-primary">
+                <i class="bi bi-pencil-square me-1"></i> Editar completo
+            </button>
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">Cerrar</button>
         </div>
     </div>
 </div>
@@ -406,9 +962,14 @@
         (() => {
             const negocioId = @Model.NegocioId;
             const calendarioEl = document.getElementById('calendarioReservas');
+            const calendarioActivo = !!calendarioEl;
             const formFiltros = document.getElementById('filtrosForm');
             const disponibilidadMensajeEl = document.getElementById('disponibilidadMensaje');
             const disponibilidadSlotsEl = document.getElementById('disponibilidadSlots');
+            const disponibilidadFechaFiltroEl = document.getElementById('disponibilidadFechaFiltro');
+            const pendientesMensajeEl = document.getElementById('pendientesMensaje');
+            const pendientesSlotsEl = document.getElementById('pendientesSlots');
+            const pendientesFechaFiltroEl = document.getElementById('pendientesFechaFiltro');
             const reservaModalEl = document.getElementById('reservaModal');
             const reservaModal = new bootstrap.Modal(reservaModalEl);
             const reservaModalForm = document.getElementById('reservaModalForm');
@@ -421,27 +982,44 @@
             const getReservaModalUrl = '@Url.Action("ObtenerReservaModal", "Reservas")';
             const guardarReservaModalUrl = '@Url.Action("GuardarReservaModal", "Reservas")';
             const validarDisponibilidadModalUrl = '@Url.Action("ValidarDisponibilidadModal", "Reservas")';
+            const cambiarEstadoRapidoUrl = '@Url.Action("CambiarEstadoRapido", "Reservas")';
+            const comboEspaciosUrl = '@Url.Action("ObtenerEspaciosFiltro", "Reservas")';
+            const resumenDiaOperativoUrl = '@Url.Action("ResumenDiaOperativo", "Reservas")';
+            const sedeSelect = document.getElementById('sedeId');
+            const espacioSelect = document.getElementById('espacioDeportivoId');
+            const estadoSelect = document.getElementById('estado');
             const btnNuevaReservaModal = document.getElementById('btnNuevaReservaModal');
+            const legendEstadoButtons = Array.from(document.querySelectorAll('[data-legend-estado]'));
+            const btnModoCompactoCalendario = document.getElementById('btnModoCompactoCalendario');
+            const btnModoContrasteCalendario = document.getElementById('btnModoContrasteCalendario');
+            const reservaDrawerEl = document.getElementById('reservaDrawer');
+            const reservaDrawer = reservaDrawerEl ? new bootstrap.Offcanvas(reservaDrawerEl) : null;
+            const drawerErrorEl = document.getElementById('reservaDrawerError');
+            const drawerReservaIdEl = document.getElementById('drawerReservaId');
+            const drawerEstadoBadgeEl = document.getElementById('drawerEstadoBadge');
+            const drawerFechaEl = document.getElementById('drawerFecha');
+            const drawerHorarioEl = document.getElementById('drawerHorario');
+            const drawerEspacioEl = document.getElementById('drawerEspacio');
+            const drawerClienteEl = document.getElementById('drawerCliente');
+            const drawerTotalEl = document.getElementById('drawerTotal');
+            const drawerAdelantoEl = document.getElementById('drawerAdelanto');
+            const btnDrawerEditarCompleto = document.getElementById('btnDrawerEditarCompleto');
+            const drawerEstadoButtons = Array.from(document.querySelectorAll('[data-drawer-estado]'));
             const hoyDate = new Date();
             const hoyIso = `${hoyDate.getFullYear()}-${String(hoyDate.getMonth() + 1).padStart(2, '0')}-${String(hoyDate.getDate()).padStart(2, '0')}`;
             const puedeCrearReserva = @Model.PuedeCrear.ToString().ToLowerInvariant();
+            const puedeEditarReserva = @Model.PuedeEditar.ToString().ToLowerInvariant();
+            const estadosOcultosCalendario = new Set();
             let timerValidacion = null;
             let conflictoReservaIdActual = null;
-            const calendarioConfig = {
-                usaHorarioSede: @Model.CalendarioUsaHorarioSede.ToString().ToLowerInvariant(),
-                atiendeLunes: @Model.AtiendeLunes.ToString().ToLowerInvariant(),
-                atiendeMartes: @Model.AtiendeMartes.ToString().ToLowerInvariant(),
-                atiendeMiercoles: @Model.AtiendeMiercoles.ToString().ToLowerInvariant(),
-                atiendeJueves: @Model.AtiendeJueves.ToString().ToLowerInvariant(),
-                atiendeViernes: @Model.AtiendeViernes.ToString().ToLowerInvariant(),
-                atiendeSabado: @Model.AtiendeSabado.ToString().ToLowerInvariant(),
-                atiendeDomingo: @Model.AtiendeDomingo.ToString().ToLowerInvariant(),
-                horaApertura: '@Model.HoraApertura.ToString("HH\\:mm")',
-                horaCierre: '@Model.HoraCierre.ToString("HH\\:mm")',
-                fechasNoLaborables: @Html.Raw(JsonSerializer.Serialize(Model.FechasNoLaborables))
-            };
-            const fechasNoLaborablesSet = new Set(calendarioConfig.fechasNoLaborables || []);
-
+            let reservaDrawerIdActual = null;
+            let calendar = null;
+            let recargandoEspacios = false;
+            let disponibilidadRenderSeq = 0;
+            let pendientesRenderSeq = 0;
+            const calendarAxisWidth = '122px';
+            let modoCompactoCalendario = false;
+            let modoContrasteCalendario = false;
             function pad2(n) {
                 return String(n).padStart(2, '0');
             }
@@ -474,6 +1052,7 @@
             }
 
             function renderToolbarSubtitle(fechaInicio, fechaFinExclusiva) {
+                if (!calendarioEl) return;
                 const toolbarTitle = calendarioEl.querySelector('.fc-toolbar-title');
                 if (!toolbarTitle) return;
                 const chunk = toolbarTitle.closest('.fc-toolbar-chunk');
@@ -500,21 +1079,260 @@
                 subtitle.innerHTML = `<span><i class="bi bi-geo-alt"></i> ${sedeTexto}</span><span><i class="bi bi-grid-3x3-gap"></i> ${espacioTexto}</span><span><i class="bi bi-calendar-range"></i> ${rangoTexto}</span>`;
             }
 
-            function classByEstado(estado, tipoEvento) {
+            function capitalizar(texto) {
+                if (!texto) return '';
+                return texto.charAt(0).toUpperCase() + texto.slice(1);
+            }
+
+            function pintarCabeceraHorarios() {
+                if (!calendarioEl) return;
+                const axisHeader = calendarioEl.querySelector('.fc .fc-col-header .fc-timegrid-axis');
+                if (!axisHeader) return;
+                axisHeader.classList.add('sc-time-axis-header');
+                const cushion = axisHeader.querySelector('.fc-col-header-cell-cushion');
+                if (cushion) {
+                    cushion.innerHTML = '<span class="sc-axis-header-label">Horarios</span>';
+                    return;
+                }
+                axisHeader.innerHTML = '<span class="sc-axis-header-label">Horarios</span>';
+            }
+
+            function forzarCabeceraDiasDosFilas() {
+                if (!calendarioEl) return;
+                const headers = calendarioEl.querySelectorAll('.fc .fc-col-header-cell[data-date]');
+                headers.forEach((th) => {
+                    const dateIso = th.getAttribute('data-date');
+                    if (!dateIso) return;
+                    const date = new Date(`${dateIso}T00:00:00`);
+                    if (Number.isNaN(date.getTime())) return;
+                    const nombreDia = capitalizar(date.toLocaleDateString('es-PE', { weekday: 'long' }));
+                    const fechaCorta = date.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit' });
+                    const cushion = th.querySelector('.fc-col-header-cell-cushion');
+                    if (!cushion) return;
+                    cushion.innerHTML = `<span class="sc-day-header-title">${nombreDia}</span><span class="sc-day-header-date">${fechaCorta}</span>`;
+                });
+            }
+
+            function aplicarEstiloCalendarioFase1() {
+                if (!calendarioEl) return;
+                const fcRoot = calendarioEl.querySelector('.fc');
+                if (!fcRoot) return;
+
+                fcRoot.style.setProperty('--fc-border-color', '#dbe5f2');
+                fcRoot.style.setProperty('--fc-neutral-bg-color', '#f5f8fc');
+                fcRoot.style.setProperty('--fc-page-bg-color', '#ffffff');
+                fcRoot.style.setProperty('--fc-today-bg-color', '#edf4ff');
+                fcRoot.style.setProperty('--fc-now-indicator-color', '#ef4444');
+
+                const toolbar = fcRoot.querySelector('.fc-toolbar');
+                if (toolbar) {
+                    toolbar.style.background = 'linear-gradient(180deg, #f9fbff 0%, #eef5ff 100%)';
+                    toolbar.style.border = '1px solid #d7e3f3';
+                    toolbar.style.borderRadius = '1.05rem';
+                    toolbar.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,.78)';
+                    toolbar.style.padding = '.68rem .8rem';
+                }
+
+                fcRoot.querySelectorAll('.fc-col-header-cell').forEach((th) => {
+                    th.style.background = 'linear-gradient(180deg, #0f2d57 0%, #173f73 100%)';
+                    th.style.borderColor = '#264a79';
+                });
+
+                fcRoot.querySelectorAll('.fc-col-header-cell-cushion').forEach((a) => {
+                    a.style.color = '#f8fafc';
+                    a.style.textDecoration = 'none';
+                    a.style.display = 'flex';
+                    a.style.flexDirection = 'column';
+                    a.style.alignItems = 'center';
+                    a.style.justifyContent = 'center';
+                    a.style.textAlign = 'center';
+                });
+
+                fcRoot.querySelectorAll('.fc-button').forEach((btn) => {
+                    btn.style.borderRadius = '.76rem';
+                    btn.style.fontWeight = '700';
+                    btn.style.fontSize = '.8rem';
+                    btn.style.padding = '.36rem .62rem';
+                    btn.style.boxShadow = 'none';
+                });
+
+                fcRoot.querySelectorAll('.fc-button-primary').forEach((btn) => {
+                    btn.style.background = '#ffffff';
+                    btn.style.borderColor = '#cfdcf0';
+                    btn.style.color = '#13253f';
+                });
+
+                fcRoot.querySelectorAll('.fc-button-primary.fc-button-active').forEach((btn) => {
+                    btn.style.background = '#dbeafe';
+                    btn.style.borderColor = '#6ea8f2';
+                    btn.style.color = '#13253f';
+                });
+
+                const todayBtn = fcRoot.querySelector('.fc-today-button');
+                if (todayBtn) {
+                    todayBtn.style.background = '#64748b';
+                    todayBtn.style.borderColor = '#64748b';
+                    todayBtn.style.color = '#ffffff';
+                }
+
+                const nuevaReservaBtn = fcRoot.querySelector('.fc-nuevaReserva-button');
+                if (nuevaReservaBtn) {
+                    nuevaReservaBtn.style.background = 'linear-gradient(180deg, #1e3a8a 0%, #1d4ed8 100%)';
+                    nuevaReservaBtn.style.borderColor = '#1d4ed8';
+                    nuevaReservaBtn.style.color = '#ffffff';
+                }
+
+                const axisWidthPx = calendarAxisWidth;
+                fcRoot.querySelectorAll('table colgroup col:first-child').forEach((col) => {
+                    col.style.width = axisWidthPx;
+                    col.style.minWidth = axisWidthPx;
+                    col.style.maxWidth = axisWidthPx;
+                });
+
+                fcRoot.querySelectorAll('.fc-timegrid-axis').forEach((axis) => {
+                    axis.style.background = '#f7faff';
+                    axis.style.width = axisWidthPx;
+                    axis.style.minWidth = axisWidthPx;
+                    axis.style.maxWidth = axisWidthPx;
+                    axis.style.textAlign = 'center';
+                });
+
+                fcRoot.querySelectorAll('.fc-timegrid-axis-frame, .fc-timegrid-slot-label, .fc-timegrid-slot-label-frame').forEach((node) => {
+                    node.style.width = axisWidthPx;
+                    node.style.minWidth = axisWidthPx;
+                    node.style.maxWidth = axisWidthPx;
+                });
+
+                fcRoot.querySelectorAll('.fc-timegrid-axis-cushion, .fc-timegrid-slot-label-cushion').forEach((lbl) => {
+                    lbl.style.color = '#243244';
+                    lbl.style.fontWeight = '700';
+                    lbl.style.fontSize = '.85rem';
+                    lbl.style.display = 'flex';
+                    lbl.style.alignItems = 'center';
+                    lbl.style.justifyContent = 'center';
+                    lbl.style.textAlign = 'center';
+                    lbl.style.whiteSpace = 'nowrap';
+                });
+
+                fcRoot.querySelectorAll('.fc-timegrid-slot').forEach((slot) => {
+                    slot.style.borderColor = '#e5ecf5';
+                });
+
+                fcRoot.querySelectorAll('.fc-timegrid-slot-minor').forEach((slot) => {
+                    slot.style.borderTopStyle = 'solid';
+                    slot.style.borderTopColor = '#eef3f9';
+                });
+
+                fcRoot.querySelectorAll('.fc-day-sat, .fc-day-sun').forEach((cell) => {
+                    cell.style.background = '#f9fbff';
+                });
+
+                fcRoot.querySelectorAll('.fc-day-today').forEach((cell) => {
+                    cell.style.boxShadow = 'inset 0 0 0 1px rgba(37,99,235,.2), inset 0 0 28px rgba(59,130,246,.07)';
+                });
+            }
+
+            function forzarAnchoEjeHorario() {
+                if (!calendarioEl) return;
+                const fcRoot = calendarioEl.querySelector('.fc');
+                if (!fcRoot) return;
+
+                fcRoot.style.setProperty('--fc-timegrid-axis-width', calendarAxisWidth);
+
+                const selectors = [
+                    'table colgroup col:first-child',
+                    '.fc-timegrid-axis',
+                    '.fc-timegrid-axis.fc-scrollgrid-shrink',
+                    '.fc-timegrid-slot-label',
+                    '.fc-timegrid-slot-label.fc-scrollgrid-shrink',
+                    '.fc-timegrid-axis-frame',
+                    '.fc-timegrid-slot-label-frame'
+                ];
+
+                selectors.forEach((selector) => {
+                    fcRoot.querySelectorAll(selector).forEach((el) => {
+                        el.style.width = calendarAxisWidth;
+                        el.style.minWidth = calendarAxisWidth;
+                        el.style.maxWidth = calendarAxisWidth;
+                    });
+                });
+
+                fcRoot.querySelectorAll('.fc-timegrid-axis-cushion, .fc-timegrid-slot-label-cushion').forEach((lbl) => {
+                    lbl.style.whiteSpace = 'nowrap';
+                    lbl.style.display = 'flex';
+                    lbl.style.justifyContent = 'center';
+                    lbl.style.alignItems = 'center';
+                    lbl.style.textAlign = 'center';
+                });
+            }
+
+            function reintentarForzarEjeHorario() {
+                forzarAnchoEjeHorario();
+                setTimeout(forzarAnchoEjeHorario, 0);
+                setTimeout(forzarAnchoEjeHorario, 90);
+                setTimeout(forzarAnchoEjeHorario, 200);
+                setTimeout(forzarAnchoEjeHorario, 500);
+                setTimeout(forzarAnchoEjeHorario, 1000);
+            }
+
+            function aplicarFiltroLeyendaCalendario() {
+                if (!calendarioEl) return;
+                ['pendiente', 'confirmada', 'enuso', 'finalizada', 'cancelada', 'noshow', 'bloqueada']
+                    .forEach((estado) => {
+                        calendarioEl.classList.toggle(`sc-hide-${estado}`, estadosOcultosCalendario.has(estado));
+                    });
+            }
+
+            function sincronizarLeyendaCalendario() {
+                legendEstadoButtons.forEach((btn) => {
+                    const estado = String(btn.dataset.legendEstado || '').trim().toLowerCase();
+                    const oculto = estadosOcultosCalendario.has(estado);
+                    btn.classList.toggle('is-off', oculto);
+                    btn.setAttribute('aria-pressed', oculto ? 'false' : 'true');
+                });
+            }
+
+            function aplicarModosVisualesCalendario() {
+                if (!calendarioEl) return;
+                calendarioEl.classList.toggle('sc-mode-compact', modoCompactoCalendario);
+                calendarioEl.classList.toggle('sc-mode-contrast', modoContrasteCalendario);
+
+                if (btnModoCompactoCalendario) {
+                    btnModoCompactoCalendario.classList.toggle('btn-outline-primary', !modoCompactoCalendario);
+                    btnModoCompactoCalendario.classList.toggle('btn-primary', modoCompactoCalendario);
+                }
+                if (btnModoContrasteCalendario) {
+                    btnModoContrasteCalendario.classList.toggle('btn-outline-secondary', !modoContrasteCalendario);
+                    btnModoContrasteCalendario.classList.toggle('btn-secondary', modoContrasteCalendario);
+                }
+            }
+
+            function activarHoverColumnasCalendario() {
+                if (!calendarioEl) return;
+                const cols = calendarioEl.querySelectorAll('.fc .fc-timegrid-col');
+                cols.forEach((col) => {
+                    if (col.dataset.scHoverBound === '1') return;
+                    col.dataset.scHoverBound = '1';
+                    col.addEventListener('mouseenter', () => col.classList.add('sc-col-hover'));
+                    col.addEventListener('mouseleave', () => col.classList.remove('sc-col-hover'));
+                });
+            }
+
+            function classByEstado(estadoCodigo, tipoEvento) {
                 if (tipoEvento === 'BLOQUEO' || tipoEvento === 'NO_ATENCION') return 'is-bloqueada';
-                switch (String(estado ?? '')) {
-                    case '1': return 'is-pendiente';
-                    case '2': return 'is-confirmada';
-                    case '3': return 'is-enuso';
-                    case '4': return 'is-finalizada';
-                    case '5': return 'is-cancelada';
-                    case '6': return 'is-noshow';
+                switch (String(estadoCodigo ?? '').toUpperCase()) {
+                    case 'PENDIENTE': return 'is-pendiente';
+                    case 'CONFIRMADA': return 'is-confirmada';
+                    case 'EN_USO': return 'is-enuso';
+                    case 'FINALIZADA': return 'is-finalizada';
+                    case 'CANCELADA': return 'is-cancelada';
+                    case 'NO_SHOW': return 'is-noshow';
                     default: return 'is-reservada';
                 }
             }
 
-            function colorTextoByEstado(estado, tipoEvento) {
-                const clase = classByEstado(estado, tipoEvento);
+            function colorTextoByEstado(estadoCodigo, tipoEvento) {
+                const clase = classByEstado(estadoCodigo, tipoEvento);
                 switch (clase) {
                     case 'is-pendiente': return '#7c2d12';
                     case 'is-confirmada': return '#166534';
@@ -526,15 +1344,108 @@
                 }
             }
 
-            function normalizarEstado(estado) {
-                const value = String(estado ?? '').trim().toLowerCase();
-                if (value === '1' || value === 'pendiente') return 1;
-                if (value === '2' || value === 'confirmada') return 2;
-                if (value === '3' || value === 'en uso' || value === 'enuso') return 3;
-                if (value === '4' || value === 'finalizada' || value === 'pagado') return 4;
-                if (value === '5' || value === 'cancelada') return 5;
-                if (value === '6' || value === 'no asistio' || value === 'no show' || value === 'noshow') return 6;
-                return 1;
+            function textoEstadoPorCodigo(estado) {
+                switch (Number(estado)) {
+                    case 1: return 'Pendiente';
+                    case 2: return 'Confirmada';
+                    case 3: return 'En uso';
+                    case 4: return 'Finalizada';
+                    case 5: return 'Cancelada';
+                    case 6: return 'No show';
+                    default: return 'Sin estado';
+                }
+            }
+
+            function claseEstadoDrawer(estado) {
+                switch (Number(estado)) {
+                    case 1: return 'is-pendiente';
+                    case 2: return 'is-confirmada';
+                    case 3: return 'is-enuso';
+                    case 4: return 'is-finalizada';
+                    case 5: return 'is-cancelada';
+                    case 6: return 'is-noshow';
+                    default: return '';
+                }
+            }
+
+            function obtenerTextoComboPorValor(selectEl, value) {
+                if (!selectEl || value === null || value === undefined) return '-';
+                const val = String(value);
+                const opt = Array.from(selectEl.options || []).find(o => String(o.value) === val);
+                return opt ? String(opt.text || '-').trim() : '-';
+            }
+
+            function limpiarErrorDrawer() {
+                if (!drawerErrorEl) return;
+                drawerErrorEl.classList.add('d-none');
+                drawerErrorEl.textContent = '';
+            }
+
+            function mostrarErrorDrawer(msg) {
+                if (!drawerErrorEl) return;
+                drawerErrorEl.textContent = msg || 'No se pudo cargar la reserva.';
+                drawerErrorEl.classList.remove('d-none');
+            }
+
+            function pintarDrawerReserva(data) {
+                if (!data) return;
+                reservaDrawerIdActual = data.id;
+                if (drawerReservaIdEl) drawerReservaIdEl.textContent = `#${data.id ?? '-'}`;
+                if (drawerFechaEl) drawerFechaEl.textContent = data.fecha || '-';
+                if (drawerHorarioEl) drawerHorarioEl.textContent = `${data.horaInicio || '--:--'} - ${data.horaFin || '--:--'}`;
+                if (drawerEspacioEl) drawerEspacioEl.textContent = obtenerTextoComboPorValor(document.getElementById('modalEspacioDeportivoId'), data.espacioDeportivoId);
+                if (drawerClienteEl) drawerClienteEl.textContent = obtenerTextoComboPorValor(document.getElementById('modalClienteId'), data.clienteId);
+                if (drawerTotalEl) drawerTotalEl.textContent = Number(data.total ?? 0).toFixed(2);
+                if (drawerAdelantoEl) drawerAdelantoEl.textContent = Number(data.adelanto ?? 0).toFixed(2);
+                if (drawerEstadoBadgeEl) {
+                    const cls = claseEstadoDrawer(data.estado);
+                    drawerEstadoBadgeEl.className = `sc-drawer-state-badge ${cls}`.trim();
+                    drawerEstadoBadgeEl.textContent = textoEstadoPorCodigo(data.estado);
+                }
+            }
+
+            async function abrirDrawerReserva(reservaId) {
+                if (!reservaDrawer || !reservaId) return;
+                limpiarErrorDrawer();
+                try {
+                    const url = `${getReservaModalUrl}?negocioId=${encodeURIComponent(negocioId)}&id=${encodeURIComponent(reservaId)}`;
+                    const r = await fetch(url, { cache: 'no-store' });
+                    const payload = await r.json();
+                    if (!r.ok || !payload?.ok) throw new Error(payload?.mensaje || 'No se pudo cargar la reserva.');
+                    pintarDrawerReserva(payload);
+                    reservaDrawer.show();
+                } catch (err) {
+                    mostrarErrorDrawer(err?.message || 'No se pudo cargar la reserva.');
+                }
+            }
+
+            async function cambiarEstadoDesdeDrawer(nuevoEstado) {
+                if (!puedeEditarReserva || !reservaDrawerIdActual) return;
+                limpiarErrorDrawer();
+                try {
+                    const r = await fetch(cambiarEstadoRapidoUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            negocioId: negocioId,
+                            reservaId: reservaDrawerIdActual,
+                            nuevoEstado: Number(nuevoEstado)
+                        })
+                    });
+                    const payload = await r.json();
+                    if (!r.ok || !payload?.ok) throw new Error(payload?.mensaje || 'No se pudo actualizar el estado.');
+
+                    await abrirDrawerReserva(reservaDrawerIdActual);
+                    if (calendar) {
+                        calendar.refetchEvents();
+                        limpiarCacheResumenDia();
+                        const fechaRef = drawerFechaEl?.textContent || hoyIso;
+                        void renderDisponibilidadDia(new Date(`${fechaRef}T00:00:00`));
+                        void renderPendientesConfirmarDia(new Date(`${fechaRef}T00:00:00`));
+                    }
+                } catch (err) {
+                    mostrarErrorDrawer(err?.message || 'No se pudo actualizar el estado.');
+                }
             }
 
             function limpiarErrorModal() {
@@ -577,22 +1488,133 @@
             }
 
             function getFiltroEspacioSeleccionado() {
-                return document.getElementById('espacioDeportivoId').value || '';
+                return espacioSelect?.value || '';
             }
 
             function getFiltroSedeSeleccionada() {
-                return document.getElementById('sedeId').value || '';
+                return sedeSelect?.value || '';
+            }
+
+            function limpiarCacheResumenDia() {
+                // Consulta backend en cada render; no usamos cache local para evitar desfases.
+            }
+
+            async function obtenerResumenDiaBackend(fechaIso) {
+                const sedeId = getFiltroSedeSeleccionada();
+                const espacioId = getFiltroEspacioSeleccionado();
+                if (!sedeId || !espacioId || !fechaIso) {
+                    return null;
+                }
+
+                const params = new URLSearchParams();
+                params.append('negocioId', String(negocioId));
+                params.append('fecha', fechaIso);
+                params.append('sedeId', String(sedeId));
+                params.append('espacioDeportivoId', String(espacioId));
+                params.append('_ts', Date.now().toString());
+
+                const response = await fetch(`${resumenDiaOperativoUrl}?${params.toString()}`, { cache: 'no-store' });
+                const payload = await response.json();
+                if (!response.ok || !payload.ok) {
+                    throw new Error(payload.mensaje || 'No se pudo consultar la disponibilidad diaria.');
+                }
+
+                return payload;
+            }
+
+            async function recargarEspaciosPorSede(valorPreferido = '', conservarActual = true) {
+                if (!sedeSelect || !espacioSelect) return;
+                if (!sedeSelect.value) {
+                    espacioSelect.innerHTML = '<option value="">Selecciona sede primero</option>';
+                    espacioSelect.value = '';
+                    espacioSelect.disabled = true;
+                    limpiarCacheResumenDia();
+                    return;
+                }
+
+                const valorActual = espacioSelect.value || '';
+                const valorObjetivo = valorPreferido || (conservarActual ? valorActual : '');
+                const params = new URLSearchParams();
+                params.append('negocioId', String(negocioId));
+                if (sedeSelect.value) {
+                    params.append('sedeId', sedeSelect.value);
+                }
+
+                try {
+                    recargandoEspacios = true;
+                    const r = await fetch(`${comboEspaciosUrl}?${params.toString()}`, { cache: 'no-store' });
+                    const payload = await r.json();
+                    if (!r.ok || !payload.ok) {
+                        throw new Error(payload.mensaje || 'No se pudo cargar espacios por sede.');
+                    }
+
+                    espacioSelect.innerHTML = '';
+                    const optSelecciona = document.createElement('option');
+                    optSelecciona.value = '';
+                    optSelecciona.textContent = 'Selecciona espacio';
+                    espacioSelect.appendChild(optSelecciona);
+
+                    let encontrado = false;
+                    (payload.items || []).forEach((item) => {
+                        const opt = document.createElement('option');
+                        opt.value = String(item.value ?? '');
+                        opt.textContent = String(item.text ?? '');
+                        if (valorObjetivo && opt.value === String(valorObjetivo)) {
+                            encontrado = true;
+                        }
+                        espacioSelect.appendChild(opt);
+                    });
+
+                    espacioSelect.value = encontrado ? String(valorObjetivo) : '';
+                    espacioSelect.disabled = false;
+                } catch (err) {
+                    console.error(err);
+                    espacioSelect.innerHTML = '<option value="">Selecciona espacio</option>';
+                    espacioSelect.value = '';
+                    espacioSelect.disabled = true;
+                } finally {
+                    recargandoEspacios = false;
+                }
+            }
+
+            function buscarBloqueoBackendEnRango(inicio, fin, espacioId) {
+                if (!inicio || !fin || !espacioId || !calendar) return null;
+                const espacioTexto = String(espacioId);
+                const eventos = calendar.getEvents();
+                for (const ev of eventos) {
+                    const tipo = String(ev.extendedProps.tipoEvento || '').toUpperCase();
+                    if (tipo !== 'NO_ATENCION' && tipo !== 'BLOQUEO') continue;
+                    if (String(ev.extendedProps.espacioDeportivoId ?? '') !== espacioTexto) continue;
+                    const evInicio = ev.start;
+                    const evFin = ev.end ?? ev.start;
+                    if (!evInicio || !evFin) continue;
+                    if (inicio < evFin && fin > evInicio) {
+                        return {
+                            motivo: String(ev.extendedProps.motivo || '').trim(),
+                            estadoTexto: String(ev.extendedProps.estadoTexto || '').trim(),
+                            titulo: String(ev.title || '').trim()
+                        };
+                    }
+                }
+
+                return null;
             }
 
             function validarAperturaReserva(fechaHora) {
                 if (!getFiltroSedeSeleccionada()) {
-                    return { ok: false, mensaje: 'Selecciona una sede para respetar su horario de atencion.' };
+                    return { ok: false, mensaje: 'Selecciona una sede para continuar.' };
+                }
+                const espacioId = getFiltroEspacioSeleccionado();
+                if (!espacioId) {
+                    return { ok: false, mensaje: 'Selecciona un espacio deportivo para validar disponibilidad.' };
                 }
                 if (formatDateIso(fechaHora) < hoyIso) {
                     return { ok: false, mensaje: 'No se permiten reservas en fechas pasadas.' };
                 }
-                if (!sePuedeOperar(fechaHora)) {
-                    return { ok: false, mensaje: 'La sede no atiende en ese dia u horario.' };
+                const fin = new Date(fechaHora.getTime() + (60 * 60000));
+                const bloqueo = buscarBloqueoBackendEnRango(fechaHora, fin, espacioId);
+                if (bloqueo) {
+                    return { ok: false, mensaje: bloqueo.motivo || bloqueo.titulo || bloqueo.estadoTexto || 'Horario bloqueado/no atencion.' };
                 }
                 return { ok: true, mensaje: '' };
             }
@@ -602,6 +1624,7 @@
                     alert('Selecciona una sede antes de crear una reserva.');
                     return;
                 }
+                if (reservaDrawer) reservaDrawer.hide();
                 limpiarErrorModal();
                 limpiarDisponibilidadModal();
                 reservaModalTitulo.textContent = 'Nueva reserva';
@@ -620,6 +1643,7 @@
             }
 
             function abrirModalEditarReserva(reservaId) {
+                if (reservaDrawer) reservaDrawer.hide();
                 limpiarErrorModal();
                 limpiarDisponibilidadModal();
                 fetch(`${getReservaModalUrl}?negocioId=${negocioId}&id=${reservaId}`)
@@ -693,113 +1717,30 @@
                 timerValidacion = setTimeout(validarDisponibilidadModal, 220);
             }
 
-            function minutosDesdeHora(hhmm) {
-                const [h, m] = String(hhmm || '00:00').split(':').map(x => parseInt(x, 10));
-                return (h * 60) + m;
-            }
-
-            function esDiaAtencion(date) {
-                const dow = date.getDay();
-                if (dow === 1) return calendarioConfig.atiendeLunes;
-                if (dow === 2) return calendarioConfig.atiendeMartes;
-                if (dow === 3) return calendarioConfig.atiendeMiercoles;
-                if (dow === 4) return calendarioConfig.atiendeJueves;
-                if (dow === 5) return calendarioConfig.atiendeViernes;
-                if (dow === 6) return calendarioConfig.atiendeSabado;
-                return calendarioConfig.atiendeDomingo;
-            }
-
-            function estaEnHorario(date) {
-                const minuto = (date.getHours() * 60) + date.getMinutes();
-                const apertura = minutosDesdeHora(calendarioConfig.horaApertura);
-                const cierre = minutosDesdeHora(calendarioConfig.horaCierre);
-                return minuto >= apertura && minuto < cierre;
-            }
-
-            function esFechaNoLaborable(date) {
-                return fechasNoLaborablesSet.has(formatDateIso(date));
-            }
-
-            function sePuedeOperar(date) {
-                if (!calendarioConfig.usaHorarioSede) return true;
-                if (!esDiaAtencion(date)) return false;
-                if (esFechaNoLaborable(date)) return false;
-                return estaEnHorario(date);
-            }
-
-            function nombreDia(dow) {
-                switch (dow) {
-                    case 0: return 'Domingo';
-                    case 1: return 'Lunes';
-                    case 2: return 'Martes';
-                    case 3: return 'Miercoles';
-                    case 4: return 'Jueves';
-                    case 5: return 'Viernes';
-                    case 6: return 'Sabado';
-                    default: return 'Dia';
-                }
-            }
-
-            function obtenerMotivoNoAtencionPorFecha(fecha) {
-                if (!(fecha instanceof Date) || Number.isNaN(fecha.getTime())) {
-                    return 'No atencion';
-                }
-                if (!calendarioConfig.usaHorarioSede) {
-                    return 'No atencion';
-                }
-                if (esFechaNoLaborable(fecha)) {
-                    return 'Fecha no laborable';
-                }
-                if (!esDiaAtencion(fecha)) {
-                    return `${nombreDia(fecha.getDay())} no atendido`;
-                }
-                if (!estaEnHorario(fecha)) {
-                    return `Fuera de horario ${calendarioConfig.horaApertura}-${calendarioConfig.horaCierre}`;
-                }
-                return 'No atencion';
-            }
-
             function obtenerTooltipBloqueo(arg) {
-                const tipo = String(arg.event.extendedProps.tipoEvento || '').toUpperCase();
                 const motivoApi = arg.event.extendedProps.motivo || arg.event.extendedProps.detalle || arg.event.title;
-                if (tipo === 'NO_ATENCION') {
-                    return String(motivoApi || obtenerMotivoNoAtencionPorFecha(arg.event.start) || 'No atencion');
-                }
-                if (tipo === 'BLOQUEO') {
-                    return String(motivoApi || 'Horario bloqueado por administracion');
-                }
-                return '';
+                if (motivoApi) return String(motivoApi);
+                const estadoTexto = arg.event.extendedProps.estadoTexto;
+                if (estadoTexto) return String(estadoTexto);
+                return 'Horario bloqueado/no atencion';
             }
 
-            const businessDays = [];
-            if (calendarioConfig.atiendeDomingo) businessDays.push(0);
-            if (calendarioConfig.atiendeLunes) businessDays.push(1);
-            if (calendarioConfig.atiendeMartes) businessDays.push(2);
-            if (calendarioConfig.atiendeMiercoles) businessDays.push(3);
-            if (calendarioConfig.atiendeJueves) businessDays.push(4);
-            if (calendarioConfig.atiendeViernes) businessDays.push(5);
-            if (calendarioConfig.atiendeSabado) businessDays.push(6);
-
-            const businessHoursConfig = calendarioConfig.usaHorarioSede
-                ? [{
-                    daysOfWeek: businessDays,
-                    startTime: `${calendarioConfig.horaApertura}:00`,
-                    endTime: `${calendarioConfig.horaCierre}:00`
-                }]
-                : true;
-
-            function hayCruce(inicioMin, finMin, ocupados) {
-                for (const tramo of ocupados) {
-                    if (inicioMin < tramo.fin && finMin > tramo.inicio) {
-                        return true;
-                    }
+            async function renderDisponibilidadDia(dateClick) {
+                const requestSeq = ++disponibilidadRenderSeq;
+                if (!calendar || !disponibilidadSlotsEl || !disponibilidadMensajeEl) return;
+                let fechaTrabajo = dateClick;
+                if (!fechaTrabajo && disponibilidadFechaFiltroEl?.value) {
+                    fechaTrabajo = new Date(`${disponibilidadFechaFiltroEl.value}T00:00:00`);
                 }
-                return false;
-            }
-
-            function renderDisponibilidadDia(dateClick) {
+                if (!fechaTrabajo || Number.isNaN(fechaTrabajo.getTime())) {
+                    disponibilidadMensajeEl.textContent = 'Selecciona una fecha valida para ver disponibilidad.';
+                    return;
+                }
                 const espacioId = document.getElementById('espacioDeportivoId').value;
                 disponibilidadSlotsEl.innerHTML = '';
+                if (disponibilidadFechaFiltroEl) {
+                    disponibilidadFechaFiltroEl.value = formatDateIso(fechaTrabajo);
+                }
 
                 if (!getFiltroSedeSeleccionada()) {
                     disponibilidadMensajeEl.textContent = 'Selecciona una sede para ver disponibilidad segun su horario de atencion.';
@@ -811,70 +1752,108 @@
                     return;
                 }
 
-                const fechaIso = formatDateIso(dateClick);
+                const fechaIso = formatDateIso(fechaTrabajo);
                 if (esFechaPasadaIso(fechaIso)) {
                     disponibilidadMensajeEl.textContent = `La fecha ${fechaIso} ya paso. Solo se pueden registrar reservas desde hoy.`;
                     return;
                 }
-                const eventosDiaEspacio = calendar.getEvents().filter(ev => {
-                    const inicio = ev.start;
-                    if (!inicio) return false;
-                    const mismoDia = formatDateIso(inicio) === fechaIso;
-                    const mismoEspacio = String(ev.extendedProps.espacioDeportivoId ?? '') === String(espacioId);
-                    return mismoDia && mismoEspacio;
-                });
-
-                const ocupados = eventosDiaEspacio.map(ev => {
-                    const start = ev.start;
-                    const end = ev.end ?? ev.start;
-                    return {
-                        inicio: (start.getHours() * 60) + start.getMinutes(),
-                        fin: (end.getHours() * 60) + end.getMinutes()
-                    };
-                });
-
-                const inicioDia = 6 * 60;
-                const finDia = 24 * 60;
-                let slotsLibres = 0;
-
-                for (let minuto = inicioDia; minuto < finDia; minuto += 60) {
-                    const fin = minuto + 60;
-                    const fechaSlot = new Date(dateClick.getFullYear(), dateClick.getMonth(), dateClick.getDate(), Math.floor(minuto / 60), minuto % 60, 0, 0);
-                    if (!sePuedeOperar(fechaSlot)) {
-                        continue;
-                    }
-                    if (hayCruce(minuto, fin, ocupados)) {
-                        continue;
+                try {
+                    const resumen = await obtenerResumenDiaBackend(fechaIso);
+                    if (requestSeq !== disponibilidadRenderSeq) return;
+                    const slots = resumen?.slotsDisponibles || [];
+                    disponibilidadSlotsEl.innerHTML = '';
+                    for (const slot of slots) {
+                        const horaInicio = String(slot.horaInicio || '').trim();
+                        const horaFin = String(slot.horaFin || '').trim();
+                        if (!horaInicio || !horaFin) continue;
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'btn btn-sm sc-slot-btn';
+                        btn.textContent = `${horaInicio} - ${horaFin}`;
+                        btn.addEventListener('click', () => {
+                            abrirModalNuevaReserva(fechaIso, horaInicio, horaFin, espacioId);
+                        });
+                        disponibilidadSlotsEl.appendChild(btn);
                     }
 
-                    const hi = Math.floor(minuto / 60);
-                    const mi = minuto % 60;
-                    const hf = Math.floor(fin / 60);
-                    const mf = fin % 60;
+                    if (slots.length === 0) {
+                        disponibilidadMensajeEl.textContent = `No hay horas libres para ${fechaIso} en el espacio seleccionado.`;
+                        return;
+                    }
+                    disponibilidadMensajeEl.textContent = `Horas disponibles para ${fechaIso}: ${slots.length} bloque(s) libre(s).`;
+                } catch (err) {
+                    if (requestSeq !== disponibilidadRenderSeq) return;
+                    disponibilidadMensajeEl.textContent = err?.message || 'No se pudo consultar disponibilidad en este momento.';
+                }
+            }
 
-                    const btn = document.createElement('button');
-                    btn.type = 'button';
-                    btn.className = 'btn btn-sm btn-outline-success';
-                    btn.textContent = `${formatTime(hi, mi)} - ${formatTime(hf, mf)}`;
-                    btn.addEventListener('click', () => {
-                        abrirModalNuevaReserva(fechaIso, formatTime(hi, mi), formatTime(hf, mf), espacioId);
-                    });
-                    disponibilidadSlotsEl.appendChild(btn);
-                    slotsLibres++;
+            async function renderPendientesConfirmarDia(dateClick) {
+                const requestSeq = ++pendientesRenderSeq;
+                if (!calendar || !pendientesSlotsEl || !pendientesMensajeEl) return;
+                let fechaTrabajo = dateClick;
+                if (!fechaTrabajo && pendientesFechaFiltroEl?.value) {
+                    fechaTrabajo = new Date(`${pendientesFechaFiltroEl.value}T00:00:00`);
+                }
+                if (!fechaTrabajo || Number.isNaN(fechaTrabajo.getTime())) {
+                    pendientesMensajeEl.textContent = 'Selecciona una fecha valida para revisar reservas pendientes.';
+                    return;
+                }
+                const espacioId = document.getElementById('espacioDeportivoId').value;
+                pendientesSlotsEl.innerHTML = '';
+                if (pendientesFechaFiltroEl) {
+                    pendientesFechaFiltroEl.value = formatDateIso(fechaTrabajo);
                 }
 
-                if (slotsLibres === 0) {
-                    disponibilidadMensajeEl.textContent = `No hay horas libres para ${fechaIso} en el espacio seleccionado.`;
+                if (!getFiltroSedeSeleccionada()) {
+                    pendientesMensajeEl.textContent = 'Selecciona una sede para revisar reservas pendientes.';
                     return;
                 }
 
-                disponibilidadMensajeEl.textContent = `Horas disponibles para ${fechaIso}: ${slotsLibres} bloque(s) libre(s).`;
+                if (!espacioId) {
+                    pendientesMensajeEl.textContent = 'Selecciona un espacio en el filtro para mostrar pendientes.';
+                    return;
+                }
+
+                const fechaIso = formatDateIso(fechaTrabajo);
+                try {
+                    const resumen = await obtenerResumenDiaBackend(fechaIso);
+                    if (requestSeq !== pendientesRenderSeq) return;
+                    const pendientes = resumen?.pendientes || [];
+                    pendientesSlotsEl.innerHTML = '';
+
+                    if (pendientes.length === 0) {
+                        pendientesMensajeEl.textContent = `No hay reservas pendientes para ${fechaIso}.`;
+                        return;
+                    }
+
+                    const pendientesUnicos = new Set();
+                    for (const item of pendientes) {
+                        const reservaId = Number(item.reservaId || 0);
+                        if (!reservaId) continue;
+                        if (pendientesUnicos.has(reservaId)) continue;
+                        pendientesUnicos.add(reservaId);
+                        const hi = String(item.horaInicio || '').trim();
+                        const hf = String(item.horaFin || '').trim();
+                        const titulo = String(item.titulo || `Reserva #${reservaId}`).trim();
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'btn btn-sm sc-pendiente-slot-btn';
+                        btn.innerHTML = `<span class="sc-pendiente-slot-hora">${hi} - ${hf}</span><span class="sc-pendiente-slot-titulo">${titulo}</span>`;
+                        btn.addEventListener('click', () => abrirDrawerReserva(reservaId));
+                        pendientesSlotsEl.appendChild(btn);
+                    }
+
+                    pendientesMensajeEl.textContent = `Reservas pendientes para ${fechaIso}: ${pendientesUnicos.size} registro(s).`;
+                } catch (err) {
+                    if (requestSeq !== pendientesRenderSeq) return;
+                    pendientesMensajeEl.textContent = err?.message || 'No se pudo consultar pendientes en este momento.';
+                }
             }
 
             function armarUrlEventos(info) {
-                const sedeId = document.getElementById('sedeId').value;
-                const espacioDeportivoId = document.getElementById('espacioDeportivoId').value;
-                const estado = document.getElementById('estado').value;
+                const sedeId = sedeSelect?.value || '';
+                const espacioDeportivoId = espacioSelect?.value || '';
+                const estado = estadoSelect?.value || '';
                 const params = new URLSearchParams();
                 params.append('negocioId', negocioId);
                 params.append('start', info.startStr);
@@ -886,251 +1865,380 @@
                 return '@Url.Action("CalendarioEventos", "Reservas")' + '?' + params.toString();
             }
 
-            const calendar = new FullCalendar.Calendar(calendarioEl, {
-                initialView: 'timeGridWeek',
-                locale: 'es',
-                firstDay: 1,
-                allDaySlot: false,
-                dayHeaderFormat: { weekday: 'short', day: '2-digit', month: '2-digit' },
-                slotLabelFormat: {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: false
-                },
-                slotLabelInterval: '01:00:00',
-                slotDuration: '00:30:00',
-                slotMinTime: '06:00:00',
-                slotMaxTime: '24:00:00',
-                nowIndicator: true,
-                editable: true,
-                selectable: true,
-                businessHours: businessHoursConfig,
-                selectConstraint: calendarioConfig.usaHorarioSede ? 'businessHours' : undefined,
-                height: 'auto',
-                expandRows: true,
-                buttonText: {
-                    today: 'Hoy',
-                    week: 'Semana',
-                    day: 'Dia',
-                    month: 'Mes'
-                },
-                customButtons: {
-                    nuevaReserva: {
-                        text: 'Nueva reserva',
-                        click: function() {
-                            abrirModalNuevaReserva();
+            if (calendarioActivo) {
+                calendar = new FullCalendar.Calendar(calendarioEl, {
+                    initialView: 'timeGridWeek',
+                    locale: 'es',
+                    firstDay: 1,
+                    allDaySlot: false,
+                    dayHeaderContent: function() {
+                        return { html: '' };
+                    },
+                    dayHeaderDidMount: function(arg) {
+                        const nombreDia = capitalizar(arg.date.toLocaleDateString('es-PE', { weekday: 'long' }));
+                        const fechaCorta = arg.date.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit' });
+                        arg.el.classList.add('sc-header-day-cell');
+                        arg.el.style.background = 'linear-gradient(180deg, #0f2d57 0%, #173f73 100%)';
+                        arg.el.style.borderColor = '#264a79';
+                        const cushion = arg.el.querySelector('.fc-col-header-cell-cushion');
+                        if (cushion) {
+                            cushion.innerHTML = `<span class="sc-day-header-title">${nombreDia}</span><span class="sc-day-header-date">${fechaCorta}</span>`;
+                            cushion.style.color = '#f8fafc';
+                            cushion.style.textDecoration = 'none';
+                            cushion.style.display = 'flex';
+                            cushion.style.flexDirection = 'column';
+                            cushion.style.alignItems = 'center';
+                            cushion.style.justifyContent = 'center';
+                            cushion.style.textAlign = 'center';
                         }
-                    }
-                },
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: puedeCrearReserva ? 'timeGridWeek,timeGridDay,dayGridMonth nuevaReserva' : 'timeGridWeek,timeGridDay,dayGridMonth'
-                },
-                eventClassNames: function(arg) {
-                    if (arg.event.display === 'background') {
-                        return [];
-                    }
-                    return ['sc-fc-event', classByEstado(arg.event.extendedProps.estado, arg.event.extendedProps.tipoEvento)];
-                },
-                eventContent: function(arg) {
-                    const timeText = arg.timeText ? `<div class="sc-fc-event-time">${arg.timeText}</div>` : '';
-                    return { html: `<div class="sc-fc-event-inner"><div class="sc-fc-event-title">${arg.event.title || ''}</div>${timeText}</div>` };
-                },
-                eventDidMount: function(arg) {
-                    if (arg.event.display === 'background') {
-                        const tipo = String(arg.event.extendedProps.tipoEvento || '').toUpperCase();
-                        if (tipo === 'NO_ATENCION' || tipo === 'BLOQUEO') {
-                            const colorBloqueo = String(arg.event.backgroundColor || arg.event.borderColor || '#64748b').trim();
-                            arg.el.style.background = `repeating-linear-gradient(-45deg, ${hexToRgba(colorBloqueo, 0.24)}, ${hexToRgba(colorBloqueo, 0.24)} 8px, ${hexToRgba(colorBloqueo, 0.14)} 8px, ${hexToRgba(colorBloqueo, 0.14)} 16px)`;
-                            arg.el.style.borderColor = hexToRgba(colorBloqueo, 0.45);
-                            const motivoTexto = String(arg.event.title || '').trim();
-                            if (motivoTexto) {
-                                const motivo = document.createElement('span');
-                                motivo.className = 'sc-bg-motivo-inline';
-                                motivo.textContent = motivoTexto;
-                                arg.el.appendChild(motivo);
-                            }
-                            const estadoTexto = String(arg.event.extendedProps.estadoTexto || '').trim();
-                            if (estadoTexto) {
-                                arg.el.setAttribute('data-estado-label', estadoTexto);
-                                arg.el.classList.add('sc-bg-estado-label');
-                                const badge = document.createElement('span');
-                                badge.className = 'sc-bg-estado-inline';
-                                badge.textContent = estadoTexto;
-                                arg.el.appendChild(badge);
-                            }
-                            const textoTooltip = obtenerTooltipBloqueo(arg);
-                            if (textoTooltip) {
-                                arg.el.setAttribute('title', textoTooltip);
-                                arg.el.setAttribute('data-bs-toggle', 'tooltip');
-                                arg.el.setAttribute('data-bs-placement', 'top');
-                                arg.el.setAttribute('data-bs-custom-class', 'sc-tooltip');
-                                if (window.bootstrap && bootstrap.Tooltip) {
-                                    const tip = new bootstrap.Tooltip(arg.el, {
-                                        container: 'body',
-                                        trigger: 'hover'
-                                    });
-                                    arg.el._scTooltip = tip;
-                                }
+                    },
+                    slotLabelFormat: {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                    },
+                    slotLabelInterval: '01:00:00',
+                    slotDuration: '00:30:00',
+                    slotMinTime: '06:00:00',
+                    slotMaxTime: '24:00:00',
+                    nowIndicator: true,
+                    editable: true,
+                    selectable: true,
+                    height: 'auto',
+                    expandRows: true,
+                    buttonText: {
+                        today: 'Hoy',
+                        week: 'Semana',
+                        day: 'Dia'
+                    },
+                    customButtons: {
+                        nuevaReserva: {
+                            text: 'Nueva reserva',
+                            click: function() {
+                                abrirModalNuevaReserva();
                             }
                         }
-                        return;
-                    }
-                    const estado = arg.event.extendedProps.estado;
-                    const tipo = arg.event.extendedProps.tipoEvento;
-                    const colorTexto = colorTextoByEstado(estado, tipo);
-                    arg.el.style.color = colorTexto;
-                    arg.el.style.setProperty('--fc-event-text-color', colorTexto);
-                    arg.el.querySelectorAll('.sc-fc-event-title, .sc-fc-event-time, .fc-event-main, .fc-event-title, .fc-event-time').forEach(el => {
-                        el.style.color = colorTexto;
-                    });
-                },
-                eventWillUnmount: function(arg) {
-                    if (arg.el && arg.el._scTooltip && typeof arg.el._scTooltip.dispose === 'function') {
-                        arg.el._scTooltip.dispose();
-                    }
-                },
-                datesSet: function(info) {
-                    renderToolbarSubtitle(info.start, info.end);
-                },
-                events: function(info, success, failure) {
-                    fetch(armarUrlEventos(info), { cache: 'no-store' })
-                        .then(r => r.json())
-                        .then(data => {
-                            const eventosApi = data.flatMap(ev => {
-                                const tipo = String(ev.tipoEvento || '');
-                                const colorEvento = ev.backgroundColor || ev.borderColor || ev.color || '#64748b';
-                                const base = { ...ev };
-                                delete base.backgroundColor;
-                                delete base.borderColor;
-                                delete base.textColor;
-                                delete base.color;
-                                if (tipo === 'NO_ATENCION') {
-                                    return [{ ...base, display: 'background', classNames: ['sc-no-atencion-bg'], editable: false, overlap: false, backgroundColor: colorEvento, borderColor: colorEvento }];
+                    },
+                    headerToolbar: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: puedeCrearReserva ? 'timeGridWeek,timeGridDay nuevaReserva' : 'timeGridWeek,timeGridDay'
+                    },
+                    eventClassNames: function(arg) {
+                        if (arg.event.display === 'background') {
+                            return [];
+                        }
+                        return ['sc-fc-event', classByEstado(arg.event.extendedProps.estadoCodigo, arg.event.extendedProps.tipoEvento)];
+                    },
+                    eventContent: function(arg) {
+                        if (arg.event.display === 'background') {
+                            return { html: '' };
+                        }
+                        const timeText = arg.timeText ? `<div class="sc-fc-event-time">${arg.timeText}</div>` : '';
+                        return { html: `<div class="sc-fc-event-inner"><div class="sc-fc-event-title">${arg.event.title || ''}</div>${timeText}</div>` };
+                    },
+                    eventDidMount: function(arg) {
+                        if (arg.event.display === 'background') {
+                            const tipo = String(arg.event.extendedProps.tipoEvento || '').toUpperCase();
+                            if (tipo === 'NO_ATENCION' || tipo === 'BLOQUEO') {
+                                const colorBloqueo = String(arg.event.backgroundColor || arg.event.borderColor || '#64748b').trim();
+                                arg.el.style.background = `repeating-linear-gradient(-45deg, ${hexToRgba(colorBloqueo, 0.18)}, ${hexToRgba(colorBloqueo, 0.18)} 8px, ${hexToRgba(colorBloqueo, 0.1)} 8px, ${hexToRgba(colorBloqueo, 0.1)} 16px)`;
+                                arg.el.style.borderColor = hexToRgba(colorBloqueo, 0.32);
+                                arg.el.textContent = '';
+                                const motivoTexto = String(arg.event.title || '').trim();
+                                const estadoTexto = String(arg.event.extendedProps.estadoTexto || '').trim();
+                                const etiquetaTexto = motivoTexto || estadoTexto;
+                                if (etiquetaTexto) {
+                                    const motivo = document.createElement('span');
+                                    motivo.className = 'sc-bg-motivo-inline';
+                                    motivo.textContent = etiquetaTexto;
+                                    arg.el.appendChild(motivo);
                                 }
-                                if (tipo === 'BLOQUEO') {
-                                    return [{ ...base, display: 'background', classNames: ['sc-bloqueo-bg'], editable: false, overlap: false, backgroundColor: colorEvento, borderColor: colorEvento }];
+                                const textoTooltip = obtenerTooltipBloqueo(arg);
+                                if (textoTooltip) {
+                                    arg.el.setAttribute('title', textoTooltip);
+                                    arg.el.setAttribute('data-bs-toggle', 'tooltip');
+                                    arg.el.setAttribute('data-bs-placement', 'top');
+                                    arg.el.setAttribute('data-bs-custom-class', 'sc-tooltip');
+                                    if (window.bootstrap && bootstrap.Tooltip) {
+                                        const tip = new bootstrap.Tooltip(arg.el, {
+                                            container: 'body',
+                                            trigger: 'hover'
+                                        });
+                                        arg.el._scTooltip = tip;
+                                    }
                                 }
-                                const estadoClase = classByEstado(base.estado, base.tipoEvento);
+                            }
+                            return;
+                        }
+                        const estadoCodigo = arg.event.extendedProps.estadoCodigo;
+                        const tipo = arg.event.extendedProps.tipoEvento;
+                        const colorTexto = colorTextoByEstado(estadoCodigo, tipo);
+                        arg.el.style.color = colorTexto;
+                        arg.el.style.setProperty('--fc-event-text-color', colorTexto);
+                        arg.el.style.boxShadow = '0 6px 12px rgba(15,23,42,.09)';
+                        arg.el.style.borderRadius = '.62rem';
+                        arg.el.querySelectorAll('.sc-fc-event-title, .sc-fc-event-time, .fc-event-main, .fc-event-title, .fc-event-time').forEach(el => {
+                            el.style.color = colorTexto;
+                        });
+                    },
+                    eventWillUnmount: function(arg) {
+                        if (arg.el && arg.el._scTooltip && typeof arg.el._scTooltip.dispose === 'function') {
+                            arg.el._scTooltip.dispose();
+                        }
+                    },
+                    datesSet: function(info) {
+                        renderToolbarSubtitle(info.start, info.end);
+                        pintarCabeceraHorarios();
+                        forzarCabeceraDiasDosFilas();
+                        aplicarEstiloCalendarioFase1();
+                        reintentarForzarEjeHorario();
+                        activarHoverColumnasCalendario();
+                        aplicarFiltroLeyendaCalendario();
+                        aplicarModosVisualesCalendario();
+                    },
+                    events: function(info, success, failure) {
+                        fetch(armarUrlEventos(info), { cache: 'no-store' })
+                            .then(r => r.json())
+                            .then(data => {
+                                const eventosApi = data.flatMap(ev => {
+                                    const tipo = String(ev.tipoEvento || '');
+                                    const colorEvento = ev.backgroundColor || ev.borderColor || ev.color || '#64748b';
+                                    const base = { ...ev };
+                                    delete base.backgroundColor;
+                                    delete base.borderColor;
+                                    delete base.textColor;
+                                    delete base.color;
+                                    if (tipo === 'NO_ATENCION') {
+                                        return [{ ...base, display: 'background', classNames: ['sc-no-atencion-bg'], editable: false, overlap: false, backgroundColor: colorEvento, borderColor: colorEvento }];
+                                    }
+                                    if (tipo === 'BLOQUEO') {
+                                        return [{ ...base, display: 'background', classNames: ['sc-bloqueo-bg'], editable: false, overlap: false, backgroundColor: colorEvento, borderColor: colorEvento }];
+                                    }
+                                    const estadoClase = classByEstado(base.estadoCodigo, base.tipoEvento);
                                 const fondoEstado = {
                                     ...base,
                                     id: `BG-${base.id}`,
-                                    title: '',
-                                    display: 'background',
-                                    editable: false,
-                                    overlap: true,
-                                    classNames: ['sc-reserva-slot-bg', estadoClase]
-                                };
-                                base.textColor = colorTextoByEstado(base.estado, base.tipoEvento);
+                                        title: '',
+                                        display: 'background',
+                                        editable: false,
+                                        overlap: true,
+                                        classNames: ['sc-reserva-slot-bg', estadoClase]
+                                    };
+                                base.textColor = colorTextoByEstado(base.estadoCodigo, base.tipoEvento);
                                 return [fondoEstado, base];
                             });
                             success(eventosApi);
+                            setTimeout(() => {
+                                reintentarForzarEjeHorario();
+                                const fechaRef = disponibilidadFechaFiltroEl?.value || hoyIso;
+                                void renderDisponibilidadDia(new Date(`${fechaRef}T00:00:00`));
+                                const fechaPendienteRef = pendientesFechaFiltroEl?.value || hoyIso;
+                                void renderPendientesConfirmarDia(new Date(`${fechaPendienteRef}T00:00:00`));
+                            }, 0);
                         })
                         .catch(err => failure(err));
                 },
-                dateClick: function(info) {
-                    if (!info.allDay) {
-                        const inicio = info.date;
-                        const validacion = validarAperturaReserva(inicio);
-                        if (!validacion.ok) {
-                            alert(validacion.mensaje);
+                    dateClick: function(info) {
+                        if (!info.allDay) {
+                            const inicio = info.date;
+                            const validacion = validarAperturaReserva(inicio);
+                            if (!validacion.ok) {
+                                alert(validacion.mensaje);
+                                return;
+                            }
+                            const fin = new Date(inicio.getTime() + (60 * 60000));
+                            abrirModalNuevaReserva(
+                                formatDateIso(inicio),
+                                formatTime(inicio.getHours(), inicio.getMinutes()),
+                                formatTime(fin.getHours(), fin.getMinutes()),
+                                getFiltroEspacioSeleccionado()
+                            );
                             return;
                         }
-                        const fin = new Date(inicio.getTime() + (60 * 60000));
-                        abrirModalNuevaReserva(
-                            formatDateIso(inicio),
-                            formatTime(inicio.getHours(), inicio.getMinutes()),
-                            formatTime(fin.getHours(), fin.getMinutes()),
-                            getFiltroEspacioSeleccionado()
-                        );
-                        return;
-                    }
-                    renderDisponibilidadDia(info.date);
-                },
-                select: function(info) {
-                    if (!sePuedeOperar(info.start)) {
-                        return;
-                    }
-                    renderDisponibilidadDia(info.start);
-                },
-                eventDrop: function(info) {
-                    if (!info.event.extendedProps.reservaId) {
-                        info.revert();
-                        return;
-                    }
-
-                    fetch('@Url.Action("MoverEvento", "Reservas")', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            negocioId: negocioId,
-                            reservaId: info.event.extendedProps.reservaId,
-                            inicio: toLocalDateTimeString(info.event.start),
-                            fin: toLocalDateTimeString(info.event.end ? info.event.end : info.event.start)
-                        })
-                    })
-                    .then(async r => {
-                        const payload = await r.json();
-                        if (!r.ok || !payload.ok) {
-                            throw new Error(payload.mensaje || 'No se pudo mover la reserva.');
+                        renderDisponibilidadDia(info.date);
+                    },
+                    select: function(info) {
+                        renderDisponibilidadDia(info.start);
+                        renderPendientesConfirmarDia(info.start);
+                    },
+                    eventDrop: function(info) {
+                        if (!info.event.extendedProps.reservaId) {
+                            info.revert();
+                            return;
                         }
-                        calendar.refetchEvents();
-                        renderDisponibilidadDia(info.event.start ?? new Date());
-                    })
-                    .catch(err => {
-                        alert(err.message);
-                        info.revert();
-                    });
-                },
-                eventResize: function(info) {
-                    if (!info.event.extendedProps.reservaId) {
-                        info.revert();
-                        return;
-                    }
 
-                    fetch('@Url.Action("MoverEvento", "Reservas")', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            negocioId: negocioId,
-                            reservaId: info.event.extendedProps.reservaId,
-                            inicio: toLocalDateTimeString(info.event.start),
-                            fin: toLocalDateTimeString(info.event.end ? info.event.end : info.event.start)
+                        fetch('@Url.Action("MoverEvento", "Reservas")', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                negocioId: negocioId,
+                                reservaId: info.event.extendedProps.reservaId,
+                                inicio: toLocalDateTimeString(info.event.start),
+                                fin: toLocalDateTimeString(info.event.end ? info.event.end : info.event.start)
+                            })
                         })
-                    })
-                    .then(async r => {
-                        const payload = await r.json();
-                        if (!r.ok || !payload.ok) {
-                            throw new Error(payload.mensaje || 'No se pudo redimensionar la reserva.');
+                        .then(async r => {
+                            const payload = await r.json();
+                            if (!r.ok || !payload.ok) {
+                                throw new Error(payload.mensaje || 'No se pudo mover la reserva.');
+                            }
+                            calendar.refetchEvents();
+                            limpiarCacheResumenDia();
+                            void renderDisponibilidadDia(info.event.start ?? new Date());
+                            void renderPendientesConfirmarDia(info.event.start ?? new Date());
+                        })
+                        .catch(err => {
+                            alert(err.message);
+                            info.revert();
+                        });
+                    },
+                    eventResize: function(info) {
+                        if (!info.event.extendedProps.reservaId) {
+                            info.revert();
+                            return;
                         }
-                        calendar.refetchEvents();
-                        renderDisponibilidadDia(info.event.start ?? new Date());
-                    })
-                    .catch(err => {
-                        alert(err.message);
-                        info.revert();
-                    });
-                },
-                eventClick: function(info) {
-                    const reservaId = info.event.extendedProps.reservaId;
-                    if (!reservaId) {
-                        return;
-                    }
-                    abrirModalEditarReserva(reservaId);
-                }
-            });
 
-            calendar.render();
+                        fetch('@Url.Action("MoverEvento", "Reservas")', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                negocioId: negocioId,
+                                reservaId: info.event.extendedProps.reservaId,
+                                inicio: toLocalDateTimeString(info.event.start),
+                                fin: toLocalDateTimeString(info.event.end ? info.event.end : info.event.start)
+                            })
+                        })
+                        .then(async r => {
+                            const payload = await r.json();
+                            if (!r.ok || !payload.ok) {
+                                throw new Error(payload.mensaje || 'No se pudo redimensionar la reserva.');
+                            }
+                            calendar.refetchEvents();
+                            limpiarCacheResumenDia();
+                            void renderDisponibilidadDia(info.event.start ?? new Date());
+                            void renderPendientesConfirmarDia(info.event.start ?? new Date());
+                        })
+                        .catch(err => {
+                            alert(err.message);
+                            info.revert();
+                        });
+                    },
+                    eventClick: function(info) {
+                        const reservaId = info.event.extendedProps.reservaId;
+                        if (!reservaId) {
+                            return;
+                        }
+                        abrirDrawerReserva(reservaId);
+                    }
+                });
+
+                calendar.render();
+                renderToolbarSubtitle(calendar.view.currentStart, calendar.view.currentEnd);
+                pintarCabeceraHorarios();
+                forzarCabeceraDiasDosFilas();
+                aplicarEstiloCalendarioFase1();
+                reintentarForzarEjeHorario();
+                activarHoverColumnasCalendario();
+                aplicarFiltroLeyendaCalendario();
+                aplicarModosVisualesCalendario();
+                void renderDisponibilidadDia(new Date(`${disponibilidadFechaFiltroEl?.value || hoyIso}T00:00:00`));
+                void renderPendientesConfirmarDia(new Date(`${pendientesFechaFiltroEl?.value || hoyIso}T00:00:00`));
+            }
             document.getElementById('modalFecha').setAttribute('min', hoyIso);
-            renderToolbarSubtitle(calendar.view.currentStart, calendar.view.currentEnd);
-            renderDisponibilidadDia(new Date());
+            if (disponibilidadFechaFiltroEl) {
+                if (!disponibilidadFechaFiltroEl.value) {
+                    disponibilidadFechaFiltroEl.value = hoyIso;
+                }
+                disponibilidadFechaFiltroEl.setAttribute('min', hoyIso);
+                disponibilidadFechaFiltroEl.addEventListener('change', () => {
+                    const fechaRef = disponibilidadFechaFiltroEl.value;
+                    if (!fechaRef || !calendar) return;
+                    calendar.gotoDate(fechaRef);
+                    setTimeout(() => {
+                        limpiarCacheResumenDia();
+                        void renderDisponibilidadDia(new Date(`${fechaRef}T00:00:00`));
+                    }, 80);
+                });
+            }
+            if (pendientesFechaFiltroEl) {
+                if (!pendientesFechaFiltroEl.value) {
+                    pendientesFechaFiltroEl.value = hoyIso;
+                }
+                pendientesFechaFiltroEl.setAttribute('min', hoyIso);
+                pendientesFechaFiltroEl.addEventListener('change', () => {
+                    const fechaRef = pendientesFechaFiltroEl.value;
+                    if (!fechaRef || !calendar) return;
+                    calendar.gotoDate(fechaRef);
+                    setTimeout(() => {
+                        limpiarCacheResumenDia();
+                        void renderPendientesConfirmarDia(new Date(`${fechaRef}T00:00:00`));
+                    }, 80);
+                });
+            }
             if (btnNuevaReservaModal) {
                 btnNuevaReservaModal.addEventListener('click', () => abrirModalNuevaReserva());
+            }
+
+            if (btnDrawerEditarCompleto) {
+                btnDrawerEditarCompleto.addEventListener('click', () => {
+                    if (!reservaDrawerIdActual) return;
+                    abrirModalEditarReserva(reservaDrawerIdActual);
+                });
+            }
+
+            if (reservaDrawerEl) {
+                reservaDrawerEl.addEventListener('hidden.bs.offcanvas', () => {
+                    reservaDrawerIdActual = null;
+                    limpiarErrorDrawer();
+                });
+            }
+
+            drawerEstadoButtons.forEach((btn) => {
+                btn.addEventListener('click', async () => {
+                    if (!puedeEditarReserva) return;
+                    const nuevoEstado = Number(btn.dataset.drawerEstado || 0);
+                    if (!nuevoEstado) return;
+                    await cambiarEstadoDesdeDrawer(nuevoEstado);
+                });
+            });
+
+            legendEstadoButtons.forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const estado = String(btn.dataset.legendEstado || '').trim().toLowerCase();
+                    if (!estado) return;
+                    if (estadosOcultosCalendario.has(estado)) {
+                        estadosOcultosCalendario.delete(estado);
+                    } else {
+                        estadosOcultosCalendario.add(estado);
+                    }
+                    sincronizarLeyendaCalendario();
+                    aplicarFiltroLeyendaCalendario();
+                });
+            });
+            sincronizarLeyendaCalendario();
+
+            if (btnModoCompactoCalendario) {
+                btnModoCompactoCalendario.addEventListener('click', () => {
+                    modoCompactoCalendario = !modoCompactoCalendario;
+                    aplicarModosVisualesCalendario();
+                });
+            }
+
+            if (btnModoContrasteCalendario) {
+                btnModoContrasteCalendario.addEventListener('click', () => {
+                    modoContrasteCalendario = !modoContrasteCalendario;
+                    aplicarModosVisualesCalendario();
+                });
+            }
+
+            if (sedeSelect && espacioSelect) {
+                const espacioInicial = espacioSelect.value || '';
+                recargarEspaciosPorSede(espacioInicial, true);
             }
 
             btnVerReservaConflicto.addEventListener('click', () => {
@@ -1164,27 +2272,59 @@
                         throw new Error(payload.mensaje || 'No se pudo guardar la reserva.');
                     }
                     reservaModal.hide();
-                    calendar.refetchEvents();
-                    renderDisponibilidadDia(new Date(document.getElementById('modalFecha').value + 'T00:00:00'));
-                    setTimeout(() => calendar.refetchEvents(), 250);
+                    if (calendar) {
+                        calendar.refetchEvents();
+                        limpiarCacheResumenDia();
+                        void renderDisponibilidadDia(new Date(document.getElementById('modalFecha').value + 'T00:00:00'));
+                        void renderPendientesConfirmarDia(new Date(document.getElementById('modalFecha').value + 'T00:00:00'));
+                        setTimeout(() => calendar.refetchEvents(), 250);
+                    }
                 })
                 .catch(err => mostrarErrorModal(err.message));
             });
 
             formFiltros.addEventListener('submit', () => {
                 const inicio = document.getElementById('fechaDesde').value;
-                if (inicio) {
+                if (calendar && inicio) {
                     calendar.gotoDate(inicio);
                 }
             });
 
-            ['sedeId', 'espacioDeportivoId', 'estado'].forEach(id => {
-                const el = document.getElementById(id);
-                if (!el) return;
-                el.addEventListener('change', () => {
-                    renderToolbarSubtitle(calendar.view.currentStart, calendar.view.currentEnd);
+            if (sedeSelect) {
+                sedeSelect.addEventListener('change', async () => {
+                    await recargarEspaciosPorSede('', false);
+                    limpiarCacheResumenDia();
+                    if (disponibilidadMensajeEl) disponibilidadMensajeEl.textContent = 'Selecciona un espacio en el filtro para ver disponibilidad exacta por dia.';
+                    if (disponibilidadSlotsEl) disponibilidadSlotsEl.innerHTML = '';
+                    if (pendientesMensajeEl) pendientesMensajeEl.textContent = 'Selecciona un espacio en el filtro para mostrar pendientes.';
+                    if (pendientesSlotsEl) pendientesSlotsEl.innerHTML = '';
+                    if (calendar) {
+                        renderToolbarSubtitle(calendar.view.currentStart, calendar.view.currentEnd);
+                    }
                 });
-            });
+            }
+
+            if (espacioSelect) {
+                espacioSelect.addEventListener('change', () => {
+                    if (recargandoEspacios) return;
+                    limpiarCacheResumenDia();
+                    if (calendar) {
+                        renderToolbarSubtitle(calendar.view.currentStart, calendar.view.currentEnd);
+                        const fechaDisponibilidad = disponibilidadFechaFiltroEl?.value || hoyIso;
+                        const fechaPendiente = pendientesFechaFiltroEl?.value || hoyIso;
+                        void renderDisponibilidadDia(new Date(`${fechaDisponibilidad}T00:00:00`));
+                        void renderPendientesConfirmarDia(new Date(`${fechaPendiente}T00:00:00`));
+                    }
+                });
+            }
+
+            if (estadoSelect) {
+                estadoSelect.addEventListener('change', () => {
+                    if (calendar) {
+                        renderToolbarSubtitle(calendar.view.currentStart, calendar.view.currentEnd);
+                    }
+                });
+            }
         })();
     </script>
 }

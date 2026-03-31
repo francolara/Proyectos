@@ -523,6 +523,23 @@ body {
   padding-bottom: 0.62rem;
 }
 
+/* Firma: Codex - 30/03/2026 | Fondo escalonado suave para distinguir registros en listados detallados (espacios, sedes, clientes, pagos, comprobantes, promociones y reservas) */
+:is(#tablaEspaciosDetallada, #tablaSedesDetallada, #tablaClientesDetallada, #tablaPagosDetallada, #tablaComprobantesDetallada, #tablaPromocionesDetallada, #tablaReservasDetallada) tbody tr:nth-child(odd) > td {
+  background-color: #ffffff;
+}
+
+:is(#tablaEspaciosDetallada, #tablaSedesDetallada, #tablaClientesDetallada, #tablaPagosDetallada, #tablaComprobantesDetallada, #tablaPromocionesDetallada, #tablaReservasDetallada) tbody tr:nth-child(even) > td {
+  background-color: #f6f8fb;
+}
+
+:is(#tablaEspaciosDetallada, #tablaSedesDetallada, #tablaClientesDetallada, #tablaPagosDetallada, #tablaComprobantesDetallada, #tablaPromocionesDetallada, #tablaReservasDetallada) tbody tr > td {
+  transition: background-color 0.18s ease;
+}
+
+:is(#tablaEspaciosDetallada, #tablaSedesDetallada, #tablaClientesDetallada, #tablaPagosDetallada, #tablaComprobantesDetallada, #tablaPromocionesDetallada, #tablaReservasDetallada) tbody tr:hover > td {
+  background-color: #edf3ff;
+}
+
 .section-title {
   margin: 0;
   font-size: 1rem;
@@ -549,18 +566,37 @@ body {
   background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
   padding: 0.95rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 .kpi-card-label {
   margin: 0;
   font-size: 0.8rem;
   color: #64748b;
+  width: 100%;
+  text-align: center;
 }
 
 .kpi-card-value {
   margin: 0.3rem 0 0;
   font-size: 1.5rem;
   font-weight: 800;
+  color: #0f172a;
+  width: 100%;
+  text-align: center;
+}
+
+/* Firma: Codex - 30/03/2026 | Centrado visual de metricas acumulativas en KPIs y contador de registros visibles */
+.filter-card .form-control[id^="contador"] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-weight: 700;
   color: #0f172a;
 }
 
@@ -579,6 +615,313 @@ body {
 .empty-state i {
   color: #2563eb;
   font-size: 1.1rem;
+}
+
+/* Firma: Codex - 30/03/2026 | Tarjeta premium para listados y panel operativo de reservas (agenda, disponibilidad, pendientes por confirmar, bloqueos y resumen). */
+.sc-reservas-list-card {
+  overflow: hidden;
+}
+
+.sc-reservas-list-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1rem 0.35rem;
+  border-bottom: 1px solid #e6edf6;
+}
+
+.sc-listado-filtro-form {
+  padding: 0.85rem 1rem 0.95rem;
+  border-bottom: 1px solid #e6edf6;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+}
+
+.sc-listado-filtro-form .form-control {
+  border-radius: 0.7rem;
+  border-color: #cbd8ea;
+  min-height: 2.35rem;
+}
+
+.sc-listado-estados-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.sc-estado-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid #d7e2f1;
+  border-radius: 999px;
+  padding: 0.25rem 0.6rem;
+  background: #f8fbff;
+  color: #334155;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.sc-estado-check input[type='checkbox'] {
+  width: 0.92rem;
+  height: 0.92rem;
+  margin: 0;
+}
+
+.sc-reservas-metrics {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.sc-reservas-metric {
+  min-width: 122px;
+  border: 1px solid #d6e1f0;
+  border-radius: 0.75rem;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  padding: 0.42rem 0.65rem;
+  text-align: center;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+}
+
+.sc-reservas-metric span {
+  display: block;
+  font-size: 0.73rem;
+  color: #64748b;
+  margin-bottom: 0.12rem;
+}
+
+.sc-reservas-metric strong {
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sc-calendar-body,
+.sc-disponibilidad-body,
+.sc-bloqueo-form-body,
+.sc-bloqueos-body {
+  padding: 0.9rem 1rem 1rem;
+}
+
+.sc-operativa-card .sc-reservas-metric {
+  min-width: 135px;
+  max-width: 220px;
+}
+
+.sc-operativa-card .sc-reservas-metric:last-child {
+  min-width: 308px;
+  max-width: 308px;
+}
+
+.sc-operativa-card .sc-reservas-metric:last-child strong {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.15;
+}
+
+.sc-disponibilidad-card .sc-reservas-metric {
+  min-width: 180px;
+}
+
+.sc-disponibilidad-date-filter {
+  min-width: 190px;
+}
+
+.sc-disponibilidad-date-filter .form-label {
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+.sc-disponibilidad-date-filter .form-control {
+  border-radius: 0.7rem;
+  border-color: #cbd8ea;
+  min-height: 2.15rem;
+}
+
+.sc-disponibilidad-msg {
+  border: 1px dashed #c7d5e9;
+  border-radius: 0.8rem;
+  background: #f8fbff;
+  color: #475569;
+  padding: 0.55rem 0.68rem;
+  font-size: 0.84rem;
+  font-weight: 500;
+}
+
+.sc-pendientes-msg {
+  border: 1px dashed #dbc8ff;
+  border-radius: 0.8rem;
+  background: #f8f5ff;
+  color: #4c1d95;
+  padding: 0.55rem 0.68rem;
+  font-size: 0.84rem;
+  font-weight: 500;
+}
+
+.sc-slot-btn {
+  border: 1px solid #22c55e;
+  background: #ecfdf3;
+  color: #166534;
+  border-radius: 999px;
+  font-weight: 700;
+  padding: 0.27rem 0.65rem;
+  transition: all 0.16s ease;
+}
+
+.sc-slot-btn:hover {
+  border-color: #16a34a;
+  background: #dcfce7;
+  color: #14532d;
+}
+
+.sc-pendiente-slot-btn {
+  border: 1px solid #a78bfa;
+  background: #f5f3ff;
+  color: #4c1d95;
+  border-radius: 0.8rem;
+  font-weight: 700;
+  padding: 0.32rem 0.62rem;
+  transition: all 0.16s ease;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 0.06rem;
+}
+
+.sc-pendiente-slot-btn:hover {
+  border-color: #8b5cf6;
+  background: #ede9fe;
+  color: #3b0764;
+}
+
+.sc-pendiente-slot-hora {
+  font-size: 0.74rem;
+  opacity: 0.88;
+  line-height: 1.05;
+}
+
+.sc-pendiente-slot-titulo {
+  font-size: 0.8rem;
+  line-height: 1.12;
+}
+
+.sc-bloqueo-item {
+  border: 1px solid #d9e3f1;
+  border-radius: 0.85rem;
+  padding: 0.6rem 0.72rem;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.05);
+}
+
+.sc-bloqueo-item .fw-semibold {
+  color: #0f172a;
+}
+
+.sc-bloqueo-item .small i {
+  margin-right: 0.22rem;
+  color: #2563eb;
+}
+
+.sc-bloqueo-form .form-control,
+.sc-bloqueo-form .form-select {
+  border-radius: 0.7rem;
+  border-color: #cbd8ea;
+  min-height: 2.45rem;
+}
+
+.sc-bloqueo-form .btn-outline-danger {
+  white-space: nowrap;
+}
+
+@media (max-width: 992px) {
+  .sc-reservas-list-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .sc-reservas-metrics {
+    justify-content: flex-start;
+  }
+
+  .sc-operativa-card .sc-reservas-metric,
+  .sc-disponibilidad-card .sc-reservas-metric {
+    min-width: 132px;
+    max-width: 100%;
+  }
+
+  .sc-operativa-card .sc-reservas-metric:last-child {
+    min-width: 132px;
+    max-width: 100%;
+  }
+
+  .sc-disponibilidad-date-filter {
+    width: 100%;
+  }
+}
+
+/* Firma: Codex - 29/03/2026
+   Refinamiento visual del listado de espacios deportivos */
+.sc-espacio-main {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.sc-list-main {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.sc-list-code {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid #c7d6ee;
+  background: #f5f9ff;
+  color: #1e3a8a;
+  font-weight: 700;
+  font-size: 0.74rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.sc-list-title {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.sc-espacio-code {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid #c7d6ee;
+  background: #f5f9ff;
+  color: #1e3a8a;
+  font-weight: 700;
+  font-size: 0.74rem;
+  letter-spacing: 0.03em;
+}
+
+.sc-espacio-name {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.sc-estado-pill {
+  min-width: 140px;
+  display: inline-flex;
+  justify-content: center;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  padding: 0.38rem 0.65rem;
 }
 
 /* Mapeo automatico para pantallas que aun usan la estructura anterior */
@@ -677,7 +1020,7 @@ body {
 }
 
 .sc-calendar-filter-card {
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #f4f8ff 100%);
 }
 
 .sc-calendar-heading {
@@ -712,33 +1055,37 @@ body {
 }
 
 .sc-calendar-card #calendarioReservas {
-  border: 1px solid #dbe4f2;
-  border-radius: 1.1rem;
-  background: #ffffff;
-  padding: 0.62rem;
+  border: 1px solid #d4dfef;
+  border-radius: 1.2rem;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  padding: 0.75rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
 .sc-calendar-card #calendarioReservas .fc {
-  --fc-border-color: #e6edf6;
+  --fc-border-color: #dbe5f2;
+  --fc-timegrid-axis-width: 122px;
   --fc-page-bg-color: #ffffff;
-  --fc-neutral-bg-color: #f8fafc;
-  --fc-today-bg-color: #eff6ff;
+  --fc-neutral-bg-color: #f5f8fc;
+  --fc-today-bg-color: #edf4ff;
   --fc-event-border-color: transparent;
   --fc-button-bg-color: #ffffff;
-  --fc-button-border-color: #d8e2f0;
+  --fc-button-border-color: #cfdcf0;
   --fc-button-hover-bg-color: #eef4ff;
-  --fc-button-hover-border-color: #bfdbfe;
+  --fc-button-hover-border-color: #a9c7ef;
   --fc-button-active-bg-color: #dbeafe;
-  --fc-button-active-border-color: #93c5fd;
-  --fc-button-text-color: #0f172a;
+  --fc-button-active-border-color: #6ea8f2;
+  --fc-button-text-color: #13253f;
+  --fc-now-indicator-color: #ef4444;
 }
 
 .sc-calendar-card #calendarioReservas .fc .fc-toolbar {
-  border: 1px solid #e2eaf5;
-  border-radius: 1rem;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-  padding: 0.62rem 0.75rem;
+  border: 1px solid #d7e3f3;
+  border-radius: 1.05rem;
+  background: linear-gradient(180deg, #f9fbff 0%, #eef5ff 100%);
+  padding: 0.68rem 0.8rem;
   margin-bottom: 0.75rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
 }
 
 .sc-calendar-card #calendarioReservas .fc .fc-toolbar-title {
@@ -779,16 +1126,18 @@ body {
 }
 
 .sc-calendar-card #calendarioReservas .fc .fc-button {
-  border-radius: 0.72rem;
+  border-radius: 0.76rem;
   font-weight: 700;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   box-shadow: none;
+  padding: 0.36rem 0.62rem;
 }
 
 .sc-calendar-card #calendarioReservas .fc .fc-button-group {
-  border: 1px solid #d9e4f2;
+  border: 1px solid #c9d9ee;
   border-radius: 0.8rem;
   overflow: hidden;
+  background: #ffffff;
 }
 
 .sc-calendar-card #calendarioReservas .fc .fc-button-group > .fc-button {
@@ -802,57 +1151,174 @@ body {
 }
 
 .sc-calendar-card #calendarioReservas .fc .fc-button.fc-nuevaReserva-button {
-  background: #2563eb;
-  border-color: #2563eb;
+  background: linear-gradient(180deg, #1e3a8a 0%, #1d4ed8 100%);
+  border-color: #1d4ed8;
   color: #fff;
-  border-radius: 0.72rem;
+  border-radius: 0.78rem;
   margin-left: 0.45rem;
 }
 
+/* Firma: Codex - 30/03/2026 | Fase 1 de rediseño visual del calendario: cabecera premium azul, grilla menos ruidosa, eventos legibles y toolbar moderno tipo SaaS. */
 .sc-calendar-card #calendarioReservas .fc .fc-col-header-cell {
-  border-color: transparent;
-  border-bottom-color: #e5edf8;
-  background: #f8fbff;
+  border-color: #264a79;
+  border-bottom-color: #1f3f69;
+  background: linear-gradient(180deg, #0f2d57 0%, #173f73 100%);
 }
 
 .sc-calendar-card #calendarioReservas .fc .fc-col-header-cell-cushion {
-  color: #0f172a;
-  text-decoration: none;
-  font-weight: 800;
-  font-size: 0.82rem;
+  color: #f8fafc;
+  text-decoration: none !important;
+  font-weight: 700;
+  font-size: 0.79rem;
   letter-spacing: 0.01em;
-  text-transform: capitalize;
-  padding: 0.52rem 0.35rem;
+  text-transform: none;
+  padding: 0.52rem 0.32rem;
+  line-height: 1.15;
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: normal;
 }
 
-.sc-calendar-card #calendarioReservas .fc .fc-day-today .fc-col-header-cell-cushion {
-  color: #1d4ed8;
+.sc-calendar-card #calendarioReservas .fc .fc-day-today .fc-col-header-cell {
+  box-shadow: inset 0 -3px 0 #facc15, inset 0 0 0 1px rgba(250, 204, 21, 0.38);
 }
 
 .sc-calendar-card #calendarioReservas .fc .fc-timegrid-axis {
-  width: 76px;
-  background: #f8fbff;
+  width: 122px !important;
+  min-width: 122px !important;
+  max-width: 122px !important;
+  background: #f7faff;
+  text-align: center;
+}
+
+.sc-calendar-card #calendarioReservas .fc .fc-timegrid-axis.fc-scrollgrid-shrink,
+.sc-calendar-card #calendarioReservas .fc .fc-timegrid-slot-label.fc-scrollgrid-shrink {
+  width: 122px !important;
+  min-width: 122px !important;
+  max-width: 122px !important;
+}
+
+.sc-calendar-card #calendarioReservas .fc .fc-col-header .fc-timegrid-axis {
+  background: linear-gradient(180deg, #0f2d57 0%, #173f73 100%);
+  border-color: #264a79;
+}
+
+.sc-calendar-card #calendarioReservas .fc .fc-col-header .fc-timegrid-axis .fc-col-header-cell-cushion,
+.sc-calendar-card #calendarioReservas .fc .fc-col-header .fc-timegrid-axis.sc-time-axis-header {
+  color: #f8fafc;
+  font-weight: 800;
+  font-size: 0.82rem;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  justify-content: center;
+}
+
+.sc-calendar-card #calendarioReservas .fc .fc-col-header .fc-timegrid-axis {
+  width: 122px !important;
+  min-width: 122px !important;
+  max-width: 122px !important;
+}
+
+.sc-calendar-card #calendarioReservas .fc table colgroup col:first-child {
+  width: 122px !important;
+  min-width: 122px !important;
+  max-width: 122px !important;
+}
+
+.sc-calendar-card #calendarioReservas .fc .fc-timegrid-axis-frame,
+.sc-calendar-card #calendarioReservas .fc .fc-timegrid-slot-label-frame,
+.sc-calendar-card #calendarioReservas .fc .fc-timegrid-slot-label {
+  width: 122px !important;
+  min-width: 122px !important;
+  max-width: 122px !important;
+}
+
+.sc-calendar-card #calendarioReservas .fc .sc-time-axis-header .fc-col-header-cell-cushion {
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  overflow-wrap: normal !important;
+}
+
+.sc-calendar-card #calendarioReservas .fc .sc-axis-header-label {
+  display: inline-block;
+  white-space: nowrap;
+  width: 100%;
+  text-align: center;
+}
+
+.sc-calendar-card #calendarioReservas .fc .sc-header-day-cell .fc-col-header-cell-cushion {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.14rem;
+  min-height: 2.2rem;
+}
+
+.sc-calendar-card #calendarioReservas .fc .sc-header-day-cell .fc-col-header-cell-cushion:link,
+.sc-calendar-card #calendarioReservas .fc .sc-header-day-cell .fc-col-header-cell-cushion:visited,
+.sc-calendar-card #calendarioReservas .fc .sc-header-day-cell .fc-col-header-cell-cushion:hover,
+.sc-calendar-card #calendarioReservas .fc .sc-header-day-cell .fc-col-header-cell-cushion:active {
+  color: #f8fafc !important;
+  text-decoration: none !important;
+}
+
+.sc-calendar-card #calendarioReservas .fc .sc-day-header-title {
+  display: block;
+  font-weight: 700;
+  color: #f8fafc;
+  font-size: 0.79rem;
+  line-height: 1.05;
+}
+
+.sc-calendar-card #calendarioReservas .fc .sc-day-header-date {
+  display: block;
+  margin-top: 0.16rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #dbeafe;
+  opacity: 1;
+}
+
+.sc-calendar-card #calendarioReservas .fc .sc-day-header-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.05;
+  min-height: 2.15rem;
 }
 
 .sc-calendar-card #calendarioReservas .fc .fc-timegrid-slot-label {
-  background: #f8fbff;
-  border-color: #edf2f7;
+  background: #f9fbff;
+  border-color: #e4edf7;
 }
 
+.sc-calendar-card #calendarioReservas .fc .fc-timegrid-axis-cushion,
 .sc-calendar-card #calendarioReservas .fc .fc-timegrid-slot-label-cushion {
-  font-size: 0.74rem;
-  color: #94a3b8;
-  font-weight: 600;
+  font-size: 0.85rem;
+  color: #243244;
+  font-weight: 700;
   letter-spacing: 0.01em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
+  width: 100%;
 }
 
 .sc-calendar-card #calendarioReservas .fc .fc-timegrid-slot {
   height: 2.24rem;
-  border-color: #edf2f7;
+  border-color: #e5ecf5;
 }
 
 .sc-calendar-card #calendarioReservas .fc .fc-timegrid-slot-minor {
-  border-top-style: dotted;
+  border-top-style: solid;
+  border-top-color: #eef3f9;
 }
 
 .sc-calendar-card #calendarioReservas .fc .fc-timegrid-col {
@@ -861,11 +1327,11 @@ body {
 
 .sc-calendar-card #calendarioReservas .fc .fc-day-sat,
 .sc-calendar-card #calendarioReservas .fc .fc-day-sun {
-  background: #fafcff;
+  background: #f9fbff;
 }
 
 .sc-calendar-card #calendarioReservas .fc .fc-day-today {
-  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.2), inset 0 0 28px rgba(59, 130, 246, 0.07);
 }
 
 .sc-calendar-card #calendarioReservas .fc .fc-timegrid-now-indicator-line {
@@ -890,16 +1356,16 @@ body {
 }
 
 .sc-calendar-card #calendarioReservas .fc .sc-fc-event {
-  border-radius: 0.68rem;
+  border-radius: 0.62rem;
   border: 1px solid transparent;
-  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 6px 12px rgba(15, 23, 42, 0.09);
   padding: 0;
   transition: transform 0.14s ease, box-shadow 0.14s ease, filter 0.14s ease;
 }
 
 .sc-calendar-card #calendarioReservas .fc .sc-fc-event:hover {
   transform: translateY(-1px);
-  box-shadow: 0 11px 18px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.13);
   filter: saturate(1.05);
 }
 
@@ -915,23 +1381,23 @@ body {
 }
 
 .sc-fc-event-inner {
-  padding: 0.34rem 0.46rem;
+  padding: 0.34rem 0.5rem;
 }
 
 .sc-fc-event-title {
   font-weight: 800;
-  font-size: 0.78rem;
-  line-height: 1.2;
+  font-size: 0.8rem;
+  line-height: 1.24;
   color: inherit !important;
-  letter-spacing: 0.01em;
+  letter-spacing: 0;
   text-shadow: 0 0 0 transparent;
 }
 
 .sc-fc-event-time {
-  margin-top: 0.12rem;
-  font-size: 0.7rem;
+  margin-top: 0.13rem;
+  font-size: 0.73rem;
   opacity: 0.96;
-  font-weight: 700;
+  font-weight: 800;
   color: inherit !important;
 }
 
@@ -1045,15 +1511,15 @@ body {
 .sc-calendar-card #calendarioReservas .fc .fc-bg-event.sc-bloqueo-bg {
   background: repeating-linear-gradient(
     -45deg,
-    rgba(100, 116, 139, 0.22),
-    rgba(100, 116, 139, 0.22) 8px,
-    rgba(148, 163, 184, 0.16) 8px,
-    rgba(148, 163, 184, 0.16) 16px
+    rgba(71, 85, 105, 0.19),
+    rgba(71, 85, 105, 0.19) 8px,
+    rgba(148, 163, 184, 0.12) 8px,
+    rgba(148, 163, 184, 0.12) 16px
   );
   opacity: 1;
   pointer-events: auto;
   cursor: not-allowed;
-  border: 1px solid rgba(100, 116, 139, 0.24);
+  border: 1px solid rgba(100, 116, 139, 0.2);
 }
 
 .sc-calendar-card #calendarioReservas .fc .fc-bg-event.sc-bg-estado-label {
@@ -1087,14 +1553,14 @@ body {
   top: 6px;
   left: 6px;
   z-index: 2;
-  font-size: 0.68rem;
+  font-size: 0.69rem;
   font-weight: 700;
   line-height: 1.2;
-  color: #0f172a;
-  background: rgba(241, 245, 249, 0.9);
-  border: 1px solid rgba(148, 163, 184, 0.45);
+  color: #10233c;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(148, 163, 184, 0.38);
   border-radius: 8px;
-  padding: 2px 7px;
+  padding: 2px 8px;
   max-width: min(360px, calc(100% - 112px));
   overflow: hidden;
   white-space: nowrap;
@@ -1149,7 +1615,7 @@ body {
 
 .sc-calendar-card #calendarioReservas .fc .fc-timegrid-slot:hover,
 .sc-calendar-card #calendarioReservas .fc .fc-daygrid-day:hover {
-  background: #f7fbff;
+  background: #f4f8ff;
   cursor: pointer;
 }
 
@@ -1444,4 +1910,129 @@ body {
   .admin-page-frame > .d-flex.justify-content-between.align-items-center.mb-3 {
     padding: 0.85rem;
   }
+}
+
+/* Firma: Codex - 30/03/2026 | Fase 1 calendario (forzado visual): override fuerte para toolbar, botones, grilla, horas y eventos. */
+.sc-calendar-card #calendarioReservas {
+  border: 1px solid #c9d8eb !important;
+  border-radius: 1rem !important;
+  background: linear-gradient(180deg, #fdfefe 0%, #f4f8ff 100%) !important;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.07) !important;
+  padding: 0.65rem !important;
+}
+
+.sc-calendar-card #calendarioReservas .fc .fc-toolbar {
+  background: linear-gradient(180deg, #f9fbff 0%, #eaf2ff 100%) !important;
+  border: 1px solid #d2dff2 !important;
+  border-radius: 0.92rem !important;
+  padding: 0.62rem 0.75rem !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
+}
+
+.sc-calendar-card #calendarioReservas .fc .fc-toolbar-title {
+  font-size: 2rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+  color: #0f172a !important;
+}
+
+.sc-calendar-card #calendarioReservas .fc .fc-button-primary {
+  background: #ffffff !important;
+  border-color: #c9d8eb !important;
+  color: #0f2f5f !important;
+  border-radius: 0.7rem !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+}
+
+.sc-calendar-card #calendarioReservas .fc .fc-button-primary:hover {
+  background: #eaf2ff !important;
+  border-color: #9fc2ee !important;
+  color: #0b2b55 !important;
+}
+
+.sc-calendar-card #calendarioReservas .fc .fc-button-primary.fc-button-active,
+.sc-calendar-card #calendarioReservas .fc .fc-button-primary:active {
+  background: #dbeafe !important;
+  border-color: #86b7f0 !important;
+  color: #0b2b55 !important;
+}
+
+.sc-calendar-card #calendarioReservas .fc .fc-today-button {
+  background: #64748b !important;
+  border-color: #64748b !important;
+  color: #ffffff !important;
+}
+
+.sc-calendar-card #calendarioReservas .fc .fc-nuevaReserva-button {
+  background: linear-gradient(180deg, #0f4ac0 0%, #2563eb 100%) !important;
+  border-color: #2563eb !important;
+  color: #ffffff !important;
+}
+
+.sc-calendar-card #calendarioReservas .fc .fc-timegrid-axis {
+  width: 122px !important;
+  min-width: 122px !important;
+  max-width: 122px !important;
+  background: #f7faff !important;
+  border-color: #dce6f3 !important;
+  text-align: center !important;
+}
+
+.sc-calendar-card #calendarioReservas .fc .fc-timegrid-axis.fc-scrollgrid-shrink,
+.sc-calendar-card #calendarioReservas .fc .fc-timegrid-slot-label.fc-scrollgrid-shrink {
+  width: 122px !important;
+  min-width: 122px !important;
+  max-width: 122px !important;
+}
+
+.sc-calendar-card #calendarioReservas .fc .fc-timegrid-axis-cushion,
+.sc-calendar-card #calendarioReservas .fc .fc-timegrid-slot-label-cushion {
+  font-size: 0.83rem !important;
+  font-weight: 700 !important;
+  color: #243244 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+}
+
+.sc-calendar-card #calendarioReservas .fc .fc-timegrid-slot {
+  border-color: #e4ebf5 !important;
+}
+
+.sc-calendar-card #calendarioReservas .fc .fc-timegrid-slot-minor {
+  border-top-style: solid !important;
+  border-top-color: #edf2f8 !important;
+}
+
+.sc-calendar-card #calendarioReservas .fc .fc-timegrid-col {
+  background: #ffffff !important;
+}
+
+.sc-calendar-card #calendarioReservas .fc .fc-day-sat,
+.sc-calendar-card #calendarioReservas .fc .fc-day-sun {
+  background: #f6f9ff !important;
+}
+
+.sc-calendar-card #calendarioReservas .fc .fc-day-today {
+  background: #eef5ff !important;
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.24) !important;
+}
+
+.sc-calendar-card #calendarioReservas .fc .sc-fc-event {
+  border-radius: 0.58rem !important;
+  box-shadow: 0 7px 14px rgba(15, 23, 42, 0.12) !important;
+  border-width: 1px !important;
+}
+
+.sc-calendar-card #calendarioReservas .fc .sc-fc-event .sc-fc-event-title {
+  font-size: 0.82rem !important;
+  font-weight: 800 !important;
+}
+
+.sc-calendar-card #calendarioReservas .fc .sc-fc-event .sc-fc-event-time {
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
 }

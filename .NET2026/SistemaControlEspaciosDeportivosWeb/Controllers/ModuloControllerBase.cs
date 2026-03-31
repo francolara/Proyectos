@@ -30,6 +30,8 @@ public abstract class ModuloControllerBase(IModuloPermisoService moduloPermisoSe
             NegocioId = contexto.NegocioId,
             NegocioNombre = contexto.NegocioNombre,
             RolActual = contexto.RolActual,
+            SedeIdAsignada = contexto.SedeIdAsignada,
+            EsAdministrador = contexto.EsAdministrador,
             ModuloCodigo = contexto.ModuloCodigo,
             ModuloNombre = contexto.ModuloNombre,
             PuedeCrear = contexto.PuedeCrear,
@@ -39,6 +41,19 @@ public abstract class ModuloControllerBase(IModuloPermisoService moduloPermisoSe
     }
 
     protected IActionResult SinAcceso(ModuloBaseViewModel vm) => View("~/Views/Shared/ModuloSinAcceso.cshtml", vm);
+
+    protected static int? AplicarSedeAsignada(ModuloBaseViewModel baseVm, int? sedeIdSolicitada)
+    {
+        return baseVm.EsAdministrador ? sedeIdSolicitada : baseVm.SedeIdAsignada;
+    }
+
+    protected static bool SedePermitida(ModuloBaseViewModel baseVm, int? sedeId)
+    {
+        if (baseVm.EsAdministrador) return true;
+        if (!baseVm.SedeIdAsignada.HasValue) return true;
+        if (!sedeId.HasValue) return false;
+        return baseVm.SedeIdAsignada.Value == sedeId.Value;
+    }
 
     protected async Task<int?> ResolverNegocioIdAsync(int? negocioId, ISportCenterStoredProcedureService spService)
     {

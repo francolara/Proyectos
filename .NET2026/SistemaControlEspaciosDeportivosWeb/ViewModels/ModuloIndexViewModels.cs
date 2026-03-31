@@ -8,6 +8,8 @@ public class ModuloBaseViewModel
     public int NegocioId { get; set; }
     public string NegocioNombre { get; set; } = string.Empty;
     public string RolActual { get; set; } = string.Empty;
+    public int? SedeIdAsignada { get; set; }
+    public bool EsAdministrador { get; set; }
     public string ModuloCodigo { get; set; } = string.Empty;
     public string ModuloNombre { get; set; } = string.Empty;
     public bool PuedeCrear { get; set; }
@@ -81,6 +83,7 @@ public class EspacioItemViewModel
     public string TipoDeporteNombre { get; set; } = string.Empty;
     public string TipoSueloNombre { get; set; } = string.Empty;
     public string Estado { get; set; } = string.Empty;
+    public string TarifaResumen { get; set; } = string.Empty;
 }
 
 public class ReservasIndexViewModel : ModuloBaseViewModel
@@ -89,9 +92,12 @@ public class ReservasIndexViewModel : ModuloBaseViewModel
     public List<BloqueoHorarioItemViewModel> Bloqueos { get; set; } = new();
     public DateOnly FechaDesde { get; set; } = DateOnly.FromDateTime(DateTime.Today);
     public DateOnly FechaHasta { get; set; } = DateOnly.FromDateTime(DateTime.Today.AddDays(6));
+    public DateOnly ListadoFechaDesde { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+    public DateOnly ListadoFechaHasta { get; set; } = DateOnly.FromDateTime(DateTime.Today.AddDays(6));
     public int? SedeId { get; set; }
     public int? EspacioDeportivoId { get; set; }
     public int? Estado { get; set; }
+    public List<int> EstadosListadoSeleccionados { get; set; } = new();
     public List<SelectListItem> SedesFiltro { get; set; } = new();
     public List<SelectListItem> EspaciosFiltro { get; set; } = new();
     public List<SelectListItem> EstadosFiltro { get; set; } = new();
@@ -132,6 +138,9 @@ public class ReservaCalendarioEventoViewModel
     public TimeOnly HoraInicio { get; set; }
     public TimeOnly HoraFin { get; set; }
     public int? Estado { get; set; }
+    public string? EstadoCodigo { get; set; }
+    public string? EstadoTexto { get; set; }
+    public string? Motivo { get; set; }
     public string? Color { get; set; }
     public int? EspacioDeportivoId { get; set; }
     public string Espacio { get; set; } = string.Empty;

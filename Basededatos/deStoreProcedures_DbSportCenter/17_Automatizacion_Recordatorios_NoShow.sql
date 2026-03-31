@@ -3,6 +3,12 @@
 -- Create date:   27/03/2026
 -- Description:   Sprint 7 - Automatizacion de recordatorios por correo y marcado automatico de no-show.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   30/03/2026
+-- Description:   Ajusta marcado de recordatorio para devolver error controlado cuando la reserva no existe para el negocio.
+-- Firma:         Codex - 30/03/2026 | Centraliza validacion de existencia en SP.
+-- =============================================
 
 IF COL_LENGTH('dbo.Reservas', 'RecordatorioEnviado') IS NULL
 BEGIN
@@ -72,6 +78,9 @@ BEGIN
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
         WHERE r.Id = @ReservaId
           AND s.NegocioId = @NegocioId;
+
+        IF @@ROWCOUNT = 0
+            RAISERROR('No se encontro la reserva para marcar recordatorio en el negocio.', 16, 1);
     END TRY
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;

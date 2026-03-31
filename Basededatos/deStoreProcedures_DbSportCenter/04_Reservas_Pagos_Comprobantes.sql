@@ -7,6 +7,7 @@
 -- Author:        FRANCO LARA
 -- Create date:   27/03/2026
 -- Description:   Ajuste de auditoria con parametros nombrados para compatibilidad SQL Server.
+-- Firma:         Codex - 30/03/2026 | Ajusta Sp_Reservas_Eliminar y operaciones de pagos/comprobantes para devolver error controlado cuando no existe registro.
 -- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.Sp_Combos_EspaciosPorNegocio
@@ -227,11 +228,18 @@ AS
 BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
-        UPDATE dbo.Reservas
-        SET Estado = 5,
-            FechaActualizacion = SYSUTCDATETIME(),
-            UsuarioActualizacion = @Usuario
-        WHERE Id = @Id;
+        UPDATE r
+        SET r.Estado = 5,
+            r.FechaActualizacion = SYSUTCDATETIME(),
+            r.UsuarioActualizacion = @Usuario
+        FROM dbo.Reservas r
+        INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
+        INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
+        WHERE r.Id = @Id
+          AND s.NegocioId = @NegocioId;
+
+        IF @@ROWCOUNT = 0
+            RAISERROR('No se encontro la reserva para eliminar.', 16, 1);
 
         IF @@ROWCOUNT > 0
         BEGIN
@@ -368,12 +376,12 @@ BEGIN
             UsuarioActualizacion = @Usuario
         WHERE Id = @Id;
 
-        IF @@ROWCOUNT > 0
-        BEGIN
-            DECLARE @EntidadIdAudit NVARCHAR(80);
-            SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
-            EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'PAGOS', @Accion = N'EDIT', @Entidad = N'Pago', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
-        END
+        IF @@ROWCOUNT = 0
+            RAISERROR('No se encontro el pago para actualizar en el negocio.', 16, 1);
+
+        DECLARE @EntidadIdAudit NVARCHAR(80);
+        SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
+        EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'PAGOS', @Accion = N'EDIT', @Entidad = N'Pago', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
     END TRY
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
@@ -392,12 +400,12 @@ BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
         DELETE FROM dbo.Pagos WHERE Id = @Id;
-        IF @@ROWCOUNT > 0
-        BEGIN
-            DECLARE @EntidadIdAudit NVARCHAR(80);
-            SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
-            EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'PAGOS', @Accion = N'DELETE', @Entidad = N'Pago', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
-        END
+        IF @@ROWCOUNT = 0
+            RAISERROR('No se encontro el pago para eliminar en el negocio.', 16, 1);
+
+        DECLARE @EntidadIdAudit NVARCHAR(80);
+        SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
+        EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'PAGOS', @Accion = N'DELETE', @Entidad = N'Pago', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
     END TRY
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
@@ -536,12 +544,12 @@ BEGIN
         WHERE Id = @Id
           AND NegocioId = @NegocioId;
 
-        IF @@ROWCOUNT > 0
-        BEGIN
-            DECLARE @EntidadIdAudit NVARCHAR(80);
-            SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
-            EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'COMPROBANTES', @Accion = N'EDIT', @Entidad = N'ComprobanteElectronico', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
-        END
+        IF @@ROWCOUNT = 0
+            RAISERROR('No se encontro el comprobante para actualizar en el negocio.', 16, 1);
+
+        DECLARE @EntidadIdAudit NVARCHAR(80);
+        SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
+        EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'COMPROBANTES', @Accion = N'EDIT', @Entidad = N'ComprobanteElectronico', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
     END TRY
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
@@ -566,12 +574,12 @@ BEGIN
         WHERE Id = @Id
           AND NegocioId = @NegocioId;
 
-        IF @@ROWCOUNT > 0
-        BEGIN
-            DECLARE @EntidadIdAudit NVARCHAR(80);
-            SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
-            EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'COMPROBANTES', @Accion = N'DELETE', @Entidad = N'ComprobanteElectronico', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
-        END
+        IF @@ROWCOUNT = 0
+            RAISERROR('No se encontro el comprobante para eliminar en el negocio.', 16, 1);
+
+        DECLARE @EntidadIdAudit NVARCHAR(80);
+        SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
+        EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'COMPROBANTES', @Accion = N'DELETE', @Entidad = N'ComprobanteElectronico', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
     END TRY
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;

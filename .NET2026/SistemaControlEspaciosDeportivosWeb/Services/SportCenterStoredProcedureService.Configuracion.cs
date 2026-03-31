@@ -31,22 +31,26 @@ public partial class SportCenterStoredProcedureService
 
     public async Task<bool> ConfiguracionClubActualizarAsync(ConfiguracionClubViewModel model, string usuario)
     {
-        var actual = await ConfiguracionClubObtenerAsync(model.NegocioId);
-        if (actual is null) return false;
-
-        await using var cn = CreateConnection();
-        await cn.OpenAsync();
-        await using var cmd = new SqlCommand("Sp_ConfiguracionClub_Actualizar", cn) { CommandType = CommandType.StoredProcedure };
-        AddParam(cmd, "@NegocioId", model.NegocioId, SqlDbType.Int);
-        AddParam(cmd, "@NombreComercial", model.NombreComercial, SqlDbType.NVarChar);
-        AddParam(cmd, "@RazonSocial", model.RazonSocial, SqlDbType.NVarChar);
-        AddParam(cmd, "@TipoDocumentoFiscal", model.TipoDocumento, SqlDbType.NVarChar);
-        AddParam(cmd, "@NumeroDocumentoFiscal", model.NumeroDocumento, SqlDbType.NVarChar);
-        AddParam(cmd, "@DireccionFiscal", model.DireccionFiscal, SqlDbType.NVarChar);
-        AddParam(cmd, "@MonedaId", model.MonedaId, SqlDbType.Int);
-        AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        await cmd.ExecuteNonQueryAsync();
-        return true;
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_ConfiguracionClub_Actualizar", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@NegocioId", model.NegocioId, SqlDbType.Int);
+            AddParam(cmd, "@NombreComercial", model.NombreComercial, SqlDbType.NVarChar);
+            AddParam(cmd, "@RazonSocial", model.RazonSocial, SqlDbType.NVarChar);
+            AddParam(cmd, "@TipoDocumentoFiscal", model.TipoDocumento, SqlDbType.NVarChar);
+            AddParam(cmd, "@NumeroDocumentoFiscal", model.NumeroDocumento, SqlDbType.NVarChar);
+            AddParam(cmd, "@DireccionFiscal", model.DireccionFiscal, SqlDbType.NVarChar);
+            AddParam(cmd, "@MonedaId", model.MonedaId, SqlDbType.Int);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (SqlException ex) when (EsErrorNoEncontrado(ex.Message))
+        {
+            return false;
+        }
     }
 
     public async Task<List<SelectListItem>> ConfiguracionClubComboMonedasAsync()

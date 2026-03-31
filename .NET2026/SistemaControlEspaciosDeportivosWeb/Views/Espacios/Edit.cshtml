@@ -3,9 +3,11 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.EspacioFormViewModel
 <!-- Firma: Codex - 27/03/2026 | Estandar visual pro para formulario de espacios -->
 <!-- Firma: Codex - 28/03/2026 | Edicion de multiples tarifas por dia y rango horario en espacio deportivo -->
+<!-- Firma: Codex - 29/03/2026 | Normalizacion de JSON de tarifas a camelCase, validacion por moneda y asistente de bloques con control de cruces -->
 
 @{
     ViewData["Title"] = "Editar espacio";
+    var monedaEtiqueta = string.IsNullOrWhiteSpace(Model.MonedaEtiqueta) ? "-" : Model.MonedaEtiqueta;
 }
 
 <div class="admin-page-frame">
@@ -77,6 +79,63 @@
         <section class="sc-form-card">
             <div class="sc-form-section">
                 <h2 class="sc-form-title"><i class="bi bi-cash-coin"></i> Tarifas por dia y rango horario</h2>
+                <div class="d-flex justify-content-end mb-2">
+                    <span class="badge text-bg-light border">Moneda: @monedaEtiqueta</span>
+                </div>
+                @if (!Model.PuedeEditarTarifas)
+                {
+                    <div class="alert alert-warning mb-3">
+                        Debes configurar la moneda del club en <strong>Configuracion</strong> para registrar precios.
+                    </div>
+                }
+                <div class="card border-0 bg-light-subtle mb-3">
+                    <div class="card-body">
+                        <div class="row g-2 align-items-end">
+                            <div class="col-lg-3 col-md-6">
+                                <label class="form-label">Bloque de dias</label>
+                                <select id="bloqueDiasPreset" class="form-select form-select-sm" @(Model.PuedeEditarTarifas ? null : "disabled")>
+                                    <option value="lv">Lunes a Viernes</option>
+                                    <option value="sd">Sabado y Domingo</option>
+                                    <option value="todos">Todos los dias</option>
+                                    <option value="personalizado">Personalizado</option>
+                                </select>
+                            </div>
+                            <div class="col-lg-2 col-md-6">
+                                <label class="form-label">Hora inicio</label>
+                                <input id="bloqueHoraInicio" type="time" class="form-control form-control-sm" value="09:00" @(Model.PuedeEditarTarifas ? null : "disabled") />
+                            </div>
+                            <div class="col-lg-2 col-md-6">
+                                <label class="form-label">Hora fin</label>
+                                <input id="bloqueHoraFin" type="time" class="form-control form-control-sm" value="10:00" @(Model.PuedeEditarTarifas ? null : "disabled") />
+                            </div>
+                            <div class="col-lg-3 col-md-6">
+                                <label class="form-label">Precio</label>
+                                <div class="input-group input-group-sm">
+                                    <input id="bloquePrecio" type="text" inputmode="decimal" autocomplete="off" class="form-control text-end" value="0.01" @(Model.PuedeEditarTarifas ? null : "disabled") />
+                                    <span class="input-group-text">@monedaEtiqueta</span>
+                                </div>
+                            </div>
+                            <div class="col-lg-2 col-md-12 d-grid">
+                                <button type="button" id="btnAgregarBloque" class="btn btn-primary btn-sm" @(Model.PuedeEditarTarifas ? null : "disabled")>
+                                    <i class="bi bi-magic me-1"></i> Agregar bloque
+                                </button>
+                            </div>
+                        </div>
+                        <div id="bloqueDiasPersonalizado" class="mt-3 d-none">
+                            <label class="form-label mb-2">Selecciona dias</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach (var dia in Model.TarifaDiasSemana)
+                                {
+                                    <label class="sc-check-chip py-1 px-2">
+                                        <input type="checkbox" class="form-check-input mt-0 js-dia-custom" value="@dia.Value" />
+                                        <span>@dia.Text</span>
+                                    </label>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="tarifasErrorBox" class="alert alert-danger d-none mb-3 py-2"></div>
                 <input type="hidden" asp-for="TarifasJson" id="tarifasJson" />
                 <div class="table-responsive">
                     <table class="table table-sm align-middle mb-2" id="tablaTarifasEspacio">
@@ -85,14 +144,14 @@
                                 <th>Dia</th>
                                 <th>Hora inicio</th>
                                 <th>Hora fin</th>
-                                <th>Precio</th>
+                                <th class="text-end">Precio</th>
                                 <th class="text-end">Accion</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
                     </table>
                 </div>
-                <button type="button" class="btn btn-outline-primary btn-sm" id="btnAgregarTarifa">
+                <button type="button" class="btn btn-outline-primary btn-sm" id="btnAgregarTarifa" @(Model.PuedeEditarTarifas ? null : "disabled")>
                     <i class="bi bi-plus-circle"></i> Agregar rango
                 </button>
                 <div class="form-text mt-2">Puedes registrar varios rangos por dia. Evita superponer horarios del mismo dia.</div>
@@ -112,55 +171,228 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         (() => {
-            const tarifasIniciales = @Html.Raw(JsonSerializer.Serialize(Model.Tarifas));
+            const tarifasIniciales = @Html.Raw(JsonSerializer.Serialize(Model.Tarifas, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
             const dias = @Html.Raw(JsonSerializer.Serialize(Model.TarifaDiasSemana.Select(d => new { value = d.Value, text = d.Text })));
             const tabla = document.querySelector('#tablaTarifasEspacio tbody');
             const inputJson = document.getElementById('tarifasJson');
             const btnAgregar = document.getElementById('btnAgregarTarifa');
             const form = document.querySelector('form.sc-form-shell');
+            const monedaEtiqueta = @Html.Raw(JsonSerializer.Serialize(Model.MonedaEtiqueta));
+            const puedeEditarTarifas = @Model.PuedeEditarTarifas.ToString().ToLowerInvariant();
+            const bloquePreset = document.getElementById('bloqueDiasPreset');
+            const bloqueHoraInicio = document.getElementById('bloqueHoraInicio');
+            const bloqueHoraFin = document.getElementById('bloqueHoraFin');
+            const bloquePrecio = document.getElementById('bloquePrecio');
+            const btnAgregarBloque = document.getElementById('btnAgregarBloque');
+            const bloqueDiasPersonalizado = document.getElementById('bloqueDiasPersonalizado');
+            const errorBox = document.getElementById('tarifasErrorBox');
+
+            function mostrarError(msg) {
+                errorBox.textContent = msg;
+                errorBox.classList.remove('d-none');
+            }
+
+            function limpiarError() {
+                errorBox.textContent = '';
+                errorBox.classList.add('d-none');
+            }
 
             function optionDias(selected) {
                 return dias.map(d => `<option value="${d.value}" ${String(selected) === String(d.value) ? 'selected' : ''}>${d.text}</option>`).join('');
             }
 
+            function nombreDia(valorDia) {
+                const encontrado = dias.find(d => Number(d.value) === Number(valorDia));
+                return encontrado ? encontrado.text : `Dia ${valorDia}`;
+            }
+
+            function limpiarPrecio(valor) {
+                const normalizado = (valor || '').replace(',', '.').replace(/[^0-9.]/g, '');
+                const partes = normalizado.split('.');
+                if (partes.length <= 1) return normalizado;
+                return `${partes[0]}.${partes.slice(1).join('').substring(0, 2)}`;
+            }
+
+            function parsePrecio(valor) {
+                const limpio = limpiarPrecio(valor);
+                const numero = Number(limpio);
+                return Number.isFinite(numero) ? numero : 0;
+            }
+
+            function rangosSeCruzan(inicioA, finA, inicioB, finB) {
+                return inicioA < finB && inicioB < finA;
+            }
+
+            function filasTarifas() {
+                return [...tabla.querySelectorAll('tr')].map(tr => ({
+                    diaSemana: Number(tr.querySelector('.js-dia').value),
+                    horaInicio: tr.querySelector('.js-hora-inicio').value,
+                    horaFin: tr.querySelector('.js-hora-fin').value,
+                    precio: parsePrecio(tr.querySelector('.js-precio').value)
+                }));
+            }
+
+            function validarCrucesCliente() {
+                const filas = filasTarifas();
+                for (const fila of filas) {
+                    if (!fila.horaInicio || !fila.horaFin) {
+                        return 'Completa hora inicio y hora fin en todas las tarifas.';
+                    }
+                    if (fila.horaFin <= fila.horaInicio) {
+                        return `La hora fin debe ser mayor que la hora inicio (${nombreDia(fila.diaSemana)}).`;
+                    }
+                    if (fila.precio <= 0) {
+                        return `El precio debe ser mayor que cero (${nombreDia(fila.diaSemana)}).`;
+                    }
+                }
+
+                const porDia = {};
+                for (const fila of filas) {
+                    if (!porDia[fila.diaSemana]) porDia[fila.diaSemana] = [];
+                    porDia[fila.diaSemana].push(fila);
+                }
+
+                for (const dia in porDia) {
+                    const ordenadas = porDia[dia].sort((a, b) => a.horaInicio.localeCompare(b.horaInicio));
+                    for (let i = 1; i < ordenadas.length; i++) {
+                        if (rangosSeCruzan(ordenadas[i - 1].horaInicio, ordenadas[i - 1].horaFin, ordenadas[i].horaInicio, ordenadas[i].horaFin)) {
+                            return `Hay cruce de horarios en ${nombreDia(Number(dia))}.`;
+                        }
+                    }
+                }
+                return null;
+            }
+
+            function obtenerDiasBloque() {
+                const preset = bloquePreset.value;
+                if (preset === 'lv') return [1, 2, 3, 4, 5];
+                if (preset === 'sd') return [6, 0];
+                if (preset === 'todos') return [1, 2, 3, 4, 5, 6, 0];
+                return [...document.querySelectorAll('.js-dia-custom:checked')].map(x => Number(x.value));
+            }
+
             function nuevaFila(tarifa) {
                 const horaInicio = (tarifa.horaInicio ?? '08:00').toString().substring(0, 5);
                 const horaFin = (tarifa.horaFin ?? '09:00').toString().substring(0, 5);
+                const precio = Number(tarifa.precio ?? 0).toFixed(2);
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td><select class="form-select form-select-sm js-dia">${optionDias(tarifa.diaSemana ?? 1)}</select></td>
                     <td><input type="time" class="form-control form-control-sm js-hora-inicio" value="${horaInicio}"></td>
                     <td><input type="time" class="form-control form-control-sm js-hora-fin" value="${horaFin}"></td>
-                    <td><input type="number" min="0.01" step="0.01" class="form-control form-control-sm js-precio" value="${tarifa.precio ?? '0.01'}"></td>
+                    <td class="text-end">
+                        <div class="input-group input-group-sm">
+                            <input type="text" inputmode="decimal" autocomplete="off" class="form-control form-control-sm text-end js-precio" value="${precio}">
+                            <span class="input-group-text js-moneda">${monedaEtiqueta || ''}</span>
+                        </div>
+                    </td>
                     <td class="text-end"><button type="button" class="btn btn-sm sc-action-btn sc-action-delete js-quitar"><i class="bi bi-trash3"></i> Quitar</button></td>`;
                 row.querySelector('.js-quitar').addEventListener('click', () => {
                     row.remove();
                     sincronizarJson();
                 });
-                row.querySelectorAll('select,input').forEach(el => el.addEventListener('change', sincronizarJson));
+                row.querySelector('.js-precio').addEventListener('input', (e) => {
+                    e.target.value = limpiarPrecio(e.target.value);
+                    sincronizarJson();
+                });
+                row.querySelectorAll('select,input').forEach(el => el.addEventListener('change', () => {
+                    sincronizarJson();
+                    const err = validarCrucesCliente();
+                    if (err) mostrarError(err); else limpiarError();
+                }));
                 tabla.appendChild(row);
             }
 
             function sincronizarJson() {
+                if (!puedeEditarTarifas) {
+                    inputJson.value = "[]";
+                    return;
+                }
                 const data = [...tabla.querySelectorAll('tr')].map(tr => ({
                     diaSemana: Number(tr.querySelector('.js-dia').value),
                     horaInicio: tr.querySelector('.js-hora-inicio').value,
                     horaFin: tr.querySelector('.js-hora-fin').value,
-                    precio: Number(tr.querySelector('.js-precio').value || 0)
+                    precio: parsePrecio(tr.querySelector('.js-precio').value)
                 }));
                 inputJson.value = JSON.stringify(data);
             }
 
+            if (bloquePreset) {
+                bloquePreset.addEventListener('change', () => {
+                    const esPersonalizado = bloquePreset.value === 'personalizado';
+                    bloqueDiasPersonalizado.classList.toggle('d-none', !esPersonalizado);
+                });
+            }
+
+            if (bloquePrecio) {
+                bloquePrecio.addEventListener('input', (e) => {
+                    e.target.value = limpiarPrecio(e.target.value);
+                });
+            }
+
+            if (btnAgregarBloque) {
+                btnAgregarBloque.addEventListener('click', () => {
+                    if (!puedeEditarTarifas) return;
+                    limpiarError();
+
+                    const diasSeleccionados = obtenerDiasBloque();
+                    const horaInicio = bloqueHoraInicio.value;
+                    const horaFin = bloqueHoraFin.value;
+                    const precio = parsePrecio(bloquePrecio.value);
+
+                    if (!diasSeleccionados.length) {
+                        mostrarError('Selecciona al menos un dia para el bloque.');
+                        return;
+                    }
+                    if (!horaInicio || !horaFin || horaFin <= horaInicio) {
+                        mostrarError('La hora fin debe ser mayor que la hora inicio.');
+                        return;
+                    }
+                    if (precio <= 0) {
+                        mostrarError('El precio del bloque debe ser mayor que cero.');
+                        return;
+                    }
+
+                    const actuales = filasTarifas();
+                    for (const dia of diasSeleccionados) {
+                        const cruza = actuales.some(t =>
+                            t.diaSemana === dia &&
+                            rangosSeCruzan(horaInicio, horaFin, t.horaInicio, t.horaFin));
+                        if (cruza) {
+                            mostrarError(`No se puede agregar el bloque porque cruza horarios en ${nombreDia(dia)}.`);
+                            return;
+                        }
+                    }
+
+                    diasSeleccionados.forEach(dia => nuevaFila({ diaSemana: dia, horaInicio, horaFin, precio }));
+                    sincronizarJson();
+                    const err = validarCrucesCliente();
+                    if (err) mostrarError(err); else limpiarError();
+                });
+            }
+
             btnAgregar.addEventListener('click', () => {
+                if (!puedeEditarTarifas) return;
                 nuevaFila({ diaSemana: 1, horaInicio: '08:00', horaFin: '09:00', precio: 0.01 });
                 sincronizarJson();
             });
 
-            (tarifasIniciales && tarifasIniciales.length ? tarifasIniciales : [{ diaSemana: 1, horaInicio: '08:00', horaFin: '09:00', precio: 0.01 }])
-                .forEach(nuevaFila);
+            if (puedeEditarTarifas) {
+                (tarifasIniciales && tarifasIniciales.length ? tarifasIniciales : [{ diaSemana: 1, horaInicio: '08:00', horaFin: '09:00', precio: 0.01 }])
+                    .forEach(nuevaFila);
+            }
             sincronizarJson();
 
-            form.addEventListener('submit', sincronizarJson);
+            form.addEventListener('submit', (e) => {
+                sincronizarJson();
+                const err = validarCrucesCliente();
+                if (err) {
+                    e.preventDefault();
+                    mostrarError(err);
+                } else {
+                    limpiarError();
+                }
+            });
         })();
     </script>
 }

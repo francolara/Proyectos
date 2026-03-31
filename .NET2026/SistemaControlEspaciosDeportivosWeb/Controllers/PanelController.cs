@@ -52,7 +52,8 @@ public class PanelController(ISportCenterStoredProcedureService spService, IModu
         var permisosRol = await spService.PanelListarModulosPermitidosAsync(usuarioId, negocioSeleccionadoId);
 
         var hoy = DateOnly.FromDateTime(DateTime.Today);
-        var metricas = await spService.PanelObtenerMetricasAsync(negocioSeleccionadoId, hoy);
+        var sedeIdFiltro = contextoDashboard.EsAdministrador ? (int?)null : contextoDashboard.SedeIdAsignada;
+        var metricas = await spService.PanelObtenerMetricasAsync(negocioSeleccionadoId, hoy, sedeIdFiltro);
 
         var vm = new PanelDashboardViewModel
         {
