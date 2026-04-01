@@ -80,19 +80,16 @@ app.UseHttpsRedirection();
 app.UseRequestLocalization(localizationOptions);
 app.UseRouting();
 app.UseSession();
+app.UseStaticFiles();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapStaticAssets();
-
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
-    .WithStaticAssets();
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
-app.MapRazorPages()
-   .WithStaticAssets();
+app.MapRazorPages();
 
 await IdentitySeeder.SeedRolesAsync(app.Services);
 

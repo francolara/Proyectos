@@ -1,6 +1,7 @@
 <!-- Firma: Codex - 28/03/2026 | Ajustes visuales de acciones y calendario backend; tooltip y etiquetas visibles de estado/motivo en franjas bloqueadas; fix horario drag/drop, color bloqueado tomado del backend, eliminacion de texto duplicado en NO_ATENCION/BLOQUEO, cabecera del calendario en dos filas obligatorias y estilos centralizados en site.css. -->
 <!-- Firma: Codex - 30/03/2026 | Calendario backend-driven: disponibilidad y pendientes por dia consultan BD via endpoint diario; panel operativo condicionado a sede+espacio; persistencia de filtros; nueva seccion "Pendiente de confirmar por dia"; listado general con filtro propio de rango y estados multiples (backend); refuerzo visual Fase 1 aplicado tambien por JS para evitar cache/orden de CSS, incluyendo toolbar, botones, grilla, columna horaria y fines de semana. -->
 <!-- Firma: Codex - 31/03/2026 | Fase 2/3 del calendario: leyenda interactiva por estado, modos visuales (compacto/contraste), grilla operativa con cabecera y eje horario sticky, realce de columna por hover, drawer de detalle y ajuste robusto del eje horario (ancho fijo en colgroup/frame/cushion/shrink, titulo sin corte y horas centradas/legibles, re-aplicado tras filtrar/refetch). -->
+<!-- Firma: Codex - 01/04/2026 | Correccion definitiva de eje horario en Reservas: se evita compresion de columnas con min-width de grilla + scroll horizontal controlado, bloqueo de auto-ajuste en tablas internas de FullCalendar (sync-table) y centralizacion completa de estilos de Reservas; adicionalmente se elimina pintado inline de cabecera/eventos, se respeta color desde CSS, se corrige mapeo de estados numericos/string para que la paleta por estado no se pierda, se agrega hoja dedicada reservas-calendario.css; ajuste de raiz en cabecera de dias: render directo en dayHeaderDidMount (2 filas dia/fecha), eliminacion de inyeccion dinamica de CSS y correccion estructural de selectores/queries que asumian '.fc' como descendiente (en FullCalendar vive en el mismo #calendarioReservas). -->
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ReservasIndexViewModel
 <!-- Firma: Codex - 27/03/2026 | Calendario en espanol, bloqueos por sede, gestion por modal, bloqueo de fechas pasadas y rediseno visual SaaS del calendario -->
 @{
@@ -14,352 +15,6 @@
     var habilitarFiltroEspacio = Model.SedeId.HasValue;
     var estadosListadoCatalogo = Model.EstadosFiltro.Where(x => !string.IsNullOrWhiteSpace(x.Value)).ToList();
 }
-
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.14/index.global.min.css" rel="stylesheet" />
-<style>
-    /* Firma: Codex - 30/03/2026 | Fase 1 calendario aplicada en la propia vista para asegurar prioridad visual sobre FullCalendar. */
-    .sc-calendar-card #calendarioReservas {
-        border: 1px solid #c9d8eb !important;
-        border-radius: 1rem !important;
-        background: linear-gradient(180deg, #fdfefe 0%, #f4f8ff 100%) !important;
-        box-shadow: 0 14px 28px rgba(15, 23, 42, 0.07) !important;
-        padding: 0.65rem !important;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc .fc-toolbar {
-        background: linear-gradient(180deg, #f9fbff 0%, #eaf2ff 100%) !important;
-        border: 1px solid #d2dff2 !important;
-        border-radius: 0.92rem !important;
-        padding: 0.62rem 0.75rem !important;
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc .fc-toolbar-title {
-        font-size: 2rem !important;
-        font-weight: 800 !important;
-        letter-spacing: -0.02em !important;
-        color: #0f172a !important;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc .fc-button-primary {
-        background: #ffffff !important;
-        border-color: #c9d8eb !important;
-        color: #0f2f5f !important;
-        border-radius: 0.7rem !important;
-        font-weight: 700 !important;
-        box-shadow: none !important;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc .fc-button-primary:hover {
-        background: #eaf2ff !important;
-        border-color: #9fc2ee !important;
-        color: #0b2b55 !important;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc .fc-button-primary.fc-button-active,
-    .sc-calendar-card #calendarioReservas .fc .fc-button-primary:active {
-        background: #dbeafe !important;
-        border-color: #86b7f0 !important;
-        color: #0b2b55 !important;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc .fc-today-button {
-        background: #64748b !important;
-        border-color: #64748b !important;
-        color: #ffffff !important;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc .fc-nuevaReserva-button {
-        background: linear-gradient(180deg, #0f4ac0 0%, #2563eb 100%) !important;
-        border-color: #2563eb !important;
-        color: #ffffff !important;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc .fc-timegrid-axis {
-        width: 122px !important;
-        min-width: 122px !important;
-        max-width: 122px !important;
-        background: #f7faff !important;
-        border-color: #dce6f3 !important;
-        border-right: 1px solid #cddcf0 !important;
-        text-align: center !important;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc .fc-col-header .fc-timegrid-axis {
-        width: 122px !important;
-        min-width: 122px !important;
-        max-width: 122px !important;
-        background: linear-gradient(180deg, #0f2d57 0%, #173f73 100%) !important;
-        border-color: #264a79 !important;
-        border-right: 1px solid #264a79 !important;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc .fc-timegrid-slot-label {
-        width: 122px !important;
-        min-width: 122px !important;
-        max-width: 122px !important;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc .fc-timegrid-axis.fc-scrollgrid-shrink,
-    .sc-calendar-card #calendarioReservas .fc .fc-timegrid-slot-label.fc-scrollgrid-shrink {
-        width: 122px !important;
-        min-width: 122px !important;
-        max-width: 122px !important;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc table colgroup col:first-child {
-        width: 122px !important;
-        min-width: 122px !important;
-        max-width: 122px !important;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc .fc-timegrid-axis-frame,
-    .sc-calendar-card #calendarioReservas .fc .fc-timegrid-slot-label-frame {
-        width: 122px !important;
-        min-width: 122px !important;
-        max-width: 122px !important;
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-        text-align: center !important;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc .fc-timegrid-axis-cushion,
-    .sc-calendar-card #calendarioReservas .fc .fc-timegrid-slot-label-cushion {
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-        width: 100% !important;
-        text-align: center !important;
-        white-space: nowrap !important;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc .fc-timegrid-slot-label-cushion {
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-        width: 100% !important;
-        text-align: center !important;
-        font-size: 0.85rem !important;
-        font-weight: 700 !important;
-        color: #243244 !important;
-        letter-spacing: 0.01em !important;
-        padding: 0.16rem 0 !important;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc .sc-time-axis-header .fc-col-header-cell-cushion,
-    .sc-calendar-card #calendarioReservas .fc .fc-col-header .fc-timegrid-axis .fc-col-header-cell-cushion {
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-        width: 100% !important;
-        text-align: center !important;
-        white-space: nowrap !important;
-        overflow-wrap: normal !important;
-        word-break: keep-all !important;
-        font-size: 0.82rem !important;
-        font-weight: 800 !important;
-        letter-spacing: 0.01em !important;
-        color: #f8fafc !important;
-        padding: 0.48rem 0.25rem !important;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc .sc-axis-header-label {
-        display: inline-block !important;
-        white-space: nowrap !important;
-        text-align: center !important;
-        width: 100% !important;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc .fc-timegrid-slot {
-        border-color: #e4ebf5 !important;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc .fc-timegrid-slot-minor {
-        border-top-style: solid !important;
-        border-top-color: #edf2f8 !important;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc .fc-timegrid-col {
-        background: #ffffff !important;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc .fc-day-sat,
-    .sc-calendar-card #calendarioReservas .fc .fc-day-sun {
-        background: #f6f9ff !important;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc .fc-day-today {
-        background: #eef5ff !important;
-        box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.24) !important;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc .sc-fc-event {
-        border-radius: 0.58rem !important;
-        box-shadow: 0 7px 14px rgba(15, 23, 42, 0.12) !important;
-        border-width: 1px !important;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc .sc-fc-event .sc-fc-event-title {
-        font-size: 0.82rem !important;
-        font-weight: 800 !important;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc .sc-fc-event .sc-fc-event-time {
-        font-size: 0.75rem !important;
-        font-weight: 700 !important;
-    }
-
-    .sc-calendar-legend-actions {
-        display: flex;
-        gap: 0.45rem;
-        align-items: center;
-    }
-
-    .sc-calendar-legend-actions .btn {
-        border-radius: 999px;
-        font-size: 0.76rem;
-        font-weight: 700;
-        padding: 0.2rem 0.65rem;
-    }
-
-    .sc-calendar-legend-list .sc-legend-pill {
-        appearance: none;
-        cursor: pointer;
-        background: #f8fafc;
-        color: #334155;
-        font-size: 0.76rem;
-        font-weight: 600;
-        padding: 0.3rem 0.62rem;
-        border-radius: 999px;
-        border: 1px solid #dbe4f2;
-        transition: all .18s ease;
-    }
-
-    .sc-calendar-legend-list .sc-legend-pill.is-off {
-        opacity: 0.42;
-        filter: grayscale(.35);
-        text-decoration: line-through;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc .fc-scrollgrid {
-        border-radius: .8rem;
-        overflow: hidden;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc .fc-col-header {
-        position: sticky;
-        top: 0;
-        z-index: 7;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc .fc-timegrid-axis {
-        position: sticky;
-        left: 0;
-        z-index: 6;
-    }
-
-    .sc-calendar-card #calendarioReservas .fc .fc-timegrid-col.sc-col-hover {
-        background: #f0f7ff !important;
-    }
-
-    .sc-calendar-card #calendarioReservas.sc-mode-compact .fc .fc-timegrid-slot {
-        height: 1.65rem !important;
-    }
-
-    .sc-calendar-card #calendarioReservas.sc-mode-compact .fc .sc-fc-event .sc-fc-event-title {
-        font-size: 0.74rem !important;
-    }
-
-    .sc-calendar-card #calendarioReservas.sc-mode-compact .fc .sc-fc-event .sc-fc-event-time {
-        font-size: 0.68rem !important;
-    }
-
-    .sc-calendar-card #calendarioReservas.sc-mode-contrast .fc .fc-timegrid-slot {
-        border-color: #cedbec !important;
-    }
-
-    .sc-calendar-card #calendarioReservas.sc-mode-contrast .fc .fc-timegrid-col {
-        background: #fdfefe !important;
-    }
-
-    .sc-calendar-card #calendarioReservas.sc-hide-pendiente .sc-fc-event.is-pendiente,
-    .sc-calendar-card #calendarioReservas.sc-hide-confirmada .sc-fc-event.is-confirmada,
-    .sc-calendar-card #calendarioReservas.sc-hide-enuso .sc-fc-event.is-enuso,
-    .sc-calendar-card #calendarioReservas.sc-hide-finalizada .sc-fc-event.is-finalizada,
-    .sc-calendar-card #calendarioReservas.sc-hide-cancelada .sc-fc-event.is-cancelada,
-    .sc-calendar-card #calendarioReservas.sc-hide-noshow .sc-fc-event.is-noshow,
-    .sc-calendar-card #calendarioReservas.sc-hide-bloqueada .fc-bg-event.sc-no-atencion-bg,
-    .sc-calendar-card #calendarioReservas.sc-hide-bloqueada .fc-bg-event.sc-bloqueo-bg,
-    .sc-calendar-card #calendarioReservas.sc-hide-pendiente .fc-bg-event.sc-reserva-slot-bg.is-pendiente,
-    .sc-calendar-card #calendarioReservas.sc-hide-confirmada .fc-bg-event.sc-reserva-slot-bg.is-confirmada,
-    .sc-calendar-card #calendarioReservas.sc-hide-enuso .fc-bg-event.sc-reserva-slot-bg.is-enuso,
-    .sc-calendar-card #calendarioReservas.sc-hide-finalizada .fc-bg-event.sc-reserva-slot-bg.is-finalizada,
-    .sc-calendar-card #calendarioReservas.sc-hide-cancelada .fc-bg-event.sc-reserva-slot-bg.is-cancelada,
-    .sc-calendar-card #calendarioReservas.sc-hide-noshow .fc-bg-event.sc-reserva-slot-bg.is-noshow {
-        display: none !important;
-    }
-
-    .sc-reserva-drawer .offcanvas-header {
-        border-bottom: 1px solid #e5ecf6;
-        background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
-    }
-
-    .sc-reserva-drawer .offcanvas-title {
-        font-weight: 800;
-        color: #0f172a;
-    }
-
-    .sc-drawer-kv {
-        display: grid;
-        grid-template-columns: 120px 1fr;
-        gap: .35rem .75rem;
-        font-size: .86rem;
-        margin-bottom: .7rem;
-    }
-
-    .sc-drawer-kv dt {
-        margin: 0;
-        color: #64748b;
-        font-weight: 600;
-    }
-
-    .sc-drawer-kv dd {
-        margin: 0;
-        color: #0f172a;
-        font-weight: 700;
-    }
-
-    .sc-drawer-state-badge {
-        display: inline-flex;
-        align-items: center;
-        border-radius: 999px;
-        border: 1px solid #d4deee;
-        padding: .2rem .58rem;
-        font-size: .78rem;
-        font-weight: 700;
-        width: fit-content;
-    }
-
-    .sc-drawer-state-badge.is-pendiente { background: #fef3c7; color: #7c2d12; border-color: #fde68a; }
-    .sc-drawer-state-badge.is-confirmada { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
-    .sc-drawer-state-badge.is-enuso { background: #dbeafe; color: #1d4ed8; border-color: #93c5fd; }
-    .sc-drawer-state-badge.is-finalizada { background: #ecfeff; color: #0f4e63; border-color: #a5f3fc; }
-    .sc-drawer-state-badge.is-cancelada { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
-    .sc-drawer-state-badge.is-noshow { background: #ede9fe; color: #5b21b6; border-color: #ddd6fe; }
-
-    .sc-drawer-actions {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: .5rem;
-    }
-
-    .sc-drawer-actions .btn {
-        border-radius: .7rem;
-        font-weight: 700;
-        font-size: .82rem;
-    }
-</style>
 
 <header class="page-header">
     <div>
@@ -1086,7 +741,7 @@ else
 
             function pintarCabeceraHorarios() {
                 if (!calendarioEl) return;
-                const axisHeader = calendarioEl.querySelector('.fc .fc-col-header .fc-timegrid-axis');
+                const axisHeader = calendarioEl.querySelector('.fc-col-header .fc-timegrid-axis');
                 if (!axisHeader) return;
                 axisHeader.classList.add('sc-time-axis-header');
                 const cushion = axisHeader.querySelector('.fc-col-header-cell-cushion');
@@ -1097,144 +752,23 @@ else
                 axisHeader.innerHTML = '<span class="sc-axis-header-label">Horarios</span>';
             }
 
-            function forzarCabeceraDiasDosFilas() {
-                if (!calendarioEl) return;
-                const headers = calendarioEl.querySelectorAll('.fc .fc-col-header-cell[data-date]');
-                headers.forEach((th) => {
-                    const dateIso = th.getAttribute('data-date');
-                    if (!dateIso) return;
-                    const date = new Date(`${dateIso}T00:00:00`);
-                    if (Number.isNaN(date.getTime())) return;
-                    const nombreDia = capitalizar(date.toLocaleDateString('es-PE', { weekday: 'long' }));
-                    const fechaCorta = date.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit' });
-                    const cushion = th.querySelector('.fc-col-header-cell-cushion');
-                    if (!cushion) return;
-                    cushion.innerHTML = `<span class="sc-day-header-title">${nombreDia}</span><span class="sc-day-header-date">${fechaCorta}</span>`;
-                });
-            }
-
             function aplicarEstiloCalendarioFase1() {
                 if (!calendarioEl) return;
-                const fcRoot = calendarioEl.querySelector('.fc');
+                const fcRoot = calendarioEl.classList.contains('fc') ? calendarioEl : calendarioEl.querySelector('.fc');
                 if (!fcRoot) return;
 
+                calendarioEl.classList.add('sc-calendar-ready');
+                fcRoot.style.setProperty('--fc-timegrid-axis-width', calendarAxisWidth);
                 fcRoot.style.setProperty('--fc-border-color', '#dbe5f2');
                 fcRoot.style.setProperty('--fc-neutral-bg-color', '#f5f8fc');
                 fcRoot.style.setProperty('--fc-page-bg-color', '#ffffff');
                 fcRoot.style.setProperty('--fc-today-bg-color', '#edf4ff');
                 fcRoot.style.setProperty('--fc-now-indicator-color', '#ef4444');
-
-                const toolbar = fcRoot.querySelector('.fc-toolbar');
-                if (toolbar) {
-                    toolbar.style.background = 'linear-gradient(180deg, #f9fbff 0%, #eef5ff 100%)';
-                    toolbar.style.border = '1px solid #d7e3f3';
-                    toolbar.style.borderRadius = '1.05rem';
-                    toolbar.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,.78)';
-                    toolbar.style.padding = '.68rem .8rem';
-                }
-
-                fcRoot.querySelectorAll('.fc-col-header-cell').forEach((th) => {
-                    th.style.background = 'linear-gradient(180deg, #0f2d57 0%, #173f73 100%)';
-                    th.style.borderColor = '#264a79';
-                });
-
-                fcRoot.querySelectorAll('.fc-col-header-cell-cushion').forEach((a) => {
-                    a.style.color = '#f8fafc';
-                    a.style.textDecoration = 'none';
-                    a.style.display = 'flex';
-                    a.style.flexDirection = 'column';
-                    a.style.alignItems = 'center';
-                    a.style.justifyContent = 'center';
-                    a.style.textAlign = 'center';
-                });
-
-                fcRoot.querySelectorAll('.fc-button').forEach((btn) => {
-                    btn.style.borderRadius = '.76rem';
-                    btn.style.fontWeight = '700';
-                    btn.style.fontSize = '.8rem';
-                    btn.style.padding = '.36rem .62rem';
-                    btn.style.boxShadow = 'none';
-                });
-
-                fcRoot.querySelectorAll('.fc-button-primary').forEach((btn) => {
-                    btn.style.background = '#ffffff';
-                    btn.style.borderColor = '#cfdcf0';
-                    btn.style.color = '#13253f';
-                });
-
-                fcRoot.querySelectorAll('.fc-button-primary.fc-button-active').forEach((btn) => {
-                    btn.style.background = '#dbeafe';
-                    btn.style.borderColor = '#6ea8f2';
-                    btn.style.color = '#13253f';
-                });
-
-                const todayBtn = fcRoot.querySelector('.fc-today-button');
-                if (todayBtn) {
-                    todayBtn.style.background = '#64748b';
-                    todayBtn.style.borderColor = '#64748b';
-                    todayBtn.style.color = '#ffffff';
-                }
-
-                const nuevaReservaBtn = fcRoot.querySelector('.fc-nuevaReserva-button');
-                if (nuevaReservaBtn) {
-                    nuevaReservaBtn.style.background = 'linear-gradient(180deg, #1e3a8a 0%, #1d4ed8 100%)';
-                    nuevaReservaBtn.style.borderColor = '#1d4ed8';
-                    nuevaReservaBtn.style.color = '#ffffff';
-                }
-
-                const axisWidthPx = calendarAxisWidth;
-                fcRoot.querySelectorAll('table colgroup col:first-child').forEach((col) => {
-                    col.style.width = axisWidthPx;
-                    col.style.minWidth = axisWidthPx;
-                    col.style.maxWidth = axisWidthPx;
-                });
-
-                fcRoot.querySelectorAll('.fc-timegrid-axis').forEach((axis) => {
-                    axis.style.background = '#f7faff';
-                    axis.style.width = axisWidthPx;
-                    axis.style.minWidth = axisWidthPx;
-                    axis.style.maxWidth = axisWidthPx;
-                    axis.style.textAlign = 'center';
-                });
-
-                fcRoot.querySelectorAll('.fc-timegrid-axis-frame, .fc-timegrid-slot-label, .fc-timegrid-slot-label-frame').forEach((node) => {
-                    node.style.width = axisWidthPx;
-                    node.style.minWidth = axisWidthPx;
-                    node.style.maxWidth = axisWidthPx;
-                });
-
-                fcRoot.querySelectorAll('.fc-timegrid-axis-cushion, .fc-timegrid-slot-label-cushion').forEach((lbl) => {
-                    lbl.style.color = '#243244';
-                    lbl.style.fontWeight = '700';
-                    lbl.style.fontSize = '.85rem';
-                    lbl.style.display = 'flex';
-                    lbl.style.alignItems = 'center';
-                    lbl.style.justifyContent = 'center';
-                    lbl.style.textAlign = 'center';
-                    lbl.style.whiteSpace = 'nowrap';
-                });
-
-                fcRoot.querySelectorAll('.fc-timegrid-slot').forEach((slot) => {
-                    slot.style.borderColor = '#e5ecf5';
-                });
-
-                fcRoot.querySelectorAll('.fc-timegrid-slot-minor').forEach((slot) => {
-                    slot.style.borderTopStyle = 'solid';
-                    slot.style.borderTopColor = '#eef3f9';
-                });
-
-                fcRoot.querySelectorAll('.fc-day-sat, .fc-day-sun').forEach((cell) => {
-                    cell.style.background = '#f9fbff';
-                });
-
-                fcRoot.querySelectorAll('.fc-day-today').forEach((cell) => {
-                    cell.style.boxShadow = 'inset 0 0 0 1px rgba(37,99,235,.2), inset 0 0 28px rgba(59,130,246,.07)';
-                });
             }
 
             function forzarAnchoEjeHorario() {
                 if (!calendarioEl) return;
-                const fcRoot = calendarioEl.querySelector('.fc');
+                const fcRoot = calendarioEl.classList.contains('fc') ? calendarioEl : calendarioEl.querySelector('.fc');
                 if (!fcRoot) return;
 
                 fcRoot.style.setProperty('--fc-timegrid-axis-width', calendarAxisWidth);
@@ -1255,6 +789,12 @@ else
                         el.style.minWidth = calendarAxisWidth;
                         el.style.maxWidth = calendarAxisWidth;
                     });
+                });
+
+                fcRoot.querySelectorAll('.fc-scrollgrid-sync-table').forEach((table) => {
+                    table.style.tableLayout = 'fixed';
+                    table.style.width = 'max-content';
+                    table.style.minWidth = '100%';
                 });
 
                 fcRoot.querySelectorAll('.fc-timegrid-axis-cushion, .fc-timegrid-slot-label-cushion').forEach((lbl) => {
@@ -1309,7 +849,7 @@ else
 
             function activarHoverColumnasCalendario() {
                 if (!calendarioEl) return;
-                const cols = calendarioEl.querySelectorAll('.fc .fc-timegrid-col');
+                const cols = calendarioEl.querySelectorAll('.fc-timegrid-col');
                 cols.forEach((col) => {
                     if (col.dataset.scHoverBound === '1') return;
                     col.dataset.scHoverBound = '1';
@@ -1320,12 +860,20 @@ else
 
             function classByEstado(estadoCodigo, tipoEvento) {
                 if (tipoEvento === 'BLOQUEO' || tipoEvento === 'NO_ATENCION') return 'is-bloqueada';
-                switch (String(estadoCodigo ?? '').toUpperCase()) {
+                const codigoRaw = String(estadoCodigo ?? '').trim();
+                const codigo = codigoRaw.toUpperCase();
+                switch (codigo) {
+                    case '1':
                     case 'PENDIENTE': return 'is-pendiente';
+                    case '2':
                     case 'CONFIRMADA': return 'is-confirmada';
+                    case '3':
                     case 'EN_USO': return 'is-enuso';
+                    case '4':
                     case 'FINALIZADA': return 'is-finalizada';
+                    case '5':
                     case 'CANCELADA': return 'is-cancelada';
+                    case '6':
                     case 'NO_SHOW': return 'is-noshow';
                     default: return 'is-reservada';
                 }
@@ -1870,28 +1418,16 @@ else
                     initialView: 'timeGridWeek',
                     locale: 'es',
                     firstDay: 1,
+                    navLinks: false,
                     allDaySlot: false,
-                    dayHeaderContent: function() {
-                        return { html: '' };
-                    },
                     dayHeaderDidMount: function(arg) {
                         const nombreDia = capitalizar(arg.date.toLocaleDateString('es-PE', { weekday: 'long' }));
                         const fechaCorta = arg.date.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit' });
-                        arg.el.classList.add('sc-header-day-cell');
-                        arg.el.style.background = 'linear-gradient(180deg, #0f2d57 0%, #173f73 100%)';
-                        arg.el.style.borderColor = '#264a79';
-                        const cushion = arg.el.querySelector('.fc-col-header-cell-cushion');
-                        if (cushion) {
-                            cushion.innerHTML = `<span class="sc-day-header-title">${nombreDia}</span><span class="sc-day-header-date">${fechaCorta}</span>`;
-                            cushion.style.color = '#f8fafc';
-                            cushion.style.textDecoration = 'none';
-                            cushion.style.display = 'flex';
-                            cushion.style.flexDirection = 'column';
-                            cushion.style.alignItems = 'center';
-                            cushion.style.justifyContent = 'center';
-                            cushion.style.textAlign = 'center';
-                        }
+                        const anchor = arg.el.querySelector('.fc-col-header-cell-cushion');
+                        if (!anchor) return;
+                        anchor.innerHTML = `<span class="sc-day-header-wrap"><span class="sc-day-header-title">${nombreDia}</span><span class="sc-day-header-date">${fechaCorta}</span></span>`;
                     },
+                    dayHeaderClassNames: function() { return ['sc-header-day-cell']; },
                     slotLabelFormat: {
                         hour: '2-digit',
                         minute: '2-digit',
@@ -1942,8 +1478,9 @@ else
                             const tipo = String(arg.event.extendedProps.tipoEvento || '').toUpperCase();
                             if (tipo === 'NO_ATENCION' || tipo === 'BLOQUEO') {
                                 const colorBloqueo = String(arg.event.backgroundColor || arg.event.borderColor || '#64748b').trim();
-                                arg.el.style.background = `repeating-linear-gradient(-45deg, ${hexToRgba(colorBloqueo, 0.18)}, ${hexToRgba(colorBloqueo, 0.18)} 8px, ${hexToRgba(colorBloqueo, 0.1)} 8px, ${hexToRgba(colorBloqueo, 0.1)} 16px)`;
-                                arg.el.style.borderColor = hexToRgba(colorBloqueo, 0.32);
+                                arg.el.style.setProperty('--sc-block-bg-a', hexToRgba(colorBloqueo, 0.18));
+                                arg.el.style.setProperty('--sc-block-bg-b', hexToRgba(colorBloqueo, 0.1));
+                                arg.el.style.setProperty('--sc-block-border', hexToRgba(colorBloqueo, 0.32));
                                 arg.el.textContent = '';
                                 const motivoTexto = String(arg.event.title || '').trim();
                                 const estadoTexto = String(arg.event.extendedProps.estadoTexto || '').trim();
@@ -1974,10 +1511,8 @@ else
                         const estadoCodigo = arg.event.extendedProps.estadoCodigo;
                         const tipo = arg.event.extendedProps.tipoEvento;
                         const colorTexto = colorTextoByEstado(estadoCodigo, tipo);
-                        arg.el.style.color = colorTexto;
                         arg.el.style.setProperty('--fc-event-text-color', colorTexto);
-                        arg.el.style.boxShadow = '0 6px 12px rgba(15,23,42,.09)';
-                        arg.el.style.borderRadius = '.62rem';
+                        arg.el.style.setProperty('--sc-event-text-color', colorTexto);
                         arg.el.querySelectorAll('.sc-fc-event-title, .sc-fc-event-time, .fc-event-main, .fc-event-title, .fc-event-time').forEach(el => {
                             el.style.color = colorTexto;
                         });
@@ -1990,7 +1525,6 @@ else
                     datesSet: function(info) {
                         renderToolbarSubtitle(info.start, info.end);
                         pintarCabeceraHorarios();
-                        forzarCabeceraDiasDosFilas();
                         aplicarEstiloCalendarioFase1();
                         reintentarForzarEjeHorario();
                         activarHoverColumnasCalendario();
@@ -2140,7 +1674,6 @@ else
                 calendar.render();
                 renderToolbarSubtitle(calendar.view.currentStart, calendar.view.currentEnd);
                 pintarCabeceraHorarios();
-                forzarCabeceraDiasDosFilas();
                 aplicarEstiloCalendarioFase1();
                 reintentarForzarEjeHorario();
                 activarHoverColumnasCalendario();
@@ -2328,5 +1861,6 @@ else
         })();
     </script>
 }
+
 
 
