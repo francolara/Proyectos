@@ -6,6 +6,11 @@ public class Negocio
     public string NombreComercial { get; set; } = string.Empty;
     public string? RazonSocial { get; set; }
     public string? DocumentoFiscal { get; set; }
+    public string? TipoDocumentoFiscal { get; set; }
+    public string? NumeroDocumentoFiscal { get; set; }
+    public string? DireccionFiscal { get; set; }
+    public string? CodigoUbigeo { get; set; }
+    public int? MonedaId { get; set; }
     public bool Activo { get; set; } = true;
     public DateTime FechaRegistro { get; set; } = DateTime.UtcNow;
 

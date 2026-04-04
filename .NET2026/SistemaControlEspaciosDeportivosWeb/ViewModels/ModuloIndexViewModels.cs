@@ -38,12 +38,29 @@ public class ConfiguracionClubViewModel : ModuloBaseViewModel
 
     [StringLength(250, ErrorMessage = "La direccion fiscal no puede superar los 250 caracteres.")]
     public string? DireccionFiscal { get; set; }
+    public string? CodigoDepartamento { get; set; }
+    public string? CodigoProvincia { get; set; }
+    [StringLength(6, ErrorMessage = "El codigo ubigeo debe tener 6 caracteres.")]
+    public string? CodigoUbigeo { get; set; }
 
     [Range(1, int.MaxValue, ErrorMessage = "Debes seleccionar una moneda válida.")]
     public int MonedaId { get; set; } = 1;
 
     public List<SelectListItem> TiposDocumento { get; set; } = new();
     public List<SelectListItem> Monedas { get; set; } = new();
+    public List<SelectListItem> DepartamentosUbigeo { get; set; } = new();
+    public List<SelectListItem> ProvinciasUbigeo { get; set; } = new();
+    public List<SelectListItem> DistritosUbigeo { get; set; } = new();
+}
+
+public class UbigeoLookupViewModel
+{
+    public string CodigoUbigeo { get; set; } = string.Empty;
+    public string CodigoDepartamento { get; set; } = string.Empty;
+    public string CodigoProvincia { get; set; } = string.Empty;
+    public string Departamento { get; set; } = string.Empty;
+    public string Provincia { get; set; } = string.Empty;
+    public string Distrito { get; set; } = string.Empty;
 }
 
 public class SedesIndexViewModel : ModuloBaseViewModel

@@ -129,7 +129,7 @@ END
 
 
 ## Otros recordatorios
-- Los procedimientos, scripts y tablas residen en la carpeta Basededatos/SportCenter.
-- Si se modifica o crea un procedimiento Basededatos/SportCenter/StoreProcedure.
-- Si se Altera una estructura de una tabla o se agrega un insert o update para datos de una tabla  Basededatos/SportCenter/Script.
+- Las tablas residen en la carpeta Basededatos/SportCenter/Tablas , (cada vez que se crea una tabla debe ser un archivo independiente). 
+- Si se modifica o crea un procedimiento Basededatos/SportCenter/StoreProcedure ,  (cada vez que se crea una procedimiento se crea un archivo independiente, si se modifica se reemplaza en que ya existe).
+- Si se Altera una estructura de una tabla o se agrega un insert o update para datos de una tabla  Basededatos/SportCenter/Script,(se pueden consolidar en un solo script , alter ,insert, update).
 - Para cambios masivos de codificación, apóyate en `.gitattributes` y en `git add --renormalize .`.

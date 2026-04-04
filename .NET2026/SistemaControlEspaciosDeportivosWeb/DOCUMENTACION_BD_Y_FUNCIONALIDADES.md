@@ -458,6 +458,45 @@
 - Objetivo:
   - asegurar integridad del contrato de imagenes desde backend (ADO.NET + SP), sin depender de validaciones front-end.
 
+### 20260404_Carga_Ubigeo_SUNAT.sql (nuevo 04/04/2026)
+- Tablas nuevas (carpeta `Basededatos/SportCenter/Tablas`):
+  - `dbo.UbigeoDepartamentos`
+  - `dbo.UbigeoProvincias`
+  - `dbo.UbigeoDistritos`
+- Script de carga (carpeta `Basededatos/SportCenter/Script`):
+  - `20260404_Carga_Ubigeo_SUNAT.sql`
+- Fuente oficial:
+  - anexo SUNAT RS `000103-2023/SUNAT` (`Departamento`, `Provincia`, `Distrito`, `Ubigeo`).
+- Cobertura cargada:
+  - `25` departamentos
+  - `196` provincias
+  - `1889` distritos
+- Relacionamiento:
+  - `UbigeoProvincias.CodigoDepartamento -> UbigeoDepartamentos.CodigoDepartamento`
+  - `UbigeoDistritos.CodigoDepartamento -> UbigeoDepartamentos.CodigoDepartamento`
+  - `UbigeoDistritos.CodigoProvincia -> UbigeoProvincias.CodigoProvincia`
+
+### 20260404_Clientes_Configuracion_Ubigeo.sql (nuevo 04/04/2026)
+- Ajustes de estructura:
+  - `Clientes.CodigoUbigeo` (`CHAR(6)`, nullable, FK a `UbigeoDistritos`)
+  - `Negocios.CodigoUbigeo` (`CHAR(6)`, nullable, FK a `UbigeoDistritos`)
+- Regla funcional:
+  - si se informa direccion fiscal, ubigeo (distrito) es obligatorio.
+  - si no se informa direccion fiscal, `CodigoUbigeo` se limpia a `NULL`.
+
+### StoreProcedure (individuales 04/04/2026)
+- Nuevos SP en `Basededatos/SportCenter/StoreProcedure`:
+  - `dbo.Sp_Ubigeo_Departamentos_Listar.StoredProcedure.sql`
+  - `dbo.Sp_Ubigeo_Provincias_Listar.StoredProcedure.sql`
+  - `dbo.Sp_Ubigeo_Distritos_Listar.StoredProcedure.sql`
+  - `dbo.Sp_Ubigeo_ObtenerPorCodigo.StoredProcedure.sql`
+- SP reemplazados (individuales):
+  - `dbo.Sp_Clientes_ObtenerPorId.StoredProcedure.sql`
+  - `dbo.Sp_Clientes_Crear.StoredProcedure.sql`
+  - `dbo.Sp_Clientes_Actualizar.StoredProcedure.sql`
+  - `dbo.Sp_ConfiguracionClub_Obtener.StoredProcedure.sql`
+  - `dbo.Sp_ConfiguracionClub_Actualizar.StoredProcedure.sql`
+
 ### 99_SP_Finales.sql
 - Script consolidado con la **ultima version efectiva** de cada `CREATE OR ALTER PROCEDURE`.
 - Se genera automaticamente desde todos los `.sql` de la carpeta `deStoreProcedures_DbSportCenter`.
@@ -508,6 +547,12 @@
 37. Ejecutar `37_Sedes_Ubicacion_Fotos.sql`.
 38. Ejecutar `EXEC dbo.Sp_Seguridad_SeedModulosPermisosBase;` una vez.
 39. Ejecutar `99_SP_Finales.sql` como post-deploy para asegurar contrato final de SP.
+40. Ejecutar `Basededatos/SportCenter/Tablas/dbo.UbigeoDepartamentos.Table.sql`.
+41. Ejecutar `Basededatos/SportCenter/Tablas/dbo.UbigeoProvincias.Table.sql`.
+42. Ejecutar `Basededatos/SportCenter/Tablas/dbo.UbigeoDistritos.Table.sql`.
+43. Ejecutar `Basededatos/SportCenter/Script/20260404_Carga_Ubigeo_SUNAT.sql`.
+44. Ejecutar `Basededatos/SportCenter/Script/20260404_Clientes_Configuracion_Ubigeo.sql` (solo estructura).
+45. Ejecutar los SP individuales en `Basededatos/SportCenter/StoreProcedure` (nuevos y reemplazados de ubigeo/clientes/configuracion).
 
 ## Observaciones funcionales
 - CRUD de modulos internos ejecuta operaciones por SP.

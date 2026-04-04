@@ -15,6 +15,10 @@ public interface ISportCenterStoredProcedureService
     Task<ConfiguracionClubViewModel?> ConfiguracionClubObtenerAsync(int negocioId);
     Task<bool> ConfiguracionClubActualizarAsync(ConfiguracionClubViewModel model, string usuario);
     Task<List<SelectListItem>> ConfiguracionClubComboMonedasAsync(int negocioId);
+    Task<List<SelectListItem>> UbigeoDepartamentosListarAsync();
+    Task<List<SelectListItem>> UbigeoProvinciasListarAsync(string codigoDepartamento);
+    Task<List<SelectListItem>> UbigeoDistritosListarAsync(string codigoProvincia);
+    Task<UbigeoLookupViewModel?> UbigeoObtenerPorCodigoAsync(string codigoUbigeo);
 
     Task<List<NegocioAccesoViewModel>> PanelListarNegociosUsuarioAsync(string usuarioId);
     Task<string?> PanelObtenerRolAsync(string usuarioId, int negocioId);

@@ -3,7 +3,8 @@
 <!-- Firma: Codex - 27/03/2026 | Rediseño visual pro del formulario de sedes (estructura SaaS y jerarquia por secciones) -->
 <!-- Firma: Codex - 30/03/2026 | Selector de codigo pais para telefonos de sede y WhatsApp -->
 <!-- Firma: Codex - 02/04/2026 | Agrega ubicacion/fotos de sede, PlaceId y URL ocultos, autocomplete de Places y carga de maximo 6 imagenes en nube (principal+alternativas), estandarizando subida a JPG/PNG de entrada, conversion automatica a WebP 1200x900 <= 400KB, listado visual de archivos seleccionados y ajuste de region R2. -->
-<!-- Firma: Codex - 03/04/2026 | Quita boton de validacion R2 y cambia edicion de imagenes a manejo incremental (ver, quitar y agregar sin reemplazo total). -->
+<!-- Firma: Codex - 03/04/2026 | Quita boton de validacion R2, cambia edicion de imagenes a manejo incremental y agrega visualizacion estable (miniatura + lupa) mediante endpoint de vista para URLs de storage no publicas. -->
+<!-- Firma: Codex - 04/04/2026 | Habilita reordenamiento de imagenes actuales (subir/bajar) para poder cambiar el rol principal entre fotos ya registradas. -->
 
 @{
     ViewData["Title"] = "Editar sede";
@@ -429,6 +430,8 @@
             if (!fotoPrincipalInput || !fotosCsvInput || !bodyActuales || !eliminarContainer) return;
 
             const iniciales = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(galeriaSede));
+            const verImagenBaseUrl = '@Url.Action("VerImagen", "Sedes")';
+            const imagenFallbackSvg = "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='110' height='72' viewBox='0 0 110 72'%3E%3Crect width='110' height='72' fill='%23f3f4f6'/%3E%3Cpath d='M8 56l20-20 12 12 18-18 24 26H8z' fill='%23cbd5e1'/%3E%3Ccircle cx='36' cy='24' r='8' fill='%23cbd5e1'/%3E%3C/svg%3E";
             let actuales = Array.isArray(iniciales) ? [...iniciales] : [];
             const removidas = new Set();
 
@@ -458,6 +461,10 @@
                 syncHiddenRemovidas();
             }
 
+            function obtenerUrlVisualizacion(url) {
+                return `${verImagenBaseUrl}?url=${encodeURIComponent(url)}`;
+            }
+
             function renderActuales() {
                 if (actuales.length === 0) {
                     bodyActuales.innerHTML = '<tr><td colspan="5" class="text-muted small">No hay imagenes registradas.</td></tr>';
@@ -468,27 +475,61 @@
                 bodyActuales.innerHTML = '';
                 actuales.forEach((url, index) => {
                     const rol = index === 0 ? 'Principal' : `Alternativa ${index}`;
+                    const urlVisualizacion = obtenerUrlVisualizacion(url);
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td>${index + 1}</td>
-                        <td><img src="${url}" alt="Imagen ${index + 1}" style="width:110px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #dbe2ef;" /></td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <img src="${urlVisualizacion}" alt="Imagen ${index + 1}" style="width:110px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #dbe2ef;" data-preview="true" />
+                                <a class="btn btn-sm btn-outline-secondary" href="${urlVisualizacion}" target="_blank" rel="noopener noreferrer" title="Ver imagen completa">
+                                    <i class="bi bi-search"></i>
+                                </a>
+                            </div>
+                        </td>
                         <td class="text-truncate" style="max-width:380px;" title="${url}">${nombreArchivo(url)}</td>
                         <td><span class="badge ${index === 0 ? 'text-bg-primary' : 'text-bg-secondary'}">${rol}</span></td>
-                        <td><button type="button" class="btn btn-sm btn-outline-danger" data-action="remove-current" data-url="${url}">Quitar</button></td>
+                        <td class="d-flex gap-1">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="up-current" data-index="${index}" ${index === 0 ? 'disabled' : ''}>↑</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="down-current" data-index="${index}" ${index === actuales.length - 1 ? 'disabled' : ''}>↓</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" data-action="remove-current" data-url="${url}">Quitar</button>
+                        </td>
                     `;
+                    const img = tr.querySelector('img[data-preview="true"]');
+                    if (img) {
+                        img.addEventListener('error', () => {
+                            img.src = imagenFallbackSvg;
+                        }, { once: true });
+                    }
                     bodyActuales.appendChild(tr);
                 });
                 syncModelo();
             }
 
             bodyActuales.addEventListener('click', (e) => {
-                const btn = e.target.closest('button[data-action="remove-current"]');
+                const btn = e.target.closest('button[data-action]');
                 if (!btn) return;
-                const url = btn.getAttribute('data-url');
-                if (!url) return;
-                actuales = actuales.filter(x => x !== url);
-                removidas.add(url);
-                renderActuales();
+                const action = btn.getAttribute('data-action');
+
+                if (action === 'up-current' || action === 'down-current') {
+                    const index = Number(btn.getAttribute('data-index'));
+                    if (!Number.isInteger(index)) return;
+                    const target = action === 'up-current' ? index - 1 : index + 1;
+                    if (target < 0 || target >= actuales.length) return;
+                    const temp = actuales[index];
+                    actuales[index] = actuales[target];
+                    actuales[target] = temp;
+                    renderActuales();
+                    return;
+                }
+
+                if (action === 'remove-current') {
+                    const url = btn.getAttribute('data-url');
+                    if (!url) return;
+                    actuales = actuales.filter(x => x !== url);
+                    removidas.add(url);
+                    renderActuales();
+                }
             });
 
             renderActuales();

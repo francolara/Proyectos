@@ -136,6 +136,17 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
         return RedirectToAction(nameof(Index), new { negocioId });
     }
 
+    [HttpGet]
+    public async Task<IActionResult> VerImagen(string? url)
+    {
+        var imagen = await sedeImagenStorageService.ObtenerImagenVisualizacionAsync(url, HttpContext.RequestAborted);
+        if (imagen is null)
+            return NotFound();
+
+        Response.Headers["Cache-Control"] = "private, max-age=300";
+        return File(imagen.Value.Contenido, imagen.Value.ContentType);
+    }
+
     private async Task CargarCatalogoServiciosAsync(SedeFormViewModel model)
     {
         model.ServiciosDisponibles = await spService.SedesComboServiciosAsync();

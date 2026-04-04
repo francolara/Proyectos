@@ -1,8 +1,8 @@
 -- =============================================
 -- Author:        FRANCO LARA
--- Create date:   02/04/2026
+-- Create date:   04/04/2026
 -- Description:   Consolidado final de stored procedures (ultima version efectiva por nombre) generado automaticamente.
--- Firma:         Codex - 02/04/2026 | Script final para evitar sobreescritura por orden de despliegue.
+-- Firma:         Codex - 04/04/2026 | Script final para evitar sobreescritura por orden de despliegue.
 -- =============================================
 -- REGLA DE USO:
 -- 1) Ejecutar primero los scripts estructurales y funcionales (00..32).
@@ -2911,34 +2911,6 @@ BEGIN
 END
 GO
 
--- SOURCE: 30_Configuracion_Club_Monedas.sql (linea 140)
-CREATE OR ALTER PROCEDURE dbo.Sp_ConfiguracionClub_Obtener
-    @NegocioId INT
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    BEGIN TRY
-        SELECT
-            n.Id,
-            n.NombreComercial,
-            n.RazonSocial,
-            COALESCE(NULLIF(n.TipoDocumentoFiscal, N''), N'DNI') AS TipoDocumentoFiscal,
-            COALESCE(NULLIF(n.NumeroDocumentoFiscal, N''), n.DocumentoFiscal) AS NumeroDocumentoFiscal,
-            n.DireccionFiscal,
-            COALESCE(n.MonedaId, 1) AS MonedaId
-        FROM dbo.Negocios n
-        WHERE n.Id = @NegocioId
-          AND n.Activo = 1;
-    END TRY
-    BEGIN CATCH
-        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
-        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
-        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
-    END CATCH
-END
-GO
-
 -- SOURCE: 31_Espacios_Tarifas_Base.sql (linea 29)
 CREATE OR ALTER PROCEDURE dbo.Sp_Espacios_ObtenerPorId
     @NegocioId INT,
@@ -4027,181 +3999,6 @@ BEGIN
         WHERE nc.NegocioId = @NegocioId
           AND nc.Activo = 1
         ORDER BY c.NombresORazonSocial;
-    END TRY
-    BEGIN CATCH
-        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
-        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
-        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
-    END CATCH
-END
-GO
-
--- SOURCE: 34_Clientes_NombreEquipo_Reservas.sql (linea 76)
-CREATE OR ALTER PROCEDURE dbo.Sp_Clientes_ObtenerPorId
-    @NegocioId INT,
-    @Id INT
-AS
-BEGIN
-    SET NOCOUNT ON;
-    BEGIN TRY
-        SELECT
-            c.Id,
-            c.NombresORazonSocial,
-            c.NombreEquipo,
-            c.TipoDocumento,
-            c.NumeroDocumento,
-            c.Telefono,
-            c.Correo,
-            c.DireccionFiscal,
-            c.Activo
-        FROM dbo.Clientes c
-        INNER JOIN dbo.NegocioClientes nc ON nc.ClienteId = c.Id
-        WHERE nc.NegocioId = @NegocioId
-          AND nc.Activo = 1
-          AND c.Id = @Id;
-    END TRY
-    BEGIN CATCH
-        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
-        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
-        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
-    END CATCH
-END
-GO
-
--- SOURCE: 34_Clientes_NombreEquipo_Reservas.sql (linea 107)
-CREATE OR ALTER PROCEDURE dbo.Sp_Clientes_Crear
-    @NegocioId INT,
-    @NombresORazonSocial NVARCHAR(200),
-    @NombreEquipo NVARCHAR(120) = NULL,
-    @TipoDocumento NVARCHAR(20),
-    @NumeroDocumento NVARCHAR(20),
-    @Telefono NVARCHAR(20) = NULL,
-    @Correo NVARCHAR(200) = NULL,
-    @DireccionFiscal NVARCHAR(250) = NULL,
-    @Activo BIT,
-    @Usuario NVARCHAR(200)
-AS
-BEGIN
-    SET NOCOUNT ON;
-    BEGIN TRY
-        DECLARE @NumeroDocumentoNormalizado NVARCHAR(20);
-        DECLARE @NombreEquipoNormalizado NVARCHAR(120);
-        SET @NumeroDocumentoNormalizado = NULLIF(LTRIM(RTRIM(@NumeroDocumento)), N'');
-        SET @NombreEquipoNormalizado = NULLIF(LTRIM(RTRIM(@NombreEquipo)), N'');
-        SET @NumeroDocumento = COALESCE(@NumeroDocumentoNormalizado, N'');
-
-        IF @NumeroDocumentoNormalizado IS NOT NULL
-           AND EXISTS
-           (
-               SELECT 1
-               FROM dbo.Clientes c
-               INNER JOIN dbo.NegocioClientes nc ON nc.ClienteId = c.Id
-               WHERE nc.NegocioId = @NegocioId
-                 AND nc.Activo = 1
-                 AND c.Activo = 1
-                 AND LTRIM(RTRIM(c.NumeroDocumento)) = @NumeroDocumentoNormalizado
-           )
-            RAISERROR('Cliente ya se encuentra registrado.', 16, 1);
-
-        BEGIN TRANSACTION;
-
-        INSERT INTO dbo.Clientes
-        (
-            NombresORazonSocial, NombreEquipo, TipoDocumento, NumeroDocumento, Telefono,
-            Correo, DireccionFiscal, Activo, FechaCreacion, UsuarioCreacion
-        )
-        VALUES
-        (
-            @NombresORazonSocial, @NombreEquipoNormalizado, @TipoDocumento, @NumeroDocumento, @Telefono,
-            @Correo, @DireccionFiscal, @Activo, SYSUTCDATETIME(), @Usuario
-        );
-
-        DECLARE @Id INT;
-        SET @Id = SCOPE_IDENTITY();
-
-        INSERT INTO dbo.NegocioClientes (NegocioId, ClienteId, Activo, FechaRegistro, UsuarioCreacion)
-        VALUES (@NegocioId, @Id, 1, SYSUTCDATETIME(), @Usuario);
-
-        DECLARE @EntidadIdAudit NVARCHAR(80);
-        SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
-        EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'CLIENTES', @Accion = N'CREATE', @Entidad = N'Cliente', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
-
-        COMMIT TRANSACTION;
-
-        SELECT @Id;
-    END TRY
-    BEGIN CATCH
-        IF XACT_STATE() <> 0
-            ROLLBACK TRANSACTION;
-
-        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
-        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
-        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
-    END CATCH
-END
-GO
-
--- SOURCE: 34_Clientes_NombreEquipo_Reservas.sql (linea 179)
-CREATE OR ALTER PROCEDURE dbo.Sp_Clientes_Actualizar
-    @Id INT,
-    @NegocioId INT,
-    @NombresORazonSocial NVARCHAR(200),
-    @NombreEquipo NVARCHAR(120) = NULL,
-    @TipoDocumento NVARCHAR(20),
-    @NumeroDocumento NVARCHAR(20),
-    @Telefono NVARCHAR(20) = NULL,
-    @Correo NVARCHAR(200) = NULL,
-    @DireccionFiscal NVARCHAR(250) = NULL,
-    @Activo BIT,
-    @Usuario NVARCHAR(200)
-AS
-BEGIN
-    SET NOCOUNT ON;
-    BEGIN TRY
-        DECLARE @NumeroDocumentoNormalizado NVARCHAR(20);
-        DECLARE @NombreEquipoNormalizado NVARCHAR(120);
-        SET @NumeroDocumentoNormalizado = NULLIF(LTRIM(RTRIM(@NumeroDocumento)), N'');
-        SET @NombreEquipoNormalizado = NULLIF(LTRIM(RTRIM(@NombreEquipo)), N'');
-        SET @NumeroDocumento = COALESCE(@NumeroDocumentoNormalizado, N'');
-
-        IF @NumeroDocumentoNormalizado IS NOT NULL
-           AND EXISTS
-           (
-               SELECT 1
-               FROM dbo.Clientes c
-               INNER JOIN dbo.NegocioClientes nc ON nc.ClienteId = c.Id
-               WHERE nc.NegocioId = @NegocioId
-                 AND nc.Activo = 1
-                 AND c.Activo = 1
-                 AND c.Id <> @Id
-                 AND LTRIM(RTRIM(c.NumeroDocumento)) = @NumeroDocumentoNormalizado
-           )
-            RAISERROR('Cliente ya se encuentra registrado.', 16, 1);
-
-        UPDATE c
-        SET
-            c.NombresORazonSocial = @NombresORazonSocial,
-            c.NombreEquipo = @NombreEquipoNormalizado,
-            c.TipoDocumento = @TipoDocumento,
-            c.NumeroDocumento = @NumeroDocumento,
-            c.Telefono = @Telefono,
-            c.Correo = @Correo,
-            c.DireccionFiscal = @DireccionFiscal,
-            c.Activo = @Activo,
-            c.FechaActualizacion = SYSUTCDATETIME(),
-            c.UsuarioActualizacion = @Usuario
-        FROM dbo.Clientes c
-        INNER JOIN dbo.NegocioClientes nc ON nc.ClienteId = c.Id
-        WHERE c.Id = @Id
-          AND nc.NegocioId = @NegocioId
-          AND nc.Activo = 1;
-
-        IF @@ROWCOUNT = 0
-            RAISERROR('No se encontro el cliente para actualizar en el negocio.', 16, 1);
-
-        DECLARE @EntidadIdAudit NVARCHAR(80);
-        SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
-        EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'CLIENTES', @Accion = N'EDIT', @Entidad = N'Cliente', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
     END TRY
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
@@ -5350,7 +5147,342 @@ BEGIN
 END
 GO
 
--- SOURCE: 36_Maestros_PorNegocio_MonedasSuper.sql (linea 619)
+-- SOURCE: 38_Clientes_Configuracion_Ubigeo.sql (linea 60)
+CREATE OR ALTER PROCEDURE dbo.Sp_Ubigeo_Departamentos_Listar
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        SELECT
+            d.CodigoDepartamento,
+            d.Nombre
+        FROM dbo.UbigeoDepartamentos d
+        WHERE d.Activo = 1
+        ORDER BY d.Nombre;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 38_Clientes_Configuracion_Ubigeo.sql (linea 80)
+CREATE OR ALTER PROCEDURE dbo.Sp_Ubigeo_Provincias_Listar
+    @CodigoDepartamento CHAR(2)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        SELECT
+            p.CodigoProvincia,
+            p.Nombre
+        FROM dbo.UbigeoProvincias p
+        WHERE p.Activo = 1
+          AND p.CodigoDepartamento = @CodigoDepartamento
+        ORDER BY p.Nombre;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 38_Clientes_Configuracion_Ubigeo.sql (linea 102)
+CREATE OR ALTER PROCEDURE dbo.Sp_Ubigeo_Distritos_Listar
+    @CodigoProvincia CHAR(4)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        SELECT
+            d.CodigoUbigeo,
+            d.Nombre
+        FROM dbo.UbigeoDistritos d
+        WHERE d.Activo = 1
+          AND d.CodigoProvincia = @CodigoProvincia
+        ORDER BY d.Nombre;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 38_Clientes_Configuracion_Ubigeo.sql (linea 124)
+CREATE OR ALTER PROCEDURE dbo.Sp_Ubigeo_ObtenerPorCodigo
+    @CodigoUbigeo CHAR(6)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        SELECT
+            d.CodigoUbigeo,
+            d.CodigoDepartamento,
+            d.CodigoProvincia,
+            dep.Nombre AS Departamento,
+            prov.Nombre AS Provincia,
+            d.Nombre AS Distrito
+        FROM dbo.UbigeoDistritos d
+        INNER JOIN dbo.UbigeoDepartamentos dep ON dep.CodigoDepartamento = d.CodigoDepartamento
+        INNER JOIN dbo.UbigeoProvincias prov ON prov.CodigoProvincia = d.CodigoProvincia
+        WHERE d.CodigoUbigeo = @CodigoUbigeo
+          AND d.Activo = 1
+          AND dep.Activo = 1
+          AND prov.Activo = 1;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 38_Clientes_Configuracion_Ubigeo.sql (linea 153)
+CREATE OR ALTER PROCEDURE dbo.Sp_Clientes_ObtenerPorId
+    @NegocioId INT,
+    @Id INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        SELECT
+            c.Id,
+            c.NombresORazonSocial,
+            c.NombreEquipo,
+            c.TipoDocumento,
+            c.NumeroDocumento,
+            c.Telefono,
+            c.Correo,
+            c.DireccionFiscal,
+            c.CodigoUbigeo,
+            c.Activo
+        FROM dbo.Clientes c
+        INNER JOIN dbo.NegocioClientes nc ON nc.ClienteId = c.Id
+        WHERE nc.NegocioId = @NegocioId
+          AND nc.Activo = 1
+          AND c.Id = @Id;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 38_Clientes_Configuracion_Ubigeo.sql (linea 185)
+CREATE OR ALTER PROCEDURE dbo.Sp_Clientes_Crear
+    @NegocioId INT,
+    @NombresORazonSocial NVARCHAR(200),
+    @NombreEquipo NVARCHAR(120) = NULL,
+    @TipoDocumento NVARCHAR(20),
+    @NumeroDocumento NVARCHAR(20),
+    @Telefono NVARCHAR(20) = NULL,
+    @Correo NVARCHAR(200) = NULL,
+    @DireccionFiscal NVARCHAR(250) = NULL,
+    @CodigoUbigeo CHAR(6) = NULL,
+    @Activo BIT,
+    @Usuario NVARCHAR(200)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        DECLARE @NumeroDocumentoNormalizado NVARCHAR(20);
+        DECLARE @NombreEquipoNormalizado NVARCHAR(120);
+        DECLARE @DireccionFiscalNormalizada NVARCHAR(250);
+        DECLARE @CodigoUbigeoNormalizado CHAR(6);
+
+        SET @NumeroDocumentoNormalizado = NULLIF(LTRIM(RTRIM(@NumeroDocumento)), N'');
+        SET @NombreEquipoNormalizado = NULLIF(LTRIM(RTRIM(@NombreEquipo)), N'');
+        SET @DireccionFiscalNormalizada = NULLIF(LTRIM(RTRIM(@DireccionFiscal)), N'');
+        SET @CodigoUbigeoNormalizado = NULLIF(LTRIM(RTRIM(@CodigoUbigeo)), '');
+        SET @NumeroDocumento = COALESCE(@NumeroDocumentoNormalizado, N'');
+
+        IF @NumeroDocumentoNormalizado IS NOT NULL
+           AND EXISTS
+           (
+               SELECT 1
+               FROM dbo.Clientes c
+               INNER JOIN dbo.NegocioClientes nc ON nc.ClienteId = c.Id
+               WHERE nc.NegocioId = @NegocioId
+                 AND nc.Activo = 1
+                 AND c.Activo = 1
+                 AND LTRIM(RTRIM(c.NumeroDocumento)) = @NumeroDocumentoNormalizado
+           )
+            RAISERROR('Cliente ya se encuentra registrado.', 16, 1);
+
+        IF @DireccionFiscalNormalizada IS NULL
+            SET @CodigoUbigeoNormalizado = NULL;
+
+        IF @DireccionFiscalNormalizada IS NOT NULL AND @CodigoUbigeoNormalizado IS NULL
+            RAISERROR('Cuando se registra direccion fiscal, el distrito es obligatorio.', 16, 1);
+
+        IF @CodigoUbigeoNormalizado IS NOT NULL
+           AND NOT EXISTS (SELECT 1 FROM dbo.UbigeoDistritos WHERE CodigoUbigeo = @CodigoUbigeoNormalizado AND Activo = 1)
+            RAISERROR('El codigo de ubigeo no existe.', 16, 1);
+
+        BEGIN TRANSACTION;
+
+        INSERT INTO dbo.Clientes
+        (
+            NombresORazonSocial, NombreEquipo, TipoDocumento, NumeroDocumento, Telefono,
+            Correo, DireccionFiscal, CodigoUbigeo, Activo, FechaCreacion, UsuarioCreacion
+        )
+        VALUES
+        (
+            @NombresORazonSocial, @NombreEquipoNormalizado, @TipoDocumento, @NumeroDocumento, @Telefono,
+            @Correo, @DireccionFiscalNormalizada, @CodigoUbigeoNormalizado, @Activo, SYSUTCDATETIME(), @Usuario
+        );
+
+        DECLARE @Id INT;
+        SET @Id = SCOPE_IDENTITY();
+
+        INSERT INTO dbo.NegocioClientes (NegocioId, ClienteId, Activo, FechaRegistro, UsuarioCreacion)
+        VALUES (@NegocioId, @Id, 1, SYSUTCDATETIME(), @Usuario);
+
+        DECLARE @EntidadIdAudit NVARCHAR(80);
+        SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
+        EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'CLIENTES', @Accion = N'CREATE', @Entidad = N'Cliente', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
+
+        COMMIT TRANSACTION;
+
+        SELECT @Id;
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE() <> 0
+            ROLLBACK TRANSACTION;
+
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 38_Clientes_Configuracion_Ubigeo.sql (linea 273)
+CREATE OR ALTER PROCEDURE dbo.Sp_Clientes_Actualizar
+    @Id INT,
+    @NegocioId INT,
+    @NombresORazonSocial NVARCHAR(200),
+    @NombreEquipo NVARCHAR(120) = NULL,
+    @TipoDocumento NVARCHAR(20),
+    @NumeroDocumento NVARCHAR(20),
+    @Telefono NVARCHAR(20) = NULL,
+    @Correo NVARCHAR(200) = NULL,
+    @DireccionFiscal NVARCHAR(250) = NULL,
+    @CodigoUbigeo CHAR(6) = NULL,
+    @Activo BIT,
+    @Usuario NVARCHAR(200)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        DECLARE @NumeroDocumentoNormalizado NVARCHAR(20);
+        DECLARE @NombreEquipoNormalizado NVARCHAR(120);
+        DECLARE @DireccionFiscalNormalizada NVARCHAR(250);
+        DECLARE @CodigoUbigeoNormalizado CHAR(6);
+
+        SET @NumeroDocumentoNormalizado = NULLIF(LTRIM(RTRIM(@NumeroDocumento)), N'');
+        SET @NombreEquipoNormalizado = NULLIF(LTRIM(RTRIM(@NombreEquipo)), N'');
+        SET @DireccionFiscalNormalizada = NULLIF(LTRIM(RTRIM(@DireccionFiscal)), N'');
+        SET @CodigoUbigeoNormalizado = NULLIF(LTRIM(RTRIM(@CodigoUbigeo)), '');
+        SET @NumeroDocumento = COALESCE(@NumeroDocumentoNormalizado, N'');
+
+        IF @NumeroDocumentoNormalizado IS NOT NULL
+           AND EXISTS
+           (
+               SELECT 1
+               FROM dbo.Clientes c
+               INNER JOIN dbo.NegocioClientes nc ON nc.ClienteId = c.Id
+               WHERE nc.NegocioId = @NegocioId
+                 AND nc.Activo = 1
+                 AND c.Activo = 1
+                 AND c.Id <> @Id
+                 AND LTRIM(RTRIM(c.NumeroDocumento)) = @NumeroDocumentoNormalizado
+           )
+            RAISERROR('Cliente ya se encuentra registrado.', 16, 1);
+
+        IF @DireccionFiscalNormalizada IS NULL
+            SET @CodigoUbigeoNormalizado = NULL;
+
+        IF @DireccionFiscalNormalizada IS NOT NULL AND @CodigoUbigeoNormalizado IS NULL
+            RAISERROR('Cuando se registra direccion fiscal, el distrito es obligatorio.', 16, 1);
+
+        IF @CodigoUbigeoNormalizado IS NOT NULL
+           AND NOT EXISTS (SELECT 1 FROM dbo.UbigeoDistritos WHERE CodigoUbigeo = @CodigoUbigeoNormalizado AND Activo = 1)
+            RAISERROR('El codigo de ubigeo no existe.', 16, 1);
+
+        UPDATE c
+        SET
+            c.NombresORazonSocial = @NombresORazonSocial,
+            c.NombreEquipo = @NombreEquipoNormalizado,
+            c.TipoDocumento = @TipoDocumento,
+            c.NumeroDocumento = @NumeroDocumento,
+            c.Telefono = @Telefono,
+            c.Correo = @Correo,
+            c.DireccionFiscal = @DireccionFiscalNormalizada,
+            c.CodigoUbigeo = @CodigoUbigeoNormalizado,
+            c.Activo = @Activo,
+            c.FechaActualizacion = SYSUTCDATETIME(),
+            c.UsuarioActualizacion = @Usuario
+        FROM dbo.Clientes c
+        INNER JOIN dbo.NegocioClientes nc ON nc.ClienteId = c.Id
+        WHERE c.Id = @Id
+          AND nc.NegocioId = @NegocioId
+          AND nc.Activo = 1;
+
+        IF @@ROWCOUNT = 0
+            RAISERROR('No se encontro el cliente para actualizar en el negocio.', 16, 1);
+
+        DECLARE @EntidadIdAudit NVARCHAR(80);
+        SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
+        EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'CLIENTES', @Accion = N'EDIT', @Entidad = N'Cliente', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 38_Clientes_Configuracion_Ubigeo.sql (linea 359)
+CREATE OR ALTER PROCEDURE dbo.Sp_ConfiguracionClub_Obtener
+    @NegocioId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRY
+        SELECT
+            n.Id,
+            n.NombreComercial,
+            n.RazonSocial,
+            COALESCE(NULLIF(n.TipoDocumentoFiscal, N''), N'DNI') AS TipoDocumentoFiscal,
+            COALESCE(NULLIF(n.NumeroDocumentoFiscal, N''), n.DocumentoFiscal) AS NumeroDocumentoFiscal,
+            n.DireccionFiscal,
+            COALESCE(n.MonedaId, 1) AS MonedaId,
+            n.CodigoUbigeo
+        FROM dbo.Negocios n
+        WHERE n.Id = @NegocioId
+          AND n.Activo = 1;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 38_Clientes_Configuracion_Ubigeo.sql (linea 387)
 CREATE OR ALTER PROCEDURE dbo.Sp_ConfiguracionClub_Actualizar
     @NegocioId INT,
     @NombreComercial NVARCHAR(200),
@@ -5358,26 +5490,61 @@ CREATE OR ALTER PROCEDURE dbo.Sp_ConfiguracionClub_Actualizar
     @TipoDocumentoFiscal NVARCHAR(20) = NULL,
     @NumeroDocumentoFiscal NVARCHAR(20) = NULL,
     @DireccionFiscal NVARCHAR(250) = NULL,
+    @CodigoUbigeo CHAR(6) = NULL,
     @MonedaId INT,
     @Usuario NVARCHAR(200)
 AS
 BEGIN
     SET NOCOUNT ON;
-    BEGIN TRY
-        IF NOT EXISTS (SELECT 1 FROM dbo.Monedas WHERE Id = @MonedaId AND NegocioId = @NegocioId AND Activo = 1)
-            RAISERROR('La moneda seleccionada no pertenece al negocio.', 16, 1);
 
-        UPDATE dbo.Negocios
-        SET NombreComercial = @NombreComercial,
-            RazonSocial = @RazonSocial,
-            TipoDocumentoFiscal = @TipoDocumentoFiscal,
-            NumeroDocumentoFiscal = @NumeroDocumentoFiscal,
-            DireccionFiscal = @DireccionFiscal,
-            MonedaId = @MonedaId
-        WHERE Id = @NegocioId;
+    BEGIN TRY
+        DECLARE @DireccionFiscalNormalizada NVARCHAR(250);
+        DECLARE @CodigoUbigeoNormalizado CHAR(6);
+
+        SET @DireccionFiscalNormalizada = NULLIF(LTRIM(RTRIM(@DireccionFiscal)), N'');
+        SET @CodigoUbigeoNormalizado = NULLIF(LTRIM(RTRIM(@CodigoUbigeo)), '');
+
+        IF NOT EXISTS (SELECT 1 FROM dbo.Monedas WHERE Id = @MonedaId AND Activo = 1)
+            RAISERROR('La moneda seleccionada no es valida.', 16, 1);
+
+        IF @DireccionFiscalNormalizada IS NULL
+            SET @CodigoUbigeoNormalizado = NULL;
+
+        IF @DireccionFiscalNormalizada IS NOT NULL AND @CodigoUbigeoNormalizado IS NULL
+            RAISERROR('Cuando se registra direccion fiscal, el distrito es obligatorio.', 16, 1);
+
+        IF @CodigoUbigeoNormalizado IS NOT NULL
+           AND NOT EXISTS (SELECT 1 FROM dbo.UbigeoDistritos WHERE CodigoUbigeo = @CodigoUbigeoNormalizado AND Activo = 1)
+            RAISERROR('El codigo de ubigeo no existe.', 16, 1);
+
+        UPDATE n
+        SET
+            n.NombreComercial = @NombreComercial,
+            n.RazonSocial = NULLIF(@RazonSocial, N''),
+            n.TipoDocumentoFiscal = NULLIF(@TipoDocumentoFiscal, N''),
+            n.NumeroDocumentoFiscal = NULLIF(@NumeroDocumentoFiscal, N''),
+            n.DireccionFiscal = @DireccionFiscalNormalizada,
+            n.CodigoUbigeo = @CodigoUbigeoNormalizado,
+            n.DocumentoFiscal = NULLIF(@NumeroDocumentoFiscal, N''),
+            n.MonedaId = @MonedaId
+        FROM dbo.Negocios n
+        WHERE n.Id = @NegocioId
+          AND n.Activo = 1;
 
         IF @@ROWCOUNT = 0
-            RAISERROR('No se encontro el negocio para actualizar.', 16, 1);
+            RAISERROR('No se encontro el club para actualizar.', 16, 1);
+
+        DECLARE @EntidadIdAuditoria NVARCHAR(80);
+        SET @EntidadIdAuditoria = CONVERT(NVARCHAR(80), @NegocioId);
+
+        EXEC dbo.Sp_Auditoria_Registrar
+            @NegocioId = @NegocioId,
+            @Modulo = N'CONFIGURACION',
+            @Accion = N'EDIT',
+            @Entidad = N'Negocio',
+            @EntidadId = @EntidadIdAuditoria,
+            @Usuario = @Usuario,
+            @DetalleJson = NULL;
     END TRY
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;

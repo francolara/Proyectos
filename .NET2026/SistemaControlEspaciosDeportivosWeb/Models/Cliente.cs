@@ -23,6 +23,8 @@ public class Cliente
 
     [MaxLength(250)]
     public string? DireccionFiscal { get; set; }
+    [MaxLength(6)]
+    public string? CodigoUbigeo { get; set; }
 
     public bool Activo { get; set; } = true;
 

@@ -50,7 +50,8 @@ public partial class SportCenterStoredProcedureService
             Telefono = dr.IsDBNull(5) ? null : dr.GetString(5),
             Correo = dr.IsDBNull(6) ? null : dr.GetString(6),
             DireccionFiscal = dr.IsDBNull(7) ? null : dr.GetString(7),
-            Activo = dr.GetBoolean(8),
+            CodigoUbigeo = dr.IsDBNull(8) ? null : dr.GetString(8),
+            Activo = dr.GetBoolean(9),
             NegocioId = negocioId
         };
     }
@@ -68,6 +69,7 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@Telefono", model.Telefono, SqlDbType.NVarChar);
         AddParam(cmd, "@Correo", model.Correo, SqlDbType.NVarChar);
         AddParam(cmd, "@DireccionFiscal", model.DireccionFiscal, SqlDbType.NVarChar);
+        AddParam(cmd, "@CodigoUbigeo", model.CodigoUbigeo, SqlDbType.Char);
         AddParam(cmd, "@Activo", model.Activo, SqlDbType.Bit);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
         return Convert.ToInt32(await cmd.ExecuteScalarAsync());
@@ -89,6 +91,7 @@ public partial class SportCenterStoredProcedureService
             AddParam(cmd, "@Telefono", model.Telefono, SqlDbType.NVarChar);
             AddParam(cmd, "@Correo", model.Correo, SqlDbType.NVarChar);
             AddParam(cmd, "@DireccionFiscal", model.DireccionFiscal, SqlDbType.NVarChar);
+            AddParam(cmd, "@CodigoUbigeo", model.CodigoUbigeo, SqlDbType.Char);
             AddParam(cmd, "@Activo", model.Activo, SqlDbType.Bit);
             AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
             await cmd.ExecuteNonQueryAsync();

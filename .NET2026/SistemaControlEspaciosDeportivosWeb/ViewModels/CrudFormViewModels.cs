@@ -40,7 +40,7 @@ public class SedeFormViewModel
     public string? FotosUrlsCsv { get; set; }
     public List<string> FotosUrls { get; set; } = new();
     public List<string> FotosEliminarUrls { get; set; } = new();
-    public List<IFormFile> ImagenesArchivos { get; set; } = new();
+    public List<IFormFile>? ImagenesArchivos { get; set; }
 
     [StringLength(20, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string? Telefono { get; set; }
@@ -309,9 +309,16 @@ public class ClienteFormViewModel
 
     [StringLength(250, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string? DireccionFiscal { get; set; }
+    public string? CodigoDepartamento { get; set; }
+    public string? CodigoProvincia { get; set; }
+    [StringLength(6, ErrorMessage = "El campo {0} debe tener 6 caracteres.")]
+    public string? CodigoUbigeo { get; set; }
 
     public bool Activo { get; set; } = true;
     public List<SelectListItem> CodigosPais { get; set; } = new();
+    public List<SelectListItem> DepartamentosUbigeo { get; set; } = new();
+    public List<SelectListItem> ProvinciasUbigeo { get; set; } = new();
+    public List<SelectListItem> DistritosUbigeo { get; set; } = new();
 }
 
 public class PromocionFormViewModel

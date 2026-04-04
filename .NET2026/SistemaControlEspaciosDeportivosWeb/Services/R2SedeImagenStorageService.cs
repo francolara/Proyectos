@@ -198,6 +198,54 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
         return eliminadas;
     }
 
+    public async Task<(byte[] Contenido, string ContentType)?> ObtenerImagenVisualizacionAsync(string? url, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return null;
+
+        var urlTrim = url.Trim();
+        if (!Uri.TryCreate(urlTrim, UriKind.Absolute, out var uriOriginal))
+            return null;
+
+        if (!EsUrlDelStorage(uriOriginal))
+            return null;
+
+        var key = ExtraerObjectKeyDesdeUrl(urlTrim);
+        if (string.IsNullOrWhiteSpace(key))
+            return null;
+
+        if (!_settings.Enabled ||
+            string.IsNullOrWhiteSpace(_settings.Endpoint) ||
+            string.IsNullOrWhiteSpace(_settings.BucketName) ||
+            string.IsNullOrWhiteSpace(_settings.AccessKey) ||
+            string.IsNullOrWhiteSpace(_settings.SecretKey))
+            return null;
+
+        try
+        {
+            using var cliente = CreateClient();
+            using var response = await cliente.GetObjectAsync(new GetObjectRequest
+            {
+                BucketName = _settings.BucketName.Trim(),
+                Key = key
+            }, cancellationToken);
+
+            await using var source = response.ResponseStream;
+            using var buffer = new MemoryStream();
+            await source.CopyToAsync(buffer, cancellationToken);
+
+            var contentType = string.IsNullOrWhiteSpace(response.Headers.ContentType)
+                ? "image/webp"
+                : response.Headers.ContentType;
+
+            return (buffer.ToArray(), contentType);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private async Task<(bool Ok, string Mensaje, bool AccessKeyInvalida)> ProbarEndpointAsync(string endpoint, string bucketName, CancellationToken cancellationToken)
     {
         try
@@ -279,6 +327,30 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
         return endpoint;
     }
 
+    private bool EsUrlDelStorage(Uri uri)
+    {
+        if (!string.IsNullOrWhiteSpace(_settings.PublicBaseUrl) &&
+            Uri.TryCreate(_settings.PublicBaseUrl.Trim(), UriKind.Absolute, out var publicUri) &&
+            string.Equals(publicUri.Host, uri.Host, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (!string.IsNullOrWhiteSpace(_settings.Endpoint))
+        {
+            var endpoint = _settings.Endpoint.Trim();
+            if (!endpoint.StartsWith("https://", StringComparison.OrdinalIgnoreCase) &&
+                !endpoint.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+                endpoint = $"https://{endpoint}";
+
+            if (Uri.TryCreate(endpoint, UriKind.Absolute, out var endpointUri) &&
+                string.Equals(endpointUri.Host, uri.Host, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        var bucket = _settings.BucketName.Trim().Trim('/');
+        return !string.IsNullOrWhiteSpace(bucket) &&
+               uri.AbsolutePath.TrimStart('/').StartsWith(bucket + "/", StringComparison.OrdinalIgnoreCase);
+    }
+
     private AmazonS3Client CreateClient(string? endpointOverride = null)
     {
         var servicioUrl = (endpointOverride ?? _settings.Endpoint).Trim();
@@ -294,7 +366,8 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
         {
             ServiceURL = servicioUrl,
             ForcePathStyle = true,
-            AuthenticationRegion = region
+            AuthenticationRegion = region,
+            SignatureVersion = "4"
         };
 
         var credenciales = new BasicAWSCredentials(accessKey, secretKey);

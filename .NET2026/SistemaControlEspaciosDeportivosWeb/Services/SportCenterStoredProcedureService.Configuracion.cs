@@ -25,7 +25,8 @@ public partial class SportCenterStoredProcedureService
             TipoDocumento = dr.IsDBNull(3) ? "DNI" : dr.GetString(3),
             NumeroDocumento = dr.IsDBNull(4) ? null : dr.GetString(4),
             DireccionFiscal = dr.IsDBNull(5) ? null : dr.GetString(5),
-            MonedaId = dr.IsDBNull(6) ? 1 : dr.GetInt32(6)
+            MonedaId = dr.IsDBNull(6) ? 1 : dr.GetInt32(6),
+            CodigoUbigeo = dr.IsDBNull(7) ? null : dr.GetString(7)
         };
     }
 
@@ -42,6 +43,7 @@ public partial class SportCenterStoredProcedureService
             AddParam(cmd, "@TipoDocumentoFiscal", model.TipoDocumento, SqlDbType.NVarChar);
             AddParam(cmd, "@NumeroDocumentoFiscal", model.NumeroDocumento, SqlDbType.NVarChar);
             AddParam(cmd, "@DireccionFiscal", model.DireccionFiscal, SqlDbType.NVarChar);
+            AddParam(cmd, "@CodigoUbigeo", model.CodigoUbigeo, SqlDbType.Char);
             AddParam(cmd, "@MonedaId", model.MonedaId, SqlDbType.Int);
             AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
             await cmd.ExecuteNonQueryAsync();
