@@ -64,7 +64,18 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
                 Direccion = dr.GetString(2),
                 Telefono = dr.IsDBNull(3) ? null : dr.GetString(3),
                 WhatsappContacto = dr.IsDBNull(4) ? null : dr.GetString(4),
-                PermiteChatWhatsapp = ReadBool(dr, 5)
+                PermiteChatWhatsapp = ReadBool(dr, 5),
+                Latitud = dr.FieldCount > 6 && !dr.IsDBNull(6) ? dr.GetDecimal(6) : null,
+                Longitud = dr.FieldCount > 7 && !dr.IsDBNull(7) ? dr.GetDecimal(7) : null,
+                GoogleMapsUrl = dr.FieldCount > 8 && !dr.IsDBNull(8) ? dr.GetString(8) : null,
+                FotoPrincipalUrl = dr.FieldCount > 9 && !dr.IsDBNull(9) ? dr.GetString(9) : null,
+                FotosAlternativas = dr.FieldCount > 10 && !dr.IsDBNull(10)
+                    ? dr.GetString(10)
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .Where(x => !string.IsNullOrWhiteSpace(x))
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToList()
+                    : new List<string>()
             });
         }
         return list;

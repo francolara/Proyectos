@@ -1,7 +1,7 @@
 <!-- Firma: Codex - 28/03/2026 | Ajustes visuales de acciones y calendario backend; tooltip y etiquetas visibles de estado/motivo en franjas bloqueadas; fix horario drag/drop, color bloqueado tomado del backend, eliminacion de texto duplicado en NO_ATENCION/BLOQUEO, cabecera del calendario en dos filas obligatorias y estilos centralizados en site.css. -->
 <!-- Firma: Codex - 30/03/2026 | Calendario backend-driven: disponibilidad y pendientes por dia consultan BD via endpoint diario; panel operativo condicionado a sede+espacio; persistencia de filtros; nueva seccion "Pendiente de confirmar por dia"; listado general con filtro propio de rango y estados multiples (backend); refuerzo visual Fase 1 aplicado tambien por JS para evitar cache/orden de CSS, incluyendo toolbar, botones, grilla, columna horaria y fines de semana. -->
 <!-- Firma: Codex - 31/03/2026 | Fase 2/3 del calendario: leyenda interactiva por estado, modos visuales (compacto/contraste), grilla operativa con cabecera y eje horario sticky, realce de columna por hover, drawer de detalle y ajuste robusto del eje horario (ancho fijo en colgroup/frame/cushion/shrink, titulo sin corte y horas centradas/legibles, re-aplicado tras filtrar/refetch). -->
-<!-- Firma: Codex - 01/04/2026 | Correccion definitiva de eje horario en Reservas: se evita compresion de columnas con min-width de grilla + scroll horizontal controlado, bloqueo de auto-ajuste en tablas internas de FullCalendar (sync-table) y centralizacion completa de estilos de Reservas; adicionalmente se elimina pintado inline de cabecera/eventos, se respeta color desde CSS, se corrige mapeo de estados numericos/string para que la paleta por estado no se pierda, se agrega hoja dedicada reservas-calendario.css; ajuste de raiz en cabecera de dias: render directo en dayHeaderDidMount (2 filas dia/fecha), eliminacion de inyeccion dinamica de CSS y correccion estructural de selectores/queries que asumian '.fc' como descendiente (en FullCalendar vive en el mismo #calendarioReservas). -->
+<!-- Firma: Codex - 01/04/2026 | Reservas: cabecera con rango largo centrado, modo opcional Bloqueos HC, KPI operativo diario, vista por espacios, historial de cambios en drawer, validacion visual de solape en modal, acciones masivas (confirmar/no-show/recordatorio) backend-driven y estandar visual unificado para botones de acciones en listado (editar/check-in/no-show/cancelar). -->
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ReservasIndexViewModel
 <!-- Firma: Codex - 27/03/2026 | Calendario en espanol, bloqueos por sede, gestion por modal, bloqueo de fechas pasadas y rediseno visual SaaS del calendario -->
 @{
@@ -107,6 +107,7 @@
                 <small class="text-muted me-1">Vista rapida por color para lectura inmediata del calendario.</small>
                 <button type="button" class="btn btn-outline-primary btn-sm" id="btnModoCompactoCalendario">Compacto</button>
                 <button type="button" class="btn btn-outline-secondary btn-sm" id="btnModoContrasteCalendario">Contraste</button>
+                <button type="button" class="btn btn-outline-dark btn-sm" id="btnModoBloqueosHCCalendario">Bloqueos HC</button>
             </div>
         </div>
         <div class="sc-calendar-legend-list">
@@ -144,6 +145,51 @@
         <div class="sc-calendar-body">
             <div id="calendarioReservas"></div>
         </div>
+    </section>
+
+    <section class="table-card sc-kpi-operativo-card mb-3" id="panelKpiOperativoDia">
+        <div class="sc-reservas-list-head">
+            <div>
+                <h2 class="section-title"><i class="bi bi-speedometer2 me-1"></i>KPI operativo del dia</h2>
+                <p class="mb-0 text-muted small">Resumen en tiempo real por fecha seleccionada (backend).</p>
+            </div>
+        </div>
+        <div class="sc-kpi-grid">
+            <article class="sc-kpi-item">
+                <span>Ocupacion</span>
+                <strong id="kpiOcupacionDia">0%</strong>
+            </article>
+            <article class="sc-kpi-item">
+                <span>Slots ocupados</span>
+                <strong id="kpiSlotsOcupadosDia">0</strong>
+            </article>
+            <article class="sc-kpi-item">
+                <span>Slots libres</span>
+                <strong id="kpiSlotsLibresDia">0</strong>
+            </article>
+            <article class="sc-kpi-item">
+                <span>Reservas activas</span>
+                <strong id="kpiReservasActivasDia">0</strong>
+            </article>
+            <article class="sc-kpi-item">
+                <span>Pendientes</span>
+                <strong id="kpiPendientesDia">0</strong>
+            </article>
+            <article class="sc-kpi-item">
+                <span>Bloqueos</span>
+                <strong id="kpiBloqueosDia">0</strong>
+            </article>
+        </div>
+    </section>
+
+    <section class="table-card sc-recursos-card mb-3" id="panelRecursosDia">
+        <div class="sc-reservas-list-head">
+            <div>
+                <h2 class="section-title"><i class="bi bi-grid-3x3-gap me-1"></i>Vista por espacios (dia)</h2>
+                <p class="mb-0 text-muted small">Carga por espacio para la fecha seleccionada en la sede activa.</p>
+            </div>
+        </div>
+        <div id="recursosDiaGrid" class="sc-recursos-grid"></div>
     </section>
 
     <section class="table-card sc-disponibilidad-card mb-4" id="panelDisponibilidadDia">
@@ -276,6 +322,26 @@ else
             </div>
         </div>
     </div>
+    @if (Model.PuedeEditar)
+    {
+        <div class="sc-acciones-masivas mb-3">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <button type="button" id="btnSeleccionarPendientes" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-check2-square"></i> Seleccionar pendientes
+                </button>
+                <button type="button" id="btnMasivoConfirmar" class="btn btn-outline-success btn-sm">
+                    <i class="bi bi-check2-circle"></i> Confirmar seleccion
+                </button>
+                <button type="button" id="btnMasivoNoShow" class="btn btn-outline-dark btn-sm">
+                    <i class="bi bi-person-x"></i> Marcar no show
+                </button>
+                <button type="button" id="btnMasivoRecordatorio" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-send"></i> Enviar recordatorio
+                </button>
+            </div>
+            <small id="accionesMasivasFeedback" class="text-muted">Selecciona reservas en la tabla para aplicar acciones por lote.</small>
+        </div>
+    }
     <form method="get" asp-action="Index" class="sc-listado-filtro-form">
         <input type="hidden" name="negocioId" value="@Model.NegocioId" />
         <input type="hidden" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
@@ -324,6 +390,12 @@ else
             <table id="tablaReservasDetallada" class="table table-sm align-middle">
                 <thead>
                     <tr>
+                        @if (Model.PuedeEditar)
+                        {
+                            <th style="width:42px;">
+                                <input type="checkbox" id="chkReservasAll" class="form-check-input" />
+                            </th>
+                        }
                         <th>Id</th>
                         <th>Cliente</th>
                         <th>Sede</th>
@@ -339,6 +411,15 @@ else
                     @foreach (var item in Model.Reservas)
                     {
                         <tr>
+                            @if (Model.PuedeEditar)
+                            {
+                                <td>
+                                    <input type="checkbox"
+                                           class="form-check-input chk-reserva-item"
+                                           value="@item.Id"
+                                           data-estado="@item.Estado" />
+                                </td>
+                            }
                             <td>@item.Id</td>
                             <td>@item.Cliente</td>
                             <td>@item.Sede</td>
@@ -379,7 +460,9 @@ else
                                             <input type="hidden" name="sedeId" value="@Model.SedeId" />
                                             <input type="hidden" name="espacioDeportivoId" value="@Model.EspacioDeportivoId" />
                                             <input type="hidden" name="estado" value="@Model.Estado" />
-                                            <button type="submit" class="btn btn-sm btn-outline-success">Check-in</button>
+                                            <button type="submit" class="btn btn-sm sc-action-btn sc-action-checkin">
+                                                <i class="bi bi-box-arrow-in-right"></i> Check-in
+                                            </button>
                                         </form>
                                         <form asp-action="CambiarEstadoTabla" method="post" class="d-inline">
                                             @Html.AntiForgeryToken()
@@ -391,7 +474,9 @@ else
                                             <input type="hidden" name="sedeId" value="@Model.SedeId" />
                                             <input type="hidden" name="espacioDeportivoId" value="@Model.EspacioDeportivoId" />
                                             <input type="hidden" name="estado" value="@Model.Estado" />
-                                            <button type="submit" class="btn btn-sm btn-outline-dark">No show</button>
+                                            <button type="submit" class="btn btn-sm sc-action-btn sc-action-noshow">
+                                                <i class="bi bi-person-x"></i> No show
+                                            </button>
                                         </form>
                                     }
                                     else if (item.Estado == "3")
@@ -501,6 +586,10 @@ else
             <dt>Total</dt><dd id="drawerTotal">-</dd>
             <dt>Adelanto</dt><dd id="drawerAdelanto">-</dd>
         </dl>
+        <div class="sc-drawer-historial mb-3">
+            <div class="small text-muted fw-semibold mb-2">Historial de cambios</div>
+            <ul id="drawerHistorialList" class="sc-drawer-historial-list"></ul>
+        </div>
 
         @if (Model.PuedeEditar)
         {
@@ -640,6 +729,8 @@ else
             const cambiarEstadoRapidoUrl = '@Url.Action("CambiarEstadoRapido", "Reservas")';
             const comboEspaciosUrl = '@Url.Action("ObtenerEspaciosFiltro", "Reservas")';
             const resumenDiaOperativoUrl = '@Url.Action("ResumenDiaOperativo", "Reservas")';
+            const historialReservaUrl = '@Url.Action("HistorialReserva", "Reservas")';
+            const accionMasivaUrl = '@Url.Action("AccionMasiva", "Reservas")';
             const sedeSelect = document.getElementById('sedeId');
             const espacioSelect = document.getElementById('espacioDeportivoId');
             const estadoSelect = document.getElementById('estado');
@@ -647,6 +738,7 @@ else
             const legendEstadoButtons = Array.from(document.querySelectorAll('[data-legend-estado]'));
             const btnModoCompactoCalendario = document.getElementById('btnModoCompactoCalendario');
             const btnModoContrasteCalendario = document.getElementById('btnModoContrasteCalendario');
+            const btnModoBloqueosHCCalendario = document.getElementById('btnModoBloqueosHCCalendario');
             const reservaDrawerEl = document.getElementById('reservaDrawer');
             const reservaDrawer = reservaDrawerEl ? new bootstrap.Offcanvas(reservaDrawerEl) : null;
             const drawerErrorEl = document.getElementById('reservaDrawerError');
@@ -658,8 +750,23 @@ else
             const drawerClienteEl = document.getElementById('drawerCliente');
             const drawerTotalEl = document.getElementById('drawerTotal');
             const drawerAdelantoEl = document.getElementById('drawerAdelanto');
+            const drawerHistorialListEl = document.getElementById('drawerHistorialList');
             const btnDrawerEditarCompleto = document.getElementById('btnDrawerEditarCompleto');
             const drawerEstadoButtons = Array.from(document.querySelectorAll('[data-drawer-estado]'));
+            const kpiOcupacionDiaEl = document.getElementById('kpiOcupacionDia');
+            const kpiSlotsOcupadosDiaEl = document.getElementById('kpiSlotsOcupadosDia');
+            const kpiSlotsLibresDiaEl = document.getElementById('kpiSlotsLibresDia');
+            const kpiReservasActivasDiaEl = document.getElementById('kpiReservasActivasDia');
+            const kpiPendientesDiaEl = document.getElementById('kpiPendientesDia');
+            const kpiBloqueosDiaEl = document.getElementById('kpiBloqueosDia');
+            const recursosDiaGridEl = document.getElementById('recursosDiaGrid');
+            const chkReservasAllEl = document.getElementById('chkReservasAll');
+            const chkReservasItemEls = Array.from(document.querySelectorAll('.chk-reserva-item'));
+            const btnSeleccionarPendientesEl = document.getElementById('btnSeleccionarPendientes');
+            const btnMasivoConfirmarEl = document.getElementById('btnMasivoConfirmar');
+            const btnMasivoNoShowEl = document.getElementById('btnMasivoNoShow');
+            const btnMasivoRecordatorioEl = document.getElementById('btnMasivoRecordatorio');
+            const accionesMasivasFeedbackEl = document.getElementById('accionesMasivasFeedback');
             const hoyDate = new Date();
             const hoyIso = `${hoyDate.getFullYear()}-${String(hoyDate.getMonth() + 1).padStart(2, '0')}-${String(hoyDate.getDate()).padStart(2, '0')}`;
             const puedeCrearReserva = @Model.PuedeCrear.ToString().ToLowerInvariant();
@@ -675,6 +782,7 @@ else
             const calendarAxisWidth = '122px';
             let modoCompactoCalendario = false;
             let modoContrasteCalendario = false;
+            let modoBloqueosHCCalendario = false;
             function pad2(n) {
                 return String(n).padStart(2, '0');
             }
@@ -706,32 +814,32 @@ else
                 return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}T${pad2(date.getHours())}:${pad2(date.getMinutes())}:${pad2(date.getSeconds())}`;
             }
 
+            function formatearRangoCabecera(fechaInicio, fechaFinExclusiva) {
+                if (!fechaInicio || !fechaFinExclusiva) return '';
+                const fin = new Date(fechaFinExclusiva.getTime() - 1);
+                const diaInicio = fechaInicio.getDate();
+                const diaFin = fin.getDate();
+                const mesInicio = capitalizar(fechaInicio.toLocaleDateString('es-PE', { month: 'long' }));
+                const mesFin = capitalizar(fin.toLocaleDateString('es-PE', { month: 'long' }));
+                const anio = fin.getFullYear();
+                return `${diaInicio} de ${mesInicio} al ${diaFin} de ${mesFin} del ${anio}`;
+            }
+
             function renderToolbarSubtitle(fechaInicio, fechaFinExclusiva) {
                 if (!calendarioEl) return;
                 const toolbarTitle = calendarioEl.querySelector('.fc-toolbar-title');
                 if (!toolbarTitle) return;
+
                 const chunk = toolbarTitle.closest('.fc-toolbar-chunk');
-                if (!chunk) return;
-
-                let subtitle = chunk.querySelector('.sc-fc-toolbar-subtitle');
-                if (!subtitle) {
-                    subtitle = document.createElement('div');
-                    subtitle.className = 'sc-fc-toolbar-subtitle';
-                    chunk.appendChild(subtitle);
+                if (chunk) {
+                    const subtitle = chunk.querySelector('.sc-fc-toolbar-subtitle');
+                    if (subtitle) subtitle.remove();
                 }
 
-                const sedeSelect = document.getElementById('sedeId');
-                const espacioSelect = document.getElementById('espacioDeportivoId');
-                const sedeTexto = sedeSelect?.selectedOptions?.[0]?.text?.trim() || 'Todas las sedes';
-                const espacioTexto = espacioSelect?.selectedOptions?.[0]?.text?.trim() || 'Todos los espacios';
-
-                let rangoTexto = '';
-                if (fechaInicio && fechaFinExclusiva) {
-                    const fin = new Date(fechaFinExclusiva.getTime() - 1);
-                    rangoTexto = `${formatDateIso(fechaInicio)} a ${formatDateIso(fin)}`;
+                const titulo = formatearRangoCabecera(fechaInicio, fechaFinExclusiva);
+                if (titulo) {
+                    toolbarTitle.textContent = titulo;
                 }
-
-                subtitle.innerHTML = `<span><i class="bi bi-geo-alt"></i> ${sedeTexto}</span><span><i class="bi bi-grid-3x3-gap"></i> ${espacioTexto}</span><span><i class="bi bi-calendar-range"></i> ${rangoTexto}</span>`;
             }
 
             function capitalizar(texto) {
@@ -754,65 +862,7 @@ else
 
             function aplicarEstiloCalendarioFase1() {
                 if (!calendarioEl) return;
-                const fcRoot = calendarioEl.classList.contains('fc') ? calendarioEl : calendarioEl.querySelector('.fc');
-                if (!fcRoot) return;
-
                 calendarioEl.classList.add('sc-calendar-ready');
-                fcRoot.style.setProperty('--fc-timegrid-axis-width', calendarAxisWidth);
-                fcRoot.style.setProperty('--fc-border-color', '#dbe5f2');
-                fcRoot.style.setProperty('--fc-neutral-bg-color', '#f5f8fc');
-                fcRoot.style.setProperty('--fc-page-bg-color', '#ffffff');
-                fcRoot.style.setProperty('--fc-today-bg-color', '#edf4ff');
-                fcRoot.style.setProperty('--fc-now-indicator-color', '#ef4444');
-            }
-
-            function forzarAnchoEjeHorario() {
-                if (!calendarioEl) return;
-                const fcRoot = calendarioEl.classList.contains('fc') ? calendarioEl : calendarioEl.querySelector('.fc');
-                if (!fcRoot) return;
-
-                fcRoot.style.setProperty('--fc-timegrid-axis-width', calendarAxisWidth);
-
-                const selectors = [
-                    'table colgroup col:first-child',
-                    '.fc-timegrid-axis',
-                    '.fc-timegrid-axis.fc-scrollgrid-shrink',
-                    '.fc-timegrid-slot-label',
-                    '.fc-timegrid-slot-label.fc-scrollgrid-shrink',
-                    '.fc-timegrid-axis-frame',
-                    '.fc-timegrid-slot-label-frame'
-                ];
-
-                selectors.forEach((selector) => {
-                    fcRoot.querySelectorAll(selector).forEach((el) => {
-                        el.style.width = calendarAxisWidth;
-                        el.style.minWidth = calendarAxisWidth;
-                        el.style.maxWidth = calendarAxisWidth;
-                    });
-                });
-
-                fcRoot.querySelectorAll('.fc-scrollgrid-sync-table').forEach((table) => {
-                    table.style.tableLayout = 'fixed';
-                    table.style.width = 'max-content';
-                    table.style.minWidth = '100%';
-                });
-
-                fcRoot.querySelectorAll('.fc-timegrid-axis-cushion, .fc-timegrid-slot-label-cushion').forEach((lbl) => {
-                    lbl.style.whiteSpace = 'nowrap';
-                    lbl.style.display = 'flex';
-                    lbl.style.justifyContent = 'center';
-                    lbl.style.alignItems = 'center';
-                    lbl.style.textAlign = 'center';
-                });
-            }
-
-            function reintentarForzarEjeHorario() {
-                forzarAnchoEjeHorario();
-                setTimeout(forzarAnchoEjeHorario, 0);
-                setTimeout(forzarAnchoEjeHorario, 90);
-                setTimeout(forzarAnchoEjeHorario, 200);
-                setTimeout(forzarAnchoEjeHorario, 500);
-                setTimeout(forzarAnchoEjeHorario, 1000);
             }
 
             function aplicarFiltroLeyendaCalendario() {
@@ -836,6 +886,7 @@ else
                 if (!calendarioEl) return;
                 calendarioEl.classList.toggle('sc-mode-compact', modoCompactoCalendario);
                 calendarioEl.classList.toggle('sc-mode-contrast', modoContrasteCalendario);
+                calendarioEl.classList.toggle('sc-mode-blocks-hc', modoBloqueosHCCalendario);
 
                 if (btnModoCompactoCalendario) {
                     btnModoCompactoCalendario.classList.toggle('btn-outline-primary', !modoCompactoCalendario);
@@ -844,6 +895,10 @@ else
                 if (btnModoContrasteCalendario) {
                     btnModoContrasteCalendario.classList.toggle('btn-outline-secondary', !modoContrasteCalendario);
                     btnModoContrasteCalendario.classList.toggle('btn-secondary', modoContrasteCalendario);
+                }
+                if (btnModoBloqueosHCCalendario) {
+                    btnModoBloqueosHCCalendario.classList.toggle('btn-outline-dark', !modoBloqueosHCCalendario);
+                    btnModoBloqueosHCCalendario.classList.toggle('btn-dark', modoBloqueosHCCalendario);
                 }
             }
 
@@ -929,6 +984,44 @@ else
                 drawerErrorEl.textContent = '';
             }
 
+            function renderHistorialDrawer(items) {
+                if (!drawerHistorialListEl) return;
+                drawerHistorialListEl.innerHTML = '';
+                const historial = Array.isArray(items) ? items : [];
+                if (historial.length === 0) {
+                    const li = document.createElement('li');
+                    li.className = 'text-muted';
+                    li.textContent = 'Sin movimientos registrados.';
+                    drawerHistorialListEl.appendChild(li);
+                    return;
+                }
+                historial.forEach((item) => {
+                    const li = document.createElement('li');
+                    const fecha = String(item.fecha || '').trim();
+                    const accion = String(item.accion || '').trim();
+                    const usuario = String(item.usuario || '').trim();
+                    const detalle = String(item.detalle || '').trim();
+                    li.innerHTML = `<div class="sc-historial-head"><strong>${accion || 'Cambio'}</strong><span>${fecha || '-'}</span></div><div class="sc-historial-meta">${usuario || 'sistema'}</div>${detalle ? `<div class="sc-historial-detalle">${detalle}</div>` : ''}`;
+                    drawerHistorialListEl.appendChild(li);
+                });
+            }
+
+            async function cargarHistorialDrawer(reservaId) {
+                if (!drawerHistorialListEl) return;
+                renderHistorialDrawer([]);
+                try {
+                    const params = new URLSearchParams();
+                    params.append('negocioId', String(negocioId));
+                    params.append('id', String(reservaId));
+                    const r = await fetch(`${historialReservaUrl}?${params.toString()}`, { cache: 'no-store' });
+                    const payload = await r.json();
+                    if (!r.ok || !payload?.ok) throw new Error(payload?.mensaje || 'No se pudo cargar historial.');
+                    renderHistorialDrawer(payload.items || []);
+                } catch {
+                    renderHistorialDrawer([]);
+                }
+            }
+
             function mostrarErrorDrawer(msg) {
                 if (!drawerErrorEl) return;
                 drawerErrorEl.textContent = msg || 'No se pudo cargar la reserva.';
@@ -950,6 +1043,7 @@ else
                     drawerEstadoBadgeEl.className = `sc-drawer-state-badge ${cls}`.trim();
                     drawerEstadoBadgeEl.textContent = textoEstadoPorCodigo(data.estado);
                 }
+                void cargarHistorialDrawer(data.id);
             }
 
             async function abrirDrawerReserva(reservaId) {
@@ -1005,6 +1099,12 @@ else
                 reservaModalDisponibilidad.classList.add('d-none');
                 reservaModalDisponibilidad.classList.remove('alert-success', 'alert-warning');
                 reservaModalDisponibilidad.textContent = '';
+                ['modalEspacioDeportivoId', 'modalFecha', 'modalHoraInicio', 'modalHoraFin']
+                    .forEach((id) => {
+                        const el = document.getElementById(id);
+                        if (!el) return;
+                        el.classList.remove('is-invalid', 'is-valid');
+                    });
                 conflictoReservaIdActual = null;
                 reservaModalAccionConflicto.classList.add('d-none');
             }
@@ -1020,6 +1120,13 @@ else
                 reservaModalDisponibilidad.classList.toggle('alert-warning', !disponible);
                 reservaModalDisponibilidad.textContent = mensaje;
                 btnGuardarReservaModal.disabled = !disponible;
+                ['modalEspacioDeportivoId', 'modalFecha', 'modalHoraInicio', 'modalHoraFin']
+                    .forEach((id) => {
+                        const el = document.getElementById(id);
+                        if (!el) return;
+                        el.classList.toggle('is-invalid', !disponible);
+                        el.classList.toggle('is-valid', disponible);
+                    });
 
                 conflictoReservaIdActual = null;
                 reservaModalAccionConflicto.classList.add('d-none');
@@ -1308,6 +1415,8 @@ else
                 try {
                     const resumen = await obtenerResumenDiaBackend(fechaIso);
                     if (requestSeq !== disponibilidadRenderSeq) return;
+                    pintarKpiOperativoDia(resumen?.kpi, resumen?.totalPendientes ?? 0);
+                    pintarResumenRecursosDia(resumen?.resumenEspacios || []);
                     const slots = resumen?.slotsDisponibles || [];
                     disponibilidadSlotsEl.innerHTML = '';
                     for (const slot of slots) {
@@ -1366,6 +1475,8 @@ else
                 try {
                     const resumen = await obtenerResumenDiaBackend(fechaIso);
                     if (requestSeq !== pendientesRenderSeq) return;
+                    pintarKpiOperativoDia(resumen?.kpi, resumen?.totalPendientes ?? 0);
+                    pintarResumenRecursosDia(resumen?.resumenEspacios || []);
                     const pendientes = resumen?.pendientes || [];
                     pendientesSlotsEl.innerHTML = '';
 
@@ -1398,6 +1509,98 @@ else
                 }
             }
 
+            function pintarKpiOperativoDia(kpi, totalPendientes) {
+                if (!kpiOcupacionDiaEl) return;
+                const data = kpi || {};
+                kpiOcupacionDiaEl.textContent = `${Number(data.ocupacionPct || 0).toFixed(2)}%`;
+                if (kpiSlotsOcupadosDiaEl) kpiSlotsOcupadosDiaEl.textContent = String(data.slotsOcupados ?? 0);
+                if (kpiSlotsLibresDiaEl) kpiSlotsLibresDiaEl.textContent = String(data.slotsLibres ?? 0);
+                if (kpiReservasActivasDiaEl) kpiReservasActivasDiaEl.textContent = String(data.reservasActivas ?? 0);
+                if (kpiPendientesDiaEl) kpiPendientesDiaEl.textContent = String(totalPendientes ?? 0);
+                if (kpiBloqueosDiaEl) kpiBloqueosDiaEl.textContent = String(data.bloqueosActivos ?? 0);
+            }
+
+            function pintarResumenRecursosDia(items) {
+                if (!recursosDiaGridEl) return;
+                recursosDiaGridEl.innerHTML = '';
+                const rows = Array.isArray(items) ? items : [];
+                if (rows.length === 0) {
+                    recursosDiaGridEl.innerHTML = '<div class="empty-state mb-0"><i class="bi bi-grid"></i><span>Sin actividad de reservas para la fecha seleccionada.</span></div>';
+                    return;
+                }
+
+                rows.forEach((item) => {
+                    const card = document.createElement('article');
+                    card.className = 'sc-recurso-item';
+                    card.innerHTML = `
+                        <header>
+                            <strong>${item.espacio || '-'}</strong>
+                            <span>Total: ${item.total || 0}</span>
+                        </header>
+                        <div class="sc-recurso-stats">
+                            <span class="is-pendiente">Pend: ${item.pendientes || 0}</span>
+                            <span class="is-confirmada">Conf: ${item.confirmadas || 0}</span>
+                            <span class="is-enuso">En uso: ${item.enUso || 0}</span>
+                            <span class="is-finalizada">Fin: ${item.finalizadas || 0}</span>
+                            <span class="is-cancelada">Canc: ${item.canceladas || 0}</span>
+                            <span class="is-noshow">No show: ${item.noShow || 0}</span>
+                        </div>
+                    `;
+                    recursosDiaGridEl.appendChild(card);
+                });
+            }
+
+            function obtenerIdsSeleccionados() {
+                return chkReservasItemEls
+                    .filter((x) => x.checked)
+                    .map((x) => Number(x.value))
+                    .filter((x) => Number.isInteger(x) && x > 0);
+            }
+
+            function setFeedbackAccionMasiva(texto, tipo = 'muted') {
+                if (!accionesMasivasFeedbackEl) return;
+                accionesMasivasFeedbackEl.textContent = texto;
+                accionesMasivasFeedbackEl.classList.remove('text-muted', 'text-success', 'text-danger');
+                accionesMasivasFeedbackEl.classList.add(tipo === 'success' ? 'text-success' : (tipo === 'error' ? 'text-danger' : 'text-muted'));
+            }
+
+            async function ejecutarAccionMasiva(accion) {
+                const ids = obtenerIdsSeleccionados();
+                if (ids.length === 0) {
+                    setFeedbackAccionMasiva('Selecciona al menos una reserva.', 'error');
+                    return;
+                }
+
+                setFeedbackAccionMasiva('Procesando accion por lote...', 'muted');
+                try {
+                    const r = await fetch(accionMasivaUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            negocioId: negocioId,
+                            accion,
+                            reservaIds: ids
+                        })
+                    });
+                    const payload = await r.json();
+                    if (!r.ok || !payload?.ok) throw new Error(payload?.mensaje || 'No se pudo aplicar la accion masiva.');
+
+                    const errores = Array.isArray(payload.errores) ? payload.errores.filter(Boolean) : [];
+                    const tipo = errores.length > 0 ? 'error' : 'success';
+                    setFeedbackAccionMasiva(payload.mensaje || 'Accion completada.', tipo);
+                    if (calendar) {
+                        calendar.refetchEvents();
+                    }
+                    limpiarCacheResumenDia();
+                    const fechaDisponibilidad = disponibilidadFechaFiltroEl?.value || hoyIso;
+                    const fechaPendiente = pendientesFechaFiltroEl?.value || hoyIso;
+                    void renderDisponibilidadDia(new Date(`${fechaDisponibilidad}T00:00:00`));
+                    void renderPendientesConfirmarDia(new Date(`${fechaPendiente}T00:00:00`));
+                } catch (err) {
+                    setFeedbackAccionMasiva(err?.message || 'No se pudo completar la accion.', 'error');
+                }
+            }
+
             function armarUrlEventos(info) {
                 const sedeId = sedeSelect?.value || '';
                 const espacioDeportivoId = espacioSelect?.value || '';
@@ -1420,18 +1623,23 @@ else
                     firstDay: 1,
                     navLinks: false,
                     allDaySlot: false,
-                    dayHeaderDidMount: function(arg) {
+                    dayHeaderContent: function(arg) {
                         const nombreDia = capitalizar(arg.date.toLocaleDateString('es-PE', { weekday: 'long' }));
                         const fechaCorta = arg.date.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit' });
-                        const anchor = arg.el.querySelector('.fc-col-header-cell-cushion');
-                        if (!anchor) return;
-                        anchor.innerHTML = `<span class="sc-day-header-wrap"><span class="sc-day-header-title">${nombreDia}</span><span class="sc-day-header-date">${fechaCorta}</span></span>`;
+                        return {
+                            html: `<span class="sc-day-header-wrap"><span class="sc-day-header-title">${nombreDia}</span><span class="sc-day-header-date">${fechaCorta}</span></span>`
+                        };
                     },
                     dayHeaderClassNames: function() { return ['sc-header-day-cell']; },
                     slotLabelFormat: {
                         hour: '2-digit',
                         minute: '2-digit',
                         hour12: false
+                    },
+                    slotLabelContent: function(arg) {
+                        const hh = pad2(arg.date.getHours());
+                        const mm = pad2(arg.date.getMinutes());
+                        return { html: hh + ':' + mm };
                     },
                     slotLabelInterval: '01:00:00',
                     slotDuration: '00:30:00',
@@ -1526,7 +1734,6 @@ else
                         renderToolbarSubtitle(info.start, info.end);
                         pintarCabeceraHorarios();
                         aplicarEstiloCalendarioFase1();
-                        reintentarForzarEjeHorario();
                         activarHoverColumnasCalendario();
                         aplicarFiltroLeyendaCalendario();
                         aplicarModosVisualesCalendario();
@@ -1564,7 +1771,6 @@ else
                             });
                             success(eventosApi);
                             setTimeout(() => {
-                                reintentarForzarEjeHorario();
                                 const fechaRef = disponibilidadFechaFiltroEl?.value || hoyIso;
                                 void renderDisponibilidadDia(new Date(`${fechaRef}T00:00:00`));
                                 const fechaPendienteRef = pendientesFechaFiltroEl?.value || hoyIso;
@@ -1675,7 +1881,6 @@ else
                 renderToolbarSubtitle(calendar.view.currentStart, calendar.view.currentEnd);
                 pintarCabeceraHorarios();
                 aplicarEstiloCalendarioFase1();
-                reintentarForzarEjeHorario();
                 activarHoverColumnasCalendario();
                 aplicarFiltroLeyendaCalendario();
                 aplicarModosVisualesCalendario();
@@ -1768,6 +1973,12 @@ else
                     aplicarModosVisualesCalendario();
                 });
             }
+            if (btnModoBloqueosHCCalendario) {
+                btnModoBloqueosHCCalendario.addEventListener('click', () => {
+                    modoBloqueosHCCalendario = !modoBloqueosHCCalendario;
+                    aplicarModosVisualesCalendario();
+                });
+            }
 
             if (sedeSelect && espacioSelect) {
                 const espacioInicial = espacioSelect.value || '';
@@ -1857,6 +2068,31 @@ else
                         renderToolbarSubtitle(calendar.view.currentStart, calendar.view.currentEnd);
                     }
                 });
+            }
+
+            if (chkReservasAllEl) {
+                chkReservasAllEl.addEventListener('change', () => {
+                    chkReservasItemEls.forEach((x) => { x.checked = chkReservasAllEl.checked; });
+                });
+            }
+            if (btnSeleccionarPendientesEl) {
+                btnSeleccionarPendientesEl.addEventListener('click', () => {
+                    chkReservasItemEls.forEach((x) => {
+                        x.checked = String(x.dataset.estado || '') === '1';
+                    });
+                    if (chkReservasAllEl) {
+                        chkReservasAllEl.checked = chkReservasItemEls.length > 0 && chkReservasItemEls.every((x) => x.checked);
+                    }
+                });
+            }
+            if (btnMasivoConfirmarEl) {
+                btnMasivoConfirmarEl.addEventListener('click', () => ejecutarAccionMasiva('confirmar'));
+            }
+            if (btnMasivoNoShowEl) {
+                btnMasivoNoShowEl.addEventListener('click', () => ejecutarAccionMasiva('noshow'));
+            }
+            if (btnMasivoRecordatorioEl) {
+                btnMasivoRecordatorioEl.addEventListener('click', () => ejecutarAccionMasiva('recordatorio'));
             }
         })();
     </script>

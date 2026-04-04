@@ -9,10 +9,21 @@
 -- Description:   Ajusta update/delete de clientes para devolver error controlado cuando no existe registro para el negocio y valida duplicado por numero de documento dentro del negocio.
 -- Firma:         Codex - 30/03/2026 | Centraliza validacion de existencia y duplicidad (numero de documento) en SP para crear/actualizar cliente.
 -- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   01/04/2026
+-- Description:   Agrega NombreEquipo al maestro de clientes y lo propaga en CRUD/combo.
+-- Firma:         Codex - 01/04/2026 | Campo NombreEquipo en clientes y salida para reservas.
+-- =============================================
 
 IF COL_LENGTH('dbo.Clientes', 'DireccionFiscal') IS NULL
 BEGIN
     ALTER TABLE dbo.Clientes ADD DireccionFiscal NVARCHAR(250) NULL;
+END;
+GO
+
+IF COL_LENGTH('dbo.Clientes', 'NombreEquipo') IS NULL
+BEGIN
+    ALTER TABLE dbo.Clientes ADD NombreEquipo NVARCHAR(120) NULL;
 END;
 GO
 
@@ -154,7 +165,18 @@ AS
 BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
-        SELECT c.Id, CONCAT(c.NombresORazonSocial, N' (', c.NumeroDocumento, N')')
+        SELECT
+            c.Id,
+            CONCAT(
+                c.NombresORazonSocial,
+                N' (',
+                c.NumeroDocumento,
+                N')',
+                CASE
+                    WHEN NULLIF(LTRIM(RTRIM(c.NombreEquipo)), N'') IS NULL THEN N''
+                    ELSE CONCAT(N' - Equipo: ', LTRIM(RTRIM(c.NombreEquipo)))
+                END
+            )
         FROM dbo.Clientes c
         INNER JOIN dbo.NegocioClientes nc ON nc.ClienteId = c.Id
         WHERE nc.NegocioId = @NegocioId
@@ -179,6 +201,7 @@ BEGIN
         SELECT
             c.Id,
             c.NombresORazonSocial,
+            c.NombreEquipo,
             c.TipoDocumento,
             c.NumeroDocumento,
             c.Telefono,
@@ -208,6 +231,7 @@ BEGIN
         SELECT
             c.Id,
             c.NombresORazonSocial,
+            c.NombreEquipo,
             c.TipoDocumento,
             c.NumeroDocumento,
             c.Telefono,
@@ -231,6 +255,7 @@ GO
 CREATE OR ALTER PROCEDURE dbo.Sp_Clientes_Crear
     @NegocioId INT,
     @NombresORazonSocial NVARCHAR(200),
+    @NombreEquipo NVARCHAR(120) = NULL,
     @TipoDocumento NVARCHAR(20),
     @NumeroDocumento NVARCHAR(20),
     @Telefono NVARCHAR(20) = NULL,
@@ -243,7 +268,9 @@ BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
         DECLARE @NumeroDocumentoNormalizado NVARCHAR(20);
+        DECLARE @NombreEquipoNormalizado NVARCHAR(120);
         SET @NumeroDocumentoNormalizado = NULLIF(LTRIM(RTRIM(@NumeroDocumento)), N'');
+        SET @NombreEquipoNormalizado = NULLIF(LTRIM(RTRIM(@NombreEquipo)), N'');
         SET @NumeroDocumento = COALESCE(@NumeroDocumentoNormalizado, N'');
 
         IF @NumeroDocumentoNormalizado IS NOT NULL
@@ -263,12 +290,12 @@ BEGIN
 
         INSERT INTO dbo.Clientes
         (
-            NombresORazonSocial, TipoDocumento, NumeroDocumento, Telefono,
+            NombresORazonSocial, NombreEquipo, TipoDocumento, NumeroDocumento, Telefono,
             Correo, DireccionFiscal, Activo, FechaCreacion, UsuarioCreacion
         )
         VALUES
         (
-            @NombresORazonSocial, @TipoDocumento, @NumeroDocumento, @Telefono,
+            @NombresORazonSocial, @NombreEquipoNormalizado, @TipoDocumento, @NumeroDocumento, @Telefono,
             @Correo, @DireccionFiscal, @Activo, SYSUTCDATETIME(), @Usuario
         );
 
@@ -301,6 +328,7 @@ CREATE OR ALTER PROCEDURE dbo.Sp_Clientes_Actualizar
     @Id INT,
     @NegocioId INT,
     @NombresORazonSocial NVARCHAR(200),
+    @NombreEquipo NVARCHAR(120) = NULL,
     @TipoDocumento NVARCHAR(20),
     @NumeroDocumento NVARCHAR(20),
     @Telefono NVARCHAR(20) = NULL,
@@ -313,7 +341,9 @@ BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
         DECLARE @NumeroDocumentoNormalizado NVARCHAR(20);
+        DECLARE @NombreEquipoNormalizado NVARCHAR(120);
         SET @NumeroDocumentoNormalizado = NULLIF(LTRIM(RTRIM(@NumeroDocumento)), N'');
+        SET @NombreEquipoNormalizado = NULLIF(LTRIM(RTRIM(@NombreEquipo)), N'');
         SET @NumeroDocumento = COALESCE(@NumeroDocumentoNormalizado, N'');
 
         IF @NumeroDocumentoNormalizado IS NOT NULL
@@ -333,6 +363,7 @@ BEGIN
         UPDATE c
         SET
             c.NombresORazonSocial = @NombresORazonSocial,
+            c.NombreEquipo = @NombreEquipoNormalizado,
             c.TipoDocumento = @TipoDocumento,
             c.NumeroDocumento = @NumeroDocumento,
             c.Telefono = @Telefono,

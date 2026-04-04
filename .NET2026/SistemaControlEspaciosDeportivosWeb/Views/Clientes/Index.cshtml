@@ -1,5 +1,6 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ClientesIndexViewModel
 <!-- Firma: Codex - 29/03/2026 | Rediseno del listado de clientes con KPIs, filtro rapido y tabla detallada -->
+<!-- Firma: Codex - 01/04/2026 | Se agrega visualizacion de Nombre de equipo en listado de clientes. -->
 
 @{
     ViewData["Title"] = "Clientes";
@@ -87,10 +88,18 @@
                         {
                             var telefono = string.IsNullOrWhiteSpace(item.Telefono) ? "-" : item.Telefono!;
                             var correo = string.IsNullOrWhiteSpace(item.Correo) ? "-" : item.Correo!;
-                            <tr data-search="@($"{item.NombresORazonSocial} {item.TipoDocumento} {item.NumeroDocumento} {telefono} {correo} {(item.Activo ? "Activo" : "Inactivo")}".ToLowerInvariant())">
+                            <tr data-search="@($"{item.NombresORazonSocial} {item.NombreEquipo} {item.TipoDocumento} {item.NumeroDocumento} {telefono} {correo} {(item.Activo ? "Activo" : "Inactivo")}".ToLowerInvariant())">
                                 <td>
                                     <div class="sc-list-main">
                                         <div class="sc-list-title">@item.NombresORazonSocial</div>
+                                        @if (!string.IsNullOrWhiteSpace(item.NombreEquipo))
+                                        {
+                                            <div class="mt-1">
+                                                <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle">
+                                                    <i class="bi bi-shield me-1"></i>@item.NombreEquipo
+                                                </span>
+                                            </div>
+                                        }
                                         <small class="text-muted">ID: @item.Id</small>
                                     </div>
                                 </td>

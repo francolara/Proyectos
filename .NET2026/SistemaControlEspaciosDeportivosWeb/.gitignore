@@ -1,0 +1,3 @@
+# Configuracion local de desarrollo (no versionar secretos)
+appsettings.Development.json
+

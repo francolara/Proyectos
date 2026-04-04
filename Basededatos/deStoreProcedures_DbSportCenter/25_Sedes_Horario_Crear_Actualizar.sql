@@ -2,7 +2,7 @@
 -- Author:        FRANCO LARA
 -- Create date:   27/03/2026
 -- Description:   Extension de Sp_Sedes_Crear y Sp_Sedes_Actualizar con horario/dias y fechas no laborables.
--- Firma:         Codex - 27/03/2026
+-- Firma:         Codex - 02/04/2026 | Agrega ubicacion georreferenciada/fotos de sede y validacion de maximo 6 imagenes (1 principal + 5 alternativas).
 -- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.Sp_Sedes_Crear
@@ -11,6 +11,12 @@ CREATE OR ALTER PROCEDURE dbo.Sp_Sedes_Crear
     @Direccion NVARCHAR(250),
     @Telefono NVARCHAR(20) = NULL,
     @Activo BIT,
+    @Latitud DECIMAL(10,7) = NULL,
+    @Longitud DECIMAL(10,7) = NULL,
+    @GooglePlaceId NVARCHAR(200) = NULL,
+    @GoogleMapsUrl NVARCHAR(500) = NULL,
+    @FotoPrincipalUrl NVARCHAR(500) = NULL,
+    @FotosUrlsCsv NVARCHAR(MAX) = NULL,
     @ServiciosIdsCsv NVARCHAR(MAX) = NULL,
     @NotificacionesActivas BIT = 1,
     @MinutosAnticipacionRecordatorio INT = 90,
@@ -37,11 +43,33 @@ BEGIN
             RAISERROR('La hora de cierre debe ser mayor a la hora de apertura.', 16, 1);
         IF COALESCE(@AtiendeLunes, 0) + COALESCE(@AtiendeMartes, 0) + COALESCE(@AtiendeMiercoles, 0) + COALESCE(@AtiendeJueves, 0) + COALESCE(@AtiendeViernes, 0) + COALESCE(@AtiendeSabado, 0) + COALESCE(@AtiendeDomingo, 0) = 0
             RAISERROR('Debes seleccionar al menos un dia de atencion.', 16, 1);
+        DECLARE @FotosAlternativasCount INT = 0;
+        IF @FotosUrlsCsv IS NOT NULL AND LEN(LTRIM(RTRIM(@FotosUrlsCsv))) > 0
+            SELECT @FotosAlternativasCount = COUNT(1)
+            FROM STRING_SPLIT(@FotosUrlsCsv, N',')
+            WHERE LEN(LTRIM(RTRIM(value))) > 0;
+
+        IF @FotosAlternativasCount > 5
+            RAISERROR('Solo se permiten 5 fotos alternativas por sede.', 16, 1);
+        IF @FotoPrincipalUrl IS NULL AND @FotosAlternativasCount > 0
+            RAISERROR('Debes registrar una foto principal cuando existan fotos alternativas.', 16, 1);
+        IF (CASE WHEN @FotoPrincipalUrl IS NULL OR LEN(LTRIM(RTRIM(@FotoPrincipalUrl))) = 0 THEN 0 ELSE 1 END) + @FotosAlternativasCount > 6
+            RAISERROR('Solo se permiten 6 imagenes por sede (1 principal y 5 alternativas).', 16, 1);
 
         BEGIN TRANSACTION;
 
-        INSERT INTO dbo.Sedes (NegocioId, Nombre, Direccion, Telefono, Activo, FechaCreacion, UsuarioCreacion)
-        VALUES (@NegocioId, @Nombre, @Direccion, @Telefono, @Activo, SYSUTCDATETIME(), @Usuario);
+        INSERT INTO dbo.Sedes
+        (
+            NegocioId, Nombre, Direccion, Telefono, Activo,
+            Latitud, Longitud, GooglePlaceId, GoogleMapsUrl, FotoPrincipalUrl, FotosUrlsCsv,
+            FechaCreacion, UsuarioCreacion
+        )
+        VALUES
+        (
+            @NegocioId, @Nombre, @Direccion, @Telefono, @Activo,
+            @Latitud, @Longitud, @GooglePlaceId, @GoogleMapsUrl, @FotoPrincipalUrl, @FotosUrlsCsv,
+            SYSUTCDATETIME(), @Usuario
+        );
 
         DECLARE @Id INT = SCOPE_IDENTITY();
 
@@ -135,6 +163,12 @@ CREATE OR ALTER PROCEDURE dbo.Sp_Sedes_Actualizar
     @Direccion NVARCHAR(250),
     @Telefono NVARCHAR(20) = NULL,
     @Activo BIT,
+    @Latitud DECIMAL(10,7) = NULL,
+    @Longitud DECIMAL(10,7) = NULL,
+    @GooglePlaceId NVARCHAR(200) = NULL,
+    @GoogleMapsUrl NVARCHAR(500) = NULL,
+    @FotoPrincipalUrl NVARCHAR(500) = NULL,
+    @FotosUrlsCsv NVARCHAR(MAX) = NULL,
     @ServiciosIdsCsv NVARCHAR(MAX) = NULL,
     @NotificacionesActivas BIT = 1,
     @MinutosAnticipacionRecordatorio INT = 90,
@@ -161,6 +195,18 @@ BEGIN
             RAISERROR('La hora de cierre debe ser mayor a la hora de apertura.', 16, 1);
         IF COALESCE(@AtiendeLunes, 0) + COALESCE(@AtiendeMartes, 0) + COALESCE(@AtiendeMiercoles, 0) + COALESCE(@AtiendeJueves, 0) + COALESCE(@AtiendeViernes, 0) + COALESCE(@AtiendeSabado, 0) + COALESCE(@AtiendeDomingo, 0) = 0
             RAISERROR('Debes seleccionar al menos un dia de atencion.', 16, 1);
+        DECLARE @FotosAlternativasCount INT = 0;
+        IF @FotosUrlsCsv IS NOT NULL AND LEN(LTRIM(RTRIM(@FotosUrlsCsv))) > 0
+            SELECT @FotosAlternativasCount = COUNT(1)
+            FROM STRING_SPLIT(@FotosUrlsCsv, N',')
+            WHERE LEN(LTRIM(RTRIM(value))) > 0;
+
+        IF @FotosAlternativasCount > 5
+            RAISERROR('Solo se permiten 5 fotos alternativas por sede.', 16, 1);
+        IF @FotoPrincipalUrl IS NULL AND @FotosAlternativasCount > 0
+            RAISERROR('Debes registrar una foto principal cuando existan fotos alternativas.', 16, 1);
+        IF (CASE WHEN @FotoPrincipalUrl IS NULL OR LEN(LTRIM(RTRIM(@FotoPrincipalUrl))) = 0 THEN 0 ELSE 1 END) + @FotosAlternativasCount > 6
+            RAISERROR('Solo se permiten 6 imagenes por sede (1 principal y 5 alternativas).', 16, 1);
 
         BEGIN TRANSACTION;
 
@@ -169,6 +215,12 @@ BEGIN
             Direccion = @Direccion,
             Telefono = @Telefono,
             Activo = @Activo,
+            Latitud = @Latitud,
+            Longitud = @Longitud,
+            GooglePlaceId = @GooglePlaceId,
+            GoogleMapsUrl = @GoogleMapsUrl,
+            FotoPrincipalUrl = @FotoPrincipalUrl,
+            FotosUrlsCsv = @FotosUrlsCsv,
             FechaActualizacion = SYSUTCDATETIME(),
             UsuarioActualizacion = @Usuario
         WHERE Id = @Id

@@ -8,6 +8,13 @@ using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// En desarrollo, forzamos User Secrets al final para que tenga prioridad
+// sobre valores anteriores de appsettings/perfiles locales.
+if (builder.Environment.IsDevelopment())
+{
+    builder.Configuration.AddUserSecrets<Program>(optional: true, reloadOnChange: true);
+}
+
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -44,8 +51,10 @@ builder.Services.AddSession(options =>
 });
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.Configure<AutomationSettings>(builder.Configuration.GetSection("AutomationSettings"));
+builder.Services.Configure<SedeImagenStorageSettings>(builder.Configuration.GetSection("SedeImagenStorage"));
 builder.Services.AddScoped<IModuloPermisoService, ModuloPermisoService>();
 builder.Services.AddScoped<ISportCenterStoredProcedureService, SportCenterStoredProcedureService>();
+builder.Services.AddScoped<ISedeImagenStorageService, R2SedeImagenStorageService>();
 builder.Services.AddScoped<INotificacionEmailService, NotificacionEmailService>();
 builder.Services.AddHostedService<ReservaAutomationHostedService>();
 

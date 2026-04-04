@@ -22,3 +22,18 @@ public class ReservaDisponibilidadValidacionViewModel
     public string? ConflictoTipo { get; set; }
     public int? ConflictoId { get; set; }
 }
+
+public class ReservaAccionMasivaRequestViewModel
+{
+    public int NegocioId { get; set; }
+    public string Accion { get; set; } = string.Empty;
+    public List<int> ReservaIds { get; set; } = new();
+}
+
+public class ReservaHistorialItemViewModel
+{
+    public DateTime FechaRegistro { get; set; }
+    public string Accion { get; set; } = string.Empty;
+    public string Usuario { get; set; } = string.Empty;
+    public string? Detalle { get; set; }
+}

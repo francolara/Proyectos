@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using SistemaControlEspaciosDeportivosWeb.Models;
 
@@ -18,6 +19,28 @@ public class SedeFormViewModel
     [Required(ErrorMessage = "Este campo es obligatorio.")]
     [StringLength(250, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string Direccion { get; set; } = string.Empty;
+
+    [Range(-90, 90, ErrorMessage = "La latitud debe estar entre -90 y 90.")]
+    public decimal? Latitud { get; set; }
+
+    [Range(-180, 180, ErrorMessage = "La longitud debe estar entre -180 y 180.")]
+    public decimal? Longitud { get; set; }
+
+    [StringLength(200, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+    public string? GooglePlaceId { get; set; }
+
+    [StringLength(500, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+    [Url(ErrorMessage = "Ingresa una URL valida.")]
+    public string? GoogleMapsUrl { get; set; }
+
+    [StringLength(500, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+    [Url(ErrorMessage = "Ingresa una URL valida.")]
+    public string? FotoPrincipalUrl { get; set; }
+
+    public string? FotosUrlsCsv { get; set; }
+    public List<string> FotosUrls { get; set; } = new();
+    public List<string> FotosEliminarUrls { get; set; } = new();
+    public List<IFormFile> ImagenesArchivos { get; set; } = new();
 
     [StringLength(20, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string? Telefono { get; set; }
@@ -197,7 +220,10 @@ public class PagoFormViewModel
     public decimal Monto { get; set; }
 
     public DateTime FechaPago { get; set; } = DateTime.Now;
-    public FormaPago FormaPago { get; set; } = FormaPago.Efectivo;
+
+    [Range(1, int.MaxValue, ErrorMessage = "Debes seleccionar una forma de pago.")]
+    [Display(Name = "Forma de pago")]
+    public int FormaPagoId { get; set; }
 
     [StringLength(50, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string? NumeroOperacion { get; set; }
@@ -206,6 +232,7 @@ public class PagoFormViewModel
     public string? Observacion { get; set; }
 
     public List<SelectListItem> Reservas { get; set; } = new();
+    public List<SelectListItem> FormasPago { get; set; } = new();
 }
 
 public class ComprobanteFormViewModel
@@ -255,6 +282,9 @@ public class ClienteFormViewModel
     [Required(ErrorMessage = "Este campo es obligatorio.")]
     [StringLength(200, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string NombresORazonSocial { get; set; } = string.Empty;
+
+    [StringLength(120, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+    public string? NombreEquipo { get; set; }
 
     [Required(ErrorMessage = "Este campo es obligatorio.")]
     [StringLength(20, ErrorMessage = "El campo {0} excede la longitud permitida.")]

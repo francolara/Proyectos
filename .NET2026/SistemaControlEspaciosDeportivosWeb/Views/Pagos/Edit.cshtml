@@ -1,6 +1,5 @@
-@using SistemaControlEspaciosDeportivosWeb.Models
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.PagoFormViewModel
-<!-- Firma: Codex - 27/03/2026 | Estandar visual pro para formulario de pagos -->
+<!-- Firma: Codex - 01/04/2026 | Formulario de pagos ajustado para combo Forma de pago desde catalogo BD -->
 
 @{
     ViewData["Title"] = "Editar pago";
@@ -37,8 +36,8 @@
                         <input asp-for="Monto" class="form-control" />
                     </div>
                     <div class="col-md-3">
-                        <label asp-for="FormaPago" class="form-label"></label>
-                        <select asp-for="FormaPago" asp-items="Html.GetEnumSelectList<FormaPago>()" class="form-select"></select>
+                        <label asp-for="FormaPagoId" class="form-label"></label>
+                        <select asp-for="FormaPagoId" asp-items="Model.FormasPago" class="form-select"></select>
                     </div>
                     <div class="col-md-4">
                         <label asp-for="FechaPago" class="form-label"></label>

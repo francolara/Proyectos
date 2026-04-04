@@ -15,10 +15,11 @@
   - `Services/SportCenterStoredProcedureService.Clientes.cs`
   - `Services/SportCenterStoredProcedureService.Reportes.cs`
   - `Services/SportCenterStoredProcedureService.Solicitudes.cs`
-  - `Services/SportCenterStoredProcedureService.Usuarios.cs`
-  - `Services/SportCenterStoredProcedureService.Promociones.cs`
-  - `Services/SportCenterStoredProcedureService.ReservasPagosComprobantes.cs` (incluye calendario y bloqueos sprint 5)
-  - `Services/SportCenterStoredProcedureService.Automatizacion.cs`
+- `Services/SportCenterStoredProcedureService.Usuarios.cs`
+- `Services/SportCenterStoredProcedureService.Promociones.cs`
+- `Services/SportCenterStoredProcedureService.Maestros.cs`
+- `Services/SportCenterStoredProcedureService.ReservasPagosComprobantes.cs` (incluye calendario y bloqueos sprint 5)
+- `Services/SportCenterStoredProcedureService.Automatizacion.cs`
 - Seguridad por modulo via SP:
   - `Services/ModuloPermisoService.cs` usa `Sp_Seguridad_ObtenerContextoModulo`.
 
@@ -35,6 +36,7 @@
 - `Controllers/PagosController.cs`
 - `Controllers/ComprobantesController.cs`
 - `Controllers/ReportesController.cs`
+- `Controllers/MaestrosController.cs`
 
 ## Carpeta de Stored Procedures
 `Basededatos/deStoreProcedures_DbSportCenter`
@@ -347,11 +349,120 @@
   - `Sp_Combos_EspaciosPorNegocio` devuelve etiqueta de combo en formato: `Codigo - Nombre (Tipo suelo)`.
   - `Sp_UsuariosNegocio_ActualizarRol` devuelve error si no encuentra filas para el negocio.
 
+### 33_Reservas_Historial_Recordatorio.sql
+- SP nuevos:
+  - `Sp_Reservas_Historial`
+  - `Sp_Reservas_ObtenerParaRecordatorio`
+- Objetivo:
+  - soportar historial de acciones por reserva (drawer backend-driven)
+  - habilitar recordatorio manual por seleccion (acciones por lote)
+
+### 34_Clientes_NombreEquipo_Reservas.sql
+- Alter tabla:
+  - `Clientes.NombreEquipo` (NVARCHAR(120), NULL)
+- SP actualizados:
+  - `Sp_Combos_Clientes`
+  - `Sp_Clientes_Listar`
+  - `Sp_Clientes_ObtenerPorId`
+  - `Sp_Clientes_Crear`
+  - `Sp_Clientes_Actualizar`
+  - `Sp_Reservas_Listar`
+  - `Sp_Reservas_CalendarioEventos`
+  - `Sp_Combos_ReservasPorNegocio`
+  - `Sp_Reservas_ObtenerParaRecordatorio`
+- Objetivo:
+  - registrar nombre de equipo en maestro de clientes
+  - mostrar el equipo en calendario y vistas de reserva (listado/detalle/edicion/acciones)
+
+### 35_Maestros_FormasPago.sql
+- Tabla:
+  - `FormasPago`
+- SP actualizados:
+  - `Sp_Seguridad_SeedModulosPermisosBase` (agrega modulo `MAESTROS`)
+  - `Sp_Pagos_Listar`
+  - `Sp_Pagos_Crear`
+  - `Sp_Pagos_Actualizar`
+- SP nuevos:
+  - `Sp_Combos_FormasPago`
+  - `Sp_Maestros_Monedas_Listar`
+  - `Sp_Maestros_Monedas_Crear`
+  - `Sp_Maestros_Monedas_Actualizar`
+  - `Sp_Maestros_Monedas_Eliminar`
+  - `Sp_Maestros_TiposSuelo_Listar`
+  - `Sp_Maestros_TiposSuelo_Crear`
+  - `Sp_Maestros_TiposSuelo_Actualizar`
+  - `Sp_Maestros_TiposSuelo_Eliminar`
+  - `Sp_Maestros_TiposDeporte_Listar`
+  - `Sp_Maestros_TiposDeporte_Crear`
+  - `Sp_Maestros_TiposDeporte_Actualizar`
+  - `Sp_Maestros_TiposDeporte_Eliminar`
+  - `Sp_Maestros_FormasPago_Listar`
+  - `Sp_Maestros_FormasPago_Crear`
+  - `Sp_Maestros_FormasPago_Actualizar`
+  - `Sp_Maestros_FormasPago_Eliminar`
+- Objetivo:
+  - habilitar pestana `Maestros` para mantenimiento backend-driven de catalogos base.
+  - desacoplar formas de pago del valor fijo y manejarlo por tabla/combos.
+
+### 36_Maestros_PorNegocio_MonedasSuper.sql
+- Tabla:
+  - `MonedasSuperMaestro` (supermaestro LATAM con codigo/simbolo)
+- Alter tablas (auditoria + alcance por negocio):
+  - `Monedas`
+  - `TiposSuelo`
+  - `TiposDeporte`
+  - `FormasPago`
+- SP redefinidos:
+  - `Sp_Maestros_MonedasSuper_Listar`
+  - `Sp_Combos_Monedas` (ahora por `@NegocioId`)
+  - `Sp_Combos_TiposSuelo` (ahora por `@NegocioId`)
+  - `Sp_Combos_TiposDeporte` (ahora por `@NegocioId`)
+  - `Sp_Combos_FormasPago` (ahora por `@NegocioId`)
+  - `Sp_Maestros_Monedas_*`, `Sp_Maestros_TiposSuelo_*`, `Sp_Maestros_TiposDeporte_*`, `Sp_Maestros_FormasPago_*` (todos por negocio)
+  - `Sp_ConfiguracionClub_Actualizar` (valida moneda activa del negocio)
+- Objetivo:
+  - permitir que cada negocio maneje sus propios catálogos.
+  - en `Maestros > Monedas`, registrar monedas del club seleccionando desde supermaestro.
+
+### 37_Sedes_Ubicacion_Fotos.sql
+- Alter tabla:
+  - `Sedes.Latitud` (DECIMAL(10,7), NULL)
+  - `Sedes.Longitud` (DECIMAL(10,7), NULL)
+  - `Sedes.GooglePlaceId` (NVARCHAR(200), NULL)
+  - `Sedes.GoogleMapsUrl` (NVARCHAR(500), NULL)
+  - `Sedes.FotoPrincipalUrl` (NVARCHAR(500), NULL)
+  - `Sedes.FotosUrlsCsv` (NVARCHAR(MAX), NULL)
+- SP ajustados:
+  - `Sp_Sedes_ObtenerPorId`
+  - `Sp_Sedes_Crear`
+  - `Sp_Sedes_Actualizar`
+  - `Sp_Home_ListarSedesPublicas`
+- Objetivo:
+  - guardar ubicacion y fotos directamente en `Sedes` (sin tabla nueva)
+  - exponer coordenadas/foto para mostrar mini mapa en el portal cliente.
+  - soportar una foto principal y galeria alternativa por sede.
+
+### 19_Home_Whatsapp_Publico.sql (actualizacion 02/04/2026)
+- Ajuste de contrato en `Sp_Home_ListarSedesPublicas`:
+  - ahora devuelve `Sedes.FotosUrlsCsv` ademas de `FotoPrincipalUrl`.
+- Objetivo:
+  - mostrar galeria publica por sede (principal + alternativas) en modo cliente.
+
+### 25_Sedes_Horario_Crear_Actualizar.sql (actualizacion 02/04/2026)
+- Ajuste de validaciones en:
+  - `Sp_Sedes_Crear`
+  - `Sp_Sedes_Actualizar`
+- Reglas nuevas de fotos por sede:
+  - maximo 6 imagenes por sede (`1 principal + 5 alternativas`)
+  - no permite fotos alternativas sin foto principal.
+- Objetivo:
+  - asegurar integridad del contrato de imagenes desde backend (ADO.NET + SP), sin depender de validaciones front-end.
+
 ### 99_SP_Finales.sql
 - Script consolidado con la **ultima version efectiva** de cada `CREATE OR ALTER PROCEDURE`.
 - Se genera automaticamente desde todos los `.sql` de la carpeta `deStoreProcedures_DbSportCenter`.
 - Uso recomendado:
-  - ejecutar `00..32` normalmente
+  - ejecutar `00..33` normalmente
   - ejecutar `99_SP_Finales.sql` al final para evitar sobreescritura accidental por orden.
 - Generacion:
   - ejecutar `Generate-99_SP_Finales.ps1`
@@ -390,8 +501,13 @@
 30. Ejecutar `30_Configuracion_Club_Monedas.sql`.
 31. Ejecutar `31_Espacios_Tarifas_Base.sql`.
 32. Ejecutar `32_Usuarios_Sede_Restriccion_Filtros.sql`.
-33. Ejecutar `EXEC dbo.Sp_Seguridad_SeedModulosPermisosBase;` una vez.
-34. Ejecutar `99_SP_Finales.sql` como post-deploy para asegurar contrato final de SP.
+33. Ejecutar `33_Reservas_Historial_Recordatorio.sql`.
+34. Ejecutar `34_Clientes_NombreEquipo_Reservas.sql`.
+35. Ejecutar `35_Maestros_FormasPago.sql`.
+36. Ejecutar `36_Maestros_PorNegocio_MonedasSuper.sql`.
+37. Ejecutar `37_Sedes_Ubicacion_Fotos.sql`.
+38. Ejecutar `EXEC dbo.Sp_Seguridad_SeedModulosPermisosBase;` una vez.
+39. Ejecutar `99_SP_Finales.sql` como post-deploy para asegurar contrato final de SP.
 
 ## Observaciones funcionales
 - CRUD de modulos internos ejecuta operaciones por SP.
@@ -403,6 +519,13 @@
 - Panel privado muestra KPIs avanzados para operacion diaria y seguimiento mensual.
 - Reservas integra FullCalendar con vista semana/dia/mes, arrastre para mover horarios y bloqueos operativos por espacio.
 - Reservas permite cambio rapido de estado (check-in/check-out/no-show) desde tabla y calendario.
+- Reservas agrega operaciones avanzadas backend-driven:
+  - historial por reserva desde bitacora
+  - recordatorio manual por seleccion de reservas
+  - resumen operativo diario con KPI y vista por espacios
+- Clientes y reservas:
+  - se incorpora `NombreEquipo` en maestro de clientes
+  - el nombre de equipo se refleja en combos y visualizacion de reservas (calendario, listado y detalle)
 - Automatizacion en segundo plano:
   - envia recordatorios por correo antes de la hora de reserva
   - marca no-show automatico segun tolerancia configurada
@@ -415,6 +538,12 @@
 - Portal publico:
   - boton de WhatsApp visible solo si la sede habilito chat y registro numero.
   - boton tambien visible en tarjetas de espacios disponibles para iniciar chat inmediato.
+  - tarjetas de sedes muestran foto principal y carrusel con fotos alternativas cuando existen.
+- Carga de imagenes en Sedes:
+  - formulario de `Nueva sede` y `Editar sede` permite subir archivos (`jpg/png/webp`) en lugar de pegar URLs.
+  - carga integrada a almacenamiento objeto compatible S3 (Cloudflare R2) desde backend.
+  - primera imagen cargada se registra como `FotoPrincipalUrl`; el resto va a `FotosUrlsCsv`.
+  - limite tecnico y funcional de 6 imagenes por sede validado en front, controller y SP.
 - Boton publico "Software para Clubes":
   - pide contrasena para crear la cuenta del dueno
   - valida codigo CAPTCHA

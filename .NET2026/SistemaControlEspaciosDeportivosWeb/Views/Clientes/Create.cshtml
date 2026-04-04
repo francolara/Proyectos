@@ -1,6 +1,7 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ClienteFormViewModel
 <!-- Firma: Codex - 27/03/2026 | Estandar visual pro para formulario de clientes -->
 <!-- Firma: Codex - 30/03/2026 | Selector de codigo pais para telefono de cliente -->
+<!-- Firma: Codex - 01/04/2026 | Nuevo campo Nombre de equipo en alta de cliente. -->
 
 @{
     ViewData["Title"] = "Nuevo cliente";
@@ -31,6 +32,11 @@
                         <label asp-for="NombresORazonSocial" class="form-label"></label>
                         <input asp-for="NombresORazonSocial" class="form-control" />
                         <span asp-validation-for="NombresORazonSocial" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="NombreEquipo" class="form-label">Nombre de equipo</label>
+                        <input asp-for="NombreEquipo" class="form-control" />
+                        <span asp-validation-for="NombreEquipo" class="text-danger"></span>
                     </div>
                     <div class="col-md-4">
                         <label asp-for="TipoDocumento" class="form-label"></label>

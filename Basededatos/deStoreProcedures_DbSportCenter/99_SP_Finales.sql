@@ -1,8 +1,8 @@
 -- =============================================
 -- Author:        FRANCO LARA
--- Create date:   30/03/2026
+-- Create date:   02/04/2026
 -- Description:   Consolidado final de stored procedures (ultima version efectiva por nombre) generado automaticamente.
--- Firma:         Codex - 30/03/2026 | Script final para evitar sobreescritura por orden de despliegue; incluye filtro de estados multiples en Sp_Reservas_Listar.
+-- Firma:         Codex - 02/04/2026 | Script final para evitar sobreescritura por orden de despliegue.
 -- =============================================
 -- REGLA DE USO:
 -- 1) Ejecutar primero los scripts estructurales y funcionales (00..32).
@@ -447,226 +447,7 @@ BEGIN
 END
 GO
 
--- SOURCE: 06_Seguridad_Clientes.sql (linea 151)
-CREATE OR ALTER PROCEDURE dbo.Sp_Combos_Clientes
-    @NegocioId INT
-AS
-BEGIN
-    SET NOCOUNT ON;
-    BEGIN TRY
-        SELECT c.Id, CONCAT(c.NombresORazonSocial, N' (', c.NumeroDocumento, N')')
-        FROM dbo.Clientes c
-        INNER JOIN dbo.NegocioClientes nc ON nc.ClienteId = c.Id
-        WHERE nc.NegocioId = @NegocioId
-          AND nc.Activo = 1
-          AND c.Activo = 1
-        ORDER BY c.NombresORazonSocial;
-    END TRY
-    BEGIN CATCH
-        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
-        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
-        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
-    END CATCH
-END
-GO
-
--- SOURCE: 06_Seguridad_Clientes.sql (linea 173)
-CREATE OR ALTER PROCEDURE dbo.Sp_Clientes_Listar
-    @NegocioId INT
-AS
-BEGIN
-    SET NOCOUNT ON;
-    BEGIN TRY
-        SELECT
-            c.Id,
-            c.NombresORazonSocial,
-            c.TipoDocumento,
-            c.NumeroDocumento,
-            c.Telefono,
-            c.Correo,
-            c.Activo
-        FROM dbo.Clientes c
-        INNER JOIN dbo.NegocioClientes nc ON nc.ClienteId = c.Id
-        WHERE nc.NegocioId = @NegocioId
-          AND nc.Activo = 1
-        ORDER BY c.NombresORazonSocial;
-    END TRY
-    BEGIN CATCH
-        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
-        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
-        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
-    END CATCH
-END
-GO
-
--- SOURCE: 06_Seguridad_Clientes.sql (linea 201)
-CREATE OR ALTER PROCEDURE dbo.Sp_Clientes_ObtenerPorId
-    @NegocioId INT,
-    @Id INT
-AS
-BEGIN
-    SET NOCOUNT ON;
-    BEGIN TRY
-        SELECT
-            c.Id,
-            c.NombresORazonSocial,
-            c.TipoDocumento,
-            c.NumeroDocumento,
-            c.Telefono,
-            c.Correo,
-            c.DireccionFiscal,
-            c.Activo
-        FROM dbo.Clientes c
-        INNER JOIN dbo.NegocioClientes nc ON nc.ClienteId = c.Id
-        WHERE nc.NegocioId = @NegocioId
-          AND nc.Activo = 1
-          AND c.Id = @Id;
-    END TRY
-    BEGIN CATCH
-        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
-        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
-        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
-    END CATCH
-END
-GO
-
--- SOURCE: 06_Seguridad_Clientes.sql (linea 231)
-CREATE OR ALTER PROCEDURE dbo.Sp_Clientes_Crear
-    @NegocioId INT,
-    @NombresORazonSocial NVARCHAR(200),
-    @TipoDocumento NVARCHAR(20),
-    @NumeroDocumento NVARCHAR(20),
-    @Telefono NVARCHAR(20) = NULL,
-    @Correo NVARCHAR(200) = NULL,
-    @DireccionFiscal NVARCHAR(250) = NULL,
-    @Activo BIT,
-    @Usuario NVARCHAR(200)
-AS
-BEGIN
-    SET NOCOUNT ON;
-    BEGIN TRY
-        DECLARE @NumeroDocumentoNormalizado NVARCHAR(20);
-        SET @NumeroDocumentoNormalizado = NULLIF(LTRIM(RTRIM(@NumeroDocumento)), N'');
-        SET @NumeroDocumento = COALESCE(@NumeroDocumentoNormalizado, N'');
-
-        IF @NumeroDocumentoNormalizado IS NOT NULL
-           AND EXISTS
-           (
-               SELECT 1
-               FROM dbo.Clientes c
-               INNER JOIN dbo.NegocioClientes nc ON nc.ClienteId = c.Id
-               WHERE nc.NegocioId = @NegocioId
-                 AND nc.Activo = 1
-                 AND c.Activo = 1
-                 AND LTRIM(RTRIM(c.NumeroDocumento)) = @NumeroDocumentoNormalizado
-           )
-            RAISERROR('Cliente ya se encuentra registrado.', 16, 1);
-
-        BEGIN TRANSACTION;
-
-        INSERT INTO dbo.Clientes
-        (
-            NombresORazonSocial, TipoDocumento, NumeroDocumento, Telefono,
-            Correo, DireccionFiscal, Activo, FechaCreacion, UsuarioCreacion
-        )
-        VALUES
-        (
-            @NombresORazonSocial, @TipoDocumento, @NumeroDocumento, @Telefono,
-            @Correo, @DireccionFiscal, @Activo, SYSUTCDATETIME(), @Usuario
-        );
-
-        DECLARE @Id INT;
-        SET @Id = SCOPE_IDENTITY();
-
-        INSERT INTO dbo.NegocioClientes (NegocioId, ClienteId, Activo, FechaRegistro, UsuarioCreacion)
-        VALUES (@NegocioId, @Id, 1, SYSUTCDATETIME(), @Usuario);
-
-        DECLARE @EntidadIdAudit NVARCHAR(80);
-        SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
-        EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'CLIENTES', @Accion = N'CREATE', @Entidad = N'Cliente', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
-
-        COMMIT TRANSACTION;
-
-        SELECT @Id;
-    END TRY
-    BEGIN CATCH
-        IF XACT_STATE() <> 0
-            ROLLBACK TRANSACTION;
-
-        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
-        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
-        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
-    END CATCH
-END
-GO
-
--- SOURCE: 06_Seguridad_Clientes.sql (linea 300)
-CREATE OR ALTER PROCEDURE dbo.Sp_Clientes_Actualizar
-    @Id INT,
-    @NegocioId INT,
-    @NombresORazonSocial NVARCHAR(200),
-    @TipoDocumento NVARCHAR(20),
-    @NumeroDocumento NVARCHAR(20),
-    @Telefono NVARCHAR(20) = NULL,
-    @Correo NVARCHAR(200) = NULL,
-    @DireccionFiscal NVARCHAR(250) = NULL,
-    @Activo BIT,
-    @Usuario NVARCHAR(200)
-AS
-BEGIN
-    SET NOCOUNT ON;
-    BEGIN TRY
-        DECLARE @NumeroDocumentoNormalizado NVARCHAR(20);
-        SET @NumeroDocumentoNormalizado = NULLIF(LTRIM(RTRIM(@NumeroDocumento)), N'');
-        SET @NumeroDocumento = COALESCE(@NumeroDocumentoNormalizado, N'');
-
-        IF @NumeroDocumentoNormalizado IS NOT NULL
-           AND EXISTS
-           (
-               SELECT 1
-               FROM dbo.Clientes c
-               INNER JOIN dbo.NegocioClientes nc ON nc.ClienteId = c.Id
-               WHERE nc.NegocioId = @NegocioId
-                 AND nc.Activo = 1
-                 AND c.Activo = 1
-                 AND c.Id <> @Id
-                 AND LTRIM(RTRIM(c.NumeroDocumento)) = @NumeroDocumentoNormalizado
-           )
-            RAISERROR('Cliente ya se encuentra registrado.', 16, 1);
-
-        UPDATE c
-        SET
-            c.NombresORazonSocial = @NombresORazonSocial,
-            c.TipoDocumento = @TipoDocumento,
-            c.NumeroDocumento = @NumeroDocumento,
-            c.Telefono = @Telefono,
-            c.Correo = @Correo,
-            c.DireccionFiscal = @DireccionFiscal,
-            c.Activo = @Activo,
-            c.FechaActualizacion = SYSUTCDATETIME(),
-            c.UsuarioActualizacion = @Usuario
-        FROM dbo.Clientes c
-        INNER JOIN dbo.NegocioClientes nc ON nc.ClienteId = c.Id
-        WHERE c.Id = @Id
-          AND nc.NegocioId = @NegocioId
-          AND nc.Activo = 1;
-
-        IF @@ROWCOUNT = 0
-            RAISERROR('No se encontro el cliente para actualizar en el negocio.', 16, 1);
-
-        DECLARE @EntidadIdAudit NVARCHAR(80);
-        SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
-        EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'CLIENTES', @Accion = N'EDIT', @Entidad = N'Cliente', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
-    END TRY
-    BEGIN CATCH
-        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
-        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
-        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
-    END CATCH
-END
-GO
-
--- SOURCE: 06_Seguridad_Clientes.sql (linea 365)
+-- SOURCE: 06_Seguridad_Clientes.sql (linea 396)
 CREATE OR ALTER PROCEDURE dbo.Sp_Clientes_Eliminar
     @NegocioId INT,
     @Id INT,
@@ -790,186 +571,6 @@ BEGIN
 END
 GO
 
--- SOURCE: 07_Reservas_Pagos_Reglas.sql (linea 162)
-CREATE OR ALTER PROCEDURE dbo.Sp_Pagos_Crear
-    @NegocioId INT,
-    @ReservaId INT,
-    @FechaPago DATETIME2,
-    @Monto DECIMAL(10,2),
-    @FormaPago INT,
-    @NumeroOperacion NVARCHAR(50) = NULL,
-    @Observacion NVARCHAR(300) = NULL,
-    @Usuario NVARCHAR(200)
-AS
-BEGIN
-    SET NOCOUNT ON;
-    BEGIN TRY
-        IF @Monto <= 0
-            RAISERROR('El monto debe ser mayor que cero.', 16, 1);
-
-        DECLARE @TotalReserva DECIMAL(10,2);
-        DECLARE @PagadoActual DECIMAL(10,2);
-        DECLARE @NuevoPagado DECIMAL(10,2);
-
-        SELECT @TotalReserva = r.Total
-        FROM dbo.Reservas r
-        INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
-        INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
-        WHERE r.Id = @ReservaId
-          AND s.NegocioId = @NegocioId;
-
-        IF @TotalReserva IS NULL
-            RAISERROR('Reserva invalida para el negocio.', 16, 1);
-
-        SELECT @PagadoActual = COALESCE(SUM(p.Monto), 0)
-        FROM dbo.Pagos p
-        WHERE p.ReservaId = @ReservaId;
-
-        SET @NuevoPagado = @PagadoActual + @Monto;
-        IF @NuevoPagado > @TotalReserva
-            RAISERROR('El pago excede el total de la reserva.', 16, 1);
-
-        BEGIN TRANSACTION;
-
-        INSERT INTO dbo.Pagos
-        (
-            ReservaId, FechaPago, Monto, FormaPago, NumeroOperacion, Observacion,
-            FechaCreacion, UsuarioCreacion
-        )
-        VALUES
-        (
-            @ReservaId, @FechaPago, @Monto, @FormaPago, @NumeroOperacion, @Observacion,
-            SYSUTCDATETIME(), @Usuario
-        );
-
-        UPDATE r
-        SET Adelanto = @NuevoPagado,
-            Saldo = (r.Total - @NuevoPagado),
-            Estado = CASE WHEN (r.Total - @NuevoPagado) <= 0 AND r.Estado = 1 THEN 2 ELSE r.Estado END,
-            FechaActualizacion = SYSUTCDATETIME(),
-            UsuarioActualizacion = @Usuario
-        FROM dbo.Reservas r
-        WHERE r.Id = @ReservaId;
-
-        DECLARE @Id INT;
-        SET @Id = SCOPE_IDENTITY();
-        DECLARE @EntidadIdAudit NVARCHAR(80);
-        SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
-        EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'PAGOS', @Accion = N'CREATE', @Entidad = N'Pago', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
-
-        COMMIT TRANSACTION;
-
-        SELECT @Id;
-    END TRY
-    BEGIN CATCH
-        IF XACT_STATE() <> 0
-            ROLLBACK TRANSACTION;
-
-        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
-        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
-        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
-    END CATCH
-END
-GO
-
--- SOURCE: 07_Reservas_Pagos_Reglas.sql (linea 243)
-CREATE OR ALTER PROCEDURE dbo.Sp_Pagos_Actualizar
-    @Id INT,
-    @NegocioId INT,
-    @ReservaId INT,
-    @FechaPago DATETIME2,
-    @Monto DECIMAL(10,2),
-    @FormaPago INT,
-    @NumeroOperacion NVARCHAR(50) = NULL,
-    @Observacion NVARCHAR(300) = NULL,
-    @Usuario NVARCHAR(200)
-AS
-BEGIN
-    SET NOCOUNT ON;
-    BEGIN TRY
-        IF @Monto <= 0
-            RAISERROR('El monto debe ser mayor que cero.', 16, 1);
-
-        DECLARE @ReservaAnteriorId INT;
-        SELECT @ReservaAnteriorId = p.ReservaId FROM dbo.Pagos p WHERE p.Id = @Id;
-
-        IF @ReservaAnteriorId IS NULL
-            RAISERROR('No se encontro el pago para actualizar en el negocio.', 16, 1);
-
-        IF NOT EXISTS (
-            SELECT 1
-            FROM dbo.Reservas r
-            INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
-            INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
-            WHERE r.Id = @ReservaId
-              AND s.NegocioId = @NegocioId
-        )
-            RAISERROR('Reserva invalida para el negocio.', 16, 1);
-
-        DECLARE @TotalReserva DECIMAL(10,2);
-        DECLARE @PagadoSinEste DECIMAL(10,2);
-        DECLARE @NuevoPagado DECIMAL(10,2);
-
-        SELECT @TotalReserva = r.Total FROM dbo.Reservas r WHERE r.Id = @ReservaId;
-
-        SELECT @PagadoSinEste = COALESCE(SUM(p.Monto), 0)
-        FROM dbo.Pagos p
-        WHERE p.ReservaId = @ReservaId
-          AND p.Id <> @Id;
-
-        SET @NuevoPagado = @PagadoSinEste + @Monto;
-        IF @NuevoPagado > @TotalReserva
-            RAISERROR('El pago excede el total de la reserva.', 16, 1);
-
-        BEGIN TRANSACTION;
-
-        UPDATE dbo.Pagos
-        SET ReservaId = @ReservaId,
-            FechaPago = @FechaPago,
-            Monto = @Monto,
-            FormaPago = @FormaPago,
-            NumeroOperacion = @NumeroOperacion,
-            Observacion = @Observacion,
-            FechaActualizacion = SYSUTCDATETIME(),
-            UsuarioActualizacion = @Usuario
-        WHERE Id = @Id;
-
-        DECLARE @ReservaRecalculo TABLE (ReservaId INT PRIMARY KEY);
-        INSERT INTO @ReservaRecalculo (ReservaId) VALUES (@ReservaId);
-        IF @ReservaAnteriorId <> @ReservaId
-            INSERT INTO @ReservaRecalculo (ReservaId) VALUES (@ReservaAnteriorId);
-
-        UPDATE r
-        SET Adelanto = x.Pagado,
-            Saldo = (r.Total - x.Pagado),
-            Estado = CASE WHEN (r.Total - x.Pagado) <= 0 AND r.Estado = 1 THEN 2 ELSE r.Estado END,
-            FechaActualizacion = SYSUTCDATETIME(),
-            UsuarioActualizacion = @Usuario
-        FROM dbo.Reservas r
-        INNER JOIN (
-            SELECT rr.ReservaId, COALESCE(SUM(p.Monto), 0) AS Pagado
-            FROM @ReservaRecalculo rr
-            LEFT JOIN dbo.Pagos p ON p.ReservaId = rr.ReservaId
-            GROUP BY rr.ReservaId
-        ) x ON x.ReservaId = r.Id;
-
-        DECLARE @EntidadIdAudit NVARCHAR(80);
-        SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
-        EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'PAGOS', @Accion = N'EDIT', @Entidad = N'Pago', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
-
-        COMMIT TRANSACTION;
-    END TRY
-    BEGIN CATCH
-        IF XACT_STATE() <> 0
-            ROLLBACK TRANSACTION;
-
-        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
-        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
-        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
-    END CATCH
-END
-GO
-
 -- SOURCE: 07_Reservas_Pagos_Reglas.sql (linea 340)
 CREATE OR ALTER PROCEDURE dbo.Sp_Pagos_Eliminar
     @NegocioId INT,
@@ -1020,69 +621,6 @@ BEGIN
         IF XACT_STATE() <> 0
             ROLLBACK TRANSACTION;
 
-        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
-        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
-        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
-    END CATCH
-END
-GO
-
--- SOURCE: 08_Reservas_Calendario_Filtros.sql (linea 7)
-CREATE OR ALTER PROCEDURE dbo.Sp_Reservas_Listar
-    @NegocioId INT,
-    @FechaDesde DATE = NULL,
-    @FechaHasta DATE = NULL,
-    @SedeId INT = NULL,
-    @EspacioDeportivoId INT = NULL,
-    @Estado INT = NULL,
-    @EstadosCsv NVARCHAR(200) = NULL
-AS
-BEGIN
-    SET NOCOUNT ON;
-    BEGIN TRY
-        DECLARE @EstadosNormalizados NVARCHAR(200);
-        SET @EstadosNormalizados = NULLIF(REPLACE(REPLACE(LTRIM(RTRIM(@EstadosCsv)), N' ', N''), N';', N','), N'');
-
-        SELECT TOP (300)
-            r.Id,
-            c.NombresORazonSocial AS Cliente,
-            e.Nombre AS Espacio,
-            s.Nombre AS Sede,
-            r.Fecha,
-            r.HoraInicio,
-            r.HoraFin,
-            r.Total,
-            CAST(r.Estado AS NVARCHAR(20)) AS Estado
-        FROM dbo.Reservas r
-        INNER JOIN dbo.Clientes c ON c.Id = r.ClienteId
-        INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
-        INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
-        WHERE s.NegocioId = @NegocioId
-          AND (@FechaDesde IS NULL OR r.Fecha >= @FechaDesde)
-          AND (@FechaHasta IS NULL OR r.Fecha <= @FechaHasta)
-          AND (@SedeId IS NULL OR s.Id = @SedeId)
-          AND (@EspacioDeportivoId IS NULL OR e.Id = @EspacioDeportivoId)
-          AND
-          (
-              (@Estado IS NOT NULL AND r.Estado = @Estado)
-              OR
-              (
-                  @Estado IS NULL
-                  AND
-                  (
-                      @EstadosNormalizados IS NULL
-                      OR EXISTS
-                      (
-                          SELECT 1
-                          FROM STRING_SPLIT(@EstadosNormalizados, N',') estados
-                          WHERE TRY_CAST(estados.value AS INT) = r.Estado
-                      )
-                  )
-              )
-          )
-        ORDER BY r.Fecha ASC, r.HoraInicio ASC;
-    END TRY
-    BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
         SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
         RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
@@ -1563,82 +1101,6 @@ BEGIN
         DECLARE @EntidadIdAudit NVARCHAR(80);
         SET @EntidadIdAudit = CONCAT(CONVERT(NVARCHAR(30), @UsuarioNegocioId), N'-', CONVERT(NVARCHAR(30), @ModuloSistemaId));
         EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'USUARIOS', @Accion = N'EDIT', @Entidad = N'UsuarioNegocioPermiso', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
-    END TRY
-    BEGIN CATCH
-        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
-        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
-        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
-    END CATCH
-END
-GO
-
--- SOURCE: 14_Promociones_Kpis.sql (linea 39)
-CREATE OR ALTER PROCEDURE dbo.Sp_Seguridad_SeedModulosPermisosBase
-AS
-BEGIN
-    SET NOCOUNT ON;
-    BEGIN TRY
-        IF NOT EXISTS (SELECT 1 FROM dbo.ModulosSistema WHERE Codigo = N'DASHBOARD')
-            INSERT INTO dbo.ModulosSistema (Codigo, Nombre, Activo) VALUES (N'DASHBOARD', N'Dashboard', 1);
-        IF NOT EXISTS (SELECT 1 FROM dbo.ModulosSistema WHERE Codigo = N'SEDES')
-            INSERT INTO dbo.ModulosSistema (Codigo, Nombre, Activo) VALUES (N'SEDES', N'Sedes', 1);
-        IF NOT EXISTS (SELECT 1 FROM dbo.ModulosSistema WHERE Codigo = N'CLIENTES')
-            INSERT INTO dbo.ModulosSistema (Codigo, Nombre, Activo) VALUES (N'CLIENTES', N'Clientes', 1);
-        IF NOT EXISTS (SELECT 1 FROM dbo.ModulosSistema WHERE Codigo = N'ESPACIOS')
-            INSERT INTO dbo.ModulosSistema (Codigo, Nombre, Activo) VALUES (N'ESPACIOS', N'Espacios deportivos', 1);
-        IF NOT EXISTS (SELECT 1 FROM dbo.ModulosSistema WHERE Codigo = N'RESERVAS')
-            INSERT INTO dbo.ModulosSistema (Codigo, Nombre, Activo) VALUES (N'RESERVAS', N'Reservas', 1);
-        IF NOT EXISTS (SELECT 1 FROM dbo.ModulosSistema WHERE Codigo = N'SOLICITUDES')
-            INSERT INTO dbo.ModulosSistema (Codigo, Nombre, Activo) VALUES (N'SOLICITUDES', N'Solicitudes publicas', 1);
-        IF NOT EXISTS (SELECT 1 FROM dbo.ModulosSistema WHERE Codigo = N'PROMOCIONES')
-            INSERT INTO dbo.ModulosSistema (Codigo, Nombre, Activo) VALUES (N'PROMOCIONES', N'Promociones', 1);
-        IF NOT EXISTS (SELECT 1 FROM dbo.ModulosSistema WHERE Codigo = N'USUARIOS')
-            INSERT INTO dbo.ModulosSistema (Codigo, Nombre, Activo) VALUES (N'USUARIOS', N'Usuarios del negocio', 1);
-        IF NOT EXISTS (SELECT 1 FROM dbo.ModulosSistema WHERE Codigo = N'PAGOS')
-            INSERT INTO dbo.ModulosSistema (Codigo, Nombre, Activo) VALUES (N'PAGOS', N'Pagos', 1);
-        IF NOT EXISTS (SELECT 1 FROM dbo.ModulosSistema WHERE Codigo = N'COMPROBANTES')
-            INSERT INTO dbo.ModulosSistema (Codigo, Nombre, Activo) VALUES (N'COMPROBANTES', N'Comprobantes electronicos', 1);
-        IF NOT EXISTS (SELECT 1 FROM dbo.ModulosSistema WHERE Codigo = N'REPORTES')
-            INSERT INTO dbo.ModulosSistema (Codigo, Nombre, Activo) VALUES (N'REPORTES', N'Reportes', 1);
-
-        ;WITH Roles AS
-        (
-            SELECT CAST(1 AS INT) AS RolNegocio UNION ALL
-            SELECT 2 UNION ALL
-            SELECT 3 UNION ALL
-            SELECT 4 UNION ALL
-            SELECT 5
-        )
-        INSERT INTO dbo.RolesNegocioPermiso (RolNegocio, ModuloSistemaId, PuedeVer, PuedeCrear, PuedeEditar, PuedeEliminar)
-        SELECT
-            r.RolNegocio,
-            m.Id,
-            CAST(CASE WHEN r.RolNegocio = 1 THEN 1
-                      WHEN r.RolNegocio = 2 AND m.Codigo IN (N'DASHBOARD', N'RESERVAS', N'SOLICITUDES', N'PAGOS', N'CLIENTES', N'REPORTES', N'PROMOCIONES') THEN 1
-                      WHEN r.RolNegocio = 3 AND m.Codigo IN (N'DASHBOARD', N'RESERVAS', N'SOLICITUDES', N'CLIENTES') THEN 1
-                      WHEN r.RolNegocio = 4 AND m.Codigo IN (N'DASHBOARD', N'PAGOS', N'COMPROBANTES', N'REPORTES') THEN 1
-                      WHEN r.RolNegocio = 5 AND m.Codigo IN (N'DASHBOARD', N'RESERVAS', N'ESPACIOS', N'REPORTES') THEN 1
-                      ELSE 0 END AS BIT),
-            CAST(CASE WHEN r.RolNegocio = 1 THEN 1
-                      WHEN r.RolNegocio = 2 AND m.Codigo IN (N'RESERVAS', N'SOLICITUDES', N'PAGOS', N'CLIENTES', N'PROMOCIONES') THEN 1
-                      WHEN r.RolNegocio = 3 AND m.Codigo IN (N'RESERVAS', N'SOLICITUDES', N'CLIENTES') THEN 1
-                      WHEN r.RolNegocio = 4 AND m.Codigo IN (N'PAGOS', N'COMPROBANTES') THEN 1
-                      ELSE 0 END AS BIT),
-            CAST(CASE WHEN r.RolNegocio = 1 THEN 1
-                      WHEN r.RolNegocio = 2 AND m.Codigo IN (N'RESERVAS', N'SOLICITUDES', N'PAGOS', N'CLIENTES', N'PROMOCIONES') THEN 1
-                      WHEN r.RolNegocio = 3 AND m.Codigo IN (N'RESERVAS', N'SOLICITUDES', N'CLIENTES') THEN 1
-                      WHEN r.RolNegocio = 4 AND m.Codigo IN (N'PAGOS', N'COMPROBANTES') THEN 1
-                      WHEN r.RolNegocio = 5 AND m.Codigo IN (N'RESERVAS', N'ESPACIOS') THEN 1
-                      ELSE 0 END AS BIT),
-            CAST(CASE WHEN r.RolNegocio = 1 THEN 1 ELSE 0 END AS BIT)
-        FROM Roles r
-        CROSS JOIN dbo.ModulosSistema m
-        WHERE NOT EXISTS (
-            SELECT 1
-            FROM dbo.RolesNegocioPermiso rp
-            WHERE rp.RolNegocio = r.RolNegocio
-              AND rp.ModuloSistemaId = m.Id
-        );
     END TRY
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
@@ -2194,7 +1656,7 @@ BEGIN
 END
 GO
 
--- SOURCE: 19_Home_Whatsapp_Publico.sql (linea 7)
+-- SOURCE: 19_Home_Whatsapp_Publico.sql (linea 8)
 CREATE OR ALTER PROCEDURE dbo.Sp_Home_ListarSedesPublicas
 AS
 BEGIN
@@ -2206,7 +1668,12 @@ BEGIN
             s.Direccion,
             s.Telefono,
             scn.WhatsappContacto,
-            COALESCE(scn.PermiteChatWhatsapp, 0) AS PermiteChatWhatsapp
+            COALESCE(scn.PermiteChatWhatsapp, 0) AS PermiteChatWhatsapp,
+            s.Latitud,
+            s.Longitud,
+            s.GoogleMapsUrl,
+            s.FotoPrincipalUrl,
+            s.FotosUrlsCsv
         FROM dbo.Sedes s
         INNER JOIN dbo.Negocios n ON n.Id = s.NegocioId
         LEFT JOIN dbo.SedeConfiguracionNotificacion scn ON scn.SedeId = s.Id
@@ -2759,7 +2226,7 @@ BEGIN
 END
 GO
 
--- SOURCE: 24_Sedes_Horario_NoLaborable.sql (linea 100)
+-- SOURCE: 24_Sedes_Horario_NoLaborable.sql (linea 104)
 CREATE OR ALTER PROCEDURE dbo.Sp_Sedes_ObtenerPorId
     @NegocioId INT,
     @Id INT
@@ -2769,6 +2236,12 @@ BEGIN
     BEGIN TRY
         SELECT
             s.Id, s.NegocioId, s.Nombre, s.Direccion, s.Telefono, s.Activo,
+            s.Latitud,
+            s.Longitud,
+            s.GooglePlaceId,
+            s.GoogleMapsUrl,
+            s.FotoPrincipalUrl,
+            s.FotosUrlsCsv,
             STUFF((SELECT N',' + CONVERT(NVARCHAR(20), ss.ServicioId) FROM dbo.SedeServicios ss WHERE ss.SedeId = s.Id ORDER BY ss.ServicioId FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, N'') AS ServiciosIdsCsv,
             COALESCE(scn.NotificacionesActivas, 1) AS NotificacionesActivas,
             COALESCE(scn.MinutosAnticipacionRecordatorio, 90) AS MinutosAnticipacionRecordatorio,
@@ -2807,6 +2280,12 @@ CREATE OR ALTER PROCEDURE dbo.Sp_Sedes_Crear
     @Direccion NVARCHAR(250),
     @Telefono NVARCHAR(20) = NULL,
     @Activo BIT,
+    @Latitud DECIMAL(10,7) = NULL,
+    @Longitud DECIMAL(10,7) = NULL,
+    @GooglePlaceId NVARCHAR(200) = NULL,
+    @GoogleMapsUrl NVARCHAR(500) = NULL,
+    @FotoPrincipalUrl NVARCHAR(500) = NULL,
+    @FotosUrlsCsv NVARCHAR(MAX) = NULL,
     @ServiciosIdsCsv NVARCHAR(MAX) = NULL,
     @NotificacionesActivas BIT = 1,
     @MinutosAnticipacionRecordatorio INT = 90,
@@ -2833,11 +2312,33 @@ BEGIN
             RAISERROR('La hora de cierre debe ser mayor a la hora de apertura.', 16, 1);
         IF COALESCE(@AtiendeLunes, 0) + COALESCE(@AtiendeMartes, 0) + COALESCE(@AtiendeMiercoles, 0) + COALESCE(@AtiendeJueves, 0) + COALESCE(@AtiendeViernes, 0) + COALESCE(@AtiendeSabado, 0) + COALESCE(@AtiendeDomingo, 0) = 0
             RAISERROR('Debes seleccionar al menos un dia de atencion.', 16, 1);
+        DECLARE @FotosAlternativasCount INT = 0;
+        IF @FotosUrlsCsv IS NOT NULL AND LEN(LTRIM(RTRIM(@FotosUrlsCsv))) > 0
+            SELECT @FotosAlternativasCount = COUNT(1)
+            FROM STRING_SPLIT(@FotosUrlsCsv, N',')
+            WHERE LEN(LTRIM(RTRIM(value))) > 0;
+
+        IF @FotosAlternativasCount > 5
+            RAISERROR('Solo se permiten 5 fotos alternativas por sede.', 16, 1);
+        IF @FotoPrincipalUrl IS NULL AND @FotosAlternativasCount > 0
+            RAISERROR('Debes registrar una foto principal cuando existan fotos alternativas.', 16, 1);
+        IF (CASE WHEN @FotoPrincipalUrl IS NULL OR LEN(LTRIM(RTRIM(@FotoPrincipalUrl))) = 0 THEN 0 ELSE 1 END) + @FotosAlternativasCount > 6
+            RAISERROR('Solo se permiten 6 imagenes por sede (1 principal y 5 alternativas).', 16, 1);
 
         BEGIN TRANSACTION;
 
-        INSERT INTO dbo.Sedes (NegocioId, Nombre, Direccion, Telefono, Activo, FechaCreacion, UsuarioCreacion)
-        VALUES (@NegocioId, @Nombre, @Direccion, @Telefono, @Activo, SYSUTCDATETIME(), @Usuario);
+        INSERT INTO dbo.Sedes
+        (
+            NegocioId, Nombre, Direccion, Telefono, Activo,
+            Latitud, Longitud, GooglePlaceId, GoogleMapsUrl, FotoPrincipalUrl, FotosUrlsCsv,
+            FechaCreacion, UsuarioCreacion
+        )
+        VALUES
+        (
+            @NegocioId, @Nombre, @Direccion, @Telefono, @Activo,
+            @Latitud, @Longitud, @GooglePlaceId, @GoogleMapsUrl, @FotoPrincipalUrl, @FotosUrlsCsv,
+            SYSUTCDATETIME(), @Usuario
+        );
 
         DECLARE @Id INT = SCOPE_IDENTITY();
 
@@ -2924,7 +2425,7 @@ BEGIN
 END
 GO
 
--- SOURCE: 25_Sedes_Horario_Crear_Actualizar.sql (linea 131)
+-- SOURCE: 25_Sedes_Horario_Crear_Actualizar.sql (linea 159)
 CREATE OR ALTER PROCEDURE dbo.Sp_Sedes_Actualizar
     @Id INT,
     @NegocioId INT,
@@ -2932,6 +2433,12 @@ CREATE OR ALTER PROCEDURE dbo.Sp_Sedes_Actualizar
     @Direccion NVARCHAR(250),
     @Telefono NVARCHAR(20) = NULL,
     @Activo BIT,
+    @Latitud DECIMAL(10,7) = NULL,
+    @Longitud DECIMAL(10,7) = NULL,
+    @GooglePlaceId NVARCHAR(200) = NULL,
+    @GoogleMapsUrl NVARCHAR(500) = NULL,
+    @FotoPrincipalUrl NVARCHAR(500) = NULL,
+    @FotosUrlsCsv NVARCHAR(MAX) = NULL,
     @ServiciosIdsCsv NVARCHAR(MAX) = NULL,
     @NotificacionesActivas BIT = 1,
     @MinutosAnticipacionRecordatorio INT = 90,
@@ -2958,6 +2465,18 @@ BEGIN
             RAISERROR('La hora de cierre debe ser mayor a la hora de apertura.', 16, 1);
         IF COALESCE(@AtiendeLunes, 0) + COALESCE(@AtiendeMartes, 0) + COALESCE(@AtiendeMiercoles, 0) + COALESCE(@AtiendeJueves, 0) + COALESCE(@AtiendeViernes, 0) + COALESCE(@AtiendeSabado, 0) + COALESCE(@AtiendeDomingo, 0) = 0
             RAISERROR('Debes seleccionar al menos un dia de atencion.', 16, 1);
+        DECLARE @FotosAlternativasCount INT = 0;
+        IF @FotosUrlsCsv IS NOT NULL AND LEN(LTRIM(RTRIM(@FotosUrlsCsv))) > 0
+            SELECT @FotosAlternativasCount = COUNT(1)
+            FROM STRING_SPLIT(@FotosUrlsCsv, N',')
+            WHERE LEN(LTRIM(RTRIM(value))) > 0;
+
+        IF @FotosAlternativasCount > 5
+            RAISERROR('Solo se permiten 5 fotos alternativas por sede.', 16, 1);
+        IF @FotoPrincipalUrl IS NULL AND @FotosAlternativasCount > 0
+            RAISERROR('Debes registrar una foto principal cuando existan fotos alternativas.', 16, 1);
+        IF (CASE WHEN @FotoPrincipalUrl IS NULL OR LEN(LTRIM(RTRIM(@FotoPrincipalUrl))) = 0 THEN 0 ELSE 1 END) + @FotosAlternativasCount > 6
+            RAISERROR('Solo se permiten 6 imagenes por sede (1 principal y 5 alternativas).', 16, 1);
 
         BEGIN TRANSACTION;
 
@@ -2966,6 +2485,12 @@ BEGIN
             Direccion = @Direccion,
             Telefono = @Telefono,
             Activo = @Activo,
+            Latitud = @Latitud,
+            Longitud = @Longitud,
+            GooglePlaceId = @GooglePlaceId,
+            GoogleMapsUrl = @GoogleMapsUrl,
+            FotoPrincipalUrl = @FotoPrincipalUrl,
+            FotosUrlsCsv = @FotosUrlsCsv,
             FechaActualizacion = SYSUTCDATETIME(),
             UsuarioActualizacion = @Usuario
         WHERE Id = @Id
@@ -3220,306 +2745,6 @@ BEGIN
 END
 GO
 
--- SOURCE: 27_Calendario_No_Atencion_Sede.sql (linea 10)
-CREATE OR ALTER PROCEDURE dbo.Sp_Reservas_CalendarioEventos
-    @NegocioId INT,
-    @FechaDesde DATE,
-    @FechaHasta DATE,
-    @SedeId INT = NULL,
-    @EspacioDeportivoId INT = NULL,
-    @Estado INT = NULL
-AS
-BEGIN
-    SET NOCOUNT ON;
-    BEGIN TRY
-        ;WITH Fechas AS
-        (
-            SELECT @FechaDesde AS Fecha
-            UNION ALL
-            SELECT DATEADD(DAY, 1, Fecha) FROM Fechas WHERE Fecha < @FechaHasta
-        )
-        SELECT
-            r.Id,
-            CAST(N'RESERVA' AS NVARCHAR(20)) AS TipoEvento,
-            CONCAT(e.Nombre, N' - ', c.NombresORazonSocial) AS Titulo,
-            r.Fecha,
-            r.HoraInicio,
-            r.HoraFin,
-            r.Estado,
-            CAST(
-                CASE r.Estado
-                    WHEN 1 THEN N'#f59f00'
-                    WHEN 2 THEN N'#2f9e44'
-                    WHEN 3 THEN N'#1971c2'
-                    WHEN 4 THEN N'#495057'
-                    WHEN 5 THEN N'#c92a2a'
-                    WHEN 6 THEN N'#212529'
-                    ELSE N'#6c757d'
-                END
-                AS NVARCHAR(20)
-            ) AS Color,
-            e.Id AS EspacioDeportivoId,
-            e.Nombre AS Espacio,
-            s.Nombre AS Sede,
-            CAST(NULL AS NVARCHAR(200)) AS Motivo,
-            CAST(
-                CASE r.Estado
-                    WHEN 1 THEN N'PENDIENTE'
-                    WHEN 2 THEN N'CONFIRMADA'
-                    WHEN 3 THEN N'EN_USO'
-                    WHEN 4 THEN N'FINALIZADA'
-                    WHEN 5 THEN N'CANCELADA'
-                    WHEN 6 THEN N'NO_SHOW'
-                    ELSE N'RESERVADA'
-                END
-                AS NVARCHAR(40)
-            ) AS EstadoCodigo,
-            CAST(
-                CASE r.Estado
-                    WHEN 1 THEN N'Pendiente'
-                    WHEN 2 THEN N'Confirmada'
-                    WHEN 3 THEN N'En uso'
-                    WHEN 4 THEN N'Finalizada'
-                    WHEN 5 THEN N'Cancelada'
-                    WHEN 6 THEN N'No show'
-                    ELSE N'Reservada'
-                END
-                AS NVARCHAR(80)
-            ) AS EstadoTexto
-        FROM dbo.Reservas r
-        INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
-        INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
-        INNER JOIN dbo.Clientes c ON c.Id = r.ClienteId
-        WHERE s.NegocioId = @NegocioId
-          AND r.Fecha BETWEEN @FechaDesde AND @FechaHasta
-          AND (@SedeId IS NULL OR s.Id = @SedeId)
-          AND (@EspacioDeportivoId IS NULL OR e.Id = @EspacioDeportivoId)
-          AND (@Estado IS NULL OR r.Estado = @Estado)
-
-        UNION ALL
-
-        SELECT
-            b.Id,
-            CAST(N'BLOQUEO' AS NVARCHAR(20)) AS TipoEvento,
-            CONCAT(N'Bloqueado: ', b.Motivo) AS Titulo,
-            b.Fecha,
-            b.HoraInicio,
-            b.HoraFin,
-            NULL AS Estado,
-            CAST(N'#64748b' AS NVARCHAR(20)) AS Color,
-            e.Id AS EspacioDeportivoId,
-            e.Nombre AS Espacio,
-            s.Nombre AS Sede,
-            b.Motivo AS Motivo,
-            CAST(N'BLOQUEADO' AS NVARCHAR(40)) AS EstadoCodigo,
-            CAST(N'Bloqueado' AS NVARCHAR(80)) AS EstadoTexto
-        FROM dbo.BloqueosHorario b
-        INNER JOIN dbo.EspaciosDeportivos e ON e.Id = b.EspacioDeportivoId
-        INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
-        WHERE s.NegocioId = @NegocioId
-          AND b.Activo = 1
-          AND b.Fecha BETWEEN @FechaDesde AND @FechaHasta
-          AND (@SedeId IS NULL OR s.Id = @SedeId)
-          AND (@EspacioDeportivoId IS NULL OR e.Id = @EspacioDeportivoId)
-
-        UNION ALL
-
-        SELECT
-            (
-                110000000
-                + (DATEDIFF(DAY, '2020-01-01', sfi.Fecha) * 10000)
-                + (e.Id % 10000)
-            ),
-            CAST(N'NO_ATENCION' AS NVARCHAR(20)),
-            CAST(N'Sede sin atencion (fecha inhabilitada)' AS NVARCHAR(200)),
-            sfi.Fecha,
-            CAST('00:00' AS TIME),
-            CAST('23:59' AS TIME),
-            NULL,
-            CAST(N'#64748b' AS NVARCHAR(20)),
-            e.Id,
-            e.Nombre,
-            s.Nombre,
-            CAST(N'Sede sin atencion (fecha inhabilitada)' AS NVARCHAR(200)),
-            CAST(N'BLOQUEADO_NO_ATENCION' AS NVARCHAR(40)),
-            CAST(N'Bloqueado/No atencion' AS NVARCHAR(80))
-        FROM dbo.SedeFechasInhabilitadas sfi
-        INNER JOIN dbo.Sedes s ON s.Id = sfi.SedeId
-        INNER JOIN dbo.EspaciosDeportivos e ON e.SedeId = s.Id
-        WHERE s.NegocioId = @NegocioId
-          AND sfi.Activo = 1
-          AND sfi.Fecha BETWEEN @FechaDesde AND @FechaHasta
-          AND (@SedeId IS NULL OR s.Id = @SedeId)
-          AND (@EspacioDeportivoId IS NULL OR e.Id = @EspacioDeportivoId)
-
-        UNION ALL
-
-        SELECT
-            (
-                120000000
-                + (DATEDIFF(DAY, '2020-01-01', f.Fecha) * 10000)
-                + (e.Id % 10000)
-            ),
-            CAST(N'NO_ATENCION' AS NVARCHAR(20)),
-            CAST(N'Sede sin atencion (dia no laborable)' AS NVARCHAR(200)),
-            f.Fecha,
-            CAST('00:00' AS TIME),
-            CAST('23:59' AS TIME),
-            NULL,
-            CAST(N'#64748b' AS NVARCHAR(20)),
-            e.Id,
-            e.Nombre,
-            s.Nombre,
-            CAST(N'Sede sin atencion (dia no laborable)' AS NVARCHAR(200)),
-            CAST(N'BLOQUEADO_NO_ATENCION' AS NVARCHAR(40)),
-            CAST(N'Bloqueado/No atencion' AS NVARCHAR(80))
-        FROM Fechas f
-        INNER JOIN dbo.Sedes s ON s.NegocioId = @NegocioId
-        INNER JOIN dbo.EspaciosDeportivos e ON e.SedeId = s.Id
-        LEFT JOIN dbo.SedeHorarioAtencion sha ON sha.SedeId = s.Id
-        LEFT JOIN dbo.SedeFechasInhabilitadas sfi ON sfi.SedeId = s.Id AND sfi.Activo = 1 AND sfi.Fecha = f.Fecha
-        WHERE (@SedeId IS NULL OR s.Id = @SedeId)
-          AND (@EspacioDeportivoId IS NULL OR e.Id = @EspacioDeportivoId)
-          AND sfi.SedeId IS NULL
-          AND CASE ((DATEDIFF(DAY, '19000101', f.Fecha) % 7) + 1)
-                WHEN 1 THEN COALESCE(sha.AtiendeLunes, 1)
-                WHEN 2 THEN COALESCE(sha.AtiendeMartes, 1)
-                WHEN 3 THEN COALESCE(sha.AtiendeMiercoles, 1)
-                WHEN 4 THEN COALESCE(sha.AtiendeJueves, 1)
-                WHEN 5 THEN COALESCE(sha.AtiendeViernes, 1)
-                WHEN 6 THEN COALESCE(sha.AtiendeSabado, 1)
-                WHEN 7 THEN COALESCE(sha.AtiendeDomingo, 1)
-              END = 0
-
-        UNION ALL
-
-        SELECT
-            (
-                130000000
-                + (DATEDIFF(DAY, '2020-01-01', f.Fecha) * 10000)
-                + (e.Id % 10000)
-            ),
-            CAST(N'NO_ATENCION' AS NVARCHAR(20)),
-            CAST(N'Sede sin atencion (fuera de horario)' AS NVARCHAR(200)),
-            f.Fecha,
-            CAST('00:00' AS TIME),
-            COALESCE(sha.HoraApertura, CAST('08:00' AS TIME)),
-            NULL,
-            CAST(N'#64748b' AS NVARCHAR(20)),
-            e.Id,
-            e.Nombre,
-            s.Nombre,
-            CAST(N'Sede sin atencion (fuera de horario)' AS NVARCHAR(200)),
-            CAST(N'BLOQUEADO_NO_ATENCION' AS NVARCHAR(40)),
-            CAST(N'Bloqueado/No atencion' AS NVARCHAR(80))
-        FROM Fechas f
-        INNER JOIN dbo.Sedes s ON s.NegocioId = @NegocioId
-        INNER JOIN dbo.EspaciosDeportivos e ON e.SedeId = s.Id
-        LEFT JOIN dbo.SedeHorarioAtencion sha ON sha.SedeId = s.Id
-        LEFT JOIN dbo.SedeFechasInhabilitadas sfi ON sfi.SedeId = s.Id AND sfi.Activo = 1 AND sfi.Fecha = f.Fecha
-        WHERE (@SedeId IS NULL OR s.Id = @SedeId)
-          AND (@EspacioDeportivoId IS NULL OR e.Id = @EspacioDeportivoId)
-          AND sfi.SedeId IS NULL
-          AND CASE ((DATEDIFF(DAY, '19000101', f.Fecha) % 7) + 1)
-                WHEN 1 THEN COALESCE(sha.AtiendeLunes, 1)
-                WHEN 2 THEN COALESCE(sha.AtiendeMartes, 1)
-                WHEN 3 THEN COALESCE(sha.AtiendeMiercoles, 1)
-                WHEN 4 THEN COALESCE(sha.AtiendeJueves, 1)
-                WHEN 5 THEN COALESCE(sha.AtiendeViernes, 1)
-                WHEN 6 THEN COALESCE(sha.AtiendeSabado, 1)
-                WHEN 7 THEN COALESCE(sha.AtiendeDomingo, 1)
-              END = 1
-          AND COALESCE(sha.HoraApertura, CAST('08:00' AS TIME)) > CAST('00:00' AS TIME)
-
-        UNION ALL
-
-        SELECT
-            (
-                140000000
-                + (DATEDIFF(DAY, '2020-01-01', f.Fecha) * 10000)
-                + (e.Id % 10000)
-            ),
-            CAST(N'NO_ATENCION' AS NVARCHAR(20)),
-            CAST(N'Sede sin atencion (fuera de horario)' AS NVARCHAR(200)),
-            f.Fecha,
-            COALESCE(sha.HoraCierre, CAST('23:00' AS TIME)),
-            CAST('23:59' AS TIME),
-            NULL,
-            CAST(N'#64748b' AS NVARCHAR(20)),
-            e.Id,
-            e.Nombre,
-            s.Nombre,
-            CAST(N'Sede sin atencion (fuera de horario)' AS NVARCHAR(200)),
-            CAST(N'BLOQUEADO_NO_ATENCION' AS NVARCHAR(40)),
-            CAST(N'Bloqueado/No atencion' AS NVARCHAR(80))
-        FROM Fechas f
-        INNER JOIN dbo.Sedes s ON s.NegocioId = @NegocioId
-        INNER JOIN dbo.EspaciosDeportivos e ON e.SedeId = s.Id
-        LEFT JOIN dbo.SedeHorarioAtencion sha ON sha.SedeId = s.Id
-        LEFT JOIN dbo.SedeFechasInhabilitadas sfi ON sfi.SedeId = s.Id AND sfi.Activo = 1 AND sfi.Fecha = f.Fecha
-        WHERE (@SedeId IS NULL OR s.Id = @SedeId)
-          AND (@EspacioDeportivoId IS NULL OR e.Id = @EspacioDeportivoId)
-          AND sfi.SedeId IS NULL
-          AND CASE ((DATEDIFF(DAY, '19000101', f.Fecha) % 7) + 1)
-                WHEN 1 THEN COALESCE(sha.AtiendeLunes, 1)
-                WHEN 2 THEN COALESCE(sha.AtiendeMartes, 1)
-                WHEN 3 THEN COALESCE(sha.AtiendeMiercoles, 1)
-                WHEN 4 THEN COALESCE(sha.AtiendeJueves, 1)
-                WHEN 5 THEN COALESCE(sha.AtiendeViernes, 1)
-                WHEN 6 THEN COALESCE(sha.AtiendeSabado, 1)
-                WHEN 7 THEN COALESCE(sha.AtiendeDomingo, 1)
-              END = 1
-          AND COALESCE(sha.HoraCierre, CAST('23:00' AS TIME)) < CAST('23:59' AS TIME)
-
-        ORDER BY Fecha, HoraInicio
-        OPTION (MAXRECURSION 400);
-    END TRY
-    BEGIN CATCH
-        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
-        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
-        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
-    END CATCH
-END
-GO
-
--- SOURCE: 28_Espacios_Deporte_Suelo_Catalogos.sql (linea 89)
-CREATE OR ALTER PROCEDURE dbo.Sp_Combos_TiposDeporte
-AS
-BEGIN
-    SET NOCOUNT ON;
-    BEGIN TRY
-        SELECT td.Id, td.Nombre
-        FROM dbo.TiposDeporte td
-        WHERE td.Activo = 1
-        ORDER BY td.Nombre;
-    END TRY
-    BEGIN CATCH
-        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
-        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
-        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
-    END CATCH
-END
-GO
-
--- SOURCE: 28_Espacios_Deporte_Suelo_Catalogos.sql (linea 107)
-CREATE OR ALTER PROCEDURE dbo.Sp_Combos_TiposSuelo
-AS
-BEGIN
-    SET NOCOUNT ON;
-    BEGIN TRY
-        SELECT ts.Id, ts.Nombre
-        FROM dbo.TiposSuelo ts
-        WHERE ts.Activo = 1
-        ORDER BY ts.Nombre;
-    END TRY
-    BEGIN CATCH
-        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
-        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
-        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
-    END CATCH
-END
-GO
-
 -- SOURCE: 29_Reservas_ValidarDisponibilidad_Modal.sql (linea 8)
 CREATE OR ALTER PROCEDURE dbo.Sp_Reservas_ValidarDisponibilidad
     @NegocioId INT,
@@ -3686,28 +2911,6 @@ BEGIN
 END
 GO
 
--- SOURCE: 30_Configuracion_Club_Monedas.sql (linea 119)
-CREATE OR ALTER PROCEDURE dbo.Sp_Combos_Monedas
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    BEGIN TRY
-        SELECT
-            m.Id,
-            CONCAT(m.Nombre, N' (', m.Codigo, N')') AS Nombre
-        FROM dbo.Monedas m
-        WHERE m.Activo = 1
-        ORDER BY m.Nombre;
-    END TRY
-    BEGIN CATCH
-        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
-        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
-        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
-    END CATCH
-END
-GO
-
 -- SOURCE: 30_Configuracion_Club_Monedas.sql (linea 140)
 CREATE OR ALTER PROCEDURE dbo.Sp_ConfiguracionClub_Obtener
     @NegocioId INT
@@ -3727,60 +2930,6 @@ BEGIN
         FROM dbo.Negocios n
         WHERE n.Id = @NegocioId
           AND n.Activo = 1;
-    END TRY
-    BEGIN CATCH
-        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
-        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
-        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
-    END CATCH
-END
-GO
-
--- SOURCE: 30_Configuracion_Club_Monedas.sql (linea 167)
-CREATE OR ALTER PROCEDURE dbo.Sp_ConfiguracionClub_Actualizar
-    @NegocioId INT,
-    @NombreComercial NVARCHAR(200),
-    @RazonSocial NVARCHAR(200) = NULL,
-    @TipoDocumentoFiscal NVARCHAR(20) = NULL,
-    @NumeroDocumentoFiscal NVARCHAR(20) = NULL,
-    @DireccionFiscal NVARCHAR(250) = NULL,
-    @MonedaId INT,
-    @Usuario NVARCHAR(200)
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    BEGIN TRY
-        IF NOT EXISTS (SELECT 1 FROM dbo.Monedas WHERE Id = @MonedaId AND Activo = 1)
-            RAISERROR('La moneda seleccionada no es valida.', 16, 1);
-
-        UPDATE n
-        SET
-            n.NombreComercial = @NombreComercial,
-            n.RazonSocial = NULLIF(@RazonSocial, N''),
-            n.TipoDocumentoFiscal = NULLIF(@TipoDocumentoFiscal, N''),
-            n.NumeroDocumentoFiscal = NULLIF(@NumeroDocumentoFiscal, N''),
-            n.DireccionFiscal = NULLIF(@DireccionFiscal, N''),
-            n.DocumentoFiscal = NULLIF(@NumeroDocumentoFiscal, N''),
-            n.MonedaId = @MonedaId
-        FROM dbo.Negocios n
-        WHERE n.Id = @NegocioId
-          AND n.Activo = 1;
-
-        IF @@ROWCOUNT = 0
-            RAISERROR('No se encontro el club para actualizar.', 16, 1);
-
-        DECLARE @EntidadIdAuditoria NVARCHAR(80);
-        SET @EntidadIdAuditoria = CONVERT(NVARCHAR(80), @NegocioId);
-
-        EXEC dbo.Sp_Auditoria_Registrar
-            @NegocioId = @NegocioId,
-            @Modulo = N'CONFIGURACION',
-            @Accion = N'EDIT',
-            @Entidad = N'Negocio',
-            @EntidadId = @EntidadIdAuditoria,
-            @Usuario = @Usuario,
-            @DetalleJson = NULL;
     END TRY
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
@@ -4261,61 +3410,6 @@ BEGIN
           AND (@SedeId IS NULL OR s.Id = @SedeId)
           AND e.Estado = 1
         ORDER BY e.Codigo, e.Nombre;
-    END TRY
-    BEGIN CATCH
-        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
-        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
-        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
-    END CATCH
-END
-GO
-
--- SOURCE: 32_Usuarios_Sede_Restriccion_Filtros.sql (linea 244)
-CREATE OR ALTER PROCEDURE dbo.Sp_Combos_ReservasPorNegocio
-    @NegocioId INT,
-    @SedeId INT = NULL
-AS
-BEGIN
-    SET NOCOUNT ON;
-    BEGIN TRY
-        SELECT r.Id, CONCAT(N'#', r.Id, N' - ', c.NombresORazonSocial)
-        FROM dbo.Reservas r
-        INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
-        INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
-        INNER JOIN dbo.Clientes c ON c.Id = r.ClienteId
-        WHERE s.NegocioId = @NegocioId
-          AND (@SedeId IS NULL OR s.Id = @SedeId)
-        ORDER BY r.Fecha DESC, r.HoraInicio DESC;
-    END TRY
-    BEGIN CATCH
-        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
-        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
-        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
-    END CATCH
-END
-GO
-
--- SOURCE: 32_Usuarios_Sede_Restriccion_Filtros.sql (linea 268)
-CREATE OR ALTER PROCEDURE dbo.Sp_Pagos_Listar
-    @NegocioId INT,
-    @SedeId INT = NULL
-AS
-BEGIN
-    SET NOCOUNT ON;
-    BEGIN TRY
-        SELECT TOP (100)
-            p.Id,
-            p.ReservaId,
-            p.FechaPago,
-            p.Monto,
-            CAST(p.FormaPago AS NVARCHAR(20))
-        FROM dbo.Pagos p
-        INNER JOIN dbo.Reservas r ON r.Id = p.ReservaId
-        INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
-        INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
-        WHERE s.NegocioId = @NegocioId
-          AND (@SedeId IS NULL OR s.Id = @SedeId)
-        ORDER BY p.FechaPago DESC;
     END TRY
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
@@ -4848,3 +3942,1448 @@ BEGIN
     END CATCH
 END
 GO
+
+-- SOURCE: 33_Reservas_Historial_Recordatorio.sql (linea 8)
+CREATE OR ALTER PROCEDURE dbo.Sp_Reservas_Historial
+    @NegocioId INT,
+    @ReservaId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRY
+        SELECT
+            b.FechaRegistro,
+            b.Accion,
+            COALESCE(NULLIF(LTRIM(RTRIM(b.UsuarioNombre)), N''), b.UsuarioId, N'sistema') AS UsuarioNombre,
+            b.DetalleJson
+        FROM dbo.BitacoraAuditoria b
+        WHERE b.NegocioId = @NegocioId
+          AND b.Modulo = N'RESERVAS'
+          AND b.Entidad = N'Reserva'
+          AND b.EntidadId = CONVERT(NVARCHAR(80), @ReservaId)
+        ORDER BY b.FechaRegistro DESC;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 34_Clientes_NombreEquipo_Reservas.sql (linea 14)
+CREATE OR ALTER PROCEDURE dbo.Sp_Combos_Clientes
+    @NegocioId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        SELECT
+            c.Id,
+            CONCAT(
+                c.NombresORazonSocial,
+                N' (',
+                c.NumeroDocumento,
+                N')',
+                CASE
+                    WHEN NULLIF(LTRIM(RTRIM(c.NombreEquipo)), N'') IS NULL THEN N''
+                    ELSE CONCAT(N' - Equipo: ', LTRIM(RTRIM(c.NombreEquipo)))
+                END
+            ) AS NombreCliente
+        FROM dbo.Clientes c
+        INNER JOIN dbo.NegocioClientes nc ON nc.ClienteId = c.Id
+        WHERE nc.NegocioId = @NegocioId
+          AND nc.Activo = 1
+          AND c.Activo = 1
+        ORDER BY c.NombresORazonSocial;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 34_Clientes_NombreEquipo_Reservas.sql (linea 47)
+CREATE OR ALTER PROCEDURE dbo.Sp_Clientes_Listar
+    @NegocioId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        SELECT
+            c.Id,
+            c.NombresORazonSocial,
+            c.NombreEquipo,
+            c.TipoDocumento,
+            c.NumeroDocumento,
+            c.Telefono,
+            c.Correo,
+            c.Activo
+        FROM dbo.Clientes c
+        INNER JOIN dbo.NegocioClientes nc ON nc.ClienteId = c.Id
+        WHERE nc.NegocioId = @NegocioId
+          AND nc.Activo = 1
+        ORDER BY c.NombresORazonSocial;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 34_Clientes_NombreEquipo_Reservas.sql (linea 76)
+CREATE OR ALTER PROCEDURE dbo.Sp_Clientes_ObtenerPorId
+    @NegocioId INT,
+    @Id INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        SELECT
+            c.Id,
+            c.NombresORazonSocial,
+            c.NombreEquipo,
+            c.TipoDocumento,
+            c.NumeroDocumento,
+            c.Telefono,
+            c.Correo,
+            c.DireccionFiscal,
+            c.Activo
+        FROM dbo.Clientes c
+        INNER JOIN dbo.NegocioClientes nc ON nc.ClienteId = c.Id
+        WHERE nc.NegocioId = @NegocioId
+          AND nc.Activo = 1
+          AND c.Id = @Id;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 34_Clientes_NombreEquipo_Reservas.sql (linea 107)
+CREATE OR ALTER PROCEDURE dbo.Sp_Clientes_Crear
+    @NegocioId INT,
+    @NombresORazonSocial NVARCHAR(200),
+    @NombreEquipo NVARCHAR(120) = NULL,
+    @TipoDocumento NVARCHAR(20),
+    @NumeroDocumento NVARCHAR(20),
+    @Telefono NVARCHAR(20) = NULL,
+    @Correo NVARCHAR(200) = NULL,
+    @DireccionFiscal NVARCHAR(250) = NULL,
+    @Activo BIT,
+    @Usuario NVARCHAR(200)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        DECLARE @NumeroDocumentoNormalizado NVARCHAR(20);
+        DECLARE @NombreEquipoNormalizado NVARCHAR(120);
+        SET @NumeroDocumentoNormalizado = NULLIF(LTRIM(RTRIM(@NumeroDocumento)), N'');
+        SET @NombreEquipoNormalizado = NULLIF(LTRIM(RTRIM(@NombreEquipo)), N'');
+        SET @NumeroDocumento = COALESCE(@NumeroDocumentoNormalizado, N'');
+
+        IF @NumeroDocumentoNormalizado IS NOT NULL
+           AND EXISTS
+           (
+               SELECT 1
+               FROM dbo.Clientes c
+               INNER JOIN dbo.NegocioClientes nc ON nc.ClienteId = c.Id
+               WHERE nc.NegocioId = @NegocioId
+                 AND nc.Activo = 1
+                 AND c.Activo = 1
+                 AND LTRIM(RTRIM(c.NumeroDocumento)) = @NumeroDocumentoNormalizado
+           )
+            RAISERROR('Cliente ya se encuentra registrado.', 16, 1);
+
+        BEGIN TRANSACTION;
+
+        INSERT INTO dbo.Clientes
+        (
+            NombresORazonSocial, NombreEquipo, TipoDocumento, NumeroDocumento, Telefono,
+            Correo, DireccionFiscal, Activo, FechaCreacion, UsuarioCreacion
+        )
+        VALUES
+        (
+            @NombresORazonSocial, @NombreEquipoNormalizado, @TipoDocumento, @NumeroDocumento, @Telefono,
+            @Correo, @DireccionFiscal, @Activo, SYSUTCDATETIME(), @Usuario
+        );
+
+        DECLARE @Id INT;
+        SET @Id = SCOPE_IDENTITY();
+
+        INSERT INTO dbo.NegocioClientes (NegocioId, ClienteId, Activo, FechaRegistro, UsuarioCreacion)
+        VALUES (@NegocioId, @Id, 1, SYSUTCDATETIME(), @Usuario);
+
+        DECLARE @EntidadIdAudit NVARCHAR(80);
+        SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
+        EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'CLIENTES', @Accion = N'CREATE', @Entidad = N'Cliente', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
+
+        COMMIT TRANSACTION;
+
+        SELECT @Id;
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE() <> 0
+            ROLLBACK TRANSACTION;
+
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 34_Clientes_NombreEquipo_Reservas.sql (linea 179)
+CREATE OR ALTER PROCEDURE dbo.Sp_Clientes_Actualizar
+    @Id INT,
+    @NegocioId INT,
+    @NombresORazonSocial NVARCHAR(200),
+    @NombreEquipo NVARCHAR(120) = NULL,
+    @TipoDocumento NVARCHAR(20),
+    @NumeroDocumento NVARCHAR(20),
+    @Telefono NVARCHAR(20) = NULL,
+    @Correo NVARCHAR(200) = NULL,
+    @DireccionFiscal NVARCHAR(250) = NULL,
+    @Activo BIT,
+    @Usuario NVARCHAR(200)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        DECLARE @NumeroDocumentoNormalizado NVARCHAR(20);
+        DECLARE @NombreEquipoNormalizado NVARCHAR(120);
+        SET @NumeroDocumentoNormalizado = NULLIF(LTRIM(RTRIM(@NumeroDocumento)), N'');
+        SET @NombreEquipoNormalizado = NULLIF(LTRIM(RTRIM(@NombreEquipo)), N'');
+        SET @NumeroDocumento = COALESCE(@NumeroDocumentoNormalizado, N'');
+
+        IF @NumeroDocumentoNormalizado IS NOT NULL
+           AND EXISTS
+           (
+               SELECT 1
+               FROM dbo.Clientes c
+               INNER JOIN dbo.NegocioClientes nc ON nc.ClienteId = c.Id
+               WHERE nc.NegocioId = @NegocioId
+                 AND nc.Activo = 1
+                 AND c.Activo = 1
+                 AND c.Id <> @Id
+                 AND LTRIM(RTRIM(c.NumeroDocumento)) = @NumeroDocumentoNormalizado
+           )
+            RAISERROR('Cliente ya se encuentra registrado.', 16, 1);
+
+        UPDATE c
+        SET
+            c.NombresORazonSocial = @NombresORazonSocial,
+            c.NombreEquipo = @NombreEquipoNormalizado,
+            c.TipoDocumento = @TipoDocumento,
+            c.NumeroDocumento = @NumeroDocumento,
+            c.Telefono = @Telefono,
+            c.Correo = @Correo,
+            c.DireccionFiscal = @DireccionFiscal,
+            c.Activo = @Activo,
+            c.FechaActualizacion = SYSUTCDATETIME(),
+            c.UsuarioActualizacion = @Usuario
+        FROM dbo.Clientes c
+        INNER JOIN dbo.NegocioClientes nc ON nc.ClienteId = c.Id
+        WHERE c.Id = @Id
+          AND nc.NegocioId = @NegocioId
+          AND nc.Activo = 1;
+
+        IF @@ROWCOUNT = 0
+            RAISERROR('No se encontro el cliente para actualizar en el negocio.', 16, 1);
+
+        DECLARE @EntidadIdAudit NVARCHAR(80);
+        SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
+        EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'CLIENTES', @Accion = N'EDIT', @Entidad = N'Cliente', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 34_Clientes_NombreEquipo_Reservas.sql (linea 248)
+CREATE OR ALTER PROCEDURE dbo.Sp_Reservas_Listar
+    @NegocioId INT,
+    @FechaDesde DATE = NULL,
+    @FechaHasta DATE = NULL,
+    @SedeId INT = NULL,
+    @EspacioDeportivoId INT = NULL,
+    @Estado INT = NULL,
+    @EstadosCsv NVARCHAR(200) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        DECLARE @EstadosNormalizados NVARCHAR(200);
+        SET @EstadosNormalizados = NULLIF(REPLACE(REPLACE(LTRIM(RTRIM(@EstadosCsv)), N' ', N''), N';', N','), N'');
+
+        SELECT TOP (300)
+            r.Id,
+            CAST(
+                CASE
+                    WHEN NULLIF(LTRIM(RTRIM(c.NombreEquipo)), N'') IS NULL THEN c.NombresORazonSocial
+                    ELSE CONCAT(c.NombresORazonSocial, N' - Equipo: ', LTRIM(RTRIM(c.NombreEquipo)))
+                END
+                AS NVARCHAR(250)
+            ) AS Cliente,
+            e.Nombre AS Espacio,
+            s.Nombre AS Sede,
+            r.Fecha,
+            r.HoraInicio,
+            r.HoraFin,
+            r.Total,
+            CAST(r.Estado AS NVARCHAR(20)) AS Estado
+        FROM dbo.Reservas r
+        INNER JOIN dbo.Clientes c ON c.Id = r.ClienteId
+        INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
+        INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
+        WHERE s.NegocioId = @NegocioId
+          AND (@FechaDesde IS NULL OR r.Fecha >= @FechaDesde)
+          AND (@FechaHasta IS NULL OR r.Fecha <= @FechaHasta)
+          AND (@SedeId IS NULL OR s.Id = @SedeId)
+          AND (@EspacioDeportivoId IS NULL OR e.Id = @EspacioDeportivoId)
+          AND
+          (
+              (@Estado IS NOT NULL AND r.Estado = @Estado)
+              OR
+              (
+                  @Estado IS NULL
+                  AND
+                  (
+                      @EstadosNormalizados IS NULL
+                      OR EXISTS
+                      (
+                          SELECT 1
+                          FROM STRING_SPLIT(@EstadosNormalizados, N',') estados
+                          WHERE TRY_CAST(estados.value AS INT) = r.Estado
+                      )
+                  )
+              )
+          )
+        ORDER BY r.Fecha ASC, r.HoraInicio ASC;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 34_Clientes_NombreEquipo_Reservas.sql (linea 316)
+CREATE OR ALTER PROCEDURE dbo.Sp_Reservas_CalendarioEventos
+    @NegocioId INT,
+    @FechaDesde DATE,
+    @FechaHasta DATE,
+    @SedeId INT = NULL,
+    @EspacioDeportivoId INT = NULL,
+    @Estado INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        ;WITH Fechas AS
+        (
+            SELECT @FechaDesde AS Fecha
+            UNION ALL
+            SELECT DATEADD(DAY, 1, Fecha) FROM Fechas WHERE Fecha < @FechaHasta
+        )
+        SELECT
+            r.Id,
+            CAST(N'RESERVA' AS NVARCHAR(20)) AS TipoEvento,
+            CAST(
+                CASE
+                    WHEN NULLIF(LTRIM(RTRIM(c.NombreEquipo)), N'') IS NULL
+                        THEN CONCAT(e.Nombre, N' - ', c.NombresORazonSocial)
+                    ELSE CONCAT(e.Nombre, N' - ', LTRIM(RTRIM(c.NombreEquipo)), N' (', c.NombresORazonSocial, N')')
+                END
+                AS NVARCHAR(300)
+            ) AS Titulo,
+            r.Fecha,
+            r.HoraInicio,
+            r.HoraFin,
+            r.Estado,
+            CAST(
+                CASE r.Estado
+                    WHEN 1 THEN N'#f59f00'
+                    WHEN 2 THEN N'#2f9e44'
+                    WHEN 3 THEN N'#1971c2'
+                    WHEN 4 THEN N'#495057'
+                    WHEN 5 THEN N'#c92a2a'
+                    WHEN 6 THEN N'#212529'
+                    ELSE N'#6c757d'
+                END
+                AS NVARCHAR(20)
+            ) AS Color,
+            e.Id AS EspacioDeportivoId,
+            e.Nombre AS Espacio,
+            s.Nombre AS Sede,
+            CAST(NULL AS NVARCHAR(200)) AS Motivo,
+            CAST(
+                CASE r.Estado
+                    WHEN 1 THEN N'PENDIENTE'
+                    WHEN 2 THEN N'CONFIRMADA'
+                    WHEN 3 THEN N'EN_USO'
+                    WHEN 4 THEN N'FINALIZADA'
+                    WHEN 5 THEN N'CANCELADA'
+                    WHEN 6 THEN N'NO_SHOW'
+                    ELSE N'RESERVADA'
+                END
+                AS NVARCHAR(40)
+            ) AS EstadoCodigo,
+            CAST(
+                CASE r.Estado
+                    WHEN 1 THEN N'Pendiente'
+                    WHEN 2 THEN N'Confirmada'
+                    WHEN 3 THEN N'En uso'
+                    WHEN 4 THEN N'Finalizada'
+                    WHEN 5 THEN N'Cancelada'
+                    WHEN 6 THEN N'No show'
+                    ELSE N'Reservada'
+                END
+                AS NVARCHAR(80)
+            ) AS EstadoTexto
+        FROM dbo.Reservas r
+        INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
+        INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
+        INNER JOIN dbo.Clientes c ON c.Id = r.ClienteId
+        WHERE s.NegocioId = @NegocioId
+          AND r.Fecha BETWEEN @FechaDesde AND @FechaHasta
+          AND (@SedeId IS NULL OR s.Id = @SedeId)
+          AND (@EspacioDeportivoId IS NULL OR e.Id = @EspacioDeportivoId)
+          AND (@Estado IS NULL OR r.Estado = @Estado)
+
+        UNION ALL
+
+        SELECT
+            b.Id,
+            CAST(N'BLOQUEO' AS NVARCHAR(20)) AS TipoEvento,
+            CONCAT(N'Bloqueado: ', b.Motivo) AS Titulo,
+            b.Fecha,
+            b.HoraInicio,
+            b.HoraFin,
+            NULL AS Estado,
+            CAST(N'#64748b' AS NVARCHAR(20)) AS Color,
+            e.Id AS EspacioDeportivoId,
+            e.Nombre AS Espacio,
+            s.Nombre AS Sede,
+            b.Motivo AS Motivo,
+            CAST(N'BLOQUEADO' AS NVARCHAR(40)) AS EstadoCodigo,
+            CAST(N'Bloqueado' AS NVARCHAR(80)) AS EstadoTexto
+        FROM dbo.BloqueosHorario b
+        INNER JOIN dbo.EspaciosDeportivos e ON e.Id = b.EspacioDeportivoId
+        INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
+        WHERE s.NegocioId = @NegocioId
+          AND b.Activo = 1
+          AND b.Fecha BETWEEN @FechaDesde AND @FechaHasta
+          AND (@SedeId IS NULL OR s.Id = @SedeId)
+          AND (@EspacioDeportivoId IS NULL OR e.Id = @EspacioDeportivoId)
+
+        UNION ALL
+
+        SELECT
+            (
+                110000000
+                + (DATEDIFF(DAY, '2020-01-01', sfi.Fecha) * 10000)
+                + (e.Id % 10000)
+            ),
+            CAST(N'NO_ATENCION' AS NVARCHAR(20)),
+            CAST(N'Sede sin atencion (fecha inhabilitada)' AS NVARCHAR(200)),
+            sfi.Fecha,
+            CAST('00:00' AS TIME),
+            CAST('23:59' AS TIME),
+            NULL,
+            CAST(N'#64748b' AS NVARCHAR(20)),
+            e.Id,
+            e.Nombre,
+            s.Nombre,
+            CAST(N'Sede sin atencion (fecha inhabilitada)' AS NVARCHAR(200)),
+            CAST(N'BLOQUEADO_NO_ATENCION' AS NVARCHAR(40)),
+            CAST(N'Bloqueado/No atencion' AS NVARCHAR(80))
+        FROM dbo.SedeFechasInhabilitadas sfi
+        INNER JOIN dbo.Sedes s ON s.Id = sfi.SedeId
+        INNER JOIN dbo.EspaciosDeportivos e ON e.SedeId = s.Id
+        WHERE s.NegocioId = @NegocioId
+          AND sfi.Activo = 1
+          AND sfi.Fecha BETWEEN @FechaDesde AND @FechaHasta
+          AND (@SedeId IS NULL OR s.Id = @SedeId)
+          AND (@EspacioDeportivoId IS NULL OR e.Id = @EspacioDeportivoId)
+
+        UNION ALL
+
+        SELECT
+            (
+                120000000
+                + (DATEDIFF(DAY, '2020-01-01', f.Fecha) * 10000)
+                + (e.Id % 10000)
+            ),
+            CAST(N'NO_ATENCION' AS NVARCHAR(20)),
+            CAST(N'Sede sin atencion (dia no laborable)' AS NVARCHAR(200)),
+            f.Fecha,
+            CAST('00:00' AS TIME),
+            CAST('23:59' AS TIME),
+            NULL,
+            CAST(N'#64748b' AS NVARCHAR(20)),
+            e.Id,
+            e.Nombre,
+            s.Nombre,
+            CAST(N'Sede sin atencion (dia no laborable)' AS NVARCHAR(200)),
+            CAST(N'BLOQUEADO_NO_ATENCION' AS NVARCHAR(40)),
+            CAST(N'Bloqueado/No atencion' AS NVARCHAR(80))
+        FROM Fechas f
+        INNER JOIN dbo.Sedes s ON s.NegocioId = @NegocioId
+        INNER JOIN dbo.EspaciosDeportivos e ON e.SedeId = s.Id
+        LEFT JOIN dbo.SedeHorarioAtencion sha ON sha.SedeId = s.Id
+        LEFT JOIN dbo.SedeFechasInhabilitadas sfi ON sfi.SedeId = s.Id AND sfi.Activo = 1 AND sfi.Fecha = f.Fecha
+        WHERE (@SedeId IS NULL OR s.Id = @SedeId)
+          AND (@EspacioDeportivoId IS NULL OR e.Id = @EspacioDeportivoId)
+          AND sfi.SedeId IS NULL
+          AND CASE ((DATEDIFF(DAY, '19000101', f.Fecha) % 7) + 1)
+                WHEN 1 THEN COALESCE(sha.AtiendeLunes, 1)
+                WHEN 2 THEN COALESCE(sha.AtiendeMartes, 1)
+                WHEN 3 THEN COALESCE(sha.AtiendeMiercoles, 1)
+                WHEN 4 THEN COALESCE(sha.AtiendeJueves, 1)
+                WHEN 5 THEN COALESCE(sha.AtiendeViernes, 1)
+                WHEN 6 THEN COALESCE(sha.AtiendeSabado, 1)
+                WHEN 7 THEN COALESCE(sha.AtiendeDomingo, 1)
+              END = 0
+
+        UNION ALL
+
+        SELECT
+            (
+                130000000
+                + (DATEDIFF(DAY, '2020-01-01', f.Fecha) * 10000)
+                + (e.Id % 10000)
+            ),
+            CAST(N'NO_ATENCION' AS NVARCHAR(20)),
+            CAST(N'Sede sin atencion (fuera de horario)' AS NVARCHAR(200)),
+            f.Fecha,
+            CAST('00:00' AS TIME),
+            COALESCE(sha.HoraApertura, CAST('08:00' AS TIME)),
+            NULL,
+            CAST(N'#64748b' AS NVARCHAR(20)),
+            e.Id,
+            e.Nombre,
+            s.Nombre,
+            CAST(N'Sede sin atencion (fuera de horario)' AS NVARCHAR(200)),
+            CAST(N'BLOQUEADO_NO_ATENCION' AS NVARCHAR(40)),
+            CAST(N'Bloqueado/No atencion' AS NVARCHAR(80))
+        FROM Fechas f
+        INNER JOIN dbo.Sedes s ON s.NegocioId = @NegocioId
+        INNER JOIN dbo.EspaciosDeportivos e ON e.SedeId = s.Id
+        LEFT JOIN dbo.SedeHorarioAtencion sha ON sha.SedeId = s.Id
+        LEFT JOIN dbo.SedeFechasInhabilitadas sfi ON sfi.SedeId = s.Id AND sfi.Activo = 1 AND sfi.Fecha = f.Fecha
+        WHERE (@SedeId IS NULL OR s.Id = @SedeId)
+          AND (@EspacioDeportivoId IS NULL OR e.Id = @EspacioDeportivoId)
+          AND sfi.SedeId IS NULL
+          AND
+          (
+              COALESCE(sha.HoraApertura, CAST('08:00' AS TIME)) > CAST('00:00' AS TIME)
+              OR COALESCE(sha.HoraCierre, CAST('23:00' AS TIME)) < CAST('23:59' AS TIME)
+          )
+
+        UNION ALL
+
+        SELECT
+            (
+                140000000
+                + (DATEDIFF(DAY, '2020-01-01', f.Fecha) * 10000)
+                + (e.Id % 10000)
+            ),
+            CAST(N'NO_ATENCION' AS NVARCHAR(20)),
+            CAST(N'Sede sin atencion (fuera de horario)' AS NVARCHAR(200)),
+            f.Fecha,
+            COALESCE(sha.HoraCierre, CAST('23:00' AS TIME)),
+            CAST('23:59' AS TIME),
+            NULL,
+            CAST(N'#64748b' AS NVARCHAR(20)),
+            e.Id,
+            e.Nombre,
+            s.Nombre,
+            CAST(N'Sede sin atencion (fuera de horario)' AS NVARCHAR(200)),
+            CAST(N'BLOQUEADO_NO_ATENCION' AS NVARCHAR(40)),
+            CAST(N'Bloqueado/No atencion' AS NVARCHAR(80))
+        FROM Fechas f
+        INNER JOIN dbo.Sedes s ON s.NegocioId = @NegocioId
+        INNER JOIN dbo.EspaciosDeportivos e ON e.SedeId = s.Id
+        LEFT JOIN dbo.SedeHorarioAtencion sha ON sha.SedeId = s.Id
+        LEFT JOIN dbo.SedeFechasInhabilitadas sfi ON sfi.SedeId = s.Id AND sfi.Activo = 1 AND sfi.Fecha = f.Fecha
+        WHERE (@SedeId IS NULL OR s.Id = @SedeId)
+          AND (@EspacioDeportivoId IS NULL OR e.Id = @EspacioDeportivoId)
+          AND sfi.SedeId IS NULL
+          AND
+          (
+              COALESCE(sha.HoraApertura, CAST('08:00' AS TIME)) > CAST('00:00' AS TIME)
+              OR COALESCE(sha.HoraCierre, CAST('23:00' AS TIME)) < CAST('23:59' AS TIME)
+          )
+        ORDER BY Fecha, HoraInicio
+        OPTION (MAXRECURSION 1000);
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 34_Clientes_NombreEquipo_Reservas.sql (linea 573)
+CREATE OR ALTER PROCEDURE dbo.Sp_Combos_ReservasPorNegocio
+    @NegocioId INT,
+    @SedeId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        SELECT
+            r.Id,
+            CONCAT(
+                N'#', r.Id, N' - ',
+                c.NombresORazonSocial,
+                CASE
+                    WHEN NULLIF(LTRIM(RTRIM(c.NombreEquipo)), N'') IS NULL THEN N''
+                    ELSE CONCAT(N' [', LTRIM(RTRIM(c.NombreEquipo)), N']')
+                END
+            ) AS ReservaTexto
+        FROM dbo.Reservas r
+        INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
+        INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
+        INNER JOIN dbo.Clientes c ON c.Id = r.ClienteId
+        WHERE s.NegocioId = @NegocioId
+          AND (@SedeId IS NULL OR s.Id = @SedeId)
+        ORDER BY r.Fecha DESC, r.HoraInicio DESC;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 34_Clientes_NombreEquipo_Reservas.sql (linea 606)
+CREATE OR ALTER PROCEDURE dbo.Sp_Reservas_ObtenerParaRecordatorio
+    @NegocioId INT,
+    @ReservaId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        SELECT
+            r.Id AS ReservaId,
+            s.NegocioId,
+            CAST(
+                CASE
+                    WHEN NULLIF(LTRIM(RTRIM(c.NombreEquipo)), N'') IS NULL THEN c.NombresORazonSocial
+                    ELSE CONCAT(c.NombresORazonSocial, N' - Equipo: ', LTRIM(RTRIM(c.NombreEquipo)))
+                END
+                AS NVARCHAR(250)
+            ) AS Cliente,
+            c.Correo,
+            s.Nombre AS Sede,
+            e.Nombre AS Espacio,
+            r.Fecha,
+            r.HoraInicio,
+            r.HoraFin,
+            s.CorreoNotificacion,
+            s.WhatsappContacto
+        FROM dbo.Reservas r
+        INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
+        INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
+        INNER JOIN dbo.Clientes c ON c.Id = r.ClienteId
+        WHERE r.Id = @ReservaId
+          AND s.NegocioId = @NegocioId
+          AND r.Estado = 1
+          AND c.Activo = 1
+          AND NULLIF(LTRIM(RTRIM(c.Correo)), N'') IS NOT NULL;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 35_Maestros_FormasPago.sql (linea 61)
+CREATE OR ALTER PROCEDURE dbo.Sp_Seguridad_SeedModulosPermisosBase
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        IF NOT EXISTS (SELECT 1 FROM dbo.ModulosSistema WHERE Codigo = N'DASHBOARD')
+            INSERT INTO dbo.ModulosSistema (Codigo, Nombre, Activo) VALUES (N'DASHBOARD', N'Dashboard', 1);
+        IF NOT EXISTS (SELECT 1 FROM dbo.ModulosSistema WHERE Codigo = N'MAESTROS')
+            INSERT INTO dbo.ModulosSistema (Codigo, Nombre, Activo) VALUES (N'MAESTROS', N'Maestros', 1);
+        IF NOT EXISTS (SELECT 1 FROM dbo.ModulosSistema WHERE Codigo = N'SEDES')
+            INSERT INTO dbo.ModulosSistema (Codigo, Nombre, Activo) VALUES (N'SEDES', N'Sedes', 1);
+        IF NOT EXISTS (SELECT 1 FROM dbo.ModulosSistema WHERE Codigo = N'CLIENTES')
+            INSERT INTO dbo.ModulosSistema (Codigo, Nombre, Activo) VALUES (N'CLIENTES', N'Clientes', 1);
+        IF NOT EXISTS (SELECT 1 FROM dbo.ModulosSistema WHERE Codigo = N'ESPACIOS')
+            INSERT INTO dbo.ModulosSistema (Codigo, Nombre, Activo) VALUES (N'ESPACIOS', N'Espacios deportivos', 1);
+        IF NOT EXISTS (SELECT 1 FROM dbo.ModulosSistema WHERE Codigo = N'RESERVAS')
+            INSERT INTO dbo.ModulosSistema (Codigo, Nombre, Activo) VALUES (N'RESERVAS', N'Reservas', 1);
+        IF NOT EXISTS (SELECT 1 FROM dbo.ModulosSistema WHERE Codigo = N'SOLICITUDES')
+            INSERT INTO dbo.ModulosSistema (Codigo, Nombre, Activo) VALUES (N'SOLICITUDES', N'Solicitudes publicas', 1);
+        IF NOT EXISTS (SELECT 1 FROM dbo.ModulosSistema WHERE Codigo = N'PROMOCIONES')
+            INSERT INTO dbo.ModulosSistema (Codigo, Nombre, Activo) VALUES (N'PROMOCIONES', N'Promociones', 1);
+        IF NOT EXISTS (SELECT 1 FROM dbo.ModulosSistema WHERE Codigo = N'USUARIOS')
+            INSERT INTO dbo.ModulosSistema (Codigo, Nombre, Activo) VALUES (N'USUARIOS', N'Usuarios del negocio', 1);
+        IF NOT EXISTS (SELECT 1 FROM dbo.ModulosSistema WHERE Codigo = N'PAGOS')
+            INSERT INTO dbo.ModulosSistema (Codigo, Nombre, Activo) VALUES (N'PAGOS', N'Pagos', 1);
+        IF NOT EXISTS (SELECT 1 FROM dbo.ModulosSistema WHERE Codigo = N'COMPROBANTES')
+            INSERT INTO dbo.ModulosSistema (Codigo, Nombre, Activo) VALUES (N'COMPROBANTES', N'Comprobantes electronicos', 1);
+        IF NOT EXISTS (SELECT 1 FROM dbo.ModulosSistema WHERE Codigo = N'REPORTES')
+            INSERT INTO dbo.ModulosSistema (Codigo, Nombre, Activo) VALUES (N'REPORTES', N'Reportes', 1);
+
+        ;WITH Roles AS
+        (
+            SELECT CAST(1 AS INT) AS RolNegocio UNION ALL
+            SELECT 2 UNION ALL
+            SELECT 3 UNION ALL
+            SELECT 4 UNION ALL
+            SELECT 5
+        )
+        INSERT INTO dbo.RolesNegocioPermiso (RolNegocio, ModuloSistemaId, PuedeVer, PuedeCrear, PuedeEditar, PuedeEliminar)
+        SELECT
+            r.RolNegocio,
+            m.Id,
+            CAST(CASE WHEN r.RolNegocio = 1 THEN 1
+                      WHEN r.RolNegocio = 2 AND m.Codigo IN (N'DASHBOARD', N'RESERVAS', N'SOLICITUDES', N'PAGOS', N'CLIENTES', N'REPORTES', N'PROMOCIONES') THEN 1
+                      WHEN r.RolNegocio = 3 AND m.Codigo IN (N'DASHBOARD', N'RESERVAS', N'SOLICITUDES', N'CLIENTES') THEN 1
+                      WHEN r.RolNegocio = 4 AND m.Codigo IN (N'DASHBOARD', N'PAGOS', N'COMPROBANTES', N'REPORTES') THEN 1
+                      WHEN r.RolNegocio = 5 AND m.Codigo IN (N'DASHBOARD', N'RESERVAS', N'ESPACIOS', N'REPORTES') THEN 1
+                      ELSE 0 END AS BIT),
+            CAST(CASE WHEN r.RolNegocio = 1 THEN 1
+                      WHEN r.RolNegocio = 2 AND m.Codigo IN (N'RESERVAS', N'SOLICITUDES', N'PAGOS', N'CLIENTES', N'PROMOCIONES') THEN 1
+                      WHEN r.RolNegocio = 3 AND m.Codigo IN (N'RESERVAS', N'SOLICITUDES', N'CLIENTES') THEN 1
+                      WHEN r.RolNegocio = 4 AND m.Codigo IN (N'PAGOS', N'COMPROBANTES') THEN 1
+                      ELSE 0 END AS BIT),
+            CAST(CASE WHEN r.RolNegocio = 1 THEN 1
+                      WHEN r.RolNegocio = 2 AND m.Codigo IN (N'RESERVAS', N'SOLICITUDES', N'PAGOS', N'CLIENTES', N'PROMOCIONES') THEN 1
+                      WHEN r.RolNegocio = 3 AND m.Codigo IN (N'RESERVAS', N'SOLICITUDES', N'CLIENTES') THEN 1
+                      WHEN r.RolNegocio = 4 AND m.Codigo IN (N'PAGOS', N'COMPROBANTES') THEN 1
+                      WHEN r.RolNegocio = 5 AND m.Codigo IN (N'RESERVAS', N'ESPACIOS') THEN 1
+                      ELSE 0 END AS BIT),
+            CAST(CASE WHEN r.RolNegocio = 1 THEN 1 ELSE 0 END AS BIT)
+        FROM Roles r
+        CROSS JOIN dbo.ModulosSistema m
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM dbo.RolesNegocioPermiso rp
+            WHERE rp.RolNegocio = r.RolNegocio
+              AND rp.ModuloSistemaId = m.Id
+        );
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 35_Maestros_FormasPago.sql (linea 156)
+CREATE OR ALTER PROCEDURE dbo.Sp_Pagos_Listar
+    @NegocioId INT,
+    @SedeId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        SELECT TOP (100)
+            p.Id,
+            p.ReservaId,
+            p.FechaPago,
+            p.Monto,
+            fp.Nombre AS FormaPago
+        FROM dbo.Pagos p
+        INNER JOIN dbo.FormasPago fp ON fp.Id = p.FormaPago
+        INNER JOIN dbo.Reservas r ON r.Id = p.ReservaId
+        INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
+        INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
+        WHERE s.NegocioId = @NegocioId
+          AND (@SedeId IS NULL OR s.Id = @SedeId)
+        ORDER BY p.FechaPago DESC;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 35_Maestros_FormasPago.sql (linea 186)
+CREATE OR ALTER PROCEDURE dbo.Sp_Pagos_Crear
+    @NegocioId INT,
+    @ReservaId INT,
+    @FechaPago DATETIME2,
+    @Monto DECIMAL(10,2),
+    @FormaPago INT,
+    @NumeroOperacion NVARCHAR(50) = NULL,
+    @Observacion NVARCHAR(300) = NULL,
+    @Usuario NVARCHAR(200)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        IF @Monto <= 0
+            RAISERROR('El monto debe ser mayor que cero.', 16, 1);
+
+        IF NOT EXISTS (SELECT 1 FROM dbo.FormasPago WHERE Id = @FormaPago AND Activo = 1)
+            RAISERROR('La forma de pago no es valida.', 16, 1);
+
+        DECLARE @TotalReserva DECIMAL(10,2);
+        DECLARE @PagadoActual DECIMAL(10,2);
+        DECLARE @NuevoPagado DECIMAL(10,2);
+
+        SELECT @TotalReserva = r.Total
+        FROM dbo.Reservas r
+        INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
+        INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
+        WHERE r.Id = @ReservaId
+          AND s.NegocioId = @NegocioId;
+
+        IF @TotalReserva IS NULL
+            RAISERROR('Reserva invalida para el negocio.', 16, 1);
+
+        SELECT @PagadoActual = COALESCE(SUM(p.Monto), 0)
+        FROM dbo.Pagos p
+        WHERE p.ReservaId = @ReservaId;
+
+        SET @NuevoPagado = @PagadoActual + @Monto;
+        IF @NuevoPagado > @TotalReserva
+            RAISERROR('El pago excede el total de la reserva.', 16, 1);
+
+        BEGIN TRANSACTION;
+
+        INSERT INTO dbo.Pagos
+        (
+            ReservaId, FechaPago, Monto, FormaPago, NumeroOperacion, Observacion,
+            FechaCreacion, UsuarioCreacion
+        )
+        VALUES
+        (
+            @ReservaId, @FechaPago, @Monto, @FormaPago, @NumeroOperacion, @Observacion,
+            SYSUTCDATETIME(), @Usuario
+        );
+
+        UPDATE r
+        SET Adelanto = @NuevoPagado,
+            Saldo = (r.Total - @NuevoPagado),
+            Estado = CASE WHEN (r.Total - @NuevoPagado) <= 0 AND r.Estado = 1 THEN 2 ELSE r.Estado END,
+            FechaActualizacion = SYSUTCDATETIME(),
+            UsuarioActualizacion = @Usuario
+        FROM dbo.Reservas r
+        WHERE r.Id = @ReservaId;
+
+        DECLARE @Id INT;
+        SET @Id = SCOPE_IDENTITY();
+        DECLARE @EntidadIdAudit NVARCHAR(80);
+        SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
+        EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'PAGOS', @Accion = N'CREATE', @Entidad = N'Pago', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
+
+        COMMIT TRANSACTION;
+        SELECT @Id;
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE() <> 0
+            ROLLBACK TRANSACTION;
+
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 35_Maestros_FormasPago.sql (linea 269)
+CREATE OR ALTER PROCEDURE dbo.Sp_Pagos_Actualizar
+    @Id INT,
+    @NegocioId INT,
+    @ReservaId INT,
+    @FechaPago DATETIME2,
+    @Monto DECIMAL(10,2),
+    @FormaPago INT,
+    @NumeroOperacion NVARCHAR(50) = NULL,
+    @Observacion NVARCHAR(300) = NULL,
+    @Usuario NVARCHAR(200)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        IF @Monto <= 0
+            RAISERROR('El monto debe ser mayor que cero.', 16, 1);
+
+        IF NOT EXISTS (SELECT 1 FROM dbo.FormasPago WHERE Id = @FormaPago AND Activo = 1)
+            RAISERROR('La forma de pago no es valida.', 16, 1);
+
+        DECLARE @ReservaAnteriorId INT;
+        SELECT @ReservaAnteriorId = p.ReservaId FROM dbo.Pagos p WHERE p.Id = @Id;
+
+        IF @ReservaAnteriorId IS NULL
+            RAISERROR('No se encontro el pago para actualizar en el negocio.', 16, 1);
+
+        IF NOT EXISTS (
+            SELECT 1
+            FROM dbo.Reservas r
+            INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
+            INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
+            WHERE r.Id = @ReservaId
+              AND s.NegocioId = @NegocioId
+        )
+            RAISERROR('Reserva invalida para el negocio.', 16, 1);
+
+        DECLARE @TotalReserva DECIMAL(10,2);
+        DECLARE @PagadoSinEste DECIMAL(10,2);
+        DECLARE @NuevoPagado DECIMAL(10,2);
+
+        SELECT @TotalReserva = r.Total FROM dbo.Reservas r WHERE r.Id = @ReservaId;
+
+        SELECT @PagadoSinEste = COALESCE(SUM(p.Monto), 0)
+        FROM dbo.Pagos p
+        WHERE p.ReservaId = @ReservaId
+          AND p.Id <> @Id;
+
+        SET @NuevoPagado = @PagadoSinEste + @Monto;
+        IF @NuevoPagado > @TotalReserva
+            RAISERROR('El pago excede el total de la reserva.', 16, 1);
+
+        BEGIN TRANSACTION;
+
+        UPDATE dbo.Pagos
+        SET ReservaId = @ReservaId,
+            FechaPago = @FechaPago,
+            Monto = @Monto,
+            FormaPago = @FormaPago,
+            NumeroOperacion = @NumeroOperacion,
+            Observacion = @Observacion,
+            FechaActualizacion = SYSUTCDATETIME(),
+            UsuarioActualizacion = @Usuario
+        WHERE Id = @Id;
+
+        DECLARE @ReservaRecalculo TABLE (ReservaId INT PRIMARY KEY);
+        INSERT INTO @ReservaRecalculo (ReservaId) VALUES (@ReservaId);
+        IF @ReservaAnteriorId <> @ReservaId
+            INSERT INTO @ReservaRecalculo (ReservaId) VALUES (@ReservaAnteriorId);
+
+        UPDATE r
+        SET Adelanto = x.Pagado,
+            Saldo = (r.Total - x.Pagado),
+            Estado = CASE WHEN (r.Total - x.Pagado) <= 0 AND r.Estado = 1 THEN 2 ELSE r.Estado END,
+            FechaActualizacion = SYSUTCDATETIME(),
+            UsuarioActualizacion = @Usuario
+        FROM dbo.Reservas r
+        INNER JOIN (
+            SELECT rr.ReservaId, COALESCE(SUM(p.Monto), 0) AS Pagado
+            FROM @ReservaRecalculo rr
+            LEFT JOIN dbo.Pagos p ON p.ReservaId = rr.ReservaId
+            GROUP BY rr.ReservaId
+        ) x ON x.ReservaId = r.Id;
+
+        DECLARE @EntidadIdAudit NVARCHAR(80);
+        SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
+        EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'PAGOS', @Accion = N'EDIT', @Entidad = N'Pago', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE() <> 0
+            ROLLBACK TRANSACTION;
+
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 36_Maestros_PorNegocio_MonedasSuper.sql (linea 200)
+CREATE OR ALTER PROCEDURE dbo.Sp_Maestros_MonedasSuper_Listar
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        SELECT m.Id, CONCAT(m.Codigo, N' - ', m.Nombre, N' (', m.Simbolo, N')') AS Nombre
+        FROM dbo.MonedasSuperMaestro m
+        WHERE m.Activo = 1
+        ORDER BY m.Codigo;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 36_Maestros_PorNegocio_MonedasSuper.sql (linea 218)
+CREATE OR ALTER PROCEDURE dbo.Sp_Combos_Monedas
+    @NegocioId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        SELECT m.Id, CONCAT(m.Codigo, N' - ', m.Nombre, N' (', m.Simbolo, N')') AS Nombre
+        FROM dbo.Monedas m
+        WHERE m.NegocioId = @NegocioId
+          AND m.Activo = 1
+        ORDER BY m.Codigo;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 36_Maestros_PorNegocio_MonedasSuper.sql (linea 238)
+CREATE OR ALTER PROCEDURE dbo.Sp_Combos_TiposDeporte
+    @NegocioId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        SELECT td.Id, td.Nombre
+        FROM dbo.TiposDeporte td
+        WHERE td.NegocioId = @NegocioId
+          AND td.Activo = 1
+        ORDER BY td.Nombre;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 36_Maestros_PorNegocio_MonedasSuper.sql (linea 258)
+CREATE OR ALTER PROCEDURE dbo.Sp_Combos_TiposSuelo
+    @NegocioId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        SELECT ts.Id, ts.Nombre
+        FROM dbo.TiposSuelo ts
+        WHERE ts.NegocioId = @NegocioId
+          AND ts.Activo = 1
+        ORDER BY ts.Nombre;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 36_Maestros_PorNegocio_MonedasSuper.sql (linea 278)
+CREATE OR ALTER PROCEDURE dbo.Sp_Combos_FormasPago
+    @NegocioId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        SELECT fp.Id, fp.Nombre
+        FROM dbo.FormasPago fp
+        WHERE fp.NegocioId = @NegocioId
+          AND fp.Activo = 1
+        ORDER BY fp.Nombre;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 36_Maestros_PorNegocio_MonedasSuper.sql (linea 298)
+CREATE OR ALTER PROCEDURE dbo.Sp_Maestros_Monedas_Listar
+    @NegocioId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        SELECT m.Id, m.MonedaSuperId, m.Codigo, m.Nombre, m.Simbolo, m.Activo
+        FROM dbo.Monedas m
+        WHERE m.NegocioId = @NegocioId
+        ORDER BY m.Nombre;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 36_Maestros_PorNegocio_MonedasSuper.sql (linea 317)
+CREATE OR ALTER PROCEDURE dbo.Sp_Maestros_Monedas_Crear
+    @NegocioId INT,
+    @MonedaSuperId INT,
+    @Activo BIT,
+    @Usuario NVARCHAR(200)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        IF NOT EXISTS (SELECT 1 FROM dbo.MonedasSuperMaestro WHERE Id = @MonedaSuperId AND Activo = 1)
+            RAISERROR('La moneda del supermaestro no es valida.', 16, 1);
+        IF EXISTS (SELECT 1 FROM dbo.Monedas WHERE NegocioId = @NegocioId AND MonedaSuperId = @MonedaSuperId)
+            RAISERROR('La moneda ya esta registrada para este negocio.', 16, 1);
+
+        INSERT INTO dbo.Monedas (NegocioId, MonedaSuperId, Codigo, Nombre, Simbolo, Activo, FechaCreacion, UsuarioCreacion)
+        SELECT @NegocioId, ms.Id, ms.Codigo, ms.Nombre, ms.Simbolo, @Activo, SYSUTCDATETIME(), @Usuario
+        FROM dbo.MonedasSuperMaestro ms
+        WHERE ms.Id = @MonedaSuperId;
+
+        DECLARE @Id INT = SCOPE_IDENTITY();
+        EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'MAESTROS', @Accion = N'CREATE', @Entidad = N'Moneda', @EntidadId = @Id, @Usuario = @Usuario, @DetalleJson = NULL;
+        SELECT @Id;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 36_Maestros_PorNegocio_MonedasSuper.sql (linea 348)
+CREATE OR ALTER PROCEDURE dbo.Sp_Maestros_Monedas_Actualizar
+    @NegocioId INT,
+    @Id INT,
+    @Activo BIT,
+    @Usuario NVARCHAR(200)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        IF @Activo = 0 AND EXISTS (SELECT 1 FROM dbo.Negocios WHERE Id = @NegocioId AND MonedaId = @Id AND Activo = 1)
+            RAISERROR('No se puede inactivar la moneda configurada en el club.', 16, 1);
+
+        UPDATE dbo.Monedas
+        SET Activo = @Activo,
+            FechaActualizacion = SYSUTCDATETIME(),
+            UsuarioActualizacion = @Usuario
+        WHERE Id = @Id
+          AND NegocioId = @NegocioId;
+
+        IF @@ROWCOUNT = 0
+            RAISERROR('No se encontro la moneda para actualizar.', 16, 1);
+
+        EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'MAESTROS', @Accion = N'EDIT', @Entidad = N'Moneda', @EntidadId = @Id, @Usuario = @Usuario, @DetalleJson = NULL;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 36_Maestros_PorNegocio_MonedasSuper.sql (linea 380)
+CREATE OR ALTER PROCEDURE dbo.Sp_Maestros_Monedas_Eliminar
+    @NegocioId INT,
+    @Id INT,
+    @Usuario NVARCHAR(200)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        EXEC dbo.Sp_Maestros_Monedas_Actualizar @NegocioId = @NegocioId, @Id = @Id, @Activo = 0, @Usuario = @Usuario;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 36_Maestros_PorNegocio_MonedasSuper.sql (linea 398)
+CREATE OR ALTER PROCEDURE dbo.Sp_Maestros_TiposSuelo_Listar
+    @NegocioId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        SELECT Id, Nombre, Activo FROM dbo.TiposSuelo WHERE NegocioId = @NegocioId ORDER BY Nombre;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 36_Maestros_PorNegocio_MonedasSuper.sql (linea 414)
+CREATE OR ALTER PROCEDURE dbo.Sp_Maestros_TiposSuelo_Crear
+    @NegocioId INT, @Nombre NVARCHAR(80), @Activo BIT, @Usuario NVARCHAR(200)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        SET @Nombre = LTRIM(RTRIM(@Nombre));
+        IF @Nombre = N'' RAISERROR('El nombre es obligatorio.',16,1);
+        IF EXISTS (SELECT 1 FROM dbo.TiposSuelo WHERE NegocioId = @NegocioId AND UPPER(LTRIM(RTRIM(Nombre))) = UPPER(@Nombre))
+            RAISERROR('Ya existe un tipo de suelo con ese nombre para el negocio.',16,1);
+        INSERT INTO dbo.TiposSuelo(NegocioId,Nombre,Activo,FechaCreacion,UsuarioCreacion) VALUES(@NegocioId,@Nombre,@Activo,SYSUTCDATETIME(),@Usuario);
+        DECLARE @Id INT = SCOPE_IDENTITY();
+        EXEC dbo.Sp_Auditoria_Registrar @NegocioId=@NegocioId,@Modulo=N'MAESTROS',@Accion=N'CREATE',@Entidad=N'TipoSuelo',@EntidadId=@Id,@Usuario=@Usuario,@DetalleJson=NULL;
+        SELECT @Id;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 36_Maestros_PorNegocio_MonedasSuper.sql (linea 437)
+CREATE OR ALTER PROCEDURE dbo.Sp_Maestros_TiposSuelo_Actualizar
+    @NegocioId INT, @Id INT, @Nombre NVARCHAR(80), @Activo BIT, @Usuario NVARCHAR(200)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        SET @Nombre = LTRIM(RTRIM(@Nombre));
+        UPDATE dbo.TiposSuelo SET Nombre=@Nombre,Activo=@Activo,FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@Usuario WHERE Id=@Id AND NegocioId=@NegocioId;
+        IF @@ROWCOUNT=0 RAISERROR('No se encontro el tipo de suelo para actualizar.',16,1);
+        EXEC dbo.Sp_Auditoria_Registrar @NegocioId=@NegocioId,@Modulo=N'MAESTROS',@Accion=N'EDIT',@Entidad=N'TipoSuelo',@EntidadId=@Id,@Usuario=@Usuario,@DetalleJson=NULL;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 36_Maestros_PorNegocio_MonedasSuper.sql (linea 456)
+CREATE OR ALTER PROCEDURE dbo.Sp_Maestros_TiposSuelo_Eliminar
+    @NegocioId INT, @Id INT, @Usuario NVARCHAR(200)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        UPDATE dbo.TiposSuelo SET Activo=0,FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@Usuario WHERE Id=@Id AND NegocioId=@NegocioId;
+        IF @@ROWCOUNT=0 RAISERROR('No se encontro el tipo de suelo para inactivar.',16,1);
+        EXEC dbo.Sp_Auditoria_Registrar @NegocioId=@NegocioId,@Modulo=N'MAESTROS',@Accion=N'DELETE',@Entidad=N'TipoSuelo',@EntidadId=@Id,@Usuario=@Usuario,@DetalleJson=NULL;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 36_Maestros_PorNegocio_MonedasSuper.sql (linea 474)
+CREATE OR ALTER PROCEDURE dbo.Sp_Maestros_TiposDeporte_Listar
+    @NegocioId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        SELECT Id, Nombre, Activo FROM dbo.TiposDeporte WHERE NegocioId=@NegocioId ORDER BY Nombre;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 36_Maestros_PorNegocio_MonedasSuper.sql (linea 490)
+CREATE OR ALTER PROCEDURE dbo.Sp_Maestros_TiposDeporte_Crear
+    @NegocioId INT, @Nombre NVARCHAR(80), @Activo BIT, @Usuario NVARCHAR(200)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        SET @Nombre = LTRIM(RTRIM(@Nombre));
+        IF @Nombre = N'' RAISERROR('El nombre es obligatorio.',16,1);
+        IF EXISTS (SELECT 1 FROM dbo.TiposDeporte WHERE NegocioId=@NegocioId AND UPPER(LTRIM(RTRIM(Nombre)))=UPPER(@Nombre)) RAISERROR('Ya existe un tipo de deporte con ese nombre para el negocio.',16,1);
+        INSERT INTO dbo.TiposDeporte(NegocioId,Nombre,Activo,FechaCreacion,UsuarioCreacion) VALUES(@NegocioId,@Nombre,@Activo,SYSUTCDATETIME(),@Usuario);
+        DECLARE @Id INT = SCOPE_IDENTITY();
+        EXEC dbo.Sp_Auditoria_Registrar @NegocioId=@NegocioId,@Modulo=N'MAESTROS',@Accion=N'CREATE',@Entidad=N'TipoDeporte',@EntidadId=@Id,@Usuario=@Usuario,@DetalleJson=NULL;
+        SELECT @Id;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 36_Maestros_PorNegocio_MonedasSuper.sql (linea 512)
+CREATE OR ALTER PROCEDURE dbo.Sp_Maestros_TiposDeporte_Actualizar
+    @NegocioId INT, @Id INT, @Nombre NVARCHAR(80), @Activo BIT, @Usuario NVARCHAR(200)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        UPDATE dbo.TiposDeporte SET Nombre=LTRIM(RTRIM(@Nombre)),Activo=@Activo,FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@Usuario WHERE Id=@Id AND NegocioId=@NegocioId;
+        IF @@ROWCOUNT=0 RAISERROR('No se encontro el tipo de deporte para actualizar.',16,1);
+        EXEC dbo.Sp_Auditoria_Registrar @NegocioId=@NegocioId,@Modulo=N'MAESTROS',@Accion=N'EDIT',@Entidad=N'TipoDeporte',@EntidadId=@Id,@Usuario=@Usuario,@DetalleJson=NULL;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 36_Maestros_PorNegocio_MonedasSuper.sql (linea 530)
+CREATE OR ALTER PROCEDURE dbo.Sp_Maestros_TiposDeporte_Eliminar
+    @NegocioId INT, @Id INT, @Usuario NVARCHAR(200)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        UPDATE dbo.TiposDeporte SET Activo=0,FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@Usuario WHERE Id=@Id AND NegocioId=@NegocioId;
+        IF @@ROWCOUNT=0 RAISERROR('No se encontro el tipo de deporte para inactivar.',16,1);
+        EXEC dbo.Sp_Auditoria_Registrar @NegocioId=@NegocioId,@Modulo=N'MAESTROS',@Accion=N'DELETE',@Entidad=N'TipoDeporte',@EntidadId=@Id,@Usuario=@Usuario,@DetalleJson=NULL;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 36_Maestros_PorNegocio_MonedasSuper.sql (linea 548)
+CREATE OR ALTER PROCEDURE dbo.Sp_Maestros_FormasPago_Listar
+    @NegocioId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        SELECT Id, Nombre, Activo FROM dbo.FormasPago WHERE NegocioId=@NegocioId ORDER BY Nombre;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 36_Maestros_PorNegocio_MonedasSuper.sql (linea 564)
+CREATE OR ALTER PROCEDURE dbo.Sp_Maestros_FormasPago_Crear
+    @NegocioId INT, @Nombre NVARCHAR(80), @Activo BIT, @Usuario NVARCHAR(200)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        INSERT INTO dbo.FormasPago(NegocioId,Nombre,Activo,FechaCreacion,UsuarioCreacion) VALUES(@NegocioId,LTRIM(RTRIM(@Nombre)),@Activo,SYSUTCDATETIME(),@Usuario);
+        DECLARE @Id INT = SCOPE_IDENTITY();
+        EXEC dbo.Sp_Auditoria_Registrar @NegocioId=@NegocioId,@Modulo=N'MAESTROS',@Accion=N'CREATE',@Entidad=N'FormaPago',@EntidadId=@Id,@Usuario=@Usuario,@DetalleJson=NULL;
+        SELECT @Id;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 36_Maestros_PorNegocio_MonedasSuper.sql (linea 583)
+CREATE OR ALTER PROCEDURE dbo.Sp_Maestros_FormasPago_Actualizar
+    @NegocioId INT, @Id INT, @Nombre NVARCHAR(80), @Activo BIT, @Usuario NVARCHAR(200)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        UPDATE dbo.FormasPago SET Nombre=LTRIM(RTRIM(@Nombre)),Activo=@Activo,FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@Usuario WHERE Id=@Id AND NegocioId=@NegocioId;
+        IF @@ROWCOUNT=0 RAISERROR('No se encontro la forma de pago para actualizar.',16,1);
+        EXEC dbo.Sp_Auditoria_Registrar @NegocioId=@NegocioId,@Modulo=N'MAESTROS',@Accion=N'EDIT',@Entidad=N'FormaPago',@EntidadId=@Id,@Usuario=@Usuario,@DetalleJson=NULL;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 36_Maestros_PorNegocio_MonedasSuper.sql (linea 601)
+CREATE OR ALTER PROCEDURE dbo.Sp_Maestros_FormasPago_Eliminar
+    @NegocioId INT, @Id INT, @Usuario NVARCHAR(200)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        UPDATE dbo.FormasPago SET Activo=0,FechaActualizacion=SYSUTCDATETIME(),UsuarioActualizacion=@Usuario WHERE Id=@Id AND NegocioId=@NegocioId;
+        IF @@ROWCOUNT=0 RAISERROR('No se encontro la forma de pago para inactivar.',16,1);
+        EXEC dbo.Sp_Auditoria_Registrar @NegocioId=@NegocioId,@Modulo=N'MAESTROS',@Accion=N'DELETE',@Entidad=N'FormaPago',@EntidadId=@Id,@Usuario=@Usuario,@DetalleJson=NULL;
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+-- SOURCE: 36_Maestros_PorNegocio_MonedasSuper.sql (linea 619)
+CREATE OR ALTER PROCEDURE dbo.Sp_ConfiguracionClub_Actualizar
+    @NegocioId INT,
+    @NombreComercial NVARCHAR(200),
+    @RazonSocial NVARCHAR(200) = NULL,
+    @TipoDocumentoFiscal NVARCHAR(20) = NULL,
+    @NumeroDocumentoFiscal NVARCHAR(20) = NULL,
+    @DireccionFiscal NVARCHAR(250) = NULL,
+    @MonedaId INT,
+    @Usuario NVARCHAR(200)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        IF NOT EXISTS (SELECT 1 FROM dbo.Monedas WHERE Id = @MonedaId AND NegocioId = @NegocioId AND Activo = 1)
+            RAISERROR('La moneda seleccionada no pertenece al negocio.', 16, 1);
+
+        UPDATE dbo.Negocios
+        SET NombreComercial = @NombreComercial,
+            RazonSocial = @RazonSocial,
+            TipoDocumentoFiscal = @TipoDocumentoFiscal,
+            NumeroDocumentoFiscal = @NumeroDocumentoFiscal,
+            DireccionFiscal = @DireccionFiscal,
+            MonedaId = @MonedaId
+        WHERE Id = @NegocioId;
+
+        IF @@ROWCOUNT = 0
+            RAISERROR('No se encontro el negocio para actualizar.', 16, 1);
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
+        SELECT @ErrorMessage = ERROR_MESSAGE(), @ErrorSeverity = ERROR_SEVERITY(), @ErrorState = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+

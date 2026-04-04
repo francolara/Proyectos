@@ -148,6 +148,55 @@ public partial class SportCenterStoredProcedureService
         }
     }
 
+    public async Task<List<ReservaHistorialItemViewModel>> ReservasHistorialAsync(int negocioId, int reservaId)
+    {
+        var list = new List<ReservaHistorialItemViewModel>();
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_Reservas_Historial", cn) { CommandType = CommandType.StoredProcedure };
+        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+        AddParam(cmd, "@ReservaId", reservaId, SqlDbType.Int);
+        await using var dr = await cmd.ExecuteReaderAsync();
+        while (await dr.ReadAsync())
+        {
+            list.Add(new ReservaHistorialItemViewModel
+            {
+                FechaRegistro = dr.GetDateTime(0),
+                Accion = dr.IsDBNull(1) ? string.Empty : dr.GetString(1),
+                Usuario = dr.IsDBNull(2) ? string.Empty : dr.GetString(2),
+                Detalle = dr.IsDBNull(3) ? null : dr.GetString(3)
+            });
+        }
+
+        return list;
+    }
+
+    public async Task<ReservaRecordatorioPendienteViewModel?> ReservasObtenerParaRecordatorioAsync(int negocioId, int reservaId)
+    {
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_Reservas_ObtenerParaRecordatorio", cn) { CommandType = CommandType.StoredProcedure };
+        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+        AddParam(cmd, "@ReservaId", reservaId, SqlDbType.Int);
+        await using var dr = await cmd.ExecuteReaderAsync();
+        if (!await dr.ReadAsync()) return null;
+
+        return new ReservaRecordatorioPendienteViewModel
+        {
+            ReservaId = dr.GetInt32(0),
+            NegocioId = dr.GetInt32(1),
+            Cliente = dr.IsDBNull(2) ? string.Empty : dr.GetString(2),
+            Correo = dr.IsDBNull(3) ? string.Empty : dr.GetString(3),
+            Sede = dr.IsDBNull(4) ? string.Empty : dr.GetString(4),
+            Espacio = dr.IsDBNull(5) ? string.Empty : dr.GetString(5),
+            Fecha = DateOnly.FromDateTime(dr.GetDateTime(6)),
+            HoraInicio = TimeOnly.FromTimeSpan(dr.GetTimeSpan(7)),
+            HoraFin = TimeOnly.FromTimeSpan(dr.GetTimeSpan(8)),
+            CorreoNotificacion = dr.IsDBNull(9) ? null : dr.GetString(9),
+            WhatsappContacto = dr.IsDBNull(10) ? null : dr.GetString(10)
+        };
+    }
+
     public async Task<List<ReservaCalendarioEventoViewModel>> ReservasCalendarioEventosAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null, int? espacioDeportivoId = null, int? estado = null)
     {
         var list = new List<ReservaCalendarioEventoViewModel>();
@@ -338,7 +387,7 @@ public partial class SportCenterStoredProcedureService
             ReservaId = dr.GetInt32(1),
             FechaPago = dr.GetDateTime(2),
             Monto = dr.GetDecimal(3),
-            FormaPago = (FormaPago)dr.GetInt32(4),
+            FormaPagoId = dr.GetInt32(4),
             NumeroOperacion = dr.IsDBNull(5) ? null : dr.GetString(5),
             Observacion = dr.IsDBNull(6) ? null : dr.GetString(6),
             NegocioId = negocioId
@@ -354,7 +403,7 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@ReservaId", model.ReservaId, SqlDbType.Int);
         AddParam(cmd, "@FechaPago", model.FechaPago, SqlDbType.DateTime2);
         AddParam(cmd, "@Monto", model.Monto, SqlDbType.Decimal);
-        AddParam(cmd, "@FormaPago", (int)model.FormaPago, SqlDbType.Int);
+        AddParam(cmd, "@FormaPago", model.FormaPagoId, SqlDbType.Int);
         AddParam(cmd, "@NumeroOperacion", model.NumeroOperacion, SqlDbType.NVarChar);
         AddParam(cmd, "@Observacion", model.Observacion, SqlDbType.NVarChar);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
@@ -373,7 +422,7 @@ public partial class SportCenterStoredProcedureService
             AddParam(cmd, "@ReservaId", model.ReservaId, SqlDbType.Int);
             AddParam(cmd, "@FechaPago", model.FechaPago, SqlDbType.DateTime2);
             AddParam(cmd, "@Monto", model.Monto, SqlDbType.Decimal);
-            AddParam(cmd, "@FormaPago", (int)model.FormaPago, SqlDbType.Int);
+            AddParam(cmd, "@FormaPago", model.FormaPagoId, SqlDbType.Int);
             AddParam(cmd, "@NumeroOperacion", model.NumeroOperacion, SqlDbType.NVarChar);
             AddParam(cmd, "@Observacion", model.Observacion, SqlDbType.NVarChar);
             AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
@@ -406,6 +455,7 @@ public partial class SportCenterStoredProcedureService
     }
 
     public Task<List<SelectListItem>> PagosComboReservasAsync(int negocioId, int? sedeId = null) => ComboAsync("Sp_Combos_ReservasPorNegocio", ("@NegocioId", (object?)negocioId, SqlDbType.Int), ("@SedeId", sedeId, SqlDbType.Int));
+    public Task<List<SelectListItem>> PagosComboFormasPagoAsync(int negocioId) => ComboAsync("Sp_Combos_FormasPago", ("@NegocioId", negocioId, SqlDbType.Int));
 
     public async Task<List<ComprobanteItemViewModel>> ComprobantesListarAsync(int negocioId, int? sedeId = null)
     {

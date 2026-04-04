@@ -23,7 +23,7 @@ public class ConfiguracionController(IModuloPermisoService moduloPermisoService,
         vm.PuedeEditar = baseVm.PuedeEditar;
         vm.PuedeEliminar = baseVm.PuedeEliminar;
         vm.TiposDocumento = ObtenerTiposDocumento();
-        vm.Monedas = await spService.ConfiguracionClubComboMonedasAsync();
+        vm.Monedas = await spService.ConfiguracionClubComboMonedasAsync(negocioId);
         return View(vm);
     }
 
@@ -36,7 +36,7 @@ public class ConfiguracionController(IModuloPermisoService moduloPermisoService,
             return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "Acceso denegado." });
 
         model.TiposDocumento = ObtenerTiposDocumento();
-        model.Monedas = await spService.ConfiguracionClubComboMonedasAsync();
+        model.Monedas = await spService.ConfiguracionClubComboMonedasAsync(model.NegocioId);
         if (!ModelState.IsValid)
         {
             model.NegocioNombre = baseVm.NegocioNombre;

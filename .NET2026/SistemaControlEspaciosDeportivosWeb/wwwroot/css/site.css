@@ -949,6 +949,24 @@ body {
   --_hover-text: #b91c1c;
 }
 
+.sc-action-checkin {
+  --_bg: #ecfdf5;
+  --_border: #86efac;
+  --_text: #166534;
+  --_hover-bg: #dcfce7;
+  --_hover-border: #4ade80;
+  --_hover-text: #14532d;
+}
+
+.sc-action-noshow {
+  --_bg: #f5f3ff;
+  --_border: #c4b5fd;
+  --_text: #6d28d9;
+  --_hover-bg: #ede9fe;
+  --_hover-border: #a78bfa;
+  --_hover-text: #5b21b6;
+}
+
 .table td.text-end .sc-action-btn,
 .card td.text-end .sc-action-btn {
   margin-left: 0.28rem;
@@ -1039,3 +1057,209 @@ body {
   }
 }
 
+
+/* Firma: Codex - 02/04/2026 | Fase 1/Fase 2 Maestros: navegación por paneles, encabezados, buscador y composición visual premium */
+.sc-maestros-kpi {
+  text-align: center;
+}
+
+.sc-maestros-nav-card {
+  padding: 0.8rem;
+}
+
+.sc-maestros-nav {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.sc-maestro-tab {
+  border: 1px solid #d6e3f5;
+  background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+  border-radius: 0.95rem;
+  padding: 0.78rem 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-align: left;
+  transition: all 0.18s ease;
+  color: #1e293b;
+}
+
+.sc-maestro-tab:hover {
+  border-color: #aac7f7;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.12);
+}
+
+.sc-maestro-tab.is-active {
+  border-color: #3b82f6;
+  background: linear-gradient(180deg, #eaf3ff 0%, #dbeafe 100%);
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.16);
+}
+
+.sc-maestro-tab-icon {
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 0.65rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  color: #1d4ed8;
+  border: 1px solid #cfe0fa;
+}
+
+.sc-maestro-tab-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  line-height: 1.2;
+}
+
+.sc-maestro-tab-text strong {
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.sc-maestro-tab-text small {
+  color: #64748b;
+  font-size: 0.74rem;
+}
+
+.sc-maestro-panel {
+  display: none;
+}
+
+.sc-maestro-panel.is-active {
+  display: block;
+}
+
+.sc-maestro-panel-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.sc-maestro-panel-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  min-width: 250px;
+  max-width: 340px;
+  border: 1px solid #cfe0fa;
+  border-radius: 0.72rem;
+  background: #f8fbff;
+  padding: 0.34rem 0.5rem;
+}
+
+.sc-maestro-panel-search i {
+  color: #64748b;
+}
+
+.sc-maestro-panel-search .form-control {
+  border: 0;
+  background: transparent;
+  box-shadow: none !important;
+  padding: 0;
+  min-height: 1.65rem;
+}
+
+.sc-maestro-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  padding-bottom: 0.35rem;
+}
+
+.sc-maestro-stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  border-radius: 999px;
+  border: 1px solid #cfe0fa;
+  background: #f8fbff;
+  color: #334155;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 0.3rem 0.62rem;
+}
+
+.sc-maestro-stat-pill i {
+  font-size: 0.76rem;
+}
+
+.sc-maestro-stat-pill.is-success {
+  border-color: #86efac;
+  background: #ecfdf5;
+  color: #166534;
+}
+
+.sc-maestro-stat-pill.is-danger {
+  border-color: #fda4af;
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.sc-maestro-form {
+  background: linear-gradient(180deg, #fbfdff 0%, #f4f8ff 100%);
+  border: 1px solid #d8e5f9;
+  border-radius: 0.85rem;
+  margin: 0.15rem 0.75rem 0.5rem;
+  padding: 0.78rem !important;
+}
+
+.sc-maestro-form .btn-primary {
+  box-shadow: 0 10px 16px rgba(37, 99, 235, 0.14);
+}
+
+.sc-maestro-table thead th {
+  color: #475569;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  font-weight: 700;
+  border-bottom-color: #cdddf3;
+  background: #f8fbff;
+}
+
+.sc-maestro-table tbody tr {
+  transition: background-color 0.16s ease;
+}
+
+.sc-maestro-table tbody tr:hover {
+  background: #f8fbff;
+}
+
+.sc-maestro-table tbody td {
+  border-bottom-color: #e6eef9;
+}
+
+.sc-maestro-table tbody tr:nth-child(even) {
+  background: #fbfdff;
+}
+
+@media (max-width: 1200px) {
+  .sc-maestros-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 992px) {
+  .sc-maestro-panel-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .sc-maestro-panel-search {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .sc-maestros-nav {
+    grid-template-columns: 1fr;
+  }
+}

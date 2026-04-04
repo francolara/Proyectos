@@ -1,0 +1,105 @@
+﻿@model (List<SistemaControlEspaciosDeportivosWeb.ViewModels.MaestroCatalogoItemViewModel> Items, string Titulo, string CreateAction, string EditAction, string DeleteAction, int NegocioId, bool PuedeCrear, bool PuedeEditar, bool PuedeEliminar)
+<!-- Firma: Codex - 01/04/2026 | Parcial reutilizable para mantenimiento de catalogos simples de Maestros -->
+<!-- Firma: Codex - 02/04/2026 | Mejora visual Fase 1/Fase 2 en paneles de catálogos simples para Maestros -->
+
+@{
+    var panelId = Model.Titulo.ToLowerInvariant().Replace(" ", "-");
+    var icon = Model.Titulo.Contains("suelo") ? "bi-grid-1x2" : Model.Titulo.Contains("deporte") ? "bi-dribbble" : "bi-wallet2";
+    var activos = Model.Items.Count(x => x.Activo);
+    var inactivos = Model.Items.Count - activos;
+    var descripcion = Model.Titulo.Contains("suelo")
+        ? "Administra la lista de superficies disponibles para espacios deportivos."
+        : Model.Titulo.Contains("deporte")
+            ? "Gestiona los deportes habilitados para las sedes del negocio."
+            : "Configura las formas de pago permitidas en reservas y caja.";
+}
+
+<section class="table-card sc-reservas-list-card mb-3">
+    <div class="sc-maestro-panel-header px-3 pt-3 pb-2">
+        <div>
+            <h2 class="section-title mb-1"><i class="bi @icon me-1 text-primary"></i>@Model.Titulo</h2>
+            <p class="text-secondary-emphasis small mb-0">@descripcion</p>
+        </div>
+        <div class="sc-maestro-panel-search">
+            <i class="bi bi-search"></i>
+            <input type="search" class="form-control form-control-sm sc-maestro-search-input" data-search-target="@panelId" placeholder="Buscar en @Model.Titulo.ToLowerInvariant()..." />
+        </div>
+    </div>
+    <div class="sc-maestro-stats px-3">
+        <span class="sc-maestro-stat-pill"><i class="bi bi-collection"></i>Total: @Model.Items.Count</span>
+        <span class="sc-maestro-stat-pill is-success"><i class="bi bi-check2-circle"></i>Activos: @activos</span>
+        <span class="sc-maestro-stat-pill is-danger"><i class="bi bi-x-circle"></i>Inactivos: @inactivos</span>
+    </div>
+
+    @if (Model.PuedeCrear)
+    {
+        <form asp-action="@Model.CreateAction" method="post" class="px-3 pb-2 pt-2 sc-maestro-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+            <div class="row g-2">
+                <div class="col-md-8">
+                    <input type="text" name="nombre" class="form-control" maxlength="80" placeholder="Nombre" required />
+                </div>
+                <div class="col-md-2">
+                    <select name="activo" class="form-select">
+                        <option value="true">Activo</option>
+                        <option value="false">Inactivo</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-plus-circle me-1"></i>Agregar</button>
+                </div>
+            </div>
+        </form>
+    }
+
+    <div class="table-responsive px-3 pb-3">
+        <table class="table table-sm align-middle sc-maestro-table" data-table-id="@panelId">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Estado</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Items.OrderBy(x => x.Nombre))
+                {
+                    <tr data-search-text="@item.Nombre">
+                        <td>@item.Nombre</td>
+                        <td>
+                            <span class="badge @(item.Activo ? "bg-success-subtle text-success-emphasis border border-success-subtle" : "bg-danger-subtle text-danger-emphasis border border-danger-subtle")">
+                                @(item.Activo ? "Activo" : "Inactivo")
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            @if (Model.PuedeEditar)
+                            {
+                                <form asp-action="@Model.EditAction" method="post" class="d-inline-flex gap-1 align-items-center">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                                    <input type="hidden" name="id" value="@item.Id" />
+                                    <input type="text" name="nombre" value="@item.Nombre" maxlength="80" class="form-control form-control-sm" style="max-width:220px;" required />
+                                    <select name="activo" class="form-select form-select-sm" style="max-width:96px;">
+                                        <option value="true" selected="@item.Activo">Activo</option>
+                                        <option value="false" selected="@(!item.Activo)">Inactivo</option>
+                                    </select>
+                                    <button type="submit" class="btn btn-sm sc-action-btn sc-action-edit"><i class="bi bi-pencil-square"></i>Editar</button>
+                                </form>
+                            }
+                            @if (Model.PuedeEliminar)
+                            {
+                                <form asp-action="@Model.DeleteAction" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                                    <input type="hidden" name="id" value="@item.Id" />
+                                    <button type="submit" class="btn btn-sm sc-action-btn sc-action-delete"><i class="bi bi-trash3"></i>Inactivar</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

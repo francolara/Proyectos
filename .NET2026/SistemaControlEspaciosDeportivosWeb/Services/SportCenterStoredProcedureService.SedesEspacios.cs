@@ -60,32 +60,44 @@ public partial class SportCenterStoredProcedureService
             Direccion = dr.GetString(3),
             Telefono = dr.IsDBNull(4) ? null : dr.GetString(4),
             Activo = ReadBool(dr, 5),
-            ServiciosSeleccionados = dr.FieldCount > 6 && !dr.IsDBNull(6)
-                ? dr.GetString(6)
+            Latitud = dr.FieldCount > 6 && !dr.IsDBNull(6) ? dr.GetDecimal(6) : null,
+            Longitud = dr.FieldCount > 7 && !dr.IsDBNull(7) ? dr.GetDecimal(7) : null,
+            GooglePlaceId = dr.FieldCount > 8 && !dr.IsDBNull(8) ? dr.GetString(8) : null,
+            GoogleMapsUrl = dr.FieldCount > 9 && !dr.IsDBNull(9) ? dr.GetString(9) : null,
+            FotoPrincipalUrl = dr.FieldCount > 10 && !dr.IsDBNull(10) ? dr.GetString(10) : null,
+            FotosUrlsCsv = dr.FieldCount > 11 && !dr.IsDBNull(11) ? dr.GetString(11) : null,
+            FotosUrls = dr.FieldCount > 11 && !dr.IsDBNull(11)
+                ? dr.GetString(11)
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList()
+                : new List<string>(),
+            ServiciosSeleccionados = dr.FieldCount > 12 && !dr.IsDBNull(12)
+                ? dr.GetString(12)
                     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .Where(x => int.TryParse(x, out _))
                     .Select(int.Parse)
                     .Distinct()
                     .ToList()
                 : new List<int>(),
-            NotificacionesActivas = dr.FieldCount > 7 ? ReadBool(dr, 7) : true,
-            MinutosAnticipacionRecordatorio = dr.FieldCount > 8 && !dr.IsDBNull(8) ? dr.GetInt32(8) : 90,
-            MinutosToleranciaNoShow = dr.FieldCount > 9 && !dr.IsDBNull(9) ? dr.GetInt32(9) : 30,
-            CorreoNotificacion = dr.FieldCount > 10 && !dr.IsDBNull(10) ? dr.GetString(10) : null,
-            WhatsappContacto = dr.FieldCount > 11 && !dr.IsDBNull(11) ? dr.GetString(11) : null,
-            PermiteChatWhatsapp = dr.FieldCount > 12 && ReadBool(dr, 12),
-            AtiendeLunes = dr.FieldCount > 13 ? ReadBool(dr, 13) : true,
-            AtiendeMartes = dr.FieldCount > 14 ? ReadBool(dr, 14) : true,
-            AtiendeMiercoles = dr.FieldCount > 15 ? ReadBool(dr, 15) : true,
-            AtiendeJueves = dr.FieldCount > 16 ? ReadBool(dr, 16) : true,
-            AtiendeViernes = dr.FieldCount > 17 ? ReadBool(dr, 17) : true,
-            AtiendeSabado = dr.FieldCount > 18 ? ReadBool(dr, 18) : true,
-            AtiendeDomingo = dr.FieldCount > 19 ? ReadBool(dr, 19) : true,
-            HoraApertura = dr.FieldCount > 20 && !dr.IsDBNull(20) ? TimeOnly.FromTimeSpan(dr.GetTimeSpan(20)) : new TimeOnly(8, 0),
-            HoraCierre = dr.FieldCount > 21 && !dr.IsDBNull(21) ? TimeOnly.FromTimeSpan(dr.GetTimeSpan(21)) : new TimeOnly(23, 0),
-            FechasInhabilitadasCsv = dr.FieldCount > 22 && !dr.IsDBNull(22) ? dr.GetString(22) : null,
-            FechasInhabilitadas = dr.FieldCount > 22 && !dr.IsDBNull(22)
-                ? dr.GetString(22)
+            NotificacionesActivas = dr.FieldCount > 13 ? ReadBool(dr, 13) : true,
+            MinutosAnticipacionRecordatorio = dr.FieldCount > 14 && !dr.IsDBNull(14) ? dr.GetInt32(14) : 90,
+            MinutosToleranciaNoShow = dr.FieldCount > 15 && !dr.IsDBNull(15) ? dr.GetInt32(15) : 30,
+            CorreoNotificacion = dr.FieldCount > 16 && !dr.IsDBNull(16) ? dr.GetString(16) : null,
+            WhatsappContacto = dr.FieldCount > 17 && !dr.IsDBNull(17) ? dr.GetString(17) : null,
+            PermiteChatWhatsapp = dr.FieldCount > 18 && ReadBool(dr, 18),
+            AtiendeLunes = dr.FieldCount > 19 ? ReadBool(dr, 19) : true,
+            AtiendeMartes = dr.FieldCount > 20 ? ReadBool(dr, 20) : true,
+            AtiendeMiercoles = dr.FieldCount > 21 ? ReadBool(dr, 21) : true,
+            AtiendeJueves = dr.FieldCount > 22 ? ReadBool(dr, 22) : true,
+            AtiendeViernes = dr.FieldCount > 23 ? ReadBool(dr, 23) : true,
+            AtiendeSabado = dr.FieldCount > 24 ? ReadBool(dr, 24) : true,
+            AtiendeDomingo = dr.FieldCount > 25 ? ReadBool(dr, 25) : true,
+            HoraApertura = dr.FieldCount > 26 && !dr.IsDBNull(26) ? TimeOnly.FromTimeSpan(dr.GetTimeSpan(26)) : new TimeOnly(8, 0),
+            HoraCierre = dr.FieldCount > 27 && !dr.IsDBNull(27) ? TimeOnly.FromTimeSpan(dr.GetTimeSpan(27)) : new TimeOnly(23, 0),
+            FechasInhabilitadasCsv = dr.FieldCount > 28 && !dr.IsDBNull(28) ? dr.GetString(28) : null,
+            FechasInhabilitadas = dr.FieldCount > 28 && !dr.IsDBNull(28)
+                ? dr.GetString(28)
                     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .Where(x => DateOnly.TryParse(x, out _))
                     .Select(DateOnly.Parse)
@@ -106,6 +118,12 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@Direccion", model.Direccion, SqlDbType.NVarChar);
         AddParam(cmd, "@Telefono", model.Telefono, SqlDbType.NVarChar);
         AddParam(cmd, "@Activo", model.Activo, SqlDbType.Bit);
+        AddParam(cmd, "@Latitud", model.Latitud, SqlDbType.Decimal);
+        AddParam(cmd, "@Longitud", model.Longitud, SqlDbType.Decimal);
+        AddParam(cmd, "@GooglePlaceId", model.GooglePlaceId, SqlDbType.NVarChar);
+        AddParam(cmd, "@GoogleMapsUrl", model.GoogleMapsUrl, SqlDbType.NVarChar);
+        AddParam(cmd, "@FotoPrincipalUrl", model.FotoPrincipalUrl, SqlDbType.NVarChar);
+        AddParam(cmd, "@FotosUrlsCsv", model.FotosUrlsCsv, SqlDbType.NVarChar);
         AddParam(cmd, "@ServiciosIdsCsv", ToCsv(model.ServiciosSeleccionados), SqlDbType.NVarChar);
         AddParam(cmd, "@NotificacionesActivas", model.NotificacionesActivas, SqlDbType.Bit);
         AddParam(cmd, "@MinutosAnticipacionRecordatorio", model.MinutosAnticipacionRecordatorio, SqlDbType.Int);
@@ -140,6 +158,12 @@ public partial class SportCenterStoredProcedureService
             AddParam(cmd, "@Direccion", model.Direccion, SqlDbType.NVarChar);
             AddParam(cmd, "@Telefono", model.Telefono, SqlDbType.NVarChar);
             AddParam(cmd, "@Activo", model.Activo, SqlDbType.Bit);
+            AddParam(cmd, "@Latitud", model.Latitud, SqlDbType.Decimal);
+            AddParam(cmd, "@Longitud", model.Longitud, SqlDbType.Decimal);
+            AddParam(cmd, "@GooglePlaceId", model.GooglePlaceId, SqlDbType.NVarChar);
+            AddParam(cmd, "@GoogleMapsUrl", model.GoogleMapsUrl, SqlDbType.NVarChar);
+            AddParam(cmd, "@FotoPrincipalUrl", model.FotoPrincipalUrl, SqlDbType.NVarChar);
+            AddParam(cmd, "@FotosUrlsCsv", model.FotosUrlsCsv, SqlDbType.NVarChar);
             AddParam(cmd, "@ServiciosIdsCsv", ToCsv(model.ServiciosSeleccionados), SqlDbType.NVarChar);
             AddParam(cmd, "@NotificacionesActivas", model.NotificacionesActivas, SqlDbType.Bit);
             AddParam(cmd, "@MinutosAnticipacionRecordatorio", model.MinutosAnticipacionRecordatorio, SqlDbType.Int);
@@ -314,8 +338,8 @@ public partial class SportCenterStoredProcedureService
 
     public Task<List<SelectListItem>> EspaciosComboSedesAsync(int negocioId, int? sedeId = null) => ComboAsync("Sp_Combos_Sedes", ("@NegocioId", (object?)negocioId, SqlDbType.Int), ("@SedeId", sedeId, SqlDbType.Int));
     public Task<List<SelectListItem>> SedesComboServiciosAsync() => ComboAsync("Sp_Combos_ServiciosSede");
-    public Task<List<SelectListItem>> EspaciosComboTiposDeporteAsync() => ComboAsync("Sp_Combos_TiposDeporte");
-    public Task<List<SelectListItem>> EspaciosComboTiposSueloAsync() => ComboAsync("Sp_Combos_TiposSuelo");
+    public Task<List<SelectListItem>> EspaciosComboTiposDeporteAsync(int negocioId) => ComboAsync("Sp_Combos_TiposDeporte", ("@NegocioId", negocioId, SqlDbType.Int));
+    public Task<List<SelectListItem>> EspaciosComboTiposSueloAsync(int negocioId) => ComboAsync("Sp_Combos_TiposSuelo", ("@NegocioId", negocioId, SqlDbType.Int));
 
     private static string? ToCsv(IEnumerable<int>? values)
     {

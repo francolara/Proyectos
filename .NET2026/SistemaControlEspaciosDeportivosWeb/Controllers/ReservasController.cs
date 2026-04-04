@@ -4,7 +4,10 @@ using SistemaControlEspaciosDeportivosWeb.ViewModels;
 
 namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 
-public class ReservasController(IModuloPermisoService moduloPermisoService, ISportCenterStoredProcedureService spService)
+public class ReservasController(
+    IModuloPermisoService moduloPermisoService,
+    ISportCenterStoredProcedureService spService,
+    INotificacionEmailService notificacionEmailService)
     : ModuloControllerBase(moduloPermisoService)
 {
     public async Task<IActionResult> Index(int? negocioId, DateOnly? fechaDesde, DateOnly? fechaHasta, int? sedeId, int? espacioDeportivoId, int? estado, DateOnly? listadoDesde, DateOnly? listadoHasta, List<int>? estadosListado)
@@ -271,6 +274,109 @@ public class ReservasController(IModuloPermisoService moduloPermisoService, ISpo
     }
 
     [HttpGet]
+    public async Task<IActionResult> HistorialReserva(int negocioId, int id)
+    {
+        var baseVm = await ObtenerBaseAsync(negocioId, "RESERVAS");
+        if (baseVm is null || !string.IsNullOrWhiteSpace(baseVm.Mensaje)) return Forbid();
+        if (!await ReservaPermitidaAsync(baseVm, negocioId, id)) return Forbid();
+
+        var historial = await spService.ReservasHistorialAsync(negocioId, id);
+        return Json(new
+        {
+            ok = true,
+            items = historial.Select(x => new
+            {
+                fecha = x.FechaRegistro.ToLocalTime().ToString("dd/MM/yyyy HH:mm"),
+                accion = x.Accion,
+                usuario = x.Usuario,
+                detalle = x.Detalle
+            })
+        });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> AccionMasiva([FromBody] ReservaAccionMasivaRequestViewModel request)
+    {
+        var baseVm = await ObtenerBaseAsync(request.NegocioId, "RESERVAS");
+        if (baseVm is null || !string.IsNullOrWhiteSpace(baseVm.Mensaje) || !baseVm.PuedeEditar) return Forbid();
+
+        var ids = (request.ReservaIds ?? new List<int>())
+            .Where(x => x > 0)
+            .Distinct()
+            .ToList();
+        if (ids.Count == 0)
+            return BadRequest(new { ok = false, mensaje = "Selecciona al menos una reserva." });
+
+        var accion = (request.Accion ?? string.Empty).Trim().ToLowerInvariant();
+        if (accion is not ("confirmar" or "noshow" or "recordatorio"))
+            return BadRequest(new { ok = false, mensaje = "Accion no valida." });
+
+        var procesadas = 0;
+        var omitidas = 0;
+        var errores = new List<string>();
+        foreach (var reservaId in ids)
+        {
+            if (!await ReservaPermitidaAsync(baseVm, request.NegocioId, reservaId))
+            {
+                omitidas++;
+                continue;
+            }
+
+            try
+            {
+                if (accion == "confirmar")
+                {
+                    var ok = await spService.ReservasCambiarEstadoRapidoAsync(request.NegocioId, reservaId, 2, User.Identity?.Name ?? "sistema");
+                    if (ok) procesadas++; else omitidas++;
+                    continue;
+                }
+
+                if (accion == "noshow")
+                {
+                    var ok = await spService.ReservasCambiarEstadoRapidoAsync(request.NegocioId, reservaId, 6, User.Identity?.Name ?? "sistema");
+                    if (ok) procesadas++; else omitidas++;
+                    continue;
+                }
+
+                var reserva = await spService.ReservasObtenerParaRecordatorioAsync(request.NegocioId, reservaId);
+                if (reserva is null || string.IsNullOrWhiteSpace(reserva.Correo))
+                {
+                    omitidas++;
+                    continue;
+                }
+
+                var enviado = await notificacionEmailService.EnviarRecordatorioReservaAsync(reserva);
+                if (!enviado)
+                {
+                    omitidas++;
+                    continue;
+                }
+
+                await spService.ReservasMarcarRecordatorioEnviadoAsync(request.NegocioId, reservaId, User.Identity?.Name ?? "sistema");
+                procesadas++;
+            }
+            catch (Exception ex)
+            {
+                errores.Add($"Reserva #{reservaId}: {ex.Message}");
+            }
+        }
+
+        return Json(new
+        {
+            ok = true,
+            procesadas,
+            omitidas,
+            errores,
+            mensaje = accion switch
+            {
+                "confirmar" => $"Reservas confirmadas: {procesadas}. Omitidas: {omitidas}.",
+                "noshow" => $"Reservas marcadas como no-show: {procesadas}. Omitidas: {omitidas}.",
+                _ => $"Recordatorios enviados: {procesadas}. Omitidas: {omitidas}."
+            }
+        });
+    }
+
+    [HttpGet]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public async Task<IActionResult> ResumenDiaOperativo(int negocioId, DateOnly fecha, int? sedeId, int? espacioDeportivoId)
     {
@@ -330,6 +436,51 @@ public class ReservasController(IModuloPermisoService moduloPermisoService, ISpo
             })
             .ToList();
 
+        var reservasActivas = eventos.Count(e =>
+            string.Equals(e.TipoEvento, "RESERVA", StringComparison.OrdinalIgnoreCase)
+            && e.Estado is 1 or 2 or 3 or 4);
+        var bloqueosActivos = eventos.Count(e =>
+            string.Equals(e.TipoEvento, "BLOQUEO", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(e.TipoEvento, "NO_ATENCION", StringComparison.OrdinalIgnoreCase));
+        var totalSlots = (finDia - inicioDia) / 60;
+        var slotsOcupados = totalSlots - slotsDisponibles.Count;
+        var ocupacionPct = totalSlots <= 0 ? 0m : Math.Round((slotsOcupados * 100m) / totalSlots, 2);
+
+        var espacios = await spService.ReservasComboEspaciosAsync(negocioId, sedeId);
+        var eventosSede = await spService.ReservasCalendarioEventosAsync(negocioId, fecha, fecha, sedeId, null, null);
+        var resumenPorEspacio = espacios
+            .Select(espacio =>
+            {
+                var espacioId = int.TryParse(espacio.Value, out var idParsed) ? idParsed : 0;
+                var eventosEspacio = eventosSede
+                    .Where(e => e.EspacioDeportivoId == espacioId
+                                && string.Equals(e.TipoEvento, "RESERVA", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                var totalPendientes = eventosEspacio.Count(x => x.Estado == 1);
+                var totalConfirmadas = eventosEspacio.Count(x => x.Estado == 2);
+                var totalEnUso = eventosEspacio.Count(x => x.Estado == 3);
+                var totalFinalizadas = eventosEspacio.Count(x => x.Estado == 4);
+                var totalCanceladas = eventosEspacio.Count(x => x.Estado == 5);
+                var totalNoShow = eventosEspacio.Count(x => x.Estado == 6);
+                var total = totalPendientes + totalConfirmadas + totalEnUso + totalFinalizadas + totalCanceladas + totalNoShow;
+                return new
+                {
+                    espacioId,
+                    espacio = espacio.Text,
+                    total,
+                    pendientes = totalPendientes,
+                    confirmadas = totalConfirmadas,
+                    enUso = totalEnUso,
+                    finalizadas = totalFinalizadas,
+                    canceladas = totalCanceladas,
+                    noShow = totalNoShow
+                };
+            })
+            .OrderByDescending(x => x.total)
+            .ThenBy(x => x.espacio)
+            .ToList();
+
         return Json(new
         {
             ok = true,
@@ -337,7 +488,17 @@ public class ReservasController(IModuloPermisoService moduloPermisoService, ISpo
             slotsDisponibles,
             pendientes,
             totalSlotsDisponibles = slotsDisponibles.Count,
-            totalPendientes = pendientes.Count
+            totalPendientes = pendientes.Count,
+            kpi = new
+            {
+                totalSlots,
+                slotsOcupados,
+                slotsLibres = slotsDisponibles.Count,
+                reservasActivas,
+                bloqueosActivos,
+                ocupacionPct
+            },
+            resumenEspacios = resumenPorEspacio
         });
     }
 

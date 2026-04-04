@@ -1,4 +1,4 @@
-﻿/* Firma: Codex - 01/04/2026 | Hoja dedicada del calendario de Reservas: centralizacion total de estilos de la pestaña Reservas (agenda, leyenda, disponibilidad, bloqueos, drawer y modos visuales), cabecera en 2 filas estable (día/fecha) con wrapper dedicado, eje horario fijo, toolbar premium, paleta por estado y fondos de bloqueo/atencion derivados de variables backend; ajuste de raiz para anclas de cabecera (sin subrayado/color link), correccion estructural de selectores anclados directamente a #calendarioReservas (sin asumir ".fc" descendiente) y consistencia visual post-render sin parches JS. */
+/* Firma: Codex - 01/04/2026 | Hoja dedicada de Reservas: estilos centralizados del calendario y panel operativo, cabecera 2 filas con rango largo, modo Bloqueos HC, KPI diario, vista por espacios, historial drawer y barra de acciones masivas. */
 
 .sc-reservas-metrics {
   display: flex;
@@ -291,27 +291,37 @@
 
 #calendarioReservas {
   min-width: 1160px !important;
+  --fc-timegrid-axis-width: 122px;
 }
 
 #calendarioReservas .fc-scrollgrid-sync-table {
-  table-layout: fixed !important;
-  width: max-content !important;
+  table-layout: auto !important;
+  width: 100% !important;
   min-width: 100% !important;
 }
 
-#calendarioReservas .fc-toolbar {
-  background: linear-gradient(180deg, #fbfdff 0%, #edf4ff 100%) !important;
-  border: 1px solid #d2dff2 !important;
-  border-radius: 1rem !important;
-  padding: 0.65rem 0.82rem !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
-}
 
 #calendarioReservas .fc-toolbar-title {
-  font-size: 1.9rem !important;
+  font-size: 2rem !important;
   font-weight: 800 !important;
   letter-spacing: -0.02em !important;
   color: #0f172a !important;
+  text-align: center !important;
+  line-height: 1.18 !important;
+}
+
+
+
+#calendarioReservas .fc-toolbar-chunk:nth-child(2) {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+.sc-fc-toolbar-subtitle {
+  display: none !important;
 }
 
 #calendarioReservas .fc-button-primary {
@@ -408,7 +418,7 @@
   max-width: 122px !important;
 }
 
-#calendarioReservas .fc-timegrid-axis {
+#calendarioReservas .fc-timegrid-slots .fc-timegrid-axis {
   background: #f7faff !important;
   border-color: #dce6f3 !important;
   border-right: 1px solid #cddcf0 !important;
@@ -418,6 +428,17 @@
   z-index: 6;
 }
 
+#calendarioReservas .fc-timegrid-cols .fc-timegrid-axis {
+  background: transparent !important;
+  border-right: 1px solid #cddcf0 !important;
+  position: static !important;
+  z-index: 1 !important;
+}
+
+#calendarioReservas .fc-timegrid-slot-label {
+  background: #f7faff !important;
+  z-index: 7;
+}
 #calendarioReservas .fc-timegrid-axis-frame,
 #calendarioReservas .fc-timegrid-slot-label-frame {
   width: 122px !important;
@@ -443,6 +464,8 @@
   font-size: 0.84rem !important;
   font-weight: 800 !important;
   color: #22324a !important;
+  opacity: 1 !important;
+  visibility: visible !important;
   letter-spacing: 0.01em !important;
   padding: 0.2rem 0 !important;
 }
@@ -484,14 +507,33 @@
   background: #f6faff !important;
 }
 
-#calendarioReservas .fc-day-sat,
-#calendarioReservas .fc-day-sun {
+#calendarioReservas .fc-timegrid-col.fc-day-sat,
+#calendarioReservas .fc-timegrid-col.fc-day-sun {
   background: #f6f9ff !important;
 }
 
-#calendarioReservas .fc-day-today {
+#calendarioReservas .fc-timegrid-col.fc-day-today {
   background: #eef5ff !important;
   box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.24) !important;
+}
+
+#calendarioReservas .fc-col-header-cell.fc-day-sat,
+#calendarioReservas .fc-col-header-cell.fc-day-sun,
+#calendarioReservas .fc-col-header-cell.fc-day-today {
+  background: linear-gradient(180deg, #0f2d57 0%, #173f73 100%) !important;
+  border-color: #264a79 !important;
+}
+
+#calendarioReservas .fc-col-header-cell.fc-day-sat .fc-col-header-cell-cushion,
+#calendarioReservas .fc-col-header-cell.fc-day-sun .fc-col-header-cell-cushion,
+#calendarioReservas .fc-col-header-cell.fc-day-today .fc-col-header-cell-cushion,
+#calendarioReservas .fc-col-header-cell.fc-day-sat .sc-day-header-title,
+#calendarioReservas .fc-col-header-cell.fc-day-sun .sc-day-header-title,
+#calendarioReservas .fc-col-header-cell.fc-day-today .sc-day-header-title,
+#calendarioReservas .fc-col-header-cell.fc-day-sat .sc-day-header-date,
+#calendarioReservas .fc-col-header-cell.fc-day-sun .sc-day-header-date,
+#calendarioReservas .fc-col-header-cell.fc-day-today .sc-day-header-date {
+  color: #f8fafc !important;
 }
 
 #calendarioReservas .sc-fc-event {
@@ -527,16 +569,17 @@
 #calendarioReservas .fc-bg-event.sc-bloqueo-bg {
   background: repeating-linear-gradient(
     -45deg,
-    var(--sc-block-bg-a, rgba(100, 116, 139, 0.2)),
-    var(--sc-block-bg-a, rgba(100, 116, 139, 0.2)) 8px,
-    var(--sc-block-bg-b, rgba(148, 163, 184, 0.12)) 8px,
-    var(--sc-block-bg-b, rgba(148, 163, 184, 0.12)) 16px
+    var(--sc-block-bg-a, rgba(100, 116, 139, 0.24)),
+    var(--sc-block-bg-a, rgba(100, 116, 139, 0.24)) 8px,
+    var(--sc-block-bg-b, rgba(148, 163, 184, 0.16)) 8px,
+    var(--sc-block-bg-b, rgba(148, 163, 184, 0.16)) 16px
   ) !important;
-  border: 1px solid var(--sc-block-border, rgba(100, 116, 139, 0.3)) !important;
+  border: 1px solid var(--sc-block-border, rgba(71, 85, 105, 0.42)) !important;
   opacity: 1 !important;
   pointer-events: auto;
   cursor: not-allowed;
 }
+
 
 #calendarioReservas .fc-scrollgrid {
   border-radius: 0.8rem;
@@ -665,16 +708,25 @@
 }
 
 .sc-bg-motivo-inline {
-  display: inline-block;
-  margin-top: 0.18rem;
-  padding: 0.08rem 0.34rem;
-  border-radius: 0.45rem;
-  background: rgba(255, 255, 255, 0.75);
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: #475569;
-  line-height: 1.1;
+  display: inline-flex;
+  align-items: center;
+  margin-top: 0.12rem;
+  padding: 0.14rem 0.44rem;
+  border-radius: 0.52rem;
+  border: 1px solid rgba(100, 116, 139, 0.28);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9), 0 3px 8px rgba(15, 23, 42, 0.12);
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: #334155;
+  line-height: 1.18;
+  letter-spacing: 0.01em;
+  max-width: calc(100% - 8px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
+
 
 .sc-tooltip .tooltip-inner {
   background: #24344d;
@@ -773,13 +825,29 @@
     width: 100%;
   }
 
-  #calendarioReservas .fc-toolbar {
-    gap: 0.55rem;
-  }
+  
+#calendarioReservas .fc-toolbar-title {
+  font-size: 2rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+  color: #0f172a !important;
+  text-align: center !important;
+  line-height: 1.18 !important;
+}
 
-  #calendarioReservas .fc-toolbar-title {
-    font-size: 1.12rem;
-  }
+  
+
+#calendarioReservas .fc-toolbar-chunk:nth-child(2) {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+.sc-fc-toolbar-subtitle {
+  display: none !important;
+}
 
   .sc-fc-toolbar-subtitle {
     display: none;
@@ -792,3 +860,172 @@
 }
 
 
+
+
+#calendarioReservas.sc-mode-blocks-hc .fc-bg-event.sc-no-atencion-bg,
+#calendarioReservas.sc-mode-blocks-hc .fc-bg-event.sc-bloqueo-bg {
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(71, 85, 105, 0.34),
+    rgba(71, 85, 105, 0.34) 8px,
+    rgba(100, 116, 139, 0.22) 8px,
+    rgba(100, 116, 139, 0.22) 16px
+  ) !important;
+  border-color: rgba(51, 65, 85, 0.65) !important;
+}
+
+#calendarioReservas.sc-mode-blocks-hc .sc-bg-motivo-inline {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(51, 65, 85, 0.42);
+  color: #1f2937;
+  font-weight: 900;
+}
+
+.sc-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(120px, 1fr));
+  gap: 0.65rem;
+  padding: 0.1rem 1rem 1rem;
+}
+
+.sc-kpi-item {
+  border: 1px solid #d7e4f3;
+  border-radius: 0.85rem;
+  background: linear-gradient(180deg, #fff 0%, #f4f8ff 100%);
+  padding: 0.58rem 0.72rem;
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.05);
+}
+
+.sc-kpi-item span {
+  display: block;
+  font-size: 0.74rem;
+  color: #64748b;
+}
+
+.sc-kpi-item strong {
+  display: block;
+  margin-top: 0.14rem;
+  font-size: 1.04rem;
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.sc-recursos-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  gap: 0.65rem;
+  padding: 0.1rem 1rem 1rem;
+}
+
+.sc-recurso-item {
+  border: 1px solid #d8e3f1;
+  border-radius: 0.9rem;
+  background: #fff;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.05);
+  padding: 0.58rem 0.7rem;
+}
+
+.sc-recurso-item header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.45rem;
+}
+
+.sc-recurso-item header strong {
+  font-size: 0.86rem;
+  color: #0f172a;
+}
+
+.sc-recurso-item header span {
+  font-size: 0.73rem;
+  color: #475569;
+  font-weight: 700;
+}
+
+.sc-recurso-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.sc-recurso-stats span {
+  border-radius: 999px;
+  border: 1px solid #dbe4f2;
+  background: #f8fafc;
+  padding: 0.16rem 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.sc-recurso-stats .is-pendiente { background: #fff7e6; border-color: #facc15; color: #92400e; }
+.sc-recurso-stats .is-confirmada { background: #ecfdf3; border-color: #86efac; color: #166534; }
+.sc-recurso-stats .is-enuso { background: #ecf3ff; border-color: #93c5fd; color: #1d4ed8; }
+.sc-recurso-stats .is-finalizada { background: #ecfeff; border-color: #99f6e4; color: #0f766e; }
+.sc-recurso-stats .is-cancelada { background: #fef2f2; border-color: #fca5a5; color: #b91c1c; }
+.sc-recurso-stats .is-noshow { background: #f5f3ff; border-color: #c4b5fd; color: #6d28d9; }
+
+.sc-acciones-masivas {
+  border: 1px dashed #c9d8eb;
+  border-radius: 0.85rem;
+  padding: 0.6rem 0.72rem;
+  background: #f8fbff;
+}
+
+.sc-acciones-masivas small {
+  display: block;
+  margin-top: 0.35rem;
+}
+
+.sc-drawer-historial {
+  border-top: 1px dashed #d7e3f2;
+  padding-top: 0.65rem;
+}
+
+.sc-drawer-historial-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  max-height: 170px;
+  overflow: auto;
+}
+
+.sc-drawer-historial-list li {
+  border: 1px solid #dee7f4;
+  background: #f8fbff;
+  border-radius: 0.72rem;
+  padding: 0.45rem 0.56rem;
+}
+
+.sc-historial-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.sc-historial-head strong {
+  color: #0f172a;
+  font-size: 0.78rem;
+}
+
+.sc-historial-head span,
+.sc-historial-meta,
+.sc-historial-detalle {
+  font-size: 0.72rem;
+  color: #475569;
+}
+
+@media (max-width: 1200px) {
+  .sc-kpi-grid { grid-template-columns: repeat(3, minmax(130px, 1fr)); }
+  .sc-recursos-grid { grid-template-columns: repeat(2, minmax(220px, 1fr)); }
+}
+
+@media (max-width: 768px) {
+  .sc-kpi-grid { grid-template-columns: repeat(2, minmax(130px, 1fr)); }
+  .sc-recursos-grid { grid-template-columns: 1fr; }
+}

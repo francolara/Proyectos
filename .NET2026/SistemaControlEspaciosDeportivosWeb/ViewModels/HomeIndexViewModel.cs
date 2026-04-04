@@ -23,6 +23,11 @@ public class SedePublicaViewModel
     public string? Telefono { get; set; }
     public string? WhatsappContacto { get; set; }
     public bool PermiteChatWhatsapp { get; set; }
+    public decimal? Latitud { get; set; }
+    public decimal? Longitud { get; set; }
+    public string? GoogleMapsUrl { get; set; }
+    public string? FotoPrincipalUrl { get; set; }
+    public List<string> FotosAlternativas { get; set; } = new();
 }
 
 public class TipoDeportePublicoViewModel

@@ -53,12 +53,13 @@ public partial class SportCenterStoredProcedureService
         }
     }
 
-    public async Task<List<SelectListItem>> ConfiguracionClubComboMonedasAsync()
+    public async Task<List<SelectListItem>> ConfiguracionClubComboMonedasAsync(int negocioId)
     {
         var list = new List<SelectListItem>();
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_Combos_Monedas", cn) { CommandType = CommandType.StoredProcedure };
+        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
         await using var dr = await cmd.ExecuteReaderAsync();
         while (await dr.ReadAsync())
         {

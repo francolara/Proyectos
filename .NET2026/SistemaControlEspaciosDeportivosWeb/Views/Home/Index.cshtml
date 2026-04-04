@@ -1,6 +1,8 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.HomeIndexViewModel
 @using System.Linq
+@using System.Globalization
 <!-- Firma: Codex - 27/03/2026 -->
+<!-- Firma: Codex - 02/04/2026 | Agrega visualizacion de foto/mapa por sede y carrusel publico de imagenes principales+alternativas -->
 
 @{
     ViewData["Title"] = "Portal deportivo";
@@ -177,12 +179,76 @@
             var enlaceWhatsapp = string.IsNullOrWhiteSpace(numeroWhatsapp)
                 ? string.Empty
                 : $"https://wa.me/{numeroWhatsapp}?text={mensajeWhatsapp}";
+            var tieneUbicacion = sede.Latitud.HasValue && sede.Longitud.HasValue;
+            var latText = sede.Latitud?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+            var lngText = sede.Longitud?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+            var mapsOpenUrl = !string.IsNullOrWhiteSpace(sede.GoogleMapsUrl)
+                ? sede.GoogleMapsUrl
+                : (tieneUbicacion ? $"https://www.google.com/maps?q={latText},{lngText}" : string.Empty);
+            var mapEmbedUrl = tieneUbicacion
+                ? $"https://www.google.com/maps?width=100%25&height=220&hl=es&q={latText},{lngText}&t=&z=15&ie=UTF8&iwloc=B&output=embed"
+                : string.Empty;
+            var fotosSede = new List<string>();
+            if (!string.IsNullOrWhiteSpace(sede.FotoPrincipalUrl))
+            {
+                fotosSede.Add(sede.FotoPrincipalUrl);
+            }
+            if (sede.FotosAlternativas?.Count > 0)
+            {
+                fotosSede.AddRange(sede.FotosAlternativas.Where(x => !string.IsNullOrWhiteSpace(x)));
+            }
+            var carouselId = $"sede-carousel-{sede.Id}";
             <div class="col-md-6 col-xl-4">
                 <article class="card h-100 border-0 shadow-sm">
+                    @if (fotosSede.Count == 1)
+                    {
+                        <img src="@fotosSede[0]" class="card-img-top" alt="Foto de @sede.Nombre" style="height:180px;object-fit:cover;" />
+                    }
+                    else if (fotosSede.Count > 1)
+                    {
+                        <div id="@carouselId" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-inner">
+                                @for (var i = 0; i < fotosSede.Count; i++)
+                                {
+                                    <div class="carousel-item @(i == 0 ? "active" : null)">
+                                        <img src="@fotosSede[i]" class="d-block w-100" alt="Foto @(i + 1) de @sede.Nombre" style="height:180px;object-fit:cover;" />
+                                    </div>
+                                }
+                            </div>
+                            <button class="carousel-control-prev" type="button" data-bs-target="#@carouselId" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon"></span>
+                                <span class="visually-hidden">Anterior</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#@carouselId" data-bs-slide="next">
+                                <span class="carousel-control-next-icon"></span>
+                                <span class="visually-hidden">Siguiente</span>
+                            </button>
+                        </div>
+                    }
                     <div class="card-body">
                         <h3 class="h6 fw-bold mb-1">@sede.Nombre</h3>
                         <p class="mb-1">@sede.Direccion</p>
                         <p class="mb-2">@(string.IsNullOrWhiteSpace(sede.Telefono) ? "Sin telefono registrado" : sede.Telefono)</p>
+                        @if (tieneUbicacion)
+                        {
+                            <div class="ratio ratio-16x9 rounded border overflow-hidden mb-2">
+                                <iframe src="@mapEmbedUrl"
+                                        loading="lazy"
+                                        referrerpolicy="no-referrer-when-downgrade"
+                                        style="border:0;"
+                                        title="Mapa de @sede.Nombre"></iframe>
+                            </div>
+                            <a class="btn btn-sm btn-outline-primary me-2"
+                               href="@mapsOpenUrl"
+                               target="_blank"
+                               rel="noopener noreferrer">
+                                Ver en Google Maps
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="badge text-bg-secondary mb-2">Ubicacion pendiente</span>
+                        }
                         @if (sede.PermiteChatWhatsapp && !string.IsNullOrWhiteSpace(numeroWhatsapp))
                         {
                             <a class="btn btn-sm btn-success"

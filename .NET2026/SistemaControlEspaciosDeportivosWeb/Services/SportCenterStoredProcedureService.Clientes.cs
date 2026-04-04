@@ -20,11 +20,12 @@ public partial class SportCenterStoredProcedureService
             {
                 Id = dr.GetInt32(0),
                 NombresORazonSocial = dr.GetString(1),
-                TipoDocumento = dr.GetString(2),
-                NumeroDocumento = dr.GetString(3),
-                Telefono = dr.IsDBNull(4) ? null : dr.GetString(4),
-                Correo = dr.IsDBNull(5) ? null : dr.GetString(5),
-                Activo = dr.GetBoolean(6)
+                NombreEquipo = dr.IsDBNull(2) ? null : dr.GetString(2),
+                TipoDocumento = dr.GetString(3),
+                NumeroDocumento = dr.GetString(4),
+                Telefono = dr.IsDBNull(5) ? null : dr.GetString(5),
+                Correo = dr.IsDBNull(6) ? null : dr.GetString(6),
+                Activo = dr.GetBoolean(7)
             });
         }
         return list;
@@ -43,12 +44,13 @@ public partial class SportCenterStoredProcedureService
         {
             Id = dr.GetInt32(0),
             NombresORazonSocial = dr.GetString(1),
-            TipoDocumento = dr.GetString(2),
-            NumeroDocumento = dr.GetString(3),
-            Telefono = dr.IsDBNull(4) ? null : dr.GetString(4),
-            Correo = dr.IsDBNull(5) ? null : dr.GetString(5),
-            DireccionFiscal = dr.IsDBNull(6) ? null : dr.GetString(6),
-            Activo = dr.GetBoolean(7),
+            NombreEquipo = dr.IsDBNull(2) ? null : dr.GetString(2),
+            TipoDocumento = dr.GetString(3),
+            NumeroDocumento = dr.GetString(4),
+            Telefono = dr.IsDBNull(5) ? null : dr.GetString(5),
+            Correo = dr.IsDBNull(6) ? null : dr.GetString(6),
+            DireccionFiscal = dr.IsDBNull(7) ? null : dr.GetString(7),
+            Activo = dr.GetBoolean(8),
             NegocioId = negocioId
         };
     }
@@ -60,6 +62,7 @@ public partial class SportCenterStoredProcedureService
         await using var cmd = new SqlCommand("Sp_Clientes_Crear", cn) { CommandType = CommandType.StoredProcedure };
         AddParam(cmd, "@NegocioId", model.NegocioId, SqlDbType.Int);
         AddParam(cmd, "@NombresORazonSocial", model.NombresORazonSocial, SqlDbType.NVarChar);
+        AddParam(cmd, "@NombreEquipo", model.NombreEquipo, SqlDbType.NVarChar);
         AddParam(cmd, "@TipoDocumento", model.TipoDocumento, SqlDbType.NVarChar);
         AddParam(cmd, "@NumeroDocumento", model.NumeroDocumento, SqlDbType.NVarChar);
         AddParam(cmd, "@Telefono", model.Telefono, SqlDbType.NVarChar);
@@ -80,6 +83,7 @@ public partial class SportCenterStoredProcedureService
             AddParam(cmd, "@Id", model.Id, SqlDbType.Int);
             AddParam(cmd, "@NegocioId", model.NegocioId, SqlDbType.Int);
             AddParam(cmd, "@NombresORazonSocial", model.NombresORazonSocial, SqlDbType.NVarChar);
+            AddParam(cmd, "@NombreEquipo", model.NombreEquipo, SqlDbType.NVarChar);
             AddParam(cmd, "@TipoDocumento", model.TipoDocumento, SqlDbType.NVarChar);
             AddParam(cmd, "@NumeroDocumento", model.NumeroDocumento, SqlDbType.NVarChar);
             AddParam(cmd, "@Telefono", model.Telefono, SqlDbType.NVarChar);

@@ -2,7 +2,7 @@
 -- Author:        FRANCO LARA
 -- Create date:   27/03/2026
 -- Description:   Dias/horario de atencion por sede + fechas no laborables y validacion de reservas.
--- Firma:         Codex - 27/03/2026
+-- Firma:         Codex - 02/04/2026 | Ajusta salida de sedes para incluir ubicacion/fotos y mantener contrato ADO.NET.
 -- =============================================
 
 IF OBJECT_ID(N'dbo.SedeHorarioAtencion', N'U') IS NULL
@@ -82,7 +82,11 @@ BEGIN
             ) AS DiasAtencion,
             CONCAT(CONVERT(NVARCHAR(5), COALESCE(sha.HoraApertura, CAST('08:00' AS TIME)), 108), N' - ', CONVERT(NVARCHAR(5), COALESCE(sha.HoraCierre, CAST('23:00' AS TIME)), 108)) AS HorarioAtencion,
             (SELECT COUNT(1) FROM dbo.SedeFechasInhabilitadas sfi WHERE sfi.SedeId = s.Id AND sfi.Activo = 1) AS FechasNoLaborablesCount,
-            s.Activo
+            s.Activo,
+            s.Latitud,
+            s.Longitud,
+            s.GoogleMapsUrl,
+            s.FotoPrincipalUrl
         FROM dbo.Sedes s
         LEFT JOIN dbo.SedeConfiguracionNotificacion scn ON scn.SedeId = s.Id
         LEFT JOIN dbo.SedeHorarioAtencion sha ON sha.SedeId = s.Id
@@ -106,6 +110,12 @@ BEGIN
     BEGIN TRY
         SELECT
             s.Id, s.NegocioId, s.Nombre, s.Direccion, s.Telefono, s.Activo,
+            s.Latitud,
+            s.Longitud,
+            s.GooglePlaceId,
+            s.GoogleMapsUrl,
+            s.FotoPrincipalUrl,
+            s.FotosUrlsCsv,
             STUFF((SELECT N',' + CONVERT(NVARCHAR(20), ss.ServicioId) FROM dbo.SedeServicios ss WHERE ss.SedeId = s.Id ORDER BY ss.ServicioId FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, N'') AS ServiciosIdsCsv,
             COALESCE(scn.NotificacionesActivas, 1) AS NotificacionesActivas,
             COALESCE(scn.MinutosAnticipacionRecordatorio, 90) AS MinutosAnticipacionRecordatorio,

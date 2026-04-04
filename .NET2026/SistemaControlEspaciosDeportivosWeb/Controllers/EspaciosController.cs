@@ -147,8 +147,8 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
         var tieneTarifasJson = !string.IsNullOrWhiteSpace(tarifasJsonOriginal);
 
         model.Sedes = await spService.EspaciosComboSedesAsync(model.NegocioId, sedeIdFiltro);
-        model.TiposDeporte = await spService.EspaciosComboTiposDeporteAsync();
-        model.TiposSuelo = await spService.EspaciosComboTiposSueloAsync();
+        model.TiposDeporte = await spService.EspaciosComboTiposDeporteAsync(model.NegocioId);
+        model.TiposSuelo = await spService.EspaciosComboTiposSueloAsync(model.NegocioId);
         InsertarOpcionSeleccione(model.Sedes, "Seleccione sede");
         InsertarOpcionSeleccione(model.TiposDeporte, "Seleccione deporte");
         InsertarOpcionSeleccione(model.TiposSuelo, "Seleccione tipo de suelo");
@@ -200,7 +200,7 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
     private async Task CargarMonedaConfiguradaAsync(EspacioFormViewModel model)
     {
         var configuracion = await spService.ConfiguracionClubObtenerAsync(model.NegocioId);
-        var monedas = await spService.ConfiguracionClubComboMonedasAsync();
+        var monedas = await spService.ConfiguracionClubComboMonedasAsync(model.NegocioId);
         var monedaSeleccionada = configuracion is null
             ? null
             : monedas.FirstOrDefault(x => x.Value == configuracion.MonedaId.ToString());

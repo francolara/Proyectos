@@ -9,6 +9,7 @@
     string moduloIcon(string codigo) => codigo switch
     {
         "DASHBOARD" => "bi-speedometer2",
+        "MAESTROS" => "bi-collection",
         "RESERVAS" => "bi-calendar-check",
         "CLIENTES" => "bi-people",
         "ESPACIOS" => "bi-grid-1x2",
@@ -24,6 +25,7 @@
 
     string moduloDescripcion(string codigo) => codigo switch
     {
+        "MAESTROS" => "Mantiene catalogos base: monedas, suelos, deportes y formas de pago.",
         "RESERVAS" => "Gestiona agenda, horarios y estado de reservas.",
         "CLIENTES" => "Administra el padron de clientes y su historial.",
         "ESPACIOS" => "Configura canchas, capacidad y disponibilidad.",
@@ -39,6 +41,7 @@
 
     string? moduloController(string codigo) => codigo switch
     {
+        "MAESTROS" => "Maestros",
         "SEDES" => "Sedes",
         "CLIENTES" => "Clientes",
         "ESPACIOS" => "Espacios",

@@ -1,9 +1,23 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.SedeFormViewModel
+@inject IConfiguration Configuration
 <!-- Firma: Codex - 27/03/2026 | Rediseño visual pro del formulario de sedes (estructura SaaS y jerarquia por secciones) -->
 <!-- Firma: Codex - 30/03/2026 | Selector de codigo pais para telefonos de sede y WhatsApp -->
+<!-- Firma: Codex - 02/04/2026 | Agrega ubicacion/fotos de sede, PlaceId y URL ocultos, autocomplete de Places y carga de maximo 6 imagenes en nube (principal+alternativas), estandarizando subida a JPG/PNG de entrada, conversion automatica a WebP 1200x900 <= 400KB, listado visual de archivos seleccionados y ajuste de region R2. -->
+<!-- Firma: Codex - 03/04/2026 | Quita boton de validacion R2 y cambia edicion de imagenes a manejo incremental (ver, quitar y agregar sin reemplazo total). -->
 
 @{
     ViewData["Title"] = "Editar sede";
+    var mapsApiKey = Configuration["GoogleMaps:ApiKey"];
+
+    var galeriaSede = new List<string>();
+    if (!string.IsNullOrWhiteSpace(Model.FotoPrincipalUrl))
+    {
+        galeriaSede.Add(Model.FotoPrincipalUrl);
+    }
+    if (Model.FotosUrls?.Count > 0)
+    {
+        galeriaSede.AddRange(Model.FotosUrls.Where(x => !string.IsNullOrWhiteSpace(x)));
+    }
 }
 
 <div class="admin-page-frame">
@@ -19,7 +33,7 @@
         </div>
     </section>
 
-    <form asp-action="Edit" method="post" class="sc-form-shell">
+    <form asp-action="Edit" method="post" enctype="multipart/form-data" class="sc-form-shell">
         <input type="hidden" asp-for="Id" />
         <input type="hidden" asp-for="NegocioId" />
         <div asp-validation-summary="ModelOnly" class="alert alert-danger shadow-sm mb-0"></div>
@@ -44,9 +58,32 @@
                         <span asp-validation-for="TelefonoNumeroLocal" class="text-danger"></span>
                     </div>
                     <div class="col-12">
+                        <input asp-for="GooglePlaceId" type="hidden" />
+                        <input asp-for="Latitud" type="hidden" />
+                        <input asp-for="Longitud" type="hidden" />
+                    </div>
+                    <div class="col-md-8">
                         <label asp-for="Direccion" class="form-label"></label>
                         <input asp-for="Direccion" class="form-control" />
                         <span asp-validation-for="Direccion" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4 d-grid align-items-end">
+                        <button id="btnBuscarDireccionMapa" type="button" class="btn btn-outline-primary mt-md-4">
+                            <i class="bi bi-geo-alt me-1"></i> Buscar en mapa
+                        </button>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">Enlace de Google Maps (generado)</label>
+                        <input asp-for="GoogleMapsUrl" type="hidden" />
+                        <input id="GoogleMapsUrlDisplay" class="form-control" type="text" readonly placeholder="Se genera automaticamente al fijar ubicacion" />
+                        <a id="GoogleMapsUrlLink" class="form-text d-inline-block mt-1" href="#" target="_blank" rel="noopener noreferrer" style="display:none;">
+                            Abrir ubicacion en Google Maps
+                        </a>
+                        <span asp-validation-for="GoogleMapsUrl" class="text-danger"></span>
+                    </div>
+                    <div class="col-12">
+                        <div id="sedeMapa" class="border rounded-3" style="min-height: 280px;"></div>
+                        <div class="form-text">Puedes hacer clic en el mapa para fijar el punto exacto de la sede.</div>
                     </div>
                     <div class="col-12">
                         <label class="sc-check-chip">
@@ -165,6 +202,81 @@
             </div>
         </section>
 
+        <section class="sc-form-card">
+            <div class="sc-form-section">
+                <h2 class="sc-form-title"><i class="bi bi-images"></i> Fotos de la sede</h2>
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label asp-for="ImagenesArchivos" class="form-label">Agregar imagenes (maximo 6 en total)</label>
+                        <input asp-for="ImagenesArchivos" id="imagenesArchivosInput" type="file" class="form-control" multiple accept=".jpg,.jpeg,.png,image/jpeg,image/png" />
+                        <span asp-validation-for="ImagenesArchivos" class="text-danger"></span>
+                        <div class="form-text">
+                            Puedes mantener imagenes actuales y agregar nuevas.
+                            Si eliminas la principal, se asignara la siguiente disponible.
+                            Formato de entrada permitido: JPG/JPEG/PNG.
+                            Salida automatica estandar: WebP, 1200x900 (4:3), maximo 400KB.
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Resumen actual</label>
+                        <div class="border rounded-3 p-2 bg-light-subtle small text-secondary">
+                            <div><strong>Principal:</strong> @(string.IsNullOrWhiteSpace(Model.FotoPrincipalUrl) ? "Sin definir" : "Disponible")</div>
+                            <div><strong>Alternativas:</strong> @(Model.FotosUrls?.Count ?? 0)</div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <input asp-for="FotoPrincipalUrl" type="hidden" />
+                        <input asp-for="FotosUrlsCsv" type="hidden" />
+                        <div id="fotosEliminarContainer"></div>
+                        <span asp-validation-for="FotoPrincipalUrl" class="text-danger d-block"></span>
+                        <span asp-validation-for="FotosUrlsCsv" class="text-danger d-block"></span>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Imagenes actuales</label>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th style="width:70px;">Orden</th>
+                                        <th style="width:130px;">Vista</th>
+                                        <th>Archivo</th>
+                                        <th style="width:160px;">Rol</th>
+                                        <th style="width:170px;">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="imagenesActualesBody">
+                                    <tr>
+                                        <td colspan="5" class="text-muted small">No hay imagenes registradas.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Nuevas imagenes seleccionadas</label>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th style="width:70px;">Orden</th>
+                                        <th>Archivo</th>
+                                        <th style="width:160px;">Rol</th>
+                                        <th style="width:140px;">Tamano</th>
+                                        <th style="width:170px;">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="imagenesSeleccionadasBody">
+                                    <tr>
+                                        <td colspan="5" class="text-muted small">Aun no has seleccionado archivos.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <div class="sc-form-actions">
             <button type="submit" class="btn btn-primary">
                 <i class="bi bi-check2-circle me-1"></i> Guardar cambios
@@ -210,4 +322,259 @@
             render();
         })();
     </script>
+    <script>
+        (() => {
+            const latInput = document.getElementById('Latitud');
+            const lngInput = document.getElementById('Longitud');
+            const placeIdInput = document.getElementById('GooglePlaceId');
+            const dirInput = document.getElementById('Direccion');
+            const mapsUrlInput = document.getElementById('GoogleMapsUrl');
+            const mapsUrlDisplay = document.getElementById('GoogleMapsUrlDisplay');
+            const mapsUrlLink = document.getElementById('GoogleMapsUrlLink');
+            const btnBuscar = document.getElementById('btnBuscarDireccionMapa');
+            const targetMap = document.getElementById('sedeMapa');
+            const hasGoogleApi = @(!string.IsNullOrWhiteSpace(mapsApiKey) ? "true" : "false");
+            let map;
+            let marker;
+            let geocoder;
+            let autocomplete;
+
+            function setCoords(lat, lng) {
+                const latNorm = Number(lat).toFixed(7);
+                const lngNorm = Number(lng).toFixed(7);
+                latInput.value = latNorm;
+                lngInput.value = lngNorm;
+                mapsUrlInput.value = `https://www.google.com/maps?q=${latNorm},${lngNorm}`;
+                if (mapsUrlDisplay) mapsUrlDisplay.value = mapsUrlInput.value;
+                if (mapsUrlLink) {
+                    mapsUrlLink.href = mapsUrlInput.value;
+                    mapsUrlLink.style.display = '';
+                }
+            }
+
+            function paintFallback() {
+                targetMap.classList.add('d-flex', 'align-items-center', 'justify-content-center', 'text-muted', 'bg-light');
+                targetMap.innerHTML = 'Configura GoogleMaps:ApiKey para habilitar el mapa interactivo en esta pantalla.';
+                btnBuscar.disabled = true;
+            }
+
+            function initMap() {
+                const lat = parseFloat((latInput.value || '-12.046374').replace(',', '.'));
+                const lng = parseFloat((lngInput.value || '-77.042793').replace(',', '.'));
+                geocoder = new google.maps.Geocoder();
+                map = new google.maps.Map(targetMap, { center: { lat, lng }, zoom: 15 });
+                marker = new google.maps.Marker({ position: { lat, lng }, map, draggable: true });
+                autocomplete = new google.maps.places.Autocomplete(dirInput, {
+                    fields: ['place_id', 'formatted_address', 'geometry'],
+                    componentRestrictions: { country: ['pe'] }
+                });
+
+                marker.addListener('dragend', () => {
+                    const pos = marker.getPosition();
+                    setCoords(pos.lat(), pos.lng());
+                });
+                map.addListener('click', (e) => {
+                    marker.setPosition(e.latLng);
+                    setCoords(e.latLng.lat(), e.latLng.lng());
+                });
+                autocomplete.addListener('place_changed', () => {
+                    const place = autocomplete.getPlace();
+                    if (!place || !place.geometry || !place.geometry.location) return;
+                    const latPlace = place.geometry.location.lat();
+                    const lngPlace = place.geometry.location.lng();
+                    if (place.formatted_address) dirInput.value = place.formatted_address;
+                    if (placeIdInput) placeIdInput.value = place.place_id || '';
+                    map.setCenter({ lat: latPlace, lng: lngPlace });
+                    map.setZoom(16);
+                    marker.setPosition({ lat: latPlace, lng: lngPlace });
+                    setCoords(latPlace, lngPlace);
+                });
+            }
+
+            function buscarDireccion() {
+                if (!hasGoogleApi || !geocoder) return;
+                const value = (dirInput.value || '').trim();
+                if (!value) return;
+                geocoder.geocode({ address: value }, (results, status) => {
+                    if (status !== 'OK' || !results || !results.length) return;
+                    const loc = results[0].geometry.location;
+                    map.setCenter(loc);
+                    marker.setPosition(loc);
+                    setCoords(loc.lat(), loc.lng());
+                    if (placeIdInput) placeIdInput.value = results[0].place_id || '';
+                });
+            }
+
+            if (!hasGoogleApi) {
+                paintFallback();
+                return;
+            }
+
+            if (mapsUrlInput?.value && mapsUrlDisplay && mapsUrlLink) {
+                mapsUrlDisplay.value = mapsUrlInput.value;
+                mapsUrlLink.href = mapsUrlInput.value;
+                mapsUrlLink.style.display = '';
+            }
+
+            window.initSedeMapa = initMap;
+            btnBuscar.addEventListener('click', buscarDireccion);
+        })();
+    </script>
+    <script>
+        (() => {
+            const fotoPrincipalInput = document.getElementById('FotoPrincipalUrl');
+            const fotosCsvInput = document.getElementById('FotosUrlsCsv');
+            const bodyActuales = document.getElementById('imagenesActualesBody');
+            const eliminarContainer = document.getElementById('fotosEliminarContainer');
+            if (!fotoPrincipalInput || !fotosCsvInput || !bodyActuales || !eliminarContainer) return;
+
+            const iniciales = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(galeriaSede));
+            let actuales = Array.isArray(iniciales) ? [...iniciales] : [];
+            const removidas = new Set();
+
+            function nombreArchivo(url) {
+                try {
+                    const pathname = new URL(url).pathname;
+                    return decodeURIComponent(pathname.split('/').pop() || url);
+                } catch {
+                    return url;
+                }
+            }
+
+            function syncHiddenRemovidas() {
+                eliminarContainer.innerHTML = '';
+                for (const url of removidas) {
+                    const hidden = document.createElement('input');
+                    hidden.type = 'hidden';
+                    hidden.name = 'FotosEliminarUrls';
+                    hidden.value = url;
+                    eliminarContainer.appendChild(hidden);
+                }
+            }
+
+            function syncModelo() {
+                fotoPrincipalInput.value = actuales.length > 0 ? actuales[0] : '';
+                fotosCsvInput.value = actuales.length > 1 ? actuales.slice(1).join(',') : '';
+                syncHiddenRemovidas();
+            }
+
+            function renderActuales() {
+                if (actuales.length === 0) {
+                    bodyActuales.innerHTML = '<tr><td colspan="5" class="text-muted small">No hay imagenes registradas.</td></tr>';
+                    syncModelo();
+                    return;
+                }
+
+                bodyActuales.innerHTML = '';
+                actuales.forEach((url, index) => {
+                    const rol = index === 0 ? 'Principal' : `Alternativa ${index}`;
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td><img src="${url}" alt="Imagen ${index + 1}" style="width:110px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #dbe2ef;" /></td>
+                        <td class="text-truncate" style="max-width:380px;" title="${url}">${nombreArchivo(url)}</td>
+                        <td><span class="badge ${index === 0 ? 'text-bg-primary' : 'text-bg-secondary'}">${rol}</span></td>
+                        <td><button type="button" class="btn btn-sm btn-outline-danger" data-action="remove-current" data-url="${url}">Quitar</button></td>
+                    `;
+                    bodyActuales.appendChild(tr);
+                });
+                syncModelo();
+            }
+
+            bodyActuales.addEventListener('click', (e) => {
+                const btn = e.target.closest('button[data-action="remove-current"]');
+                if (!btn) return;
+                const url = btn.getAttribute('data-url');
+                if (!url) return;
+                actuales = actuales.filter(x => x !== url);
+                removidas.add(url);
+                renderActuales();
+            });
+
+            renderActuales();
+        })();
+    </script>
+    <script>
+        (() => {
+            const input = document.getElementById('imagenesArchivosInput');
+            const body = document.getElementById('imagenesSeleccionadasBody');
+            if (!input || !body) return;
+            let selectedFiles = [];
+
+            function formatBytes(bytes) {
+                if (!bytes || bytes <= 0) return '0 KB';
+                const kb = bytes / 1024;
+                if (kb < 1024) return `${kb.toFixed(1)} KB`;
+                return `${(kb / 1024).toFixed(2)} MB`;
+            }
+
+            function syncInputFiles() {
+                const dt = new DataTransfer();
+                selectedFiles.forEach(file => dt.items.add(file));
+                input.files = dt.files;
+            }
+
+            function move(index, offset) {
+                const target = index + offset;
+                if (target < 0 || target >= selectedFiles.length) return;
+                const tmp = selectedFiles[index];
+                selectedFiles[index] = selectedFiles[target];
+                selectedFiles[target] = tmp;
+                syncInputFiles();
+                render();
+            }
+
+            function removeAt(index) {
+                selectedFiles.splice(index, 1);
+                syncInputFiles();
+                render();
+            }
+
+            function render() {
+                if (selectedFiles.length === 0) {
+                    body.innerHTML = '<tr><td colspan="5" class="text-muted small">Aun no has seleccionado archivos.</td></tr>';
+                    return;
+                }
+
+                body.innerHTML = '';
+                selectedFiles.forEach((file, index) => {
+                    const rol = index === 0 ? 'Principal' : `Alternativa ${index}`;
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td class="text-truncate" style="max-width:420px;" title="${file.name}">${file.name}</td>
+                        <td><span class="badge ${index === 0 ? 'text-bg-primary' : 'text-bg-secondary'}">${rol}</span></td>
+                        <td>${formatBytes(file.size)}</td>
+                        <td class="d-flex gap-1">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="up" data-index="${index}" ${index === 0 ? 'disabled' : ''}>↑</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="down" data-index="${index}" ${index === selectedFiles.length - 1 ? 'disabled' : ''}>↓</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" data-action="remove" data-index="${index}">Quitar</button>
+                        </td>
+                    `;
+                    body.appendChild(tr);
+                });
+            }
+
+            body.addEventListener('click', (e) => {
+                const btn = e.target.closest('button[data-action]');
+                if (!btn) return;
+                const action = btn.getAttribute('data-action');
+                const index = Number(btn.getAttribute('data-index'));
+                if (!Number.isInteger(index)) return;
+                if (action === 'up') move(index, -1);
+                if (action === 'down') move(index, 1);
+                if (action === 'remove') removeAt(index);
+            });
+
+            input.addEventListener('change', () => {
+                selectedFiles = Array.from(input.files || []);
+                syncInputFiles();
+                render();
+            });
+        })();
+    </script>
+    @if (!string.IsNullOrWhiteSpace(mapsApiKey))
+    {
+        <script async defer src="https://maps.googleapis.com/maps/api/js?key=@mapsApiKey&libraries=places&callback=initSedeMapa"></script>
+    }
 }

@@ -199,6 +199,32 @@ public class PromocionesIndexViewModel : ModuloBaseViewModel
     public List<PromocionItemViewModel> Promociones { get; set; } = new();
 }
 
+public class MaestrosIndexViewModel : ModuloBaseViewModel
+{
+    public List<MonedaMaestroItemViewModel> Monedas { get; set; } = new();
+    public List<SelectListItem> MonedasSuper { get; set; } = new();
+    public List<MaestroCatalogoItemViewModel> TiposSuelo { get; set; } = new();
+    public List<MaestroCatalogoItemViewModel> TiposDeporte { get; set; } = new();
+    public List<MaestroCatalogoItemViewModel> FormasPago { get; set; } = new();
+}
+
+public class MonedaMaestroItemViewModel
+{
+    public int Id { get; set; }
+    public int MonedaSuperId { get; set; }
+    public string Codigo { get; set; } = string.Empty;
+    public string Nombre { get; set; } = string.Empty;
+    public string? Simbolo { get; set; }
+    public bool Activo { get; set; }
+}
+
+public class MaestroCatalogoItemViewModel
+{
+    public int Id { get; set; }
+    public string Nombre { get; set; } = string.Empty;
+    public bool Activo { get; set; }
+}
+
 public class PromocionItemViewModel
 {
     public int Id { get; set; }
@@ -217,6 +243,7 @@ public class ClienteItemViewModel
 {
     public int Id { get; set; }
     public string NombresORazonSocial { get; set; } = string.Empty;
+    public string? NombreEquipo { get; set; }
     public string TipoDocumento { get; set; } = string.Empty;
     public string NumeroDocumento { get; set; } = string.Empty;
     public string? Telefono { get; set; }
