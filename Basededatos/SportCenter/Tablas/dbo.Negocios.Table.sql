@@ -14,7 +14,7 @@ CREATE TABLE [dbo].[Negocios](
     [Activo] [bit] NOT NULL,
     [FechaRegistro] [datetime2](7) NOT NULL,
     [MonedaId] [int] NULL,
-    [TipoDocumentoFiscal] [nvarchar](20) NULL,
+    [TipoDocumentoFiscal] [nvarchar](2) NULL,
     [NumeroDocumentoFiscal] [nvarchar](20) NULL,
     [DireccionFiscal] [nvarchar](250) NULL,
     [CodigoUbigeo] [char](6) NULL,

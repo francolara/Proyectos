@@ -34,7 +34,7 @@ public class ConfiguracionClubViewModel : ModuloBaseViewModel
 
     [Required(ErrorMessage = "El tipo de documento es obligatorio.")]
     [StringLength(20, ErrorMessage = "El tipo de documento no puede superar los 20 caracteres.")]
-    public string TipoDocumento { get; set; } = "DNI";
+    public string TipoDocumento { get; set; } = "1";
 
     [StringLength(250, ErrorMessage = "La direccion fiscal no puede superar los 250 caracteres.")]
     public string? DireccionFiscal { get; set; }

@@ -288,7 +288,7 @@ public class ClienteFormViewModel
 
     [Required(ErrorMessage = "Este campo es obligatorio.")]
     [StringLength(20, ErrorMessage = "El campo {0} excede la longitud permitida.")]
-    public string TipoDocumento { get; set; } = "DNI";
+    public string TipoDocumento { get; set; } = "1";
 
     [Required(ErrorMessage = "Este campo es obligatorio.")]
     [StringLength(20, ErrorMessage = "El campo {0} excede la longitud permitida.")]
@@ -316,6 +316,7 @@ public class ClienteFormViewModel
 
     public bool Activo { get; set; } = true;
     public List<SelectListItem> CodigosPais { get; set; } = new();
+    public List<SelectListItem> TiposDocumento { get; set; } = new();
     public List<SelectListItem> DepartamentosUbigeo { get; set; } = new();
     public List<SelectListItem> ProvinciasUbigeo { get; set; } = new();
     public List<SelectListItem> DistritosUbigeo { get; set; } = new();

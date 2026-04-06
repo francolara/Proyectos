@@ -68,7 +68,7 @@ public class ReservaAutomationHostedService(
         if (enviados > 0 || autoNoShow > 0)
         {
             logger.LogInformation(
-                "Automatizacion reservas: recordatorios enviados={Enviados}, no-show auto={AutoNoShow}.",
+                        "Automatizacion reservas: recordatorios enviados={Enviados}, no asistio auto={AutoNoShow}.",
                 enviados,
                 autoNoShow);
         }

@@ -5,6 +5,7 @@
 <!-- Firma: Codex - 02/04/2026 | Agrega ubicacion/fotos de sede, PlaceId y URL ocultos, autocomplete de Places y carga de maximo 6 imagenes en nube (principal+alternativas), estandarizando subida a JPG/PNG de entrada, conversion automatica a WebP 1200x900 <= 400KB, listado visual de archivos seleccionados y ajuste de region R2. -->
 <!-- Firma: Codex - 03/04/2026 | Quita boton de validacion R2, cambia edicion de imagenes a manejo incremental y agrega visualizacion estable (miniatura + lupa) mediante endpoint de vista para URLs de storage no publicas. -->
 <!-- Firma: Codex - 04/04/2026 | Habilita reordenamiento de imagenes actuales (subir/bajar) para poder cambiar el rol principal entre fotos ya registradas. -->
+<!-- Firma: Codex - 05/04/2026 | Estandariza texto de estado para mostrar "No Asistio" en lugar de "no-show" en etiquetas de configuracion de sede. -->
 
 @{
     ViewData["Title"] = "Editar sede";
@@ -127,7 +128,7 @@
                         <span asp-validation-for="MinutosAnticipacionRecordatorio" class="text-danger"></span>
                     </div>
                     <div class="col-md-3">
-                        <label asp-for="MinutosToleranciaNoShow" class="form-label">Tolerancia no-show (min)</label>
+                        <label asp-for="MinutosToleranciaNoShow" class="form-label">Tolerancia No Asistio (min)</label>
                         <input asp-for="MinutosToleranciaNoShow" class="form-control" />
                         <span asp-validation-for="MinutosToleranciaNoShow" class="text-danger"></span>
                     </div>

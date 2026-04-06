@@ -9,7 +9,7 @@ GO
 CREATE TABLE [dbo].[Clientes](
     [Id] [int] IDENTITY(1,1) NOT NULL,
     [NombresORazonSocial] [nvarchar](200) NOT NULL,
-    [TipoDocumento] [nvarchar](20) NOT NULL,
+    [TipoDocumento] [nvarchar](2) NOT NULL,
     [NumeroDocumento] [nvarchar](20) NOT NULL,
     [Telefono] [nvarchar](20) NULL,
     [Correo] [nvarchar](200) NULL,

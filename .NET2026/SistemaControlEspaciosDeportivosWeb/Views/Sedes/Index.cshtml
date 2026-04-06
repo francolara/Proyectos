@@ -1,5 +1,6 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.SedesIndexViewModel
 <!-- Firma: Codex - 30/03/2026 | Rediseno del listado de sedes con KPIs, filtro rapido y tabla detallada -->
+<!-- Firma: Codex - 05/04/2026 | Estandariza texto de estado para mostrar "No Asistio" en lugar de "No-show" en resumen de sedes. -->
 
 @{
     ViewData["Title"] = "Sedes";
@@ -134,7 +135,7 @@
                                         @if (item.NotificacionesActivas)
                                         {
                                             <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">Notificaciones activas</span>
-                                            <small class="text-muted">@item.MinutosAnticipacionRecordatorio min antes | No-show: @item.MinutosToleranciaNoShow min</small>
+                                            <small class="text-muted">@item.MinutosAnticipacionRecordatorio min antes | No Asistio: @item.MinutosToleranciaNoShow min</small>
                                         }
                                         else
                                         {

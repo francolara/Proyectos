@@ -185,6 +185,7 @@ public class ClientesController(IModuloPermisoService moduloPermisoService, ISpo
     private async Task CargarCombosClienteAsync(ClienteFormViewModel model)
     {
         model.CodigosPais = TelefonoInternacionalHelper.ObtenerCodigosPais(model.TelefonoCodigoPais);
+        model.TiposDocumento = await spService.CombosTiposDocumentoIdentidadSunatAsync();
         model.DepartamentosUbigeo = await spService.UbigeoDepartamentosListarAsync();
 
         if (!string.IsNullOrWhiteSpace(model.CodigoUbigeo) && Regex.IsMatch(model.CodigoUbigeo, @"^\d{6}$"))

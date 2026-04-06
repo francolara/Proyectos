@@ -1,6 +1,7 @@
 @using SistemaControlEspaciosDeportivosWeb.Models
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ReservaFormViewModel
 <!-- Firma: Codex - 27/03/2026 | Estandar visual pro para formulario de reservas y bloqueo de fechas pasadas -->
+<!-- Firma: Codex - 05/04/2026 | Estados de reserva ajustados: se retira En uso, Finalizada pasa a Pagada y No Show pasa a No Asistio. -->
 
 @{
     ViewData["Title"] = "Nueva reserva";
@@ -49,7 +50,13 @@
                     </div>
                     <div class="col-md-3">
                         <label asp-for="Estado" class="form-label"></label>
-                        <select asp-for="Estado" asp-items="Html.GetEnumSelectList<EstadoReserva>()" class="form-select"></select>
+                        <select asp-for="Estado" class="form-select">
+                            <option value="1">Pendiente</option>
+                            <option value="2">Confirmada</option>
+                            <option value="4">Pagada</option>
+                            <option value="5">Cancelada</option>
+                            <option value="6">No Asistio</option>
+                        </select>
                     </div>
                     <div class="col-md-4">
                         <label asp-for="Total" class="form-label"></label>

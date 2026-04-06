@@ -186,9 +186,11 @@
 - `Sp_Reservas_CambiarEstadoRapido`
 - `Sp_Reservas_CambiarEstadoRapido` retorna error si la reserva no existe para el negocio.
 - Reglas:
-  - `Check-in` (3) desde `Pendiente` (1) o `Confirmada` (2)
-  - `Check-out` (4) solo desde `En uso` (3)
-  - `No-show` (6) desde `Pendiente` (1) o `Confirmada` (2)
+  - `Confirmada` (2) por cambio rapido
+  - `Pagada` (4) desde `Pendiente` (1), `Confirmada` (2) o `En uso` historico (3)
+  - `Cancelada` (5) por cambio rapido
+  - `No Asistio` (6) desde `Pendiente` (1), `Confirmada` (2) o `En uso` historico (3)
+  - El estado `En uso`/`Check-in` queda retirado para nuevas transiciones.
 
 ### 17_Automatizacion_Recordatorios_NoShow.sql
 - Alter tabla `Reservas`:
@@ -423,6 +425,7 @@
 - Objetivo:
   - permitir que cada negocio maneje sus propios catálogos.
   - en `Maestros > Monedas`, registrar monedas del club seleccionando desde supermaestro.
+  - `Sp_Maestros_Monedas_Crear` valida que por negocio solo se permita una moneda registrada.
 
 ### 37_Sedes_Ubicacion_Fotos.sql
 - Alter tabla:
@@ -497,6 +500,25 @@
   - `dbo.Sp_ConfiguracionClub_Obtener.StoredProcedure.sql`
   - `dbo.Sp_ConfiguracionClub_Actualizar.StoredProcedure.sql`
 
+### 20260404_TiposDocumentoIdentidadSunat_Clientes_Configuracion.sql (nuevo 04/04/2026)
+- Tabla nueva (carpeta `Basededatos/SportCenter/Tablas`):
+  - `dbo.TiposDocumentoIdentidadSunat`
+- Script de estructura/datos (carpeta `Basededatos/SportCenter/Script`):
+  - `20260404_TiposDocumentoIdentidadSunat_Clientes_Configuracion.sql`
+- Cobertura SUNAT cargada:
+  - `0` (Doc. trib. no dom. sin RUC)
+  - `1` (DNI)
+  - `4` (Carnet de extranjeria)
+  - `6` (RUC)
+  - `7` (Pasaporte)
+  - `A` (Cedula diplomatica)
+- Reglas aplicadas:
+  - `Clientes.TipoDocumento` y `Negocios.TipoDocumentoFiscal` migran a codigo SUNAT.
+  - longitud de columnas alineada a SUNAT: `NVARCHAR(2)` en `Clientes.TipoDocumento` y `Negocios.TipoDocumentoFiscal`.
+  - se crean FK a `TiposDocumentoIdentidadSunat.CodigoSunat` para integridad.
+  - `Sp_Comprobantes_Crear` usa el codigo SUNAT real del cliente para `CodigoTipoDocumentoClienteSunat`.
+  - Clientes y Configuracion cargan el combo desde `Sp_Combos_TiposDocumentoIdentidadSunat`.
+
 ### 99_SP_Finales.sql
 - Script consolidado con la **ultima version efectiva** de cada `CREATE OR ALTER PROCEDURE`.
 - Se genera automaticamente desde todos los `.sql` de la carpeta `deStoreProcedures_DbSportCenter`.
@@ -553,6 +575,17 @@
 43. Ejecutar `Basededatos/SportCenter/Script/20260404_Carga_Ubigeo_SUNAT.sql`.
 44. Ejecutar `Basededatos/SportCenter/Script/20260404_Clientes_Configuracion_Ubigeo.sql` (solo estructura).
 45. Ejecutar los SP individuales en `Basededatos/SportCenter/StoreProcedure` (nuevos y reemplazados de ubigeo/clientes/configuracion).
+46. Ejecutar `Basededatos/SportCenter/Tablas/dbo.TiposDocumentoIdentidadSunat.Table.sql`.
+47. Ejecutar `Basededatos/SportCenter/Script/20260404_TiposDocumentoIdentidadSunat_Clientes_Configuracion.sql`.
+48. Ejecutar los SP individuales actualizados/nuevos:
+  - `dbo.Sp_Combos_TiposDocumentoIdentidadSunat.StoredProcedure.sql`
+  - `dbo.Sp_Clientes_Crear.StoredProcedure.sql`
+  - `dbo.Sp_Clientes_Actualizar.StoredProcedure.sql`
+  - `dbo.Sp_Clientes_Listar.StoredProcedure.sql`
+  - `dbo.Sp_ConfiguracionClub_Obtener.StoredProcedure.sql`
+  - `dbo.Sp_ConfiguracionClub_Actualizar.StoredProcedure.sql`
+  - `dbo.Sp_Comprobantes_Crear.StoredProcedure.sql`
+  - `dbo.Sp_SolicitudesPublicas_ConvertirAReserva.StoredProcedure.sql`
 
 ## Observaciones funcionales
 - CRUD de modulos internos ejecuta operaciones por SP.
@@ -563,7 +596,7 @@
 - Modulo de promociones permite descuentos por sede/espacio con vigencia por fecha y franja horaria.
 - Panel privado muestra KPIs avanzados para operacion diaria y seguimiento mensual.
 - Reservas integra FullCalendar con vista semana/dia/mes, arrastre para mover horarios y bloqueos operativos por espacio.
-- Reservas permite cambio rapido de estado (check-in/check-out/no-show) desde tabla y calendario.
+- Reservas permite cambio rapido de estado (confirmada/pagada/cancelada/no asistio) desde tabla y calendario.
 - Reservas agrega operaciones avanzadas backend-driven:
   - historial por reserva desde bitacora
   - recordatorio manual por seleccion de reservas

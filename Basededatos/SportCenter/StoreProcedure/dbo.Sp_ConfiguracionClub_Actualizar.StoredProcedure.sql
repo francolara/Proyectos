@@ -5,7 +5,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
--- Firma: Codex - 04/04/2026 | Actualizacion individual de Sp_ConfiguracionClub_Actualizar por integracion de ubigeo fiscal.
+-- Firma: Codex - 04/04/2026 | Actualizacion individual de Sp_ConfiguracionClub_Actualizar por ubigeo fiscal y tipo de documento SUNAT centralizado.
 CREATE OR ALTER PROCEDURE dbo.Sp_ConfiguracionClub_Actualizar
     @NegocioId INT,
     @NombreComercial NVARCHAR(200),
@@ -24,11 +24,18 @@ BEGIN
         DECLARE @DireccionFiscalNormalizada NVARCHAR(250);
         DECLARE @CodigoUbigeoNormalizado CHAR(6);
 
+        SET @TipoDocumentoFiscal = NULLIF(UPPER(LTRIM(RTRIM(@TipoDocumentoFiscal))), N'');
         SET @DireccionFiscalNormalizada = NULLIF(LTRIM(RTRIM(@DireccionFiscal)), N'');
         SET @CodigoUbigeoNormalizado = NULLIF(LTRIM(RTRIM(@CodigoUbigeo)), '');
 
         IF NOT EXISTS (SELECT 1 FROM dbo.Monedas WHERE Id = @MonedaId AND Activo = 1)
             RAISERROR('La moneda seleccionada no es valida.', 16, 1);
+
+        IF @TipoDocumentoFiscal IS NULL
+            RAISERROR('El tipo de documento SUNAT es obligatorio.', 16, 1);
+
+        IF NOT EXISTS (SELECT 1 FROM dbo.TiposDocumentoIdentidadSunat t WHERE t.CodigoSunat = @TipoDocumentoFiscal AND t.Activo = 1)
+            RAISERROR('El tipo de documento SUNAT no es valido.', 16, 1);
 
         IF @DireccionFiscalNormalizada IS NULL
             SET @CodigoUbigeoNormalizado = NULL;
@@ -44,7 +51,7 @@ BEGIN
         SET
             n.NombreComercial = @NombreComercial,
             n.RazonSocial = NULLIF(@RazonSocial, N''),
-            n.TipoDocumentoFiscal = NULLIF(@TipoDocumentoFiscal, N''),
+            n.TipoDocumentoFiscal = @TipoDocumentoFiscal,
             n.NumeroDocumentoFiscal = NULLIF(@NumeroDocumentoFiscal, N''),
             n.DireccionFiscal = @DireccionFiscalNormalizada,
             n.CodigoUbigeo = @CodigoUbigeoNormalizado,

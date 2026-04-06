@@ -5,7 +5,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
--- Firma: Codex - 04/04/2026 | Actualizacion individual de Sp_Clientes_Crear por integracion de ubigeo fiscal.
+-- Firma: Codex - 04/04/2026 | Actualizacion individual de Sp_Clientes_Crear por ubigeo fiscal y tipo de documento SUNAT centralizado.
 CREATE OR ALTER PROCEDURE dbo.Sp_Clientes_Crear
     @NegocioId INT,
     @NombresORazonSocial NVARCHAR(200),
@@ -27,11 +27,15 @@ BEGIN
         DECLARE @DireccionFiscalNormalizada NVARCHAR(250);
         DECLARE @CodigoUbigeoNormalizado CHAR(6);
 
+        SET @TipoDocumento = UPPER(LTRIM(RTRIM(@TipoDocumento)));
         SET @NumeroDocumentoNormalizado = NULLIF(LTRIM(RTRIM(@NumeroDocumento)), N'');
         SET @NombreEquipoNormalizado = NULLIF(LTRIM(RTRIM(@NombreEquipo)), N'');
         SET @DireccionFiscalNormalizada = NULLIF(LTRIM(RTRIM(@DireccionFiscal)), N'');
         SET @CodigoUbigeoNormalizado = NULLIF(LTRIM(RTRIM(@CodigoUbigeo)), '');
         SET @NumeroDocumento = COALESCE(@NumeroDocumentoNormalizado, N'');
+
+        IF NOT EXISTS (SELECT 1 FROM dbo.TiposDocumentoIdentidadSunat t WHERE t.CodigoSunat = @TipoDocumento AND t.Activo = 1)
+            RAISERROR('El tipo de documento SUNAT no es valido.', 16, 1);
 
         IF @NumeroDocumentoNormalizado IS NOT NULL
            AND EXISTS

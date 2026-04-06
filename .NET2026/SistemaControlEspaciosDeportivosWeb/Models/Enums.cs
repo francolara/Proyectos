@@ -11,7 +11,10 @@ public enum EstadoReserva
 {
     Pendiente = 1,
     Confirmada = 2,
+    [Obsolete("Estado en uso retirado. Usa Pagada.")]
     EnUso = 3,
+    Pagada = 4,
+    [Obsolete("Renombrado a Pagada.")]
     Finalizada = 4,
     Cancelada = 5,
     NoAsistio = 6

@@ -22,7 +22,7 @@ public partial class SportCenterStoredProcedureService
             NegocioId = dr.GetInt32(0),
             NombreComercial = dr.GetString(1),
             RazonSocial = dr.IsDBNull(2) ? null : dr.GetString(2),
-            TipoDocumento = dr.IsDBNull(3) ? "DNI" : dr.GetString(3),
+            TipoDocumento = dr.IsDBNull(3) ? "1" : dr.GetString(3),
             NumeroDocumento = dr.IsDBNull(4) ? null : dr.GetString(4),
             DireccionFiscal = dr.IsDBNull(5) ? null : dr.GetString(5),
             MonedaId = dr.IsDBNull(6) ? 1 : dr.GetInt32(6),
@@ -67,6 +67,21 @@ public partial class SportCenterStoredProcedureService
         {
             list.Add(new SelectListItem(dr.GetString(1), dr.GetInt32(0).ToString()));
         }
+        return list;
+    }
+
+    public async Task<List<SelectListItem>> CombosTiposDocumentoIdentidadSunatAsync()
+    {
+        var list = new List<SelectListItem>();
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_Combos_TiposDocumentoIdentidadSunat", cn) { CommandType = CommandType.StoredProcedure };
+        await using var dr = await cmd.ExecuteReaderAsync();
+        while (await dr.ReadAsync())
+        {
+            list.Add(new SelectListItem(dr.GetString(1), dr.GetString(0)));
+        }
+
         return list;
     }
 }

@@ -23,7 +23,7 @@ public class ConfiguracionController(IModuloPermisoService moduloPermisoService,
         vm.PuedeCrear = baseVm.PuedeCrear;
         vm.PuedeEditar = baseVm.PuedeEditar;
         vm.PuedeEliminar = baseVm.PuedeEliminar;
-        vm.TiposDocumento = ObtenerTiposDocumento();
+        vm.TiposDocumento = await spService.CombosTiposDocumentoIdentidadSunatAsync();
         vm.Monedas = await spService.ConfiguracionClubComboMonedasAsync(negocioId);
         await CargarCombosUbigeoAsync(vm);
         return View(vm);
@@ -37,7 +37,7 @@ public class ConfiguracionController(IModuloPermisoService moduloPermisoService,
         if (baseVm is null || !string.IsNullOrWhiteSpace(baseVm.Mensaje))
             return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "Acceso denegado." });
 
-        model.TiposDocumento = ObtenerTiposDocumento();
+        model.TiposDocumento = await spService.CombosTiposDocumentoIdentidadSunatAsync();
         model.Monedas = await spService.ConfiguracionClubComboMonedasAsync(model.NegocioId);
         await NormalizarYValidarUbigeoAsync(model);
         if (!ModelState.IsValid)
@@ -81,15 +81,6 @@ public class ConfiguracionController(IModuloPermisoService moduloPermisoService,
         var data = await spService.UbigeoDistritosListarAsync(codigoProv);
         return Json(data.Select(x => new { value = x.Value, text = x.Text }));
     }
-
-    private static List<SelectListItem> ObtenerTiposDocumento()
-        =>
-        [
-            new("DNI", "DNI"),
-            new("RUC", "RUC"),
-            new("CE", "CE"),
-            new("Pasaporte", "PASAPORTE")
-        ];
 
     private async Task CargarCombosUbigeoAsync(ConfiguracionClubViewModel model)
     {

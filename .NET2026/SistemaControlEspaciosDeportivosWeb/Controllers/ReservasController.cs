@@ -35,7 +35,7 @@ public class ReservasController(
         var filtroListadoHasta = listadoHasta ?? hasta;
         if (filtroListadoHasta < filtroListadoDesde) filtroListadoHasta = filtroListadoDesde;
         var estadosListadoLimpios = (estadosListado ?? new List<int>())
-            .Where(x => x is >= 1 and <= 6)
+            .Where(x => x is 1 or 2 or 4 or 5 or 6)
             .Distinct()
             .OrderBy(x => x)
             .ToList();
@@ -370,7 +370,7 @@ public class ReservasController(
             mensaje = accion switch
             {
                 "confirmar" => $"Reservas confirmadas: {procesadas}. Omitidas: {omitidas}.",
-                "noshow" => $"Reservas marcadas como no-show: {procesadas}. Omitidas: {omitidas}.",
+                "noshow" => $"Reservas marcadas como no asistio: {procesadas}. Omitidas: {omitidas}.",
                 _ => $"Recordatorios enviados: {procesadas}. Omitidas: {omitidas}."
             }
         });
@@ -394,6 +394,16 @@ public class ReservasController(
 
         static int ToMinutes(TimeOnly t) => (t.Hour * 60) + t.Minute;
         static bool Cruza((int Inicio, int Fin) a, (int Inicio, int Fin) b) => a.Inicio < b.Fin && b.Inicio < a.Fin;
+
+        var tramosBloqueados = eventos
+            .Where(e =>
+            {
+                var tipo = (e.TipoEvento ?? string.Empty).ToUpperInvariant();
+                return tipo == "NO_ATENCION" || tipo == "BLOQUEO";
+            })
+            .Select(e => (Inicio: ToMinutes(e.HoraInicio), Fin: ToMinutes(e.HoraFin)))
+            .Where(x => x.Fin > x.Inicio)
+            .ToList();
 
         var ocupados = eventos
             .Where(e =>
@@ -442,8 +452,14 @@ public class ReservasController(
         var bloqueosActivos = eventos.Count(e =>
             string.Equals(e.TipoEvento, "BLOQUEO", StringComparison.OrdinalIgnoreCase)
             || string.Equals(e.TipoEvento, "NO_ATENCION", StringComparison.OrdinalIgnoreCase));
-        var totalSlots = (finDia - inicioDia) / 60;
-        var slotsOcupados = totalSlots - slotsDisponibles.Count;
+        var totalSlots = 0;
+        for (var minuto = inicioDia; minuto < finDia; minuto += 60)
+        {
+            var tramo = (Inicio: minuto, Fin: minuto + 60);
+            if (tramosBloqueados.Any(b => Cruza(tramo, b))) continue;
+            totalSlots++;
+        }
+        var slotsOcupados = Math.Max(0, totalSlots - slotsDisponibles.Count);
         var ocupacionPct = totalSlots <= 0 ? 0m : Math.Round((slotsOcupados * 100m) / totalSlots, 2);
 
         var espacios = await spService.ReservasComboEspaciosAsync(negocioId, sedeId);
@@ -459,11 +475,10 @@ public class ReservasController(
 
                 var totalPendientes = eventosEspacio.Count(x => x.Estado == 1);
                 var totalConfirmadas = eventosEspacio.Count(x => x.Estado == 2);
-                var totalEnUso = eventosEspacio.Count(x => x.Estado == 3);
-                var totalFinalizadas = eventosEspacio.Count(x => x.Estado == 4);
+                var totalPagadas = eventosEspacio.Count(x => x.Estado is 3 or 4);
                 var totalCanceladas = eventosEspacio.Count(x => x.Estado == 5);
                 var totalNoShow = eventosEspacio.Count(x => x.Estado == 6);
-                var total = totalPendientes + totalConfirmadas + totalEnUso + totalFinalizadas + totalCanceladas + totalNoShow;
+                var total = totalPendientes + totalConfirmadas + totalPagadas + totalCanceladas + totalNoShow;
                 return new
                 {
                     espacioId,
@@ -471,8 +486,7 @@ public class ReservasController(
                     total,
                     pendientes = totalPendientes,
                     confirmadas = totalConfirmadas,
-                    enUso = totalEnUso,
-                    finalizadas = totalFinalizadas,
+                    pagadas = totalPagadas,
                     canceladas = totalCanceladas,
                     noShow = totalNoShow
                 };
@@ -766,10 +780,9 @@ public class ReservasController(
             new("Todos", string.Empty),
             new("Pendiente", "1"),
             new("Confirmada", "2"),
-            new("En uso", "3"),
-            new("Finalizada", "4"),
+            new("Pagada", "4"),
             new("Cancelada", "5"),
-            new("No asistio", "6")
+            new("No Asistio", "6")
         };
     }
 

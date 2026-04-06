@@ -5,7 +5,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
--- Firma: Codex - 04/04/2026 | Actualizacion individual de Sp_ConfiguracionClub_Obtener por integracion de ubigeo fiscal.
+-- Firma: Codex - 04/04/2026 | Actualizacion individual de Sp_ConfiguracionClub_Obtener por ubigeo fiscal y tipo de documento SUNAT centralizado.
 CREATE OR ALTER PROCEDURE dbo.Sp_ConfiguracionClub_Obtener
     @NegocioId INT
 AS
@@ -17,7 +17,7 @@ BEGIN
             n.Id,
             n.NombreComercial,
             n.RazonSocial,
-            COALESCE(NULLIF(n.TipoDocumentoFiscal, N''), N'DNI') AS TipoDocumentoFiscal,
+            COALESCE(NULLIF(n.TipoDocumentoFiscal, N''), N'1') AS TipoDocumentoFiscal,
             COALESCE(NULLIF(n.NumeroDocumentoFiscal, N''), n.DocumentoFiscal) AS NumeroDocumentoFiscal,
             n.DireccionFiscal,
             COALESCE(n.MonedaId, 1) AS MonedaId,
