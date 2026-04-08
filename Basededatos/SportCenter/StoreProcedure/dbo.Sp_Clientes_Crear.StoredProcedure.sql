@@ -6,9 +6,14 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 -- Firma: Codex - 04/04/2026 | Actualizacion individual de Sp_Clientes_Crear por ubigeo fiscal y tipo de documento SUNAT centralizado.
+-- Firma: Codex - 06/04/2026 | Agrega soporte de nombres/apellidos por separado para documentos distintos a RUC y mantiene NombresORazonSocial concatenado para compatibilidad.
+-- Firma: Codex - 06/04/2026 | Se elimina dependencia de NegocioClientes y se usa Clientes.NegocioId.
+-- Firma: Codex - 07/04/2026 | Valida reglas de numero de documento y permite vacio para tipo no domiciliado sin RUC.
 CREATE OR ALTER PROCEDURE dbo.Sp_Clientes_Crear
     @NegocioId INT,
     @NombresORazonSocial NVARCHAR(200),
+    @Nombres NVARCHAR(120) = NULL,
+    @Apellidos NVARCHAR(120) = NULL,
     @NombreEquipo NVARCHAR(120) = NULL,
     @TipoDocumento NVARCHAR(20),
     @NumeroDocumento NVARCHAR(20),
@@ -26,6 +31,9 @@ BEGIN
         DECLARE @NombreEquipoNormalizado NVARCHAR(120);
         DECLARE @DireccionFiscalNormalizada NVARCHAR(250);
         DECLARE @CodigoUbigeoNormalizado CHAR(6);
+        DECLARE @NombresNormalizado NVARCHAR(120);
+        DECLARE @ApellidosNormalizado NVARCHAR(120);
+        DECLARE @NombresORazonSocialNormalizado NVARCHAR(200);
 
         SET @TipoDocumento = UPPER(LTRIM(RTRIM(@TipoDocumento)));
         SET @NumeroDocumentoNormalizado = NULLIF(LTRIM(RTRIM(@NumeroDocumento)), N'');
@@ -33,18 +41,55 @@ BEGIN
         SET @DireccionFiscalNormalizada = NULLIF(LTRIM(RTRIM(@DireccionFiscal)), N'');
         SET @CodigoUbigeoNormalizado = NULLIF(LTRIM(RTRIM(@CodigoUbigeo)), '');
         SET @NumeroDocumento = COALESCE(@NumeroDocumentoNormalizado, N'');
+        SET @NombresNormalizado = NULLIF(LTRIM(RTRIM(@Nombres)), N'');
+        SET @ApellidosNormalizado = NULLIF(LTRIM(RTRIM(@Apellidos)), N'');
+        SET @NombresORazonSocialNormalizado = NULLIF(LTRIM(RTRIM(@NombresORazonSocial)), N'');
 
         IF NOT EXISTS (SELECT 1 FROM dbo.TiposDocumentoIdentidadSunat t WHERE t.CodigoSunat = @TipoDocumento AND t.Activo = 1)
             RAISERROR('El tipo de documento SUNAT no es valido.', 16, 1);
+
+        IF @TipoDocumento = N'0'
+        BEGIN
+            SET @NumeroDocumentoNormalizado = NULL;
+            SET @NumeroDocumento = N'';
+        END
+        ELSE
+        BEGIN
+            IF @NumeroDocumentoNormalizado IS NULL
+                RAISERROR('Ingresa el numero de documento.', 16, 1);
+
+            IF LEN(@NumeroDocumentoNormalizado) > 11
+                RAISERROR('El numero de documento permite como maximo 11 digitos.', 16, 1);
+
+            IF @NumeroDocumentoNormalizado LIKE N'%[^0-9]%'
+                RAISERROR('El numero de documento solo permite digitos.', 16, 1);
+        END;
+
+        IF @TipoDocumento = N'6'
+        BEGIN
+            IF @NombresORazonSocialNormalizado IS NULL
+                RAISERROR('Ingresa la razon social para tipo de documento RUC.', 16, 1);
+
+            SET @NombresNormalizado = NULL;
+            SET @ApellidosNormalizado = NULL;
+        END
+        ELSE
+        BEGIN
+            IF @NombresNormalizado IS NULL
+                RAISERROR('Ingresa los nombres del cliente.', 16, 1);
+
+            IF @ApellidosNormalizado IS NULL
+                RAISERROR('Ingresa los apellidos del cliente.', 16, 1);
+
+            SET @NombresORazonSocialNormalizado = LEFT(LTRIM(RTRIM(CONCAT(@NombresNormalizado, N' ', @ApellidosNormalizado))), 200);
+        END;
 
         IF @NumeroDocumentoNormalizado IS NOT NULL
            AND EXISTS
            (
                SELECT 1
                FROM dbo.Clientes c
-               INNER JOIN dbo.NegocioClientes nc ON nc.ClienteId = c.Id
-               WHERE nc.NegocioId = @NegocioId
-                 AND nc.Activo = 1
+               WHERE c.NegocioId = @NegocioId
                  AND c.Activo = 1
                  AND LTRIM(RTRIM(c.NumeroDocumento)) = @NumeroDocumentoNormalizado
            )
@@ -64,20 +109,17 @@ BEGIN
 
         INSERT INTO dbo.Clientes
         (
-            NombresORazonSocial, NombreEquipo, TipoDocumento, NumeroDocumento, Telefono,
+            NegocioId, NombresORazonSocial, Nombres, Apellidos, NombreEquipo, TipoDocumento, NumeroDocumento, Telefono,
             Correo, DireccionFiscal, CodigoUbigeo, Activo, FechaCreacion, UsuarioCreacion
         )
         VALUES
         (
-            @NombresORazonSocial, @NombreEquipoNormalizado, @TipoDocumento, @NumeroDocumento, @Telefono,
+            @NegocioId, @NombresORazonSocialNormalizado, @NombresNormalizado, @ApellidosNormalizado, @NombreEquipoNormalizado, @TipoDocumento, @NumeroDocumento, @Telefono,
             @Correo, @DireccionFiscalNormalizada, @CodigoUbigeoNormalizado, @Activo, SYSUTCDATETIME(), @Usuario
         );
 
         DECLARE @Id INT;
         SET @Id = SCOPE_IDENTITY();
-
-        INSERT INTO dbo.NegocioClientes (NegocioId, ClienteId, Activo, FechaRegistro, UsuarioCreacion)
-        VALUES (@NegocioId, @Id, 1, SYSUTCDATETIME(), @Usuario);
 
         DECLARE @EntidadIdAudit NVARCHAR(80);
         SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);

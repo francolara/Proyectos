@@ -3,6 +3,8 @@
 <!-- Firma: Codex - 30/03/2026 | Selector de codigo pais para telefono de cliente -->
 <!-- Firma: Codex - 01/04/2026 | Nuevo campo Nombre de equipo en edicion de cliente. -->
 <!-- Firma: Codex - 04/04/2026 | Ubigeo fiscal obligatorio por direccion (departamento/provincia/distrito) con combos encadenados y tipo de documento centralizado desde tabla SUNAT en edicion de cliente. -->
+<!-- Firma: Codex - 06/04/2026 | Ajusta etiquetas del formulario y agrega captura dinamica por tipo de documento: RUC usa razon social; no RUC usa nombres y apellidos. -->
+<!-- Firma: Codex - 07/04/2026 | Corrige deteccion de RUC: tipo 0 (No domiciliado sin RUC) ahora usa Nombres y Apellidos, no Razon social. -->
 
 @{
     ViewData["Title"] = "Editar cliente";
@@ -30,10 +32,20 @@
             <div class="sc-form-section">
                 <h2 class="sc-form-title"><i class="bi bi-person-vcard"></i> Datos del cliente</h2>
                 <div class="row g-3">
-                    <div class="col-md-8">
-                        <label asp-for="NombresORazonSocial" class="form-label"></label>
-                        <input asp-for="NombresORazonSocial" class="form-control" />
+                    <div class="col-md-6" id="grupoRazonSocial">
+                        <label asp-for="NombresORazonSocial" class="form-label">Razon social</label>
+                        <input asp-for="NombresORazonSocial" class="form-control" id="NombresORazonSocial" />
                         <span asp-validation-for="NombresORazonSocial" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-3" id="grupoNombres">
+                        <label asp-for="Nombres" class="form-label">Nombres</label>
+                        <input asp-for="Nombres" class="form-control" id="Nombres" />
+                        <span asp-validation-for="Nombres" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-3" id="grupoApellidos">
+                        <label asp-for="Apellidos" class="form-label">Apellidos</label>
+                        <input asp-for="Apellidos" class="form-control" id="Apellidos" />
+                        <span asp-validation-for="Apellidos" class="text-danger"></span>
                     </div>
                     <div class="col-md-4">
                         <label asp-for="NombreEquipo" class="form-label">Nombre de equipo</label>
@@ -41,17 +53,17 @@
                         <span asp-validation-for="NombreEquipo" class="text-danger"></span>
                     </div>
                     <div class="col-md-4">
-                        <label asp-for="TipoDocumento" class="form-label"></label>
+                        <label asp-for="TipoDocumento" class="form-label">Tipo de documento</label>
                         <select asp-for="TipoDocumento" asp-items="Model.TiposDocumento" class="form-select"></select>
                         <span asp-validation-for="TipoDocumento" class="text-danger"></span>
                     </div>
                     <div class="col-md-4">
-                        <label asp-for="NumeroDocumento" class="form-label"></label>
-                        <input asp-for="NumeroDocumento" class="form-control" />
+                        <label asp-for="NumeroDocumento" class="form-label">Numero de documento</label>
+                        <input asp-for="NumeroDocumento" class="form-control" maxlength="11" inputmode="numeric" />
                         <span asp-validation-for="NumeroDocumento" class="text-danger"></span>
                     </div>
                     <div class="col-md-4">
-                        <label asp-for="Telefono" class="form-label"></label>
+                        <label asp-for="Telefono" class="form-label">Telefono</label>
                         <input asp-for="Telefono" type="hidden" />
                         <div class="input-group">
                             <select asp-for="TelefonoCodigoPais" asp-items="Model.CodigosPais" class="form-select" style="max-width: 180px;"></select>
@@ -61,12 +73,12 @@
                         <span asp-validation-for="TelefonoNumeroLocal" class="text-danger"></span>
                     </div>
                     <div class="col-md-4">
-                        <label asp-for="Correo" class="form-label"></label>
+                        <label asp-for="Correo" class="form-label">Correo</label>
                         <input asp-for="Correo" class="form-control" />
                         <span asp-validation-for="Correo" class="text-danger"></span>
                     </div>
                     <div class="col-12">
-                        <label asp-for="DireccionFiscal" class="form-label"></label>
+                        <label asp-for="DireccionFiscal" class="form-label">Direccion fiscal</label>
                         <input asp-for="DireccionFiscal" class="form-control" />
                         <span asp-validation-for="DireccionFiscal" class="text-danger"></span>
                     </div>
@@ -156,6 +168,69 @@
 
             direccion.addEventListener('input', toggleRequired);
             toggleRequired();
+        })();
+    </script>
+    <script>
+        (() => {
+            const tipoDocumentoEl = document.getElementById('TipoDocumento');
+            const razonGroup = document.getElementById('grupoRazonSocial');
+            const nombresGroup = document.getElementById('grupoNombres');
+            const apellidosGroup = document.getElementById('grupoApellidos');
+            const razonInput = document.getElementById('NombresORazonSocial');
+            const nombresInput = document.getElementById('Nombres');
+            const apellidosInput = document.getElementById('Apellidos');
+            if (!tipoDocumentoEl || !razonGroup || !nombresGroup || !apellidosGroup || !razonInput || !nombresInput || !apellidosInput) return;
+
+            const esRuc = () => {
+                const valor = (tipoDocumentoEl.value || '').trim().toUpperCase();
+                return valor === '6' || valor === 'RUC';
+            };
+            const esNoDomiciliadoSinRuc = () => (tipoDocumentoEl.value || '').trim().toUpperCase() === '0';
+            const numeroDocumentoInput = document.getElementById('NumeroDocumento');
+
+            const actualizarVista = () => {
+                if (esRuc()) {
+                    razonGroup.style.display = '';
+                    nombresGroup.style.display = 'none';
+                    apellidosGroup.style.display = 'none';
+                    razonInput.disabled = false;
+                    razonInput.required = true;
+                    nombresInput.disabled = true;
+                    apellidosInput.disabled = true;
+                    nombresInput.required = false;
+                    apellidosInput.required = false;
+                    if (!razonInput.value.trim() && (nombresInput.value.trim() || apellidosInput.value.trim())) {
+                        razonInput.value = `${nombresInput.value} ${apellidosInput.value}`.trim();
+                    }
+                } else {
+                    razonGroup.style.display = 'none';
+                    nombresGroup.style.display = '';
+                    apellidosGroup.style.display = '';
+                    razonInput.disabled = true;
+                    razonInput.required = false;
+                    nombresInput.disabled = false;
+                    apellidosInput.disabled = false;
+                    nombresInput.required = true;
+                    apellidosInput.required = true;
+                    if (!nombresInput.value.trim() && !apellidosInput.value.trim() && razonInput.value.trim()) {
+                        nombresInput.value = razonInput.value.trim();
+                    }
+                }
+
+                if (numeroDocumentoInput) {
+                    if (esNoDomiciliadoSinRuc()) {
+                        numeroDocumentoInput.value = '';
+                        numeroDocumentoInput.disabled = true;
+                        numeroDocumentoInput.required = false;
+                    } else {
+                        numeroDocumentoInput.disabled = false;
+                        numeroDocumentoInput.required = true;
+                    }
+                }
+            };
+
+            tipoDocumentoEl.addEventListener('change', actualizarVista);
+            actualizarVista();
         })();
     </script>
 }

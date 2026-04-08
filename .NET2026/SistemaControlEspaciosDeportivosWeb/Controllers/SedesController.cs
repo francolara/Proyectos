@@ -172,6 +172,7 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
 
     private void NormalizarUbicacionYFotos(SedeFormViewModel model)
     {
+        model.ConsideracionesReserva = string.IsNullOrWhiteSpace(model.ConsideracionesReserva) ? null : model.ConsideracionesReserva.Trim();
         model.GooglePlaceId = string.IsNullOrWhiteSpace(model.GooglePlaceId) ? null : model.GooglePlaceId.Trim();
         model.GoogleMapsUrl = string.IsNullOrWhiteSpace(model.GoogleMapsUrl) ? null : model.GoogleMapsUrl.Trim();
         model.FotoPrincipalUrl = string.IsNullOrWhiteSpace(model.FotoPrincipalUrl) ? null : model.FotoPrincipalUrl.Trim();

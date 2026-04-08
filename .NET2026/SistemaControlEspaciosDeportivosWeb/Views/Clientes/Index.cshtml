@@ -1,16 +1,27 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ClientesIndexViewModel
 <!-- Firma: Codex - 29/03/2026 | Rediseno del listado de clientes con KPIs, filtro rapido y tabla detallada -->
 <!-- Firma: Codex - 01/04/2026 | Se agrega visualizacion de Nombre de equipo en listado de clientes. -->
+<!-- Firma: Codex - 06/04/2026 | Se agrega filtro de estado (todos/activos/inactivos) en listado de clientes. -->
+<!-- Firma: Codex - 06/04/2026 | El filtro de estado consulta backend y preserva el estado seleccionado. -->
+<!-- Firma: Codex - 07/04/2026 | La busqueda de clientes ahora consulta backend (SP) y se mantiene en paginacion. -->
 
 @{
     ViewData["Title"] = "Clientes";
-    var totalClientes = Model.Clientes.Count;
-    var totalActivos = Model.Clientes.Count(x => x.Activo);
-    var totalInactivos = Math.Max(0, totalClientes - totalActivos);
-    var totalConCorreo = Model.Clientes.Count(x => !string.IsNullOrWhiteSpace(x.Correo));
+    var totalClientes = Model.TotalActivos + Model.TotalInactivos;
+    var totalActivos = Model.TotalActivos;
+    var totalInactivos = Model.TotalInactivos;
 }
 
 <div class="admin-page-frame">
+    @if (TempData["ClientesError"] is string clientesError && !string.IsNullOrWhiteSpace(clientesError))
+    {
+        <div class="alert alert-danger">@clientesError</div>
+    }
+    @if (TempData["ClientesOk"] is string clientesOk && !string.IsNullOrWhiteSpace(clientesOk))
+    {
+        <div class="alert alert-success">@clientesOk</div>
+    }
+
     <section class="page-header">
         <div>
             <h1>Clientes</h1>
@@ -42,24 +53,52 @@
             <p class="kpi-card-label">Clientes inactivos</p>
             <h3 class="kpi-card-value">@totalInactivos</h3>
         </article>
-        <article class="kpi-card">
-            <p class="kpi-card-label">Con correo</p>
-            <h3 class="kpi-card-value">@totalConCorreo</h3>
-        </article>
     </section>
 
     <section class="filter-card mb-3">
         <h2 class="section-title">Filtro rapido</h2>
-        <div class="row g-2 align-items-end px-3 pb-3">
-            <div class="col-lg-8 col-md-7">
-                <label class="form-label">Buscar por nombre, documento, telefono o correo</label>
-                <input type="text" id="filtroClientes" class="form-control" placeholder="Ejemplo: BORIS, 12345678, gmail.com..." />
+        <form method="get" asp-action="Index">
+            <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+            <div class="row g-2 align-items-end px-3 pb-3">
+                <div class="col-lg-6 col-md-6">
+                    <label class="form-label">Buscar por nombre, documento, telefono o correo</label>
+                    <input type="text" id="filtroClientes" name="buscar" value="@Model.Buscar" class="form-control" placeholder="Ejemplo: BORIS, 12345678, gmail.com..." />
+                </div>
+                <div class="col-lg-3 col-md-3">
+                    <label class="form-label">Estado</label>
+                    <select id="filtroEstadoClientes" name="estado" class="form-select" onchange="this.form.submit()">
+                        <option value="todos" selected="@(Model.EstadoFiltro == "todos" ? "selected" : null)">Todos</option>
+                        <option value="activos" selected="@(Model.EstadoFiltro == "activos" ? "selected" : null)">Activos</option>
+                        <option value="inactivos" selected="@(Model.EstadoFiltro == "inactivos" ? "selected" : null)">Inactivos</option>
+                    </select>
+                </div>
+                <div class="col-lg-3 col-md-3">
+                    <label class="form-label">Registros visibles</label>
+                    <div class="form-control bg-light" id="contadorClientes">@Model.TotalRegistros</div>
+                </div>
+                <div class="col-12 d-flex justify-content-end">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="bi bi-search me-1"></i> Buscar
+                    </button>
+                </div>
             </div>
-            <div class="col-lg-4 col-md-5">
-                <label class="form-label">Registros visibles</label>
-                <div class="form-control bg-light" id="contadorClientes">@totalClientes</div>
+        </form>
+        @if (Model.TotalPaginas > 1)
+        {
+            <div class="px-3 pb-3 d-flex justify-content-between align-items-center">
+                <small class="text-muted">Pagina @Model.Pagina de @Model.TotalPaginas (@Model.TotalRegistros registros)</small>
+                <nav aria-label="Paginacion clientes">
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item @(Model.Pagina <= 1 ? "disabled" : null)">
+                            <a class="page-link" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-estado="@Model.EstadoFiltro" asp-route-buscar="@Model.Buscar" asp-route-pagina="@(Model.Pagina - 1)">Anterior</a>
+                        </li>
+                        <li class="page-item @(Model.Pagina >= Model.TotalPaginas ? "disabled" : null)">
+                            <a class="page-link" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-estado="@Model.EstadoFiltro" asp-route-buscar="@Model.Buscar" asp-route-pagina="@(Model.Pagina + 1)">Siguiente</a>
+                        </li>
+                    </ul>
+                </nav>
             </div>
-        </div>
+        }
     </section>
 
     <section class="table-card">
@@ -88,7 +127,7 @@
                         {
                             var telefono = string.IsNullOrWhiteSpace(item.Telefono) ? "-" : item.Telefono!;
                             var correo = string.IsNullOrWhiteSpace(item.Correo) ? "-" : item.Correo!;
-                            <tr data-search="@($"{item.NombresORazonSocial} {item.NombreEquipo} {item.TipoDocumento} {item.NumeroDocumento} {telefono} {correo} {(item.Activo ? "Activo" : "Inactivo")}".ToLowerInvariant())">
+                            <tr>
                                 <td>
                                     <div class="sc-list-main">
                                         <div class="sc-list-title">@item.NombresORazonSocial</div>
@@ -127,14 +166,14 @@
                                             <i class="bi bi-pencil-square"></i> Editar
                                         </a>
                                     }
-                                    @if (Model.PuedeEliminar)
+                                    @if (Model.PuedeEliminar && item.Activo)
                                     {
                                         <form asp-action="Delete" method="post" class="d-inline">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="negocioId" value="@Model.NegocioId" />
                                             <input type="hidden" name="id" value="@item.Id" />
                                             <button type="submit" class="btn btn-sm sc-action-btn sc-action-delete">
-                                                <i class="bi bi-trash3"></i> Eliminar
+                                                <i class="bi bi-person-x"></i> Inactivar
                                             </button>
                                         </form>
                                     }
@@ -147,29 +186,3 @@
         }
     </section>
 </div>
-
-@section Scripts {
-    <script>
-        (() => {
-            const filtro = document.getElementById('filtroClientes');
-            const tabla = document.getElementById('tablaClientesDetallada');
-            const contador = document.getElementById('contadorClientes');
-            if (!filtro || !tabla || !contador) return;
-
-            function aplicarFiltro() {
-                const valor = (filtro.value || '').trim().toLowerCase();
-                let visibles = 0;
-                tabla.querySelectorAll('tbody tr').forEach(row => {
-                    const texto = row.getAttribute('data-search') || '';
-                    const mostrar = !valor || texto.includes(valor);
-                    row.style.display = mostrar ? '' : 'none';
-                    if (mostrar) visibles++;
-                });
-                contador.textContent = String(visibles);
-            }
-
-            filtro.addEventListener('input', aplicarFiltro);
-            aplicarFiltro();
-        })();
-    </script>
-}

@@ -6,10 +6,15 @@
 <!-- Firma: Codex - 03/04/2026 | Quita boton de validacion R2, cambia edicion de imagenes a manejo incremental y agrega visualizacion estable (miniatura + lupa) mediante endpoint de vista para URLs de storage no publicas. -->
 <!-- Firma: Codex - 04/04/2026 | Habilita reordenamiento de imagenes actuales (subir/bajar) para poder cambiar el rol principal entre fotos ya registradas. -->
 <!-- Firma: Codex - 05/04/2026 | Estandariza texto de estado para mostrar "No Asistio" en lugar de "no-show" en etiquetas de configuracion de sede. -->
+<!-- Firma: Codex - 06/04/2026 | Agrega apartado Consideraciones de reserva en mantenimiento de sede para publicacion en portal publico (sin exponer en listado admin). -->
+<!-- Firma: Codex - 08/04/2026 | Unifica selectores de hora de apertura/cierre a listas cada 30 minutos. -->
 
 @{
     ViewData["Title"] = "Editar sede";
     var mapsApiKey = Configuration["GoogleMaps:ApiKey"];
+    var horasMediaHora = Enumerable.Range(0, 48)
+        .Select(i => TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(i * 30)))
+        .ToList();
 
     var galeriaSede = new List<string>();
     if (!string.IsNullOrWhiteSpace(Model.FotoPrincipalUrl))
@@ -68,6 +73,12 @@
                         <label asp-for="Direccion" class="form-label"></label>
                         <input asp-for="Direccion" class="form-control" />
                         <span asp-validation-for="Direccion" class="text-danger"></span>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="ConsideracionesReserva" class="form-label">Consideraciones</label>
+                        <textarea asp-for="ConsideracionesReserva" class="form-control" rows="5" placeholder="Ejemplo: reglas de duracion, politica de pago, cambios y devoluciones."></textarea>
+                        <span asp-validation-for="ConsideracionesReserva" class="text-danger"></span>
+                        <div class="form-text">Este texto se mostrara en el portal cuando el cliente busque canchas de esta sede.</div>
                     </div>
                     <div class="col-md-4 d-grid align-items-end">
                         <button id="btnBuscarDireccionMapa" type="button" class="btn btn-outline-primary mt-md-4">
@@ -174,12 +185,22 @@
                     </div>
                     <div class="col-md-3">
                         <label asp-for="HoraApertura" class="form-label">Hora de apertura</label>
-                        <input asp-for="HoraApertura" type="time" class="form-control" />
+                        <select asp-for="HoraApertura" class="form-select">
+                            @foreach (var hora in horasMediaHora)
+                            {
+                                <option value="@hora.ToString("HH\\:mm")">@hora.ToString("HH\\:mm")</option>
+                            }
+                        </select>
                         <span asp-validation-for="HoraApertura" class="text-danger"></span>
                     </div>
                     <div class="col-md-3">
                         <label asp-for="HoraCierre" class="form-label">Hora de cierre</label>
-                        <input asp-for="HoraCierre" type="time" class="form-control" />
+                        <select asp-for="HoraCierre" class="form-select">
+                            @foreach (var hora in horasMediaHora)
+                            {
+                                <option value="@hora.ToString("HH\\:mm")">@hora.ToString("HH\\:mm")</option>
+                            }
+                        </select>
                         <span asp-validation-for="HoraCierre" class="text-danger"></span>
                     </div>
                 </div>

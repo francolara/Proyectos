@@ -20,6 +20,15 @@
 }
 
 <div class="admin-page-frame">
+    @if (TempData["EspaciosError"] is string espaciosError && !string.IsNullOrWhiteSpace(espaciosError))
+    {
+        <div class="alert alert-danger">@espaciosError</div>
+    }
+    @if (TempData["EspaciosOk"] is string espaciosOk && !string.IsNullOrWhiteSpace(espaciosOk))
+    {
+        <div class="alert alert-success">@espaciosOk</div>
+    }
+
     <section class="page-header">
         <div>
             <h1>Espacios deportivos</h1>

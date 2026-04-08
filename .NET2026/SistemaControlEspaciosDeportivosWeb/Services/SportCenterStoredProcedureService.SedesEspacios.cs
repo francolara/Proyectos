@@ -58,46 +58,47 @@ public partial class SportCenterStoredProcedureService
             NegocioId = dr.GetInt32(1),
             Nombre = dr.GetString(2),
             Direccion = dr.GetString(3),
-            Telefono = dr.IsDBNull(4) ? null : dr.GetString(4),
-            Activo = ReadBool(dr, 5),
-            Latitud = dr.FieldCount > 6 && !dr.IsDBNull(6) ? dr.GetDecimal(6) : null,
-            Longitud = dr.FieldCount > 7 && !dr.IsDBNull(7) ? dr.GetDecimal(7) : null,
-            GooglePlaceId = dr.FieldCount > 8 && !dr.IsDBNull(8) ? dr.GetString(8) : null,
-            GoogleMapsUrl = dr.FieldCount > 9 && !dr.IsDBNull(9) ? dr.GetString(9) : null,
-            FotoPrincipalUrl = dr.FieldCount > 10 && !dr.IsDBNull(10) ? dr.GetString(10) : null,
-            FotosUrlsCsv = dr.FieldCount > 11 && !dr.IsDBNull(11) ? dr.GetString(11) : null,
-            FotosUrls = dr.FieldCount > 11 && !dr.IsDBNull(11)
-                ? dr.GetString(11)
+            ConsideracionesReserva = dr.FieldCount > 4 && !dr.IsDBNull(4) ? dr.GetString(4) : null,
+            Telefono = dr.IsDBNull(5) ? null : dr.GetString(5),
+            Activo = ReadBool(dr, 6),
+            Latitud = dr.FieldCount > 7 && !dr.IsDBNull(7) ? dr.GetDecimal(7) : null,
+            Longitud = dr.FieldCount > 8 && !dr.IsDBNull(8) ? dr.GetDecimal(8) : null,
+            GooglePlaceId = dr.FieldCount > 9 && !dr.IsDBNull(9) ? dr.GetString(9) : null,
+            GoogleMapsUrl = dr.FieldCount > 10 && !dr.IsDBNull(10) ? dr.GetString(10) : null,
+            FotoPrincipalUrl = dr.FieldCount > 11 && !dr.IsDBNull(11) ? dr.GetString(11) : null,
+            FotosUrlsCsv = dr.FieldCount > 12 && !dr.IsDBNull(12) ? dr.GetString(12) : null,
+            FotosUrls = dr.FieldCount > 12 && !dr.IsDBNull(12)
+                ? dr.GetString(12)
                     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToList()
                 : new List<string>(),
-            ServiciosSeleccionados = dr.FieldCount > 12 && !dr.IsDBNull(12)
-                ? dr.GetString(12)
+            ServiciosSeleccionados = dr.FieldCount > 13 && !dr.IsDBNull(13)
+                ? dr.GetString(13)
                     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .Where(x => int.TryParse(x, out _))
                     .Select(int.Parse)
                     .Distinct()
                     .ToList()
                 : new List<int>(),
-            NotificacionesActivas = dr.FieldCount > 13 ? ReadBool(dr, 13) : true,
-            MinutosAnticipacionRecordatorio = dr.FieldCount > 14 && !dr.IsDBNull(14) ? dr.GetInt32(14) : 90,
-            MinutosToleranciaNoShow = dr.FieldCount > 15 && !dr.IsDBNull(15) ? dr.GetInt32(15) : 30,
-            CorreoNotificacion = dr.FieldCount > 16 && !dr.IsDBNull(16) ? dr.GetString(16) : null,
-            WhatsappContacto = dr.FieldCount > 17 && !dr.IsDBNull(17) ? dr.GetString(17) : null,
-            PermiteChatWhatsapp = dr.FieldCount > 18 && ReadBool(dr, 18),
-            AtiendeLunes = dr.FieldCount > 19 ? ReadBool(dr, 19) : true,
-            AtiendeMartes = dr.FieldCount > 20 ? ReadBool(dr, 20) : true,
-            AtiendeMiercoles = dr.FieldCount > 21 ? ReadBool(dr, 21) : true,
-            AtiendeJueves = dr.FieldCount > 22 ? ReadBool(dr, 22) : true,
-            AtiendeViernes = dr.FieldCount > 23 ? ReadBool(dr, 23) : true,
-            AtiendeSabado = dr.FieldCount > 24 ? ReadBool(dr, 24) : true,
-            AtiendeDomingo = dr.FieldCount > 25 ? ReadBool(dr, 25) : true,
-            HoraApertura = dr.FieldCount > 26 && !dr.IsDBNull(26) ? TimeOnly.FromTimeSpan(dr.GetTimeSpan(26)) : new TimeOnly(8, 0),
-            HoraCierre = dr.FieldCount > 27 && !dr.IsDBNull(27) ? TimeOnly.FromTimeSpan(dr.GetTimeSpan(27)) : new TimeOnly(23, 0),
-            FechasInhabilitadasCsv = dr.FieldCount > 28 && !dr.IsDBNull(28) ? dr.GetString(28) : null,
-            FechasInhabilitadas = dr.FieldCount > 28 && !dr.IsDBNull(28)
-                ? dr.GetString(28)
+            NotificacionesActivas = dr.FieldCount > 14 ? ReadBool(dr, 14) : true,
+            MinutosAnticipacionRecordatorio = dr.FieldCount > 15 && !dr.IsDBNull(15) ? dr.GetInt32(15) : 90,
+            MinutosToleranciaNoShow = dr.FieldCount > 16 && !dr.IsDBNull(16) ? dr.GetInt32(16) : 30,
+            CorreoNotificacion = dr.FieldCount > 17 && !dr.IsDBNull(17) ? dr.GetString(17) : null,
+            WhatsappContacto = dr.FieldCount > 18 && !dr.IsDBNull(18) ? dr.GetString(18) : null,
+            PermiteChatWhatsapp = dr.FieldCount > 19 && ReadBool(dr, 19),
+            AtiendeLunes = dr.FieldCount > 20 ? ReadBool(dr, 20) : true,
+            AtiendeMartes = dr.FieldCount > 21 ? ReadBool(dr, 21) : true,
+            AtiendeMiercoles = dr.FieldCount > 22 ? ReadBool(dr, 22) : true,
+            AtiendeJueves = dr.FieldCount > 23 ? ReadBool(dr, 23) : true,
+            AtiendeViernes = dr.FieldCount > 24 ? ReadBool(dr, 24) : true,
+            AtiendeSabado = dr.FieldCount > 25 ? ReadBool(dr, 25) : true,
+            AtiendeDomingo = dr.FieldCount > 26 ? ReadBool(dr, 26) : true,
+            HoraApertura = dr.FieldCount > 27 && !dr.IsDBNull(27) ? TimeOnly.FromTimeSpan(dr.GetTimeSpan(27)) : new TimeOnly(8, 0),
+            HoraCierre = dr.FieldCount > 28 && !dr.IsDBNull(28) ? TimeOnly.FromTimeSpan(dr.GetTimeSpan(28)) : new TimeOnly(23, 0),
+            FechasInhabilitadasCsv = dr.FieldCount > 29 && !dr.IsDBNull(29) ? dr.GetString(29) : null,
+            FechasInhabilitadas = dr.FieldCount > 29 && !dr.IsDBNull(29)
+                ? dr.GetString(29)
                     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .Where(x => DateOnly.TryParse(x, out _))
                     .Select(DateOnly.Parse)
@@ -116,6 +117,7 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@NegocioId", model.NegocioId, SqlDbType.Int);
         AddParam(cmd, "@Nombre", model.Nombre, SqlDbType.NVarChar);
         AddParam(cmd, "@Direccion", model.Direccion, SqlDbType.NVarChar);
+        AddParam(cmd, "@ConsideracionesReserva", model.ConsideracionesReserva, SqlDbType.NVarChar);
         AddParam(cmd, "@Telefono", model.Telefono, SqlDbType.NVarChar);
         AddParam(cmd, "@Activo", model.Activo, SqlDbType.Bit);
         AddParam(cmd, "@Latitud", model.Latitud, SqlDbType.Decimal);
@@ -156,6 +158,7 @@ public partial class SportCenterStoredProcedureService
             AddParam(cmd, "@NegocioId", model.NegocioId, SqlDbType.Int);
             AddParam(cmd, "@Nombre", model.Nombre, SqlDbType.NVarChar);
             AddParam(cmd, "@Direccion", model.Direccion, SqlDbType.NVarChar);
+            AddParam(cmd, "@ConsideracionesReserva", model.ConsideracionesReserva, SqlDbType.NVarChar);
             AddParam(cmd, "@Telefono", model.Telefono, SqlDbType.NVarChar);
             AddParam(cmd, "@Activo", model.Activo, SqlDbType.Bit);
             AddParam(cmd, "@Latitud", model.Latitud, SqlDbType.Decimal);

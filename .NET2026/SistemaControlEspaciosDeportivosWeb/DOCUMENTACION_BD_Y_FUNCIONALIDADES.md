@@ -445,6 +445,34 @@
   - exponer coordenadas/foto para mostrar mini mapa en el portal cliente.
   - soportar una foto principal y galeria alternativa por sede.
 
+### 20260406_Maestros_TiposSueloSuperMaestro.sql
+- Tabla nueva:
+  - `TiposSueloSuperMaestro` (supermaestro de suelos con codigo y nombre).
+- Alter tabla:
+  - `TiposSuelo.TipoSueloSuperId` (FK hacia `TiposSueloSuperMaestro`).
+  - indice unico `UX_TiposSuelo_Negocio_TipoSueloSuperId` para evitar duplicados por negocio.
+- SP nuevos/ajustados:
+  - `Sp_Maestros_TiposSueloSuper_Listar` (combo del supermaestro, solo nombre).
+  - `Sp_Maestros_TiposSuelo_Crear` (alta por `@TipoSueloSuperId`).
+  - `Sp_Maestros_TiposSuelo_Actualizar` (actualiza solo estado por negocio).
+  - `Sp_Maestros_TiposSuelo_Listar` (incluye codigo/superId para UI).
+- Objetivo:
+  - en `Maestros > Tipos de suelo`, registrar tipos de suelo del club seleccionando desde supermaestro, igual que Monedas.
+
+### 20260406_Maestros_TiposDeporteSuperMaestro.sql
+- Tabla nueva:
+  - `TiposDeporteSuperMaestro` (supermaestro de deportes con codigo y nombre).
+- Alter tabla:
+  - `TiposDeporte.TipoDeporteSuperId` (FK hacia `TiposDeporteSuperMaestro`).
+  - indice unico `UX_TiposDeporte_Negocio_TipoDeporteSuperId` para evitar duplicados por negocio.
+- SP nuevos/ajustados:
+  - `Sp_Maestros_TiposDeporteSuper_Listar` (combo del supermaestro, solo nombre).
+  - `Sp_Maestros_TiposDeporte_Crear` (alta por `@TipoDeporteSuperId`).
+  - `Sp_Maestros_TiposDeporte_Actualizar` (actualiza solo estado por negocio).
+  - `Sp_Maestros_TiposDeporte_Listar` (incluye codigo/superId para UI).
+- Objetivo:
+  - en `Maestros > Tipos de deporte`, registrar deportes del club seleccionando desde supermaestro, igual que Monedas.
+
 ### 19_Home_Whatsapp_Publico.sql (actualizacion 02/04/2026)
 - Ajuste de contrato en `Sp_Home_ListarSedesPublicas`:
   - ahora devuelve `Sedes.FotosUrlsCsv` ademas de `FotoPrincipalUrl`.
@@ -586,6 +614,69 @@
   - `dbo.Sp_ConfiguracionClub_Actualizar.StoredProcedure.sql`
   - `dbo.Sp_Comprobantes_Crear.StoredProcedure.sql`
   - `dbo.Sp_SolicitudesPublicas_ConvertirAReserva.StoredProcedure.sql`
+49. Ejecutar `Basededatos/SportCenter/Script/20260406_Maestros_TiposSueloSuperMaestro.sql`.
+50. Ejecutar los SP individuales actualizados/nuevos:
+  - `dbo.Sp_Maestros_TiposSueloSuper_Listar.StoredProcedure.sql`
+  - `dbo.Sp_Maestros_TiposSuelo_Listar.StoredProcedure.sql`
+  - `dbo.Sp_Maestros_TiposSuelo_Crear.StoredProcedure.sql`
+  - `dbo.Sp_Maestros_TiposSuelo_Actualizar.StoredProcedure.sql`
+51. Ejecutar `Basededatos/SportCenter/Script/20260406_Maestros_TiposDeporteSuperMaestro.sql`.
+52. Ejecutar los SP individuales actualizados/nuevos:
+  - `dbo.Sp_Maestros_TiposDeporteSuper_Listar.StoredProcedure.sql`
+  - `dbo.Sp_Maestros_TiposDeporte_Listar.StoredProcedure.sql`
+  - `dbo.Sp_Maestros_TiposDeporte_Crear.StoredProcedure.sql`
+  - `dbo.Sp_Maestros_TiposDeporte_Actualizar.StoredProcedure.sql`
+53. Ejecutar `Basededatos/SportCenter/Script/20260406_Negocios_PoliticaConfirmacionPago.sql` (solo estructura).
+54. Ejecutar los SP individuales actualizados:
+  - `dbo.Sp_ConfiguracionClub_Obtener.StoredProcedure.sql`
+  - `dbo.Sp_ConfiguracionClub_Actualizar.StoredProcedure.sql`
+  - `dbo.Sp_Reservas_Crear.StoredProcedure.sql`
+  - `dbo.Sp_Reservas_Actualizar.StoredProcedure.sql`
+  - `dbo.Sp_Reservas_CambiarEstadoRapido.StoredProcedure.sql`
+  - `dbo.Sp_SolicitudesPublicas_ConvertirAReserva.StoredProcedure.sql`
+55. Ejecutar `Basededatos/SportCenter/Script/20260406_Sedes_ConsideracionesReserva.sql` (solo estructura).
+56. Ejecutar los SP individuales actualizados:
+  - `dbo.Sp_Sedes_Crear.StoredProcedure.sql`
+  - `dbo.Sp_Sedes_Actualizar.StoredProcedure.sql`
+  - `dbo.Sp_Sedes_ObtenerPorId.StoredProcedure.sql`
+  - `dbo.Sp_Home_ListarSedesPublicas.StoredProcedure.sql`
+  - `dbo.Sp_Home_BuscarEspaciosDisponibles.StoredProcedure.sql`
+57. Ejecutar `Basededatos/SportCenter/Script/20260406_Clientes_Nombres_Apellidos.sql` (solo estructura).
+58. Ejecutar los SP individuales actualizados:
+  - `dbo.Sp_Clientes_Crear.StoredProcedure.sql`
+  - `dbo.Sp_Clientes_Actualizar.StoredProcedure.sql`
+  - `dbo.Sp_Clientes_ObtenerPorId.StoredProcedure.sql`
+59. Ejecutar `Basededatos/SportCenter/Script/20260406_Combos_TiposDocumentoIdentidadSunat_Formato.sql`.
+60. Ejecutar el SP actualizado:
+  - `dbo.Sp_Combos_TiposDocumentoIdentidadSunat.StoredProcedure.sql`
+61. Ejecutar `Basededatos/SportCenter/Script/20260406_Clientes_Listar_FiltroActivo.sql`.
+62. Ejecutar el SP actualizado:
+  - `dbo.Sp_Clientes_Listar.StoredProcedure.sql`
+63. Ejecutar `Basededatos/SportCenter/Script/20260406_Sp_Clientes_Crear_NombresApellidos.sql` si al crear cliente aparece error de parametros en `Sp_Clientes_Crear`.
+64. Ejecutar `Basededatos/SportCenter/Script/20260406_Clientes_NegocioId_SinTablaPuente.sql` (estructura y migracion de datos).
+65. Ejecutar los SP individuales actualizados:
+  - `dbo.Sp_Clientes_Crear.StoredProcedure.sql`
+  - `dbo.Sp_Clientes_Actualizar.StoredProcedure.sql`
+  - `dbo.Sp_Clientes_ObtenerPorId.StoredProcedure.sql`
+  - `dbo.Sp_Clientes_Listar.StoredProcedure.sql`
+  - `dbo.Sp_Clientes_Eliminar.StoredProcedure.sql` (inactivacion logica)
+  - `dbo.Sp_Combos_Clientes.StoredProcedure.sql`
+  - `dbo.Sp_SolicitudesPublicas_ConvertirAReserva.StoredProcedure.sql`
+66. Ejecutar scripts de validaciones operativas y listado:
+  - `Basededatos/SportCenter/Script/20260407_Validaciones_Inactivacion_Clientes_Espacios_ReservasListado.sql`
+  - `Basededatos/SportCenter/Script/20260407_Clientes_Documento_Reglas.sql`
+  - `Basededatos/SportCenter/Script/20260407_Sp_Clientes_Actualizar_Validaciones.sql`
+  - `Basededatos/SportCenter/Script/20260407_Sp_Clientes_Eliminar_Validaciones.sql`
+  - `Basededatos/SportCenter/Script/20260407_Sp_Espacios_Actualizar_Validaciones.sql`
+  - `Basededatos/SportCenter/Script/20260407_Sp_Espacios_Eliminar_Validaciones.sql`
+  - `Basededatos/SportCenter/Script/20260407_Sp_Reservas_Listar_Saldo.sql`
+67. Ejecutar `Basededatos/SportCenter/Script/20260407_Reservas_Pago_Fecha_NumOperacion.sql`.
+68. Ejecutar los SP individuales actualizados:
+  - `dbo.Sp_Reservas_Crear.StoredProcedure.sql`
+  - `dbo.Sp_Reservas_Actualizar.StoredProcedure.sql`
+69. Ejecutar `Basededatos/SportCenter/Script/20260407_Reservas_Cotizar_PoliticaSinTarifa.sql`.
+70. Ejecutar `Basededatos/SportCenter/Script/20260407_Reservas_Listar_Cliente_Equipo_Columnas.sql`.
+71. Ejecutar `Basededatos/SportCenter/Script/20260408_Sp_Reservas_CalendarioEventos_TotalReserva.sql`.
 
 ## Observaciones funcionales
 - CRUD de modulos internos ejecuta operaciones por SP.
@@ -597,13 +688,29 @@
 - Panel privado muestra KPIs avanzados para operacion diaria y seguimiento mensual.
 - Reservas integra FullCalendar con vista semana/dia/mes, arrastre para mover horarios y bloqueos operativos por espacio.
 - Reservas permite cambio rapido de estado (confirmada/pagada/cancelada/no asistio) desde tabla y calendario.
+- Configuracion del club/negocio:
+  - incluye politica para confirmar reservas por pago.
+  - opciones por negocio: sin pago, adelanto minimo por porcentaje, o pago total (100%).
+  - si la politica exige pago, backend bloquea confirmacion cuando no cumple (en cambio rapido, crear/editar reserva y convertir solicitud).
 - Reservas agrega operaciones avanzadas backend-driven:
   - historial por reserva desde bitacora
   - recordatorio manual por seleccion de reservas
   - resumen operativo diario con KPI y vista por espacios
 - Clientes y reservas:
   - se incorpora `NombreEquipo` en maestro de clientes
+  - para cliente con documento RUC, el formulario solicita razon social.
+  - para documento distinto de RUC, el formulario solicita nombres y apellidos por separado.
+  - `NombresORazonSocial` se mantiene como campo de compatibilidad y se llena automaticamente (concatenado para persona natural).
   - el nombre de equipo se refleja en combos y visualizacion de reservas (calendario, listado y detalle)
+- el combo de tipo de documento (clientes/configuracion) muestra formato de etiqueta `Nombre (CodigoSunat)` sin codigo interno.
+- el listado de clientes soporta filtro de estado (todos/activos/inactivos) con consulta backend.
+- la paginacion y busqueda del listado de clientes se resuelven en SQL Server via `Sp_Clientes_Listar` con `@Buscar`, `@Pagina`, `@TamanoPagina` y `@TotalRegistros OUTPUT`.
+- la relacion cliente-negocio ahora es directa por `Clientes.NegocioId`; `NegocioClientes` queda deprecada.
+  - la accion del listado de clientes inactiva registro (`Activo = 0`) y no realiza eliminacion fisica.
+  - no se permite inactivar cliente si tiene reservas activas futuras (pendiente/confirmada/pagada), mostrando detalle de reservas a cancelar.
+  - tipo de documento `Doc. trib. no dom. sin RUC` no exige numero de documento.
+  - el indice unico de clientes excluye `TipoDocumento = 0`, permitiendo multiples registros no domiciliados sin RUC sin colision por duplicado.
+  - para los demas tipos se valida numero de documento obligatorio, maximo 11 digitos y solo numerico.
 - Automatizacion en segundo plano:
   - envia recordatorios por correo antes de la hora de reserva
   - marca no-show automatico segun tolerancia configurada
@@ -613,10 +720,12 @@
   - minutos de tolerancia para no-show automatico
   - correo de notificacion del negocio (copia oculta en recordatorios)
   - numero de WhatsApp de contacto para chatear/coordinar
+  - consideraciones de reserva (texto libre) para publicar reglas y condiciones de atencion en el portal publico
 - Portal publico:
   - boton de WhatsApp visible solo si la sede habilito chat y registro numero.
   - boton tambien visible en tarjetas de espacios disponibles para iniciar chat inmediato.
   - tarjetas de sedes muestran foto principal y carrusel con fotos alternativas cuando existen.
+  - muestra consideraciones de la sede en tarjetas de sedes y en resultados de espacios disponibles.
 - Carga de imagenes en Sedes:
   - formulario de `Nueva sede` y `Editar sede` permite subir archivos (`jpg/png/webp`) en lugar de pegar URLs.
   - carga integrada a almacenamiento objeto compatible S3 (Cloudflare R2) desde backend.
@@ -633,3 +742,23 @@
 - Usuarios por sede:
   - si el rol es no administrador, la sede es obligatoria.
   - el backend restringe combos/listados/reportes/metricas a la sede asignada.
+- Espacios deportivos:
+  - no se permite cambiar a mantenimiento/inactivo ni inactivar espacio si el espacio tiene reservas activas futuras (pendiente/confirmada/pagada), mostrando detalle de reservas a cancelar.
+- Reservas (listado general):
+  - incorpora columnas de `Precio de Espacio` y `Saldo pendiente`.
+  - agrega paginacion de 20 en 20 resuelta desde `Sp_Reservas_Listar` (no en memoria), manteniendo filtros de rango/sede/espacio/estados.
+  - separa `Cliente` y `Equipo` en columnas distintas (ya no concatenadas en una sola celda).
+  - importes de `Precio de Espacio` y `Saldo pendiente` se muestran alineados a la derecha.
+- Reservas (tarjetas del calendario):
+  - ya no muestran nombre de espacio en eventos `RESERVA`.
+  - muestran `Horario` y debajo `Precio de Espacio` usando `TotalReserva` expuesto por `Sp_Reservas_CalendarioEventos`.
+- Reservas (pop-up crear/editar):
+  - agrega `Comentario` en tabla `Reservas` y en formulario modal.
+  - habilita cotizacion automatica por horario (`tarifa + promocion`) con endpoint `Sp_Reservas_Cotizar`.
+  - politica de pago del negocio visible en modal al crear/editar.
+  - el estado no se elige al crear; se calcula segun pago registrado y politica del negocio.
+  - soporte de registro de pago en creacion/edicion de reserva con forma de pago.
+  - al marcar `Registrar pago`, se habilitan `Fecha de pago` (por defecto hoy, no permite fecha futura) y `N° Operacion` (opcional, solo alfanumerico).
+  - en edicion, si el pago acumulado llega al 100% del precio del espacio, el backend ajusta automaticamente el estado a `Pagada`.
+  - la politica de confirmacion se muestra siempre, incluso cuando no existe tarifa para el horario; en ese caso se permite ingreso manual del precio del espacio.
+  - limite maximo de 2 pagos por reserva validado en `Sp_Reservas_Actualizar` y `Sp_Pagos_Crear`.

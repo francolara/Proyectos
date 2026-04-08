@@ -97,26 +97,31 @@ public partial class SportCenterStoredProcedureService
             list.Add(new MaestroCatalogoItemViewModel
             {
                 Id = dr.GetInt32(0),
-                Nombre = dr.GetString(1),
-                Activo = dr.GetBoolean(2)
+                SuperId = dr.IsDBNull(1) ? null : dr.GetInt32(1),
+                Codigo = dr.IsDBNull(2) ? null : dr.GetString(2),
+                Nombre = dr.GetString(3),
+                Activo = dr.GetBoolean(4)
             });
         }
         return list;
     }
 
-    public async Task<int> MaestrosTiposSueloCrearAsync(int negocioId, string nombre, bool activo, string usuario)
+    public async Task<List<SelectListItem>> MaestrosTiposSueloSuperListarAsync()
+        => await ComboAsync("Sp_Maestros_TiposSueloSuper_Listar");
+
+    public async Task<int> MaestrosTiposSueloCrearAsync(int negocioId, int tipoSueloSuperId, bool activo, string usuario)
     {
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_Maestros_TiposSuelo_Crear", cn) { CommandType = CommandType.StoredProcedure };
         AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
-        AddParam(cmd, "@Nombre", nombre, SqlDbType.NVarChar);
+        AddParam(cmd, "@TipoSueloSuperId", tipoSueloSuperId, SqlDbType.Int);
         AddParam(cmd, "@Activo", activo, SqlDbType.Bit);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
         return Convert.ToInt32(await cmd.ExecuteScalarAsync());
     }
 
-    public async Task<bool> MaestrosTiposSueloActualizarAsync(int negocioId, int id, string nombre, bool activo, string usuario)
+    public async Task<bool> MaestrosTiposSueloActualizarAsync(int negocioId, int id, bool activo, string usuario)
     {
         try
         {
@@ -125,7 +130,6 @@ public partial class SportCenterStoredProcedureService
             await using var cmd = new SqlCommand("Sp_Maestros_TiposSuelo_Actualizar", cn) { CommandType = CommandType.StoredProcedure };
             AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
             AddParam(cmd, "@Id", id, SqlDbType.Int);
-            AddParam(cmd, "@Nombre", nombre, SqlDbType.NVarChar);
             AddParam(cmd, "@Activo", activo, SqlDbType.Bit);
             AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
             await cmd.ExecuteNonQueryAsync();
@@ -169,26 +173,31 @@ public partial class SportCenterStoredProcedureService
             list.Add(new MaestroCatalogoItemViewModel
             {
                 Id = dr.GetInt32(0),
-                Nombre = dr.GetString(1),
-                Activo = dr.GetBoolean(2)
+                SuperId = dr.IsDBNull(1) ? null : dr.GetInt32(1),
+                Codigo = dr.IsDBNull(2) ? null : dr.GetString(2),
+                Nombre = dr.GetString(3),
+                Activo = dr.GetBoolean(4)
             });
         }
         return list;
     }
 
-    public async Task<int> MaestrosTiposDeporteCrearAsync(int negocioId, string nombre, bool activo, string usuario)
+    public async Task<List<SelectListItem>> MaestrosTiposDeporteSuperListarAsync()
+        => await ComboAsync("Sp_Maestros_TiposDeporteSuper_Listar");
+
+    public async Task<int> MaestrosTiposDeporteCrearAsync(int negocioId, int tipoDeporteSuperId, bool activo, string usuario)
     {
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_Maestros_TiposDeporte_Crear", cn) { CommandType = CommandType.StoredProcedure };
         AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
-        AddParam(cmd, "@Nombre", nombre, SqlDbType.NVarChar);
+        AddParam(cmd, "@TipoDeporteSuperId", tipoDeporteSuperId, SqlDbType.Int);
         AddParam(cmd, "@Activo", activo, SqlDbType.Bit);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
         return Convert.ToInt32(await cmd.ExecuteScalarAsync());
     }
 
-    public async Task<bool> MaestrosTiposDeporteActualizarAsync(int negocioId, int id, string nombre, bool activo, string usuario)
+    public async Task<bool> MaestrosTiposDeporteActualizarAsync(int negocioId, int id, bool activo, string usuario)
     {
         try
         {
@@ -197,7 +206,6 @@ public partial class SportCenterStoredProcedureService
             await using var cmd = new SqlCommand("Sp_Maestros_TiposDeporte_Actualizar", cn) { CommandType = CommandType.StoredProcedure };
             AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
             AddParam(cmd, "@Id", id, SqlDbType.Int);
-            AddParam(cmd, "@Nombre", nombre, SqlDbType.NVarChar);
             AddParam(cmd, "@Activo", activo, SqlDbType.Bit);
             AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
             await cmd.ExecuteNonQueryAsync();

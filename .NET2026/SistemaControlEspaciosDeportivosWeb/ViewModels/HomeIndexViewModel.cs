@@ -20,6 +20,7 @@ public class SedePublicaViewModel
     public int Id { get; set; }
     public string Nombre { get; set; } = string.Empty;
     public string Direccion { get; set; } = string.Empty;
+    public string? ConsideracionesReserva { get; set; }
     public string? Telefono { get; set; }
     public string? WhatsappContacto { get; set; }
     public bool PermiteChatWhatsapp { get; set; }
@@ -42,6 +43,7 @@ public class EspacioDisponibleViewModel
     public string NombreEspacio { get; set; } = string.Empty;
     public string Codigo { get; set; } = string.Empty;
     public string SedeNombre { get; set; } = string.Empty;
+    public string? SedeConsideracionesReserva { get; set; }
     public string TipoDeporteNombre { get; set; } = string.Empty;
     public bool TieneIluminacion { get; set; }
     public bool Techada { get; set; }

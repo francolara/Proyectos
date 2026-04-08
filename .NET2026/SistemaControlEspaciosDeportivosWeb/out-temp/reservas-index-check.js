@@ -46,6 +46,9 @@
             let recargandoEspacios = false;
             let disponibilidadRenderSeq = 0;
             let pendientesRenderSeq = 0;
+            let dragBloqueadoPendienteLimpieza = false;
+            let ultimoAvisoBloqueoDragAt = 0;
+            let movimientoPendienteServidor = false;
             const calendarAxisWidth = '122px';
             function pad2(n) {
                 return String(n).padStart(2, '0');
@@ -726,6 +729,30 @@
                 return '@Url.Action("CalendarioEventos", "Reservas")' + '?' + params.toString();
             }
 
+            function cruzaRangos(inicioA, finA, inicioB, finB) {
+                if (!inicioA || !finA || !inicioB || !finB) return false;
+                return inicioA < finB && inicioB < finA;
+            }
+
+            function movimientoCruzaBloqueo(start, end, draggedEvent) {
+                if (!calendar || !start || !end || !draggedEvent) return false;
+                const espacioMovimiento = String(draggedEvent.extendedProps?.espacioDeportivoId || '').trim();
+                if (!espacioMovimiento) return false;
+
+                const eventos = calendar.getEvents();
+                for (const ev of eventos) {
+                    if (!ev || ev.id === draggedEvent.id) continue;
+                    const tipo = String(ev.extendedProps?.tipoEvento || '').toUpperCase();
+                    if (tipo !== 'BLOQUEO' && tipo !== 'NO_ATENCION') continue;
+                    const espacioBloqueo = String(ev.extendedProps?.espacioDeportivoId || '').trim();
+                    if (!espacioBloqueo || espacioBloqueo !== espacioMovimiento) continue;
+                    const evInicio = ev.start;
+                    const evFin = ev.end ?? ev.start;
+                    if (cruzaRangos(start, end, evInicio, evFin)) return true;
+                }
+                return false;
+            }
+
             function notificarCalendario(mensaje, tipo = 'warning') {
                 const texto = String(mensaje || '').trim();
                 if (!texto) return;
@@ -742,6 +769,16 @@
                 window.setTimeout(() => {
                     if (div.parentElement) div.parentElement.removeChild(div);
                 }, 3200);
+            }
+
+            function limpiarArrastreVisual() {
+                if (!calendar) return;
+                calendar.unselect();
+                window.setTimeout(() => {
+                    calendarioEl?.querySelectorAll('.fc-event-mirror, .fc-event-dragging').forEach((el) => el.remove());
+                    calendar.refetchEvents();
+                    calendar.updateSize();
+                }, 60);
             }
 
             async function procesarMovimientoReserva(info, mensajeErrorPorDefecto) {
@@ -779,13 +816,13 @@
                     void renderPendientesConfirmarDia(info.event.start ?? new Date());
                 } catch (err) {
                     info?.revert?.();
-                    calendar?.unselect();
-                    calendar?.refetchEvents();
+                    limpiarArrastreVisual();
                     const mensaje = err?.name === 'AbortError'
                         ? 'La validacion tardÃ³ demasiado. Se restauro la reserva a su posicion original.'
                         : (err?.message || mensajeErrorPorDefecto);
                     notificarCalendario(mensaje, 'warning');
                 } finally {
+                    movimientoPendienteServidor = false;
                     window.clearTimeout(timeoutId);
                 }
             }
@@ -824,6 +861,21 @@
                     selectable: true,
                     height: 'auto',
                     expandRows: true,
+                    eventAllow: function(dropInfo, draggedEvent) {
+                        const start = dropInfo?.start;
+                        const end = dropInfo?.end ?? (start ? new Date(start.getTime() + (60 * 60000)) : null);
+                        if (!start || !end || !draggedEvent) return true;
+                        if (movimientoCruzaBloqueo(start, end, draggedEvent)) {
+                            dragBloqueadoPendienteLimpieza = true;
+                            const ahora = Date.now();
+                            if ((ahora - ultimoAvisoBloqueoDragAt) > 1200) {
+                                ultimoAvisoBloqueoDragAt = ahora;
+                                notificarCalendario('No se puede mover la reserva a un horario bloqueado/no atencion.', 'warning');
+                            }
+                            return false;
+                        }
+                        return true;
+                    },
                     buttonText: {
                         today: 'Hoy',
                         week: 'Semana',
@@ -928,23 +980,13 @@
                                     delete base.textColor;
                                     delete base.color;
                                     if (tipo === 'NO_ATENCION') {
-                                        return [{ ...base, display: 'background', classNames: ['sc-no-atencion-bg'], editable: false, overlap: false, backgroundColor: colorEvento, borderColor: colorEvento }];
+                                        return [{ ...base, display: 'background', classNames: ['sc-no-atencion-bg'], editable: false, overlap: true, backgroundColor: colorEvento, borderColor: colorEvento }];
                                     }
                                     if (tipo === 'BLOQUEO') {
-                                        return [{ ...base, display: 'background', classNames: ['sc-bloqueo-bg'], editable: false, overlap: false, backgroundColor: colorEvento, borderColor: colorEvento }];
+                                        return [{ ...base, display: 'background', classNames: ['sc-bloqueo-bg'], editable: false, overlap: true, backgroundColor: colorEvento, borderColor: colorEvento }];
                                     }
-                                    const estadoClase = classByEstado(base.estadoCodigo, base.tipoEvento);
-                                const fondoEstado = {
-                                    ...base,
-                                    id: `BG-${base.id}`,
-                                        title: '',
-                                        display: 'background',
-                                        editable: false,
-                                        overlap: true,
-                                        classNames: ['sc-reserva-slot-bg', estadoClase]
-                                    };
-                                base.textColor = colorTextoByEstado(base.estadoCodigo, base.tipoEvento);
-                                return [fondoEstado, base];
+                                    base.textColor = colorTextoByEstado(base.estadoCodigo, base.tipoEvento);
+                                    return [base];
                             });
                             success(eventosApi);
                             setTimeout(() => {
@@ -980,10 +1022,35 @@
                         renderPendientesConfirmarDia(info.start);
                     },
                     eventDrop: function(info) {
+                        dragBloqueadoPendienteLimpieza = false;
+                        movimientoPendienteServidor = true;
                         void procesarMovimientoReserva(info, 'No se pudo mover la reserva.');
                     },
                     eventResize: function(info) {
+                        dragBloqueadoPendienteLimpieza = false;
+                        movimientoPendienteServidor = true;
                         void procesarMovimientoReserva(info, 'No se pudo redimensionar la reserva.');
+                    },
+                    eventDragStop: function() {
+                        if (movimientoPendienteServidor) return;
+                        const requiereLimpieza = dragBloqueadoPendienteLimpieza;
+                        dragBloqueadoPendienteLimpieza = false;
+                        window.setTimeout(() => {
+                            if (requiereLimpieza) {
+                                limpiarArrastreVisual();
+                                return;
+                            }
+                            // Cierra cualquier residuo visual si se cancela/interrumpe drag sin drop efectivo.
+                            calendarioEl?.querySelectorAll('.fc-event-mirror, .fc-event-dragging').forEach((el) => el.remove());
+                            calendar?.updateSize();
+                        }, 20);
+                    },
+                    eventResizeStop: function() {
+                        if (movimientoPendienteServidor) return;
+                        window.setTimeout(() => {
+                            calendarioEl?.querySelectorAll('.fc-event-mirror, .fc-event-dragging').forEach((el) => el.remove());
+                            calendar?.updateSize();
+                        }, 20);
                     },
                     eventClick: function(info) {
                         const reservaId = info.event.extendedProps.reservaId;

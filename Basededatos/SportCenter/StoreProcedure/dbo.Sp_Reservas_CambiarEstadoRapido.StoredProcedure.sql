@@ -1,4 +1,4 @@
-﻿USE [DbSportCenter]
+USE [DbSportCenter]
 GO
 /****** Object:  StoredProcedure [dbo].[Sp_Reservas_CambiarEstadoRapido]    Script Date: 3/04/2026 23:18:34 ******/
 SET ANSI_NULLS ON
@@ -8,6 +8,7 @@ GO
 
 -- SOURCE: 16_Reservas_CheckIn_CheckOut.sql (linea 8)
 -- Firma: Codex - 05/04/2026 | Se retira estado En uso/Check-in y se normaliza Finalizada->Pagada, No Show->No Asistio.
+-- Firma: Codex - 06/04/2026 | Confirmar reserva valida politica de pago del negocio (sin pago, adelanto minimo %, o pago total 100%).
 CREATE OR ALTER   PROCEDURE [dbo].[Sp_Reservas_CambiarEstadoRapido]
     @NegocioId INT,
     @Id INT,
@@ -18,11 +19,22 @@ BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
         DECLARE @EstadoActual INT;
+        DECLARE @TotalReserva DECIMAL(10,2);
+        DECLARE @PagadoActual DECIMAL(10,2);
+        DECLARE @PoliticaConfirmacionPago TINYINT;
+        DECLARE @PorcentajeAdelantoMinimo DECIMAL(5,2);
+        DECLARE @PagoMinimoRequerido DECIMAL(10,2);
 
-        SELECT @EstadoActual = r.Estado
+        SELECT
+            @EstadoActual = r.Estado,
+            @TotalReserva = COALESCE(r.Total, 0),
+            @PagadoActual = COALESCE(r.Adelanto, 0),
+            @PoliticaConfirmacionPago = COALESCE(n.PoliticaConfirmacionPago, 0),
+            @PorcentajeAdelantoMinimo = n.PorcentajeAdelantoMinimo
         FROM dbo.Reservas r
         INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
+        INNER JOIN dbo.Negocios n ON n.Id = s.NegocioId
         WHERE r.Id = @Id
           AND s.NegocioId = @NegocioId;
 
@@ -40,6 +52,24 @@ BEGIN
 
         IF @NuevoEstado = 6 AND @EstadoActual NOT IN (1, 2, 3)
             RAISERROR('No Asistio solo permitido para reservas pendientes, confirmadas o en uso historico.', 16, 1);
+
+        IF @NuevoEstado = 2
+        BEGIN
+            IF @PoliticaConfirmacionPago = 1
+            BEGIN
+                IF @PorcentajeAdelantoMinimo IS NULL OR @PorcentajeAdelantoMinimo <= 0 OR @PorcentajeAdelantoMinimo > 100
+                    RAISERROR('La configuracion del porcentaje minimo de adelanto no es valida para confirmar.', 16, 1);
+
+                SET @PagoMinimoRequerido = ROUND(@TotalReserva * (@PorcentajeAdelantoMinimo / 100.0), 2);
+                IF @PagadoActual < @PagoMinimoRequerido
+                    RAISERROR('No se puede confirmar: el pago actual no alcanza el adelanto minimo configurado.', 16, 1);
+            END
+            ELSE IF @PoliticaConfirmacionPago = 2
+            BEGIN
+                IF @PagadoActual < @TotalReserva
+                    RAISERROR('No se puede confirmar: se requiere pago total (100%).', 16, 1);
+            END
+        END
 
         UPDATE dbo.Reservas
         SET Estado = @NuevoEstado,

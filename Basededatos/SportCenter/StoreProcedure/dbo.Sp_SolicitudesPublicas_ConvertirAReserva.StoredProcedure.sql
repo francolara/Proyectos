@@ -6,6 +6,8 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 -- Firma: Codex - 04/04/2026 | Actualizacion individual de Sp_SolicitudesPublicas_ConvertirAReserva para tipo de documento SUNAT por defecto.
+-- Firma: Codex - 06/04/2026 | Si la solicitud se convierte como Confirmada, valida politica de pago del negocio.
+-- Firma: Codex - 06/04/2026 | Se elimina dependencia de NegocioClientes y se usa Clientes.NegocioId.
 CREATE OR ALTER PROCEDURE dbo.Sp_SolicitudesPublicas_ConvertirAReserva
     @NegocioId INT,
     @Id INT,
@@ -19,6 +21,37 @@ BEGIN
     BEGIN TRY
         IF @Total < 0 OR @Adelanto < 0 OR @Adelanto > @Total
             RAISERROR('Montos invalidos para la conversion.', 16, 1);
+
+        DECLARE @PoliticaConfirmacionPago TINYINT;
+        DECLARE @PorcentajeAdelantoMinimo DECIMAL(5,2);
+        DECLARE @PagoMinimoRequerido DECIMAL(10,2);
+
+        SELECT
+            @PoliticaConfirmacionPago = COALESCE(n.PoliticaConfirmacionPago, 0),
+            @PorcentajeAdelantoMinimo = n.PorcentajeAdelantoMinimo
+        FROM dbo.Negocios n
+        WHERE n.Id = @NegocioId;
+
+        IF @PoliticaConfirmacionPago NOT IN (0, 1, 2)
+            SET @PoliticaConfirmacionPago = 0;
+
+        IF @EstadoReserva = 2
+        BEGIN
+            IF @PoliticaConfirmacionPago = 1
+            BEGIN
+                IF @PorcentajeAdelantoMinimo IS NULL OR @PorcentajeAdelantoMinimo <= 0 OR @PorcentajeAdelantoMinimo > 100
+                    RAISERROR('La configuracion del porcentaje minimo de adelanto no es valida para confirmar.', 16, 1);
+
+                SET @PagoMinimoRequerido = ROUND(@Total * (@PorcentajeAdelantoMinimo / 100.0), 2);
+                IF @Adelanto < @PagoMinimoRequerido
+                    RAISERROR('No se puede confirmar: el adelanto no alcanza el porcentaje minimo configurado.', 16, 1);
+            END
+            ELSE IF @PoliticaConfirmacionPago = 2
+            BEGIN
+                IF @Adelanto < @Total
+                    RAISERROR('No se puede confirmar: se requiere pago total (100%).', 16, 1);
+            END
+        END
 
         DECLARE @EspacioDeportivoId INT, @Fecha DATE, @HoraInicio TIME, @HoraFin TIME, @NombreSolicitante NVARCHAR(200), @Telefono NVARCHAR(30), @Correo NVARCHAR(200);
         DECLARE @ClienteId INT, @ReservaId INT;
@@ -54,9 +87,7 @@ BEGIN
 
         SELECT TOP (1) @ClienteId = c.Id
         FROM dbo.Clientes c
-        INNER JOIN dbo.NegocioClientes nc ON nc.ClienteId = c.Id
-        WHERE nc.NegocioId = @NegocioId
-          AND nc.Activo = 1
+        WHERE c.NegocioId = @NegocioId
           AND c.Activo = 1
           AND c.NombresORazonSocial = @NombreSolicitante
           AND c.Telefono = @Telefono;
@@ -67,19 +98,16 @@ BEGIN
         BEGIN
             INSERT INTO dbo.Clientes
             (
-                NombresORazonSocial, TipoDocumento, NumeroDocumento, Telefono, Correo,
+                NegocioId, NombresORazonSocial, TipoDocumento, NumeroDocumento, Telefono, Correo,
                 Activo, FechaCreacion, UsuarioCreacion
             )
             VALUES
             (
-                @NombreSolicitante, N'0', CONCAT(N'SOL', @Id), @Telefono, @Correo,
+                @NegocioId, @NombreSolicitante, N'0', CONCAT(N'SOL', @Id), @Telefono, @Correo,
                 1, SYSUTCDATETIME(), @Usuario
             );
 
             SET @ClienteId = SCOPE_IDENTITY();
-
-            INSERT INTO dbo.NegocioClientes (NegocioId, ClienteId, Activo, FechaRegistro, UsuarioCreacion)
-            VALUES (@NegocioId, @ClienteId, 1, SYSUTCDATETIME(), @Usuario);
         END;
 
         INSERT INTO dbo.Reservas

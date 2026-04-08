@@ -2,13 +2,14 @@
 <!-- Firma: Codex - 27/03/2026 | Configuracion del club editable con combo de moneda desde tabla Maestra -->
 <!-- Firma: Codex - 28/03/2026 | Se agrega Tipo de Documento, Numero Documento y Direccion Fiscal en configuracion del club -->
 <!-- Firma: Codex - 04/04/2026 | Ubigeo fiscal obligatorio por direccion (departamento/provincia/distrito) con combos encadenados y tipo de documento centralizado desde tabla SUNAT. -->
+<!-- Firma: Codex - 06/04/2026 | Se actualiza el titulo de la pantalla a "Configuracion del Club / Negocio", se agrega politica configurable para confirmar reservas por pago (sin pago, adelanto minimo %, o pago total 100%) y el porcentaje queda alineado a la derecha, solo entero y sin permitir punto/decimales. -->
 @{
     ViewData["Title"] = "Configuracion";
 }
 
 <header class="page-header">
     <div>
-        <h1>Configuracion del club</h1>
+        <h1>Configuración del Club / Negocio</h1>
         <p class="page-subtitle">Edita los datos principales del negocio y la moneda de trabajo.</p>
     </div>
     <div class="action-toolbar">
@@ -55,6 +56,16 @@
                     <label asp-for="MonedaId" class="form-label">Moneda de trabajo</label>
                     <select asp-for="MonedaId" asp-items="Model.Monedas" class="form-select"></select>
                 </div>
+                <div class="col-md-4">
+                    <label asp-for="PoliticaConfirmacionPago" class="form-label">Confirmar reserva requiere pago</label>
+                    <select asp-for="PoliticaConfirmacionPago" asp-items="Model.PoliticasConfirmacionPago" class="form-select" id="PoliticaConfirmacionPago"></select>
+                    <span asp-validation-for="PoliticaConfirmacionPago" class="text-danger"></span>
+                </div>
+                <div class="col-md-4" id="rowPorcentajeAdelantoMinimo">
+                    <label asp-for="PorcentajeAdelantoMinimo" class="form-label">Porcentaje minimo de adelanto (%)</label>
+                    <input asp-for="PorcentajeAdelantoMinimo" class="form-control text-end" id="PorcentajeAdelantoMinimo" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off" />
+                    <span asp-validation-for="PorcentajeAdelantoMinimo" class="text-danger"></span>
+                </div>
                 <div class="col-12">
                     <label asp-for="DireccionFiscal" class="form-label">Direccion fiscal</label>
                     <input asp-for="DireccionFiscal" class="form-control" maxlength="250" />
@@ -100,7 +111,10 @@
             const dep = document.getElementById('CodigoDepartamento');
             const prov = document.getElementById('CodigoProvincia');
             const dist = document.getElementById('CodigoUbigeo');
-            if (!direccion || !dep || !prov || !dist) return;
+            const politicaPago = document.getElementById('PoliticaConfirmacionPago');
+            const rowPorcentaje = document.getElementById('rowPorcentajeAdelantoMinimo');
+            const porcentaje = document.getElementById('PorcentajeAdelantoMinimo');
+            if (!direccion || !dep || !prov || !dist || !politicaPago || !rowPorcentaje || !porcentaje) return;
 
             const urlProv = '@Url.Action("UbigeoProvincias", "Configuracion")';
             const urlDist = '@Url.Action("UbigeoDistritos", "Configuracion")';
@@ -110,6 +124,32 @@
                 dep.required = required;
                 prov.required = required;
                 dist.required = required;
+            }
+
+            function togglePoliticaPago() {
+                const requiereAdelanto = (politicaPago.value || '') === '1';
+                rowPorcentaje.style.display = requiereAdelanto ? '' : 'none';
+                porcentaje.required = requiereAdelanto;
+                if (!requiereAdelanto) porcentaje.value = '';
+            }
+
+            function normalizarPorcentajeEntero() {
+                const raw = (porcentaje.value || '').trim();
+                const soloDigitos = raw.replace(/\D/g, '');
+                if (!soloDigitos) {
+                    porcentaje.value = '';
+                    return;
+                }
+
+                let entero = Number.parseInt(soloDigitos, 10);
+                if (!Number.isFinite(entero)) {
+                    porcentaje.value = '';
+                    return;
+                }
+
+                if (entero < 1) entero = 1;
+                if (entero > 100) entero = 100;
+                porcentaje.value = String(entero);
             }
 
             async function cargarSelect(select, url, emptyText, selectedValue) {
@@ -137,7 +177,17 @@
             });
 
             direccion.addEventListener('input', toggleRequired);
+            politicaPago.addEventListener('change', togglePoliticaPago);
+            porcentaje.addEventListener('keydown', (evt) => {
+                const tecla = evt.key;
+                if (tecla === '.' || tecla === ',' || tecla === 'e' || tecla === 'E' || tecla === '-' || tecla === '+') {
+                    evt.preventDefault();
+                }
+            });
+            porcentaje.addEventListener('input', normalizarPorcentajeEntero);
+            porcentaje.addEventListener('blur', normalizarPorcentajeEntero);
             toggleRequired();
+            togglePoliticaPago();
         })();
     </script>
 }

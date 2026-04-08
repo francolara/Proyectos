@@ -2,9 +2,13 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ReservaFormViewModel
 <!-- Firma: Codex - 27/03/2026 | Estandar visual pro para formulario de reservas y bloqueo de fechas pasadas -->
 <!-- Firma: Codex - 05/04/2026 | Estados de reserva ajustados: se retira En uso, Finalizada pasa a Pagada y No Show pasa a No Asistio. -->
+<!-- Firma: Codex - 08/04/2026 | Unifica selectores de hora a listas cada 30 minutos. -->
 
 @{
     ViewData["Title"] = "Editar reserva";
+    var horasMediaHora = Enumerable.Range(0, 48)
+        .Select(i => TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(i * 30)))
+        .ToList();
 }
 
 <div class="admin-page-frame">
@@ -43,11 +47,21 @@
                     </div>
                     <div class="col-md-3">
                         <label asp-for="HoraInicio" class="form-label"></label>
-                        <input asp-for="HoraInicio" class="form-control" type="time" />
+                        <select asp-for="HoraInicio" class="form-select">
+                            @foreach (var hora in horasMediaHora)
+                            {
+                                <option value="@hora.ToString("HH\\:mm")">@hora.ToString("HH\\:mm")</option>
+                            }
+                        </select>
                     </div>
                     <div class="col-md-3">
                         <label asp-for="HoraFin" class="form-label"></label>
-                        <input asp-for="HoraFin" class="form-control" type="time" />
+                        <select asp-for="HoraFin" class="form-select">
+                            @foreach (var hora in horasMediaHora)
+                            {
+                                <option value="@hora.ToString("HH\\:mm")">@hora.ToString("HH\\:mm")</option>
+                            }
+                        </select>
                     </div>
                     <div class="col-md-3">
                         <label asp-for="Estado" class="form-label"></label>

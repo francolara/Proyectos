@@ -3,9 +3,14 @@
 @using System.Globalization
 <!-- Firma: Codex - 27/03/2026 -->
 <!-- Firma: Codex - 02/04/2026 | Agrega visualizacion de foto/mapa por sede y carrusel publico de imagenes principales+alternativas -->
+<!-- Firma: Codex - 06/04/2026 | Muestra consideraciones de reserva configuradas por sede en resultados de busqueda y tarjetas publicas de sedes. -->
+<!-- Firma: Codex - 08/04/2026 | Unifica selectores de hora a listas cada 30 minutos para mantener consistencia con reservas. -->
 
 @{
     ViewData["Title"] = "Portal deportivo";
+    var horasMediaHora = Enumerable.Range(0, 48)
+        .Select(i => TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(i * 30)))
+        .ToList();
 }
 
 <section class="hero-publico p-4 p-md-5 rounded-4 mb-4">
@@ -50,11 +55,37 @@
             </div>
             <div class="col-md-2">
                 <label class="form-label">Hora inicio</label>
-                <input class="form-control" type="time" name="horaInicio" value="@Model.HoraInicio.ToString("HH\\:mm")" />
+                <select class="form-select" name="horaInicio">
+                    @foreach (var hora in horasMediaHora)
+                    {
+                        var valor = hora.ToString("HH\\:mm");
+                        if (hora == Model.HoraInicio)
+                        {
+                            <option value="@valor" selected="selected">@valor</option>
+                        }
+                        else
+                        {
+                            <option value="@valor">@valor</option>
+                        }
+                    }
+                </select>
             </div>
             <div class="col-md-2">
                 <label class="form-label">Hora fin</label>
-                <input class="form-control" type="time" name="horaFin" value="@Model.HoraFin.ToString("HH\\:mm")" />
+                <select class="form-select" name="horaFin">
+                    @foreach (var hora in horasMediaHora)
+                    {
+                        var valor = hora.ToString("HH\\:mm");
+                        if (hora == Model.HoraFin)
+                        {
+                            <option value="@valor" selected="selected">@valor</option>
+                        }
+                        else
+                        {
+                            <option value="@valor">@valor</option>
+                        }
+                    }
+                </select>
             </div>
             <div class="col-md-3">
                 <label class="form-label">Sede</label>
@@ -111,6 +142,13 @@
                             <h3 class="h6 fw-bold mb-1">@item.NombreEspacio (@item.Codigo)</h3>
                             <p class="mb-1"><strong>Sede:</strong> @item.SedeNombre</p>
                             <p class="mb-1"><strong>Deporte:</strong> @item.TipoDeporteNombre</p>
+                            @if (!string.IsNullOrWhiteSpace(item.SedeConsideracionesReserva))
+                            {
+                                <p class="mb-2 small text-muted" style="white-space: pre-line;">
+                                    <strong>Consideraciones:</strong><br />
+                                    @item.SedeConsideracionesReserva
+                                </p>
+                            }
                             <p class="mb-2">
                                 <strong>Caracteristicas:</strong>
                                 @(item.Techada ? "Techada" : "No techada"),
@@ -229,6 +267,13 @@
                         <h3 class="h6 fw-bold mb-1">@sede.Nombre</h3>
                         <p class="mb-1">@sede.Direccion</p>
                         <p class="mb-2">@(string.IsNullOrWhiteSpace(sede.Telefono) ? "Sin telefono registrado" : sede.Telefono)</p>
+                        @if (!string.IsNullOrWhiteSpace(sede.ConsideracionesReserva))
+                        {
+                            <div class="small text-muted mb-2" style="white-space: pre-line;">
+                                <strong>Consideraciones:</strong><br />
+                                @sede.ConsideracionesReserva
+                            </div>
+                        }
                         @if (tieneUbicacion)
                         {
                             <div class="ratio ratio-16x9 rounded border overflow-hidden mb-2">

@@ -6,6 +6,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 -- Firma: Codex - 04/04/2026 | Actualizacion individual de Sp_ConfiguracionClub_Obtener por ubigeo fiscal y tipo de documento SUNAT centralizado.
+-- Firma: Codex - 06/04/2026 | Se agrega politica de confirmacion de reserva por pago y porcentaje minimo de adelanto a nivel negocio.
 CREATE OR ALTER PROCEDURE dbo.Sp_ConfiguracionClub_Obtener
     @NegocioId INT
 AS
@@ -21,7 +22,9 @@ BEGIN
             COALESCE(NULLIF(n.NumeroDocumentoFiscal, N''), n.DocumentoFiscal) AS NumeroDocumentoFiscal,
             n.DireccionFiscal,
             COALESCE(n.MonedaId, 1) AS MonedaId,
-            n.CodigoUbigeo
+            n.CodigoUbigeo,
+            CAST(COALESCE(n.PoliticaConfirmacionPago, 0) AS TINYINT) AS PoliticaConfirmacionPago,
+            n.PorcentajeAdelantoMinimo
         FROM dbo.Negocios n
         WHERE n.Id = @NegocioId
           AND n.Activo = 1;

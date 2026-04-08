@@ -6,6 +6,8 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 -- Firma: Codex - 04/04/2026 | Actualizacion individual de Sp_Clientes_ObtenerPorId por integracion de ubigeo fiscal.
+-- Firma: Codex - 06/04/2026 | Incluye columnas Nombres y Apellidos para mantenimiento diferenciado de cliente natural/juridico.
+-- Firma: Codex - 06/04/2026 | Se elimina dependencia de NegocioClientes y se usa Clientes.NegocioId.
 CREATE OR ALTER PROCEDURE dbo.Sp_Clientes_ObtenerPorId
     @NegocioId INT,
     @Id INT
@@ -16,6 +18,8 @@ BEGIN
         SELECT
             c.Id,
             c.NombresORazonSocial,
+            c.Nombres,
+            c.Apellidos,
             c.NombreEquipo,
             c.TipoDocumento,
             c.NumeroDocumento,
@@ -25,9 +29,7 @@ BEGIN
             c.CodigoUbigeo,
             c.Activo
         FROM dbo.Clientes c
-        INNER JOIN dbo.NegocioClientes nc ON nc.ClienteId = c.Id
-        WHERE nc.NegocioId = @NegocioId
-          AND nc.Activo = 1
+        WHERE c.NegocioId = @NegocioId
           AND c.Id = @Id;
     END TRY
     BEGIN CATCH

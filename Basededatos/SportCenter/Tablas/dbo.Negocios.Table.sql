@@ -2,6 +2,7 @@ USE [DbSportCenter]
 GO
 /****** Object:  Table [dbo].[Negocios]    Script Date: 04/04/2026 ******/
 -- Firma: Codex - 04/04/2026 | Agrega CodigoUbigeo en tabla Negocios y su relacion FK a UbigeoDistritos.
+-- Firma: Codex - 06/04/2026 | Agrega politica de confirmacion de reserva por pago y porcentaje minimo de adelanto por negocio.
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -14,6 +15,8 @@ CREATE TABLE [dbo].[Negocios](
     [Activo] [bit] NOT NULL,
     [FechaRegistro] [datetime2](7) NOT NULL,
     [MonedaId] [int] NULL,
+    [PoliticaConfirmacionPago] [tinyint] NOT NULL,
+    [PorcentajeAdelantoMinimo] [decimal](5,2) NULL,
     [TipoDocumentoFiscal] [nvarchar](2) NULL,
     [NumeroDocumentoFiscal] [nvarchar](20) NULL,
     [DireccionFiscal] [nvarchar](250) NULL,
@@ -25,6 +28,8 @@ CREATE TABLE [dbo].[Negocios](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
 ALTER TABLE [dbo].[Negocios] ADD  CONSTRAINT [DF_Negocios_MonedaId]  DEFAULT ((1)) FOR [MonedaId]
+GO
+ALTER TABLE [dbo].[Negocios] ADD  CONSTRAINT [DF_Negocios_PoliticaConfirmacionPago]  DEFAULT ((0)) FOR [PoliticaConfirmacionPago]
 GO
 ALTER TABLE [dbo].[Negocios]  WITH CHECK ADD  CONSTRAINT [FK_Negocios_Monedas_MonedaId] FOREIGN KEY([MonedaId])
 REFERENCES [dbo].[Monedas] ([Id])

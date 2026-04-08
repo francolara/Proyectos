@@ -6,6 +6,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 -- Firma: Codex - 04/04/2026 | Combo centralizado de tipos de documento SUNAT para clientes y configuracion.
+-- Firma: Codex - 06/04/2026 | Ajuste de etiqueta visible: mostrar Nombre + (Codigo SUNAT), ocultando codigo interno.
 CREATE OR ALTER PROCEDURE dbo.Sp_Combos_TiposDocumentoIdentidadSunat
 AS
 BEGIN
@@ -14,7 +15,7 @@ BEGIN
     BEGIN TRY
         SELECT
             t.CodigoSunat,
-            CONCAT(t.CodigoInterno, N' - ', t.Nombre, N' (', t.CodigoSunat, N')') AS Nombre
+            CONCAT(t.Nombre, N' (', t.CodigoSunat, N')') AS Nombre
         FROM dbo.TiposDocumentoIdentidadSunat t
         WHERE t.Activo = 1
         ORDER BY t.Orden, t.CodigoSunat;

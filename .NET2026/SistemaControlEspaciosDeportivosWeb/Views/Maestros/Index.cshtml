@@ -1,6 +1,7 @@
 ﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.MaestrosIndexViewModel
 <!-- Firma: Codex - 01/04/2026 | Nueva pestaña Maestros para mantenimiento de Monedas, Tipos de suelo, Tipos de deporte y Formas de pago -->
 <!-- Firma: Codex - 02/04/2026 | Monedas por negocio desde supermaestro LATAM, mantenimiento por NegocioId y mejora visual Fase 1/Fase 2 en navegación, paneles y composición visual de Maestros -->
+<!-- Firma: Codex - 06/04/2026 | Tipos de suelo y tipos de deporte migran a alta desde supermaestro (combo), igual que Monedas; se mantiene edición/inactivación por negocio sin edición manual de nombre; se retira el código del supermaestro en combo y listado (solo nombre); se reordena navegación de Maestros a: Tipos de deporte, Tipos de suelo, Monedas, Formas de pago; y se preserva la pestaña activa tras registrar/actualizar/inactivar para no regresar por defecto al primer maestro. -->
 
 @{
     ViewData["Title"] = "Maestros";
@@ -49,11 +50,11 @@
 
     <section class="table-card sc-maestros-nav-card mb-3">
         <div class="sc-maestros-nav">
-            <button type="button" class="sc-maestro-tab is-active" data-target="monedas">
-                <span class="sc-maestro-tab-icon"><i class="bi bi-cash-stack"></i></span>
+            <button type="button" class="sc-maestro-tab is-active" data-target="tipos-deporte">
+                <span class="sc-maestro-tab-icon"><i class="bi bi-dribbble"></i></span>
                 <span class="sc-maestro-tab-text">
-                    <strong>Monedas</strong>
-                    <small>@Model.Monedas.Count registro(s)</small>
+                    <strong>Tipos de deporte</strong>
+                    <small>@Model.TiposDeporte.Count registro(s)</small>
                 </span>
             </button>
             <button type="button" class="sc-maestro-tab" data-target="tipos-suelo">
@@ -63,11 +64,11 @@
                     <small>@Model.TiposSuelo.Count registro(s)</small>
                 </span>
             </button>
-            <button type="button" class="sc-maestro-tab" data-target="tipos-deporte">
-                <span class="sc-maestro-tab-icon"><i class="bi bi-dribbble"></i></span>
+            <button type="button" class="sc-maestro-tab" data-target="monedas">
+                <span class="sc-maestro-tab-icon"><i class="bi bi-cash-stack"></i></span>
                 <span class="sc-maestro-tab-text">
-                    <strong>Tipos de deporte</strong>
-                    <small>@Model.TiposDeporte.Count registro(s)</small>
+                    <strong>Monedas</strong>
+                    <small>@Model.Monedas.Count registro(s)</small>
                 </span>
             </button>
             <button type="button" class="sc-maestro-tab" data-target="formas-pago">
@@ -81,7 +82,7 @@
     </section>
 
     <div class="sc-maestros-paneles">
-        <section class="table-card sc-reservas-list-card mb-3 sc-maestro-panel is-active" data-panel="monedas">
+        <section class="table-card sc-reservas-list-card mb-3 sc-maestro-panel" data-panel="monedas">
             @{
                 var monedasActivas = Model.Monedas.Count(x => x.Activo);
                 var monedasInactivas = Model.Monedas.Count - monedasActivas;
@@ -182,12 +183,198 @@
             </div>
         </section>
 
-        <div class="sc-maestro-panel" data-panel="tipos-suelo">
-            @await Html.PartialAsync("_CatalogoSimple", (Model.TiposSuelo, "Tipos de suelo", "TipoSueloCrear", "TipoSueloEditar", "TipoSueloEliminar", Model.NegocioId, Model.PuedeCrear, Model.PuedeEditar, Model.PuedeEliminar))
-        </div>
-        <div class="sc-maestro-panel" data-panel="tipos-deporte">
-            @await Html.PartialAsync("_CatalogoSimple", (Model.TiposDeporte, "Tipos de deporte", "TipoDeporteCrear", "TipoDeporteEditar", "TipoDeporteEliminar", Model.NegocioId, Model.PuedeCrear, Model.PuedeEditar, Model.PuedeEliminar))
-        </div>
+        <section class="table-card sc-reservas-list-card mb-3 sc-maestro-panel" data-panel="tipos-suelo">
+            @{
+                var suelosActivos = Model.TiposSuelo.Count(x => x.Activo);
+                var suelosInactivos = Model.TiposSuelo.Count - suelosActivos;
+            }
+            <div class="sc-maestro-panel-header">
+                <div>
+                    <h2 class="section-title mb-1"><i class="bi bi-grid-1x2 me-1 text-primary"></i>Tipos de suelo</h2>
+                    <p class="text-secondary-emphasis small mb-0">Asocia tipos de suelo del supermaestro al club/negocio.</p>
+                </div>
+                <div class="sc-maestro-panel-search">
+                    <i class="bi bi-search"></i>
+                    <input type="search" class="form-control form-control-sm sc-maestro-search-input" data-search-target="tipos-suelo" placeholder="Buscar tipo de suelo..." />
+                </div>
+            </div>
+            <div class="sc-maestro-stats px-3">
+                <span class="sc-maestro-stat-pill"><i class="bi bi-collection"></i>Total: @Model.TiposSuelo.Count</span>
+                <span class="sc-maestro-stat-pill is-success"><i class="bi bi-check2-circle"></i>Activos: @suelosActivos</span>
+                <span class="sc-maestro-stat-pill is-danger"><i class="bi bi-x-circle"></i>Inactivos: @suelosInactivos</span>
+            </div>
+            @if (Model.PuedeCrear)
+            {
+                <form asp-action="TipoSueloCrear" method="post" class="px-3 pb-2 pt-2 sc-maestro-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <select name="tipoSueloSuperId" class="form-select" required>
+                                <option value="">Selecciona tipo de suelo del supermaestro</option>
+                                @foreach (var t in Model.TiposSueloSuper)
+                                {
+                                    <option value="@t.Value">@t.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select name="activo" class="form-select">
+                                <option value="true">Activo</option>
+                                <option value="false">Inactivo</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-plus-circle me-1"></i>Agregar</button>
+                        </div>
+                    </div>
+                </form>
+            }
+            <div class="table-responsive px-3 pb-3">
+                <table class="table table-sm align-middle sc-maestro-table" data-table-id="tipos-suelo">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Estado</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.TiposSuelo.OrderBy(x => x.Nombre))
+                        {
+                            <tr data-search-text="@item.Nombre">
+                                <td>@item.Nombre</td>
+                                <td>
+                                    <span class="badge @(item.Activo ? "bg-success-subtle text-success-emphasis border border-success-subtle" : "bg-danger-subtle text-danger-emphasis border border-danger-subtle")">
+                                        @(item.Activo ? "Activo" : "Inactivo")
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    @if (Model.PuedeEditar)
+                                    {
+                                        <form asp-action="TipoSueloEditar" method="post" class="d-inline-flex gap-1 align-items-center">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <select name="activo" class="form-select form-select-sm" style="max-width:96px;">
+                                                <option value="true" selected="@item.Activo">Activo</option>
+                                                <option value="false" selected="@(!item.Activo)">Inactivo</option>
+                                            </select>
+                                            <button type="submit" class="btn btn-sm sc-action-btn sc-action-edit"><i class="bi bi-pencil-square"></i>Editar</button>
+                                        </form>
+                                    }
+                                    @if (Model.PuedeEliminar)
+                                    {
+                                        <form asp-action="TipoSueloEliminar" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <button type="submit" class="btn btn-sm sc-action-btn sc-action-delete"><i class="bi bi-trash3"></i>Inactivar</button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        <section class="table-card sc-reservas-list-card mb-3 sc-maestro-panel is-active" data-panel="tipos-deporte">
+            @{
+                var deportesActivos = Model.TiposDeporte.Count(x => x.Activo);
+                var deportesInactivos = Model.TiposDeporte.Count - deportesActivos;
+            }
+            <div class="sc-maestro-panel-header">
+                <div>
+                    <h2 class="section-title mb-1"><i class="bi bi-dribbble me-1 text-primary"></i>Tipos de deporte</h2>
+                    <p class="text-secondary-emphasis small mb-0">Asocia tipos de deporte del supermaestro al club/negocio.</p>
+                </div>
+                <div class="sc-maestro-panel-search">
+                    <i class="bi bi-search"></i>
+                    <input type="search" class="form-control form-control-sm sc-maestro-search-input" data-search-target="tipos-deporte" placeholder="Buscar tipo de deporte..." />
+                </div>
+            </div>
+            <div class="sc-maestro-stats px-3">
+                <span class="sc-maestro-stat-pill"><i class="bi bi-collection"></i>Total: @Model.TiposDeporte.Count</span>
+                <span class="sc-maestro-stat-pill is-success"><i class="bi bi-check2-circle"></i>Activos: @deportesActivos</span>
+                <span class="sc-maestro-stat-pill is-danger"><i class="bi bi-x-circle"></i>Inactivos: @deportesInactivos</span>
+            </div>
+            @if (Model.PuedeCrear)
+            {
+                <form asp-action="TipoDeporteCrear" method="post" class="px-3 pb-2 pt-2 sc-maestro-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <select name="tipoDeporteSuperId" class="form-select" required>
+                                <option value="">Selecciona tipo de deporte del supermaestro</option>
+                                @foreach (var t in Model.TiposDeporteSuper)
+                                {
+                                    <option value="@t.Value">@t.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select name="activo" class="form-select">
+                                <option value="true">Activo</option>
+                                <option value="false">Inactivo</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-plus-circle me-1"></i>Agregar</button>
+                        </div>
+                    </div>
+                </form>
+            }
+            <div class="table-responsive px-3 pb-3">
+                <table class="table table-sm align-middle sc-maestro-table" data-table-id="tipos-deporte">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Estado</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.TiposDeporte.OrderBy(x => x.Nombre))
+                        {
+                            <tr data-search-text="@item.Nombre">
+                                <td>@item.Nombre</td>
+                                <td>
+                                    <span class="badge @(item.Activo ? "bg-success-subtle text-success-emphasis border border-success-subtle" : "bg-danger-subtle text-danger-emphasis border border-danger-subtle")">
+                                        @(item.Activo ? "Activo" : "Inactivo")
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    @if (Model.PuedeEditar)
+                                    {
+                                        <form asp-action="TipoDeporteEditar" method="post" class="d-inline-flex gap-1 align-items-center">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <select name="activo" class="form-select form-select-sm" style="max-width:96px;">
+                                                <option value="true" selected="@item.Activo">Activo</option>
+                                                <option value="false" selected="@(!item.Activo)">Inactivo</option>
+                                            </select>
+                                            <button type="submit" class="btn btn-sm sc-action-btn sc-action-edit"><i class="bi bi-pencil-square"></i>Editar</button>
+                                        </form>
+                                    }
+                                    @if (Model.PuedeEliminar)
+                                    {
+                                        <form asp-action="TipoDeporteEliminar" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <button type="submit" class="btn btn-sm sc-action-btn sc-action-delete"><i class="bi bi-trash3"></i>Inactivar</button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
         <div class="sc-maestro-panel" data-panel="formas-pago">
             @await Html.PartialAsync("_CatalogoSimple", (Model.FormasPago, "Formas de pago", "FormaPagoCrear", "FormaPagoEditar", "FormaPagoEliminar", Model.NegocioId, Model.PuedeCrear, Model.PuedeEditar, Model.PuedeEliminar))
         </div>
@@ -198,14 +385,49 @@
     (() => {
         const tabs = Array.from(document.querySelectorAll('.sc-maestro-tab'));
         const panels = Array.from(document.querySelectorAll('.sc-maestro-panel'));
+        const tabStorageKey = `sc_maestros_tab_@Model.NegocioId`;
 
         function activatePanel(target) {
             tabs.forEach((tab) => tab.classList.toggle('is-active', tab.dataset.target === target));
             panels.forEach((panel) => panel.classList.toggle('is-active', panel.dataset.panel === target));
         }
 
+        function guardarTabActiva(target) {
+            if (!target) return;
+            try {
+                window.localStorage.setItem(tabStorageKey, target);
+            } catch {
+                // Ignorar problemas de storage y continuar sin persistencia.
+            }
+        }
+
+        function leerTabActivaGuardada() {
+            try {
+                return window.localStorage.getItem(tabStorageKey) || '';
+            } catch {
+                return '';
+            }
+        }
+
         tabs.forEach((tab) => {
-            tab.addEventListener('click', () => activatePanel(tab.dataset.target));
+            tab.addEventListener('click', () => {
+                const target = tab.dataset.target;
+                activatePanel(target);
+                guardarTabActiva(target);
+            });
+        });
+
+        const tabGuardada = leerTabActivaGuardada();
+        if (tabGuardada && tabs.some((t) => t.dataset.target === tabGuardada) && panels.some((p) => p.dataset.panel === tabGuardada)) {
+            activatePanel(tabGuardada);
+        }
+
+        document.addEventListener('submit', (evt) => {
+            const form = evt.target;
+            if (!(form instanceof HTMLFormElement)) return;
+            const panel = form.closest('.sc-maestro-panel');
+            const panelId = panel?.getAttribute('data-panel') || '';
+            if (panelId) guardarTabActiva(panelId);
         });
 
         document.querySelectorAll('.sc-maestro-search-input').forEach((input) => {

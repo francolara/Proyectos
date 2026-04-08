@@ -62,15 +62,16 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
                 Id = dr.GetInt32(0),
                 Nombre = dr.GetString(1),
                 Direccion = dr.GetString(2),
-                Telefono = dr.IsDBNull(3) ? null : dr.GetString(3),
-                WhatsappContacto = dr.IsDBNull(4) ? null : dr.GetString(4),
-                PermiteChatWhatsapp = ReadBool(dr, 5),
-                Latitud = dr.FieldCount > 6 && !dr.IsDBNull(6) ? dr.GetDecimal(6) : null,
-                Longitud = dr.FieldCount > 7 && !dr.IsDBNull(7) ? dr.GetDecimal(7) : null,
-                GoogleMapsUrl = dr.FieldCount > 8 && !dr.IsDBNull(8) ? dr.GetString(8) : null,
-                FotoPrincipalUrl = dr.FieldCount > 9 && !dr.IsDBNull(9) ? dr.GetString(9) : null,
-                FotosAlternativas = dr.FieldCount > 10 && !dr.IsDBNull(10)
-                    ? dr.GetString(10)
+                ConsideracionesReserva = dr.FieldCount > 3 && !dr.IsDBNull(3) ? dr.GetString(3) : null,
+                Telefono = dr.IsDBNull(4) ? null : dr.GetString(4),
+                WhatsappContacto = dr.IsDBNull(5) ? null : dr.GetString(5),
+                PermiteChatWhatsapp = ReadBool(dr, 6),
+                Latitud = dr.FieldCount > 7 && !dr.IsDBNull(7) ? dr.GetDecimal(7) : null,
+                Longitud = dr.FieldCount > 8 && !dr.IsDBNull(8) ? dr.GetDecimal(8) : null,
+                GoogleMapsUrl = dr.FieldCount > 9 && !dr.IsDBNull(9) ? dr.GetString(9) : null,
+                FotoPrincipalUrl = dr.FieldCount > 10 && !dr.IsDBNull(10) ? dr.GetString(10) : null,
+                FotosAlternativas = dr.FieldCount > 11 && !dr.IsDBNull(11)
+                    ? dr.GetString(11)
                         .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                         .Where(x => !string.IsNullOrWhiteSpace(x))
                         .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -115,11 +116,12 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
                 NombreEspacio = dr.GetString(1),
                 Codigo = dr.GetString(2),
                 SedeNombre = dr.GetString(3),
-                TipoDeporteNombre = dr.GetString(4),
-                TieneIluminacion = ReadBool(dr, 5),
-                Techada = ReadBool(dr, 6),
-                WhatsappContacto = dr.IsDBNull(7) ? null : dr.GetString(7),
-                PermiteChatWhatsapp = ReadBool(dr, 8)
+                SedeConsideracionesReserva = dr.FieldCount > 4 && !dr.IsDBNull(4) ? dr.GetString(4) : null,
+                TipoDeporteNombre = dr.GetString(5),
+                TieneIluminacion = ReadBool(dr, 6),
+                Techada = ReadBool(dr, 7),
+                WhatsappContacto = dr.IsDBNull(8) ? null : dr.GetString(8),
+                PermiteChatWhatsapp = ReadBool(dr, 9)
             });
         }
         return list;

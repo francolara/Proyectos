@@ -26,7 +26,9 @@ public partial class SportCenterStoredProcedureService
             NumeroDocumento = dr.IsDBNull(4) ? null : dr.GetString(4),
             DireccionFiscal = dr.IsDBNull(5) ? null : dr.GetString(5),
             MonedaId = dr.IsDBNull(6) ? 1 : dr.GetInt32(6),
-            CodigoUbigeo = dr.IsDBNull(7) ? null : dr.GetString(7)
+            CodigoUbigeo = dr.IsDBNull(7) ? null : dr.GetString(7),
+            PoliticaConfirmacionPago = dr.FieldCount > 8 && !dr.IsDBNull(8) ? Convert.ToInt32(dr.GetValue(8)) : 0,
+            PorcentajeAdelantoMinimo = dr.FieldCount > 9 && !dr.IsDBNull(9) ? Convert.ToDecimal(dr.GetValue(9)) : null
         };
     }
 
@@ -45,6 +47,8 @@ public partial class SportCenterStoredProcedureService
             AddParam(cmd, "@DireccionFiscal", model.DireccionFiscal, SqlDbType.NVarChar);
             AddParam(cmd, "@CodigoUbigeo", model.CodigoUbigeo, SqlDbType.Char);
             AddParam(cmd, "@MonedaId", model.MonedaId, SqlDbType.Int);
+            AddParam(cmd, "@PoliticaConfirmacionPago", model.PoliticaConfirmacionPago, SqlDbType.TinyInt);
+            AddParam(cmd, "@PorcentajeAdelantoMinimo", model.PorcentajeAdelantoMinimo, SqlDbType.Decimal);
             AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
             await cmd.ExecuteNonQueryAsync();
             return true;

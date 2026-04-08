@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace SistemaControlEspaciosDeportivosWeb.Controllers;
@@ -9,13 +10,49 @@ namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 public class ClientesController(IModuloPermisoService moduloPermisoService, ISportCenterStoredProcedureService spService)
     : ModuloControllerBase(moduloPermisoService)
 {
-    public async Task<IActionResult> Index(int? negocioId)
+    private const string CodigoDocumentoRucSunat = "6";
+    private const string CodigoDocumentoNoDomiciliadoSinRucSunat = "0";
+
+    public async Task<IActionResult> Index(int? negocioId, string? estado = null, string? buscar = null, int pagina = 1)
     {
         var resolvedNegocioId = await ResolverNegocioIdAsync(negocioId, spService);
         if (!resolvedNegocioId.HasValue) return Forbid();
 
         var baseVm = await ObtenerBaseAsync(resolvedNegocioId.Value, "CLIENTES");
         if (baseVm is null || !string.IsNullOrWhiteSpace(baseVm.Mensaje)) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "Acceso denegado." });
+
+        var estadoNormalizado = (estado ?? "activos").Trim().ToLowerInvariant();
+        bool? activoFiltro = estadoNormalizado switch
+        {
+            "activos" => true,
+            "inactivos" => false,
+            _ => null
+        };
+
+        if (estadoNormalizado is not ("todos" or "activos" or "inactivos"))
+            estadoNormalizado = "activos";
+
+        const int tamanoPagina = 20;
+        var paginaActual = pagina < 1 ? 1 : pagina;
+        var textoBusqueda = string.IsNullOrWhiteSpace(buscar) ? null : buscar.Trim();
+        var (clientesPagina, totalRegistros, totalActivos, totalInactivos) = await spService.ClientesListarAsync(
+            resolvedNegocioId.Value,
+            activoFiltro,
+            textoBusqueda,
+            paginaActual,
+            tamanoPagina);
+
+        var totalPaginas = Math.Max(1, (int)Math.Ceiling(totalRegistros / (double)tamanoPagina));
+        if (paginaActual > totalPaginas)
+        {
+            paginaActual = totalPaginas;
+            (clientesPagina, totalRegistros, totalActivos, totalInactivos) = await spService.ClientesListarAsync(
+                resolvedNegocioId.Value,
+                activoFiltro,
+                textoBusqueda,
+                paginaActual,
+                tamanoPagina);
+        }
 
         var vm = new ClientesIndexViewModel
         {
@@ -27,7 +64,15 @@ public class ClientesController(IModuloPermisoService moduloPermisoService, ISpo
             PuedeCrear = baseVm.PuedeCrear,
             PuedeEditar = baseVm.PuedeEditar,
             PuedeEliminar = baseVm.PuedeEliminar,
-            Clientes = await spService.ClientesListarAsync(resolvedNegocioId.Value)
+            EstadoFiltro = estadoNormalizado,
+            Buscar = textoBusqueda,
+            Pagina = paginaActual,
+            TamanoPagina = tamanoPagina,
+            TotalRegistros = totalRegistros,
+            TotalPaginas = totalPaginas,
+            TotalActivos = totalActivos,
+            TotalInactivos = totalInactivos,
+            Clientes = clientesPagina
         };
         return View(vm);
     }
@@ -45,6 +90,7 @@ public class ClientesController(IModuloPermisoService moduloPermisoService, ISpo
             NegocioId = resolvedNegocioId.Value,
             NegocioNombre = baseVm.NegocioNombre,
             RolActual = baseVm.RolActual,
+            TipoDocumento = CodigoDocumentoNoDomiciliadoSinRucSunat,
             Activo = true,
             CodigosPais = TelefonoInternacionalHelper.ObtenerCodigosPais("+51")
         };
@@ -58,6 +104,7 @@ public class ClientesController(IModuloPermisoService moduloPermisoService, ISpo
     {
         var baseVm = await ObtenerBaseAsync(model.NegocioId, "CLIENTES");
         if (baseVm is null || !baseVm.PuedeCrear) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
+        NormalizarYValidarIdentidad(model);
         ComponerTelefono(model);
         await NormalizarYValidarUbigeoAsync(model);
         if (!ModelState.IsValid)
@@ -77,6 +124,12 @@ public class ClientesController(IModuloPermisoService moduloPermisoService, ISpo
             await CargarCombosClienteAsync(model);
             return View(model);
         }
+        catch (SqlException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            await CargarCombosClienteAsync(model);
+            return View(model);
+        }
     }
 
     public async Task<IActionResult> Edit(int id, int? negocioId)
@@ -89,6 +142,7 @@ public class ClientesController(IModuloPermisoService moduloPermisoService, ISpo
 
         var vm = await spService.ClientesObtenerAsync(resolvedNegocioId.Value, id);
         if (vm is null) return NotFound();
+        CompletarNombresDesdeCampoGeneral(vm);
         vm.NegocioNombre = baseVm.NegocioNombre;
         vm.RolActual = baseVm.RolActual;
         InicializarTelefonoParaVista(vm);
@@ -102,6 +156,7 @@ public class ClientesController(IModuloPermisoService moduloPermisoService, ISpo
     {
         var baseVm = await ObtenerBaseAsync(model.NegocioId, "CLIENTES");
         if (baseVm is null || !baseVm.PuedeEditar) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
+        NormalizarYValidarIdentidad(model);
         ComponerTelefono(model);
         await NormalizarYValidarUbigeoAsync(model);
         if (!ModelState.IsValid)
@@ -124,6 +179,12 @@ public class ClientesController(IModuloPermisoService moduloPermisoService, ISpo
         catch (SqlException ex) when (EsErrorClienteDuplicado(ex.Message))
         {
             ModelState.AddModelError(string.Empty, "Cliente ya se encuentra registrado.");
+            await CargarCombosClienteAsync(model);
+            return View(model);
+        }
+        catch (SqlException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
             await CargarCombosClienteAsync(model);
             return View(model);
         }
@@ -158,9 +219,18 @@ public class ClientesController(IModuloPermisoService moduloPermisoService, ISpo
         var baseVm = await ObtenerBaseAsync(negocioId, "CLIENTES");
         if (baseVm is null || !baseVm.PuedeEliminar) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
-        var ok = await spService.ClientesEliminarAsync(negocioId, id, User.Identity?.Name ?? "sistema");
-        if (!ok) return NotFound();
-        return RedirectToAction(nameof(Index), new { negocioId });
+        try
+        {
+            var ok = await spService.ClientesEliminarAsync(negocioId, id, User.Identity?.Name ?? "sistema");
+            if (!ok) return NotFound();
+            TempData["ClientesOk"] = "Cliente inactivado correctamente.";
+        }
+        catch (SqlException ex)
+        {
+            TempData["ClientesError"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Index), new { negocioId, estado = "activos" });
     }
 
     private static void InicializarTelefonoParaVista(ClienteFormViewModel model)
@@ -174,6 +244,86 @@ public class ClientesController(IModuloPermisoService moduloPermisoService, ISpo
     private static void ComponerTelefono(ClienteFormViewModel model)
     {
         model.Telefono = TelefonoInternacionalHelper.Componer(model.TelefonoCodigoPais, model.TelefonoNumeroLocal);
+    }
+
+    private static bool EsDocumentoRuc(string? tipoDocumento)
+    {
+        var codigo = (tipoDocumento ?? string.Empty).Trim().ToUpperInvariant();
+        return codigo == CodigoDocumentoRucSunat || codigo == "RUC";
+    }
+
+    private static bool EsDocumentoNoDomiciliadoSinRuc(string? tipoDocumento)
+    {
+        var codigo = (tipoDocumento ?? string.Empty).Trim().ToUpperInvariant();
+        return codigo == CodigoDocumentoNoDomiciliadoSinRucSunat;
+    }
+
+    private static void CompletarNombresDesdeCampoGeneral(ClienteFormViewModel model)
+    {
+        if (EsDocumentoRuc(model.TipoDocumento))
+        {
+            model.Nombres = null;
+            model.Apellidos = null;
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(model.Nombres) || !string.IsNullOrWhiteSpace(model.Apellidos))
+            return;
+
+        var partes = (model.NombresORazonSocial ?? string.Empty)
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        if (partes.Length <= 1)
+        {
+            model.Nombres = model.NombresORazonSocial;
+            return;
+        }
+
+        model.Nombres = string.Join(' ', partes.Take(partes.Length - 1));
+        model.Apellidos = partes[^1];
+    }
+
+    private void NormalizarYValidarIdentidad(ClienteFormViewModel model)
+    {
+        model.TipoDocumento = (model.TipoDocumento ?? string.Empty).Trim().ToUpperInvariant();
+        model.NombresORazonSocial = string.IsNullOrWhiteSpace(model.NombresORazonSocial) ? string.Empty : model.NombresORazonSocial.Trim();
+        model.Nombres = string.IsNullOrWhiteSpace(model.Nombres) ? null : model.Nombres.Trim();
+        model.Apellidos = string.IsNullOrWhiteSpace(model.Apellidos) ? null : model.Apellidos.Trim();
+        model.NumeroDocumento = string.IsNullOrWhiteSpace(model.NumeroDocumento) ? string.Empty : model.NumeroDocumento.Trim();
+
+        if (EsDocumentoNoDomiciliadoSinRuc(model.TipoDocumento))
+        {
+            model.NumeroDocumento = string.Empty;
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(model.NumeroDocumento))
+                ModelState.AddModelError(nameof(model.NumeroDocumento), "Ingresa el numero de documento.");
+            else
+            {
+                if (model.NumeroDocumento.Length > 11)
+                    ModelState.AddModelError(nameof(model.NumeroDocumento), "El numero de documento permite como maximo 11 digitos.");
+                if (!model.NumeroDocumento.All(char.IsDigit))
+                    ModelState.AddModelError(nameof(model.NumeroDocumento), "El numero de documento solo permite digitos.");
+            }
+        }
+
+        if (EsDocumentoRuc(model.TipoDocumento))
+        {
+            if (string.IsNullOrWhiteSpace(model.NombresORazonSocial))
+                ModelState.AddModelError(nameof(model.NombresORazonSocial), "Ingresa la razon social.");
+
+            model.Nombres = null;
+            model.Apellidos = null;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(model.Nombres))
+            ModelState.AddModelError(nameof(model.Nombres), "Ingresa los nombres.");
+        if (string.IsNullOrWhiteSpace(model.Apellidos))
+            ModelState.AddModelError(nameof(model.Apellidos), "Ingresa los apellidos.");
+
+        model.NombresORazonSocial = $"{model.Nombres} {model.Apellidos}".Trim();
     }
 
     private static bool EsErrorClienteDuplicado(string? mensaje)

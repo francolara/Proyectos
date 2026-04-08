@@ -1,4 +1,4 @@
-﻿USE [DbSportCenter]
+USE [DbSportCenter]
 GO
 /****** Object:  StoredProcedure [dbo].[Sp_Reservas_Listar]    Script Date: 3/04/2026 23:18:34 ******/
 SET ANSI_NULLS ON
@@ -8,6 +8,7 @@ GO
 
 -- SOURCE: 34_Clientes_NombreEquipo_Reservas.sql (linea 248)
 -- Firma: Codex - 05/04/2026 | Filtro de estado Pagada incluye estados historicos 3 y 4; retiro operativo de En uso.
+-- Firma: Codex - 07/04/2026 | Incluye Adelanto, SaldoPendiente, paginacion backend con total de registros para listado general, y separa Cliente/Equipo en columnas independientes.
 CREATE OR ALTER  PROCEDURE [dbo].[Sp_Reservas_Listar]
     @NegocioId INT,
     @FechaDesde DATE = NULL,
@@ -15,30 +16,36 @@ CREATE OR ALTER  PROCEDURE [dbo].[Sp_Reservas_Listar]
     @SedeId INT = NULL,
     @EspacioDeportivoId INT = NULL,
     @Estado INT = NULL,
-    @EstadosCsv NVARCHAR(200) = NULL
+    @EstadosCsv NVARCHAR(200) = NULL,
+    @Pagina INT = 1,
+    @TamanoPagina INT = 20,
+    @TotalRegistros INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
         DECLARE @EstadosNormalizados NVARCHAR(200);
         SET @EstadosNormalizados = NULLIF(REPLACE(REPLACE(LTRIM(RTRIM(@EstadosCsv)), N' ', N''), N';', N','), N'');
+        SET @Pagina = CASE WHEN ISNULL(@Pagina, 0) < 1 THEN 1 ELSE @Pagina END;
+        SET @TamanoPagina = CASE WHEN ISNULL(@TamanoPagina, 0) < 1 THEN 20 ELSE @TamanoPagina END;
 
-        SELECT TOP (300)
+        IF OBJECT_ID('tempdb..#ReservasFiltradas') IS NOT NULL
+            DROP TABLE #ReservasFiltradas;
+
+        SELECT
             r.Id,
-            CAST(
-                CASE
-                    WHEN NULLIF(LTRIM(RTRIM(c.NombreEquipo)), N'') IS NULL THEN c.NombresORazonSocial
-                    ELSE CONCAT(c.NombresORazonSocial, N' - Equipo: ', LTRIM(RTRIM(c.NombreEquipo)))
-                END
-                AS NVARCHAR(250)
-            ) AS Cliente,
+            CAST(c.NombresORazonSocial AS NVARCHAR(250)) AS Cliente,
+            CAST(NULLIF(LTRIM(RTRIM(c.NombreEquipo)), N'') AS NVARCHAR(120)) AS Equipo,
             e.Nombre AS Espacio,
             s.Nombre AS Sede,
             r.Fecha,
             r.HoraInicio,
             r.HoraFin,
             r.Total,
+            r.Adelanto,
+            (r.Total - r.Adelanto) AS SaldoPendiente,
             CAST(r.Estado AS NVARCHAR(20)) AS Estado
+        INTO #ReservasFiltradas
         FROM dbo.Reservas r
         INNER JOIN dbo.Clientes c ON c.Id = r.ClienteId
         INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
@@ -65,8 +72,29 @@ BEGIN
                       )
                   )
               )
-          )
-        ORDER BY r.Fecha ASC, r.HoraInicio ASC;
+          );
+
+        SELECT
+            @TotalRegistros = COUNT(1)
+        FROM #ReservasFiltradas;
+
+        SELECT
+            r.Id,
+            r.Cliente,
+            r.Equipo,
+            r.Espacio,
+            r.Sede,
+            r.Fecha,
+            r.HoraInicio,
+            r.HoraFin,
+            r.Total,
+            r.Adelanto,
+            r.SaldoPendiente,
+            r.Estado
+        FROM #ReservasFiltradas r
+        ORDER BY r.Fecha ASC, r.HoraInicio ASC, r.Id ASC
+        OFFSET ((@Pagina - 1) * @TamanoPagina) ROWS
+        FETCH NEXT @TamanoPagina ROWS ONLY;
     END TRY
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;

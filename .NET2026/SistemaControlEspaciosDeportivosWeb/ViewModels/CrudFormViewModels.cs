@@ -20,6 +20,9 @@ public class SedeFormViewModel
     [StringLength(250, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string Direccion { get; set; } = string.Empty;
 
+    [StringLength(2000, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+    public string? ConsideracionesReserva { get; set; }
+
     [Range(-90, 90, ErrorMessage = "La latitud debe estar entre -90 y 90.")]
     public decimal? Latitud { get; set; }
 
@@ -177,9 +180,19 @@ public class ReservaFormViewModel
     public decimal Adelanto { get; set; }
 
     public EstadoReserva Estado { get; set; } = EstadoReserva.Pendiente;
+    public bool RegistrarPago { get; set; }
+    public int? FormaPagoId { get; set; }
+    public DateTime? FechaPago { get; set; }
+
+    [StringLength(50, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+    public string? NumeroOperacion { get; set; }
+
+    [StringLength(500, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+    public string? Comentario { get; set; }
 
     public List<SelectListItem> Espacios { get; set; } = new();
     public List<SelectListItem> Clientes { get; set; } = new();
+    public List<SelectListItem> FormasPago { get; set; } = new();
 }
 
 public class BloqueoHorarioFormViewModel
@@ -279,18 +292,22 @@ public class ClienteFormViewModel
     public string NegocioNombre { get; set; } = string.Empty;
     public string RolActual { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Este campo es obligatorio.")]
     [StringLength(200, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string NombresORazonSocial { get; set; } = string.Empty;
+
+    [StringLength(120, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+    public string? Nombres { get; set; }
+
+    [StringLength(120, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+    public string? Apellidos { get; set; }
 
     [StringLength(120, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string? NombreEquipo { get; set; }
 
     [Required(ErrorMessage = "Este campo es obligatorio.")]
     [StringLength(20, ErrorMessage = "El campo {0} excede la longitud permitida.")]
-    public string TipoDocumento { get; set; } = "1";
+    public string TipoDocumento { get; set; } = "0";
 
-    [Required(ErrorMessage = "Este campo es obligatorio.")]
     [StringLength(20, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string NumeroDocumento { get; set; } = string.Empty;
 

@@ -4,10 +4,14 @@
 <!-- Firma: Codex - 27/03/2026 | Estandar visual pro para formulario de espacios -->
 <!-- Firma: Codex - 28/03/2026 | Edicion de multiples tarifas por dia y rango horario en espacio deportivo -->
 <!-- Firma: Codex - 29/03/2026 | Normalizacion de JSON de tarifas a camelCase, validacion por moneda y asistente de bloques con control de cruces -->
+<!-- Firma: Codex - 08/04/2026 | Unifica selectores de hora de tarifas a listas cada 30 minutos (bloques y filas dinamicas). -->
 
 @{
     ViewData["Title"] = "Editar espacio";
     var monedaEtiqueta = string.IsNullOrWhiteSpace(Model.MonedaEtiqueta) ? "-" : Model.MonedaEtiqueta;
+    var horasMediaHora = Enumerable.Range(0, 48)
+        .Select(i => TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(i * 30)))
+        .ToList();
 }
 
 <div class="admin-page-frame">
@@ -102,11 +106,37 @@
                             </div>
                             <div class="col-lg-2 col-md-6">
                                 <label class="form-label">Hora inicio</label>
-                                <input id="bloqueHoraInicio" type="time" class="form-control form-control-sm" value="09:00" @(Model.PuedeEditarTarifas ? null : "disabled") />
+                                <select id="bloqueHoraInicio" class="form-select form-select-sm" @(Model.PuedeEditarTarifas ? null : "disabled")>
+                                    @foreach (var hora in horasMediaHora)
+                                    {
+                                        var valor = hora.ToString("HH\\:mm");
+                                        if (valor == "09:00")
+                                        {
+                                            <option value="@valor" selected="selected">@valor</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@valor">@valor</option>
+                                        }
+                                    }
+                                </select>
                             </div>
                             <div class="col-lg-2 col-md-6">
                                 <label class="form-label">Hora fin</label>
-                                <input id="bloqueHoraFin" type="time" class="form-control form-control-sm" value="10:00" @(Model.PuedeEditarTarifas ? null : "disabled") />
+                                <select id="bloqueHoraFin" class="form-select form-select-sm" @(Model.PuedeEditarTarifas ? null : "disabled")>
+                                    @foreach (var hora in horasMediaHora)
+                                    {
+                                        var valor = hora.ToString("HH\\:mm");
+                                        if (valor == "10:00")
+                                        {
+                                            <option value="@valor" selected="selected">@valor</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@valor">@valor</option>
+                                        }
+                                    }
+                                </select>
                             </div>
                             <div class="col-lg-3 col-md-6">
                                 <label class="form-label">Precio</label>
@@ -201,6 +231,17 @@
                 return dias.map(d => `<option value="${d.value}" ${String(selected) === String(d.value) ? 'selected' : ''}>${d.text}</option>`).join('');
             }
 
+            function optionHoras(selected) {
+                const horas = Array.from({ length: 48 }, (_, i) => {
+                    const total = i * 30;
+                    const h = String(Math.floor(total / 60)).padStart(2, '0');
+                    const m = String(total % 60).padStart(2, '0');
+                    return `${h}:${m}`;
+                });
+                const valor = String(selected || '').substring(0, 5);
+                return horas.map(h => `<option value="${h}" ${h === valor ? 'selected' : ''}>${h}</option>`).join('');
+            }
+
             function nombreDia(valorDia) {
                 const encontrado = dias.find(d => Number(d.value) === Number(valorDia));
                 return encontrado ? encontrado.text : `Dia ${valorDia}`;
@@ -278,8 +319,8 @@
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td><select class="form-select form-select-sm js-dia">${optionDias(tarifa.diaSemana ?? 1)}</select></td>
-                    <td><input type="time" class="form-control form-control-sm js-hora-inicio" value="${horaInicio}"></td>
-                    <td><input type="time" class="form-control form-control-sm js-hora-fin" value="${horaFin}"></td>
+                    <td><select class="form-select form-select-sm js-hora-inicio">${optionHoras(horaInicio)}</select></td>
+                    <td><select class="form-select form-select-sm js-hora-fin">${optionHoras(horaFin)}</select></td>
                     <td class="text-end">
                         <div class="input-group input-group-sm">
                             <input type="text" inputmode="decimal" autocomplete="off" class="form-control form-control-sm text-end js-precio" value="${precio}">

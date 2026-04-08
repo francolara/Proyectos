@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using SistemaControlEspaciosDeportivosWeb.Models;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
 
@@ -10,7 +11,10 @@ public class ReservasController(
     INotificacionEmailService notificacionEmailService)
     : ModuloControllerBase(moduloPermisoService)
 {
-    public async Task<IActionResult> Index(int? negocioId, DateOnly? fechaDesde, DateOnly? fechaHasta, int? sedeId, int? espacioDeportivoId, int? estado, DateOnly? listadoDesde, DateOnly? listadoHasta, List<int>? estadosListado)
+    private const string CodigoDocumentoRucSunat = "6";
+    private const string CodigoDocumentoNoDomiciliadoSinRucSunat = "0";
+
+    public async Task<IActionResult> Index(int? negocioId, DateOnly? fechaDesde, DateOnly? fechaHasta, int? sedeId, int? espacioDeportivoId, int? estado, DateOnly? listadoDesde, DateOnly? listadoHasta, List<int>? estadosListado, string? estadosListadoCsv = null, int paginaListado = 1)
     {
         var resolvedNegocioId = await ResolverNegocioIdAsync(negocioId, spService);
         if (!resolvedNegocioId.HasValue) return Forbid();
@@ -23,31 +27,59 @@ public class ReservasController(
         if (hasta < desde) hasta = desde;
         sedeId = AplicarSedeAsignada(baseVm, sedeId);
 
-        // Firma Codex 30/03/2026: el combo de sedes no debe colapsar a la sede seleccionada en filtros.
         var sedes = await spService.EspaciosComboSedesAsync(resolvedNegocioId.Value, baseVm.SedeIdAsignada);
-        if (!sedeId.HasValue && sedes.Count == 1 && int.TryParse(sedes[0].Value, out var sedeUnicaId))
-            sedeId = sedeUnicaId;
         var espacios = await spService.ReservasComboEspaciosAsync(resolvedNegocioId.Value, sedeId);
         if (espacioDeportivoId.HasValue && !espacios.Any(x => x.Value == espacioDeportivoId.Value.ToString()))
             espacioDeportivoId = null;
-        var clientes = await spService.ReservasComboClientesAsync(resolvedNegocioId.Value);
+        var tiposDocumentoClientes = await spService.CombosTiposDocumentoIdentidadSunatAsync();
+        var formasPago = await spService.PagosComboFormasPagoAsync(resolvedNegocioId.Value);
+        var configClub = await spService.ConfiguracionClubObtenerAsync(resolvedNegocioId.Value);
         var filtroListadoDesde = listadoDesde ?? desde;
         var filtroListadoHasta = listadoHasta ?? hasta;
         if (filtroListadoHasta < filtroListadoDesde) filtroListadoHasta = filtroListadoDesde;
-        var estadosListadoLimpios = (estadosListado ?? new List<int>())
+        var estadosSeleccionados = estadosListado ?? new List<int>();
+        if (estadosSeleccionados.Count == 0 && !string.IsNullOrWhiteSpace(estadosListadoCsv))
+        {
+            estadosSeleccionados = estadosListadoCsv
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(x => int.TryParse(x, out var v) ? v : 0)
+                .Where(x => x > 0)
+                .ToList();
+        }
+
+        var estadosListadoLimpios = estadosSeleccionados
             .Where(x => x is 1 or 2 or 4 or 5 or 6)
             .Distinct()
             .OrderBy(x => x)
             .ToList();
-        var estadosListadoCsv = estadosListadoLimpios.Count == 0 ? null : string.Join(",", estadosListadoLimpios);
-        var reservas = await spService.ReservasListarAsync(
+        var estadosListadoCsvNormalizado = estadosListadoLimpios.Count == 0 ? null : string.Join(",", estadosListadoLimpios);
+        const int tamanoPaginaListado = 20;
+        var paginaActualListado = paginaListado < 1 ? 1 : paginaListado;
+        var (reservas, totalReservasListado) = await spService.ReservasListarAsync(
             resolvedNegocioId.Value,
             filtroListadoDesde,
             filtroListadoHasta,
             sedeId,
             espacioDeportivoId,
             null,
-            estadosListadoCsv);
+            estadosListadoCsvNormalizado,
+            paginaActualListado,
+            tamanoPaginaListado);
+        var totalPaginasListado = Math.Max(1, (int)Math.Ceiling(totalReservasListado / (double)tamanoPaginaListado));
+        if (paginaActualListado > totalPaginasListado)
+        {
+            paginaActualListado = totalPaginasListado;
+            (reservas, totalReservasListado) = await spService.ReservasListarAsync(
+                resolvedNegocioId.Value,
+                filtroListadoDesde,
+                filtroListadoHasta,
+                sedeId,
+                espacioDeportivoId,
+                null,
+                estadosListadoCsvNormalizado,
+                paginaActualListado,
+                tamanoPaginaListado);
+        }
 
         var vm = new ReservasIndexViewModel
         {
@@ -68,10 +100,16 @@ public class ReservasController(
             SedeId = sedeId,
             EspacioDeportivoId = espacioDeportivoId,
             Estado = estado,
+            PaginaListado = paginaActualListado,
+            TamanoPaginaListado = tamanoPaginaListado,
+            TotalReservasListado = totalReservasListado,
+            TotalPaginasListado = totalPaginasListado,
             EstadosListadoSeleccionados = estadosListadoLimpios,
             SedesFiltro = sedes,
             EspaciosFiltro = espacios,
-            ClientesFiltro = clientes,
+            ClientesFiltro = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>(),
+            TiposDocumentoClientesFiltro = tiposDocumentoClientes,
+            FormasPagoFiltro = formasPago,
             EstadosFiltro = ObtenerEstadosFiltro(),
             Reservas = reservas,
             Bloqueos = await spService.BloqueosListarAsync(resolvedNegocioId.Value, desde, hasta, sedeId, espacioDeportivoId),
@@ -82,6 +120,10 @@ public class ReservasController(
                 Espacios = espacios
             }
         };
+        vm.PoliticaConfirmacionPago = configClub?.PoliticaConfirmacionPago ?? 0;
+        vm.PorcentajeAdelantoMinimo = configClub?.PorcentajeAdelantoMinimo;
+        vm.MonedaNombre = "PEN";
+        vm.MonedaSimbolo = "S/";
 
         if (sedeId.HasValue)
         {
@@ -128,6 +170,108 @@ public class ReservasController(
     }
 
     [HttpGet]
+    public async Task<IActionResult> ObtenerClientesFiltro(int negocioId, string? buscar = null, int? clienteId = null)
+    {
+        var baseVm = await ObtenerBaseAsync(negocioId, "RESERVAS");
+        if (baseVm is null || !string.IsNullOrWhiteSpace(baseVm.Mensaje))
+            return Json(new { ok = false, mensaje = "No autorizado." });
+
+        var criterio = string.IsNullOrWhiteSpace(buscar) ? null : buscar.Trim();
+        var clientes = await spService.ReservasBuscarClientesAsync(negocioId, criterio, clienteId, 30);
+        return Json(new
+        {
+            ok = true,
+            items = clientes.Select(x => new { value = x.Value, text = x.Text })
+        });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CrearClienteRapido([FromBody] ReservaClienteRapidoRequestViewModel request)
+    {
+        var baseVm = await ObtenerBaseAsync(request.NegocioId, "RESERVAS");
+        if (baseVm is null || !string.IsNullOrWhiteSpace(baseVm.Mensaje) || !baseVm.PuedeCrear)
+            return Forbid();
+
+        var tipoDocumento = (request.TipoDocumento ?? string.Empty).Trim().ToUpperInvariant();
+        if (string.IsNullOrWhiteSpace(tipoDocumento))
+            return BadRequest(new { ok = false, mensaje = "Selecciona el tipo de documento." });
+
+        var numeroDocumento = string.IsNullOrWhiteSpace(request.NumeroDocumento) ? string.Empty : request.NumeroDocumento.Trim();
+        var nombres = string.IsNullOrWhiteSpace(request.Nombres) ? null : request.Nombres.Trim();
+        var apellidos = string.IsNullOrWhiteSpace(request.Apellidos) ? null : request.Apellidos.Trim();
+        var razonSocial = string.IsNullOrWhiteSpace(request.RazonSocial) ? null : request.RazonSocial.Trim();
+        var nombreEquipo = string.IsNullOrWhiteSpace(request.NombreEquipo) ? null : request.NombreEquipo.Trim();
+        var telefono = string.IsNullOrWhiteSpace(request.Telefono) ? null : request.Telefono.Trim();
+        var correo = string.IsNullOrWhiteSpace(request.Correo) ? null : request.Correo.Trim();
+
+        var esRuc = tipoDocumento == CodigoDocumentoRucSunat || tipoDocumento == "RUC";
+        var esNoDomiciliadoSinRuc = tipoDocumento == CodigoDocumentoNoDomiciliadoSinRucSunat;
+
+        if (esNoDomiciliadoSinRuc)
+        {
+            numeroDocumento = string.Empty;
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(numeroDocumento))
+                return BadRequest(new { ok = false, mensaje = "Ingresa el numero de documento." });
+            if (numeroDocumento.Length > 11 || !numeroDocumento.All(char.IsDigit))
+                return BadRequest(new { ok = false, mensaje = "El numero de documento debe tener maximo 11 digitos numericos." });
+        }
+
+        string nombresORazonSocial;
+        if (esRuc)
+        {
+            if (string.IsNullOrWhiteSpace(razonSocial))
+                return BadRequest(new { ok = false, mensaje = "Ingresa la razon social." });
+            nombresORazonSocial = razonSocial;
+            nombres = null;
+            apellidos = null;
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(nombres) || string.IsNullOrWhiteSpace(apellidos))
+                return BadRequest(new { ok = false, mensaje = "Ingresa nombres y apellidos." });
+            nombresORazonSocial = $"{nombres} {apellidos}".Trim();
+        }
+
+        var cliente = new ClienteFormViewModel
+        {
+            NegocioId = request.NegocioId,
+            TipoDocumento = tipoDocumento,
+            NumeroDocumento = numeroDocumento,
+            Nombres = nombres,
+            Apellidos = apellidos,
+            NombresORazonSocial = nombresORazonSocial,
+            NombreEquipo = nombreEquipo,
+            Telefono = telefono,
+            Correo = correo,
+            DireccionFiscal = null,
+            CodigoUbigeo = null,
+            Activo = true
+        };
+
+        try
+        {
+            var id = await spService.ClientesCrearAsync(cliente, User.Identity?.Name ?? "sistema");
+            var etiqueta = $"{nombresORazonSocial} ({numeroDocumento})";
+            if (!string.IsNullOrWhiteSpace(nombreEquipo))
+                etiqueta += $" - Equipo: {nombreEquipo}";
+
+            return Json(new
+            {
+                ok = true,
+                clienteId = id,
+                clienteTexto = etiqueta
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { ok = false, mensaje = ex.Message });
+        }
+    }
+
+    [HttpGet]
     public async Task<IActionResult> ObtenerReservaModal(int negocioId, int id)
     {
         var baseVm = await ObtenerBaseAsync(negocioId, "RESERVAS");
@@ -149,8 +293,38 @@ public class ReservasController(
             horaFin = vm.HoraFin.ToString("HH\\:mm"),
             estado = (int)vm.Estado,
             total = vm.Total,
-            adelanto = vm.Adelanto
+            adelanto = vm.Adelanto,
+            comentario = vm.Comentario
         });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> CotizarReserva(int negocioId, int espacioDeportivoId, DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin)
+    {
+        var baseVm = await ObtenerBaseAsync(negocioId, "RESERVAS");
+        if (baseVm is null || !string.IsNullOrWhiteSpace(baseVm.Mensaje)) return Forbid();
+        if (!await EspacioPermitidoAsync(baseVm, negocioId, espacioDeportivoId)) return Forbid();
+
+        try
+        {
+            var cotizacion = await spService.ReservasCotizarAsync(negocioId, espacioDeportivoId, fecha, horaInicio, horaFin);
+            return Json(new
+            {
+                ok = cotizacion.Ok,
+                mensaje = cotizacion.Mensaje,
+                precioBase = cotizacion.PrecioBase,
+                descuentoPct = cotizacion.DescuentoPct,
+                precioFinal = cotizacion.PrecioFinal,
+                monedaSimbolo = cotizacion.MonedaSimbolo,
+                monedaNombre = cotizacion.MonedaNombre,
+                politicaConfirmacionPago = cotizacion.PoliticaConfirmacionPago,
+                porcentajeAdelantoMinimo = cotizacion.PorcentajeAdelantoMinimo
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { ok = false, mensaje = ex.Message });
+        }
     }
 
     [HttpGet]
@@ -209,6 +383,36 @@ public class ReservasController(
             var errores = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
             return BadRequest(new { ok = false, mensaje = "Revisa los datos ingresados.", errores });
         }
+        if (model.Total <= 0)
+        {
+            return BadRequest(new { ok = false, mensaje = "El precio de espacio es obligatorio y debe ser mayor que cero." });
+        }
+        if (model.RegistrarPago)
+        {
+            if (model.Adelanto <= 0)
+                return BadRequest(new { ok = false, mensaje = "Debes ingresar un monto de adelanto/pago mayor que cero." });
+            if (!model.FormaPagoId.HasValue || model.FormaPagoId.Value <= 0)
+                return BadRequest(new { ok = false, mensaje = "Selecciona una forma de pago para registrar el adelanto/pago." });
+
+            model.FechaPago ??= DateTime.Now;
+            if (model.FechaPago.Value.Date > DateTime.Today)
+                return BadRequest(new { ok = false, mensaje = "La fecha de pago no puede ser mayor al dia actual." });
+
+            model.NumeroOperacion = string.IsNullOrWhiteSpace(model.NumeroOperacion) ? null : model.NumeroOperacion.Trim();
+            if (!string.IsNullOrWhiteSpace(model.NumeroOperacion) && !model.NumeroOperacion.All(char.IsLetterOrDigit))
+                return BadRequest(new { ok = false, mensaje = "El numero de operacion solo puede contener caracteres alfanumericos." });
+        }
+        else
+        {
+            model.Adelanto = 0;
+            model.FormaPagoId = null;
+            model.FechaPago = null;
+            model.NumeroOperacion = null;
+        }
+        if (!requiereEditar)
+        {
+            model.Estado = EstadoReserva.Pendiente;
+        }
         if (EsFechaPasada(model.Fecha))
         {
             return BadRequest(new { ok = false, mensaje = "No se permite registrar reservas en fechas pasadas." });
@@ -264,6 +468,7 @@ public class ReservasController(
             estadoCodigo = r.EstadoCodigo,
             estadoTexto = r.EstadoTexto,
             motivo = r.Motivo,
+            totalReserva = r.TotalReserva,
             espacioDeportivoId = r.EspacioDeportivoId,
             backgroundColor = r.Color,
             borderColor = r.Color,
@@ -661,6 +866,7 @@ public class ReservasController(
         var sedeFiltro = AplicarSedeAsignada(baseVm, null);
         vm.Espacios = await spService.ReservasComboEspaciosAsync(resolvedNegocioId.Value, sedeFiltro);
         vm.Clientes = await spService.ReservasComboClientesAsync(resolvedNegocioId.Value);
+        vm.FormasPago = await spService.PagosComboFormasPagoAsync(resolvedNegocioId.Value);
         if (espacioDeportivoId.HasValue && vm.Espacios.Any(x => x.Value == espacioDeportivoId.Value.ToString()))
         {
             vm.EspacioDeportivoId = espacioDeportivoId.Value;
@@ -678,6 +884,7 @@ public class ReservasController(
         var sedeFiltro = AplicarSedeAsignada(baseVm, null);
         model.Espacios = await spService.ReservasComboEspaciosAsync(model.NegocioId, sedeFiltro);
         model.Clientes = await spService.ReservasComboClientesAsync(model.NegocioId);
+        model.FormasPago = await spService.PagosComboFormasPagoAsync(model.NegocioId);
         if (EsFechaPasada(model.Fecha))
         {
             ModelState.AddModelError(nameof(model.Fecha), "No se permite registrar reservas en fechas pasadas.");
@@ -718,6 +925,7 @@ public class ReservasController(
         var sedeFiltro = AplicarSedeAsignada(baseVm, null);
         vm.Espacios = await spService.ReservasComboEspaciosAsync(resolvedNegocioId.Value, sedeFiltro);
         vm.Clientes = await spService.ReservasComboClientesAsync(resolvedNegocioId.Value);
+        vm.FormasPago = await spService.PagosComboFormasPagoAsync(resolvedNegocioId.Value);
         return View(vm);
     }
 
@@ -731,6 +939,7 @@ public class ReservasController(
         var sedeFiltro = AplicarSedeAsignada(baseVm, null);
         model.Espacios = await spService.ReservasComboEspaciosAsync(model.NegocioId, sedeFiltro);
         model.Clientes = await spService.ReservasComboClientesAsync(model.NegocioId);
+        model.FormasPago = await spService.PagosComboFormasPagoAsync(model.NegocioId);
         if (EsFechaPasada(model.Fecha))
         {
             ModelState.AddModelError(nameof(model.Fecha), "No se permite registrar reservas en fechas pasadas.");

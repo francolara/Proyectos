@@ -25,6 +25,7 @@ public class ConfiguracionController(IModuloPermisoService moduloPermisoService,
         vm.PuedeEliminar = baseVm.PuedeEliminar;
         vm.TiposDocumento = await spService.CombosTiposDocumentoIdentidadSunatAsync();
         vm.Monedas = await spService.ConfiguracionClubComboMonedasAsync(negocioId);
+        vm.PoliticasConfirmacionPago = ObtenerPoliticasConfirmacionPago();
         await CargarCombosUbigeoAsync(vm);
         return View(vm);
     }
@@ -39,6 +40,8 @@ public class ConfiguracionController(IModuloPermisoService moduloPermisoService,
 
         model.TiposDocumento = await spService.CombosTiposDocumentoIdentidadSunatAsync();
         model.Monedas = await spService.ConfiguracionClubComboMonedasAsync(model.NegocioId);
+        model.PoliticasConfirmacionPago = ObtenerPoliticasConfirmacionPago();
+        NormalizarYValidarPoliticaConfirmacionPago(model);
         await NormalizarYValidarUbigeoAsync(model);
         if (!ModelState.IsValid)
         {
@@ -156,5 +159,44 @@ public class ConfiguracionController(IModuloPermisoService moduloPermisoService,
         }
 
         await CargarCombosUbigeoAsync(model);
+    }
+
+    private static List<SelectListItem> ObtenerPoliticasConfirmacionPago() =>
+    [
+        new SelectListItem("No exigir pago para confirmar", "0"),
+        new SelectListItem("Exigir adelanto minimo (%)", "1"),
+        new SelectListItem("Exigir pago total (100%)", "2")
+    ];
+
+    private void NormalizarYValidarPoliticaConfirmacionPago(ConfiguracionClubViewModel model)
+    {
+        if (model.PoliticaConfirmacionPago is < 0 or > 2)
+        {
+            ModelState.AddModelError(nameof(model.PoliticaConfirmacionPago), "La politica de confirmacion no es valida.");
+            return;
+        }
+
+        if (model.PoliticaConfirmacionPago != 1)
+        {
+            model.PorcentajeAdelantoMinimo = null;
+            return;
+        }
+
+        if (!model.PorcentajeAdelantoMinimo.HasValue)
+        {
+            ModelState.AddModelError(nameof(model.PorcentajeAdelantoMinimo), "Ingresa el porcentaje minimo de adelanto.");
+            return;
+        }
+
+        if (model.PorcentajeAdelantoMinimo.Value < 1 || model.PorcentajeAdelantoMinimo.Value > 100)
+        {
+            ModelState.AddModelError(nameof(model.PorcentajeAdelantoMinimo), "El porcentaje minimo debe ser un numero entero entre 1 y 100.");
+            return;
+        }
+
+        if (model.PorcentajeAdelantoMinimo.Value != Math.Truncate(model.PorcentajeAdelantoMinimo.Value))
+        {
+            ModelState.AddModelError(nameof(model.PorcentajeAdelantoMinimo), "El porcentaje minimo no admite decimales.");
+        }
     }
 }

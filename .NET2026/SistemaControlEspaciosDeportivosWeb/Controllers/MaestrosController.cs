@@ -30,6 +30,8 @@ public class MaestrosController(IModuloPermisoService moduloPermisoService, ISpo
             PuedeEliminar = baseVm.PuedeEliminar,
             Monedas = await spService.MaestrosMonedasListarAsync(baseVm.NegocioId),
             MonedasSuper = await spService.MaestrosMonedasSuperListarAsync(),
+            TiposSueloSuper = await spService.MaestrosTiposSueloSuperListarAsync(),
+            TiposDeporteSuper = await spService.MaestrosTiposDeporteSuperListarAsync(),
             TiposSuelo = await spService.MaestrosTiposSueloListarAsync(baseVm.NegocioId),
             TiposDeporte = await spService.MaestrosTiposDeporteListarAsync(baseVm.NegocioId),
             FormasPago = await spService.MaestrosFormasPagoListarAsync(baseVm.NegocioId)
@@ -101,14 +103,14 @@ public class MaestrosController(IModuloPermisoService moduloPermisoService, ISpo
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> TipoSueloCrear(int negocioId, string nombre, bool activo = true)
+    public async Task<IActionResult> TipoSueloCrear(int negocioId, int tipoSueloSuperId, bool activo = true)
     {
         var baseVm = await ObtenerBaseAsync(negocioId, "MAESTROS");
         if (baseVm is null || !baseVm.PuedeCrear) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
         try
         {
-            await spService.MaestrosTiposSueloCrearAsync(negocioId, nombre, activo, User.Identity?.Name ?? "sistema");
+            await spService.MaestrosTiposSueloCrearAsync(negocioId, tipoSueloSuperId, activo, User.Identity?.Name ?? "sistema");
             TempData["MaestrosOk"] = "Tipo de suelo registrado correctamente.";
         }
         catch (Exception ex)
@@ -121,14 +123,14 @@ public class MaestrosController(IModuloPermisoService moduloPermisoService, ISpo
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> TipoSueloEditar(int negocioId, int id, string nombre, bool activo = true)
+    public async Task<IActionResult> TipoSueloEditar(int negocioId, int id, bool activo = true)
     {
         var baseVm = await ObtenerBaseAsync(negocioId, "MAESTROS");
         if (baseVm is null || !baseVm.PuedeEditar) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
         try
         {
-            var ok = await spService.MaestrosTiposSueloActualizarAsync(negocioId, id, nombre, activo, User.Identity?.Name ?? "sistema");
+            var ok = await spService.MaestrosTiposSueloActualizarAsync(negocioId, id, activo, User.Identity?.Name ?? "sistema");
             TempData["MaestrosError"] = ok ? null : "No se pudo actualizar el tipo de suelo.";
             TempData["MaestrosOk"] = ok ? "Tipo de suelo actualizado correctamente." : null;
         }
@@ -163,14 +165,14 @@ public class MaestrosController(IModuloPermisoService moduloPermisoService, ISpo
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> TipoDeporteCrear(int negocioId, string nombre, bool activo = true)
+    public async Task<IActionResult> TipoDeporteCrear(int negocioId, int tipoDeporteSuperId, bool activo = true)
     {
         var baseVm = await ObtenerBaseAsync(negocioId, "MAESTROS");
         if (baseVm is null || !baseVm.PuedeCrear) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
         try
         {
-            await spService.MaestrosTiposDeporteCrearAsync(negocioId, nombre, activo, User.Identity?.Name ?? "sistema");
+            await spService.MaestrosTiposDeporteCrearAsync(negocioId, tipoDeporteSuperId, activo, User.Identity?.Name ?? "sistema");
             TempData["MaestrosOk"] = "Tipo de deporte registrado correctamente.";
         }
         catch (Exception ex)
@@ -183,14 +185,14 @@ public class MaestrosController(IModuloPermisoService moduloPermisoService, ISpo
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> TipoDeporteEditar(int negocioId, int id, string nombre, bool activo = true)
+    public async Task<IActionResult> TipoDeporteEditar(int negocioId, int id, bool activo = true)
     {
         var baseVm = await ObtenerBaseAsync(negocioId, "MAESTROS");
         if (baseVm is null || !baseVm.PuedeEditar) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
         try
         {
-            var ok = await spService.MaestrosTiposDeporteActualizarAsync(negocioId, id, nombre, activo, User.Identity?.Name ?? "sistema");
+            var ok = await spService.MaestrosTiposDeporteActualizarAsync(negocioId, id, activo, User.Identity?.Name ?? "sistema");
             TempData["MaestrosError"] = ok ? null : "No se pudo actualizar el tipo de deporte.";
             TempData["MaestrosOk"] = ok ? "Tipo de deporte actualizado correctamente." : null;
         }

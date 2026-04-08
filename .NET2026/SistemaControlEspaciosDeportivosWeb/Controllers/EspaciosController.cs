@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Data.SqlClient;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
 using System.Text.Json;
@@ -120,10 +121,18 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
         }
         if (!ModelState.IsValid) return View(model);
 
-        var ok = await spService.EspaciosActualizarAsync(model, User.Identity?.Name ?? "sistema");
-        if (!ok)
+        try
         {
-            ModelState.AddModelError(string.Empty, "No se pudo guardar el espacio deportivo. Verifica el negocio seleccionado.");
+            var ok = await spService.EspaciosActualizarAsync(model, User.Identity?.Name ?? "sistema");
+            if (!ok)
+            {
+                ModelState.AddModelError(string.Empty, "No se pudo guardar el espacio deportivo. Verifica el negocio seleccionado.");
+                return View(model);
+            }
+        }
+        catch (SqlException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
             return View(model);
         }
         return RedirectToAction(nameof(Index), new { negocioId = model.NegocioId });
@@ -136,8 +145,16 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
         var baseVm = await ObtenerBaseAsync(negocioId, "ESPACIOS");
         if (baseVm is null || !baseVm.PuedeEliminar) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
-        var ok = await spService.EspaciosEliminarAsync(negocioId, id, User.Identity?.Name ?? "sistema");
-        if (!ok) return NotFound();
+        try
+        {
+            var ok = await spService.EspaciosEliminarAsync(negocioId, id, User.Identity?.Name ?? "sistema");
+            if (!ok) return NotFound();
+            TempData["EspaciosOk"] = "Espacio inactivado correctamente.";
+        }
+        catch (SqlException ex)
+        {
+            TempData["EspaciosError"] = ex.Message;
+        }
         return RedirectToAction(nameof(Index), new { negocioId });
     }
 

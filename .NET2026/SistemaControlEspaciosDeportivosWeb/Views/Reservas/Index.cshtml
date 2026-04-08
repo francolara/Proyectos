@@ -3,11 +3,14 @@
 <!-- Firma: Codex - 31/03/2026 | Fase 2/3 del calendario: leyenda interactiva por estado, modos visuales (compacto/contraste), grilla operativa con cabecera y eje horario sticky, realce de columna por hover, drawer de detalle y ajuste robusto del eje horario (ancho fijo en colgroup/frame/cushion/shrink, titulo sin corte y horas centradas/legibles, re-aplicado tras filtrar/refetch). -->
 <!-- Firma: Codex - 01/04/2026 | Reservas: cabecera con rango largo centrado, modo opcional Bloqueos HC, KPI operativo diario, vista por espacios, historial de cambios en drawer, validacion visual de solape en modal, acciones masivas (confirmar/no-show/recordatorio) backend-driven y estandar visual unificado para botones de acciones en listado (editar/check-in/no-show/cancelar). -->
 <!-- Firma: Codex - 05/04/2026 | Se retira Reserva manual y controles de modo; calendario fijo en Contraste + Bloqueos HC; se elimina panel "Vista por espacios (dia)"; la leyenda muestra contadores dinamicos por rango visible con formato "Estado (N)" excepto "Bloqueada / No atencion"; se reubica "Listado general de reservas" debajo de "Pendiente de confirmar por dia" y se restituye su visibilidad en la vista por defecto (sin sede/espacio); se eliminan 4 botones de acciones masivas del listado general y su JS; en "Disponibilidad por dia" ya no se muestran slots de horas pasadas cuando la fecha filtrada es hoy; el boton Editar del listado abre modal pop-up; se retira la tarjeta "Bloqueos" del KPI operativo; ajustes de estados: "No Show" pasa a "No Asistio", se retira "En uso/Check-in" y "Finalizada" se renombra a "Pagada"; y se elimina el panel lateral de detalle para que el calendario abra solo el pop-up modal de reserva. -->
+<!-- Firma: Codex - 06/04/2026 | Reservas calendario drag/drop: correccion de raiz por bloqueo en ciclo de FullCalendar cuando eventAllow rechaza; la validacion de cruce con BLOQUEO/NO_ATENCION se mueve al momento de soltar (eventDrop/eventResize) con revert inmediato + notificacion + refetch, evitando que la tarjeta quede superpuesta o el drag atrapado; y en Listado general de reservas se retira el boton de accion "Pagada". -->
+<!-- Firma: Codex - 07/04/2026 | Pop-up de reserva con bloques de 30 minutos, cotizacion automatica de precio (tarifa/promocion), politica de pago visible aun sin tarifa, registro de adelanto con forma de pago + fecha de pago y N° operacion alfanumerico opcional, estado solo editable al editar y campo comentario; busqueda+lista de clientes integrada con filtro en vivo (disparo por texto con debounce), boton + de cliente en modal dentro de la misma pestana, precio editable/obligatorio, visualizacion de pagado acumulado y saldo al reingresar, y en listado general separa columnas Cliente/Equipo con montos de Precio y Saldo alineados a la derecha. -->
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ReservasIndexViewModel
+<!-- Firma: Codex - 08/04/2026 | Unifica selectores de hora del bloqueo manual al mismo formato de lista cada 30 minutos usado en reservas; tarjetas del calendario de reserva muestran horario + precio (sin nombre de espacio). -->
 <!-- Firma: Codex - 27/03/2026 | Calendario en espanol, bloqueos por sede, gestion por modal, bloqueo de fechas pasadas y rediseno visual SaaS del calendario -->
 @{
     ViewData["Title"] = "Reservas";
-    var sedeSeleccionadaTexto = Model.SedesFiltro.FirstOrDefault(x => x.Value == Model.SedeId?.ToString())?.Text ?? "Todas las sedes";
+    var sedeSeleccionadaTexto = Model.SedesFiltro.FirstOrDefault(x => x.Value == Model.SedeId?.ToString())?.Text ?? "Seleccione sede";
     var espacioSeleccionadoTexto = Model.EspaciosFiltro.FirstOrDefault(x => x.Value == Model.EspacioDeportivoId?.ToString())?.Text ?? "Todos los espacios";
     var mostrarPanelOperativo = Model.SedeId.HasValue && Model.EspacioDeportivoId.HasValue;
     var totalMontoReservas = Model.Reservas.Sum(x => x.Total);
@@ -15,6 +18,9 @@
     var diasRango = (Model.FechaHasta.DayNumber - Model.FechaDesde.DayNumber) + 1;
     var habilitarFiltroEspacio = Model.SedeId.HasValue;
     var estadosListadoCatalogo = Model.EstadosFiltro.Where(x => !string.IsNullOrWhiteSpace(x.Value)).ToList();
+    var horasMediaHora = Enumerable.Range(0, 48)
+        .Select(i => TimeOnly.MinValue.AddMinutes(i * 30))
+        .ToList();
 }
 
 <header class="page-header">
@@ -40,7 +46,7 @@
         <div class="col-md-4">
             <label class="form-label">Sede</label>
             <select id="sedeId" class="form-select" name="sedeId">
-                <option value="">Todas</option>
+                <option value="">Seleccione sede</option>
                 @foreach (var s in Model.SedesFiltro)
                 {
                     if (Model.SedeId?.ToString() == s.Value)
@@ -207,12 +213,12 @@
         <div class="sc-reservas-list-head">
             <div>
                 <h2 class="section-title"><i class="bi bi-list-check me-1"></i>Listado general de reservas</h2>
-                <p class="mb-0 text-muted small">Consulta backend con filtro independiente de rango y estados multiples.</p>
+                <p class="mb-0 text-muted small">Consulta con filtro independiente de rango y estados multiples.</p>
             </div>
             <div class="sc-reservas-metrics">
                 <div class="sc-reservas-metric">
                     <span>Registros</span>
-                    <strong>@Model.Reservas.Count</strong>
+                    <strong>@Model.TotalReservasListado</strong>
                 </div>
                 <div class="sc-reservas-metric">
                     <span>Monto total</span>
@@ -227,13 +233,14 @@
             <input type="hidden" name="sedeId" value="@Model.SedeId" />
             <input type="hidden" name="espacioDeportivoId" value="@Model.EspacioDeportivoId" />
             <input type="hidden" name="estado" value="@Model.Estado" />
+            <input type="hidden" name="paginaListado" value="@Model.PaginaListado" />
             <div class="row g-2 align-items-end">
                 <div class="col-md-2">
-                    <label class="form-label">Desde (listado)</label>
+                    <label class="form-label">Desde</label>
                     <input type="date" class="form-control" name="listadoDesde" value="@Model.ListadoFechaDesde.ToString("yyyy-MM-dd")" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Hasta (listado)</label>
+                    <label class="form-label">Hasta</label>
                     <input type="date" class="form-control" name="listadoHasta" value="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" />
                 </div>
                 <div class="col-md-7">
@@ -270,11 +277,13 @@
                         <tr>
                             <th>Id</th>
                             <th>Cliente</th>
+                            <th>Equipo</th>
                             <th>Sede</th>
                             <th>Espacio</th>
                             <th>Fecha</th>
                             <th>Horario</th>
-                            <th>Total</th>
+                            <th class="text-center">Precio de Espacio (@Model.MonedaSimbolo)</th>
+                            <th class="text-center">Saldo pendiente</th>
                             <th>Estado</th>
                             <th class="text-end">Acciones</th>
                         </tr>
@@ -285,12 +294,14 @@
                             <tr>
                                 <td>@item.Id</td>
                                 <td>@item.Cliente</td>
+                                <td>@(string.IsNullOrWhiteSpace(item.Equipo) ? "-" : item.Equipo)</td>
                                 <td>@item.Sede</td>
                                 <td>@item.Espacio</td>
                                 <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
                                 <td>@item.HoraInicio.ToString("HH\\:mm") - @item.HoraFin.ToString("HH\\:mm")</td>
-                                <td>S/ @item.Total.ToString("N2")</td>
-                                <td>
+                                <td class="text-end">@item.Total.ToString("N2")</td>
+                                <td class="text-end">@item.SaldoPendiente.ToString("N2")</td>
+                                <td class="text-center">
                                     @{
                                     var estadoTexto = item.Estado switch
                                     {
@@ -303,7 +314,7 @@
                                         _ => item.Estado
                                     };
                                 }
-                                @estadoTexto
+                                <span class="badge @(item.Estado switch { "1" => "bg-warning-subtle text-warning-emphasis border border-warning-subtle", "2" => "bg-success-subtle text-success-emphasis border border-success-subtle", "3" => "bg-info-subtle text-info-emphasis border border-info-subtle", "4" => "bg-info-subtle text-info-emphasis border border-info-subtle", "5" => "bg-danger-subtle text-danger-emphasis border border-danger-subtle", "6" => "sc-estado-noshow", _ => "bg-light text-dark border" })">@estadoTexto</span>
                             </td>
                             <td class="text-end">
                                 @if (Model.PuedeEditar)
@@ -311,37 +322,6 @@
                                     <button type="button" class="btn btn-sm sc-action-btn sc-action-edit" data-accion-editar-reserva data-reserva-id="@item.Id">
                                         <i class="bi bi-pencil-square"></i> Editar
                                     </button>
-                                    @if (item.Estado == "1" || item.Estado == "2")
-                                    {
-                                        <form asp-action="CambiarEstadoTabla" method="post" class="d-inline">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="negocioId" value="@Model.NegocioId" />
-                                                <input type="hidden" name="id" value="@item.Id" />
-                                            <input type="hidden" name="nuevoEstado" value="4" />
-                                                <input type="hidden" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
-                                                <input type="hidden" name="fechaHasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
-                                                <input type="hidden" name="sedeId" value="@Model.SedeId" />
-                                                <input type="hidden" name="espacioDeportivoId" value="@Model.EspacioDeportivoId" />
-                                                <input type="hidden" name="estado" value="@Model.Estado" />
-                                            <button type="submit" class="btn btn-sm btn-outline-primary">
-                                                <i class="bi bi-cash-coin"></i> Pagada
-                                            </button>
-                                        </form>
-                                        <form asp-action="CambiarEstadoTabla" method="post" class="d-inline">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="negocioId" value="@Model.NegocioId" />
-                                                <input type="hidden" name="id" value="@item.Id" />
-                                                <input type="hidden" name="nuevoEstado" value="6" />
-                                                <input type="hidden" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
-                                                <input type="hidden" name="fechaHasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
-                                                <input type="hidden" name="sedeId" value="@Model.SedeId" />
-                                                <input type="hidden" name="espacioDeportivoId" value="@Model.EspacioDeportivoId" />
-                                                <input type="hidden" name="estado" value="@Model.Estado" />
-                                            <button type="submit" class="btn btn-sm sc-action-btn sc-action-noshow">
-                                                <i class="bi bi-person-x"></i> No Asistio
-                                            </button>
-                                        </form>
-                                    }
                                 }
                                     @if (Model.PuedeEliminar)
                                     {
@@ -360,6 +340,22 @@
                     </tbody>
                 </table>
             </div>
+            @if (Model.TotalPaginasListado > 1)
+            {
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <small class="text-muted">Pagina @Model.PaginaListado de @Model.TotalPaginasListado (@Model.TotalReservasListado registros)</small>
+                    <nav aria-label="Paginacion listado reservas">
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item @(Model.PaginaListado <= 1 ? "disabled" : null)">
+                                <a class="page-link" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")" asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")" asp-route-sedeId="@Model.SedeId" asp-route-espacioDeportivoId="@Model.EspacioDeportivoId" asp-route-estado="@Model.Estado" asp-route-listadoDesde="@Model.ListadoFechaDesde.ToString("yyyy-MM-dd")" asp-route-listadoHasta="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" asp-route-estadosListadoCsv="@string.Join(",", Model.EstadosListadoSeleccionados)" asp-route-paginaListado="@(Model.PaginaListado - 1)">Anterior</a>
+                            </li>
+                            <li class="page-item @(Model.PaginaListado >= Model.TotalPaginasListado ? "disabled" : null)">
+                                <a class="page-link" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")" asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")" asp-route-sedeId="@Model.SedeId" asp-route-espacioDeportivoId="@Model.EspacioDeportivoId" asp-route-estado="@Model.Estado" asp-route-listadoDesde="@Model.ListadoFechaDesde.ToString("yyyy-MM-dd")" asp-route-listadoHasta="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" asp-route-estadosListadoCsv="@string.Join(",", Model.EstadosListadoSeleccionados)" asp-route-paginaListado="@(Model.PaginaListado + 1)">Siguiente</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            }
         }
     </section>
 
@@ -409,11 +405,37 @@
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">Inicio</label>
-                        <input type="time" class="form-control" name="HoraInicio" value="08:00" required />
+                        <select class="form-select" name="HoraInicio" required>
+                            @foreach (var hora in horasMediaHora)
+                            {
+                                var valor = hora.ToString("HH\\:mm");
+                                if (valor == "08:00")
+                                {
+                                    <option value="@valor" selected="selected">@valor</option>
+                                }
+                                else
+                                {
+                                    <option value="@valor">@valor</option>
+                                }
+                            }
+                        </select>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">Fin</label>
-                        <input type="time" class="form-control" name="HoraFin" value="09:00" required />
+                        <select class="form-select" name="HoraFin" required>
+                            @foreach (var hora in horasMediaHora)
+                            {
+                                var valor = hora.ToString("HH\\:mm");
+                                if (valor == "09:00")
+                                {
+                                    <option value="@valor" selected="selected">@valor</option>
+                                }
+                                else
+                                {
+                                    <option value="@valor">@valor</option>
+                                }
+                            }
+                        </select>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">Motivo</label>
@@ -445,12 +467,12 @@ else
         <div class="sc-reservas-list-head">
             <div>
                 <h2 class="section-title"><i class="bi bi-list-check me-1"></i>Listado general de reservas</h2>
-                <p class="mb-0 text-muted small">Consulta backend con filtro independiente de rango y estados multiples.</p>
+                <p class="mb-0 text-muted small">Consulta con filtro independiente de rango y estados multiples.</p>
             </div>
             <div class="sc-reservas-metrics">
                 <div class="sc-reservas-metric">
                     <span>Registros</span>
-                    <strong>@Model.Reservas.Count</strong>
+                    <strong>@Model.TotalReservasListado</strong>
                 </div>
                 <div class="sc-reservas-metric">
                     <span>Monto total</span>
@@ -467,11 +489,11 @@ else
             <input type="hidden" name="estado" value="@Model.Estado" />
             <div class="row g-2 align-items-end">
                 <div class="col-md-2">
-                    <label class="form-label">Desde (listado)</label>
+                    <label class="form-label">Desde</label>
                     <input type="date" class="form-control" name="listadoDesde" value="@Model.ListadoFechaDesde.ToString("yyyy-MM-dd")" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Hasta (listado)</label>
+                    <label class="form-label">Hasta</label>
                     <input type="date" class="form-control" name="listadoHasta" value="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" />
                 </div>
                 <div class="col-md-7">
@@ -508,11 +530,13 @@ else
                         <tr>
                             <th>Id</th>
                             <th>Cliente</th>
+                            <th>Equipo</th>
                             <th>Sede</th>
                             <th>Espacio</th>
                             <th>Fecha</th>
                             <th>Horario</th>
-                            <th>Total</th>
+                            <th class="text-center">Precio de Espacio (@Model.MonedaSimbolo)</th>
+                            <th class="text-center">Saldo pendiente</th>
                             <th>Estado</th>
                             <th class="text-end">Acciones</th>
                         </tr>
@@ -523,12 +547,14 @@ else
                             <tr>
                                 <td>@item.Id</td>
                                 <td>@item.Cliente</td>
+                                <td>@(string.IsNullOrWhiteSpace(item.Equipo) ? "-" : item.Equipo)</td>
                                 <td>@item.Sede</td>
                                 <td>@item.Espacio</td>
                                 <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
                                 <td>@item.HoraInicio.ToString("HH\\:mm") - @item.HoraFin.ToString("HH\\:mm")</td>
-                                <td>S/ @item.Total.ToString("N2")</td>
-                                <td>
+                                <td class="text-end">@item.Total.ToString("N2")</td>
+                                <td class="text-end">@item.SaldoPendiente.ToString("N2")</td>
+                                <td class="text-center">
                                     @{
                                     var estadoTexto = item.Estado switch
                                     {
@@ -541,45 +567,14 @@ else
                                         _ => item.Estado
                                     };
                                 }
-                                @estadoTexto
-                                </td>
+                                <span class="badge @(item.Estado switch { "1" => "bg-warning-subtle text-warning-emphasis border border-warning-subtle", "2" => "bg-success-subtle text-success-emphasis border border-success-subtle", "3" => "bg-info-subtle text-info-emphasis border border-info-subtle", "4" => "bg-info-subtle text-info-emphasis border border-info-subtle", "5" => "bg-danger-subtle text-danger-emphasis border border-danger-subtle", "6" => "sc-estado-noshow", _ => "bg-light text-dark border" })">@estadoTexto</span>
+                            </td>
                                 <td class="text-end">
                                     @if (Model.PuedeEditar)
                                     {
                                         <button type="button" class="btn btn-sm sc-action-btn sc-action-edit" data-accion-editar-reserva data-reserva-id="@item.Id">
                                             <i class="bi bi-pencil-square"></i> Editar
                                         </button>
-                                    @if (item.Estado == "1" || item.Estado == "2")
-                                    {
-                                        <form asp-action="CambiarEstadoTabla" method="post" class="d-inline">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="negocioId" value="@Model.NegocioId" />
-                                                <input type="hidden" name="id" value="@item.Id" />
-                                            <input type="hidden" name="nuevoEstado" value="4" />
-                                                <input type="hidden" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
-                                                <input type="hidden" name="fechaHasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
-                                                <input type="hidden" name="sedeId" value="@Model.SedeId" />
-                                                <input type="hidden" name="espacioDeportivoId" value="@Model.EspacioDeportivoId" />
-                                                <input type="hidden" name="estado" value="@Model.Estado" />
-                                            <button type="submit" class="btn btn-sm btn-outline-primary">
-                                                <i class="bi bi-cash-coin"></i> Pagada
-                                            </button>
-                                        </form>
-                                        <form asp-action="CambiarEstadoTabla" method="post" class="d-inline">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="negocioId" value="@Model.NegocioId" />
-                                                <input type="hidden" name="id" value="@item.Id" />
-                                                <input type="hidden" name="nuevoEstado" value="6" />
-                                                <input type="hidden" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
-                                                <input type="hidden" name="fechaHasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
-                                                <input type="hidden" name="sedeId" value="@Model.SedeId" />
-                                                <input type="hidden" name="espacioDeportivoId" value="@Model.EspacioDeportivoId" />
-                                                <input type="hidden" name="estado" value="@Model.Estado" />
-                                            <button type="submit" class="btn btn-sm sc-action-btn sc-action-noshow">
-                                                <i class="bi bi-person-x"></i> No Asistio
-                                            </button>
-                                        </form>
-                                    }
                                 }
                                     @if (Model.PuedeEliminar)
                                     {
@@ -598,6 +593,22 @@ else
                     </tbody>
                 </table>
             </div>
+            @if (Model.TotalPaginasListado > 1)
+            {
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <small class="text-muted">Pagina @Model.PaginaListado de @Model.TotalPaginasListado (@Model.TotalReservasListado registros)</small>
+                    <nav aria-label="Paginacion listado reservas">
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item @(Model.PaginaListado <= 1 ? "disabled" : null)">
+                                <a class="page-link" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")" asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")" asp-route-sedeId="@Model.SedeId" asp-route-espacioDeportivoId="@Model.EspacioDeportivoId" asp-route-estado="@Model.Estado" asp-route-listadoDesde="@Model.ListadoFechaDesde.ToString("yyyy-MM-dd")" asp-route-listadoHasta="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" asp-route-estadosListadoCsv="@string.Join(",", Model.EstadosListadoSeleccionados)" asp-route-paginaListado="@(Model.PaginaListado - 1)">Anterior</a>
+                            </li>
+                            <li class="page-item @(Model.PaginaListado >= Model.TotalPaginasListado ? "disabled" : null)">
+                                <a class="page-link" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")" asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")" asp-route-sedeId="@Model.SedeId" asp-route-espacioDeportivoId="@Model.EspacioDeportivoId" asp-route-estado="@Model.Estado" asp-route-listadoDesde="@Model.ListadoFechaDesde.ToString("yyyy-MM-dd")" asp-route-listadoHasta="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" asp-route-estadosListadoCsv="@string.Join(",", Model.EstadosListadoSeleccionados)" asp-route-paginaListado="@(Model.PaginaListado + 1)">Siguiente</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            }
         }
     </section>
 }
@@ -688,12 +699,13 @@ else
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Cliente</label>
+                            <div class="input-group mb-1">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control form-control-sm" id="modalClienteBuscar" placeholder="Buscar cliente (filtra la lista)..." autocomplete="off" />
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="modalBtnNuevoCliente" title="Nuevo cliente rapido">+</button>
+                            </div>
                             <select class="form-select" id="modalClienteId" name="ClienteId" required>
-                                <option value="">Selecciona...</option>
-                                @foreach (var c in Model.ClientesFiltro)
-                                {
-                                    <option value="@c.Value">@c.Text</option>
-                                }
+                                <option value="">Escribe para buscar cliente...</option>
                             </select>
                         </div>
                         <div class="col-md-3">
@@ -702,13 +714,23 @@ else
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Hora inicio</label>
-                            <input type="time" class="form-control" id="modalHoraInicio" name="HoraInicio" required />
+                            <select class="form-select" id="modalHoraInicio" name="HoraInicio" required>
+                                @foreach (var hora in horasMediaHora)
+                                {
+                                    <option value="@hora.ToString("HH\\:mm")">@hora.ToString("HH\\:mm")</option>
+                                }
+                            </select>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Hora fin</label>
-                            <input type="time" class="form-control" id="modalHoraFin" name="HoraFin" required />
+                            <select class="form-select" id="modalHoraFin" name="HoraFin" required>
+                                @foreach (var hora in horasMediaHora)
+                                {
+                                    <option value="@hora.ToString("HH\\:mm")">@hora.ToString("HH\\:mm")</option>
+                                }
+                            </select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-3 d-none" id="modalEstadoWrap">
                             <label class="form-label">Estado</label>
                             <select class="form-select" id="modalEstado" name="Estado" required>
                                 <option value="1">Pendiente</option>
@@ -719,12 +741,47 @@ else
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Total</label>
-                            <input type="number" min="0" step="0.01" class="form-control" id="modalTotal" name="Total" required />
+                            <label class="form-label" id="modalPrecioLabel">Precio de Espacio (@Model.MonedaSimbolo)</label>
+                            <input type="number" min="0.01" step="0.01" class="form-control sc-monto-input" id="modalTotal" name="Total" required />
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Adelanto</label>
-                            <input type="number" min="0" step="0.01" class="form-control" id="modalAdelanto" name="Adelanto" required />
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label mb-0">Adelanto / pago</label>
+                                <div class="form-check m-0">
+                                    <input class="form-check-input" type="checkbox" id="modalRegistrarPago" name="RegistrarPago" value="true" />
+                                    <label class="form-check-label small" for="modalRegistrarPago">Registrar pago</label>
+                                </div>
+                            </div>
+                            <small id="modalAdelantoActualInfo" class="text-muted d-block mb-1">Pagado acumulado actual: 0.00</small>
+                            <input type="number" min="0" step="0.01" class="form-control sc-monto-input" id="modalAdelanto" name="Adelanto" value="0.00" disabled />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Forma de pago</label>
+                            <select class="form-select" id="modalFormaPagoId" name="FormaPagoId" disabled>
+                                <option value="">Selecciona...</option>
+                                @foreach (var fp in Model.FormasPagoFiltro)
+                                {
+                                    <option value="@fp.Value">@fp.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Fecha de pago</label>
+                            <input type="date" class="form-control" id="modalFechaPago" name="FechaPago" value="@DateTime.Today.ToString("yyyy-MM-dd")" max="@DateTime.Today.ToString("yyyy-MM-dd")" disabled />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">N° Operacion</label>
+                            <input type="text" class="form-control" id="modalNumeroOperacion" name="NumeroOperacion" maxlength="50" placeholder="Opcional" autocomplete="off" disabled />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Politica de confirmacion</label>
+                            <div id="modalPoliticaPagoInfo" class="form-control bg-light" style="height:auto; min-height: 2.4rem;">
+                                Cargando...
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Comentario</label>
+                            <textarea class="form-control" id="modalComentario" name="Comentario" rows="2" maxlength="500" placeholder="Observaciones opcionales de la reserva..."></textarea>
                         </div>
                     </div>
                 </div>
@@ -735,6 +792,66 @@ else
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="clienteRapidoModal" tabindex="-1" aria-labelledby="clienteRapidoModalTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="clienteRapidoModalTitulo">Nuevo cliente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form id="clienteRapidoForm">
+                <div class="modal-body">
+                    <div id="clienteRapidoError" class="alert alert-danger d-none py-2"></div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Tipo de documento</label>
+                            <select class="form-select" id="clienteRapidoTipoDocumento" required>
+                                @foreach (var td in Model.TiposDocumentoClientesFiltro)
+                                {
+                                    <option value="@td.Value" selected="@(td.Value == "0" ? "selected" : null)">@td.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Numero de documento</label>
+                            <input type="text" class="form-control" id="clienteRapidoNumeroDocumento" maxlength="11" />
+                        </div>
+                        <div class="col-md-6" id="clienteRapidoRazonSocialWrap">
+                            <label class="form-label">Razon social</label>
+                            <input type="text" class="form-control" id="clienteRapidoRazonSocial" maxlength="150" />
+                        </div>
+                        <div class="col-md-6 d-none" id="clienteRapidoNombresWrap">
+                            <label class="form-label">Nombres</label>
+                            <input type="text" class="form-control" id="clienteRapidoNombres" maxlength="100" />
+                        </div>
+                        <div class="col-md-6 d-none" id="clienteRapidoApellidosWrap">
+                            <label class="form-label">Apellidos</label>
+                            <input type="text" class="form-control" id="clienteRapidoApellidos" maxlength="100" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Nombre de equipo</label>
+                            <input type="text" class="form-control" id="clienteRapidoNombreEquipo" maxlength="120" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Telefono</label>
+                            <input type="text" class="form-control" id="clienteRapidoTelefono" maxlength="20" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Correo</label>
+                            <input type="email" class="form-control" id="clienteRapidoCorreo" maxlength="120" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="clienteRapidoGuardarBtn">Guardar cliente</button>
+                </div>
+            </form>
+            </div>
         </div>
     </div>
 </div>
@@ -754,6 +871,7 @@ else
             const pendientesMensajeEl = document.getElementById('pendientesMensaje');
             const pendientesSlotsEl = document.getElementById('pendientesSlots');
             const pendientesFechaFiltroEl = document.getElementById('pendientesFechaFiltro');
+            const monedaSimboloCalendario = '@Model.MonedaSimbolo';
             const reservaModalEl = document.getElementById('reservaModal');
             const reservaModal = new bootstrap.Modal(reservaModalEl);
             const reservaModalForm = document.getElementById('reservaModalForm');
@@ -761,11 +879,43 @@ else
             const reservaModalError = document.getElementById('reservaModalError');
             const reservaModalDisponibilidad = document.getElementById('reservaModalDisponibilidad');
             const btnGuardarReservaModal = document.getElementById('btnGuardarReservaModal');
+            const modalEstadoWrap = document.getElementById('modalEstadoWrap');
+            const modalRegistrarPagoEl = document.getElementById('modalRegistrarPago');
+            const modalFormaPagoIdEl = document.getElementById('modalFormaPagoId');
+            const modalAdelantoEl = document.getElementById('modalAdelanto');
+            const modalFechaPagoEl = document.getElementById('modalFechaPago');
+            const modalNumeroOperacionEl = document.getElementById('modalNumeroOperacion');
+            const modalTotalEl = document.getElementById('modalTotal');
+            const modalPoliticaPagoInfoEl = document.getElementById('modalPoliticaPagoInfo');
+            const modalPrecioLabelEl = document.getElementById('modalPrecioLabel');
+            const modalClienteBuscarEl = document.getElementById('modalClienteBuscar');
+            const modalClienteIdEl = document.getElementById('modalClienteId');
+            const modalBtnNuevoClienteEl = document.getElementById('modalBtnNuevoCliente');
+            const modalAdelantoActualInfoEl = document.getElementById('modalAdelantoActualInfo');
+            const clienteRapidoModalEl = document.getElementById('clienteRapidoModal');
+            const clienteRapidoModal = clienteRapidoModalEl ? new bootstrap.Modal(clienteRapidoModalEl) : null;
+            const clienteRapidoFormEl = document.getElementById('clienteRapidoForm');
+            const clienteRapidoErrorEl = document.getElementById('clienteRapidoError');
+            const clienteRapidoGuardarBtnEl = document.getElementById('clienteRapidoGuardarBtn');
+            const clienteRapidoTipoDocumentoEl = document.getElementById('clienteRapidoTipoDocumento');
+            const clienteRapidoNumeroDocumentoEl = document.getElementById('clienteRapidoNumeroDocumento');
+            const clienteRapidoRazonSocialWrapEl = document.getElementById('clienteRapidoRazonSocialWrap');
+            const clienteRapidoNombresWrapEl = document.getElementById('clienteRapidoNombresWrap');
+            const clienteRapidoApellidosWrapEl = document.getElementById('clienteRapidoApellidosWrap');
+            const clienteRapidoRazonSocialEl = document.getElementById('clienteRapidoRazonSocial');
+            const clienteRapidoNombresEl = document.getElementById('clienteRapidoNombres');
+            const clienteRapidoApellidosEl = document.getElementById('clienteRapidoApellidos');
+            const clienteRapidoNombreEquipoEl = document.getElementById('clienteRapidoNombreEquipo');
+            const clienteRapidoTelefonoEl = document.getElementById('clienteRapidoTelefono');
+            const clienteRapidoCorreoEl = document.getElementById('clienteRapidoCorreo');
             const reservaModalAccionConflicto = document.getElementById('reservaModalAccionConflicto');
             const btnVerReservaConflicto = document.getElementById('btnVerReservaConflicto');
             const getReservaModalUrl = '@Url.Action("ObtenerReservaModal", "Reservas")';
             const guardarReservaModalUrl = '@Url.Action("GuardarReservaModal", "Reservas")';
             const validarDisponibilidadModalUrl = '@Url.Action("ValidarDisponibilidadModal", "Reservas")';
+            const cotizarReservaModalUrl = '@Url.Action("CotizarReserva", "Reservas")';
+            const comboClientesUrl = '@Url.Action("ObtenerClientesFiltro", "Reservas")';
+            const crearClienteRapidoUrl = '@Url.Action("CrearClienteRapido", "Reservas")';
             const cambiarEstadoRapidoUrl = '@Url.Action("CambiarEstadoRapido", "Reservas")';
             const comboEspaciosUrl = '@Url.Action("ObtenerEspaciosFiltro", "Reservas")';
             const resumenDiaOperativoUrl = '@Url.Action("ResumenDiaOperativo", "Reservas")';
@@ -791,6 +941,13 @@ else
             let recargandoEspacios = false;
             let disponibilidadRenderSeq = 0;
             let pendientesRenderSeq = 0;
+            let ultimoAvisoBloqueoDragAt = 0;
+            let movimientoPendienteServidor = false;
+            let dragEnCurso = false;
+            let dragRechazadoPorBloqueo = false;
+            let ignorarClicksCalendarioHasta = 0;
+            let timerBusquedaCliente = null;
+            const debugDragActivo = true;
             const calendarAxisWidth = '122px';
             function pad2(n) {
                 return String(n).padStart(2, '0');
@@ -988,6 +1145,13 @@ else
                 }
             }
 
+            function obtenerClienteEquipoDesdeTitulo(tituloRaw) {
+                const titulo = String(tituloRaw || '').trim();
+                if (!titulo) return '';
+                const separadorEspacio = titulo.indexOf(' - ');
+                return separadorEspacio >= 0 ? titulo.substring(separadorEspacio + 3).trim() : titulo;
+            }
+
             function colorTextoByEstado(estadoCodigo, tipoEvento) {
                 const clase = classByEstado(estadoCodigo, tipoEvento);
                 switch (clase) {
@@ -1069,6 +1233,145 @@ else
             function setValue(id, value) {
                 const el = document.getElementById(id);
                 el.value = value ?? '';
+            }
+
+            function sincronizarClienteBusquedaDesdeSelect() {
+                if (!modalClienteBuscarEl || !modalClienteIdEl) return;
+                const texto = modalClienteIdEl.selectedOptions?.[0]?.text || '';
+                modalClienteBuscarEl.value = modalClienteIdEl.value ? texto : '';
+            }
+
+            async function recargarClientesModal(buscar = '', clienteIdPreferido = '') {
+                if (!modalClienteIdEl) return;
+                const params = new URLSearchParams();
+                params.append('negocioId', String(negocioId));
+                if (buscar) params.append('buscar', buscar);
+                if (clienteIdPreferido) params.append('clienteId', clienteIdPreferido);
+                const r = await fetch(`${comboClientesUrl}?${params.toString()}`, { cache: 'no-store' });
+                const payload = await r.json();
+                if (!r.ok || !payload.ok) {
+                    throw new Error(payload.mensaje || 'No se pudo recargar el combo de clientes.');
+                }
+
+                const seleccionadoActual = clienteIdPreferido || modalClienteIdEl.value || '';
+                modalClienteIdEl.innerHTML = '<option value="">Selecciona...</option>';
+                let encontrado = false;
+                (payload.items || []).forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = String(item.value ?? '');
+                    opt.textContent = String(item.text ?? '');
+                    if (seleccionadoActual && opt.value === seleccionadoActual) {
+                        encontrado = true;
+                    }
+                    modalClienteIdEl.appendChild(opt);
+                });
+
+                modalClienteIdEl.value = encontrado ? seleccionadoActual : '';
+                sincronizarClienteBusquedaDesdeSelect();
+            }
+
+            function limpiarOpcionesClienteModal(mensaje = 'Escribe para buscar cliente...') {
+                if (!modalClienteIdEl) return;
+                modalClienteIdEl.innerHTML = `<option value="">${mensaje}</option>`;
+                modalClienteIdEl.value = '';
+            }
+
+            function limpiarClienteRapidoError() {
+                if (!clienteRapidoErrorEl) return;
+                clienteRapidoErrorEl.classList.add('d-none');
+                clienteRapidoErrorEl.textContent = '';
+            }
+
+            function mostrarClienteRapidoError(msg) {
+                if (!clienteRapidoErrorEl) return;
+                clienteRapidoErrorEl.textContent = msg || 'No se pudo crear el cliente.';
+                clienteRapidoErrorEl.classList.remove('d-none');
+            }
+
+            function actualizarFormularioClienteRapido() {
+                if (!clienteRapidoTipoDocumentoEl) return;
+                const tipo = String(clienteRapidoTipoDocumentoEl.value || '').trim().toUpperCase();
+                const esRuc = tipo === '6' || tipo === 'RUC';
+                const esNoDomiciliado = tipo === '0';
+
+                if (clienteRapidoRazonSocialWrapEl) clienteRapidoRazonSocialWrapEl.classList.toggle('d-none', !esRuc);
+                if (clienteRapidoNombresWrapEl) clienteRapidoNombresWrapEl.classList.toggle('d-none', esRuc);
+                if (clienteRapidoApellidosWrapEl) clienteRapidoApellidosWrapEl.classList.toggle('d-none', esRuc);
+
+                if (clienteRapidoNumeroDocumentoEl) {
+                    clienteRapidoNumeroDocumentoEl.value = esNoDomiciliado ? '' : clienteRapidoNumeroDocumentoEl.value;
+                    clienteRapidoNumeroDocumentoEl.disabled = esNoDomiciliado;
+                    clienteRapidoNumeroDocumentoEl.placeholder = esNoDomiciliado ? 'No obligatorio para este tipo.' : '';
+                }
+            }
+
+            function formatMoney(value) {
+                const n = Number(value || 0);
+                if (!Number.isFinite(n)) return '0.00';
+                return n.toFixed(2);
+            }
+
+            function politicaPagoTexto(politica, porcentaje) {
+                const pol = Number(politica || 0);
+                if (pol === 2) return 'Exigir pago total 100% para confirmar.';
+                if (pol === 1) return `Exigir adelanto minimo de ${Math.round(Number(porcentaje || 0))}% para confirmar.`;
+                return 'No exigir pago para confirmar.';
+            }
+
+            function actualizarUIRegistroPago() {
+                const activo = !!modalRegistrarPagoEl?.checked;
+                if (modalAdelantoEl) {
+                    modalAdelantoEl.disabled = !activo;
+                    if (!activo) modalAdelantoEl.value = '0.00';
+                }
+                if (modalFormaPagoIdEl) {
+                    modalFormaPagoIdEl.disabled = !activo;
+                    if (!activo) modalFormaPagoIdEl.value = '';
+                }
+                if (modalFechaPagoEl) {
+                    modalFechaPagoEl.disabled = !activo;
+                    if (!activo || !modalFechaPagoEl.value) modalFechaPagoEl.value = hoyIso;
+                }
+                if (modalNumeroOperacionEl) {
+                    modalNumeroOperacionEl.disabled = !activo;
+                    if (!activo) modalNumeroOperacionEl.value = '';
+                }
+            }
+
+            async function cotizarReservaModal(preservarTotalActual = false) {
+                const espacioId = document.getElementById('modalEspacioDeportivoId').value || '';
+                const fecha = document.getElementById('modalFecha').value || '';
+                const horaInicio = document.getElementById('modalHoraInicio').value || '';
+                const horaFin = document.getElementById('modalHoraFin').value || '';
+                if (!espacioId || !fecha || !horaInicio || !horaFin) return;
+                try {
+                    const params = new URLSearchParams();
+                    params.append('negocioId', negocioId);
+                    params.append('espacioDeportivoId', espacioId);
+                    params.append('fecha', fecha);
+                    params.append('horaInicio', horaInicio);
+                    params.append('horaFin', horaFin);
+                    const r = await fetch(`${cotizarReservaModalUrl}?${params.toString()}`, { cache: 'no-store' });
+                    const payload = await r.json();
+                    if (!r.ok || !payload.ok) throw new Error(payload.mensaje || 'No se pudo cotizar la reserva.');
+                    const monedaSimbolo = String(payload.monedaSimbolo || 'S/');
+                    if (modalPrecioLabelEl) {
+                        modalPrecioLabelEl.textContent = `Precio de Espacio (${monedaSimbolo})`;
+                    }
+                    if (modalTotalEl) {
+                        const precioFinal = Number(payload.precioFinal || 0);
+                        if (!preservarTotalActual && precioFinal > 0) {
+                            modalTotalEl.value = formatMoney(precioFinal);
+                        }
+                    }
+                    if (modalPoliticaPagoInfoEl) {
+                        modalPoliticaPagoInfoEl.textContent = politicaPagoTexto(payload.politicaConfirmacionPago, payload.porcentajeAdelantoMinimo);
+                    }
+                } catch (err) {
+                    if (modalPoliticaPagoInfoEl) {
+                        modalPoliticaPagoInfoEl.textContent = err?.message || 'No se pudo cargar la politica de pago.';
+                    }
+                }
             }
 
             function getFiltroEspacioSeleccionado() {
@@ -1211,6 +1514,7 @@ else
                 limpiarErrorModal();
                 limpiarDisponibilidadModal();
                 reservaModalTitulo.textContent = 'Nueva reserva';
+                if (modalEstadoWrap) modalEstadoWrap.classList.add('d-none');
                 setValue('modalReservaId', 0);
                 const fechaInicial = fechaIso && !esFechaPasadaIso(fechaIso) ? fechaIso : hoyIso;
                 setValue('modalFecha', fechaInicial);
@@ -1219,9 +1523,21 @@ else
                 setValue('modalEstado', 1);
                 setValue('modalTotal', '0.00');
                 setValue('modalAdelanto', '0.00');
+                if (modalAdelantoActualInfoEl) {
+                    modalAdelantoActualInfoEl.textContent = 'Pagado acumulado actual: 0.00';
+                }
+                setValue('modalComentario', '');
+                setValue('modalFormaPagoId', '');
+                setValue('modalFechaPago', hoyIso);
+                setValue('modalNumeroOperacion', '');
+                if (modalRegistrarPagoEl) modalRegistrarPagoEl.checked = false;
+                actualizarUIRegistroPago();
                 setValue('modalEspacioDeportivoId', espacioId || getFiltroEspacioSeleccionado());
                 setValue('modalClienteId', '');
+                if (modalClienteBuscarEl) modalClienteBuscarEl.value = '';
+                if (modalClienteIdEl) modalClienteIdEl.innerHTML = '<option value="">Escribe para buscar cliente...</option>';
                 reservaModal.show();
+                cotizarReservaModal();
                 validarDisponibilidadModal();
             }
 
@@ -1238,16 +1554,34 @@ else
                     })
                     .then(data => {
                         reservaModalTitulo.textContent = `Editar reserva #${data.id}`;
+                        if (modalEstadoWrap) modalEstadoWrap.classList.remove('d-none');
                         setValue('modalReservaId', data.id);
                         setValue('modalEspacioDeportivoId', data.espacioDeportivoId);
                         setValue('modalClienteId', data.clienteId);
+                        sincronizarClienteBusquedaDesdeSelect();
                         setValue('modalFecha', data.fecha);
                         setValue('modalHoraInicio', data.horaInicio);
                         setValue('modalHoraFin', data.horaFin);
                         setValue('modalEstado', data.estado);
                         setValue('modalTotal', data.total ?? '0.00');
-                        setValue('modalAdelanto', data.adelanto ?? '0.00');
+                        setValue('modalAdelanto', '0.00');
+                        if (modalAdelantoActualInfoEl) {
+                            const pagado = Number(data.adelanto || 0);
+                            const total = Number(data.total || 0);
+                            const saldo = Math.max(0, total - pagado);
+                            modalAdelantoActualInfoEl.textContent = `Pagado acumulado actual: ${formatMoney(pagado)} | Saldo pendiente: ${formatMoney(saldo)}`;
+                        }
+                        setValue('modalComentario', data.comentario ?? '');
+                        setValue('modalFormaPagoId', '');
+                        setValue('modalFechaPago', hoyIso);
+                        setValue('modalNumeroOperacion', '');
+                        if (modalRegistrarPagoEl) modalRegistrarPagoEl.checked = false;
+                        actualizarUIRegistroPago();
                         reservaModal.show();
+                        const clienteId = String(data.clienteId || '');
+                        if (modalClienteBuscarEl) modalClienteBuscarEl.value = '';
+                        recargarClientesModal('', clienteId).catch(() => { });
+                        cotizarReservaModal(true);
                         validarDisponibilidadModal();
                     })
                     .catch(err => alert(err.message));
@@ -1471,6 +1805,30 @@ else
                 return '@Url.Action("CalendarioEventos", "Reservas")' + '?' + params.toString();
             }
 
+            function cruzaRangos(inicioA, finA, inicioB, finB) {
+                if (!inicioA || !finA || !inicioB || !finB) return false;
+                return inicioA < finB && inicioB < finA;
+            }
+
+            function movimientoCruzaBloqueo(start, end, draggedEvent) {
+                if (!calendar || !start || !end || !draggedEvent) return false;
+                const espacioMovimiento = String(draggedEvent.extendedProps?.espacioDeportivoId || '').trim();
+                if (!espacioMovimiento) return false;
+
+                const eventos = calendar.getEvents();
+                for (const ev of eventos) {
+                    if (!ev || ev.id === draggedEvent.id) continue;
+                    const tipo = String(ev.extendedProps?.tipoEvento || '').toUpperCase();
+                    if (tipo !== 'BLOQUEO' && tipo !== 'NO_ATENCION') continue;
+                    const espacioBloqueo = String(ev.extendedProps?.espacioDeportivoId || '').trim();
+                    if (!espacioBloqueo || espacioBloqueo !== espacioMovimiento) continue;
+                    const evInicio = ev.start;
+                    const evFin = ev.end ?? ev.start;
+                    if (cruzaRangos(start, end, evInicio, evFin)) return true;
+                }
+                return false;
+            }
+
             function notificarCalendario(mensaje, tipo = 'warning') {
                 const texto = String(mensaje || '').trim();
                 if (!texto) return;
@@ -1487,6 +1845,54 @@ else
                 window.setTimeout(() => {
                     if (div.parentElement) div.parentElement.removeChild(div);
                 }, 3200);
+            }
+
+            function limpiarArrastreVisual() {
+                if (!calendar) return;
+                calendar.unselect();
+                window.setTimeout(() => {
+                    calendar.refetchEvents();
+                    calendar.updateSize();
+                }, 60);
+            }
+
+            function trazaDrag(marca, extra) {
+                if (!debugDragActivo) return;
+                const item = {
+                    at: new Date().toISOString(),
+                    marca: String(marca || ''),
+                    dragEnCurso: !!dragEnCurso,
+                    dragRechazadoPorBloqueo: !!dragRechazadoPorBloqueo,
+                    movimientoPendienteServidor: !!movimientoPendienteServidor,
+                    ignorarHasta: ignorarClicksCalendarioHasta,
+                    ...((extra && typeof extra === 'object') ? extra : {})
+                };
+                window.__scDragTrace = window.__scDragTrace || [];
+                window.__scDragTrace.push(item);
+                if (window.__scDragTrace.length > 200) {
+                    window.__scDragTrace.shift();
+                }
+                console.log('[SC-DRAG]', item);
+            }
+
+            function recuperarCalendarioPostDropInvalido(origen) {
+                trazaDrag('recuperarCalendarioPostDropInvalido', { origen: String(origen || '') });
+                document.documentElement.classList.remove('fc-not-allowed');
+                document.body.classList.remove('fc-not-allowed');
+                calendar?.unselect();
+                window.setTimeout(() => {
+                    calendar?.refetchEvents();
+                    calendar?.updateSize();
+                }, 0);
+            }
+
+            function bloquearClicksFantasmaTrasDrag(ms = 220) {
+                ignorarClicksCalendarioHasta = Date.now() + ms;
+                trazaDrag('bloquearClicksFantasmaTrasDrag', { ms });
+            }
+
+            function debeIgnorarInteraccionCalendario() {
+                return Date.now() <= ignorarClicksCalendarioHasta;
             }
 
             async function procesarMovimientoReserva(info, mensajeErrorPorDefecto) {
@@ -1524,13 +1930,13 @@ else
                     void renderPendientesConfirmarDia(info.event.start ?? new Date());
                 } catch (err) {
                     info?.revert?.();
-                    calendar?.unselect();
-                    calendar?.refetchEvents();
+                    limpiarArrastreVisual();
                     const mensaje = err?.name === 'AbortError'
                         ? 'La validacion tardó demasiado. Se restauro la reserva a su posicion original.'
                         : (err?.message || mensajeErrorPorDefecto);
                     notificarCalendario(mensaje, 'warning');
                 } finally {
+                    movimientoPendienteServidor = false;
                     window.clearTimeout(timeoutId);
                 }
             }
@@ -1569,6 +1975,30 @@ else
                     selectable: true,
                     height: 'auto',
                     expandRows: true,
+                    eventAllow: function(dropInfo, draggedEvent) {
+                        const start = dropInfo?.start;
+                        const end = dropInfo?.end ?? (start ? new Date(start.getTime() + (60 * 60000)) : null);
+                        if (!start || !end || !draggedEvent) return true;
+                        if (movimientoCruzaBloqueo(start, end, draggedEvent)) {
+                            trazaDrag('eventAllow:rechazado', {
+                                eventoId: draggedEvent.id || null,
+                                inicio: start?.toISOString?.() || null,
+                                fin: end?.toISOString?.() || null
+                            });
+                            const ahora = Date.now();
+                            if ((ahora - ultimoAvisoBloqueoDragAt) > 1200) {
+                                ultimoAvisoBloqueoDragAt = ahora;
+                                notificarCalendario('No se puede mover la reserva a un horario bloqueado/no atencion.', 'warning');
+                            }
+                            return true;
+                        }
+                        trazaDrag('eventAllow:ok', {
+                            eventoId: draggedEvent.id || null,
+                            inicio: start?.toISOString?.() || null,
+                            fin: end?.toISOString?.() || null
+                        });
+                        return true;
+                    },
                     buttonText: {
                         today: 'Hoy',
                         week: 'Semana',
@@ -1597,7 +2027,22 @@ else
                         if (arg.event.display === 'background') {
                             return { html: '' };
                         }
+                        const tipoEvento = String(arg.event.extendedProps?.tipoEvento || '').trim().toUpperCase();
                         const timeText = arg.timeText ? `<div class="sc-fc-event-time">${arg.timeText}</div>` : '';
+                        if (tipoEvento === 'RESERVA') {
+                            const clienteEquipo = obtenerClienteEquipoDesdeTitulo(arg.event.title);
+                            const total = Number(arg.event.extendedProps?.totalReserva || 0);
+                            const horarioPrecio = Number.isFinite(total) && total > 0
+                                ? `${arg.timeText || ''} (${monedaSimboloCalendario} ${formatMoney(total)})`
+                                : (arg.timeText || '');
+                            const clienteEquipoTexto = clienteEquipo
+                                ? `<div class="sc-fc-event-title sc-fc-event-cliente">${clienteEquipo}</div>`
+                                : '';
+                            const horarioPrecioTexto = horarioPrecio
+                                ? `<div class="sc-fc-event-time">${horarioPrecio}</div>`
+                                : '';
+                            return { html: `<div class="sc-fc-event-inner">${clienteEquipoTexto}${horarioPrecioTexto}</div>` };
+                        }
                         return { html: `<div class="sc-fc-event-inner"><div class="sc-fc-event-title">${arg.event.title || ''}</div>${timeText}</div>` };
                     },
                     eventDidMount: function(arg) {
@@ -1637,6 +2082,14 @@ else
                         }
                         const estadoCodigo = arg.event.extendedProps.estadoCodigo;
                         const tipo = arg.event.extendedProps.tipoEvento;
+                        if (String(tipo || '').toUpperCase() === 'RESERVA') {
+                            const clienteEquipoTooltip = obtenerClienteEquipoDesdeTitulo(arg.event.title);
+                            if (clienteEquipoTooltip) {
+                                arg.el.setAttribute('title', clienteEquipoTooltip);
+                            } else {
+                                arg.el.removeAttribute('title');
+                            }
+                        }
                         const colorTexto = colorTextoByEstado(estadoCodigo, tipo);
                         arg.el.style.setProperty('--fc-event-text-color', colorTexto);
                         arg.el.style.setProperty('--sc-event-text-color', colorTexto);
@@ -1673,23 +2126,13 @@ else
                                     delete base.textColor;
                                     delete base.color;
                                     if (tipo === 'NO_ATENCION') {
-                                        return [{ ...base, display: 'background', classNames: ['sc-no-atencion-bg'], editable: false, overlap: false, backgroundColor: colorEvento, borderColor: colorEvento }];
+                                        return [{ ...base, display: 'background', classNames: ['sc-no-atencion-bg'], editable: false, overlap: true, backgroundColor: colorEvento, borderColor: colorEvento }];
                                     }
                                     if (tipo === 'BLOQUEO') {
-                                        return [{ ...base, display: 'background', classNames: ['sc-bloqueo-bg'], editable: false, overlap: false, backgroundColor: colorEvento, borderColor: colorEvento }];
+                                        return [{ ...base, display: 'background', classNames: ['sc-bloqueo-bg'], editable: false, overlap: true, backgroundColor: colorEvento, borderColor: colorEvento }];
                                     }
-                                    const estadoClase = classByEstado(base.estadoCodigo, base.tipoEvento);
-                                const fondoEstado = {
-                                    ...base,
-                                    id: `BG-${base.id}`,
-                                        title: '',
-                                        display: 'background',
-                                        editable: false,
-                                        overlap: true,
-                                        classNames: ['sc-reserva-slot-bg', estadoClase]
-                                    };
-                                base.textColor = colorTextoByEstado(base.estadoCodigo, base.tipoEvento);
-                                return [fondoEstado, base];
+                                    base.textColor = colorTextoByEstado(base.estadoCodigo, base.tipoEvento);
+                                    return [base];
                             });
                             success(eventosApi);
                             setTimeout(() => {
@@ -1702,6 +2145,16 @@ else
                         .catch(err => failure(err));
                 },
                     dateClick: function(info) {
+                        trazaDrag('dateClick', {
+                            allDay: !!info?.allDay,
+                            fecha: info?.date?.toISOString?.() || null
+                        });
+                        if (dragRechazadoPorBloqueo) {
+                            bloquearClicksFantasmaTrasDrag(450);
+                            trazaDrag('dateClick:bloqueado_por_drag_rechazado');
+                            return;
+                        }
+                        if (debeIgnorarInteraccionCalendario()) return;
                         if (!info.allDay) {
                             const inicio = info.date;
                             const validacion = validarAperturaReserva(inicio);
@@ -1721,16 +2174,97 @@ else
                         renderDisponibilidadDia(info.date);
                     },
                     select: function(info) {
+                        trazaDrag('select', {
+                            inicio: info?.start?.toISOString?.() || null,
+                            fin: info?.end?.toISOString?.() || null
+                        });
+                        if (dragRechazadoPorBloqueo) {
+                            bloquearClicksFantasmaTrasDrag(450);
+                            trazaDrag('select:bloqueado_por_drag_rechazado');
+                            return;
+                        }
+                        if (debeIgnorarInteraccionCalendario()) return;
                         renderDisponibilidadDia(info.start);
                         renderPendientesConfirmarDia(info.start);
                     },
+                    eventDragStart: function() {
+                        dragEnCurso = true;
+                        dragRechazadoPorBloqueo = false;
+                        trazaDrag('eventDragStart');
+                    },
                     eventDrop: function(info) {
+                        movimientoPendienteServidor = true;
+                        dragEnCurso = false;
+                        trazaDrag('eventDrop', {
+                            eventoId: info?.event?.id || null,
+                            inicio: info?.event?.start?.toISOString?.() || null,
+                            fin: info?.event?.end?.toISOString?.() || null
+                        });
+                        if (movimientoCruzaBloqueo(info?.event?.start, info?.event?.end ?? info?.event?.start, info?.event)) {
+                            trazaDrag('eventDrop:cruceBloqueoRevert');
+                            movimientoPendienteServidor = false;
+                            info?.revert?.();
+                            bloquearClicksFantasmaTrasDrag(450);
+                            recuperarCalendarioPostDropInvalido('eventDrop:cruceBloqueo');
+                            notificarCalendario('No se puede mover la reserva a un horario bloqueado/no atencion.', 'warning');
+                            return;
+                        }
                         void procesarMovimientoReserva(info, 'No se pudo mover la reserva.');
                     },
                     eventResize: function(info) {
+                        movimientoPendienteServidor = true;
+                        dragEnCurso = false;
+                        trazaDrag('eventResize', {
+                            eventoId: info?.event?.id || null,
+                            inicio: info?.event?.start?.toISOString?.() || null,
+                            fin: info?.event?.end?.toISOString?.() || null
+                        });
+                        if (movimientoCruzaBloqueo(info?.event?.start, info?.event?.end ?? info?.event?.start, info?.event)) {
+                            trazaDrag('eventResize:cruceBloqueoRevert');
+                            movimientoPendienteServidor = false;
+                            info?.revert?.();
+                            bloquearClicksFantasmaTrasDrag(450);
+                            recuperarCalendarioPostDropInvalido('eventResize:cruceBloqueo');
+                            notificarCalendario('No se puede redimensionar sobre un horario bloqueado/no atencion.', 'warning');
+                            return;
+                        }
                         void procesarMovimientoReserva(info, 'No se pudo redimensionar la reserva.');
                     },
+                    eventDragStop: function() {
+                        dragEnCurso = false;
+                        trazaDrag('eventDragStop');
+                        bloquearClicksFantasmaTrasDrag(450);
+                        if (movimientoPendienteServidor) return;
+                        const requiereResetVisual = dragRechazadoPorBloqueo;
+                        dragRechazadoPorBloqueo = false;
+                        window.setTimeout(() => {
+                            if (requiereResetVisual) {
+                                recuperarCalendarioPostDropInvalido('eventDragStop');
+                            } else {
+                                calendar?.updateSize();
+                            }
+                        }, 30);
+                    },
+                    eventResizeStop: function() {
+                        dragEnCurso = false;
+                        trazaDrag('eventResizeStop');
+                        bloquearClicksFantasmaTrasDrag(450);
+                        if (movimientoPendienteServidor) return;
+                        window.setTimeout(() => {
+                            calendar?.updateSize();
+                        }, 30);
+                    },
                     eventClick: function(info) {
+                        trazaDrag('eventClick', {
+                            eventoId: info?.event?.id || null,
+                            fecha: info?.event?.start?.toISOString?.() || null
+                        });
+                        if (dragRechazadoPorBloqueo) {
+                            bloquearClicksFantasmaTrasDrag(450);
+                            trazaDrag('eventClick:bloqueado_por_drag_rechazado');
+                            return;
+                        }
+                        if (dragEnCurso || debeIgnorarInteraccionCalendario()) return;
                         const reservaId = info.event.extendedProps.reservaId;
                         if (!reservaId) {
                             return;
@@ -1819,9 +2353,93 @@ else
                 .forEach(id => {
                     const el = document.getElementById(id);
                     if (!el) return;
-                    el.addEventListener('change', validarDisponibilidadModalDebounce);
+                    el.addEventListener('change', () => {
+                        validarDisponibilidadModalDebounce();
+                        cotizarReservaModal();
+                    });
                     el.addEventListener('keyup', validarDisponibilidadModalDebounce);
                 });
+            if (modalRegistrarPagoEl) {
+                modalRegistrarPagoEl.addEventListener('change', actualizarUIRegistroPago);
+            }
+            if (modalClienteBuscarEl && modalClienteIdEl) {
+                modalClienteBuscarEl.addEventListener('input', () => {
+                    const filtro = String(modalClienteBuscarEl.value || '').trim();
+                    if (timerBusquedaCliente) {
+                        clearTimeout(timerBusquedaCliente);
+                        timerBusquedaCliente = null;
+                    }
+                    if (filtro.length < 2) {
+                        limpiarOpcionesClienteModal('Escribe al menos 2 caracteres...');
+                        return;
+                    }
+                    timerBusquedaCliente = setTimeout(() => {
+                        recargarClientesModal(filtro).catch(err => {
+                            console.warn(err);
+                            limpiarOpcionesClienteModal('No se pudo cargar clientes');
+                        });
+                    }, 250);
+                });
+                modalClienteBuscarEl.addEventListener('focus', () => {
+                    const filtro = String(modalClienteBuscarEl.value || '').trim();
+                    if (filtro.length < 2 && !modalClienteIdEl.value) {
+                        limpiarOpcionesClienteModal('Escribe al menos 2 caracteres...');
+                    }
+                });
+                modalClienteIdEl.addEventListener('change', sincronizarClienteBusquedaDesdeSelect);
+            }
+            if (modalBtnNuevoClienteEl && clienteRapidoModal) {
+                modalBtnNuevoClienteEl.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    limpiarClienteRapidoError();
+                    if (clienteRapidoFormEl) clienteRapidoFormEl.reset();
+                    if (clienteRapidoTipoDocumentoEl) clienteRapidoTipoDocumentoEl.value = '0';
+                    actualizarFormularioClienteRapido();
+                    clienteRapidoModal.show();
+                });
+            }
+            if (clienteRapidoTipoDocumentoEl) {
+                clienteRapidoTipoDocumentoEl.addEventListener('change', actualizarFormularioClienteRapido);
+            }
+            if (clienteRapidoFormEl) {
+                clienteRapidoFormEl.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    limpiarClienteRapidoError();
+
+                    const payload = {
+                        negocioId: negocioId,
+                        tipoDocumento: String(clienteRapidoTipoDocumentoEl?.value || ''),
+                        numeroDocumento: String(clienteRapidoNumeroDocumentoEl?.value || ''),
+                        razonSocial: String(clienteRapidoRazonSocialEl?.value || ''),
+                        nombres: String(clienteRapidoNombresEl?.value || ''),
+                        apellidos: String(clienteRapidoApellidosEl?.value || ''),
+                        nombreEquipo: String(clienteRapidoNombreEquipoEl?.value || ''),
+                        telefono: String(clienteRapidoTelefonoEl?.value || ''),
+                        correo: String(clienteRapidoCorreoEl?.value || '')
+                    };
+
+                    if (clienteRapidoGuardarBtnEl) clienteRapidoGuardarBtnEl.disabled = true;
+                    try {
+                        const resp = await fetch(crearClienteRapidoUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        const data = await resp.json();
+                        if (!resp.ok || !data.ok) {
+                            throw new Error(data.mensaje || 'No se pudo crear el cliente.');
+                        }
+
+                        await recargarClientesModal('', String(data.clienteId || ''));
+                        clienteRapidoModal.hide();
+                    } catch (err) {
+                        mostrarClienteRapidoError(err.message);
+                    } finally {
+                        if (clienteRapidoGuardarBtnEl) clienteRapidoGuardarBtnEl.disabled = false;
+                    }
+                });
+            }
 
             reservaModalForm.addEventListener('submit', function (e) {
                 e.preventDefault();
@@ -1829,6 +2447,26 @@ else
                 if (btnGuardarReservaModal.disabled) {
                     mostrarErrorModal('Debes corregir la disponibilidad antes de guardar.');
                     return;
+                }
+                if (Number(modalTotalEl?.value || 0) <= 0) {
+                    mostrarErrorModal('El precio de espacio es obligatorio y debe ser mayor que cero.');
+                    return;
+                }
+                if (modalRegistrarPagoEl?.checked) {
+                    const numeroOperacion = String(modalNumeroOperacionEl?.value || '').trim();
+                    if (numeroOperacion && !/^[A-Za-z0-9]+$/.test(numeroOperacion)) {
+                        mostrarErrorModal('El numero de operacion solo puede contener caracteres alfanumericos.');
+                        return;
+                    }
+                    const fechaPago = String(modalFechaPagoEl?.value || '').trim();
+                    if (!fechaPago) {
+                        mostrarErrorModal('Selecciona la fecha de pago.');
+                        return;
+                    }
+                    if (fechaPago > hoyIso) {
+                        mostrarErrorModal('La fecha de pago no puede ser mayor al dia actual.');
+                        return;
+                    }
                 }
                 const data = new FormData(reservaModalForm);
                 fetch(guardarReservaModalUrl, {
