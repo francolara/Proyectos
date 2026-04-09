@@ -349,7 +349,7 @@ Begin VB.Form frmListaDocExportar
                Italic          =   0   'False
                Strikethrough   =   0   'False
             EndProperty
-            Format          =   132251649
+            Format          =   140443649
             CurrentDate     =   38955
          End
          Begin MSComCtl2.DTPicker dtp_Hasta 
@@ -370,7 +370,7 @@ Begin VB.Form frmListaDocExportar
                Italic          =   0   'False
                Strikethrough   =   0   'False
             EndProperty
-            Format          =   132251649
+            Format          =   140443649
             CurrentDate     =   38955
          End
          Begin VB.Label Label3 
@@ -446,7 +446,7 @@ Private RsD             As New ADODB.Recordset
 Private strTDExportar   As String
 Dim indNuevoDoc         As Boolean
 Dim XstrCodCliente      As String
-
+Dim Sw_ValidaCheck      As Boolean
 Private Sub cmbAyudaCliente_Click()
     
     mostrarAyuda "CLIENTE", txtCod_Cliente, txtGls_Cliente
@@ -979,11 +979,44 @@ Private Sub gLista_OnCheckEditToggleClick(ByVal Column As DXDBGRIDLibCtl.IdxGrid
 End Sub
 
 Private Sub gListaDetalle_OnCheckEditToggleClick(ByVal Column As DXDBGRIDLibCtl.IdxGridColumn, ByVal Node As DXDBGRIDLibCtl.IdxGridNode, ByVal Text As String, ByVal State As DXDBGRIDLibCtl.ExCheckBoxState)
+' =============================================
+' Author:        FRANCO LARA / Codex
+' Create date:   08/04/2026
+' Description:   Sincroniza cabecera segun checks del detalle sin usar Bookmark (compatibilidad QuantumGrid).
+' =============================================
+Dim blnTieneDetalleMarcado As Boolean
+Dim rsTmp As ADODB.Recordset
     
+    Sw_ValidaCheck = True
     If gListaDetalle.Dataset.State = dsEdit Then
         gListaDetalle.Dataset.Post
     End If
 
+    If gLista.Count = 0 Or gListaDetalle.Count = 0 Then Exit Sub
+
+    Set rsTmp = RsD.Clone(adLockReadOnly)
+    If rsTmp.RecordCount > 0 Then rsTmp.MoveFirst
+
+    Do While Not rsTmp.EOF
+        If CStr(rsTmp.Fields("chkMarca").Value) = "1" Then
+            blnTieneDetalleMarcado = True
+            Exit Do
+        End If
+        rsTmp.MoveNext
+    Loop
+
+    If gLista.Dataset.State = dsEdit Then
+        gLista.Dataset.Post
+    End If
+
+    gLista.Dataset.Edit
+    gLista.Columns.ColumnByFieldName("chkMarca").Value = IIf(blnTieneDetalleMarcado, "1", "0")
+    gLista.Dataset.Post
+
+    If rsTmp.State = 1 Then rsTmp.Close
+    Set rsTmp = Nothing
+    
+    Sw_ValidaCheck = False
 End Sub
 
 Private Sub Toolbar1_ButtonClick(ByVal Button As MSComctlLib.Button)
@@ -1053,7 +1086,8 @@ End Sub
 Private Sub gLista_OnChangeNode(ByVal OldNode As DXDBGRIDLibCtl.IdxGridNode, ByVal Node As DXDBGRIDLibCtl.IdxGridNode)
 On Error GoTo Err
 Dim StrMsgError As String
-
+    
+    If Sw_ValidaCheck = True Then Exit Sub
     ListaDetalle StrMsgError
     If StrMsgError <> "" Then GoTo Err
     
