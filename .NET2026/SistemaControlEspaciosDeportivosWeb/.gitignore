@@ -1,3 +1,5 @@
 # Configuracion local de desarrollo (no versionar secretos)
 appsettings.Development.json
 
+# Salida temporal local de compilacion/publicacion
+out-temp/
