@@ -1,9 +1,9 @@
-@model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobantesIndexViewModel
-<!-- Firma: Codex - 29/03/2026 | Rediseno del listado de comprobantes con KPIs, filtro rapido y tabla detallada -->
-
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobantesIndexViewModel
+<!-- Firma: Codex - 09/04/2026 | Rediseno de cabecera/listado de comprobantes con estandar de iconos, buscador y paginacion 20x20; accion Ver abre preview web y desde ahi descarga PDF interno (RI) o redirecciona a URL proveedor en tributarios. -->
+<!-- Firma: Codex - 10/04/2026 | Listado de comprobantes agrega filtro por tipo de documento configurado para el negocio (maestros), con paginacion conservando filtro. -->
 @{
     ViewData["Title"] = "Comprobantes";
-    var totalComprobantes = Model.Comprobantes.Count;
+    var totalComprobantes = Model.TotalRegistros;
     var totalMonto = Model.Comprobantes.Sum(x => x.Total);
     var pendientes = Model.Comprobantes.Count(x => x.Estado.Contains("Pend", StringComparison.OrdinalIgnoreCase));
     var anulados = Model.Comprobantes.Count(x => x.Estado.Contains("Anul", StringComparison.OrdinalIgnoreCase));
@@ -19,6 +19,14 @@
 }
 
 <div class="admin-page-frame">
+    @if (TempData["ComprobanteError"] is string comprobanteError && !string.IsNullOrWhiteSpace(comprobanteError))
+    {
+        <div class="alert alert-danger">@comprobanteError</div>
+    }
+    @if (TempData["ComprobanteOk"] is string comprobanteOk && !string.IsNullOrWhiteSpace(comprobanteOk))
+    {
+        <div class="alert alert-success">@comprobanteOk</div>
+    }
     <section class="page-header">
         <div>
             <h1>Comprobantes electronicos</h1>
@@ -39,7 +47,7 @@
 
     <section class="kpi-grid mb-3">
         <article class="kpi-card">
-            <p class="kpi-card-label">Total comprobantes</p>
+            <p class="kpi-card-label">Comprobantes</p>
             <h3 class="kpi-card-value">@totalComprobantes</h3>
         </article>
         <article class="kpi-card">
@@ -58,20 +66,61 @@
 
     <section class="filter-card mb-3">
         <h2 class="section-title">Filtro rapido</h2>
-        <div class="row g-2 align-items-end px-3 pb-3">
-            <div class="col-lg-8 col-md-7">
-                <label class="form-label">Buscar por numero, cliente, tipo o estado</label>
-                <input type="text" id="filtroComprobantes" class="form-control" placeholder="Ejemplo: B001-10, BORIS, Boleta, Pendiente..." />
+        <form method="get" asp-action="Index">
+            <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+            <div class="row g-2 align-items-end px-3 pb-3">
+                <div class="col-lg-5 col-md-6">
+                    <label class="form-label">Buscar por comprobante, reserva, cliente, tipo o estado</label>
+                    <input type="text" name="buscar" value="@Model.Buscar" class="form-control" placeholder="Ejemplo: B001-10, #12, BORIS, Boleta, Pendiente..." />
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label">Tipo de documento</label>
+                    <select name="codigoDocumento" class="form-select">
+                        <option value="">Todos</option>
+                        @foreach (var td in Model.TiposDocumentoFiltro)
+                        {
+                            if (string.Equals(td.Value, Model.CodigoDocumento, StringComparison.OrdinalIgnoreCase))
+                            {
+                                <option value="@td.Value" selected="selected">@td.Text</option>
+                            }
+                            else
+                            {
+                                <option value="@td.Value">@td.Text</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-lg-4 col-md-12">
+                    <label class="form-label">Registros visibles</label>
+                    <div class="form-control bg-light text-center fw-bold">@Model.TotalRegistros</div>
+                </div>
+                <div class="col-12 d-flex justify-content-end">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="bi bi-search me-1"></i> Buscar
+                    </button>
+                </div>
             </div>
-            <div class="col-lg-4 col-md-5">
-                <label class="form-label">Registros visibles</label>
-                <div class="form-control bg-light" id="contadorComprobantes">@totalComprobantes</div>
+        </form>
+        @if (Model.TotalPaginas > 1)
+        {
+            <div class="px-3 pb-3 d-flex justify-content-between align-items-center">
+                <small class="text-muted">Pagina @Model.Pagina de @Model.TotalPaginas (@Model.TotalRegistros registros)</small>
+                <nav aria-label="Paginacion comprobantes">
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item @(Model.Pagina <= 1 ? "disabled" : null)">
+                            <a class="page-link" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-buscar="@Model.Buscar" asp-route-codigoDocumento="@Model.CodigoDocumento" asp-route-pagina="@(Model.Pagina - 1)">Anterior</a>
+                        </li>
+                        <li class="page-item @(Model.Pagina >= Model.TotalPaginas ? "disabled" : null)">
+                            <a class="page-link" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-buscar="@Model.Buscar" asp-route-codigoDocumento="@Model.CodigoDocumento" asp-route-pagina="@(Model.Pagina + 1)">Siguiente</a>
+                        </li>
+                    </ul>
+                </nav>
             </div>
-        </div>
+        }
     </section>
 
     <section class="table-card">
-        <h2 class="section-title">Listado detallado de comprobantes</h2>
+        <h2 class="section-title">Listado general de comprobantes</h2>
         @if (!Model.Comprobantes.Any())
         {
             <div class="empty-state">
@@ -85,37 +134,73 @@
                 <table class="table table-sm align-middle" id="tablaComprobantesDetallada">
                     <thead>
                         <tr>
-                            <th>Comprobante</th>
-                            <th>Cliente y fecha</th>
-                            <th>Estado y total</th>
-                            <th class="text-end">Acciones</th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-receipt-cutoff"></i><small>Documento</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-person"></i><small>Cliente y fecha</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-cash-stack"></i><small>Estado y total</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-gear"></i><small>Acciones</small></span></th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var item in Model.Comprobantes)
                         {
-                            var fechaTexto = item.FechaEmision.ToString("dd/MM/yyyy HH:mm");
-                            <tr data-search="@($"{item.Id} {item.Tipo} {item.SerieNumero} {item.Cliente} {item.Estado} {fechaTexto} {item.Total:N2}".ToLowerInvariant())">
-                                <td>
-                                    <div class="sc-list-main">
-                                        <span class="sc-list-code">@item.Tipo</span>
-                                        <div class="sc-list-title">@item.SerieNumero</div>
-                                        <small class="text-muted">ID: @item.Id</small>
+                            <tr>
+                                <td class="text-center">
+                                    @{
+                                        var serie = item.SerieNumero;
+                                        var numero = "";
+                                        if (!string.IsNullOrWhiteSpace(item.SerieNumero))
+                                        {
+                                            var partes = item.SerieNumero.Split('-', 2, StringSplitOptions.TrimEntries);
+                                            serie = partes.Length > 0 ? partes[0] : item.SerieNumero;
+                                            numero = partes.Length > 1 ? partes[1] : "";
+                                        }
+                                    }
+                                    <div class="comprobante-meta-grid">
+                                        <div class="comprobante-meta-item">
+                                            <small>Tipo</small>
+                                            <div>@item.Tipo</div>
+                                        </div>
+                                        <div class="comprobante-meta-item">
+                                            <small>Serie</small>
+                                            <div>@serie</div>
+                                        </div>
+                                        <div class="comprobante-meta-item">
+                                            <small>Numero</small>
+                                            <div>@numero</div>
+                                        </div>
+                                        <div class="comprobante-meta-item">
+                                            <small>Nro reserva</small>
+                                            <div>#@item.ReservaId</div>
+                                        </div>
                                     </div>
                                 </td>
-                                <td>
-                                    <div class="d-flex flex-wrap gap-2">
-                                        <span class="badge bg-light text-dark border"><i class="bi bi-person me-1"></i>@item.Cliente</span>
-                                        <span class="badge bg-light text-dark border"><i class="bi bi-calendar3 me-1"></i>@fechaTexto</span>
+                                <td class="text-center">
+                                    <div class="comprobante-meta-grid comprobante-meta-grid-2">
+                                        <div class="comprobante-meta-item">
+                                            <small>Cliente</small>
+                                            <div>@item.Cliente</div>
+                                        </div>
+                                        <div class="comprobante-meta-item">
+                                            <small>Fecha</small>
+                                            <div>@item.FechaEmision.ToString("dd/MM/yyyy")</div>
+                                        </div>
                                     </div>
                                 </td>
-                                <td>
-                                    <div class="d-flex flex-column gap-1">
+                                <td class="text-center">
+                                    <div class="d-flex flex-wrap justify-content-center gap-1">
                                         <span class="badge @estadoClase(item.Estado) sc-estado-pill">@item.Estado</span>
                                         <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle sc-estado-pill">S/ @item.Total.ToString("N2")</span>
                                     </div>
                                 </td>
                                 <td class="text-end">
+                                    <a class="btn btn-sm sc-action-btn sc-action-primary"
+                                       asp-action="Preview"
+                                       asp-route-negocioId="@Model.NegocioId"
+                                       asp-route-id="@item.Id"
+                                       target="_blank"
+                                       title="Visualizar comprobante">
+                                        <i class="bi bi-eye"></i> Ver
+                                    </a>
                                     @if (Model.PuedeEditar)
                                     {
                                         <a class="btn btn-sm sc-action-btn sc-action-edit" asp-action="Edit" asp-route-negocioId="@Model.NegocioId" asp-route-id="@item.Id">
@@ -143,28 +228,36 @@
     </section>
 </div>
 
-@section Scripts {
-    <script>
-        (() => {
-            const filtro = document.getElementById('filtroComprobantes');
-            const tabla = document.getElementById('tablaComprobantesDetallada');
-            const contador = document.getElementById('contadorComprobantes');
-            if (!filtro || !tabla || !contador) return;
+<style>
+    .comprobante-meta-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(120px, 1fr));
+        gap: .35rem;
+    }
+    .comprobante-meta-grid-2 {
+        grid-template-columns: repeat(2, minmax(160px, 1fr));
+    }
+    .comprobante-meta-item {
+        border: 1px solid #d8e1f3;
+        border-radius: .45rem;
+        padding: .25rem .4rem;
+        background: #f8fbff;
+        text-align: center;
+    }
+    .comprobante-meta-item small {
+        display: block;
+        font-size: .66rem;
+        color: #6b7a96;
+        font-weight: 600;
+        line-height: 1.1;
+        margin-bottom: .1rem;
+    }
+    .comprobante-meta-item div {
+        font-size: .75rem;
+        font-weight: 700;
+        color: #1f2f48;
+        line-height: 1.2;
+    }
+</style>
 
-            function aplicarFiltro() {
-                const valor = (filtro.value || '').trim().toLowerCase();
-                let visibles = 0;
-                tabla.querySelectorAll('tbody tr').forEach(row => {
-                    const texto = row.getAttribute('data-search') || '';
-                    const mostrar = !valor || texto.includes(valor);
-                    row.style.display = mostrar ? '' : 'none';
-                    if (mostrar) visibles++;
-                });
-                contador.textContent = String(visibles);
-            }
 
-            filtro.addEventListener('input', aplicarFiltro);
-            aplicarFiltro();
-        })();
-    </script>
-}

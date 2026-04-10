@@ -1,7 +1,5 @@
-@using SistemaControlEspaciosDeportivosWeb.Models
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobanteFormViewModel
-<!-- Firma: Codex - 27/03/2026 | Estandar visual pro para formulario de comprobantes -->
-
+<!-- Firma: Codex - 09/04/2026 | Emision de comprobante con reserva pagada, numero correlativo autogenerado, datos editables de cliente (con ubigeo) y validaciones tributarias en backend. -->
 @{
     ViewData["Title"] = "Emitir comprobante";
 }
@@ -9,8 +7,8 @@
 <div class="admin-page-frame">
     <section class="page-header">
         <div>
-            <h1>Emitir comprobante electronico</h1>
-            <p class="page-subtitle">Registra serie, numero, montos e informacion tributaria de la emision.</p>
+            <h1>Emitir comprobante</h1>
+            <p class="page-subtitle">Selecciona una reserva pagada y genera el comprobante con la serie configurada.</p>
         </div>
         <div class="action-toolbar">
             <a class="btn btn-outline-secondary" asp-action="Index" asp-route-negocioId="@Model.NegocioId">
@@ -19,53 +17,157 @@
         </div>
     </section>
 
-    <form asp-action="Create" method="post" class="sc-form-shell">
+    <form asp-action="Create" method="post" class="sc-form-shell" id="comprobanteCreateForm">
+        @Html.AntiForgeryToken()
         <input type="hidden" asp-for="NegocioId" />
+        <input type="hidden" asp-for="ReservaId" id="reservaIdSeleccionada" />
+        <input type="hidden" asp-for="SubTotal" id="subTotalInput" />
+        <input type="hidden" asp-for="Igv" id="igvInput" />
+        <input type="hidden" asp-for="Serie" id="serieTextoInput" />
         <div asp-validation-summary="ModelOnly" class="alert alert-danger shadow-sm mb-0"></div>
 
         <section class="sc-form-card">
             <div class="sc-form-section">
-                <h2 class="sc-form-title"><i class="bi bi-receipt"></i> Datos del comprobante</h2>
+                <h2 class="sc-form-title"><i class="bi bi-search"></i> Reserva pagada</h2>
                 <div class="row g-3">
+                    <div class="col-md-8">
+                        <label class="form-label">Buscar reserva</label>
+                        <input type="text" id="reservaBuscarInput" class="form-control" value="@Model.ReservaCodigo" placeholder="Escribe cliente/equipo/#reserva y presiona Enter..." />
+                        <small class="text-muted">Solo se listan reservas pagadas.</small>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Resultados</label>
+                        <select id="reservaResultados" class="form-select">
+                            <option value="">Escribe y presiona Enter...</option>
+                            @foreach (var r in Model.Reservas)
+                            {
+                                if (r.Value == Model.ReservaId.ToString())
+                                {
+                                    <option value="@r.Value" selected="selected">@r.Text</option>
+                                }
+                                else
+                                {
+                                    <option value="@r.Value">@r.Text</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="sc-form-card mb-3">
+            <div class="sc-form-section">
+                <h2 class="sc-form-title"><i class="bi bi-card-list"></i> Datos de la reserva</h2>
+                <div class="row g-2">
+                    <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2" id="refReserva">Reserva: -</span></div>
+                    <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2" id="refSede">Sede: -</span></div>
+                    <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2" id="refEspacio">Espacio: -</span></div>
+                    <div class="col-md-3"><span class="badge bg-light text-dark border w-100 py-2" id="refCliente">Cliente: -</span></div>
+                    <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2" id="refFecha">Fecha: -</span></div>
+                    <div class="col-md-1"><span class="badge bg-light text-dark border w-100 py-2" id="refHorario">--:-- - --:--</span></div>
+                    <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2" id="refTotalReserva">Total reserva: -</span></div>
+                    <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2" id="refTotalPagos">Total pagos: -</span></div>
+                    <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2" id="refMontoPagado">Monto pagado: -</span></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="table-card mb-3">
+            <h2 class="section-title"><i class="bi bi-receipt me-1"></i>Pagos registrados</h2>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-hash"></i><small>Pago</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-calendar-check"></i><small>Fecha</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-cash"></i><small>Monto</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-wallet2"></i><small>Forma</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-upc"></i><small>N° Operación</small></span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="pagosReservaBody">
+                        <tr><td colspan="5" class="text-center text-muted">No hay pagos registrados.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="sc-form-card">
+            <div class="sc-form-section">
+                <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
+                    <h2 class="sc-form-title mb-0"><i class="bi bi-file-earmark-text"></i> Datos del comprobante</h2>
+                    <div class="d-flex align-items-center gap-2">
+                        <label asp-for="Numero" class="form-label fw-bold mb-0">Número</label>
+                        <input asp-for="Numero" class="form-control text-center fw-bold" readonly />
+                    </div>
+                </div>
+                <div class="row g-3 mt-1">
+                    <div class="col-md-4">
+                        <label class="form-label">Nombre cliente</label>
+                        <input asp-for="Cliente" class="form-control" readonly />
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="ClienteCorreo" class="form-label">Correo</label>
+                        <input asp-for="ClienteCorreo" class="form-control" />
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="ClienteTipoDocumento" class="form-label">Tipo de documento</label>
+                        <select asp-for="ClienteTipoDocumento" asp-items="Model.TiposDocumentoIdentidad" class="form-select" id="clienteTipoDocumentoSelect"></select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="ClienteNumeroDocumento" class="form-label">Número de documento</label>
+                        <input asp-for="ClienteNumeroDocumento" class="form-control" />
+                    </div>
+                    <div class="col-md-8">
+                        <label asp-for="ClienteDireccionFiscal" class="form-label">Dirección</label>
+                        <input asp-for="ClienteDireccionFiscal" class="form-control" />
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Departamento</label>
+                        <select asp-for="ClienteCodigoDepartamento" asp-items="Model.DepartamentosUbigeo" class="form-select" id="clienteDepartamentoSelect">
+                            <option value="">Selecciona departamento</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Provincia</label>
+                        <select asp-for="ClienteCodigoProvincia" asp-items="Model.ProvinciasUbigeo" class="form-select" id="clienteProvinciaSelect">
+                            <option value="">Selecciona provincia</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Distrito</label>
+                        <select asp-for="ClienteCodigoUbigeo" asp-items="Model.DistritosUbigeo" class="form-select" id="clienteDistritoSelect">
+                            <option value="">Selecciona distrito</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Tipo de documento comprobante</label>
+                        <select asp-for="CodigoDocumentoComprobante" asp-items="Model.TiposDocumentoComprobante" class="form-select" id="codigoSunatSelect"></select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Serie</label>
+                        <select asp-for="NegocioSerieId" asp-items="Model.SeriesDocumento" class="form-select" id="serieSelect"></select>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="FechaEmision" class="form-label">Fecha</label>
+                        <input asp-for="FechaEmision" type="date" class="form-control" />
+                    </div>
                     <div class="col-md-5">
-                        <label asp-for="ReservaId" class="form-label">Reserva</label>
-                        <select asp-for="ReservaId" asp-items="Model.Reservas" class="form-select"></select>
+                        <label class="form-label">Total (@Model.MonedaSimbolo)</label>
+                        <input asp-for="Total" class="form-control text-end" id="totalInput" />
                     </div>
-                    <div class="col-md-3">
-                        <label asp-for="TipoComprobante" class="form-label"></label>
-                        <select asp-for="TipoComprobante" asp-items="Html.GetEnumSelectList<TipoComprobante>()" class="form-select"></select>
+
+                    <div class="col-md-4" id="wrapSubtotal">
+                        <label class="form-label">SubTotal (@Model.MonedaSimbolo)</label>
+                        <input class="form-control text-end" id="subTotalVisual" readonly />
                     </div>
-                    <div class="col-md-2">
-                        <label asp-for="Serie" class="form-label"></label>
-                        <input asp-for="Serie" class="form-control" />
-                    </div>
-                    <div class="col-md-2">
-                        <label asp-for="Numero" class="form-label"></label>
-                        <input asp-for="Numero" class="form-control" />
-                    </div>
-                    <div class="col-md-3">
-                        <label asp-for="FechaEmision" class="form-label"></label>
-                        <input asp-for="FechaEmision" class="form-control" type="datetime-local" />
-                    </div>
-                    <div class="col-md-2">
-                        <label asp-for="TipoMoneda" class="form-label"></label>
-                        <select asp-for="TipoMoneda" asp-items="Html.GetEnumSelectList<TipoMoneda>()" class="form-select"></select>
-                    </div>
-                    <div class="col-md-2">
-                        <label asp-for="SubTotal" class="form-label"></label>
-                        <input asp-for="SubTotal" class="form-control" />
-                    </div>
-                    <div class="col-md-2">
-                        <label asp-for="Igv" class="form-label"></label>
-                        <input asp-for="Igv" class="form-control" />
-                    </div>
-                    <div class="col-md-2">
-                        <label asp-for="Total" class="form-label"></label>
-                        <input asp-for="Total" class="form-control" />
-                    </div>
-                    <div class="col-md-3">
-                        <label asp-for="Estado" class="form-label"></label>
-                        <select asp-for="Estado" asp-items="Html.GetEnumSelectList<EstadoComprobanteElectronico>()" class="form-select"></select>
+                    <div class="col-md-4" id="wrapIgv">
+                        <label class="form-label">IGV @Model.PorcentajeIgvConfigurado% (@Model.MonedaSimbolo)</label>
+                        <input class="form-control text-end" id="igvVisual" readonly />
                     </div>
                 </div>
             </div>
@@ -82,4 +184,290 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const negocioId = Number('@Model.NegocioId');
+            const buscarUrl = '@Url.Action("BuscarReservas", "Comprobantes")';
+            const contextoUrl = '@Url.Action("ObtenerContextoReserva", "Comprobantes")';
+            const ubigeoProvUrl = '@Url.Action("UbigeoProvincias", "Comprobantes")';
+            const ubigeoDistUrl = '@Url.Action("UbigeoDistritos", "Comprobantes")';
+            const porcentajeIgv = Number('@Model.PorcentajeIgvConfigurado');
+
+            const form = document.getElementById('comprobanteCreateForm');
+            const inputBuscar = document.getElementById('reservaBuscarInput');
+            const selectResultados = document.getElementById('reservaResultados');
+            const reservaIdInput = document.getElementById('reservaIdSeleccionada');
+            const codigoSunatSelect = document.getElementById('codigoSunatSelect');
+            const serieSelect = document.getElementById('serieSelect');
+            const serieTextoInput = document.getElementById('serieTextoInput');
+            const totalInput = document.getElementById('totalInput');
+            const subTotalInput = document.getElementById('subTotalInput');
+            const igvInput = document.getElementById('igvInput');
+            const subTotalVisual = document.getElementById('subTotalVisual');
+            const igvVisual = document.getElementById('igvVisual');
+            const pagosReservaBody = document.getElementById('pagosReservaBody');
+            const wrapSubtotal = document.getElementById('wrapSubtotal');
+            const wrapIgv = document.getElementById('wrapIgv');
+
+            const clienteCorreoInput = document.getElementById('ClienteCorreo');
+            const clienteTipoDocumentoSelect = document.getElementById('clienteTipoDocumentoSelect');
+            const clienteNumeroDocumentoInput = document.getElementById('ClienteNumeroDocumento');
+            const clienteDireccionInput = document.getElementById('ClienteDireccionFiscal');
+            const clienteDepSelect = document.getElementById('clienteDepartamentoSelect');
+            const clienteProvSelect = document.getElementById('clienteProvinciaSelect');
+            const clienteDistSelect = document.getElementById('clienteDistritoSelect');
+
+            const refReserva = document.getElementById('refReserva');
+            const refSede = document.getElementById('refSede');
+            const refEspacio = document.getElementById('refEspacio');
+            const refCliente = document.getElementById('refCliente');
+            const refFecha = document.getElementById('refFecha');
+            const refHorario = document.getElementById('refHorario');
+            const refTotalReserva = document.getElementById('refTotalReserva');
+            const refTotalPagos = document.getElementById('refTotalPagos');
+            const refMontoPagado = document.getElementById('refMontoPagado');
+
+            const toMoney = (v) => {
+                const n = Number(v || 0);
+                return Number.isFinite(n) ? n.toFixed(2) : '0.00';
+            };
+
+            const isTributario = () => (codigoSunatSelect?.value || '').toUpperCase() !== 'RI';
+
+            const setOptions = (selectEl, items, placeholder) => {
+                if (!selectEl) return;
+                const opts = [`<option value="">${placeholder}</option>`];
+                for (const item of items || []) opts.push(`<option value="${item.value}">${item.text}</option>`);
+                selectEl.innerHTML = opts.join('');
+            };
+
+            const cargarProvincias = async (codigoDep, selected = '') => {
+                if (!clienteProvSelect || !clienteDistSelect) return;
+                if (!codigoDep || String(codigoDep).length !== 2) {
+                    setOptions(clienteProvSelect, [], 'Selecciona provincia');
+                    setOptions(clienteDistSelect, [], 'Selecciona distrito');
+                    return;
+                }
+                const resp = await fetch(`${ubigeoProvUrl}?codigoDepartamento=${encodeURIComponent(codigoDep)}`);
+                const items = await resp.json();
+                setOptions(clienteProvSelect, Array.isArray(items) ? items : [], 'Selecciona provincia');
+                if (selected) clienteProvSelect.value = selected;
+            };
+
+            const cargarDistritos = async (codigoProv, selected = '') => {
+                if (!clienteDistSelect) return;
+                if (!codigoProv || String(codigoProv).length !== 4) {
+                    setOptions(clienteDistSelect, [], 'Selecciona distrito');
+                    return;
+                }
+                const resp = await fetch(`${ubigeoDistUrl}?codigoProvincia=${encodeURIComponent(codigoProv)}`);
+                const items = await resp.json();
+                setOptions(clienteDistSelect, Array.isArray(items) ? items : [], 'Selecciona distrito');
+                if (selected) clienteDistSelect.value = selected;
+            };
+
+            const limpiarContextoReserva = () => {
+                if (reservaIdInput) reservaIdInput.value = '';
+                refReserva.textContent = 'Reserva: -';
+                refSede.textContent = 'Sede: -';
+                refEspacio.textContent = 'Espacio: -';
+                refCliente.textContent = 'Cliente: -';
+                refFecha.textContent = 'Fecha: -';
+                refHorario.textContent = '--:-- - --:--';
+                refTotalReserva.textContent = 'Total reserva: -';
+                refTotalPagos.textContent = 'Total pagos: -';
+                refMontoPagado.textContent = 'Monto pagado: -';
+                pagosReservaBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay pagos registrados.</td></tr>';
+                if (serieSelect) {
+                    serieSelect.innerHTML = '<option value="">Sin series configuradas</option>';
+                }
+                if (serieTextoInput) serieTextoInput.value = '';
+                if (totalInput) totalInput.value = '0.00';
+            };
+
+            const recalcularMontos = () => {
+                const total = Number(totalInput?.value || 0);
+                if (!Number.isFinite(total) || total < 0) return;
+                if (!isTributario()) {
+                    subTotalInput.value = total.toFixed(2);
+                    igvInput.value = '0.00';
+                    subTotalVisual.value = total.toFixed(2);
+                    igvVisual.value = '0.00';
+                    wrapSubtotal.style.display = 'none';
+                    wrapIgv.style.display = 'none';
+                    return;
+                }
+                const divisor = 1 + (porcentajeIgv / 100);
+                const subTotal = divisor > 0 ? (total / divisor) : total;
+                const igv = total - subTotal;
+                subTotalInput.value = subTotal.toFixed(2);
+                igvInput.value = igv.toFixed(2);
+                subTotalVisual.value = subTotal.toFixed(2);
+                igvVisual.value = igv.toFixed(2);
+                wrapSubtotal.style.display = '';
+                wrapIgv.style.display = '';
+            };
+
+            const cargarResultados = async (texto) => {
+                const q = String(texto || '').trim();
+                if (q.length < 2) {
+                    selectResultados.innerHTML = '<option value="">Escribe al menos 2 caracteres...</option>';
+                    limpiarContextoReserva();
+                    return;
+                }
+                const resp = await fetch(`${buscarUrl}?negocioId=${encodeURIComponent(negocioId)}&q=${encodeURIComponent(q)}`);
+                const data = await resp.json();
+                if (!resp.ok || !data.ok || !Array.isArray(data.items)) throw new Error(data.mensaje || 'No se pudo buscar reservas pagadas.');
+                if (!data.items.length) {
+                    selectResultados.innerHTML = '<option value="">No se encontraron reservas pagadas</option>';
+                    limpiarContextoReserva();
+                    return;
+                }
+                selectResultados.innerHTML = '<option value="">Selecciona reserva...</option>' + data.items.map(x => `<option value="${x.value}">${x.text}</option>`).join('');
+            };
+
+            const cargarContexto = async () => {
+                const reservaId = Number(reservaIdInput.value || 0);
+                if (!reservaId) {
+                    limpiarContextoReserva();
+                    recalcularMontos();
+                    return;
+                }
+                const codigoSunat = String(codigoSunatSelect?.value || '');
+                const resp = await fetch(`${contextoUrl}?negocioId=${encodeURIComponent(negocioId)}&reservaId=${encodeURIComponent(reservaId)}&codigoSunat=${encodeURIComponent(codigoSunat)}`);
+                const payload = await resp.json();
+                if (!resp.ok || !payload.ok || !payload.data) {
+                    limpiarContextoReserva();
+                    recalcularMontos();
+                    throw new Error(payload.mensaje || 'No se pudo cargar contexto.');
+                }
+                const d = payload.data;
+
+                refReserva.textContent = `Reserva: ${d.reservaCodigo || '-'}`;
+                refSede.textContent = `Sede: ${d.sede || '-'}`;
+                refEspacio.textContent = `Espacio: ${d.espacio || '-'}`;
+                refCliente.textContent = `Cliente: ${d.cliente || '-'}`;
+                refFecha.textContent = `Fecha: ${(d.fechaReserva || '').split('-').reverse().join('/') || '-'}`;
+                refHorario.textContent = `${d.horaInicioReserva || '--:--'} - ${d.horaFinReserva || '--:--'}`;
+                refTotalReserva.textContent = `Total reserva: ${(d.monedaSimbolo || 'S/')} ${toMoney(d.totalReserva)}`;
+                refTotalPagos.textContent = `Total pagos: ${Array.isArray(d.pagos) ? d.pagos.length : 0}`;
+                refMontoPagado.textContent = `Monto pagado: ${(d.monedaSimbolo || 'S/')} ${toMoney(d.totalPagado)}`;
+
+                if (clienteCorreoInput) clienteCorreoInput.value = d.clienteCorreo || '';
+                if (clienteTipoDocumentoSelect) clienteTipoDocumentoSelect.value = d.clienteTipoDocumento || '';
+                if (clienteNumeroDocumentoInput) clienteNumeroDocumentoInput.value = d.clienteNumeroDocumento || '';
+                if (clienteDireccionInput) clienteDireccionInput.value = d.clienteDireccionFiscal || '';
+                if (clienteDepSelect) clienteDepSelect.value = d.clienteCodigoDepartamento || '';
+
+                await cargarProvincias(d.clienteCodigoDepartamento || '', d.clienteCodigoProvincia || '');
+                await cargarDistritos(d.clienteCodigoProvincia || '', d.clienteCodigoUbigeo || '');
+
+                if (totalInput && (!totalInput.value || Number(totalInput.value) <= 0)) {
+                    totalInput.value = toMoney(d.totalReserva);
+                }
+
+                const documentos = Array.isArray(d.documentos) ? d.documentos : [];
+                if (codigoSunatSelect) {
+                    const codigoActual = String(codigoSunatSelect.value || '');
+                    codigoSunatSelect.innerHTML = documentos.length
+                        ? documentos.map(x => `<option value="${x.value}">${x.text}</option>`).join('')
+                        : '<option value="">Sin documentos habilitados</option>';
+                    if (documentos.some(x => String(x.value) === codigoActual)) {
+                        codigoSunatSelect.value = codigoActual;
+                    }
+                }
+
+                const series = Array.isArray(d.series) ? d.series : [];
+                if (serieSelect) {
+                    serieSelect.innerHTML = series.length
+                        ? series.map(s => `<option value="${s.value}">${s.text}</option>`).join('')
+                        : '<option value="">Sin series configuradas</option>';
+                    serieTextoInput.value = series.length ? String(series[0].text || '') : '';
+                }
+
+                const pagos = Array.isArray(d.pagos) ? d.pagos : [];
+                if (!pagos.length) {
+                    pagosReservaBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay pagos registrados.</td></tr>';
+                } else {
+                    pagosReservaBody.innerHTML = pagos.map((p) => `
+                        <tr>
+                            <td class="text-center">#${p.pagoId}</td>
+                            <td class="text-center">${p.fechaPago || '-'}</td>
+                            <td class="text-center">${toMoney(p.monto)}</td>
+                            <td class="text-center">${p.formaPago || '-'}</td>
+                            <td class="text-center">${p.numeroOperacion || '-'}</td>
+                        </tr>
+                    `).join('');
+                }
+
+                recalcularMontos();
+            };
+
+            inputBuscar?.addEventListener('keydown', async (e) => {
+                if (e.key !== 'Enter') return;
+                e.preventDefault();
+                try {
+                    await cargarResultados(inputBuscar.value);
+                    selectResultados?.focus();
+                } catch (err) {
+                    console.warn(err);
+                }
+            });
+
+            selectResultados?.addEventListener('change', async () => {
+                reservaIdInput.value = selectResultados.value || '';
+                await cargarContexto();
+            });
+
+            codigoSunatSelect?.addEventListener('change', async () => {
+                await cargarContexto();
+            });
+
+            serieSelect?.addEventListener('change', () => {
+                const opt = serieSelect.options[serieSelect.selectedIndex];
+                serieTextoInput.value = opt ? String(opt.text || '') : '';
+            });
+
+            clienteDepSelect?.addEventListener('change', async () => {
+                await cargarProvincias(clienteDepSelect.value || '', '');
+                await cargarDistritos('', '');
+            });
+
+            clienteProvSelect?.addEventListener('change', async () => {
+                await cargarDistritos(clienteProvSelect.value || '', '');
+            });
+
+            totalInput?.addEventListener('input', recalcularMontos);
+
+            form?.addEventListener('submit', (e) => {
+                const reservaId = Number(reservaIdInput.value || 0);
+                if (!reservaId) {
+                    e.preventDefault();
+                    limpiarContextoReserva();
+                    alert('Selecciona una reserva pagada.');
+                    return;
+                }
+                const serieId = Number(serieSelect?.value || 0);
+                if (!serieId) {
+                    e.preventDefault();
+                    alert('Selecciona una serie configurada.');
+                    return;
+                }
+                const total = Number(totalInput?.value || 0);
+                if (!Number.isFinite(total) || total <= 0) {
+                    e.preventDefault();
+                    alert('El total del comprobante debe ser mayor que cero.');
+                    return;
+                }
+                recalcularMontos();
+            });
+
+            if (Number(reservaIdInput?.value || 0) > 0) {
+                cargarContexto().catch(err => console.warn(err));
+            } else {
+                limpiarContextoReserva();
+                recalcularMontos();
+            }
+        })();
+    </script>
 }

@@ -307,4 +307,81 @@ public partial class SportCenterStoredProcedureService
             return false;
         }
     }
+
+    public Task<List<SelectListItem>> MaestrosTiposDocumentoComprobanteSuperListarAsync()
+        => ComboAsync("Sp_Maestros_TiposDocumentoComprobanteSuper_Listar");
+
+    public async Task<List<TipoDocumentoComprobanteNegocioItemViewModel>> MaestrosTiposDocumentoComprobanteListarAsync(int negocioId)
+    {
+        var list = new List<TipoDocumentoComprobanteNegocioItemViewModel>();
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_Maestros_TiposDocumentoComprobante_Listar", cn) { CommandType = CommandType.StoredProcedure };
+        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+        await using var dr = await cmd.ExecuteReaderAsync();
+        while (await dr.ReadAsync())
+        {
+            list.Add(new TipoDocumentoComprobanteNegocioItemViewModel
+            {
+                Id = dr.GetInt32(0),
+                CodigoSunat = dr.GetString(1),
+                Nombre = dr.GetString(2),
+                Tributario = dr.GetBoolean(3),
+                HabilitadoSuper = dr.GetBoolean(4),
+                Activo = dr.GetBoolean(5)
+            });
+        }
+        return list;
+    }
+
+    public async Task<int> MaestrosTiposDocumentoComprobanteCrearAsync(int negocioId, string codigoSunat, bool activo, string usuario)
+    {
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_Maestros_TiposDocumentoComprobante_Crear", cn) { CommandType = CommandType.StoredProcedure };
+        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+        AddParam(cmd, "@CodigoSunat", codigoSunat, SqlDbType.NVarChar);
+        AddParam(cmd, "@Activo", activo, SqlDbType.Bit);
+        AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+        return Convert.ToInt32(await cmd.ExecuteScalarAsync());
+    }
+
+    public async Task<bool> MaestrosTiposDocumentoComprobanteActualizarAsync(int negocioId, int id, bool activo, string usuario)
+    {
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_Maestros_TiposDocumentoComprobante_Actualizar", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+            AddParam(cmd, "@Id", id, SqlDbType.Int);
+            AddParam(cmd, "@Activo", activo, SqlDbType.Bit);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (SqlException ex) when (EsErrorNoEncontrado(ex.Message))
+        {
+            return false;
+        }
+    }
+
+    public async Task<bool> MaestrosTiposDocumentoComprobanteEliminarAsync(int negocioId, int id, string usuario)
+    {
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_Maestros_TiposDocumentoComprobante_Eliminar", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+            AddParam(cmd, "@Id", id, SqlDbType.Int);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (SqlException ex) when (EsErrorNoEncontrado(ex.Message))
+        {
+            return false;
+        }
+    }
 }

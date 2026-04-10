@@ -15,7 +15,13 @@ public interface ISportCenterStoredProcedureService
     Task<ConfiguracionClubViewModel?> ConfiguracionClubObtenerAsync(int negocioId);
     Task<bool> ConfiguracionClubActualizarAsync(ConfiguracionClubViewModel model, string usuario);
     Task<List<SelectListItem>> ConfiguracionClubComboMonedasAsync(int negocioId);
+    Task<bool> ConfiguracionClubActualizarEmisionAsync(int negocioId, bool emisionComprobantesElectronicos, bool emisionReciboInterno, string usuario);
+    Task<List<SerieDocumentoComprobanteItemViewModel>> ConfiguracionSeriesDocumentoListarAsync(int negocioId);
+    Task ConfiguracionSeriesDocumentoGuardarAsync(int negocioId, string codigoSunat, string serie, bool activo, string usuario);
+    Task<bool> ConfiguracionSeriesDocumentoEliminarAsync(int negocioId, int id, string usuario);
     Task<List<SelectListItem>> CombosTiposDocumentoIdentidadSunatAsync();
+    Task<List<SelectListItem>> CombosDocumentosComprobanteNegocioAsync(int negocioId, bool? tributario = null);
+    Task<List<SelectListItem>> CombosSeriesDocumentoComprobanteAsync(int negocioId, string codigoSunat);
     Task<List<SelectListItem>> UbigeoDepartamentosListarAsync();
     Task<List<SelectListItem>> UbigeoProvinciasListarAsync(string codigoDepartamento);
     Task<List<SelectListItem>> UbigeoDistritosListarAsync(string codigoProvincia);
@@ -32,6 +38,8 @@ public interface ISportCenterStoredProcedureService
     Task<bool> SedesActualizarAsync(SedeFormViewModel model, string usuario);
     Task<bool> SedesEliminarAsync(int negocioId, int id, string usuario);
     Task<List<SelectListItem>> SedesComboServiciosAsync();
+    Task<List<SedeSerieDocumentoConfigItemViewModel>> SedesSeriesDocumentoListarAsync(int negocioId, int sedeId);
+    Task SedesSeriesDocumentoGuardarAsync(int negocioId, int sedeId, string codigoSunat, int? negocioSerieId, string usuario);
 
     Task<List<EspacioItemViewModel>> EspaciosListarAsync(int negocioId, int? sedeId = null);
     Task<EspacioFormViewModel?> EspaciosObtenerAsync(int negocioId, int id);
@@ -43,6 +51,7 @@ public interface ISportCenterStoredProcedureService
     Task<List<SelectListItem>> EspaciosComboTiposSueloAsync(int negocioId);
 
     Task<(List<ReservaItemViewModel> Reservas, int TotalRegistros)> ReservasListarAsync(int negocioId, DateOnly? fechaDesde = null, DateOnly? fechaHasta = null, int? sedeId = null, int? espacioDeportivoId = null, int? estado = null, string? estadosCsv = null, int pagina = 1, int tamanoPagina = 20);
+    Task<ReservasListadoResumenViewModel> ReservasListadoResumenAsync(int negocioId, DateOnly? fechaDesde = null, DateOnly? fechaHasta = null, int? sedeId = null, int? espacioDeportivoId = null, int? estado = null, string? estadosCsv = null);
     Task<ReservaFormViewModel?> ReservasObtenerAsync(int negocioId, int id);
     Task<int> ReservasCrearAsync(ReservaFormViewModel model, string usuario);
     Task<bool> ReservasActualizarAsync(ReservaFormViewModel model, string usuario);
@@ -61,20 +70,25 @@ public interface ISportCenterStoredProcedureService
     Task<List<SelectListItem>> ReservasComboClientesAsync(int negocioId);
     Task<List<SelectListItem>> ReservasBuscarClientesAsync(int negocioId, string? buscar = null, int? clienteId = null, int top = 50);
 
-    Task<List<PagoItemViewModel>> PagosListarAsync(int negocioId, int? sedeId = null);
-    Task<PagoFormViewModel?> PagosObtenerAsync(int negocioId, int id);
+    Task<(List<PagoReservaResumenViewModel> Pagos, int TotalRegistros)> PagosListarAsync(int negocioId, int? sedeId = null, string? buscar = null, int pagina = 1, int tamanoPagina = 20);
+    Task<PagoReservaEditViewModel?> PagosObtenerAsync(int negocioId, int reservaId);
     Task<int> PagosCrearAsync(PagoFormViewModel model, string usuario);
-    Task<bool> PagosActualizarAsync(PagoFormViewModel model, string usuario);
+    Task<bool> PagosActualizarAsync(int negocioId, int pagoId, string? observacion, string usuario);
     Task<bool> PagosEliminarAsync(int negocioId, int id, string usuario);
+    Task<bool> PagosEliminarPorReservaAsync(int negocioId, int reservaId, string usuario);
     Task<List<SelectListItem>> PagosComboReservasAsync(int negocioId, int? sedeId = null);
+    Task<List<SelectListItem>> PagosBuscarReservasAsync(int negocioId, string? buscar = null, int? reservaId = null, int top = 30);
     Task<List<SelectListItem>> PagosComboFormasPagoAsync(int negocioId);
 
-    Task<List<ComprobanteItemViewModel>> ComprobantesListarAsync(int negocioId, int? sedeId = null);
+    Task<(List<ComprobanteItemViewModel> Comprobantes, int TotalRegistros)> ComprobantesListarAsync(int negocioId, int? sedeId = null, string? buscar = null, string? codigoDocumento = null, int pagina = 1, int tamanoPagina = 20);
     Task<ComprobanteFormViewModel?> ComprobantesObtenerAsync(int negocioId, int id);
+    Task<ComprobanteVisualizacionViewModel?> ComprobantesObtenerVisualizacionAsync(int negocioId, int id);
     Task<int> ComprobantesCrearAsync(ComprobanteFormViewModel model, string usuario);
     Task<bool> ComprobantesActualizarAsync(ComprobanteFormViewModel model, string usuario);
     Task<bool> ComprobantesEliminarAsync(int negocioId, int id, string usuario);
     Task<List<SelectListItem>> ComprobantesComboReservasAsync(int negocioId, int? sedeId = null);
+    Task<List<SelectListItem>> ComprobantesBuscarReservasPagadasAsync(int negocioId, string? buscar = null, int? reservaId = null, int top = 30);
+    Task<ComprobanteReservaContextoViewModel?> ComprobantesObtenerContextoReservaAsync(int negocioId, int reservaId, string? codigoSunat = null);
 
     Task<(List<ClienteItemViewModel> Clientes, int TotalRegistros, int TotalActivos, int TotalInactivos)> ClientesListarAsync(int negocioId, bool? activo = null, string? buscar = null, int pagina = 1, int tamanoPagina = 20);
     Task<ClienteFormViewModel?> ClientesObtenerAsync(int negocioId, int id);
@@ -129,6 +143,11 @@ public interface ISportCenterStoredProcedureService
     Task<int> MaestrosFormasPagoCrearAsync(int negocioId, string nombre, bool activo, string usuario);
     Task<bool> MaestrosFormasPagoActualizarAsync(int negocioId, int id, string nombre, bool activo, string usuario);
     Task<bool> MaestrosFormasPagoEliminarAsync(int negocioId, int id, string usuario);
+    Task<List<SelectListItem>> MaestrosTiposDocumentoComprobanteSuperListarAsync();
+    Task<List<TipoDocumentoComprobanteNegocioItemViewModel>> MaestrosTiposDocumentoComprobanteListarAsync(int negocioId);
+    Task<int> MaestrosTiposDocumentoComprobanteCrearAsync(int negocioId, string codigoSunat, bool activo, string usuario);
+    Task<bool> MaestrosTiposDocumentoComprobanteActualizarAsync(int negocioId, int id, bool activo, string usuario);
+    Task<bool> MaestrosTiposDocumentoComprobanteEliminarAsync(int negocioId, int id, string usuario);
 
     Task<List<ReservaRecordatorioPendienteViewModel>> ReservasRecordatoriosPendientesAsync(DateTime fechaHoraActual);
     Task<bool> ReservasMarcarRecordatorioEnviadoAsync(int negocioId, int reservaId, string usuario);

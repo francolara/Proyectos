@@ -1,5 +1,5 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.PagoFormViewModel
-<!-- Firma: Codex - 01/04/2026 | Formulario de pagos ajustado para combo Forma de pago desde catalogo BD -->
+<!-- Firma: Codex - 09/04/2026 | Registro de pago con busqueda de reserva por texto+Enter, resumen referencial, pagos previos visibles y validaciones de monto/politica. -->
 
 @{
     ViewData["Title"] = "Registrar pago";
@@ -9,7 +9,7 @@
     <section class="page-header">
         <div>
             <h1>Registrar pago</h1>
-            <p class="page-subtitle">Registra abonos, forma de pago y referencia de la operacion.</p>
+            <p class="page-subtitle">Busca una reserva, valida referencia operativa y registra el pago.</p>
         </div>
         <div class="action-toolbar">
             <a class="btn btn-outline-secondary" asp-action="Index" asp-route-negocioId="@Model.NegocioId">
@@ -18,31 +18,81 @@
         </div>
     </section>
 
-    <form asp-action="Create" method="post" class="sc-form-shell">
+    <form asp-action="Create" method="post" class="sc-form-shell" id="pagoCreateForm">
+        @Html.AntiForgeryToken()
         <input type="hidden" asp-for="NegocioId" />
+        <input type="hidden" asp-for="ReservaId" id="reservaIdSeleccionada" />
         <div asp-validation-summary="ModelOnly" class="alert alert-danger shadow-sm mb-0"></div>
 
         <section class="sc-form-card">
             <div class="sc-form-section">
-                <h2 class="sc-form-title"><i class="bi bi-cash-coin"></i> Datos del pago</h2>
+                <h2 class="sc-form-title"><i class="bi bi-search"></i> Reserva</h2>
                 <div class="row g-3">
-                    <div class="col-md-6">
-                        <label asp-for="ReservaId" class="form-label">Reserva</label>
-                        <select asp-for="ReservaId" asp-items="Model.Reservas" class="form-select"></select>
+                    <div class="col-md-8">
+                        <label class="form-label">Buscar reserva</label>
+                        <input type="text"
+                               id="reservaBuscarInput"
+                               class="form-control"
+                               placeholder="Escribe cliente/equipo/#reserva y presiona Enter..."
+                               value="@Model.ReservaTextoSeleccionada" />
+                        <small class="text-muted">Escribe al menos 2 caracteres y presiona Enter para listar.</small>
                     </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Resultados</label>
+                        <select id="reservaResultados" class="form-select">
+                            <option value="">Escribe y presiona Enter...</option>
+                            @foreach (var r in Model.Reservas)
+                            {
+                                if (r.Value == Model.ReservaId.ToString())
+                                {
+                                    <option value="@r.Value" selected="selected">@r.Text</option>
+                                }
+                                else
+                                {
+                                    <option value="@r.Value">@r.Text</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="sc-form-card mb-3">
+            <div class="sc-form-section">
+                <h2 class="sc-form-title"><i class="bi bi-card-list"></i> Datos de la reserva</h2>
+                <div class="row g-2">
+                    <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2" id="refReserva">Reserva: -</span></div>
+                    <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2" id="refSede">Sede: -</span></div>
+                    <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2" id="refEspacio">Espacio: -</span></div>
+                    <div class="col-md-3"><span class="badge bg-light text-dark border w-100 py-2" id="refCliente">Cliente: -</span></div>
+                    <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2" id="refFecha">Fecha: -</span></div>
+                    <div class="col-md-1"><span class="badge bg-light text-dark border w-100 py-2" id="refHorario">--:-- - --:--</span></div>
+                    <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2" id="refTotal">Monto: -</span></div>
+                    <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2" id="refPagado">Pagado: -</span></div>
+                    <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2" id="refSaldo">Saldo: -</span></div>
+                </div>
+                <div class="mt-2 small text-muted" id="refPolitica">Política de confirmación: -</div>
+            </div>
+        </section>
+
+        <section class="sc-form-card">
+            <div class="sc-form-section">
+                <h2 class="sc-form-title"><i class="bi bi-cash-coin"></i>Datos del pago</h2>
+                <div class="row g-3">
                     <div class="col-md-3">
                         <label asp-for="Monto" class="form-label"></label>
-                        <input asp-for="Monto" class="form-control" />
+                        <input asp-for="Monto" class="form-control text-end" id="montoPagoInput" />
                     </div>
                     <div class="col-md-3">
                         <label asp-for="FormaPagoId" class="form-label"></label>
                         <select asp-for="FormaPagoId" asp-items="Model.FormasPago" class="form-select"></select>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label asp-for="FechaPago" class="form-label"></label>
-                        <input asp-for="FechaPago" class="form-control" type="datetime-local" />
+                        <input asp-for="FechaPago" class="form-control" type="date" />
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label asp-for="NumeroOperacion" class="form-label"></label>
                         <input asp-for="NumeroOperacion" class="form-control" />
                     </div>
@@ -51,6 +101,44 @@
                         <input asp-for="Observacion" class="form-control" />
                     </div>
                 </div>
+            </div>
+        </section>
+
+        <section class="table-card mb-3">
+            <h2 class="section-title"><i class="bi bi-receipt me-1"></i>Pagos previos de la reserva</h2>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0" id="tablaPagosPrevios">
+                    <thead>
+                        <tr>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-hash"></i><small>Pago</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-calendar-check"></i><small>Fecha</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-cash"></i><small>Monto</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-wallet2"></i><small>Forma</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-upc"></i><small>N° Operación</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-chat-left-text"></i><small>Observación</small></span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="pagosPreviosBody">
+                        @if (!Model.PagosPrevios.Any())
+                        {
+                            <tr><td colspan="6" class="text-center text-muted">No hay pagos previos.</td></tr>
+                        }
+                        else
+                        {
+                            @foreach (var pagoPrevio in Model.PagosPrevios)
+                            {
+                                <tr>
+                                    <td class="text-center">#@pagoPrevio.PagoId</td>
+                                    <td class="text-center">@pagoPrevio.FechaPago.ToString("dd/MM/yyyy")</td>
+                                    <td class="text-center">@pagoPrevio.Monto.ToString("N2")</td>
+                                    <td class="text-center">@pagoPrevio.FormaPago</td>
+                                    <td class="text-center">@(string.IsNullOrWhiteSpace(pagoPrevio.NumeroOperacion) ? "-" : pagoPrevio.NumeroOperacion)</td>
+                                    <td class="text-center">@(string.IsNullOrWhiteSpace(pagoPrevio.Observacion) ? "-" : pagoPrevio.Observacion)</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
             </div>
         </section>
 
@@ -65,4 +153,166 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const negocioId = Number('@Model.NegocioId');
+            const buscarUrl = '@Url.Action("BuscarReservas", "Pagos")';
+            const resumenUrl = '@Url.Action("ObtenerResumenReserva", "Pagos")';
+
+            const inputBuscar = document.getElementById('reservaBuscarInput');
+            const selectResultados = document.getElementById('reservaResultados');
+            const reservaIdInput = document.getElementById('reservaIdSeleccionada');
+            const form = document.getElementById('pagoCreateForm');
+            const montoInput = document.getElementById('montoPagoInput');
+            const pagosPreviosBody = document.getElementById('pagosPreviosBody');
+
+            const refReserva = document.getElementById('refReserva');
+            const refSede = document.getElementById('refSede');
+            const refEspacio = document.getElementById('refEspacio');
+            const refCliente = document.getElementById('refCliente');
+            const refFecha = document.getElementById('refFecha');
+            const refHorario = document.getElementById('refHorario');
+            const refTotal = document.getElementById('refTotal');
+            const refPagado = document.getElementById('refPagado');
+            const refSaldo = document.getElementById('refSaldo');
+            const refPolitica = document.getElementById('refPolitica');
+
+            let resumenActual = null;
+            const moneda = (v) => {
+                const n = Number(v || 0);
+                return Number.isFinite(n) ? n.toFixed(2) : '0.00';
+            };
+
+            const limpiarReferencias = () => {
+                resumenActual = null;
+                refReserva.textContent = 'Reserva: -';
+                refSede.textContent = 'Sede: -';
+                refEspacio.textContent = 'Espacio: -';
+                refCliente.textContent = 'Cliente: -';
+                refFecha.textContent = 'Fecha: -';
+                refHorario.textContent = '--:-- - --:--';
+                refTotal.textContent = 'Monto: -';
+                refPagado.textContent = 'Pagado: -';
+                refSaldo.textContent = 'Saldo: -';
+                refPolitica.textContent = 'Política de confirmación: -';
+                pagosPreviosBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No hay pagos previos.</td></tr>';
+            };
+
+            const renderPolitica = (data) => {
+                if (!data) return 'Política de confirmación: -';
+                if (data.politicaConfirmacionPago === 2) return 'Política de confirmación: Exigir pago total (100%).';
+                if (data.politicaConfirmacionPago === 1) {
+                    return `Política de confirmación: Exigir adelanto mínimo de ${Number(data.porcentajeAdelantoMinimo || 0)}%.`;
+                }
+                return 'Política de confirmación: No exigir pago para confirmar.';
+            };
+
+            const cargarResumenReserva = async (reservaId) => {
+                if (!reservaId) {
+                    limpiarReferencias();
+                    return;
+                }
+                const resp = await fetch(`${resumenUrl}?negocioId=${encodeURIComponent(negocioId)}&reservaId=${encodeURIComponent(reservaId)}`);
+                const payload = await resp.json();
+                if (!resp.ok || !payload.ok || !payload.data) throw new Error(payload.mensaje || 'No se pudo cargar el resumen.');
+                const data = payload.data;
+                resumenActual = data;
+
+                refReserva.textContent = `Reserva: ${data.reservaCodigo || '-'}`;
+                refSede.textContent = `Sede: ${data.sede || '-'}`;
+                refEspacio.textContent = `Espacio: ${data.espacio || '-'}`;
+                refCliente.textContent = `Cliente: ${data.cliente || '-'}`;
+                refFecha.textContent = `Fecha: ${data.fechaReserva ? data.fechaReserva.split('-').reverse().join('/') : '-'}`;
+                refHorario.textContent = `${data.horaInicioReserva || '--:--'} - ${data.horaFinReserva || '--:--'}`;
+                refTotal.textContent = `Monto: ${data.monedaSimbolo || 'S/'} ${moneda(data.totalReserva)}`;
+                refPagado.textContent = `Pagado: ${data.monedaSimbolo || 'S/'} ${moneda(data.totalPagado)}`;
+                refSaldo.textContent = `Saldo: ${data.monedaSimbolo || 'S/'} ${moneda(data.saldoPendiente)}`;
+                refPolitica.textContent = renderPolitica(data);
+
+                const pagos = Array.isArray(data.pagos) ? data.pagos : [];
+                if (!pagos.length) {
+                    pagosPreviosBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No hay pagos previos.</td></tr>';
+                } else {
+                    pagosPreviosBody.innerHTML = pagos.map((p) => `
+                        <tr>
+                            <td class="text-center">#${p.pagoId}</td>
+                            <td class="text-center">${p.fechaPago || '-'}</td>
+                            <td class="text-center">${moneda(p.monto)}</td>
+                            <td class="text-center">${p.formaPago || '-'}</td>
+                            <td class="text-center">${p.numeroOperacion || '-'}</td>
+                            <td class="text-center">${p.observacion || '-'}</td>
+                        </tr>
+                    `).join('');
+                }
+            };
+
+            const cargarResultados = async (texto) => {
+                const q = String(texto || '').trim();
+                if (q.length < 2) {
+                    selectResultados.innerHTML = '<option value="">Escribe al menos 2 caracteres...</option>';
+                    return;
+                }
+                const resp = await fetch(`${buscarUrl}?negocioId=${encodeURIComponent(negocioId)}&q=${encodeURIComponent(q)}`);
+                const payload = await resp.json();
+                if (!resp.ok || !payload.ok || !Array.isArray(payload.items)) throw new Error(payload.mensaje || 'No se pudo buscar reservas.');
+                const items = payload.items;
+                if (!items.length) {
+                    selectResultados.innerHTML = '<option value="">No se encontraron reservas</option>';
+                    return;
+                }
+                selectResultados.innerHTML = '<option value="">Selecciona reserva...</option>' + items.map(x => `<option value="${x.value}">${x.text}</option>`).join('');
+            };
+
+            inputBuscar?.addEventListener('keydown', async (e) => {
+                if (e.key !== 'Enter') return;
+                e.preventDefault();
+                try {
+                    await cargarResultados(inputBuscar.value);
+                    selectResultados?.focus();
+                } catch (error) {
+                    console.warn(error);
+                }
+            });
+
+            selectResultados?.addEventListener('change', async () => {
+                const value = Number(selectResultados.value || 0);
+                reservaIdInput.value = value > 0 ? String(value) : '';
+                try {
+                    await cargarResumenReserva(value);
+                } catch (error) {
+                    console.warn(error);
+                    limpiarReferencias();
+                }
+            });
+
+            form?.addEventListener('submit', (e) => {
+                const reservaId = Number(reservaIdInput.value || 0);
+                if (!reservaId) {
+                    e.preventDefault();
+                    alert('Selecciona una reserva antes de guardar el pago.');
+                    return;
+                }
+                const monto = Number(montoInput?.value || 0);
+                if (!Number.isFinite(monto) || monto <= 0) {
+                    e.preventDefault();
+                    alert('El monto debe ser mayor a cero.');
+                    return;
+                }
+                if (resumenActual) {
+                    const saldo = Number(resumenActual.saldoPendiente || 0);
+                    if (monto > saldo) {
+                        e.preventDefault();
+                        alert(`El monto ingresado excede el saldo pendiente de la reserva (${resumenActual.monedaSimbolo || 'S/'} ${moneda(saldo)}).`);
+                    }
+                }
+            });
+
+            const reservaInicial = Number(reservaIdInput?.value || 0);
+            if (reservaInicial > 0) {
+                cargarResumenReserva(reservaInicial).catch(() => limpiarReferencias());
+            } else {
+                limpiarReferencias();
+            }
+        })();
+    </script>
 }

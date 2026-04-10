@@ -1,6 +1,7 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.EspaciosIndexViewModel
 <!-- Firma: Codex - 29/03/2026 | Rediseno del listado de espacios con detalle operativo, estados visuales y filtro rapido -->
 <!-- Firma: Codex - 30/03/2026 | Incorporacion de resumen breve de tarifas por dias y horarios en la lista detallada -->
+<!-- Firma: Codex - 09/04/2026 | Rediseno de cabecera del listado de espacios con icono superior y etiqueta pequena centrada por columna. -->
 
 @{
     ViewData["Title"] = "Espacios";
@@ -95,10 +96,10 @@
                 <table class="table table-sm align-middle" id="tablaEspaciosDetallada">
                     <thead>
                         <tr>
-                            <th>Espacio</th>
-                            <th>Detalle operativo</th>
-                            <th>Estado</th>
-                            <th class="text-end">Acciones</th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-grid-3x3-gap"></i><small>Espacio</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-clipboard2-data"></i><small>Detalle operativo</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-patch-check"></i><small>Estado</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-gear"></i><small>Acciones</small></span></th>
                         </tr>
                     </thead>
                     <tbody>

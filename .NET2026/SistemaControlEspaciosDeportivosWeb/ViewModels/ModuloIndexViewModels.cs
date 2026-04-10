@@ -51,13 +51,31 @@ public class ConfiguracionClubViewModel : ModuloBaseViewModel
 
     [Range(typeof(decimal), "1", "100", ErrorMessage = "El porcentaje minimo debe ser un numero entero entre 1 y 100.")]
     public decimal? PorcentajeAdelantoMinimo { get; set; }
+    public bool EmisionComprobantesElectronicos { get; set; }
+    public bool EmisionReciboInterno { get; set; }
+
+    [Range(0, 100, ErrorMessage = "El porcentaje de IGV debe estar entre 0 y 100.")]
+    public int PorcentajeIgv { get; set; } = 18;
 
     public List<SelectListItem> TiposDocumento { get; set; } = new();
     public List<SelectListItem> Monedas { get; set; } = new();
     public List<SelectListItem> PoliticasConfirmacionPago { get; set; } = new();
+    public List<SelectListItem> TiposDocumentoComprobanteTributarios { get; set; } = new();
+    public List<SelectListItem> TiposDocumentoComprobanteNoTributarios { get; set; } = new();
+    public List<SerieDocumentoComprobanteItemViewModel> SeriesDocumentoComprobante { get; set; } = new();
     public List<SelectListItem> DepartamentosUbigeo { get; set; } = new();
     public List<SelectListItem> ProvinciasUbigeo { get; set; } = new();
     public List<SelectListItem> DistritosUbigeo { get; set; } = new();
+}
+
+public class SerieDocumentoComprobanteItemViewModel
+{
+    public int Id { get; set; }
+    public string CodigoSunat { get; set; } = string.Empty;
+    public string NombreDocumento { get; set; } = string.Empty;
+    public bool Tributario { get; set; }
+    public string Serie { get; set; } = string.Empty;
+    public bool Activo { get; set; }
 }
 
 public class UbigeoLookupViewModel
@@ -114,6 +132,9 @@ public class ReservasIndexViewModel : ModuloBaseViewModel
 {
     public List<ReservaItemViewModel> Reservas { get; set; } = new();
     public int TotalReservasListado { get; set; }
+    public int TotalPendientesListadoGlobal { get; set; }
+    public int TotalPagadasListadoGlobal { get; set; }
+    public decimal SaldoTotalListadoGlobal { get; set; }
     public int PaginaListado { get; set; } = 1;
     public int TamanoPaginaListado { get; set; } = 20;
     public int TotalPaginasListado { get; set; } = 1;
@@ -148,6 +169,13 @@ public class ReservasIndexViewModel : ModuloBaseViewModel
     public decimal? PorcentajeAdelantoMinimo { get; set; }
     public string MonedaSimbolo { get; set; } = "S/";
     public string MonedaNombre { get; set; } = "PEN";
+}
+
+public class ReservasListadoResumenViewModel
+{
+    public int TotalPendientes { get; set; }
+    public int TotalPagadas { get; set; }
+    public decimal SaldoTotal { get; set; }
 }
 
 public class ReservaClienteRapidoRequestViewModel
@@ -225,32 +253,97 @@ public class BloqueoHorarioItemViewModel
 
 public class PagosIndexViewModel : ModuloBaseViewModel
 {
-    public List<PagoItemViewModel> Pagos { get; set; } = new();
+    public string? Buscar { get; set; }
+    public int Pagina { get; set; } = 1;
+    public int TamanoPagina { get; set; } = 20;
+    public int TotalRegistros { get; set; }
+    public int TotalPaginas { get; set; } = 1;
+    public string MonedaSimbolo { get; set; } = "S/";
+    public bool EmisionComprobantesElectronicos { get; set; }
+    public bool EmisionReciboInterno { get; set; }
+    public List<PagoReservaResumenViewModel> Pagos { get; set; } = new();
 }
 
-public class PagoItemViewModel
+public class PagoReservaResumenViewModel
 {
-    public int Id { get; set; }
     public int ReservaId { get; set; }
+    public string ReservaCodigo { get; set; } = string.Empty;
+    public string Sede { get; set; } = string.Empty;
+    public string Espacio { get; set; } = string.Empty;
+    public string Cliente { get; set; } = string.Empty;
+    public DateOnly Fecha { get; set; }
+    public decimal MontoTotal { get; set; }
+    public decimal SaldoPendiente { get; set; }
+    public string FormaPagoResumen { get; set; } = string.Empty;
+    public int CantidadPagos { get; set; }
+    public string MonedaSimbolo { get; set; } = "S/";
+    public bool PagadaCompleta { get; set; }
+    public bool TieneComprobanteActivo { get; set; }
+}
+
+public class PagoReservaEditViewModel : ModuloBaseViewModel
+{
+    public int ReservaId { get; set; }
+    public string ReservaCodigo { get; set; } = string.Empty;
+    public string Sede { get; set; } = string.Empty;
+    public string Espacio { get; set; } = string.Empty;
+    public string Cliente { get; set; } = string.Empty;
+    public DateOnly FechaReserva { get; set; }
+    public TimeOnly HoraInicioReserva { get; set; }
+    public TimeOnly HoraFinReserva { get; set; }
+    public decimal TotalReserva { get; set; }
+    public decimal TotalPagado { get; set; }
+    public decimal SaldoPendiente { get; set; }
+    public string MonedaSimbolo { get; set; } = "S/";
+    public int PoliticaConfirmacionPago { get; set; }
+    public decimal? PorcentajeAdelantoMinimo { get; set; }
+    public List<PagoReservaDetalleItemViewModel> Pagos { get; set; } = new();
+
+    public bool AgregarNuevoPago { get; set; }
+    public DateTime? NuevaFechaPago { get; set; }
+    public decimal? NuevoMonto { get; set; }
+    public int? NuevaFormaPagoId { get; set; }
+    public string? NuevoNumeroOperacion { get; set; }
+    public string? NuevaObservacion { get; set; }
+    public List<SelectListItem> FormasPago { get; set; } = new();
+}
+
+public class PagoReservaDetalleItemViewModel
+{
+    public int PagoId { get; set; }
     public DateTime FechaPago { get; set; }
     public decimal Monto { get; set; }
-    public string FormaPago { get; set; } = string.Empty;
+    public int FormaPagoId { get; set; }
+    public string FormaPagoNombre { get; set; } = string.Empty;
+    public string? NumeroOperacion { get; set; }
+    public string? Observacion { get; set; }
+    public bool Eliminar { get; set; }
 }
 
 public class ComprobantesIndexViewModel : ModuloBaseViewModel
 {
+    public string? Buscar { get; set; }
+    public string? CodigoDocumento { get; set; }
+    public int Pagina { get; set; } = 1;
+    public int TamanoPagina { get; set; } = 20;
+    public int TotalRegistros { get; set; }
+    public int TotalPaginas { get; set; } = 1;
+    public List<SelectListItem> TiposDocumentoFiltro { get; set; } = new();
     public List<ComprobanteItemViewModel> Comprobantes { get; set; } = new();
 }
 
 public class ComprobanteItemViewModel
 {
     public int Id { get; set; }
+    public int ReservaId { get; set; }
     public string Tipo { get; set; } = string.Empty;
     public string SerieNumero { get; set; } = string.Empty;
     public DateTime FechaEmision { get; set; }
     public string Cliente { get; set; } = string.Empty;
     public decimal Total { get; set; }
     public string Estado { get; set; } = string.Empty;
+    public bool EsTributario { get; set; }
+    public string? UrlDescargaProveedor { get; set; }
 }
 
 public class ClientesIndexViewModel : ModuloBaseViewModel
@@ -280,6 +373,8 @@ public class MaestrosIndexViewModel : ModuloBaseViewModel
     public List<MaestroCatalogoItemViewModel> TiposSuelo { get; set; } = new();
     public List<MaestroCatalogoItemViewModel> TiposDeporte { get; set; } = new();
     public List<MaestroCatalogoItemViewModel> FormasPago { get; set; } = new();
+    public List<SelectListItem> TiposDocumentoComprobanteSuper { get; set; } = new();
+    public List<TipoDocumentoComprobanteNegocioItemViewModel> TiposDocumentoComprobante { get; set; } = new();
 }
 
 public class MonedaMaestroItemViewModel
@@ -298,6 +393,16 @@ public class MaestroCatalogoItemViewModel
     public int? SuperId { get; set; }
     public string? Codigo { get; set; }
     public string Nombre { get; set; } = string.Empty;
+    public bool Activo { get; set; }
+}
+
+public class TipoDocumentoComprobanteNegocioItemViewModel
+{
+    public int Id { get; set; }
+    public string CodigoSunat { get; set; } = string.Empty;
+    public string Nombre { get; set; } = string.Empty;
+    public bool Tributario { get; set; }
+    public bool HabilitadoSuper { get; set; }
     public bool Activo { get; set; }
 }
 

@@ -1,16 +1,23 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.PagosIndexViewModel
-<!-- Firma: Codex - 29/03/2026 | Rediseno del listado de pagos con KPIs, filtro rapido y tabla detallada -->
+<!-- Firma: Codex - 09/04/2026 | Rediseno integral de listado de pagos por reserva (una fila por reserva), cabecera estandar con iconos, paginacion backend 20x20, accion eliminar por reserva y columna de saldo pendiente con simbolo de moneda. -->
 
 @{
     ViewData["Title"] = "Pagos";
-    var totalPagos = Model.Pagos.Count;
-    var totalMonto = Model.Pagos.Sum(x => x.Monto);
-    var hoy = DateTime.Today;
-    var totalHoy = Model.Pagos.Count(x => x.FechaPago.Date == hoy);
-    var montoHoy = Model.Pagos.Where(x => x.FechaPago.Date == hoy).Sum(x => x.Monto);
+    var montoTotal = Model.Pagos.Sum(x => x.MontoTotal);
+    var pagoTotal = Model.Pagos.Sum(x => x.MontoTotal - x.SaldoPendiente);
+    var saldoTotal = Model.Pagos.Sum(x => x.SaldoPendiente);
 }
 
 <div class="admin-page-frame">
+    @if (TempData["PagosError"] is string pagosError && !string.IsNullOrWhiteSpace(pagosError))
+    {
+        <div class="alert alert-danger">@pagosError</div>
+    }
+    @if (TempData["PagosOk"] is string pagosOk && !string.IsNullOrWhiteSpace(pagosOk))
+    {
+        <div class="alert alert-success">@pagosOk</div>
+    }
+
     <section class="page-header">
         <div>
             <h1>Pagos</h1>
@@ -31,35 +38,55 @@
 
     <section class="kpi-grid mb-3">
         <article class="kpi-card">
-            <p class="kpi-card-label">Total pagos</p>
-            <h3 class="kpi-card-value">@totalPagos</h3>
+            <p class="kpi-card-label">Monto</p>
+            <h3 class="kpi-card-value">@Model.MonedaSimbolo @montoTotal.ToString("N2")</h3>
         </article>
         <article class="kpi-card">
-            <p class="kpi-card-label">Monto total</p>
-            <h3 class="kpi-card-value">S/ @totalMonto.ToString("N2")</h3>
+            <p class="kpi-card-label">Pago</p>
+            <h3 class="kpi-card-value">@Model.MonedaSimbolo @pagoTotal.ToString("N2")</h3>
         </article>
         <article class="kpi-card">
-            <p class="kpi-card-label">Pagos de hoy</p>
-            <h3 class="kpi-card-value">@totalHoy</h3>
-        </article>
-        <article class="kpi-card">
-            <p class="kpi-card-label">Monto de hoy</p>
-            <h3 class="kpi-card-value">S/ @montoHoy.ToString("N2")</h3>
+            <p class="kpi-card-label">Saldo</p>
+            <h3 class="kpi-card-value">@Model.MonedaSimbolo @saldoTotal.ToString("N2")</h3>
         </article>
     </section>
 
     <section class="filter-card mb-3">
         <h2 class="section-title">Filtro rapido</h2>
-        <div class="row g-2 align-items-end px-3 pb-3">
-            <div class="col-lg-8 col-md-7">
-                <label class="form-label">Buscar por ID, reserva, forma de pago o fecha</label>
-                <input type="text" id="filtroPagos" class="form-control" placeholder="Ejemplo: #12, Efectivo, 29/03/2026..." />
+        <form method="get" asp-action="Index">
+            <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+            <div class="row g-2 align-items-end px-3 pb-3">
+                <div class="col-lg-8 col-md-7">
+                    <label class="form-label">Buscar por reserva, sede, espacio, cliente, forma o fecha</label>
+                    <input type="text" name="buscar" value="@Model.Buscar" class="form-control" placeholder="Ejemplo: #12, VILLA MARIA, CANCHA 1, BORIS..." />
+                </div>
+                <div class="col-lg-4 col-md-5">
+                    <label class="form-label">Registros visibles</label>
+                    <div class="form-control bg-light text-center fw-bold">@Model.TotalRegistros</div>
+                </div>
+                <div class="col-12 d-flex justify-content-end">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="bi bi-search me-1"></i> Buscar
+                    </button>
+                </div>
             </div>
-            <div class="col-lg-4 col-md-5">
-                <label class="form-label">Registros visibles</label>
-                <div class="form-control bg-light" id="contadorPagos">@totalPagos</div>
+        </form>
+        @if (Model.TotalPaginas > 1)
+        {
+            <div class="px-3 pb-3 d-flex justify-content-between align-items-center">
+                <small class="text-muted">Pagina @Model.Pagina de @Model.TotalPaginas (@Model.TotalRegistros registros)</small>
+                <nav aria-label="Paginacion pagos">
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item @(Model.Pagina <= 1 ? "disabled" : null)">
+                            <a class="page-link" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-buscar="@Model.Buscar" asp-route-pagina="@(Model.Pagina - 1)">Anterior</a>
+                        </li>
+                        <li class="page-item @(Model.Pagina >= Model.TotalPaginas ? "disabled" : null)">
+                            <a class="page-link" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-buscar="@Model.Buscar" asp-route-pagina="@(Model.Pagina + 1)">Siguiente</a>
+                        </li>
+                    </ul>
+                </nav>
             </div>
-        </div>
+        }
     </section>
 
     <section class="table-card">
@@ -77,46 +104,69 @@
                 <table class="table table-sm align-middle" id="tablaPagosDetallada">
                     <thead>
                         <tr>
-                            <th>Pago</th>
-                            <th>Referencia y forma</th>
-                            <th>Monto</th>
-                            <th class="text-end">Acciones</th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-credit-card-2-front"></i><small>Reserva</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-geo-alt"></i><small>Sede</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-grid-3x3-gap"></i><small>Espacio</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-person"></i><small>Cliente</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-calendar-event"></i><small>Fecha</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-cash-stack"></i><small>Monto (@Model.MonedaSimbolo)</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-credit-card"></i><small>Pago</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-cash-coin"></i><small>Saldo</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-wallet2"></i><small>Forma</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-gear"></i><small>Acciones</small></span></th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var item in Model.Pagos)
                         {
-                            var fechaTexto = item.FechaPago.ToString("dd/MM/yyyy HH:mm");
-                            <tr data-search="@($"{item.Id} {item.ReservaId} {item.FormaPago} {fechaTexto} {item.Monto:N2}".ToLowerInvariant())">
-                                <td>
-                                    <div class="sc-list-main">
-                                        <span class="sc-list-code">PAGO #@item.Id</span>
-                                        <div class="sc-list-title">@fechaTexto</div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="d-flex flex-wrap gap-2">
-                                        <span class="badge bg-light text-dark border"><i class="bi bi-calendar-check me-1"></i>Reserva #@item.ReservaId</span>
-                                        <span class="badge bg-light text-dark border"><i class="bi bi-wallet2 me-1"></i>@item.FormaPago</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle sc-estado-pill">S/ @item.Monto.ToString("N2")</span>
-                                </td>
+                            <tr>
+                                <td class="text-center"><span class="sc-id-chip">@item.ReservaCodigo</span></td>
+                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center"><i class="bi bi-geo-alt"></i><span>@item.Sede</span></span></td>
+                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center"><i class="bi bi-grid-3x3-gap"></i><span>@item.Espacio</span></span></td>
+                                <td><span class="sc-list-mini-card"><i class="bi bi-person"></i><span>@item.Cliente</span></span></td>
+                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center"><i class="bi bi-calendar-event"></i><span>@item.Fecha.ToString("dd/MM/yyyy")</span></span></td>
+                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center sc-list-mini-card-amount"><i class="bi bi-cash-stack"></i><span>@item.MontoTotal.ToString("N2")</span></span></td>
+                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center sc-list-mini-card-amount"><i class="bi bi-credit-card"></i><span>@(Math.Max(0m, item.MontoTotal - item.SaldoPendiente).ToString("N2"))</span></span></td>
+                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center sc-list-mini-card-amount"><i class="bi bi-cash-coin"></i><span>@item.SaldoPendiente.ToString("N2")</span></span></td>
+                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center"><i class="bi bi-wallet2"></i><span>@item.FormaPagoResumen</span></span></td>
                                 <td class="text-end">
+                                    @if (Model.EmisionComprobantesElectronicos && item.PagadaCompleta && !item.TieneComprobanteActivo)
+                                    {
+                                        <a class="btn btn-sm sc-action-btn sc-action-primary"
+                                           asp-controller="Comprobantes"
+                                           asp-action="Create"
+                                           asp-route-negocioId="@Model.NegocioId"
+                                           asp-route-reservaId="@item.ReservaId"
+                                           asp-route-codigoSunat="03">
+                                            <i class="bi bi-receipt"></i> Emitir CPE
+                                        </a>
+                                    }
+                                    @if (Model.EmisionReciboInterno && item.PagadaCompleta && !item.TieneComprobanteActivo)
+                                    {
+                                        <a class="btn btn-sm sc-action-btn sc-action-neutral"
+                                           asp-controller="Comprobantes"
+                                           asp-action="Create"
+                                           asp-route-negocioId="@Model.NegocioId"
+                                           asp-route-reservaId="@item.ReservaId"
+                                           asp-route-codigoSunat="RI">
+                                            <i class="bi bi-journal-text"></i> Emitir Recibo
+                                        </a>
+                                    }
                                     @if (Model.PuedeEditar)
                                     {
-                                        <a class="btn btn-sm sc-action-btn sc-action-edit" asp-action="Edit" asp-route-negocioId="@Model.NegocioId" asp-route-id="@item.Id">
+                                        <a class="btn btn-sm sc-action-btn sc-action-edit" asp-action="Edit" asp-route-negocioId="@Model.NegocioId" asp-route-id="@item.ReservaId">
                                             <i class="bi bi-pencil-square"></i> Editar
                                         </a>
                                     }
                                     @if (Model.PuedeEliminar)
                                     {
-                                        <form asp-action="Delete" method="post" class="d-inline">
+                                        <form asp-action="DeleteByReserva" method="post" class="d-inline">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="negocioId" value="@Model.NegocioId" />
-                                            <input type="hidden" name="id" value="@item.Id" />
-                                            <button type="submit" class="btn btn-sm sc-action-btn sc-action-delete">
+                                            <input type="hidden" name="reservaId" value="@item.ReservaId" />
+                                            <button type="submit"
+                                                    class="btn btn-sm sc-action-btn sc-action-delete"
+                                                    onclick="return confirm('Se eliminarán todos los pagos de la reserva @item.ReservaCodigo y la reserva se cancelará. ¿Deseas continuar?');">
                                                 <i class="bi bi-trash3"></i> Eliminar
                                             </button>
                                         </form>
@@ -130,29 +180,3 @@
         }
     </section>
 </div>
-
-@section Scripts {
-    <script>
-        (() => {
-            const filtro = document.getElementById('filtroPagos');
-            const tabla = document.getElementById('tablaPagosDetallada');
-            const contador = document.getElementById('contadorPagos');
-            if (!filtro || !tabla || !contador) return;
-
-            function aplicarFiltro() {
-                const valor = (filtro.value || '').trim().toLowerCase();
-                let visibles = 0;
-                tabla.querySelectorAll('tbody tr').forEach(row => {
-                    const texto = row.getAttribute('data-search') || '';
-                    const mostrar = !valor || texto.includes(valor);
-                    row.style.display = mostrar ? '' : 'none';
-                    if (mostrar) visibles++;
-                });
-                contador.textContent = String(visibles);
-            }
-
-            filtro.addEventListener('input', aplicarFiltro);
-            aplicarFiltro();
-        })();
-    </script>
-}

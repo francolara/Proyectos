@@ -8,6 +8,7 @@
 <!-- Firma: Codex - 05/04/2026 | Estandariza texto de estado para mostrar "No Asistio" en lugar de "no-show" en etiquetas de configuracion de sede. -->
 <!-- Firma: Codex - 06/04/2026 | Agrega apartado Consideraciones de reserva en mantenimiento de sede para publicacion en portal publico (sin exponer en listado admin). -->
 <!-- Firma: Codex - 08/04/2026 | Unifica selectores de hora de apertura/cierre a listas cada 30 minutos. -->
+<!-- Firma: Codex - 09/04/2026 | Agrega configuracion opcional de serie por documento para la sede en base a series del negocio. -->
 
 @{
     ViewData["Title"] = "Editar sede";
@@ -296,6 +297,39 @@
                             </table>
                         </div>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="sc-form-card">
+            <div class="sc-form-section">
+                <h2 class="sc-form-title"><i class="bi bi-receipt"></i> Documentos y series (opcional)</h2>
+                <div class="row g-3">
+                    @if (Model.SeriesDocumentoConfig is null || !Model.SeriesDocumentoConfig.Any())
+                    {
+                        <div class="col-12">
+                            <div class="text-muted small">No hay documentos habilitados en Maestros/Configuración para asignar series a la sede.</div>
+                        </div>
+                    }
+                    else
+                    {
+                        @for (var i = 0; i < Model.SeriesDocumentoConfig.Count; i++)
+                        {
+                            <input type="hidden" asp-for="SeriesDocumentoConfig[i].CodigoSunat" />
+                            <input type="hidden" asp-for="SeriesDocumentoConfig[i].NombreDocumento" />
+                            <input type="hidden" asp-for="SeriesDocumentoConfig[i].Tributario" />
+
+                            <div class="col-md-6">
+                                <label class="form-label">@Model.SeriesDocumentoConfig[i].NombreDocumento (@Model.SeriesDocumentoConfig[i].CodigoSunat)</label>
+                                <select asp-for="SeriesDocumentoConfig[i].NegocioSerieId"
+                                        asp-items="Model.SeriesDocumentoConfig[i].SeriesDisponibles"
+                                        class="form-select">
+                                    <option value="">Sin serie asignada</option>
+                                </select>
+                                <div class="form-text">Selecciona una serie configurada en Configuración para este documento.</div>
+                            </div>
+                        }
+                    }
                 </div>
             </div>
         </section>

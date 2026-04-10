@@ -1,16 +1,20 @@
-@using SistemaControlEspaciosDeportivosWeb.Models
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobanteFormViewModel
-<!-- Firma: Codex - 27/03/2026 | Estandar visual pro para formulario de comprobantes -->
-
+<!-- Firma: Codex - 09/04/2026 | Edicion de comprobante alineada al flujo de registro: reserva bloqueada, importe solo lectura y edicion de datos de cliente solo en estado pendiente. -->
 @{
     ViewData["Title"] = "Editar comprobante";
+    var puedeEditarCliente = Model.PuedeEditarDatosCliente;
 }
 
 <div class="admin-page-frame">
+    @if (TempData["ComprobanteOk"] is string comprobanteOk && !string.IsNullOrWhiteSpace(comprobanteOk))
+    {
+        <div class="alert alert-success">@comprobanteOk</div>
+    }
+
     <section class="page-header">
         <div>
-            <h1>Editar comprobante electronico</h1>
-            <p class="page-subtitle">Actualiza datos de emision, montos y estado del comprobante.</p>
+            <h1>Editar comprobante</h1>
+            <p class="page-subtitle">Misma vista de emision con reserva fija. El importe no se puede modificar.</p>
         </div>
         <div class="action-toolbar">
             <a class="btn btn-outline-secondary" asp-action="Index" asp-route-negocioId="@Model.NegocioId">
@@ -19,68 +23,231 @@
         </div>
     </section>
 
-    <form asp-action="Edit" method="post" class="sc-form-shell">
+    <form asp-action="Edit" method="post" class="sc-form-shell" id="comprobanteEditForm">
+        @Html.AntiForgeryToken()
         <input type="hidden" asp-for="Id" />
         <input type="hidden" asp-for="NegocioId" />
+        <input type="hidden" asp-for="ReservaId" />
+        <input type="hidden" asp-for="SubTotal" />
+        <input type="hidden" asp-for="Igv" />
+        <input type="hidden" asp-for="Serie" />
+        <input type="hidden" asp-for="CodigoDocumentoComprobante" />
+        <input type="hidden" asp-for="Total" />
         <div asp-validation-summary="ModelOnly" class="alert alert-danger shadow-sm mb-0"></div>
 
-        <section class="sc-form-card">
+        @if (!puedeEditarCliente)
+        {
+            <div class="alert alert-info mb-3">Este comprobante no esta pendiente. Solo lectura.</div>
+        }
+
+        <section class="sc-form-card mb-3">
             <div class="sc-form-section">
-                <h2 class="sc-form-title"><i class="bi bi-receipt"></i> Datos del comprobante</h2>
-                <div class="row g-3">
-                    <div class="col-md-5">
-                        <label asp-for="ReservaId" class="form-label">Reserva</label>
-                        <select asp-for="ReservaId" asp-items="Model.Reservas" class="form-select"></select>
-                    </div>
-                    <div class="col-md-3">
-                        <label asp-for="TipoComprobante" class="form-label"></label>
-                        <select asp-for="TipoComprobante" asp-items="Html.GetEnumSelectList<TipoComprobante>()" class="form-select"></select>
-                    </div>
-                    <div class="col-md-2">
-                        <label asp-for="Serie" class="form-label"></label>
-                        <input asp-for="Serie" class="form-control" />
-                    </div>
-                    <div class="col-md-2">
-                        <label asp-for="Numero" class="form-label"></label>
-                        <input asp-for="Numero" class="form-control" />
-                    </div>
-                    <div class="col-md-3">
-                        <label asp-for="FechaEmision" class="form-label"></label>
-                        <input asp-for="FechaEmision" class="form-control" type="datetime-local" />
-                    </div>
-                    <div class="col-md-2">
-                        <label asp-for="TipoMoneda" class="form-label"></label>
-                        <select asp-for="TipoMoneda" asp-items="Html.GetEnumSelectList<TipoMoneda>()" class="form-select"></select>
-                    </div>
-                    <div class="col-md-2">
-                        <label asp-for="SubTotal" class="form-label"></label>
-                        <input asp-for="SubTotal" class="form-control" />
-                    </div>
-                    <div class="col-md-2">
-                        <label asp-for="Igv" class="form-label"></label>
-                        <input asp-for="Igv" class="form-control" />
-                    </div>
-                    <div class="col-md-2">
-                        <label asp-for="Total" class="form-label"></label>
-                        <input asp-for="Total" class="form-control" />
-                    </div>
-                    <div class="col-md-3">
-                        <label asp-for="Estado" class="form-label"></label>
-                        <select asp-for="Estado" asp-items="Html.GetEnumSelectList<EstadoComprobanteElectronico>()" class="form-select"></select>
-                    </div>
+                <h2 class="sc-form-title"><i class="bi bi-card-list"></i> Datos de la reserva</h2>
+                <div class="row g-2">
+                    <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2">Reserva: @Model.ReservaCodigo</span></div>
+                    <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2">Sede: @Model.Sede</span></div>
+                    <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2">Espacio: @Model.Espacio</span></div>
+                    <div class="col-md-3"><span class="badge bg-light text-dark border w-100 py-2">Cliente: @Model.Cliente</span></div>
+                    <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2">Fecha: @Model.FechaReserva?.ToString("dd/MM/yyyy")</span></div>
+                    <div class="col-md-1"><span class="badge bg-light text-dark border w-100 py-2">@Model.HoraInicioReserva?.ToString("HH:mm") - @Model.HoraFinReserva?.ToString("HH:mm")</span></div>
+                    <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2">Total reserva: @Model.MonedaSimbolo @Model.TotalReserva?.ToString("N2")</span></div>
+                    <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2">Total pagos: @Model.PagosReserva.Count</span></div>
+                    <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2">Monto pagado: @Model.MonedaSimbolo @Model.PagadoReserva?.ToString("N2")</span></div>
                 </div>
             </div>
         </section>
 
-        <div class="sc-form-actions">
-            <button type="submit" class="btn btn-primary">
-                <i class="bi bi-check2-circle me-1"></i> Guardar cambios
-            </button>
-            <a class="btn btn-outline-secondary" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Cancelar</a>
-        </div>
+        <section class="table-card mb-3">
+            <h2 class="section-title"><i class="bi bi-receipt me-1"></i>Pagos registrados</h2>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-hash"></i><small>Pago</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-calendar-check"></i><small>Fecha</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-cash"></i><small>Monto</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-wallet2"></i><small>Forma</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-upc"></i><small>N Operacion</small></span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.PagosReserva.Any())
+                        {
+                            <tr><td colspan="5" class="text-center text-muted">No hay pagos registrados.</td></tr>
+                        }
+                        else
+                        {
+                            @foreach (var p in Model.PagosReserva)
+                            {
+                                <tr>
+                                    <td class="text-center">#@p.PagoId</td>
+                                    <td class="text-center">@p.FechaPago.ToString("dd/MM/yyyy")</td>
+                                    <td class="text-center">@p.Monto.ToString("N2")</td>
+                                    <td class="text-center">@p.FormaPago</td>
+                                    <td class="text-center">@(string.IsNullOrWhiteSpace(p.NumeroOperacion) ? "-" : p.NumeroOperacion)</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="sc-form-card">
+            <div class="sc-form-section">
+                <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
+                    <h2 class="sc-form-title mb-0"><i class="bi bi-file-earmark-text"></i> Datos del comprobante</h2>
+                    <div class="d-flex align-items-center gap-2">
+                        <label asp-for="Numero" class="form-label fw-bold mb-0">Numero</label>
+                        <input asp-for="Numero" class="form-control text-center fw-bold" readonly />
+                    </div>
+                </div>
+                <div class="row g-3 mt-1">
+                    <div class="col-md-4">
+                        <label class="form-label">Nombre cliente</label>
+                        <input asp-for="Cliente" class="form-control" readonly />
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="ClienteCorreo" class="form-label">Correo</label>
+                        <input asp-for="ClienteCorreo" class="form-control" readonly="@(!puedeEditarCliente)" />
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="ClienteTipoDocumento" class="form-label">Tipo de documento</label>
+                        <select asp-for="ClienteTipoDocumento" asp-items="Model.TiposDocumentoIdentidad" class="form-select" disabled="@(!puedeEditarCliente)"></select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="ClienteNumeroDocumento" class="form-label">Numero de documento</label>
+                        <input asp-for="ClienteNumeroDocumento" class="form-control" readonly="@(!puedeEditarCliente)" />
+                    </div>
+                    <div class="col-md-8">
+                        <label asp-for="ClienteDireccionFiscal" class="form-label">Direccion</label>
+                        <input asp-for="ClienteDireccionFiscal" class="form-control" readonly="@(!puedeEditarCliente)" />
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Departamento</label>
+                        <select asp-for="ClienteCodigoDepartamento" asp-items="Model.DepartamentosUbigeo" class="form-select" id="clienteDepartamentoSelect" disabled="@(!puedeEditarCliente)">
+                            <option value="">Selecciona departamento</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Provincia</label>
+                        <select asp-for="ClienteCodigoProvincia" asp-items="Model.ProvinciasUbigeo" class="form-select" id="clienteProvinciaSelect" disabled="@(!puedeEditarCliente)">
+                            <option value="">Selecciona provincia</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Distrito</label>
+                        <select asp-for="ClienteCodigoUbigeo" asp-items="Model.DistritosUbigeo" class="form-select" id="clienteDistritoSelect" disabled="@(!puedeEditarCliente)">
+                            <option value="">Selecciona distrito</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Tipo de documento comprobante</label>
+                        <select asp-for="CodigoDocumentoComprobante" asp-items="Model.TiposDocumentoComprobante" class="form-select" disabled></select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Serie</label>
+                        <input class="form-control" value="@Model.Serie" readonly />
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="FechaEmision" class="form-label">Fecha</label>
+                        <input asp-for="FechaEmision" type="date" class="form-control" readonly />
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">Total (@Model.MonedaSimbolo)</label>
+                        <input asp-for="Total" class="form-control text-end" readonly />
+                    </div>
+
+                    @if (Model.DocumentoTributario)
+                    {
+                        <div class="col-md-4">
+                            <label class="form-label">SubTotal (@Model.MonedaSimbolo)</label>
+                            <input value="@Model.SubTotal.ToString("N2")" class="form-control text-end" readonly />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">IGV @Model.PorcentajeIgvConfigurado% (@Model.MonedaSimbolo)</label>
+                            <input value="@Model.Igv.ToString("N2")" class="form-control text-end" readonly />
+                        </div>
+                    }
+                </div>
+            </div>
+        </section>
+
+        @if (puedeEditarCliente)
+        {
+            <div class="sc-form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check2-circle me-1"></i> Guardar comprobante
+                </button>
+                <a class="btn btn-outline-secondary" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Cancelar</a>
+            </div>
+        }
+        else
+        {
+            <div class="sc-form-actions">
+                <a class="btn btn-outline-secondary" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Volver</a>
+            </div>
+        }
     </form>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const puedeEditarCliente = @puedeEditarCliente.ToString().ToLowerInvariant();
+            if (!puedeEditarCliente) return;
+
+            const ubigeoProvUrl = '@Url.Action("UbigeoProvincias", "Comprobantes")';
+            const ubigeoDistUrl = '@Url.Action("UbigeoDistritos", "Comprobantes")';
+
+            const clienteDepSelect = document.getElementById('clienteDepartamentoSelect');
+            const clienteProvSelect = document.getElementById('clienteProvinciaSelect');
+            const clienteDistSelect = document.getElementById('clienteDistritoSelect');
+
+            const setOptions = (selectEl, items, placeholder) => {
+                if (!selectEl) return;
+                const opts = [`<option value="">${placeholder}</option>`];
+                for (const item of items || []) opts.push(`<option value="${item.value}">${item.text}</option>`);
+                selectEl.innerHTML = opts.join('');
+            };
+
+            const cargarProvincias = async (codigoDep, selected = '') => {
+                if (!clienteProvSelect || !clienteDistSelect) return;
+                if (!codigoDep || String(codigoDep).length !== 2) {
+                    setOptions(clienteProvSelect, [], 'Selecciona provincia');
+                    setOptions(clienteDistSelect, [], 'Selecciona distrito');
+                    return;
+                }
+                const resp = await fetch(`${ubigeoProvUrl}?codigoDepartamento=${encodeURIComponent(codigoDep)}`);
+                const items = await resp.json();
+                setOptions(clienteProvSelect, Array.isArray(items) ? items : [], 'Selecciona provincia');
+                if (selected) clienteProvSelect.value = selected;
+            };
+
+            const cargarDistritos = async (codigoProv, selected = '') => {
+                if (!clienteDistSelect) return;
+                if (!codigoProv || String(codigoProv).length !== 4) {
+                    setOptions(clienteDistSelect, [], 'Selecciona distrito');
+                    return;
+                }
+                const resp = await fetch(`${ubigeoDistUrl}?codigoProvincia=${encodeURIComponent(codigoProv)}`);
+                const items = await resp.json();
+                setOptions(clienteDistSelect, Array.isArray(items) ? items : [], 'Selecciona distrito');
+                if (selected) clienteDistSelect.value = selected;
+            };
+
+            clienteDepSelect?.addEventListener('change', async () => {
+                await cargarProvincias(clienteDepSelect.value || '', '');
+                await cargarDistritos('', '');
+            });
+
+            clienteProvSelect?.addEventListener('change', async () => {
+                await cargarDistritos(clienteProvSelect.value || '', '');
+            });
+        })();
+    </script>
 }

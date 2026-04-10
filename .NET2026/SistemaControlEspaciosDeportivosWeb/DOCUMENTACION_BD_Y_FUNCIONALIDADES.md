@@ -82,6 +82,7 @@
 - `Sp_Reservas_Actualizar`
 - `Sp_Reservas_Eliminar`
 - `Sp_Reservas_Eliminar` valida `@NegocioId` por join con `Sedes` y devuelve error si no encuentra la reserva.
+- `Sp_Reservas_Eliminar` bloquea cancelar cuando la reserva tiene pagos registrados (`RAISERROR` para validacion funcional).
 - `Sp_Pagos_Listar`
 - `Sp_Pagos_ObtenerPorId`
 - `Sp_Pagos_Crear`
@@ -89,6 +90,7 @@
 - `Sp_Pagos_Eliminar`
 - `Sp_Pagos_Actualizar` y `Sp_Pagos_Eliminar` devuelven error si no existe el pago para el negocio (evita falso positivo en C#).
 - `Sp_Comprobantes_Listar`
+- `Sp_Comprobantes_Listar` incluye filtro opcional por `CodigoDocumento` (tipo de documento SUNAT del comprobante) para listar por negocio segun tipos configurados en maestros.
 - `Sp_Comprobantes_ObtenerPorId`
 - `Sp_Comprobantes_Crear`
 - `Sp_Comprobantes_Actualizar`
@@ -121,6 +123,7 @@
 ### 07_Reservas_Pagos_Reglas.sql
 - `Sp_Reservas_Crear` (valida cruce, horas y montos)
 - `Sp_Reservas_Actualizar` (valida cruce, horas y montos; retorna error si no afecta filas)
+- `Sp_Reservas_Actualizar` bloquea cambio a `Cancelada` cuando la reserva tiene pagos registrados.
 - `Sp_Pagos_Crear` (valida monto y evita sobrepago)
 - `Sp_Pagos_Actualizar` (recalcula saldo en reserva nueva/anterior)
 - `Sp_Pagos_Eliminar` (recalcula saldo de la reserva)
@@ -185,6 +188,7 @@
 ### 16_Reservas_CheckIn_CheckOut.sql
 - `Sp_Reservas_CambiarEstadoRapido`
 - `Sp_Reservas_CambiarEstadoRapido` retorna error si la reserva no existe para el negocio.
+- `Sp_Reservas_CambiarEstadoRapido` bloquea cambio rapido a `Cancelada` si la reserva tiene pagos registrados.
 - Reglas:
   - `Confirmada` (2) por cambio rapido
   - `Pagada` (4) desde `Pendiente` (1), `Confirmada` (2) o `En uso` historico (3)
@@ -557,6 +561,30 @@
   - ejecutar `Generate-99_SP_Finales.ps1`
   - el script recorre la carpeta, detecta SP duplicados y conserva la version del archivo de mayor orden (ultimas capas funcionales).
 
+### 20260409_Pagos_Listado_Reserva_Paginacion.sql
+- SP actualizados:
+  - `Sp_Pagos_Listar`
+  - `Sp_Pagos_ObtenerPorId`
+  - `Sp_Pagos_Actualizar`
+  - `Sp_Pagos_Eliminar`
+  - `Sp_Pagos_Crear`
+- SP nuevos:
+  - `Sp_Combos_Reservas_Buscar`
+  - `Sp_Pagos_EliminarPorReserva`
+- Objetivo:
+  - listar pagos agrupados por reserva (una sola fila por reserva) con filtro y paginacion backend.
+  - exponer en listado de pagos el `SaldoPendiente` por reserva y `MonedaSimbolo` para encabezado monetario (origen: `MonedasSuperMaestro.Simbolo` segun moneda del negocio).
+  - editar pagos por reserva mostrando cabecera + detalle de pagos (2 resultsets), incluyendo fecha + horario de reserva.
+  - registrar pago con busqueda incremental de reserva por texto (Enter) y resumen referencial de reserva seleccionada.
+  - limitar edicion de pago existente a `Observacion`.
+  - `Sp_Pagos_Crear` aplica validacion de politica del negocio (sin pago / adelanto minimo / pago total 100%), evita sobrepago, exige que el segundo pago sea igual al saldo restante y actualiza estado segun pago acumulado.
+  - al eliminar pago:
+    - si la reserva queda sin pagos -> estado `Cancelada`.
+    - si mantiene pagos -> estado `Confirmada`.
+  - al eliminar pagos desde listado por reserva:
+    - elimina todos los pagos de la reserva.
+    - deja la reserva en estado `Cancelada`.
+
 ## Flujo recomendado de despliegue SQL
 1. Ejecutar `00_Auditoria.sql`.
 2. Ejecutar `01_Seguridad_Panel.sql`.
@@ -677,6 +705,26 @@
 69. Ejecutar `Basededatos/SportCenter/Script/20260407_Reservas_Cotizar_PoliticaSinTarifa.sql`.
 70. Ejecutar `Basededatos/SportCenter/Script/20260407_Reservas_Listar_Cliente_Equipo_Columnas.sql`.
 71. Ejecutar `Basededatos/SportCenter/Script/20260408_Sp_Reservas_CalendarioEventos_TotalReserva.sql`.
+72. Ejecutar `Basededatos/SportCenter/Script/20260409_Pagos_Listado_Reserva_Paginacion.sql`.
+73. Ejecutar `Basededatos/SportCenter/Script/20260409_DocumentosComprobante_Emision_Series.sql`.
+74. Ejecutar/actualizar los SP individuales:
+  - `dbo.Sp_ConfiguracionClub_Obtener.StoredProcedure.sql`
+  - `dbo.Sp_ConfiguracionClub_Actualizar.StoredProcedure.sql`
+  - `dbo.Sp_Maestros_TiposDocumentoComprobanteSuper_Listar.StoredProcedure.sql`
+  - `dbo.Sp_Maestros_TiposDocumentoComprobante_Listar.StoredProcedure.sql`
+  - `dbo.Sp_Maestros_TiposDocumentoComprobante_Crear.StoredProcedure.sql`
+  - `dbo.Sp_Maestros_TiposDocumentoComprobante_Actualizar.StoredProcedure.sql`
+  - `dbo.Sp_Maestros_TiposDocumentoComprobante_Eliminar.StoredProcedure.sql`
+  - `dbo.Sp_Combos_DocumentosComprobanteNegocio.StoredProcedure.sql`
+  - `dbo.Sp_Configuracion_SeriesDocumentoComprobante_Listar.StoredProcedure.sql`
+  - `dbo.Sp_Configuracion_SeriesDocumentoComprobante_Guardar.StoredProcedure.sql`
+  - `dbo.Sp_Configuracion_SeriesDocumentoComprobante_Eliminar.StoredProcedure.sql`
+  - `dbo.Sp_Combos_SeriesDocumentoComprobante.StoredProcedure.sql`
+  - `dbo.Sp_Sedes_SeriesDocumentoComprobante_Listar.StoredProcedure.sql`
+  - `dbo.Sp_Sedes_SeriesDocumentoComprobante_Guardar.StoredProcedure.sql`
+  - `dbo.Sp_Reservas_Actualizar.StoredProcedure.sql`
+  - `dbo.Sp_Reservas_CambiarEstadoRapido.StoredProcedure.sql`
+  - `dbo.Sp_Reservas_Eliminar.StoredProcedure.sql`
 
 ## Observaciones funcionales
 - CRUD de modulos internos ejecuta operaciones por SP.
@@ -749,6 +797,13 @@
   - agrega paginacion de 20 en 20 resuelta desde `Sp_Reservas_Listar` (no en memoria), manteniendo filtros de rango/sede/espacio/estados.
   - separa `Cliente` y `Equipo` en columnas distintas (ya no concatenadas en una sola celda).
   - importes de `Precio de Espacio` y `Saldo pendiente` se muestran alineados a la derecha.
+- Pagos:
+  - el listado principal se renderiza por reserva (una fila por reserva), no por cada movimiento de pago.
+  - el listado usa paginacion backend (`20` por pagina) y filtro por texto.
+  - el listado muestra columnas `Monto (<simbolo moneda>)` (monto total de la reserva) y `Saldo` por reserva.
+  - la edicion permite solo actualizar `Observacion` de pagos existentes, agregar pago nuevo y/o marcar pagos para eliminacion con confirmacion previa.
+  - en edicion de pagos se muestra tarjeta `Saldo` dentro de `Datos de la reserva`.
+  - al eliminar todos los pagos de una reserva, la reserva queda en estado `Cancelada` y ya no aparece en el listado de pagos.
 - Reservas (tarjetas del calendario):
   - ya no muestran nombre de espacio en eventos `RESERVA`.
   - muestran `Horario` y debajo `Precio de Espacio` usando `TotalReserva` expuesto por `Sp_Reservas_CalendarioEventos`.
@@ -762,3 +817,50 @@
   - en edicion, si el pago acumulado llega al 100% del precio del espacio, el backend ajusta automaticamente el estado a `Pagada`.
   - la politica de confirmacion se muestra siempre, incluso cuando no existe tarifa para el horario; en ese caso se permite ingreso manual del precio del espacio.
   - limite maximo de 2 pagos por reserva validado en `Sp_Reservas_Actualizar` y `Sp_Pagos_Crear`.
+- Documentos de comprobante y emision:
+  - se incorpora supermaestro `TiposDocumentoComprobanteSuperMaestro` con codigos SUNAT, campos `Tributario` y `Habilitado`, y documento interno `RI (Recibo Interno)`.
+  - el seed de supermaestro carga el Catalogo SUNAT No. 01 completo (RS 245-2017/SUNAT, Anexo N. 8) y habilita por defecto `01-Factura` y `03-Boleta`.
+  - se incorpora configuracion por negocio en `NegociosTiposDocumentoComprobante`.
+  - se incorpora configuracion de series por negocio en `NegociosSeriesDocumentoComprobante`.
+  - se incorpora configuracion opcional de serie por sede en `SedesSeriesDocumentoComprobante`.
+  - `Negocios` agrega `EmisionComprobantesElectronicos`, `EmisionReciboInterno` y `PorcentajeIgv`.
+  - en Configuracion se administra series por documento y activacion de emision tributaria/no tributaria.
+  - en `Sedes > Documentos y series` se listan solo documentos activos en Maestros que ademas tienen al menos una serie activa configurada en Configuracion para ese mismo documento.
+  - al agregar/inactivar series desde la misma seccion, tambien se persisten inmediatamente los checks `EmisionComprobantesElectronicos` y `EmisionReciboInterno` en `Negocios` mediante `Sp_ConfiguracionClub_ActualizarEmision`.
+  - en Maestros se agrega mantenimiento de tipos de documento de comprobante por negocio.
+- Cancelacion de reservas:
+  - no se permite cancelar (editar, cambio rapido o boton cancelar) si la reserva tiene pagos registrados.
+  - el sistema muestra validacion indicando eliminar primero los pagos.
+- Comprobantes (emision desde reservas pagadas):
+  - se agrega `Sp_Combos_ReservasPagadas_Buscar` para buscar reservas solo en estado `Pagada`.
+  - `Sp_Combos_ReservasPagadas_Buscar` excluye reservas que ya tengan comprobante activo (`Estado <> Anulado`) para evitar doble emision.
+  - `Sp_Comprobantes_Crear` valida reserva pagada, documento habilitado por negocio y serie habilitada por sede.
+  - `Sp_Comprobantes_Crear` valida que la reserva pertenezca al negocio y bloquea duplicado de comprobante por reserva activa.
+  - `Sp_Comprobantes_Crear` soporta documento `RI` (recibo interno), forzando `Igv = 0` y `SubTotal = Total`.
+  - `Sp_Comprobantes_ObtenerPorId` devuelve `CodigoDocumentoComprobante` para la UI.
+  - `Sp_Comprobantes_Listar` muestra etiquetas legibles para tipo (`Factura/Boleta/Recibo Interno`) y estado.
+- Pagos (integracion con comprobantes):
+  - el listado agrega botones `Emitir CPE` y `Emitir Recibo` segun checks de configuracion del negocio.
+  - los botones abren la emision con reserva precargada.
+  - los botones `Emitir CPE` y `Emitir Recibo` solo se muestran cuando la reserva esta pagada al 100% (sin saldo).
+  - `Sp_Pagos_Listar` expone banderas `PagadaCompleta` y `TieneComprobanteActivo` para decidir habilitacion de emision desde backend.
+  - si la reserva ya tiene comprobante activo (estado distinto de anulado), no se muestran botones de emision en listado de pagos.
+- Comprobantes (registro y validaciones comerciales):
+  - en `Emitir comprobante`, el campo `Numero` queda solo lectura y se genera automaticamente al grabar (correlativo por `TipoComprobante + Serie`).
+  - `Sp_Comprobantes_Crear` actualiza datos editables del cliente desde el formulario de comprobante (`Correo`, `TipoDocumento`, `NumeroDocumento`, `DireccionFiscal`, `CodigoUbigeo`).
+  - para `Boleta (03)`: valida `Total <= 700` y tipo de documento cliente en (`0`, `1`).
+  - para `Factura (01)`: valida que el tipo de documento del cliente sea `RUC (6)`.
+  - en emision se muestra primero bloque de datos editables del cliente (incluyendo ubigeo), y luego calculo de `SubTotal/IGV/Total`.
+  - `Sp_Comprobantes_Listar` ahora soporta `@Buscar`, `@Pagina`, `@TamanoPagina` y devuelve `@TotalRegistros` para paginacion backend 20x20.
+  - en `Editar comprobante`, la reserva queda fija y el importe queda solo lectura.
+  - `Sp_Comprobantes_Actualizar` solo permite editar datos del cliente cuando el comprobante esta en estado `Pendiente`.
+  - si el comprobante no esta pendiente, la UI y backend dejan el registro en solo lectura.
+  - al grabar crear/editar comprobante, la aplicacion recarga el mismo registro (no regresa al listado).
+  - en el listado de comprobantes se agrega accion `Ver` para visualizar el comprobante.
+  - para documentos no tributarios (`Recibo Interno`) la visualizacion genera un PDF interno con cabecera + detalle (cantidad 1 por reserva).
+  - para documentos tributarios (`Factura/Boleta`) la visualizacion redirige a la URL de descarga del proveedor, cuando la URL exista.
+  - `Sp_Comprobantes_Listar` expone `EsTributario` y `UrlDescargaProveedor` para la UI.
+  - se agrega `Sp_Comprobantes_ObtenerVisualizacion` para obtener datos de cabecera/detalle usados en la vista previa.
+  - `Sp_Comprobantes_ObtenerVisualizacion` incluye ubigeo descriptivo (`Distrito/Provincia/Departamento`) de negocio y cliente para mostrarlo en la vista previa.
+- Reservas (listado general):
+  - se agrega `Sp_Reservas_ListadoResumen` para KPI global del listado (Pendientes, Pagadas, Saldo total) con los mismos filtros del listado general y sin efecto de paginacion.

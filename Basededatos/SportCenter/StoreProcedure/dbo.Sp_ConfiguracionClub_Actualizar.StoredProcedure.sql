@@ -7,6 +7,7 @@ GO
 
 -- Firma: Codex - 04/04/2026 | Actualizacion individual de Sp_ConfiguracionClub_Actualizar por ubigeo fiscal y tipo de documento SUNAT centralizado.
 -- Firma: Codex - 06/04/2026 | Se agrega configuracion de politica de confirmacion por pago y porcentaje minimo de adelanto por negocio.
+-- Firma: Codex - 09/04/2026 | Se agrega configuracion de emision (CPE/Recibo interno) y porcentaje IGV.
 CREATE OR ALTER PROCEDURE dbo.Sp_ConfiguracionClub_Actualizar
     @NegocioId INT,
     @NombreComercial NVARCHAR(200),
@@ -18,6 +19,9 @@ CREATE OR ALTER PROCEDURE dbo.Sp_ConfiguracionClub_Actualizar
     @MonedaId INT,
     @PoliticaConfirmacionPago TINYINT = 0,
     @PorcentajeAdelantoMinimo DECIMAL(5,2) = NULL,
+    @EmisionComprobantesElectronicos BIT = 0,
+    @EmisionReciboInterno BIT = 0,
+    @PorcentajeIgv INT = 18,
     @Usuario NVARCHAR(200)
 AS
 BEGIN
@@ -68,6 +72,35 @@ BEGIN
             SET @PorcentajeAdelantoNormalizado = NULL;
         END
 
+        IF @PorcentajeIgv IS NULL OR @PorcentajeIgv < 0 OR @PorcentajeIgv > 100
+            RAISERROR('El porcentaje de IGV debe estar entre 0 y 100.', 16, 1);
+
+        IF @EmisionComprobantesElectronicos = 1
+           AND NOT EXISTS (
+                SELECT 1
+                FROM dbo.NegociosTiposDocumentoComprobante ntd
+                INNER JOIN dbo.TiposDocumentoComprobanteSuperMaestro t ON t.CodigoSunat = ntd.CodigoSunat
+                WHERE ntd.NegocioId = @NegocioId
+                  AND ntd.Activo = 1
+                  AND t.Activo = 1
+                  AND t.Habilitado = 1
+                  AND t.Tributario = 1
+            )
+            RAISERROR('Debes habilitar al menos un documento tributario en Maestros para activar emision de comprobantes electronicos.', 16, 1);
+
+        IF @EmisionReciboInterno = 1
+           AND NOT EXISTS (
+                SELECT 1
+                FROM dbo.NegociosTiposDocumentoComprobante ntd
+                INNER JOIN dbo.TiposDocumentoComprobanteSuperMaestro t ON t.CodigoSunat = ntd.CodigoSunat
+                WHERE ntd.NegocioId = @NegocioId
+                  AND ntd.Activo = 1
+                  AND t.Activo = 1
+                  AND t.Habilitado = 1
+                  AND t.Tributario = 0
+            )
+            RAISERROR('Debes habilitar al menos un documento no tributario en Maestros para activar emision de recibo interno.', 16, 1);
+
         UPDATE n
         SET
             n.NombreComercial = @NombreComercial,
@@ -79,7 +112,10 @@ BEGIN
             n.DocumentoFiscal = NULLIF(@NumeroDocumentoFiscal, N''),
             n.MonedaId = @MonedaId,
             n.PoliticaConfirmacionPago = @PoliticaConfirmacionPago,
-            n.PorcentajeAdelantoMinimo = @PorcentajeAdelantoNormalizado
+            n.PorcentajeAdelantoMinimo = @PorcentajeAdelantoNormalizado,
+            n.EmisionComprobantesElectronicos = @EmisionComprobantesElectronicos,
+            n.EmisionReciboInterno = @EmisionReciboInterno,
+            n.PorcentajeIgv = @PorcentajeIgv
         FROM dbo.Negocios n
         WHERE n.Id = @NegocioId
           AND n.Activo = 1;

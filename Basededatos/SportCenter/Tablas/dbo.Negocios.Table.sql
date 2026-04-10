@@ -3,6 +3,7 @@ GO
 /****** Object:  Table [dbo].[Negocios]    Script Date: 04/04/2026 ******/
 -- Firma: Codex - 04/04/2026 | Agrega CodigoUbigeo en tabla Negocios y su relacion FK a UbigeoDistritos.
 -- Firma: Codex - 06/04/2026 | Agrega politica de confirmacion de reserva por pago y porcentaje minimo de adelanto por negocio.
+-- Firma: Codex - 09/04/2026 | Agrega configuracion de emision (CPE/Recibo interno) y porcentaje IGV.
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -17,6 +18,9 @@ CREATE TABLE [dbo].[Negocios](
     [MonedaId] [int] NULL,
     [PoliticaConfirmacionPago] [tinyint] NOT NULL,
     [PorcentajeAdelantoMinimo] [decimal](5,2) NULL,
+    [PorcentajeIgv] [int] NOT NULL,
+    [EmisionComprobantesElectronicos] [bit] NOT NULL,
+    [EmisionReciboInterno] [bit] NOT NULL,
     [TipoDocumentoFiscal] [nvarchar](2) NULL,
     [NumeroDocumentoFiscal] [nvarchar](20) NULL,
     [DireccionFiscal] [nvarchar](250) NULL,
@@ -30,6 +34,12 @@ GO
 ALTER TABLE [dbo].[Negocios] ADD  CONSTRAINT [DF_Negocios_MonedaId]  DEFAULT ((1)) FOR [MonedaId]
 GO
 ALTER TABLE [dbo].[Negocios] ADD  CONSTRAINT [DF_Negocios_PoliticaConfirmacionPago]  DEFAULT ((0)) FOR [PoliticaConfirmacionPago]
+GO
+ALTER TABLE [dbo].[Negocios] ADD  CONSTRAINT [DF_Negocios_PorcentajeIgv]  DEFAULT ((18)) FOR [PorcentajeIgv]
+GO
+ALTER TABLE [dbo].[Negocios] ADD  CONSTRAINT [DF_Negocios_EmisionComprobantesElectronicos]  DEFAULT ((0)) FOR [EmisionComprobantesElectronicos]
+GO
+ALTER TABLE [dbo].[Negocios] ADD  CONSTRAINT [DF_Negocios_EmisionReciboInterno]  DEFAULT ((0)) FOR [EmisionReciboInterno]
 GO
 ALTER TABLE [dbo].[Negocios]  WITH CHECK ADD  CONSTRAINT [FK_Negocios_Monedas_MonedaId] FOREIGN KEY([MonedaId])
 REFERENCES [dbo].[Monedas] ([Id])

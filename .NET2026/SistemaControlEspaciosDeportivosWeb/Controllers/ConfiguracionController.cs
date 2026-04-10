@@ -26,6 +26,7 @@ public class ConfiguracionController(IModuloPermisoService moduloPermisoService,
         vm.TiposDocumento = await spService.CombosTiposDocumentoIdentidadSunatAsync();
         vm.Monedas = await spService.ConfiguracionClubComboMonedasAsync(negocioId);
         vm.PoliticasConfirmacionPago = ObtenerPoliticasConfirmacionPago();
+        await CargarConfigDocumentosSeriesAsync(vm);
         await CargarCombosUbigeoAsync(vm);
         return View(vm);
     }
@@ -41,8 +42,11 @@ public class ConfiguracionController(IModuloPermisoService moduloPermisoService,
         model.TiposDocumento = await spService.CombosTiposDocumentoIdentidadSunatAsync();
         model.Monedas = await spService.ConfiguracionClubComboMonedasAsync(model.NegocioId);
         model.PoliticasConfirmacionPago = ObtenerPoliticasConfirmacionPago();
+        await CargarConfigDocumentosSeriesAsync(model);
         NormalizarYValidarPoliticaConfirmacionPago(model);
+        NormalizarYValidarIgv(model);
         await NormalizarYValidarUbigeoAsync(model);
+        ValidarEmisionComprobantes(model);
         if (!ModelState.IsValid)
         {
             model.NegocioNombre = baseVm.NegocioNombre;
@@ -61,6 +65,69 @@ public class ConfiguracionController(IModuloPermisoService moduloPermisoService,
 
         TempData["ConfiguracionOk"] = "Configuracion del club actualizada correctamente.";
         return RedirectToAction(nameof(Index), new { negocioId = model.NegocioId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> GuardarSerieDocumento(
+        int negocioId,
+        string codigoSunat,
+        string serie,
+        bool activo = true,
+        bool emisionComprobantesElectronicos = false,
+        bool emisionReciboInterno = false)
+    {
+        var baseVm = await ObtenerBaseAsync(negocioId, "SEDES");
+        if (baseVm is null || !baseVm.PuedeEditar)
+            return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
+
+        try
+        {
+            await spService.ConfiguracionSeriesDocumentoGuardarAsync(negocioId, codigoSunat, serie, activo, User.Identity?.Name ?? "sistema");
+            await spService.ConfiguracionClubActualizarEmisionAsync(
+                negocioId,
+                emisionComprobantesElectronicos,
+                emisionReciboInterno,
+                User.Identity?.Name ?? "sistema");
+            TempData["ConfiguracionOk"] = "Serie configurada correctamente.";
+        }
+        catch (Exception ex)
+        {
+            TempData["ConfiguracionError"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Index), new { negocioId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EliminarSerieDocumento(
+        int negocioId,
+        int id,
+        bool emisionComprobantesElectronicos = false,
+        bool emisionReciboInterno = false)
+    {
+        var baseVm = await ObtenerBaseAsync(negocioId, "SEDES");
+        if (baseVm is null || !baseVm.PuedeEditar)
+            return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
+
+        try
+        {
+            var ok = await spService.ConfiguracionSeriesDocumentoEliminarAsync(negocioId, id, User.Identity?.Name ?? "sistema");
+            await spService.ConfiguracionClubActualizarEmisionAsync(
+                negocioId,
+                emisionComprobantesElectronicos,
+                emisionReciboInterno,
+                User.Identity?.Name ?? "sistema");
+            TempData["ConfiguracionOk"] = ok ? "Serie inactivada correctamente." : null;
+            TempData["ConfiguracionError"] = ok ? null : "No se pudo inactivar la serie.";
+        }
+        catch (Exception ex)
+        {
+            TempData["ConfiguracionError"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Index), new { negocioId });
     }
 
     [HttpGet]
@@ -102,6 +169,13 @@ public class ConfiguracionController(IModuloPermisoService moduloPermisoService,
         model.DistritosUbigeo = !string.IsNullOrWhiteSpace(model.CodigoProvincia) && model.CodigoProvincia.Length == 4
             ? await spService.UbigeoDistritosListarAsync(model.CodigoProvincia)
             : new List<SelectListItem>();
+    }
+
+    private async Task CargarConfigDocumentosSeriesAsync(ConfiguracionClubViewModel model)
+    {
+        model.TiposDocumentoComprobanteTributarios = await spService.CombosDocumentosComprobanteNegocioAsync(model.NegocioId, true);
+        model.TiposDocumentoComprobanteNoTributarios = await spService.CombosDocumentosComprobanteNegocioAsync(model.NegocioId, false);
+        model.SeriesDocumentoComprobante = await spService.ConfiguracionSeriesDocumentoListarAsync(model.NegocioId);
     }
 
     private async Task NormalizarYValidarUbigeoAsync(ConfiguracionClubViewModel model)
@@ -197,6 +271,56 @@ public class ConfiguracionController(IModuloPermisoService moduloPermisoService,
         if (model.PorcentajeAdelantoMinimo.Value != Math.Truncate(model.PorcentajeAdelantoMinimo.Value))
         {
             ModelState.AddModelError(nameof(model.PorcentajeAdelantoMinimo), "El porcentaje minimo no admite decimales.");
+        }
+    }
+
+    private void NormalizarYValidarIgv(ConfiguracionClubViewModel model)
+    {
+        if (model.PorcentajeIgv is < 0 or > 100)
+            ModelState.AddModelError(nameof(model.PorcentajeIgv), "El porcentaje de IGV debe estar entre 0 y 100.");
+    }
+
+    private void ValidarEmisionComprobantes(ConfiguracionClubViewModel model)
+    {
+        if (model.EmisionComprobantesElectronicos)
+        {
+            if (!string.Equals((model.TipoDocumento ?? string.Empty).Trim(), "6", StringComparison.Ordinal))
+            {
+                ModelState.AddModelError(nameof(model.TipoDocumento),
+                    "Para activar emision de comprobantes electronicos, el tipo de documento del negocio debe ser RUC (6).");
+            }
+
+            if (model.PorcentajeIgv <= 0)
+            {
+                ModelState.AddModelError(nameof(model.PorcentajeIgv),
+                    "Para activar emision de comprobantes electronicos, el IGV debe ser mayor que 0.");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.DireccionFiscal))
+            {
+                ModelState.AddModelError(nameof(model.DireccionFiscal),
+                    "Para activar emision de comprobantes electronicos, la direccion fiscal es obligatoria.");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.CodigoUbigeo))
+            {
+                ModelState.AddModelError(nameof(model.CodigoUbigeo),
+                    "Para activar emision de comprobantes electronicos, el ubigeo fiscal es obligatorio.");
+            }
+        }
+
+        if (model.EmisionComprobantesElectronicos &&
+            !model.SeriesDocumentoComprobante.Any(x => x.Tributario && x.Activo))
+        {
+            ModelState.AddModelError(nameof(model.EmisionComprobantesElectronicos),
+                "Para activar emisión de comprobantes electrónicos, primero configura al menos una serie tributaria.");
+        }
+
+        if (model.EmisionReciboInterno &&
+            !model.SeriesDocumentoComprobante.Any(x => !x.Tributario && x.Activo))
+        {
+            ModelState.AddModelError(nameof(model.EmisionReciboInterno),
+                "Para activar emisión de recibo interno, primero configura al menos una serie no tributaria.");
         }
     }
 }

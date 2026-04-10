@@ -1,6 +1,7 @@
 /* Firma: Codex - 01/04/2026 | Hoja dedicada de Reservas: estilos centralizados del calendario y panel operativo, cabecera 2 filas con rango largo, modo Bloqueos HC, KPI diario, vista por espacios, historial drawer y barra de acciones masivas. */
 /* Firma: Codex - 05/04/2026 | Pendiente de confirmar por dia: se alinea paleta visual al estado Pendiente (mensaje y tarjetas). */
 /* Firma: Codex - 07/04/2026 | Pop-up de reservas: campos monetarios alineados a la derecha y sin spinner en total/adelanto; estado No Asistio con color distintivo en listado. */
+/* Firma: Codex - 08/04/2026 | Listado general de reservas: mini tarjetas con icono para cliente/equipo/sede/espacio/fecha/horario/precio/saldo y centrado de horario/montos, mas cabeceras de columnas con icono superior destacado y etiqueta inferior pequena. */
 
 .sc-monto-input {
   text-align: right;
@@ -14,6 +15,94 @@
 
 .sc-monto-input[type=number] {
   -moz-appearance: textfield;
+}
+
+.sc-list-mini-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.18rem 0.5rem;
+  border: 1px solid #d7e2f0;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  font-size: 0.74rem;
+  color: #0f172a;
+  line-height: 1.15;
+  max-width: 100%;
+}
+
+.sc-list-mini-card i {
+  color: #2563eb;
+  font-size: 0.72rem;
+}
+
+.sc-list-mini-card span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sc-list-mini-card-center {
+  justify-content: center;
+}
+
+.sc-list-mini-card-amount span {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.sc-col-header {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.08rem;
+  line-height: 1;
+}
+
+.sc-col-header i {
+  font-size: 0.95rem;
+  color: #1d4ed8;
+}
+
+.sc-col-header small {
+  font-size: 0.64rem;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+.sc-col-header-center {
+  align-items: center;
+}
+
+.sc-reservas-list-card th .sc-col-header {
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.sc-reservas-list-card th.sc-col-id,
+.sc-reservas-list-card td.sc-col-id {
+  width: 86px;
+  min-width: 86px;
+  max-width: 86px;
+}
+
+.sc-id-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  padding: 0.14rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid #cbdaf3;
+  background: linear-gradient(180deg, #ffffff 0%, #edf4ff 100%);
+  color: #1e40af;
+  font-size: 0.72rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }
 
 .sc-reservas-metrics {

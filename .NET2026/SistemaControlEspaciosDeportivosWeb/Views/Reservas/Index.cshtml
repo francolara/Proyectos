@@ -1,19 +1,21 @@
-<!-- Firma: Codex - 28/03/2026 | Ajustes visuales de acciones y calendario backend; tooltip y etiquetas visibles de estado/motivo en franjas bloqueadas; fix horario drag/drop, color bloqueado tomado del backend, eliminacion de texto duplicado en NO_ATENCION/BLOQUEO, cabecera del calendario en dos filas obligatorias y estilos centralizados en site.css. -->
+﻿<!-- Firma: Codex - 28/03/2026 | Ajustes visuales de acciones y calendario backend; tooltip y etiquetas visibles de estado/motivo en franjas bloqueadas; fix horario drag/drop, color bloqueado tomado del backend, eliminacion de texto duplicado en NO_ATENCION/BLOQUEO, cabecera del calendario en dos filas obligatorias y estilos centralizados en site.css. -->
 <!-- Firma: Codex - 30/03/2026 | Calendario backend-driven: disponibilidad y pendientes por dia consultan BD via endpoint diario; panel operativo condicionado a sede+espacio; persistencia de filtros; nueva seccion "Pendiente de confirmar por dia"; listado general con filtro propio de rango y estados multiples (backend); refuerzo visual Fase 1 aplicado tambien por JS para evitar cache/orden de CSS, incluyendo toolbar, botones, grilla, columna horaria y fines de semana. -->
 <!-- Firma: Codex - 31/03/2026 | Fase 2/3 del calendario: leyenda interactiva por estado, modos visuales (compacto/contraste), grilla operativa con cabecera y eje horario sticky, realce de columna por hover, drawer de detalle y ajuste robusto del eje horario (ancho fijo en colgroup/frame/cushion/shrink, titulo sin corte y horas centradas/legibles, re-aplicado tras filtrar/refetch). -->
 <!-- Firma: Codex - 01/04/2026 | Reservas: cabecera con rango largo centrado, modo opcional Bloqueos HC, KPI operativo diario, vista por espacios, historial de cambios en drawer, validacion visual de solape en modal, acciones masivas (confirmar/no-show/recordatorio) backend-driven y estandar visual unificado para botones de acciones en listado (editar/check-in/no-show/cancelar). -->
 <!-- Firma: Codex - 05/04/2026 | Se retira Reserva manual y controles de modo; calendario fijo en Contraste + Bloqueos HC; se elimina panel "Vista por espacios (dia)"; la leyenda muestra contadores dinamicos por rango visible con formato "Estado (N)" excepto "Bloqueada / No atencion"; se reubica "Listado general de reservas" debajo de "Pendiente de confirmar por dia" y se restituye su visibilidad en la vista por defecto (sin sede/espacio); se eliminan 4 botones de acciones masivas del listado general y su JS; en "Disponibilidad por dia" ya no se muestran slots de horas pasadas cuando la fecha filtrada es hoy; el boton Editar del listado abre modal pop-up; se retira la tarjeta "Bloqueos" del KPI operativo; ajustes de estados: "No Show" pasa a "No Asistio", se retira "En uso/Check-in" y "Finalizada" se renombra a "Pagada"; y se elimina el panel lateral de detalle para que el calendario abra solo el pop-up modal de reserva. -->
 <!-- Firma: Codex - 06/04/2026 | Reservas calendario drag/drop: correccion de raiz por bloqueo en ciclo de FullCalendar cuando eventAllow rechaza; la validacion de cruce con BLOQUEO/NO_ATENCION se mueve al momento de soltar (eventDrop/eventResize) con revert inmediato + notificacion + refetch, evitando que la tarjeta quede superpuesta o el drag atrapado; y en Listado general de reservas se retira el boton de accion "Pagada". -->
-<!-- Firma: Codex - 07/04/2026 | Pop-up de reserva con bloques de 30 minutos, cotizacion automatica de precio (tarifa/promocion), politica de pago visible aun sin tarifa, registro de adelanto con forma de pago + fecha de pago y N° operacion alfanumerico opcional, estado solo editable al editar y campo comentario; busqueda+lista de clientes integrada con filtro en vivo (disparo por texto con debounce), boton + de cliente en modal dentro de la misma pestana, precio editable/obligatorio, visualizacion de pagado acumulado y saldo al reingresar, y en listado general separa columnas Cliente/Equipo con montos de Precio y Saldo alineados a la derecha. -->
+<!-- Firma: Codex - 07/04/2026 | Pop-up de reserva con bloques de 30 minutos, cotizacion automatica de precio (tarifa/promocion), politica de pago visible aun sin tarifa, registro de adelanto con forma de pago + fecha de pago y NÂ° operacion alfanumerico opcional, estado solo editable al editar y campo comentario; busqueda+lista de clientes integrada con filtro en vivo (disparo por texto con debounce), boton + de cliente en modal dentro de la misma pestana, precio editable/obligatorio, visualizacion de pagado acumulado y saldo al reingresar, y en listado general separa columnas Cliente/Equipo con montos de Precio y Saldo alineados a la derecha. -->
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ReservasIndexViewModel
-<!-- Firma: Codex - 08/04/2026 | Unifica selectores de hora del bloqueo manual al mismo formato de lista cada 30 minutos usado en reservas; tarjetas del calendario de reserva muestran horario + precio (sin nombre de espacio). -->
+<!-- Firma: Codex - 08/04/2026 | Unifica selectores de hora del bloqueo manual al mismo formato de lista cada 30 minutos usado en reservas; tarjetas del calendario de reserva muestran cliente/equipo + horario(precio) sin nombre de espacio; busqueda de cliente en pop-up con una sola caja y listado por Enter; KPI del listado general en Pendientes/Pagadas/Saldo total con conteo robusto por estado y detalle del listado en mini tarjetas con iconos (incluyendo horario, precio y saldo centrados), mas cabeceras con icono superior y etiqueta pequena. -->
+<!-- Firma: Codex - 09/04/2026 | KPI operativo movido debajo del titulo de modulo, paginacion del listado general reubicada debajo de filtros, botones Filtrar estandarizados a Buscar con icono, y el pop-up de reserva ahora muestra numero/correo del cliente tanto por busqueda como por alta rapida. -->
+<!-- Firma: Codex - 10/04/2026 | Paginacion del listado general de reservas visible siempre (incluye estado 1/1 con botones deshabilitados) para mantener estandar. -->
+<!-- Firma: Codex - 10/04/2026 | Corrige listado general: paginacion tambien en modo sin panel operativo, filtros/paginacion por AJAX sin recargar toda la pagina, y cambio/limpieza de sede fuerza ocultar panel hasta seleccionar sede+espacio valido; tarjeta de calendario en reservas muestra prefijo #NNN-Equipo (Cliente). -->
 <!-- Firma: Codex - 27/03/2026 | Calendario en espanol, bloqueos por sede, gestion por modal, bloqueo de fechas pasadas y rediseno visual SaaS del calendario -->
 @{
     ViewData["Title"] = "Reservas";
     var sedeSeleccionadaTexto = Model.SedesFiltro.FirstOrDefault(x => x.Value == Model.SedeId?.ToString())?.Text ?? "Seleccione sede";
     var espacioSeleccionadoTexto = Model.EspaciosFiltro.FirstOrDefault(x => x.Value == Model.EspacioDeportivoId?.ToString())?.Text ?? "Todos los espacios";
     var mostrarPanelOperativo = Model.SedeId.HasValue && Model.EspacioDeportivoId.HasValue;
-    var totalMontoReservas = Model.Reservas.Sum(x => x.Total);
     var totalBloqueos = Model.Bloqueos.Count;
     var diasRango = (Model.FechaHasta.DayNumber - Model.FechaDesde.DayNumber) + 1;
     var habilitarFiltroEspacio = Model.SedeId.HasValue;
@@ -36,6 +38,40 @@
 @if (TempData["ReservasError"] is string reservasError && !string.IsNullOrWhiteSpace(reservasError))
 {
     <div class="alert alert-danger">@reservasError</div>
+}
+
+@if (mostrarPanelOperativo)
+{
+    <section class="table-card sc-kpi-operativo-card mb-3" id="panelKpiOperativoDia">
+        <div class="sc-reservas-list-head">
+            <div>
+                <h2 class="section-title"><i class="bi bi-speedometer2 me-1"></i>KPI operativo del dia</h2>
+                <p class="mb-0 text-muted small">Resumen en tiempo real por fecha seleccionada (backend).</p>
+            </div>
+        </div>
+        <div class="sc-kpi-grid">
+            <article class="sc-kpi-item">
+                <span>Ocupacion</span>
+                <strong id="kpiOcupacionDia">0%</strong>
+            </article>
+            <article class="sc-kpi-item">
+                <span>Slots ocupados</span>
+                <strong id="kpiSlotsOcupadosDia">0</strong>
+            </article>
+            <article class="sc-kpi-item">
+                <span>Slots libres</span>
+                <strong id="kpiSlotsLibresDia">0</strong>
+            </article>
+            <article class="sc-kpi-item">
+                <span>Reservas activas</span>
+                <strong id="kpiReservasActivasDia">0</strong>
+            </article>
+            <article class="sc-kpi-item">
+                <span>Pendientes</span>
+                <strong id="kpiPendientesDia">0</strong>
+            </article>
+        </div>
+    </section>
 }
 
 <form method="get" asp-action="Index" class="card card-body shadow-sm mb-3 sc-calendar-filter-card" id="filtrosForm">
@@ -94,7 +130,7 @@
             </select>
         </div>
         <div class="col-md-1 d-grid">
-            <button type="submit" class="btn btn-outline-primary">Filtrar</button>
+            <button type="submit" class="btn btn-outline-primary"><i class="bi bi-search me-1"></i> Buscar</button>
         </div>
     </div>
 </form>
@@ -144,37 +180,6 @@
         </div>
     </section>
 
-    <section class="table-card sc-kpi-operativo-card mb-3" id="panelKpiOperativoDia">
-        <div class="sc-reservas-list-head">
-            <div>
-                <h2 class="section-title"><i class="bi bi-speedometer2 me-1"></i>KPI operativo del dia</h2>
-                <p class="mb-0 text-muted small">Resumen en tiempo real por fecha seleccionada (backend).</p>
-            </div>
-        </div>
-        <div class="sc-kpi-grid">
-            <article class="sc-kpi-item">
-                <span>Ocupacion</span>
-                <strong id="kpiOcupacionDia">0%</strong>
-            </article>
-            <article class="sc-kpi-item">
-                <span>Slots ocupados</span>
-                <strong id="kpiSlotsOcupadosDia">0</strong>
-            </article>
-            <article class="sc-kpi-item">
-                <span>Slots libres</span>
-                <strong id="kpiSlotsLibresDia">0</strong>
-            </article>
-            <article class="sc-kpi-item">
-                <span>Reservas activas</span>
-                <strong id="kpiReservasActivasDia">0</strong>
-            </article>
-            <article class="sc-kpi-item">
-                <span>Pendientes</span>
-                <strong id="kpiPendientesDia">0</strong>
-            </article>
-        </div>
-    </section>
-
     <section class="table-card sc-disponibilidad-card mb-4" id="panelDisponibilidadDia">
         <div class="sc-reservas-list-head">
             <div>
@@ -217,12 +222,16 @@
             </div>
             <div class="sc-reservas-metrics">
                 <div class="sc-reservas-metric">
-                    <span>Registros</span>
-                    <strong>@Model.TotalReservasListado</strong>
+                    <span>Pendientes</span>
+                    <strong>@Model.TotalPendientesListadoGlobal</strong>
                 </div>
                 <div class="sc-reservas-metric">
-                    <span>Monto total</span>
-                    <strong>S/ @totalMontoReservas.ToString("N2")</strong>
+                    <span>Pagadas</span>
+                    <strong>@Model.TotalPagadasListadoGlobal</strong>
+                </div>
+                <div class="sc-reservas-metric">
+                    <span>Saldo total</span>
+                    <strong>@Model.MonedaSimbolo @Model.SaldoTotalListadoGlobal.ToString("N2")</strong>
                 </div>
             </div>
         </div>
@@ -258,10 +267,23 @@
                     </div>
                 </div>
                 <div class="col-md-1 d-grid">
-                    <button type="submit" class="btn btn-outline-primary">Aplicar</button>
+                    <button type="submit" class="btn btn-outline-primary"><i class="bi bi-search me-1"></i> Buscar</button>
                 </div>
             </div>
         </form>
+        <div class="d-flex justify-content-between align-items-center mt-2 mb-2">
+            <small class="text-muted">Pagina @Model.PaginaListado de @Model.TotalPaginasListado (@Model.TotalReservasListado registros)</small>
+            <nav aria-label="Paginacion listado reservas">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item @(Model.PaginaListado <= 1 ? "disabled" : null)">
+                        <a class="page-link" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")" asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")" asp-route-sedeId="@Model.SedeId" asp-route-espacioDeportivoId="@Model.EspacioDeportivoId" asp-route-estado="@Model.Estado" asp-route-listadoDesde="@Model.ListadoFechaDesde.ToString("yyyy-MM-dd")" asp-route-listadoHasta="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" asp-route-estadosListadoCsv="@string.Join(",", Model.EstadosListadoSeleccionados)" asp-route-paginaListado="@(Model.PaginaListado - 1)">Anterior</a>
+                    </li>
+                    <li class="page-item @(Model.PaginaListado >= Model.TotalPaginasListado ? "disabled" : null)">
+                        <a class="page-link" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")" asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")" asp-route-sedeId="@Model.SedeId" asp-route-espacioDeportivoId="@Model.EspacioDeportivoId" asp-route-estado="@Model.Estado" asp-route-listadoDesde="@Model.ListadoFechaDesde.ToString("yyyy-MM-dd")" asp-route-listadoHasta="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" asp-route-estadosListadoCsv="@string.Join(",", Model.EstadosListadoSeleccionados)" asp-route-paginaListado="@(Model.PaginaListado + 1)">Siguiente</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
         @if (Model.Reservas.Count == 0)
         {
             <div class="empty-state">
@@ -275,32 +297,32 @@
                 <table id="tablaReservasDetallada" class="table table-sm align-middle">
                     <thead>
                         <tr>
-                            <th>Id</th>
-                            <th>Cliente</th>
-                            <th>Equipo</th>
-                            <th>Sede</th>
-                            <th>Espacio</th>
-                            <th>Fecha</th>
-                            <th>Horario</th>
-                            <th class="text-center">Precio de Espacio (@Model.MonedaSimbolo)</th>
-                            <th class="text-center">Saldo pendiente</th>
-                            <th>Estado</th>
-                            <th class="text-end">Acciones</th>
+                            <th class="sc-col-id"><span class="sc-col-header"><i class="bi bi-hash"></i><small># Reserva</small></span></th>
+                            <th><span class="sc-col-header"><i class="bi bi-person"></i><small>Cliente</small></span></th>
+                            <th><span class="sc-col-header"><i class="bi bi-people"></i><small>Equipo</small></span></th>
+                            <th><span class="sc-col-header"><i class="bi bi-geo-alt"></i><small>Sede</small></span></th>
+                            <th><span class="sc-col-header"><i class="bi bi-grid-3x3-gap"></i><small>Espacio</small></span></th>
+                            <th><span class="sc-col-header"><i class="bi bi-calendar-event"></i><small>Fecha</small></span></th>
+                            <th class="text-center"><span class="sc-col-header sc-col-header-center"><i class="bi bi-clock"></i><small>Horario</small></span></th>
+                            <th class="text-center"><span class="sc-col-header sc-col-header-center"><i class="bi bi-cash-stack"></i><small>Precio (@Model.MonedaSimbolo)</small></span></th>
+                            <th class="text-center"><span class="sc-col-header sc-col-header-center"><i class="bi bi-wallet2"></i><small>Saldo</small></span></th>
+                            <th class="text-center"><span class="sc-col-header sc-col-header-center"><i class="bi bi-patch-check"></i><small>Estado</small></span></th>
+                            <th class="text-center"><span class="sc-col-header sc-col-header-center"><i class="bi bi-gear"></i><small>Acciones</small></span></th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var item in Model.Reservas)
                         {
                             <tr>
-                                <td>@item.Id</td>
-                                <td>@item.Cliente</td>
-                                <td>@(string.IsNullOrWhiteSpace(item.Equipo) ? "-" : item.Equipo)</td>
-                                <td>@item.Sede</td>
-                                <td>@item.Espacio</td>
-                                <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
-                                <td>@item.HoraInicio.ToString("HH\\:mm") - @item.HoraFin.ToString("HH\\:mm")</td>
-                                <td class="text-end">@item.Total.ToString("N2")</td>
-                                <td class="text-end">@item.SaldoPendiente.ToString("N2")</td>
+                                <td class="text-center sc-col-id"><span class="sc-id-chip">#@item.Id</span></td>
+                                <td><span class="sc-list-mini-card"><i class="bi bi-person"></i><span>@item.Cliente</span></span></td>
+                                <td><span class="sc-list-mini-card"><i class="bi bi-people"></i><span>@(string.IsNullOrWhiteSpace(item.Equipo) ? "-" : item.Equipo)</span></span></td>
+                                <td><span class="sc-list-mini-card"><i class="bi bi-geo-alt"></i><span>@item.Sede</span></span></td>
+                                <td><span class="sc-list-mini-card"><i class="bi bi-grid-3x3-gap"></i><span>@item.Espacio</span></span></td>
+                                <td><span class="sc-list-mini-card"><i class="bi bi-calendar-event"></i><span>@item.Fecha.ToString("dd/MM/yyyy")</span></span></td>
+                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center"><i class="bi bi-clock"></i><span>@item.HoraInicio.ToString("HH\\:mm") - @item.HoraFin.ToString("HH\\:mm")</span></span></td>
+                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center sc-list-mini-card-amount"><i class="bi bi-cash-stack"></i><span>@item.Total.ToString("N2")</span></span></td>
+                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center sc-list-mini-card-amount"><i class="bi bi-wallet2"></i><span>@item.SaldoPendiente.ToString("N2")</span></span></td>
                                 <td class="text-center">
                                     @{
                                     var estadoTexto = item.Estado switch
@@ -340,22 +362,6 @@
                     </tbody>
                 </table>
             </div>
-            @if (Model.TotalPaginasListado > 1)
-            {
-                <div class="d-flex justify-content-between align-items-center mt-2">
-                    <small class="text-muted">Pagina @Model.PaginaListado de @Model.TotalPaginasListado (@Model.TotalReservasListado registros)</small>
-                    <nav aria-label="Paginacion listado reservas">
-                        <ul class="pagination pagination-sm mb-0">
-                            <li class="page-item @(Model.PaginaListado <= 1 ? "disabled" : null)">
-                                <a class="page-link" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")" asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")" asp-route-sedeId="@Model.SedeId" asp-route-espacioDeportivoId="@Model.EspacioDeportivoId" asp-route-estado="@Model.Estado" asp-route-listadoDesde="@Model.ListadoFechaDesde.ToString("yyyy-MM-dd")" asp-route-listadoHasta="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" asp-route-estadosListadoCsv="@string.Join(",", Model.EstadosListadoSeleccionados)" asp-route-paginaListado="@(Model.PaginaListado - 1)">Anterior</a>
-                            </li>
-                            <li class="page-item @(Model.PaginaListado >= Model.TotalPaginasListado ? "disabled" : null)">
-                                <a class="page-link" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")" asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")" asp-route-sedeId="@Model.SedeId" asp-route-espacioDeportivoId="@Model.EspacioDeportivoId" asp-route-estado="@Model.Estado" asp-route-listadoDesde="@Model.ListadoFechaDesde.ToString("yyyy-MM-dd")" asp-route-listadoHasta="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" asp-route-estadosListadoCsv="@string.Join(",", Model.EstadosListadoSeleccionados)" asp-route-paginaListado="@(Model.PaginaListado + 1)">Siguiente</a>
-                            </li>
-                        </ul>
-                    </nav>
-                </div>
-            }
         }
     </section>
 
@@ -471,12 +477,16 @@ else
             </div>
             <div class="sc-reservas-metrics">
                 <div class="sc-reservas-metric">
-                    <span>Registros</span>
-                    <strong>@Model.TotalReservasListado</strong>
+                    <span>Pendientes</span>
+                    <strong>@Model.TotalPendientesListadoGlobal</strong>
                 </div>
                 <div class="sc-reservas-metric">
-                    <span>Monto total</span>
-                    <strong>S/ @totalMontoReservas.ToString("N2")</strong>
+                    <span>Pagadas</span>
+                    <strong>@Model.TotalPagadasListadoGlobal</strong>
+                </div>
+                <div class="sc-reservas-metric">
+                    <span>Saldo total</span>
+                    <strong>@Model.MonedaSimbolo @Model.SaldoTotalListadoGlobal.ToString("N2")</strong>
                 </div>
             </div>
         </div>
@@ -511,10 +521,23 @@ else
                     </div>
                 </div>
                 <div class="col-md-1 d-grid">
-                    <button type="submit" class="btn btn-outline-primary">Aplicar</button>
+                    <button type="submit" class="btn btn-outline-primary"><i class="bi bi-search me-1"></i> Buscar</button>
                 </div>
             </div>
         </form>
+        <div class="d-flex justify-content-between align-items-center mt-2 mb-2">
+            <small class="text-muted">Pagina @Model.PaginaListado de @Model.TotalPaginasListado (@Model.TotalReservasListado registros)</small>
+            <nav aria-label="Paginacion listado reservas">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item @(Model.PaginaListado <= 1 ? "disabled" : null)">
+                        <a class="page-link" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")" asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")" asp-route-sedeId="@Model.SedeId" asp-route-espacioDeportivoId="@Model.EspacioDeportivoId" asp-route-estado="@Model.Estado" asp-route-listadoDesde="@Model.ListadoFechaDesde.ToString("yyyy-MM-dd")" asp-route-listadoHasta="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" asp-route-estadosListadoCsv="@string.Join(",", Model.EstadosListadoSeleccionados)" asp-route-paginaListado="@(Model.PaginaListado - 1)">Anterior</a>
+                    </li>
+                    <li class="page-item @(Model.PaginaListado >= Model.TotalPaginasListado ? "disabled" : null)">
+                        <a class="page-link" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")" asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")" asp-route-sedeId="@Model.SedeId" asp-route-espacioDeportivoId="@Model.EspacioDeportivoId" asp-route-estado="@Model.Estado" asp-route-listadoDesde="@Model.ListadoFechaDesde.ToString("yyyy-MM-dd")" asp-route-listadoHasta="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" asp-route-estadosListadoCsv="@string.Join(",", Model.EstadosListadoSeleccionados)" asp-route-paginaListado="@(Model.PaginaListado + 1)">Siguiente</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
         @if (Model.Reservas.Count == 0)
         {
             <div class="empty-state">
@@ -528,32 +551,32 @@ else
                 <table id="tablaReservasDetallada" class="table table-sm align-middle">
                     <thead>
                         <tr>
-                            <th>Id</th>
-                            <th>Cliente</th>
-                            <th>Equipo</th>
-                            <th>Sede</th>
-                            <th>Espacio</th>
-                            <th>Fecha</th>
-                            <th>Horario</th>
-                            <th class="text-center">Precio de Espacio (@Model.MonedaSimbolo)</th>
-                            <th class="text-center">Saldo pendiente</th>
-                            <th>Estado</th>
-                            <th class="text-end">Acciones</th>
+                            <th class="sc-col-id"><span class="sc-col-header"><i class="bi bi-hash"></i><small># Reserva</small></span></th>
+                            <th><span class="sc-col-header"><i class="bi bi-person"></i><small>Cliente</small></span></th>
+                            <th><span class="sc-col-header"><i class="bi bi-people"></i><small>Equipo</small></span></th>
+                            <th><span class="sc-col-header"><i class="bi bi-geo-alt"></i><small>Sede</small></span></th>
+                            <th><span class="sc-col-header"><i class="bi bi-grid-3x3-gap"></i><small>Espacio</small></span></th>
+                            <th><span class="sc-col-header"><i class="bi bi-calendar-event"></i><small>Fecha</small></span></th>
+                            <th class="text-center"><span class="sc-col-header sc-col-header-center"><i class="bi bi-clock"></i><small>Horario</small></span></th>
+                            <th class="text-center"><span class="sc-col-header sc-col-header-center"><i class="bi bi-cash-stack"></i><small>Precio (@Model.MonedaSimbolo)</small></span></th>
+                            <th class="text-center"><span class="sc-col-header sc-col-header-center"><i class="bi bi-wallet2"></i><small>Saldo</small></span></th>
+                            <th class="text-center"><span class="sc-col-header sc-col-header-center"><i class="bi bi-patch-check"></i><small>Estado</small></span></th>
+                            <th class="text-center"><span class="sc-col-header sc-col-header-center"><i class="bi bi-gear"></i><small>Acciones</small></span></th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var item in Model.Reservas)
                         {
                             <tr>
-                                <td>@item.Id</td>
-                                <td>@item.Cliente</td>
-                                <td>@(string.IsNullOrWhiteSpace(item.Equipo) ? "-" : item.Equipo)</td>
-                                <td>@item.Sede</td>
-                                <td>@item.Espacio</td>
-                                <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
-                                <td>@item.HoraInicio.ToString("HH\\:mm") - @item.HoraFin.ToString("HH\\:mm")</td>
-                                <td class="text-end">@item.Total.ToString("N2")</td>
-                                <td class="text-end">@item.SaldoPendiente.ToString("N2")</td>
+                                <td class="text-center sc-col-id"><span class="sc-id-chip">#@item.Id</span></td>
+                                <td><span class="sc-list-mini-card"><i class="bi bi-person"></i><span>@item.Cliente</span></span></td>
+                                <td><span class="sc-list-mini-card"><i class="bi bi-people"></i><span>@(string.IsNullOrWhiteSpace(item.Equipo) ? "-" : item.Equipo)</span></span></td>
+                                <td><span class="sc-list-mini-card"><i class="bi bi-geo-alt"></i><span>@item.Sede</span></span></td>
+                                <td><span class="sc-list-mini-card"><i class="bi bi-grid-3x3-gap"></i><span>@item.Espacio</span></span></td>
+                                <td><span class="sc-list-mini-card"><i class="bi bi-calendar-event"></i><span>@item.Fecha.ToString("dd/MM/yyyy")</span></span></td>
+                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center"><i class="bi bi-clock"></i><span>@item.HoraInicio.ToString("HH\\:mm") - @item.HoraFin.ToString("HH\\:mm")</span></span></td>
+                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center sc-list-mini-card-amount"><i class="bi bi-cash-stack"></i><span>@item.Total.ToString("N2")</span></span></td>
+                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center sc-list-mini-card-amount"><i class="bi bi-wallet2"></i><span>@item.SaldoPendiente.ToString("N2")</span></span></td>
                                 <td class="text-center">
                                     @{
                                     var estadoTexto = item.Estado switch
@@ -593,22 +616,6 @@ else
                     </tbody>
                 </table>
             </div>
-            @if (Model.TotalPaginasListado > 1)
-            {
-                <div class="d-flex justify-content-between align-items-center mt-2">
-                    <small class="text-muted">Pagina @Model.PaginaListado de @Model.TotalPaginasListado (@Model.TotalReservasListado registros)</small>
-                    <nav aria-label="Paginacion listado reservas">
-                        <ul class="pagination pagination-sm mb-0">
-                            <li class="page-item @(Model.PaginaListado <= 1 ? "disabled" : null)">
-                                <a class="page-link" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")" asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")" asp-route-sedeId="@Model.SedeId" asp-route-espacioDeportivoId="@Model.EspacioDeportivoId" asp-route-estado="@Model.Estado" asp-route-listadoDesde="@Model.ListadoFechaDesde.ToString("yyyy-MM-dd")" asp-route-listadoHasta="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" asp-route-estadosListadoCsv="@string.Join(",", Model.EstadosListadoSeleccionados)" asp-route-paginaListado="@(Model.PaginaListado - 1)">Anterior</a>
-                            </li>
-                            <li class="page-item @(Model.PaginaListado >= Model.TotalPaginasListado ? "disabled" : null)">
-                                <a class="page-link" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")" asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")" asp-route-sedeId="@Model.SedeId" asp-route-espacioDeportivoId="@Model.EspacioDeportivoId" asp-route-estado="@Model.Estado" asp-route-listadoDesde="@Model.ListadoFechaDesde.ToString("yyyy-MM-dd")" asp-route-listadoHasta="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" asp-route-estadosListadoCsv="@string.Join(",", Model.EstadosListadoSeleccionados)" asp-route-paginaListado="@(Model.PaginaListado + 1)">Siguiente</a>
-                            </li>
-                        </ul>
-                    </nav>
-                </div>
-            }
         }
     </section>
 }
@@ -701,12 +708,25 @@ else
                             <label class="form-label">Cliente</label>
                             <div class="input-group mb-1">
                                 <span class="input-group-text"><i class="bi bi-search"></i></span>
-                                <input type="text" class="form-control form-control-sm" id="modalClienteBuscar" placeholder="Buscar cliente (filtra la lista)..." autocomplete="off" />
+                                <input type="text" class="form-control form-control-sm" id="modalClienteBuscar" placeholder="Escribe cliente/equipo/doc y presiona Enter..." autocomplete="off" />
                                 <button type="button" class="btn btn-sm btn-outline-primary" id="modalBtnNuevoCliente" title="Nuevo cliente rapido">+</button>
                             </div>
-                            <select class="form-select" id="modalClienteId" name="ClienteId" required>
-                                <option value="">Escribe para buscar cliente...</option>
-                            </select>
+                            <input type="hidden" id="modalClienteId" name="ClienteId" />
+                            <div id="modalClienteResultadosWrap" class="d-none">
+                                <select class="form-select form-select-sm" id="modalClienteResultados" size="5" aria-label="Resultados de busqueda de clientes">
+                                    <option value="">Sin resultados</option>
+                                </select>
+                            </div>
+                            <div class="row g-2 mt-1">
+                                <div class="col-md-5">
+                                    <label class="form-label small mb-1">Numero</label>
+                                    <input type="text" class="form-control form-control-sm" id="modalClienteNumero" value="-" readonly />
+                                </div>
+                                <div class="col-md-7">
+                                    <label class="form-label small mb-1">Correo</label>
+                                    <input type="text" class="form-control form-control-sm" id="modalClienteCorreo" value="-" readonly />
+                                </div>
+                            </div>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Fecha</label>
@@ -770,7 +790,7 @@ else
                             <input type="date" class="form-control" id="modalFechaPago" name="FechaPago" value="@DateTime.Today.ToString("yyyy-MM-dd")" max="@DateTime.Today.ToString("yyyy-MM-dd")" disabled />
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">N° Operacion</label>
+                            <label class="form-label">NÂ° Operacion</label>
                             <input type="text" class="form-control" id="modalNumeroOperacion" name="NumeroOperacion" maxlength="50" placeholder="Opcional" autocomplete="off" disabled />
                         </div>
                         <div class="col-md-6">
@@ -890,6 +910,10 @@ else
             const modalPrecioLabelEl = document.getElementById('modalPrecioLabel');
             const modalClienteBuscarEl = document.getElementById('modalClienteBuscar');
             const modalClienteIdEl = document.getElementById('modalClienteId');
+            const modalClienteNumeroEl = document.getElementById('modalClienteNumero');
+            const modalClienteCorreoEl = document.getElementById('modalClienteCorreo');
+            const modalClienteResultadosWrapEl = document.getElementById('modalClienteResultadosWrap');
+            const modalClienteResultadosEl = document.getElementById('modalClienteResultados');
             const modalBtnNuevoClienteEl = document.getElementById('modalBtnNuevoCliente');
             const modalAdelantoActualInfoEl = document.getElementById('modalAdelantoActualInfo');
             const clienteRapidoModalEl = document.getElementById('clienteRapidoModal');
@@ -924,7 +948,7 @@ else
             const espacioSelect = document.getElementById('espacioDeportivoId');
             const estadoSelect = document.getElementById('estado');
             const legendEstadoButtons = Array.from(document.querySelectorAll('[data-legend-estado]'));
-            const btnEditarReservaListadoEls = Array.from(document.querySelectorAll('[data-accion-editar-reserva]'));
+            const listadoCardSelector = '.sc-reservas-list-card';
             const kpiOcupacionDiaEl = document.getElementById('kpiOcupacionDia');
             const kpiSlotsOcupadosDiaEl = document.getElementById('kpiSlotsOcupadosDia');
             const kpiSlotsLibresDiaEl = document.getElementById('kpiSlotsLibresDia');
@@ -946,9 +970,9 @@ else
             let dragEnCurso = false;
             let dragRechazadoPorBloqueo = false;
             let ignorarClicksCalendarioHasta = 0;
-            let timerBusquedaCliente = null;
             const debugDragActivo = true;
             const calendarAxisWidth = '122px';
+            const clientesDetalleMap = new Map();
             function pad2(n) {
                 return String(n).padStart(2, '0');
             }
@@ -1152,6 +1176,16 @@ else
                 return separadorEspacio >= 0 ? titulo.substring(separadorEspacio + 3).trim() : titulo;
             }
 
+            function obtenerCodigoReservaDesdeEvento(evento) {
+                if (!evento) return '';
+                const reservaIdRaw = evento.extendedProps?.reservaId ?? evento.id ?? '';
+                const match = String(reservaIdRaw).match(/\d+/);
+                if (!match) return '';
+                const numero = Number.parseInt(match[0], 10);
+                if (!Number.isFinite(numero) || numero <= 0) return '';
+                return `#${numero}`;
+            }
+
             function colorTextoByEstado(estadoCodigo, tipoEvento) {
                 const clase = classByEstado(estadoCodigo, tipoEvento);
                 switch (clase) {
@@ -1235,14 +1269,38 @@ else
                 el.value = value ?? '';
             }
 
+            function mostrarResultadosCliente(visible) {
+                if (!modalClienteResultadosWrapEl) return;
+                modalClienteResultadosWrapEl.classList.toggle('d-none', !visible);
+            }
+
+            function actualizarContactoClienteModal(numero = '', correo = '') {
+                if (modalClienteNumeroEl) modalClienteNumeroEl.value = String(numero || '').trim() || '-';
+                if (modalClienteCorreoEl) modalClienteCorreoEl.value = String(correo || '').trim() || '-';
+            }
+
+            function seleccionarClienteModal(clienteId, textoCliente, detalle = null) {
+                if (!modalClienteIdEl || !modalClienteBuscarEl) return;
+                modalClienteIdEl.value = clienteId ? String(clienteId) : '';
+                modalClienteBuscarEl.value = clienteId ? String(textoCliente || '') : '';
+                const key = clienteId ? String(clienteId) : '';
+                const info = detalle || clientesDetalleMap.get(key) || null;
+                actualizarContactoClienteModal(info?.numero, info?.correo);
+                mostrarResultadosCliente(false);
+            }
+
             function sincronizarClienteBusquedaDesdeSelect() {
-                if (!modalClienteBuscarEl || !modalClienteIdEl) return;
-                const texto = modalClienteIdEl.selectedOptions?.[0]?.text || '';
-                modalClienteBuscarEl.value = modalClienteIdEl.value ? texto : '';
+                if (!modalClienteResultadosEl) return;
+                const opt = modalClienteResultadosEl.selectedOptions?.[0];
+                if (!opt || !opt.value) return;
+                seleccionarClienteModal(opt.value, opt.text || '', {
+                    numero: opt.getAttribute('data-numero') || '',
+                    correo: opt.getAttribute('data-correo') || ''
+                });
             }
 
             async function recargarClientesModal(buscar = '', clienteIdPreferido = '') {
-                if (!modalClienteIdEl) return;
+                if (!modalClienteResultadosEl) return [];
                 const params = new URLSearchParams();
                 params.append('negocioId', String(negocioId));
                 if (buscar) params.append('buscar', buscar);
@@ -1253,27 +1311,70 @@ else
                     throw new Error(payload.mensaje || 'No se pudo recargar el combo de clientes.');
                 }
 
-                const seleccionadoActual = clienteIdPreferido || modalClienteIdEl.value || '';
-                modalClienteIdEl.innerHTML = '<option value="">Selecciona...</option>';
-                let encontrado = false;
-                (payload.items || []).forEach(item => {
-                    const opt = document.createElement('option');
-                    opt.value = String(item.value ?? '');
-                    opt.textContent = String(item.text ?? '');
-                    if (seleccionadoActual && opt.value === seleccionadoActual) {
-                        encontrado = true;
+                const items = (payload.items || []).map(item => ({
+                    value: String(item.value ?? ''),
+                    text: String(item.text ?? ''),
+                    numero: String(item.numero ?? ''),
+                    correo: String(item.correo ?? '')
+                }));
+
+                clientesDetalleMap.clear();
+                modalClienteResultadosEl.innerHTML = '';
+                if (items.length === 0) {
+                    const optVacio = document.createElement('option');
+                    optVacio.value = '';
+                    optVacio.textContent = 'Sin resultados';
+                    modalClienteResultadosEl.appendChild(optVacio);
+                    mostrarResultadosCliente(true);
+                    if (!clienteIdPreferido && modalClienteIdEl) {
+                        modalClienteIdEl.value = '';
+                        actualizarContactoClienteModal('', '');
                     }
-                    modalClienteIdEl.appendChild(opt);
+                    return items;
+                }
+
+                let encontradoPreferido = false;
+                items.forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item.value;
+                    opt.textContent = item.text;
+                    opt.setAttribute('data-numero', item.numero || '');
+                    opt.setAttribute('data-correo', item.correo || '');
+                    clientesDetalleMap.set(item.value, { numero: item.numero || '', correo: item.correo || '' });
+                    if (clienteIdPreferido && opt.value === String(clienteIdPreferido)) {
+                        encontradoPreferido = true;
+                    }
+                    modalClienteResultadosEl.appendChild(opt);
                 });
 
-                modalClienteIdEl.value = encontrado ? seleccionadoActual : '';
-                sincronizarClienteBusquedaDesdeSelect();
+                if (clienteIdPreferido && encontradoPreferido) {
+                    const optSel = Array.from(modalClienteResultadosEl.options).find(x => x.value === String(clienteIdPreferido));
+                    if (optSel) {
+                        seleccionarClienteModal(optSel.value, optSel.text || '', {
+                            numero: optSel.getAttribute('data-numero') || '',
+                            correo: optSel.getAttribute('data-correo') || ''
+                        });
+                    }
+                } else {
+                    mostrarResultadosCliente(true);
+                    if (modalClienteIdEl) modalClienteIdEl.value = '';
+                    actualizarContactoClienteModal('', '');
+                }
+
+                return items;
             }
 
-            function limpiarOpcionesClienteModal(mensaje = 'Escribe para buscar cliente...') {
-                if (!modalClienteIdEl) return;
-                modalClienteIdEl.innerHTML = `<option value="">${mensaje}</option>`;
-                modalClienteIdEl.value = '';
+            function limpiarOpcionesClienteModal(mensaje = 'Escribe y presiona Enter para buscar...') {
+                if (modalClienteIdEl) modalClienteIdEl.value = '';
+                if (!modalClienteResultadosEl) return;
+                modalClienteResultadosEl.innerHTML = '';
+                clientesDetalleMap.clear();
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.textContent = mensaje;
+                modalClienteResultadosEl.appendChild(opt);
+                actualizarContactoClienteModal('', '');
+                mostrarResultadosCliente(false);
             }
 
             function limpiarClienteRapidoError() {
@@ -1506,6 +1607,81 @@ else
                 return { ok: true, mensaje: '' };
             }
 
+            function buildQueryStringFromForm(form) {
+                const data = new FormData(form);
+                const params = new URLSearchParams();
+                data.forEach((value, key) => {
+                    if (value === null || value === undefined) return;
+                    params.append(key, String(value));
+                });
+                return params.toString();
+            }
+
+            async function renderListadoGeneralPorAjax(url) {
+                const actualCard = document.querySelector(listadoCardSelector);
+                if (!actualCard) {
+                    window.location.href = url;
+                    return;
+                }
+
+                try {
+                    actualCard.classList.add('is-loading');
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                        cache: 'no-store'
+                    });
+                    if (!response.ok) {
+                        throw new Error('No se pudo recargar el listado general.');
+                    }
+                    const html = await response.text();
+                    const doc = new DOMParser().parseFromString(html, 'text/html');
+                    const nuevoCard = doc.querySelector(listadoCardSelector);
+                    if (!nuevoCard) {
+                        window.location.href = url;
+                        return;
+                    }
+                    actualCard.replaceWith(nuevoCard);
+                    conectarListadoGeneralAjax();
+                } catch (err) {
+                    console.error(err);
+                    window.location.href = url;
+                }
+            }
+
+            function conectarListadoGeneralAjax() {
+                const card = document.querySelector(listadoCardSelector);
+                if (!card) return;
+                const form = card.querySelector('form.sc-listado-filtro-form');
+                if (form && !form.dataset.ajaxBound) {
+                    form.dataset.ajaxBound = '1';
+                    form.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        const paginaInput = form.querySelector('input[name="paginaListado"]');
+                        if (paginaInput) paginaInput.value = '1';
+                        const query = buildQueryStringFromForm(form);
+                        const url = `${form.action}?${query}`;
+                        void renderListadoGeneralPorAjax(url);
+                    });
+                }
+
+                card.querySelectorAll('a.page-link').forEach((link) => {
+                    if (link.dataset.ajaxBound) return;
+                    link.dataset.ajaxBound = '1';
+                    link.addEventListener('click', (e) => {
+                        const item = link.closest('.page-item');
+                        if (item?.classList.contains('disabled')) {
+                            e.preventDefault();
+                            return;
+                        }
+                        e.preventDefault();
+                        const href = link.getAttribute('href') || '';
+                        if (!href) return;
+                        void renderListadoGeneralPorAjax(href);
+                    });
+                });
+            }
+
             function abrirModalNuevaReserva(fechaIso, horaInicio, horaFin, espacioId) {
                 if (!getFiltroSedeSeleccionada()) {
                     alert('Selecciona una sede antes de crear una reserva.');
@@ -1535,7 +1711,7 @@ else
                 setValue('modalEspacioDeportivoId', espacioId || getFiltroEspacioSeleccionado());
                 setValue('modalClienteId', '');
                 if (modalClienteBuscarEl) modalClienteBuscarEl.value = '';
-                if (modalClienteIdEl) modalClienteIdEl.innerHTML = '<option value="">Escribe para buscar cliente...</option>';
+                limpiarOpcionesClienteModal('Escribe y presiona Enter para buscar...');
                 reservaModal.show();
                 cotizarReservaModal();
                 validarDisponibilidadModal();
@@ -1558,7 +1734,6 @@ else
                         setValue('modalReservaId', data.id);
                         setValue('modalEspacioDeportivoId', data.espacioDeportivoId);
                         setValue('modalClienteId', data.clienteId);
-                        sincronizarClienteBusquedaDesdeSelect();
                         setValue('modalFecha', data.fecha);
                         setValue('modalHoraInicio', data.horaInicio);
                         setValue('modalHoraFin', data.horaFin);
@@ -1580,7 +1755,10 @@ else
                         reservaModal.show();
                         const clienteId = String(data.clienteId || '');
                         if (modalClienteBuscarEl) modalClienteBuscarEl.value = '';
-                        recargarClientesModal('', clienteId).catch(() => { });
+                        recargarClientesModal('', clienteId).catch(() => {
+                            const textoBase = modalClienteBuscarEl?.value || '';
+                            seleccionarClienteModal(clienteId, textoBase);
+                        });
                         cotizarReservaModal(true);
                         validarDisponibilidadModal();
                     })
@@ -1932,7 +2110,7 @@ else
                     info?.revert?.();
                     limpiarArrastreVisual();
                     const mensaje = err?.name === 'AbortError'
-                        ? 'La validacion tardó demasiado. Se restauro la reserva a su posicion original.'
+                        ? 'La validacion tardÃ³ demasiado. Se restauro la reserva a su posicion original.'
                         : (err?.message || mensajeErrorPorDefecto);
                     notificarCalendario(mensaje, 'warning');
                 } finally {
@@ -2031,12 +2209,16 @@ else
                         const timeText = arg.timeText ? `<div class="sc-fc-event-time">${arg.timeText}</div>` : '';
                         if (tipoEvento === 'RESERVA') {
                             const clienteEquipo = obtenerClienteEquipoDesdeTitulo(arg.event.title);
+                            const codigoReserva = obtenerCodigoReservaDesdeEvento(arg.event);
                             const total = Number(arg.event.extendedProps?.totalReserva || 0);
                             const horarioPrecio = Number.isFinite(total) && total > 0
                                 ? `${arg.timeText || ''} (${monedaSimboloCalendario} ${formatMoney(total)})`
                                 : (arg.timeText || '');
-                            const clienteEquipoTexto = clienteEquipo
-                                ? `<div class="sc-fc-event-title sc-fc-event-cliente">${clienteEquipo}</div>`
+                            const clienteEquipoCompleto = codigoReserva
+                                ? (clienteEquipo ? `${codigoReserva}-${clienteEquipo}` : codigoReserva)
+                                : clienteEquipo;
+                            const clienteEquipoTexto = clienteEquipoCompleto
+                                ? `<div class="sc-fc-event-title sc-fc-event-cliente">${clienteEquipoCompleto}</div>`
                                 : '';
                             const horarioPrecioTexto = horarioPrecio
                                 ? `<div class="sc-fc-event-time">${horarioPrecio}</div>`
@@ -2314,12 +2496,13 @@ else
                     }, 80);
                 });
             }
-            btnEditarReservaListadoEls.forEach((btn) => {
-                btn.addEventListener('click', () => {
-                    const reservaId = Number(btn.dataset.reservaId || 0);
-                    if (!reservaId) return;
-                    abrirModalEditarReserva(reservaId);
-                });
+            document.addEventListener('click', (evt) => {
+                const target = evt.target instanceof Element ? evt.target.closest('[data-accion-editar-reserva]') : null;
+                if (!target) return;
+                evt.preventDefault();
+                const reservaId = Number(target.getAttribute('data-reserva-id') || 0);
+                if (!reservaId) return;
+                abrirModalEditarReserva(reservaId);
             });
 
             legendEstadoButtons.forEach((btn) => {
@@ -2362,31 +2545,46 @@ else
             if (modalRegistrarPagoEl) {
                 modalRegistrarPagoEl.addEventListener('change', actualizarUIRegistroPago);
             }
-            if (modalClienteBuscarEl && modalClienteIdEl) {
+            if (modalClienteBuscarEl && modalClienteIdEl && modalClienteResultadosEl) {
                 modalClienteBuscarEl.addEventListener('input', () => {
-                    const filtro = String(modalClienteBuscarEl.value || '').trim();
-                    if (timerBusquedaCliente) {
-                        clearTimeout(timerBusquedaCliente);
-                        timerBusquedaCliente = null;
+                    if (modalClienteIdEl.value) {
+                        modalClienteIdEl.value = '';
+                        actualizarContactoClienteModal('', '');
                     }
+                });
+                modalClienteBuscarEl.addEventListener('keydown', async (e) => {
+                    if (e.key !== 'Enter') return;
+                    e.preventDefault();
+                    const filtro = String(modalClienteBuscarEl.value || '').trim();
                     if (filtro.length < 2) {
-                        limpiarOpcionesClienteModal('Escribe al menos 2 caracteres...');
+                        limpiarOpcionesClienteModal('Escribe al menos 2 caracteres y presiona Enter.');
+                        mostrarResultadosCliente(true);
                         return;
                     }
-                    timerBusquedaCliente = setTimeout(() => {
-                        recargarClientesModal(filtro).catch(err => {
-                            console.warn(err);
-                            limpiarOpcionesClienteModal('No se pudo cargar clientes');
-                        });
-                    }, 250);
-                });
-                modalClienteBuscarEl.addEventListener('focus', () => {
-                    const filtro = String(modalClienteBuscarEl.value || '').trim();
-                    if (filtro.length < 2 && !modalClienteIdEl.value) {
-                        limpiarOpcionesClienteModal('Escribe al menos 2 caracteres...');
+                    try {
+                        const items = await recargarClientesModal(filtro);
+                        if (items.length === 1) {
+                            seleccionarClienteModal(items[0].value, items[0].text, {
+                                numero: items[0].numero || '',
+                                correo: items[0].correo || ''
+                            });
+                        } else {
+                            mostrarResultadosCliente(true);
+                            modalClienteResultadosEl.focus();
+                        }
+                    } catch (err) {
+                        console.warn(err);
+                        limpiarOpcionesClienteModal('No se pudo cargar clientes');
+                        mostrarResultadosCliente(true);
                     }
                 });
-                modalClienteIdEl.addEventListener('change', sincronizarClienteBusquedaDesdeSelect);
+                modalClienteResultadosEl.addEventListener('change', sincronizarClienteBusquedaDesdeSelect);
+                modalClienteResultadosEl.addEventListener('dblclick', sincronizarClienteBusquedaDesdeSelect);
+                modalClienteResultadosEl.addEventListener('keydown', (e) => {
+                    if (e.key !== 'Enter') return;
+                    e.preventDefault();
+                    sincronizarClienteBusquedaDesdeSelect();
+                });
             }
             if (modalBtnNuevoClienteEl && clienteRapidoModal) {
                 modalBtnNuevoClienteEl.addEventListener('click', (e) => {
@@ -2432,6 +2630,12 @@ else
                         }
 
                         await recargarClientesModal('', String(data.clienteId || ''));
+                        if (data?.clienteId) {
+                            seleccionarClienteModal(String(data.clienteId), String(data.clienteTexto || ''), {
+                                numero: String(data.numero || ''),
+                                correo: String(data.correo || '')
+                            });
+                        }
                         clienteRapidoModal.hide();
                     } catch (err) {
                         mostrarClienteRapidoError(err.message);
@@ -2450,6 +2654,10 @@ else
                 }
                 if (Number(modalTotalEl?.value || 0) <= 0) {
                     mostrarErrorModal('El precio de espacio es obligatorio y debe ser mayor que cero.');
+                    return;
+                }
+                if (!String(modalClienteIdEl?.value || '').trim()) {
+                    mostrarErrorModal('Selecciona un cliente. Escribe en la caja y presiona Enter para buscar.');
                     return;
                 }
                 if (modalRegistrarPagoEl?.checked) {
@@ -2513,10 +2721,7 @@ else
                     if (disponibilidadSlotsEl) disponibilidadSlotsEl.innerHTML = '';
                     if (pendientesMensajeEl) pendientesMensajeEl.textContent = 'Selecciona un espacio en el filtro para mostrar pendientes.';
                     if (pendientesSlotsEl) pendientesSlotsEl.innerHTML = '';
-                    if (calendar) {
-                        renderToolbarSubtitle(calendar.view.currentStart, calendar.view.currentEnd);
-                        calendar.refetchEvents();
-                    }
+                    enviarFiltros();
                 });
             }
 
@@ -2524,6 +2729,10 @@ else
                 espacioSelect.addEventListener('change', () => {
                     if (recargandoEspacios) return;
                     limpiarCacheResumenDia();
+                    if (!espacioSelect.value) {
+                        enviarFiltros();
+                        return;
+                    }
                     if (!calendarioActivo) {
                         enviarFiltros();
                         return;
@@ -2550,6 +2759,11 @@ else
                 });
             }
 
+            conectarListadoGeneralAjax();
+
         })();
     </script>
 }
+
+
+

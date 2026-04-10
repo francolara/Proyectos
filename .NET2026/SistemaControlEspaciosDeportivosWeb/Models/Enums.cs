@@ -41,7 +41,8 @@ public enum RolNegocio
 public enum TipoComprobante
 {
     Boleta = 1,
-    Factura = 2
+    Factura = 2,
+    ReciboInterno = 3
 }
 
 public enum EstadoComprobanteElectronico

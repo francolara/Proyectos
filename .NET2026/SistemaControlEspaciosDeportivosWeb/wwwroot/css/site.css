@@ -1011,6 +1011,24 @@ body {
   --_hover-text: #5b21b6;
 }
 
+.sc-action-primary {
+  --_bg: #eff6ff;
+  --_border: #93c5fd;
+  --_text: #1d4ed8;
+  --_hover-bg: #dbeafe;
+  --_hover-border: #60a5fa;
+  --_hover-text: #1e40af;
+}
+
+.sc-action-neutral {
+  --_bg: #f1f5f9;
+  --_border: #cbd5e1;
+  --_text: #334155;
+  --_hover-bg: #e2e8f0;
+  --_hover-border: #94a3b8;
+  --_hover-text: #1e293b;
+}
+
 .table td.text-end .sc-action-btn,
 .card td.text-end .sc-action-btn {
   margin-left: 0.28rem;
@@ -1306,4 +1324,28 @@ body {
   .sc-maestros-nav {
     grid-template-columns: 1fr;
   }
+}
+
+/* Firma: Codex - 09/04/2026 | Estandar visual de cabeceras de listados con icono superior y etiqueta pequena centrada. */
+.table-card thead th .sc-col-header {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.08rem;
+  width: 100%;
+  text-align: center;
+  line-height: 1;
+}
+
+.table-card thead th .sc-col-header i {
+  font-size: 0.95rem;
+  color: #1d4ed8;
+}
+
+.table-card thead th .sc-col-header small {
+  font-size: 0.64rem;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.01em;
 }

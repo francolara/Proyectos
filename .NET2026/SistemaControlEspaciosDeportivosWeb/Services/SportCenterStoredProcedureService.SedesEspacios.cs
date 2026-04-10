@@ -344,6 +344,51 @@ public partial class SportCenterStoredProcedureService
     public Task<List<SelectListItem>> EspaciosComboTiposDeporteAsync(int negocioId) => ComboAsync("Sp_Combos_TiposDeporte", ("@NegocioId", negocioId, SqlDbType.Int));
     public Task<List<SelectListItem>> EspaciosComboTiposSueloAsync(int negocioId) => ComboAsync("Sp_Combos_TiposSuelo", ("@NegocioId", negocioId, SqlDbType.Int));
 
+    public async Task<List<SedeSerieDocumentoConfigItemViewModel>> SedesSeriesDocumentoListarAsync(int negocioId, int sedeId)
+    {
+        var list = new List<SedeSerieDocumentoConfigItemViewModel>();
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_Sedes_SeriesDocumentoComprobante_Listar", cn) { CommandType = CommandType.StoredProcedure };
+        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+        AddParam(cmd, "@SedeId", sedeId, SqlDbType.Int);
+        await using var dr = await cmd.ExecuteReaderAsync();
+        while (await dr.ReadAsync())
+        {
+            var codigo = dr.GetString(0);
+            var item = new SedeSerieDocumentoConfigItemViewModel
+            {
+                CodigoSunat = codigo,
+                NombreDocumento = dr.GetString(1),
+                Tributario = dr.GetBoolean(2),
+                NegocioSerieId = dr.IsDBNull(3) ? null : dr.GetInt32(3),
+                SerieSeleccionada = dr.IsDBNull(4) ? null : dr.GetString(4)
+            };
+
+            list.Add(item);
+        }
+
+        foreach (var item in list)
+        {
+            item.SeriesDisponibles = await CombosSeriesDocumentoComprobanteAsync(negocioId, item.CodigoSunat);
+        }
+
+        return list;
+    }
+
+    public async Task SedesSeriesDocumentoGuardarAsync(int negocioId, int sedeId, string codigoSunat, int? negocioSerieId, string usuario)
+    {
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_Sedes_SeriesDocumentoComprobante_Guardar", cn) { CommandType = CommandType.StoredProcedure };
+        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+        AddParam(cmd, "@SedeId", sedeId, SqlDbType.Int);
+        AddParam(cmd, "@CodigoSunat", codigoSunat, SqlDbType.NVarChar);
+        AddParam(cmd, "@NegocioSerieId", negocioSerieId, SqlDbType.Int);
+        AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+        await cmd.ExecuteNonQueryAsync();
+    }
+
     private static string? ToCsv(IEnumerable<int>? values)
     {
         if (values is null) return null;

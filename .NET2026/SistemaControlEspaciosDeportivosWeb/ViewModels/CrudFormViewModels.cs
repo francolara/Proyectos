@@ -99,6 +99,17 @@ public class SedeFormViewModel
     public string? FechasInhabilitadasCsv { get; set; }
     public List<DateOnly> FechasInhabilitadas { get; set; } = new();
     public List<SelectListItem> CodigosPais { get; set; } = new();
+    public List<SedeSerieDocumentoConfigItemViewModel> SeriesDocumentoConfig { get; set; } = new();
+}
+
+public class SedeSerieDocumentoConfigItemViewModel
+{
+    public string CodigoSunat { get; set; } = string.Empty;
+    public string NombreDocumento { get; set; } = string.Empty;
+    public bool Tributario { get; set; }
+    public int? NegocioSerieId { get; set; }
+    public string? SerieSeleccionada { get; set; }
+    public List<SelectListItem> SeriesDisponibles { get; set; } = new();
 }
 
 public class EspacioFormViewModel
@@ -226,13 +237,13 @@ public class PagoFormViewModel
     public string NegocioNombre { get; set; } = string.Empty;
     public string RolActual { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Este campo es obligatorio.")]
+    [Range(1, int.MaxValue, ErrorMessage = "Selecciona una reserva valida.")]
     public int ReservaId { get; set; }
 
     [Range(0.01, 999999, ErrorMessage = "El campo {0} debe estar entre {1} y {2}.")]
     public decimal Monto { get; set; }
 
-    public DateTime FechaPago { get; set; } = DateTime.Now;
+    public DateTime FechaPago { get; set; } = DateTime.Today;
 
     [Range(1, int.MaxValue, ErrorMessage = "Debes seleccionar una forma de pago.")]
     [Display(Name = "Forma de pago")]
@@ -246,6 +257,31 @@ public class PagoFormViewModel
 
     public List<SelectListItem> Reservas { get; set; } = new();
     public List<SelectListItem> FormasPago { get; set; } = new();
+
+    public string? ReservaTextoSeleccionada { get; set; }
+    public string? Sede { get; set; }
+    public string? Espacio { get; set; }
+    public string? Cliente { get; set; }
+    public DateOnly? FechaReserva { get; set; }
+    public TimeOnly? HoraInicioReserva { get; set; }
+    public TimeOnly? HoraFinReserva { get; set; }
+    public decimal? TotalReserva { get; set; }
+    public decimal? PagadoReserva { get; set; }
+    public decimal? SaldoReserva { get; set; }
+    public string MonedaSimbolo { get; set; } = "S/";
+    public int PoliticaConfirmacionPago { get; set; }
+    public decimal? PorcentajeAdelantoMinimo { get; set; }
+    public List<PagoPrevioItemViewModel> PagosPrevios { get; set; } = new();
+}
+
+public class PagoPrevioItemViewModel
+{
+    public int PagoId { get; set; }
+    public DateTime FechaPago { get; set; }
+    public decimal Monto { get; set; }
+    public string FormaPago { get; set; } = string.Empty;
+    public string? NumeroOperacion { get; set; }
+    public string? Observacion { get; set; }
 }
 
 public class ComprobanteFormViewModel
@@ -265,7 +301,7 @@ public class ComprobanteFormViewModel
     [StringLength(4, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string Serie { get; set; } = "B001";
 
-    [Range(1, int.MaxValue, ErrorMessage = "El campo {0} debe estar entre {1} y {2}.")]
+    [Range(0, int.MaxValue, ErrorMessage = "El campo {0} debe estar entre {1} y {2}.")]
     public int Numero { get; set; }
 
     public DateTime FechaEmision { get; set; } = DateTime.Now;
@@ -283,6 +319,109 @@ public class ComprobanteFormViewModel
     public EstadoComprobanteElectronico Estado { get; set; } = EstadoComprobanteElectronico.PendienteEnvio;
 
     public List<SelectListItem> Reservas { get; set; } = new();
+    public List<SelectListItem> TiposDocumentoComprobante { get; set; } = new();
+    public string CodigoDocumentoComprobante { get; set; } = "03";
+    public bool DocumentoTributario { get; set; } = true;
+    public int? NegocioSerieId { get; set; }
+    public string MonedaSimbolo { get; set; } = "S/";
+    public bool EmisionComprobantesElectronicos { get; set; }
+    public bool EmisionReciboInterno { get; set; }
+
+    public string? ReservaCodigo { get; set; }
+    public string? Sede { get; set; }
+    public string? Espacio { get; set; }
+    public string? Cliente { get; set; }
+    public int? ClienteId { get; set; }
+    public string? ClienteCorreo { get; set; }
+    public string? ClienteTipoDocumento { get; set; }
+    public string? ClienteNumeroDocumento { get; set; }
+    public string? ClienteDireccionFiscal { get; set; }
+    public string? ClienteCodigoDepartamento { get; set; }
+    public string? ClienteCodigoProvincia { get; set; }
+    public string? ClienteCodigoUbigeo { get; set; }
+    public DateOnly? FechaReserva { get; set; }
+    public TimeOnly? HoraInicioReserva { get; set; }
+    public TimeOnly? HoraFinReserva { get; set; }
+    public decimal? TotalReserva { get; set; }
+    public decimal? PagadoReserva { get; set; }
+    public decimal? SaldoReserva { get; set; }
+    public int PorcentajeIgvConfigurado { get; set; } = 18;
+    public List<PagoPrevioItemViewModel> PagosReserva { get; set; } = new();
+    public List<SelectListItem> SeriesDocumento { get; set; } = new();
+    public List<SelectListItem> TiposDocumentoIdentidad { get; set; } = new();
+    public List<SelectListItem> DepartamentosUbigeo { get; set; } = new();
+    public List<SelectListItem> ProvinciasUbigeo { get; set; } = new();
+    public List<SelectListItem> DistritosUbigeo { get; set; } = new();
+
+    public bool EsEdicion { get; set; }
+    public bool PuedeEditarDatosCliente => EsEdicion && Estado == EstadoComprobanteElectronico.PendienteEnvio;
+}
+
+public class ComprobanteReservaContextoViewModel
+{
+    public int ReservaId { get; set; }
+    public string ReservaCodigo { get; set; } = string.Empty;
+    public string Sede { get; set; } = string.Empty;
+    public string Espacio { get; set; } = string.Empty;
+    public string Cliente { get; set; } = string.Empty;
+    public int? ClienteId { get; set; }
+    public string? ClienteCorreo { get; set; }
+    public string? ClienteTipoDocumento { get; set; }
+    public string? ClienteNumeroDocumento { get; set; }
+    public string? ClienteDireccionFiscal { get; set; }
+    public string? ClienteCodigoUbigeo { get; set; }
+    public string? ClienteCodigoDepartamento { get; set; }
+    public string? ClienteCodigoProvincia { get; set; }
+    public DateOnly FechaReserva { get; set; }
+    public TimeOnly HoraInicioReserva { get; set; }
+    public TimeOnly HoraFinReserva { get; set; }
+    public decimal TotalReserva { get; set; }
+    public decimal TotalPagado { get; set; }
+    public decimal SaldoPendiente { get; set; }
+    public string MonedaSimbolo { get; set; } = "S/";
+    public int PorcentajeIgvConfigurado { get; set; } = 18;
+    public List<PagoPrevioItemViewModel> PagosReserva { get; set; } = new();
+    public List<SelectListItem> DocumentosDisponibles { get; set; } = new();
+    public List<SelectListItem> SeriesDisponibles { get; set; } = new();
+}
+
+public class ComprobanteVisualizacionViewModel
+{
+    public int Id { get; set; }
+    public int NegocioId { get; set; }
+    public int ReservaId { get; set; }
+    public int TipoComprobante { get; set; }
+    public string CodigoDocumentoComprobante { get; set; } = string.Empty;
+    public string TipoDocumentoNombre { get; set; } = string.Empty;
+    public bool EsTributario { get; set; }
+    public string Serie { get; set; } = string.Empty;
+    public int Numero { get; set; }
+    public DateTime FechaEmision { get; set; }
+    public string MonedaSimbolo { get; set; } = "S/";
+    public decimal SubTotal { get; set; }
+    public decimal Igv { get; set; }
+    public decimal Total { get; set; }
+    public int PorcentajeIgv { get; set; }
+    public string NegocioNombre { get; set; } = string.Empty;
+    public string? NegocioRazonSocial { get; set; }
+    public string? NegocioDireccionFiscal { get; set; }
+    public string? NegocioDistrito { get; set; }
+    public string? NegocioProvincia { get; set; }
+    public string? NegocioDepartamento { get; set; }
+    public string? NegocioDocumento { get; set; }
+    public string ClienteNombre { get; set; } = string.Empty;
+    public string? ClienteDocumento { get; set; }
+    public string? ClienteDireccion { get; set; }
+    public string? ClienteDistrito { get; set; }
+    public string? ClienteProvincia { get; set; }
+    public string? ClienteDepartamento { get; set; }
+    public string? ClienteCorreo { get; set; }
+    public string SedeNombre { get; set; } = string.Empty;
+    public string EspacioNombre { get; set; } = string.Empty;
+    public DateOnly FechaReserva { get; set; }
+    public TimeOnly HoraInicioReserva { get; set; }
+    public TimeOnly HoraFinReserva { get; set; }
+    public string? UrlDescargaProveedor { get; set; }
 }
 
 public class ClienteFormViewModel

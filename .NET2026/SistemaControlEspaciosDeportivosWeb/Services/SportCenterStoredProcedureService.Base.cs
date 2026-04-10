@@ -44,7 +44,12 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
         await using var cmd = new SqlCommand(spName, cn) { CommandType = CommandType.StoredProcedure };
         foreach (var p in parameters) AddParam(cmd, p.Name, p.Value, p.Type);
         await using var dr = await cmd.ExecuteReaderAsync();
-        while (await dr.ReadAsync()) list.Add(new SelectListItem(dr.GetString(1), dr.GetInt32(0).ToString()));
+        while (await dr.ReadAsync())
+        {
+            var text = dr.IsDBNull(1) ? string.Empty : dr.GetString(1);
+            var rawValue = dr.IsDBNull(0) ? string.Empty : Convert.ToString(dr.GetValue(0)) ?? string.Empty;
+            list.Add(new SelectListItem(text, rawValue));
+        }
         return list;
     }
 

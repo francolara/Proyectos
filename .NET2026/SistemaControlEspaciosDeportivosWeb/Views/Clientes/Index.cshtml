@@ -4,6 +4,7 @@
 <!-- Firma: Codex - 06/04/2026 | Se agrega filtro de estado (todos/activos/inactivos) en listado de clientes. -->
 <!-- Firma: Codex - 06/04/2026 | El filtro de estado consulta backend y preserva el estado seleccionado. -->
 <!-- Firma: Codex - 07/04/2026 | La busqueda de clientes ahora consulta backend (SP) y se mantiene en paginacion. -->
+<!-- Firma: Codex - 09/04/2026 | Rediseno de cabecera del listado de clientes con icono superior y etiqueta pequena centrada por columna; separa columnas ID/Cliente/Equipo en el listado. -->
 
 @{
     ViewData["Title"] = "Clientes";
@@ -116,10 +117,12 @@
                 <table class="table table-sm align-middle" id="tablaClientesDetallada">
                     <thead>
                         <tr>
-                            <th>Cliente</th>
-                            <th>Documento y contacto</th>
-                            <th>Estado</th>
-                            <th class="text-end">Acciones</th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-hash"></i><small>ID</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-person"></i><small>Cliente</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-shield"></i><small>Equipo</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-card-checklist"></i><small>Documento y contacto</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-patch-check"></i><small>Estado</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-gear"></i><small>Acciones</small></span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -128,19 +131,27 @@
                             var telefono = string.IsNullOrWhiteSpace(item.Telefono) ? "-" : item.Telefono!;
                             var correo = string.IsNullOrWhiteSpace(item.Correo) ? "-" : item.Correo!;
                             <tr>
-                                <td>
-                                    <div class="sc-list-main">
-                                        <div class="sc-list-title">@item.NombresORazonSocial</div>
-                                        @if (!string.IsNullOrWhiteSpace(item.NombreEquipo))
-                                        {
-                                            <div class="mt-1">
-                                                <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle">
-                                                    <i class="bi bi-shield me-1"></i>@item.NombreEquipo
-                                                </span>
-                                            </div>
-                                        }
-                                        <small class="text-muted">ID: @item.Id</small>
-                                    </div>
+                                <td class="text-center">
+                                    <span class="sc-id-chip">#@item.Id</span>
+                                </td>
+                                <td class="text-start">
+                                    <span class="sc-list-mini-card">
+                                        <i class="bi bi-person"></i>
+                                        <span>@item.NombresORazonSocial</span>
+                                    </span>
+                                </td>
+                                <td class="text-start">
+                                    @if (!string.IsNullOrWhiteSpace(item.NombreEquipo))
+                                    {
+                                        <span class="sc-list-mini-card">
+                                            <i class="bi bi-shield"></i>
+                                            <span>@item.NombreEquipo</span>
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
                                 </td>
                                 <td>
                                     <div class="d-flex flex-wrap gap-2">

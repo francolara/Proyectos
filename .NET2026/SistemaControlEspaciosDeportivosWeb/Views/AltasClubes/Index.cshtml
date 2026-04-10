@@ -1,5 +1,6 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.AltasClubesIndexViewModel
 <!-- Firma: Codex - 27/03/2026 -->
+<!-- Firma: Codex - 09/04/2026 | Estandariza boton de filtro a "Buscar" con icono de lupa. -->
 @{
     ViewData["Title"] = "Altas de clubes";
 }
@@ -37,7 +38,7 @@
             </select>
         </div>
         <div class="col-md-2 d-grid">
-            <button type="submit" class="btn btn-primary">Filtrar</button>
+            <button type="submit" class="btn btn-outline-primary"><i class="bi bi-search me-1"></i> Buscar</button>
         </div>
     </div>
 </form>

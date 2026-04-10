@@ -7,6 +7,7 @@ GO
 
 -- Firma: Codex - 04/04/2026 | Actualizacion individual de Sp_ConfiguracionClub_Obtener por ubigeo fiscal y tipo de documento SUNAT centralizado.
 -- Firma: Codex - 06/04/2026 | Se agrega politica de confirmacion de reserva por pago y porcentaje minimo de adelanto a nivel negocio.
+-- Firma: Codex - 09/04/2026 | Se agrega configuracion de emision (CPE/Recibo interno) y porcentaje IGV.
 CREATE OR ALTER PROCEDURE dbo.Sp_ConfiguracionClub_Obtener
     @NegocioId INT
 AS
@@ -24,7 +25,10 @@ BEGIN
             COALESCE(n.MonedaId, 1) AS MonedaId,
             n.CodigoUbigeo,
             CAST(COALESCE(n.PoliticaConfirmacionPago, 0) AS TINYINT) AS PoliticaConfirmacionPago,
-            n.PorcentajeAdelantoMinimo
+            n.PorcentajeAdelantoMinimo,
+            CAST(COALESCE(n.EmisionComprobantesElectronicos, 0) AS BIT) AS EmisionComprobantesElectronicos,
+            CAST(COALESCE(n.EmisionReciboInterno, 0) AS BIT) AS EmisionReciboInterno,
+            CAST(COALESCE(n.PorcentajeIgv, 18) AS INT) AS PorcentajeIgv
         FROM dbo.Negocios n
         WHERE n.Id = @NegocioId
           AND n.Activo = 1;

@@ -1,6 +1,7 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.SedesIndexViewModel
 <!-- Firma: Codex - 30/03/2026 | Rediseno del listado de sedes con KPIs, filtro rapido y tabla detallada -->
 <!-- Firma: Codex - 05/04/2026 | Estandariza texto de estado para mostrar "No Asistio" en lugar de "No-show" en resumen de sedes. -->
+<!-- Firma: Codex - 09/04/2026 | Rediseno de cabecera del listado de sedes con icono superior y etiqueta pequena centrada por columna. -->
 
 @{
     ViewData["Title"] = "Sedes";
@@ -77,11 +78,11 @@
                 <table class="table table-sm align-middle" id="tablaSedesDetallada">
                     <thead>
                         <tr>
-                            <th>Sede</th>
-                            <th>Atencion y servicios</th>
-                            <th>Notificaciones y contacto</th>
-                            <th>Estado</th>
-                            <th class="text-end">Acciones</th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-building"></i><small>Sede</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-clipboard2-pulse"></i><small>Atencion y servicios</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-bell"></i><small>Notificaciones y contacto</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-patch-check"></i><small>Estado</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-gear"></i><small>Acciones</small></span></th>
                         </tr>
                     </thead>
                     <tbody>

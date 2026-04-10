@@ -85,6 +85,7 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
         vm.NegocioNombre = baseVm.NegocioNombre;
         vm.RolActual = baseVm.RolActual;
         await CargarCatalogoServiciosAsync(vm);
+        vm.SeriesDocumentoConfig = await spService.SedesSeriesDocumentoListarAsync(resolvedNegocioId.Value, vm.Id);
         InicializarTelefonosParaVista(vm);
         return View(vm);
     }
@@ -105,6 +106,7 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
         if (!ModelState.IsValid)
         {
             await CargarCatalogoServiciosAsync(model);
+            model.SeriesDocumentoConfig = await spService.SedesSeriesDocumentoListarAsync(model.NegocioId, model.Id);
             model.CodigosPais = TelefonoInternacionalHelper.ObtenerCodigosPais(model.TelefonoCodigoPais);
             return View(model);
         }
@@ -114,8 +116,19 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
         {
             ModelState.AddModelError(string.Empty, "No se pudo actualizar la sede. Verifica el negocio seleccionado.");
             await CargarCatalogoServiciosAsync(model);
+            model.SeriesDocumentoConfig = await spService.SedesSeriesDocumentoListarAsync(model.NegocioId, model.Id);
             model.CodigosPais = TelefonoInternacionalHelper.ObtenerCodigosPais(model.TelefonoCodigoPais);
             return View(model);
+        }
+
+        foreach (var item in model.SeriesDocumentoConfig ?? new List<SedeSerieDocumentoConfigItemViewModel>())
+        {
+            await spService.SedesSeriesDocumentoGuardarAsync(
+                model.NegocioId,
+                model.Id,
+                item.CodigoSunat,
+                item.NegocioSerieId,
+                User.Identity?.Name ?? "sistema");
         }
 
         if (urlsEliminar.Count > 0)

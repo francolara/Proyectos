@@ -28,7 +28,10 @@ public partial class SportCenterStoredProcedureService
             MonedaId = dr.IsDBNull(6) ? 1 : dr.GetInt32(6),
             CodigoUbigeo = dr.IsDBNull(7) ? null : dr.GetString(7),
             PoliticaConfirmacionPago = dr.FieldCount > 8 && !dr.IsDBNull(8) ? Convert.ToInt32(dr.GetValue(8)) : 0,
-            PorcentajeAdelantoMinimo = dr.FieldCount > 9 && !dr.IsDBNull(9) ? Convert.ToDecimal(dr.GetValue(9)) : null
+            PorcentajeAdelantoMinimo = dr.FieldCount > 9 && !dr.IsDBNull(9) ? Convert.ToDecimal(dr.GetValue(9)) : null,
+            EmisionComprobantesElectronicos = dr.FieldCount > 10 && !dr.IsDBNull(10) && Convert.ToBoolean(dr.GetValue(10)),
+            EmisionReciboInterno = dr.FieldCount > 11 && !dr.IsDBNull(11) && Convert.ToBoolean(dr.GetValue(11)),
+            PorcentajeIgv = dr.FieldCount > 12 && !dr.IsDBNull(12) ? Convert.ToInt32(dr.GetValue(12)) : 18
         };
     }
 
@@ -49,6 +52,9 @@ public partial class SportCenterStoredProcedureService
             AddParam(cmd, "@MonedaId", model.MonedaId, SqlDbType.Int);
             AddParam(cmd, "@PoliticaConfirmacionPago", model.PoliticaConfirmacionPago, SqlDbType.TinyInt);
             AddParam(cmd, "@PorcentajeAdelantoMinimo", model.PorcentajeAdelantoMinimo, SqlDbType.Decimal);
+            AddParam(cmd, "@EmisionComprobantesElectronicos", model.EmisionComprobantesElectronicos, SqlDbType.Bit);
+            AddParam(cmd, "@EmisionReciboInterno", model.EmisionReciboInterno, SqlDbType.Bit);
+            AddParam(cmd, "@PorcentajeIgv", model.PorcentajeIgv, SqlDbType.Int);
             AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
             await cmd.ExecuteNonQueryAsync();
             return true;
@@ -74,6 +80,26 @@ public partial class SportCenterStoredProcedureService
         return list;
     }
 
+    public async Task<bool> ConfiguracionClubActualizarEmisionAsync(int negocioId, bool emisionComprobantesElectronicos, bool emisionReciboInterno, string usuario)
+    {
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_ConfiguracionClub_ActualizarEmision", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+            AddParam(cmd, "@EmisionComprobantesElectronicos", emisionComprobantesElectronicos, SqlDbType.Bit);
+            AddParam(cmd, "@EmisionReciboInterno", emisionReciboInterno, SqlDbType.Bit);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (SqlException ex) when (EsErrorNoEncontrado(ex.Message))
+        {
+            return false;
+        }
+    }
+
     public async Task<List<SelectListItem>> CombosTiposDocumentoIdentidadSunatAsync()
     {
         var list = new List<SelectListItem>();
@@ -87,5 +113,73 @@ public partial class SportCenterStoredProcedureService
         }
 
         return list;
+    }
+
+    public Task<List<SelectListItem>> CombosDocumentosComprobanteNegocioAsync(int negocioId, bool? tributario = null)
+        => ComboAsync(
+            "Sp_Combos_DocumentosComprobanteNegocio",
+            ("@NegocioId", negocioId, SqlDbType.Int),
+            ("@Tributario", tributario, SqlDbType.Bit));
+
+    public Task<List<SelectListItem>> CombosSeriesDocumentoComprobanteAsync(int negocioId, string codigoSunat)
+        => ComboAsync(
+            "Sp_Combos_SeriesDocumentoComprobante",
+            ("@NegocioId", negocioId, SqlDbType.Int),
+            ("@CodigoSunat", codigoSunat, SqlDbType.NVarChar));
+
+    public async Task<List<SerieDocumentoComprobanteItemViewModel>> ConfiguracionSeriesDocumentoListarAsync(int negocioId)
+    {
+        var list = new List<SerieDocumentoComprobanteItemViewModel>();
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_Configuracion_SeriesDocumentoComprobante_Listar", cn) { CommandType = CommandType.StoredProcedure };
+        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+        await using var dr = await cmd.ExecuteReaderAsync();
+        while (await dr.ReadAsync())
+        {
+            list.Add(new SerieDocumentoComprobanteItemViewModel
+            {
+                Id = dr.GetInt32(0),
+                CodigoSunat = dr.GetString(1),
+                NombreDocumento = dr.GetString(2),
+                Tributario = dr.GetBoolean(3),
+                Serie = dr.GetString(4),
+                Activo = dr.GetBoolean(5)
+            });
+        }
+
+        return list;
+    }
+
+    public async Task ConfiguracionSeriesDocumentoGuardarAsync(int negocioId, string codigoSunat, string serie, bool activo, string usuario)
+    {
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_Configuracion_SeriesDocumentoComprobante_Guardar", cn) { CommandType = CommandType.StoredProcedure };
+        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+        AddParam(cmd, "@CodigoSunat", codigoSunat, SqlDbType.NVarChar);
+        AddParam(cmd, "@Serie", serie, SqlDbType.NVarChar);
+        AddParam(cmd, "@Activo", activo, SqlDbType.Bit);
+        AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+        await cmd.ExecuteNonQueryAsync();
+    }
+
+    public async Task<bool> ConfiguracionSeriesDocumentoEliminarAsync(int negocioId, int id, string usuario)
+    {
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_Configuracion_SeriesDocumentoComprobante_Eliminar", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+            AddParam(cmd, "@Id", id, SqlDbType.Int);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (SqlException ex) when (EsErrorNoEncontrado(ex.Message))
+        {
+            return false;
+        }
     }
 }

@@ -34,7 +34,9 @@ public class MaestrosController(IModuloPermisoService moduloPermisoService, ISpo
             TiposDeporteSuper = await spService.MaestrosTiposDeporteSuperListarAsync(),
             TiposSuelo = await spService.MaestrosTiposSueloListarAsync(baseVm.NegocioId),
             TiposDeporte = await spService.MaestrosTiposDeporteListarAsync(baseVm.NegocioId),
-            FormasPago = await spService.MaestrosFormasPagoListarAsync(baseVm.NegocioId)
+            FormasPago = await spService.MaestrosFormasPagoListarAsync(baseVm.NegocioId),
+            TiposDocumentoComprobanteSuper = await spService.MaestrosTiposDocumentoComprobanteSuperListarAsync(),
+            TiposDocumentoComprobante = await spService.MaestrosTiposDocumentoComprobanteListarAsync(baseVm.NegocioId)
         };
         return View(vm);
     }
@@ -278,6 +280,68 @@ public class MaestrosController(IModuloPermisoService moduloPermisoService, ISpo
             var ok = await spService.MaestrosFormasPagoEliminarAsync(negocioId, id, User.Identity?.Name ?? "sistema");
             TempData["MaestrosError"] = ok ? null : "No se pudo inactivar la forma de pago.";
             TempData["MaestrosOk"] = ok ? "Forma de pago inactivada correctamente." : null;
+        }
+        catch (Exception ex)
+        {
+            TempData["MaestrosError"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Index), new { negocioId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> TipoDocumentoComprobanteCrear(int negocioId, string codigoSunat, bool activo = true)
+    {
+        var baseVm = await ObtenerBaseAsync(negocioId, "MAESTROS");
+        if (baseVm is null || !baseVm.PuedeCrear) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
+
+        try
+        {
+            await spService.MaestrosTiposDocumentoComprobanteCrearAsync(negocioId, codigoSunat, activo, User.Identity?.Name ?? "sistema");
+            TempData["MaestrosOk"] = "Tipo de documento registrado correctamente.";
+        }
+        catch (Exception ex)
+        {
+            TempData["MaestrosError"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Index), new { negocioId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> TipoDocumentoComprobanteEditar(int negocioId, int id, bool activo = true)
+    {
+        var baseVm = await ObtenerBaseAsync(negocioId, "MAESTROS");
+        if (baseVm is null || !baseVm.PuedeEditar) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
+
+        try
+        {
+            var ok = await spService.MaestrosTiposDocumentoComprobanteActualizarAsync(negocioId, id, activo, User.Identity?.Name ?? "sistema");
+            TempData["MaestrosError"] = ok ? null : "No se pudo actualizar el tipo de documento.";
+            TempData["MaestrosOk"] = ok ? "Tipo de documento actualizado correctamente." : null;
+        }
+        catch (Exception ex)
+        {
+            TempData["MaestrosError"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Index), new { negocioId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> TipoDocumentoComprobanteEliminar(int negocioId, int id)
+    {
+        var baseVm = await ObtenerBaseAsync(negocioId, "MAESTROS");
+        if (baseVm is null || !baseVm.PuedeEliminar) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
+
+        try
+        {
+            var ok = await spService.MaestrosTiposDocumentoComprobanteEliminarAsync(negocioId, id, User.Identity?.Name ?? "sistema");
+            TempData["MaestrosError"] = ok ? null : "No se pudo inactivar el tipo de documento.";
+            TempData["MaestrosOk"] = ok ? "Tipo de documento inactivado correctamente." : null;
         }
         catch (Exception ex)
         {

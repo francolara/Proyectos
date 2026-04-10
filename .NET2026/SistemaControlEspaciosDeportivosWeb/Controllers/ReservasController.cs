@@ -65,6 +65,14 @@ public class ReservasController(
             estadosListadoCsvNormalizado,
             paginaActualListado,
             tamanoPaginaListado);
+        var resumenListadoGlobal = await spService.ReservasListadoResumenAsync(
+            resolvedNegocioId.Value,
+            filtroListadoDesde,
+            filtroListadoHasta,
+            sedeId,
+            espacioDeportivoId,
+            null,
+            estadosListadoCsvNormalizado);
         var totalPaginasListado = Math.Max(1, (int)Math.Ceiling(totalReservasListado / (double)tamanoPaginaListado));
         if (paginaActualListado > totalPaginasListado)
         {
@@ -103,6 +111,9 @@ public class ReservasController(
             PaginaListado = paginaActualListado,
             TamanoPaginaListado = tamanoPaginaListado,
             TotalReservasListado = totalReservasListado,
+            TotalPendientesListadoGlobal = resumenListadoGlobal.TotalPendientes,
+            TotalPagadasListadoGlobal = resumenListadoGlobal.TotalPagadas,
+            SaldoTotalListadoGlobal = resumenListadoGlobal.SaldoTotal,
             TotalPaginasListado = totalPaginasListado,
             EstadosListadoSeleccionados = estadosListadoLimpios,
             SedesFiltro = sedes,
@@ -178,10 +189,35 @@ public class ReservasController(
 
         var criterio = string.IsNullOrWhiteSpace(buscar) ? null : buscar.Trim();
         var clientes = await spService.ReservasBuscarClientesAsync(negocioId, criterio, clienteId, 30);
+        var idsClientes = clientes
+            .Select(x => int.TryParse(x.Value, out var id) ? id : 0)
+            .Where(x => x > 0)
+            .Distinct()
+            .ToList();
+
+        var detalleClientes = new Dictionary<int, ClienteFormViewModel>();
+        foreach (var id in idsClientes)
+        {
+            var detalle = await spService.ClientesObtenerAsync(negocioId, id);
+            if (detalle is not null)
+                detalleClientes[id] = detalle;
+        }
+
         return Json(new
         {
             ok = true,
-            items = clientes.Select(x => new { value = x.Value, text = x.Text })
+            items = clientes.Select(x =>
+            {
+                var id = int.TryParse(x.Value, out var parsed) ? parsed : 0;
+                detalleClientes.TryGetValue(id, out var detalle);
+                return new
+                {
+                    value = x.Value,
+                    text = x.Text,
+                    numero = string.IsNullOrWhiteSpace(detalle?.Telefono) ? string.Empty : detalle!.Telefono,
+                    correo = string.IsNullOrWhiteSpace(detalle?.Correo) ? string.Empty : detalle!.Correo
+                };
+            })
         });
     }
 
@@ -262,7 +298,9 @@ public class ReservasController(
             {
                 ok = true,
                 clienteId = id,
-                clienteTexto = etiqueta
+                clienteTexto = etiqueta,
+                numero = string.IsNullOrWhiteSpace(telefono) ? string.Empty : telefono,
+                correo = string.IsNullOrWhiteSpace(correo) ? string.Empty : correo
             });
         }
         catch (Exception ex)
@@ -394,7 +432,7 @@ public class ReservasController(
             if (!model.FormaPagoId.HasValue || model.FormaPagoId.Value <= 0)
                 return BadRequest(new { ok = false, mensaje = "Selecciona una forma de pago para registrar el adelanto/pago." });
 
-            model.FechaPago ??= DateTime.Now;
+            model.FechaPago ??= DateTime.Today;
             if (model.FechaPago.Value.Date > DateTime.Today)
                 return BadRequest(new { ok = false, mensaje = "La fecha de pago no puede ser mayor al dia actual." });
 
@@ -491,7 +529,7 @@ public class ReservasController(
             ok = true,
             items = historial.Select(x => new
             {
-                fecha = x.FechaRegistro.ToLocalTime().ToString("dd/MM/yyyy HH:mm"),
+                fecha = x.FechaRegistro.ToLocalTime().ToString("dd/MM/yyyy"),
                 accion = x.Accion,
                 usuario = x.Usuario,
                 detalle = x.Detalle
@@ -976,9 +1014,16 @@ public class ReservasController(
         if (baseVm is null || !baseVm.PuedeEliminar) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
         if (!await ReservaPermitidaAsync(baseVm, negocioId, id))
             return Forbid();
+        try
+        {
+            var ok = await spService.ReservasEliminarAsync(negocioId, id, User.Identity?.Name ?? "sistema");
+            if (!ok) return NotFound();
+        }
+        catch (Exception ex)
+        {
+            TempData["ReservasError"] = ex.Message;
+        }
 
-        var ok = await spService.ReservasEliminarAsync(negocioId, id, User.Identity?.Name ?? "sistema");
-        if (!ok) return NotFound();
         return RedirectToAction(nameof(Index), new { negocioId });
     }
 

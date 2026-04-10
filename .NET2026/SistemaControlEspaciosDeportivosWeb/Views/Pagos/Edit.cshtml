@@ -1,15 +1,16 @@
-@model SistemaControlEspaciosDeportivosWeb.ViewModels.PagoFormViewModel
-<!-- Firma: Codex - 01/04/2026 | Formulario de pagos ajustado para combo Forma de pago desde catalogo BD -->
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.PagoReservaEditViewModel
+<!-- Firma: Codex - 09/04/2026 | Edicion de pagos por reserva: resumen unico, edicion de observacion, alta/eliminacion de pagos con confirmacion SI/NO, tarjeta de saldo en datos de reserva y deteccion automatica de intento de nuevo pago para evitar redireccion sin validacion. -->
 
 @{
-    ViewData["Title"] = "Editar pago";
+    ViewData["Title"] = $"Editar pagos reserva {Model.ReservaCodigo}";
+    var totalPagos = Model.Pagos?.Count ?? 0;
 }
 
 <div class="admin-page-frame">
     <section class="page-header">
         <div>
-            <h1>Editar pago</h1>
-            <p class="page-subtitle">Ajusta monto, forma de pago y referencia de la operacion.</p>
+            <h1>Editar pagos de reserva</h1>
+            <p class="page-subtitle">@Model.NegocioNombre | Rol: @Model.RolActual</p>
         </div>
         <div class="action-toolbar">
             <a class="btn btn-outline-secondary" asp-action="Index" asp-route-negocioId="@Model.NegocioId">
@@ -18,40 +19,146 @@
         </div>
     </section>
 
-    <form asp-action="Edit" method="post" class="sc-form-shell">
-        <input type="hidden" asp-for="Id" />
+    <section class="kpi-grid mb-3">
+        <article class="kpi-card">
+            <p class="kpi-card-label">Reserva</p>
+            <h3 class="kpi-card-value">@Model.ReservaCodigo</h3>
+        </article>
+        <article class="kpi-card">
+            <p class="kpi-card-label">Total pagos</p>
+            <h3 class="kpi-card-value">@totalPagos</h3>
+        </article>
+        <article class="kpi-card">
+            <p class="kpi-card-label">Monto pagado</p>
+            <h3 class="kpi-card-value">@Model.MonedaSimbolo @Model.TotalPagado.ToString("N2")</h3>
+        </article>
+        <article class="kpi-card">
+            <p class="kpi-card-label">Saldo pendiente</p>
+            <h3 class="kpi-card-value">@Model.MonedaSimbolo @Model.SaldoPendiente.ToString("N2")</h3>
+        </article>
+    </section>
+
+    <section class="sc-form-card mb-3">
+        <div class="sc-form-section">
+            <h2 class="sc-form-title"><i class="bi bi-card-list"></i> Datos de la reserva</h2>
+            <div class="row g-2">
+                <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2">Reserva: @Model.ReservaCodigo</span></div>
+                <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2">Sede: @Model.Sede</span></div>
+                <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2">Espacio: @Model.Espacio</span></div>
+                <div class="col-md-3"><span class="badge bg-light text-dark border w-100 py-2">Cliente: @Model.Cliente</span></div>
+                <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2">Fecha: @Model.FechaReserva.ToString("dd/MM/yyyy")</span></div>
+                <div class="col-md-1"><span class="badge bg-light text-dark border w-100 py-2">@Model.HoraInicioReserva.ToString("HH\\:mm") - @Model.HoraFinReserva.ToString("HH\\:mm")</span></div>
+                <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2">Monto: @Model.MonedaSimbolo @Model.TotalReserva.ToString("N2")</span></div>
+                <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2">Saldo: @Model.MonedaSimbolo @Model.SaldoPendiente.ToString("N2")</span></div>
+            </div>
+        </div>
+    </section>
+
+    <form asp-action="Edit" method="post" class="sc-form-shell" id="pagosReservaForm">
+        @Html.AntiForgeryToken()
         <input type="hidden" asp-for="NegocioId" />
-        <div asp-validation-summary="ModelOnly" class="alert alert-danger shadow-sm mb-0"></div>
+        <input type="hidden" asp-for="ReservaId" />
+        <input type="hidden" asp-for="ReservaCodigo" />
+        <input type="hidden" asp-for="Sede" />
+        <input type="hidden" asp-for="Espacio" />
+        <input type="hidden" asp-for="Cliente" />
+        <input type="hidden" asp-for="FechaReserva" />
+        <input type="hidden" asp-for="TotalReserva" />
+        <input type="hidden" asp-for="TotalPagado" />
+        <input type="hidden" asp-for="SaldoPendiente" />
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger shadow-sm mb-3"></div>
+
+        <section class="table-card mb-3">
+            <h2 class="section-title">Pagos registrados</h2>
+            @if (Model.Pagos is null || !Model.Pagos.Any())
+            {
+                <div class="empty-state">
+                    <i class="bi bi-info-circle"></i>
+                    <span>La reserva no tiene pagos registrados.</span>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th class="text-center"><span class="sc-col-header"><i class="bi bi-hash"></i><small>Pago</small></span></th>
+                                <th class="text-center"><span class="sc-col-header"><i class="bi bi-calendar-check"></i><small>Fecha pago</small></span></th>
+                                <th class="text-center"><span class="sc-col-header"><i class="bi bi-cash-coin"></i><small>Monto</small></span></th>
+                                <th class="text-center"><span class="sc-col-header"><i class="bi bi-wallet2"></i><small>Forma</small></span></th>
+                                <th class="text-center"><span class="sc-col-header"><i class="bi bi-upc"></i><small>N° Operación</small></span></th>
+                                <th class="text-center"><span class="sc-col-header"><i class="bi bi-chat-left-text"></i><small>Observación</small></span></th>
+                                <th class="text-center"><span class="sc-col-header"><i class="bi bi-trash"></i><small>Eliminar</small></span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (var i = 0; i < Model.Pagos.Count; i++)
+                            {
+                                <tr>
+                                    <td class="text-center">
+                                        #@Model.Pagos[i].PagoId
+                                        <input type="hidden" asp-for="Pagos[i].PagoId" />
+                                        <input type="hidden" asp-for="Pagos[i].Monto" />
+                                        <input type="hidden" asp-for="Pagos[i].FechaPago" />
+                                        <input type="hidden" asp-for="Pagos[i].FormaPagoId" />
+                                        <input type="hidden" asp-for="Pagos[i].FormaPagoNombre" />
+                                        <input type="hidden" asp-for="Pagos[i].NumeroOperacion" />
+                                    </td>
+                                    <td class="text-center">@Model.Pagos[i].FechaPago.ToString("dd/MM/yyyy")</td>
+                                    <td class="text-end">@Model.Pagos[i].Monto.ToString("N2")</td>
+                                    <td class="text-center">@Model.Pagos[i].FormaPagoNombre</td>
+                                    <td>@(string.IsNullOrWhiteSpace(Model.Pagos[i].NumeroOperacion) ? "-" : Model.Pagos[i].NumeroOperacion)</td>
+                                    <td>
+                                        <input asp-for="Pagos[i].Observacion" class="form-control form-control-sm" maxlength="300" readonly />
+                                    </td>
+                                    <td class="text-center">
+                                        <input asp-for="Pagos[i].Eliminar"
+                                               class="form-check-input js-eliminar-pago"
+                                               data-pago-id="@Model.Pagos[i].PagoId"
+                                               data-total-pagos="@Model.Pagos.Count"
+                                               type="checkbox" />
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
 
         <section class="sc-form-card">
             <div class="sc-form-section">
-                <h2 class="sc-form-title"><i class="bi bi-cash-coin"></i> Datos del pago</h2>
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label asp-for="ReservaId" class="form-label">Reserva</label>
-                        <select asp-for="ReservaId" asp-items="Model.Reservas" class="form-select"></select>
+                <h2 class="sc-form-title"><i class="bi bi-plus-circle"></i> Agregar nuevo pago</h2>
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-2">
+                        <div class="form-check form-switch">
+                            <input asp-for="AgregarNuevoPago" class="form-check-input" id="AgregarNuevoPago" checked />
+                            <label class="form-check-label" for="AgregarNuevoPago">Agregar pago</label>
+                        </div>
                     </div>
                     <div class="col-md-3">
-                        <label asp-for="Monto" class="form-label"></label>
-                        <input asp-for="Monto" class="form-control" />
+                        <label asp-for="NuevaFechaPago" class="form-label">Fecha pago</label>
+                        <input asp-for="NuevaFechaPago" class="form-control" type="date" />
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="NuevoMonto" class="form-label">Monto</label>
+                        <input asp-for="NuevoMonto" class="form-control text-end" />
                     </div>
                     <div class="col-md-3">
-                        <label asp-for="FormaPagoId" class="form-label"></label>
-                        <select asp-for="FormaPagoId" asp-items="Model.FormasPago" class="form-select"></select>
+                        <label asp-for="NuevaFormaPagoId" class="form-label">Forma de pago</label>
+                        <select asp-for="NuevaFormaPagoId" asp-items="Model.FormasPago" class="form-select"></select>
                     </div>
-                    <div class="col-md-4">
-                        <label asp-for="FechaPago" class="form-label"></label>
-                        <input asp-for="FechaPago" class="form-control" type="datetime-local" />
+                    <div class="col-md-2">
+                        <label asp-for="NuevoNumeroOperacion" class="form-label">N° Operación</label>
+                        <input asp-for="NuevoNumeroOperacion" class="form-control" maxlength="50" />
                     </div>
-                    <div class="col-md-4">
-                        <label asp-for="NumeroOperacion" class="form-label"></label>
-                        <input asp-for="NumeroOperacion" class="form-control" />
-                    </div>
-                    <div class="col-md-12">
-                        <label asp-for="Observacion" class="form-label"></label>
-                        <input asp-for="Observacion" class="form-control" />
+                    <div class="col-12">
+                        <label asp-for="NuevaObservacion" class="form-label">Observación</label>
+                        <input asp-for="NuevaObservacion" class="form-control" maxlength="300" />
                     </div>
                 </div>
+                <small class="text-muted d-block mt-2">Puedes editar observación de pagos existentes y registrar como máximo 1 pago adicional por operación.</small>
             </div>
         </section>
 
@@ -66,4 +173,59 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const form = document.getElementById('pagosReservaForm');
+            if (!form) return;
+
+            const agregarPago = document.getElementById('AgregarNuevoPago');
+            const nuevoMonto = document.getElementById('NuevoMonto');
+            const nuevaFormaPagoId = document.getElementById('NuevaFormaPagoId');
+            const nuevaFechaPago = document.getElementById('NuevaFechaPago');
+            const nuevoNumeroOperacion = document.getElementById('NuevoNumeroOperacion');
+            const nuevaObservacion = document.getElementById('NuevaObservacion');
+
+            const marcarIntentoNuevoPago = () => {
+                if (!agregarPago) return;
+                const hayDatos =
+                    (nuevoMonto && (nuevoMonto.value || '').trim() !== '') ||
+                    (nuevaFormaPagoId && (nuevaFormaPagoId.value || '').trim() !== '') ||
+                    (nuevaFechaPago && (nuevaFechaPago.value || '').trim() !== '') ||
+                    (nuevoNumeroOperacion && (nuevoNumeroOperacion.value || '').trim() !== '') ||
+                    (nuevaObservacion && (nuevaObservacion.value || '').trim() !== '');
+                if (hayDatos) agregarPago.checked = true;
+            };
+
+            [nuevoMonto, nuevaFormaPagoId, nuevaFechaPago, nuevoNumeroOperacion, nuevaObservacion]
+                .filter(x => x)
+                .forEach(x => {
+                    x.addEventListener('input', marcarIntentoNuevoPago);
+                    x.addEventListener('change', marcarIntentoNuevoPago);
+                });
+
+            const checks = Array.from(form.querySelectorAll('.js-eliminar-pago'));
+            checks.forEach((check) => {
+                check.addEventListener('change', () => {
+                    if (!check.checked) return;
+                    const totalPagos = Number(check.getAttribute('data-total-pagos') || '0');
+                    const pagoId = check.getAttribute('data-pago-id') || '';
+                    const mensaje = totalPagos <= 1
+                        ? `Si eliminas el pago #${pagoId}, la reserva quedará sin pagos y se cambiará a estado Cancelada. ¿Deseas continuar?`
+                        : `Si eliminas el pago #${pagoId}, la reserva cambiará a estado Confirmada. ¿Deseas continuar?`;
+                    if (!window.confirm(mensaje)) {
+                        check.checked = false;
+                    }
+                });
+            });
+
+            form.addEventListener('submit', (event) => {
+                marcarIntentoNuevoPago();
+                const seleccionados = checks.filter((x) => x.checked).length;
+                if (!seleccionados) return;
+                if (!window.confirm('Se eliminarán pagos seleccionados y se actualizará el estado de la reserva según la regla configurada. ¿Confirmas la acción?')) {
+                    event.preventDefault();
+                }
+            });
+        })();
+    </script>
 }

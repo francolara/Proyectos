@@ -1,0 +1,355 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobanteVisualizacionViewModel
+<!-- Firma: Codex - 09/04/2026 | Rediseno profesional de vista previa web de comprobantes con tarjetas, resumen visual y preview embebido de PDF interno. -->
+@{
+    ViewData["Title"] = "Vista previa de comprobante";
+    var numeroComprobante = $"{Model.Serie}-{Model.Numero:D8}";
+    var descripcionDetalle = $"Reserva de {Model.EspacioNombre} | {Model.FechaReserva:dd/MM/yyyy} {Model.HoraInicioReserva:HH\\:mm}-{Model.HoraFinReserva:HH\\:mm}";
+    var documentoCliente = string.IsNullOrWhiteSpace(Model.ClienteDocumento) ? "-" : Model.ClienteDocumento;
+    var correoCliente = string.IsNullOrWhiteSpace(Model.ClienteCorreo) ? "-" : Model.ClienteCorreo;
+    var direccionCliente = string.IsNullOrWhiteSpace(Model.ClienteDireccion) ? "-" : Model.ClienteDireccion;
+    var ubigeoCliente = $"{(string.IsNullOrWhiteSpace(Model.ClienteDepartamento) ? "-" : Model.ClienteDepartamento)} / {(string.IsNullOrWhiteSpace(Model.ClienteProvincia) ? "-" : Model.ClienteProvincia)} / {(string.IsNullOrWhiteSpace(Model.ClienteDistrito) ? "-" : Model.ClienteDistrito)}";
+    var direccionNegocio = string.IsNullOrWhiteSpace(Model.NegocioDireccionFiscal) ? "-" : Model.NegocioDireccionFiscal;
+    var ubigeoNegocio = $"{(string.IsNullOrWhiteSpace(Model.NegocioDepartamento) ? "-" : Model.NegocioDepartamento)} / {(string.IsNullOrWhiteSpace(Model.NegocioProvincia) ? "-" : Model.NegocioProvincia)} / {(string.IsNullOrWhiteSpace(Model.NegocioDistrito) ? "-" : Model.NegocioDistrito)}";
+}
+
+<div class="admin-page-frame comprobante-preview-page">
+    <section class="page-header">
+        <div>
+            <h1>Vista previa de comprobante</h1>
+            <p class="page-subtitle">@Model.TipoDocumentoNombre | @numeroComprobante</p>
+        </div>
+        <div class="action-toolbar">
+            @if (Model.EsTributario)
+            {
+                if (!string.IsNullOrWhiteSpace(Model.UrlDescargaProveedor))
+                {
+                    <a class="btn btn-primary" href="@Model.UrlDescargaProveedor" target="_blank" rel="noopener">
+                        <i class="bi bi-box-arrow-up-right me-1"></i> Abrir proveedor
+                    </a>
+                }
+            }
+            else
+            {
+                <a class="btn btn-primary" asp-action="Visualizar" asp-route-negocioId="@Model.NegocioId" asp-route-id="@Model.Id" target="_blank">
+                    <i class="bi bi-download me-1"></i> Descargar PDF
+                </a>
+            }
+            <a class="btn btn-outline-secondary" asp-action="Index" asp-route-negocioId="@Model.NegocioId">
+                <i class="bi bi-arrow-left me-1"></i> Volver
+            </a>
+        </div>
+    </section>
+
+    @if (Model.EsTributario)
+    {
+        <div class="alert alert-info mb-3">
+            Documento tributario. La descarga oficial se realiza desde el proveedor electronico.
+        </div>
+    }
+
+    <section class="comprobante-summary-grid mb-3">
+        <article class="summary-card summary-card-highlight">
+            <small>Documento</small>
+            <h3>@numeroComprobante</h3>
+            <p>@Model.TipoDocumentoNombre</p>
+        </article>
+        <article class="summary-card">
+            <small>Fecha emision</small>
+            <h3>@Model.FechaEmision.ToString("dd/MM/yyyy")</h3>
+            <p>Comprobante emitido</p>
+        </article>
+        <article class="summary-card">
+            <small>Reserva</small>
+            <h3>#@Model.ReservaId</h3>
+            <p>@Model.SedeNombre | @Model.EspacioNombre</p>
+        </article>
+        <article class="summary-card summary-card-total">
+            <small>Total</small>
+            <h3>@Model.MonedaSimbolo @Model.Total.ToString("N2")</h3>
+            <p>Moneda de emision</p>
+        </article>
+    </section>
+
+    <section class="table-card mb-3">
+        <h2 class="section-title">Datos del emisor y cliente</h2>
+        <div class="row g-2 px-3 pb-3">
+            <div class="col-lg-6">
+                <div class="info-block">
+                    <div class="info-block-header"><i class="bi bi-building"></i> Emisor</div>
+                    <ul>
+                        <li><span>Negocio</span><strong>@Model.NegocioNombre</strong></li>
+                        <li><span>Documento</span><strong>-</strong></li>
+                        <li><span>Direccion</span><strong>@direccionNegocio</strong></li>
+                        <li><span>Ubigeo</span><strong>@ubigeoNegocio</strong></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="info-block">
+                    <div class="info-block-header"><i class="bi bi-person-badge"></i> Cliente</div>
+                    <ul>
+                        <li><span>Nombre</span><strong>@Model.ClienteNombre</strong></li>
+                        <li><span>Documento</span><strong>@documentoCliente</strong></li>
+                        <li><span>Correo</span><strong>@correoCliente</strong></li>
+                        <li><span>Direccion</span><strong>@direccionCliente</strong></li>
+                        <li><span>Ubigeo</span><strong>@ubigeoCliente</strong></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="table-card mb-3">
+        <h2 class="section-title">Detalle del comprobante</h2>
+        <div class="px-3 pb-3">
+            <article class="detalle-item-card">
+                <header>
+                    <span class="detalle-item-tag">Item 1</span>
+                    <span class="detalle-item-unidad">UND x 1</span>
+                </header>
+                <p class="detalle-item-desc">@descripcionDetalle</p>
+                <footer>
+                    <div><small>Valor unitario</small><strong>@Model.MonedaSimbolo @Model.Total.ToString("N2")</strong></div>
+                    <div><small>Importe</small><strong>@Model.MonedaSimbolo @Model.Total.ToString("N2")</strong></div>
+                </footer>
+            </article>
+        </div>
+    </section>
+
+    <section class="table-card mb-3">
+        <h2 class="section-title">Resumen de importes</h2>
+        <div class="row g-2 px-3 pb-3 justify-content-end">
+            @if (Model.EsTributario)
+            {
+                <div class="col-lg-3 col-md-4">
+                    <div class="amount-card">
+                        <small>Subtotal</small>
+                        <strong>@Model.MonedaSimbolo @Model.SubTotal.ToString("N2")</strong>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-4">
+                    <div class="amount-card">
+                        <small>IGV (@Model.PorcentajeIgv%)</small>
+                        <strong>@Model.MonedaSimbolo @Model.Igv.ToString("N2")</strong>
+                    </div>
+                </div>
+            }
+            <div class="col-lg-3 col-md-4">
+                <div class="amount-card amount-card-total">
+                    <small>Total</small>
+                    <strong>@Model.MonedaSimbolo @Model.Total.ToString("N2")</strong>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>
+
+<style>
+    .comprobante-preview-page {
+        --cp-surface: #f7fbff;
+        --cp-border: #d6e4f8;
+        --cp-text: #1a2f52;
+        --cp-muted: #667a99;
+        --cp-primary: #1c6ed6;
+        --cp-primary-soft: #e8f1ff;
+    }
+
+    .comprobante-summary-grid {
+        display: grid;
+        gap: .75rem;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    }
+
+    .summary-card {
+        border: 1px solid var(--cp-border);
+        border-radius: .85rem;
+        background: linear-gradient(180deg, #ffffff 0%, var(--cp-surface) 100%);
+        padding: .85rem;
+    }
+
+    .summary-card small {
+        display: block;
+        color: var(--cp-muted);
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        font-size: .68rem;
+        font-weight: 700;
+        margin-bottom: .2rem;
+    }
+
+    .summary-card h3 {
+        margin: 0;
+        font-size: 1.15rem;
+        color: var(--cp-text);
+        font-weight: 800;
+    }
+
+    .summary-card p {
+        margin: .2rem 0 0;
+        color: var(--cp-muted);
+        font-size: .78rem;
+        font-weight: 600;
+    }
+
+    .summary-card-highlight {
+        border-color: #b8d2ff;
+        background: linear-gradient(180deg, #f2f8ff 0%, #e8f1ff 100%);
+    }
+
+    .summary-card-total {
+        border-color: #8eb8ff;
+        background: linear-gradient(180deg, #edf5ff 0%, #dfeeff 100%);
+    }
+
+    .info-block {
+        border: 1px solid var(--cp-border);
+        border-radius: .75rem;
+        background: #fff;
+        padding: .65rem .75rem;
+        height: 100%;
+    }
+
+    .info-block-header {
+        display: flex;
+        align-items: center;
+        gap: .35rem;
+        font-weight: 800;
+        color: var(--cp-text);
+        margin-bottom: .45rem;
+    }
+
+    .info-block ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: .35rem;
+    }
+
+    .info-block li {
+        display: grid;
+        grid-template-columns: 110px 1fr;
+        gap: .5rem;
+        align-items: baseline;
+    }
+
+    .info-block li span {
+        color: var(--cp-muted);
+        font-size: .75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+    }
+
+    .info-block li strong {
+        color: var(--cp-text);
+        font-size: .83rem;
+        font-weight: 700;
+        word-break: break-word;
+    }
+
+    .detalle-item-card {
+        border: 1px solid var(--cp-border);
+        border-radius: .75rem;
+        background: #fff;
+        padding: .75rem;
+    }
+
+    .detalle-item-card header,
+    .detalle-item-card footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: .75rem;
+    }
+
+    .detalle-item-tag {
+        background: var(--cp-primary-soft);
+        color: var(--cp-primary);
+        border: 1px solid #bfd8ff;
+        border-radius: 999px;
+        padding: .15rem .55rem;
+        font-size: .72rem;
+        font-weight: 700;
+    }
+
+    .detalle-item-unidad {
+        color: var(--cp-muted);
+        font-size: .75rem;
+        font-weight: 700;
+    }
+
+    .detalle-item-desc {
+        margin: .7rem 0;
+        color: var(--cp-text);
+        font-weight: 700;
+        line-height: 1.35;
+    }
+
+    .detalle-item-card footer div {
+        text-align: right;
+    }
+
+    .detalle-item-card footer small {
+        display: block;
+        font-size: .68rem;
+        color: var(--cp-muted);
+        text-transform: uppercase;
+        letter-spacing: .03em;
+    }
+
+    .detalle-item-card footer strong {
+        font-size: .95rem;
+        color: var(--cp-text);
+        font-weight: 800;
+    }
+
+    .amount-card {
+        border: 1px solid var(--cp-border);
+        border-radius: .75rem;
+        background: #fff;
+        padding: .65rem .75rem;
+        text-align: right;
+    }
+
+    .amount-card small {
+        display: block;
+        color: var(--cp-muted);
+        text-transform: uppercase;
+        letter-spacing: .03em;
+        font-size: .68rem;
+        font-weight: 700;
+    }
+
+    .amount-card strong {
+        display: block;
+        margin-top: .15rem;
+        color: var(--cp-text);
+        font-size: 1.02rem;
+        font-weight: 800;
+    }
+
+    .amount-card-total {
+        border-color: #8eb8ff;
+        background: #eaf3ff;
+    }
+
+    @@media (max-width: 768px) {
+        .info-block li {
+            grid-template-columns: 1fr;
+            gap: .15rem;
+        }
+
+        .detalle-item-card header,
+        .detalle-item-card footer {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .detalle-item-card footer div {
+            text-align: left;
+        }
+
+    }
+</style>
