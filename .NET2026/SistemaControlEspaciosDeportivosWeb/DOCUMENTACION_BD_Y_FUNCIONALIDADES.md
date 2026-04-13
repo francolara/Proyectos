@@ -363,6 +363,7 @@
   - `Sp_Promociones_Listar`
 - Regla funcional:
   - usuarios no administradores trabajan con una sola sede asignada y los filtros/listados se restringen en backend.
+  - `Sp_Panel_ObtenerMetricas` (13/04/2026) calcula `OcupacionHoyPct` con **horas disponibles netas** por dia: horario de atencion de sede menos bloqueos activos (`BloqueosHorario`) y excluye fechas inhabilitadas de sede.
   - `Sp_Espacios_Listar` devuelve `TarifaResumen` (dias + rango horario + precio con simbolo de moneda del negocio) para mostrar resumen tarifario en la lista detallada sin calculo en frontend.
   - `Sp_Combos_EspaciosPorNegocio` devuelve etiqueta de combo en formato: `Codigo - Nombre (Tipo suelo)`.
   - `Sp_UsuariosNegocio_ActualizarRol` devuelve error si no encuentra filas para el negocio.

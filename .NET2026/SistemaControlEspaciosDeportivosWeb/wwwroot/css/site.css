@@ -1636,3 +1636,265 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* Firma: Codex - 13/04/2026 | Fase 2 y 3 dashboard: filtros globales, variaciones, tablas accionables, tarjeta informativa de Club/Negocio junto al titulo y modal de nueva reserva en el mismo dashboard. */
+.sc-dash-filter-card {
+  border: 1px solid #d8e2f0;
+  border-radius: 1rem;
+  background: linear-gradient(170deg, #ffffff 0%, #f8fbff 100%);
+  padding: 0.85rem 0.9rem;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.05);
+}
+
+.sc-dash-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+  align-items: end;
+}
+
+.sc-dash-filter-grid label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #475569;
+  margin-bottom: 0.22rem;
+}
+
+.sc-dash-negocio-card {
+  border: 1px solid #d1deef;
+  border-radius: 0.7rem;
+  background: linear-gradient(165deg, #f9fcff 0%, #eef5ff 100%);
+  padding: 0.4rem 0.5rem;
+  min-height: 63px;
+}
+
+.sc-dash-title-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.sc-dash-negocio-card-inline {
+  min-width: 195px;
+  max-width: 285px;
+}
+
+#dashModalClienteResultados {
+  max-height: 150px;
+}
+
+.sc-dash-negocio-card-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  font-size: 0.51rem;
+  font-weight: 700;
+  color: #4f6482;
+  margin-bottom: 0.15rem;
+}
+
+.sc-dash-negocio-card-name {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.sc-dash-negocio-card-id {
+  margin-top: 0.14rem;
+  font-size: 0.54rem;
+  font-weight: 700;
+  color: #1e3a8a;
+}
+
+.sc-page-title-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+  min-width: 260px;
+}
+
+.sc-page-title-wrap > :first-child {
+  min-width: 220px;
+}
+
+.sc-negocio-ref-card {
+  border: 1px solid #d1deef;
+  border-radius: 0.7rem;
+  background: linear-gradient(165deg, #f9fcff 0%, #eef5ff 100%);
+  padding: 0.4rem 0.5rem;
+  min-width: 188px;
+  max-width: 285px;
+  margin-top: 0.05rem;
+}
+
+.sc-negocio-ref-card-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  font-size: 0.51rem;
+  font-weight: 700;
+  color: #4f6482;
+  margin-bottom: 0.15rem;
+}
+
+.sc-negocio-ref-card-name {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.sc-negocio-ref-card-id {
+  margin-top: 0.14rem;
+  font-size: 0.54rem;
+  font-weight: 700;
+  color: #1e3a8a;
+}
+
+.sc-dash-filter-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.sc-dash-kpi-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem;
+}
+
+.sc-dash-var {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.42rem;
+  border-radius: 999px;
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.sc-dash-var-up {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.sc-dash-var-down {
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+.sc-dash-var-flat {
+  color: #334155;
+  background: #e2e8f0;
+}
+
+.sc-dash-line-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.sc-dash-line-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.sc-dash-line-item > span {
+  font-size: 0.74rem;
+  color: #64748b;
+  min-width: 52px;
+}
+
+.sc-dash-line-item > strong {
+  font-size: 0.78rem;
+  color: #0f172a;
+  min-width: 36px;
+  text-align: right;
+}
+
+.sc-dash-line-track {
+  height: 0.5rem;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.sc-dash-line-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #22d3ee 0%, #2563eb 100%);
+}
+
+.sc-dash-table thead th {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: #475569;
+  border-bottom: 1px solid #d6e3f4;
+}
+
+.sc-dash-table tbody td {
+  font-size: 0.82rem;
+  color: #0f172a;
+}
+
+.sc-dash-mini-progress {
+  margin-top: 0.25rem;
+  width: 100%;
+  height: 0.28rem;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.sc-dash-mini-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #38bdf8 0%, #2563eb 100%);
+}
+
+@media (max-width: 1400px) {
+  .sc-dash-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sc-dash-filter-actions {
+    grid-column: span 2;
+    justify-content: flex-start;
+  }
+
+  .sc-dash-negocio-card-inline {
+    min-width: 220px;
+    max-width: 100%;
+  }
+
+  .sc-negocio-ref-card {
+    min-width: 220px;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .sc-dash-title-wrap {
+    align-items: flex-start;
+  }
+
+  .sc-page-title-wrap {
+    min-width: 0;
+  }
+
+  .sc-dash-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sc-dash-filter-actions {
+    grid-column: auto;
+  }
+}

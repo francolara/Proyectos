@@ -3,6 +3,7 @@
 <!-- Firma: Codex - 10/04/2026 | Listado de comprobantes agrega filtro por tipo de documento configurado para el negocio (maestros), con paginacion conservando filtro. -->
 <!-- Firma: Codex - 11/04/2026 | Listado agrega botones Generar NC/ND por fila; solo habilitados para Factura/Boleta aceptadas SUNAT. -->
 <!-- Firma: Codex - 11/04/2026 | Listado agrega columna Referencia y bloquea NC/ND + Anular cuando el comprobante ya tiene notas relacionadas; para RI oculta NC/ND. -->
+<!-- Firma: Codex - 13/04/2026 | Cabecera del modulo muestra tarjeta informativa de Club/negocio con ID junto al titulo. -->
 @{
     ViewData["Title"] = "Comprobantes";
     var totalComprobantes = Model.TotalRegistros;
@@ -30,9 +31,16 @@
         <div class="alert alert-success">@comprobanteOk</div>
     }
     <section class="page-header">
-        <div>
-            <h1>Comprobantes electronicos</h1>
-            <p class="page-subtitle">@Model.NegocioNombre | Rol: @Model.RolActual</p>
+        <div class="sc-page-title-wrap">
+            <div>
+                <h1>Comprobantes electronicos</h1>
+                <p class="page-subtitle">Gestion y seguimiento de comprobantes emitidos.</p>
+            </div>
+            <div class="sc-negocio-ref-card" aria-readonly="true">
+                <div class="sc-negocio-ref-card-head"><i class="bi bi-building"></i><span>Club / negocio</span></div>
+                <div class="sc-negocio-ref-card-name">@Model.NegocioNombre</div>
+                <div class="sc-negocio-ref-card-id">ID: @Model.NegocioId</div>
+            </div>
         </div>
         <div class="action-toolbar">
             @if (Model.PuedeCrear)

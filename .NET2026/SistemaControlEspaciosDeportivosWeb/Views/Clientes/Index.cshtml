@@ -5,6 +5,7 @@
 <!-- Firma: Codex - 06/04/2026 | El filtro de estado consulta backend y preserva el estado seleccionado. -->
 <!-- Firma: Codex - 07/04/2026 | La busqueda de clientes ahora consulta backend (SP) y se mantiene en paginacion. -->
 <!-- Firma: Codex - 09/04/2026 | Rediseno de cabecera del listado de clientes con icono superior y etiqueta pequena centrada por columna; separa columnas ID/Cliente/Equipo en el listado. -->
+<!-- Firma: Codex - 13/04/2026 | Cabecera del modulo muestra tarjeta informativa de Club/negocio con ID junto al titulo. -->
 
 @{
     ViewData["Title"] = "Clientes";
@@ -24,9 +25,16 @@
     }
 
     <section class="page-header">
-        <div>
-            <h1>Clientes</h1>
-            <p class="page-subtitle">@Model.NegocioNombre | Rol: @Model.RolActual</p>
+        <div class="sc-page-title-wrap">
+            <div>
+                <h1>Clientes</h1>
+                <p class="page-subtitle">Gestion de clientes del negocio.</p>
+            </div>
+            <div class="sc-negocio-ref-card" aria-readonly="true">
+                <div class="sc-negocio-ref-card-head"><i class="bi bi-building"></i><span>Club / negocio</span></div>
+                <div class="sc-negocio-ref-card-name">@Model.NegocioNombre</div>
+                <div class="sc-negocio-ref-card-id">ID: @Model.NegocioId</div>
+            </div>
         </div>
         <div class="action-toolbar">
             @if (Model.PuedeCrear)

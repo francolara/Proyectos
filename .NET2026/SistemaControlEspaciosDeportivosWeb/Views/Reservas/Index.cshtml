@@ -1,4 +1,4 @@
-﻿<!-- Firma: Codex - 28/03/2026 | Ajustes visuales de acciones y calendario backend; tooltip y etiquetas visibles de estado/motivo en franjas bloqueadas; fix horario drag/drop, color bloqueado tomado del backend, eliminacion de texto duplicado en NO_ATENCION/BLOQUEO, cabecera del calendario en dos filas obligatorias y estilos centralizados en site.css. -->
+<!-- Firma: Codex - 28/03/2026 | Ajustes visuales de acciones y calendario backend; tooltip y etiquetas visibles de estado/motivo en franjas bloqueadas; fix horario drag/drop, color bloqueado tomado del backend, eliminacion de texto duplicado en NO_ATENCION/BLOQUEO, cabecera del calendario en dos filas obligatorias y estilos centralizados en site.css. -->
 <!-- Firma: Codex - 30/03/2026 | Calendario backend-driven: disponibilidad y pendientes por dia consultan BD via endpoint diario; panel operativo condicionado a sede+espacio; persistencia de filtros; nueva seccion "Pendiente de confirmar por dia"; listado general con filtro propio de rango y estados multiples (backend); refuerzo visual Fase 1 aplicado tambien por JS para evitar cache/orden de CSS, incluyendo toolbar, botones, grilla, columna horaria y fines de semana. -->
 <!-- Firma: Codex - 31/03/2026 | Fase 2/3 del calendario: leyenda interactiva por estado, modos visuales (compacto/contraste), grilla operativa con cabecera y eje horario sticky, realce de columna por hover, drawer de detalle y ajuste robusto del eje horario (ancho fijo en colgroup/frame/cushion/shrink, titulo sin corte y horas centradas/legibles, re-aplicado tras filtrar/refetch). -->
 <!-- Firma: Codex - 01/04/2026 | Reservas: cabecera con rango largo centrado, modo opcional Bloqueos HC, KPI operativo diario, vista por espacios, historial de cambios en drawer, validacion visual de solape en modal, acciones masivas (confirmar/no-show/recordatorio) backend-driven y estandar visual unificado para botones de acciones en listado (editar/check-in/no-show/cancelar). -->
@@ -11,6 +11,7 @@
 <!-- Firma: Codex - 10/04/2026 | Paginacion del listado general de reservas visible siempre (incluye estado 1/1 con botones deshabilitados) para mantener estandar. -->
 <!-- Firma: Codex - 10/04/2026 | Corrige listado general: paginacion tambien en modo sin panel operativo, filtros/paginacion por AJAX sin recargar toda la pagina, y cambio/limpieza de sede fuerza ocultar panel hasta seleccionar sede+espacio valido; tarjeta de calendario en reservas muestra prefijo #NNN-Equipo (Cliente). -->
 <!-- Firma: Codex - 27/03/2026 | Calendario en espanol, bloqueos por sede, gestion por modal, bloqueo de fechas pasadas y rediseno visual SaaS del calendario -->
+<!-- Firma: Codex - 13/04/2026 | Cabecera del modulo muestra tarjeta informativa de Club/negocio con ID junto al titulo. -->
 @{
     ViewData["Title"] = "Reservas";
     var sedeSeleccionadaTexto = Model.SedesFiltro.FirstOrDefault(x => x.Value == Model.SedeId?.ToString())?.Text ?? "Seleccione sede";
@@ -26,9 +27,16 @@
 }
 
 <header class="page-header">
-    <div>
-        <h1>Reservas y calendario</h1>
-        <p class="page-subtitle">@Model.NegocioNombre | Rol: @Model.RolActual</p>
+    <div class="sc-page-title-wrap">
+        <div>
+            <h1>Reservas y calendario</h1>
+            <p class="page-subtitle">Planificacion de reservas y calendario operativo.</p>
+        </div>
+        <div class="sc-negocio-ref-card" aria-readonly="true">
+            <div class="sc-negocio-ref-card-head"><i class="bi bi-building"></i><span>Club / negocio</span></div>
+            <div class="sc-negocio-ref-card-name">@Model.NegocioNombre</div>
+            <div class="sc-negocio-ref-card-id">ID: @Model.NegocioId</div>
+        </div>
     </div>
     <div class="action-toolbar">
         <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Panel</a>
@@ -1683,10 +1691,6 @@ else
             }
 
             function abrirModalNuevaReserva(fechaIso, horaInicio, horaFin, espacioId) {
-                if (!getFiltroSedeSeleccionada()) {
-                    alert('Selecciona una sede antes de crear una reserva.');
-                    return;
-                }
                 limpiarErrorModal();
                 limpiarDisponibilidadModal();
                 reservaModalTitulo.textContent = 'Nueva reserva';
@@ -2757,6 +2761,15 @@ else
                     }
                     enviarFiltros();
                 });
+            }
+
+            const queryParams = new URLSearchParams(window.location.search || '');
+            const abrirModalParam = (queryParams.get('abrirModal') || '').trim().toLowerCase();
+            const reservaIdParam = Number.parseInt(queryParams.get('reservaId') || '', 10);
+            if (abrirModalParam === 'nueva') {
+                setTimeout(() => abrirModalNuevaReserva(), 120);
+            } else if (abrirModalParam === 'editar' && Number.isFinite(reservaIdParam) && reservaIdParam > 0) {
+                setTimeout(() => abrirModalEditarReserva(reservaIdParam), 120);
             }
 
             conectarListadoGeneralAjax();

@@ -518,7 +518,7 @@ On Error GoTo Err
     If Cn.State = 1 Then Cn.Close
     Cn.CursorLocation = adUseClient
     Cn.CommandTimeout = 0
-    Cn.ConnectionString = "driver={SQL Server};server=" & gbservidor & ";uid=" & gbusuario & ";pwd=" & gbPassword & ";database=" & gbDatabase
+    Cn.ConnectionString = "driver={ODBC Driver 17 for SQL Server};server=" & gbservidor & ";uid=" & gbusuario & ";pwd=" & gbPassword & ";database=" & gbDatabase
     Cn.Open
 
 Exit Sub
@@ -814,7 +814,7 @@ Public Sub EjecutaSQLForm_1(F As Form, tipoOperacion As Integer, indEmpresa As B
 On Error GoTo Err
 Dim C As Object
 Dim csql As String
-Dim strCampo As String
+Dim StrCampo As String
 Dim strTipoDato As String
 Dim strCampos As String
 Dim strValores As String
@@ -846,10 +846,10 @@ Dim indTrans As Boolean
         If TypeOf C Is CATTextBox Or TypeOf C Is DTPicker Or TypeOf C Is CheckBox Then
             If C.Tag <> "" Then
                 strTipoDato = left(C.Tag, 1)
-                strCampo = right(C.Tag, Len(C.Tag) - 1)
+                StrCampo = right(C.Tag, Len(C.Tag) - 1)
                 Select Case tipoOperacion
                     Case 0 'inserta
-                        strCampos = strCampos & strCampo & ","
+                        strCampos = strCampos & StrCampo & ","
                         
                         Select Case strTipoDato
                             Case "N"
@@ -860,7 +860,7 @@ Dim indTrans As Boolean
                                 strValores = strValores & "'" & Format(C.Value, "yyyy-mm-dd") & "',"
                         End Select
                     Case 1
-                        If UCase(strCampoCod) <> UCase(strCampo) Then
+                        If UCase(strCampoCod) <> UCase(StrCampo) Then
                             Select Case strTipoDato
                                 Case "N"
                                     strValores = C.Value
@@ -869,7 +869,7 @@ Dim indTrans As Boolean
                                 Case "F"
                                     strValores = "'" & Format(C.Value, "yyyy-mm-dd") & "'"
                             End Select
-                            strCampos = strCampos & strCampo & "=" & strValores & ","
+                            strCampos = strCampos & StrCampo & "=" & strValores & ","
                         Else
                             strValCod = C.Value
                         End If
@@ -908,9 +908,9 @@ Dim indTrans As Boolean
             For i = 0 To g.Columns.Count - 1
                 If UCase(left(g.Columns(i).ObjectName, 1)) = "W" Then
                     strTipoDato = Mid(g.Columns(i).ObjectName, 2, 1)
-                    strCampo = Mid(g.Columns(i).ObjectName, 3)
+                    StrCampo = Mid(g.Columns(i).ObjectName, 3)
                     
-                    strCampos = strCampos & strCampo & ","
+                    strCampos = strCampos & StrCampo & ","
                     
                     Select Case strTipoDato
                         Case "N"
@@ -947,7 +947,7 @@ Public Sub EjecutaSQLForm(F As Form, tipoOperacion As Integer, indEmpresa As Boo
 On Error GoTo Err
 Dim C As Object
 Dim csql As String
-Dim strCampo As String
+Dim StrCampo As String
 Dim strTipoDato As String
 Dim strCampos As String
 Dim strValores As String
@@ -977,10 +977,10 @@ Dim indTrans As Boolean
         If TypeOf C Is CATTextBox Or TypeOf C Is DTPicker Or TypeOf C Is CheckBox Then
             If C.Tag <> "" Then
                 strTipoDato = left(C.Tag, 1)
-                strCampo = right(C.Tag, Len(C.Tag) - 1)
+                StrCampo = right(C.Tag, Len(C.Tag) - 1)
                 Select Case tipoOperacion
                     Case 0 'inserta
-                        strCampos = strCampos & strCampo & ","
+                        strCampos = strCampos & StrCampo & ","
                         
                         Select Case strTipoDato
                             Case "N"
@@ -991,7 +991,7 @@ Dim indTrans As Boolean
                                 strValores = strValores & "'" & Format(C.Value, "yyyy-mm-dd") & "',"
                         End Select
                     Case 1
-                        If UCase(strCampoCod) <> UCase(strCampo) Then
+                        If UCase(strCampoCod) <> UCase(StrCampo) Then
                             Select Case strTipoDato
                                 Case "N"
                                     strValores = C.Value
@@ -1000,7 +1000,7 @@ Dim indTrans As Boolean
                                 Case "F"
                                     strValores = "'" & Format(C.Value, "yyyy-mm-dd") & "'"
                             End Select
-                            strCampos = strCampos & strCampo & "=" & strValores & ","
+                            strCampos = strCampos & StrCampo & "=" & strValores & ","
                         Else
                             strValCod = C.Value
                         End If
@@ -1048,9 +1048,9 @@ Dim indTrans As Boolean
             For i = 0 To g.Columns.Count - 1
                 If UCase(left(g.Columns(i).ObjectName, 1)) = "W" Then
                     strTipoDato = Mid(g.Columns(i).ObjectName, 2, 1)
-                    strCampo = Mid(g.Columns(i).ObjectName, 3)
+                    StrCampo = Mid(g.Columns(i).ObjectName, 3)
                     
-                    strCampos = strCampos & strCampo & ","
+                    strCampos = strCampos & StrCampo & ","
                     
                     Select Case strTipoDato
                         Case "N"
@@ -1292,7 +1292,7 @@ Dim csql            As String
     
 End Function
 
-Public Function existeEnGrilla(g As dxDBGrid, strNomCampo As String, strValor As String) As Boolean
+Public Function existeEnGrilla(g As dxDBGrid, strNomCampo As String, StrValor As String) As Boolean
 Dim intItem As Integer
 Dim fil As Integer
  
@@ -1303,7 +1303,7 @@ Dim fil As Integer
     g.Dataset.First
     Do While Not g.Dataset.EOF
         If g.Columns.ColumnByFieldName("item").Value <> intItem Then
-            If g.Columns.ColumnByFieldName(strNomCampo).Value = strValor Then
+            If g.Columns.ColumnByFieldName(strNomCampo).Value = StrValor Then
                 existeEnGrilla = True
             End If
         End If
@@ -2845,7 +2845,7 @@ Public Sub EjecutaSQLFormTrans(F As Form, tipoOperacion As Integer, indEmpresa A
 On Error GoTo Err
 Dim C                                               As Object
 Dim CSqlC                                           As String
-Dim strCampo                                        As String
+Dim StrCampo                                        As String
 Dim strTipoDato                                     As String
 Dim strCampos                                       As String
 Dim strValores                                      As String
@@ -2875,10 +2875,10 @@ Dim indTrans                                        As Boolean
         If TypeOf C Is CATTextBox Or TypeOf C Is DTPicker Or TypeOf C Is CheckBox Then
             If C.Tag <> "" Then
                 strTipoDato = left(C.Tag, 1)
-                strCampo = right(C.Tag, Len(C.Tag) - 1)
+                StrCampo = right(C.Tag, Len(C.Tag) - 1)
                 Select Case tipoOperacion
                     Case 0 'inserta
-                        strCampos = strCampos & strCampo & ","
+                        strCampos = strCampos & StrCampo & ","
                         
                         Select Case strTipoDato
                             Case "N"
@@ -2889,7 +2889,7 @@ Dim indTrans                                        As Boolean
                                 strValores = strValores & "'" & Format(C.Value, "yyyy-mm-dd") & "',"
                         End Select
                     Case 1
-                        If UCase(strCampoCod) <> UCase(strCampo) Then
+                        If UCase(strCampoCod) <> UCase(StrCampo) Then
                             Select Case strTipoDato
                                 Case "N"
                                     strValores = C.Value
@@ -2898,7 +2898,7 @@ Dim indTrans                                        As Boolean
                                 Case "F"
                                     strValores = "'" & Format(C.Value, "yyyy-mm-dd") & "'"
                             End Select
-                            strCampos = strCampos & strCampo & "=" & strValores & ","
+                            strCampos = strCampos & StrCampo & "=" & strValores & ","
                         Else
                             strValCod = C.Value
                         End If
@@ -2949,8 +2949,8 @@ Dim indTrans                                        As Boolean
             For i = 0 To g.Columns.Count - 1
                 If UCase(left(g.Columns(i).ObjectName, 1)) = "W" Then
                     strTipoDato = Mid(g.Columns(i).ObjectName, 2, 1)
-                    strCampo = Mid(g.Columns(i).ObjectName, 3)
-                    strCampos = strCampos & strCampo & ","
+                    StrCampo = Mid(g.Columns(i).ObjectName, 3)
+                    strCampos = strCampos & StrCampo & ","
                     
                     Select Case strTipoDato
                         Case "N"
@@ -3227,59 +3227,59 @@ Dim strRuta As String
         CCarpeta = leeParametro("CARPETA_XML_VE")
         
         strRuta = CCarpeta & "\" & strRUC & "-" & pRecCab("idDocumento") & "-" & pRecCab("idSerie") & "-" & pRecCab("idDocVentas") & ".xml"
-        IntFile = FreeFile
-        Open strRuta For Output As #IntFile
+        intFile = FreeFile
+        Open strRuta For Output As #intFile
         'Cabecera
-        strLinea = ""
-        strLinea = strLinea & "<?xml version=""1.0"" encoding=""ISO-8859-1"" standalone=""no""?> " & vbCrLf
-        strLinea = strLinea & "<" & CGlsCab & " " & vbCrLf
-        strLinea = strLinea & "    xmlns=""urn:oasis:names:specification:ubl:schema:xsd:" & CGlsCab & "-2"" " & vbCrLf
-        strLinea = strLinea & "    xmlns:cac=""urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"" " & vbCrLf
-        strLinea = strLinea & "    xmlns:cbc=""urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"" " & vbCrLf
-        strLinea = strLinea & "    xmlns:ccts=""urn:un:unece:uncefact:documentation:2"" " & vbCrLf
-        strLinea = strLinea & "    xmlns:ds=""http://www.w3.org/2000/09/xmldsig#"" " & vbCrLf
-        strLinea = strLinea & "    xmlns:ext=""urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2"" " & vbCrLf
-        strLinea = strLinea & "    xmlns:qdt=""urn:oasis:names:specification:ubl:schema:xsd:QualifiedDatatypes-2"" " & vbCrLf
-        strLinea = strLinea & "    xmlns:sac=""urn:sunat:names:specification:ubl:peru:schema:xsd:SunatAggregateComponents-1"" " & vbCrLf
-        strLinea = strLinea & "    xmlns:udt=""urn:un:unece:uncefact:data:specification:UnqualifiedDataTypesSchemaModule:2"" " & vbCrLf
-        strLinea = strLinea & "    xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance""> " & vbCrLf
-        strLinea = strLinea & "    <ext:UBLExtensions> " & vbCrLf
-        strLinea = strLinea & "        <ext:UBLExtension> " & vbCrLf
-        strLinea = strLinea & "            <ext:ExtensionContent> " & vbCrLf
-        strLinea = strLinea & "                <sac:AdditionalInformation> " & vbCrLf
-        strLinea = strLinea & "                    <sac:AdditionalMonetaryTotal> " & vbCrLf
-        strLinea = strLinea & "                        <cbc:ID>1001</cbc:ID> " & vbCrLf
-        strLinea = strLinea & "                        <cbc:PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecCab("TotalBaseImponible")), "0.00") & "</cbc:PayableAmount> " & vbCrLf
-        strLinea = strLinea & "                    </sac:AdditionalMonetaryTotal> " & vbCrLf
+        StrLinea = ""
+        StrLinea = StrLinea & "<?xml version=""1.0"" encoding=""ISO-8859-1"" standalone=""no""?> " & vbCrLf
+        StrLinea = StrLinea & "<" & CGlsCab & " " & vbCrLf
+        StrLinea = StrLinea & "    xmlns=""urn:oasis:names:specification:ubl:schema:xsd:" & CGlsCab & "-2"" " & vbCrLf
+        StrLinea = StrLinea & "    xmlns:cac=""urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"" " & vbCrLf
+        StrLinea = StrLinea & "    xmlns:cbc=""urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"" " & vbCrLf
+        StrLinea = StrLinea & "    xmlns:ccts=""urn:un:unece:uncefact:documentation:2"" " & vbCrLf
+        StrLinea = StrLinea & "    xmlns:ds=""http://www.w3.org/2000/09/xmldsig#"" " & vbCrLf
+        StrLinea = StrLinea & "    xmlns:ext=""urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2"" " & vbCrLf
+        StrLinea = StrLinea & "    xmlns:qdt=""urn:oasis:names:specification:ubl:schema:xsd:QualifiedDatatypes-2"" " & vbCrLf
+        StrLinea = StrLinea & "    xmlns:sac=""urn:sunat:names:specification:ubl:peru:schema:xsd:SunatAggregateComponents-1"" " & vbCrLf
+        StrLinea = StrLinea & "    xmlns:udt=""urn:un:unece:uncefact:data:specification:UnqualifiedDataTypesSchemaModule:2"" " & vbCrLf
+        StrLinea = StrLinea & "    xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance""> " & vbCrLf
+        StrLinea = StrLinea & "    <ext:UBLExtensions> " & vbCrLf
+        StrLinea = StrLinea & "        <ext:UBLExtension> " & vbCrLf
+        StrLinea = StrLinea & "            <ext:ExtensionContent> " & vbCrLf
+        StrLinea = StrLinea & "                <sac:AdditionalInformation> " & vbCrLf
+        StrLinea = StrLinea & "                    <sac:AdditionalMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "                        <cbc:ID>1001</cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "                        <cbc:PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecCab("TotalBaseImponible")), "0.00") & "</cbc:PayableAmount> " & vbCrLf
+        StrLinea = StrLinea & "                    </sac:AdditionalMonetaryTotal> " & vbCrLf
         
         If pDocumento <> "07" And pDocumento <> "08" Then
-        strLinea = strLinea & "                    <sac:AdditionalMonetaryTotal> " & vbCrLf
-        strLinea = strLinea & "                        <cbc:ID>1002</cbc:ID> " & vbCrLf
-        strLinea = strLinea & "                        <cbc:PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecCab("TotalExonerado")), "0.00") & "</cbc:PayableAmount> " & vbCrLf
-        strLinea = strLinea & "                    </sac:AdditionalMonetaryTotal> " & vbCrLf
-        strLinea = strLinea & "                    <sac:AdditionalMonetaryTotal> " & vbCrLf
-        strLinea = strLinea & "                        <cbc:ID>1003</cbc:ID> " & vbCrLf
-        strLinea = strLinea & "                        <cbc:PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(0, "0.00") & "</cbc:PayableAmount> " & vbCrLf
-        strLinea = strLinea & "                    </sac:AdditionalMonetaryTotal> " & vbCrLf
-        strLinea = strLinea & "                    <sac:AdditionalMonetaryTotal> " & vbCrLf
-        strLinea = strLinea & "                        <cbc:ID>1004</cbc:ID> " & vbCrLf
-        strLinea = strLinea & "                        <cbc:PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, pRecCab("TotalValorVenta"), 0), "0.00") & "</cbc:PayableAmount> " & vbCrLf
-        strLinea = strLinea & "                    </sac:AdditionalMonetaryTotal> " & vbCrLf
-        strLinea = strLinea & "                    <sac:AdditionalMonetaryTotal> " & vbCrLf
-        strLinea = strLinea & "                        <cbc:ID>2005</cbc:ID> " & vbCrLf
-        strLinea = strLinea & "                        <cbc:PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & pRecCab("TotalDescuento") & "</cbc:PayableAmount> " & vbCrLf
-        strLinea = strLinea & "                    </sac:AdditionalMonetaryTotal> " & vbCrLf
-        strLinea = strLinea & "                    <sac:AdditionalProperty> " & vbCrLf
-        strLinea = strLinea & "                        <cbc:ID>" & IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, "1002", "1000") & "</cbc:ID> " & vbCrLf
-        strLinea = strLinea & "                        <cbc:Value>" & pRecCab("totalLetras") & "</cbc:Value> " & vbCrLf
-        strLinea = strLinea & "                    </sac:AdditionalProperty> " & vbCrLf
+        StrLinea = StrLinea & "                    <sac:AdditionalMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "                        <cbc:ID>1002</cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "                        <cbc:PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecCab("TotalExonerado")), "0.00") & "</cbc:PayableAmount> " & vbCrLf
+        StrLinea = StrLinea & "                    </sac:AdditionalMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "                    <sac:AdditionalMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "                        <cbc:ID>1003</cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "                        <cbc:PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(0, "0.00") & "</cbc:PayableAmount> " & vbCrLf
+        StrLinea = StrLinea & "                    </sac:AdditionalMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "                    <sac:AdditionalMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "                        <cbc:ID>1004</cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "                        <cbc:PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, pRecCab("TotalValorVenta"), 0), "0.00") & "</cbc:PayableAmount> " & vbCrLf
+        StrLinea = StrLinea & "                    </sac:AdditionalMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "                    <sac:AdditionalMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "                        <cbc:ID>2005</cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "                        <cbc:PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & pRecCab("TotalDescuento") & "</cbc:PayableAmount> " & vbCrLf
+        StrLinea = StrLinea & "                    </sac:AdditionalMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "                    <sac:AdditionalProperty> " & vbCrLf
+        StrLinea = StrLinea & "                        <cbc:ID>" & IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, "1002", "1000") & "</cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "                        <cbc:Value>" & pRecCab("totalLetras") & "</cbc:Value> " & vbCrLf
+        StrLinea = StrLinea & "                    </sac:AdditionalProperty> " & vbCrLf
         End If
         
-        strLinea = strLinea & "                </sac:AdditionalInformation> " & vbCrLf
-        strLinea = strLinea & "            </ext:ExtensionContent> " & vbCrLf
-        strLinea = strLinea & "        </ext:UBLExtension> " & vbCrLf
-        strLinea = strLinea & "        <ext:UBLExtension> " & vbCrLf
-        strLinea = strLinea & "            <ext:ExtensionContent> " & vbCrLf
+        StrLinea = StrLinea & "                </sac:AdditionalInformation> " & vbCrLf
+        StrLinea = StrLinea & "            </ext:ExtensionContent> " & vbCrLf
+        StrLinea = StrLinea & "        </ext:UBLExtension> " & vbCrLf
+        StrLinea = StrLinea & "        <ext:UBLExtension> " & vbCrLf
+        StrLinea = StrLinea & "            <ext:ExtensionContent> " & vbCrLf
 '        strLinea = strLinea & "                <ds:Signature Id=""SignatureSP""> " & vbCrLf
 '        strLinea = strLinea & "                    <ds:SignedInfo> " & vbCrLf
 '        strLinea = strLinea & "                        <ds:CanonicalizationMethod Algorithm=""http://www.w3.org/TR/2001/REC-xml-c14n-20010315""/> " & vbCrLf
@@ -3305,19 +3305,19 @@ Dim strRuta As String
 '        strLinea = strLinea & "                        </ds:X509Data> " & vbCrLf
 '        strLinea = strLinea & "                    </ds:KeyInfo> " & vbCrLf
 '        strLinea = strLinea & "                </ds:Signature> " & vbCrLf
-        strLinea = strLinea & "            </ext:ExtensionContent> " & vbCrLf
-        strLinea = strLinea & "        </ext:UBLExtension> " & vbCrLf
-        strLinea = strLinea & "    </ext:UBLExtensions> " & vbCrLf
-        strLinea = strLinea & "    <cbc:UBLVersionID>2.0</cbc:UBLVersionID> " & vbCrLf
-        strLinea = strLinea & "    <cbc:CustomizationID>1.0</cbc:CustomizationID> " & vbCrLf
-        strLinea = strLinea & "    <cbc:ID>" & pRecCab("idSerie") & "-" & pRecCab("idDocVentas") & "</cbc:ID> " & vbCrLf
-        strLinea = strLinea & "    <cbc:IssueDate>" & Format(pRecCab("fecEmision"), "yyyy-mm-dd") & "</cbc:IssueDate> " & vbCrLf
+        StrLinea = StrLinea & "            </ext:ExtensionContent> " & vbCrLf
+        StrLinea = StrLinea & "        </ext:UBLExtension> " & vbCrLf
+        StrLinea = StrLinea & "    </ext:UBLExtensions> " & vbCrLf
+        StrLinea = StrLinea & "    <cbc:UBLVersionID>2.0</cbc:UBLVersionID> " & vbCrLf
+        StrLinea = StrLinea & "    <cbc:CustomizationID>1.0</cbc:CustomizationID> " & vbCrLf
+        StrLinea = StrLinea & "    <cbc:ID>" & pRecCab("idSerie") & "-" & pRecCab("idDocVentas") & "</cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "    <cbc:IssueDate>" & Format(pRecCab("fecEmision"), "yyyy-mm-dd") & "</cbc:IssueDate> " & vbCrLf
         
         If pDocumento <> "07" And pDocumento <> "08" Then
-        strLinea = strLinea & "    <cbc:InvoiceTypeCode>" & pRecCab("idDocumento") & "</cbc:InvoiceTypeCode> " & vbCrLf
+        StrLinea = StrLinea & "    <cbc:InvoiceTypeCode>" & pRecCab("idDocumento") & "</cbc:InvoiceTypeCode> " & vbCrLf
         End If
         
-        strLinea = strLinea & "    <cbc:DocumentCurrencyCode>" & pRecCab("idMoneda") & "</cbc:DocumentCurrencyCode> " & vbCrLf
+        StrLinea = StrLinea & "    <cbc:DocumentCurrencyCode>" & pRecCab("idMoneda") & "</cbc:DocumentCurrencyCode> " & vbCrLf
         
         If pDocumento = "07" Or pDocumento = "08" Then
         
@@ -3333,161 +3333,161 @@ Dim strRuta As String
         End If
         rsref.Close: Set rsref = Nothing
         
-        strLinea = strLinea & "    <cac:DiscrepancyResponse> " & vbCrLf
-        strLinea = strLinea & "        <cbc:ReferenceID>" & CIdSerieRef & "-" & CIdNumeroRef & "</cbc:ReferenceID> " & vbCrLf
+        StrLinea = StrLinea & "    <cac:DiscrepancyResponse> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:ReferenceID>" & CIdSerieRef & "-" & CIdNumeroRef & "</cbc:ReferenceID> " & vbCrLf
         
         CSqlC = "Select A.GlsMotivoNCD,A.IdCodigoVE " & _
                 "From MotivosNCD A " & _
                 "Where A.IdMotivoNCD = '" & Trim("" & pRecCab.Fields("IdMotivoNCD")) & "'"
         AbrirRecordset StrMsgError, Cn, RsC, CSqlC: If StrMsgError <> "" Then GoTo Err
         If Not RsC.EOF Then
-        strLinea = strLinea & "        <cbc:ResponseCode>" & Trim("" & RsC.Fields("IdCodigoVE")) & "</cbc:ResponseCode> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:ResponseCode>" & Trim("" & RsC.Fields("IdCodigoVE")) & "</cbc:ResponseCode> " & vbCrLf
         End If
         RsC.Close: Set RsC = Nothing
         
-        strLinea = strLinea & "        <cbc:Description>" & QuitarCaracteresEspeciales("" & pRecCab.Fields("ObsDocVentas")) & "</cbc:Description> " & vbCrLf
-        strLinea = strLinea & "    </cac:DiscrepancyResponse> " & vbCrLf
-        strLinea = strLinea & "    <cac:BillingReference> " & vbCrLf
-        strLinea = strLinea & "        <cac:InvoiceDocumentReference> " & vbCrLf
-        strLinea = strLinea & "            <cbc:ID>" & CIdSerieRef & "-" & CIdNumeroRef & "</cbc:ID> " & vbCrLf
-        strLinea = strLinea & "            <cbc:DocumentTypeCode>" & CIdDocumentoRef & "</cbc:DocumentTypeCode> " & vbCrLf
-        strLinea = strLinea & "        </cac:InvoiceDocumentReference> " & vbCrLf
-        strLinea = strLinea & "    </cac:BillingReference> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:Description>" & QuitarCaracteresEspeciales("" & pRecCab.Fields("ObsDocVentas")) & "</cbc:Description> " & vbCrLf
+        StrLinea = StrLinea & "    </cac:DiscrepancyResponse> " & vbCrLf
+        StrLinea = StrLinea & "    <cac:BillingReference> " & vbCrLf
+        StrLinea = StrLinea & "        <cac:InvoiceDocumentReference> " & vbCrLf
+        StrLinea = StrLinea & "            <cbc:ID>" & CIdSerieRef & "-" & CIdNumeroRef & "</cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "            <cbc:DocumentTypeCode>" & CIdDocumentoRef & "</cbc:DocumentTypeCode> " & vbCrLf
+        StrLinea = StrLinea & "        </cac:InvoiceDocumentReference> " & vbCrLf
+        StrLinea = StrLinea & "    </cac:BillingReference> " & vbCrLf
         End If
         If Trim(PForm.txt_OrdenCompra.Text) <> "" And pDocumento = "01" Then
         'Agregar la orden de compra
-        strLinea = strLinea & "    <cac:OrderReference> " & vbCrLf
-        strLinea = strLinea & "        <cbc:ID><![CDATA[" & Trim(PForm.txt_OrdenCompra.Text) & "]]></cbc:ID> " & vbCrLf
-        strLinea = strLinea & "    </cac:OrderReference> " & vbCrLf
+        StrLinea = StrLinea & "    <cac:OrderReference> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:ID><![CDATA[" & Trim(PForm.txt_OrdenCompra.Text) & "]]></cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "    </cac:OrderReference> " & vbCrLf
         End If
-        strLinea = strLinea & "    <cac:Signature> " & vbCrLf
-        strLinea = strLinea & "        <cbc:ID>IDSignSP</cbc:ID> " & vbCrLf
-        strLinea = strLinea & "        <cac:SignatoryParty> " & vbCrLf
-        strLinea = strLinea & "            <cac:PartyIdentification> " & vbCrLf
-        strLinea = strLinea & "                <cbc:ID>" & strRUC & "</cbc:ID> " & vbCrLf
-        strLinea = strLinea & "            </cac:PartyIdentification> " & vbCrLf
-        strLinea = strLinea & "            <cac:PartyName> " & vbCrLf
-        strLinea = strLinea & "                <cbc:Name><![CDATA[" & STREMP & "]]></cbc:Name> " & vbCrLf
-        strLinea = strLinea & "            </cac:PartyName> " & vbCrLf
-        strLinea = strLinea & "        </cac:SignatoryParty> " & vbCrLf
-        strLinea = strLinea & "        <cac:DigitalSignatureAttachment> " & vbCrLf
-        strLinea = strLinea & "            <cac:ExternalReference> " & vbCrLf
-        strLinea = strLinea & "                <cbc:URI>#SignatureSP</cbc:URI> " & vbCrLf
-        strLinea = strLinea & "            </cac:ExternalReference> " & vbCrLf
-        strLinea = strLinea & "        </cac:DigitalSignatureAttachment> " & vbCrLf
-        strLinea = strLinea & "    </cac:Signature> " & vbCrLf
-        strLinea = strLinea & "    <cac:AccountingSupplierParty> " & vbCrLf
-        strLinea = strLinea & "        <cbc:CustomerAssignedAccountID>" & strRUC & "</cbc:CustomerAssignedAccountID> " & vbCrLf
-        strLinea = strLinea & "        <cbc:AdditionalAccountID>6</cbc:AdditionalAccountID> " & vbCrLf
-        strLinea = strLinea & "        <cac:Party> " & vbCrLf
-        strLinea = strLinea & "            <cac:PostalAddress> " & vbCrLf
-        strLinea = strLinea & "                <cbc:ID>" & pRecEmp("idDistrito") & "</cbc:ID> " & vbCrLf
-        strLinea = strLinea & "                <cbc:StreetName>" & STREMP & "</cbc:StreetName> " & vbCrLf
-        strLinea = strLinea & "                <cbc:CitySubdivisionName></cbc:CitySubdivisionName> " & vbCrLf
-        strLinea = strLinea & "                <cbc:CityName>" & strDpt & "</cbc:CityName> " & vbCrLf
-        strLinea = strLinea & "                <cbc:CountrySubentity>" & strPrv & "</cbc:CountrySubentity> " & vbCrLf
-        strLinea = strLinea & "                <cbc:District>" & pRecEmp("glsUbigeo") & "</cbc:District> " & vbCrLf
-        strLinea = strLinea & "                <cac:Country> " & vbCrLf
-        strLinea = strLinea & "                    <cbc:IdentificationCode>PE</cbc:IdentificationCode> " & vbCrLf
-        strLinea = strLinea & "                </cac:Country> " & vbCrLf
-        strLinea = strLinea & "            </cac:PostalAddress> " & vbCrLf
-        strLinea = strLinea & "            <cac:PartyLegalEntity> " & vbCrLf
-        strLinea = strLinea & "                <cbc:RegistrationName><![CDATA[" & STREMP & "]]></cbc:RegistrationName> " & vbCrLf
-        strLinea = strLinea & "            </cac:PartyLegalEntity> " & vbCrLf
-        strLinea = strLinea & "        </cac:Party> " & vbCrLf
-        strLinea = strLinea & "    </cac:AccountingSupplierParty> " & vbCrLf
-        strLinea = strLinea & "    <cac:AccountingCustomerParty> " & vbCrLf
-        strLinea = strLinea & "        <cbc:CustomerAssignedAccountID>" & pRecCab("RucCliente") & "</cbc:CustomerAssignedAccountID> " & vbCrLf
-        strLinea = strLinea & "        <cbc:AdditionalAccountID>" & pRecCab("idTipoDocIdentidad") & "</cbc:AdditionalAccountID> " & vbCrLf
-        strLinea = strLinea & "        <cac:Party> " & vbCrLf
-        strLinea = strLinea & "            <cac:PartyLegalEntity> " & vbCrLf
-        strLinea = strLinea & "                <cbc:RegistrationName>" & QuitarCaracteresEspeciales("" & pRecCab("GlsCliente")) & "</cbc:RegistrationName> " & vbCrLf
-        strLinea = strLinea & "            </cac:PartyLegalEntity> " & vbCrLf
-        strLinea = strLinea & "        </cac:Party> " & vbCrLf
-        strLinea = strLinea & "    </cac:AccountingCustomerParty> " & vbCrLf
-        strLinea = strLinea & "    <cac:TaxTotal> " & vbCrLf
-        strLinea = strLinea & "        <cbc:TaxAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecCab("TotalIGVVenta"), "0.00") & "</cbc:TaxAmount> " & vbCrLf
-        strLinea = strLinea & "        <cac:TaxSubtotal> " & vbCrLf
-        strLinea = strLinea & "            <cbc:TaxAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecCab("TotalIGVVenta"), "0.00") & "</cbc:TaxAmount> " & vbCrLf
-        strLinea = strLinea & "            <cac:TaxCategory> " & vbCrLf
-        strLinea = strLinea & "                <cac:TaxScheme> " & vbCrLf
-        strLinea = strLinea & "                    <cbc:ID>1000</cbc:ID> " & vbCrLf
-        strLinea = strLinea & "                    <cbc:Name>IGV</cbc:Name> " & vbCrLf
-        strLinea = strLinea & "                    <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode> " & vbCrLf
-        strLinea = strLinea & "                </cac:TaxScheme> " & vbCrLf
-        strLinea = strLinea & "            </cac:TaxCategory> " & vbCrLf
-        strLinea = strLinea & "        </cac:TaxSubtotal> " & vbCrLf
-        strLinea = strLinea & "    </cac:TaxTotal> " & vbCrLf
+        StrLinea = StrLinea & "    <cac:Signature> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:ID>IDSignSP</cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "        <cac:SignatoryParty> " & vbCrLf
+        StrLinea = StrLinea & "            <cac:PartyIdentification> " & vbCrLf
+        StrLinea = StrLinea & "                <cbc:ID>" & strRUC & "</cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "            </cac:PartyIdentification> " & vbCrLf
+        StrLinea = StrLinea & "            <cac:PartyName> " & vbCrLf
+        StrLinea = StrLinea & "                <cbc:Name><![CDATA[" & STREMP & "]]></cbc:Name> " & vbCrLf
+        StrLinea = StrLinea & "            </cac:PartyName> " & vbCrLf
+        StrLinea = StrLinea & "        </cac:SignatoryParty> " & vbCrLf
+        StrLinea = StrLinea & "        <cac:DigitalSignatureAttachment> " & vbCrLf
+        StrLinea = StrLinea & "            <cac:ExternalReference> " & vbCrLf
+        StrLinea = StrLinea & "                <cbc:URI>#SignatureSP</cbc:URI> " & vbCrLf
+        StrLinea = StrLinea & "            </cac:ExternalReference> " & vbCrLf
+        StrLinea = StrLinea & "        </cac:DigitalSignatureAttachment> " & vbCrLf
+        StrLinea = StrLinea & "    </cac:Signature> " & vbCrLf
+        StrLinea = StrLinea & "    <cac:AccountingSupplierParty> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:CustomerAssignedAccountID>" & strRUC & "</cbc:CustomerAssignedAccountID> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:AdditionalAccountID>6</cbc:AdditionalAccountID> " & vbCrLf
+        StrLinea = StrLinea & "        <cac:Party> " & vbCrLf
+        StrLinea = StrLinea & "            <cac:PostalAddress> " & vbCrLf
+        StrLinea = StrLinea & "                <cbc:ID>" & pRecEmp("idDistrito") & "</cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "                <cbc:StreetName>" & STREMP & "</cbc:StreetName> " & vbCrLf
+        StrLinea = StrLinea & "                <cbc:CitySubdivisionName></cbc:CitySubdivisionName> " & vbCrLf
+        StrLinea = StrLinea & "                <cbc:CityName>" & strDpt & "</cbc:CityName> " & vbCrLf
+        StrLinea = StrLinea & "                <cbc:CountrySubentity>" & strPrv & "</cbc:CountrySubentity> " & vbCrLf
+        StrLinea = StrLinea & "                <cbc:District>" & pRecEmp("glsUbigeo") & "</cbc:District> " & vbCrLf
+        StrLinea = StrLinea & "                <cac:Country> " & vbCrLf
+        StrLinea = StrLinea & "                    <cbc:IdentificationCode>PE</cbc:IdentificationCode> " & vbCrLf
+        StrLinea = StrLinea & "                </cac:Country> " & vbCrLf
+        StrLinea = StrLinea & "            </cac:PostalAddress> " & vbCrLf
+        StrLinea = StrLinea & "            <cac:PartyLegalEntity> " & vbCrLf
+        StrLinea = StrLinea & "                <cbc:RegistrationName><![CDATA[" & STREMP & "]]></cbc:RegistrationName> " & vbCrLf
+        StrLinea = StrLinea & "            </cac:PartyLegalEntity> " & vbCrLf
+        StrLinea = StrLinea & "        </cac:Party> " & vbCrLf
+        StrLinea = StrLinea & "    </cac:AccountingSupplierParty> " & vbCrLf
+        StrLinea = StrLinea & "    <cac:AccountingCustomerParty> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:CustomerAssignedAccountID>" & pRecCab("RucCliente") & "</cbc:CustomerAssignedAccountID> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:AdditionalAccountID>" & pRecCab("idTipoDocIdentidad") & "</cbc:AdditionalAccountID> " & vbCrLf
+        StrLinea = StrLinea & "        <cac:Party> " & vbCrLf
+        StrLinea = StrLinea & "            <cac:PartyLegalEntity> " & vbCrLf
+        StrLinea = StrLinea & "                <cbc:RegistrationName>" & QuitarCaracteresEspeciales("" & pRecCab("GlsCliente")) & "</cbc:RegistrationName> " & vbCrLf
+        StrLinea = StrLinea & "            </cac:PartyLegalEntity> " & vbCrLf
+        StrLinea = StrLinea & "        </cac:Party> " & vbCrLf
+        StrLinea = StrLinea & "    </cac:AccountingCustomerParty> " & vbCrLf
+        StrLinea = StrLinea & "    <cac:TaxTotal> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:TaxAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecCab("TotalIGVVenta"), "0.00") & "</cbc:TaxAmount> " & vbCrLf
+        StrLinea = StrLinea & "        <cac:TaxSubtotal> " & vbCrLf
+        StrLinea = StrLinea & "            <cbc:TaxAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecCab("TotalIGVVenta"), "0.00") & "</cbc:TaxAmount> " & vbCrLf
+        StrLinea = StrLinea & "            <cac:TaxCategory> " & vbCrLf
+        StrLinea = StrLinea & "                <cac:TaxScheme> " & vbCrLf
+        StrLinea = StrLinea & "                    <cbc:ID>1000</cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "                    <cbc:Name>IGV</cbc:Name> " & vbCrLf
+        StrLinea = StrLinea & "                    <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode> " & vbCrLf
+        StrLinea = StrLinea & "                </cac:TaxScheme> " & vbCrLf
+        StrLinea = StrLinea & "            </cac:TaxCategory> " & vbCrLf
+        StrLinea = StrLinea & "        </cac:TaxSubtotal> " & vbCrLf
+        StrLinea = StrLinea & "    </cac:TaxTotal> " & vbCrLf
         
         If pDocumento = "08" Then
-        strLinea = strLinea & "    <cac:RequestedMonetaryTotal> " & vbCrLf
-        strLinea = strLinea & "        <cbc:PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecCab("TotalPrecioVenta"), "0.00") & "</cbc:PayableAmount> " & vbCrLf
-        strLinea = strLinea & "    </cac:RequestedMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "    <cac:RequestedMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecCab("TotalPrecioVenta"), "0.00") & "</cbc:PayableAmount> " & vbCrLf
+        StrLinea = StrLinea & "    </cac:RequestedMonetaryTotal> " & vbCrLf
         Else
-        strLinea = strLinea & "    <cac:LegalMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "    <cac:LegalMonetaryTotal> " & vbCrLf
         If Val("" & pRecCab.Fields("TotalDescuentoGlobalGravado")) > 0 Or Val("" & pRecCab.Fields("TotalDescuentoGlobalExonerado")) > 0 Then
-        strLinea = strLinea & "        <cbc:AllowanceTotalAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, Val("" & pRecCab.Fields("TotalDescuentoGlobalGravado")) + Val("" & pRecCab.Fields("TotalDescuentoGlobalExonerado"))), "0.00") & "</cbc:AllowanceTotalAmount> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:AllowanceTotalAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, Val("" & pRecCab.Fields("TotalDescuentoGlobalGravado")) + Val("" & pRecCab.Fields("TotalDescuentoGlobalExonerado"))), "0.00") & "</cbc:AllowanceTotalAmount> " & vbCrLf
         End If
-        strLinea = strLinea & "        <cbc:PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecCab("TotalPrecioVenta")), "0.00") & "</cbc:PayableAmount> " & vbCrLf
-        strLinea = strLinea & "    </cac:LegalMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecCab("TotalPrecioVenta")), "0.00") & "</cbc:PayableAmount> " & vbCrLf
+        StrLinea = StrLinea & "    </cac:LegalMonetaryTotal> " & vbCrLf
         End If
         
         csql = "Select If(Afecto = '1','" & IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, "11", "10") & "','" & IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, "16", "30") & "') Afecto,Cantidad,TotalVVNeto,PVUnit,TotalIGVNeto,glsProducto,idProducto,VVUnit from docventasdet where idEmpresa='" & glsEmpresa & "' and idDocumento='" & pDocumento & "' and idSerie='" & pSerie & "' and idDocVentas='" & PNumero & "' Order by item "
         Set pRecDet = New ADODB.Recordset
         pRecDet.Open csql, Cn
-        Print #IntFile, strLinea
+        Print #intFile, StrLinea
         item = 0
         'Detalle
         Do While Not pRecDet.EOF
             item = item + 1
-            strLinea = ""
-            strLinea = strLinea & "    <cac:" & CGlsCab & "Line> " & vbCrLf
-            strLinea = strLinea & "        <cbc:ID>" & item & "</cbc:ID> " & vbCrLf
-            strLinea = strLinea & "        <cbc:" & CGlsDet & "Quantity unitCode=""NIU"">" & pRecDet("Cantidad") & "</cbc:" & CGlsDet & "Quantity> " & vbCrLf
-            strLinea = strLinea & "        <cbc:LineExtensionAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecDet("TotalVVNeto")), "0.00") & "</cbc:LineExtensionAmount> " & vbCrLf
-            strLinea = strLinea & "        <cac:PricingReference> " & vbCrLf
-            strLinea = strLinea & "            <cac:AlternativeConditionPrice> " & vbCrLf
-            strLinea = strLinea & "                <cbc:PriceAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecDet("PVUnit")), "0.00") & "</cbc:PriceAmount> " & vbCrLf
-            strLinea = strLinea & "                <cbc:PriceTypeCode>01</cbc:PriceTypeCode> " & vbCrLf
-            strLinea = strLinea & "            </cac:AlternativeConditionPrice> " & vbCrLf
+            StrLinea = ""
+            StrLinea = StrLinea & "    <cac:" & CGlsCab & "Line> " & vbCrLf
+            StrLinea = StrLinea & "        <cbc:ID>" & item & "</cbc:ID> " & vbCrLf
+            StrLinea = StrLinea & "        <cbc:" & CGlsDet & "Quantity unitCode=""NIU"">" & pRecDet("Cantidad") & "</cbc:" & CGlsDet & "Quantity> " & vbCrLf
+            StrLinea = StrLinea & "        <cbc:LineExtensionAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecDet("TotalVVNeto")), "0.00") & "</cbc:LineExtensionAmount> " & vbCrLf
+            StrLinea = StrLinea & "        <cac:PricingReference> " & vbCrLf
+            StrLinea = StrLinea & "            <cac:AlternativeConditionPrice> " & vbCrLf
+            StrLinea = StrLinea & "                <cbc:PriceAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecDet("PVUnit")), "0.00") & "</cbc:PriceAmount> " & vbCrLf
+            StrLinea = StrLinea & "                <cbc:PriceTypeCode>01</cbc:PriceTypeCode> " & vbCrLf
+            StrLinea = StrLinea & "            </cac:AlternativeConditionPrice> " & vbCrLf
             If Val("" & pRecCab.Fields("IndVtaGratuita")) = 1 Then
-            strLinea = strLinea & "            <cac:AlternativeConditionPrice> " & vbCrLf
-            strLinea = strLinea & "                <cbc:PriceAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecDet("PVUnit"), "0.00") & "</cbc:PriceAmount> " & vbCrLf
-            strLinea = strLinea & "                <cbc:PriceTypeCode>02</cbc:PriceTypeCode> " & vbCrLf
-            strLinea = strLinea & "            </cac:AlternativeConditionPrice> " & vbCrLf
+            StrLinea = StrLinea & "            <cac:AlternativeConditionPrice> " & vbCrLf
+            StrLinea = StrLinea & "                <cbc:PriceAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecDet("PVUnit"), "0.00") & "</cbc:PriceAmount> " & vbCrLf
+            StrLinea = StrLinea & "                <cbc:PriceTypeCode>02</cbc:PriceTypeCode> " & vbCrLf
+            StrLinea = StrLinea & "            </cac:AlternativeConditionPrice> " & vbCrLf
             End If
-            strLinea = strLinea & "        </cac:PricingReference> " & vbCrLf
-            strLinea = strLinea & "        <cac:TaxTotal> " & vbCrLf
-            strLinea = strLinea & "            <cbc:TaxAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecDet("TotalIGVNeto"), "0.00") & "</cbc:TaxAmount> " & vbCrLf
-            strLinea = strLinea & "            <cac:TaxSubtotal> " & vbCrLf
-            strLinea = strLinea & "                <cbc:TaxAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecDet("TotalIGVNeto"), "0.00") & "</cbc:TaxAmount> " & vbCrLf
-            strLinea = strLinea & "                <cac:TaxCategory> " & vbCrLf
-            strLinea = strLinea & "                    <cbc:TaxExemptionReasonCode>" & Trim("" & pRecDet.Fields("Afecto")) & "</cbc:TaxExemptionReasonCode> " & vbCrLf
-            strLinea = strLinea & "                    <cac:TaxScheme> " & vbCrLf
-            strLinea = strLinea & "                        <cbc:ID>1000</cbc:ID> " & vbCrLf
-            strLinea = strLinea & "                        <cbc:Name>IGV</cbc:Name> " & vbCrLf
-            strLinea = strLinea & "                        <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode> " & vbCrLf
-            strLinea = strLinea & "                    </cac:TaxScheme> " & vbCrLf
-            strLinea = strLinea & "                </cac:TaxCategory> " & vbCrLf
-            strLinea = strLinea & "            </cac:TaxSubtotal> " & vbCrLf
-            strLinea = strLinea & "        </cac:TaxTotal> " & vbCrLf
-            strLinea = strLinea & "        <cac:Item> " & vbCrLf
-            strLinea = strLinea & "            <cbc:Description>" & QuitarCaracteresEspeciales("" & pRecDet("glsProducto")) & "</cbc:Description> " & vbCrLf
-            strLinea = strLinea & "            <cac:SellersItemIdentification> " & vbCrLf
-            strLinea = strLinea & "                <cbc:ID>" & pRecDet("idProducto") & "</cbc:ID> " & vbCrLf
-            strLinea = strLinea & "            </cac:SellersItemIdentification> " & vbCrLf
-            strLinea = strLinea & "        </cac:Item> " & vbCrLf
-            strLinea = strLinea & "        <cac:Price> " & vbCrLf
-            strLinea = strLinea & "            <cbc:PriceAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecDet("VVUnit")), "0.00") & "</cbc:PriceAmount> " & vbCrLf
-            strLinea = strLinea & "        </cac:Price> " & vbCrLf
-            strLinea = strLinea & "    </cac:" & CGlsCab & "Line> " & vbCrLf
-            Print #IntFile, strLinea
+            StrLinea = StrLinea & "        </cac:PricingReference> " & vbCrLf
+            StrLinea = StrLinea & "        <cac:TaxTotal> " & vbCrLf
+            StrLinea = StrLinea & "            <cbc:TaxAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecDet("TotalIGVNeto"), "0.00") & "</cbc:TaxAmount> " & vbCrLf
+            StrLinea = StrLinea & "            <cac:TaxSubtotal> " & vbCrLf
+            StrLinea = StrLinea & "                <cbc:TaxAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecDet("TotalIGVNeto"), "0.00") & "</cbc:TaxAmount> " & vbCrLf
+            StrLinea = StrLinea & "                <cac:TaxCategory> " & vbCrLf
+            StrLinea = StrLinea & "                    <cbc:TaxExemptionReasonCode>" & Trim("" & pRecDet.Fields("Afecto")) & "</cbc:TaxExemptionReasonCode> " & vbCrLf
+            StrLinea = StrLinea & "                    <cac:TaxScheme> " & vbCrLf
+            StrLinea = StrLinea & "                        <cbc:ID>1000</cbc:ID> " & vbCrLf
+            StrLinea = StrLinea & "                        <cbc:Name>IGV</cbc:Name> " & vbCrLf
+            StrLinea = StrLinea & "                        <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode> " & vbCrLf
+            StrLinea = StrLinea & "                    </cac:TaxScheme> " & vbCrLf
+            StrLinea = StrLinea & "                </cac:TaxCategory> " & vbCrLf
+            StrLinea = StrLinea & "            </cac:TaxSubtotal> " & vbCrLf
+            StrLinea = StrLinea & "        </cac:TaxTotal> " & vbCrLf
+            StrLinea = StrLinea & "        <cac:Item> " & vbCrLf
+            StrLinea = StrLinea & "            <cbc:Description>" & QuitarCaracteresEspeciales("" & pRecDet("glsProducto")) & "</cbc:Description> " & vbCrLf
+            StrLinea = StrLinea & "            <cac:SellersItemIdentification> " & vbCrLf
+            StrLinea = StrLinea & "                <cbc:ID>" & pRecDet("idProducto") & "</cbc:ID> " & vbCrLf
+            StrLinea = StrLinea & "            </cac:SellersItemIdentification> " & vbCrLf
+            StrLinea = StrLinea & "        </cac:Item> " & vbCrLf
+            StrLinea = StrLinea & "        <cac:Price> " & vbCrLf
+            StrLinea = StrLinea & "            <cbc:PriceAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecDet("VVUnit")), "0.00") & "</cbc:PriceAmount> " & vbCrLf
+            StrLinea = StrLinea & "        </cac:Price> " & vbCrLf
+            StrLinea = StrLinea & "    </cac:" & CGlsCab & "Line> " & vbCrLf
+            Print #intFile, StrLinea
             pRecDet.MoveNext
         Loop
         'strLinea = strLinea & "</Invoice>" & vbCrLf
-        strLinea = "</" & CGlsCab & ">" & vbCrLf
-        Print #IntFile, strLinea
-        Close #IntFile
+        StrLinea = "</" & CGlsCab & ">" & vbCrLf
+        Print #intFile, StrLinea
+        Close #intFile
     End If
     MsgBox "Se creo el archivo XML, en unos momentos se enviara al sistema SOL", vbInformation
     
@@ -3498,7 +3498,7 @@ Dim strRuta As String
     Exit Sub
 Err:
     If StrMsgError = "" Then StrMsgError = Err.Description
-    Close #IntFile
+    Close #intFile
     Exit Sub
     Resume
 End Sub
@@ -3584,28 +3584,28 @@ Dim bolExportacion As Boolean
         CCarpeta = leeParametro("CARPETA_XML_VE")
         
         strRuta = CCarpeta & "\" & strRUC & "-" & pRecCab("idDocumento") & "-" & pRecCab("idSerie") & "-" & pRecCab("idDocVentas") & ".xml"
-        IntFile = FreeFile
-        Open strRuta For Output As #IntFile
+        intFile = FreeFile
+        Open strRuta For Output As #intFile
         'Cabecera
-        strLinea = ""
+        StrLinea = ""
         If pDocumento = "07" Or pDocumento = "08" Then
-        strLinea = strLinea & "<?xml version=""1.0"" encoding=""ISO-8859-1"" standalone=""no""?> " & vbCrLf
+        StrLinea = StrLinea & "<?xml version=""1.0"" encoding=""ISO-8859-1"" standalone=""no""?> " & vbCrLf
         Else
-        strLinea = strLinea & "<?xml version=""1.0"" encoding=""ISO-8859-1"" standalone=""no""?> " & vbCrLf
+        StrLinea = StrLinea & "<?xml version=""1.0"" encoding=""ISO-8859-1"" standalone=""no""?> " & vbCrLf
         End If
         
-        strLinea = strLinea & "<" & CGlsCab & " " & vbCrLf
-        strLinea = strLinea & "    xmlns=""urn:oasis:names:specification:ubl:schema:xsd:" & CGlsCab & "-2"" " & vbCrLf
-        strLinea = strLinea & "    xmlns:cac=""urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"" " & vbCrLf
-        strLinea = strLinea & "    xmlns:cbc=""urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"" " & vbCrLf
+        StrLinea = StrLinea & "<" & CGlsCab & " " & vbCrLf
+        StrLinea = StrLinea & "    xmlns=""urn:oasis:names:specification:ubl:schema:xsd:" & CGlsCab & "-2"" " & vbCrLf
+        StrLinea = StrLinea & "    xmlns:cac=""urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"" " & vbCrLf
+        StrLinea = StrLinea & "    xmlns:cbc=""urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"" " & vbCrLf
 '        strLinea = strLinea & "    xmlns:ccts=""urn:un:unece:uncefact:documentation:2"" " & vbCrLf
-        strLinea = strLinea & "    xmlns:ds=""http://www.w3.org/2000/09/xmldsig#"" " & vbCrLf
-        strLinea = strLinea & "    xmlns:ext=""urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2"">" & vbCrLf
+        StrLinea = StrLinea & "    xmlns:ds=""http://www.w3.org/2000/09/xmldsig#"" " & vbCrLf
+        StrLinea = StrLinea & "    xmlns:ext=""urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2"">" & vbCrLf
 '        strLinea = strLinea & "    xmlns:qdt=""urn:oasis:names:specification:ubl:schema:xsd:QualifiedDatatypes-2"" " & vbCrLf
 '        strLinea = strLinea & "    xmlns:sac=""urn:sunat:names:specification:ubl:peru:schema:xsd:SunatAggregateComponents-1"" " & vbCrLf
 '        strLinea = strLinea & "    xmlns:udt=""urn:un:unece:uncefact:data:specification:UnqualifiedDataTypesSchemaModule:2"" " & vbCrLf
 '        strLinea = strLinea & "    xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance""> " & vbCrLf
-        strLinea = strLinea & "    <ext:UBLExtensions> " & vbCrLf
+        StrLinea = StrLinea & "    <ext:UBLExtensions> " & vbCrLf
 '        strLinea = strLinea & "        <ext:UBLExtension> " & vbCrLf
 '        strLinea = strLinea & "            <ext:ExtensionContent> " & vbCrLf
 '        strLinea = strLinea & "                <sac:AdditionalInformation> " & vbCrLf
@@ -3640,27 +3640,27 @@ Dim bolExportacion As Boolean
 '        strLinea = strLinea & "                </sac:AdditionalInformation> " & vbCrLf
 '        strLinea = strLinea & "            </ext:ExtensionContent> " & vbCrLf
 '        strLinea = strLinea & "        </ext:UBLExtension> " & vbCrLf
-        strLinea = strLinea & "        <ext:UBLExtension> " & vbCrLf
-        strLinea = strLinea & "            <ext:ExtensionContent> " & vbCrLf
-        strLinea = strLinea & "            </ext:ExtensionContent> " & vbCrLf
-        strLinea = strLinea & "        </ext:UBLExtension> " & vbCrLf
-        strLinea = strLinea & "    </ext:UBLExtensions> " & vbCrLf
-        strLinea = strLinea & "    <cbc:UBLVersionID>2.1</cbc:UBLVersionID> " & vbCrLf
-        strLinea = strLinea & "    <cbc:CustomizationID>2.0</cbc:CustomizationID> " & vbCrLf
-        strLinea = strLinea & "    <cbc:ID>" & pRecCab("idSerie") & "-" & pRecCab("idDocVentas") & "</cbc:ID> " & vbCrLf
-        strLinea = strLinea & "    <cbc:IssueDate>" & Format(pRecCab("fecEmision"), "yyyy-mm-dd") & "</cbc:IssueDate> " & vbCrLf
-        strLinea = strLinea & "    <cbc:IssueTime>" & Format(Now, "hh:MM:ss") & "</cbc:IssueTime> " & vbCrLf
+        StrLinea = StrLinea & "        <ext:UBLExtension> " & vbCrLf
+        StrLinea = StrLinea & "            <ext:ExtensionContent> " & vbCrLf
+        StrLinea = StrLinea & "            </ext:ExtensionContent> " & vbCrLf
+        StrLinea = StrLinea & "        </ext:UBLExtension> " & vbCrLf
+        StrLinea = StrLinea & "    </ext:UBLExtensions> " & vbCrLf
+        StrLinea = StrLinea & "    <cbc:UBLVersionID>2.1</cbc:UBLVersionID> " & vbCrLf
+        StrLinea = StrLinea & "    <cbc:CustomizationID>2.0</cbc:CustomizationID> " & vbCrLf
+        StrLinea = StrLinea & "    <cbc:ID>" & pRecCab("idSerie") & "-" & pRecCab("idDocVentas") & "</cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "    <cbc:IssueDate>" & Format(pRecCab("fecEmision"), "yyyy-mm-dd") & "</cbc:IssueDate> " & vbCrLf
+        StrLinea = StrLinea & "    <cbc:IssueTime>" & Format(Now, "hh:MM:ss") & "</cbc:IssueTime> " & vbCrLf
         
         If pDocumento <> "07" And pDocumento <> "08" Then
-        strLinea = strLinea & "    <cbc:DueDate>" & Format(pRecCab("fecEmision"), "yyyy-mm-dd") & "</cbc:DueDate> " & vbCrLf
+        StrLinea = StrLinea & "    <cbc:DueDate>" & Format(pRecCab("fecEmision"), "yyyy-mm-dd") & "</cbc:DueDate> " & vbCrLf
         'strLinea = strLinea & "    <cbc:InvoiceTypeCode>" & pRecCab("idDocumento") & "</cbc:InvoiceTypeCode> " & vbCrLf
-        strLinea = strLinea & "    <cbc:InvoiceTypeCode listID=""" & IIf(Not bolExportacion, "0101", "0200") & """ listAgencyName=""PE:SUNAT"" listName=""SUNAT:Identificador de Tipo de Documento"" listURI=""urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo01"">" & pRecCab("idDocumento") & "</cbc:InvoiceTypeCode> " & vbCrLf
+        StrLinea = StrLinea & "    <cbc:InvoiceTypeCode listID=""" & IIf(Not bolExportacion, "0101", "0200") & """ listAgencyName=""PE:SUNAT"" listName=""SUNAT:Identificador de Tipo de Documento"" listURI=""urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo01"">" & pRecCab("idDocumento") & "</cbc:InvoiceTypeCode> " & vbCrLf
         End If
-        strLinea = strLinea & "    <cbc:Note languageLocaleID=""1000"">" & pRecCab("totalLetras") & "</cbc:Note> " & vbCrLf
+        StrLinea = StrLinea & "    <cbc:Note languageLocaleID=""1000"">" & pRecCab("totalLetras") & "</cbc:Note> " & vbCrLf
         'strLinea = strLinea & "    <cbc:DocumentCurrencyCode>" & pRecCab("idMoneda") & "</cbc:DocumentCurrencyCode> " & vbCrLf
-        strLinea = strLinea & "    <cbc:DocumentCurrencyCode listID=""ISO 4217 Alpha"" listName=""Currency"" listAgencyName=""United Nations Economic Commission for Europe"">" & pRecCab("idMoneda") & "</cbc:DocumentCurrencyCode> " & vbCrLf
+        StrLinea = StrLinea & "    <cbc:DocumentCurrencyCode listID=""ISO 4217 Alpha"" listName=""Currency"" listAgencyName=""United Nations Economic Commission for Europe"">" & pRecCab("idMoneda") & "</cbc:DocumentCurrencyCode> " & vbCrLf
         If pDocumento = "01" Or pDocumento = "03" Then
-        strLinea = strLinea & "    <cbc:LineCountNumeric>2</cbc:LineCountNumeric> " & vbCrLf
+        StrLinea = StrLinea & "    <cbc:LineCountNumeric>2</cbc:LineCountNumeric> " & vbCrLf
         End If
         
         If pDocumento = "07" Or pDocumento = "08" Then
@@ -3677,56 +3677,56 @@ Dim bolExportacion As Boolean
         End If
         rsref.Close: Set rsref = Nothing
         
-        strLinea = strLinea & "    <cac:DiscrepancyResponse> " & vbCrLf
-        strLinea = strLinea & "        <cbc:ReferenceID>" & CIdSerieRef & "-" & CIdNumeroRef & "</cbc:ReferenceID> " & vbCrLf
+        StrLinea = StrLinea & "    <cac:DiscrepancyResponse> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:ReferenceID>" & CIdSerieRef & "-" & CIdNumeroRef & "</cbc:ReferenceID> " & vbCrLf
         
         CSqlC = "Select A.GlsMotivoNCD,A.IdCodigoVE " & _
                 "From MotivosNCD A " & _
                 "Where A.IdMotivoNCD = '" & Trim("" & pRecCab.Fields("IdMotivoNCD")) & "'"
         AbrirRecordset StrMsgError, Cn, RsC, CSqlC: If StrMsgError <> "" Then GoTo Err
         If Not RsC.EOF Then
-        strLinea = strLinea & "        <cbc:ResponseCode>" & Trim("" & RsC.Fields("IdCodigoVE")) & "</cbc:ResponseCode> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:ResponseCode>" & Trim("" & RsC.Fields("IdCodigoVE")) & "</cbc:ResponseCode> " & vbCrLf
         End If
         RsC.Close: Set RsC = Nothing
         
-        strLinea = strLinea & "        <cbc:Description>" & QuitarCaracteresEspeciales("" & pRecCab.Fields("ObsDocVentas")) & "</cbc:Description> " & vbCrLf
-        strLinea = strLinea & "    </cac:DiscrepancyResponse> " & vbCrLf
-        strLinea = strLinea & "    <cac:BillingReference> " & vbCrLf
-        strLinea = strLinea & "        <cac:InvoiceDocumentReference> " & vbCrLf
-        strLinea = strLinea & "            <cbc:ID>" & CIdSerieRef & "-" & CIdNumeroRef & "</cbc:ID> " & vbCrLf
-        strLinea = strLinea & "            <cbc:DocumentTypeCode>" & CIdDocumentoRef & "</cbc:DocumentTypeCode> " & vbCrLf
-        strLinea = strLinea & "        </cac:InvoiceDocumentReference> " & vbCrLf
-        strLinea = strLinea & "    </cac:BillingReference> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:Description>" & QuitarCaracteresEspeciales("" & pRecCab.Fields("ObsDocVentas")) & "</cbc:Description> " & vbCrLf
+        StrLinea = StrLinea & "    </cac:DiscrepancyResponse> " & vbCrLf
+        StrLinea = StrLinea & "    <cac:BillingReference> " & vbCrLf
+        StrLinea = StrLinea & "        <cac:InvoiceDocumentReference> " & vbCrLf
+        StrLinea = StrLinea & "            <cbc:ID>" & CIdSerieRef & "-" & CIdNumeroRef & "</cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "            <cbc:DocumentTypeCode>" & CIdDocumentoRef & "</cbc:DocumentTypeCode> " & vbCrLf
+        StrLinea = StrLinea & "        </cac:InvoiceDocumentReference> " & vbCrLf
+        StrLinea = StrLinea & "    </cac:BillingReference> " & vbCrLf
         End If
         If Trim(PForm.txt_OrdenCompra.Text) <> "" And pDocumento = "01" Then
         'Agregar la orden de compra
-        strLinea = strLinea & "    <cac:OrderReference> " & vbCrLf
-        strLinea = strLinea & "        <cbc:ID><![CDATA[" & Trim(PForm.txt_OrdenCompra.Text) & "]]></cbc:ID> " & vbCrLf
-        strLinea = strLinea & "    </cac:OrderReference> " & vbCrLf
+        StrLinea = StrLinea & "    <cac:OrderReference> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:ID><![CDATA[" & Trim(PForm.txt_OrdenCompra.Text) & "]]></cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "    </cac:OrderReference> " & vbCrLf
         End If
                 
-        strLinea = strLinea & "    <cac:Signature> " & vbCrLf
+        StrLinea = StrLinea & "    <cac:Signature> " & vbCrLf
         If pDocumento = "07" Or pDocumento = "08" Then
-        strLinea = strLinea & "        <cbc:ID>" & strRUC & "</cbc:ID> " & vbCrLf
-        strLinea = strLinea & "        <cbc:Note>" & STREMP & "</cbc:Note> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:ID>" & strRUC & "</cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:Note>" & STREMP & "</cbc:Note> " & vbCrLf
         Else
-        strLinea = strLinea & "        <cbc:ID>IDSignSP</cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:ID>IDSignSP</cbc:ID> " & vbCrLf
         End If
-        strLinea = strLinea & "        <cac:SignatoryParty> " & vbCrLf
-        strLinea = strLinea & "            <cac:PartyIdentification> " & vbCrLf
-        strLinea = strLinea & "                <cbc:ID>" & strRUC & "</cbc:ID> " & vbCrLf
-        strLinea = strLinea & "            </cac:PartyIdentification> " & vbCrLf
-        strLinea = strLinea & "            <cac:PartyName> " & vbCrLf
-        strLinea = strLinea & "                <cbc:Name><![CDATA[" & STREMP & "]]></cbc:Name> " & vbCrLf
-        strLinea = strLinea & "            </cac:PartyName> " & vbCrLf
-        strLinea = strLinea & "        </cac:SignatoryParty> " & vbCrLf
-        strLinea = strLinea & "        <cac:DigitalSignatureAttachment> " & vbCrLf
-        strLinea = strLinea & "            <cac:ExternalReference> " & vbCrLf
-        strLinea = strLinea & "                <cbc:URI>#SignatureSP</cbc:URI> " & vbCrLf
-        strLinea = strLinea & "            </cac:ExternalReference> " & vbCrLf
-        strLinea = strLinea & "        </cac:DigitalSignatureAttachment> " & vbCrLf
-        strLinea = strLinea & "    </cac:Signature> " & vbCrLf
-        strLinea = strLinea & "    <cac:AccountingSupplierParty> " & vbCrLf
+        StrLinea = StrLinea & "        <cac:SignatoryParty> " & vbCrLf
+        StrLinea = StrLinea & "            <cac:PartyIdentification> " & vbCrLf
+        StrLinea = StrLinea & "                <cbc:ID>" & strRUC & "</cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "            </cac:PartyIdentification> " & vbCrLf
+        StrLinea = StrLinea & "            <cac:PartyName> " & vbCrLf
+        StrLinea = StrLinea & "                <cbc:Name><![CDATA[" & STREMP & "]]></cbc:Name> " & vbCrLf
+        StrLinea = StrLinea & "            </cac:PartyName> " & vbCrLf
+        StrLinea = StrLinea & "        </cac:SignatoryParty> " & vbCrLf
+        StrLinea = StrLinea & "        <cac:DigitalSignatureAttachment> " & vbCrLf
+        StrLinea = StrLinea & "            <cac:ExternalReference> " & vbCrLf
+        StrLinea = StrLinea & "                <cbc:URI>#SignatureSP</cbc:URI> " & vbCrLf
+        StrLinea = StrLinea & "            </cac:ExternalReference> " & vbCrLf
+        StrLinea = StrLinea & "        </cac:DigitalSignatureAttachment> " & vbCrLf
+        StrLinea = StrLinea & "    </cac:Signature> " & vbCrLf
+        StrLinea = StrLinea & "    <cac:AccountingSupplierParty> " & vbCrLf
 '        strLinea = strLinea & "        <cbc:CustomerAssignedAccountID>" & strRUC & "</cbc:CustomerAssignedAccountID> " & vbCrLf
 '        strLinea = strLinea & "        <cbc:AdditionalAccountID>6</cbc:AdditionalAccountID> " & vbCrLf
 '        strLinea = strLinea & "        <cac:Party> " & vbCrLf
@@ -3756,158 +3756,158 @@ Dim bolExportacion As Boolean
 '        strLinea = strLinea & "        </cac:Party> " & vbCrLf
 '        strLinea = strLinea & "    </cac:AccountingCustomerParty> " & vbCrLf
         
-        strLinea = strLinea & "    <cac:Party> " & vbCrLf
-        strLinea = strLinea & "      <cac:PartyIdentification> " & vbCrLf
-        strLinea = strLinea & "        <cbc:ID schemeID=""6"" schemeName=""SUNAT:Identificador de Documento de Identidad"" schemeAgencyName=""PE:SUNAT"" schemeURI=""urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo06"">" & strRUC & "</cbc:ID> " & vbCrLf
-        strLinea = strLinea & "      </cac:PartyIdentification> " & vbCrLf
-        strLinea = strLinea & "      <cac:PartyName> " & vbCrLf
-        strLinea = strLinea & "        <cbc:Name>" & STREMP & "</cbc:Name> " & vbCrLf
-        strLinea = strLinea & "      </cac:PartyName> " & vbCrLf
-        strLinea = strLinea & "      <cac:PartyLegalEntity> " & vbCrLf
-        strLinea = strLinea & "        <cbc:RegistrationName>" & STREMP & "</cbc:RegistrationName> " & vbCrLf
-        strLinea = strLinea & "        <cac:RegistrationAddress> " & vbCrLf
-        strLinea = strLinea & "          <cbc:AddressTypeCode>" & pRecEmp("idDistrito") & "</cbc:AddressTypeCode> " & vbCrLf
-        strLinea = strLinea & "        </cac:RegistrationAddress> " & vbCrLf
-        strLinea = strLinea & "      </cac:PartyLegalEntity> " & vbCrLf
-        strLinea = strLinea & "    </cac:Party> " & vbCrLf
-        strLinea = strLinea & "  </cac:AccountingSupplierParty> " & vbCrLf
-        strLinea = strLinea & "  <cac:AccountingCustomerParty> " & vbCrLf
-        strLinea = strLinea & "    <cac:Party> " & vbCrLf
-        strLinea = strLinea & "      <cac:PartyIdentification> " & vbCrLf
-        strLinea = strLinea & "        <cbc:ID schemeID=""" & pRecCab("idTipoDocIdentidad") & """ schemeName=""SUNAT:Identificador de Documento de Identidad"" schemeAgencyName=""PE:SUNAT"" schemeURI=""urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo06"">" & pRecCab("RucCliente") & "</cbc:ID> " & vbCrLf
-        strLinea = strLinea & "      </cac:PartyIdentification> " & vbCrLf
-        strLinea = strLinea & "      <cac:PartyLegalEntity> " & vbCrLf
-        strLinea = strLinea & "        <cbc:RegistrationName>" & QuitarCaracteresEspeciales("" & pRecCab("GlsCliente")) & "</cbc:RegistrationName> " & vbCrLf
-        strLinea = strLinea & "      </cac:PartyLegalEntity> " & vbCrLf
-        strLinea = strLinea & "    </cac:Party> " & vbCrLf
-        strLinea = strLinea & "  </cac:AccountingCustomerParty> " & vbCrLf
+        StrLinea = StrLinea & "    <cac:Party> " & vbCrLf
+        StrLinea = StrLinea & "      <cac:PartyIdentification> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:ID schemeID=""6"" schemeName=""SUNAT:Identificador de Documento de Identidad"" schemeAgencyName=""PE:SUNAT"" schemeURI=""urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo06"">" & strRUC & "</cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "      </cac:PartyIdentification> " & vbCrLf
+        StrLinea = StrLinea & "      <cac:PartyName> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:Name>" & STREMP & "</cbc:Name> " & vbCrLf
+        StrLinea = StrLinea & "      </cac:PartyName> " & vbCrLf
+        StrLinea = StrLinea & "      <cac:PartyLegalEntity> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:RegistrationName>" & STREMP & "</cbc:RegistrationName> " & vbCrLf
+        StrLinea = StrLinea & "        <cac:RegistrationAddress> " & vbCrLf
+        StrLinea = StrLinea & "          <cbc:AddressTypeCode>" & pRecEmp("idDistrito") & "</cbc:AddressTypeCode> " & vbCrLf
+        StrLinea = StrLinea & "        </cac:RegistrationAddress> " & vbCrLf
+        StrLinea = StrLinea & "      </cac:PartyLegalEntity> " & vbCrLf
+        StrLinea = StrLinea & "    </cac:Party> " & vbCrLf
+        StrLinea = StrLinea & "  </cac:AccountingSupplierParty> " & vbCrLf
+        StrLinea = StrLinea & "  <cac:AccountingCustomerParty> " & vbCrLf
+        StrLinea = StrLinea & "    <cac:Party> " & vbCrLf
+        StrLinea = StrLinea & "      <cac:PartyIdentification> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:ID schemeID=""" & pRecCab("idTipoDocIdentidad") & """ schemeName=""SUNAT:Identificador de Documento de Identidad"" schemeAgencyName=""PE:SUNAT"" schemeURI=""urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo06"">" & pRecCab("RucCliente") & "</cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "      </cac:PartyIdentification> " & vbCrLf
+        StrLinea = StrLinea & "      <cac:PartyLegalEntity> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:RegistrationName>" & QuitarCaracteresEspeciales("" & pRecCab("GlsCliente")) & "</cbc:RegistrationName> " & vbCrLf
+        StrLinea = StrLinea & "      </cac:PartyLegalEntity> " & vbCrLf
+        StrLinea = StrLinea & "    </cac:Party> " & vbCrLf
+        StrLinea = StrLinea & "  </cac:AccountingCustomerParty> " & vbCrLf
         
-        strLinea = strLinea & "   <cac:TaxTotal> " & vbCrLf
-        strLinea = strLinea & "       <cbc:TaxAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecCab("TotalIGVVenta"), "0.00") & "</cbc:TaxAmount> " & vbCrLf
-        strLinea = strLinea & "       <cac:TaxSubtotal> " & vbCrLf
-        strLinea = strLinea & "           <cbc:TaxableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecCab("TotalValorVenta"), "0.00") & "</cbc:TaxableAmount>" & vbCrLf
-        strLinea = strLinea & "           <cbc:TaxAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecCab("TotalIGVVenta"), "0.00") & "</cbc:TaxAmount> " & vbCrLf
-        strLinea = strLinea & "           <cac:TaxCategory> " & vbCrLf
-        strLinea = strLinea & "               <cbc:ID schemeID=""UN/ECE 5305"" schemeName=""Tax Category Identifier"" schemeAgencyName=""United Nations Economic Commission for Europe"">" & IIf(Not bolExportacion, "S", "G") & "</cbc:ID>" & vbCrLf
-        strLinea = strLinea & "               <cac:TaxScheme> " & vbCrLf
+        StrLinea = StrLinea & "   <cac:TaxTotal> " & vbCrLf
+        StrLinea = StrLinea & "       <cbc:TaxAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecCab("TotalIGVVenta"), "0.00") & "</cbc:TaxAmount> " & vbCrLf
+        StrLinea = StrLinea & "       <cac:TaxSubtotal> " & vbCrLf
+        StrLinea = StrLinea & "           <cbc:TaxableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecCab("TotalValorVenta"), "0.00") & "</cbc:TaxableAmount>" & vbCrLf
+        StrLinea = StrLinea & "           <cbc:TaxAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecCab("TotalIGVVenta"), "0.00") & "</cbc:TaxAmount> " & vbCrLf
+        StrLinea = StrLinea & "           <cac:TaxCategory> " & vbCrLf
+        StrLinea = StrLinea & "               <cbc:ID schemeID=""UN/ECE 5305"" schemeName=""Tax Category Identifier"" schemeAgencyName=""United Nations Economic Commission for Europe"">" & IIf(Not bolExportacion, "S", "G") & "</cbc:ID>" & vbCrLf
+        StrLinea = StrLinea & "               <cac:TaxScheme> " & vbCrLf
         If Not bolExportacion Then
-        strLinea = strLinea & "                   <cbc:ID  schemeID=""UN/ECE 5153"" schemeAgencyID=""6"">1000</cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "                   <cbc:ID  schemeID=""UN/ECE 5153"" schemeAgencyID=""6"">1000</cbc:ID> " & vbCrLf
         Else
-        strLinea = strLinea & "                   <cbc:ID schemeName=""Codigo de tributos"" schemeAgencyName=""PE:SUNAT"" schemeURI=""urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05"">9995</cbc:ID>" & vbCrLf
+        StrLinea = StrLinea & "                   <cbc:ID schemeName=""Codigo de tributos"" schemeAgencyName=""PE:SUNAT"" schemeURI=""urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05"">9995</cbc:ID>" & vbCrLf
         End If
-        strLinea = strLinea & "                   <cbc:Name>" & IIf(Not bolExportacion, "IGV", "EXP") & "</cbc:Name> " & vbCrLf
-        strLinea = strLinea & "                   <cbc:TaxTypeCode>" & IIf(Not bolExportacion, "VAT", "FRE") & "</cbc:TaxTypeCode> " & vbCrLf
-        strLinea = strLinea & "               </cac:TaxScheme> " & vbCrLf
-        strLinea = strLinea & "           </cac:TaxCategory> " & vbCrLf
-        strLinea = strLinea & "    </cac:TaxSubtotal> " & vbCrLf
+        StrLinea = StrLinea & "                   <cbc:Name>" & IIf(Not bolExportacion, "IGV", "EXP") & "</cbc:Name> " & vbCrLf
+        StrLinea = StrLinea & "                   <cbc:TaxTypeCode>" & IIf(Not bolExportacion, "VAT", "FRE") & "</cbc:TaxTypeCode> " & vbCrLf
+        StrLinea = StrLinea & "               </cac:TaxScheme> " & vbCrLf
+        StrLinea = StrLinea & "           </cac:TaxCategory> " & vbCrLf
+        StrLinea = StrLinea & "    </cac:TaxSubtotal> " & vbCrLf
         
         If (pDocumento = "01" Or pDocumento = "03") And Not bolExportacion Then
         'INICIO
-        strLinea = strLinea & "    <cac:TaxSubtotal> " & vbCrLf
-        strLinea = strLinea & "         <cbc:TaxableAmount currencyID=""" & pRecCab("idMoneda") & """>0.00</cbc:TaxableAmount> " & vbCrLf
-        strLinea = strLinea & "         <cbc:TaxAmount currencyID=""" & pRecCab("idMoneda") & """>0.00</cbc:TaxAmount> " & vbCrLf
-        strLinea = strLinea & "         <cac:TaxCategory> " & vbCrLf
-        strLinea = strLinea & "            <cac:TaxScheme> " & vbCrLf
-        strLinea = strLinea & "                <cbc:ID>9996</cbc:ID> " & vbCrLf
-        strLinea = strLinea & "               <cbc:Name>GRA</cbc:Name> " & vbCrLf
-        strLinea = strLinea & "               <cbc:TaxTypeCode>FRE</cbc:TaxTypeCode> " & vbCrLf
-        strLinea = strLinea & "            </cac:TaxScheme> " & vbCrLf
-        strLinea = strLinea & "            </cac:TaxCategory> " & vbCrLf
-        strLinea = strLinea & "    </cac:TaxSubtotal> " & vbCrLf
+        StrLinea = StrLinea & "    <cac:TaxSubtotal> " & vbCrLf
+        StrLinea = StrLinea & "         <cbc:TaxableAmount currencyID=""" & pRecCab("idMoneda") & """>0.00</cbc:TaxableAmount> " & vbCrLf
+        StrLinea = StrLinea & "         <cbc:TaxAmount currencyID=""" & pRecCab("idMoneda") & """>0.00</cbc:TaxAmount> " & vbCrLf
+        StrLinea = StrLinea & "         <cac:TaxCategory> " & vbCrLf
+        StrLinea = StrLinea & "            <cac:TaxScheme> " & vbCrLf
+        StrLinea = StrLinea & "                <cbc:ID>9996</cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "               <cbc:Name>GRA</cbc:Name> " & vbCrLf
+        StrLinea = StrLinea & "               <cbc:TaxTypeCode>FRE</cbc:TaxTypeCode> " & vbCrLf
+        StrLinea = StrLinea & "            </cac:TaxScheme> " & vbCrLf
+        StrLinea = StrLinea & "            </cac:TaxCategory> " & vbCrLf
+        StrLinea = StrLinea & "    </cac:TaxSubtotal> " & vbCrLf
         
-        strLinea = strLinea & "    <cac:TaxSubtotal> " & vbCrLf
-        strLinea = strLinea & "         <cbc:TaxableAmount currencyID=""" & pRecCab("idMoneda") & """>0.00</cbc:TaxableAmount> " & vbCrLf
-        strLinea = strLinea & "         <cbc:TaxAmount currencyID=""" & pRecCab("idMoneda") & """>0.00</cbc:TaxAmount> " & vbCrLf
-        strLinea = strLinea & "         <cac:TaxCategory> " & vbCrLf
-        strLinea = strLinea & "            <cac:TaxScheme> " & vbCrLf
-        strLinea = strLinea & "               <cbc:ID>9997</cbc:ID> " & vbCrLf
-        strLinea = strLinea & "               <cbc:Name>EXO</cbc:Name> " & vbCrLf
-        strLinea = strLinea & "               <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode> " & vbCrLf
-        strLinea = strLinea & "            </cac:TaxScheme> " & vbCrLf
-        strLinea = strLinea & "         </cac:TaxCategory> " & vbCrLf
-        strLinea = strLinea & "    </cac:TaxSubtotal> " & vbCrLf
+        StrLinea = StrLinea & "    <cac:TaxSubtotal> " & vbCrLf
+        StrLinea = StrLinea & "         <cbc:TaxableAmount currencyID=""" & pRecCab("idMoneda") & """>0.00</cbc:TaxableAmount> " & vbCrLf
+        StrLinea = StrLinea & "         <cbc:TaxAmount currencyID=""" & pRecCab("idMoneda") & """>0.00</cbc:TaxAmount> " & vbCrLf
+        StrLinea = StrLinea & "         <cac:TaxCategory> " & vbCrLf
+        StrLinea = StrLinea & "            <cac:TaxScheme> " & vbCrLf
+        StrLinea = StrLinea & "               <cbc:ID>9997</cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "               <cbc:Name>EXO</cbc:Name> " & vbCrLf
+        StrLinea = StrLinea & "               <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode> " & vbCrLf
+        StrLinea = StrLinea & "            </cac:TaxScheme> " & vbCrLf
+        StrLinea = StrLinea & "         </cac:TaxCategory> " & vbCrLf
+        StrLinea = StrLinea & "    </cac:TaxSubtotal> " & vbCrLf
         ' FIN
         End If
         
-        strLinea = strLinea & "    </cac:TaxTotal> " & vbCrLf
+        StrLinea = StrLinea & "    </cac:TaxTotal> " & vbCrLf
         
         If pDocumento = "08" Then
-        strLinea = strLinea & "    <cac:RequestedMonetaryTotal> " & vbCrLf
-        strLinea = strLinea & "        <cbc:PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecCab("TotalPrecioVenta"), "0.00") & "</cbc:PayableAmount> " & vbCrLf
-        strLinea = strLinea & "    </cac:RequestedMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "    <cac:RequestedMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecCab("TotalPrecioVenta"), "0.00") & "</cbc:PayableAmount> " & vbCrLf
+        StrLinea = StrLinea & "    </cac:RequestedMonetaryTotal> " & vbCrLf
         Else
-        strLinea = strLinea & "    <cac:LegalMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "    <cac:LegalMonetaryTotal> " & vbCrLf
         If Val("" & pRecCab.Fields("TotalDescuentoGlobalGravado")) > 0 Or Val("" & pRecCab.Fields("TotalDescuentoGlobalExonerado")) > 0 Then
-        strLinea = strLinea & "        <cbc:AllowanceTotalAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, Val("" & pRecCab.Fields("TotalDescuentoGlobalGravado")) + Val("" & pRecCab.Fields("TotalDescuentoGlobalExonerado"))), "0.00") & "</cbc:AllowanceTotalAmount> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:AllowanceTotalAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, Val("" & pRecCab.Fields("TotalDescuentoGlobalGravado")) + Val("" & pRecCab.Fields("TotalDescuentoGlobalExonerado"))), "0.00") & "</cbc:AllowanceTotalAmount> " & vbCrLf
         End If
-        strLinea = strLinea & "        <cbc:LineExtensionAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecCab("TotalValorVenta")), "0.00") & "</cbc:LineExtensionAmount> " & vbCrLf
-        strLinea = strLinea & "        <cbc:PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecCab("TotalPrecioVenta")), "0.00") & "</cbc:PayableAmount> " & vbCrLf
-        strLinea = strLinea & "    </cac:LegalMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:LineExtensionAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecCab("TotalValorVenta")), "0.00") & "</cbc:LineExtensionAmount> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecCab("TotalPrecioVenta")), "0.00") & "</cbc:PayableAmount> " & vbCrLf
+        StrLinea = StrLinea & "    </cac:LegalMonetaryTotal> " & vbCrLf
         End If
         
         csql = "Select If(Afecto = '1','" & IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, "11", "10") & "','" & IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, "16", "30") & "') Afecto,Cantidad,TotalVVNeto,PVUnit,TotalIGVNeto,glsProducto,idProducto,VVUnit from docventasdet where idEmpresa='" & glsEmpresa & "' and idDocumento='" & pDocumento & "' and idSerie='" & pSerie & "' and idDocVentas='" & PNumero & "' Order by item "
         Set pRecDet = New ADODB.Recordset
         pRecDet.Open csql, Cn
-        Print #IntFile, strLinea
+        Print #intFile, StrLinea
         item = 0
         'Detalle
         Do While Not pRecDet.EOF
             item = item + 1
-            strLinea = ""
-            strLinea = strLinea & "    <cac:" & CGlsCab & "Line> " & vbCrLf
-            strLinea = strLinea & "        <cbc:ID>" & item & "</cbc:ID> " & vbCrLf
-            strLinea = strLinea & "        <cbc:" & CGlsDet & "Quantity unitCode=""NIU"">" & pRecDet("Cantidad") & "</cbc:" & CGlsDet & "Quantity> " & vbCrLf
-            strLinea = strLinea & "        <cbc:LineExtensionAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecDet("TotalVVNeto")), "0.00") & "</cbc:LineExtensionAmount> " & vbCrLf
-            strLinea = strLinea & "        <cac:PricingReference> " & vbCrLf
-            strLinea = strLinea & "            <cac:AlternativeConditionPrice> " & vbCrLf
-            strLinea = strLinea & "                <cbc:PriceAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecDet("PVUnit")), "0.00") & "</cbc:PriceAmount> " & vbCrLf
-            strLinea = strLinea & "                <cbc:PriceTypeCode>01</cbc:PriceTypeCode> " & vbCrLf
-            strLinea = strLinea & "            </cac:AlternativeConditionPrice> " & vbCrLf
+            StrLinea = ""
+            StrLinea = StrLinea & "    <cac:" & CGlsCab & "Line> " & vbCrLf
+            StrLinea = StrLinea & "        <cbc:ID>" & item & "</cbc:ID> " & vbCrLf
+            StrLinea = StrLinea & "        <cbc:" & CGlsDet & "Quantity unitCode=""NIU"">" & pRecDet("Cantidad") & "</cbc:" & CGlsDet & "Quantity> " & vbCrLf
+            StrLinea = StrLinea & "        <cbc:LineExtensionAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecDet("TotalVVNeto")), "0.00") & "</cbc:LineExtensionAmount> " & vbCrLf
+            StrLinea = StrLinea & "        <cac:PricingReference> " & vbCrLf
+            StrLinea = StrLinea & "            <cac:AlternativeConditionPrice> " & vbCrLf
+            StrLinea = StrLinea & "                <cbc:PriceAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecDet("PVUnit")), "0.00") & "</cbc:PriceAmount> " & vbCrLf
+            StrLinea = StrLinea & "                <cbc:PriceTypeCode>01</cbc:PriceTypeCode> " & vbCrLf
+            StrLinea = StrLinea & "            </cac:AlternativeConditionPrice> " & vbCrLf
             If Val("" & pRecCab.Fields("IndVtaGratuita")) = 1 Then
-            strLinea = strLinea & "            <cac:AlternativeConditionPrice> " & vbCrLf
-            strLinea = strLinea & "                <cbc:PriceAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecDet("PVUnit"), "0.00") & "</cbc:PriceAmount> " & vbCrLf
-            strLinea = strLinea & "                <cbc:PriceTypeCode>02</cbc:PriceTypeCode> " & vbCrLf
-            strLinea = strLinea & "            </cac:AlternativeConditionPrice> " & vbCrLf
+            StrLinea = StrLinea & "            <cac:AlternativeConditionPrice> " & vbCrLf
+            StrLinea = StrLinea & "                <cbc:PriceAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecDet("PVUnit"), "0.00") & "</cbc:PriceAmount> " & vbCrLf
+            StrLinea = StrLinea & "                <cbc:PriceTypeCode>02</cbc:PriceTypeCode> " & vbCrLf
+            StrLinea = StrLinea & "            </cac:AlternativeConditionPrice> " & vbCrLf
             End If
-            strLinea = strLinea & "        </cac:PricingReference> " & vbCrLf
-            strLinea = strLinea & "        <cac:TaxTotal> " & vbCrLf
-            strLinea = strLinea & "            <cbc:TaxAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecDet("TotalIGVNeto"), "0.00") & "</cbc:TaxAmount> " & vbCrLf
-            strLinea = strLinea & "            <cac:TaxSubtotal> " & vbCrLf
-            strLinea = strLinea & "                <cbc:TaxableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecDet("TotalVVNeto"), "0.00") & "</cbc:TaxableAmount>" & vbCrLf
-            strLinea = strLinea & "                <cbc:TaxAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecDet("TotalIGVNeto"), "0.00") & "</cbc:TaxAmount> " & vbCrLf
-            strLinea = strLinea & "                <cac:TaxCategory> " & vbCrLf
-            strLinea = strLinea & "                    <cbc:Percent>18.00</cbc:Percent> " & vbCrLf
-            strLinea = strLinea & "                    <cbc:TaxExemptionReasonCode listAgencyName=""PE: SUNAT"" listName=""SUNAT:Codigo de Tipo de Afectacion del IGV"" listURI=""urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07"">" & IIf(Not bolExportacion, Trim("" & pRecDet.Fields("Afecto")), "40") & "</cbc:TaxExemptionReasonCode> " & vbCrLf
-            strLinea = strLinea & "                    <cac:TaxScheme> " & vbCrLf
-            strLinea = strLinea & "                        <cbc:ID>" & IIf(Not bolExportacion, "1000", "9995") & "</cbc:ID> " & vbCrLf
-            strLinea = strLinea & "                        <cbc:Name>" & IIf(Not bolExportacion, "IGV", "EXP") & "</cbc:Name> " & vbCrLf
-            strLinea = strLinea & "                        <cbc:TaxTypeCode>" & IIf(Not bolExportacion, "VAT", "FRE") & "</cbc:TaxTypeCode> " & vbCrLf
-            strLinea = strLinea & "                    </cac:TaxScheme> " & vbCrLf
-            strLinea = strLinea & "                </cac:TaxCategory> " & vbCrLf
-            strLinea = strLinea & "            </cac:TaxSubtotal> " & vbCrLf
-            strLinea = strLinea & "        </cac:TaxTotal> " & vbCrLf
-            strLinea = strLinea & "        <cac:Item> " & vbCrLf
-            strLinea = strLinea & "            <cbc:Description>" & QuitarCaracteresEspeciales("" & pRecDet("glsProducto")) & "</cbc:Description> " & vbCrLf
+            StrLinea = StrLinea & "        </cac:PricingReference> " & vbCrLf
+            StrLinea = StrLinea & "        <cac:TaxTotal> " & vbCrLf
+            StrLinea = StrLinea & "            <cbc:TaxAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecDet("TotalIGVNeto"), "0.00") & "</cbc:TaxAmount> " & vbCrLf
+            StrLinea = StrLinea & "            <cac:TaxSubtotal> " & vbCrLf
+            StrLinea = StrLinea & "                <cbc:TaxableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecDet("TotalVVNeto"), "0.00") & "</cbc:TaxableAmount>" & vbCrLf
+            StrLinea = StrLinea & "                <cbc:TaxAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecDet("TotalIGVNeto"), "0.00") & "</cbc:TaxAmount> " & vbCrLf
+            StrLinea = StrLinea & "                <cac:TaxCategory> " & vbCrLf
+            StrLinea = StrLinea & "                    <cbc:Percent>18.00</cbc:Percent> " & vbCrLf
+            StrLinea = StrLinea & "                    <cbc:TaxExemptionReasonCode listAgencyName=""PE: SUNAT"" listName=""SUNAT:Codigo de Tipo de Afectacion del IGV"" listURI=""urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07"">" & IIf(Not bolExportacion, Trim("" & pRecDet.Fields("Afecto")), "40") & "</cbc:TaxExemptionReasonCode> " & vbCrLf
+            StrLinea = StrLinea & "                    <cac:TaxScheme> " & vbCrLf
+            StrLinea = StrLinea & "                        <cbc:ID>" & IIf(Not bolExportacion, "1000", "9995") & "</cbc:ID> " & vbCrLf
+            StrLinea = StrLinea & "                        <cbc:Name>" & IIf(Not bolExportacion, "IGV", "EXP") & "</cbc:Name> " & vbCrLf
+            StrLinea = StrLinea & "                        <cbc:TaxTypeCode>" & IIf(Not bolExportacion, "VAT", "FRE") & "</cbc:TaxTypeCode> " & vbCrLf
+            StrLinea = StrLinea & "                    </cac:TaxScheme> " & vbCrLf
+            StrLinea = StrLinea & "                </cac:TaxCategory> " & vbCrLf
+            StrLinea = StrLinea & "            </cac:TaxSubtotal> " & vbCrLf
+            StrLinea = StrLinea & "        </cac:TaxTotal> " & vbCrLf
+            StrLinea = StrLinea & "        <cac:Item> " & vbCrLf
+            StrLinea = StrLinea & "            <cbc:Description>" & QuitarCaracteresEspeciales("" & pRecDet("glsProducto")) & "</cbc:Description> " & vbCrLf
             'strLinea = strLinea & "            <cac:SellersItemIdentification> " & vbCrLf
             'strLinea = strLinea & "                <cbc:ID>" & pRecDet("idProducto") & "</cbc:ID> " & vbCrLf
             'strLinea = strLinea & "            </cac:SellersItemIdentification> " & vbCrLf
             If bolExportacion Then
-            strLinea = strLinea & "            <cac:CommodityClassification> " & vbCrLf
-            strLinea = strLinea & "                <cbc:ItemClassificationCode listID=""UNSPSC"" listAgencyName=""GS1 US"" listName=""Item Classification"">50000000</cbc:ItemClassificationCode>" & vbCrLf
-            strLinea = strLinea & "            </cac:CommodityClassification> " & vbCrLf
+            StrLinea = StrLinea & "            <cac:CommodityClassification> " & vbCrLf
+            StrLinea = StrLinea & "                <cbc:ItemClassificationCode listID=""UNSPSC"" listAgencyName=""GS1 US"" listName=""Item Classification"">50000000</cbc:ItemClassificationCode>" & vbCrLf
+            StrLinea = StrLinea & "            </cac:CommodityClassification> " & vbCrLf
             End If
-            strLinea = strLinea & "        </cac:Item> " & vbCrLf
-            strLinea = strLinea & "        <cac:Price> " & vbCrLf
-            strLinea = strLinea & "            <cbc:PriceAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecDet("VVUnit")), "0.00") & "</cbc:PriceAmount> " & vbCrLf
-            strLinea = strLinea & "        </cac:Price> " & vbCrLf
-            strLinea = strLinea & "    </cac:" & CGlsCab & "Line> " & vbCrLf
-            Print #IntFile, strLinea
+            StrLinea = StrLinea & "        </cac:Item> " & vbCrLf
+            StrLinea = StrLinea & "        <cac:Price> " & vbCrLf
+            StrLinea = StrLinea & "            <cbc:PriceAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecDet("VVUnit")), "0.00") & "</cbc:PriceAmount> " & vbCrLf
+            StrLinea = StrLinea & "        </cac:Price> " & vbCrLf
+            StrLinea = StrLinea & "    </cac:" & CGlsCab & "Line> " & vbCrLf
+            Print #intFile, StrLinea
             pRecDet.MoveNext
         Loop
         'strLinea = strLinea & "</Invoice>" & vbCrLf
-        strLinea = "</" & CGlsCab & ">" & vbCrLf
-        Print #IntFile, strLinea
-        Close #IntFile
+        StrLinea = "</" & CGlsCab & ">" & vbCrLf
+        Print #intFile, StrLinea
+        Close #intFile
     End If
     MsgBox "Se creo el archivo XML, en unos momentos se enviara al sistema SOL", vbInformation
     
@@ -3918,7 +3918,7 @@ Dim bolExportacion As Boolean
     Exit Sub
 Err:
     If StrMsgError = "" Then StrMsgError = Err.Description
-    Close #IntFile
+    Close #intFile
     Exit Sub
     Resume
 End Sub
@@ -3978,115 +3978,115 @@ Dim RetVal
         CCarpeta = leeParametro("CARPETA_XML_VE")
         
         strRuta = CCarpeta & "\" & strRUC & "-09-" & pRecCab("idSerie") & "-" & pRecCab("idDocVentas") & ".xml"
-        IntFile = FreeFile
-        Open strRuta For Output As #IntFile
+        intFile = FreeFile
+        Open strRuta For Output As #intFile
         'Cabecera
-        strLinea = ""
-        strLinea = strLinea & "<?xml version=""1.0"" encoding=""UTF-8""?> " & vbCrLf
-        strLinea = strLinea & "<" & CGlsCab & " " & vbCrLf
-        strLinea = strLinea & "    xmlns=""urn:oasis:names:specification:ubl:schema:xsd:" & CGlsCab & "-2"" " & vbCrLf
-        strLinea = strLinea & "    xmlns:ds=""http://www.w3.org/2000/09/xmldsig#"" " & vbCrLf
-        strLinea = strLinea & "    xmlns:cac=""urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"" " & vbCrLf
-        strLinea = strLinea & "    xmlns:cbc=""urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"" " & vbCrLf
-        strLinea = strLinea & "    xmlns:ext=""urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2""> " & vbCrLf
-        strLinea = strLinea & "    <ext:UBLExtensions> " & vbCrLf
-        strLinea = strLinea & "        <ext:UBLExtension> " & vbCrLf
-        strLinea = strLinea & "            <ext:ExtensionContent/> " & vbCrLf
-        strLinea = strLinea & "        </ext:UBLExtension> " & vbCrLf
-        strLinea = strLinea & "        <ext:UBLExtension " & vbCrLf
-        strLinea = strLinea & "            xmlns="""" " & vbCrLf
-        strLinea = strLinea & "            xmlns:ar=""urn:oasis:names:specification:ubl:schema:xsd:ApplicationResponse-2""> " & vbCrLf
-        strLinea = strLinea & "            <ext:ExtensionContent> " & vbCrLf
+        StrLinea = ""
+        StrLinea = StrLinea & "<?xml version=""1.0"" encoding=""UTF-8""?> " & vbCrLf
+        StrLinea = StrLinea & "<" & CGlsCab & " " & vbCrLf
+        StrLinea = StrLinea & "    xmlns=""urn:oasis:names:specification:ubl:schema:xsd:" & CGlsCab & "-2"" " & vbCrLf
+        StrLinea = StrLinea & "    xmlns:ds=""http://www.w3.org/2000/09/xmldsig#"" " & vbCrLf
+        StrLinea = StrLinea & "    xmlns:cac=""urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"" " & vbCrLf
+        StrLinea = StrLinea & "    xmlns:cbc=""urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"" " & vbCrLf
+        StrLinea = StrLinea & "    xmlns:ext=""urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2""> " & vbCrLf
+        StrLinea = StrLinea & "    <ext:UBLExtensions> " & vbCrLf
+        StrLinea = StrLinea & "        <ext:UBLExtension> " & vbCrLf
+        StrLinea = StrLinea & "            <ext:ExtensionContent/> " & vbCrLf
+        StrLinea = StrLinea & "        </ext:UBLExtension> " & vbCrLf
+        StrLinea = StrLinea & "        <ext:UBLExtension " & vbCrLf
+        StrLinea = StrLinea & "            xmlns="""" " & vbCrLf
+        StrLinea = StrLinea & "            xmlns:ar=""urn:oasis:names:specification:ubl:schema:xsd:ApplicationResponse-2""> " & vbCrLf
+        StrLinea = StrLinea & "            <ext:ExtensionContent> " & vbCrLf
                                                'FIRMA
-        strLinea = strLinea & "            </ext:ExtensionContent> " & vbCrLf
-        strLinea = strLinea & "        </ext:UBLExtension> " & vbCrLf
-        strLinea = strLinea & "    </ext:UBLExtensions> " & vbCrLf
-        strLinea = strLinea & "    <cbc:UBLVersionID>2.1</cbc:UBLVersionID> " & vbCrLf
-        strLinea = strLinea & "    <cbc:CustomizationID>1.0</cbc:CustomizationID> " & vbCrLf
-        strLinea = strLinea & "    <cbc:ID>" & pSerie & "-" & PNumero & "</cbc:ID> " & vbCrLf
-        strLinea = strLinea & "    <cbc:IssueDate>" & Format(pRecCab.Fields("FecEmision"), "yyyy-mm-dd") & "</cbc:IssueDate> " & vbCrLf
-        strLinea = strLinea & "    <cbc:IssueTime>" & pRecCab.Fields("FecEmision") & "</cbc:IssueTime> " & vbCrLf
-        strLinea = strLinea & "    <cbc:DespatchAdviceTypeCode>09</cbc:DespatchAdviceTypeCode> " & vbCrLf
-        strLinea = strLinea & "    <cbc:Note>" & pRecCab.Fields("ObsDocVentas") & "</cbc:Note> " & vbCrLf
-        strLinea = strLinea & "    <cac:DespatchSupplierParty> " & vbCrLf
-        strLinea = strLinea & "        <cbc:CustomerAssignedAccountID schemeID=""6"">" & strRUC & "</cbc:CustomerAssignedAccountID> " & vbCrLf
-        strLinea = strLinea & "        <cac:Party> " & vbCrLf
-        strLinea = strLinea & "            <cac:PartyLegalEntity> " & vbCrLf
-        strLinea = strLinea & "                <cbc:RegistrationName>" & STREMP & "</cbc:RegistrationName> " & vbCrLf
-        strLinea = strLinea & "            </cac:PartyLegalEntity> " & vbCrLf
-        strLinea = strLinea & "        </cac:Party> " & vbCrLf
-        strLinea = strLinea & "    </cac:DespatchSupplierParty> " & vbCrLf
-        strLinea = strLinea & "    <cac:DeliveryCustomerParty> " & vbCrLf
-        strLinea = strLinea & "        <cbc:CustomerAssignedAccountID schemeID=""6"">" & strRUC & "</cbc:CustomerAssignedAccountID> " & vbCrLf
-        strLinea = strLinea & "        <cac:Party> " & vbCrLf
-        strLinea = strLinea & "            <cac:PartyLegalEntity> " & vbCrLf
-        strLinea = strLinea & "                <cbc:RegistrationName>" & STREMP & "</cbc:RegistrationName> " & vbCrLf
-        strLinea = strLinea & "            </cac:PartyLegalEntity> " & vbCrLf
-        strLinea = strLinea & "        </cac:Party> " & vbCrLf
-        strLinea = strLinea & "    </cac:DeliveryCustomerParty> " & vbCrLf
-        strLinea = strLinea & "    <cac:Shipment> " & vbCrLf
-        strLinea = strLinea & "        <cbc:ID>1</cbc:ID> " & vbCrLf
-        strLinea = strLinea & "        <cbc:HandlingCode>04</cbc:HandlingCode> " & vbCrLf
-        strLinea = strLinea & "        <cbc:Information/> " & vbCrLf
-        strLinea = strLinea & "        <cac:ShipmentStage> " & vbCrLf
-        strLinea = strLinea & "            <cbc:TransportModeCode>2</cbc:TransportModeCode> " & vbCrLf
-        strLinea = strLinea & "            <cac:TransitPeriod> " & vbCrLf
-        strLinea = strLinea & "                <cbc:StartDate>" & Format(pRecCab.Fields("FecEmision"), "yyyy-mm-dd") & "</cbc:StartDate> " & vbCrLf
-        strLinea = strLinea & "            </cac:TransitPeriod> " & vbCrLf
-        strLinea = strLinea & "            <cac:TransportMeans> " & vbCrLf
-        strLinea = strLinea & "                <cac:RoadTransport> " & vbCrLf
-        strLinea = strLinea & "                    <cbc:LicensePlateID>" & pRecCab.Fields("Placa") & "</cbc:LicensePlateID> " & vbCrLf
-        strLinea = strLinea & "                </cac:RoadTransport> " & vbCrLf
-        strLinea = strLinea & "            </cac:TransportMeans> " & vbCrLf
-        strLinea = strLinea & "            <cac:DriverPerson> " & vbCrLf
-        strLinea = strLinea & "                <cbc:ID schemeID=""1"">" & traerCampo("Personas", "Ruc", "IdPersona", Trim("" & pRecCab.Fields("IdChofer")), False) & "</cbc:ID> " & vbCrLf 'Falta DNI de Conductor
-        strLinea = strLinea & "            </cac:DriverPerson> " & vbCrLf
-        strLinea = strLinea & "        </cac:ShipmentStage> " & vbCrLf
-        strLinea = strLinea & "        <cac:Delivery> " & vbCrLf
-        strLinea = strLinea & "            <cac:DeliveryAddress> " & vbCrLf
-        strLinea = strLinea & "                <cbc:ID>" & traerCampo("Personas", "IdDistrito", "IdPersona", glsPersonaEmpresa, False) & "</cbc:ID> " & vbCrLf 'Falta Ubigeo Llegada
-        strLinea = strLinea & "                <cbc:StreetName>" & pRecCab.Fields("Llegada") & "</cbc:StreetName> " & vbCrLf 'Falta Direccion
-        strLinea = strLinea & "            </cac:DeliveryAddress> " & vbCrLf
-        strLinea = strLinea & "        </cac:Delivery> " & vbCrLf
-        strLinea = strLinea & "        <cac:TransportHandlingUnit> " & vbCrLf
-        strLinea = strLinea & "            <cbc:ID>" & pRecCab.Fields("Placa") & "</cbc:ID> " & vbCrLf
-        strLinea = strLinea & "        </cac:TransportHandlingUnit> " & vbCrLf
-        strLinea = strLinea & "        <cac:OriginAddress> " & vbCrLf
-        strLinea = strLinea & "            <cbc:ID>" & traerCampo("Personas", "IdDistrito", "Ruc", "" & strRUC, False) & "</cbc:ID> " & vbCrLf
-        strLinea = strLinea & "            <cbc:StreetName>" & traerCampo("Personas", "Direccion", "Ruc", "" & strRUC, False) & "</cbc:StreetName> " & vbCrLf
-        strLinea = strLinea & "        </cac:OriginAddress> " & vbCrLf
-        strLinea = strLinea & "    </cac:Shipment> " & vbCrLf
+        StrLinea = StrLinea & "            </ext:ExtensionContent> " & vbCrLf
+        StrLinea = StrLinea & "        </ext:UBLExtension> " & vbCrLf
+        StrLinea = StrLinea & "    </ext:UBLExtensions> " & vbCrLf
+        StrLinea = StrLinea & "    <cbc:UBLVersionID>2.1</cbc:UBLVersionID> " & vbCrLf
+        StrLinea = StrLinea & "    <cbc:CustomizationID>1.0</cbc:CustomizationID> " & vbCrLf
+        StrLinea = StrLinea & "    <cbc:ID>" & pSerie & "-" & PNumero & "</cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "    <cbc:IssueDate>" & Format(pRecCab.Fields("FecEmision"), "yyyy-mm-dd") & "</cbc:IssueDate> " & vbCrLf
+        StrLinea = StrLinea & "    <cbc:IssueTime>" & pRecCab.Fields("FecEmision") & "</cbc:IssueTime> " & vbCrLf
+        StrLinea = StrLinea & "    <cbc:DespatchAdviceTypeCode>09</cbc:DespatchAdviceTypeCode> " & vbCrLf
+        StrLinea = StrLinea & "    <cbc:Note>" & pRecCab.Fields("ObsDocVentas") & "</cbc:Note> " & vbCrLf
+        StrLinea = StrLinea & "    <cac:DespatchSupplierParty> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:CustomerAssignedAccountID schemeID=""6"">" & strRUC & "</cbc:CustomerAssignedAccountID> " & vbCrLf
+        StrLinea = StrLinea & "        <cac:Party> " & vbCrLf
+        StrLinea = StrLinea & "            <cac:PartyLegalEntity> " & vbCrLf
+        StrLinea = StrLinea & "                <cbc:RegistrationName>" & STREMP & "</cbc:RegistrationName> " & vbCrLf
+        StrLinea = StrLinea & "            </cac:PartyLegalEntity> " & vbCrLf
+        StrLinea = StrLinea & "        </cac:Party> " & vbCrLf
+        StrLinea = StrLinea & "    </cac:DespatchSupplierParty> " & vbCrLf
+        StrLinea = StrLinea & "    <cac:DeliveryCustomerParty> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:CustomerAssignedAccountID schemeID=""6"">" & strRUC & "</cbc:CustomerAssignedAccountID> " & vbCrLf
+        StrLinea = StrLinea & "        <cac:Party> " & vbCrLf
+        StrLinea = StrLinea & "            <cac:PartyLegalEntity> " & vbCrLf
+        StrLinea = StrLinea & "                <cbc:RegistrationName>" & STREMP & "</cbc:RegistrationName> " & vbCrLf
+        StrLinea = StrLinea & "            </cac:PartyLegalEntity> " & vbCrLf
+        StrLinea = StrLinea & "        </cac:Party> " & vbCrLf
+        StrLinea = StrLinea & "    </cac:DeliveryCustomerParty> " & vbCrLf
+        StrLinea = StrLinea & "    <cac:Shipment> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:ID>1</cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:HandlingCode>04</cbc:HandlingCode> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:Information/> " & vbCrLf
+        StrLinea = StrLinea & "        <cac:ShipmentStage> " & vbCrLf
+        StrLinea = StrLinea & "            <cbc:TransportModeCode>2</cbc:TransportModeCode> " & vbCrLf
+        StrLinea = StrLinea & "            <cac:TransitPeriod> " & vbCrLf
+        StrLinea = StrLinea & "                <cbc:StartDate>" & Format(pRecCab.Fields("FecEmision"), "yyyy-mm-dd") & "</cbc:StartDate> " & vbCrLf
+        StrLinea = StrLinea & "            </cac:TransitPeriod> " & vbCrLf
+        StrLinea = StrLinea & "            <cac:TransportMeans> " & vbCrLf
+        StrLinea = StrLinea & "                <cac:RoadTransport> " & vbCrLf
+        StrLinea = StrLinea & "                    <cbc:LicensePlateID>" & pRecCab.Fields("Placa") & "</cbc:LicensePlateID> " & vbCrLf
+        StrLinea = StrLinea & "                </cac:RoadTransport> " & vbCrLf
+        StrLinea = StrLinea & "            </cac:TransportMeans> " & vbCrLf
+        StrLinea = StrLinea & "            <cac:DriverPerson> " & vbCrLf
+        StrLinea = StrLinea & "                <cbc:ID schemeID=""1"">" & traerCampo("Personas", "Ruc", "IdPersona", Trim("" & pRecCab.Fields("IdChofer")), False) & "</cbc:ID> " & vbCrLf 'Falta DNI de Conductor
+        StrLinea = StrLinea & "            </cac:DriverPerson> " & vbCrLf
+        StrLinea = StrLinea & "        </cac:ShipmentStage> " & vbCrLf
+        StrLinea = StrLinea & "        <cac:Delivery> " & vbCrLf
+        StrLinea = StrLinea & "            <cac:DeliveryAddress> " & vbCrLf
+        StrLinea = StrLinea & "                <cbc:ID>" & traerCampo("Personas", "IdDistrito", "IdPersona", glsPersonaEmpresa, False) & "</cbc:ID> " & vbCrLf 'Falta Ubigeo Llegada
+        StrLinea = StrLinea & "                <cbc:StreetName>" & pRecCab.Fields("Llegada") & "</cbc:StreetName> " & vbCrLf 'Falta Direccion
+        StrLinea = StrLinea & "            </cac:DeliveryAddress> " & vbCrLf
+        StrLinea = StrLinea & "        </cac:Delivery> " & vbCrLf
+        StrLinea = StrLinea & "        <cac:TransportHandlingUnit> " & vbCrLf
+        StrLinea = StrLinea & "            <cbc:ID>" & pRecCab.Fields("Placa") & "</cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "        </cac:TransportHandlingUnit> " & vbCrLf
+        StrLinea = StrLinea & "        <cac:OriginAddress> " & vbCrLf
+        StrLinea = StrLinea & "            <cbc:ID>" & traerCampo("Personas", "IdDistrito", "Ruc", "" & strRUC, False) & "</cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "            <cbc:StreetName>" & traerCampo("Personas", "Direccion", "Ruc", "" & strRUC, False) & "</cbc:StreetName> " & vbCrLf
+        StrLinea = StrLinea & "        </cac:OriginAddress> " & vbCrLf
+        StrLinea = StrLinea & "    </cac:Shipment> " & vbCrLf
         
         csql = "Select If(Afecto = '1','" & IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, "11", "10") & "','" & IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, "16", "30") & "') Afecto,Cantidad,TotalVVNeto,PVUnit,TotalIGVNeto,glsProducto,idProducto,VVUnit from docventasdet where idEmpresa='" & glsEmpresa & "' and idDocumento='" & pDocumento & "' and idSerie='" & pSerie & "' and idDocVentas='" & PNumero & "' Order by item "
         Set pRecDet = New ADODB.Recordset
         pRecDet.Open csql, Cn
-        Print #IntFile, strLinea
+        Print #intFile, StrLinea
         item = 0
         'Detalle
         Do While Not pRecDet.EOF
         item = item + 1
-        strLinea = ""
-        strLinea = strLinea & "    <cac:" & CGlsCab & "Line> " & vbCrLf
-        strLinea = strLinea & "        <cbc:ID>" & item & "</cbc:ID> " & vbCrLf
-        strLinea = strLinea & "        <cbc:" & CGlsDet & "Quantity unitCode=""C62"">" & pRecDet("Cantidad") & "</cbc:" & CGlsDet & "Quantity> " & vbCrLf
-        strLinea = strLinea & "        <cac:OrderLineReference> " & vbCrLf
-        strLinea = strLinea & "            <cbc:LineID>" & item & "</cbc:LineID> " & vbCrLf
-        strLinea = strLinea & "        </cac:OrderLineReference> " & vbCrLf
-        strLinea = strLinea & "        <cac:Item> " & vbCrLf
-        strLinea = strLinea & "            <cbc:Name>" & pRecDet("GlsProducto") & "</cbc:Name> " & vbCrLf
-        strLinea = strLinea & "            <cac:SellersItemIdentification> " & vbCrLf
-        strLinea = strLinea & "                <cbc:ID>" & pRecDet("IdProducto") & "</cbc:ID> " & vbCrLf
-        strLinea = strLinea & "            </cac:SellersItemIdentification> " & vbCrLf
-        strLinea = strLinea & "        </cac:Item> " & vbCrLf
-        strLinea = strLinea & "    </cac:" & CGlsCab & "Line> " & vbCrLf
+        StrLinea = ""
+        StrLinea = StrLinea & "    <cac:" & CGlsCab & "Line> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:ID>" & item & "</cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "        <cbc:" & CGlsDet & "Quantity unitCode=""C62"">" & pRecDet("Cantidad") & "</cbc:" & CGlsDet & "Quantity> " & vbCrLf
+        StrLinea = StrLinea & "        <cac:OrderLineReference> " & vbCrLf
+        StrLinea = StrLinea & "            <cbc:LineID>" & item & "</cbc:LineID> " & vbCrLf
+        StrLinea = StrLinea & "        </cac:OrderLineReference> " & vbCrLf
+        StrLinea = StrLinea & "        <cac:Item> " & vbCrLf
+        StrLinea = StrLinea & "            <cbc:Name>" & pRecDet("GlsProducto") & "</cbc:Name> " & vbCrLf
+        StrLinea = StrLinea & "            <cac:SellersItemIdentification> " & vbCrLf
+        StrLinea = StrLinea & "                <cbc:ID>" & pRecDet("IdProducto") & "</cbc:ID> " & vbCrLf
+        StrLinea = StrLinea & "            </cac:SellersItemIdentification> " & vbCrLf
+        StrLinea = StrLinea & "        </cac:Item> " & vbCrLf
+        StrLinea = StrLinea & "    </cac:" & CGlsCab & "Line> " & vbCrLf
         
-            Print #IntFile, strLinea
+            Print #intFile, StrLinea
             pRecDet.MoveNext
         Loop
         
-        strLinea = "</" & CGlsCab & ">" & vbCrLf
-        Print #IntFile, strLinea
-        Close #IntFile
+        StrLinea = "</" & CGlsCab & ">" & vbCrLf
+        Print #intFile, StrLinea
+        Close #intFile
     End If
     MsgBox "Se creo el archivo XML, en unos momentos se enviara al sistema SOL", vbInformation
     
@@ -4097,7 +4097,7 @@ Dim RetVal
     Exit Sub
 Err:
     If StrMsgError = "" Then StrMsgError = Err.Description
-    Close #IntFile
+    Close #intFile
     Exit Sub
     Resume
 End Sub
@@ -4193,18 +4193,18 @@ Dim strRuta As String
         CCarpeta = leeParametro("CARPETA_XML_VE")
         
         strRuta = CCarpeta & "\" & strRUC & "-" & pRecCab("idDocumento") & "-" & pRecCab("idSerie") & "-" & pRecCab("idDocVentas") & ".xml"
-        IntFile = FreeFile
-        Open strRuta For Output As #IntFile
+        intFile = FreeFile
+        Open strRuta For Output As #intFile
         'Cabecera
-        strLinea = ""
-        strLinea = strLinea & "<?xml version=""1.0"" encoding=""ISO-8859-1"" standalone=""no""?> " & vbCrLf
-        strLinea = strLinea & "<" & CGlsCab & " " & vbCrLf
-        strLinea = strLinea & "    <IssueDate>" & Format(pRecCab("fecEmision"), "yyyy-mm-dd") & "</IssueDate> " & vbCrLf
+        StrLinea = ""
+        StrLinea = StrLinea & "<?xml version=""1.0"" encoding=""ISO-8859-1"" standalone=""no""?> " & vbCrLf
+        StrLinea = StrLinea & "<" & CGlsCab & " " & vbCrLf
+        StrLinea = StrLinea & "    <IssueDate>" & Format(pRecCab("fecEmision"), "yyyy-mm-dd") & "</IssueDate> " & vbCrLf
         If pDocumento <> "07" And pDocumento <> "08" Then
-        strLinea = strLinea & "    <InvoiceTypeCode>" & pRecCab("idDocumento") & "</InvoiceTypeCode> " & vbCrLf
+        StrLinea = StrLinea & "    <InvoiceTypeCode>" & pRecCab("idDocumento") & "</InvoiceTypeCode> " & vbCrLf
         End If
-        strLinea = strLinea & "    <ID>" & pRecCab("idSerie") & "-" & pRecCab("idDocVentas") & "</ID> " & vbCrLf
-        strLinea = strLinea & "    <DocumentCurrencyCode>" & pRecCab("idMoneda") & "</DocumentCurrencyCode> " & vbCrLf
+        StrLinea = StrLinea & "    <ID>" & pRecCab("idSerie") & "-" & pRecCab("idDocVentas") & "</ID> " & vbCrLf
+        StrLinea = StrLinea & "    <DocumentCurrencyCode>" & pRecCab("idMoneda") & "</DocumentCurrencyCode> " & vbCrLf
         
         If pDocumento = "07" Or pDocumento = "08" Then
         CSqlC = "Select A.TipoDocReferencia,A.SerieDocReferencia,A.NumDocReferencia " & _
@@ -4219,44 +4219,44 @@ Dim strRuta As String
         End If
         rsref.Close: Set rsref = Nothing
         
-        strLinea = strLinea & "    <BillingReference> " & vbCrLf
-        strLinea = strLinea & "        <InvoiceDocumentReference> " & vbCrLf
-        strLinea = strLinea & "            <ID>" & CIdSerieRef & "-" & CIdNumeroRef & "</ID> " & vbCrLf
-        strLinea = strLinea & "            <DocumentTypeCode>" & CIdDocumentoRef & "</DocumentTypeCode> " & vbCrLf
-        strLinea = strLinea & "        </InvoiceDocumentReference> " & vbCrLf
-        strLinea = strLinea & "    </BillingReference> " & vbCrLf
+        StrLinea = StrLinea & "    <BillingReference> " & vbCrLf
+        StrLinea = StrLinea & "        <InvoiceDocumentReference> " & vbCrLf
+        StrLinea = StrLinea & "            <ID>" & CIdSerieRef & "-" & CIdNumeroRef & "</ID> " & vbCrLf
+        StrLinea = StrLinea & "            <DocumentTypeCode>" & CIdDocumentoRef & "</DocumentTypeCode> " & vbCrLf
+        StrLinea = StrLinea & "        </InvoiceDocumentReference> " & vbCrLf
+        StrLinea = StrLinea & "    </BillingReference> " & vbCrLf
         
         End If
-        strLinea = strLinea & "    <AccountingSupplierParty> " & vbCrLf
-        strLinea = strLinea & "        <CustomerAssignedAccountID>" & strRUC & "</CustomerAssignedAccountID> " & vbCrLf
-        strLinea = strLinea & "        <AdditionalAccountID>6</AdditionalAccountID> " & vbCrLf
-        strLinea = strLinea & "        <Party> " & vbCrLf
-        strLinea = strLinea & "            <PartyName> " & vbCrLf
-        strLinea = strLinea & "                <Name>" & STREMP & "</Name> " & vbCrLf
-        strLinea = strLinea & "            </PartyName> " & vbCrLf
-        strLinea = strLinea & "            <PostalAddress> " & vbCrLf
-        strLinea = strLinea & "                <ID>" & pRecEmp("idDistrito") & "</ID> " & vbCrLf
-        strLinea = strLinea & "                <StreetName>" & STREMP & "</StreetName> " & vbCrLf
-        strLinea = strLinea & "                <CitySubdivisionName></CitySubdivisionName> " & vbCrLf
-        strLinea = strLinea & "                <CityName>" & strDpt & "</CityName> " & vbCrLf
-        strLinea = strLinea & "                <CountrySubentity>" & strPrv & "</CountrySubentity> " & vbCrLf
-        strLinea = strLinea & "                <District>" & pRecEmp("glsUbigeo") & "</District> " & vbCrLf
-        strLinea = strLinea & "                <Country> " & vbCrLf
-        strLinea = strLinea & "                    <IdentificationCode>PE</IdentificationCode> " & vbCrLf
-        strLinea = strLinea & "                </Country> " & vbCrLf
-        strLinea = strLinea & "            </PostalAddress> " & vbCrLf
-        strLinea = strLinea & "            <PartyLegalEntity> " & vbCrLf
-        strLinea = strLinea & "                <RegistrationName>" & STREMP & "</RegistrationName> " & vbCrLf
-        strLinea = strLinea & "            </PartyLegalEntity> " & vbCrLf
-        strLinea = strLinea & "        </Party> " & vbCrLf
-        strLinea = strLinea & "    </AccountingSupplierParty> " & vbCrLf
-        strLinea = strLinea & "    <AccountingCustomerParty> " & vbCrLf
-        strLinea = strLinea & "        <CustomerAssignedAccountID>" & pRecCab("RucCliente") & "</CustomerAssignedAccountID> " & vbCrLf
-        strLinea = strLinea & "        <AdditionalAccountID>" & pRecCab("idTipoDocIdentidad") & "</AdditionalAccountID> " & vbCrLf
-        strLinea = strLinea & "        <Party> " & vbCrLf
-        strLinea = strLinea & "            <PartyName> " & vbCrLf
-        strLinea = strLinea & "                <Name>" & pRecCab("GlsCliente") & "</Name> " & vbCrLf
-        strLinea = strLinea & "            </PartyName> " & vbCrLf
+        StrLinea = StrLinea & "    <AccountingSupplierParty> " & vbCrLf
+        StrLinea = StrLinea & "        <CustomerAssignedAccountID>" & strRUC & "</CustomerAssignedAccountID> " & vbCrLf
+        StrLinea = StrLinea & "        <AdditionalAccountID>6</AdditionalAccountID> " & vbCrLf
+        StrLinea = StrLinea & "        <Party> " & vbCrLf
+        StrLinea = StrLinea & "            <PartyName> " & vbCrLf
+        StrLinea = StrLinea & "                <Name>" & STREMP & "</Name> " & vbCrLf
+        StrLinea = StrLinea & "            </PartyName> " & vbCrLf
+        StrLinea = StrLinea & "            <PostalAddress> " & vbCrLf
+        StrLinea = StrLinea & "                <ID>" & pRecEmp("idDistrito") & "</ID> " & vbCrLf
+        StrLinea = StrLinea & "                <StreetName>" & STREMP & "</StreetName> " & vbCrLf
+        StrLinea = StrLinea & "                <CitySubdivisionName></CitySubdivisionName> " & vbCrLf
+        StrLinea = StrLinea & "                <CityName>" & strDpt & "</CityName> " & vbCrLf
+        StrLinea = StrLinea & "                <CountrySubentity>" & strPrv & "</CountrySubentity> " & vbCrLf
+        StrLinea = StrLinea & "                <District>" & pRecEmp("glsUbigeo") & "</District> " & vbCrLf
+        StrLinea = StrLinea & "                <Country> " & vbCrLf
+        StrLinea = StrLinea & "                    <IdentificationCode>PE</IdentificationCode> " & vbCrLf
+        StrLinea = StrLinea & "                </Country> " & vbCrLf
+        StrLinea = StrLinea & "            </PostalAddress> " & vbCrLf
+        StrLinea = StrLinea & "            <PartyLegalEntity> " & vbCrLf
+        StrLinea = StrLinea & "                <RegistrationName>" & STREMP & "</RegistrationName> " & vbCrLf
+        StrLinea = StrLinea & "            </PartyLegalEntity> " & vbCrLf
+        StrLinea = StrLinea & "        </Party> " & vbCrLf
+        StrLinea = StrLinea & "    </AccountingSupplierParty> " & vbCrLf
+        StrLinea = StrLinea & "    <AccountingCustomerParty> " & vbCrLf
+        StrLinea = StrLinea & "        <CustomerAssignedAccountID>" & pRecCab("RucCliente") & "</CustomerAssignedAccountID> " & vbCrLf
+        StrLinea = StrLinea & "        <AdditionalAccountID>" & pRecCab("idTipoDocIdentidad") & "</AdditionalAccountID> " & vbCrLf
+        StrLinea = StrLinea & "        <Party> " & vbCrLf
+        StrLinea = StrLinea & "            <PartyName> " & vbCrLf
+        StrLinea = StrLinea & "                <Name>" & pRecCab("GlsCliente") & "</Name> " & vbCrLf
+        StrLinea = StrLinea & "            </PartyName> " & vbCrLf
         'strLinea = strLinea & "            <PostalAddress> " & vbCrLf
         'strLinea = strLinea & "                <ID>" & pRecEmp("idDistrito") & "</ID> " & vbCrLf
         'strLinea = strLinea & "                <StreetName>" & pRecEmp("glsEmpresa") & "</StreetName> " & vbCrLf
@@ -4268,113 +4268,113 @@ Dim strRuta As String
         'strLinea = strLinea & "                    <IdentificationCode>PE</IdentificationCode> " & vbCrLf
         'strLinea = strLinea & "                </Country> " & vbCrLf
         'strLinea = strLinea & "            </PostalAddress> " & vbCrLf
-        strLinea = strLinea & "            <PartyLegalEntity> " & vbCrLf
-        strLinea = strLinea & "                <RegistrationName>" & pRecCab("GlsCliente") & "</RegistrationName> " & vbCrLf
-        strLinea = strLinea & "            </PartyLegalEntity> " & vbCrLf
-        strLinea = strLinea & "        </Party> " & vbCrLf
-        strLinea = strLinea & "    </AccountingCustomerParty> " & vbCrLf
-        strLinea = strLinea & "    <TaxTotal> " & vbCrLf
-        strLinea = strLinea & "        <TaxAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecCab("TotalIGVVenta"), "0.00") & "</TaxAmount> " & vbCrLf
-        strLinea = strLinea & "        <TaxSubtotal> " & vbCrLf
-        strLinea = strLinea & "            <TaxAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecCab("TotalIGVVenta"), "0.00") & "</TaxAmount> " & vbCrLf
-        strLinea = strLinea & "            <TaxCategory> " & vbCrLf
-        strLinea = strLinea & "                <TaxScheme> " & vbCrLf
-        strLinea = strLinea & "                    <ID>1000</ID> " & vbCrLf
-        strLinea = strLinea & "                    <Name>IGV</Name> " & vbCrLf
-        strLinea = strLinea & "                    <TaxTypeCode>VAT</TaxTypeCode> " & vbCrLf
-        strLinea = strLinea & "                </TaxScheme> " & vbCrLf
-        strLinea = strLinea & "            </TaxCategory> " & vbCrLf
-        strLinea = strLinea & "        </TaxSubtotal> " & vbCrLf
-        strLinea = strLinea & "    </TaxTotal> " & vbCrLf
-        strLinea = strLinea & "    <LegalMonetaryTotal> " & vbCrLf
-        strLinea = strLinea & "        <PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecCab("TotalPrecioVenta")), "0.00") & "</PayableAmount> " & vbCrLf
-        strLinea = strLinea & "    </LegalMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "            <PartyLegalEntity> " & vbCrLf
+        StrLinea = StrLinea & "                <RegistrationName>" & pRecCab("GlsCliente") & "</RegistrationName> " & vbCrLf
+        StrLinea = StrLinea & "            </PartyLegalEntity> " & vbCrLf
+        StrLinea = StrLinea & "        </Party> " & vbCrLf
+        StrLinea = StrLinea & "    </AccountingCustomerParty> " & vbCrLf
+        StrLinea = StrLinea & "    <TaxTotal> " & vbCrLf
+        StrLinea = StrLinea & "        <TaxAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecCab("TotalIGVVenta"), "0.00") & "</TaxAmount> " & vbCrLf
+        StrLinea = StrLinea & "        <TaxSubtotal> " & vbCrLf
+        StrLinea = StrLinea & "            <TaxAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecCab("TotalIGVVenta"), "0.00") & "</TaxAmount> " & vbCrLf
+        StrLinea = StrLinea & "            <TaxCategory> " & vbCrLf
+        StrLinea = StrLinea & "                <TaxScheme> " & vbCrLf
+        StrLinea = StrLinea & "                    <ID>1000</ID> " & vbCrLf
+        StrLinea = StrLinea & "                    <Name>IGV</Name> " & vbCrLf
+        StrLinea = StrLinea & "                    <TaxTypeCode>VAT</TaxTypeCode> " & vbCrLf
+        StrLinea = StrLinea & "                </TaxScheme> " & vbCrLf
+        StrLinea = StrLinea & "            </TaxCategory> " & vbCrLf
+        StrLinea = StrLinea & "        </TaxSubtotal> " & vbCrLf
+        StrLinea = StrLinea & "    </TaxTotal> " & vbCrLf
+        StrLinea = StrLinea & "    <LegalMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "        <PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecCab("TotalPrecioVenta")), "0.00") & "</PayableAmount> " & vbCrLf
+        StrLinea = StrLinea & "    </LegalMonetaryTotal> " & vbCrLf
         csql = "Select If(Afecto = '1','" & IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, "11", "10") & "','" & IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, "16", "30") & "') Afecto,Cantidad,TotalVVNeto,PVUnit,TotalIGVNeto,glsProducto,idProducto,VVUnit from docventasdet where idEmpresa='" & glsEmpresa & "' and idDocumento='" & pDocumento & "' and idSerie='" & pSerie & "' and idDocVentas='" & PNumero & "' Order by item "
         Set pRecDet = New ADODB.Recordset
         pRecDet.Open csql, Cn
-        Print #IntFile, strLinea
+        Print #intFile, StrLinea
         item = 0
         'Detalle
         Do While Not pRecDet.EOF
         item = item + 1
-        strLinea = ""
-        strLinea = strLinea & "    <" & CGlsCab & "Line> " & vbCrLf
-        strLinea = strLinea & "        <ID>" & item & "</ID> " & vbCrLf
-        strLinea = strLinea & "        <" & CGlsDet & "Quantity unitCode=""NIU"">" & pRecDet("Cantidad") & "</" & CGlsDet & "Quantity> " & vbCrLf
-        strLinea = strLinea & "        <LineExtensionAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecDet("TotalVVNeto")), "0.00") & "</LineExtensionAmount> " & vbCrLf
-        strLinea = strLinea & "        <PricingReference> " & vbCrLf
-        strLinea = strLinea & "            <AlternativeConditionPrice> " & vbCrLf
-        strLinea = strLinea & "                <PriceAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecDet("PVUnit")), "0.00") & "</PriceAmount> " & vbCrLf
-        strLinea = strLinea & "                <PriceTypeCode>01</PriceTypeCode> " & vbCrLf
-        strLinea = strLinea & "            </AlternativeConditionPrice> " & vbCrLf
+        StrLinea = ""
+        StrLinea = StrLinea & "    <" & CGlsCab & "Line> " & vbCrLf
+        StrLinea = StrLinea & "        <ID>" & item & "</ID> " & vbCrLf
+        StrLinea = StrLinea & "        <" & CGlsDet & "Quantity unitCode=""NIU"">" & pRecDet("Cantidad") & "</" & CGlsDet & "Quantity> " & vbCrLf
+        StrLinea = StrLinea & "        <LineExtensionAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecDet("TotalVVNeto")), "0.00") & "</LineExtensionAmount> " & vbCrLf
+        StrLinea = StrLinea & "        <PricingReference> " & vbCrLf
+        StrLinea = StrLinea & "            <AlternativeConditionPrice> " & vbCrLf
+        StrLinea = StrLinea & "                <PriceAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecDet("PVUnit")), "0.00") & "</PriceAmount> " & vbCrLf
+        StrLinea = StrLinea & "                <PriceTypeCode>01</PriceTypeCode> " & vbCrLf
+        StrLinea = StrLinea & "            </AlternativeConditionPrice> " & vbCrLf
         If Val("" & pRecCab.Fields("IndVtaGratuita")) = 1 Then
-        strLinea = strLinea & "            <AlternativeConditionPrice> " & vbCrLf
-        strLinea = strLinea & "                <PriceAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecDet("PVUnit"), "0.00") & "</PriceAmount> " & vbCrLf
-        strLinea = strLinea & "                <PriceTypeCode>02</PriceTypeCode> " & vbCrLf
-        strLinea = strLinea & "            </AlternativeConditionPrice> " & vbCrLf
+        StrLinea = StrLinea & "            <AlternativeConditionPrice> " & vbCrLf
+        StrLinea = StrLinea & "                <PriceAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecDet("PVUnit"), "0.00") & "</PriceAmount> " & vbCrLf
+        StrLinea = StrLinea & "                <PriceTypeCode>02</PriceTypeCode> " & vbCrLf
+        StrLinea = StrLinea & "            </AlternativeConditionPrice> " & vbCrLf
         End If
-        strLinea = strLinea & "        </PricingReference> " & vbCrLf
-        strLinea = strLinea & "        <TaxTotal> " & vbCrLf
-        strLinea = strLinea & "            <TaxAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecDet("TotalIGVNeto"), "0.00") & "</TaxAmount> " & vbCrLf
-        strLinea = strLinea & "            <TaxSubtotal> " & vbCrLf
-        strLinea = strLinea & "                <TaxAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecDet("TotalIGVNeto"), "0.00") & "</TaxAmount> " & vbCrLf
-        strLinea = strLinea & "                <TaxCategory> " & vbCrLf
-        strLinea = strLinea & "                    <TaxExemptionReasonCode>" & Trim("" & pRecDet.Fields("Afecto")) & "</TaxExemptionReasonCode> " & vbCrLf
-        strLinea = strLinea & "                    <TaxScheme> " & vbCrLf
-        strLinea = strLinea & "                        <ID>1000</ID> " & vbCrLf
-        strLinea = strLinea & "                        <Name>IGV</Name> " & vbCrLf
-        strLinea = strLinea & "                        <TaxTypeCode>VAT</TaxTypeCode> " & vbCrLf
-        strLinea = strLinea & "                    </TaxScheme> " & vbCrLf
-        strLinea = strLinea & "                </TaxCategory> " & vbCrLf
-        strLinea = strLinea & "            </TaxSubtotal> " & vbCrLf
-        strLinea = strLinea & "        </TaxTotal> " & vbCrLf
-        strLinea = strLinea & "        <Item> " & vbCrLf
-        strLinea = strLinea & "            <Description>" & pRecDet("glsProducto") & "</Description> " & vbCrLf
-        strLinea = strLinea & "            <SellersItemIdentification> " & vbCrLf
-        strLinea = strLinea & "                <ID>" & pRecDet("idProducto") & "</ID> " & vbCrLf
-        strLinea = strLinea & "            </SellersItemIdentification> " & vbCrLf
-        strLinea = strLinea & "        </Item> " & vbCrLf
-        strLinea = strLinea & "        <Price> " & vbCrLf
-        strLinea = strLinea & "            <PriceAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecDet("VVUnit")), "0.00") & "</PriceAmount> " & vbCrLf
-        strLinea = strLinea & "        </Price> " & vbCrLf
-        strLinea = strLinea & "    </" & CGlsCab & "Line> " & vbCrLf
+        StrLinea = StrLinea & "        </PricingReference> " & vbCrLf
+        StrLinea = StrLinea & "        <TaxTotal> " & vbCrLf
+        StrLinea = StrLinea & "            <TaxAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecDet("TotalIGVNeto"), "0.00") & "</TaxAmount> " & vbCrLf
+        StrLinea = StrLinea & "            <TaxSubtotal> " & vbCrLf
+        StrLinea = StrLinea & "                <TaxAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(pRecDet("TotalIGVNeto"), "0.00") & "</TaxAmount> " & vbCrLf
+        StrLinea = StrLinea & "                <TaxCategory> " & vbCrLf
+        StrLinea = StrLinea & "                    <TaxExemptionReasonCode>" & Trim("" & pRecDet.Fields("Afecto")) & "</TaxExemptionReasonCode> " & vbCrLf
+        StrLinea = StrLinea & "                    <TaxScheme> " & vbCrLf
+        StrLinea = StrLinea & "                        <ID>1000</ID> " & vbCrLf
+        StrLinea = StrLinea & "                        <Name>IGV</Name> " & vbCrLf
+        StrLinea = StrLinea & "                        <TaxTypeCode>VAT</TaxTypeCode> " & vbCrLf
+        StrLinea = StrLinea & "                    </TaxScheme> " & vbCrLf
+        StrLinea = StrLinea & "                </TaxCategory> " & vbCrLf
+        StrLinea = StrLinea & "            </TaxSubtotal> " & vbCrLf
+        StrLinea = StrLinea & "        </TaxTotal> " & vbCrLf
+        StrLinea = StrLinea & "        <Item> " & vbCrLf
+        StrLinea = StrLinea & "            <Description>" & pRecDet("glsProducto") & "</Description> " & vbCrLf
+        StrLinea = StrLinea & "            <SellersItemIdentification> " & vbCrLf
+        StrLinea = StrLinea & "                <ID>" & pRecDet("idProducto") & "</ID> " & vbCrLf
+        StrLinea = StrLinea & "            </SellersItemIdentification> " & vbCrLf
+        StrLinea = StrLinea & "        </Item> " & vbCrLf
+        StrLinea = StrLinea & "        <Price> " & vbCrLf
+        StrLinea = StrLinea & "            <PriceAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecDet("VVUnit")), "0.00") & "</PriceAmount> " & vbCrLf
+        StrLinea = StrLinea & "        </Price> " & vbCrLf
+        StrLinea = StrLinea & "    </" & CGlsCab & "Line> " & vbCrLf
         
-            Print #IntFile, strLinea
+            Print #intFile, StrLinea
             pRecDet.MoveNext
         Loop
-        strLinea = "    <AdditionalInformation> " & vbCrLf
-        strLinea = strLinea & "        <AdditionalMonetaryTotal> " & vbCrLf
-        strLinea = strLinea & "            <ID>1001</ID> " & vbCrLf
-        strLinea = strLinea & "            <PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecCab("TotalBaseImponible")), "0.00") & "</PayableAmount> " & vbCrLf
-        strLinea = strLinea & "        </AdditionalMonetaryTotal> " & vbCrLf
+        StrLinea = "    <AdditionalInformation> " & vbCrLf
+        StrLinea = StrLinea & "        <AdditionalMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "            <ID>1001</ID> " & vbCrLf
+        StrLinea = StrLinea & "            <PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecCab("TotalBaseImponible")), "0.00") & "</PayableAmount> " & vbCrLf
+        StrLinea = StrLinea & "        </AdditionalMonetaryTotal> " & vbCrLf
         
         If pDocumento <> "07" And pDocumento <> "08" Then
-        strLinea = strLinea & "        <AdditionalMonetaryTotal> " & vbCrLf
-        strLinea = strLinea & "            <ID>1002</ID> " & vbCrLf
-        strLinea = strLinea & "            <PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecCab("TotalExonerado")), "0.00") & "</PayableAmount> " & vbCrLf
-        strLinea = strLinea & "        </AdditionalMonetaryTotal> " & vbCrLf
-        strLinea = strLinea & "        <AdditionalMonetaryTotal> " & vbCrLf
-        strLinea = strLinea & "            <ID>1003</ID> " & vbCrLf
-        strLinea = strLinea & "            <PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(0, "0.00") & "</PayableAmount> " & vbCrLf
-        strLinea = strLinea & "        </AdditionalMonetaryTotal> " & vbCrLf
-        strLinea = strLinea & "        <AdditionalMonetaryTotal> " & vbCrLf
-        strLinea = strLinea & "            <ID>1004</ID> " & vbCrLf
-        strLinea = strLinea & "            <PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, pRecCab("TotalValorVenta"), 0), "0.00") & "</PayableAmount> " & vbCrLf
-        strLinea = strLinea & "        </AdditionalMonetaryTotal> " & vbCrLf
-        strLinea = strLinea & "        <AdditionalMonetaryTotal> " & vbCrLf
-        strLinea = strLinea & "            <ID>2005</ID> " & vbCrLf
-        strLinea = strLinea & "            <PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & pRecCab("TotalDescuento") & "</PayableAmount> " & vbCrLf
-        strLinea = strLinea & "        </AdditionalMonetaryTotal> " & vbCrLf
-        strLinea = strLinea & "        <AdditionalMonetaryTotal> " & vbCrLf
-        strLinea = strLinea & "            <ID>" & IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, "1002", "1000") & "</ID> " & vbCrLf
-        strLinea = strLinea & "            <Value>" & pRecCab("totalLetras") & "</Value> " & vbCrLf
-        strLinea = strLinea & "        </AdditionalMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "        <AdditionalMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "            <ID>1002</ID> " & vbCrLf
+        StrLinea = StrLinea & "            <PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, 0, pRecCab("TotalExonerado")), "0.00") & "</PayableAmount> " & vbCrLf
+        StrLinea = StrLinea & "        </AdditionalMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "        <AdditionalMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "            <ID>1003</ID> " & vbCrLf
+        StrLinea = StrLinea & "            <PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(0, "0.00") & "</PayableAmount> " & vbCrLf
+        StrLinea = StrLinea & "        </AdditionalMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "        <AdditionalMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "            <ID>1004</ID> " & vbCrLf
+        StrLinea = StrLinea & "            <PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & Format(IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, pRecCab("TotalValorVenta"), 0), "0.00") & "</PayableAmount> " & vbCrLf
+        StrLinea = StrLinea & "        </AdditionalMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "        <AdditionalMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "            <ID>2005</ID> " & vbCrLf
+        StrLinea = StrLinea & "            <PayableAmount currencyID=""" & pRecCab("idMoneda") & """>" & pRecCab("TotalDescuento") & "</PayableAmount> " & vbCrLf
+        StrLinea = StrLinea & "        </AdditionalMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "        <AdditionalMonetaryTotal> " & vbCrLf
+        StrLinea = StrLinea & "            <ID>" & IIf(Val("" & pRecCab.Fields("IndVtaGratuita")) = 1, "1002", "1000") & "</ID> " & vbCrLf
+        StrLinea = StrLinea & "            <Value>" & pRecCab("totalLetras") & "</Value> " & vbCrLf
+        StrLinea = StrLinea & "        </AdditionalMonetaryTotal> " & vbCrLf
         End If
         
-        strLinea = strLinea & "    </sac:AdditionalInformation> " & vbCrLf
-        strLinea = strLinea & "</" & CGlsCab & ">" & vbCrLf
-        Print #IntFile, strLinea
-        Close #IntFile
+        StrLinea = StrLinea & "    </sac:AdditionalInformation> " & vbCrLf
+        StrLinea = StrLinea & "</" & CGlsCab & ">" & vbCrLf
+        Print #intFile, StrLinea
+        Close #intFile
         
     End If
     
@@ -4387,7 +4387,7 @@ Dim strRuta As String
     Exit Sub
 Err:
     If StrMsgError = "" Then StrMsgError = Err.Description
-    Close #IntFile
+    Close #intFile
     Exit Sub
     Resume
 End Sub

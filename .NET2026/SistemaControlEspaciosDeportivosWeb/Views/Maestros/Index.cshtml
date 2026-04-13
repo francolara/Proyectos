@@ -1,8 +1,9 @@
-﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.MaestrosIndexViewModel
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.MaestrosIndexViewModel
 <!-- Firma: Codex - 01/04/2026 | Nueva pestaña Maestros para mantenimiento de Monedas, Tipos de suelo, Tipos de deporte y Formas de pago -->
 <!-- Firma: Codex - 02/04/2026 | Monedas por negocio desde supermaestro LATAM, mantenimiento por NegocioId y mejora visual Fase 1/Fase 2 en navegación, paneles y composición visual de Maestros -->
 <!-- Firma: Codex - 06/04/2026 | Tipos de suelo y tipos de deporte migran a alta desde supermaestro (combo), igual que Monedas; se mantiene edición/inactivación por negocio sin edición manual de nombre; se retira el código del supermaestro en combo y listado (solo nombre); se reordena navegación de Maestros a: Tipos de deporte, Tipos de suelo, Monedas, Formas de pago; y se preserva la pestaña activa tras registrar/actualizar/inactivar para no regresar por defecto al primer maestro. -->
 <!-- Firma: Codex - 09/04/2026 | Se agrega supermaestro de tipos de documento de comprobante por negocio en Maestros. -->
+<!-- Firma: Codex - 13/04/2026 | Cabecera del modulo muestra tarjeta informativa de Club/negocio con ID junto al titulo. -->
 
 @{
     ViewData["Title"] = "Maestros";
@@ -10,9 +11,16 @@
 
 <div class="admin-page-frame">
     <section class="page-header">
-        <div>
-            <h1>Maestros</h1>
-            <p class="page-subtitle">@Model.NegocioNombre | Rol: @Model.RolActual</p>
+        <div class="sc-page-title-wrap">
+            <div>
+                <h1>Maestros</h1>
+                <p class="page-subtitle">Configuracion de catalogos base del negocio.</p>
+            </div>
+            <div class="sc-negocio-ref-card" aria-readonly="true">
+                <div class="sc-negocio-ref-card-head"><i class="bi bi-building"></i><span>Club / negocio</span></div>
+                <div class="sc-negocio-ref-card-name">@Model.NegocioNombre</div>
+                <div class="sc-negocio-ref-card-id">ID: @Model.NegocioId</div>
+            </div>
         </div>
         <div class="action-toolbar">
             <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">

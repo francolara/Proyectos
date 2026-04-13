@@ -5,6 +5,7 @@
 <!-- Firma: Codex - 06/04/2026 | Se actualiza el titulo de la pantalla a "Configuracion del Club / Negocio", se agrega politica configurable para confirmar reservas por pago (sin pago, adelanto minimo %, o pago total 100%) y el porcentaje queda alineado a la derecha, solo entero y sin permitir punto/decimales. -->
 <!-- Firma: Codex - 09/04/2026 | Se agrega configuracion de emision CPE/Recibo interno, porcentaje IGV y mantenimiento de series por documento del negocio. -->
 <!-- Firma: Codex - 10/04/2026 | Reordena campos: IGV despues de moneda de trabajo y checks de emision debajo de direccion fiscal. -->
+<!-- Firma: Codex - 13/04/2026 | Se separa formulario en "Datos del club" y "Configuracion de Atributos"; confirmar reserva + porcentaje en primera fila, moneda + IGV en segunda fila. -->
 @{
     ViewData["Title"] = "Configuracion";
 }
@@ -34,7 +35,7 @@
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="NegocioId" />
     <input type="hidden" asp-for="Id" />
-    <div asp-validation-summary="ModelOnly" class="alert alert-danger shadow-sm mb-0"></div>
+    <div asp-validation-summary="All" class="alert alert-danger shadow-sm mb-0"></div>
 
     <section class="sc-form-card">
         <div class="sc-form-section">
@@ -57,33 +58,6 @@
                     <label asp-for="NumeroDocumento" class="form-label">Numero documento</label>
                     <input asp-for="NumeroDocumento" class="form-control" maxlength="20" />
                     <span asp-validation-for="NumeroDocumento" class="text-danger"></span>
-                </div>
-                <div class="col-md-4">
-                    <label asp-for="MonedaId" class="form-label">Moneda de trabajo</label>
-                    <select asp-for="MonedaId" asp-items="Model.Monedas" class="form-select"></select>
-                </div>
-                <div class="col-md-4">
-                    <label asp-for="PorcentajeIgv" class="form-label">IGV (%)</label>
-                    <input asp-for="PorcentajeIgv" class="form-control text-center" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" id="PorcentajeIgv" />
-                    <span asp-validation-for="PorcentajeIgv" class="text-danger"></span>
-                </div>
-                <div class="col-md-4">
-                    <label asp-for="PoliticaConfirmacionPago" class="form-label">Confirmar reserva requiere pago</label>
-                    <select asp-for="PoliticaConfirmacionPago" asp-items="Model.PoliticasConfirmacionPago" class="form-select" id="PoliticaConfirmacionPago"></select>
-                    <span asp-validation-for="PoliticaConfirmacionPago" class="text-danger"></span>
-                </div>
-                <div class="col-md-4" id="rowPorcentajeAdelantoMinimo">
-                    <label asp-for="PorcentajeAdelantoMinimo" class="form-label">Porcentaje minimo de adelanto (%)</label>
-                    <input asp-for="PorcentajeAdelantoMinimo"
-                           value="@(Model.PorcentajeAdelantoMinimo.HasValue ? Math.Truncate(Model.PorcentajeAdelantoMinimo.Value).ToString() : string.Empty)"
-                           class="form-control text-end"
-                           id="PorcentajeAdelantoMinimo"
-                           type="text"
-                           inputmode="numeric"
-                           pattern="[0-9]*"
-                           maxlength="3"
-                           autocomplete="off" />
-                    <span asp-validation-for="PorcentajeAdelantoMinimo" class="text-danger"></span>
                 </div>
                 <div class="col-12">
                     <label asp-for="DireccionFiscal" class="form-label">Direccion fiscal</label>
@@ -116,12 +90,46 @@
                         <input asp-for="EmisionComprobantesElectronicos" class="form-check-input mt-0" />
                         <span>Emision de comprobantes electronicos</span>
                     </label>
+                    <span asp-validation-for="EmisionComprobantesElectronicos" class="text-danger"></span>
                 </div>
                 <div class="col-md-4">
                     <label class="sc-check-chip">
                         <input asp-for="EmisionReciboInterno" class="form-check-input mt-0" />
                         <span>Emision de recibo interno</span>
                     </label>
+                    <span asp-validation-for="EmisionReciboInterno" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+        <div class="sc-form-section mt-3">
+            <h2 class="sc-form-title"><i class="bi bi-sliders"></i> Configuracion de Atributos</h2>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="PoliticaConfirmacionPago" class="form-label">Confirmar reserva requiere pago</label>
+                    <select asp-for="PoliticaConfirmacionPago" asp-items="Model.PoliticasConfirmacionPago" class="form-select" id="PoliticaConfirmacionPago"></select>
+                    <span asp-validation-for="PoliticaConfirmacionPago" class="text-danger"></span>
+                </div>
+                <div class="col-md-6" id="rowPorcentajeAdelantoMinimo">
+                    <label asp-for="PorcentajeAdelantoMinimo" class="form-label">Porcentaje minimo de adelanto (%)</label>
+                    <input asp-for="PorcentajeAdelantoMinimo"
+                           value="@(Model.PorcentajeAdelantoMinimo.HasValue ? Math.Truncate(Model.PorcentajeAdelantoMinimo.Value).ToString() : string.Empty)"
+                           class="form-control text-end"
+                           id="PorcentajeAdelantoMinimo"
+                           type="text"
+                           inputmode="numeric"
+                           pattern="[0-9]*"
+                           maxlength="3"
+                           autocomplete="off" />
+                    <span asp-validation-for="PorcentajeAdelantoMinimo" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="MonedaId" class="form-label">Moneda de trabajo</label>
+                    <select asp-for="MonedaId" asp-items="Model.Monedas" class="form-select"></select>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="PorcentajeIgv" class="form-label">IGV (%)</label>
+                    <input asp-for="PorcentajeIgv" class="form-control text-center" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" id="PorcentajeIgv" />
+                    <span asp-validation-for="PorcentajeIgv" class="text-danger"></span>
                 </div>
             </div>
         </div>

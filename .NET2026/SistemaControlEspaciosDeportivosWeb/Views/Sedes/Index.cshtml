@@ -2,6 +2,7 @@
 <!-- Firma: Codex - 30/03/2026 | Rediseno del listado de sedes con KPIs, filtro rapido y tabla detallada -->
 <!-- Firma: Codex - 05/04/2026 | Estandariza texto de estado para mostrar "No Asistio" en lugar de "No-show" en resumen de sedes. -->
 <!-- Firma: Codex - 09/04/2026 | Rediseno de cabecera del listado de sedes con icono superior y etiqueta pequena centrada por columna. -->
+<!-- Firma: Codex - 13/04/2026 | Cabecera del modulo muestra tarjeta informativa de Club/negocio con ID junto al titulo. -->
 
 @{
     ViewData["Title"] = "Sedes";
@@ -13,9 +14,16 @@
 
 <div class="admin-page-frame">
     <section class="page-header">
-        <div>
-            <h1>Sedes</h1>
-            <p class="page-subtitle">@Model.NegocioNombre | Rol: @Model.RolActual</p>
+        <div class="sc-page-title-wrap">
+            <div>
+                <h1>Sedes</h1>
+                <p class="page-subtitle">Administracion de sedes y cobertura operativa.</p>
+            </div>
+            <div class="sc-negocio-ref-card" aria-readonly="true">
+                <div class="sc-negocio-ref-card-head"><i class="bi bi-building"></i><span>Club / negocio</span></div>
+                <div class="sc-negocio-ref-card-name">@Model.NegocioNombre</div>
+                <div class="sc-negocio-ref-card-id">ID: @Model.NegocioId</div>
+            </div>
         </div>
         <div class="action-toolbar">
             @if (Model.PuedeCrear)

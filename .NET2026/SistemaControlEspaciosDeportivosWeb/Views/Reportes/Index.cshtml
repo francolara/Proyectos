@@ -1,5 +1,6 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ReportesIndexViewModel
 <!-- Firma: Codex - 27/03/2026 -->
+<!-- Firma: Codex - 13/04/2026 | Cabecera del modulo muestra tarjeta informativa de Club/negocio con ID junto al titulo. -->
 @{
     ViewData["Title"] = "Reportes";
 
@@ -10,11 +11,18 @@
 }
 
 <header class="page-header">
-    <div>
-        <h1>Reportes</h1>
-        <p class="page-subtitle">
-            Analiza la operacion del negocio por periodo. @Model.NegocioNombre | Rol: @Model.RolActual
-        </p>
+    <div class="sc-page-title-wrap">
+        <div>
+            <h1>Reportes</h1>
+            <p class="page-subtitle">
+                Analiza la operacion del negocio por periodo.
+            </p>
+        </div>
+        <div class="sc-negocio-ref-card" aria-readonly="true">
+            <div class="sc-negocio-ref-card-head"><i class="bi bi-building"></i><span>Club / negocio</span></div>
+            <div class="sc-negocio-ref-card-name">@Model.NegocioNombre</div>
+            <div class="sc-negocio-ref-card-id">ID: @Model.NegocioId</div>
+        </div>
     </div>
     <div class="action-toolbar">
         <a class="btn btn-outline-success"

@@ -1,5 +1,6 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.PagosIndexViewModel
 <!-- Firma: Codex - 09/04/2026 | Rediseno integral de listado de pagos por reserva (una fila por reserva), cabecera estandar con iconos, paginacion backend 20x20, accion eliminar por reserva y columna de saldo pendiente con simbolo de moneda. -->
+<!-- Firma: Codex - 13/04/2026 | Cabecera del modulo muestra tarjeta informativa de Club/negocio con ID junto al titulo. -->
 
 @{
     ViewData["Title"] = "Pagos";
@@ -19,9 +20,16 @@
     }
 
     <section class="page-header">
-        <div>
-            <h1>Pagos</h1>
-            <p class="page-subtitle">@Model.NegocioNombre | Rol: @Model.RolActual</p>
+        <div class="sc-page-title-wrap">
+            <div>
+                <h1>Pagos</h1>
+                <p class="page-subtitle">Control de pagos y saldos por reserva.</p>
+            </div>
+            <div class="sc-negocio-ref-card" aria-readonly="true">
+                <div class="sc-negocio-ref-card-head"><i class="bi bi-building"></i><span>Club / negocio</span></div>
+                <div class="sc-negocio-ref-card-name">@Model.NegocioNombre</div>
+                <div class="sc-negocio-ref-card-id">ID: @Model.NegocioId</div>
+            </div>
         </div>
         <div class="action-toolbar">
             @if (Model.PuedeCrear)
