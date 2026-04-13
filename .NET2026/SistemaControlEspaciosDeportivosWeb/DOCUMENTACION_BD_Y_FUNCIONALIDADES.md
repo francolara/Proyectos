@@ -96,6 +96,18 @@
 - `Sp_Comprobantes_Actualizar`
 - `Sp_Comprobantes_Eliminar`
 - `Sp_Comprobantes_Actualizar` y `Sp_Comprobantes_Eliminar` devuelven error si no existe el comprobante para el negocio.
+- `Sp_Comprobantes_Eliminar` marca el comprobante como anulado (`Estado = 5`) y libera la reserva asociada para permitir nueva emision de comprobante sobre reservas pagadas.
+- `Sp_ParametrosGlobales_ObtenerValor` retorna `ValorParametro` por `NombreParametro` para reglas de validacion configurables.
+
+### Parametros globales
+- Tabla:
+  - `ParametrosGlobales` (`ParametroId`, `NombreParametro`, `Descripcion`, `ValorParametro`)
+- Parametro inicial:
+  - `NombreParametro = VALIDA_MONTO_BSINDOC`
+  - `Descripcion = Monto Maximo para atencion de boletas sin DOC`
+  - `ValorParametro = 700`
+- Uso funcional:
+  - Validacion de comprobantes (`Boleta`) obtiene el `ValorParametro` por `NombreParametro` (sin valor fijo en codigo).
 
 ### 05_Sedes_Servicios.sql
 - Tablas:
@@ -585,6 +597,18 @@
     - elimina todos los pagos de la reserva.
     - deja la reserva en estado `Cancelada`.
 
+### 20260412_Pagos_Referencia_Ultimo_Comprobante.sql
+- SP actualizados:
+  - `Sp_Pagos_Listar`
+  - `Sp_Pagos_ObtenerPorId`
+- Objetivo:
+  - agregar columna `Referencia` al listado de pagos por reserva.
+  - la referencia muestra el **ultimo comprobante principal activo generado** de la reserva (`01` factura, `03` boleta, `RI` recibo interno), usando prioridad por `Id` (ultimo registro creado).
+  - si el ultimo comprobante principal esta anulado, no se muestra referencia.
+  - para boleta/factura, si tiene notas relacionadas activas (`07` NC o `08` ND), no se muestra referencia.
+  - al emitir un nuevo comprobante principal para la reserva, la referencia pasa a mostrar ese ultimo documento.
+  - en edicion de pagos (`Sp_Pagos_ObtenerPorId`) se expone `TieneComprobanteActivo` y `ReferenciaComprobante` para bloquear alta/eliminacion de pagos cuando la reserva ya tiene comprobante emitido.
+
 ## Flujo recomendado de despliegue SQL
 1. Ejecutar `00_Auditoria.sql`.
 2. Ejecutar `01_Seguridad_Panel.sql`.
@@ -847,6 +871,7 @@
   - si la reserva ya tiene comprobante activo (estado distinto de anulado), no se muestran botones de emision en listado de pagos.
 - Comprobantes (registro y validaciones comerciales):
   - en `Emitir comprobante`, el campo `Numero` queda solo lectura y se genera automaticamente al grabar (correlativo por `TipoComprobante + Serie`).
+  - si falta `Serie` al grabar, se muestra validacion inline en el combo (`NegocioSerieId`) ademas del resumen general.
   - `Sp_Comprobantes_Crear` actualiza datos editables del cliente desde el formulario de comprobante (`Correo`, `TipoDocumento`, `NumeroDocumento`, `DireccionFiscal`, `CodigoUbigeo`).
   - para `Boleta (03)`: valida `Total <= 700` y tipo de documento cliente en (`0`, `1`).
   - para `Factura (01)`: valida que el tipo de documento del cliente sea `RUC (6)`.
@@ -862,5 +887,30 @@
   - `Sp_Comprobantes_Listar` expone `EsTributario` y `UrlDescargaProveedor` para la UI.
   - se agrega `Sp_Comprobantes_ObtenerVisualizacion` para obtener datos de cabecera/detalle usados en la vista previa.
   - `Sp_Comprobantes_ObtenerVisualizacion` incluye ubigeo descriptivo (`Distrito/Provincia/Departamento`) de negocio y cliente para mostrarlo en la vista previa.
+- Comprobantes (NC/ND desde comprobante aceptado SUNAT - 11/04/2026):
+  - el listado de comprobantes agrega botones `Generar NC` y `Generar ND`; solo se habilitan cuando el comprobante origen es `Factura/Boleta` y esta en estado `Aceptado`.
+  - para `Recibo Interno (RI)` no se muestran botones `Generar NC/ND`.
+  - el listado agrega columna `Referencia`:
+    - en NC/ND muestra el comprobante origen (Factura/Boleta).
+    - en Factura/Boleta muestra las notas relacionadas (NC/ND) activas.
+  - si un comprobante ya tiene NC/ND relacionadas activas, el listado desactiva `Anular` y `Generar NC/ND`.
+  - se agrega flujo nuevo `CreateNota` (no reemplaza `Create`) para registrar Nota de Credito o Nota de Debito con:
+    - documento de referencia (tipo/serie/numero del comprobante origen).
+    - tipo de nota SUNAT obligatorio (combo segun `NC` o `ND`).
+    - tipo de documento fijo (`07` para NC, `08` para ND).
+  - se agrega tabla `dbo.TiposNotaComprobanteSunat` (maestro SUNAT de motivos NC/ND).
+  - `dbo.ComprobantesElectronicos` agrega:
+    - `ComprobanteReferenciaId` (FK a `ComprobantesElectronicos.Id`).
+    - `TipoNota` (`07` para NC, `08` para ND).
+    - `TipoNotaCodigoSunat`.
+  - se agrega `Sp_Combos_TiposNotaComprobanteSunat` para poblar el combo de tipo de nota.
+  - `Sp_Comprobantes_Crear` valida y crea NC/ND solo con comprobante referencia valido (Factura/Boleta aceptada SUNAT) y tipo de nota SUNAT activo.
+  - al generar `NC (07)`, el comprobante referencia se mantiene activo; la reemision del comprobante principal se habilita por regla de negocio en `Sp_Comprobantes_Crear` cuando existe NC activa sobre el comprobante principal.
+  - `Sp_Comprobantes_ObtenerPorId`, `Sp_Comprobantes_Listar` y `Sp_Comprobantes_ObtenerVisualizacion` ahora soportan codigos `07/08` y datos de nota/referencia.
+  - `Sp_Comprobantes_Listar` obtiene tipo/codigo/referencias desde `NegociosTiposDocumentoComprobante` + `TiposDocumentoComprobanteSuperMaestro` (sin mapeo rigido por Id), manteniendo comportamiento multi-negocio.
+  - en columnas `Referencia` (listado de comprobantes y pagos), el prefijo del documento usa `TiposDocumentoComprobanteSuperMaestro.Abreviatura` (con fallback a `Nombre`).
+  - en pagos y combos de reservas para comprobantes, la reserva se considera disponible para reemision cuando el comprobante principal activo tiene una NC activa asociada.
+  - se agrega script `20260413_Comprobantes_ReemisionPorNC_IndiceReserva.sql` para convertir `IX_ComprobantesElectronicos_ReservaId` a indice no unico (la restriccion de reemision por NC se controla en SP y no en filtro de indice).
+  - el indice `IX_ComprobantesElectronicos_ReservaId` pasa a unico filtrado por `NegocioId + ReservaId` para comprobante principal activo (`Estado <> 5` y `ComprobanteReferenciaId IS NULL`), permitiendo NC/ND y derivados futuros (`ComprobanteReferenciaId IS NOT NULL`) sin depender de codigos de `TipoComprobante`.
 - Reservas (listado general):
   - se agrega `Sp_Reservas_ListadoResumen` para KPI global del listado (Pendientes, Pagadas, Saldo total) con los mismos filtros del listado general y sin efecto de paginacion.

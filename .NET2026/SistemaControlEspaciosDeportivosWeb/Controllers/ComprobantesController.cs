@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
 using System.Globalization;
@@ -123,20 +124,202 @@ public class ComprobantesController(IModuloPermisoService moduloPermisoService, 
         }
         if (!model.NegocioSerieId.HasValue || model.NegocioSerieId <= 0)
         {
-            ModelState.AddModelError(string.Empty, "Selecciona una serie valida para el documento.");
+            ModelState.AddModelError(nameof(model.NegocioSerieId), "Selecciona una serie valida para el documento.");
         }
         NormalizarDatosCliente(model);
-        ValidarReglasDocumento(model);
+        var montoMaximoBoletaSinDoc = await ObtenerMontoMaximoBoletaSinDocAsync();
+        ValidarReglasDocumento(model, montoMaximoBoletaSinDoc);
         model.TipoComprobante = MapearTipoComprobante(model.CodigoDocumentoComprobante);
         if (!ModelState.IsValid) return View(model);
 
-        var id = await spService.ComprobantesCrearAsync(model, User.Identity?.Name ?? "sistema");
+        int id;
+        try
+        {
+            id = await spService.ComprobantesCrearAsync(model, User.Identity?.Name ?? "sistema");
+        }
+        catch (SqlException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            return View(model);
+        }
         var comprobanteCreado = await spService.ComprobantesObtenerAsync(model.NegocioId, id);
         if (comprobanteCreado is not null)
         {
             TempData["ComprobanteOk"] = $"Comprobante emitido: {comprobanteCreado.Serie}-{comprobanteCreado.Numero:D8}.";
         }
         return RedirectToAction(nameof(Edit), new { negocioId = model.NegocioId, id });
+    }
+
+    public async Task<IActionResult> CreateNota(int id, string tipoNota, int? negocioId)
+    {
+        var resolvedNegocioId = await ResolverNegocioIdAsync(negocioId, spService);
+        if (!resolvedNegocioId.HasValue) return Forbid();
+
+        var baseVm = await ObtenerBaseAsync(resolvedNegocioId.Value, "COMPROBANTES");
+        if (baseVm is null || !baseVm.PuedeCrear) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
+
+        var referencia = await spService.ComprobantesObtenerAsync(resolvedNegocioId.Value, id);
+        if (referencia is null) return NotFound();
+        if (!EsComprobanteAptoParaNota(referencia))
+        {
+            TempData["ComprobanteError"] = "Solo se puede generar NC/ND desde comprobantes Factura o Boleta aceptados por SUNAT.";
+            return RedirectToAction(nameof(Index), new { negocioId = resolvedNegocioId.Value });
+        }
+
+        var tipoNotaNormalizado = NormalizarTipoNota(tipoNota);
+        if (tipoNotaNormalizado is null)
+            return BadRequest("Tipo de nota no valido.");
+
+        var codigoDocumentoNota = CodigoDocumentoPorTipoNota(tipoNotaNormalizado);
+        var vm = new ComprobanteFormViewModel
+        {
+            NegocioId = resolvedNegocioId.Value,
+            NegocioNombre = baseVm.NegocioNombre,
+            RolActual = baseVm.RolActual,
+            ReservaId = referencia.ReservaId,
+            FechaEmision = DateTime.Today,
+            CodigoDocumentoComprobante = codigoDocumentoNota,
+            TipoComprobante = MapearTipoComprobante(codigoDocumentoNota),
+            DocumentoTributario = true,
+            Total = referencia.Total,
+            SubTotal = referencia.SubTotal,
+            Igv = referencia.Igv,
+            ClienteCorreo = referencia.ClienteCorreo,
+            ClienteTipoDocumento = referencia.ClienteTipoDocumento,
+            ClienteNumeroDocumento = referencia.ClienteNumeroDocumento,
+            ClienteDireccionFiscal = referencia.ClienteDireccionFiscal,
+            ClienteCodigoUbigeo = referencia.ClienteCodigoUbigeo,
+            EsNota = true,
+            TipoNota = tipoNotaNormalizado,
+            ComprobanteReferenciaId = referencia.Id,
+            ComprobanteReferenciaTipo = NombreDocumentoPorCodigo(referencia.CodigoDocumentoComprobante),
+            ComprobanteReferenciaSerie = referencia.Serie,
+            ComprobanteReferenciaNumero = referencia.Numero
+        };
+
+        await PoblarDatosComprobanteAsync(vm, baseVm, vm.ReservaId);
+        vm.CodigoDocumentoComprobante = codigoDocumentoNota;
+        vm.TipoComprobante = MapearTipoComprobante(codigoDocumentoNota);
+        vm.TiposDocumentoComprobante = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>
+        {
+            new(
+                $"{NombreDocumentoPorCodigo(codigoDocumentoNota)} ({codigoDocumentoNota})",
+                codigoDocumentoNota)
+        };
+
+        vm.TiposNotaSunat = await spService.CombosTiposNotaComprobanteSunatAsync(tipoNotaNormalizado);
+        vm.TipoNotaCodigoSunat = vm.TiposNotaSunat.FirstOrDefault()?.Value;
+        if (!vm.SeriesDocumento.Any())
+        {
+            ModelState.AddModelError(nameof(vm.NegocioSerieId), "No hay series habilitadas para este tipo de nota en la sede de la reserva.");
+        }
+        AplicarCalculoComprobante(vm);
+        return View(vm);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateNota(ComprobanteFormViewModel model)
+    {
+        var baseVm = await ObtenerBaseAsync(model.NegocioId, "COMPROBANTES");
+        if (baseVm is null || !baseVm.PuedeCrear) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
+
+        model.NegocioNombre = baseVm.NegocioNombre;
+        model.RolActual = baseVm.RolActual;
+        model.EsNota = true;
+
+        var tipoNotaNormalizado = NormalizarTipoNota(model.TipoNota);
+        if (tipoNotaNormalizado is null)
+        {
+            ModelState.AddModelError(nameof(model.TipoNota), "Tipo de nota no valido.");
+            tipoNotaNormalizado = "NC";
+        }
+
+        model.TipoNota = tipoNotaNormalizado;
+        var codigoDocumentoNota = CodigoDocumentoPorTipoNota(tipoNotaNormalizado);
+        model.CodigoDocumentoComprobante = codigoDocumentoNota;
+        model.TipoComprobante = MapearTipoComprobante(codigoDocumentoNota);
+        model.DocumentoTributario = true;
+
+        if (!model.ComprobanteReferenciaId.HasValue || model.ComprobanteReferenciaId <= 0)
+        {
+            ModelState.AddModelError(nameof(model.ComprobanteReferenciaId), "Selecciona un comprobante de referencia valido.");
+        }
+
+        ComprobanteFormViewModel? referencia = null;
+        if (model.ComprobanteReferenciaId.HasValue && model.ComprobanteReferenciaId > 0)
+        {
+            referencia = await spService.ComprobantesObtenerAsync(model.NegocioId, model.ComprobanteReferenciaId.Value);
+            if (referencia is null || !EsComprobanteAptoParaNota(referencia))
+            {
+                ModelState.AddModelError(nameof(model.ComprobanteReferenciaId), "El comprobante de referencia no es valido para emitir notas.");
+            }
+            else
+            {
+                model.ReservaId = referencia.ReservaId;
+                model.ComprobanteReferenciaTipo = NombreDocumentoPorCodigo(referencia.CodigoDocumentoComprobante);
+                model.ComprobanteReferenciaSerie = referencia.Serie;
+                model.ComprobanteReferenciaNumero = referencia.Numero;
+                if (model.Total <= 0)
+                {
+                    model.Total = referencia.Total;
+                }
+            }
+        }
+
+        await PoblarDatosComprobanteAsync(model, baseVm, model.ReservaId);
+        model.CodigoDocumentoComprobante = codigoDocumentoNota;
+        model.TipoComprobante = MapearTipoComprobante(codigoDocumentoNota);
+        model.TiposDocumentoComprobante = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>
+        {
+            new(
+                $"{NombreDocumentoPorCodigo(codigoDocumentoNota)} ({codigoDocumentoNota})",
+                codigoDocumentoNota)
+        };
+        model.TiposNotaSunat = await spService.CombosTiposNotaComprobanteSunatAsync(tipoNotaNormalizado);
+
+        if (!model.TiposNotaSunat.Any())
+        {
+            ModelState.AddModelError(string.Empty, "No existen tipos de nota configurados para SUNAT.");
+        }
+        else if (string.IsNullOrWhiteSpace(model.TipoNotaCodigoSunat) || !model.TiposNotaSunat.Any(x => string.Equals(x.Value, model.TipoNotaCodigoSunat, StringComparison.OrdinalIgnoreCase)))
+        {
+            ModelState.AddModelError(nameof(model.TipoNotaCodigoSunat), "Selecciona el tipo de nota SUNAT.");
+        }
+
+        if (!model.NegocioSerieId.HasValue || model.NegocioSerieId <= 0 || !model.SeriesDocumento.Any(x => x.Value == model.NegocioSerieId.Value.ToString(CultureInfo.InvariantCulture)))
+        {
+            ModelState.AddModelError(nameof(model.NegocioSerieId), "Selecciona una serie valida para la nota.");
+        }
+        else
+        {
+            var serieElegida = model.SeriesDocumento.FirstOrDefault(x => x.Value == model.NegocioSerieId.Value.ToString(CultureInfo.InvariantCulture));
+            model.Serie = serieElegida?.Text ?? model.Serie;
+        }
+
+        AplicarCalculoComprobante(model);
+        NormalizarDatosCliente(model);
+        var montoMaximoBoletaSinDoc = await ObtenerMontoMaximoBoletaSinDocAsync();
+        ValidarReglasDocumento(model, montoMaximoBoletaSinDoc);
+        if (!ModelState.IsValid) return View(model);
+
+        int idGenerado;
+        try
+        {
+            idGenerado = await spService.ComprobantesCrearAsync(model, User.Identity?.Name ?? "sistema");
+        }
+        catch (SqlException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            return View(model);
+        }
+        var comprobanteCreado = await spService.ComprobantesObtenerAsync(model.NegocioId, idGenerado);
+        if (comprobanteCreado is not null)
+        {
+            TempData["ComprobanteOk"] = $"{(tipoNotaNormalizado == "NC" ? "Nota de credito" : "Nota de debito")} generada: {comprobanteCreado.Serie}-{comprobanteCreado.Numero:D8}.";
+        }
+
+        return RedirectToAction(nameof(Edit), new { negocioId = model.NegocioId, id = idGenerado });
     }
 
     public async Task<IActionResult> Edit(int id, int? negocioId)
@@ -194,7 +377,8 @@ public class ComprobantesController(IModuloPermisoService moduloPermisoService, 
         AplicarCalculoComprobante(model);
         model.TipoComprobante = MapearTipoComprobante(model.CodigoDocumentoComprobante);
         NormalizarDatosCliente(model);
-        ValidarReglasDocumento(model);
+        var montoMaximoBoletaSinDoc = await ObtenerMontoMaximoBoletaSinDocAsync();
+        ValidarReglasDocumento(model, montoMaximoBoletaSinDoc);
         if (!ModelState.IsValid) return View(model);
 
         var ok = await spService.ComprobantesActualizarAsync(model, User.Identity?.Name ?? "sistema");
@@ -370,6 +554,16 @@ public class ComprobantesController(IModuloPermisoService moduloPermisoService, 
         {
             documentos = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
         }
+        if (!model.EsNota)
+        {
+            documentos = documentos
+                .Where(d =>
+                {
+                    var codigo = (d.Value ?? string.Empty).Trim().ToUpperInvariant();
+                    return codigo is not ("07" or "08");
+                })
+                .ToList();
+        }
         model.TiposDocumentoComprobante = documentos;
         if (string.IsNullOrWhiteSpace(model.CodigoDocumentoComprobante))
         {
@@ -419,6 +613,13 @@ public class ComprobantesController(IModuloPermisoService moduloPermisoService, 
                 model.SaldoReserva = ctx.SaldoPendiente;
                 model.MonedaSimbolo = ctx.MonedaSimbolo;
                 model.PagosReserva = ctx.PagosReserva;
+                model.SeriesDocumento = ctx.SeriesDisponibles;
+                if (model.NegocioSerieId.HasValue
+                    && !model.SeriesDocumento.Any(s => s.Value == model.NegocioSerieId.Value.ToString(CultureInfo.InvariantCulture)))
+                {
+                    model.NegocioSerieId = null;
+                    model.Serie = string.Empty;
+                }
                 if (model.Total <= 0) model.Total = ctx.TotalReserva;
                 if (!model.NegocioSerieId.HasValue)
                 {
@@ -523,9 +724,46 @@ public class ComprobantesController(IModuloPermisoService moduloPermisoService, 
         return codigo switch
         {
             "01" => SistemaControlEspaciosDeportivosWeb.Models.TipoComprobante.Factura,
+            "07" => SistemaControlEspaciosDeportivosWeb.Models.TipoComprobante.NotaCredito,
+            "08" => SistemaControlEspaciosDeportivosWeb.Models.TipoComprobante.NotaDebito,
             "RI" => (SistemaControlEspaciosDeportivosWeb.Models.TipoComprobante)3,
             _ => SistemaControlEspaciosDeportivosWeb.Models.TipoComprobante.Boleta
         };
+    }
+
+    private static string? NormalizarTipoNota(string? tipoNota)
+    {
+        var tipo = (tipoNota ?? string.Empty).Trim().ToUpperInvariant();
+        if (tipo is "NC" or "ND") return tipo;
+        return null;
+    }
+
+    private static string CodigoDocumentoPorTipoNota(string tipoNota)
+    {
+        return string.Equals(tipoNota, "ND", StringComparison.OrdinalIgnoreCase) ? "08" : "07";
+    }
+
+    private static string NombreDocumentoPorCodigo(string? codigoDocumento)
+    {
+        var codigo = (codigoDocumento ?? string.Empty).Trim().ToUpperInvariant();
+        return codigo switch
+        {
+            "01" => "Factura",
+            "03" => "Boleta",
+            "07" => "Nota de credito",
+            "08" => "Nota de debito",
+            "RI" => "Recibo Interno",
+            _ => "Comprobante"
+        };
+    }
+
+    private static bool EsComprobanteAptoParaNota(ComprobanteFormViewModel comprobante)
+    {
+        if (comprobante.Estado != SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico.AceptadoSunat)
+            return false;
+
+        var codigo = (comprobante.CodigoDocumentoComprobante ?? string.Empty).Trim().ToUpperInvariant();
+        return codigo is "01" or "03";
     }
 
     private void NormalizarDatosCliente(ComprobanteFormViewModel model)
@@ -539,7 +777,18 @@ public class ComprobantesController(IModuloPermisoService moduloPermisoService, 
         model.ClienteCodigoUbigeo = string.IsNullOrWhiteSpace(model.ClienteCodigoUbigeo) ? null : model.ClienteCodigoUbigeo.Trim();
     }
 
-    private void ValidarReglasDocumento(ComprobanteFormViewModel model)
+    private async Task<decimal> ObtenerMontoMaximoBoletaSinDocAsync()
+    {
+        const string nombreParametro = "VALIDA_MONTO_BSINDOC";
+        var valorParametro = await spService.ParametrosGlobalesObtenerValorAsync(nombreParametro);
+        if (decimal.TryParse(valorParametro, NumberStyles.Any, CultureInfo.InvariantCulture, out var valor) && valor >= 0m)
+            return valor;
+        if (decimal.TryParse(valorParametro, NumberStyles.Any, CultureInfo.CurrentCulture, out valor) && valor >= 0m)
+            return valor;
+        return 700m;
+    }
+
+    private void ValidarReglasDocumento(ComprobanteFormViewModel model, decimal montoMaximoBoletaSinDoc)
     {
         var codigoDocComprobante = (model.CodigoDocumentoComprobante ?? string.Empty).Trim().ToUpperInvariant();
         var tipoDocCliente = (model.ClienteTipoDocumento ?? string.Empty).Trim().ToUpperInvariant();
@@ -549,16 +798,22 @@ public class ComprobantesController(IModuloPermisoService moduloPermisoService, 
 
         if (codigoDocComprobante == "03")
         {
-            if (model.Total > 700m)
-                ModelState.AddModelError(nameof(model.Total), "La boleta no puede exceder S/ 700.00.");
+            if (model.Total > montoMaximoBoletaSinDoc)
+            {
+                if (tipoDocCliente is not ("1" or "6"))
+                    ModelState.AddModelError(nameof(model.ClienteTipoDocumento), $"Si la boleta supera S/ {montoMaximoBoletaSinDoc:0.00}, el tipo de documento debe ser DNI (1) o RUC (6).");
 
-            if (tipoDocCliente is not ("0" or "1"))
-                ModelState.AddModelError(nameof(model.ClienteTipoDocumento), "Para boleta solo se permite tipo de documento 0 o 1.");
+                if (string.IsNullOrWhiteSpace(model.ClienteNumeroDocumento))
+                    ModelState.AddModelError(nameof(model.ClienteNumeroDocumento), $"Si la boleta supera S/ {montoMaximoBoletaSinDoc:0.00}, el numero de documento es obligatorio.");
+            }
         }
         else if (codigoDocComprobante == "01")
         {
             if (tipoDocCliente != "6")
                 ModelState.AddModelError(nameof(model.ClienteTipoDocumento), "Para factura el cliente debe tener RUC (6).");
+
+            if (string.IsNullOrWhiteSpace(model.ClienteNumeroDocumento))
+                ModelState.AddModelError(nameof(model.ClienteNumeroDocumento), "Para factura el numero de documento (RUC) es obligatorio.");
         }
     }
 }

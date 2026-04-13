@@ -279,6 +279,7 @@ public class PagoReservaResumenViewModel
     public string MonedaSimbolo { get; set; } = "S/";
     public bool PagadaCompleta { get; set; }
     public bool TieneComprobanteActivo { get; set; }
+    public string Referencia { get; set; } = string.Empty;
 }
 
 public class PagoReservaEditViewModel : ModuloBaseViewModel
@@ -297,6 +298,8 @@ public class PagoReservaEditViewModel : ModuloBaseViewModel
     public string MonedaSimbolo { get; set; } = "S/";
     public int PoliticaConfirmacionPago { get; set; }
     public decimal? PorcentajeAdelantoMinimo { get; set; }
+    public bool TieneComprobanteActivo { get; set; }
+    public string ReferenciaComprobante { get; set; } = string.Empty;
     public List<PagoReservaDetalleItemViewModel> Pagos { get; set; } = new();
 
     public bool AgregarNuevoPago { get; set; }
@@ -342,6 +345,10 @@ public class ComprobanteItemViewModel
     public string Cliente { get; set; } = string.Empty;
     public decimal Total { get; set; }
     public string Estado { get; set; } = string.Empty;
+    public int EstadoCodigo { get; set; }
+    public string CodigoDocumentoComprobante { get; set; } = string.Empty;
+    public string Referencia { get; set; } = string.Empty;
+    public bool TieneNotasRelacionadas { get; set; }
     public bool EsTributario { get; set; }
     public string? UrlDescargaProveedor { get; set; }
 }

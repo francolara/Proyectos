@@ -1,9 +1,11 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.PagoReservaEditViewModel
 <!-- Firma: Codex - 09/04/2026 | Edicion de pagos por reserva: resumen unico, edicion de observacion, alta/eliminacion de pagos con confirmacion SI/NO, tarjeta de saldo en datos de reserva y deteccion automatica de intento de nuevo pago para evitar redireccion sin validacion. -->
+<!-- Firma: Codex - 12/04/2026 | Modo solo visualizacion cuando la reserva tiene comprobante activo: bloquea agregar/eliminar pagos y oculta acciones de guardado. -->
 
 @{
     ViewData["Title"] = $"Editar pagos reserva {Model.ReservaCodigo}";
     var totalPagos = Model.Pagos?.Count ?? 0;
+    var soloLecturaComprobante = Model.TieneComprobanteActivo;
 }
 
 <div class="admin-page-frame">
@@ -54,6 +56,17 @@
         </div>
     </section>
 
+    @if (soloLecturaComprobante)
+    {
+        <div class="alert alert-warning shadow-sm mb-3">
+            <strong>Modo visualizacion:</strong> la reserva ya tiene comprobante emitido. No se pueden agregar ni eliminar pagos.
+            @if (!string.IsNullOrWhiteSpace(Model.ReferenciaComprobante))
+            {
+                <span> Referencia: <strong>@Model.ReferenciaComprobante</strong>.</span>
+            }
+        </div>
+    }
+
     <form asp-action="Edit" method="post" class="sc-form-shell" id="pagosReservaForm">
         @Html.AntiForgeryToken()
         <input type="hidden" asp-for="NegocioId" />
@@ -66,6 +79,8 @@
         <input type="hidden" asp-for="TotalReserva" />
         <input type="hidden" asp-for="TotalPagado" />
         <input type="hidden" asp-for="SaldoPendiente" />
+        <input type="hidden" asp-for="TieneComprobanteActivo" />
+        <input type="hidden" asp-for="ReferenciaComprobante" />
         <div asp-validation-summary="ModelOnly" class="alert alert-danger shadow-sm mb-3"></div>
 
         <section class="table-card mb-3">
@@ -87,9 +102,12 @@
                                 <th class="text-center"><span class="sc-col-header"><i class="bi bi-calendar-check"></i><small>Fecha pago</small></span></th>
                                 <th class="text-center"><span class="sc-col-header"><i class="bi bi-cash-coin"></i><small>Monto</small></span></th>
                                 <th class="text-center"><span class="sc-col-header"><i class="bi bi-wallet2"></i><small>Forma</small></span></th>
-                                <th class="text-center"><span class="sc-col-header"><i class="bi bi-upc"></i><small>N° Operación</small></span></th>
-                                <th class="text-center"><span class="sc-col-header"><i class="bi bi-chat-left-text"></i><small>Observación</small></span></th>
-                                <th class="text-center"><span class="sc-col-header"><i class="bi bi-trash"></i><small>Eliminar</small></span></th>
+                                <th class="text-center"><span class="sc-col-header"><i class="bi bi-upc"></i><small>Nro Operacion</small></span></th>
+                                <th class="text-center"><span class="sc-col-header"><i class="bi bi-chat-left-text"></i><small>Observacion</small></span></th>
+                                @if (!soloLecturaComprobante)
+                                {
+                                    <th class="text-center"><span class="sc-col-header"><i class="bi bi-trash"></i><small>Eliminar</small></span></th>
+                                }
                             </tr>
                         </thead>
                         <tbody>
@@ -112,13 +130,20 @@
                                     <td>
                                         <input asp-for="Pagos[i].Observacion" class="form-control form-control-sm" maxlength="300" readonly />
                                     </td>
-                                    <td class="text-center">
-                                        <input asp-for="Pagos[i].Eliminar"
-                                               class="form-check-input js-eliminar-pago"
-                                               data-pago-id="@Model.Pagos[i].PagoId"
-                                               data-total-pagos="@Model.Pagos.Count"
-                                               type="checkbox" />
-                                    </td>
+                                    @if (!soloLecturaComprobante)
+                                    {
+                                        <td class="text-center">
+                                            <input asp-for="Pagos[i].Eliminar"
+                                                   class="form-check-input js-eliminar-pago"
+                                                   data-pago-id="@Model.Pagos[i].PagoId"
+                                                   data-total-pagos="@Model.Pagos.Count"
+                                                   type="checkbox" />
+                                        </td>
+                                    }
+                                    else
+                                    {
+                                        <input type="hidden" asp-for="Pagos[i].Eliminar" value="false" />
+                                    }
                                 </tr>
                             }
                         </tbody>
@@ -127,45 +152,55 @@
             }
         </section>
 
-        <section class="sc-form-card">
-            <div class="sc-form-section">
-                <h2 class="sc-form-title"><i class="bi bi-plus-circle"></i> Agregar nuevo pago</h2>
-                <div class="row g-3 align-items-end">
-                    <div class="col-md-2">
-                        <div class="form-check form-switch">
-                            <input asp-for="AgregarNuevoPago" class="form-check-input" id="AgregarNuevoPago" checked />
-                            <label class="form-check-label" for="AgregarNuevoPago">Agregar pago</label>
+        @if (!soloLecturaComprobante)
+        {
+            <section class="sc-form-card">
+                <div class="sc-form-section">
+                    <h2 class="sc-form-title"><i class="bi bi-plus-circle"></i> Agregar nuevo pago</h2>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-2">
+                            <div class="form-check form-switch">
+                                <input asp-for="AgregarNuevoPago" class="form-check-input" id="AgregarNuevoPago" checked />
+                                <label class="form-check-label" for="AgregarNuevoPago">Agregar pago</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="NuevaFechaPago" class="form-label">Fecha pago</label>
+                            <input asp-for="NuevaFechaPago" class="form-control" type="date" />
+                        </div>
+                        <div class="col-md-2">
+                            <label asp-for="NuevoMonto" class="form-label">Monto</label>
+                            <input asp-for="NuevoMonto" class="form-control text-end" />
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="NuevaFormaPagoId" class="form-label">Forma de pago</label>
+                            <select asp-for="NuevaFormaPagoId" asp-items="Model.FormasPago" class="form-select"></select>
+                        </div>
+                        <div class="col-md-2">
+                            <label asp-for="NuevoNumeroOperacion" class="form-label">Nro Operacion</label>
+                            <input asp-for="NuevoNumeroOperacion" class="form-control" maxlength="50" />
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="NuevaObservacion" class="form-label">Observacion</label>
+                            <input asp-for="NuevaObservacion" class="form-control" maxlength="300" />
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <label asp-for="NuevaFechaPago" class="form-label">Fecha pago</label>
-                        <input asp-for="NuevaFechaPago" class="form-control" type="date" />
-                    </div>
-                    <div class="col-md-2">
-                        <label asp-for="NuevoMonto" class="form-label">Monto</label>
-                        <input asp-for="NuevoMonto" class="form-control text-end" />
-                    </div>
-                    <div class="col-md-3">
-                        <label asp-for="NuevaFormaPagoId" class="form-label">Forma de pago</label>
-                        <select asp-for="NuevaFormaPagoId" asp-items="Model.FormasPago" class="form-select"></select>
-                    </div>
-                    <div class="col-md-2">
-                        <label asp-for="NuevoNumeroOperacion" class="form-label">N° Operación</label>
-                        <input asp-for="NuevoNumeroOperacion" class="form-control" maxlength="50" />
-                    </div>
-                    <div class="col-12">
-                        <label asp-for="NuevaObservacion" class="form-label">Observación</label>
-                        <input asp-for="NuevaObservacion" class="form-control" maxlength="300" />
-                    </div>
+                    <small class="text-muted d-block mt-2">Puedes editar observacion de pagos existentes y registrar como maximo 1 pago adicional por operacion.</small>
                 </div>
-                <small class="text-muted d-block mt-2">Puedes editar observación de pagos existentes y registrar como máximo 1 pago adicional por operación.</small>
-            </div>
-        </section>
+            </section>
+        }
+        else
+        {
+            <input type="hidden" asp-for="AgregarNuevoPago" value="false" />
+        }
 
         <div class="sc-form-actions">
-            <button type="submit" class="btn btn-primary">
-                <i class="bi bi-check2-circle me-1"></i> Guardar cambios
-            </button>
+            @if (!soloLecturaComprobante)
+            {
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check2-circle me-1"></i> Guardar cambios
+                </button>
+            }
             <a class="btn btn-outline-secondary" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Cancelar</a>
         </div>
     </form>
@@ -210,8 +245,8 @@
                     const totalPagos = Number(check.getAttribute('data-total-pagos') || '0');
                     const pagoId = check.getAttribute('data-pago-id') || '';
                     const mensaje = totalPagos <= 1
-                        ? `Si eliminas el pago #${pagoId}, la reserva quedará sin pagos y se cambiará a estado Cancelada. ¿Deseas continuar?`
-                        : `Si eliminas el pago #${pagoId}, la reserva cambiará a estado Confirmada. ¿Deseas continuar?`;
+                        ? `Si eliminas el pago #${pagoId}, la reserva quedara sin pagos y se cambiara a estado Cancelada. Deseas continuar?`
+                        : `Si eliminas el pago #${pagoId}, la reserva cambiara a estado Confirmada. Deseas continuar?`;
                     if (!window.confirm(mensaje)) {
                         check.checked = false;
                     }
@@ -222,7 +257,7 @@
                 marcarIntentoNuevoPago();
                 const seleccionados = checks.filter((x) => x.checked).length;
                 if (!seleccionados) return;
-                if (!window.confirm('Se eliminarán pagos seleccionados y se actualizará el estado de la reserva según la regla configurada. ¿Confirmas la acción?')) {
+                if (!window.confirm('Se eliminaran pagos seleccionados y se actualizara el estado de la reserva segun la regla configurada. Confirmas la accion?')) {
                     event.preventDefault();
                 }
             });

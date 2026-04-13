@@ -1349,3 +1349,290 @@ body {
   color: #64748b;
   letter-spacing: 0.01em;
 }
+
+/* Firma: Codex - 13/04/2026 | Dashboard ejecutivo: KPIs de decision, paneles operativos, tendencia visual y acciones rapidas. */
+.sc-dash-shell {
+  display: grid;
+  gap: 1rem;
+}
+
+.sc-dash-topbar {
+  background: linear-gradient(115deg, rgba(255, 255, 255, 0.92), rgba(240, 247, 255, 0.95));
+}
+
+.sc-dash-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.sc-dash-action-link {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  border: 1px solid #d8e2f0;
+  border-radius: 0.9rem;
+  padding: 0.65rem 0.8rem;
+  background: #fff;
+  text-decoration: none;
+  color: #0f172a;
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.05);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.sc-dash-action-link i {
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 0.65rem;
+  display: grid;
+  place-content: center;
+  background: #eaf2ff;
+  color: #1d4ed8;
+  font-size: 1rem;
+}
+
+.sc-dash-action-link span {
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.sc-dash-action-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 24px rgba(15, 23, 42, 0.09);
+  border-color: #9eb4d4;
+  color: #0f172a;
+}
+
+.sc-dash-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.sc-dash-kpi-card {
+  border-radius: 1rem;
+  background: linear-gradient(160deg, #ffffff 0%, #f7fbff 100%);
+  border: 1px solid #d7e3f2;
+  padding: 0.95rem 1rem;
+  box-shadow: 0 13px 26px rgba(15, 23, 42, 0.06);
+}
+
+.sc-dash-kpi-label {
+  font-size: 0.78rem;
+  color: #5f6f86;
+  margin-bottom: 0.25rem;
+}
+
+.sc-dash-kpi-value {
+  font-size: 1.58rem;
+  line-height: 1.2;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.sc-dash-kpi-foot {
+  margin-top: 0.4rem;
+  color: #64748b;
+  font-size: 0.76rem;
+}
+
+.sc-dash-progress {
+  margin-top: 0.5rem;
+  width: 100%;
+  height: 0.44rem;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.sc-dash-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #0ea5e9, #2563eb);
+}
+
+.sc-dash-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.14rem 0.48rem;
+  font-weight: 700;
+  font-size: 0.69rem;
+  letter-spacing: 0.01em;
+}
+
+.sc-dash-badge-ok {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.sc-dash-badge-warn {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.sc-dash-badge-danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.sc-dash-grid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: 1.25fr 1fr;
+}
+
+.sc-dash-panel {
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid #d7e2ef;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+  padding: 0.95rem 1rem;
+}
+
+.sc-dash-panel-head h3 {
+  margin: 0;
+  font-size: 1.02rem;
+  color: #0f172a;
+}
+
+.sc-dash-panel-head p {
+  margin: 0.24rem 0 0.7rem;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.sc-dash-health-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.sc-dash-health-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.7rem;
+  padding: 0.5rem 0.62rem;
+  background: #f9fbff;
+}
+
+.sc-dash-health-item span {
+  color: #475569;
+  font-size: 0.8rem;
+}
+
+.sc-dash-health-item strong {
+  color: #0f172a;
+  font-size: 0.95rem;
+}
+
+.sc-dash-bars {
+  min-height: 182px;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.48rem;
+  align-items: end;
+}
+
+.sc-dash-bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.sc-dash-bar-col small {
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.sc-dash-bar-track {
+  width: 100%;
+  height: 142px;
+  border-radius: 0.7rem;
+  background: linear-gradient(180deg, #eef3fb 0%, #e2e8f0 100%);
+  display: flex;
+  align-items: flex-end;
+  padding: 0.16rem;
+}
+
+.sc-dash-bar-fill {
+  width: 100%;
+  border-radius: 0.54rem;
+  background: linear-gradient(180deg, #38bdf8 0%, #2563eb 100%);
+}
+
+.sc-dash-todo {
+  display: grid;
+  gap: 0.52rem;
+}
+
+.sc-dash-todo-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.52rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.72rem;
+  background: #fff;
+  padding: 0.55rem 0.7rem;
+}
+
+.sc-dash-todo-item h5 {
+  margin: 0;
+  font-size: 0.84rem;
+  color: #0f172a;
+}
+
+.sc-dash-todo-item p {
+  margin: 0.1rem 0 0;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.sc-dash-mod-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.sc-dash-mod-item {
+  border: 1px solid #dbe5f2;
+  border-radius: 0.72rem;
+  padding: 0.52rem 0.62rem;
+  background: #f9fbff;
+}
+
+.sc-dash-mod-item span {
+  display: block;
+  color: #0f172a;
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+
+.sc-dash-mod-item small {
+  color: #64748b;
+  font-size: 0.68rem;
+}
+
+@media (max-width: 1400px) {
+  .sc-dash-actions,
+  .sc-dash-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sc-dash-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .sc-dash-actions,
+  .sc-dash-kpis,
+  .sc-dash-mod-grid {
+    grid-template-columns: 1fr;
+  }
+}

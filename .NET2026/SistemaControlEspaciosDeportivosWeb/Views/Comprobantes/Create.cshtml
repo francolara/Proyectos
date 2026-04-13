@@ -1,5 +1,7 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobanteFormViewModel
 <!-- Firma: Codex - 09/04/2026 | Emision de comprobante con reserva pagada, numero correlativo autogenerado, datos editables de cliente (con ubigeo) y validaciones tributarias en backend. -->
+<!-- Firma: Codex - 10/04/2026 | Reordena campos en datos de comprobante (tipo/serie/fecha primero y SubTotal/IGV/Total al final) y limpia datos del comprobante al cambiar reserva seleccionada. -->
+<!-- Firma: Codex - 11/04/2026 | Muestra validacion inline en Serie (NegocioSerieId) para hacer visible el mensaje obligatorio al grabar. -->
 @{
     ViewData["Title"] = "Emitir comprobante";
 }
@@ -104,6 +106,20 @@
                 </div>
                 <div class="row g-3 mt-1">
                     <div class="col-md-4">
+                        <label class="form-label">Tipo de documento comprobante</label>
+                        <select asp-for="CodigoDocumentoComprobante" asp-items="Model.TiposDocumentoComprobante" class="form-select" id="codigoSunatSelect"></select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Serie</label>
+                        <select asp-for="NegocioSerieId" asp-items="Model.SeriesDocumento" class="form-select" id="serieSelect"></select>
+                        <span asp-validation-for="NegocioSerieId" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="FechaEmision" class="form-label">Fecha</label>
+                        <input asp-for="FechaEmision" type="date" class="form-control" />
+                    </div>
+
+                    <div class="col-md-4">
                         <label class="form-label">Nombre cliente</label>
                         <input asp-for="Cliente" class="form-control" readonly />
                     </div>
@@ -144,23 +160,6 @@
                         </select>
                     </div>
 
-                    <div class="col-md-3">
-                        <label class="form-label">Tipo de documento comprobante</label>
-                        <select asp-for="CodigoDocumentoComprobante" asp-items="Model.TiposDocumentoComprobante" class="form-select" id="codigoSunatSelect"></select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Serie</label>
-                        <select asp-for="NegocioSerieId" asp-items="Model.SeriesDocumento" class="form-select" id="serieSelect"></select>
-                    </div>
-                    <div class="col-md-2">
-                        <label asp-for="FechaEmision" class="form-label">Fecha</label>
-                        <input asp-for="FechaEmision" type="date" class="form-control" />
-                    </div>
-                    <div class="col-md-5">
-                        <label class="form-label">Total (@Model.MonedaSimbolo)</label>
-                        <input asp-for="Total" class="form-control text-end" id="totalInput" />
-                    </div>
-
                     <div class="col-md-4" id="wrapSubtotal">
                         <label class="form-label">SubTotal (@Model.MonedaSimbolo)</label>
                         <input class="form-control text-end" id="subTotalVisual" readonly />
@@ -168,6 +167,10 @@
                     <div class="col-md-4" id="wrapIgv">
                         <label class="form-label">IGV @Model.PorcentajeIgvConfigurado% (@Model.MonedaSimbolo)</label>
                         <input class="form-control text-end" id="igvVisual" readonly />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Total (@Model.MonedaSimbolo)</label>
+                        <input asp-for="Total" class="form-control text-end" id="totalInput" />
                     </div>
                 </div>
             </div>
@@ -210,6 +213,7 @@
             const wrapIgv = document.getElementById('wrapIgv');
 
             const clienteCorreoInput = document.getElementById('ClienteCorreo');
+            const clienteNombreInput = document.getElementById('Cliente');
             const clienteTipoDocumentoSelect = document.getElementById('clienteTipoDocumentoSelect');
             const clienteNumeroDocumentoInput = document.getElementById('ClienteNumeroDocumento');
             const clienteDireccionInput = document.getElementById('ClienteDireccionFiscal');
@@ -226,6 +230,7 @@
             const refTotalReserva = document.getElementById('refTotalReserva');
             const refTotalPagos = document.getElementById('refTotalPagos');
             const refMontoPagado = document.getElementById('refMontoPagado');
+            let reservaIdActual = Number(reservaIdInput?.value || 0);
 
             const toMoney = (v) => {
                 const n = Number(v || 0);
@@ -283,6 +288,29 @@
                 }
                 if (serieTextoInput) serieTextoInput.value = '';
                 if (totalInput) totalInput.value = '0.00';
+                if (clienteNombreInput) clienteNombreInput.value = '';
+            };
+
+            const limpiarDatosComprobante = () => {
+                if (clienteNombreInput) clienteNombreInput.value = '';
+                if (clienteCorreoInput) clienteCorreoInput.value = '';
+                if (clienteTipoDocumentoSelect) clienteTipoDocumentoSelect.value = '';
+                if (clienteNumeroDocumentoInput) clienteNumeroDocumentoInput.value = '';
+                if (clienteDireccionInput) clienteDireccionInput.value = '';
+                if (clienteDepSelect) clienteDepSelect.value = '';
+                if (clienteProvSelect) clienteProvSelect.innerHTML = '<option value="">Selecciona provincia</option>';
+                if (clienteDistSelect) clienteDistSelect.innerHTML = '<option value="">Selecciona distrito</option>';
+                if (codigoSunatSelect) {
+                    codigoSunatSelect.selectedIndex = codigoSunatSelect.options.length ? 0 : -1;
+                }
+                if (serieSelect) serieSelect.innerHTML = '<option value="">Sin series configuradas</option>';
+                if (serieTextoInput) serieTextoInput.value = '';
+                if (totalInput) totalInput.value = '0.00';
+                if (subTotalVisual) subTotalVisual.value = '0.00';
+                if (igvVisual) igvVisual.value = '0.00';
+                if (subTotalInput) subTotalInput.value = '0.00';
+                if (igvInput) igvInput.value = '0.00';
+                pagosReservaBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay pagos registrados.</td></tr>';
             };
 
             const recalcularMontos = () => {
@@ -354,6 +382,7 @@
                 refMontoPagado.textContent = `Monto pagado: ${(d.monedaSimbolo || 'S/')} ${toMoney(d.totalPagado)}`;
 
                 if (clienteCorreoInput) clienteCorreoInput.value = d.clienteCorreo || '';
+                if (clienteNombreInput) clienteNombreInput.value = d.cliente || '';
                 if (clienteTipoDocumentoSelect) clienteTipoDocumentoSelect.value = d.clienteTipoDocumento || '';
                 if (clienteNumeroDocumentoInput) clienteNumeroDocumentoInput.value = d.clienteNumeroDocumento || '';
                 if (clienteDireccionInput) clienteDireccionInput.value = d.clienteDireccionFiscal || '';
@@ -415,8 +444,13 @@
             });
 
             selectResultados?.addEventListener('change', async () => {
+                const siguienteReservaId = Number(selectResultados.value || 0);
+                if (reservaIdActual > 0 && reservaIdActual !== siguienteReservaId) {
+                    limpiarDatosComprobante();
+                }
                 reservaIdInput.value = selectResultados.value || '';
                 await cargarContexto();
+                reservaIdActual = Number(reservaIdInput.value || 0);
             });
 
             codigoSunatSelect?.addEventListener('change', async () => {

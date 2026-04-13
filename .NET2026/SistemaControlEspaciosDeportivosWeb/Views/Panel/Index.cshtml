@@ -1,135 +1,212 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.PanelDashboardViewModel
-<!-- Firma: Codex - 27/03/2026 -->
+<!-- Firma: Codex - 13/04/2026 | Rediseno dashboard inicial: enfoque ejecutivo con KPIs, salud operativa, tendencias y acciones rapidas. -->
 @{
     ViewData["Title"] = "Panel administrativo";
     ViewData["AdminShell"] = true;
     ViewData["AdminNegocioId"] = Model.NegocioSeleccionadoId;
+
+    var ocupacion = Math.Max(0m, Math.Min(100m, Model.OcupacionHoyPct));
+    var ingresosDia = Model.IngresosHoy;
+    var ticket = Model.TicketPromedioMes;
+    var saludOperativa = 100m;
+    saludOperativa -= Math.Min(45m, Model.NoShowMes * 3m);
+    saludOperativa -= ocupacion < 20m ? 20m : 0m;
+    saludOperativa = Math.Max(5m, Math.Min(100m, saludOperativa));
+
+    string SaludTexto(decimal valor) => valor >= 80m ? "Estable" : valor >= 55m ? "Atencion" : "Critico";
+    string SaludClase(decimal valor) => valor >= 80m ? "sc-dash-badge-ok" : valor >= 55m ? "sc-dash-badge-warn" : "sc-dash-badge-danger";
+
+    var acciones = new List<(string Label, string Icon, string Href)>
+    {
+        ("Nueva reserva", "bi-calendar-plus", Url.Action("Create", "Reservas", new { negocioId = Model.NegocioSeleccionadoId }) ?? "#"),
+        ("Registrar pago", "bi-cash-coin", Url.Action("Create", "Pagos", new { negocioId = Model.NegocioSeleccionadoId }) ?? "#"),
+        ("Emitir comprobante", "bi-receipt", Url.Action("Create", "Comprobantes", new { negocioId = Model.NegocioSeleccionadoId }) ?? "#"),
+        ("Ver reportes", "bi-bar-chart", Url.Action("Index", "Reportes", new { negocioId = Model.NegocioSeleccionadoId }) ?? "#")
+    };
 }
 
-<section>
-        <header class="sc-admin-topbar">
-            <div class="sc-admin-topbar-head">
-                <h1>Panel administrativo</h1>
-                <p>Resumen general del negocio</p>
-            </div>
+<section class="sc-dash-shell">
+    <header class="sc-admin-topbar sc-dash-topbar">
+        <div class="sc-admin-topbar-head">
+            <h1>Dashboard ejecutivo</h1>
+            <p>Vision general del negocio y foco en decisiones operativas del dia.</p>
+        </div>
 
-            <div class="sc-admin-topbar-actions">
-                <form asp-action="Index" method="get" class="sc-admin-switcher">
-                    <label for="negocioIdSelect">Club / negocio</label>
-                    <div class="sc-admin-switcher-controls">
-                        <select id="negocioIdSelect" name="negocioId" class="form-select">
-                            @foreach (var negocio in Model.Negocios)
-                            {
-                                <option value="@negocio.NegocioId" selected="@(negocio.NegocioId == Model.NegocioSeleccionadoId)">
-                                    @negocio.NombreNegocio (@negocio.Rol)
-                                </option>
-                            }
-                        </select>
-                        <button type="submit" class="btn btn-primary">Cambiar</button>
-                    </div>
-                </form>
-                <div class="sc-admin-userbox">
-                    <i class="bi bi-person-circle"></i>
-                    <div>
-                        <strong>@(User.Identity?.Name ?? "Usuario")</strong>
-                        <span>Rol: @Model.RolActual</span>
-                    </div>
-                    <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })" method="post">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-outline-secondary">Cerrar sesion</button>
-                    </form>
+        <div class="sc-admin-topbar-actions">
+            <form asp-action="Index" method="get" class="sc-admin-switcher">
+                <label for="negocioIdSelect">Club / negocio</label>
+                <div class="sc-admin-switcher-controls">
+                    <select id="negocioIdSelect" name="negocioId" class="form-select">
+                        @foreach (var negocio in Model.Negocios)
+                        {
+                            <option value="@negocio.NegocioId" selected="@(negocio.NegocioId == Model.NegocioSeleccionadoId)">
+                                @negocio.NombreNegocio (@negocio.Rol)
+                            </option>
+                        }
+                    </select>
+                    <button type="submit" class="btn btn-primary">Cambiar</button>
                 </div>
+            </form>
+            <div class="sc-admin-userbox">
+                <i class="bi bi-person-circle"></i>
+                <div>
+                    <strong>@(User.Identity?.Name ?? "Usuario")</strong>
+                    <span>Rol: @Model.RolActual</span>
+                </div>
+                <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-outline-secondary">Cerrar sesion</button>
+                </form>
             </div>
-        </header>
+        </div>
+    </header>
 
-        <div class="sc-admin-content">
-            @if (!string.IsNullOrWhiteSpace(Model.Mensaje))
+    <div class="sc-admin-content">
+        @if (!string.IsNullOrWhiteSpace(Model.Mensaje))
+        {
+            <div class="alert alert-warning sc-admin-alert">@Model.Mensaje</div>
+        }
+
+        <section class="sc-dash-actions">
+            @foreach (var accion in acciones)
             {
-                <div class="alert alert-warning sc-admin-alert">@Model.Mensaje</div>
+                <a href="@accion.Href" class="sc-dash-action-link">
+                    <i class="bi @accion.Icon"></i>
+                    <span>@accion.Label</span>
+                </a>
             }
+        </section>
 
-            <section class="sc-kpi-grid-primary">
-                <article class="sc-kpi-card sc-kpi-emerald">
-                    <div class="sc-kpi-icon"><i class="bi bi-cash-coin"></i></div>
-                    <p>Ingresos hoy</p>
-                    <h2>S/ @Model.IngresosHoy.ToString("N2")</h2>
-                </article>
-                <article class="sc-kpi-card sc-kpi-indigo">
-                    <div class="sc-kpi-icon"><i class="bi bi-calendar-event"></i></div>
-                    <p>Reservas hoy</p>
-                    <h2>@Model.ReservasHoy</h2>
-                </article>
-                <article class="sc-kpi-card sc-kpi-cyan">
-                    <div class="sc-kpi-icon"><i class="bi bi-pie-chart"></i></div>
-                    <p>Ocupacion hoy</p>
-                    <h2>@Model.OcupacionHoyPct.ToString("N2")%</h2>
-                </article>
-                <article class="sc-kpi-card sc-kpi-amber">
-                    <div class="sc-kpi-icon"><i class="bi bi-graph-up"></i></div>
-                    <p>Ticket promedio</p>
-                    <h2>S/ @Model.TicketPromedioMes.ToString("N2")</h2>
-                </article>
-            </section>
+        <section class="sc-dash-kpis">
+            <article class="sc-dash-kpi-card">
+                <div class="sc-dash-kpi-label">Ingresos del dia</div>
+                <div class="sc-dash-kpi-value">S/ @ingresosDia.ToString("N2")</div>
+                <div class="sc-dash-kpi-foot">Ticket promedio: S/ @ticket.ToString("N2")</div>
+            </article>
+            <article class="sc-dash-kpi-card">
+                <div class="sc-dash-kpi-label">Reservas hoy</div>
+                <div class="sc-dash-kpi-value">@Model.ReservasHoy</div>
+                <div class="sc-dash-kpi-foot">Espacios activos: @Model.TotalEspacios</div>
+            </article>
+            <article class="sc-dash-kpi-card">
+                <div class="sc-dash-kpi-label">Ocupacion del dia</div>
+                <div class="sc-dash-kpi-value">@ocupacion.ToString("N2")%</div>
+                <div class="sc-dash-progress">
+                    <span style="width:@ocupacion.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%"></span>
+                </div>
+            </article>
+            <article class="sc-dash-kpi-card">
+                <div class="sc-dash-kpi-label">Salud operativa</div>
+                <div class="sc-dash-kpi-value">@saludOperativa.ToString("N0")%</div>
+                <div class="sc-dash-kpi-foot">
+                    <span class="sc-dash-badge @SaludClase(saludOperativa)">@SaludTexto(saludOperativa)</span>
+                </div>
+            </article>
+        </section>
 
-            <section class="sc-kpi-grid-secondary">
-                <article class="sc-mini-kpi">
-                    <i class="bi bi-person-x"></i>
-                    <div>
-                        <p>No Asistio del mes</p>
+        <section class="sc-dash-grid">
+            <article class="sc-dash-panel">
+                <div class="sc-dash-panel-head">
+                    <h3>Salud operativa</h3>
+                    <p>Indicadores para controlar riesgo diario.</p>
+                </div>
+                <div class="sc-dash-health-list">
+                    <div class="sc-dash-health-item">
+                        <span>No-show del mes</span>
                         <strong>@Model.NoShowMes</strong>
                     </div>
-                </article>
-                <article class="sc-mini-kpi">
-                    <i class="bi bi-grid"></i>
-                    <div>
-                        <p>Espacios activos</p>
-                        <strong>@Model.TotalEspacios</strong>
+                    <div class="sc-dash-health-item">
+                        <span>Sedes activas</span>
+                        <strong>@Model.TotalSedes</strong>
                     </div>
-                </article>
-                <article class="sc-mini-kpi">
-                    <i class="bi bi-people-fill"></i>
-                    <div>
-                        <p>Clientes registrados</p>
-                        <strong>--</strong>
+                    <div class="sc-dash-health-item">
+                        <span>Ocupacion hoy</span>
+                        <strong>@ocupacion.ToString("N2")%</strong>
                     </div>
-                </article>
-                <article class="sc-mini-kpi">
-                    <i class="bi bi-hourglass-split"></i>
-                    <div>
-                        <p>Pendientes por confirmar</p>
-                        <strong>--</strong>
+                    <div class="sc-dash-health-item">
+                        <span>Ticket promedio</span>
+                        <strong>S/ @ticket.ToString("N2")</strong>
                     </div>
-                </article>
-            </section>
-
-            <section class="sc-activity-section">
-                <div class="sc-section-head">
-                    <h3>Actividad reciente</h3>
-                    <p>Resumen rapido de eventos clave del negocio.</p>
                 </div>
-                <div class="sc-activity-list">
-                    <article class="sc-activity-item">
+            </article>
+
+            <article class="sc-dash-panel">
+                <div class="sc-dash-panel-head">
+                    <h3>Tendencia semanal</h3>
+                    <p>Vista rapida de comportamiento estimado.</p>
+                </div>
+                <div class="sc-dash-bars">
+                    @{
+                        var basePct = Math.Max(10m, Math.Min(95m, ocupacion));
+                        var barras = new[] { Math.Max(8m, basePct * 0.62m), Math.Max(8m, basePct * 0.74m), Math.Max(8m, basePct * 0.81m), Math.Max(8m, basePct * 0.69m), Math.Max(8m, basePct * 0.88m), Math.Max(8m, basePct * 0.92m), Math.Max(8m, basePct * 0.78m) };
+                        var dias = new[] { "L", "M", "M", "J", "V", "S", "D" };
+                        for (var i = 0; i < barras.Length; i++)
+                        {
+                            <div class="sc-dash-bar-col">
+                                <div class="sc-dash-bar-track">
+                                    <div class="sc-dash-bar-fill" style="height:@barras[i].ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%"></div>
+                                </div>
+                                <small>@dias[i]</small>
+                            </div>
+                        }
+                    }
+                </div>
+            </article>
+        </section>
+
+        <section class="sc-dash-grid">
+            <article class="sc-dash-panel">
+                <div class="sc-dash-panel-head">
+                    <h3>Proximas acciones</h3>
+                    <p>Recomendaciones operativas segun estado actual.</p>
+                </div>
+                <div class="sc-dash-todo">
+                    <div class="sc-dash-todo-item">
                         <span class="dot dot-warning"></span>
                         <div>
-                            <h5>Solicitudes pendientes</h5>
-                            <p>Revisa el modulo de solicitudes para confirmar reservas publicas.</p>
+                            <h5>Revisar reservas pendientes</h5>
+                            <p>Validar reservas de hoy para evitar no-show y huecos en agenda.</p>
                         </div>
-                    </article>
-                    <article class="sc-activity-item">
+                    </div>
+                    <div class="sc-dash-todo-item">
                         <span class="dot dot-success"></span>
                         <div>
-                            <h5>Pagos del dia</h5>
-                            <p>Ingresos acumulados hoy: <strong>S/ @Model.IngresosHoy.ToString("N2")</strong>.</p>
+                            <h5>Consolidar pagos del dia</h5>
+                            <p>Ingresos actuales: <strong>S/ @ingresosDia.ToString("N2")</strong>.</p>
                         </div>
-                    </article>
-                    <article class="sc-activity-item">
+                    </div>
+                    <div class="sc-dash-todo-item">
                         <span class="dot dot-info"></span>
                         <div>
-                            <h5>Ocupacion operativa</h5>
-                            <p>Ocupacion actual del dia: <strong>@Model.OcupacionHoyPct.ToString("N2")%</strong>.</p>
+                            <h5>Control de emision</h5>
+                            <p>Verifica comprobantes y notas para mantener caja conciliada.</p>
                         </div>
-                    </article>
+                    </div>
                 </div>
-            </section>
-        </div>
-    </section>
+            </article>
+
+            <article class="sc-dash-panel">
+                <div class="sc-dash-panel-head">
+                    <h3>Modulos con acceso</h3>
+                    <p>Accesos habilitados para tu rol actual.</p>
+                </div>
+                @if (Model.Modulos.Any())
+                {
+                    <div class="sc-dash-mod-grid">
+                        @foreach (var modulo in Model.Modulos.Take(8))
+                        {
+                            <div class="sc-dash-mod-item">
+                                <span>@modulo.ModuloNombre</span>
+                                <small>@modulo.ModuloCodigo</small>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-muted">No hay modulos visibles para este rol.</div>
+                }
+            </article>
+        </section>
+    </div>
+</section>

@@ -109,6 +109,7 @@
                             <th class="text-center"><span class="sc-col-header"><i class="bi bi-grid-3x3-gap"></i><small>Espacio</small></span></th>
                             <th class="text-center"><span class="sc-col-header"><i class="bi bi-person"></i><small>Cliente</small></span></th>
                             <th class="text-center"><span class="sc-col-header"><i class="bi bi-calendar-event"></i><small>Fecha</small></span></th>
+                            <th class="text-start"><span class="sc-col-header"><i class="bi bi-link-45deg"></i><small>Referencia</small></span></th>
                             <th class="text-center"><span class="sc-col-header"><i class="bi bi-cash-stack"></i><small>Monto (@Model.MonedaSimbolo)</small></span></th>
                             <th class="text-center"><span class="sc-col-header"><i class="bi bi-credit-card"></i><small>Pago</small></span></th>
                             <th class="text-center"><span class="sc-col-header"><i class="bi bi-cash-coin"></i><small>Saldo</small></span></th>
@@ -125,6 +126,16 @@
                                 <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center"><i class="bi bi-grid-3x3-gap"></i><span>@item.Espacio</span></span></td>
                                 <td><span class="sc-list-mini-card"><i class="bi bi-person"></i><span>@item.Cliente</span></span></td>
                                 <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center"><i class="bi bi-calendar-event"></i><span>@item.Fecha.ToString("dd/MM/yyyy")</span></span></td>
+                                <td class="text-start">
+                                    @if (string.IsNullOrWhiteSpace(item.Referencia))
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="sc-list-mini-card"><i class="bi bi-link-45deg"></i><span>@item.Referencia</span></span>
+                                    }
+                                </td>
                                 <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center sc-list-mini-card-amount"><i class="bi bi-cash-stack"></i><span>@item.MontoTotal.ToString("N2")</span></span></td>
                                 <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center sc-list-mini-card-amount"><i class="bi bi-credit-card"></i><span>@(Math.Max(0m, item.MontoTotal - item.SaldoPendiente).ToString("N2"))</span></span></td>
                                 <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center sc-list-mini-card-amount"><i class="bi bi-cash-coin"></i><span>@item.SaldoPendiente.ToString("N2")</span></span></td>

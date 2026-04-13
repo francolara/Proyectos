@@ -483,7 +483,10 @@ public partial class SportCenterStoredProcedureService
                     : (dr.IsDBNull(7) || dr.GetDecimal(7) <= 0m),
                 TieneComprobanteActivo = dr.FieldCount > 12
                     ? !dr.IsDBNull(12) && dr.GetBoolean(12)
-                    : false
+                    : false,
+                Referencia = dr.FieldCount > 13 && !dr.IsDBNull(13)
+                    ? dr.GetString(13)
+                    : string.Empty
             });
         }
         await dr.CloseAsync();
@@ -517,6 +520,8 @@ public partial class SportCenterStoredProcedureService
             MonedaSimbolo = dr.IsDBNull(11) ? "S/" : dr.GetString(11),
             PoliticaConfirmacionPago = dr.IsDBNull(12) ? 0 : dr.GetInt32(12),
             PorcentajeAdelantoMinimo = dr.IsDBNull(13) ? null : dr.GetDecimal(13),
+            TieneComprobanteActivo = dr.FieldCount > 14 && !dr.IsDBNull(14) && dr.GetBoolean(14),
+            ReferenciaComprobante = dr.FieldCount > 15 && !dr.IsDBNull(15) ? dr.GetString(15) : string.Empty,
             NuevaFechaPago = DateTime.Today
         };
 
@@ -645,15 +650,19 @@ public partial class SportCenterStoredProcedureService
             list.Add(new ComprobanteItemViewModel
             {
                 Id = dr.GetInt32(0),
-                ReservaId = dr.IsDBNull(7) ? 0 : dr.GetInt32(7),
                 Tipo = dr.GetString(1),
                 SerieNumero = dr.GetString(2),
                 FechaEmision = dr.GetDateTime(3),
                 Cliente = dr.GetString(4),
                 Total = dr.GetDecimal(5),
                 Estado = dr.GetString(6),
-                EsTributario = dr.FieldCount > 8 && !dr.IsDBNull(8) && dr.GetBoolean(8),
-                UrlDescargaProveedor = dr.FieldCount > 9 && !dr.IsDBNull(9) ? dr.GetString(9) : null
+                EstadoCodigo = dr.FieldCount > 7 && !dr.IsDBNull(7) ? dr.GetInt32(7) : 0,
+                CodigoDocumentoComprobante = dr.FieldCount > 8 && !dr.IsDBNull(8) ? dr.GetString(8) : string.Empty,
+                Referencia = dr.FieldCount > 9 && !dr.IsDBNull(9) ? dr.GetString(9) : "-",
+                TieneNotasRelacionadas = dr.FieldCount > 10 && !dr.IsDBNull(10) && dr.GetBoolean(10),
+                ReservaId = dr.IsDBNull(11) ? 0 : dr.GetInt32(11),
+                EsTributario = dr.FieldCount > 12 && !dr.IsDBNull(12) && dr.GetBoolean(12),
+                UrlDescargaProveedor = dr.FieldCount > 13 && !dr.IsDBNull(13) ? dr.GetString(13) : null
             });
         }
         await dr.CloseAsync();
@@ -733,6 +742,9 @@ public partial class SportCenterStoredProcedureService
             Total = dr.GetDecimal(9),
             Estado = (EstadoComprobanteElectronico)dr.GetInt32(10),
             CodigoDocumentoComprobante = dr.FieldCount > 11 && !dr.IsDBNull(11) ? dr.GetString(11) : "03",
+            ComprobanteReferenciaId = dr.FieldCount > 12 && !dr.IsDBNull(12) ? dr.GetInt32(12) : null,
+            TipoNota = dr.FieldCount > 13 && !dr.IsDBNull(13) ? dr.GetString(13) : null,
+            TipoNotaCodigoSunat = dr.FieldCount > 14 && !dr.IsDBNull(14) ? dr.GetString(14) : null,
             NegocioId = negocioId
         };
     }
@@ -760,6 +772,9 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@ClienteNumeroDocumento", model.ClienteNumeroDocumento, SqlDbType.NVarChar);
         AddParam(cmd, "@ClienteDireccionFiscal", model.ClienteDireccionFiscal, SqlDbType.NVarChar);
         AddParam(cmd, "@ClienteCodigoUbigeo", model.ClienteCodigoUbigeo, SqlDbType.Char);
+        AddParam(cmd, "@ComprobanteReferenciaId", model.ComprobanteReferenciaId, SqlDbType.Int);
+        AddParam(cmd, "@TipoNota", model.TipoNota, SqlDbType.Char);
+        AddParam(cmd, "@TipoNotaCodigoSunat", model.TipoNotaCodigoSunat, SqlDbType.NVarChar);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
         return Convert.ToInt32(await cmd.ExecuteScalarAsync());
     }

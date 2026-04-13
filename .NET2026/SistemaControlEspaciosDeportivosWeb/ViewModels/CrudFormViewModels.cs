@@ -352,6 +352,14 @@ public class ComprobanteFormViewModel
     public List<SelectListItem> DepartamentosUbigeo { get; set; } = new();
     public List<SelectListItem> ProvinciasUbigeo { get; set; } = new();
     public List<SelectListItem> DistritosUbigeo { get; set; } = new();
+    public bool EsNota { get; set; }
+    public string? TipoNota { get; set; }
+    public int? ComprobanteReferenciaId { get; set; }
+    public string? ComprobanteReferenciaTipo { get; set; }
+    public string? ComprobanteReferenciaSerie { get; set; }
+    public int? ComprobanteReferenciaNumero { get; set; }
+    public string? TipoNotaCodigoSunat { get; set; }
+    public List<SelectListItem> TiposNotaSunat { get; set; } = new();
 
     public bool EsEdicion { get; set; }
     public bool PuedeEditarDatosCliente => EsEdicion && Estado == EstadoComprobanteElectronico.PendienteEnvio;

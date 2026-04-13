@@ -1,21 +1,16 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobanteFormViewModel
-<!-- Firma: Codex - 09/04/2026 | Edicion de comprobante alineada al flujo de registro: reserva bloqueada, importe solo lectura y edicion de datos de cliente solo en estado pendiente. -->
-<!-- Firma: Codex - 10/04/2026 | Unifica orden visual con registro: tipo/serie/fecha al inicio y SubTotal/IGV/Total al final en una fila. -->
+<!-- Firma: Codex - 11/04/2026 | Flujo nuevo para generar Nota de Credito/Debito desde comprobante aceptado SUNAT, con documento referencia y tipo de nota SUNAT. -->
 @{
-    ViewData["Title"] = "Editar comprobante";
-    var puedeEditarCliente = Model.PuedeEditarDatosCliente;
+    var esNotaCredito = string.Equals(Model.TipoNota, "NC", StringComparison.OrdinalIgnoreCase);
+    var titulo = esNotaCredito ? "Generar nota de credito" : "Generar nota de debito";
+    ViewData["Title"] = titulo;
 }
 
 <div class="admin-page-frame">
-    @if (TempData["ComprobanteOk"] is string comprobanteOk && !string.IsNullOrWhiteSpace(comprobanteOk))
-    {
-        <div class="alert alert-success">@comprobanteOk</div>
-    }
-
     <section class="page-header">
         <div>
-            <h1>Editar comprobante</h1>
-            <p class="page-subtitle">Misma vista de emision con reserva fija. El importe no se puede modificar.</p>
+            <h1>@titulo</h1>
+            <p class="page-subtitle">Registro nuevo basado en el comprobante de referencia.</p>
         </div>
         <div class="action-toolbar">
             <a class="btn btn-outline-secondary" asp-action="Index" asp-route-negocioId="@Model.NegocioId">
@@ -24,22 +19,17 @@
         </div>
     </section>
 
-    <form asp-action="Edit" method="post" class="sc-form-shell" id="comprobanteEditForm">
+    <form asp-action="CreateNota" method="post" class="sc-form-shell" id="comprobanteNotaForm">
         @Html.AntiForgeryToken()
-        <input type="hidden" asp-for="Id" />
         <input type="hidden" asp-for="NegocioId" />
         <input type="hidden" asp-for="ReservaId" />
-        <input type="hidden" asp-for="SubTotal" />
-        <input type="hidden" asp-for="Igv" />
-        <input type="hidden" asp-for="Serie" />
+        <input type="hidden" asp-for="ComprobanteReferenciaId" />
+        <input type="hidden" asp-for="TipoNota" />
         <input type="hidden" asp-for="CodigoDocumentoComprobante" />
-        <input type="hidden" asp-for="Total" />
+        <input type="hidden" asp-for="SubTotal" id="subTotalInput" />
+        <input type="hidden" asp-for="Igv" id="igvInput" />
+        <input type="hidden" asp-for="Serie" id="serieTextoInput" />
         <div asp-validation-summary="ModelOnly" class="alert alert-danger shadow-sm mb-0"></div>
-
-        @if (!puedeEditarCliente)
-        {
-            <div class="alert alert-info mb-3">Este comprobante no esta pendiente. Solo lectura.</div>
-        }
 
         <section class="sc-form-card mb-3">
             <div class="sc-form-section">
@@ -103,18 +93,37 @@
                         <input asp-for="Numero" class="form-control text-center fw-bold" readonly />
                     </div>
                 </div>
+
+                <div class="row g-2 mt-2 mb-3">
+                    <div class="col-12">
+                        <div class="border rounded p-2 bg-light">
+                            <div class="fw-semibold mb-1">Documento de referencia</div>
+                            <div>
+                                Tipo: @Model.ComprobanteReferenciaTipo |
+                                Serie: @Model.ComprobanteReferenciaSerie |
+                                Numero: @Model.ComprobanteReferenciaNumero?.ToString("D8")
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="row g-3 mt-1">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label">Tipo de documento comprobante</label>
-                        <select asp-for="CodigoDocumentoComprobante" asp-items="Model.TiposDocumentoComprobante" class="form-select" disabled></select>
+                        <input class="form-control" value="@Model.TiposDocumentoComprobante.FirstOrDefault()?.Text" readonly />
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label">Serie</label>
-                        <input class="form-control" value="@Model.Serie" readonly />
+                        <select asp-for="NegocioSerieId" asp-items="Model.SeriesDocumento" class="form-select" id="serieSelect"></select>
+                        <span asp-validation-for="NegocioSerieId" class="text-danger"></span>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
+                        <label asp-for="TipoNotaCodigoSunat" class="form-label">Tipo de @(esNotaCredito ? "nota de credito" : "nota de debito")</label>
+                        <select asp-for="TipoNotaCodigoSunat" asp-items="Model.TiposNotaSunat" class="form-select"></select>
+                    </div>
+                    <div class="col-md-3">
                         <label asp-for="FechaEmision" class="form-label">Fecha</label>
-                        <input asp-for="FechaEmision" type="date" class="form-control" readonly />
+                        <input asp-for="FechaEmision" type="date" class="form-control" />
                     </div>
 
                     <div class="col-md-4">
@@ -123,75 +132,63 @@
                     </div>
                     <div class="col-md-4">
                         <label asp-for="ClienteCorreo" class="form-label">Correo</label>
-                        <input asp-for="ClienteCorreo" class="form-control" readonly="@(!puedeEditarCliente)" />
+                        <input asp-for="ClienteCorreo" class="form-control" />
                     </div>
                     <div class="col-md-4">
                         <label asp-for="ClienteTipoDocumento" class="form-label">Tipo de documento</label>
-                        <select asp-for="ClienteTipoDocumento" asp-items="Model.TiposDocumentoIdentidad" class="form-select" disabled="@(!puedeEditarCliente)"></select>
+                        <select asp-for="ClienteTipoDocumento" asp-items="Model.TiposDocumentoIdentidad" class="form-select" id="clienteTipoDocumentoSelect"></select>
                     </div>
 
                     <div class="col-md-4">
                         <label asp-for="ClienteNumeroDocumento" class="form-label">Numero de documento</label>
-                        <input asp-for="ClienteNumeroDocumento" class="form-control" readonly="@(!puedeEditarCliente)" />
+                        <input asp-for="ClienteNumeroDocumento" class="form-control" />
                     </div>
                     <div class="col-md-8">
                         <label asp-for="ClienteDireccionFiscal" class="form-label">Direccion</label>
-                        <input asp-for="ClienteDireccionFiscal" class="form-control" readonly="@(!puedeEditarCliente)" />
+                        <input asp-for="ClienteDireccionFiscal" class="form-control" />
                     </div>
 
                     <div class="col-md-4">
                         <label class="form-label">Departamento</label>
-                        <select asp-for="ClienteCodigoDepartamento" asp-items="Model.DepartamentosUbigeo" class="form-select" id="clienteDepartamentoSelect" disabled="@(!puedeEditarCliente)">
+                        <select asp-for="ClienteCodigoDepartamento" asp-items="Model.DepartamentosUbigeo" class="form-select" id="clienteDepartamentoSelect">
                             <option value="">Selecciona departamento</option>
                         </select>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Provincia</label>
-                        <select asp-for="ClienteCodigoProvincia" asp-items="Model.ProvinciasUbigeo" class="form-select" id="clienteProvinciaSelect" disabled="@(!puedeEditarCliente)">
+                        <select asp-for="ClienteCodigoProvincia" asp-items="Model.ProvinciasUbigeo" class="form-select" id="clienteProvinciaSelect">
                             <option value="">Selecciona provincia</option>
                         </select>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Distrito</label>
-                        <select asp-for="ClienteCodigoUbigeo" asp-items="Model.DistritosUbigeo" class="form-select" id="clienteDistritoSelect" disabled="@(!puedeEditarCliente)">
+                        <select asp-for="ClienteCodigoUbigeo" asp-items="Model.DistritosUbigeo" class="form-select" id="clienteDistritoSelect">
                             <option value="">Selecciona distrito</option>
                         </select>
                     </div>
 
-                    @if (Model.DocumentoTributario)
-                    {
-                        <div class="col-md-4">
-                            <label class="form-label">SubTotal (@Model.MonedaSimbolo)</label>
-                            <input value="@Model.SubTotal.ToString("N2")" class="form-control text-end" readonly />
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">IGV @Model.PorcentajeIgvConfigurado% (@Model.MonedaSimbolo)</label>
-                            <input value="@Model.Igv.ToString("N2")" class="form-control text-end" readonly />
-                        </div>
-                    }
+                    <div class="col-md-4">
+                        <label class="form-label">SubTotal (@Model.MonedaSimbolo)</label>
+                        <input class="form-control text-end" id="subTotalVisual" value="@Model.SubTotal.ToString("N2")" readonly />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">IGV @Model.PorcentajeIgvConfigurado% (@Model.MonedaSimbolo)</label>
+                        <input class="form-control text-end" id="igvVisual" value="@Model.Igv.ToString("N2")" readonly />
+                    </div>
                     <div class="col-md-4">
                         <label class="form-label">Total (@Model.MonedaSimbolo)</label>
-                        <input asp-for="Total" class="form-control text-end" readonly />
+                        <input asp-for="Total" class="form-control text-end" id="totalInput" />
                     </div>
                 </div>
             </div>
         </section>
 
-        @if (puedeEditarCliente)
-        {
-            <div class="sc-form-actions">
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-check2-circle me-1"></i> Guardar comprobante
-                </button>
-                <a class="btn btn-outline-secondary" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Cancelar</a>
-            </div>
-        }
-        else
-        {
-            <div class="sc-form-actions">
-                <a class="btn btn-outline-secondary" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Volver</a>
-            </div>
-        }
+        <div class="sc-form-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check2-circle me-1"></i> Guardar @(esNotaCredito ? "nota de credito" : "nota de debito")
+            </button>
+            <a class="btn btn-outline-secondary" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Cancelar</a>
+        </div>
     </form>
 </div>
 
@@ -199,12 +196,18 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         (() => {
-            const puedeEditarCliente = @puedeEditarCliente.ToString().ToLowerInvariant();
-            if (!puedeEditarCliente) return;
-
+            const porcentajeIgv = Number('@Model.PorcentajeIgvConfigurado');
             const ubigeoProvUrl = '@Url.Action("UbigeoProvincias", "Comprobantes")';
             const ubigeoDistUrl = '@Url.Action("UbigeoDistritos", "Comprobantes")';
 
+            const form = document.getElementById('comprobanteNotaForm');
+            const serieSelect = document.getElementById('serieSelect');
+            const serieTextoInput = document.getElementById('serieTextoInput');
+            const totalInput = document.getElementById('totalInput');
+            const subTotalInput = document.getElementById('subTotalInput');
+            const igvInput = document.getElementById('igvInput');
+            const subTotalVisual = document.getElementById('subTotalVisual');
+            const igvVisual = document.getElementById('igvVisual');
             const clienteDepSelect = document.getElementById('clienteDepartamentoSelect');
             const clienteProvSelect = document.getElementById('clienteProvinciaSelect');
             const clienteDistSelect = document.getElementById('clienteDistritoSelect');
@@ -241,6 +244,23 @@
                 if (selected) clienteDistSelect.value = selected;
             };
 
+            const recalcularMontos = () => {
+                const total = Number(totalInput?.value || 0);
+                if (!Number.isFinite(total) || total < 0) return;
+                const divisor = 1 + (porcentajeIgv / 100);
+                const subTotal = divisor > 0 ? (total / divisor) : total;
+                const igv = total - subTotal;
+                subTotalInput.value = subTotal.toFixed(2);
+                igvInput.value = igv.toFixed(2);
+                subTotalVisual.value = subTotal.toFixed(2);
+                igvVisual.value = igv.toFixed(2);
+            };
+
+            serieSelect?.addEventListener('change', () => {
+                const opt = serieSelect.options[serieSelect.selectedIndex];
+                serieTextoInput.value = opt ? String(opt.text || '') : '';
+            });
+
             clienteDepSelect?.addEventListener('change', async () => {
                 await cargarProvincias(clienteDepSelect.value || '', '');
                 await cargarDistritos('', '');
@@ -249,6 +269,11 @@
             clienteProvSelect?.addEventListener('change', async () => {
                 await cargarDistritos(clienteProvSelect.value || '', '');
             });
+
+            totalInput?.addEventListener('input', recalcularMontos);
+            form?.addEventListener('submit', () => recalcularMontos());
+
+            recalcularMontos();
         })();
     </script>
 }

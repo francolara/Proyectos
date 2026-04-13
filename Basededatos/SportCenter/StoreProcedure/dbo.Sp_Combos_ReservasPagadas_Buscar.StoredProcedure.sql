@@ -9,6 +9,7 @@ GO
 -- Create date:   09/04/2026
 -- Description:   Combo de reservas pagadas para emision de comprobantes (sin duplicar reserva ya comprobada).
 -- Firma:         Codex - 09/04/2026 | Excluye reservas que ya tengan comprobante activo (estado distinto de Anulado).
+-- Firma:         Codex - 13/04/2026 | Permite listar reserva para reemision cuando el comprobante principal tiene NC activa (07), sin anular el comprobante inicial.
 -- =============================================
 CREATE OR ALTER PROCEDURE dbo.Sp_Combos_ReservasPagadas_Buscar
     @NegocioId INT,
@@ -62,7 +63,18 @@ BEGIN
                   FROM dbo.ComprobantesElectronicos ce
                   WHERE ce.NegocioId = @NegocioId
                     AND ce.ReservaId = r.Id
+                    AND ce.ComprobanteReferenciaId IS NULL
                     AND ce.Estado <> 5
+                    AND NOT EXISTS
+                    (
+                        SELECT 1
+                        FROM dbo.ComprobantesElectronicos nc
+                        INNER JOIN dbo.NegociosTiposDocumentoComprobante ntdNc ON ntdNc.Id = nc.TipoComprobante
+                        WHERE nc.NegocioId = ce.NegocioId
+                          AND nc.ComprobanteReferenciaId = ce.Id
+                          AND nc.Estado <> 5
+                          AND ntdNc.CodigoSunat = N'07'
+                    )
               )
               AND
               (

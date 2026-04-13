@@ -115,6 +115,11 @@ public partial class SportCenterStoredProcedureService
         return list;
     }
 
+    public Task<List<SelectListItem>> CombosTiposNotaComprobanteSunatAsync(string tipoNota)
+        => ComboAsync(
+            "Sp_Combos_TiposNotaComprobanteSunat",
+            ("@TipoNota", string.IsNullOrWhiteSpace(tipoNota) ? null : tipoNota.Trim().ToUpperInvariant(), SqlDbType.Char));
+
     public Task<List<SelectListItem>> CombosDocumentosComprobanteNegocioAsync(int negocioId, bool? tributario = null)
         => ComboAsync(
             "Sp_Combos_DocumentosComprobanteNegocio",
@@ -126,6 +131,16 @@ public partial class SportCenterStoredProcedureService
             "Sp_Combos_SeriesDocumentoComprobante",
             ("@NegocioId", negocioId, SqlDbType.Int),
             ("@CodigoSunat", codigoSunat, SqlDbType.NVarChar));
+
+    public async Task<string?> ParametrosGlobalesObtenerValorAsync(string nombreParametro)
+    {
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_ParametrosGlobales_ObtenerValor", cn) { CommandType = CommandType.StoredProcedure };
+        AddParam(cmd, "@NombreParametro", nombreParametro, SqlDbType.NVarChar);
+        var result = await cmd.ExecuteScalarAsync();
+        return result?.ToString();
+    }
 
     public async Task<List<SerieDocumentoComprobanteItemViewModel>> ConfiguracionSeriesDocumentoListarAsync(int negocioId)
     {

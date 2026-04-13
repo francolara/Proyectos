@@ -5,6 +5,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 -- Firma: Codex - 09/04/2026 | Obtiene datos completos para visualizar comprobante (PDF interno o URL proveedor para tributarios), incluyendo ubigeo de negocio y cliente.
+-- Firma: Codex - 11/04/2026 | Agrega soporte de codigos 07/08 para visualizacion de NC/ND.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Comprobantes_ObtenerVisualizacion]
     @NegocioId INT,
     @Id INT
@@ -21,15 +22,19 @@ BEGIN
                 WHEN ce.TipoComprobante = 2 THEN N'01'
                 WHEN ce.TipoComprobante = 1 THEN N'03'
                 WHEN ce.TipoComprobante = 3 THEN N'RI'
+                WHEN ce.TipoComprobante = 4 THEN N'07'
+                WHEN ce.TipoComprobante = 5 THEN N'08'
                 ELSE N'03'
             END AS CodigoDocumentoComprobante,
             CASE
                 WHEN ce.TipoComprobante = 2 THEN N'Factura'
                 WHEN ce.TipoComprobante = 1 THEN N'Boleta'
                 WHEN ce.TipoComprobante = 3 THEN N'Recibo Interno'
+                WHEN ce.TipoComprobante = 4 THEN N'Nota de Credito'
+                WHEN ce.TipoComprobante = 5 THEN N'Nota de Debito'
                 ELSE CONCAT(N'Tipo ', ce.TipoComprobante)
             END AS TipoDocumentoNombre,
-            CAST(CASE WHEN ce.TipoComprobante IN (1,2) THEN 1 ELSE 0 END AS BIT) AS EsTributario,
+            CAST(CASE WHEN ce.TipoComprobante IN (1,2,4,5) THEN 1 ELSE 0 END AS BIT) AS EsTributario,
             ce.Serie,
             ce.Numero,
             ce.FechaEmision,

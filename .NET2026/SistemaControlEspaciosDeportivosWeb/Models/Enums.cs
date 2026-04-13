@@ -42,7 +42,9 @@ public enum TipoComprobante
 {
     Boleta = 1,
     Factura = 2,
-    ReciboInterno = 3
+    ReciboInterno = 3,
+    NotaCredito = 4,
+    NotaDebito = 5
 }
 
 public enum EstadoComprobanteElectronico

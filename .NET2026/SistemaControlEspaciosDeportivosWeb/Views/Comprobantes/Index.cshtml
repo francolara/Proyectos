@@ -1,6 +1,8 @@
-﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobantesIndexViewModel
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobantesIndexViewModel
 <!-- Firma: Codex - 09/04/2026 | Rediseno de cabecera/listado de comprobantes con estandar de iconos, buscador y paginacion 20x20; accion Ver abre preview web y desde ahi descarga PDF interno (RI) o redirecciona a URL proveedor en tributarios. -->
 <!-- Firma: Codex - 10/04/2026 | Listado de comprobantes agrega filtro por tipo de documento configurado para el negocio (maestros), con paginacion conservando filtro. -->
+<!-- Firma: Codex - 11/04/2026 | Listado agrega botones Generar NC/ND por fila; solo habilitados para Factura/Boleta aceptadas SUNAT. -->
+<!-- Firma: Codex - 11/04/2026 | Listado agrega columna Referencia y bloquea NC/ND + Anular cuando el comprobante ya tiene notas relacionadas; para RI oculta NC/ND. -->
 @{
     ViewData["Title"] = "Comprobantes";
     var totalComprobantes = Model.TotalRegistros;
@@ -136,6 +138,7 @@
                         <tr>
                             <th class="text-center"><span class="sc-col-header"><i class="bi bi-receipt-cutoff"></i><small>Documento</small></span></th>
                             <th class="text-center"><span class="sc-col-header"><i class="bi bi-person"></i><small>Cliente y fecha</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-link-45deg"></i><small>Referencia</small></span></th>
                             <th class="text-center"><span class="sc-col-header"><i class="bi bi-cash-stack"></i><small>Estado y total</small></span></th>
                             <th class="text-center"><span class="sc-col-header"><i class="bi bi-gear"></i><small>Acciones</small></span></th>
                         </tr>
@@ -143,6 +146,10 @@
                     <tbody>
                         @foreach (var item in Model.Comprobantes)
                         {
+                            var codigoDoc = (item.CodigoDocumentoComprobante ?? string.Empty).Trim().ToUpperInvariant();
+                            var mostrarBotonesNota = codigoDoc is "01" or "03";
+                            var puedeGenerarNota = (codigoDoc == "01" || codigoDoc == "03") && item.EstadoCodigo == 3 && !item.TieneNotasRelacionadas;
+                            var puedeAnular = !item.TieneNotasRelacionadas;
                             <tr>
                                 <td class="text-center">
                                     @{
@@ -187,37 +194,80 @@
                                     </div>
                                 </td>
                                 <td class="text-center">
+                                    <span class="badge bg-light text-dark border w-100 py-2">@item.Referencia</span>
+                                </td>
+                                <td class="text-center">
                                     <div class="d-flex flex-wrap justify-content-center gap-1">
                                         <span class="badge @estadoClase(item.Estado) sc-estado-pill">@item.Estado</span>
                                         <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle sc-estado-pill">S/ @item.Total.ToString("N2")</span>
                                     </div>
                                 </td>
                                 <td class="text-end">
-                                    <a class="btn btn-sm sc-action-btn sc-action-primary"
-                                       asp-action="Preview"
-                                       asp-route-negocioId="@Model.NegocioId"
-                                       asp-route-id="@item.Id"
-                                       target="_blank"
-                                       title="Visualizar comprobante">
-                                        <i class="bi bi-eye"></i> Ver
-                                    </a>
-                                    @if (Model.PuedeEditar)
-                                    {
-                                        <a class="btn btn-sm sc-action-btn sc-action-edit" asp-action="Edit" asp-route-negocioId="@Model.NegocioId" asp-route-id="@item.Id">
-                                            <i class="bi bi-pencil-square"></i> Editar
-                                        </a>
-                                    }
-                                    @if (Model.PuedeEliminar)
-                                    {
-                                        <form asp-action="Delete" method="post" class="d-inline">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="negocioId" value="@Model.NegocioId" />
-                                            <input type="hidden" name="id" value="@item.Id" />
-                                            <button type="submit" class="btn btn-sm sc-action-btn sc-action-delete">
-                                                <i class="bi bi-trash3"></i> Anular
-                                            </button>
-                                        </form>
-                                    }
+                                    <div class="d-inline-flex flex-column gap-1 align-items-end">
+                                        <div class="d-inline-flex gap-1">
+                                            <a class="btn btn-sm sc-action-btn sc-action-primary"
+                                               asp-action="Preview"
+                                               asp-route-negocioId="@Model.NegocioId"
+                                               asp-route-id="@item.Id"
+                                               target="_blank"
+                                               title="Visualizar comprobante">
+                                                <i class="bi bi-eye"></i> Ver
+                                            </a>
+                                            @if (Model.PuedeCrear && mostrarBotonesNota)
+                                            {
+                                                if (puedeGenerarNota)
+                                                {
+                                                    <a class="btn btn-sm sc-action-btn btn-outline-secondary"
+                                                       asp-action="CreateNota"
+                                                       asp-route-negocioId="@Model.NegocioId"
+                                                       asp-route-id="@item.Id"
+                                                       asp-route-tipoNota="NC">
+                                                        Generar NC
+                                                    </a>
+                                                    <a class="btn btn-sm sc-action-btn btn-outline-secondary"
+                                                       asp-action="CreateNota"
+                                                       asp-route-negocioId="@Model.NegocioId"
+                                                       asp-route-id="@item.Id"
+                                                       asp-route-tipoNota="ND">
+                                                        Generar ND
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <button type="button" class="btn btn-sm sc-action-btn btn-outline-secondary" disabled>Generar NC</button>
+                                                    <button type="button" class="btn btn-sm sc-action-btn btn-outline-secondary" disabled>Generar ND</button>
+                                                }
+                                            }
+                                        </div>
+                                        <div class="d-inline-flex gap-1">
+                                            @if (Model.PuedeEditar)
+                                            {
+                                                <a class="btn btn-sm sc-action-btn sc-action-edit" asp-action="Edit" asp-route-negocioId="@Model.NegocioId" asp-route-id="@item.Id">
+                                                    <i class="bi bi-pencil-square"></i> Editar
+                                                </a>
+                                            }
+                                            @if (Model.PuedeEliminar)
+                                            {
+                                                <form asp-action="Delete" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                                                    <input type="hidden" name="id" value="@item.Id" />
+                                                    @if (puedeAnular)
+                                                    {
+                                                        <button type="submit" class="btn btn-sm sc-action-btn sc-action-delete">
+                                                            <i class="bi bi-trash3"></i> Anular
+                                                        </button>
+                                                    }
+                                                    else
+                                                    {
+                                                        <button type="button" class="btn btn-sm sc-action-btn sc-action-delete" disabled>
+                                                            <i class="bi bi-trash3"></i> Anular
+                                                        </button>
+                                                    }
+                                                </form>
+                                            }
+                                        </div>
+                                    </div>
                                 </td>
                             </tr>
                         }
@@ -259,5 +309,3 @@
         line-height: 1.2;
     }
 </style>
-
-

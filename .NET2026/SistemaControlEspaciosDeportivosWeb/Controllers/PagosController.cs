@@ -101,7 +101,7 @@ public class PagosController(IModuloPermisoService moduloPermisoService, ISportC
         if (vm is null) return NotFound();
         vm.NegocioNombre = baseVm.NegocioNombre;
         vm.RolActual = baseVm.RolActual;
-        vm.AgregarNuevoPago = true;
+        vm.AgregarNuevoPago = !vm.TieneComprobanteActivo;
         vm.FormasPago = await spService.PagosComboFormasPagoAsync(resolvedNegocioId.Value);
         return View(vm);
     }
@@ -112,6 +112,18 @@ public class PagosController(IModuloPermisoService moduloPermisoService, ISportC
     {
         var baseVm = await ObtenerBaseAsync(model.NegocioId, "PAGOS");
         if (baseVm is null || !baseVm.PuedeEditar) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
+
+        var estadoActualReserva = await spService.PagosObtenerAsync(model.NegocioId, model.ReservaId);
+        if (estadoActualReserva is null) return NotFound();
+        if (estadoActualReserva.TieneComprobanteActivo)
+        {
+            estadoActualReserva.NegocioNombre = baseVm.NegocioNombre;
+            estadoActualReserva.RolActual = baseVm.RolActual;
+            estadoActualReserva.FormasPago = await spService.PagosComboFormasPagoAsync(model.NegocioId);
+            estadoActualReserva.AgregarNuevoPago = false;
+            ModelState.AddModelError(string.Empty, "La reserva ya tiene comprobante emitido. Esta pantalla queda solo en modo visualizacion.");
+            return View(estadoActualReserva);
+        }
 
         model.FormasPago = await spService.PagosComboFormasPagoAsync(model.NegocioId);
         if (model.Pagos is null) model.Pagos = new List<PagoReservaDetalleItemViewModel>();

@@ -20,8 +20,10 @@ public interface ISportCenterStoredProcedureService
     Task ConfiguracionSeriesDocumentoGuardarAsync(int negocioId, string codigoSunat, string serie, bool activo, string usuario);
     Task<bool> ConfiguracionSeriesDocumentoEliminarAsync(int negocioId, int id, string usuario);
     Task<List<SelectListItem>> CombosTiposDocumentoIdentidadSunatAsync();
+    Task<List<SelectListItem>> CombosTiposNotaComprobanteSunatAsync(string tipoNota);
     Task<List<SelectListItem>> CombosDocumentosComprobanteNegocioAsync(int negocioId, bool? tributario = null);
     Task<List<SelectListItem>> CombosSeriesDocumentoComprobanteAsync(int negocioId, string codigoSunat);
+    Task<string?> ParametrosGlobalesObtenerValorAsync(string nombreParametro);
     Task<List<SelectListItem>> UbigeoDepartamentosListarAsync();
     Task<List<SelectListItem>> UbigeoProvinciasListarAsync(string codigoDepartamento);
     Task<List<SelectListItem>> UbigeoDistritosListarAsync(string codigoProvincia);
