@@ -10,11 +10,14 @@ GO
 -- Firma: Codex - 11/04/2026 | Incluye columna Referencia y bandera TieneNotasRelacionadas para reglas UI de NC/ND y Anular.
 -- Firma: Codex - 12/04/2026 | Elimina mapeos rigidos por Id de tipo comprobante y usa relacion NegociosTiposDocumentoComprobante + TiposDocumentoComprobanteSuperMaestro para tipo/codigo/referencia/filtros en entorno multi-negocio.
 -- Firma: Codex - 12/04/2026 | En columna Referencia usa abreviatura del documento desde TiposDocumentoComprobanteSuperMaestro.Abreviatura.
+-- Firma: Codex - 13/04/2026 | Agrega filtro opcional por rango de fecha de emision (Desde/Hasta) para listado de comprobantes.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Comprobantes_Listar]
     @NegocioId INT,
     @SedeId INT = NULL,
     @Buscar NVARCHAR(120) = NULL,
     @CodigoDocumento NVARCHAR(4) = NULL,
+    @FechaDesde DATE = NULL,
+    @FechaHasta DATE = NULL,
     @Pagina INT = 1,
     @TamanoPagina INT = 20,
     @TotalRegistros INT OUTPUT
@@ -133,6 +136,8 @@ BEGIN
         ) AS notasRelacionadas
         WHERE c.NegocioId = @NegocioId
           AND (@SedeId IS NULL OR s.Id = @SedeId)
+          AND (@FechaDesde IS NULL OR CAST(c.FechaEmision AS DATE) >= @FechaDesde)
+          AND (@FechaHasta IS NULL OR CAST(c.FechaEmision AS DATE) <= @FechaHasta)
           AND
           (
                 @CodigoDocumentoNorm IS NULL

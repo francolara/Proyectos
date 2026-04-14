@@ -1,6 +1,6 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.PagosIndexViewModel
 <!-- Firma: Codex - 09/04/2026 | Rediseno integral de listado de pagos por reserva (una fila por reserva), cabecera estandar con iconos, paginacion backend 20x20, accion eliminar por reserva y columna de saldo pendiente con simbolo de moneda. -->
-<!-- Firma: Codex - 13/04/2026 | Cabecera del modulo muestra tarjeta informativa de Club/negocio con ID junto al titulo. -->
+<!-- Firma: Codex - 13/04/2026 | Cabecera del modulo muestra tarjeta informativa de Club/negocio con ID junto al titulo; agrega filtro por fecha (Desde/Hasta) y presets rapidos Hoy/7d/30d/Mes actual en listado. -->
 
 @{
     ViewData["Title"] = "Pagos";
@@ -72,7 +72,24 @@
                     <label class="form-label">Registros visibles</label>
                     <div class="form-control bg-light text-center fw-bold">@Model.TotalRegistros</div>
                 </div>
-                <div class="col-12 d-flex justify-content-end">
+                <div class="col-md-3">
+                    <label class="form-label">Desde</label>
+                    <input type="date" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Hasta</label>
+                    <input type="date" name="fechaHasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label d-block">Seleccion rapida</label>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="submit" class="btn btn-sm btn-outline-primary" name="preset" value="hoy">Hoy</button>
+                        <button type="submit" class="btn btn-sm btn-outline-primary" name="preset" value="7d">7 dias</button>
+                        <button type="submit" class="btn btn-sm btn-outline-primary" name="preset" value="30d">30 dias</button>
+                        <button type="submit" class="btn btn-sm btn-outline-primary" name="preset" value="mes">Mes actual</button>
+                    </div>
+                </div>
+                <div class="col-md-2 d-flex align-items-end justify-content-md-end">
                     <button type="submit" class="btn btn-outline-primary">
                         <i class="bi bi-search me-1"></i> Buscar
                     </button>
@@ -86,10 +103,10 @@
                 <nav aria-label="Paginacion pagos">
                     <ul class="pagination pagination-sm mb-0">
                         <li class="page-item @(Model.Pagina <= 1 ? "disabled" : null)">
-                            <a class="page-link" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-buscar="@Model.Buscar" asp-route-pagina="@(Model.Pagina - 1)">Anterior</a>
+                            <a class="page-link" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-buscar="@Model.Buscar" asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")" asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")" asp-route-pagina="@(Model.Pagina - 1)">Anterior</a>
                         </li>
                         <li class="page-item @(Model.Pagina >= Model.TotalPaginas ? "disabled" : null)">
-                            <a class="page-link" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-buscar="@Model.Buscar" asp-route-pagina="@(Model.Pagina + 1)">Siguiente</a>
+                            <a class="page-link" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-buscar="@Model.Buscar" asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")" asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")" asp-route-pagina="@(Model.Pagina + 1)">Siguiente</a>
                         </li>
                     </ul>
                 </nav>

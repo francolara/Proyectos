@@ -9,6 +9,7 @@ GO
 -- SOURCE: 34_Clientes_NombreEquipo_Reservas.sql (linea 248)
 -- Firma: Codex - 05/04/2026 | Filtro de estado Pagada incluye estados historicos 3 y 4; retiro operativo de En uso.
 -- Firma: Codex - 07/04/2026 | Incluye Adelanto, SaldoPendiente, paginacion backend con total de registros para listado general, y separa Cliente/Equipo en columnas independientes.
+-- Firma: Codex - 13/04/2026 | SaldoPendiente se calcula con pagos acumulados por reserva (incluye adelantos y pagos posteriores), no solo Adelanto.
 CREATE OR ALTER  PROCEDURE [dbo].[Sp_Reservas_Listar]
     @NegocioId INT,
     @FechaDesde DATE = NULL,
@@ -32,6 +33,14 @@ BEGIN
         IF OBJECT_ID('tempdb..#ReservasFiltradas') IS NOT NULL
             DROP TABLE #ReservasFiltradas;
 
+        ;WITH PagosPorReserva AS
+        (
+            SELECT
+                p.ReservaId,
+                SUM(p.Monto) AS MontoPagado
+            FROM dbo.Pagos p
+            GROUP BY p.ReservaId
+        )
         SELECT
             r.Id,
             CAST(c.NombresORazonSocial AS NVARCHAR(250)) AS Cliente,
@@ -43,13 +52,14 @@ BEGIN
             r.HoraFin,
             r.Total,
             r.Adelanto,
-            (r.Total - r.Adelanto) AS SaldoPendiente,
+            CAST(CASE WHEN r.Total - COALESCE(pr.MontoPagado, 0) > 0 THEN r.Total - COALESCE(pr.MontoPagado, 0) ELSE 0 END AS DECIMAL(10,2)) AS SaldoPendiente,
             CAST(r.Estado AS NVARCHAR(20)) AS Estado
         INTO #ReservasFiltradas
         FROM dbo.Reservas r
         INNER JOIN dbo.Clientes c ON c.Id = r.ClienteId
         INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
+        LEFT JOIN PagosPorReserva pr ON pr.ReservaId = r.Id
         WHERE s.NegocioId = @NegocioId
           AND (@FechaDesde IS NULL OR r.Fecha >= @FechaDesde)
           AND (@FechaHasta IS NULL OR r.Fecha <= @FechaHasta)

@@ -5,6 +5,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 -- Firma: Codex - 10/04/2026 | KPI global del listado general de reservas (pendientes, pagadas y saldo total) sin paginacion.
+-- Firma: Codex - 13/04/2026 | Excluye reservas canceladas (Estado=5) del conteo de reservas KPI y del saldo total; mantiene filtros del listado.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Reservas_ListadoResumen]
     @NegocioId INT,
     @FechaDesde DATE = NULL,
@@ -57,9 +58,10 @@ BEGIN
           );
 
         SELECT
+            COALESCE(SUM(CASE WHEN rf.Estado <> 5 THEN 1 ELSE 0 END), 0) AS TotalReservasActivas,
             SUM(CASE WHEN rf.Estado = 1 THEN 1 ELSE 0 END) AS TotalPendientes,
             SUM(CASE WHEN rf.Estado IN (3, 4) THEN 1 ELSE 0 END) AS TotalPagadas,
-            CAST(SUM(rf.Total - rf.Adelanto) AS DECIMAL(18,2)) AS SaldoTotal
+            CAST(COALESCE(SUM(CASE WHEN rf.Estado <> 5 THEN (rf.Total - rf.Adelanto) ELSE 0 END), 0) AS DECIMAL(18,2)) AS SaldoTotal
         FROM #ReservasFiltradasResumen rf;
     END TRY
     BEGIN CATCH

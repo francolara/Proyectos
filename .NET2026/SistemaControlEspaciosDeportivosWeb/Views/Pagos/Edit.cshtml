@@ -1,6 +1,7 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.PagoReservaEditViewModel
 <!-- Firma: Codex - 09/04/2026 | Edicion de pagos por reserva: resumen unico, edicion de observacion, alta/eliminacion de pagos con confirmacion SI/NO, tarjeta de saldo en datos de reserva y deteccion automatica de intento de nuevo pago para evitar redireccion sin validacion. -->
 <!-- Firma: Codex - 12/04/2026 | Modo solo visualizacion cuando la reserva tiene comprobante activo: bloquea agregar/eliminar pagos y oculta acciones de guardado. -->
+<!-- Firma: Codex - 13/04/2026 | Eliminar pago: validaciones completas, desactiva alta al marcar eliminacion y evita marcar intento de nuevo pago por valores por defecto (fecha/forma) para no bloquear el guardado. -->
 
 @{
     ViewData["Title"] = $"Editar pagos reserva {Model.ReservaCodigo}";
@@ -71,17 +72,7 @@
         @Html.AntiForgeryToken()
         <input type="hidden" asp-for="NegocioId" />
         <input type="hidden" asp-for="ReservaId" />
-        <input type="hidden" asp-for="ReservaCodigo" />
-        <input type="hidden" asp-for="Sede" />
-        <input type="hidden" asp-for="Espacio" />
-        <input type="hidden" asp-for="Cliente" />
-        <input type="hidden" asp-for="FechaReserva" />
-        <input type="hidden" asp-for="TotalReserva" />
-        <input type="hidden" asp-for="TotalPagado" />
-        <input type="hidden" asp-for="SaldoPendiente" />
-        <input type="hidden" asp-for="TieneComprobanteActivo" />
-        <input type="hidden" asp-for="ReferenciaComprobante" />
-        <div asp-validation-summary="ModelOnly" class="alert alert-danger shadow-sm mb-3"></div>
+        <div asp-validation-summary="All" class="alert alert-danger shadow-sm mb-3"></div>
 
         <section class="table-card mb-3">
             <h2 class="section-title">Pagos registrados</h2>
@@ -160,7 +151,7 @@
                     <div class="row g-3 align-items-end">
                         <div class="col-md-2">
                             <div class="form-check form-switch">
-                                <input asp-for="AgregarNuevoPago" class="form-check-input" id="AgregarNuevoPago" checked />
+                                <input asp-for="AgregarNuevoPago" class="form-check-input" id="AgregarNuevoPago" />
                                 <label class="form-check-label" for="AgregarNuevoPago">Agregar pago</label>
                             </div>
                         </div>
@@ -224,8 +215,6 @@
                 if (!agregarPago) return;
                 const hayDatos =
                     (nuevoMonto && (nuevoMonto.value || '').trim() !== '') ||
-                    (nuevaFormaPagoId && (nuevaFormaPagoId.value || '').trim() !== '') ||
-                    (nuevaFechaPago && (nuevaFechaPago.value || '').trim() !== '') ||
                     (nuevoNumeroOperacion && (nuevoNumeroOperacion.value || '').trim() !== '') ||
                     (nuevaObservacion && (nuevaObservacion.value || '').trim() !== '');
                 if (hayDatos) agregarPago.checked = true;
@@ -249,6 +238,13 @@
                         : `Si eliminas el pago #${pagoId}, la reserva cambiara a estado Confirmada. Deseas continuar?`;
                     if (!window.confirm(mensaje)) {
                         check.checked = false;
+                        return;
+                    }
+
+                    // Si la accion principal es eliminar, evitamos que el switch
+                    // "Agregar pago" quede activo por defecto y bloquee el submit.
+                    if (agregarPago) {
+                        agregarPago.checked = false;
                     }
                 });
             });

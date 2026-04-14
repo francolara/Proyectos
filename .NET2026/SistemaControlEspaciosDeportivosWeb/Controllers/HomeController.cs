@@ -18,10 +18,12 @@ public class HomeController(
         DateOnly? fecha,
         TimeOnly? horaInicio,
         TimeOnly? horaFin,
-        int? sedeId,
+        string? codigoDepartamento,
+        string? codigoProvincia,
+        string? codigoUbigeo,
         int? tipoDeporteId)
     {
-        var vm = await ConstruirHomeVmAsync(fecha, horaInicio, horaFin, sedeId, tipoDeporteId);
+        var vm = await ConstruirHomeVmAsync(fecha, horaInicio, horaFin, codigoDepartamento, codigoProvincia, codigoUbigeo, tipoDeporteId);
         vm.MensajeSolicitud = TempData["MensajeSolicitud"]?.ToString();
         return View(vm);
     }
@@ -35,7 +37,7 @@ public class HomeController(
 
         if (!ModelState.IsValid)
         {
-            var vmError = await ConstruirHomeVmAsync(model.Fecha, model.HoraInicio, model.HoraFin, model.SedeId, model.TipoDeporteId);
+            var vmError = await ConstruirHomeVmAsync(model.Fecha, model.HoraInicio, model.HoraFin, model.CodigoDepartamento, model.CodigoProvincia, model.CodigoUbigeo, model.TipoDeporteId);
             return View("Index", vmError);
         }
 
@@ -67,16 +69,38 @@ public class HomeController(
                 fecha = model.Fecha,
                 horaInicio = model.HoraInicio,
                 horaFin = model.HoraFin,
-                sedeId = model.SedeId,
+                codigoDepartamento = model.CodigoDepartamento,
+                codigoProvincia = model.CodigoProvincia,
+                codigoUbigeo = model.CodigoUbigeo,
                 tipoDeporteId = model.TipoDeporteId
             });
         }
         catch (Exception ex)
         {
             ModelState.AddModelError(string.Empty, ex.Message);
-            var vmError = await ConstruirHomeVmAsync(model.Fecha, model.HoraInicio, model.HoraFin, model.SedeId, model.TipoDeporteId);
+            var vmError = await ConstruirHomeVmAsync(model.Fecha, model.HoraInicio, model.HoraFin, model.CodigoDepartamento, model.CodigoProvincia, model.CodigoUbigeo, model.TipoDeporteId);
             return View("Index", vmError);
         }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> UbigeoProvincias(string? codigoDepartamento)
+    {
+        var codigoDep = (codigoDepartamento ?? string.Empty).Trim();
+        if (codigoDep.Length != 2) return Json(Array.Empty<object>());
+
+        var data = await spService.UbigeoProvinciasListarAsync(codigoDep);
+        return Json(data.Select(x => new { value = x.Value, text = x.Text }));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> UbigeoDistritos(string? codigoProvincia)
+    {
+        var codigoProv = (codigoProvincia ?? string.Empty).Trim();
+        if (codigoProv.Length != 4) return Json(Array.Empty<object>());
+
+        var data = await spService.UbigeoDistritosListarAsync(codigoProv);
+        return Json(data.Select(x => new { value = x.Value, text = x.Text }));
     }
 
     [HttpGet]
@@ -231,27 +255,44 @@ public class HomeController(
         DateOnly? fecha,
         TimeOnly? horaInicio,
         TimeOnly? horaFin,
-        int? sedeId,
+        string? codigoDepartamento,
+        string? codigoProvincia,
+        string? codigoUbigeo,
         int? tipoDeporteId)
     {
         var fechaConsulta = fecha ?? DateOnly.FromDateTime(DateTime.Today);
         var horaInicioConsulta = horaInicio ?? new TimeOnly(18, 0);
         var horaFinConsulta = horaFin ?? new TimeOnly(19, 0);
+        var codigoDep = string.IsNullOrWhiteSpace(codigoDepartamento) ? null : codigoDepartamento.Trim();
+        var codigoProv = string.IsNullOrWhiteSpace(codigoProvincia) ? null : codigoProvincia.Trim();
+        var codigoDist = string.IsNullOrWhiteSpace(codigoUbigeo) ? null : codigoUbigeo.Trim();
 
         if (horaFinConsulta <= horaInicioConsulta)
             horaFinConsulta = horaInicioConsulta.AddHours(1);
 
         var sedes = await spService.HomeListarSedesAsync();
         var deportes = await spService.HomeListarTiposDeporteAsync();
-        var espaciosDisponibles = await spService.HomeBuscarEspaciosDisponiblesAsync(fechaConsulta, horaInicioConsulta, horaFinConsulta, sedeId, tipoDeporteId);
+        var espaciosDisponibles = await spService.HomeBuscarEspaciosDisponiblesAsync(fechaConsulta, horaInicioConsulta, horaFinConsulta, codigoDep, codigoProv, codigoDist, tipoDeporteId);
+        var departamentos = await spService.UbigeoDepartamentosListarAsync();
+        var provincias = !string.IsNullOrWhiteSpace(codigoDep) && codigoDep.Length == 2
+            ? await spService.UbigeoProvinciasListarAsync(codigoDep)
+            : new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+        var distritos = !string.IsNullOrWhiteSpace(codigoProv) && codigoProv.Length == 4
+            ? await spService.UbigeoDistritosListarAsync(codigoProv)
+            : new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
 
         return new HomeIndexViewModel
         {
             Fecha = fechaConsulta,
             HoraInicio = horaInicioConsulta,
             HoraFin = horaFinConsulta,
-            SedeId = sedeId,
+            CodigoDepartamento = codigoDep,
+            CodigoProvincia = codigoProv,
+            CodigoUbigeo = codigoDist,
             TipoDeporteId = tipoDeporteId,
+            DepartamentosUbigeo = departamentos,
+            ProvinciasUbigeo = provincias,
+            DistritosUbigeo = distritos,
             Sedes = sedes,
             TiposDeporte = deportes,
             Disponibles = espaciosDisponibles

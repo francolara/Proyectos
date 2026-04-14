@@ -14,7 +14,7 @@ public class ReservasController(
     private const string CodigoDocumentoRucSunat = "6";
     private const string CodigoDocumentoNoDomiciliadoSinRucSunat = "0";
 
-    public async Task<IActionResult> Index(int? negocioId, DateOnly? fechaDesde, DateOnly? fechaHasta, int? sedeId, int? espacioDeportivoId, int? estado, DateOnly? listadoDesde, DateOnly? listadoHasta, List<int>? estadosListado, string? estadosListadoCsv = null, int paginaListado = 1)
+    public async Task<IActionResult> Index(int? negocioId, DateOnly? fechaDesde, DateOnly? fechaHasta, int? sedeId, int? espacioDeportivoId, int? estado, DateOnly? listadoDesde, DateOnly? listadoHasta, string? listadoPreset, List<int>? estadosListado, string? estadosListadoCsv = null, int paginaListado = 1)
     {
         var resolvedNegocioId = await ResolverNegocioIdAsync(negocioId, spService);
         if (!resolvedNegocioId.HasValue) return Forbid();
@@ -34,8 +34,7 @@ public class ReservasController(
         var tiposDocumentoClientes = await spService.CombosTiposDocumentoIdentidadSunatAsync();
         var formasPago = await spService.PagosComboFormasPagoAsync(resolvedNegocioId.Value);
         var configClub = await spService.ConfiguracionClubObtenerAsync(resolvedNegocioId.Value);
-        var filtroListadoDesde = listadoDesde ?? desde;
-        var filtroListadoHasta = listadoHasta ?? hasta;
+        var (filtroListadoDesde, filtroListadoHasta) = ResolverRangoListado(listadoDesde, listadoHasta, listadoPreset, desde, hasta);
         if (filtroListadoHasta < filtroListadoDesde) filtroListadoHasta = filtroListadoDesde;
         var estadosSeleccionados = estadosListado ?? new List<int>();
         if (estadosSeleccionados.Count == 0 && !string.IsNullOrWhiteSpace(estadosListadoCsv))
@@ -111,6 +110,7 @@ public class ReservasController(
             PaginaListado = paginaActualListado,
             TamanoPaginaListado = tamanoPaginaListado,
             TotalReservasListado = totalReservasListado,
+            TotalReservasActivasListadoGlobal = resumenListadoGlobal.TotalReservasActivas,
             TotalPendientesListadoGlobal = resumenListadoGlobal.TotalPendientes,
             TotalPagadasListadoGlobal = resumenListadoGlobal.TotalPagadas,
             SaldoTotalListadoGlobal = resumenListadoGlobal.SaldoTotal,
@@ -159,6 +159,42 @@ public class ReservasController(
             }
         }
         return View(vm);
+    }
+
+    private static (DateOnly Desde, DateOnly Hasta) ResolverRangoListado(DateOnly? listadoDesde, DateOnly? listadoHasta, string? listadoPreset, DateOnly desdeBase, DateOnly hastaBase)
+    {
+        var hoy = DateOnly.FromDateTime(DateTime.Today);
+        DateOnly desde;
+        DateOnly hasta;
+
+        switch ((listadoPreset ?? string.Empty).Trim().ToLowerInvariant())
+        {
+            case "hoy":
+                desde = hoy;
+                hasta = hoy;
+                break;
+            case "7d":
+                hasta = hoy;
+                desde = hoy.AddDays(-6);
+                break;
+            case "30d":
+                hasta = hoy;
+                desde = hoy.AddDays(-29);
+                break;
+            case "mes":
+                desde = new DateOnly(hoy.Year, hoy.Month, 1);
+                hasta = new DateOnly(hoy.Year, hoy.Month, DateTime.DaysInMonth(hoy.Year, hoy.Month));
+                break;
+            default:
+                desde = listadoDesde ?? desdeBase;
+                hasta = listadoHasta ?? hastaBase;
+                break;
+        }
+
+        if (hasta < desde)
+            (desde, hasta) = (hasta, desde);
+
+        return (desde, hasta);
     }
 
     [HttpGet]

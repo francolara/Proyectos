@@ -70,6 +70,9 @@
 - `Sp_Espacios_Crear`
 - `Sp_Espacios_Actualizar`
 - `Sp_Espacios_Eliminar`
+- Actualizacion 13/04/2026:
+  - `Sp_Espacios_Listar` compacta `TarifaResumen` por dia de semana con rango de precios (`min-max`) y elimina el detalle por cada franja horaria en el listado de espacios.
+  - `Sp_Espacios_Listar` expone `TieneIluminacion` y `Techada` para mostrar badges operativos en la grilla.
 - `Sp_Sedes_Eliminar` y `Sp_Espacios_Eliminar` ahora retornan error cuando no existe el registro para el negocio.
 
 ### 04_Reservas_Pagos_Comprobantes.sql
@@ -79,6 +82,9 @@
 - `Sp_Reservas_Listar`
 - `Sp_Reservas_ObtenerPorId`
 - `Sp_Reservas_Crear`
+- Actualizacion 14/04/2026:
+  - `Reservas` incorpora columna `CanalOrigen` (`ADMIN`/`CLIENTE_WEB`), usada para distinguir reservas creadas desde portal cliente.
+  - `Sp_Reservas_Crear` recibe `@CanalOrigen` (default `ADMIN`) y genera notificacion cuando el origen es `CLIENTE_WEB`.
 - `Sp_Reservas_Actualizar`
 - `Sp_Reservas_Eliminar`
 - `Sp_Reservas_Eliminar` valida `@NegocioId` por join con `Sedes` y devuelve error si no encuentra la reserva.
@@ -89,8 +95,12 @@
 - `Sp_Pagos_Actualizar`
 - `Sp_Pagos_Eliminar`
 - `Sp_Pagos_Actualizar` y `Sp_Pagos_Eliminar` devuelven error si no existe el pago para el negocio (evita falso positivo en C#).
+- Actualizacion 13/04/2026:
+  - `Sp_Pagos_Listar` agrega rango opcional `@FechaDesde/@FechaHasta` (fecha de reserva) para filtros rapidos en UI.
 - `Sp_Comprobantes_Listar`
 - `Sp_Comprobantes_Listar` incluye filtro opcional por `CodigoDocumento` (tipo de documento SUNAT del comprobante) para listar por negocio segun tipos configurados en maestros.
+- Actualizacion 13/04/2026:
+  - `Sp_Comprobantes_Listar` agrega rango opcional `@FechaDesde/@FechaHasta` (fecha de emision) para filtros rapidos en UI.
 - `Sp_Comprobantes_ObtenerPorId`
 - `Sp_Comprobantes_Crear`
 - `Sp_Comprobantes_Actualizar`
@@ -143,11 +153,19 @@
 
 ### 08_Reservas_Calendario_Filtros.sql
 - `Sp_Reservas_Listar` (filtros por rango fecha, sede, espacio y estado simple `@Estado` o multiple `@EstadosCsv`)
+- Actualizacion 13/04/2026:
+  - `Sp_Reservas_Listar` calcula `SaldoPendiente` con pagos acumulados por reserva (`Total - SUM(Pagos.Monto)`, minimo 0), por lo que refleja adelantos y pagos posteriores.
 
 ### 09_Reportes_Ocupacion_Ingresos.sql
 - `Sp_Seguridad_SeedModulosPermisosBase` (agrega modulo `REPORTES`)
 - `Sp_Reportes_OcupacionPorEspacio`
 - `Sp_Reportes_IngresosPorDia`
+- `Sp_Reportes_ResumenOperativo`
+- Actualizacion 13/04/2026:
+  - `Sp_Reportes_OcupacionPorEspacio` expone `SedeId` y `EspacioDeportivoId` para drill-down desde UI de reportes.
+  - `Sp_Reportes_ResumenOperativo` resume estados de reserva, monto reservado/cobrado y saldo pendiente por rango/sede.
+  - KPI de reportes excluye reservas canceladas (`Estado = 5`) en `TotalReservas`, `MontoReservado`, `MontoCobrado`, `SaldoPendiente` y en `Sp_Reportes_IngresosPorDia` (conteo/ingresos por dia).
+  - UI de reportes agrega `Exportar Excel (.xlsx)` con hojas separadas `Resumen`, `Ocupacion` e `Ingresos` y columnas de analitica (ticket/cobranza).
 
 ### 10_Home_Solicitudes_Publicas.sql
 - Tabla:
@@ -187,15 +205,29 @@
 - `Sp_Promociones_Actualizar`
 - `Sp_Promociones_Eliminar`
 - `Sp_Promociones_Actualizar` y `Sp_Promociones_Eliminar` devuelven error si no existe la promoción para el negocio.
+- `Sp_Promociones_Listar` (13/04/2026) incorpora filtros por `FechaDesde/FechaHasta`, estado (`@SoloActivos`: activos/inactivos/todos) y paginación (`@Pagina`, `@TamanoPagina`, `@TotalRegistros OUTPUT`).
 
 ### 15_Calendario_Bloqueos.sql
 - Tabla:
   - `BloqueosHorario`
 - `Sp_Reservas_CalendarioEventos`
+- Actualizacion 13/04/2026:
+  - `Sp_Reservas_CalendarioEventos` excluye por defecto reservas `Cancelada` (`Estado = 5`) cuando `@Estado` es `NULL`, liberando el horario en calendario para nuevas reservas.
+  - Si la UI filtra explicitamente `@Estado = 5`, el procedimiento mantiene la consulta de canceladas.
 - `Sp_Reservas_Mover`
 - `Sp_Bloqueos_Listar`
 - `Sp_Bloqueos_Crear`
 - `Sp_Bloqueos_Eliminar`
+
+### 37_Notificaciones_ReservasWeb.sql
+- Tabla:
+  - `NegocioNotificaciones`
+- `Sp_Notificaciones_Crear`
+- `Sp_Notificaciones_Listar`
+- `Sp_Notificaciones_ContarNoLeidas`
+- Actualizacion 14/04/2026:
+  - Campanita en barra admin consulta cada 20 segundos (ajustable a 30) y muestra acumulado de notificaciones no leidas por negocio.
+  - `Sp_SolicitudesPublicas_ConvertirAReserva` crea notificacion de tipo `RESERVA_CLIENTE_WEB` al generar reserva desde solicitud de portal cliente.
 
 ### 16_Reservas_CheckIn_CheckOut.sql
 - `Sp_Reservas_CambiarEstadoRapido`
@@ -240,6 +272,9 @@
   - `WhatsappContacto`
   - `PermiteChatWhatsapp`
 - Permite mostrar boton "Chatear por WhatsApp" directamente en tarjetas de espacios disponibles.
+- Actualizacion 14/04/2026:
+  - `Sp_Home_BuscarEspaciosDisponibles` cambia filtros publicos: ya no usa `SedeId`; filtra por `CodigoDepartamento`, `CodigoProvincia`, `CodigoUbigeo` y `TipoDeporteId`.
+  - El resultado agrega direccion de sede, departamento/provincia/distrito, tipo de suelo y `TarifaDesde` (minimo de tarifas activas por espacio) para tarjetas del portal cliente.
 
 ### 21_Altas_Clubes.sql
 - Tabla:
@@ -333,6 +368,11 @@
   - `Sp_Combos_Monedas`
   - `Sp_ConfiguracionClub_Obtener`
   - `Sp_ConfiguracionClub_Actualizar`
+- Actualizacion 13/04/2026:
+  - `Negocios` agrega columna `LogoUrl` para persistir el logo del club/negocio.
+  - `Sp_ConfiguracionClub_Obtener` expone `LogoUrl`.
+  - `Sp_ConfiguracionClub_Actualizar` permite guardar/remover `LogoUrl`.
+  - script incremental: `Basededatos/SportCenter/Script/20260413_Negocios_LogoUrl.sql`.
 
 ### 31_Espacios_Tarifas_Base.sql
 - Tabla:
@@ -359,6 +399,7 @@
   - `Sp_Comprobantes_Listar`
   - `Sp_Reportes_OcupacionPorEspacio`
   - `Sp_Reportes_IngresosPorDia`
+  - `Sp_Reportes_ResumenOperativo`
   - `Sp_Panel_ObtenerMetricas`
   - `Sp_Promociones_Listar`
 - Regla funcional:
@@ -765,6 +806,7 @@
   - incluye politica para confirmar reservas por pago.
   - opciones por negocio: sin pago, adelanto minimo por porcentaje, o pago total (100%).
   - si la politica exige pago, backend bloquea confirmacion cuando no cumple (en cambio rapido, crear/editar reserva y convertir solicitud).
+  - permite cargar un logo del club (JPG/PNG -> WebP en bucket), reemplazarlo o quitarlo, y usa `LogoUrl` del negocio para mostrarlo en la barra de menu admin.
 - Reservas agrega operaciones avanzadas backend-driven:
   - historial por reserva desde bitacora
   - recordatorio manual por seleccion de reservas
@@ -835,6 +877,7 @@
 - Reservas (pop-up crear/editar):
   - agrega `Comentario` en tabla `Reservas` y en formulario modal.
   - habilita cotizacion automatica por horario (`tarifa + promocion`) con endpoint `Sp_Reservas_Cotizar`.
+  - actualizacion 13/04/2026: `Sp_Reservas_Cotizar` corrige mapeo de dia para domingo (`DiaSemana = 0`) y alinea la cotizacion con la configuracion de tarifas del modulo Espacios.
   - politica de pago del negocio visible en modal al crear/editar.
   - el estado no se elige al crear; se calcula segun pago registrado y politica del negocio.
   - soporte de registro de pago en creacion/edicion de reserva con forma de pago.
@@ -915,3 +958,4 @@
   - el indice `IX_ComprobantesElectronicos_ReservaId` pasa a unico filtrado por `NegocioId + ReservaId` para comprobante principal activo (`Estado <> 5` y `ComprobanteReferenciaId IS NULL`), permitiendo NC/ND y derivados futuros (`ComprobanteReferenciaId IS NOT NULL`) sin depender de codigos de `TipoComprobante`.
 - Reservas (listado general):
   - se agrega `Sp_Reservas_ListadoResumen` para KPI global del listado (Pendientes, Pagadas, Saldo total) con los mismos filtros del listado general y sin efecto de paginacion.
+  - actualizacion 13/04/2026: `Sp_Reservas_ListadoResumen` excluye reservas canceladas (`Estado = 5`) del conteo de reservas activas KPI y del saldo total acumulado.

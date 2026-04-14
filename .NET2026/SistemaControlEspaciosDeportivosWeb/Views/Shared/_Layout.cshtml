@@ -1,4 +1,9 @@
 <!DOCTYPE html>
+@using SistemaControlEspaciosDeportivosWeb.Services
+@using Microsoft.AspNetCore.Identity
+@using SistemaControlEspaciosDeportivosWeb.Models
+@inject ISportCenterStoredProcedureService spService
+@inject UserManager<ApplicationUser> userManager
 <html lang="es">
 <head>
     <meta charset="utf-8" />
@@ -24,6 +29,61 @@
         ?? ViewContext.RouteData.Values["negocioId"]?.ToString()
         ?? Context.Request.Query["negocioId"].FirstOrDefault();
     var hasNegocioId = int.TryParse(negocioIdRaw, out var adminNegocioId);
+    string? adminNegocioNombre = ViewData["AdminNegocioNombre"]?.ToString();
+    string? adminNegocioLogoUrl = null;
+    var usuarioNombre = User.Identity?.Name ?? "Usuario";
+    var usuarioCorreoSidebar = usuarioNombre;
+    var saludoNombre = usuarioNombre;
+    var rolActualSidebar = "Sin rol";
+    var usuarioId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+    if (!string.IsNullOrWhiteSpace(usuarioId))
+    {
+        var usuarioActual = await userManager.GetUserAsync(User);
+        if (!string.IsNullOrWhiteSpace(usuarioActual?.Email))
+            usuarioCorreoSidebar = usuarioActual.Email!.Trim();
+        if (!string.IsNullOrWhiteSpace(usuarioActual?.Nombres))
+            saludoNombre = usuarioActual.Nombres!.Trim();
+    }
+
+    if (adminShell && hasNegocioId)
+    {
+        try
+        {
+            var configuracionNegocio = await spService.ConfiguracionClubObtenerAsync(adminNegocioId);
+            if (configuracionNegocio is not null)
+            {
+                adminNegocioNombre = string.IsNullOrWhiteSpace(configuracionNegocio.NombreComercial)
+                    ? adminNegocioNombre
+                    : configuracionNegocio.NombreComercial;
+                adminNegocioLogoUrl = string.IsNullOrWhiteSpace(configuracionNegocio.LogoUrl)
+                    ? null
+                    : configuracionNegocio.LogoUrl;
+            }
+
+            if (!string.IsNullOrWhiteSpace(usuarioId))
+            {
+                var rol = await spService.PanelObtenerRolAsync(usuarioId, adminNegocioId);
+                if (!string.IsNullOrWhiteSpace(rol))
+                    rolActualSidebar = rol;
+            }
+        }
+        catch
+        {
+            // Evita afectar la navegacion si falla la carga opcional del logo.
+        }
+    }
+
+    adminNegocioNombre ??= "SportCenter";
+    var inicialesNegocio = new string(
+        adminNegocioNombre
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => char.ToUpperInvariant(x[0]))
+            .Take(2)
+            .ToArray());
+    if (string.IsNullOrWhiteSpace(inicialesNegocio))
+        inicialesNegocio = "SC";
+
     string menuClass(string controller) => currentController == controller.ToUpperInvariant() ? "sc-admin-navlink active" : "sc-admin-navlink";
     string menuUrl(string controller)
     {
@@ -63,13 +123,41 @@
     {
         <div class="sc-admin-shell">
             <aside class="sc-admin-sidebar">
-                <div class="sc-admin-brand">
-                    <span class="sc-admin-brand-logo">SC</span>
-                    <div>
-                        <p class="sc-admin-brand-title">SportCenter</p>
-                        <p class="sc-admin-brand-subtitle">Admin SaaS</p>
-                    </div>
+                <div class="sc-admin-welcome">
+                    <small>Bienvenido</small>
+                    <strong>@saludoNombre</strong>
                 </div>
+                <div class="sc-admin-brand">
+                    @if (!string.IsNullOrWhiteSpace(adminNegocioLogoUrl))
+                    {
+                        <img src="@Url.Action("VerImagen", "Sedes", new { url = adminNegocioLogoUrl })" alt="Logo club" class="sc-admin-brand-logo-img" />
+                    }
+                    else
+                    {
+                        <span class="sc-admin-brand-logo">@inicialesNegocio</span>
+                    }
+                    <p class="sc-admin-brand-title">@adminNegocioNombre</p>
+                </div>
+
+                @if (hasNegocioId)
+                {
+                    <div class="sc-admin-notify" id="scAdminNotifyWrap" data-negocio-id="@adminNegocioId">
+                        <button type="button" class="sc-admin-notify-btn" id="scAdminNotifyBtn" aria-expanded="false" aria-controls="scAdminNotifyPanel">
+                            <i class="bi bi-bell"></i>
+                            <span>Notificaciones</span>
+                            <span class="sc-admin-notify-badge d-none" id="scAdminNotifyBadge">0</span>
+                        </button>
+                        <div class="sc-admin-notify-panel d-none" id="scAdminNotifyPanel">
+                            <div class="sc-admin-notify-head">
+                                <strong>Reservas web</strong>
+                                <small id="scAdminNotifyCountText">Sin nuevas</small>
+                            </div>
+                            <div class="sc-admin-notify-list" id="scAdminNotifyList">
+                                <div class="sc-admin-notify-empty">No hay notificaciones nuevas.</div>
+                            </div>
+                        </div>
+                    </div>
+                }
 
                 <nav class="sc-admin-nav">
                     <a class="@menuClass("Panel")" href="@menuUrl("Panel")"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
@@ -85,6 +173,22 @@
                     <a class="@menuClass("Promociones")" href="@menuUrl("Promociones")"><i class="bi bi-tags"></i><span>Promociones</span></a>
                     <a class="@menuClass("Configuracion")" href="@menuUrl("Configuracion")"><i class="bi bi-sliders2-vertical"></i><span>Configuracion</span></a>
                 </nav>
+
+                <div class="sc-admin-session-box">
+                    <div class="sc-admin-session-user">
+                        <strong>@usuarioCorreoSidebar</strong>
+                        <span>Rol: @rolActualSidebar</span>
+                    </div>
+                    <a class="btn btn-outline-light w-100 mb-2" asp-controller="Cuenta" asp-action="CambiarContrasena">
+                        <i class="bi bi-key me-1"></i>Cambiar contrasena
+                    </a>
+                    <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })" method="post">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-light w-100">
+                            <i class="bi bi-box-arrow-right me-1"></i>Cerrar sesion
+                        </button>
+                    </form>
+                </div>
             </aside>
 
             <section class="sc-admin-main">
@@ -115,6 +219,89 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    @if (adminShell && hasNegocioId)
+    {
+        <script>
+            (() => {
+                const wrap = document.getElementById('scAdminNotifyWrap');
+                const btn = document.getElementById('scAdminNotifyBtn');
+                const badge = document.getElementById('scAdminNotifyBadge');
+                const panel = document.getElementById('scAdminNotifyPanel');
+                const list = document.getElementById('scAdminNotifyList');
+                const countText = document.getElementById('scAdminNotifyCountText');
+                if (!wrap || !btn || !badge || !panel || !list || !countText) return;
+
+                const negocioId = wrap.getAttribute('data-negocio-id');
+                if (!negocioId) return;
+
+                const endpoint = '@Url.Action("Resumen", "Notificaciones")';
+                let busy = false;
+
+                function setBadge(value) {
+                    const n = Number(value || 0);
+                    badge.textContent = String(n);
+                    badge.classList.toggle('d-none', n <= 0);
+                    countText.textContent = n > 0 ? `${n} sin revisar` : 'Sin nuevas';
+                }
+
+                function renderItems(items) {
+                    const data = Array.isArray(items) ? items : [];
+                    if (data.length === 0) {
+                        list.innerHTML = '<div class="sc-admin-notify-empty">No hay notificaciones nuevas.</div>';
+                        return;
+                    }
+
+                    list.innerHTML = data.map(x => {
+                        const title = (x.titulo || '').toString();
+                        const mensaje = (x.mensaje || '').toString();
+                        const fecha = (x.fechaTexto || '').toString();
+                        const href = (x.urlDestino || '').toString();
+                        const body = `
+                            <div class="sc-admin-notify-item">
+                                <div class="sc-admin-notify-item-title">${title}</div>
+                                <div class="sc-admin-notify-item-msg">${mensaje}</div>
+                                <div class="sc-admin-notify-item-time">${fecha}</div>
+                            </div>`;
+                        return href ? `<a class="sc-admin-notify-link" href="${href}">${body}</a>` : body;
+                    }).join('');
+                }
+
+                async function refreshNotifications() {
+                    if (busy) return;
+                    busy = true;
+                    try {
+                        const url = `${endpoint}?negocioId=${encodeURIComponent(negocioId)}&top=12`;
+                        const response = await fetch(url, { cache: 'no-store' });
+                        if (!response.ok) return;
+                        const data = await response.json();
+                        if (!data || data.ok !== true) return;
+                        setBadge(data.noLeidas || 0);
+                        renderItems(data.items || []);
+                    } catch {
+                    } finally {
+                        busy = false;
+                    }
+                }
+
+                btn.addEventListener('click', () => {
+                    const open = !panel.classList.contains('d-none');
+                    panel.classList.toggle('d-none', open);
+                    btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+                });
+
+                document.addEventListener('click', (ev) => {
+                    if (!wrap.contains(ev.target)) {
+                        panel.classList.add('d-none');
+                        btn.setAttribute('aria-expanded', 'false');
+                    }
+                });
+
+                const pollingMs = 20000;
+                refreshNotifications();
+                setInterval(refreshNotifications, pollingMs);
+            })();
+        </script>
+    }
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

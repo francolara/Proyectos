@@ -8,6 +8,7 @@ GO
 -- Firma: Codex - 04/04/2026 | Actualizacion individual de Sp_ConfiguracionClub_Actualizar por ubigeo fiscal y tipo de documento SUNAT centralizado.
 -- Firma: Codex - 06/04/2026 | Se agrega configuracion de politica de confirmacion por pago y porcentaje minimo de adelanto por negocio.
 -- Firma: Codex - 09/04/2026 | Se agrega configuracion de emision (CPE/Recibo interno) y porcentaje IGV.
+-- Firma: Codex - 13/04/2026 | Se agrega persistencia de LogoUrl para logo del negocio.
 CREATE OR ALTER PROCEDURE dbo.Sp_ConfiguracionClub_Actualizar
     @NegocioId INT,
     @NombreComercial NVARCHAR(200),
@@ -22,6 +23,7 @@ CREATE OR ALTER PROCEDURE dbo.Sp_ConfiguracionClub_Actualizar
     @EmisionComprobantesElectronicos BIT = 0,
     @EmisionReciboInterno BIT = 0,
     @PorcentajeIgv INT = 18,
+    @LogoUrl NVARCHAR(500) = NULL,
     @Usuario NVARCHAR(200)
 AS
 BEGIN
@@ -31,11 +33,13 @@ BEGIN
         DECLARE @DireccionFiscalNormalizada NVARCHAR(250);
         DECLARE @CodigoUbigeoNormalizado CHAR(6);
         DECLARE @PorcentajeAdelantoNormalizado DECIMAL(5,2);
+        DECLARE @LogoUrlNormalizado NVARCHAR(500);
 
         SET @TipoDocumentoFiscal = NULLIF(UPPER(LTRIM(RTRIM(@TipoDocumentoFiscal))), N'');
         SET @DireccionFiscalNormalizada = NULLIF(LTRIM(RTRIM(@DireccionFiscal)), N'');
         SET @CodigoUbigeoNormalizado = NULLIF(LTRIM(RTRIM(@CodigoUbigeo)), '');
         SET @PorcentajeAdelantoNormalizado = @PorcentajeAdelantoMinimo;
+        SET @LogoUrlNormalizado = NULLIF(LTRIM(RTRIM(@LogoUrl)), N'');
 
         IF NOT EXISTS (SELECT 1 FROM dbo.Monedas WHERE Id = @MonedaId AND Activo = 1)
             RAISERROR('La moneda seleccionada no es valida.', 16, 1);
@@ -115,7 +119,8 @@ BEGIN
             n.PorcentajeAdelantoMinimo = @PorcentajeAdelantoNormalizado,
             n.EmisionComprobantesElectronicos = @EmisionComprobantesElectronicos,
             n.EmisionReciboInterno = @EmisionReciboInterno,
-            n.PorcentajeIgv = @PorcentajeIgv
+            n.PorcentajeIgv = @PorcentajeIgv,
+            n.LogoUrl = @LogoUrlNormalizado
         FROM dbo.Negocios n
         WHERE n.Id = @NegocioId
           AND n.Activo = 1;

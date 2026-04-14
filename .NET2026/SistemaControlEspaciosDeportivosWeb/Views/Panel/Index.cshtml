@@ -1,5 +1,5 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.PanelDashboardViewModel
-<!-- Firma: Codex - 13/04/2026 | Dashboard en 3 fases con filtros globales; Club/Negocio se muestra junto al titulo como referencia fija; Nueva reserva abre modal dentro del Dashboard con carga de espacios por sede/todas las sedes. -->
+<!-- Firma: Codex - 13/04/2026 | Dashboard en 3 fases con filtros globales; Club/Negocio se muestra junto al titulo como referencia fija; Nueva reserva abre modal dentro del Dashboard con carga de espacios por sede/todas las sedes; bloque de cobranza muestra Monto y Saldo pendiente real. -->
 @{
     ViewData["Title"] = "Panel administrativo";
     ViewData["AdminShell"] = true;
@@ -78,19 +78,6 @@
             </div>
         </div>
 
-        <div class="sc-admin-topbar-actions">
-            <div class="sc-admin-userbox">
-                <i class="bi bi-person-circle"></i>
-                <div>
-                    <strong>@(User.Identity?.Name ?? "Usuario")</strong>
-                    <span>Rol: @Model.RolActual</span>
-                </div>
-                <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })" method="post">
-                    @Html.AntiForgeryToken()
-                    <button type="submit" class="btn btn-outline-secondary">Cerrar sesion</button>
-                </form>
-            </div>
-        </div>
     </header>
 
     <div class="sc-admin-content">
@@ -363,6 +350,7 @@
                                 <th>Reserva</th>
                                 <th>Cliente</th>
                                 <th>Fecha</th>
+                                <th class="text-end">Monto</th>
                                 <th class="text-end">Saldo</th>
                                 <th class="text-end">Accion</th>
                             </tr>
@@ -374,6 +362,7 @@
                                     <td>@item.ReservaCodigo</td>
                                     <td>@item.Cliente</td>
                                     <td>@item.Fecha.ToString("dd/MM")</td>
+                                    <td class="text-end">@Model.MonedaSimbolo @item.MontoTotal.ToString("N2")</td>
                                     <td class="text-end">@Model.MonedaSimbolo @item.SaldoPendiente.ToString("N2")</td>
                                     <td class="text-end">
                                         <a class="btn btn-sm btn-outline-success" href="@Url.Action("Edit", "Pagos", new { id = item.ReservaId, negocioId = Model.NegocioSeleccionadoId })">Cobrar</a>

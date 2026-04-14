@@ -13,6 +13,10 @@ namespace SistemaControlEspaciosDeportivosWeb.Services;
 
 public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> options) : ISedeImagenStorageService
 {
+    private const int LogoTargetWidth = 560;
+    private const int LogoTargetHeight = 560;
+    private const int LogoMaxOutputBytes = 260 * 1024;
+
     private static readonly HashSet<string> ExtensionesPermitidas = new(StringComparer.OrdinalIgnoreCase)
     {
         ".jpg", ".jpeg", ".png"
@@ -69,6 +73,48 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
 
     public async Task<IReadOnlyList<string>> UploadSedeImagenesAsync(int negocioId, int? sedeId, IEnumerable<IFormFile> archivos, CancellationToken cancellationToken = default)
     {
+        return await UploadImagenesAsync(
+            negocioId,
+            sedeId,
+            "sedes",
+            archivos,
+            _settings.TargetWidth,
+            _settings.TargetHeight,
+            _settings.MaxOutputBytes,
+            exigirHorizontal: true,
+            cancellationToken);
+    }
+
+    public async Task<string?> UploadLogoNegocioAsync(int negocioId, IFormFile? archivo, CancellationToken cancellationToken = default)
+    {
+        if (archivo is null || archivo.Length <= 0)
+            return null;
+
+        var urls = await UploadImagenesAsync(
+            negocioId,
+            null,
+            "logos",
+            [archivo],
+            LogoTargetWidth,
+            LogoTargetHeight,
+            LogoMaxOutputBytes,
+            exigirHorizontal: false,
+            cancellationToken);
+
+        return urls.FirstOrDefault();
+    }
+
+    private async Task<IReadOnlyList<string>> UploadImagenesAsync(
+        int negocioId,
+        int? sedeId,
+        string categoria,
+        IEnumerable<IFormFile> archivos,
+        int targetWidth,
+        int targetHeight,
+        int maxOutputBytes,
+        bool exigirHorizontal,
+        CancellationToken cancellationToken)
+    {
         if (!_settings.Enabled)
             throw new InvalidOperationException("La carga de imagenes esta deshabilitada. Configura SedeImagenStorage:Enabled=true.");
 
@@ -104,9 +150,9 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
 
             await using var streamOrigen = archivo.OpenReadStream();
             var nombreArchivo = string.IsNullOrWhiteSpace(archivo.FileName) ? "imagen.jpg" : archivo.FileName;
-            var imagenProcesada = await ProcesarImagenAsync(streamOrigen, nombreArchivo, cancellationToken);
+            var imagenProcesada = await ProcesarImagenAsync(streamOrigen, nombreArchivo, targetWidth, targetHeight, maxOutputBytes, exigirHorizontal, cancellationToken);
 
-            var key = BuildObjectKey(negocioId, sedeId, ".webp");
+            var key = BuildObjectKey(categoria, negocioId, sedeId, ".webp");
             imagenProcesada.Position = 0;
 
             var putRequest = new PutObjectRequest
@@ -374,9 +420,12 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
         return new AmazonS3Client(credenciales, config);
     }
 
-    private string BuildObjectKey(int negocioId, int? sedeId, string extension)
+    private string BuildObjectKey(string categoria, int negocioId, int? sedeId, string extension)
     {
         var safeExt = extension.StartsWith('.') ? extension.ToLowerInvariant() : $".{extension.ToLowerInvariant()}";
+        if (string.Equals(categoria, "logos", StringComparison.OrdinalIgnoreCase))
+            return $"logos/negocio-{negocioId}/{DateTime.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}{safeExt}";
+
         var sedeSegmento = sedeId.HasValue ? $"sede-{sedeId.Value}" : "sede-nueva";
         return $"sedes/negocio-{negocioId}/{sedeSegmento}/{DateTime.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}{safeExt}";
     }
@@ -421,17 +470,24 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
         return path;
     }
 
-    private async Task<MemoryStream> ProcesarImagenAsync(Stream sourceStream, string nombreArchivo, CancellationToken cancellationToken)
+    private async Task<MemoryStream> ProcesarImagenAsync(
+        Stream sourceStream,
+        string nombreArchivo,
+        int targetWidth,
+        int targetHeight,
+        int maxOutputBytes,
+        bool exigirHorizontal,
+        CancellationToken cancellationToken)
     {
         using var image = await Image.LoadAsync<Rgba32>(sourceStream, cancellationToken);
         image.Mutate(ctx => ctx.AutoOrient());
 
-        if (image.Width < image.Height)
+        if (exigirHorizontal && image.Width < image.Height)
             throw new InvalidOperationException($"La imagen {nombreArchivo} debe ser horizontal.");
 
-        var targetWidth = Math.Max(1, _settings.TargetWidth);
-        var targetHeight = Math.Max(1, _settings.TargetHeight);
-        const decimal ratioObjetivo = 4m / 3m;
+        targetWidth = Math.Max(1, targetWidth);
+        targetHeight = Math.Max(1, targetHeight);
+        var ratioObjetivo = targetWidth / (decimal)targetHeight;
         var ratioActual = image.Width / (decimal)image.Height;
 
         Rectangle cropRect;
@@ -460,7 +516,7 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
         });
 
         var output = new MemoryStream();
-        var maxBytes = Math.Max(1, _settings.MaxOutputBytes);
+        var maxBytes = Math.Max(1, maxOutputBytes);
 
         for (var quality = 86; quality >= 52; quality -= 6)
         {
@@ -479,6 +535,6 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
             }
         }
 
-        throw new InvalidOperationException($"La imagen {nombreArchivo} no pudo comprimirse a {_settings.MaxOutputBytes / 1024} KB manteniendo la resolucion estandar.");
+        throw new InvalidOperationException($"La imagen {nombreArchivo} no pudo comprimirse a {maxOutputBytes / 1024} KB manteniendo la resolucion estandar.");
     }
 }

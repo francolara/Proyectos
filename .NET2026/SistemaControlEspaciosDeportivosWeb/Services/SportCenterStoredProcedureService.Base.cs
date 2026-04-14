@@ -101,7 +101,23 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
         return list;
     }
 
-    public async Task<List<EspacioDisponibleViewModel>> HomeBuscarEspaciosDisponiblesAsync(DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin, int? sedeId, int? tipoDeporteId)
+    public async Task<List<EspacioDisponibleViewModel>> HomeBuscarEspaciosDisponiblesAsync(DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin, string? codigoDepartamento, string? codigoProvincia, string? codigoUbigeo, int? tipoDeporteId)
+    {
+        try
+        {
+            return await HomeBuscarEspaciosDisponiblesInternoAsync(fecha, horaInicio, horaFin, codigoDepartamento, codigoProvincia, codigoUbigeo, tipoDeporteId, usarUbigeo: true);
+        }
+        catch (SqlException ex) when (
+            ex.Message.Contains("@CodigoDepartamento", StringComparison.OrdinalIgnoreCase) ||
+            ex.Message.Contains("@CodigoProvincia", StringComparison.OrdinalIgnoreCase) ||
+            ex.Message.Contains("@CodigoUbigeo", StringComparison.OrdinalIgnoreCase))
+        {
+            // Compatibilidad temporal con SP antiguo (filtro por sede).
+            return await HomeBuscarEspaciosDisponiblesInternoAsync(fecha, horaInicio, horaFin, null, null, null, tipoDeporteId, usarUbigeo: false);
+        }
+    }
+
+    private async Task<List<EspacioDisponibleViewModel>> HomeBuscarEspaciosDisponiblesInternoAsync(DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin, string? codigoDepartamento, string? codigoProvincia, string? codigoUbigeo, int? tipoDeporteId, bool usarUbigeo)
     {
         var list = new List<EspacioDisponibleViewModel>();
         await using var cn = CreateConnection();
@@ -110,24 +126,58 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
         AddParam(cmd, "@Fecha", fecha.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
         AddParam(cmd, "@HoraInicio", horaInicio.ToTimeSpan(), SqlDbType.Time);
         AddParam(cmd, "@HoraFin", horaFin.ToTimeSpan(), SqlDbType.Time);
-        AddParam(cmd, "@SedeId", sedeId, SqlDbType.Int);
+        if (usarUbigeo)
+        {
+            AddParam(cmd, "@CodigoDepartamento", string.IsNullOrWhiteSpace(codigoDepartamento) ? null : codigoDepartamento.Trim(), SqlDbType.Char);
+            AddParam(cmd, "@CodigoProvincia", string.IsNullOrWhiteSpace(codigoProvincia) ? null : codigoProvincia.Trim(), SqlDbType.Char);
+            AddParam(cmd, "@CodigoUbigeo", string.IsNullOrWhiteSpace(codigoUbigeo) ? null : codigoUbigeo.Trim(), SqlDbType.Char);
+        }
+        else
+        {
+            AddParam(cmd, "@SedeId", null, SqlDbType.Int);
+        }
         AddParam(cmd, "@TipoDeporteId", tipoDeporteId, SqlDbType.Int);
         await using var dr = await cmd.ExecuteReaderAsync();
         while (await dr.ReadAsync())
         {
-            list.Add(new EspacioDisponibleViewModel
+            if (dr.FieldCount >= 16)
             {
-                EspacioDeportivoId = dr.GetInt32(0),
-                NombreEspacio = dr.GetString(1),
-                Codigo = dr.GetString(2),
-                SedeNombre = dr.GetString(3),
-                SedeConsideracionesReserva = dr.FieldCount > 4 && !dr.IsDBNull(4) ? dr.GetString(4) : null,
-                TipoDeporteNombre = dr.GetString(5),
-                TieneIluminacion = ReadBool(dr, 6),
-                Techada = ReadBool(dr, 7),
-                WhatsappContacto = dr.IsDBNull(8) ? null : dr.GetString(8),
-                PermiteChatWhatsapp = ReadBool(dr, 9)
-            });
+                list.Add(new EspacioDisponibleViewModel
+                {
+                    EspacioDeportivoId = dr.GetInt32(0),
+                    NombreEspacio = dr.GetString(1),
+                    Codigo = dr.GetString(2),
+                    SedeNombre = dr.GetString(3),
+                    SedeDireccion = !dr.IsDBNull(4) ? dr.GetString(4) : null,
+                    SedeConsideracionesReserva = !dr.IsDBNull(5) ? dr.GetString(5) : null,
+                    Departamento = !dr.IsDBNull(6) ? dr.GetString(6) : null,
+                    Provincia = !dr.IsDBNull(7) ? dr.GetString(7) : null,
+                    Distrito = !dr.IsDBNull(8) ? dr.GetString(8) : null,
+                    TipoDeporteNombre = dr.GetString(9),
+                    TipoSueloNombre = !dr.IsDBNull(10) ? dr.GetString(10) : null,
+                    TarifaDesde = !dr.IsDBNull(11) ? dr.GetDecimal(11) : null,
+                    TieneIluminacion = ReadBool(dr, 12),
+                    Techada = ReadBool(dr, 13),
+                    WhatsappContacto = !dr.IsDBNull(14) ? dr.GetString(14) : null,
+                    PermiteChatWhatsapp = ReadBool(dr, 15)
+                });
+            }
+            else
+            {
+                list.Add(new EspacioDisponibleViewModel
+                {
+                    EspacioDeportivoId = dr.GetInt32(0),
+                    NombreEspacio = dr.GetString(1),
+                    Codigo = dr.GetString(2),
+                    SedeNombre = dr.GetString(3),
+                    SedeConsideracionesReserva = dr.FieldCount > 4 && !dr.IsDBNull(4) ? dr.GetString(4) : null,
+                    TipoDeporteNombre = dr.FieldCount > 5 && !dr.IsDBNull(5) ? dr.GetString(5) : string.Empty,
+                    TieneIluminacion = dr.FieldCount > 6 && ReadBool(dr, 6),
+                    Techada = dr.FieldCount > 7 && ReadBool(dr, 7),
+                    WhatsappContacto = dr.FieldCount > 8 && !dr.IsDBNull(8) ? dr.GetString(8) : null,
+                    PermiteChatWhatsapp = dr.FieldCount > 9 && ReadBool(dr, 9)
+                });
+            }
         }
         return list;
     }

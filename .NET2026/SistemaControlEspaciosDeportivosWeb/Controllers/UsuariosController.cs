@@ -1,12 +1,18 @@
+using System.Security.Cryptography;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using SistemaControlEspaciosDeportivosWeb.Models;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
 using System.Linq;
 
 namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 
-public class UsuariosController(IModuloPermisoService moduloPermisoService, ISportCenterStoredProcedureService spService)
+public class UsuariosController(
+    IModuloPermisoService moduloPermisoService,
+    ISportCenterStoredProcedureService spService,
+    UserManager<ApplicationUser> userManager)
     : ModuloControllerBase(moduloPermisoService)
 {
     public async Task<IActionResult> Index(int negocioId)
@@ -49,6 +55,8 @@ public class UsuariosController(IModuloPermisoService moduloPermisoService, ISpo
 
         try
         {
+            var (usuarioSistema, creadoNuevo, claveTemporal) = await ObtenerOCrearUsuarioSistemaAsync(model.Correo, model.NombreUsuario);
+
             if (!baseVm.EsAdministrador && model.RolNegocio == 1)
                 throw new InvalidOperationException("Solo un administrador puede asignar el rol Administrador.");
 
@@ -59,7 +67,9 @@ public class UsuariosController(IModuloPermisoService moduloPermisoService, ISpo
                 throw new InvalidOperationException("No puedes asignar una sede distinta a la que tienes permitida.");
 
             await spService.UsuariosNegocioAsignarPorCorreoAsync(model.NegocioId, model.Correo, model.RolNegocio, sedeAsignada, User.Identity?.Name ?? "sistema");
-            TempData["UsuariosMsg"] = "Usuario asignado correctamente.";
+            TempData["UsuariosMsg"] = creadoNuevo
+                ? $"Usuario creado y asignado correctamente. Usuario: {usuarioSistema.UserName}. Clave temporal: {claveTemporal}"
+                : "Usuario asignado correctamente.";
         }
         catch (Exception ex)
         {
@@ -121,6 +131,47 @@ public class UsuariosController(IModuloPermisoService moduloPermisoService, ISpo
 
             await spService.UsuariosNegocioDesactivarAsync(negocioId, usuarioNegocioId, User.Identity?.Name ?? "sistema");
             TempData["UsuariosMsg"] = "Usuario desactivado correctamente.";
+        }
+        catch (Exception ex)
+        {
+            TempData["UsuariosErr"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Index), new { negocioId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResetearClaveTemporal(int negocioId, int usuarioNegocioId)
+    {
+        var baseVm = await ObtenerBaseAsync(negocioId, "USUARIOS");
+        if (baseVm is null || !baseVm.PuedeEditar || !baseVm.EsAdministrador)
+            return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "Solo un administrador puede resetear claves." });
+
+        try
+        {
+            var sedeFiltro = AplicarSedeAsignada(baseVm, null);
+            var usuarioObjetivo = (await spService.UsuariosNegocioListarAsync(negocioId, sedeFiltro))
+                .FirstOrDefault(x => x.UsuarioNegocioId == usuarioNegocioId);
+            if (usuarioObjetivo is null)
+                throw new InvalidOperationException("No se encontro el usuario a resetear.");
+
+            var usuarioSistema = await userManager.FindByIdAsync(usuarioObjetivo.UsuarioId);
+            if (usuarioSistema is null)
+                throw new InvalidOperationException("El usuario no existe en Identity.");
+
+            var claveTemporal = GenerarClaveTemporal();
+            var token = await userManager.GeneratePasswordResetTokenAsync(usuarioSistema);
+            var result = await userManager.ResetPasswordAsync(usuarioSistema, token, claveTemporal);
+            if (!result.Succeeded)
+            {
+                var errores = string.Join(" ", result.Errors.Select(e => e.Description));
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(errores)
+                    ? "No se pudo resetear la clave."
+                    : errores);
+            }
+
+            TempData["UsuariosMsg"] = $"Clave temporal generada para {usuarioSistema.Email}: {claveTemporal}";
         }
         catch (Exception ex)
         {
@@ -200,4 +251,57 @@ public class UsuariosController(IModuloPermisoService moduloPermisoService, ISpo
     }
 
     private static bool RolRequiereSede(int rolNegocio) => rolNegocio != 1;
+
+    private async Task<(ApplicationUser Usuario, bool Creado, string? ClaveTemporal)> ObtenerOCrearUsuarioSistemaAsync(string correo, string? nombreUsuario)
+    {
+        var correoNormalizado = (correo ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(correoNormalizado))
+            throw new InvalidOperationException("El correo es obligatorio.");
+
+        var usuarioExistente = await userManager.FindByEmailAsync(correoNormalizado);
+        if (usuarioExistente is not null)
+            return (usuarioExistente, false, null);
+
+        var nombreUsuarioLimpio = (nombreUsuario ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(nombreUsuarioLimpio))
+            throw new InvalidOperationException("Para crear un usuario nuevo, ingresa nombres y apellidos.");
+
+        var usuarioNuevo = new ApplicationUser
+        {
+            UserName = correoNormalizado,
+            Email = correoNormalizado,
+            EmailConfirmed = false,
+            Nombres = nombreUsuarioLimpio,
+            Apellidos = string.Empty
+        };
+
+        var claveTemporal = GenerarClaveTemporal();
+        var result = await userManager.CreateAsync(usuarioNuevo, claveTemporal);
+        if (!result.Succeeded)
+        {
+            var errores = string.Join(" ", result.Errors.Select(e => e.Description));
+            throw new InvalidOperationException(string.IsNullOrWhiteSpace(errores)
+                ? "No se pudo crear el usuario en el sistema."
+                : errores);
+        }
+
+        return (usuarioNuevo, true, claveTemporal);
+    }
+
+    private static string GenerarClaveTemporal()
+    {
+        const string mayus = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+        const string minus = "abcdefghijkmnopqrstuvwxyz";
+        const string digitos = "23456789";
+        const string simbolos = "!@#$%&*";
+
+        char pick(string chars) => chars[RandomNumberGenerator.GetInt32(chars.Length)];
+
+        var bloque = new char[6];
+        for (var i = 0; i < bloque.Length; i++)
+            bloque[i] = pick(mayus + minus + digitos);
+
+        return $"Tmp{pick(mayus)}{pick(minus)}{pick(digitos)}{pick(simbolos)}{new string(bloque)}";
+    }
+
 }

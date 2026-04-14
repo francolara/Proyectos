@@ -92,7 +92,7 @@ public class PanelController(ISportCenterStoredProcedureService spService, IModu
             null,
             $"{(int)EstadoReserva.Pendiente},{(int)EstadoReserva.Confirmada},{(int)EstadoReserva.Pagada}",
             1,
-            80);
+            200);
 
         var permisosRol = await spService.PanelListarModulosPermitidosAsync(usuarioId, negocioSeleccionadoId);
         var ingresosActualTotal = ingresosPeriodo.Sum(x => x.Ingresos);
@@ -162,7 +162,6 @@ public class PanelController(ISportCenterStoredProcedureService spService, IModu
                 .Where(x => x.SaldoPendiente > 0)
                 .OrderByDescending(x => x.SaldoPendiente)
                 .ThenBy(x => x.Fecha)
-                .Take(8)
                 .Select(MapearReservaAccion)
                 .ToList()
         };
@@ -237,6 +236,7 @@ public class PanelController(ISportCenterStoredProcedureService spService, IModu
             Fecha = item.Fecha,
             HoraInicio = item.HoraInicio,
             HoraFin = item.HoraFin,
+            MontoTotal = item.Total,
             SaldoPendiente = item.SaldoPendiente,
             Estado = item.Estado
         };

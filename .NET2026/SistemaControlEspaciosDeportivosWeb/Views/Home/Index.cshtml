@@ -1,10 +1,6 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.HomeIndexViewModel
 @using System.Linq
 @using System.Globalization
-<!-- Firma: Codex - 27/03/2026 -->
-<!-- Firma: Codex - 02/04/2026 | Agrega visualizacion de foto/mapa por sede y carrusel publico de imagenes principales+alternativas -->
-<!-- Firma: Codex - 06/04/2026 | Muestra consideraciones de reserva configuradas por sede en resultados de busqueda y tarjetas publicas de sedes. -->
-<!-- Firma: Codex - 08/04/2026 | Unifica selectores de hora a listas cada 30 minutos para mantener consistencia con reservas. -->
 
 @{
     ViewData["Title"] = "Portal deportivo";
@@ -13,25 +9,76 @@
         .ToList();
 }
 
-<section class="hero-publico p-4 p-md-5 rounded-4 mb-4">
-    <div class="row align-items-center">
-        <div class="col-md-8">
-            <h1 class="display-6 fw-bold mb-3">Reserva tu cancha en minutos</h1>
-            <p class="mb-0">
-                Busca espacios por sede, horario y deporte. Si te conviene uno, envia tu solicitud y te confirmamos por telefono/correo.
-            </p>
+<section class="home-hero mb-4">
+    <div class="row g-3 align-items-stretch">
+        <div class="col-lg-8">
+            <div id="homeHeroCarousel" class="carousel slide home-hero-carousel h-100" data-bs-ride="carousel" data-bs-interval="5500">
+                <div class="carousel-inner rounded-4 h-100">
+                    <div class="carousel-item active h-100">
+                        <div class="home-hero-slide home-hero-slide-1">
+                            <div>
+                                <span class="home-hero-kicker">Reserva inteligente</span>
+                                <h1>Encuentra tu espacio deportivo en segundos</h1>
+                                <p>Filtra por ubicacion y deporte, valida disponibilidad en tiempo real y envia tu solicitud al instante.</p>
+                            </div>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <a href="#buscar" class="btn btn-light fw-semibold">Buscar espacios</a>
+                                <a asp-action="ConsultarSolicitud" class="btn btn-outline-light fw-semibold">Consultar solicitud</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="carousel-item h-100">
+                        <div class="home-hero-slide home-hero-slide-2">
+                            <div>
+                                <span class="home-hero-kicker">Promociones activas</span>
+                                <h2>Juega en los mejores horarios con ofertas del dia</h2>
+                                <p>Descubre complejos cercanos, revisa atributos del campo y reserva con la mejor tarifa disponible.</p>
+                            </div>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <a href="#resultados" class="btn btn-light fw-semibold">Ver destacados</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="carousel-item h-100">
+                        <div class="home-hero-slide home-hero-slide-3">
+                            <div>
+                                <span class="home-hero-kicker">Gestion centralizada</span>
+                                <h2>Tu complejo visible para mas deportistas</h2>
+                                <p>Publica tus espacios, acepta solicitudes y aumenta conversion desde la web de clientes.</p>
+                            </div>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <a asp-action="SoftwareClubes" class="btn btn-light fw-semibold">Quiero mi software</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#homeHeroCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon"></span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#homeHeroCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon"></span>
+                </button>
+            </div>
         </div>
-        <div class="col-md-4 text-md-end mt-3 mt-md-0">
-            <a class="btn btn-success fw-semibold" asp-action="SoftwareClubes">Software para Clubes</a>
-            @if (User?.Identity?.IsAuthenticated ?? false)
-            {
-                <a class="btn btn-light fw-semibold" asp-controller="Panel" asp-action="Index">Administrar mi sede</a>
-            }
-            else
-            {
-                <a class="btn btn-light fw-semibold" asp-area="Identity" asp-page="/Account/Login">Iniciar sesion</a>
-            }
-            <a class="btn btn-outline-light fw-semibold ms-2" asp-action="ConsultarSolicitud">Consultar solicitud</a>
+        <div class="col-lg-4">
+            <aside class="home-hero-side h-100">
+                <span class="home-hero-kicker">Campana destacada</span>
+                <h3>Turnos nocturnos con alta demanda</h3>
+                <p>Activa tus filtros por distrito y deporte para encontrar canchas cerca de ti con disponibilidad inmediata.</p>
+                <ul class="home-hero-side-list">
+                    <li>Disponibilidad por franja horaria</li>
+                    <li>Soporte WhatsApp por sede</li>
+                    <li>Solicitud online en 1 minuto</li>
+                </ul>
+                @if (User?.Identity?.IsAuthenticated ?? false)
+                {
+                    <a class="btn btn-outline-primary w-100" asp-controller="Panel" asp-action="Index">Administrar mi sede</a>
+                }
+                else
+                {
+                    <a class="btn btn-outline-primary w-100" asp-area="Identity" asp-page="/Account/Login">Ingresar al sistema</a>
+                }
+            </aside>
         </div>
     </div>
 </section>
@@ -45,11 +92,56 @@
     <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 }
 
-<section id="buscar" class="card border-0 shadow-sm mb-4">
+<section id="buscar" class="card border-0 shadow-sm mb-4 home-search-card">
     <div class="card-body">
-        <h2 class="h5 mb-3">Buscar disponibilidad</h2>
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <h2 class="h5 mb-0">Busca por zona y deporte</h2>
+            <span class="text-muted small">No filtramos por sede, filtramos por ubicacion.</span>
+        </div>
+
         <form asp-action="Index" method="get" class="row g-3">
             <div class="col-md-3">
+                <label class="form-label">Departamento</label>
+                <select class="form-select" id="codigoDepartamento" name="codigoDepartamento">
+                    <option value="">Todos</option>
+                    @foreach (var dep in Model.DepartamentosUbigeo)
+                    {
+                        <option value="@dep.Value" selected="@(Model.CodigoDepartamento == dep.Value)">@dep.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Provincia</label>
+                <select class="form-select" id="codigoProvincia" name="codigoProvincia">
+                    <option value="">Todas</option>
+                    @foreach (var prov in Model.ProvinciasUbigeo)
+                    {
+                        <option value="@prov.Value" selected="@(Model.CodigoProvincia == prov.Value)">@prov.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Distrito</label>
+                <select class="form-select" id="codigoUbigeo" name="codigoUbigeo">
+                    <option value="">Todos</option>
+                    @foreach (var dist in Model.DistritosUbigeo)
+                    {
+                        <option value="@dist.Value" selected="@(Model.CodigoUbigeo == dist.Value)">@dist.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Tipo de deporte</label>
+                <select class="form-select" name="tipoDeporteId">
+                    <option value="">Todos</option>
+                    @foreach (var deporte in Model.TiposDeporte)
+                    {
+                        <option value="@deporte.Id" selected="@(Model.TipoDeporteId == deporte.Id)">@deporte.Nombre</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-2">
                 <label class="form-label">Fecha</label>
                 <input class="form-control" type="date" name="fecha" value="@Model.Fecha.ToString("yyyy-MM-dd")" />
             </div>
@@ -87,35 +179,19 @@
                     }
                 </select>
             </div>
-            <div class="col-md-3">
-                <label class="form-label">Sede</label>
-                <select class="form-select" name="sedeId">
-                    <option value="">Todas</option>
-                    @foreach (var sede in Model.Sedes)
-                    {
-                        <option value="@sede.Id" selected="@(Model.SedeId == sede.Id)">@sede.Nombre</option>
-                    }
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Deporte</label>
-                <select class="form-select" name="tipoDeporteId">
-                    <option value="">Todos</option>
-                    @foreach (var deporte in Model.TiposDeporte)
-                    {
-                        <option value="@deporte.Id" selected="@(Model.TipoDeporteId == deporte.Id)">@deporte.Nombre</option>
-                    }
-                </select>
-            </div>
-            <div class="col-12">
-                <button type="submit" class="btn btn-primary">Buscar</button>
+            <div class="col-md-6 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Buscar espacios deportivos</button>
             </div>
         </form>
     </div>
 </section>
 
-<section class="mb-4">
-    <h2 class="h5 mb-3">Espacios disponibles</h2>
+<section id="resultados" class="mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <h2 class="h5 mb-0">Espacios disponibles</h2>
+        <span class="badge text-bg-primary">@Model.Disponibles.Count resultado(s)</span>
+    </div>
+
     @if (Model.Disponibles.Count == 0)
     {
         <div class="alert alert-warning mb-0">
@@ -135,13 +211,42 @@
                 var enlaceWhatsappEspacio = string.IsNullOrWhiteSpace(numeroWhatsappEspacio)
                     ? string.Empty
                     : $"https://wa.me/{numeroWhatsappEspacio}?text={mensajeWhatsappEspacio}";
+
                 <div class="col-md-6 col-xl-4">
-                    <article class="card h-100 border-0 shadow-sm">
-                        <div class="card-body">
-                            <span class="badge text-bg-success mb-2">Disponible</span>
-                            <h3 class="h6 fw-bold mb-1">@item.NombreEspacio (@item.Codigo)</h3>
+                    <article class="card h-100 border-0 shadow-sm home-space-card">
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                <div>
+                                    <h3 class="h6 fw-bold mb-1">@item.NombreEspacio</h3>
+                                    <span class="home-space-code">@item.Codigo</span>
+                                </div>
+                                <span class="badge text-bg-success">Disponible</span>
+                            </div>
+
                             <p class="mb-1"><strong>Sede:</strong> @item.SedeNombre</p>
-                            <p class="mb-1"><strong>Deporte:</strong> @item.TipoDeporteNombre</p>
+                            @if (!string.IsNullOrWhiteSpace(item.SedeDireccion))
+                            {
+                                <p class="mb-1 text-muted small">@item.SedeDireccion</p>
+                            }
+                            <p class="mb-2 text-muted small">
+                                @string.Join(" / ", new[] { item.Departamento, item.Provincia, item.Distrito }.Where(x => !string.IsNullOrWhiteSpace(x)))
+                            </p>
+
+                            <div class="d-flex flex-wrap gap-1 mb-2">
+                                <span class="badge text-bg-light border">@item.TipoDeporteNombre</span>
+                                @if (!string.IsNullOrWhiteSpace(item.TipoSueloNombre))
+                                {
+                                    <span class="badge text-bg-light border">@item.TipoSueloNombre</span>
+                                }
+                                <span class="badge text-bg-light border">@(item.Techada ? "Techada" : "No techada")</span>
+                                <span class="badge text-bg-light border">@(item.TieneIluminacion ? "Iluminacion" : "Sin iluminacion")</span>
+                            </div>
+
+                            @if (item.TarifaDesde.HasValue)
+                            {
+                                <p class="mb-2 home-price-from">Desde <strong>S/ @item.TarifaDesde.Value.ToString("0.00", CultureInfo.InvariantCulture)</strong> por hora</p>
+                            }
+
                             @if (!string.IsNullOrWhiteSpace(item.SedeConsideracionesReserva))
                             {
                                 <p class="mb-2 small text-muted" style="white-space: pre-line;">
@@ -149,24 +254,21 @@
                                     @item.SedeConsideracionesReserva
                                 </p>
                             }
-                            <p class="mb-2">
-                                <strong>Caracteristicas:</strong>
-                                @(item.Techada ? "Techada" : "No techada"),
-                                @(item.TieneIluminacion ? "con iluminacion" : "sin iluminacion")
-                            </p>
 
-                            <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#@collapseId" aria-expanded="false">
-                                Solicitar reserva
-                            </button>
-                            @if (item.PermiteChatWhatsapp && !string.IsNullOrWhiteSpace(numeroWhatsappEspacio))
-                            {
-                                <a class="btn btn-success btn-sm ms-2"
-                                   href="@enlaceWhatsappEspacio"
-                                   target="_blank"
-                                   rel="noopener noreferrer">
-                                    Chatear por WhatsApp
-                                </a>
-                            }
+                            <div class="mt-auto">
+                                <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#@collapseId" aria-expanded="false">
+                                    Solicitar reserva
+                                </button>
+                                @if (item.PermiteChatWhatsapp && !string.IsNullOrWhiteSpace(numeroWhatsappEspacio))
+                                {
+                                    <a class="btn btn-success btn-sm ms-2"
+                                       href="@enlaceWhatsappEspacio"
+                                       target="_blank"
+                                       rel="noopener noreferrer">
+                                        WhatsApp
+                                    </a>
+                                }
+                            </div>
 
                             <div class="collapse mt-3" id="@collapseId">
                                 <form asp-action="SolicitarReservaPublica" method="post" class="border rounded p-2">
@@ -175,7 +277,9 @@
                                     <input type="hidden" name="Fecha" value="@Model.Fecha.ToString("yyyy-MM-dd")" />
                                     <input type="hidden" name="HoraInicio" value="@Model.HoraInicio.ToString("HH\\:mm")" />
                                     <input type="hidden" name="HoraFin" value="@Model.HoraFin.ToString("HH\\:mm")" />
-                                    <input type="hidden" name="SedeId" value="@Model.SedeId" />
+                                    <input type="hidden" name="CodigoDepartamento" value="@Model.CodigoDepartamento" />
+                                    <input type="hidden" name="CodigoProvincia" value="@Model.CodigoProvincia" />
+                                    <input type="hidden" name="CodigoUbigeo" value="@Model.CodigoUbigeo" />
                                     <input type="hidden" name="TipoDeporteId" value="@Model.TipoDeporteId" />
 
                                     <div class="mb-2">
@@ -205,107 +309,54 @@
     }
 </section>
 
-<section class="mb-2">
-    <h2 class="h5 mb-3">Sedes registradas</h2>
-    <div class="row g-3">
-        @foreach (var sede in Model.Sedes)
-        {
-            var numeroWhatsapp = string.IsNullOrWhiteSpace(sede.WhatsappContacto)
-                ? string.Empty
-                : new string(sede.WhatsappContacto.Where(char.IsDigit).ToArray());
-            var mensajeWhatsapp = Uri.EscapeDataString($"Hola, quiero informacion sobre horarios y reservas en la sede {sede.Nombre}.");
-            var enlaceWhatsapp = string.IsNullOrWhiteSpace(numeroWhatsapp)
-                ? string.Empty
-                : $"https://wa.me/{numeroWhatsapp}?text={mensajeWhatsapp}";
-            var tieneUbicacion = sede.Latitud.HasValue && sede.Longitud.HasValue;
-            var latText = sede.Latitud?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
-            var lngText = sede.Longitud?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
-            var mapsOpenUrl = !string.IsNullOrWhiteSpace(sede.GoogleMapsUrl)
-                ? sede.GoogleMapsUrl
-                : (tieneUbicacion ? $"https://www.google.com/maps?q={latText},{lngText}" : string.Empty);
-            var mapEmbedUrl = tieneUbicacion
-                ? $"https://www.google.com/maps?width=100%25&height=220&hl=es&q={latText},{lngText}&t=&z=15&ie=UTF8&iwloc=B&output=embed"
-                : string.Empty;
-            var fotosSede = new List<string>();
-            if (!string.IsNullOrWhiteSpace(sede.FotoPrincipalUrl))
-            {
-                fotosSede.Add(sede.FotoPrincipalUrl);
-            }
-            if (sede.FotosAlternativas?.Count > 0)
-            {
-                fotosSede.AddRange(sede.FotosAlternativas.Where(x => !string.IsNullOrWhiteSpace(x)));
-            }
-            var carouselId = $"sede-carousel-{sede.Id}";
-            <div class="col-md-6 col-xl-4">
-                <article class="card h-100 border-0 shadow-sm">
-                    @if (fotosSede.Count == 1)
-                    {
-                        <img src="@fotosSede[0]" class="card-img-top" alt="Foto de @sede.Nombre" style="height:180px;object-fit:cover;" />
-                    }
-                    else if (fotosSede.Count > 1)
-                    {
-                        <div id="@carouselId" class="carousel slide" data-bs-ride="carousel">
-                            <div class="carousel-inner">
-                                @for (var i = 0; i < fotosSede.Count; i++)
-                                {
-                                    <div class="carousel-item @(i == 0 ? "active" : null)">
-                                        <img src="@fotosSede[i]" class="d-block w-100" alt="Foto @(i + 1) de @sede.Nombre" style="height:180px;object-fit:cover;" />
-                                    </div>
-                                }
-                            </div>
-                            <button class="carousel-control-prev" type="button" data-bs-target="#@carouselId" data-bs-slide="prev">
-                                <span class="carousel-control-prev-icon"></span>
-                                <span class="visually-hidden">Anterior</span>
-                            </button>
-                            <button class="carousel-control-next" type="button" data-bs-target="#@carouselId" data-bs-slide="next">
-                                <span class="carousel-control-next-icon"></span>
-                                <span class="visually-hidden">Siguiente</span>
-                            </button>
-                        </div>
-                    }
-                    <div class="card-body">
-                        <h3 class="h6 fw-bold mb-1">@sede.Nombre</h3>
-                        <p class="mb-1">@sede.Direccion</p>
-                        <p class="mb-2">@(string.IsNullOrWhiteSpace(sede.Telefono) ? "Sin telefono registrado" : sede.Telefono)</p>
-                        @if (!string.IsNullOrWhiteSpace(sede.ConsideracionesReserva))
-                        {
-                            <div class="small text-muted mb-2" style="white-space: pre-line;">
-                                <strong>Consideraciones:</strong><br />
-                                @sede.ConsideracionesReserva
-                            </div>
-                        }
-                        @if (tieneUbicacion)
-                        {
-                            <div class="ratio ratio-16x9 rounded border overflow-hidden mb-2">
-                                <iframe src="@mapEmbedUrl"
-                                        loading="lazy"
-                                        referrerpolicy="no-referrer-when-downgrade"
-                                        style="border:0;"
-                                        title="Mapa de @sede.Nombre"></iframe>
-                            </div>
-                            <a class="btn btn-sm btn-outline-primary me-2"
-                               href="@mapsOpenUrl"
-                               target="_blank"
-                               rel="noopener noreferrer">
-                                Ver en Google Maps
-                            </a>
-                        }
-                        else
-                        {
-                            <span class="badge text-bg-secondary mb-2">Ubicacion pendiente</span>
-                        }
-                        @if (sede.PermiteChatWhatsapp && !string.IsNullOrWhiteSpace(numeroWhatsapp))
-                        {
-                            <a class="btn btn-sm btn-success"
-                               href="@enlaceWhatsapp"
-                               target="_blank"
-                               rel="noopener noreferrer">
-                                Chatear por WhatsApp
-                            </a>
-                        }
-                    </div>
-                </article>
-            </div>
-        }
-    </div>
-</section>
+@section Scripts {
+<script>
+(() => {
+    const dep = document.getElementById('codigoDepartamento');
+    const prov = document.getElementById('codigoProvincia');
+    const dist = document.getElementById('codigoUbigeo');
+    if (!dep || !prov || !dist) return;
+
+    const urlProv = '@Url.Action("UbigeoProvincias", "Home")';
+    const urlDist = '@Url.Action("UbigeoDistritos", "Home")';
+
+    function renderOptions(select, rows, emptyText) {
+        select.innerHTML = '';
+        const first = document.createElement('option');
+        first.value = '';
+        first.textContent = emptyText;
+        select.appendChild(first);
+
+        (rows || []).forEach(x => {
+            const opt = document.createElement('option');
+            opt.value = x.value || '';
+            opt.textContent = x.text || '';
+            select.appendChild(opt);
+        });
+    }
+
+    dep.addEventListener('change', async () => {
+        const value = (dep.value || '').trim();
+        renderOptions(prov, [], 'Todas');
+        renderOptions(dist, [], 'Todos');
+        if (value.length !== 2) return;
+
+        const response = await fetch(`${urlProv}?codigoDepartamento=${encodeURIComponent(value)}`, { cache: 'no-store' });
+        if (!response.ok) return;
+        const data = await response.json();
+        renderOptions(prov, data, 'Todas');
+    });
+
+    prov.addEventListener('change', async () => {
+        const value = (prov.value || '').trim();
+        renderOptions(dist, [], 'Todos');
+        if (value.length !== 4) return;
+
+        const response = await fetch(`${urlDist}?codigoProvincia=${encodeURIComponent(value)}`, { cache: 'no-store' });
+        if (!response.ok) return;
+        const data = await response.json();
+        renderOptions(dist, data, 'Todos');
+    });
+})();
+</script>
+}

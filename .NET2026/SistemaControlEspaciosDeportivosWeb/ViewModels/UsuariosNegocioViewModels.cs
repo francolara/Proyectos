@@ -27,6 +27,9 @@ public class UsuarioNegocioAsignarFormViewModel
 {
     public int NegocioId { get; set; }
 
+    [StringLength(120, ErrorMessage = "El nombre no puede superar los 120 caracteres.")]
+    public string? NombreUsuario { get; set; }
+
     [Required(ErrorMessage = "Este campo es obligatorio.")]
     [EmailAddress(ErrorMessage = "Ingresa un correo electronico valido.")]
     public string Correo { get; set; } = string.Empty;

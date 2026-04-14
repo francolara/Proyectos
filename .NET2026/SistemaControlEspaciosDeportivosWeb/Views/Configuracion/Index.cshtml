@@ -5,7 +5,7 @@
 <!-- Firma: Codex - 06/04/2026 | Se actualiza el titulo de la pantalla a "Configuracion del Club / Negocio", se agrega politica configurable para confirmar reservas por pago (sin pago, adelanto minimo %, o pago total 100%) y el porcentaje queda alineado a la derecha, solo entero y sin permitir punto/decimales. -->
 <!-- Firma: Codex - 09/04/2026 | Se agrega configuracion de emision CPE/Recibo interno, porcentaje IGV y mantenimiento de series por documento del negocio. -->
 <!-- Firma: Codex - 10/04/2026 | Reordena campos: IGV despues de moneda de trabajo y checks de emision debajo de direccion fiscal. -->
-<!-- Firma: Codex - 13/04/2026 | Se separa formulario en "Datos del club" y "Configuracion de Atributos"; confirmar reserva + porcentaje en primera fila, moneda + IGV en segunda fila. -->
+<!-- Firma: Codex - 13/04/2026 | Se separa formulario en "Datos del club" y "Configuracion de Atributos"; confirmar reserva + porcentaje en primera fila, moneda + IGV en segunda fila. Agrega gestion de logo del club (subida/reemplazo/eliminacion) para uso en menu administrativo. -->
 @{
     ViewData["Title"] = "Configuracion";
 }
@@ -31,10 +31,11 @@
     <div class="alert alert-danger">@mensajeError</div>
 }
 
-<form asp-action="Index" method="post" class="sc-form-shell">
+<form asp-action="Index" method="post" class="sc-form-shell" enctype="multipart/form-data">
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="NegocioId" />
     <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="LogoUrl" />
     <div asp-validation-summary="All" class="alert alert-danger shadow-sm mb-0"></div>
 
     <section class="sc-form-card">
@@ -98,6 +99,41 @@
                         <span>Emision de recibo interno</span>
                     </label>
                     <span asp-validation-for="EmisionReciboInterno" class="text-danger"></span>
+                </div>
+                <div class="col-12">
+                    <label class="form-label d-flex align-items-center gap-2">
+                        <i class="bi bi-image"></i>
+                        <span>Logo del club</span>
+                    </label>
+                    <div class="row g-3 align-items-start">
+                        <div class="col-lg-4 col-md-5">
+                            @if (!string.IsNullOrWhiteSpace(Model.LogoUrl))
+                            {
+                                <img id="logoClubPreview"
+                                     src="@Url.Action("VerImagen", "Sedes", new { url = Model.LogoUrl })"
+                                     alt="Logo del club"
+                                     class="img-fluid rounded-3 border"
+                                     style="max-width: 220px; aspect-ratio: 1 / 1; object-fit: contain; background: #fff;" />
+                            }
+                            else
+                            {
+                                <div id="logoClubPreviewVacio"
+                                     class="d-flex align-items-center justify-content-center rounded-3 border text-muted"
+                                     style="max-width: 220px; aspect-ratio: 1 / 1; background: #f8fafc;">
+                                    Sin logo
+                                </div>
+                            }
+                        </div>
+                        <div class="col-lg-8 col-md-7">
+                            <input asp-for="LogoArchivo" type="file" class="form-control" accept=".jpg,.jpeg,.png,image/jpeg,image/png" />
+                            <div class="form-text">Formatos permitidos: JPG o PNG. Se optimiza y guarda como WebP.</div>
+                            <span asp-validation-for="LogoArchivo" class="text-danger"></span>
+                            <div class="form-check mt-2">
+                                <input asp-for="QuitarLogo" class="form-check-input" type="checkbox" />
+                                <label asp-for="QuitarLogo" class="form-check-label">Quitar logo actual</label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -263,6 +299,8 @@
             const chkCpe = document.getElementById('EmisionComprobantesElectronicos');
             const chkRecibo = document.getElementById('EmisionReciboInterno');
             const tipoDocumento = document.getElementById('TipoDocumento');
+            const logoArchivo = document.getElementById('LogoArchivo');
+            const quitarLogo = document.getElementById('QuitarLogo');
             const formsSeries = Array.from(document.querySelectorAll('.js-form-serie-documento'));
             const hiddenCpe = Array.from(document.querySelectorAll('.js-emision-cpe-hidden'));
             const hiddenRecibo = Array.from(document.querySelectorAll('.js-emision-recibo-hidden'));
@@ -310,6 +348,11 @@
                 const recibo = chkRecibo && chkRecibo.checked ? 'true' : 'false';
                 hiddenCpe.forEach(i => i.value = cpe);
                 hiddenRecibo.forEach(i => i.value = recibo);
+            }
+
+            function limpiarCheckQuitarLogoConNuevoArchivo() {
+                if (!logoArchivo || !quitarLogo) return;
+                if ((logoArchivo.files || []).length > 0) quitarLogo.checked = false;
             }
 
             function normalizarPorcentajeEntero() {
@@ -379,6 +422,7 @@
             if (chkRecibo) chkRecibo.addEventListener('change', syncHiddenEmisionEnFormsSeries);
             if (chkCpe) chkCpe.addEventListener('change', aplicarReglasCpe);
             formsSeries.forEach(f => f.addEventListener('submit', syncHiddenEmisionEnFormsSeries));
+            if (logoArchivo) logoArchivo.addEventListener('change', limpiarCheckQuitarLogoConNuevoArchivo);
             const igv = document.getElementById('PorcentajeIgv');
             if (igv) {
                 const normalizarIgv = () => {

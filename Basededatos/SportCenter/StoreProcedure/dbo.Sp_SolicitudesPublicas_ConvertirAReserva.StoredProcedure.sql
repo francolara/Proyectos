@@ -8,6 +8,7 @@ GO
 -- Firma: Codex - 04/04/2026 | Actualizacion individual de Sp_SolicitudesPublicas_ConvertirAReserva para tipo de documento SUNAT por defecto.
 -- Firma: Codex - 06/04/2026 | Si la solicitud se convierte como Confirmada, valida politica de pago del negocio.
 -- Firma: Codex - 06/04/2026 | Se elimina dependencia de NegocioClientes y se usa Clientes.NegocioId.
+-- Firma: Codex - 14/04/2026 | Reserva generada desde solicitud publica persiste CanalOrigen=CLIENTE_WEB, crea notificacion para campanita admin y ajusta concatenacion compatible.
 CREATE OR ALTER PROCEDURE dbo.Sp_SolicitudesPublicas_ConvertirAReserva
     @NegocioId INT,
     @Id INT,
@@ -113,12 +114,12 @@ BEGIN
         INSERT INTO dbo.Reservas
         (
             EspacioDeportivoId, ClienteId, Fecha, HoraInicio, HoraFin,
-            Estado, Total, Adelanto, Saldo, FechaRegistro, UsuarioCreacion
+            Estado, Total, Adelanto, Saldo, CanalOrigen, FechaRegistro, UsuarioCreacion
         )
         VALUES
         (
             @EspacioDeportivoId, @ClienteId, @Fecha, @HoraInicio, @HoraFin,
-            @EstadoReserva, @Total, @Adelanto, (@Total - @Adelanto), SYSUTCDATETIME(), @Usuario
+            @EstadoReserva, @Total, @Adelanto, (@Total - @Adelanto), N'CLIENTE_WEB', SYSUTCDATETIME(), @Usuario
         );
 
         SET @ReservaId = SCOPE_IDENTITY();
@@ -137,6 +138,19 @@ BEGIN
 
         SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @ReservaId);
         EXEC dbo.Sp_Auditoria_Registrar @NegocioId = @NegocioId, @Modulo = N'RESERVAS', @Accion = N'CREATE', @Entidad = N'Reserva', @EntidadId = @EntidadIdAudit, @Usuario = @Usuario, @DetalleJson = NULL;
+        DECLARE @MensajeNotificacion NVARCHAR(300);
+        DECLARE @UrlNotificacion NVARCHAR(300);
+        SET @MensajeNotificacion = N'Reserva #' + CONVERT(NVARCHAR(20), @ReservaId) + N' generada desde solicitud del cliente.';
+        SET @UrlNotificacion = N'/Reservas?negocioId=' + CONVERT(NVARCHAR(20), @NegocioId);
+
+        EXEC dbo.Sp_Notificaciones_Crear
+            @NegocioId = @NegocioId,
+            @Tipo = N'RESERVA_CLIENTE_WEB',
+            @Titulo = N'Nueva reserva web',
+            @Mensaje = @MensajeNotificacion,
+            @Entidad = N'Reserva',
+            @EntidadId = @ReservaId,
+            @UrlDestino = @UrlNotificacion;
 
         COMMIT TRANSACTION;
 

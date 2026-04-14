@@ -3,6 +3,7 @@
 <!-- Firma: Codex - 30/03/2026 | Incorporacion de resumen breve de tarifas por dias y horarios en la lista detallada -->
 <!-- Firma: Codex - 09/04/2026 | Rediseno de cabecera del listado de espacios con icono superior y etiqueta pequena centrada por columna. -->
 <!-- Firma: Codex - 13/04/2026 | Cabecera del modulo muestra tarjeta informativa de Club/negocio con ID junto al titulo. -->
+<!-- Firma: Codex - 13/04/2026 | Listado de espacios agrega badges de Iluminacion y Techado junto a Tipo de suelo. -->
 
 @{
     ViewData["Title"] = "Espacios";
@@ -113,7 +114,7 @@
                     <tbody>
                         @foreach (var item in Model.Espacios)
                         {
-                            <tr data-search="@($"{item.Codigo} {item.Nombre} {item.SedeNombre} {item.TipoDeporteNombre} {item.TipoSueloNombre} {item.Estado} {item.TarifaResumen}".ToLowerInvariant())">
+                            <tr data-search="@($"{item.Codigo} {item.Nombre} {item.SedeNombre} {item.TipoDeporteNombre} {item.TipoSueloNombre} {(item.TieneIluminacion ? "iluminacion si" : "iluminacion no")} {(item.Techada ? "techado si" : "techado no")} {item.Estado} {item.TarifaResumen}".ToLowerInvariant())">
                                 <td>
                                     <div class="sc-espacio-main">
                                         <span class="sc-espacio-code">@item.Codigo</span>
@@ -126,6 +127,8 @@
                                         <span class="badge bg-light text-dark border"><i class="bi bi-geo-alt me-1"></i>@item.SedeNombre</span>
                                         <span class="badge bg-light text-dark border"><i class="bi bi-dribbble me-1"></i>@item.TipoDeporteNombre</span>
                                         <span class="badge bg-light text-dark border"><i class="bi bi-grid-3x3-gap me-1"></i>@item.TipoSueloNombre</span>
+                                        <span class="badge bg-light text-dark border"><i class="bi bi-lightbulb me-1"></i>@(item.TieneIluminacion ? "Iluminacion: Si" : "Iluminacion: No")</span>
+                                        <span class="badge bg-light text-dark border"><i class="bi bi-house-door me-1"></i>@(item.Techada ? "Techado: Si" : "Techado: No")</span>
                                     </div>
                                     <div class="small text-muted mt-2">
                                         <i class="bi bi-cash-coin me-1"></i>@item.TarifaResumen

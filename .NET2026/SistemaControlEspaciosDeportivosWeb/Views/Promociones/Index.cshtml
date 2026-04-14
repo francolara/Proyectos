@@ -1,12 +1,12 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.PromocionesIndexViewModel
 <!-- Firma: Codex - 30/03/2026 | Rediseno del listado de promociones con KPIs, filtro rapido y tabla detallada -->
-<!-- Firma: Codex - 13/04/2026 | Cabecera del modulo muestra tarjeta informativa de Club/negocio con ID junto al titulo. -->
+<!-- Firma: Codex - 13/04/2026 | Cabecera del modulo con tarjeta Club/negocio; filtro por estado y fecha con seleccion rapida; paginacion backend 20x20; cabeceras de detalle pequenas con icono y estandar visual alineado a otros listados. -->
 
 @{
     ViewData["Title"] = "Promociones";
-    var totalPromociones = Model.Promociones.Count;
-    var totalActivas = Model.Promociones.Count(x => x.Activo);
-    var totalInactivas = Math.Max(0, totalPromociones - totalActivas);
+    var totalPromocionesVista = Model.Promociones.Count;
+    var totalActivasVista = Model.Promociones.Count(x => x.Activo);
+    var totalInactivasVista = Math.Max(0, totalPromocionesVista - totalActivasVista);
     var hoy = DateOnly.FromDateTime(DateTime.Today);
     var vigentesHoy = Model.Promociones.Count(x => x.Activo && x.FechaInicio <= hoy && x.FechaFin >= hoy);
 
@@ -23,7 +23,7 @@
         <div class="sc-page-title-wrap">
             <div>
                 <h1>Promociones</h1>
-                <p class="page-subtitle">Promociones activas y vigencia comercial.</p>
+                <p class="page-subtitle">Promociones activas, vigencias y descuentos comerciales.</p>
             </div>
             <div class="sc-negocio-ref-card" aria-readonly="true">
                 <div class="sc-negocio-ref-card-head"><i class="bi bi-building"></i><span>Club / negocio</span></div>
@@ -46,35 +46,111 @@
 
     <section class="kpi-grid mb-3">
         <article class="kpi-card">
-            <p class="kpi-card-label">Total promociones</p>
-            <h3 class="kpi-card-value">@totalPromociones</h3>
+            <p class="kpi-card-label">Promociones (pagina)</p>
+            <h3 class="kpi-card-value">@totalPromocionesVista</h3>
         </article>
         <article class="kpi-card">
-            <p class="kpi-card-label">Promociones activas</p>
-            <h3 class="kpi-card-value">@totalActivas</h3>
+            <p class="kpi-card-label">Activas (pagina)</p>
+            <h3 class="kpi-card-value">@totalActivasVista</h3>
         </article>
         <article class="kpi-card">
-            <p class="kpi-card-label">Promociones inactivas</p>
-            <h3 class="kpi-card-value">@totalInactivas</h3>
+            <p class="kpi-card-label">Inactivas (pagina)</p>
+            <h3 class="kpi-card-value">@totalInactivasVista</h3>
         </article>
         <article class="kpi-card">
-            <p class="kpi-card-label">Vigentes hoy</p>
+            <p class="kpi-card-label">Vigentes hoy (pagina)</p>
             <h3 class="kpi-card-value">@vigentesHoy</h3>
         </article>
     </section>
 
     <section class="filter-card mb-3">
         <h2 class="section-title">Filtro rapido</h2>
-        <div class="row g-2 align-items-end px-3 pb-3">
-            <div class="col-lg-8 col-md-7">
-                <label class="form-label">Buscar por nombre, sede, espacio o vigencia</label>
-                <input type="text" id="filtroPromociones" class="form-control" placeholder="Ejemplo: Hora punta, CALLAO, CANCHA 1..." />
+        <form method="get" asp-action="Index">
+            <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+            <div class="row g-2 align-items-end px-3 pb-3">
+                <div class="col-md-2">
+                    <label class="form-label">Estado</label>
+                    <select name="estado" class="form-select">
+                        @if (Model.EstadoFiltro == "activos")
+                        {
+                            <option value="activos" selected="selected">Activos</option>
+                        }
+                        else
+                        {
+                            <option value="activos">Activos</option>
+                        }
+                        @if (Model.EstadoFiltro == "todos")
+                        {
+                            <option value="todos" selected="selected">Todos</option>
+                        }
+                        else
+                        {
+                            <option value="todos">Todos</option>
+                        }
+                        @if (Model.EstadoFiltro == "inactivos")
+                        {
+                            <option value="inactivos" selected="selected">Inactivos</option>
+                        }
+                        else
+                        {
+                            <option value="inactivos">Inactivos</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Desde</label>
+                    <input type="date" name="fechaDesde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Hasta</label>
+                    <input type="date" name="fechaHasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label d-block">Seleccion rapida</label>
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <button type="submit" class="btn btn-sm btn-outline-primary" name="preset" value="hoy">Hoy</button>
+                        <button type="submit" class="btn btn-sm btn-outline-primary" name="preset" value="7d">7 dias</button>
+                        <button type="submit" class="btn btn-sm btn-outline-primary" name="preset" value="30d">30 dias</button>
+                        <button type="submit" class="btn btn-sm btn-outline-primary" name="preset" value="mes">Mes actual</button>
+                        <button type="submit" class="btn btn-outline-primary ms-md-2">
+                            <i class="bi bi-search me-1"></i> Buscar
+                        </button>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <label class="form-label mb-1">Registros visibles</label>
+                    <div class="form-control bg-light text-center fw-bold">@Model.TotalRegistros</div>
+                </div>
             </div>
-            <div class="col-lg-4 col-md-5">
-                <label class="form-label">Registros visibles</label>
-                <div class="form-control bg-light" id="contadorPromociones">@totalPromociones</div>
+        </form>
+        @if (Model.TotalPaginas > 1)
+        {
+            <div class="px-3 pb-3 d-flex justify-content-between align-items-center">
+                <small class="text-muted">Pagina @Model.Pagina de @Model.TotalPaginas (@Model.TotalRegistros registros)</small>
+                <nav aria-label="Paginacion promociones">
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item @(Model.Pagina <= 1 ? "disabled" : null)">
+                            <a class="page-link"
+                               asp-action="Index"
+                               asp-route-negocioId="@Model.NegocioId"
+                               asp-route-estado="@Model.EstadoFiltro"
+                               asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")"
+                               asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")"
+                               asp-route-pagina="@(Model.Pagina - 1)">Anterior</a>
+                        </li>
+                        <li class="page-item @(Model.Pagina >= Model.TotalPaginas ? "disabled" : null)">
+                            <a class="page-link"
+                               asp-action="Index"
+                               asp-route-negocioId="@Model.NegocioId"
+                               asp-route-estado="@Model.EstadoFiltro"
+                               asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")"
+                               asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")"
+                               asp-route-pagina="@(Model.Pagina + 1)">Siguiente</a>
+                        </li>
+                    </ul>
+                </nav>
             </div>
-        </div>
+        }
     </section>
 
     <section class="table-card">
@@ -83,7 +159,7 @@
         {
             <div class="empty-state">
                 <i class="bi bi-info-circle"></i>
-                <span>No hay promociones registradas para este negocio.</span>
+                <span>No hay promociones para el filtro seleccionado.</span>
             </div>
         }
         else
@@ -92,11 +168,11 @@
                 <table class="table table-sm align-middle" id="tablaPromocionesDetallada">
                     <thead>
                         <tr>
-                            <th>Promocion</th>
-                            <th>Cobertura</th>
-                            <th>Vigencia y horario</th>
-                            <th>Estado y descuento</th>
-                            <th class="text-end">Acciones</th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-tag"></i><small>Promocion</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-geo-alt"></i><small>Cobertura</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-calendar-range"></i><small>Vigencia / horario</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-percent"></i><small>Estado / descuento</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-gear"></i><small>Acciones</small></span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -105,30 +181,27 @@
                             var vigencia = $"{item.FechaInicio:dd/MM/yyyy} - {item.FechaFin:dd/MM/yyyy}";
                             var horario = $"{item.HoraInicio:HH\\:mm} - {item.HoraFin:HH\\:mm}";
                             var estadoTexto = item.Activo ? "Activa" : "Inactiva";
-
-                            <tr data-search="@($"{item.Nombre} {item.Sede} {item.Espacio} {vigencia} {horario} {item.PorcentajeDescuento:N2} {estadoTexto}".ToLowerInvariant())">
-                                <td>
-                                    <div class="sc-list-main">
-                                        <span class="sc-list-code">PROMO #@item.Id</span>
-                                        <div class="sc-list-title">@item.Nombre</div>
+                            <tr>
+                                <td class="text-center">
+                                    <span class="sc-id-chip">PROMO #@item.Id</span>
+                                    <div class="mt-1 fw-semibold">@item.Nombre</div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="d-flex flex-column gap-1">
+                                        <span class="sc-list-mini-card sc-list-mini-card-center"><i class="bi bi-geo-alt"></i><span>@item.Sede</span></span>
+                                        <span class="sc-list-mini-card sc-list-mini-card-center"><i class="bi bi-grid-3x3-gap"></i><span>@item.Espacio</span></span>
                                     </div>
                                 </td>
-                                <td>
-                                    <div class="d-flex flex-wrap gap-2">
-                                        <span class="badge bg-light text-dark border"><i class="bi bi-geo-alt me-1"></i>@item.Sede</span>
-                                        <span class="badge bg-light text-dark border"><i class="bi bi-grid-1x2 me-1"></i>@item.Espacio</span>
+                                <td class="text-center">
+                                    <div class="d-flex flex-column gap-1">
+                                        <span class="sc-list-mini-card sc-list-mini-card-center"><i class="bi bi-calendar3"></i><span>@vigencia</span></span>
+                                        <span class="sc-list-mini-card sc-list-mini-card-center"><i class="bi bi-clock"></i><span>@horario</span></span>
                                     </div>
                                 </td>
-                                <td>
-                                    <div class="d-flex flex-wrap gap-2">
-                                        <span class="badge bg-light text-dark border"><i class="bi bi-calendar3 me-1"></i>@vigencia</span>
-                                        <span class="badge bg-light text-dark border"><i class="bi bi-clock me-1"></i>@horario</span>
-                                    </div>
-                                </td>
-                                <td>
+                                <td class="text-center">
                                     <div class="d-flex flex-column gap-1">
                                         <span class="badge @estadoClase(item.Activo) sc-estado-pill">@estadoTexto</span>
-                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle sc-estado-pill">@item.PorcentajeDescuento.ToString("N2")%</span>
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle sc-estado-pill">@item.PorcentajeDescuento.ToString("N0")%</span>
                                     </div>
                                 </td>
                                 <td class="text-end">
@@ -158,29 +231,3 @@
         }
     </section>
 </div>
-
-@section Scripts {
-    <script>
-        (() => {
-            const filtro = document.getElementById('filtroPromociones');
-            const tabla = document.getElementById('tablaPromocionesDetallada');
-            const contador = document.getElementById('contadorPromociones');
-            if (!filtro || !tabla || !contador) return;
-
-            function aplicarFiltro() {
-                const valor = (filtro.value || '').trim().toLowerCase();
-                let visibles = 0;
-                tabla.querySelectorAll('tbody tr').forEach(row => {
-                    const texto = row.getAttribute('data-search') || '';
-                    const mostrar = !valor || texto.includes(valor);
-                    row.style.display = mostrar ? '' : 'none';
-                    if (mostrar) visibles++;
-                });
-                contador.textContent = String(visibles);
-            }
-
-            filtro.addEventListener('input', aplicarFiltro);
-            aplicarFiltro();
-        })();
-    </script>
-}

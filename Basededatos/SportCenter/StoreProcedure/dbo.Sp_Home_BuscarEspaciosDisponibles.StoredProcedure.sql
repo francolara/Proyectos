@@ -12,11 +12,14 @@ GO
 -- Create date:   06/04/2026
 -- Description:   Incluye ConsideracionesReserva de la sede en resultados de espacios disponibles.
 -- =============================================
+-- Firma: Codex - 14/04/2026 | Filtra disponibilidad publica por departamento/provincia/distrito y enriquece tarjetas con ubicacion, tipo de suelo y tarifa desde.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Home_BuscarEspaciosDisponibles]
     @Fecha DATE,
     @HoraInicio TIME,
     @HoraFin TIME,
-    @SedeId INT = NULL,
+    @CodigoDepartamento CHAR(2) = NULL,
+    @CodigoProvincia CHAR(4) = NULL,
+    @CodigoUbigeo CHAR(6) = NULL,
     @TipoDeporteId INT = NULL
 AS
 BEGIN
@@ -27,20 +30,41 @@ BEGIN
             e.Nombre,
             e.Codigo,
             s.Nombre AS SedeNombre,
+            s.Direccion AS SedeDireccion,
             s.ConsideracionesReserva AS SedeConsideracionesReserva,
+            dep.Nombre AS Departamento,
+            prov.Nombre AS Provincia,
+            dist.Nombre AS Distrito,
             td.Nombre AS TipoDeporte,
+            ts.Nombre AS TipoSuelo,
+            tarifaMin.TarifaDesde,
             e.TieneIluminacion,
             e.Techada,
             scn.WhatsappContacto,
             COALESCE(scn.PermiteChatWhatsapp, 0) AS PermiteChatWhatsapp
         FROM dbo.EspaciosDeportivos e
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
+        INNER JOIN dbo.Negocios n ON n.Id = s.NegocioId
         INNER JOIN dbo.TiposDeporte td ON td.Id = e.TipoDeporteId
+        LEFT JOIN dbo.TiposSuelo ts ON ts.Id = e.TipoSueloId
+        LEFT JOIN dbo.UbigeoDistritos dist ON dist.CodigoUbigeo = n.CodigoUbigeo
+        LEFT JOIN dbo.UbigeoProvincias prov ON prov.CodigoProvincia = dist.CodigoProvincia
+        LEFT JOIN dbo.UbigeoDepartamentos dep ON dep.CodigoDepartamento = dist.CodigoDepartamento
         LEFT JOIN dbo.SedeConfiguracionNotificacion scn ON scn.SedeId = s.Id
+        OUTER APPLY
+        (
+            SELECT MIN(t.Precio) AS TarifaDesde
+            FROM dbo.Tarifas t
+            WHERE t.EspacioDeportivoId = e.Id
+              AND t.Activa = 1
+        ) tarifaMin
         WHERE e.Estado = 1
           AND s.Activo = 1
-          AND (@SedeId IS NULL OR e.SedeId = @SedeId)
+          AND n.Activo = 1
           AND (@TipoDeporteId IS NULL OR e.TipoDeporteId = @TipoDeporteId)
+          AND (@CodigoDepartamento IS NULL OR (n.CodigoUbigeo IS NOT NULL AND LEFT(n.CodigoUbigeo, 2) = @CodigoDepartamento))
+          AND (@CodigoProvincia IS NULL OR (n.CodigoUbigeo IS NOT NULL AND LEFT(n.CodigoUbigeo, 4) = @CodigoProvincia))
+          AND (@CodigoUbigeo IS NULL OR n.CodigoUbigeo = @CodigoUbigeo)
           AND NOT EXISTS
           (
               SELECT 1
@@ -51,7 +75,7 @@ BEGIN
                 AND @HoraInicio < r.HoraFin
                 AND @HoraFin > r.HoraInicio
           )
-        ORDER BY s.Nombre, e.Nombre;
+        ORDER BY dep.Nombre, prov.Nombre, dist.Nombre, s.Nombre, e.Nombre;
     END TRY
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;

@@ -1,7 +1,8 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.UsuariosNegocioIndexViewModel
 <!-- Firma: Codex - 28/03/2026 | Mejora visual de botones de accion Editar/Eliminar con estilo premium reusable -->
 <!-- Firma: Codex - 29/03/2026 | Asignacion de sede obligatoria para usuarios no administradores y visualizacion de sede en gestion de usuarios. -->
-<!-- Firma: Codex - 13/04/2026 | Cabecera del modulo muestra tarjeta informativa de Club/negocio con ID junto al titulo. -->
+<!-- Firma: Codex - 13/04/2026 | Cabecera del modulo muestra tarjeta informativa de Club/negocio con ID junto al titulo; formulario de alta agrega Nombre de usuario para crear cuenta si el correo aun no existe. -->
+<!-- Firma: Codex - 13/04/2026 | Se agrega accion Resetear clave temporal para que administrador regenere password de usuarios del negocio. -->
 
 @{
     ViewData["Title"] = "Usuarios del negocio";
@@ -37,11 +38,15 @@
         <form asp-action="Asignar" method="post" class="row g-2 align-items-end">
             @Html.AntiForgeryToken()
             <input type="hidden" name="NegocioId" value="@Model.NegocioId" />
-            <div class="col-md-5">
+            <div class="col-md-4">
                 <label class="form-label">Correo</label>
                 <input class="form-control" name="Correo" type="email" required />
             </div>
             <div class="col-md-3">
+                <label class="form-label">Nombres y apellidos</label>
+                <input class="form-control" name="NombreUsuario" maxlength="120" placeholder="Ej. Elver Gonzales" />
+            </div>
+            <div class="col-md-2">
                 <label class="form-label">Rol</label>
                 <select class="form-select" name="RolNegocio">
                     <option value="1">Administrador</option>
@@ -61,10 +66,11 @@
                     }
                 </select>
             </div>
-            <div class="col-md-2 d-grid">
+            <div class="col-md-1 d-grid">
                 <button type="submit" class="btn btn-primary">Asignar</button>
             </div>
         </form>
+        <small class="text-muted d-block mt-2">Si el correo no existe, se creara el usuario y este valor se guardara en Nombres.</small>
     </div>
 </section>
 
@@ -119,6 +125,17 @@
                             <a class="btn btn-sm sc-action-btn sc-action-edit" asp-action="Permisos" asp-route-negocioId="@Model.NegocioId" asp-route-usuarioNegocioId="@item.UsuarioNegocioId">
                                 <i class="bi bi-pencil-square"></i> Permisos
                             </a>
+                            @if (Model.EsAdministrador && item.Activo)
+                            {
+                                <form asp-action="ResetearClaveTemporal" method="post" class="d-inline" onsubmit="return confirm('Se generara una nueva clave temporal para este usuario. Deseas continuar?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                                    <input type="hidden" name="usuarioNegocioId" value="@item.UsuarioNegocioId" />
+                                    <button type="submit" class="btn btn-sm sc-action-btn sc-action-neutral">
+                                        <i class="bi bi-key"></i> Reset clave
+                                    </button>
+                                </form>
+                            }
                         }
                         @if (Model.PuedeEliminar && item.Activo)
                         {

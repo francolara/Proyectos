@@ -67,9 +67,23 @@ public partial class SportCenterStoredProcedureService
         await using var dr = await cmd.ExecuteReaderAsync();
         if (await dr.ReadAsync())
         {
-            resumen.TotalPendientes = dr.IsDBNull(0) ? 0 : Convert.ToInt32(dr.GetValue(0));
-            resumen.TotalPagadas = dr.IsDBNull(1) ? 0 : Convert.ToInt32(dr.GetValue(1));
-            resumen.SaldoTotal = dr.IsDBNull(2) ? 0m : Convert.ToDecimal(dr.GetValue(2));
+            // Compatibilidad temporal:
+            // - Version nueva SP: [TotalReservasActivas, TotalPendientes, TotalPagadas, SaldoTotal]
+            // - Version anterior SP: [TotalPendientes, TotalPagadas, SaldoTotal]
+            if (dr.FieldCount >= 4)
+            {
+                resumen.TotalReservasActivas = dr.IsDBNull(0) ? 0 : Convert.ToInt32(dr.GetValue(0));
+                resumen.TotalPendientes = dr.IsDBNull(1) ? 0 : Convert.ToInt32(dr.GetValue(1));
+                resumen.TotalPagadas = dr.IsDBNull(2) ? 0 : Convert.ToInt32(dr.GetValue(2));
+                resumen.SaldoTotal = dr.IsDBNull(3) ? 0m : Convert.ToDecimal(dr.GetValue(3));
+            }
+            else
+            {
+                resumen.TotalPendientes = dr.IsDBNull(0) ? 0 : Convert.ToInt32(dr.GetValue(0));
+                resumen.TotalPagadas = dr.IsDBNull(1) ? 0 : Convert.ToInt32(dr.GetValue(1));
+                resumen.SaldoTotal = dr.IsDBNull(2) ? 0m : Convert.ToDecimal(dr.GetValue(2));
+                resumen.TotalReservasActivas = resumen.TotalPendientes + resumen.TotalPagadas;
+            }
         }
 
         return resumen;
@@ -119,6 +133,7 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@FechaPago", model.FechaPago, SqlDbType.DateTime2);
         AddParam(cmd, "@NumeroOperacion", model.NumeroOperacion, SqlDbType.NVarChar);
         AddParam(cmd, "@Comentario", model.Comentario, SqlDbType.NVarChar);
+        AddParam(cmd, "@CanalOrigen", "ADMIN", SqlDbType.NVarChar);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
         return Convert.ToInt32(await cmd.ExecuteScalarAsync());
     }
@@ -447,51 +462,17 @@ public partial class SportCenterStoredProcedureService
         ("@ClienteId", clienteId, SqlDbType.Int),
         ("@Top", top < 1 ? 50 : top, SqlDbType.Int));
 
-    public async Task<(List<PagoReservaResumenViewModel> Pagos, int TotalRegistros)> PagosListarAsync(int negocioId, int? sedeId = null, string? buscar = null, int pagina = 1, int tamanoPagina = 20)
+    public async Task<(List<PagoReservaResumenViewModel> Pagos, int TotalRegistros)> PagosListarAsync(int negocioId, int? sedeId = null, string? buscar = null, DateOnly? fechaDesde = null, DateOnly? fechaHasta = null, int pagina = 1, int tamanoPagina = 20)
     {
-        var list = new List<PagoReservaResumenViewModel>();
-        var paginaNormalizada = pagina < 1 ? 1 : pagina;
-        var tamanoNormalizado = tamanoPagina < 1 ? 20 : tamanoPagina;
-        await using var cn = CreateConnection();
-        await cn.OpenAsync();
-        await using var cmd = new SqlCommand("Sp_Pagos_Listar", cn) { CommandType = CommandType.StoredProcedure };
-        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
-        AddParam(cmd, "@SedeId", sedeId, SqlDbType.Int);
-        AddParam(cmd, "@Buscar", string.IsNullOrWhiteSpace(buscar) ? null : buscar.Trim(), SqlDbType.NVarChar);
-        AddParam(cmd, "@Pagina", paginaNormalizada, SqlDbType.Int);
-        AddParam(cmd, "@TamanoPagina", tamanoNormalizado, SqlDbType.Int);
-        var totalRegistrosParam = cmd.Parameters.Add("@TotalRegistros", SqlDbType.Int);
-        totalRegistrosParam.Direction = ParameterDirection.Output;
-        await using var dr = await cmd.ExecuteReaderAsync();
-        while (await dr.ReadAsync())
+        try
         {
-            list.Add(new PagoReservaResumenViewModel
-            {
-                ReservaId = dr.GetInt32(0),
-                ReservaCodigo = dr.IsDBNull(1) ? $"#{dr.GetInt32(0)}" : dr.GetString(1),
-                Sede = dr.IsDBNull(2) ? string.Empty : dr.GetString(2),
-                Espacio = dr.IsDBNull(3) ? string.Empty : dr.GetString(3),
-                Cliente = dr.IsDBNull(4) ? string.Empty : dr.GetString(4),
-                Fecha = DateOnly.FromDateTime(dr.GetDateTime(5)),
-                MontoTotal = dr.IsDBNull(6) ? 0m : dr.GetDecimal(6),
-                SaldoPendiente = dr.IsDBNull(7) ? 0m : dr.GetDecimal(7),
-                FormaPagoResumen = dr.IsDBNull(8) ? string.Empty : dr.GetString(8),
-                CantidadPagos = dr.IsDBNull(9) ? 0 : dr.GetInt32(9),
-                MonedaSimbolo = dr.IsDBNull(10) ? "S/" : dr.GetString(10),
-                PagadaCompleta = dr.FieldCount > 11
-                    ? !dr.IsDBNull(11) && dr.GetBoolean(11)
-                    : (dr.IsDBNull(7) || dr.GetDecimal(7) <= 0m),
-                TieneComprobanteActivo = dr.FieldCount > 12
-                    ? !dr.IsDBNull(12) && dr.GetBoolean(12)
-                    : false,
-                Referencia = dr.FieldCount > 13 && !dr.IsDBNull(13)
-                    ? dr.GetString(13)
-                    : string.Empty
-            });
+            return await PagosListarInternoAsync(negocioId, sedeId, buscar, fechaDesde, fechaHasta, pagina, tamanoPagina, incluirRangoFecha: true);
         }
-        await dr.CloseAsync();
-        var totalRegistros = totalRegistrosParam.Value is int total ? total : 0;
-        return (list, totalRegistros);
+        catch (SqlException ex) when (ex.Message.Contains("@FechaDesde", StringComparison.OrdinalIgnoreCase) || ex.Message.Contains("@FechaHasta", StringComparison.OrdinalIgnoreCase))
+        {
+            // Compatibilidad con SP antiguo sin parametros de rango de fecha.
+            return await PagosListarInternoAsync(negocioId, sedeId, buscar, null, null, pagina, tamanoPagina, incluirRangoFecha: false);
+        }
     }
 
     public async Task<PagoReservaEditViewModel?> PagosObtenerAsync(int negocioId, int reservaId)
@@ -628,7 +609,72 @@ public partial class SportCenterStoredProcedureService
         ("@Top", top < 1 ? 30 : top, SqlDbType.Int));
     public Task<List<SelectListItem>> PagosComboFormasPagoAsync(int negocioId) => ComboAsync("Sp_Combos_FormasPago", ("@NegocioId", negocioId, SqlDbType.Int));
 
-    public async Task<(List<ComprobanteItemViewModel> Comprobantes, int TotalRegistros)> ComprobantesListarAsync(int negocioId, int? sedeId = null, string? buscar = null, string? codigoDocumento = null, int pagina = 1, int tamanoPagina = 20)
+    public async Task<(List<ComprobanteItemViewModel> Comprobantes, int TotalRegistros)> ComprobantesListarAsync(int negocioId, int? sedeId = null, string? buscar = null, string? codigoDocumento = null, DateOnly? fechaDesde = null, DateOnly? fechaHasta = null, int pagina = 1, int tamanoPagina = 20)
+    {
+        try
+        {
+            return await ComprobantesListarInternoAsync(negocioId, sedeId, buscar, codigoDocumento, fechaDesde, fechaHasta, pagina, tamanoPagina, incluirRangoFecha: true);
+        }
+        catch (SqlException ex) when (ex.Message.Contains("@FechaDesde", StringComparison.OrdinalIgnoreCase) || ex.Message.Contains("@FechaHasta", StringComparison.OrdinalIgnoreCase))
+        {
+            // Compatibilidad con SP antiguo sin parametros de rango de fecha.
+            return await ComprobantesListarInternoAsync(negocioId, sedeId, buscar, codigoDocumento, null, null, pagina, tamanoPagina, incluirRangoFecha: false);
+        }
+    }
+
+    private async Task<(List<PagoReservaResumenViewModel> Pagos, int TotalRegistros)> PagosListarInternoAsync(int negocioId, int? sedeId, string? buscar, DateOnly? fechaDesde, DateOnly? fechaHasta, int pagina, int tamanoPagina, bool incluirRangoFecha)
+    {
+        var list = new List<PagoReservaResumenViewModel>();
+        var paginaNormalizada = pagina < 1 ? 1 : pagina;
+        var tamanoNormalizado = tamanoPagina < 1 ? 20 : tamanoPagina;
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_Pagos_Listar", cn) { CommandType = CommandType.StoredProcedure };
+        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+        AddParam(cmd, "@SedeId", sedeId, SqlDbType.Int);
+        AddParam(cmd, "@Buscar", string.IsNullOrWhiteSpace(buscar) ? null : buscar.Trim(), SqlDbType.NVarChar);
+        if (incluirRangoFecha)
+        {
+            AddParam(cmd, "@FechaDesde", fechaDesde?.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
+            AddParam(cmd, "@FechaHasta", fechaHasta?.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
+        }
+        AddParam(cmd, "@Pagina", paginaNormalizada, SqlDbType.Int);
+        AddParam(cmd, "@TamanoPagina", tamanoNormalizado, SqlDbType.Int);
+        var totalRegistrosParam = cmd.Parameters.Add("@TotalRegistros", SqlDbType.Int);
+        totalRegistrosParam.Direction = ParameterDirection.Output;
+        await using var dr = await cmd.ExecuteReaderAsync();
+        while (await dr.ReadAsync())
+        {
+            list.Add(new PagoReservaResumenViewModel
+            {
+                ReservaId = dr.GetInt32(0),
+                ReservaCodigo = dr.IsDBNull(1) ? $"#{dr.GetInt32(0)}" : dr.GetString(1),
+                Sede = dr.IsDBNull(2) ? string.Empty : dr.GetString(2),
+                Espacio = dr.IsDBNull(3) ? string.Empty : dr.GetString(3),
+                Cliente = dr.IsDBNull(4) ? string.Empty : dr.GetString(4),
+                Fecha = DateOnly.FromDateTime(dr.GetDateTime(5)),
+                MontoTotal = dr.IsDBNull(6) ? 0m : dr.GetDecimal(6),
+                SaldoPendiente = dr.IsDBNull(7) ? 0m : dr.GetDecimal(7),
+                FormaPagoResumen = dr.IsDBNull(8) ? string.Empty : dr.GetString(8),
+                CantidadPagos = dr.IsDBNull(9) ? 0 : dr.GetInt32(9),
+                MonedaSimbolo = dr.IsDBNull(10) ? "S/" : dr.GetString(10),
+                PagadaCompleta = dr.FieldCount > 11
+                    ? !dr.IsDBNull(11) && dr.GetBoolean(11)
+                    : (dr.IsDBNull(7) || dr.GetDecimal(7) <= 0m),
+                TieneComprobanteActivo = dr.FieldCount > 12
+                    ? !dr.IsDBNull(12) && dr.GetBoolean(12)
+                    : false,
+                Referencia = dr.FieldCount > 13 && !dr.IsDBNull(13)
+                    ? dr.GetString(13)
+                    : string.Empty
+            });
+        }
+        await dr.CloseAsync();
+        var totalRegistros = totalRegistrosParam.Value is int total ? total : 0;
+        return (list, totalRegistros);
+    }
+
+    private async Task<(List<ComprobanteItemViewModel> Comprobantes, int TotalRegistros)> ComprobantesListarInternoAsync(int negocioId, int? sedeId, string? buscar, string? codigoDocumento, DateOnly? fechaDesde, DateOnly? fechaHasta, int pagina, int tamanoPagina, bool incluirRangoFecha)
     {
         var list = new List<ComprobanteItemViewModel>();
         var paginaNormalizada = pagina < 1 ? 1 : pagina;
@@ -640,6 +686,11 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@SedeId", sedeId, SqlDbType.Int);
         AddParam(cmd, "@Buscar", string.IsNullOrWhiteSpace(buscar) ? null : buscar.Trim(), SqlDbType.NVarChar);
         AddParam(cmd, "@CodigoDocumento", string.IsNullOrWhiteSpace(codigoDocumento) ? null : codigoDocumento.Trim().ToUpperInvariant(), SqlDbType.NVarChar);
+        if (incluirRangoFecha)
+        {
+            AddParam(cmd, "@FechaDesde", fechaDesde?.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
+            AddParam(cmd, "@FechaHasta", fechaHasta?.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
+        }
         AddParam(cmd, "@Pagina", paginaNormalizada, SqlDbType.Int);
         AddParam(cmd, "@TamanoPagina", tamanoNormalizado, SqlDbType.Int);
         var totalRegistrosParam = cmd.Parameters.Add("@TotalRegistros", SqlDbType.Int);

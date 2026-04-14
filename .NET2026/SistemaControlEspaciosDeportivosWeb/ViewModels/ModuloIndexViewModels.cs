@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
 
 namespace SistemaControlEspaciosDeportivosWeb.ViewModels;
@@ -38,6 +39,10 @@ public class ConfiguracionClubViewModel : ModuloBaseViewModel
 
     [StringLength(250, ErrorMessage = "La direccion fiscal no puede superar los 250 caracteres.")]
     public string? DireccionFiscal { get; set; }
+    [StringLength(500, ErrorMessage = "La URL del logo no puede superar los 500 caracteres.")]
+    public string? LogoUrl { get; set; }
+    public IFormFile? LogoArchivo { get; set; }
+    public bool QuitarLogo { get; set; }
     public string? CodigoDepartamento { get; set; }
     public string? CodigoProvincia { get; set; }
     [StringLength(6, ErrorMessage = "El codigo ubigeo debe tener 6 caracteres.")]
@@ -124,6 +129,8 @@ public class EspacioItemViewModel
     public string SedeNombre { get; set; } = string.Empty;
     public string TipoDeporteNombre { get; set; } = string.Empty;
     public string TipoSueloNombre { get; set; } = string.Empty;
+    public bool TieneIluminacion { get; set; }
+    public bool Techada { get; set; }
     public string Estado { get; set; } = string.Empty;
     public string TarifaResumen { get; set; } = string.Empty;
 }
@@ -132,6 +139,7 @@ public class ReservasIndexViewModel : ModuloBaseViewModel
 {
     public List<ReservaItemViewModel> Reservas { get; set; } = new();
     public int TotalReservasListado { get; set; }
+    public int TotalReservasActivasListadoGlobal { get; set; }
     public int TotalPendientesListadoGlobal { get; set; }
     public int TotalPagadasListadoGlobal { get; set; }
     public decimal SaldoTotalListadoGlobal { get; set; }
@@ -173,6 +181,7 @@ public class ReservasIndexViewModel : ModuloBaseViewModel
 
 public class ReservasListadoResumenViewModel
 {
+    public int TotalReservasActivas { get; set; }
     public int TotalPendientes { get; set; }
     public int TotalPagadas { get; set; }
     public decimal SaldoTotal { get; set; }
@@ -254,6 +263,8 @@ public class BloqueoHorarioItemViewModel
 public class PagosIndexViewModel : ModuloBaseViewModel
 {
     public string? Buscar { get; set; }
+    public DateOnly FechaDesde { get; set; } = DateOnly.FromDateTime(DateTime.Today.AddDays(-6));
+    public DateOnly FechaHasta { get; set; } = DateOnly.FromDateTime(DateTime.Today);
     public int Pagina { get; set; } = 1;
     public int TamanoPagina { get; set; } = 20;
     public int TotalRegistros { get; set; }
@@ -327,6 +338,8 @@ public class ComprobantesIndexViewModel : ModuloBaseViewModel
 {
     public string? Buscar { get; set; }
     public string? CodigoDocumento { get; set; }
+    public DateOnly FechaDesde { get; set; } = DateOnly.FromDateTime(DateTime.Today.AddDays(-6));
+    public DateOnly FechaHasta { get; set; } = DateOnly.FromDateTime(DateTime.Today);
     public int Pagina { get; set; } = 1;
     public int TamanoPagina { get; set; } = 20;
     public int TotalRegistros { get; set; }
@@ -368,6 +381,13 @@ public class ClientesIndexViewModel : ModuloBaseViewModel
 
 public class PromocionesIndexViewModel : ModuloBaseViewModel
 {
+    public DateOnly FechaDesde { get; set; } = DateOnly.FromDateTime(DateTime.Today.AddDays(-6));
+    public DateOnly FechaHasta { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+    public string EstadoFiltro { get; set; } = "activos";
+    public int Pagina { get; set; } = 1;
+    public int TamanoPagina { get; set; } = 20;
+    public int TotalRegistros { get; set; }
+    public int TotalPaginas { get; set; } = 1;
     public List<PromocionItemViewModel> Promociones { get; set; } = new();
 }
 
@@ -437,4 +457,14 @@ public class ClienteItemViewModel
     public string? Telefono { get; set; }
     public string? Correo { get; set; }
     public bool Activo { get; set; }
+}
+
+public class NotificacionNegocioItemViewModel
+{
+    public int Id { get; set; }
+    public string Tipo { get; set; } = string.Empty;
+    public string Titulo { get; set; } = string.Empty;
+    public string Mensaje { get; set; } = string.Empty;
+    public string? UrlDestino { get; set; }
+    public DateTime FechaRegistroUtc { get; set; }
 }

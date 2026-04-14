@@ -7,7 +7,7 @@ namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 public class PagosController(IModuloPermisoService moduloPermisoService, ISportCenterStoredProcedureService spService)
     : ModuloControllerBase(moduloPermisoService)
 {
-    public async Task<IActionResult> Index(int? negocioId, string? buscar = null, int pagina = 1)
+    public async Task<IActionResult> Index(int? negocioId, string? buscar = null, DateOnly? fechaDesde = null, DateOnly? fechaHasta = null, string? preset = null, int pagina = 1)
     {
         var resolvedNegocioId = await ResolverNegocioIdAsync(negocioId, spService);
         if (!resolvedNegocioId.HasValue) return Forbid();
@@ -15,15 +15,16 @@ public class PagosController(IModuloPermisoService moduloPermisoService, ISportC
         var baseVm = await ObtenerBaseAsync(resolvedNegocioId.Value, "PAGOS");
         if (baseVm is null || !string.IsNullOrWhiteSpace(baseVm.Mensaje)) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "Acceso denegado." });
 
+        var (desde, hasta) = ResolverRangoFechas(fechaDesde, fechaHasta, preset);
         const int tamanoPagina = 20;
         var paginaActual = pagina < 1 ? 1 : pagina;
-        var (pagos, totalRegistros) = await spService.PagosListarAsync(resolvedNegocioId.Value, AplicarSedeAsignada(baseVm, null), buscar, paginaActual, tamanoPagina);
+        var (pagos, totalRegistros) = await spService.PagosListarAsync(resolvedNegocioId.Value, AplicarSedeAsignada(baseVm, null), buscar, desde, hasta, paginaActual, tamanoPagina);
         var configClub = await spService.ConfiguracionClubObtenerAsync(resolvedNegocioId.Value);
         var totalPaginas = Math.Max(1, (int)Math.Ceiling(totalRegistros / (double)tamanoPagina));
         if (paginaActual > totalPaginas)
         {
             paginaActual = totalPaginas;
-            (pagos, totalRegistros) = await spService.PagosListarAsync(resolvedNegocioId.Value, AplicarSedeAsignada(baseVm, null), buscar, paginaActual, tamanoPagina);
+            (pagos, totalRegistros) = await spService.PagosListarAsync(resolvedNegocioId.Value, AplicarSedeAsignada(baseVm, null), buscar, desde, hasta, paginaActual, tamanoPagina);
         }
 
         var vm = new PagosIndexViewModel
@@ -39,6 +40,8 @@ public class PagosController(IModuloPermisoService moduloPermisoService, ISportC
             PuedeEditar = baseVm.PuedeEditar,
             PuedeEliminar = baseVm.PuedeEliminar,
             Buscar = buscar,
+            FechaDesde = desde,
+            FechaHasta = hasta,
             Pagina = paginaActual,
             TamanoPagina = tamanoPagina,
             TotalRegistros = totalRegistros,
@@ -49,6 +52,42 @@ public class PagosController(IModuloPermisoService moduloPermisoService, ISportC
             Pagos = pagos
         };
         return View(vm);
+    }
+
+    private static (DateOnly Desde, DateOnly Hasta) ResolverRangoFechas(DateOnly? fechaDesde, DateOnly? fechaHasta, string? preset)
+    {
+        var hoy = DateOnly.FromDateTime(DateTime.Today);
+        DateOnly desde;
+        DateOnly hasta;
+
+        switch ((preset ?? string.Empty).Trim().ToLowerInvariant())
+        {
+            case "hoy":
+                desde = hoy;
+                hasta = hoy;
+                break;
+            case "7d":
+                hasta = hoy;
+                desde = hoy.AddDays(-6);
+                break;
+            case "30d":
+                hasta = hoy;
+                desde = hoy.AddDays(-29);
+                break;
+            case "mes":
+                desde = new DateOnly(hoy.Year, hoy.Month, 1);
+                hasta = new DateOnly(hoy.Year, hoy.Month, DateTime.DaysInMonth(hoy.Year, hoy.Month));
+                break;
+            default:
+                desde = fechaDesde ?? hoy.AddDays(-6);
+                hasta = fechaHasta ?? hoy;
+                break;
+        }
+
+        if (hasta < desde)
+            (desde, hasta) = (hasta, desde);
+
+        return (desde, hasta);
     }
 
     public async Task<IActionResult> Create(int? negocioId)
@@ -127,18 +166,23 @@ public class PagosController(IModuloPermisoService moduloPermisoService, ISportC
 
         model.FormasPago = await spService.PagosComboFormasPagoAsync(model.NegocioId);
         if (model.Pagos is null) model.Pagos = new List<PagoReservaDetalleItemViewModel>();
+        AplicarSeleccionEliminacionDesdeForm(model);
         var intentoNuevoPago =
-            model.AgregarNuevoPago
-            || model.NuevoMonto.HasValue
-            || model.NuevaFormaPagoId.HasValue
-            || model.NuevaFechaPago.HasValue
+            (model.NuevoMonto.HasValue && model.NuevoMonto.Value > 0)
             || !string.IsNullOrWhiteSpace(model.NuevoNumeroOperacion)
             || !string.IsNullOrWhiteSpace(model.NuevaObservacion);
 
-        // Si el usuario digita datos de nuevo pago, lo tratamos como intento de registro
-        // aunque no haya marcado el switch, para no perder la validacion ni redirigir.
-        if (intentoNuevoPago)
-            model.AgregarNuevoPago = true;
+        // Solo consideramos "nuevo pago" cuando existen datos reales.
+        // Esto evita bloquear eliminaciones/ediciones cuando el switch llega marcado por defecto.
+        model.AgregarNuevoPago = intentoNuevoPago;
+        if (!model.AgregarNuevoPago)
+        {
+            model.NuevaFechaPago = null;
+            model.NuevoMonto = null;
+            model.NuevaFormaPagoId = null;
+            model.NuevoNumeroOperacion = null;
+            model.NuevaObservacion = null;
+        }
 
         if (model.AgregarNuevoPago)
         {
@@ -196,6 +240,26 @@ public class PagosController(IModuloPermisoService moduloPermisoService, ISportC
         {
             ModelState.AddModelError(string.Empty, ex.Message);
             return View(model);
+        }
+    }
+
+    private void AplicarSeleccionEliminacionDesdeForm(PagoReservaEditViewModel model)
+    {
+        if (!Request.HasFormContentType || model.Pagos.Count == 0) return;
+
+        for (var i = 0; i < model.Pagos.Count; i++)
+        {
+            var key = $"Pagos[{i}].Eliminar";
+            if (!Request.Form.TryGetValue(key, out var values))
+            {
+                model.Pagos[i].Eliminar = false;
+                continue;
+            }
+
+            model.Pagos[i].Eliminar = values.Any(v =>
+                string.Equals(v, "true", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(v, "on", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(v, "1", StringComparison.OrdinalIgnoreCase));
         }
     }
 

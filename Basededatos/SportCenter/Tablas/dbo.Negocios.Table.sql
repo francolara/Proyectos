@@ -4,6 +4,7 @@ GO
 -- Firma: Codex - 04/04/2026 | Agrega CodigoUbigeo en tabla Negocios y su relacion FK a UbigeoDistritos.
 -- Firma: Codex - 06/04/2026 | Agrega politica de confirmacion de reserva por pago y porcentaje minimo de adelanto por negocio.
 -- Firma: Codex - 09/04/2026 | Agrega configuracion de emision (CPE/Recibo interno) y porcentaje IGV.
+-- Firma: Codex - 13/04/2026 | Agrega LogoUrl para imagen del logo del negocio.
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -25,6 +26,7 @@ CREATE TABLE [dbo].[Negocios](
     [NumeroDocumentoFiscal] [nvarchar](20) NULL,
     [DireccionFiscal] [nvarchar](250) NULL,
     [CodigoUbigeo] [char](6) NULL,
+    [LogoUrl] [nvarchar](500) NULL,
  CONSTRAINT [PK_Negocios] PRIMARY KEY CLUSTERED 
 (
     [Id] ASC

@@ -1,0 +1,54 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.CambiarContrasenaViewModel
+@{
+    ViewData["Title"] = "Cambiar contrasena";
+}
+
+<header class="page-header">
+    <div>
+        <h1>Cambiar contrasena</h1>
+        <p class="page-subtitle">Actualiza tu clave de acceso para mayor seguridad.</p>
+        <div class="sc-negocio-ref-card mt-2" aria-readonly="true">
+            <div class="sc-negocio-ref-card-head"><i class="bi bi-envelope"></i><span>Cuenta actual</span></div>
+            <div class="sc-negocio-ref-card-name">@Model.CorreoUsuario</div>
+        </div>
+    </div>
+    <div class="action-toolbar">
+        <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index">Panel</a>
+    </div>
+</header>
+
+@if (TempData["CuentaOk"] is string ok && !string.IsNullOrWhiteSpace(ok))
+{
+    <div class="alert alert-success">@ok</div>
+}
+
+<section class="sc-form-card">
+    <form asp-action="CambiarContrasena" method="post" class="sc-form-shell">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label asp-for="ContrasenaActual" class="form-label">Contrasena actual</label>
+                <input asp-for="ContrasenaActual" class="form-control" autocomplete="current-password" />
+                <span asp-validation-for="ContrasenaActual" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="NuevaContrasena" class="form-label">Nueva contrasena</label>
+                <input asp-for="NuevaContrasena" class="form-control" autocomplete="new-password" />
+                <span asp-validation-for="NuevaContrasena" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="ConfirmarNuevaContrasena" class="form-label">Confirmar nueva contrasena</label>
+                <input asp-for="ConfirmarNuevaContrasena" class="form-control" autocomplete="new-password" />
+                <span asp-validation-for="ConfirmarNuevaContrasena" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="sc-form-actions mt-3">
+            <button type="submit" class="btn btn-primary">Guardar nueva contrasena</button>
+        </div>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

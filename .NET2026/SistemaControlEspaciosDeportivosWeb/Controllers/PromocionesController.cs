@@ -8,13 +8,51 @@ namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 public class PromocionesController(IModuloPermisoService moduloPermisoService, ISportCenterStoredProcedureService spService)
     : ModuloControllerBase(moduloPermisoService)
 {
-    public async Task<IActionResult> Index(int? negocioId)
+    public async Task<IActionResult> Index(
+        int? negocioId,
+        DateOnly? fechaDesde = null,
+        DateOnly? fechaHasta = null,
+        string? estado = null,
+        string? preset = null,
+        int pagina = 1)
     {
         var resolvedNegocioId = await ResolverNegocioIdAsync(negocioId, spService);
         if (!resolvedNegocioId.HasValue) return Forbid();
 
         var baseVm = await ObtenerBaseAsync(resolvedNegocioId.Value, "PROMOCIONES");
         if (baseVm is null || !string.IsNullOrWhiteSpace(baseVm.Mensaje)) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "Acceso denegado." });
+
+        var (desde, hasta) = ResolverRangoFechas(fechaDesde, fechaHasta, preset);
+        var estadoFiltro = NormalizarEstadoFiltro(estado);
+        bool? soloActivos = estadoFiltro switch
+        {
+            "inactivos" => false,
+            "todos" => null,
+            _ => true
+        };
+        const int tamanoPagina = 20;
+        var paginaActual = pagina < 1 ? 1 : pagina;
+        var (promociones, totalRegistros) = await spService.PromocionesListarAsync(
+            resolvedNegocioId.Value,
+            AplicarSedeAsignada(baseVm, null),
+            desde,
+            hasta,
+            soloActivos,
+            paginaActual,
+            tamanoPagina);
+        var totalPaginas = Math.Max(1, (int)Math.Ceiling(totalRegistros / (double)tamanoPagina));
+        if (paginaActual > totalPaginas)
+        {
+            paginaActual = totalPaginas;
+            (promociones, totalRegistros) = await spService.PromocionesListarAsync(
+                resolvedNegocioId.Value,
+                AplicarSedeAsignada(baseVm, null),
+                desde,
+                hasta,
+                soloActivos,
+                paginaActual,
+                tamanoPagina);
+        }
 
         var vm = new PromocionesIndexViewModel
         {
@@ -28,7 +66,14 @@ public class PromocionesController(IModuloPermisoService moduloPermisoService, I
             PuedeCrear = baseVm.PuedeCrear,
             PuedeEditar = baseVm.PuedeEditar,
             PuedeEliminar = baseVm.PuedeEliminar,
-            Promociones = await spService.PromocionesListarAsync(resolvedNegocioId.Value, AplicarSedeAsignada(baseVm, null))
+            FechaDesde = desde,
+            FechaHasta = hasta,
+            EstadoFiltro = estadoFiltro,
+            Pagina = paginaActual,
+            TamanoPagina = tamanoPagina,
+            TotalRegistros = totalRegistros,
+            TotalPaginas = totalPaginas,
+            Promociones = promociones
         };
 
         return View(vm);
@@ -70,6 +115,12 @@ public class PromocionesController(IModuloPermisoService moduloPermisoService, I
             await CargarCombosAsync(model, baseVm);
             return View(model);
         }
+        if (model.PorcentajeDescuento != decimal.Truncate(model.PorcentajeDescuento))
+        {
+            ModelState.AddModelError(nameof(model.PorcentajeDescuento), "El porcentaje solo permite numeros enteros.");
+            await CargarCombosAsync(model, baseVm);
+            return View(model);
+        }
 
         await spService.PromocionesCrearAsync(model, User.Identity?.Name ?? "sistema");
         return RedirectToAction(nameof(Index), new { negocioId = model.NegocioId });
@@ -107,6 +158,12 @@ public class PromocionesController(IModuloPermisoService moduloPermisoService, I
             await CargarCombosAsync(model, baseVm);
             return View(model);
         }
+        if (model.PorcentajeDescuento != decimal.Truncate(model.PorcentajeDescuento))
+        {
+            ModelState.AddModelError(nameof(model.PorcentajeDescuento), "El porcentaje solo permite numeros enteros.");
+            await CargarCombosAsync(model, baseVm);
+            return View(model);
+        }
 
         var ok = await spService.PromocionesActualizarAsync(model, User.Identity?.Name ?? "sistema");
         if (!ok)
@@ -139,5 +196,52 @@ public class PromocionesController(IModuloPermisoService moduloPermisoService, I
         if (baseVm.EsAdministrador)
             model.Sedes.Insert(0, new SelectListItem("Todas las sedes", string.Empty));
         model.Espacios.Insert(0, new SelectListItem("Todos los espacios", string.Empty));
+    }
+
+    private static (DateOnly Desde, DateOnly Hasta) ResolverRangoFechas(DateOnly? fechaDesde, DateOnly? fechaHasta, string? preset)
+    {
+        var hoy = DateOnly.FromDateTime(DateTime.Today);
+        DateOnly desde;
+        DateOnly hasta;
+
+        switch ((preset ?? string.Empty).Trim().ToLowerInvariant())
+        {
+            case "hoy":
+                desde = hoy;
+                hasta = hoy;
+                break;
+            case "7d":
+                hasta = hoy;
+                desde = hoy.AddDays(-6);
+                break;
+            case "30d":
+                hasta = hoy;
+                desde = hoy.AddDays(-29);
+                break;
+            case "mes":
+                desde = new DateOnly(hoy.Year, hoy.Month, 1);
+                hasta = new DateOnly(hoy.Year, hoy.Month, DateTime.DaysInMonth(hoy.Year, hoy.Month));
+                break;
+            default:
+                desde = fechaDesde ?? hoy.AddDays(-6);
+                hasta = fechaHasta ?? hoy;
+                break;
+        }
+
+        if (hasta < desde)
+            (desde, hasta) = (hasta, desde);
+
+        return (desde, hasta);
+    }
+
+    private static string NormalizarEstadoFiltro(string? estado)
+    {
+        var filtro = (estado ?? string.Empty).Trim().ToLowerInvariant();
+        return filtro switch
+        {
+            "todos" => "todos",
+            "inactivos" => "inactivos",
+            _ => "activos"
+        };
     }
 }

@@ -11,7 +11,8 @@
 <!-- Firma: Codex - 10/04/2026 | Paginacion del listado general de reservas visible siempre (incluye estado 1/1 con botones deshabilitados) para mantener estandar. -->
 <!-- Firma: Codex - 10/04/2026 | Corrige listado general: paginacion tambien en modo sin panel operativo, filtros/paginacion por AJAX sin recargar toda la pagina, y cambio/limpieza de sede fuerza ocultar panel hasta seleccionar sede+espacio valido; tarjeta de calendario en reservas muestra prefijo #NNN-Equipo (Cliente). -->
 <!-- Firma: Codex - 27/03/2026 | Calendario en espanol, bloqueos por sede, gestion por modal, bloqueo de fechas pasadas y rediseno visual SaaS del calendario -->
-<!-- Firma: Codex - 13/04/2026 | Cabecera del modulo muestra tarjeta informativa de Club/negocio con ID junto al titulo. -->
+<!-- Firma: Codex - 13/04/2026 | Cabecera del modulo muestra tarjeta informativa de Club/negocio con ID junto al titulo; KPI del listado general excluye reservas canceladas en conteo de reservas activas y saldo acumulado; filtros de listado agregan presets rapidos Hoy/7d/30d/Mes actual. -->
+<!-- Firma: Codex - 13/04/2026 | En cotizacion del pop-up de reserva, el label de precio muestra aviso "Horario con promocion aplicada del N%" cuando descuentoPct > 0. -->
 @{
     ViewData["Title"] = "Reservas";
     var sedeSeleccionadaTexto = Model.SedesFiltro.FirstOrDefault(x => x.Value == Model.SedeId?.ToString())?.Text ?? "Seleccione sede";
@@ -230,6 +231,10 @@
             </div>
             <div class="sc-reservas-metrics">
                 <div class="sc-reservas-metric">
+                    <span>Reservas activas</span>
+                    <strong>@Model.TotalReservasActivasListadoGlobal</strong>
+                </div>
+                <div class="sc-reservas-metric">
                     <span>Pendientes</span>
                     <strong>@Model.TotalPendientesListadoGlobal</strong>
                 </div>
@@ -260,7 +265,16 @@
                     <label class="form-label">Hasta</label>
                     <input type="date" class="form-control" name="listadoHasta" value="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" />
                 </div>
-                <div class="col-md-7">
+                <div class="col-md-3">
+                    <label class="form-label d-block mb-1">Seleccion rapida</label>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="submit" class="btn btn-sm btn-outline-primary" name="listadoPreset" value="hoy">Hoy</button>
+                        <button type="submit" class="btn btn-sm btn-outline-primary" name="listadoPreset" value="7d">7 dias</button>
+                        <button type="submit" class="btn btn-sm btn-outline-primary" name="listadoPreset" value="30d">30 dias</button>
+                        <button type="submit" class="btn btn-sm btn-outline-primary" name="listadoPreset" value="mes">Mes actual</button>
+                    </div>
+                </div>
+                <div class="col-md-4">
                     <label class="form-label d-block mb-1">Estados (puedes elegir varios)</label>
                     <div class="sc-listado-estados-grid">
                         @foreach (var estadoItem in estadosListadoCatalogo)
@@ -514,7 +528,16 @@ else
                     <label class="form-label">Hasta</label>
                     <input type="date" class="form-control" name="listadoHasta" value="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" />
                 </div>
-                <div class="col-md-7">
+                <div class="col-md-3">
+                    <label class="form-label d-block mb-1">Seleccion rapida</label>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="submit" class="btn btn-sm btn-outline-primary" name="listadoPreset" value="hoy">Hoy</button>
+                        <button type="submit" class="btn btn-sm btn-outline-primary" name="listadoPreset" value="7d">7 dias</button>
+                        <button type="submit" class="btn btn-sm btn-outline-primary" name="listadoPreset" value="30d">30 dias</button>
+                        <button type="submit" class="btn btn-sm btn-outline-primary" name="listadoPreset" value="mes">Mes actual</button>
+                    </div>
+                </div>
+                <div class="col-md-4">
                     <label class="form-label d-block mb-1">Estados (puedes elegir varios)</label>
                     <div class="sc-listado-estados-grid">
                         @foreach (var estadoItem in estadosListadoCatalogo)
@@ -1465,7 +1488,15 @@ else
                     if (!r.ok || !payload.ok) throw new Error(payload.mensaje || 'No se pudo cotizar la reserva.');
                     const monedaSimbolo = String(payload.monedaSimbolo || 'S/');
                     if (modalPrecioLabelEl) {
-                        modalPrecioLabelEl.textContent = `Precio de Espacio (${monedaSimbolo})`;
+                        const descuentoPct = Number(payload.descuentoPct || 0);
+                        if (descuentoPct > 0) {
+                            const descuentoTexto = Number.isInteger(descuentoPct)
+                                ? descuentoPct.toString()
+                                : descuentoPct.toFixed(2);
+                            modalPrecioLabelEl.textContent = `Precio de Espacio (${monedaSimbolo}) - Horario con promocion aplicada del ${descuentoTexto}%`;
+                        } else {
+                            modalPrecioLabelEl.textContent = `Precio de Espacio (${monedaSimbolo})`;
+                        }
                     }
                     if (modalTotalEl) {
                         const precioFinal = Number(payload.precioFinal || 0);
@@ -1615,13 +1646,16 @@ else
                 return { ok: true, mensaje: '' };
             }
 
-            function buildQueryStringFromForm(form) {
+            function buildQueryStringFromForm(form, submitter) {
                 const data = new FormData(form);
                 const params = new URLSearchParams();
                 data.forEach((value, key) => {
                     if (value === null || value === undefined) return;
                     params.append(key, String(value));
                 });
+                if (submitter && submitter.name) {
+                    params.set(submitter.name, submitter.value || '');
+                }
                 return params.toString();
             }
 
@@ -1667,7 +1701,7 @@ else
                         e.preventDefault();
                         const paginaInput = form.querySelector('input[name="paginaListado"]');
                         if (paginaInput) paginaInput.value = '1';
-                        const query = buildQueryStringFromForm(form);
+                        const query = buildQueryStringFromForm(form, e.submitter || null);
                         const url = `${form.action}?${query}`;
                         void renderListadoGeneralPorAjax(url);
                     });

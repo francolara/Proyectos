@@ -31,7 +31,8 @@ public partial class SportCenterStoredProcedureService
             PorcentajeAdelantoMinimo = dr.FieldCount > 9 && !dr.IsDBNull(9) ? Convert.ToDecimal(dr.GetValue(9)) : null,
             EmisionComprobantesElectronicos = dr.FieldCount > 10 && !dr.IsDBNull(10) && Convert.ToBoolean(dr.GetValue(10)),
             EmisionReciboInterno = dr.FieldCount > 11 && !dr.IsDBNull(11) && Convert.ToBoolean(dr.GetValue(11)),
-            PorcentajeIgv = dr.FieldCount > 12 && !dr.IsDBNull(12) ? Convert.ToInt32(dr.GetValue(12)) : 18
+            PorcentajeIgv = dr.FieldCount > 12 && !dr.IsDBNull(12) ? Convert.ToInt32(dr.GetValue(12)) : 18,
+            LogoUrl = dr.FieldCount > 13 && !dr.IsDBNull(13) ? dr.GetString(13) : null
         };
     }
 
@@ -55,6 +56,7 @@ public partial class SportCenterStoredProcedureService
             AddParam(cmd, "@EmisionComprobantesElectronicos", model.EmisionComprobantesElectronicos, SqlDbType.Bit);
             AddParam(cmd, "@EmisionReciboInterno", model.EmisionReciboInterno, SqlDbType.Bit);
             AddParam(cmd, "@PorcentajeIgv", model.PorcentajeIgv, SqlDbType.Int);
+            AddParam(cmd, "@LogoUrl", model.LogoUrl, SqlDbType.NVarChar);
             AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
             await cmd.ExecuteNonQueryAsync();
             return true;

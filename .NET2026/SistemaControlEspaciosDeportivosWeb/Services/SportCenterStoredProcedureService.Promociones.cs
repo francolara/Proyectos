@@ -6,7 +6,14 @@ namespace SistemaControlEspaciosDeportivosWeb.Services;
 
 public partial class SportCenterStoredProcedureService
 {
-    public async Task<List<PromocionItemViewModel>> PromocionesListarAsync(int negocioId, int? sedeId = null)
+    public async Task<(List<PromocionItemViewModel> Promociones, int TotalRegistros)> PromocionesListarAsync(
+        int negocioId,
+        int? sedeId = null,
+        DateOnly? fechaDesde = null,
+        DateOnly? fechaHasta = null,
+        bool? soloActivos = true,
+        int pagina = 1,
+        int tamanoPagina = 20)
     {
         var list = new List<PromocionItemViewModel>();
         await using var cn = CreateConnection();
@@ -14,6 +21,13 @@ public partial class SportCenterStoredProcedureService
         await using var cmd = new SqlCommand("Sp_Promociones_Listar", cn) { CommandType = CommandType.StoredProcedure };
         AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
         AddParam(cmd, "@SedeId", sedeId, SqlDbType.Int);
+        AddParam(cmd, "@FechaDesde", fechaDesde?.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
+        AddParam(cmd, "@FechaHasta", fechaHasta?.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
+        AddParam(cmd, "@SoloActivos", soloActivos, SqlDbType.Bit);
+        AddParam(cmd, "@Pagina", pagina, SqlDbType.Int);
+        AddParam(cmd, "@TamanoPagina", tamanoPagina, SqlDbType.Int);
+        var totalRegistrosParam = new SqlParameter("@TotalRegistros", SqlDbType.Int) { Direction = ParameterDirection.Output };
+        cmd.Parameters.Add(totalRegistrosParam);
         await using var dr = await cmd.ExecuteReaderAsync();
 
         while (await dr.ReadAsync())
@@ -33,7 +47,8 @@ public partial class SportCenterStoredProcedureService
             });
         }
 
-        return list;
+        var totalRegistros = totalRegistrosParam.Value is int total ? total : 0;
+        return (list, totalRegistros);
     }
 
     public async Task<PromocionFormViewModel?> PromocionesObtenerAsync(int negocioId, int id)

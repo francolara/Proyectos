@@ -222,7 +222,7 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
         AddParam(cmd, "@SedeId", sedeId, SqlDbType.Int);
         await using var dr = await cmd.ExecuteReaderAsync();
-        if (dr.FieldCount < 8)
+        if (dr.FieldCount < 10)
             throw new InvalidOperationException("El SP Sp_Espacios_Listar no devuelve la columna TarifaResumen. Ejecuta el script SQL actualizado.");
         while (await dr.ReadAsync())
         {
@@ -234,10 +234,12 @@ public partial class SportCenterStoredProcedureService
                 SedeNombre = dr.GetString(3),
                 TipoDeporteNombre = dr.GetString(4),
                 TipoSueloNombre = dr.GetString(5),
-                Estado = dr.GetString(6),
-                TarifaResumen = dr.IsDBNull(7)
+                TieneIluminacion = ReadBool(dr, 6),
+                Techada = ReadBool(dr, 7),
+                Estado = dr.GetString(8),
+                TarifaResumen = dr.IsDBNull(9)
                     ? "Sin tarifa configurada"
-                    : dr.GetString(7)
+                    : dr.GetString(9)
             });
         }
         return list;

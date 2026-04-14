@@ -9,6 +9,7 @@ GO
 -- SOURCE: 34_Clientes_NombreEquipo_Reservas.sql (linea 316)
 -- Firma: Codex - 05/04/2026 | Estados de reserva: retiro de En uso, Finalizada renombrada a Pagada y No Show a No Asistio (normalizacion de salida de calendario).
 -- Firma: Codex - 08/04/2026 | Agrega TotalReserva en la salida del calendario para pintar precio en tarjetas de reservas sin incluir nombre de espacio.
+-- Firma: Codex - 13/04/2026 | Calendario excluye reservas canceladas por defecto (Estado 5) para liberar horario; si se filtra Estado=5 se siguen consultando canceladas.
 CREATE  OR ALTER PROCEDURE [dbo].[Sp_Reservas_CalendarioEventos]
     @NegocioId INT,
     @FechaDesde DATE,
@@ -92,9 +93,9 @@ BEGIN
           AND (@EspacioDeportivoId IS NULL OR e.Id = @EspacioDeportivoId)
           AND
           (
-              @Estado IS NULL
+              (@Estado IS NULL AND r.Estado <> 5)
               OR (@Estado = 4 AND r.Estado IN (3, 4))
-              OR (@Estado <> 4 AND r.Estado = @Estado)
+              OR (@Estado IS NOT NULL AND @Estado <> 4 AND r.Estado = @Estado)
           )
 
         UNION ALL

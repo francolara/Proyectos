@@ -62,6 +62,7 @@ public class DashboardReservaAccionViewModel
     public DateOnly Fecha { get; set; }
     public TimeOnly HoraInicio { get; set; }
     public TimeOnly HoraFin { get; set; }
+    public decimal MontoTotal { get; set; }
     public decimal SaldoPendiente { get; set; }
     public string Estado { get; set; } = string.Empty;
 }

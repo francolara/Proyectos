@@ -10,7 +10,7 @@ namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 public class ComprobantesController(IModuloPermisoService moduloPermisoService, ISportCenterStoredProcedureService spService)
     : ModuloControllerBase(moduloPermisoService)
 {
-    public async Task<IActionResult> Index(int? negocioId, string? buscar = null, string? codigoDocumento = null, int pagina = 1)
+    public async Task<IActionResult> Index(int? negocioId, string? buscar = null, string? codigoDocumento = null, DateOnly? fechaDesde = null, DateOnly? fechaHasta = null, string? preset = null, int pagina = 1)
     {
         var resolvedNegocioId = await ResolverNegocioIdAsync(negocioId, spService);
         if (!resolvedNegocioId.HasValue) return Forbid();
@@ -25,6 +25,7 @@ public class ComprobantesController(IModuloPermisoService moduloPermisoService, 
             codigoDocumentoFiltro = null;
         }
 
+        var (desde, hasta) = ResolverRangoFechas(fechaDesde, fechaHasta, preset);
         const int tamanoPagina = 20;
         var paginaActual = pagina < 1 ? 1 : pagina;
         var (comprobantes, totalRegistros) = await spService.ComprobantesListarAsync(
@@ -32,6 +33,8 @@ public class ComprobantesController(IModuloPermisoService moduloPermisoService, 
             AplicarSedeAsignada(baseVm, null),
             buscar,
             codigoDocumentoFiltro,
+            desde,
+            hasta,
             paginaActual,
             tamanoPagina);
         var totalPaginas = Math.Max(1, (int)Math.Ceiling(totalRegistros / (double)tamanoPagina));
@@ -43,6 +46,8 @@ public class ComprobantesController(IModuloPermisoService moduloPermisoService, 
                 AplicarSedeAsignada(baseVm, null),
                 buscar,
                 codigoDocumentoFiltro,
+                desde,
+                hasta,
                 paginaActual,
                 tamanoPagina);
         }
@@ -61,6 +66,8 @@ public class ComprobantesController(IModuloPermisoService moduloPermisoService, 
             PuedeEliminar = baseVm.PuedeEliminar,
             Buscar = buscar,
             CodigoDocumento = codigoDocumentoFiltro,
+            FechaDesde = desde,
+            FechaHasta = hasta,
             Pagina = paginaActual,
             TamanoPagina = tamanoPagina,
             TotalRegistros = totalRegistros,
@@ -69,6 +76,42 @@ public class ComprobantesController(IModuloPermisoService moduloPermisoService, 
             Comprobantes = comprobantes
         };
         return View(vm);
+    }
+
+    private static (DateOnly Desde, DateOnly Hasta) ResolverRangoFechas(DateOnly? fechaDesde, DateOnly? fechaHasta, string? preset)
+    {
+        var hoy = DateOnly.FromDateTime(DateTime.Today);
+        DateOnly desde;
+        DateOnly hasta;
+
+        switch ((preset ?? string.Empty).Trim().ToLowerInvariant())
+        {
+            case "hoy":
+                desde = hoy;
+                hasta = hoy;
+                break;
+            case "7d":
+                hasta = hoy;
+                desde = hoy.AddDays(-6);
+                break;
+            case "30d":
+                hasta = hoy;
+                desde = hoy.AddDays(-29);
+                break;
+            case "mes":
+                desde = new DateOnly(hoy.Year, hoy.Month, 1);
+                hasta = new DateOnly(hoy.Year, hoy.Month, DateTime.DaysInMonth(hoy.Year, hoy.Month));
+                break;
+            default:
+                desde = fechaDesde ?? hoy.AddDays(-6);
+                hasta = fechaHasta ?? hoy;
+                break;
+        }
+
+        if (hasta < desde)
+            (desde, hasta) = (hasta, desde);
+
+        return (desde, hasta);
     }
 
     public async Task<IActionResult> Create(int? negocioId, int? reservaId = null, string? codigoSunat = null)

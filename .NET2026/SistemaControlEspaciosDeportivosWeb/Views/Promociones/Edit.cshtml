@@ -1,6 +1,7 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.PromocionFormViewModel
 <!-- Firma: Codex - 27/03/2026 | Estandar visual pro para formulario de promociones -->
 <!-- Firma: Codex - 08/04/2026 | Unifica selectores de hora a listas de intervalos de 30 minutos. -->
+<!-- Firma: Codex - 13/04/2026 | Separa campos del formulario, normaliza etiquetas con nombres legibles (Fecha Inicio, Hora Inicio, etc.), alinea porcentaje de descuento a la derecha y restringe ingreso a numeros enteros. -->
 @{
     ViewData["Title"] = "Editar promocion";
     var horasMediaHora = Enumerable.Range(0, 48)
@@ -29,15 +30,26 @@
         <section class="sc-form-card">
             <div class="sc-form-section">
                 <h2 class="sc-form-title"><i class="bi bi-tags"></i> Datos de la promocion</h2>
-                <div class="row g-3">
+                <div class="row g-4">
                     <div class="col-md-8">
-                        <label asp-for="Nombre" class="form-label"></label>
+                        <label asp-for="Nombre" class="form-label">Nombre promocion</label>
                         <input asp-for="Nombre" class="form-control" />
                         <span asp-validation-for="Nombre" class="text-danger"></span>
                     </div>
                     <div class="col-md-4">
-                        <label asp-for="PorcentajeDescuento" class="form-label"></label>
-                        <input asp-for="PorcentajeDescuento" class="form-control" />
+                        <label asp-for="PorcentajeDescuento" class="form-label">Porcentaje descuento</label>
+                        <div class="input-group">
+                            <input asp-for="PorcentajeDescuento"
+                                   class="form-control text-end"
+                                   type="number"
+                                   min="0"
+                                   max="100"
+                                   step="1"
+                                   inputmode="numeric"
+                                   pattern="\d*"
+                                   oninput="this.value=this.value.replace(/[^0-9]/g,'');" />
+                            <span class="input-group-text">%</span>
+                        </div>
                         <span asp-validation-for="PorcentajeDescuento" class="text-danger"></span>
                     </div>
                     <div class="col-md-6">
@@ -51,17 +63,17 @@
                         <span asp-validation-for="EspacioDeportivoId" class="text-danger"></span>
                     </div>
                     <div class="col-md-3">
-                        <label asp-for="FechaInicio" class="form-label"></label>
+                        <label asp-for="FechaInicio" class="form-label">Fecha Inicio</label>
                         <input asp-for="FechaInicio" class="form-control" type="date" />
                         <span asp-validation-for="FechaInicio" class="text-danger"></span>
                     </div>
                     <div class="col-md-3">
-                        <label asp-for="FechaFin" class="form-label"></label>
+                        <label asp-for="FechaFin" class="form-label">Fecha Fin</label>
                         <input asp-for="FechaFin" class="form-control" type="date" />
                         <span asp-validation-for="FechaFin" class="text-danger"></span>
                     </div>
                     <div class="col-md-3">
-                        <label asp-for="HoraInicio" class="form-label"></label>
+                        <label asp-for="HoraInicio" class="form-label">Hora Inicio</label>
                         <select asp-for="HoraInicio" class="form-select">
                             @foreach (var hora in horasMediaHora)
                             {
@@ -71,7 +83,7 @@
                         <span asp-validation-for="HoraInicio" class="text-danger"></span>
                     </div>
                     <div class="col-md-3">
-                        <label asp-for="HoraFin" class="form-label"></label>
+                        <label asp-for="HoraFin" class="form-label">Hora Fin</label>
                         <select asp-for="HoraFin" class="form-select">
                             @foreach (var hora in horasMediaHora)
                             {

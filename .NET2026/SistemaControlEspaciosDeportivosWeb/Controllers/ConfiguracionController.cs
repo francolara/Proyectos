@@ -6,7 +6,10 @@ using System.Text.RegularExpressions;
 
 namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 
-public class ConfiguracionController(IModuloPermisoService moduloPermisoService, ISportCenterStoredProcedureService spService) : ModuloControllerBase(moduloPermisoService)
+public class ConfiguracionController(
+    IModuloPermisoService moduloPermisoService,
+    ISportCenterStoredProcedureService spService,
+    ISedeImagenStorageService sedeImagenStorageService) : ModuloControllerBase(moduloPermisoService)
 {
     public async Task<IActionResult> Index(int negocioId)
     {
@@ -38,17 +41,51 @@ public class ConfiguracionController(IModuloPermisoService moduloPermisoService,
         var baseVm = await ObtenerBaseAsync(model.NegocioId, "SEDES");
         if (baseVm is null || !string.IsNullOrWhiteSpace(baseVm.Mensaje))
             return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "Acceso denegado." });
+        var configActual = await spService.ConfiguracionClubObtenerAsync(model.NegocioId);
+        var logoUrlActual = string.IsNullOrWhiteSpace(configActual?.LogoUrl) ? null : configActual!.LogoUrl!.Trim();
+        string? logoUrlNuevo = null;
 
         model.TiposDocumento = await spService.CombosTiposDocumentoIdentidadSunatAsync();
         model.Monedas = await spService.ConfiguracionClubComboMonedasAsync(model.NegocioId);
         model.PoliticasConfirmacionPago = ObtenerPoliticasConfirmacionPago();
         await CargarConfigDocumentosSeriesAsync(model);
+        model.LogoUrl = logoUrlActual;
+
+        if (model.QuitarLogo)
+            model.LogoUrl = null;
+
+        if (model.LogoArchivo is not null && model.LogoArchivo.Length > 0)
+        {
+            try
+            {
+                logoUrlNuevo = await sedeImagenStorageService.UploadLogoNegocioAsync(model.NegocioId, model.LogoArchivo, HttpContext.RequestAborted);
+                if (string.IsNullOrWhiteSpace(logoUrlNuevo))
+                {
+                    ModelState.AddModelError(nameof(model.LogoArchivo), "No se pudo completar la carga del logo.");
+                }
+                else
+                {
+                    model.LogoUrl = logoUrlNuevo;
+                }
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError(nameof(model.LogoArchivo), $"No se pudo subir el logo: {ex.Message}");
+            }
+        }
+
         NormalizarYValidarPoliticaConfirmacionPago(model);
         NormalizarYValidarIgv(model);
         await NormalizarYValidarUbigeoAsync(model);
         ValidarEmisionComprobantes(model);
         if (!ModelState.IsValid)
         {
+            if (!string.IsNullOrWhiteSpace(logoUrlNuevo))
+            {
+                await sedeImagenStorageService.DeleteSedeImagenesAsync([logoUrlNuevo], HttpContext.RequestAborted);
+                model.LogoUrl = logoUrlActual;
+            }
+
             model.NegocioNombre = baseVm.NegocioNombre;
             model.RolActual = baseVm.RolActual;
             return View(model);
@@ -57,11 +94,20 @@ public class ConfiguracionController(IModuloPermisoService moduloPermisoService,
         var ok = await spService.ConfiguracionClubActualizarAsync(model, User.Identity?.Name ?? "sistema");
         if (!ok)
         {
+            if (!string.IsNullOrWhiteSpace(logoUrlNuevo))
+                await sedeImagenStorageService.DeleteSedeImagenesAsync([logoUrlNuevo], HttpContext.RequestAborted);
+
             ModelState.AddModelError(string.Empty, "No se pudo actualizar la configuracion del club.");
             model.NegocioNombre = baseVm.NegocioNombre;
             model.RolActual = baseVm.RolActual;
             return View(model);
         }
+
+        var debeEliminarLogoPrevio = !string.IsNullOrWhiteSpace(logoUrlActual) &&
+            (model.QuitarLogo || (!string.IsNullOrWhiteSpace(logoUrlNuevo) &&
+                                  !string.Equals(logoUrlActual, logoUrlNuevo, StringComparison.OrdinalIgnoreCase)));
+        if (debeEliminarLogoPrevio)
+            await sedeImagenStorageService.DeleteSedeImagenesAsync([logoUrlActual!], HttpContext.RequestAborted);
 
         TempData["ConfiguracionOk"] = "Configuracion del club actualizada correctamente.";
         return RedirectToAction(nameof(Index), new { negocioId = model.NegocioId });

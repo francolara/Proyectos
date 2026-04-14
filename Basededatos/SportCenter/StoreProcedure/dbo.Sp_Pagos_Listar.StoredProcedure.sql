@@ -9,10 +9,13 @@ GO
 -- Firma: Codex - 09/04/2026 | Lista pagos agrupados por reserva con filtro/paginacion backend, corrige alcance de consulta materializando filtrado en tabla temporal, muestra monto de reserva, saldo/simbolo y banderas PagadaCompleta/TieneComprobanteActivo para habilitar emision de comprobantes.
 -- Firma: Codex - 12/04/2026 | Agrega columna Referencia en listado de pagos con el ultimo comprobante principal activo por reserva (boleta/factura/recibo interno), tomando el ultimo generado por Id; oculta referencia cuando el comprobante principal esta anulado o cuando boleta/factura tiene NC/ND activas.
 -- Firma: Codex - 12/04/2026 | Usa abreviatura del documento (TiposDocumentoComprobanteSuperMaestro.Abreviatura) en columna Referencia.
+-- Firma: Codex - 13/04/2026 | Agrega filtro opcional por rango de fecha de reserva (Desde/Hasta) para listado de pagos.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Pagos_Listar]
     @NegocioId INT,
     @SedeId INT = NULL,
     @Buscar NVARCHAR(120) = NULL,
+    @FechaDesde DATE = NULL,
+    @FechaHasta DATE = NULL,
     @Pagina INT = 1,
     @TamanoPagina INT = 20,
     @TotalRegistros INT OUTPUT
@@ -70,6 +73,8 @@ BEGIN
             INNER JOIN dbo.Clientes c ON c.Id = r.ClienteId
             WHERE s.NegocioId = @NegocioId
               AND (@SedeId IS NULL OR s.Id = @SedeId)
+              AND (@FechaDesde IS NULL OR r.Fecha >= @FechaDesde)
+              AND (@FechaHasta IS NULL OR r.Fecha <= @FechaHasta)
             GROUP BY r.Id, s.Nombre, e.Nombre, c.NombresORazonSocial, r.Fecha, r.Total, r.Estado, ms.Simbolo
         ),
         ComprobantesPrincipales AS

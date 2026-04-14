@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace SistemaControlEspaciosDeportivosWeb.ViewModels;
 
@@ -7,8 +8,13 @@ public class HomeIndexViewModel
     public DateOnly Fecha { get; set; }
     public TimeOnly HoraInicio { get; set; }
     public TimeOnly HoraFin { get; set; }
-    public int? SedeId { get; set; }
+    public string? CodigoDepartamento { get; set; }
+    public string? CodigoProvincia { get; set; }
+    public string? CodigoUbigeo { get; set; }
     public int? TipoDeporteId { get; set; }
+    public List<SelectListItem> DepartamentosUbigeo { get; set; } = new();
+    public List<SelectListItem> ProvinciasUbigeo { get; set; } = new();
+    public List<SelectListItem> DistritosUbigeo { get; set; } = new();
     public List<SedePublicaViewModel> Sedes { get; set; } = new();
     public List<TipoDeportePublicoViewModel> TiposDeporte { get; set; } = new();
     public List<EspacioDisponibleViewModel> Disponibles { get; set; } = new();
@@ -43,8 +49,14 @@ public class EspacioDisponibleViewModel
     public string NombreEspacio { get; set; } = string.Empty;
     public string Codigo { get; set; } = string.Empty;
     public string SedeNombre { get; set; } = string.Empty;
+    public string? SedeDireccion { get; set; }
     public string? SedeConsideracionesReserva { get; set; }
+    public string? Departamento { get; set; }
+    public string? Provincia { get; set; }
+    public string? Distrito { get; set; }
     public string TipoDeporteNombre { get; set; } = string.Empty;
+    public string? TipoSueloNombre { get; set; }
+    public decimal? TarifaDesde { get; set; }
     public bool TieneIluminacion { get; set; }
     public bool Techada { get; set; }
     public string? WhatsappContacto { get; set; }
@@ -80,7 +92,9 @@ public class SolicitudReservaPublicaFormViewModel
     [StringLength(300, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string? Comentario { get; set; }
 
-    public int? SedeId { get; set; }
+    public string? CodigoDepartamento { get; set; }
+    public string? CodigoProvincia { get; set; }
+    public string? CodigoUbigeo { get; set; }
     public int? TipoDeporteId { get; set; }
 }
 
