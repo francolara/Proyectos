@@ -81,8 +81,11 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
                         .Where(x => !string.IsNullOrWhiteSpace(x))
                         .Distinct(StringComparer.OrdinalIgnoreCase)
                         .ToList()
-                    : new List<string>()
-            });
+                    : new List<string>(),
+                    NegocioId = dr.FieldCount > 12 && !dr.IsDBNull(12) ? dr.GetInt32(12) : null,
+                    NegocioNombre = dr.FieldCount > 13 && !dr.IsDBNull(13) ? dr.GetString(13) : null,
+                    Servicios = dr.FieldCount > 14 && !dr.IsDBNull(14) ? dr.GetString(14) : null
+                });
         }
         return list;
     }
@@ -101,11 +104,11 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
         return list;
     }
 
-    public async Task<List<EspacioDisponibleViewModel>> HomeBuscarEspaciosDisponiblesAsync(DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin, string? codigoDepartamento, string? codigoProvincia, string? codigoUbigeo, int? tipoDeporteId)
+    public async Task<List<EspacioDisponibleViewModel>> HomeBuscarEspaciosDisponiblesAsync(DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin, string? codigoDepartamento, string? codigoProvincia, string? codigoUbigeo, int? tipoDeporteId, int? negocioId, bool omitirFechaHorario = false)
     {
         try
         {
-            return await HomeBuscarEspaciosDisponiblesInternoAsync(fecha, horaInicio, horaFin, codigoDepartamento, codigoProvincia, codigoUbigeo, tipoDeporteId, usarUbigeo: true);
+            return await HomeBuscarEspaciosDisponiblesInternoAsync(fecha, horaInicio, horaFin, codigoDepartamento, codigoProvincia, codigoUbigeo, tipoDeporteId, negocioId, omitirFechaHorario, usarUbigeo: true, usarNegocio: true, usarIgnorarHorario: true);
         }
         catch (SqlException ex) when (
             ex.Message.Contains("@CodigoDepartamento", StringComparison.OrdinalIgnoreCase) ||
@@ -113,11 +116,21 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
             ex.Message.Contains("@CodigoUbigeo", StringComparison.OrdinalIgnoreCase))
         {
             // Compatibilidad temporal con SP antiguo (filtro por sede).
-            return await HomeBuscarEspaciosDisponiblesInternoAsync(fecha, horaInicio, horaFin, null, null, null, tipoDeporteId, usarUbigeo: false);
+            return await HomeBuscarEspaciosDisponiblesInternoAsync(fecha, horaInicio, horaFin, null, null, null, tipoDeporteId, negocioId, omitirFechaHorario, usarUbigeo: false, usarNegocio: true, usarIgnorarHorario: true);
+        }
+        catch (SqlException ex) when (ex.Message.Contains("@NegocioId", StringComparison.OrdinalIgnoreCase))
+        {
+            // Compatibilidad temporal mientras se despliega el filtro por negocio en BD.
+            return await HomeBuscarEspaciosDisponiblesInternoAsync(fecha, horaInicio, horaFin, codigoDepartamento, codigoProvincia, codigoUbigeo, tipoDeporteId, null, omitirFechaHorario, usarUbigeo: true, usarNegocio: false, usarIgnorarHorario: true);
+        }
+        catch (SqlException ex) when (ex.Message.Contains("@IgnorarFechaHorario", StringComparison.OrdinalIgnoreCase))
+        {
+            // Compatibilidad temporal mientras se despliega el nuevo parametro opcional de horario.
+            return await HomeBuscarEspaciosDisponiblesInternoAsync(fecha, horaInicio, horaFin, codigoDepartamento, codigoProvincia, codigoUbigeo, tipoDeporteId, negocioId, omitirFechaHorario, usarUbigeo: true, usarNegocio: true, usarIgnorarHorario: false);
         }
     }
 
-    private async Task<List<EspacioDisponibleViewModel>> HomeBuscarEspaciosDisponiblesInternoAsync(DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin, string? codigoDepartamento, string? codigoProvincia, string? codigoUbigeo, int? tipoDeporteId, bool usarUbigeo)
+    private async Task<List<EspacioDisponibleViewModel>> HomeBuscarEspaciosDisponiblesInternoAsync(DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin, string? codigoDepartamento, string? codigoProvincia, string? codigoUbigeo, int? tipoDeporteId, int? negocioId, bool omitirFechaHorario, bool usarUbigeo, bool usarNegocio, bool usarIgnorarHorario)
     {
         var list = new List<EspacioDisponibleViewModel>();
         await using var cn = CreateConnection();
@@ -137,6 +150,10 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
             AddParam(cmd, "@SedeId", null, SqlDbType.Int);
         }
         AddParam(cmd, "@TipoDeporteId", tipoDeporteId, SqlDbType.Int);
+        if (usarNegocio)
+            AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+        if (usarIgnorarHorario)
+            AddParam(cmd, "@IgnorarFechaHorario", omitirFechaHorario, SqlDbType.Bit);
         await using var dr = await cmd.ExecuteReaderAsync();
         while (await dr.ReadAsync())
         {
@@ -158,8 +175,18 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
                     TarifaDesde = !dr.IsDBNull(11) ? dr.GetDecimal(11) : null,
                     TieneIluminacion = ReadBool(dr, 12),
                     Techada = ReadBool(dr, 13),
-                    WhatsappContacto = !dr.IsDBNull(14) ? dr.GetString(14) : null,
-                    PermiteChatWhatsapp = ReadBool(dr, 15)
+                    CorreoNotificacion = !dr.IsDBNull(14) ? dr.GetString(14) : null,
+                    WhatsappContacto = !dr.IsDBNull(15) ? dr.GetString(15) : null,
+                    PermiteChatWhatsapp = ReadBool(dr, 16),
+                    SedeId = dr.FieldCount > 17 && !dr.IsDBNull(17) ? dr.GetInt32(17) : null,
+                    SedeFotoPrincipalUrl = dr.FieldCount > 18 && !dr.IsDBNull(18) ? dr.GetString(18) : null,
+                    SedeFotos = dr.FieldCount > 19 && !dr.IsDBNull(19)
+                        ? dr.GetString(19)
+                            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                            .Where(x => !string.IsNullOrWhiteSpace(x))
+                            .Distinct(StringComparer.OrdinalIgnoreCase)
+                            .ToList()
+                        : new List<string>()
                 });
             }
             else
@@ -182,7 +209,7 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
         return list;
     }
 
-    public async Task<string> HomeSolicitarReservaPublicaAsync(SolicitudReservaPublicaFormViewModel model)
+    public async Task<int> HomeSolicitarReservaPublicaAsync(SolicitudReservaPublicaFormViewModel model)
     {
         await using var cn = CreateConnection();
         await cn.OpenAsync();
@@ -191,12 +218,16 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
         AddParam(cmd, "@Fecha", model.Fecha.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
         AddParam(cmd, "@HoraInicio", model.HoraInicio.ToTimeSpan(), SqlDbType.Time);
         AddParam(cmd, "@HoraFin", model.HoraFin.ToTimeSpan(), SqlDbType.Time);
-        AddParam(cmd, "@NombreSolicitante", model.NombreSolicitante, SqlDbType.NVarChar);
+        AddParam(cmd, "@Nombres", model.Nombres, SqlDbType.NVarChar);
+        AddParam(cmd, "@Apellidos", model.Apellidos, SqlDbType.NVarChar);
+        AddParam(cmd, "@NombreEquipo", model.NombreEquipo, SqlDbType.NVarChar);
+        AddParam(cmd, "@TipoDocumento", model.TipoDocumento, SqlDbType.NVarChar);
+        AddParam(cmd, "@NumeroDocumento", model.NumeroDocumento, SqlDbType.NVarChar);
         AddParam(cmd, "@Telefono", model.Telefono, SqlDbType.NVarChar);
         AddParam(cmd, "@Correo", model.Correo, SqlDbType.NVarChar);
         AddParam(cmd, "@Comentario", model.Comentario, SqlDbType.NVarChar);
         var result = await cmd.ExecuteScalarAsync();
-        return result?.ToString() ?? string.Empty;
+        return Convert.ToInt32(result);
     }
 
     public async Task<SolicitudPublicaDetalleViewModel?> HomeConsultarSolicitudAsync(string codigoSolicitud, string telefono)

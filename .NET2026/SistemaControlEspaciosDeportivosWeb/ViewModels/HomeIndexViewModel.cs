@@ -12,19 +12,31 @@ public class HomeIndexViewModel
     public string? CodigoProvincia { get; set; }
     public string? CodigoUbigeo { get; set; }
     public int? TipoDeporteId { get; set; }
+    public int? NegocioId { get; set; }
+    public bool OmitirFechaHorario { get; set; }
     public List<SelectListItem> DepartamentosUbigeo { get; set; } = new();
     public List<SelectListItem> ProvinciasUbigeo { get; set; } = new();
     public List<SelectListItem> DistritosUbigeo { get; set; } = new();
+    public List<SelectListItem> Negocios { get; set; } = new();
+    public List<WebBannerPublicoViewModel> Banners { get; set; } = new();
     public List<SedePublicaViewModel> Sedes { get; set; } = new();
     public List<TipoDeportePublicoViewModel> TiposDeporte { get; set; } = new();
     public List<EspacioDisponibleViewModel> Disponibles { get; set; } = new();
     public string? MensajeSolicitud { get; set; }
+    public int PaginaActual { get; set; } = 1;
+    public int TamanoPagina { get; set; } = 9;
+    public int TotalResultados { get; set; }
+    public int TotalPaginas { get; set; }
+    public PlataformaPortalConfigViewModel PortalConfig { get; set; } = new();
 }
 
 public class SedePublicaViewModel
 {
     public int Id { get; set; }
     public string Nombre { get; set; } = string.Empty;
+    public int? NegocioId { get; set; }
+    public string? NegocioNombre { get; set; }
+    public string? Servicios { get; set; }
     public string Direccion { get; set; } = string.Empty;
     public string? ConsideracionesReserva { get; set; }
     public string? Telefono { get; set; }
@@ -43,11 +55,25 @@ public class TipoDeportePublicoViewModel
     public string Nombre { get; set; } = string.Empty;
 }
 
+public class WebBannerPublicoViewModel
+{
+    public int Id { get; set; }
+    public string Titulo { get; set; } = string.Empty;
+    public string? Subtitulo { get; set; }
+    public string? Descripcion { get; set; }
+    public string? BotonTexto { get; set; }
+    public string? BotonUrl { get; set; }
+    public string ImagenUrl { get; set; } = string.Empty;
+    public string? ImagenUrlMobile { get; set; }
+    public int Orden { get; set; }
+}
+
 public class EspacioDisponibleViewModel
 {
     public int EspacioDeportivoId { get; set; }
     public string NombreEspacio { get; set; } = string.Empty;
     public string Codigo { get; set; } = string.Empty;
+    public int? SedeId { get; set; }
     public string SedeNombre { get; set; } = string.Empty;
     public string? SedeDireccion { get; set; }
     public string? SedeConsideracionesReserva { get; set; }
@@ -59,8 +85,11 @@ public class EspacioDisponibleViewModel
     public decimal? TarifaDesde { get; set; }
     public bool TieneIluminacion { get; set; }
     public bool Techada { get; set; }
+    public string? CorreoNotificacion { get; set; }
     public string? WhatsappContacto { get; set; }
     public bool PermiteChatWhatsapp { get; set; }
+    public string? SedeFotoPrincipalUrl { get; set; }
+    public List<string> SedeFotos { get; set; } = new();
 }
 
 public class SolicitudReservaPublicaFormViewModel
@@ -78,12 +107,25 @@ public class SolicitudReservaPublicaFormViewModel
     public TimeOnly HoraFin { get; set; }
 
     [Required(ErrorMessage = "Este campo es obligatorio.")]
-    [StringLength(200, ErrorMessage = "El campo {0} excede la longitud permitida.")]
-    public string NombreSolicitante { get; set; } = string.Empty;
+    [StringLength(120, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+    public string Nombres { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Este campo es obligatorio.")]
+    [StringLength(120, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+    public string Apellidos { get; set; } = string.Empty;
+
+    [StringLength(120, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+    public string? NombreEquipo { get; set; }
+
+    [Required(ErrorMessage = "Este campo es obligatorio.")]
+    [StringLength(20, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+    public string TipoDocumento { get; set; } = "0";
+
+    [StringLength(20, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+    public string? NumeroDocumento { get; set; }
+
     [StringLength(30, ErrorMessage = "El campo {0} excede la longitud permitida.")]
-    public string Telefono { get; set; } = string.Empty;
+    public string? Telefono { get; set; }
 
     [StringLength(200, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     [EmailAddress(ErrorMessage = "Ingresa un correo electronico valido.")]
@@ -96,6 +138,18 @@ public class SolicitudReservaPublicaFormViewModel
     public string? CodigoProvincia { get; set; }
     public string? CodigoUbigeo { get; set; }
     public int? TipoDeporteId { get; set; }
+    public int? NegocioId { get; set; }
+    public bool OmitirFechaHorario { get; set; }
+    public List<SelectListItem> TiposDocumentoIdentidad { get; set; } = new();
+}
+
+public class ReservaPublicaPageViewModel
+{
+    public int NegocioId { get; set; }
+    public EspacioDisponibleViewModel Espacio { get; set; } = new();
+    public SedePublicaViewModel? Sede { get; set; }
+    public SolicitudReservaPublicaFormViewModel Formulario { get; set; } = new();
+    public ReservaCotizacionViewModel? Cotizacion { get; set; }
 }
 
 public class SolicitudPublicaDetalleViewModel

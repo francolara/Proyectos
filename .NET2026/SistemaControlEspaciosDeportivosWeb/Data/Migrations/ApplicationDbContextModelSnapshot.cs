@@ -299,6 +299,10 @@ namespace SistemaControlEspaciosDeportivosWeb.Data.Migrations
                     b.Property<bool>("Activo")
                         .HasColumnType("bit");
 
+                    b.Property<string>("CodigoUbigeo")
+                        .HasMaxLength(6)
+                        .HasColumnType("nvarchar(6)");
+
                     b.Property<string>("Correo")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
@@ -535,6 +539,9 @@ namespace SistemaControlEspaciosDeportivosWeb.Data.Migrations
                     b.Property<int>("TipoDeporteId")
                         .HasColumnType("int");
 
+                    b.Property<int>("TipoSueloId")
+                        .HasColumnType("int");
+
                     b.Property<string>("UsuarioActualizacion")
                         .HasColumnType("nvarchar(max)");
 
@@ -544,6 +551,8 @@ namespace SistemaControlEspaciosDeportivosWeb.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("TipoDeporteId");
+
+                    b.HasIndex("TipoSueloId");
 
                     b.HasIndex("SedeId", "Codigo")
                         .IsUnique();
@@ -591,17 +600,32 @@ namespace SistemaControlEspaciosDeportivosWeb.Data.Migrations
                     b.Property<bool>("Activo")
                         .HasColumnType("bit");
 
+                    b.Property<string>("CodigoUbigeo")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DireccionFiscal")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("DocumentoFiscal")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("FechaRegistro")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("MonedaId")
+                        .HasColumnType("int");
+
                     b.Property<string>("NombreComercial")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("NumeroDocumentoFiscal")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("RazonSocial")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TipoDocumentoFiscal")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -848,6 +872,26 @@ namespace SistemaControlEspaciosDeportivosWeb.Data.Migrations
                     b.ToTable("TiposDeporte");
                 });
 
+            modelBuilder.Entity("SistemaControlEspaciosDeportivosWeb.Models.TipoSuelo", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TiposSuelo");
+                });
+
             modelBuilder.Entity("SistemaControlEspaciosDeportivosWeb.Models.UsuarioNegocio", b =>
                 {
                     b.Property<int>("Id")
@@ -1018,9 +1062,17 @@ namespace SistemaControlEspaciosDeportivosWeb.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("SistemaControlEspaciosDeportivosWeb.Models.TipoSuelo", "TipoSuelo")
+                        .WithMany("EspaciosDeportivos")
+                        .HasForeignKey("TipoSueloId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Sede");
 
                     b.Navigation("TipoDeporte");
+
+                    b.Navigation("TipoSuelo");
                 });
 
             modelBuilder.Entity("SistemaControlEspaciosDeportivosWeb.Models.Pago", b =>
@@ -1177,6 +1229,11 @@ namespace SistemaControlEspaciosDeportivosWeb.Data.Migrations
                 });
 
             modelBuilder.Entity("SistemaControlEspaciosDeportivosWeb.Models.TipoDeporte", b =>
+                {
+                    b.Navigation("EspaciosDeportivos");
+                });
+
+            modelBuilder.Entity("SistemaControlEspaciosDeportivosWeb.Models.TipoSuelo", b =>
                 {
                     b.Navigation("EspaciosDeportivos");
                 });

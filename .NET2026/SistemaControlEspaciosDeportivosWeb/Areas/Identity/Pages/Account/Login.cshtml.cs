@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using SistemaControlEspaciosDeportivosWeb.Models;
 using SistemaControlEspaciosDeportivosWeb.Services;
+using SistemaControlEspaciosDeportivosWeb.ViewModels;
 
 namespace SistemaControlEspaciosDeportivosWeb.Areas.Identity.Pages.Account;
 
@@ -21,8 +22,7 @@ public class LoginModel(
 
     public IList<AuthenticationScheme> ExternalLogins { get; set; } = new List<AuthenticationScheme>();
     public string ReturnUrl { get; set; } = string.Empty;
-    [BindProperty(SupportsGet = true)]
-    public string Modo { get; set; } = "cliente";
+    public WebBannerPublicoViewModel? BannerLateral { get; set; }
 
     [TempData]
     public string? ErrorMessage { get; set; }
@@ -48,20 +48,19 @@ public class LoginModel(
             ModelState.AddModelError(string.Empty, ErrorMessage);
         }
 
-        Modo = string.Equals(Modo, "operador", StringComparison.OrdinalIgnoreCase) ? "operador" : "cliente";
         await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
         ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
         ReturnUrl = returnUrl ?? Url.Content("~/");
+        await CargarBannerLateralAsync();
     }
 
     public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
     {
         returnUrl ??= Url.Content("~/");
         ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
-        Modo = string.Equals(Modo, "operador", StringComparison.OrdinalIgnoreCase) ? "operador" : "cliente";
-
         if (!ModelState.IsValid)
         {
+            await CargarBannerLateralAsync();
             return Page();
         }
 
@@ -70,6 +69,7 @@ public class LoginModel(
         if (user is null)
         {
             ModelState.AddModelError(string.Empty, "Intento de inicio de sesion no valido.");
+            await CargarBannerLateralAsync();
             return Page();
         }
 
@@ -77,20 +77,20 @@ public class LoginModel(
         if (result.Succeeded)
         {
             logger.LogInformation("Usuario inicio sesion.");
-            if (Modo == "operador")
+            if (!string.IsNullOrWhiteSpace(returnUrl)
+                && Url.IsLocalUrl(returnUrl)
+                && !string.Equals(returnUrl, Url.Content("~/"), StringComparison.OrdinalIgnoreCase))
             {
-                var negocios = await spService.PanelListarNegociosUsuarioAsync(user.Id);
-                if (negocios.Count == 0)
-                {
-                    await signInManager.SignOutAsync();
-                    ModelState.AddModelError(string.Empty, "Tu cuenta no tiene acceso a un negocio para operar el panel.");
-                    return Page();
-                }
+                return LocalRedirect(returnUrl);
+            }
 
+            var negocios = await spService.PanelListarNegociosUsuarioAsync(user.Id);
+            if (negocios.Count > 0)
+            {
                 return RedirectToAction("Index", "Panel", new { negocioId = negocios[0].NegocioId });
             }
 
-            return LocalRedirect(returnUrl);
+            return RedirectToAction("Index", "Home");
         }
 
         if (result.RequiresTwoFactor)
@@ -105,6 +105,19 @@ public class LoginModel(
         }
 
         ModelState.AddModelError(string.Empty, "Intento de inicio de sesion no valido.");
+        await CargarBannerLateralAsync();
         return Page();
+    }
+
+    private async Task CargarBannerLateralAsync()
+    {
+        try
+        {
+            BannerLateral = await spService.WebBannersObtenerFijoPorTipoAsync((int)BannerTipo.Login);
+        }
+        catch
+        {
+            BannerLateral = null;
+        }
     }
 }

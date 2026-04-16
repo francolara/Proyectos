@@ -16,6 +16,12 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
     private const int LogoTargetWidth = 560;
     private const int LogoTargetHeight = 560;
     private const int LogoMaxOutputBytes = 260 * 1024;
+    private const int BannerTargetWidth = 1920;
+    private const int BannerTargetHeight = 760;
+    private const int BannerMaxOutputBytes = 520 * 1024;
+    private const int BannerMobileTargetWidth = 1080;
+    private const int BannerMobileTargetHeight = 1350;
+    private const int BannerMobileMaxOutputBytes = 520 * 1024;
 
     private static readonly HashSet<string> ExtensionesPermitidas = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -98,6 +104,44 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
             LogoTargetWidth,
             LogoTargetHeight,
             LogoMaxOutputBytes,
+            exigirHorizontal: false,
+            cancellationToken);
+
+        return urls.FirstOrDefault();
+    }
+
+    public async Task<string?> UploadBannerPublicoAsync(IFormFile? archivo, CancellationToken cancellationToken = default)
+    {
+        if (archivo is null || archivo.Length <= 0)
+            return null;
+
+        var urls = await UploadImagenesAsync(
+            negocioId: 0,
+            sedeId: null,
+            categoria: "banners",
+            [archivo],
+            BannerTargetWidth,
+            BannerTargetHeight,
+            BannerMaxOutputBytes,
+            exigirHorizontal: true,
+            cancellationToken);
+
+        return urls.FirstOrDefault();
+    }
+
+    public async Task<string?> UploadBannerPublicoMobileAsync(IFormFile? archivo, CancellationToken cancellationToken = default)
+    {
+        if (archivo is null || archivo.Length <= 0)
+            return null;
+
+        var urls = await UploadImagenesAsync(
+            negocioId: 0,
+            sedeId: null,
+            categoria: "banners-mobile",
+            [archivo],
+            BannerMobileTargetWidth,
+            BannerMobileTargetHeight,
+            BannerMobileMaxOutputBytes,
             exigirHorizontal: false,
             cancellationToken);
 
@@ -425,6 +469,10 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
         var safeExt = extension.StartsWith('.') ? extension.ToLowerInvariant() : $".{extension.ToLowerInvariant()}";
         if (string.Equals(categoria, "logos", StringComparison.OrdinalIgnoreCase))
             return $"logos/negocio-{negocioId}/{DateTime.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}{safeExt}";
+        if (string.Equals(categoria, "banners", StringComparison.OrdinalIgnoreCase))
+            return $"banners/publico/{DateTime.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}{safeExt}";
+        if (string.Equals(categoria, "banners-mobile", StringComparison.OrdinalIgnoreCase))
+            return $"banners/publico-mobile/{DateTime.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}{safeExt}";
 
         var sedeSegmento = sedeId.HasValue ? $"sede-{sedeId.Value}" : "sede-nueva";
         return $"sedes/negocio-{negocioId}/{sedeSegmento}/{DateTime.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}{safeExt}";

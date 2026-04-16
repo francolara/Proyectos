@@ -1,0 +1,731 @@
+
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.ReservaPublicaPageViewModel
+@using System.Globalization
+@using System.Linq
+
+@{
+    ViewData["Title"] = "Registrar reserva";
+    var fecha = Model.Formulario.Fecha;
+    var horaInicio = Model.Formulario.HoraInicio;
+    var horaFin = Model.Formulario.HoraFin;
+    var horasMediaHora = Enumerable.Range(0, 48)
+        .Select(i => TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(i * 30)))
+        .ToList();
+    var duracionMinutos = (int)(horaFin.ToTimeSpan() - horaInicio.ToTimeSpan()).TotalMinutes;
+    if (duracionMinutos <= 0) { duracionMinutos = 60; }
+
+    var mapaUrl = Model.Sede?.GoogleMapsUrl;
+    if (string.IsNullOrWhiteSpace(mapaUrl) && Model.Sede?.Latitud is decimal lat && Model.Sede.Longitud is decimal lng)
+    {
+        mapaUrl = $"https://www.google.com/maps?q={lat.ToString(CultureInfo.InvariantCulture)},{lng.ToString(CultureInfo.InvariantCulture)}";
+    }
+
+    var servicios = (Model.Sede?.Servicios ?? string.Empty)
+        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .Where(x => !string.IsNullOrWhiteSpace(x))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToList();
+}
+<!-- Firma: Codex - 15/04/2026 | Flujo publico de reserva completo: fecha/hora editables con sincronizacion al calendario, recotizacion dinamica, cliente rapido alineado al admin y datos de sede/espacio movidos debajo de consideraciones en mini tarjetas. -->
+
+<div class="container py-4 home-reservar-page">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <h1 class="h4 mb-0">Reserva tu horario</h1>
+        <a class="btn btn-outline-secondary btn-sm"
+           asp-action="Index"
+           asp-route-fecha="@fecha.ToString("yyyy-MM-dd")"
+           asp-route-horaInicio="@horaInicio.ToString("HH\\:mm")"
+           asp-route-horaFin="@horaFin.ToString("HH\\:mm")"
+           asp-route-codigoDepartamento="@Model.Formulario.CodigoDepartamento"
+           asp-route-codigoProvincia="@Model.Formulario.CodigoProvincia"
+           asp-route-codigoUbigeo="@Model.Formulario.CodigoUbigeo"
+           asp-route-tipoDeporteId="@Model.Formulario.TipoDeporteId"
+           asp-route-negocioId="@Model.Formulario.NegocioId"
+           asp-route-omitirFechaHorario="@Model.Formulario.OmitirFechaHorario">
+            Volver a resultados
+        </a>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                <h2 class="h6 mb-0"><i class="bi bi-calendar-week me-1"></i>Calendario del espacio</h2>
+                <div class="d-flex flex-wrap gap-2">
+                    <span class="sc-legend-chip is-disponible"><i></i>Disponible</span>
+                    <span class="sc-legend-chip is-reservada"><i></i>Reservada</span>
+                    <span class="sc-legend-chip is-confirmada"><i></i>Confirmada</span>
+                </div>
+            </div>
+            <p class="text-muted small mb-2">Selecciona un bloque disponible o ajusta fecha y horario desde el formulario.</p>
+            <div id="calendarioPublicoReserva"></div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-3" id="formularioReservaPublica">
+        <div class="card-body">
+            <h2 class="h6 mb-3"><i class="bi bi-pencil-square me-1"></i>Datos para registrar la reserva</h2>
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+            }
+
+            <form asp-action="SolicitarReservaPublica" method="post" class="row g-3" id="formReservaPublica">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="EspacioDeportivoId" value="@Model.Formulario.EspacioDeportivoId" />
+                <input type="hidden" name="CodigoDepartamento" value="@Model.Formulario.CodigoDepartamento" />
+                <input type="hidden" name="CodigoProvincia" value="@Model.Formulario.CodigoProvincia" />
+                <input type="hidden" name="CodigoUbigeo" value="@Model.Formulario.CodigoUbigeo" />
+                <input type="hidden" name="TipoDeporteId" value="@Model.Formulario.TipoDeporteId" />
+                <input type="hidden" name="NegocioId" value="@Model.Formulario.NegocioId" />
+                <input type="hidden" name="OmitirFechaHorario" value="@Model.Formulario.OmitirFechaHorario" />
+
+                <div class="col-md-3">
+                    <label class="form-label">Fecha</label>
+                    <input id="formFecha"
+                           name="Fecha"
+                           type="date"
+                           class="form-control"
+                           value="@Model.Formulario.Fecha.ToString("yyyy-MM-dd")"
+                           required />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Hora inicio</label>
+                    <select id="formHoraInicio" name="HoraInicio" class="form-select" required>
+                        @foreach (var hora in horasMediaHora)
+                        {
+                            var valor = hora.ToString("HH\\:mm");
+                            if (hora == Model.Formulario.HoraInicio)
+                            {
+                                <option value="@valor" selected="selected">@valor</option>
+                            }
+                            else
+                            {
+                                <option value="@valor">@valor</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Hora fin</label>
+                    <select id="formHoraFin" name="HoraFin" class="form-select" required>
+                        @foreach (var hora in horasMediaHora)
+                        {
+                            var valor = hora.ToString("HH\\:mm");
+                            if (hora == Model.Formulario.HoraFin)
+                            {
+                                <option value="@valor" selected="selected">@valor</option>
+                            }
+                            else
+                            {
+                                <option value="@valor">@valor</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Costo de la cancha</label>
+                    <div class="sc-price-box">
+                        <strong id="cotizacionPrecio">
+                            @if (Model.Cotizacion is not null)
+                            {
+                                @($"{Model.Cotizacion.MonedaSimbolo} {Model.Cotizacion.PrecioFinal.ToString("0.00", CultureInfo.InvariantCulture)}")
+                            }
+                            else
+                            {
+                                @:A cotizar
+                            }
+                        </strong>
+                        <span id="cotizacionDetalle" class="small text-muted">
+                            @if (Model.Cotizacion is not null)
+                            {
+                                @($"Base {Model.Cotizacion.MonedaSimbolo} {Model.Cotizacion.PrecioBase.ToString("0.00", CultureInfo.InvariantCulture)}")
+                            }
+                        </span>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div id="slotResumen" class="sc-slot-summary">
+                        <i class="bi bi-calendar2-check"></i>
+                        <span id="slotFechaTexto">@Model.Formulario.Fecha.ToString("dd/MM/yyyy")</span>
+                        <span class="dot"></span>
+                        <span id="slotHorarioTexto">@Model.Formulario.HoraInicio.ToString("HH\\:mm") - @Model.Formulario.HoraFin.ToString("HH\\:mm")</span>
+                    </div>
+                    <small id="cotizacionMensaje" class="text-muted">
+                        @(Model.Cotizacion?.Mensaje ?? "El costo se actualiza automaticamente cuando cambias fecha u horario.")
+                    </small>
+                </div>
+
+                <div class="col-12 pt-2">
+                    <h3 class="h6 mb-2"><i class="bi bi-person-badge me-1"></i>Datos del cliente</h3>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Tipo de documento</label>
+                    <select id="formTipoDocumento" name="TipoDocumento" class="form-select">
+                        @foreach (var item in Model.Formulario.TiposDocumentoIdentidad)
+                        {
+                            if (string.Equals(item.Value, Model.Formulario.TipoDocumento, StringComparison.OrdinalIgnoreCase))
+                            {
+                                <option value="@item.Value" selected>@item.Text</option>
+                            }
+                            else
+                            {
+                                <option value="@item.Value">@item.Text</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Numero de documento</label>
+                    <input id="formNumeroDocumento"
+                           name="NumeroDocumento"
+                           class="form-control"
+                           maxlength="20"
+                           value="@Model.Formulario.NumeroDocumento" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Nombres</label>
+                    <input name="Nombres"
+                           class="form-control"
+                           maxlength="120"
+                           value="@Model.Formulario.Nombres"
+                           required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Apellidos</label>
+                    <input name="Apellidos"
+                           class="form-control"
+                           maxlength="120"
+                           value="@Model.Formulario.Apellidos"
+                           required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Nombre de equipo</label>
+                    <input name="NombreEquipo"
+                           class="form-control"
+                           maxlength="120"
+                           value="@Model.Formulario.NombreEquipo" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Telefono</label>
+                    <input name="Telefono"
+                           class="form-control"
+                           maxlength="30"
+                           value="@Model.Formulario.Telefono" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Correo</label>
+                    <input name="Correo"
+                           type="email"
+                           class="form-control"
+                           maxlength="200"
+                           value="@Model.Formulario.Correo" />
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label">Comentario (opcional)</label>
+                    <textarea name="Comentario" class="form-control" rows="3">@Model.Formulario.Comentario</textarea>
+                </div>
+
+                <div class="col-12 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Guardar reserva</button>
+                    <a class="btn btn-outline-secondary"
+                       asp-action="Index"
+                       asp-route-fecha="@fecha.ToString("yyyy-MM-dd")"
+                       asp-route-horaInicio="@horaInicio.ToString("HH\\:mm")"
+                       asp-route-horaFin="@horaFin.ToString("HH\\:mm")"
+                       asp-route-codigoDepartamento="@Model.Formulario.CodigoDepartamento"
+                       asp-route-codigoProvincia="@Model.Formulario.CodigoProvincia"
+                       asp-route-codigoUbigeo="@Model.Formulario.CodigoUbigeo"
+                       asp-route-tipoDeporteId="@Model.Formulario.TipoDeporteId"
+                       asp-route-negocioId="@Model.Formulario.NegocioId"
+                       asp-route-omitirFechaHorario="@Model.Formulario.OmitirFechaHorario">
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Espacio.SedeConsideracionesReserva))
+    {
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+                <h2 class="h6 mb-1"><i class="bi bi-info-circle me-1"></i>Consideraciones</h2>
+                <p class="mb-0 text-muted">@Model.Espacio.SedeConsideracionesReserva</p>
+            </div>
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <div class="row g-2 align-items-stretch">
+                <div class="col-lg-3 col-md-6">
+                    <div class="sc-mini-info">
+                        <span class="sc-mini-kicker"><i class="bi bi-grid-3x3-gap"></i> Nombre del espacio</span>
+                        <strong>@Model.Espacio.NombreEspacio</strong>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="sc-mini-info">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="sc-mini-kicker mb-0"><i class="bi bi-geo-alt"></i> Nombre de sede</span>
+                            @if (!string.IsNullOrWhiteSpace(mapaUrl))
+                            {
+                                <a class="btn btn-outline-primary btn-sm ms-auto" href="@mapaUrl" target="_blank" rel="noopener noreferrer">Ver en mapa</a>
+                            }
+                        </div>
+                        <strong>@Model.Espacio.SedeNombre</strong>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="sc-mini-info">
+                        <span class="sc-mini-kicker"><i class="bi bi-signpost"></i> Direccion</span>
+                        <strong>@(string.IsNullOrWhiteSpace(Model.Espacio.SedeDireccion) ? "-" : Model.Espacio.SedeDireccion)</strong>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="sc-mini-info">
+                        <span class="sc-mini-kicker"><i class="bi bi-telephone"></i> Contacto</span>
+                        <strong>@(string.IsNullOrWhiteSpace(Model.Espacio.CorreoNotificacion) ? "-" : Model.Espacio.CorreoNotificacion)</strong>
+                        <small class="text-muted">WhatsApp: @(string.IsNullOrWhiteSpace(Model.Espacio.WhatsappContacto) ? "-" : Model.Espacio.WhatsappContacto)</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <h2 class="h6 mb-2"><i class="bi bi-stars me-1"></i>Servicios del club</h2>
+                @if (servicios.Count == 0)
+                {
+                    <div class="text-muted small">No se registraron servicios para esta sede.</div>
+                }
+                else
+                {
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach (var servicio in servicios)
+                        {
+                            <span class="sc-service-chip"><i class="bi bi-check2-circle"></i>@servicio</span>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .home-reservar-page .sc-mini-info {
+            border: 1px solid #dbe3f3;
+            border-radius: 12px;
+            padding: .65rem .8rem;
+            background: #f8fbff;
+            min-height: 92px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: .18rem;
+        }
+        .home-reservar-page .sc-mini-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            font-size: .72rem;
+            letter-spacing: .03em;
+            text-transform: uppercase;
+            color: #4b5f87;
+            font-weight: 700;
+        }
+        .home-reservar-page .sc-mini-info strong { font-size: .98rem; color: #0b1f46; }
+        .home-reservar-page .sc-service-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            padding: .35rem .6rem;
+            border-radius: 999px;
+            background: #eef4ff;
+            border: 1px solid #cddcfb;
+            color: #214287;
+            font-size: .84rem;
+            font-weight: 600;
+        }
+        .home-reservar-page .sc-legend-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            border-radius: 999px;
+            padding: .25rem .55rem;
+            border: 1px solid transparent;
+            font-size: .78rem;
+            font-weight: 700;
+        }
+        .home-reservar-page .sc-legend-chip i {
+            width: .6rem;
+            height: .6rem;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .home-reservar-page .sc-legend-chip.is-disponible { background: #edf8f0; border-color: #bde7c7; color: #1f5f2f; }
+        .home-reservar-page .sc-legend-chip.is-disponible i { background: #22c55e; }
+        .home-reservar-page .sc-legend-chip.is-reservada { background: #fff7e8; border-color: #fcd9a7; color: #8a4a00; }
+        .home-reservar-page .sc-legend-chip.is-reservada i { background: #f59f00; }
+        .home-reservar-page .sc-legend-chip.is-confirmada { background: #edf4ff; border-color: #b5ccff; color: #1e3a8a; }
+        .home-reservar-page .sc-legend-chip.is-confirmada i { background: #2563eb; }
+        .home-reservar-page .sc-price-box {
+            border: 1px solid #dbe3f3;
+            background: #f8fbff;
+            border-radius: 12px;
+            min-height: 58px;
+            padding: .5rem .7rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 0;
+        }
+        .home-reservar-page .sc-price-box strong { font-size: 1rem; color: #0b1f46; }
+        .home-reservar-page .sc-slot-summary {
+            display: inline-flex;
+            align-items: center;
+            gap: .5rem;
+            border: 1px dashed #b8c8ea;
+            border-radius: 999px;
+            padding: .3rem .75rem;
+            color: #12337a;
+            font-weight: 700;
+            background: #f8fbff;
+            margin-bottom: .15rem;
+        }
+        .home-reservar-page .sc-slot-summary .dot {
+            width: .28rem;
+            height: .28rem;
+            border-radius: 50%;
+            background: #4b67ad;
+            display: inline-block;
+        }
+
+        #calendarioPublicoReserva .fc-toolbar-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #17223b;
+            letter-spacing: -.02em;
+        }
+        #calendarioPublicoReserva .fc-timegrid-slot { height: 2rem; }
+        #calendarioPublicoReserva .fc-col-header-cell {
+            background: #153a70;
+            border-color: #365381;
+        }
+        #calendarioPublicoReserva .fc-col-header .fc-timegrid-axis {
+            background: #f4f7fc;
+            border-right: 1px solid #c4cfdf;
+            min-width: 92px;
+        }
+        #calendarioPublicoReserva .fc-col-header .fc-timegrid-axis .fc-col-header-cell-cushion {
+            color: #334155;
+            font-weight: 800;
+            text-decoration: none;
+        }
+        #calendarioPublicoReserva .fc-col-header-cell-cushion {
+            color: #f8fbff;
+            font-weight: 800;
+            text-decoration: none;
+            padding: .38rem .2rem;
+        }
+        #calendarioPublicoReserva .sc-cal-header-day {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.05;
+            gap: .12rem;
+        }
+        #calendarioPublicoReserva .sc-cal-header-day .sc-day-name { font-size: .84rem; font-weight: 800; }
+        #calendarioPublicoReserva .sc-cal-header-day .sc-day-date { font-size: .78rem; opacity: .92; }
+        #calendarioPublicoReserva .fc-timegrid-col.fc-day-today { background: rgba(32, 104, 244, .04); }
+        #calendarioPublicoReserva .fc-timegrid-slot-label {
+            background: #f8fafc;
+            color: #334155;
+            font-weight: 700;
+        }
+        #calendarioPublicoReserva .fc-timegrid-axis-cushion,
+        #calendarioPublicoReserva .fc-timegrid-slot-label-cushion {
+            color: #334155;
+            font-weight: 700;
+            text-decoration: none;
+        }
+        #calendarioPublicoReserva .fc-event.sc-public-event { border: 0; border-radius: 10px; padding: 2px 6px; box-shadow: 0 8px 18px rgba(16, 24, 40, .12); }
+        #calendarioPublicoReserva .fc-event.sc-public-event .fc-event-title { font-weight: 700; font-size: .77rem; }
+        #calendarioPublicoReserva .fc-event.sc-public-event .fc-event-time { font-size: .7rem; opacity: .9; }
+        #calendarioPublicoReserva .fc-event.sc-public-event.is-bloqueado {
+            background: repeating-linear-gradient(135deg, #334155 0px, #334155 8px, #94a3b8 8px, #94a3b8 16px) !important;
+            color: #ffffff !important;
+            border: 1px solid #1e293b !important;
+            box-shadow: 0 0 0 1px #0f172a inset, 0 6px 14px rgba(15, 23, 42, .35);
+        }
+        #calendarioPublicoReserva .fc-event.sc-public-event.is-bloqueado .fc-event-title { color: #ffffff; }
+        #calendarioPublicoReserva .fc-button-primary {
+            background: #0f3ea9;
+            border-color: #0f3ea9;
+            border-radius: 10px;
+            box-shadow: none;
+        }
+        #calendarioPublicoReserva .fc-button-primary:hover { background: #0c3184; border-color: #0c3184; }
+        #calendarioPublicoReserva .fc-button-primary.fc-button-active {
+            background: #2563eb;
+            border-color: #2563eb;
+        }
+        #calendarioPublicoReserva .fc-toolbar.fc-header-toolbar {
+            margin-bottom: .7rem;
+            align-items: center;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.14/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.14/locales-all.global.min.js"></script>
+    <script>
+        (() => {
+            const calendarEl = document.getElementById('calendarioPublicoReserva');
+            if (!calendarEl || typeof FullCalendar === 'undefined') return;
+
+            const negocioId = @Model.NegocioId;
+            const espacioId = @Model.Espacio.EspacioDeportivoId;
+
+            const inputFecha = document.getElementById('formFecha');
+            const inputInicio = document.getElementById('formHoraInicio');
+            const inputFin = document.getElementById('formHoraFin');
+            const inputTipoDocumento = document.getElementById('formTipoDocumento');
+            const inputNumeroDocumento = document.getElementById('formNumeroDocumento');
+            const slotFechaTexto = document.getElementById('slotFechaTexto');
+            const slotHorarioTexto = document.getElementById('slotHorarioTexto');
+            const cotizacionPrecio = document.getElementById('cotizacionPrecio');
+            const cotizacionDetalle = document.getElementById('cotizacionDetalle');
+            const cotizacionMensaje = document.getElementById('cotizacionMensaje');
+            const formContainer = document.getElementById('formularioReservaPublica');
+            const formReserva = document.getElementById('formReservaPublica');
+            let eventosCache = [];
+            let debounceCotizar;
+
+            function toIsoDateLocal(date) {
+                const y = date.getFullYear();
+                const m = String(date.getMonth() + 1).padStart(2, '0');
+                const d = String(date.getDate()).padStart(2, '0');
+                return `${y}-${m}-${d}`;
+            }
+            function toHm(date) {
+                return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+            }
+            function titleCaseEs(texto) {
+                if (!texto) return '';
+                return texto.charAt(0).toUpperCase() + texto.slice(1);
+            }
+            function formatAdminRangeTitle(start, end, viewType) {
+                const fmtDayMonth = new Intl.DateTimeFormat('es-PE', { day: 'numeric', month: 'long' });
+                const s = new Date(start);
+                const e = new Date(end.getTime() - 1);
+                if (viewType === 'timeGridDay') {
+                    const nombreDia = titleCaseEs(new Intl.DateTimeFormat('es-PE', { weekday: 'long' }).format(s));
+                    return `${nombreDia} ${titleCaseEs(fmtDayMonth.format(s))} del ${s.getFullYear()}`;
+                }
+                const ini = titleCaseEs(fmtDayMonth.format(s));
+                const fin = titleCaseEs(fmtDayMonth.format(e));
+                return `${ini} al ${fin} del ${e.getFullYear()}`;
+            }
+            function aplicarHeaderHorarios() {
+                const axisHeader = calendarEl.querySelector('.fc-col-header .fc-timegrid-axis .fc-col-header-cell-cushion');
+                if (axisHeader) axisHeader.textContent = 'Horarios';
+            }
+            function intersects(startA, endA, startB, endB) {
+                return startA < endB && endA > startB;
+            }
+            function hayCruceBloqueado(start, end) {
+                return eventosCache.some(ev => {
+                    const evStart = new Date(ev.start);
+                    const evEnd = new Date(ev.end);
+                    return intersects(start, end, evStart, evEnd);
+                });
+            }
+            function parseTimeToMinutes(hm) {
+                const p = String(hm || '').split(':');
+                if (p.length < 2) return null;
+                const h = Number(p[0]);
+                const m = Number(p[1]);
+                if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
+                return h * 60 + m;
+            }
+            function getDuracionMinutosFormulario() {
+                const ini = parseTimeToMinutes(inputInicio?.value);
+                const fin = parseTimeToMinutes(inputFin?.value);
+                if (ini === null || fin === null || fin <= ini) return @duracionMinutos;
+                return fin - ini;
+            }
+            function actualizarResumenSlot() {
+                if (!inputFecha || !inputInicio || !inputFin) return;
+                const fecha = inputFecha.value || '';
+                const partes = fecha.split('-');
+                if (partes.length === 3) {
+                    slotFechaTexto.textContent = `${partes[2]}/${partes[1]}/${partes[0]}`;
+                }
+                slotHorarioTexto.textContent = `${inputInicio.value} - ${inputFin.value}`;
+            }
+            function actualizarEstadoNumeroDocumento() {
+                if (!inputTipoDocumento || !inputNumeroDocumento) return;
+                const tipo = String(inputTipoDocumento.value || '').trim().toUpperCase();
+                const noObligatorio = tipo === '0';
+                if (noObligatorio) inputNumeroDocumento.value = '';
+                inputNumeroDocumento.disabled = noObligatorio;
+                inputNumeroDocumento.placeholder = noObligatorio ? 'No obligatorio para este tipo.' : '';
+            }
+            async function cotizar() {
+                if (!inputFecha || !inputInicio || !inputFin) return;
+                const ini = parseTimeToMinutes(inputInicio.value);
+                const fin = parseTimeToMinutes(inputFin.value);
+                if (ini === null || fin === null || fin <= ini) {
+                    if (cotizacionMensaje) cotizacionMensaje.textContent = 'La hora fin debe ser mayor que la hora inicio.';
+                    if (cotizacionPrecio) cotizacionPrecio.textContent = 'A cotizar';
+                    if (cotizacionDetalle) cotizacionDetalle.textContent = '';
+                    return;
+                }
+
+                const params = new URLSearchParams({
+                    negocioId: String(negocioId),
+                    espacioDeportivoId: String(espacioId),
+                    fecha: String(inputFecha.value || ''),
+                    horaInicio: String(inputInicio.value || ''),
+                    horaFin: String(inputFin.value || '')
+                });
+
+                try {
+                    const resp = await fetch('@Url.Action("CotizarReservaPublica", "Home")' + '?' + params.toString(), { credentials: 'same-origin' });
+                    const data = await resp.json();
+                    if (!data || data.ok !== true) {
+                        if (cotizacionPrecio) cotizacionPrecio.textContent = 'A cotizar';
+                        if (cotizacionDetalle) cotizacionDetalle.textContent = '';
+                        if (cotizacionMensaje) cotizacionMensaje.textContent = data?.mensaje || 'No se pudo calcular el precio para este horario.';
+                        return;
+                    }
+
+                    const c = data.cotizacion || {};
+                    const simbolo = c.monedaSimbolo || 'S/';
+                    const precioFinal = Number(c.precioFinal || 0);
+                    const precioBase = Number(c.precioBase || 0);
+                    const desc = Number(c.descuentoPct || 0);
+                    if (cotizacionPrecio) cotizacionPrecio.textContent = `${simbolo} ${precioFinal.toFixed(2)}`;
+                    if (cotizacionDetalle) {
+                        cotizacionDetalle.textContent = desc > 0
+                            ? `Base ${simbolo} ${precioBase.toFixed(2)} - Descuento ${desc.toFixed(2)}%`
+                            : `Base ${simbolo} ${precioBase.toFixed(2)}`;
+                    }
+                    if (cotizacionMensaje) cotizacionMensaje.textContent = c.mensaje || 'Cotizacion actualizada.';
+                } catch {
+                    if (cotizacionMensaje) cotizacionMensaje.textContent = 'No se pudo cotizar en este momento.';
+                }
+            }
+            function cotizarDebounced() {
+                clearTimeout(debounceCotizar);
+                debounceCotizar = setTimeout(() => { cotizar(); }, 220);
+            }
+            function sincronizarCalendarioConFormulario(calendar) {
+                if (!inputFecha || !inputInicio || !inputFin) return;
+                const fecha = inputFecha.value;
+                if (fecha) calendar.gotoDate(fecha);
+                actualizarResumenSlot();
+                cotizarDebounced();
+            }
+            function aplicarSeleccion(start, endSeleccionado) {
+                const end = (endSeleccionado && endSeleccionado > start)
+                    ? new Date(endSeleccionado)
+                    : new Date(start.getTime() + 60 * 60000);
+
+                if (start < new Date()) {
+                    alert('Ese horario ya paso. Selecciona una hora futura.');
+                    return;
+                }
+                if (hayCruceBloqueado(start, end)) {
+                    alert('Ese horario no esta disponible. Elige otro bloque libre.');
+                    return;
+                }
+
+                inputFecha.value = toIsoDateLocal(start);
+                inputInicio.value = toHm(start);
+                inputFin.value = toHm(end);
+                actualizarResumenSlot();
+                cotizarDebounced();
+                if (formContainer) formContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                locale: 'es',
+                initialView: 'timeGridWeek',
+                initialDate: '@fecha.ToString("yyyy-MM-dd")',
+                firstDay: 1,
+                weekends: true,
+                views: {
+                    timeGridWeek: { buttonText: 'Semana' },
+                    timeGridDay: { buttonText: 'Dia' }
+                },
+                allDaySlot: false,
+                height: 720,
+                slotDuration: '00:30:00',
+                slotLabelInterval: '01:00:00',
+                slotLabelFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+                slotMinTime: '06:00:00',
+                slotMaxTime: '24:00:00',
+                nowIndicator: true,
+                selectable: true,
+                selectMirror: true,
+                headerToolbar: { left: 'prev,next today', center: 'title', right: 'timeGridDay,timeGridWeek' },
+                buttonText: { today: 'Hoy' },
+                dayHeaderContent: function(args) {
+                    const dayName = titleCaseEs(new Intl.DateTimeFormat('es-PE', { weekday: 'long' }).format(args.date));
+                    const dayDate = new Intl.DateTimeFormat('es-PE', { day: 'numeric', month: 'numeric' }).format(args.date);
+                    return { html: `<div class="sc-cal-header-day"><span class="sc-day-name">${dayName}</span><span class="sc-day-date">${dayDate}</span></div>` };
+                },
+                events: async (fetchInfo, successCallback, failureCallback) => {
+                    try {
+                        const params = new URLSearchParams({
+                            negocioId: String(negocioId),
+                            espacioDeportivoId: String(espacioId),
+                            start: fetchInfo.startStr,
+                            end: fetchInfo.endStr
+                        });
+                        const resp = await fetch('@Url.Action("ReservarCalendarioEventos", "Home")' + '?' + params.toString(), { credentials: 'same-origin' });
+                        if (!resp.ok) throw new Error('No se pudo cargar el calendario.');
+                        const data = await resp.json();
+                        eventosCache = (data || []).map(x => ({ start: x.start, end: x.end }));
+                        successCallback(data || []);
+                    } catch (err) {
+                        failureCallback(err);
+                    }
+                },
+                dateClick: (info) => aplicarSeleccion(info.date, null),
+                select: (info) => aplicarSeleccion(info.start, info.end),
+                eventClick: () => alert('Ese bloque ya esta ocupado. Selecciona una franja disponible.'),
+                datesSet: (info) => {
+                    const titulo = formatAdminRangeTitle(info.start, info.end, info.view.type);
+                    const tituloEl = calendarEl.querySelector('.fc-toolbar-title');
+                    if (tituloEl) tituloEl.textContent = titulo;
+                    aplicarHeaderHorarios();
+                }
+            });
+
+            calendar.render();
+            aplicarHeaderHorarios();
+            actualizarResumenSlot();
+            actualizarEstadoNumeroDocumento();
+            cotizarDebounced();
+
+            inputTipoDocumento?.addEventListener('change', actualizarEstadoNumeroDocumento);
+            inputFecha?.addEventListener('change', () => sincronizarCalendarioConFormulario(calendar));
+            inputInicio?.addEventListener('change', () => sincronizarCalendarioConFormulario(calendar));
+            inputFin?.addEventListener('change', () => sincronizarCalendarioConFormulario(calendar));
+            formReserva?.addEventListener('submit', (e) => {
+                const ini = parseTimeToMinutes(inputInicio?.value);
+                const fin = parseTimeToMinutes(inputFin?.value);
+                if (ini === null || fin === null || fin <= ini) {
+                    e.preventDefault();
+                    alert('La hora fin debe ser mayor que la hora inicio.');
+                }
+            });
+        })();
+    </script>
+}

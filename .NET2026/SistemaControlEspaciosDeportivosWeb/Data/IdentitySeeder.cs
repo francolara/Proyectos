@@ -6,7 +6,7 @@ namespace SistemaControlEspaciosDeportivosWeb.Data;
 
 public static class IdentitySeeder
 {
-    private static readonly string[] Roles = ["Administrador", "Usuario"];
+    private static readonly string[] Roles = ["OwnerPlataforma", "Administrador", "Usuario"];
 
     public static async Task SeedRolesAsync(IServiceProvider serviceProvider)
     {

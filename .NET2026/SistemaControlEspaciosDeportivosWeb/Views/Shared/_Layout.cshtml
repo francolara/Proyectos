@@ -23,7 +23,10 @@
 </head>
 @{
     var adminShell = ViewData["AdminShell"] as bool? ?? false;
-    var contentClass = adminShell ? "flex-fill p-0" : "container py-4 flex-fill";
+    var platformShell = ViewData["PlatformShell"] as bool? ?? false;
+    var publicFullWidth = ViewData["PublicFullWidth"] as bool? ?? false;
+    var hideDefaultFooter = ViewData["HideDefaultFooter"] as bool? ?? false;
+    var contentClass = (adminShell || platformShell || publicFullWidth) ? "flex-fill p-0" : "container py-4 flex-fill";
     var currentController = (ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty).ToUpperInvariant();
     var negocioIdRaw = ViewData["AdminNegocioId"]?.ToString()
         ?? ViewContext.RouteData.Values["negocioId"]?.ToString()
@@ -35,6 +38,7 @@
     var usuarioCorreoSidebar = usuarioNombre;
     var saludoNombre = usuarioNombre;
     var rolActualSidebar = "Sin rol";
+    var esOwnerPlataforma = User.IsInRole("OwnerPlataforma");
     var usuarioId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
     if (!string.IsNullOrWhiteSpace(usuarioId))
@@ -74,6 +78,9 @@
         }
     }
 
+    if (esOwnerPlataforma && (!adminShell || !hasNegocioId))
+        rolActualSidebar = "OwnerPlataforma";
+
     adminNegocioNombre ??= "SportCenter";
     var inicialesNegocio = new string(
         adminNegocioNombre
@@ -84,7 +91,12 @@
     if (string.IsNullOrWhiteSpace(inicialesNegocio))
         inicialesNegocio = "SC";
 
+    var currentAction = (ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty).ToUpperInvariant();
     string menuClass(string controller) => currentController == controller.ToUpperInvariant() ? "sc-admin-navlink active" : "sc-admin-navlink";
+    string menuClassAction(string controller, string action)
+        => currentController == controller.ToUpperInvariant() && currentAction == action.ToUpperInvariant()
+            ? "sc-admin-navlink active"
+            : "sc-admin-navlink";
     string menuUrl(string controller)
     {
         return hasNegocioId
@@ -93,7 +105,7 @@
     }
 }
 <body class="d-flex flex-column min-vh-100">
-    @if (!adminShell)
+    @if (!adminShell && !platformShell)
     {
         <header>
             <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm">
@@ -198,6 +210,49 @@
             </section>
         </div>
     }
+    else if (platformShell)
+    {
+        <div class="sc-admin-shell">
+            <aside class="sc-admin-sidebar">
+                <div class="sc-admin-welcome">
+                    <small>Bienvenido</small>
+                    <strong>@saludoNombre</strong>
+                </div>
+                <div class="sc-admin-brand">
+                    <span class="sc-admin-brand-logo">SC</span>
+                    <p class="sc-admin-brand-title">Control de plataforma</p>
+                </div>
+
+                <nav class="sc-admin-nav">
+                    <a class="@menuClassAction("Plataforma", "Index")" href="@Url.Action("Index", "Plataforma")"><i class="bi bi-window-sidebar"></i><span>Dashboard global</span></a>
+                    <a class="@menuClass("Banners")" href="@Url.Action("Index", "Banners")"><i class="bi bi-images"></i><span>Banners web</span></a>
+                    <a class="@menuClassAction("Plataforma", "PortalWeb")" href="@Url.Action("PortalWeb", "Plataforma")"><i class="bi bi-sliders2"></i><span>Portal web</span></a>
+                </nav>
+
+                <div class="sc-admin-session-box">
+                    <div class="sc-admin-session-user">
+                        <strong>@usuarioCorreoSidebar</strong>
+                        <span>Rol: @rolActualSidebar</span>
+                    </div>
+                    <a class="btn btn-outline-light w-100 mb-2" asp-controller="Cuenta" asp-action="CambiarContrasena">
+                        <i class="bi bi-key me-1"></i>Cambiar contrasena
+                    </a>
+                    <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })" method="post">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-light w-100">
+                            <i class="bi bi-box-arrow-right me-1"></i>Cerrar sesion
+                        </button>
+                    </form>
+                </div>
+            </aside>
+
+            <section class="sc-admin-main">
+                <main role="main" class="admin-page-frame">
+                    @RenderBody()
+                </main>
+            </section>
+        </div>
+    }
     else
     {
         <div class="@contentClass">
@@ -207,7 +262,7 @@
         </div>
     }
 
-    @if (!adminShell)
+    @if (!adminShell && !platformShell && !hideDefaultFooter)
     {
         <footer class="border-top footer text-muted py-3 mt-auto">
             <div class="container">

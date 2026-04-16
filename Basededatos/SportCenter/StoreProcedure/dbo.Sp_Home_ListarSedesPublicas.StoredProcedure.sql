@@ -12,6 +12,8 @@ GO
 -- Create date:   06/04/2026
 -- Description:   Incluye ConsideracionesReserva para mostrar condiciones de sede en portal publico.
 -- =============================================
+-- Firma: Codex - 14/04/2026 | Devuelve NegocioId y NombreComercial para poblar filtro publico por club/negocio.
+-- Firma: Codex - 15/04/2026 | Agrega Servicios (catalogo de sede) para mostrar amenities del club en la vista publica de reserva.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Home_ListarSedesPublicas]
 AS
 BEGIN
@@ -29,7 +31,18 @@ BEGIN
             s.Longitud,
             s.GoogleMapsUrl,
             s.FotoPrincipalUrl,
-            s.FotosUrlsCsv
+            s.FotosUrlsCsv,
+            n.Id AS NegocioId,
+            n.NombreComercial AS NegocioNombre,
+            STUFF((
+                SELECT N', ' + cs.Nombre
+                FROM dbo.SedeServicios ss
+                INNER JOIN dbo.CatalogoServiciosSede cs ON cs.Id = ss.ServicioId
+                WHERE ss.SedeId = s.Id
+                  AND cs.Activo = 1
+                ORDER BY cs.Nombre
+                FOR XML PATH(''), TYPE
+            ).value('.', 'NVARCHAR(MAX)'), 1, 2, N'') AS Servicios
         FROM dbo.Sedes s
         INNER JOIN dbo.Negocios n ON n.Id = s.NegocioId
         LEFT JOIN dbo.SedeConfiguracionNotificacion scn ON scn.SedeId = s.Id

@@ -14,10 +14,11 @@
   - `Services/SportCenterStoredProcedureService.ReservasPagosComprobantes.cs`
   - `Services/SportCenterStoredProcedureService.Clientes.cs`
   - `Services/SportCenterStoredProcedureService.Reportes.cs`
-  - `Services/SportCenterStoredProcedureService.Solicitudes.cs`
+- `Services/SportCenterStoredProcedureService.Solicitudes.cs`
 - `Services/SportCenterStoredProcedureService.Usuarios.cs`
 - `Services/SportCenterStoredProcedureService.Promociones.cs`
 - `Services/SportCenterStoredProcedureService.Maestros.cs`
+- `Services/SportCenterStoredProcedureService.Banners.cs`
 - `Services/SportCenterStoredProcedureService.ReservasPagosComprobantes.cs` (incluye calendario y bloqueos sprint 5)
 - `Services/SportCenterStoredProcedureService.Automatizacion.cs`
 - Seguridad por modulo via SP:
@@ -25,6 +26,7 @@
 
 ## Controladores que ya usan ADO.NET + SP
 - `Controllers/HomeController.cs`
+- `Controllers/BannersController.cs`
 - `Controllers/PanelController.cs`
 - `Controllers/SedesController.cs`
 - `Controllers/ClientesController.cs`
@@ -56,6 +58,7 @@
 - `Sp_Home_ListarSedesPublicas`
 - `Sp_Home_ListarTiposDeporte`
 - `Sp_Home_BuscarEspaciosDisponibles`
+- `Sp_Home_ListarBannersPublicos`
 
 ### 03_Sedes_Espacios.sql
 - `Sp_Combos_Sedes`
@@ -108,6 +111,7 @@
 - `Sp_Comprobantes_Actualizar` y `Sp_Comprobantes_Eliminar` devuelven error si no existe el comprobante para el negocio.
 - `Sp_Comprobantes_Eliminar` marca el comprobante como anulado (`Estado = 5`) y libera la reserva asociada para permitir nueva emision de comprobante sobre reservas pagadas.
 - `Sp_ParametrosGlobales_ObtenerValor` retorna `ValorParametro` por `NombreParametro` para reglas de validacion configurables.
+- `Sp_ParametrosGlobales_UpsertValor` actualiza solo `ValorParametro` por `NombreParametro`; los nuevos parametros se crean por script (no por SP).
 
 ### Parametros globales
 - Tabla:
@@ -118,6 +122,7 @@
   - `ValorParametro = 700`
 - Uso funcional:
   - Validacion de comprobantes (`Boleta`) obtiene el `ValorParametro` por `NombreParametro` (sin valor fijo en codigo).
+  - Configuracion de portal publico (`HOME_PORTAL_*`) para CTA y barra final de contacto/redes, editable desde `Plataforma/PortalWeb`.
 
 ### 05_Sedes_Servicios.sql
 - Tablas:
@@ -171,6 +176,10 @@
 - Tabla:
   - `SolicitudesReservaPublica`
 - `Sp_Home_SolicitarReservaPublica`
+- Actualizacion 14/04/2026:
+  - `Sp_Home_SolicitarReservaPublica` ahora crea **reserva real** (canal `CLIENTE_WEB`) en lugar de solicitud.
+  - Reutiliza cliente existente por telefono/correo dentro del negocio; si no existe, crea cliente tipo `0` (no domiciliado) y luego registra la reserva.
+  - La reserva se crea via `Sp_Reservas_Crear`, por lo que aplica politica de confirmacion/pago y demas reglas vigentes del negocio.
 
 ### 11_Solicitudes_Gestion.sql
 - `Sp_Seguridad_SeedModulosPermisosBase` (agrega modulo `SOLICITUDES`)
@@ -229,6 +238,26 @@
   - Campanita en barra admin consulta cada 20 segundos (ajustable a 30) y muestra acumulado de notificaciones no leidas por negocio.
   - `Sp_SolicitudesPublicas_ConvertirAReserva` crea notificacion de tipo `RESERVA_CLIENTE_WEB` al generar reserva desde solicitud de portal cliente.
 
+### 38_Web_Banners_Publicos.sql
+- Tabla:
+  - `WebBanners`
+- SP:
+  - `Sp_Home_ListarBannersPublicos`
+  - `Sp_WebBanners_Listar`
+  - `Sp_WebBanners_Guardar`
+  - `Sp_WebBanners_Eliminar`
+  - `Sp_WebBanners_ObtenerFijoPorTipo`
+- Actualizacion 14/04/2026:
+  - Se habilita mantenimiento de banners del carrusel publico desde panel administrativo (`Banners web`).
+  - Las imagenes del banner se cargan a bucket (JPG/PNG -> WebP) y se reemplazan eliminando el objeto anterior.
+  - `WebBanners` agrega `ImagenUrlMobile` (opcional) para version vertical del banner en celulares.
+  - `WebBanners` agrega `TipoBanner` (`1=Home publico`, `2=Login fijo`, `3=Registro fijo`).
+  - `Sp_WebBanners_Guardar`, `Sp_WebBanners_Listar` y `Sp_Home_ListarBannersPublicos` soportan `ImagenUrlMobile`.
+  - `Sp_WebBanners_ObtenerFijoPorTipo` permite cargar banner lateral fijo en pantallas de autenticacion (`Login` y `Registro`).
+  - En Home, si existe imagen movil se usa en pantallas pequenas; si no existe, cae a la imagen desktop.
+  - Home publico consume banners configurados de `TipoBanner=Home` (sin filtro por vigencia por fecha).
+  - Se personaliza `Login` y nuevo `Register` con layout split (banner lateral + formulario), usando paleta visual corporativa del sistema.
+
 ### 16_Reservas_CheckIn_CheckOut.sql
 - `Sp_Reservas_CambiarEstadoRapido`
 - `Sp_Reservas_CambiarEstadoRapido` retorna error si la reserva no existe para el negocio.
@@ -274,7 +303,15 @@
 - Permite mostrar boton "Chatear por WhatsApp" directamente en tarjetas de espacios disponibles.
 - Actualizacion 14/04/2026:
   - `Sp_Home_BuscarEspaciosDisponibles` cambia filtros publicos: ya no usa `SedeId`; filtra por `CodigoDepartamento`, `CodigoProvincia`, `CodigoUbigeo` y `TipoDeporteId`.
+  - `Sp_Home_BuscarEspaciosDisponibles` agrega filtro por `NegocioId` para busqueda por club/negocio.
   - El resultado agrega direccion de sede, departamento/provincia/distrito, tipo de suelo y `TarifaDesde` (minimo de tarifas activas por espacio) para tarjetas del portal cliente.
+  - El resultado agrega `SedeId`, `SedeFotoPrincipalUrl` y `SedeFotosUrlsCsv` para renderizar mini carrusel de fotos de sede en cada tarjeta de espacio.
+  - El resultado agrega `CorreoNotificacion` y `WhatsappContacto` (tabla `SedeConfiguracionNotificacion`) para mostrar contacto de sede en tarjetas publicas.
+  - `Sp_Home_ListarSedesPublicas` devuelve `NegocioId` y `NegocioNombre` para poblar combo de filtro por club/negocio en Home.
+- Actualizacion 15/04/2026:
+  - `Sp_Home_ListarSedesPublicas` agrega `Servicios` (lista de servicios de `CatalogoServiciosSede` por sede) para mostrar amenities del club en la vista publica de reserva.
+  - `Sp_Home_BuscarEspaciosDisponibles` agrega `@IgnorarFechaHorario` (`BIT`, default `0`): cuando `1` (y se busca por negocio) lista todos los espacios del club sin aplicar cruce por fecha/hora.
+  - Home publica incorpora checkbox `Obviar filtro de dia y horario` habilitado al seleccionar `Club/negocio`; se conserva en paginacion y navegacion hacia `Reservar`.
 
 ### 21_Altas_Clubes.sql
 - Tabla:

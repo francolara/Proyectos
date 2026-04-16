@@ -138,10 +138,45 @@ public partial class SportCenterStoredProcedureService
     {
         await using var cn = CreateConnection();
         await cn.OpenAsync();
-        await using var cmd = new SqlCommand("Sp_ParametrosGlobales_ObtenerValor", cn) { CommandType = CommandType.StoredProcedure };
-        AddParam(cmd, "@NombreParametro", nombreParametro, SqlDbType.NVarChar);
-        var result = await cmd.ExecuteScalarAsync();
-        return result?.ToString();
+        try
+        {
+            await using var cmdSp = new SqlCommand("Sp_ParametrosGlobales_ObtenerValor", cn)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+            AddParam(cmdSp, "@NombreParametro", nombreParametro, SqlDbType.NVarChar);
+            var resultSp = await cmdSp.ExecuteScalarAsync();
+            return resultSp?.ToString();
+        }
+        catch (SqlException ex) when (ex.Message.Contains("Sp_ParametrosGlobales_ObtenerValor", StringComparison.OrdinalIgnoreCase))
+        {
+            await using var cmdFallback = new SqlCommand(@"
+                SELECT TOP (1) p.ValorParametro
+                FROM dbo.ParametrosGlobales p
+                WHERE p.NombreParametro = @NombreParametro;", cn);
+            AddParam(cmdFallback, "@NombreParametro", nombreParametro, SqlDbType.NVarChar);
+            var resultFallback = await cmdFallback.ExecuteScalarAsync();
+            return resultFallback?.ToString();
+        }
+    }
+
+    public async Task ParametrosGlobalesUpsertValorAsync(string nombreParametro, string? descripcion, string? valorParametro, string usuario)
+    {
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+
+        var valorNorm = (valorParametro ?? string.Empty).Trim();
+        if (valorNorm.Length > 100) valorNorm = valorNorm[..100];
+
+        await using var cmdSp = new SqlCommand("Sp_ParametrosGlobales_UpsertValor", cn)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+        AddParam(cmdSp, "@NombreParametro", nombreParametro, SqlDbType.NVarChar);
+        AddParam(cmdSp, "@Descripcion", descripcion, SqlDbType.NVarChar);
+        AddParam(cmdSp, "@ValorParametro", valorNorm, SqlDbType.NVarChar);
+        AddParam(cmdSp, "@Usuario", usuario, SqlDbType.NVarChar);
+        await cmdSp.ExecuteNonQueryAsync();
     }
 
     public async Task<List<SerieDocumentoComprobanteItemViewModel>> ConfiguracionSeriesDocumentoListarAsync(int negocioId)

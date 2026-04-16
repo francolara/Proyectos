@@ -1,0 +1,155 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.PlataformaPortalConfigViewModel
+@{
+    ViewData["Title"] = "Portal web";
+}
+<!-- Firma: Codex - 15/04/2026 | Formulario owner para configurar CTA y barra final del Home (contacto y redes). -->
+<!-- Firma: Codex - 15/04/2026 | Se agrega configuracion de seccion beneficios (6 tarjetas fijas) y resumen de errores de guardado en pantalla. -->
+
+<div class="page-header-card mb-3">
+    <div class="page-header-main">
+        <h1 class="page-title">Configuracion del portal web</h1>
+        <p class="page-subtitle">Administra el bloque CTA verde y la barra final de contacto/redes del Home.</p>
+    </div>
+</div>
+
+@if (TempData["PortalWebOk"] is string ok && !string.IsNullOrWhiteSpace(ok))
+{
+    <div class="alert alert-success">@ok</div>
+}
+<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+<form asp-action="PortalWeb" method="post" class="table-card sc-reservas-list-card p-3">
+    @Html.AntiForgeryToken()
+
+    <h2 class="section-title mb-3"><i class="bi bi-grid-3x3-gap me-1"></i>Seccion beneficios (6 tarjetas fijas)</h2>
+    <div class="row g-3 mb-4">
+        <div class="col-lg-7">
+            <label class="form-label">Titulo global de beneficios</label>
+            <input asp-for="BeneficiosTitulo" class="form-control" maxlength="100" />
+        </div>
+        <div class="col-lg-5">
+            <label class="form-label">Subtitulo global de beneficios</label>
+            <input asp-for="BeneficiosSubtitulo" class="form-control" maxlength="100" />
+        </div>
+
+        <div class="col-lg-4">
+            <label class="form-label">Tarjeta 1 titulo</label>
+            <input asp-for="Beneficio1Titulo" class="form-control" maxlength="100" />
+        </div>
+        <div class="col-lg-8">
+            <label class="form-label">Tarjeta 1 detalle</label>
+            <input asp-for="Beneficio1Detalle" class="form-control" maxlength="100" />
+        </div>
+
+        <div class="col-lg-4">
+            <label class="form-label">Tarjeta 2 titulo</label>
+            <input asp-for="Beneficio2Titulo" class="form-control" maxlength="100" />
+        </div>
+        <div class="col-lg-8">
+            <label class="form-label">Tarjeta 2 detalle</label>
+            <input asp-for="Beneficio2Detalle" class="form-control" maxlength="100" />
+        </div>
+
+        <div class="col-lg-4">
+            <label class="form-label">Tarjeta 3 titulo</label>
+            <input asp-for="Beneficio3Titulo" class="form-control" maxlength="100" />
+        </div>
+        <div class="col-lg-8">
+            <label class="form-label">Tarjeta 3 detalle</label>
+            <input asp-for="Beneficio3Detalle" class="form-control" maxlength="100" />
+        </div>
+
+        <div class="col-lg-4">
+            <label class="form-label">Tarjeta 4 titulo</label>
+            <input asp-for="Beneficio4Titulo" class="form-control" maxlength="100" />
+        </div>
+        <div class="col-lg-8">
+            <label class="form-label">Tarjeta 4 detalle</label>
+            <input asp-for="Beneficio4Detalle" class="form-control" maxlength="100" />
+        </div>
+
+        <div class="col-lg-4">
+            <label class="form-label">Tarjeta 5 titulo</label>
+            <input asp-for="Beneficio5Titulo" class="form-control" maxlength="100" />
+        </div>
+        <div class="col-lg-8">
+            <label class="form-label">Tarjeta 5 detalle</label>
+            <input asp-for="Beneficio5Detalle" class="form-control" maxlength="100" />
+        </div>
+
+        <div class="col-lg-4">
+            <label class="form-label">Tarjeta 6 titulo</label>
+            <input asp-for="Beneficio6Titulo" class="form-control" maxlength="100" />
+        </div>
+        <div class="col-lg-8">
+            <label class="form-label">Tarjeta 6 detalle</label>
+            <input asp-for="Beneficio6Detalle" class="form-control" maxlength="100" />
+        </div>
+    </div>
+
+    <h2 class="section-title mb-3"><i class="bi bi-megaphone me-1"></i>Bloque CTA</h2>
+    <div class="row g-3 mb-4">
+        <div class="col-lg-8">
+            <label class="form-label">Titulo CTA</label>
+            <input asp-for="CtaTitulo" class="form-control" maxlength="100" />
+        </div>
+        <div class="col-lg-4">
+            <label class="form-label">Texto boton club</label>
+            <input asp-for="CtaBotonClubTexto" class="form-control" maxlength="100" />
+        </div>
+        <div class="col-lg-8">
+            <label class="form-label">Subtitulo CTA</label>
+            <input asp-for="CtaSubtitulo" class="form-control" maxlength="100" />
+        </div>
+        <div class="col-lg-4">
+            <label class="form-label">URL boton club</label>
+            <input asp-for="CtaBotonClubUrl" class="form-control" maxlength="100" />
+        </div>
+        <div class="col-lg-6">
+            <label class="form-label">Texto boton usuario</label>
+            <input asp-for="CtaBotonUsuarioTexto" class="form-control" maxlength="100" />
+        </div>
+        <div class="col-lg-6">
+            <label class="form-label">URL boton usuario</label>
+            <input asp-for="CtaBotonUsuarioUrl" class="form-control" maxlength="100" />
+        </div>
+    </div>
+
+    <h2 class="section-title mb-3"><i class="bi bi-layout-text-window-reverse me-1"></i>Barra final del portal</h2>
+    <div class="row g-3">
+        <div class="col-lg-4">
+            <label class="form-label">Marca / titulo</label>
+            <input asp-for="MarcaTitulo" class="form-control" maxlength="100" />
+        </div>
+        <div class="col-lg-8">
+            <label class="form-label">Descripcion de marca</label>
+            <input asp-for="MarcaDescripcion" class="form-control" maxlength="100" />
+        </div>
+        <div class="col-lg-6">
+            <label class="form-label">Correo de contacto</label>
+            <input asp-for="ContactoEmail" class="form-control" maxlength="100" />
+        </div>
+        <div class="col-lg-6">
+            <label class="form-label">Telefono de contacto</label>
+            <input asp-for="ContactoTelefono" class="form-control" maxlength="100" />
+        </div>
+        <div class="col-lg-4">
+            <label class="form-label">Facebook URL</label>
+            <input asp-for="SiguenosFacebookUrl" class="form-control" maxlength="100" />
+        </div>
+        <div class="col-lg-4">
+            <label class="form-label">Instagram URL</label>
+            <input asp-for="SiguenosInstagramUrl" class="form-control" maxlength="100" />
+        </div>
+        <div class="col-lg-4">
+            <label class="form-label">WhatsApp URL</label>
+            <input asp-for="SiguenosWhatsappUrl" class="form-control" maxlength="100" />
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-end mt-4">
+        <button type="submit" class="btn btn-primary px-4">
+            <i class="bi bi-save me-1"></i>Guardar configuracion
+        </button>
+    </div>
+</form>

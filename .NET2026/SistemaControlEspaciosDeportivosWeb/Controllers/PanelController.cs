@@ -13,6 +13,11 @@ public class PanelController(ISportCenterStoredProcedureService spService, IModu
 {
     public async Task<IActionResult> Index(int? negocioId, int? sedeId, DateOnly? fechaDesde, DateOnly? fechaHasta)
     {
+        if (User.IsInRole("OwnerPlataforma") && !negocioId.HasValue)
+        {
+            return RedirectToAction("Index", "Plataforma");
+        }
+
         ViewData["AdminShell"] = true;
 
         var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -25,6 +30,11 @@ public class PanelController(ISportCenterStoredProcedureService spService, IModu
 
         if (membresias.Count == 0)
         {
+            if (User.IsInRole("OwnerPlataforma"))
+            {
+                return RedirectToAction("Index", "Plataforma");
+            }
+
             return View(new PanelDashboardViewModel
             {
                 Mensaje = "Tu usuario aun no esta vinculado a un negocio."

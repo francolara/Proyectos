@@ -20,11 +20,13 @@
 }
 else
 {
-    <li class="nav-item">
-        <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Login" asp-route-modo="cliente">Ingreso cliente</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Login" asp-route-modo="operador">Ingreso operador</a>
+    <li class="nav-item d-flex align-items-center gap-2">
+        <a class="auth-nav-mini auth-nav-mini-outline" asp-area="Identity" asp-page="/Account/Login">
+            <i class="bi bi-box-arrow-in-right"></i><span>Iniciar sesion</span>
+        </a>
+        <a class="auth-nav-mini auth-nav-mini-solid" asp-area="Identity" asp-page="/Account/Register">
+            <i class="bi bi-person-plus"></i><span>Registrarse</span>
+        </a>
     </li>
 }
 </ul>

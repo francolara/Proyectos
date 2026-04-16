@@ -4,12 +4,12 @@ using SistemaControlEspaciosDeportivosWeb.Models;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
 using System.Diagnostics;
+using System.Globalization;
 
 namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 
 public class HomeController(
     ISportCenterStoredProcedureService spService,
-    INotificacionEmailService notificacionEmailService,
     UserManager<ApplicationUser> userManager,
     SignInManager<ApplicationUser> signInManager) : Controller
 {
@@ -21,49 +21,211 @@ public class HomeController(
         string? codigoDepartamento,
         string? codigoProvincia,
         string? codigoUbigeo,
-        int? tipoDeporteId)
+        int? tipoDeporteId,
+        int? negocioId,
+        bool omitirFechaHorario = false,
+        int pagina = 1)
     {
-        var vm = await ConstruirHomeVmAsync(fecha, horaInicio, horaFin, codigoDepartamento, codigoProvincia, codigoUbigeo, tipoDeporteId);
+        ViewData["PublicFullWidth"] = true;
+        ViewData["HideDefaultFooter"] = true;
+        var vm = await ConstruirHomeVmAsync(fecha, horaInicio, horaFin, codigoDepartamento, codigoProvincia, codigoUbigeo, tipoDeporteId, negocioId, omitirFechaHorario, pagina);
         vm.MensajeSolicitud = TempData["MensajeSolicitud"]?.ToString();
         return View(vm);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Reservar(
+        int espacioDeportivoId,
+        DateOnly? fecha,
+        TimeOnly? horaInicio,
+        TimeOnly? horaFin,
+        string? codigoDepartamento,
+        string? codigoProvincia,
+        string? codigoUbigeo,
+        int? tipoDeporteId,
+        int? negocioId,
+        bool omitirFechaHorario = false)
+    {
+        ViewData["PublicFullWidth"] = true;
+
+        var fechaConsulta = fecha ?? DateOnly.FromDateTime(DateTime.Today);
+        var horaInicioConsulta = horaInicio ?? new TimeOnly(18, 0);
+        var horaFinConsulta = horaFin ?? horaInicioConsulta.AddHours(1);
+        if (horaFinConsulta <= horaInicioConsulta)
+            horaFinConsulta = horaInicioConsulta.AddHours(1);
+
+        var codigoDep = string.IsNullOrWhiteSpace(codigoDepartamento) ? null : codigoDepartamento.Trim();
+        var codigoProv = string.IsNullOrWhiteSpace(codigoProvincia) ? null : codigoProvincia.Trim();
+        var codigoDist = string.IsNullOrWhiteSpace(codigoUbigeo) ? null : codigoUbigeo.Trim();
+        var vm = await ConstruirReservaVmAsync(
+            espacioDeportivoId,
+            fechaConsulta,
+            horaInicioConsulta,
+            horaFinConsulta,
+            codigoDep,
+            codigoProv,
+            codigoDist,
+            tipoDeporteId,
+            negocioId,
+            omitirFechaHorario: omitirFechaHorario);
+
+        if (vm is null)
+        {
+            TempData["MensajeSolicitud"] = "El espacio ya no esta disponible para el horario seleccionado.";
+            return RedirectToAction(nameof(Index), new
+            {
+                fecha = fechaConsulta,
+                horaInicio = horaInicioConsulta,
+                horaFin = horaFinConsulta,
+                codigoDepartamento = codigoDep,
+                codigoProvincia = codigoProv,
+                codigoUbigeo = codigoDist,
+                tipoDeporteId,
+                negocioId,
+                omitirFechaHorario,
+                pagina = 1
+            });
+        }
+
+        return View(vm);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ReservarCalendarioEventos(
+        int negocioId,
+        int espacioDeportivoId,
+        DateTime? start,
+        DateTime? end)
+    {
+        var desde = DateOnly.FromDateTime((start ?? DateTime.Today).Date);
+        var hasta = DateOnly.FromDateTime((end ?? DateTime.Today).Date);
+        if (hasta < desde)
+            hasta = desde;
+
+        var eventos = await spService.ReservasCalendarioEventosAsync(
+            negocioId,
+            desde,
+            hasta,
+            sedeId: null,
+            espacioDeportivoId: espacioDeportivoId,
+            estado: null);
+
+        var payload = new List<object>();
+        foreach (var e in eventos.Where(e =>
+                     string.Equals(e.TipoEvento, "RESERVA", StringComparison.OrdinalIgnoreCase)
+                     || string.Equals(e.TipoEvento, "BLOQUEO", StringComparison.OrdinalIgnoreCase)
+                     || string.Equals(e.TipoEvento, "NO_ATENCION", StringComparison.OrdinalIgnoreCase)))
+        {
+            var inicio = e.Fecha.ToDateTime(e.HoraInicio);
+            var fin = e.Fecha.ToDateTime(e.HoraFin);
+            if (fin <= inicio) fin = inicio.AddMinutes(30);
+
+            if (string.Equals(e.TipoEvento, "RESERVA", StringComparison.OrdinalIgnoreCase))
+            {
+                var estadoUi = e.Estado switch
+                {
+                    1 => "reservada",
+                    2 or 3 or 4 => "confirmada",
+                    _ => string.Empty
+                };
+
+                if (string.IsNullOrWhiteSpace(estadoUi))
+                    continue;
+
+                payload.Add(new
+                {
+                    id = $"r-{e.Id}",
+                    title = ExtraerTituloPublico(e.Titulo),
+                    start = inicio.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    end = fin.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    color = estadoUi == "reservada" ? "#f59f00" : "#2563eb",
+                    classNames = new[] { "sc-public-event", $"is-{estadoUi}" },
+                    extendedProps = new
+                    {
+                        tipo = "RESERVA",
+                        estado = estadoUi
+                    }
+                });
+                continue;
+            }
+
+            payload.Add(new
+            {
+                id = $"b-{e.Id}",
+                title = "Bloqueado",
+                start = inicio.ToString("yyyy-MM-ddTHH:mm:ss"),
+                end = fin.ToString("yyyy-MM-ddTHH:mm:ss"),
+                color = "#334155",
+                classNames = new[] { "sc-public-event", "is-bloqueado" },
+                extendedProps = new
+                {
+                    tipo = e.TipoEvento,
+                    estado = "bloqueado"
+                }
+            });
+        }
+
+        return Json(payload);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SolicitarReservaPublica(SolicitudReservaPublicaFormViewModel model)
     {
+        ViewData["PublicFullWidth"] = true;
+
+        model.TipoDocumento = string.IsNullOrWhiteSpace(model.TipoDocumento) ? "0" : model.TipoDocumento.Trim();
+        model.NumeroDocumento = string.IsNullOrWhiteSpace(model.NumeroDocumento) ? null : model.NumeroDocumento.Trim();
+        model.Nombres = (model.Nombres ?? string.Empty).Trim();
+        model.Apellidos = (model.Apellidos ?? string.Empty).Trim();
+        model.NombreEquipo = string.IsNullOrWhiteSpace(model.NombreEquipo) ? null : model.NombreEquipo.Trim();
+        model.Telefono = string.IsNullOrWhiteSpace(model.Telefono) ? null : model.Telefono.Trim();
+        model.Correo = string.IsNullOrWhiteSpace(model.Correo) ? null : model.Correo.Trim();
+        model.Comentario = string.IsNullOrWhiteSpace(model.Comentario) ? null : model.Comentario.Trim();
+
         if (model.HoraFin <= model.HoraInicio)
             ModelState.AddModelError(string.Empty, "La hora fin debe ser mayor que la hora inicio.");
 
         if (!ModelState.IsValid)
         {
-            var vmError = await ConstruirHomeVmAsync(model.Fecha, model.HoraInicio, model.HoraFin, model.CodigoDepartamento, model.CodigoProvincia, model.CodigoUbigeo, model.TipoDeporteId);
-            return View("Index", vmError);
+            var vmError = await ConstruirReservaVmAsync(
+                model.EspacioDeportivoId,
+                model.Fecha,
+                model.HoraInicio,
+                model.HoraFin,
+                model.CodigoDepartamento,
+                model.CodigoProvincia,
+                model.CodigoUbigeo,
+                model.TipoDeporteId,
+                model.NegocioId,
+                omitirFechaHorario: model.OmitirFechaHorario,
+                formBase: model);
+
+            if (vmError is null)
+            {
+                TempData["MensajeSolicitud"] = "El espacio ya no esta disponible para el horario seleccionado.";
+                return RedirectToAction(nameof(Index), new
+                {
+                    fecha = model.Fecha,
+                    horaInicio = model.HoraInicio,
+                    horaFin = model.HoraFin,
+                    codigoDepartamento = model.CodigoDepartamento,
+                    codigoProvincia = model.CodigoProvincia,
+                    codigoUbigeo = model.CodigoUbigeo,
+                    tipoDeporteId = model.TipoDeporteId,
+                    negocioId = model.NegocioId,
+                    omitirFechaHorario = model.OmitirFechaHorario,
+                    pagina = 1
+                });
+            }
+
+            return View("Reservar", vmError);
         }
 
         try
         {
-            var codigo = await spService.HomeSolicitarReservaPublicaAsync(model);
-            var payloadEmail = await spService.HomeObtenerSolicitudParaNotificacionAsync(codigo);
-            if (payloadEmail is not null)
-            {
-                var enviado = false;
-                try
-                {
-                    enviado = await notificacionEmailService.EnviarSolicitudRecibidaAsync(payloadEmail);
-                }
-                catch
-                {
-                    enviado = false;
-                }
-
-                if (enviado)
-                {
-                    await spService.HomeMarcarSolicitudNotificadaAsync(codigo);
-                }
-            }
-
-            TempData["MensajeSolicitud"] = $"Solicitud registrada correctamente. Codigo: {codigo}. Te contactaremos para confirmacion.";
+            var reservaId = await spService.HomeSolicitarReservaPublicaAsync(model);
+            TempData["MensajeSolicitud"] = $"Reserva registrada correctamente. Codigo: R-{reservaId:D6}.";
             return RedirectToAction(nameof(Index), new
             {
                 fecha = model.Fecha,
@@ -72,14 +234,89 @@ public class HomeController(
                 codigoDepartamento = model.CodigoDepartamento,
                 codigoProvincia = model.CodigoProvincia,
                 codigoUbigeo = model.CodigoUbigeo,
-                tipoDeporteId = model.TipoDeporteId
+                tipoDeporteId = model.TipoDeporteId,
+                negocioId = model.NegocioId,
+                omitirFechaHorario = model.OmitirFechaHorario,
+                pagina = 1
             });
         }
         catch (Exception ex)
         {
             ModelState.AddModelError(string.Empty, ex.Message);
-            var vmError = await ConstruirHomeVmAsync(model.Fecha, model.HoraInicio, model.HoraFin, model.CodigoDepartamento, model.CodigoProvincia, model.CodigoUbigeo, model.TipoDeporteId);
-            return View("Index", vmError);
+            var vmError = await ConstruirReservaVmAsync(
+                model.EspacioDeportivoId,
+                model.Fecha,
+                model.HoraInicio,
+                model.HoraFin,
+                model.CodigoDepartamento,
+                model.CodigoProvincia,
+                model.CodigoUbigeo,
+                model.TipoDeporteId,
+                model.NegocioId,
+                omitirFechaHorario: model.OmitirFechaHorario,
+                formBase: model);
+
+            if (vmError is null)
+            {
+                TempData["MensajeSolicitud"] = "El espacio ya no esta disponible para el horario seleccionado.";
+                return RedirectToAction(nameof(Index), new
+                {
+                    fecha = model.Fecha,
+                    horaInicio = model.HoraInicio,
+                    horaFin = model.HoraFin,
+                    codigoDepartamento = model.CodigoDepartamento,
+                    codigoProvincia = model.CodigoProvincia,
+                    codigoUbigeo = model.CodigoUbigeo,
+                    tipoDeporteId = model.TipoDeporteId,
+                    negocioId = model.NegocioId,
+                    omitirFechaHorario = model.OmitirFechaHorario,
+                    pagina = 1
+                });
+            }
+
+            return View("Reservar", vmError);
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> CotizarReservaPublica(
+        int negocioId,
+        int espacioDeportivoId,
+        string fecha,
+        string horaInicio,
+        string horaFin)
+    {
+        if (!DateOnly.TryParseExact(fecha, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var fechaParsed) ||
+            !TimeOnly.TryParseExact(horaInicio, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var horaInicioParsed) ||
+            !TimeOnly.TryParseExact(horaFin, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var horaFinParsed))
+        {
+            return Json(new { ok = false, mensaje = "Fecha u hora invalidas." });
+        }
+
+        if (horaFinParsed <= horaInicioParsed)
+            return Json(new { ok = false, mensaje = "La hora fin debe ser mayor que la hora inicio." });
+
+        try
+        {
+            var cotizacion = await spService.ReservasCotizarAsync(negocioId, espacioDeportivoId, fechaParsed, horaInicioParsed, horaFinParsed);
+            return Json(new
+            {
+                ok = true,
+                cotizacion = new
+                {
+                    mensaje = cotizacion.Mensaje,
+                    precioBase = cotizacion.PrecioBase,
+                    descuentoPct = cotizacion.DescuentoPct,
+                    precioFinal = cotizacion.PrecioFinal,
+                    monedaSimbolo = cotizacion.MonedaSimbolo,
+                    politicaConfirmacionPago = cotizacion.PoliticaConfirmacionPago,
+                    porcentajeAdelantoMinimo = cotizacion.PorcentajeAdelantoMinimo
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { ok = false, mensaje = ex.Message });
         }
     }
 
@@ -251,6 +488,132 @@ public class HomeController(
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 
+    private static string ExtraerTituloPublico(string? tituloOriginal)
+    {
+        var raw = (tituloOriginal ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(raw))
+            return "Reservada";
+
+        var idxGuion = raw.IndexOf(" - ", StringComparison.Ordinal);
+        var baseTitulo = idxGuion >= 0 ? raw[(idxGuion + 3)..].Trim() : raw;
+        var idxParentesis = baseTitulo.IndexOf(" (", StringComparison.Ordinal);
+        if (idxParentesis > 0)
+            baseTitulo = baseTitulo[..idxParentesis].Trim();
+
+        return string.IsNullOrWhiteSpace(baseTitulo) ? "Reservada" : baseTitulo;
+    }
+
+    private async Task<ReservaPublicaPageViewModel?> ConstruirReservaVmAsync(
+        int espacioDeportivoId,
+        DateOnly fecha,
+        TimeOnly horaInicio,
+        TimeOnly horaFin,
+        string? codigoDepartamento,
+        string? codigoProvincia,
+        string? codigoUbigeo,
+        int? tipoDeporteId,
+        int? negocioId,
+        bool omitirFechaHorario = false,
+        SolicitudReservaPublicaFormViewModel? formBase = null)
+    {
+        var codigoDep = string.IsNullOrWhiteSpace(codigoDepartamento) ? null : codigoDepartamento.Trim();
+        var codigoProv = string.IsNullOrWhiteSpace(codigoProvincia) ? null : codigoProvincia.Trim();
+        var codigoDist = string.IsNullOrWhiteSpace(codigoUbigeo) ? null : codigoUbigeo.Trim();
+
+        if (horaFin <= horaInicio)
+            horaFin = horaInicio.AddHours(1);
+
+        var disponibles = await spService.HomeBuscarEspaciosDisponiblesAsync(
+            fecha,
+            horaInicio,
+            horaFin,
+            codigoDep,
+            codigoProv,
+            codigoDist,
+            tipoDeporteId,
+            negocioId,
+            omitirFechaHorario);
+
+        var espacio = disponibles.FirstOrDefault(x => x.EspacioDeportivoId == espacioDeportivoId);
+        if (espacio is null)
+            return null;
+
+        var sedes = await spService.HomeListarSedesAsync();
+        var sede = espacio.SedeId.HasValue
+            ? sedes.FirstOrDefault(x => x.Id == espacio.SedeId.Value)
+            : null;
+        var negocioIdResolved = negocioId ?? sede?.NegocioId;
+        if (!negocioIdResolved.HasValue)
+            return null;
+
+        var tiposDoc = await spService.CombosTiposDocumentoIdentidadSunatAsync();
+        var form = formBase ?? new SolicitudReservaPublicaFormViewModel();
+        form.EspacioDeportivoId = espacio.EspacioDeportivoId;
+        form.Fecha = fecha;
+        form.HoraInicio = horaInicio;
+        form.HoraFin = horaFin;
+        form.CodigoDepartamento = codigoDep;
+        form.CodigoProvincia = codigoProv;
+        form.CodigoUbigeo = codigoDist;
+        form.TipoDeporteId = tipoDeporteId;
+        form.NegocioId = negocioIdResolved;
+        form.OmitirFechaHorario = omitirFechaHorario;
+        form.TipoDocumento = string.IsNullOrWhiteSpace(form.TipoDocumento) ? "0" : form.TipoDocumento.Trim();
+        form.TiposDocumentoIdentidad = tiposDoc;
+
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            var user = await userManager.GetUserAsync(User);
+            if (user is not null)
+            {
+                if (string.IsNullOrWhiteSpace(form.Correo) && !string.IsNullOrWhiteSpace(user.Email))
+                    form.Correo = user.Email.Trim();
+
+                if (string.IsNullOrWhiteSpace(form.Nombres) && string.IsNullOrWhiteSpace(form.Apellidos))
+                {
+                    var nombreRaw = (user.Nombres ?? string.Empty).Trim();
+                    if (!string.IsNullOrWhiteSpace(nombreRaw))
+                    {
+                        var partes = nombreRaw.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                        if (partes.Length > 1)
+                        {
+                            form.Nombres = partes[0];
+                            form.Apellidos = string.Join(' ', partes.Skip(1));
+                        }
+                        else
+                        {
+                            form.Nombres = nombreRaw;
+                        }
+                    }
+                }
+            }
+        }
+
+        ReservaCotizacionViewModel? cotizacion = null;
+        try
+        {
+            cotizacion = await spService.ReservasCotizarAsync(
+                negocioIdResolved.Value,
+                espacio.EspacioDeportivoId,
+                fecha,
+                horaInicio,
+                horaFin);
+        }
+        catch
+        {
+            cotizacion = null;
+        }
+
+        return new ReservaPublicaPageViewModel
+        {
+            NegocioId = negocioIdResolved.Value,
+            Espacio = espacio,
+            Sede = sede,
+            Formulario = form,
+            Cotizacion = cotizacion
+        };
+    }
+
     private async Task<HomeIndexViewModel> ConstruirHomeVmAsync(
         DateOnly? fecha,
         TimeOnly? horaInicio,
@@ -258,21 +621,34 @@ public class HomeController(
         string? codigoDepartamento,
         string? codigoProvincia,
         string? codigoUbigeo,
-        int? tipoDeporteId)
+        int? tipoDeporteId,
+        int? negocioId,
+        bool omitirFechaHorario = false,
+        int pagina = 1)
     {
+        const int tamanoPagina = 12;
         var fechaConsulta = fecha ?? DateOnly.FromDateTime(DateTime.Today);
         var horaInicioConsulta = horaInicio ?? new TimeOnly(18, 0);
         var horaFinConsulta = horaFin ?? new TimeOnly(19, 0);
         var codigoDep = string.IsNullOrWhiteSpace(codigoDepartamento) ? null : codigoDepartamento.Trim();
         var codigoProv = string.IsNullOrWhiteSpace(codigoProvincia) ? null : codigoProvincia.Trim();
         var codigoDist = string.IsNullOrWhiteSpace(codigoUbigeo) ? null : codigoUbigeo.Trim();
+        var omitirHorarioEfectivo = omitirFechaHorario && negocioId.HasValue;
 
         if (horaFinConsulta <= horaInicioConsulta)
             horaFinConsulta = horaInicioConsulta.AddHours(1);
 
         var sedes = await spService.HomeListarSedesAsync();
         var deportes = await spService.HomeListarTiposDeporteAsync();
-        var espaciosDisponibles = await spService.HomeBuscarEspaciosDisponiblesAsync(fechaConsulta, horaInicioConsulta, horaFinConsulta, codigoDep, codigoProv, codigoDist, tipoDeporteId);
+        var banners = await spService.HomeListarBannersPublicosAsync();
+        var espaciosDisponibles = await spService.HomeBuscarEspaciosDisponiblesAsync(fechaConsulta, horaInicioConsulta, horaFinConsulta, codigoDep, codigoProv, codigoDist, tipoDeporteId, negocioId, omitirHorarioEfectivo);
+        var totalResultados = espaciosDisponibles.Count;
+        var totalPaginas = Math.Max(1, (int)Math.Ceiling(totalResultados / (double)tamanoPagina));
+        var paginaActual = Math.Clamp(pagina, 1, totalPaginas);
+        var espaciosPaginados = espaciosDisponibles
+            .Skip((paginaActual - 1) * tamanoPagina)
+            .Take(tamanoPagina)
+            .ToList();
         var departamentos = await spService.UbigeoDepartamentosListarAsync();
         var provincias = !string.IsNullOrWhiteSpace(codigoDep) && codigoDep.Length == 2
             ? await spService.UbigeoProvinciasListarAsync(codigoDep)
@@ -280,6 +656,13 @@ public class HomeController(
         var distritos = !string.IsNullOrWhiteSpace(codigoProv) && codigoProv.Length == 4
             ? await spService.UbigeoDistritosListarAsync(codigoProv)
             : new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+        var negocios = sedes
+            .Where(x => x.NegocioId.HasValue && !string.IsNullOrWhiteSpace(x.NegocioNombre))
+            .GroupBy(x => new { Id = x.NegocioId!.Value, Nombre = x.NegocioNombre! })
+            .OrderBy(x => x.Key.Nombre)
+            .Select(x => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem(x.Key.Nombre, x.Key.Id.ToString()))
+            .ToList();
+        var portalConfig = await CargarPortalConfigAsync();
 
         return new HomeIndexViewModel
         {
@@ -290,12 +673,59 @@ public class HomeController(
             CodigoProvincia = codigoProv,
             CodigoUbigeo = codigoDist,
             TipoDeporteId = tipoDeporteId,
+            NegocioId = negocioId,
+            OmitirFechaHorario = omitirHorarioEfectivo,
             DepartamentosUbigeo = departamentos,
             ProvinciasUbigeo = provincias,
             DistritosUbigeo = distritos,
+            Negocios = negocios,
+            Banners = banners,
             Sedes = sedes,
             TiposDeporte = deportes,
-            Disponibles = espaciosDisponibles
+            Disponibles = espaciosPaginados,
+            PaginaActual = paginaActual,
+            TamanoPagina = tamanoPagina,
+            TotalResultados = totalResultados,
+            TotalPaginas = totalPaginas,
+            PortalConfig = portalConfig
         };
+    }
+
+    private async Task<PlataformaPortalConfigViewModel> CargarPortalConfigAsync()
+    {
+        async Task<string?> Get(string key) => await spService.ParametrosGlobalesObtenerValorAsync(key);
+
+        var cfg = new PlataformaPortalConfigViewModel
+        {
+            BeneficiosTitulo = (await Get("HOME_PORTAL_BENEF_TITULO")) ?? "Todo lo que necesitas para gestionar tus canchas deportivas",
+            BeneficiosSubtitulo = (await Get("HOME_PORTAL_BENEF_SUBTITULO")) ?? "SportCenter integra reservas, sedes, pagos y reportes en una sola plataforma para crecer tu operacion.",
+            Beneficio1Titulo = (await Get("HOME_PORTAL_BENEF_1_TITULO")) ?? "Sistema de reservas",
+            Beneficio1Detalle = (await Get("HOME_PORTAL_BENEF_1_DETALLE")) ?? "Controla la disponibilidad por horario con agenda visual y registro de clientes en segundos.",
+            Beneficio2Titulo = (await Get("HOME_PORTAL_BENEF_2_TITULO")) ?? "Multiples sedes",
+            Beneficio2Detalle = (await Get("HOME_PORTAL_BENEF_2_DETALLE")) ?? "Administra distintos complejos deportivos desde un solo panel operativo.",
+            Beneficio3Titulo = (await Get("HOME_PORTAL_BENEF_3_TITULO")) ?? "Pagos seguros",
+            Beneficio3Detalle = (await Get("HOME_PORTAL_BENEF_3_DETALLE")) ?? "Gestiona adelantos, saldos y comprobantes con trazabilidad por reserva.",
+            Beneficio4Titulo = (await Get("HOME_PORTAL_BENEF_4_TITULO")) ?? "Promociones especiales",
+            Beneficio4Detalle = (await Get("HOME_PORTAL_BENEF_4_DETALLE")) ?? "Crea descuentos por sede, dia y horario para mejorar ocupacion en horas clave.",
+            Beneficio5Titulo = (await Get("HOME_PORTAL_BENEF_5_TITULO")) ?? "Estadisticas detalladas",
+            Beneficio5Detalle = (await Get("HOME_PORTAL_BENEF_5_DETALLE")) ?? "Analiza ingresos, ocupacion y rendimiento para tomar decisiones con datos.",
+            Beneficio6Titulo = (await Get("HOME_PORTAL_BENEF_6_TITULO")) ?? "Mayor visibilidad",
+            Beneficio6Detalle = (await Get("HOME_PORTAL_BENEF_6_DETALLE")) ?? "Publica tu negocio en el portal y recibe solicitudes online de nuevos clientes.",
+            CtaTitulo = (await Get("HOME_PORTAL_CTA_TITULO")) ?? "Unete a la comunidad de SportCenter",
+            CtaSubtitulo = (await Get("HOME_PORTAL_CTA_SUBTITULO")) ?? "Registra tu club deportivo y comienza a gestionar tus canchas de manera eficiente.",
+            CtaBotonClubTexto = (await Get("HOME_PORTAL_CTA_BTN_CLUB_TEXTO")) ?? "Registrar mi club",
+            CtaBotonClubUrl = (await Get("HOME_PORTAL_CTA_BTN_CLUB_URL")) ?? "/Home/SoftwareClubes",
+            CtaBotonUsuarioTexto = (await Get("HOME_PORTAL_CTA_BTN_USUARIO_TEXTO")) ?? "Crear cuenta personal",
+            CtaBotonUsuarioUrl = (await Get("HOME_PORTAL_CTA_BTN_USUARIO_URL")) ?? "/Identity/Account/Register",
+            MarcaTitulo = (await Get("HOME_PORTAL_MARCA_TITULO")) ?? "SportCenter",
+            MarcaDescripcion = (await Get("HOME_PORTAL_MARCA_DESC")) ?? "La plataforma lider para la reserva y gestion de canchas deportivas.",
+            ContactoEmail = (await Get("HOME_PORTAL_CONTACTO_EMAIL")) ?? "contacto@sportcenter.com",
+            ContactoTelefono = (await Get("HOME_PORTAL_CONTACTO_TELEFONO")) ?? "+51 900 000 000",
+            SiguenosFacebookUrl = (await Get("HOME_PORTAL_FACEBOOK_URL")) ?? string.Empty,
+            SiguenosInstagramUrl = (await Get("HOME_PORTAL_INSTAGRAM_URL")) ?? string.Empty,
+            SiguenosWhatsappUrl = (await Get("HOME_PORTAL_WHATSAPP_URL")) ?? string.Empty
+        };
+
+        return cfg;
     }
 }

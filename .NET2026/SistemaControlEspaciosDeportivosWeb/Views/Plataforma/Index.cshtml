@@ -1,0 +1,44 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.PlataformaIndexViewModel
+@{
+    ViewData["Title"] = "Plataforma";
+}
+
+<div class="page-header-card mb-3">
+    <div class="page-header-main">
+        <h1 class="page-title">Panel global de plataforma</h1>
+        <p class="page-subtitle">Gestion central para modulos globales (owner).</p>
+    </div>
+</div>
+
+<section class="sc-dash-kpis mb-3">
+    <article class="sc-kpi-card">
+        <div class="sc-kpi-label">Owner conectado</div>
+        <div class="sc-kpi-value" style="font-size:1rem;">@Model.CorreoUsuario</div>
+    </article>
+    <article class="sc-kpi-card">
+        <div class="sc-kpi-label">Banners totales</div>
+        <div class="sc-kpi-value">@Model.TotalBanners</div>
+    </article>
+    <article class="sc-kpi-card">
+        <div class="sc-kpi-label">Banners activos</div>
+        <div class="sc-kpi-value">@Model.BannersActivos</div>
+    </article>
+    <article class="sc-kpi-card">
+        <div class="sc-kpi-label">Banners inactivos</div>
+        <div class="sc-kpi-value">@Model.BannersInactivos</div>
+    </article>
+</section>
+
+<section class="table-card sc-reservas-list-card">
+    <div class="table-card-header d-flex justify-content-between align-items-center">
+        <h2 class="table-card-title"><i class="bi bi-window-sidebar me-1"></i>Modulos globales</h2>
+    </div>
+    <div class="p-3">
+        <a class="btn btn-primary" asp-controller="Banners" asp-action="Index">
+            <i class="bi bi-images me-1"></i>Gestionar banners web
+        </a>
+        <a class="btn btn-outline-primary ms-2" asp-controller="Plataforma" asp-action="PortalWeb">
+            <i class="bi bi-sliders2 me-1"></i>Configurar portal web
+        </a>
+    </div>
+</section>

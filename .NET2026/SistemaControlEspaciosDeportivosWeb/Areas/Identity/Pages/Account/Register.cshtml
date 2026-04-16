@@ -1,0 +1,184 @@
+@page
+@model SistemaControlEspaciosDeportivosWeb.Areas.Identity.Pages.Account.RegisterModel
+@{
+    ViewData["Title"] = "Crear cuenta";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var bannerUrl = !string.IsNullOrWhiteSpace(Model.BannerLateral?.ImagenUrl)
+        ? Url.Action("VerImagen", "Sedes", new { url = Model.BannerLateral!.ImagenUrl })
+        : null;
+}
+<!-- Firma: Codex - 14/04/2026 | Registro unificado con formulario completo para Usuario o Club en una sola pantalla y banner lateral fijo. -->
+
+<section class="auth-shell">
+    <aside class="auth-visual" style="@(string.IsNullOrWhiteSpace(bannerUrl) ? string.Empty : $"background-image:linear-gradient(165deg,rgba(3,15,35,.84),rgba(7,24,58,.70)),url('{bannerUrl}');")">
+        <div class="auth-visual-content">
+            <p class="auth-visual-tag">SportCenter</p>
+            <h2>@(string.IsNullOrWhiteSpace(Model.BannerLateral?.Titulo) ? "Impulsa tu operacion deportiva" : Model.BannerLateral!.Titulo)</h2>
+            <ul class="auth-visual-list">
+                <li>Gestion de espacios y horarios.</li>
+                <li>Control por sede y reportes de consumo.</li>
+                <li>Panel unificado para tu club.</li>
+            </ul>
+        </div>
+    </aside>
+
+    <section class="auth-panel">
+        <div class="auth-card">
+            <h1>Crear una cuenta</h1>
+            <p class="auth-subtitle">Elige el tipo de registro y completa tus datos.</p>
+
+            <form method="post" id="registerForm">
+                <input type="hidden" asp-for="ReturnUrl" />
+                <input type="hidden" asp-for="TipoRegistro" id="TipoRegistroHidden" />
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-2" role="alert"></div>
+
+                <div class="auth-mini-switch mb-3" role="group" aria-label="Tipo registro">
+                    <input type="radio" class="btn-check" id="regUsuario" value="usuario" checked="@(Model.TipoRegistro != "club")" />
+                    <label class="btn" for="regUsuario">Usuario</label>
+
+                    <input type="radio" class="btn-check" id="regClub" value="club" checked="@(Model.TipoRegistro == "club")" />
+                    <label class="btn" for="regClub">Club deportivo</label>
+                </div>
+
+                <div id="registroUsuarioFields">
+                    <div class="mb-3">
+                        <label asp-for="Usuario.NombreCompleto" class="form-label">Nombre completo</label>
+                        <input asp-for="Usuario.NombreCompleto" class="form-control" placeholder="Ej. Juan Perez" />
+                        <span asp-validation-for="Usuario.NombreCompleto" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Usuario.Email" class="form-label">Correo electronico</label>
+                        <input asp-for="Usuario.Email" class="form-control" placeholder="correo@ejemplo.com" />
+                        <span asp-validation-for="Usuario.Email" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Usuario.Telefono" class="form-label">Telefono</label>
+                        <input asp-for="Usuario.Telefono" class="form-control" placeholder="999999999" />
+                        <span asp-validation-for="Usuario.Telefono" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Usuario.Password" class="form-label">Contrasena</label>
+                        <input asp-for="Usuario.Password" class="form-control" autocomplete="new-password" />
+                        <span asp-validation-for="Usuario.Password" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Usuario.ConfirmPassword" class="form-label">Confirmar contrasena</label>
+                        <input asp-for="Usuario.ConfirmPassword" class="form-control" autocomplete="new-password" />
+                        <span asp-validation-for="Usuario.ConfirmPassword" class="text-danger"></span>
+                    </div>
+                    <button type="submit" class="w-100 btn btn-primary auth-cta">Registrarse como usuario</button>
+                </div>
+
+                <div id="registroClubFields" class="d-none">
+                    <div class="auth-club-box mb-3">
+                        <strong>Registro de club deportivo</strong>
+                        <p class="mb-0">Completa los datos del negocio y activamos tu prueba de 1 mes.</p>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="Club.NombreContacto" class="form-label">Nombre y apellido</label>
+                            <input asp-for="Club.NombreContacto" class="form-control" />
+                            <span asp-validation-for="Club.NombreContacto" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="Club.Telefono" class="form-label">Telefono</label>
+                            <input asp-for="Club.Telefono" class="form-control" />
+                            <span asp-validation-for="Club.Telefono" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="Club.Correo" class="form-label">Correo del dueno</label>
+                            <input asp-for="Club.Correo" class="form-control" />
+                            <span asp-validation-for="Club.Correo" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="Club.Password" class="form-label">Contrasena</label>
+                            <input asp-for="Club.Password" class="form-control" autocomplete="new-password" />
+                            <span asp-validation-for="Club.Password" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="Club.ConfirmPassword" class="form-label">Confirmar contrasena</label>
+                            <input asp-for="Club.ConfirmPassword" class="form-control" autocomplete="new-password" />
+                            <span asp-validation-for="Club.ConfirmPassword" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Club.RelacionClub" class="form-label">Relacion con el club</label>
+                            <select asp-for="Club.RelacionClub" class="form-select">
+                                <option value="Dueno">Dueno</option>
+                                <option value="Administrador">Administrador</option>
+                                <option value="Socio">Socio</option>
+                                <option value="Otro">Otro</option>
+                            </select>
+                            <span asp-validation-for="Club.RelacionClub" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Club.NombreClub" class="form-label">Nombre del club</label>
+                            <input asp-for="Club.NombreClub" class="form-control" />
+                            <span asp-validation-for="Club.NombreClub" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="Club.Pais" class="form-label">Pais</label>
+                            <input asp-for="Club.Pais" class="form-control" />
+                            <span asp-validation-for="Club.Pais" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="Club.ProvinciaEstado" class="form-label">Provincia / Estado</label>
+                            <input asp-for="Club.ProvinciaEstado" class="form-control" />
+                            <span asp-validation-for="Club.ProvinciaEstado" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="Club.Ciudad" class="form-label">Ciudad</label>
+                            <input asp-for="Club.Ciudad" class="form-control" />
+                            <span asp-validation-for="Club.Ciudad" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="Club.Direccion" class="form-label">Direccion</label>
+                            <input asp-for="Club.Direccion" class="form-control" />
+                            <span asp-validation-for="Club.Direccion" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Codigo CAPTCHA</label>
+                            <div class="form-control bg-light fw-bold text-center">@Model.Club.CaptchaTexto</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="Club.CaptchaCodigo" class="form-label">Ingresa el codigo</label>
+                            <input asp-for="Club.CaptchaCodigo" class="form-control text-uppercase" autocomplete="off" />
+                            <span asp-validation-for="Club.CaptchaCodigo" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <button type="submit" class="w-100 btn btn-primary auth-cta mt-3">Registrarse como club deportivo</button>
+                </div>
+
+                <div class="auth-foot-links">
+                    <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl">Ya tienes cuenta? Iniciar sesion</a>
+                    <a asp-controller="Home" asp-action="Index">Volver al inicio</a>
+                </div>
+            </form>
+        </div>
+    </section>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const usuario = document.getElementById('regUsuario');
+            const club = document.getElementById('regClub');
+            const boxUsuario = document.getElementById('registroUsuarioFields');
+            const boxClub = document.getElementById('registroClubFields');
+            if (!usuario || !club || !boxUsuario || !boxClub) return;
+
+            function sync() {
+                const isClub = club.checked;
+                boxUsuario.classList.toggle('d-none', isClub);
+                boxClub.classList.toggle('d-none', !isClub);
+                const hidden = document.getElementById('TipoRegistroHidden');
+                if (hidden) hidden.value = isClub ? 'club' : 'usuario';
+            }
+
+            usuario.addEventListener('change', sync);
+            club.addEventListener('change', sync);
+            sync();
+        })();
+    </script>
+}

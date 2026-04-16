@@ -7,8 +7,10 @@ public interface ISportCenterStoredProcedureService
 {
     Task<List<SedePublicaViewModel>> HomeListarSedesAsync();
     Task<List<TipoDeportePublicoViewModel>> HomeListarTiposDeporteAsync();
-    Task<List<EspacioDisponibleViewModel>> HomeBuscarEspaciosDisponiblesAsync(DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin, string? codigoDepartamento, string? codigoProvincia, string? codigoUbigeo, int? tipoDeporteId);
-    Task<string> HomeSolicitarReservaPublicaAsync(SolicitudReservaPublicaFormViewModel model);
+    Task<List<WebBannerPublicoViewModel>> HomeListarBannersPublicosAsync();
+    Task<WebBannerPublicoViewModel?> WebBannersObtenerFijoPorTipoAsync(int tipoBanner);
+    Task<List<EspacioDisponibleViewModel>> HomeBuscarEspaciosDisponiblesAsync(DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin, string? codigoDepartamento, string? codigoProvincia, string? codigoUbigeo, int? tipoDeporteId, int? negocioId, bool omitirFechaHorario = false);
+    Task<int> HomeSolicitarReservaPublicaAsync(SolicitudReservaPublicaFormViewModel model);
     Task<SolicitudPublicaDetalleViewModel?> HomeConsultarSolicitudAsync(string codigoSolicitud, string telefono);
     Task<SolicitudNotificacionEmailViewModel?> HomeObtenerSolicitudParaNotificacionAsync(string codigoSolicitud);
     Task<bool> HomeMarcarSolicitudNotificadaAsync(string codigoSolicitud);
@@ -24,6 +26,7 @@ public interface ISportCenterStoredProcedureService
     Task<List<SelectListItem>> CombosDocumentosComprobanteNegocioAsync(int negocioId, bool? tributario = null);
     Task<List<SelectListItem>> CombosSeriesDocumentoComprobanteAsync(int negocioId, string codigoSunat);
     Task<string?> ParametrosGlobalesObtenerValorAsync(string nombreParametro);
+    Task ParametrosGlobalesUpsertValorAsync(string nombreParametro, string? descripcion, string? valorParametro, string usuario);
     Task<List<SelectListItem>> UbigeoDepartamentosListarAsync();
     Task<List<SelectListItem>> UbigeoProvinciasListarAsync(string codigoDepartamento);
     Task<List<SelectListItem>> UbigeoDistritosListarAsync(string codigoProvincia);
@@ -153,6 +156,10 @@ public interface ISportCenterStoredProcedureService
     Task<int> MaestrosTiposDocumentoComprobanteCrearAsync(int negocioId, string codigoSunat, bool activo, string usuario);
     Task<bool> MaestrosTiposDocumentoComprobanteActualizarAsync(int negocioId, int id, bool activo, string usuario);
     Task<bool> MaestrosTiposDocumentoComprobanteEliminarAsync(int negocioId, int id, string usuario);
+
+    Task<List<BannerAdminItemViewModel>> BannersAdminListarAsync(bool? soloActivos = null);
+    Task<int> BannersAdminGuardarAsync(BannerAdminFormViewModel model, string usuario);
+    Task<bool> BannersAdminEliminarAsync(int id, string usuario);
 
     Task<List<ReservaRecordatorioPendienteViewModel>> ReservasRecordatoriosPendientesAsync(DateTime fechaHoraActual);
     Task<bool> ReservasMarcarRecordatorioEnviadoAsync(int negocioId, int reservaId, string usuario);

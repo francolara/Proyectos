@@ -1,0 +1,226 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.BannersAdminIndexViewModel
+@{
+    ViewData["Title"] = "Banners web";
+    var form = Model.Form;
+    var esEdicion = form.Id.HasValue;
+}
+
+<div class="page-header-card mb-3">
+    <div class="page-header-main">
+        <h1 class="page-title">Banners web</h1>
+        <p class="page-subtitle">Administra el carrusel principal del portal cliente (control global de plataforma).</p>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.MensajeUi))
+{
+    <div class="alert alert-success">@Model.MensajeUi</div>
+}
+@if (!string.IsNullOrWhiteSpace(Model.Error))
+{
+    <div class="alert alert-danger">@Model.Error</div>
+}
+@if (!ViewData.ModelState.IsValid)
+{
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+}
+
+<section class="table-card sc-reservas-list-card mb-3">
+    <div class="table-card-header">
+        <h2 class="table-card-title"><i class="bi bi-images me-1"></i>@(esEdicion ? "Editar banner" : "Nuevo banner")</h2>
+    </div>
+
+    <form asp-action="Guardar" method="post" enctype="multipart/form-data" class="row g-3 px-3 pb-3">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="soloActivos" value="@(Model.SoloActivos?.ToString().ToLowerInvariant())" />
+        <input type="hidden" asp-for="Form.Id" />
+        <input type="hidden" asp-for="Form.ImagenUrl" />
+        <input type="hidden" asp-for="Form.ImagenUrlMobile" />
+
+        <div class="col-md-6">
+            <label asp-for="Form.Titulo" class="form-label"></label>
+            <input asp-for="Form.Titulo" class="form-control" />
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Form.Subtitulo" class="form-label"></label>
+            <input asp-for="Form.Subtitulo" class="form-control" />
+        </div>
+        <div class="col-md-12">
+            <label class="form-label">Tipo de banner</label>
+            <div class="d-flex flex-wrap gap-2">
+                <input asp-for="Form.TipoBanner" type="radio" class="btn-check" id="tipoBannerHome" value="1" />
+                <label class="btn btn-outline-primary" for="tipoBannerHome"><i class="bi bi-house me-1"></i>Home público</label>
+                <input asp-for="Form.TipoBanner" type="radio" class="btn-check" id="tipoBannerLogin" value="2" />
+                <label class="btn btn-outline-primary" for="tipoBannerLogin"><i class="bi bi-box-arrow-in-right me-1"></i>Login (fijo)</label>
+                <input asp-for="Form.TipoBanner" type="radio" class="btn-check" id="tipoBannerRegistro" value="3" />
+                <label class="btn btn-outline-primary" for="tipoBannerRegistro"><i class="bi bi-person-plus me-1"></i>Registro (fijo)</label>
+            </div>
+        </div>
+        <div class="col-md-12">
+            <label asp-for="Form.Descripcion" class="form-label"></label>
+            <textarea asp-for="Form.Descripcion" class="form-control" rows="2"></textarea>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Form.BotonTexto" class="form-label"></label>
+            <input asp-for="Form.BotonTexto" class="form-control" />
+        </div>
+        <div class="col-md-5">
+            <label asp-for="Form.BotonUrl" class="form-label"></label>
+            <input asp-for="Form.BotonUrl" class="form-control" placeholder="/Home/SoftwareClubes o https://..." />
+        </div>
+        <div class="col-md-2">
+            <label asp-for="Form.Orden" class="form-label"></label>
+            <input asp-for="Form.Orden" class="form-control" type="number" min="1" max="999" />
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <div class="form-check">
+                <input asp-for="Form.Activo" class="form-check-input" />
+                <label asp-for="Form.Activo" class="form-check-label"></label>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Form.FechaInicio" class="form-label"></label>
+            <input asp-for="Form.FechaInicio" class="form-control" type="date" />
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Form.FechaFin" class="form-label"></label>
+            <input asp-for="Form.FechaFin" class="form-control" type="date" />
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Form.ImagenArchivo" class="form-label">Imagen (JPG/PNG)</label>
+            <input asp-for="Form.ImagenArchivo" class="form-control" type="file" accept=".jpg,.jpeg,.png" />
+            <small class="text-muted">Se convierte a WebP 1920x760 para el carrusel.</small>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Form.ImagenArchivoMobile" class="form-label">Imagen móvil (JPG/PNG)</label>
+            <input asp-for="Form.ImagenArchivoMobile" class="form-control" type="file" accept=".jpg,.jpeg,.png" />
+            <small class="text-muted">Opcional. Se convierte a WebP 1080x1350 (si no cargas, se usa la imagen desktop).</small>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(form.ImagenUrl))
+        {
+            <div class="col-md-6">
+                <div class="border rounded p-2">
+                    <small class="text-muted d-block mb-1">Vista previa desktop</small>
+                    <img src="@Url.Action("VerImagen", "Sedes", new { url = form.ImagenUrl })" alt="Banner actual" style="max-height:140px; width:auto; border-radius:.5rem;" />
+                </div>
+            </div>
+        }
+        @if (!string.IsNullOrWhiteSpace(form.ImagenUrlMobile))
+        {
+            <div class="col-md-6">
+                <div class="border rounded p-2">
+                    <small class="text-muted d-block mb-1">Vista previa móvil</small>
+                    <img src="@Url.Action("VerImagen", "Sedes", new { url = form.ImagenUrlMobile })" alt="Banner móvil actual" style="max-height:140px; width:auto; border-radius:.5rem;" />
+                </div>
+            </div>
+        }
+        <div class="col-12 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check2-circle me-1"></i>Guardar banner
+            </button>
+            @if (esEdicion)
+            {
+                <a class="btn btn-outline-secondary" asp-action="Index" asp-route-soloActivos="@Model.SoloActivos">Cancelar edicion</a>
+            }
+        </div>
+    </form>
+</section>
+
+<section class="table-card sc-reservas-list-card">
+    <div class="table-card-header d-flex justify-content-between align-items-center gap-2">
+        <h2 class="table-card-title"><i class="bi bi-list-check me-1"></i>Banners registrados</h2>
+        <form asp-action="Index" method="get" class="d-flex align-items-center gap-2">
+            <label class="form-label mb-0 small text-muted">Estado</label>
+            <select class="form-select form-select-sm" name="soloActivos" onchange="this.form.submit()">
+                <option value="">Todos</option>
+                <option value="true" selected="@(Model.SoloActivos == true)">Solo activos</option>
+                <option value="false" selected="@(Model.SoloActivos == false)">Solo inactivos</option>
+            </select>
+        </form>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Orden</th>
+                    <th>Tipo</th>
+                    <th>Titulo</th>
+                    <th>Vigencia</th>
+                    <th>Estado</th>
+                    <th>Imagen</th>
+                    <th>Imagen móvil</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Banners.Count == 0)
+                {
+                    <tr><td colspan="8" class="text-center text-muted py-3">No hay banners para el filtro seleccionado.</td></tr>
+                }
+                else
+                {
+                    @foreach (var item in Model.Banners)
+                    {
+                        <tr>
+                            <td>@item.Orden</td>
+                            <td>
+                                <span class="badge text-bg-light border">@item.TipoBannerNombre</span>
+                            </td>
+                            <td>
+                                <strong>@item.Titulo</strong>
+                                @if (!string.IsNullOrWhiteSpace(item.Subtitulo))
+                                {
+                                    <div class="small text-muted">@item.Subtitulo</div>
+                                }
+                            </td>
+                            <td>
+                                @(item.FechaInicio?.ToString("dd/MM/yyyy") ?? "Sin inicio")
+                                -
+                                @(item.FechaFin?.ToString("dd/MM/yyyy") ?? "Sin fin")
+                            </td>
+                            <td>
+                                <span class="badge @(item.Activo ? "text-bg-success" : "text-bg-secondary")">@(item.Activo ? "Activo" : "Inactivo")</span>
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(item.ImagenUrl))
+                                {
+                                    <img src="@Url.Action("VerImagen", "Sedes", new { url = item.ImagenUrl })" alt="@item.Titulo" style="width:110px;height:48px;object-fit:cover;border-radius:.5rem;" />
+                                }
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(item.ImagenUrlMobile))
+                                {
+                                    <img src="@Url.Action("VerImagen", "Sedes", new { url = item.ImagenUrlMobile })" alt="@item.Titulo" style="width:44px;height:55px;object-fit:cover;border-radius:.5rem;" />
+                                }
+                                else
+                                {
+                                    <span class="small text-muted">Usa desktop</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <a class="btn btn-outline-primary btn-sm"
+                                   asp-action="Index"
+                                   asp-route-soloActivos="@Model.SoloActivos"
+                                   asp-route-editarId="@item.Id">
+                                    <i class="bi bi-pencil-square me-1"></i>Editar
+                                </a>
+                                <form asp-action="Eliminar" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="soloActivos" value="@(Model.SoloActivos?.ToString().ToLowerInvariant())" />
+                                    <input type="hidden" name="id" value="@item.Id" />
+                                    <input type="hidden" name="imagenUrl" value="@item.ImagenUrl" />
+                                    <input type="hidden" name="imagenUrlMobile" value="@item.ImagenUrlMobile" />
+                                    <button type="submit" class="btn btn-outline-danger btn-sm"
+                                            onclick="return confirm('Se eliminara el banner seleccionado. Deseas continuar?');">
+                                        <i class="bi bi-trash me-1"></i>Eliminar
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

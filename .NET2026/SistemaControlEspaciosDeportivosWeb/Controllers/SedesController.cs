@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using SistemaControlEspaciosDeportivosWeb.Services;
@@ -149,6 +150,7 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
         return RedirectToAction(nameof(Index), new { negocioId });
     }
 
+    [AllowAnonymous]
     [HttpGet]
     public async Task<IActionResult> VerImagen(string? url)
     {
@@ -156,7 +158,7 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
         if (imagen is null)
             return NotFound();
 
-        Response.Headers["Cache-Control"] = "private, max-age=300";
+        Response.Headers["Cache-Control"] = "public, max-age=300";
         return File(imagen.Value.Contenido, imagen.Value.ContentType);
     }
 
