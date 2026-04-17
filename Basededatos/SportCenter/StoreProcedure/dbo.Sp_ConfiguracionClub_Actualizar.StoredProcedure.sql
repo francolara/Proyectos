@@ -9,6 +9,7 @@ GO
 -- Firma: Codex - 06/04/2026 | Se agrega configuracion de politica de confirmacion por pago y porcentaje minimo de adelanto por negocio.
 -- Firma: Codex - 09/04/2026 | Se agrega configuracion de emision (CPE/Recibo interno) y porcentaje IGV.
 -- Firma: Codex - 13/04/2026 | Se agrega persistencia de LogoUrl para logo del negocio.
+-- Firma: Codex - 16/04/2026 | Se agregan flags de reserva: permitir modificar precio y cancelacion automatica por no confirmacion.
 CREATE OR ALTER PROCEDURE dbo.Sp_ConfiguracionClub_Actualizar
     @NegocioId INT,
     @NombreComercial NVARCHAR(200),
@@ -24,6 +25,9 @@ CREATE OR ALTER PROCEDURE dbo.Sp_ConfiguracionClub_Actualizar
     @EmisionReciboInterno BIT = 0,
     @PorcentajeIgv INT = 18,
     @LogoUrl NVARCHAR(500) = NULL,
+    @PermitirModificarPrecioReserva BIT = 0,
+    @CancelacionAutomaticaNoConfirmada BIT = 0,
+    @MinutosCancelacionNoConfirmada INT = NULL,
     @Usuario NVARCHAR(200)
 AS
 BEGIN
@@ -79,6 +83,16 @@ BEGIN
         IF @PorcentajeIgv IS NULL OR @PorcentajeIgv < 0 OR @PorcentajeIgv > 100
             RAISERROR('El porcentaje de IGV debe estar entre 0 y 100.', 16, 1);
 
+        IF @CancelacionAutomaticaNoConfirmada = 1
+        BEGIN
+            IF @MinutosCancelacionNoConfirmada IS NULL OR @MinutosCancelacionNoConfirmada < 5 OR @MinutosCancelacionNoConfirmada > 1440
+                RAISERROR('El tiempo de cancelacion automatica debe estar entre 5 y 1440 minutos.', 16, 1);
+        END
+        ELSE
+        BEGIN
+            SET @MinutosCancelacionNoConfirmada = NULL;
+        END
+
         IF @EmisionComprobantesElectronicos = 1
            AND NOT EXISTS (
                 SELECT 1
@@ -120,7 +134,10 @@ BEGIN
             n.EmisionComprobantesElectronicos = @EmisionComprobantesElectronicos,
             n.EmisionReciboInterno = @EmisionReciboInterno,
             n.PorcentajeIgv = @PorcentajeIgv,
-            n.LogoUrl = @LogoUrlNormalizado
+            n.LogoUrl = @LogoUrlNormalizado,
+            n.PermitirModificarPrecioReserva = @PermitirModificarPrecioReserva,
+            n.CancelacionAutomaticaNoConfirmada = @CancelacionAutomaticaNoConfirmada,
+            n.MinutosCancelacionNoConfirmada = @MinutosCancelacionNoConfirmada
         FROM dbo.Negocios n
         WHERE n.Id = @NegocioId
           AND n.Activo = 1;

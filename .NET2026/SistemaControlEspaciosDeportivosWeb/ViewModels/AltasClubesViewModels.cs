@@ -39,19 +39,29 @@ public class AltaClubSolicitudFormViewModel
     [StringLength(80, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string Pais { get; set; } = "Peru";
 
-    [Required(ErrorMessage = "Este campo es obligatorio.")]
     [StringLength(120, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string ProvinciaEstado { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Este campo es obligatorio.")]
     [StringLength(120, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string Ciudad { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Selecciona el departamento.")]
+    [StringLength(2, ErrorMessage = "Codigo de departamento invalido.")]
+    public string CodigoDepartamento { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Selecciona la provincia.")]
+    [StringLength(4, ErrorMessage = "Codigo de provincia invalido.")]
+    public string CodigoProvincia { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Selecciona el distrito.")]
+    [StringLength(6, ErrorMessage = "Codigo de distrito invalido.")]
+    public string CodigoUbigeo { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Este campo es obligatorio.")]
     [StringLength(250, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string Direccion { get; set; } = string.Empty;
 
-    public string CaptchaTexto { get; set; } = string.Empty;
+    public string? CaptchaTexto { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Este campo es obligatorio.")]
     [StringLength(10, ErrorMessage = "El campo {0} excede la longitud permitida.")]

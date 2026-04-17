@@ -9,6 +9,7 @@ GO
 -- Firma: Codex - 06/04/2026 | Se agrega politica de confirmacion de reserva por pago y porcentaje minimo de adelanto a nivel negocio.
 -- Firma: Codex - 09/04/2026 | Se agrega configuracion de emision (CPE/Recibo interno) y porcentaje IGV.
 -- Firma: Codex - 13/04/2026 | Se agrega LogoUrl para administracion de logo del negocio.
+-- Firma: Codex - 16/04/2026 | Se agregan flags de reserva (precio/cancelacion) y limites operativos de negocio (SedesPermitidas/EspaciosPermitidos).
 CREATE OR ALTER PROCEDURE dbo.Sp_ConfiguracionClub_Obtener
     @NegocioId INT
 AS
@@ -30,7 +31,12 @@ BEGIN
             CAST(COALESCE(n.EmisionComprobantesElectronicos, 0) AS BIT) AS EmisionComprobantesElectronicos,
             CAST(COALESCE(n.EmisionReciboInterno, 0) AS BIT) AS EmisionReciboInterno,
             CAST(COALESCE(n.PorcentajeIgv, 18) AS INT) AS PorcentajeIgv,
-            n.LogoUrl
+            n.LogoUrl,
+            CAST(COALESCE(n.PermitirModificarPrecioReserva, 0) AS BIT) AS PermitirModificarPrecioReserva,
+            CAST(COALESCE(n.CancelacionAutomaticaNoConfirmada, 0) AS BIT) AS CancelacionAutomaticaNoConfirmada,
+            CAST(COALESCE(n.MinutosCancelacionNoConfirmada, 30) AS INT) AS MinutosCancelacionNoConfirmada,
+            CAST(COALESCE(n.SedesPermitidas, 2) AS INT) AS SedesPermitidas,
+            CAST(COALESCE(n.EspaciosPermitidos, 6) AS INT) AS EspaciosPermitidos
         FROM dbo.Negocios n
         WHERE n.Id = @NegocioId
           AND n.Activo = 1;

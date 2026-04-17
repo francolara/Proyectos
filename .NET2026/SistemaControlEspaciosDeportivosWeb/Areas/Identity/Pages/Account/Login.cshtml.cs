@@ -27,6 +27,9 @@ public class LoginModel(
     [TempData]
     public string? ErrorMessage { get; set; }
 
+    [TempData]
+    public string? SuccessMessage { get; set; }
+
     public class InputModel
     {
         [Required(ErrorMessage = "El correo es obligatorio.")]

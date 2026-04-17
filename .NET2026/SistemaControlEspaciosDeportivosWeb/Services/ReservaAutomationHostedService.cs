@@ -64,13 +64,17 @@ public class ReservaAutomationHostedService(
         var autoNoShow = await spService.ReservasAutoNoShowAsync(
             ahora,
             _settings.UsuarioSistema);
+        var autoCanceladas = await spService.ReservasAutoCancelarNoConfirmadasAsync(
+            ahora,
+            _settings.UsuarioSistema);
 
-        if (enviados > 0 || autoNoShow > 0)
+        if (enviados > 0 || autoNoShow > 0 || autoCanceladas > 0)
         {
             logger.LogInformation(
-                        "Automatizacion reservas: recordatorios enviados={Enviados}, no asistio auto={AutoNoShow}.",
+                        "Automatizacion reservas: recordatorios enviados={Enviados}, no asistio auto={AutoNoShow}, canceladas no confirmadas={AutoCanceladas}.",
                 enviados,
-                autoNoShow);
+                autoNoShow,
+                autoCanceladas);
         }
     }
 }

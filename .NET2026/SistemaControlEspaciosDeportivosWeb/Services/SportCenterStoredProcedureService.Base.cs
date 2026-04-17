@@ -71,20 +71,26 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
                 Telefono = dr.IsDBNull(4) ? null : dr.GetString(4),
                 WhatsappContacto = dr.IsDBNull(5) ? null : dr.GetString(5),
                 PermiteChatWhatsapp = ReadBool(dr, 6),
-                Latitud = dr.FieldCount > 7 && !dr.IsDBNull(7) ? dr.GetDecimal(7) : null,
-                Longitud = dr.FieldCount > 8 && !dr.IsDBNull(8) ? dr.GetDecimal(8) : null,
-                GoogleMapsUrl = dr.FieldCount > 9 && !dr.IsDBNull(9) ? dr.GetString(9) : null,
-                FotoPrincipalUrl = dr.FieldCount > 10 && !dr.IsDBNull(10) ? dr.GetString(10) : null,
-                FotosAlternativas = dr.FieldCount > 11 && !dr.IsDBNull(11)
-                    ? dr.GetString(11)
+                FacebookUrl = dr.FieldCount > 7 && !dr.IsDBNull(7) ? dr.GetString(7) : null,
+                InstagramUrl = dr.FieldCount > 8 && !dr.IsDBNull(8) ? dr.GetString(8) : null,
+                TwitterUrl = dr.FieldCount > 9 && !dr.IsDBNull(9) ? dr.GetString(9) : null,
+                Latitud = dr.FieldCount > 10 && !dr.IsDBNull(10) ? dr.GetDecimal(10) : null,
+                Longitud = dr.FieldCount > 11 && !dr.IsDBNull(11) ? dr.GetDecimal(11) : null,
+                GoogleMapsUrl = dr.FieldCount > 12 && !dr.IsDBNull(12) ? dr.GetString(12) : null,
+                FotoPrincipalUrl = dr.FieldCount > 13 && !dr.IsDBNull(13) ? dr.GetString(13) : null,
+                FotosAlternativas = dr.FieldCount > 14 && !dr.IsDBNull(14)
+                    ? dr.GetString(14)
                         .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                         .Where(x => !string.IsNullOrWhiteSpace(x))
                         .Distinct(StringComparer.OrdinalIgnoreCase)
                         .ToList()
                     : new List<string>(),
-                    NegocioId = dr.FieldCount > 12 && !dr.IsDBNull(12) ? dr.GetInt32(12) : null,
-                    NegocioNombre = dr.FieldCount > 13 && !dr.IsDBNull(13) ? dr.GetString(13) : null,
-                    Servicios = dr.FieldCount > 14 && !dr.IsDBNull(14) ? dr.GetString(14) : null
+                NegocioId = dr.FieldCount > 15 && !dr.IsDBNull(15) ? dr.GetInt32(15) : null,
+                NegocioNombre = dr.FieldCount > 16 && !dr.IsDBNull(16) ? dr.GetString(16) : null,
+                Servicios = dr.FieldCount > 17 && !dr.IsDBNull(17) ? dr.GetString(17) : null,
+                CodigoUbigeoNegocio = dr.FieldCount > 18 && !dr.IsDBNull(18) ? dr.GetString(18) : null,
+                CodigoDepartamentoNegocio = dr.FieldCount > 19 && !dr.IsDBNull(19) ? dr.GetString(19) : null,
+                CodigoProvinciaNegocio = dr.FieldCount > 20 && !dr.IsDBNull(20) ? dr.GetString(20) : null
                 });
         }
         return list;
@@ -211,6 +217,18 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
 
     public async Task<int> HomeSolicitarReservaPublicaAsync(SolicitudReservaPublicaFormViewModel model)
     {
+        try
+        {
+            return await HomeSolicitarReservaPublicaInternoAsync(model, incluirUsuarioId: true);
+        }
+        catch (SqlException ex) when (ex.Message.Contains("@UsuarioId", StringComparison.OrdinalIgnoreCase))
+        {
+            return await HomeSolicitarReservaPublicaInternoAsync(model, incluirUsuarioId: false);
+        }
+    }
+
+    private async Task<int> HomeSolicitarReservaPublicaInternoAsync(SolicitudReservaPublicaFormViewModel model, bool incluirUsuarioId)
+    {
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_Home_SolicitarReservaPublica", cn) { CommandType = CommandType.StoredProcedure };
@@ -226,6 +244,8 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
         AddParam(cmd, "@Telefono", model.Telefono, SqlDbType.NVarChar);
         AddParam(cmd, "@Correo", model.Correo, SqlDbType.NVarChar);
         AddParam(cmd, "@Comentario", model.Comentario, SqlDbType.NVarChar);
+        if (incluirUsuarioId)
+            AddParam(cmd, "@UsuarioId", string.IsNullOrWhiteSpace(model.UsuarioId) ? null : model.UsuarioId.Trim(), SqlDbType.NVarChar);
         var result = await cmd.ExecuteScalarAsync();
         return Convert.ToInt32(result);
     }

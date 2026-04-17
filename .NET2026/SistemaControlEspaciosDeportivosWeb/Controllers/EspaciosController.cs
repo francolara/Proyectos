@@ -45,6 +45,16 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
         var baseVm = await ObtenerBaseAsync(resolvedNegocioId.Value, "ESPACIOS");
         if (baseVm is null || !baseVm.PuedeCrear) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
+        var configNegocio = await spService.ConfiguracionClubObtenerAsync(resolvedNegocioId.Value);
+        var espaciosActuales = await spService.EspaciosListarAsync(resolvedNegocioId.Value, null);
+        var totalActivos = espaciosActuales.Count(x => string.Equals(x.Estado, "Activo", StringComparison.OrdinalIgnoreCase));
+        var limiteEspacios = configNegocio?.EspaciosPermitidos ?? 6;
+        if (totalActivos >= limiteEspacios)
+        {
+            TempData["EspaciosError"] = $"Limite de espacios alcanzado. Tu plan actual permite hasta {limiteEspacios} espacio(s) activos. Para continuar, solicita una ampliacion al administrador de plataforma.";
+            return RedirectToAction(nameof(Index), new { negocioId = resolvedNegocioId.Value });
+        }
+
         var vm = new EspacioFormViewModel { NegocioId = resolvedNegocioId.Value, NegocioNombre = baseVm.NegocioNombre, RolActual = baseVm.RolActual };
         await CargarCombosEspacioAsync(vm, AplicarSedeAsignada(baseVm, null));
         return View(vm);
@@ -56,6 +66,13 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
     {
         var baseVm = await ObtenerBaseAsync(model.NegocioId, "ESPACIOS");
         if (baseVm is null || !baseVm.PuedeCrear) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
+
+        var configNegocio = await spService.ConfiguracionClubObtenerAsync(model.NegocioId);
+        var espaciosActuales = await spService.EspaciosListarAsync(model.NegocioId, null);
+        var totalActivos = espaciosActuales.Count(x => string.Equals(x.Estado, "Activo", StringComparison.OrdinalIgnoreCase));
+        var limiteEspacios = configNegocio?.EspaciosPermitidos ?? 6;
+        if (totalActivos >= limiteEspacios)
+            ModelState.AddModelError(string.Empty, $"Limite de espacios alcanzado. Tu plan actual permite hasta {limiteEspacios} espacio(s) activos. Para continuar, solicita una ampliacion al administrador de plataforma.");
 
         await CargarCombosEspacioAsync(model, AplicarSedeAsignada(baseVm, null));
         if (!model.PuedeEditarTarifas)

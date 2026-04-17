@@ -111,7 +111,7 @@
 - `Sp_Comprobantes_Actualizar` y `Sp_Comprobantes_Eliminar` devuelven error si no existe el comprobante para el negocio.
 - `Sp_Comprobantes_Eliminar` marca el comprobante como anulado (`Estado = 5`) y libera la reserva asociada para permitir nueva emision de comprobante sobre reservas pagadas.
 - `Sp_ParametrosGlobales_ObtenerValor` retorna `ValorParametro` por `NombreParametro` para reglas de validacion configurables.
-- `Sp_ParametrosGlobales_UpsertValor` actualiza solo `ValorParametro` por `NombreParametro`; los nuevos parametros se crean por script (no por SP).
+- `Sp_ParametrosGlobales_UpsertValor` actualiza solo `ValorParametro` por `NombreParametro`; los nuevos parametros se crean por script (no por SP). Desde 16/04/2026 soporta hasta 500 caracteres en `@ValorParametro`.
 
 ### Parametros globales
 - Tabla:
@@ -234,9 +234,14 @@
 - `Sp_Notificaciones_Crear`
 - `Sp_Notificaciones_Listar`
 - `Sp_Notificaciones_ContarNoLeidas`
+- `Sp_Notificaciones_MarcarLeida`
+- `Sp_Notificaciones_MarcarTodasLeidas`
 - Actualizacion 14/04/2026:
   - Campanita en barra admin consulta cada 20 segundos (ajustable a 30) y muestra acumulado de notificaciones no leidas por negocio.
   - `Sp_SolicitudesPublicas_ConvertirAReserva` crea notificacion de tipo `RESERVA_CLIENTE_WEB` al generar reserva desde solicitud de portal cliente.
+- Actualizacion 16/04/2026:
+  - Al hacer click en una notificacion de la campanita se marca como leida y se descuenta del badge.
+  - Se agrega accion `Marcar todas` en campanita para limpiar en bloque las pendientes del negocio.
 
 ### 38_Web_Banners_Publicos.sql
 - Tabla:
@@ -276,6 +281,7 @@
 - `Sp_Reservas_RecordatoriosPendientes`
 - `Sp_Reservas_MarcarRecordatorioEnviado`
 - `Sp_Reservas_AutoNoShow`
+- `Sp_Reservas_AutoCancelarNoConfirmadas` (apto para SQL Job: si no recibe `@FechaHoraActual`, usa `SYSDATETIME()`; valida check y minutos configurados en `Negocios`).
 - `Sp_Reservas_MarcarRecordatorioEnviado` devuelve error si la reserva no existe para el negocio.
 
 ### 18_Sedes_Config_Notificaciones.sql
@@ -312,6 +318,8 @@
   - `Sp_Home_ListarSedesPublicas` agrega `Servicios` (lista de servicios de `CatalogoServiciosSede` por sede) para mostrar amenities del club en la vista publica de reserva.
   - `Sp_Home_BuscarEspaciosDisponibles` agrega `@IgnorarFechaHorario` (`BIT`, default `0`): cuando `1` (y se busca por negocio) lista todos los espacios del club sin aplicar cruce por fecha/hora.
   - Home publica incorpora checkbox `Obviar filtro de dia y horario` habilitado al seleccionar `Club/negocio`; se conserva en paginacion y navegacion hacia `Reservar`.
+- Actualizacion 16/04/2026:
+  - `Sp_Home_ListarSedesPublicas` agrega `CodigoUbigeoNegocio`, `CodigoDepartamentoNegocio` y `CodigoProvinciaNegocio` para filtrar el combo `Club/negocio` por ubicacion seleccionada en Home (departamento/provincia/distrito).
 
 ### 21_Altas_Clubes.sql
 - Tabla:
@@ -996,3 +1004,37 @@
 - Reservas (listado general):
   - se agrega `Sp_Reservas_ListadoResumen` para KPI global del listado (Pendientes, Pagadas, Saldo total) con los mismos filtros del listado general y sin efecto de paginacion.
   - actualizacion 13/04/2026: `Sp_Reservas_ListadoResumen` excluye reservas canceladas (`Estado = 5`) del conteo de reservas activas KPI y del saldo total acumulado.
+- Configuracion de negocio (16/04/2026):
+  - `Sp_ConfiguracionClub_Obtener` ahora tambien devuelve limites operativos por negocio:
+    - `SedesPermitidas`
+    - `EspaciosPermitidos`
+  - estos limites se consumen en la capa web para validar alta de nuevas sedes/espacios.
+  - se agrega `Sp_Reservas_AutoCancelarNoConfirmadas` para cancelar en segundo plano reservas en estado `Reservada` sin pagos, usando:
+    - `Negocios.CancelacionAutomaticaNoConfirmada = 1`
+    - `Negocios.MinutosCancelacionNoConfirmada` como umbral en minutos desde `Reservas.FechaRegistro`.
+- Perfil publico y reservas de usuario autenticado (16/04/2026):
+  - Nuevas tablas:
+    - `UsuariosPublicosPerfil`: almacena datos personales del usuario portal (tipo/numero documento, nombres, apellidos, nombre de equipo, telefono, correo, fecha de nacimiento y ubigeo).
+    - `ReservasUsuariosPublicos`: relaciona reservas generadas en portal con `AspNetUsers` para historial del usuario.
+  - Nuevos procedimientos:
+    - `Sp_UsuariosPublicos_ObtenerPerfil`
+    - `Sp_UsuariosPublicos_GuardarPerfil`
+    - `Sp_UsuariosPublicos_ReservasListar`
+  - `Sp_Home_SolicitarReservaPublica` agrega `@UsuarioId` opcional y registra la relacion en `ReservasUsuariosPublicos` cuando la reserva se genera con sesion iniciada.
+  - La reserva publica (vista `Home/Reservar`) precarga datos del cliente desde `UsuariosPublicosPerfil` cuando el usuario esta autenticado.
+
+### 39_AltasClubes_Suscripcion_Contrato.sql
+- Flujo actualizado 16/04/2026:
+  - El registro de club en portal publico ahora crea solicitud pendiente (`Sp_Home_SolicitarAltaClub`) y no autoaprueba el negocio.
+  - El superadmin aprueba/rechaza desde `Plataforma/ClubesPendientes`.
+- `Sp_AltasClubes_Aprobar`:
+  - Nuevo parametro `@DiasPrueba` (default 30) para activar periodo de prueba configurable al aprobar.
+  - Crea/actualiza fila en `NegociosSuscripcion` con estado prueba y fechas.
+- `Sp_NegociosSuscripcion_ActivarPlan`:
+  - Ahora recibe `@TipoCobro`, `@FechaInicioPlan`, `@FechaFinPlan`, `@DiasGracia` y guarda contrato comercial.
+- `Sp_Seguridad_ObtenerContextoModulo`:
+  - Bloquea acceso si el negocio no fue activado por plataforma.
+  - Mantiene bloqueo por prueba vencida.
+  - Para contrato vencido aplica gracia y bloquea modulos cuando vence `FechaFinGracia`.
+- Tabla `NegociosSuscripcion`:
+  - Nuevas columnas: `TipoCobro`, `DiasGracia`, `FechaFinGracia`.

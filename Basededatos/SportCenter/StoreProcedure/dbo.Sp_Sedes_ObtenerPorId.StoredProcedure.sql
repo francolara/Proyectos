@@ -12,6 +12,11 @@ GO
 -- Create date:   06/04/2026
 -- Description:   Devuelve ConsideracionesReserva para mantenimiento de sedes.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   16/04/2026
+-- Description:   Devuelve URLs sociales (Facebook/Instagram/Twitter) para mantenimiento de sedes.
+-- =============================================
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Sedes_ObtenerPorId]
     @NegocioId INT,
     @Id INT
@@ -20,7 +25,9 @@ BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
         SELECT
-            s.Id, s.NegocioId, s.Nombre, s.Direccion, s.ConsideracionesReserva, s.Telefono, s.Activo,
+            s.Id, s.NegocioId, s.Nombre, s.Direccion, s.ConsideracionesReserva, s.Telefono,
+            s.FacebookUrl, s.InstagramUrl, s.TwitterUrl,
+            s.Activo,
             s.Latitud,
             s.Longitud,
             s.GooglePlaceId,

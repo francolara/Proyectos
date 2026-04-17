@@ -133,6 +133,7 @@ public class ReservasController(
         };
         vm.PoliticaConfirmacionPago = configClub?.PoliticaConfirmacionPago ?? 0;
         vm.PorcentajeAdelantoMinimo = configClub?.PorcentajeAdelantoMinimo;
+        vm.PermitirModificarPrecioReserva = configClub?.PermitirModificarPrecioReserva ?? false;
         vm.MonedaNombre = "PEN";
         vm.MonedaSimbolo = "S/";
 
@@ -457,10 +458,6 @@ public class ReservasController(
             var errores = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
             return BadRequest(new { ok = false, mensaje = "Revisa los datos ingresados.", errores });
         }
-        if (model.Total <= 0)
-        {
-            return BadRequest(new { ok = false, mensaje = "El precio de espacio es obligatorio y debe ser mayor que cero." });
-        }
         if (model.RegistrarPago)
         {
             if (model.Adelanto <= 0)
@@ -494,6 +491,27 @@ public class ReservasController(
         if (!await EspacioPermitidoAsync(contexto, model.NegocioId, model.EspacioDeportivoId))
         {
             return BadRequest(new { ok = false, mensaje = "No tienes acceso a la sede del espacio seleccionado." });
+        }
+
+        var configClub = await spService.ConfiguracionClubObtenerAsync(model.NegocioId);
+        var permitirModificarPrecio = configClub?.PermitirModificarPrecioReserva ?? false;
+        if (!permitirModificarPrecio)
+        {
+            var cotizacion = await spService.ReservasCotizarAsync(
+                model.NegocioId,
+                model.EspacioDeportivoId,
+                model.Fecha,
+                model.HoraInicio,
+                model.HoraFin);
+
+            if (!cotizacion.Ok || cotizacion.PrecioFinal <= 0)
+                return BadRequest(new { ok = false, mensaje = string.IsNullOrWhiteSpace(cotizacion.Mensaje) ? "No se pudo calcular la tarifa del horario seleccionado." : cotizacion.Mensaje });
+
+            model.Total = cotizacion.PrecioFinal;
+        }
+        if (model.Total <= 0)
+        {
+            return BadRequest(new { ok = false, mensaje = "El precio de espacio es obligatorio y debe ser mayor que cero." });
         }
 
         try

@@ -32,7 +32,12 @@ public partial class SportCenterStoredProcedureService
             EmisionComprobantesElectronicos = dr.FieldCount > 10 && !dr.IsDBNull(10) && Convert.ToBoolean(dr.GetValue(10)),
             EmisionReciboInterno = dr.FieldCount > 11 && !dr.IsDBNull(11) && Convert.ToBoolean(dr.GetValue(11)),
             PorcentajeIgv = dr.FieldCount > 12 && !dr.IsDBNull(12) ? Convert.ToInt32(dr.GetValue(12)) : 18,
-            LogoUrl = dr.FieldCount > 13 && !dr.IsDBNull(13) ? dr.GetString(13) : null
+            LogoUrl = dr.FieldCount > 13 && !dr.IsDBNull(13) ? dr.GetString(13) : null,
+            PermitirModificarPrecioReserva = dr.FieldCount > 14 && !dr.IsDBNull(14) && Convert.ToBoolean(dr.GetValue(14)),
+            CancelacionAutomaticaNoConfirmada = dr.FieldCount > 15 && !dr.IsDBNull(15) && Convert.ToBoolean(dr.GetValue(15)),
+            MinutosCancelacionNoConfirmada = dr.FieldCount > 16 && !dr.IsDBNull(16) ? Convert.ToInt32(dr.GetValue(16)) : null,
+            SedesPermitidas = dr.FieldCount > 17 && !dr.IsDBNull(17) ? Convert.ToInt32(dr.GetValue(17)) : 2,
+            EspaciosPermitidos = dr.FieldCount > 18 && !dr.IsDBNull(18) ? Convert.ToInt32(dr.GetValue(18)) : 6
         };
     }
 
@@ -57,6 +62,9 @@ public partial class SportCenterStoredProcedureService
             AddParam(cmd, "@EmisionReciboInterno", model.EmisionReciboInterno, SqlDbType.Bit);
             AddParam(cmd, "@PorcentajeIgv", model.PorcentajeIgv, SqlDbType.Int);
             AddParam(cmd, "@LogoUrl", model.LogoUrl, SqlDbType.NVarChar);
+            AddParam(cmd, "@PermitirModificarPrecioReserva", model.PermitirModificarPrecioReserva, SqlDbType.Bit);
+            AddParam(cmd, "@CancelacionAutomaticaNoConfirmada", model.CancelacionAutomaticaNoConfirmada, SqlDbType.Bit);
+            AddParam(cmd, "@MinutosCancelacionNoConfirmada", model.MinutosCancelacionNoConfirmada, SqlDbType.Int);
             AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
             await cmd.ExecuteNonQueryAsync();
             return true;
@@ -138,26 +146,13 @@ public partial class SportCenterStoredProcedureService
     {
         await using var cn = CreateConnection();
         await cn.OpenAsync();
-        try
+        await using var cmdSp = new SqlCommand("Sp_ParametrosGlobales_ObtenerValor", cn)
         {
-            await using var cmdSp = new SqlCommand("Sp_ParametrosGlobales_ObtenerValor", cn)
-            {
-                CommandType = CommandType.StoredProcedure
-            };
-            AddParam(cmdSp, "@NombreParametro", nombreParametro, SqlDbType.NVarChar);
-            var resultSp = await cmdSp.ExecuteScalarAsync();
-            return resultSp?.ToString();
-        }
-        catch (SqlException ex) when (ex.Message.Contains("Sp_ParametrosGlobales_ObtenerValor", StringComparison.OrdinalIgnoreCase))
-        {
-            await using var cmdFallback = new SqlCommand(@"
-                SELECT TOP (1) p.ValorParametro
-                FROM dbo.ParametrosGlobales p
-                WHERE p.NombreParametro = @NombreParametro;", cn);
-            AddParam(cmdFallback, "@NombreParametro", nombreParametro, SqlDbType.NVarChar);
-            var resultFallback = await cmdFallback.ExecuteScalarAsync();
-            return resultFallback?.ToString();
-        }
+            CommandType = CommandType.StoredProcedure
+        };
+        AddParam(cmdSp, "@NombreParametro", nombreParametro, SqlDbType.NVarChar);
+        var resultSp = await cmdSp.ExecuteScalarAsync();
+        return resultSp?.ToString();
     }
 
     public async Task ParametrosGlobalesUpsertValorAsync(string nombreParametro, string? descripcion, string? valorParametro, string usuario)
@@ -166,7 +161,7 @@ public partial class SportCenterStoredProcedureService
         await cn.OpenAsync();
 
         var valorNorm = (valorParametro ?? string.Empty).Trim();
-        if (valorNorm.Length > 100) valorNorm = valorNorm[..100];
+        if (valorNorm.Length > 500) valorNorm = valorNorm[..500];
 
         await using var cmdSp = new SqlCommand("Sp_ParametrosGlobales_UpsertValor", cn)
         {
@@ -233,5 +228,150 @@ public partial class SportCenterStoredProcedureService
         {
             return false;
         }
+    }
+
+    public async Task<List<PlataformaNegocioLimiteItemViewModel>> PlataformaNegociosListarAsync(string? buscar = null)
+    {
+        var list = new List<PlataformaNegocioLimiteItemViewModel>();
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand(
+            @"SELECT n.Id, n.NombreComercial, n.Activo,
+                     CAST(COALESCE(n.SedesPermitidas,2) AS INT) AS SedesPermitidas,
+                     CAST(COALESCE(n.EspaciosPermitidos,6) AS INT) AS EspaciosPermitidos,
+                     CAST(COALESCE(ns.EstadoSuscripcion, 0) AS INT) AS EstadoSuscripcion,
+                     CAST(COALESCE(ns.EsPrueba, 0) AS BIT) AS EsPrueba,
+                     ns.FechaInicioPrueba,
+                     ns.FechaFinPrueba,
+                     ns.TipoCobro,
+                     ns.FechaInicioPlan,
+                     ns.FechaFinPlan,
+                     CAST(COALESCE(ns.DiasGracia, 5) AS INT) AS DiasGracia,
+                     ns.FechaFinGracia
+              FROM dbo.Negocios n
+              LEFT JOIN dbo.NegociosSuscripcion ns ON ns.NegocioId = n.Id
+              WHERE (@Buscar IS NULL OR n.NombreComercial LIKE '%' + @Buscar + '%')
+              ORDER BY n.NombreComercial, n.Id;", cn);
+        AddParam(cmd, "@Buscar", string.IsNullOrWhiteSpace(buscar) ? null : buscar.Trim(), SqlDbType.NVarChar);
+        await using var dr = await cmd.ExecuteReaderAsync();
+        while (await dr.ReadAsync())
+        {
+            list.Add(new PlataformaNegocioLimiteItemViewModel
+            {
+                NegocioId = dr.GetInt32(0),
+                NombreComercial = dr.IsDBNull(1) ? string.Empty : dr.GetString(1),
+                Activo = !dr.IsDBNull(2) && Convert.ToBoolean(dr.GetValue(2)),
+                SedesPermitidas = dr.IsDBNull(3) ? 2 : Convert.ToInt32(dr.GetValue(3)),
+                EspaciosPermitidos = dr.IsDBNull(4) ? 6 : Convert.ToInt32(dr.GetValue(4)),
+                EstadoSuscripcion = dr.IsDBNull(5) ? 0 : Convert.ToInt32(dr.GetValue(5)),
+                EsPrueba = !dr.IsDBNull(6) && Convert.ToBoolean(dr.GetValue(6)),
+                FechaInicioPrueba = dr.IsDBNull(7) ? null : dr.GetDateTime(7),
+                FechaFinPrueba = dr.IsDBNull(8) ? null : dr.GetDateTime(8),
+                TipoCobro = dr.IsDBNull(9) ? null : dr.GetString(9),
+                FechaInicioPlan = dr.IsDBNull(10) ? null : dr.GetDateTime(10),
+                FechaFinPlan = dr.IsDBNull(11) ? null : dr.GetDateTime(11),
+                DiasGracia = dr.IsDBNull(12) ? 5 : Convert.ToInt32(dr.GetValue(12)),
+                FechaFinGracia = dr.IsDBNull(13) ? null : dr.GetDateTime(13)
+            });
+            list[^1].EstadoSuscripcionNombre = list[^1].EstadoSuscripcion switch
+            {
+                1 when list[^1].EsPrueba => "Prueba",
+                1 => "Activa",
+                2 => "Contrato",
+                3 => "Vencida",
+                4 => "Suspendida",
+                _ => "Pendiente de activacion"
+            };
+        }
+
+        return list;
+    }
+
+    public async Task<bool> PlataformaNegocioActualizarLimitesAsync(int negocioId, int sedesPermitidas, int espaciosPermitidos, string usuario)
+    {
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand(
+            @"UPDATE dbo.Negocios
+              SET SedesPermitidas = @SedesPermitidas,
+                  EspaciosPermitidos = @EspaciosPermitidos
+              WHERE Id = @NegocioId;", cn);
+        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+        AddParam(cmd, "@SedesPermitidas", sedesPermitidas, SqlDbType.Int);
+        AddParam(cmd, "@EspaciosPermitidos", espaciosPermitidos, SqlDbType.Int);
+        var rows = await cmd.ExecuteNonQueryAsync();
+        return rows > 0;
+    }
+
+    public async Task<bool> PlataformaNegocioActivarContratoAsync(int negocioId, string tipoCobro, DateOnly fechaDesde, DateOnly fechaHasta, int diasGracia, string usuario)
+    {
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_NegociosSuscripcion_ActivarPlan", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+            AddParam(cmd, "@TipoCobro", string.IsNullOrWhiteSpace(tipoCobro) ? "MENSUAL" : tipoCobro.Trim().ToUpperInvariant(), SqlDbType.NVarChar);
+            AddParam(cmd, "@FechaInicioPlan", fechaDesde.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
+            AddParam(cmd, "@FechaFinPlan", fechaHasta.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
+            AddParam(cmd, "@DiasGracia", diasGracia <= 0 ? 5 : diasGracia, SqlDbType.Int);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async Task<MiSuscripcionNegocioViewModel?> MiSuscripcionObtenerAsync(int negocioId)
+    {
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand(
+            @"SELECT TOP 1
+                     ns.NegocioId,
+                     CAST(COALESCE(ns.EstadoSuscripcion, 0) AS INT) AS EstadoSuscripcion,
+                     CAST(COALESCE(ns.EsPrueba, 0) AS BIT) AS EsPrueba,
+                     ns.FechaInicioPrueba,
+                     ns.FechaFinPrueba,
+                     ns.TipoCobro,
+                     ns.FechaInicioPlan,
+                     ns.FechaFinPlan,
+                     CAST(COALESCE(ns.DiasGracia, 5) AS INT) AS DiasGracia,
+                     ns.FechaFinGracia
+              FROM dbo.NegociosSuscripcion ns
+              WHERE ns.NegocioId = @NegocioId;", cn);
+        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+
+        await using var dr = await cmd.ExecuteReaderAsync();
+        if (!await dr.ReadAsync()) return null;
+
+        var model = new MiSuscripcionNegocioViewModel
+        {
+            NegocioId = dr.GetInt32(0),
+            EstadoSuscripcion = dr.IsDBNull(1) ? 0 : Convert.ToInt32(dr.GetValue(1)),
+            EsPrueba = !dr.IsDBNull(2) && Convert.ToBoolean(dr.GetValue(2)),
+            FechaInicioPrueba = dr.IsDBNull(3) ? null : dr.GetDateTime(3),
+            FechaFinPrueba = dr.IsDBNull(4) ? null : dr.GetDateTime(4),
+            TipoCobro = dr.IsDBNull(5) ? null : dr.GetString(5),
+            FechaInicioPlan = dr.IsDBNull(6) ? null : dr.GetDateTime(6),
+            FechaFinPlan = dr.IsDBNull(7) ? null : dr.GetDateTime(7),
+            DiasGracia = dr.IsDBNull(8) ? 5 : Convert.ToInt32(dr.GetValue(8)),
+            FechaFinGracia = dr.IsDBNull(9) ? null : dr.GetDateTime(9)
+        };
+
+        model.EstadoSuscripcionNombre = model.EstadoSuscripcion switch
+        {
+            1 when model.EsPrueba => "Prueba gratuita",
+            1 => "Activa",
+            2 => "Contrato activo",
+            3 => "Vencida",
+            4 => "Suspendida",
+            _ => "Pendiente de activacion"
+        };
+
+        return model;
     }
 }

@@ -5,6 +5,7 @@ using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
 using System.Diagnostics;
 using System.Globalization;
+using System.Security.Claims;
 
 namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 
@@ -173,6 +174,8 @@ public class HomeController(
     public async Task<IActionResult> SolicitarReservaPublica(SolicitudReservaPublicaFormViewModel model)
     {
         ViewData["PublicFullWidth"] = true;
+        if (User.Identity?.IsAuthenticated == true)
+            model.UsuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         model.TipoDocumento = string.IsNullOrWhiteSpace(model.TipoDocumento) ? "0" : model.TipoDocumento.Trim();
         model.NumeroDocumento = string.IsNullOrWhiteSpace(model.NumeroDocumento) ? null : model.NumeroDocumento.Trim();
@@ -224,6 +227,28 @@ public class HomeController(
 
         try
         {
+            if (!string.IsNullOrWhiteSpace(model.UsuarioId))
+            {
+                try
+                {
+                    await spService.UsuariosPublicosGuardarPerfilAsync(new UsuarioPublicoPerfilViewModel
+                    {
+                        UsuarioId = model.UsuarioId,
+                        TipoDocumento = model.TipoDocumento,
+                        NumeroDocumento = model.NumeroDocumento,
+                        Nombres = model.Nombres,
+                        Apellidos = model.Apellidos,
+                        NombreEquipo = model.NombreEquipo,
+                        Telefono = model.Telefono,
+                        Correo = model.Correo
+                    }, User.Identity?.Name ?? "portal-web");
+                }
+                catch
+                {
+                    // El perfil publico no debe bloquear la reserva.
+                }
+            }
+
             var reservaId = await spService.HomeSolicitarReservaPublicaAsync(model);
             TempData["MensajeSolicitud"] = $"Reserva registrada correctamente. Codigo: R-{reservaId:D6}.";
             return RedirectToAction(nameof(Index), new
@@ -338,6 +363,18 @@ public class HomeController(
 
         var data = await spService.UbigeoDistritosListarAsync(codigoProv);
         return Json(data.Select(x => new { value = x.Value, text = x.Text }));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> NegociosPorUbigeo(string? codigoDepartamento, string? codigoProvincia, string? codigoUbigeo)
+    {
+        var codigoDep = string.IsNullOrWhiteSpace(codigoDepartamento) ? null : codigoDepartamento.Trim();
+        var codigoProv = string.IsNullOrWhiteSpace(codigoProvincia) ? null : codigoProvincia.Trim();
+        var codigoDist = string.IsNullOrWhiteSpace(codigoUbigeo) ? null : codigoUbigeo.Trim();
+
+        var sedes = await spService.HomeListarSedesAsync();
+        var negocios = ConstruirNegociosFiltradosPorUbigeo(sedes, codigoDep, codigoProv, codigoDist);
+        return Json(negocios.Select(x => new { value = x.Value, text = x.Text }));
     }
 
     [HttpGet]
@@ -564,6 +601,11 @@ public class HomeController(
         if (User.Identity?.IsAuthenticated == true)
         {
             var user = await userManager.GetUserAsync(User);
+            var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var perfilPublico = !string.IsNullOrWhiteSpace(usuarioId)
+                ? await spService.UsuariosPublicosObtenerPerfilAsync(usuarioId)
+                : null;
+
             if (user is not null)
             {
                 if (string.IsNullOrWhiteSpace(form.Correo) && !string.IsNullOrWhiteSpace(user.Email))
@@ -582,11 +624,31 @@ public class HomeController(
                         }
                         else
                         {
-                            form.Nombres = nombreRaw;
-                        }
+                        form.Nombres = nombreRaw;
                     }
                 }
             }
+
+            if (perfilPublico is not null)
+            {
+                if (!string.IsNullOrWhiteSpace(perfilPublico.TipoDocumento))
+                    form.TipoDocumento = perfilPublico.TipoDocumento;
+                if (string.IsNullOrWhiteSpace(form.NumeroDocumento) && !string.IsNullOrWhiteSpace(perfilPublico.NumeroDocumento))
+                    form.NumeroDocumento = perfilPublico.NumeroDocumento;
+                if (!string.IsNullOrWhiteSpace(perfilPublico.Nombres))
+                    form.Nombres = perfilPublico.Nombres;
+                if (!string.IsNullOrWhiteSpace(perfilPublico.Apellidos))
+                    form.Apellidos = perfilPublico.Apellidos;
+                if (string.IsNullOrWhiteSpace(form.NombreEquipo) && !string.IsNullOrWhiteSpace(perfilPublico.NombreEquipo))
+                    form.NombreEquipo = perfilPublico.NombreEquipo;
+                if (string.IsNullOrWhiteSpace(form.Telefono) && !string.IsNullOrWhiteSpace(perfilPublico.Telefono))
+                    form.Telefono = perfilPublico.Telefono;
+                if (string.IsNullOrWhiteSpace(form.Correo) && !string.IsNullOrWhiteSpace(perfilPublico.Correo))
+                    form.Correo = perfilPublico.Correo;
+            }
+
+            form.UsuarioId = usuarioId;
+        }
         }
 
         ReservaCotizacionViewModel? cotizacion = null;
@@ -656,12 +718,9 @@ public class HomeController(
         var distritos = !string.IsNullOrWhiteSpace(codigoProv) && codigoProv.Length == 4
             ? await spService.UbigeoDistritosListarAsync(codigoProv)
             : new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
-        var negocios = sedes
-            .Where(x => x.NegocioId.HasValue && !string.IsNullOrWhiteSpace(x.NegocioNombre))
-            .GroupBy(x => new { Id = x.NegocioId!.Value, Nombre = x.NegocioNombre! })
-            .OrderBy(x => x.Key.Nombre)
-            .Select(x => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem(x.Key.Nombre, x.Key.Id.ToString()))
-            .ToList();
+        var negocios = ConstruirNegociosFiltradosPorUbigeo(sedes, codigoDep, codigoProv, codigoDist);
+        if (negocioId.HasValue && !negocios.Any(x => x.Value == negocioId.Value.ToString()))
+            negocioId = null;
         var portalConfig = await CargarPortalConfigAsync();
 
         return new HomeIndexViewModel
@@ -691,6 +750,39 @@ public class HomeController(
         };
     }
 
+    private static List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ConstruirNegociosFiltradosPorUbigeo(
+        List<SedePublicaViewModel> sedes,
+        string? codigoDepartamento,
+        string? codigoProvincia,
+        string? codigoUbigeo)
+    {
+        var sedesFiltradas = sedes.Where(x =>
+            x.NegocioId.HasValue &&
+            !string.IsNullOrWhiteSpace(x.NegocioNombre));
+
+        if (!string.IsNullOrWhiteSpace(codigoUbigeo) && codigoUbigeo.Length == 6)
+        {
+            sedesFiltradas = sedesFiltradas.Where(x =>
+                string.Equals(x.CodigoUbigeoNegocio, codigoUbigeo, StringComparison.OrdinalIgnoreCase));
+        }
+        else if (!string.IsNullOrWhiteSpace(codigoProvincia) && codigoProvincia.Length == 4)
+        {
+            sedesFiltradas = sedesFiltradas.Where(x =>
+                string.Equals(x.CodigoProvinciaNegocio, codigoProvincia, StringComparison.OrdinalIgnoreCase));
+        }
+        else if (!string.IsNullOrWhiteSpace(codigoDepartamento) && codigoDepartamento.Length == 2)
+        {
+            sedesFiltradas = sedesFiltradas.Where(x =>
+                string.Equals(x.CodigoDepartamentoNegocio, codigoDepartamento, StringComparison.OrdinalIgnoreCase));
+        }
+
+        return sedesFiltradas
+            .GroupBy(x => new { Id = x.NegocioId!.Value, Nombre = x.NegocioNombre! })
+            .OrderBy(x => x.Key.Nombre)
+            .Select(x => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem(x.Key.Nombre, x.Key.Id.ToString()))
+            .ToList();
+    }
+
     private async Task<PlataformaPortalConfigViewModel> CargarPortalConfigAsync()
     {
         async Task<string?> Get(string key) => await spService.ParametrosGlobalesObtenerValorAsync(key);
@@ -714,7 +806,7 @@ public class HomeController(
             CtaTitulo = (await Get("HOME_PORTAL_CTA_TITULO")) ?? "Unete a la comunidad de SportCenter",
             CtaSubtitulo = (await Get("HOME_PORTAL_CTA_SUBTITULO")) ?? "Registra tu club deportivo y comienza a gestionar tus canchas de manera eficiente.",
             CtaBotonClubTexto = (await Get("HOME_PORTAL_CTA_BTN_CLUB_TEXTO")) ?? "Registrar mi club",
-            CtaBotonClubUrl = (await Get("HOME_PORTAL_CTA_BTN_CLUB_URL")) ?? "/Home/SoftwareClubes",
+            CtaBotonClubUrl = (await Get("HOME_PORTAL_CTA_BTN_CLUB_URL")) ?? "/Identity/Account/Register?TipoRegistro=club",
             CtaBotonUsuarioTexto = (await Get("HOME_PORTAL_CTA_BTN_USUARIO_TEXTO")) ?? "Crear cuenta personal",
             CtaBotonUsuarioUrl = (await Get("HOME_PORTAL_CTA_BTN_USUARIO_URL")) ?? "/Identity/Account/Register",
             MarcaTitulo = (await Get("HOME_PORTAL_MARCA_TITULO")) ?? "SportCenter",

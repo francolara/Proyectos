@@ -1,20 +1,52 @@
 @using Microsoft.AspNetCore.Identity
 @using SistemaControlEspaciosDeportivosWeb.Models
+@using SistemaControlEspaciosDeportivosWeb.Services
 @inject SignInManager<ApplicationUser> SignInManager
 @inject UserManager<ApplicationUser> UserManager
+@inject ISportCenterStoredProcedureService spService
+<!-- Firma: Codex - 16/04/2026 | El acceso "Perfil" del navbar publico ahora dirige al panel de perfil de usuario publico (no al cambio de contrasena directo). -->
+
+@{
+    var mostrarPanel = false;
+    if (SignInManager.IsSignedIn(User))
+    {
+        if (User.IsInRole("OwnerPlataforma"))
+        {
+            mostrarPanel = true;
+        }
+        else
+        {
+            var usuarioId = UserManager.GetUserId(User);
+            if (!string.IsNullOrWhiteSpace(usuarioId))
+            {
+                var negociosUsuario = await spService.PanelListarNegociosUsuarioAsync(usuarioId);
+                mostrarPanel = negociosUsuario.Count > 0;
+            }
+        }
+    }
+}
 
 <ul class="navbar-nav">
 @if (SignInManager.IsSignedIn(User))
 {
-    <li class="nav-item">
-        <a class="nav-link text-dark" asp-controller="Panel" asp-action="Index" title="Panel">Panel</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link text-dark" asp-controller="Cuenta" asp-action="CambiarContrasena" title="Perfil">Perfil</a>
-    </li>
-    <li class="nav-item">
-        <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
-            <button type="submit" class="nav-link btn btn-link text-dark">Cerrar sesion</button>
+    <li class="nav-item d-flex align-items-center gap-2">
+        @if (mostrarPanel)
+        {
+            <a class="auth-nav-mini auth-nav-mini-solid" asp-controller="Panel" asp-action="Index">
+                <i class="bi bi-grid"></i><span>Panel</span>
+            </a>
+        }
+        <a class="auth-nav-mini auth-nav-mini-outline" asp-controller="PerfilPublico" asp-action="Index">
+            <i class="bi bi-person-gear"></i><span>Perfil</span>
+        </a>
+        <form class="d-inline-block mb-0"
+              asp-area="Identity"
+              asp-page="/Account/Logout"
+              asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="auth-nav-mini auth-nav-mini-outline">
+                <i class="bi bi-box-arrow-right"></i><span>Cerrar sesion</span>
+            </button>
         </form>
     </li>
 }

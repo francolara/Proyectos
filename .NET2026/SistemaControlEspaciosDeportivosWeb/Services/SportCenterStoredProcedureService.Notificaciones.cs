@@ -41,4 +41,27 @@ public partial class SportCenterStoredProcedureService
 
         return list;
     }
+
+    public async Task<bool> NotificacionesMarcarLeidaAsync(int negocioId, int notificacionId, string? userId)
+    {
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_Notificaciones_MarcarLeida", cn) { CommandType = CommandType.StoredProcedure };
+        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+        AddParam(cmd, "@NotificacionId", notificacionId, SqlDbType.Int);
+        AddParam(cmd, "@UserId", string.IsNullOrWhiteSpace(userId) ? null : userId.Trim(), SqlDbType.NVarChar);
+        var rows = await cmd.ExecuteNonQueryAsync();
+        return rows > 0;
+    }
+
+    public async Task<int> NotificacionesMarcarTodasLeidasAsync(int negocioId, string? userId)
+    {
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_Notificaciones_MarcarTodasLeidas", cn) { CommandType = CommandType.StoredProcedure };
+        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+        AddParam(cmd, "@UserId", string.IsNullOrWhiteSpace(userId) ? null : userId.Trim(), SqlDbType.NVarChar);
+        var value = await cmd.ExecuteScalarAsync();
+        return value is null || value == DBNull.Value ? 0 : Convert.ToInt32(value);
+    }
 }

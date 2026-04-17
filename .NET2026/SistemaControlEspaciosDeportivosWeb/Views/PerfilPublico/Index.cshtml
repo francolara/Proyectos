@@ -1,0 +1,236 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.PerfilPublicoIndexViewModel
+@{
+    ViewData["Title"] = "Perfil";
+    var tab = (ViewData["Tab"]?.ToString() ?? "datos").ToLowerInvariant();
+    var tabDatos = tab == "datos";
+    var tabReservas = tab == "reservas";
+    var tabRetos = tab == "retos";
+}
+<!-- Firma: Codex - 16/04/2026 | Panel de perfil para usuario publico con tabs Datos personales, Mis reservas y Retar a un equipo (proximamente). -->
+<!-- Firma: Codex - 17/04/2026 | Header de perfil simplificado: se retiran Ir al inicio y Cerrar sesion; Cambiar contrasena adopta estilo estandar de botones del home/navbar publico. -->
+
+<div class="container py-4">
+    <header class="page-header">
+        <div>
+            <h1>Mi perfil</h1>
+            <p class="page-subtitle">Gestiona tus datos personales y consulta el historial de reservas realizadas.</p>
+        </div>
+        <div class="action-toolbar">
+            <a class="auth-nav-mini auth-nav-mini-outline" asp-controller="Cuenta" asp-action="CambiarContrasena">
+                <i class="bi bi-key me-1"></i>Cambiar contrasena
+            </a>
+        </div>
+    </header>
+
+    @if (TempData["PerfilPublicoOk"] is string ok && !string.IsNullOrWhiteSpace(ok))
+    {
+        <div class="alert alert-success">@ok</div>
+    }
+
+    <ul class="nav nav-tabs mb-3">
+        <li class="nav-item">
+            <a class="nav-link @(tabDatos ? "active" : null)" asp-action="Index" asp-route-tab="datos">Datos personales</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @(tabReservas ? "active" : null)" asp-action="Index" asp-route-tab="reservas">Mis reservas</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @(tabRetos ? "active" : null)" asp-action="Index" asp-route-tab="retos">Retar a un equipo</a>
+        </li>
+    </ul>
+
+    @if (tabDatos)
+    {
+        <form asp-action="GuardarDatos" method="post" class="content-card p-3">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+            <input type="hidden" asp-for="Perfil.Id" />
+            <input type="hidden" asp-for="Perfil.UsuarioId" />
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Tipo de documento</label>
+                    <select asp-for="Perfil.TipoDocumento" asp-items="Model.Perfil.TiposDocumento" class="form-select"></select>
+                    <span asp-validation-for="Perfil.TipoDocumento" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Numero de documento</label>
+                    <input asp-for="Perfil.NumeroDocumento" class="form-control" maxlength="20" />
+                    <span asp-validation-for="Perfil.NumeroDocumento" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Fecha de nacimiento</label>
+                    <input asp-for="Perfil.FechaNacimiento" type="date" class="form-control" />
+                    <span asp-validation-for="Perfil.FechaNacimiento" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Nombres</label>
+                    <input asp-for="Perfil.Nombres" class="form-control" maxlength="120" />
+                    <span asp-validation-for="Perfil.Nombres" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Apellidos</label>
+                    <input asp-for="Perfil.Apellidos" class="form-control" maxlength="120" />
+                    <span asp-validation-for="Perfil.Apellidos" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Nombre de equipo</label>
+                    <input asp-for="Perfil.NombreEquipo" class="form-control" maxlength="120" />
+                    <span asp-validation-for="Perfil.NombreEquipo" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Telefono</label>
+                    <input asp-for="Perfil.Telefono" class="form-control" maxlength="30" />
+                    <span asp-validation-for="Perfil.Telefono" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Correo</label>
+                    <input asp-for="Perfil.Correo" class="form-control" maxlength="200" />
+                    <span asp-validation-for="Perfil.Correo" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Departamento</label>
+                    <select asp-for="Perfil.CodigoDepartamento" asp-items="Model.Perfil.DepartamentosUbigeo" class="form-select" id="CodigoDepartamento">
+                        <option value="">Selecciona</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Provincia</label>
+                    <select asp-for="Perfil.CodigoProvincia" asp-items="Model.Perfil.ProvinciasUbigeo" class="form-select" id="CodigoProvincia">
+                        <option value="">Selecciona</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Distrito</label>
+                    <select asp-for="Perfil.CodigoUbigeo" asp-items="Model.Perfil.DistritosUbigeo" class="form-select" id="CodigoUbigeo">
+                        <option value="">Selecciona</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mt-3 d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save me-1"></i>Guardar datos personales
+                </button>
+            </div>
+        </form>
+    }
+
+    @if (tabReservas)
+    {
+        <section class="table-card">
+            <h2 class="section-title"><i class="bi bi-calendar2-check me-1"></i>Historial de reservas</h2>
+            <div class="table-responsive p-3">
+                <table class="table table-sm align-middle">
+                    <thead>
+                        <tr>
+                            <th># Reserva</th>
+                            <th>Fecha</th>
+                            <th>Horario</th>
+                            <th>Negocio</th>
+                            <th>Sede / espacio</th>
+                            <th>Precio</th>
+                            <th>Estado</th>
+                            <th>Contacto sede</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Reservas.Count == 0)
+                        {
+                            <tr><td colspan="8" class="text-center text-muted">Aun no tienes reservas registradas.</td></tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.Reservas)
+                            {
+                                <tr>
+                                    <td>R-@item.ReservaId.ToString("D6")</td>
+                                    <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
+                                    <td>@item.HoraInicio.ToString("HH\\:mm") - @item.HoraFin.ToString("HH\\:mm")</td>
+                                    <td>@item.NegocioNombre</td>
+                                    <td>
+                                        <div><strong>@item.SedeNombre</strong> / @item.EspacioNombre</div>
+                                        @if (!string.IsNullOrWhiteSpace(item.SedeDireccion))
+                                        {
+                                            <small class="text-muted">@item.SedeDireccion</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div>Total: S/ @item.Total.ToString("0.00")</div>
+                                        <small class="text-muted">Saldo: S/ @item.SaldoPendiente.ToString("0.00")</small>
+                                    </td>
+                                    <td>@item.EstadoTexto</td>
+                                    <td>
+                                        @if (!string.IsNullOrWhiteSpace(item.SedeTelefono))
+                                        {
+                                            <div>@item.SedeTelefono</div>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(item.SedeWhatsapp))
+                                        {
+                                            <small class="text-muted">WhatsApp: @item.SedeWhatsapp</small>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+
+    @if (tabRetos)
+    {
+        <section class="content-card p-4 text-center">
+            <h2 class="h5 mb-2"><i class="bi bi-trophy me-1"></i>Retar a un equipo</h2>
+            <p class="text-muted mb-0">Proximamente habilitaremos esta funcionalidad para organizar partidos entre equipos.</p>
+        </section>
+    }
+</div>
+
+@section Scripts{
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const dep = document.getElementById('CodigoDepartamento');
+            const prov = document.getElementById('CodigoProvincia');
+            const dist = document.getElementById('CodigoUbigeo');
+            if (!dep || !prov || !dist) return;
+
+            function renderOptions(select, rows, emptyText) {
+                select.innerHTML = '';
+                const first = document.createElement('option');
+                first.value = '';
+                first.textContent = emptyText;
+                select.appendChild(first);
+                (rows || []).forEach(x => {
+                    const opt = document.createElement('option');
+                    opt.value = x.value || '';
+                    opt.textContent = x.text || '';
+                    select.appendChild(opt);
+                });
+            }
+
+            dep.addEventListener('change', async () => {
+                const codigo = (dep.value || '').trim();
+                renderOptions(prov, [], 'Selecciona');
+                renderOptions(dist, [], 'Selecciona');
+                if (codigo.length !== 2) return;
+                const resp = await fetch(`@Url.Action("UbigeoProvincias", "Home")?codigoDepartamento=${encodeURIComponent(codigo)}`, { cache: 'no-store' });
+                if (!resp.ok) return;
+                const data = await resp.json();
+                renderOptions(prov, data, 'Selecciona');
+            });
+
+            prov.addEventListener('change', async () => {
+                const codigo = (prov.value || '').trim();
+                renderOptions(dist, [], 'Selecciona');
+                if (codigo.length !== 4) return;
+                const resp = await fetch(`@Url.Action("UbigeoDistritos", "Home")?codigoProvincia=${encodeURIComponent(codigo)}`, { cache: 'no-store' });
+                if (!resp.ok) return;
+                const data = await resp.json();
+                renderOptions(dist, data, 'Selecciona');
+            });
+        })();
+    </script>
+}

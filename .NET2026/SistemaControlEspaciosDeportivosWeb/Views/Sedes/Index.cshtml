@@ -13,6 +13,15 @@
 }
 
 <div class="admin-page-frame">
+    @if (TempData["SedesError"] is string sedesError && !string.IsNullOrWhiteSpace(sedesError))
+    {
+        <div class="alert alert-danger">@sedesError</div>
+    }
+    @if (TempData["SedesOk"] is string sedesOk && !string.IsNullOrWhiteSpace(sedesOk))
+    {
+        <div class="alert alert-success">@sedesOk</div>
+    }
+
     <section class="page-header">
         <div class="sc-page-title-wrap">
             <div>

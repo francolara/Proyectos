@@ -1,0 +1,138 @@
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.PlataformaNegociosAdminViewModel
+@{
+    ViewData["Title"] = "Negocios";
+}
+<!-- Firma: Codex - 16/04/2026 | Panel owner para buscar negocios, editar limites y activar contrato con tipo de cobro/vigencia y dias de gracia. -->
+
+<div class="page-header-card mb-3">
+    <div class="page-header-main">
+        <h1 class="page-title">Negocios registrados</h1>
+        <p class="page-subtitle">Administra limites operativos por negocio: sedes y espacios permitidos.</p>
+    </div>
+</div>
+
+@if (TempData["PortalWebOk"] is string ok && !string.IsNullOrWhiteSpace(ok))
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (TempData["PortalWebError"] is string err && !string.IsNullOrWhiteSpace(err))
+{
+    <div class="alert alert-danger">@err</div>
+}
+
+<section class="table-card sc-reservas-list-card p-3 mb-3">
+    <form asp-action="Negocios" method="get" class="row g-2 align-items-end">
+        <div class="col-md-6 col-lg-5">
+            <label class="form-label">Buscar negocio</label>
+            <input type="text" name="buscar" value="@Model.Buscar" class="form-control" placeholder="Nombre comercial" />
+        </div>
+        <div class="col-md-3 col-lg-2 d-grid">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-search me-1"></i>Buscar</button>
+        </div>
+        <div class="col-md-3 col-lg-2 d-grid">
+            <a asp-action="Negocios" class="btn btn-outline-secondary">Limpiar</a>
+        </div>
+    </form>
+</section>
+
+<section class="table-card sc-reservas-list-card p-0 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Negocio</th>
+                    <th>Estado</th>
+                    <th class="text-center">Limites</th>
+                    <th>Suscripcion</th>
+                    <th class="text-end">Accion</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Negocios.Count == 0)
+                {
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">No se encontraron negocios.</td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var item in Model.Negocios)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@item.NombreComercial</strong>
+                                <div class="text-muted small">ID: @item.NegocioId</div>
+                            </td>
+                            <td>
+                                @if (item.Activo)
+                                {
+                                    <span class="badge text-bg-success">Activo</span>
+                                }
+                                else
+                                {
+                                    <span class="badge text-bg-secondary">Inactivo</span>
+                                }
+                            </td>
+                            <td>
+                                <form asp-action="GuardarLimitesNegocio" method="post" class="d-flex align-items-center justify-content-center flex-wrap gap-2">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="negocioId" value="@item.NegocioId" />
+                                    <input type="hidden" name="buscar" value="@Model.Buscar" />
+                                    <label class="small text-muted mb-0">Sedes</label>
+                                    <input type="number" min="1" max="999" name="sedesPermitidas" value="@item.SedesPermitidas" class="form-control form-control-sm" style="max-width:90px;" />
+                                    <label class="small text-muted mb-0">Espacios</label>
+                                    <input type="number" min="1" max="9999" name="espaciosPermitidos" value="@item.EspaciosPermitidos" class="form-control form-control-sm" style="max-width:110px;" />
+                                    <div class="ms-2">
+                                        <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-save me-1"></i>Guardar</button>
+                                    </div>
+                                </form>
+                            </td>
+                            <td>
+                                <div class="small">
+                                    <span class="badge text-bg-@(item.EstadoSuscripcion is 1 or 2 ? "success" : item.EstadoSuscripcion == 3 ? "danger" : "secondary")">@item.EstadoSuscripcionNombre</span>
+                                </div>
+                                @if (item.EsPrueba && item.FechaFinPrueba.HasValue)
+                                {
+                                    <div class="small text-muted">Prueba hasta: @item.FechaFinPrueba.Value.ToString("dd/MM/yyyy")</div>
+                                }
+                                @if (!item.EsPrueba && item.FechaFinPlan.HasValue)
+                                {
+                                    <div class="small text-muted">Plan: @item.TipoCobro | @item.FechaInicioPlan?.ToString("dd/MM/yyyy") - @item.FechaFinPlan?.ToString("dd/MM/yyyy")</div>
+                                    <div class="small text-muted">Gracia: @item.DiasGracia dias (hasta @item.FechaFinGracia?.ToString("dd/MM/yyyy"))</div>
+                                }
+                                <form asp-action="ActivarContratoNegocio" method="post" class="row g-1 mt-2">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="negocioId" value="@item.NegocioId" />
+                                    <input type="hidden" name="buscar" value="@Model.Buscar" />
+                                    <div class="col-12">
+                                        <select name="tipoCobro" class="form-select form-select-sm">
+                                            <option value="MENSUAL">Mensual</option>
+                                            <option value="TRIMESTRAL">Trimestral</option>
+                                            <option value="SEMESTRAL">Semestral</option>
+                                            <option value="ANUAL">Anual</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="date" name="fechaDesde" class="form-control form-control-sm" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="date" name="fechaHasta" class="form-control form-control-sm" value="@DateTime.Today.AddMonths(1).ToString("yyyy-MM-dd")" />
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="number" min="1" max="30" name="diasGracia" value="@item.DiasGracia" class="form-control form-control-sm" />
+                                    </div>
+                                    <div class="col-6 d-grid">
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">Dar inicio a contrato</button>
+                                    </div>
+                                </form>
+                            </td>
+                            <td class="text-end">
+                                <span class="text-muted small">ID @item.NegocioId</span>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

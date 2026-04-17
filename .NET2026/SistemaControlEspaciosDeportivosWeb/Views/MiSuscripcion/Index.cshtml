@@ -1,0 +1,82 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.MiSuscripcionIndexViewModel
+@{
+    ViewData["Title"] = "Mi suscripcion";
+    var sus = Model.Suscripcion;
+    var dias = Model.DiasParaVencer;
+    var badgeClass = "text-bg-secondary";
+    if (dias.HasValue)
+    {
+        badgeClass = dias.Value switch
+        {
+            < 0 => "text-bg-danger",
+            <= 7 => "text-bg-warning",
+            _ => "text-bg-success"
+        };
+    }
+}
+<!-- Firma: Codex - 16/04/2026 | Nueva pestaña Mi suscripcion para negocio con estado, vigencia y contacto de plataforma. -->
+
+<header class="page-header">
+    <div>
+        <h1>Mi suscripcion</h1>
+        <p class="page-subtitle">Revisa tu estado actual, fecha de vencimiento y datos de contacto de la plataforma.</p>
+    </div>
+    <div class="action-toolbar">
+        <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">
+            <i class="bi bi-arrow-left"></i> Volver al panel
+        </a>
+    </div>
+</header>
+
+@if (sus is null)
+{
+    <div class="alert alert-warning">
+        No se encontro informacion de suscripcion para este negocio. Contacta al administrador de plataforma.
+    </div>
+}
+else
+{
+    <section class="content-card mb-3">
+        <div class="kpi-grid">
+            <article class="kpi-card">
+                <p class="kpi-card-label">Estado</p>
+                <h2 class="kpi-card-value">@sus.EstadoSuscripcionNombre</h2>
+            </article>
+            <article class="kpi-card">
+                <p class="kpi-card-label">Plan</p>
+                <h2 class="kpi-card-value">@(Model.EsModoGratuito ? "Modo gratuito" : (string.IsNullOrWhiteSpace(sus.TipoCobro) ? "Contrato" : sus.TipoCobro))</h2>
+            </article>
+            <article class="kpi-card">
+                <p class="kpi-card-label">Vence</p>
+                <h2 class="kpi-card-value">@(Model.FechaVencimiento?.ToString("dd/MM/yyyy") ?? "-")</h2>
+            </article>
+            <article class="kpi-card">
+                <p class="kpi-card-label">Dias para vencer</p>
+                <h2 class="kpi-card-value">
+                    @if (dias.HasValue)
+                    {
+                        <span class="badge @badgeClass px-3 py-2">@dias.Value</span>
+                    }
+                    else
+                    {
+                        <span>-</span>
+                    }
+                </h2>
+            </article>
+        </div>
+    </section>
+
+    <section class="content-card">
+        <h2 class="section-title mb-3"><i class="bi bi-headset me-1"></i>Contacto de soporte de plataforma</h2>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Correo</label>
+                <div class="form-control bg-light">@(!string.IsNullOrWhiteSpace(Model.ContactoPlataformaEmail) ? Model.ContactoPlataformaEmail : "No configurado")</div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Telefono</label>
+                <div class="form-control bg-light">@(!string.IsNullOrWhiteSpace(Model.ContactoPlataformaTelefono) ? Model.ContactoPlataformaTelefono : "No configurado")</div>
+            </div>
+        </div>
+    </section>
+}

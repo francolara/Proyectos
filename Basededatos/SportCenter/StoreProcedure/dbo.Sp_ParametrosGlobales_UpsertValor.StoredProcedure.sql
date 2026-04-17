@@ -6,17 +6,18 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 -- Firma: Codex - 15/04/2026 | Procedimiento para actualizar solo ValorParametro por NombreParametro en ParametrosGlobales (sin inserts; alta por script).
+-- Firma: Codex - 16/04/2026 | Se amplia longitud de @Descripcion y @ValorParametro a 500 caracteres para configuracion del portal web.
 CREATE OR ALTER PROCEDURE dbo.Sp_ParametrosGlobales_UpsertValor
     @NombreParametro NVARCHAR(100),
-    @Descripcion NVARCHAR(250) = NULL,
-    @ValorParametro NVARCHAR(MAX) = NULL,
+    @Descripcion NVARCHAR(500) = NULL,
+    @ValorParametro NVARCHAR(500) = NULL,
     @Usuario NVARCHAR(120)
 AS
 BEGIN
     SET NOCOUNT ON;
 
     BEGIN TRY
-        DECLARE @ValorNorm NVARCHAR(100) = LEFT(COALESCE(@ValorParametro, N''), 100);
+        DECLARE @ValorNorm NVARCHAR(500) = LEFT(COALESCE(@ValorParametro, N''), 500);
 
         IF NOT EXISTS (
             SELECT 1

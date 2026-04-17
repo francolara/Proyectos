@@ -34,4 +34,29 @@ public class NotificacionesController(IModuloPermisoService moduloPermisoService
             })
         });
     }
+
+    [HttpPost]
+    public async Task<IActionResult> MarcarLeida(int negocioId, int notificacionId)
+    {
+        var baseVm = await ObtenerBaseAsync(negocioId, "DASHBOARD");
+        if (baseVm is null || !string.IsNullOrWhiteSpace(baseVm.Mensaje))
+            return Forbid();
+
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var ok = await spService.NotificacionesMarcarLeidaAsync(negocioId, notificacionId, userId);
+        var noLeidas = await spService.NotificacionesContarNoLeidasAsync(negocioId);
+        return Json(new { ok, noLeidas });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> MarcarTodasLeidas(int negocioId)
+    {
+        var baseVm = await ObtenerBaseAsync(negocioId, "DASHBOARD");
+        if (baseVm is null || !string.IsNullOrWhiteSpace(baseVm.Mensaje))
+            return Forbid();
+
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var totalActualizadas = await spService.NotificacionesMarcarTodasLeidasAsync(negocioId, userId);
+        return Json(new { ok = true, totalActualizadas, noLeidas = 0 });
+    }
 }

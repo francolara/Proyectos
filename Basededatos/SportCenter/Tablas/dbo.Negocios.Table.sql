@@ -5,6 +5,7 @@ GO
 -- Firma: Codex - 06/04/2026 | Agrega politica de confirmacion de reserva por pago y porcentaje minimo de adelanto por negocio.
 -- Firma: Codex - 09/04/2026 | Agrega configuracion de emision (CPE/Recibo interno) y porcentaje IGV.
 -- Firma: Codex - 13/04/2026 | Agrega LogoUrl para imagen del logo del negocio.
+-- Firma: Codex - 16/04/2026 | Agrega limites operativos (Sedes/Espacios) y flags de reserva (edicion de precio/cancelacion automatica por no confirmacion).
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -27,6 +28,11 @@ CREATE TABLE [dbo].[Negocios](
     [DireccionFiscal] [nvarchar](250) NULL,
     [CodigoUbigeo] [char](6) NULL,
     [LogoUrl] [nvarchar](500) NULL,
+    [PermitirModificarPrecioReserva] [bit] NOT NULL,
+    [CancelacionAutomaticaNoConfirmada] [bit] NOT NULL,
+    [MinutosCancelacionNoConfirmada] [int] NULL,
+    [SedesPermitidas] [int] NOT NULL,
+    [EspaciosPermitidos] [int] NOT NULL,
  CONSTRAINT [PK_Negocios] PRIMARY KEY CLUSTERED 
 (
     [Id] ASC
@@ -42,6 +48,14 @@ GO
 ALTER TABLE [dbo].[Negocios] ADD  CONSTRAINT [DF_Negocios_EmisionComprobantesElectronicos]  DEFAULT ((0)) FOR [EmisionComprobantesElectronicos]
 GO
 ALTER TABLE [dbo].[Negocios] ADD  CONSTRAINT [DF_Negocios_EmisionReciboInterno]  DEFAULT ((0)) FOR [EmisionReciboInterno]
+GO
+ALTER TABLE [dbo].[Negocios] ADD  CONSTRAINT [DF_Negocios_PermitirModificarPrecioReserva]  DEFAULT ((0)) FOR [PermitirModificarPrecioReserva]
+GO
+ALTER TABLE [dbo].[Negocios] ADD  CONSTRAINT [DF_Negocios_CancelacionAutomaticaNoConfirmada]  DEFAULT ((0)) FOR [CancelacionAutomaticaNoConfirmada]
+GO
+ALTER TABLE [dbo].[Negocios] ADD  CONSTRAINT [DF_Negocios_SedesPermitidas]  DEFAULT ((2)) FOR [SedesPermitidas]
+GO
+ALTER TABLE [dbo].[Negocios] ADD  CONSTRAINT [DF_Negocios_EspaciosPermitidos]  DEFAULT ((6)) FOR [EspaciosPermitidos]
 GO
 ALTER TABLE [dbo].[Negocios]  WITH CHECK ADD  CONSTRAINT [FK_Negocios_Monedas_MonedaId] FOREIGN KEY([MonedaId])
 REFERENCES [dbo].[Monedas] ([Id])

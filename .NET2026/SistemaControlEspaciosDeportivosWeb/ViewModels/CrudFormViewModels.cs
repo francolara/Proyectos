@@ -48,6 +48,18 @@ public class SedeFormViewModel
     [StringLength(20, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string? Telefono { get; set; }
 
+    [StringLength(500, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+    [Url(ErrorMessage = "Ingresa una URL valida.")]
+    public string? FacebookUrl { get; set; }
+
+    [StringLength(500, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+    [Url(ErrorMessage = "Ingresa una URL valida.")]
+    public string? InstagramUrl { get; set; }
+
+    [StringLength(500, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+    [Url(ErrorMessage = "Ingresa una URL valida.")]
+    public string? TwitterUrl { get; set; }
+
     [RegularExpression(@"^\+\d{1,4}$", ErrorMessage = "Selecciona un codigo de pais valido.")]
     public string TelefonoCodigoPais { get; set; } = "+51";
 
@@ -186,6 +198,7 @@ public class ReservaFormViewModel
 
     [Range(0, 999999, ErrorMessage = "El campo {0} debe estar entre {1} y {2}.")]
     public decimal Total { get; set; }
+    public bool PuedeModificarPrecio { get; set; }
 
     [Range(0, 999999, ErrorMessage = "El campo {0} debe estar entre {1} y {2}.")]
     public decimal Adelanto { get; set; }

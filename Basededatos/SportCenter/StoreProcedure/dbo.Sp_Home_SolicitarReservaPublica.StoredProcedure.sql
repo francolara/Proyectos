@@ -8,7 +8,7 @@ GO
 
 -- SOURCE: 10_Home_Solicitudes_Publicas.sql (linea 35)
 -- Firma: Codex - 14/04/2026 | Convierte flujo publico: ahora crea reserva real (canal CLIENTE_WEB), reutiliza/crea cliente y aplica politica de confirmacion/pago del negocio.
--- Firma: Codex - 15/04/2026 | Registro publico alineado al alta rapida de cliente: recibe tipo/numero documento, nombres, apellidos y equipo; si hay documento reutiliza cliente del negocio, sin documento siempre crea nuevo cliente. Ajuste de compatibilidad T-SQL en EXEC: @NumeroDocumento se pasa via variable (sin COALESCE inline).
+-- Firma: Codex - 16/04/2026 | Registro publico autenticado: recibe UsuarioId opcional y guarda relacion en ReservasUsuariosPublicos para historial del perfil publico.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Home_SolicitarReservaPublica]
     @EspacioDeportivoId INT,
     @Fecha DATE,
@@ -21,7 +21,8 @@ CREATE OR ALTER PROCEDURE [dbo].[Sp_Home_SolicitarReservaPublica]
     @NumeroDocumento NVARCHAR(20) = NULL,
     @Telefono NVARCHAR(30) = NULL,
     @Correo NVARCHAR(200) = NULL,
-    @Comentario NVARCHAR(300) = NULL
+    @Comentario NVARCHAR(300) = NULL,
+    @UsuarioId NVARCHAR(450) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -160,6 +161,16 @@ BEGIN
 
         IF @ReservaId IS NULL OR @ReservaId <= 0
             RAISERROR('No se pudo generar la reserva.', 16, 1);
+
+        IF NULLIF(LTRIM(RTRIM(@UsuarioId)), N'') IS NOT NULL
+           AND EXISTS (SELECT 1 FROM dbo.AspNetUsers WHERE Id = @UsuarioId)
+        BEGIN
+            IF NOT EXISTS (SELECT 1 FROM dbo.ReservasUsuariosPublicos WHERE ReservaId = @ReservaId AND UsuarioId = @UsuarioId)
+            BEGIN
+                INSERT INTO dbo.ReservasUsuariosPublicos (ReservaId, UsuarioId, FechaCreacion, UsuarioCreacion)
+                VALUES (@ReservaId, @UsuarioId, SYSDATETIME(), N'portal-web');
+            END
+        END
 
         SELECT @ReservaId;
     END TRY

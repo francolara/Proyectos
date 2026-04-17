@@ -64,4 +64,15 @@ public partial class SportCenterStoredProcedureService
         var result = await cmd.ExecuteScalarAsync();
         return Convert.ToInt32(result ?? 0);
     }
+
+    public async Task<int> ReservasAutoCancelarNoConfirmadasAsync(DateTime fechaHoraActual, string usuario)
+    {
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_Reservas_AutoCancelarNoConfirmadas", cn) { CommandType = CommandType.StoredProcedure };
+        AddParam(cmd, "@FechaHoraActual", fechaHoraActual, SqlDbType.DateTime2);
+        AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+        var result = await cmd.ExecuteScalarAsync();
+        return Convert.ToInt32(result ?? 0);
+    }
 }

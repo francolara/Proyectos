@@ -56,6 +56,15 @@ public class ConfiguracionClubViewModel : ModuloBaseViewModel
 
     [Range(typeof(decimal), "1", "100", ErrorMessage = "El porcentaje minimo debe ser un numero entero entre 1 y 100.")]
     public decimal? PorcentajeAdelantoMinimo { get; set; }
+    public bool PermitirModificarPrecioReserva { get; set; }
+    public bool CancelacionAutomaticaNoConfirmada { get; set; }
+
+    [Range(5, 1440, ErrorMessage = "El tiempo de cancelacion automatica debe estar entre 5 y 1440 minutos.")]
+    public int? MinutosCancelacionNoConfirmada { get; set; }
+    [Range(1, 999, ErrorMessage = "Sedes permitidas debe ser mayor a 0.")]
+    public int SedesPermitidas { get; set; } = 2;
+    [Range(1, 9999, ErrorMessage = "Espacios permitidos debe ser mayor a 0.")]
+    public int EspaciosPermitidos { get; set; } = 6;
     public bool EmisionComprobantesElectronicos { get; set; }
     public bool EmisionReciboInterno { get; set; }
 
@@ -175,6 +184,7 @@ public class ReservasIndexViewModel : ModuloBaseViewModel
     public List<string> FechasNoLaborables { get; set; } = new();
     public int PoliticaConfirmacionPago { get; set; }
     public decimal? PorcentajeAdelantoMinimo { get; set; }
+    public bool PermitirModificarPrecioReserva { get; set; }
     public string MonedaSimbolo { get; set; } = "S/";
     public string MonedaNombre { get; set; } = "PEN";
 }

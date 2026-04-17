@@ -75,6 +75,7 @@ public class ConfiguracionController(
         }
 
         NormalizarYValidarPoliticaConfirmacionPago(model);
+        NormalizarYValidarCancelacionNoConfirmada(model);
         NormalizarYValidarIgv(model);
         await NormalizarYValidarUbigeoAsync(model);
         ValidarEmisionComprobantes(model);
@@ -324,6 +325,28 @@ public class ConfiguracionController(
     {
         if (model.PorcentajeIgv is < 0 or > 100)
             ModelState.AddModelError(nameof(model.PorcentajeIgv), "El porcentaje de IGV debe estar entre 0 y 100.");
+    }
+
+    private void NormalizarYValidarCancelacionNoConfirmada(ConfiguracionClubViewModel model)
+    {
+        if (!model.CancelacionAutomaticaNoConfirmada)
+        {
+            model.MinutosCancelacionNoConfirmada = null;
+            return;
+        }
+
+        if (!model.MinutosCancelacionNoConfirmada.HasValue)
+        {
+            ModelState.AddModelError(nameof(model.MinutosCancelacionNoConfirmada),
+                "Ingresa el tiempo de cancelacion automatica por no confirmacion.");
+            return;
+        }
+
+        if (model.MinutosCancelacionNoConfirmada.Value < 5 || model.MinutosCancelacionNoConfirmada.Value > 1440)
+        {
+            ModelState.AddModelError(nameof(model.MinutosCancelacionNoConfirmada),
+                "El tiempo de cancelacion automatica debe estar entre 5 y 1440 minutos.");
+        }
     }
 
     private void ValidarEmisionComprobantes(ConfiguracionClubViewModel model)

@@ -6,6 +6,7 @@
 <!-- Firma: Codex - 09/04/2026 | Se agrega configuracion de emision CPE/Recibo interno, porcentaje IGV y mantenimiento de series por documento del negocio. -->
 <!-- Firma: Codex - 10/04/2026 | Reordena campos: IGV despues de moneda de trabajo y checks de emision debajo de direccion fiscal. -->
 <!-- Firma: Codex - 13/04/2026 | Se separa formulario en "Datos del club" y "Configuracion de Atributos"; confirmar reserva + porcentaje en primera fila, moneda + IGV en segunda fila. Agrega gestion de logo del club (subida/reemplazo/eliminacion) para uso en menu administrativo. -->
+<!-- Firma: Codex - 16/04/2026 | Configuracion de negocio agrega flags: permitir modificar precio en reservas y cancelacion automatica por no confirmacion (minutos). -->
 @{
     ViewData["Title"] = "Configuracion";
 }
@@ -167,6 +168,29 @@
                     <input asp-for="PorcentajeIgv" class="form-control text-center" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" id="PorcentajeIgv" />
                     <span asp-validation-for="PorcentajeIgv" class="text-danger"></span>
                 </div>
+                <div class="col-md-6">
+                    <label class="sc-check-chip">
+                        <input asp-for="PermitirModificarPrecioReserva" class="form-check-input mt-0" />
+                        <span>Permitir modificar un precio en el registro de reserva</span>
+                    </label>
+                </div>
+                <div class="col-md-6">
+                    <label class="sc-check-chip">
+                        <input asp-for="CancelacionAutomaticaNoConfirmada" class="form-check-input mt-0" id="CancelacionAutomaticaNoConfirmada" />
+                        <span>Cancelacion de reserva por tiempo no confirmado</span>
+                    </label>
+                </div>
+                <div class="col-md-6" id="rowMinutosCancelacionNoConfirmada">
+                    <label asp-for="MinutosCancelacionNoConfirmada" class="form-label">Tiempo maximo sin confirmar (minutos)</label>
+                    <input asp-for="MinutosCancelacionNoConfirmada"
+                           class="form-control text-end"
+                           type="text"
+                           inputmode="numeric"
+                           pattern="[0-9]*"
+                           maxlength="4"
+                           id="MinutosCancelacionNoConfirmada" />
+                    <span asp-validation-for="MinutosCancelacionNoConfirmada" class="text-danger"></span>
+                </div>
             </div>
         </div>
     </section>
@@ -298,6 +322,9 @@
             const porcentaje = document.getElementById('PorcentajeAdelantoMinimo');
             const chkCpe = document.getElementById('EmisionComprobantesElectronicos');
             const chkRecibo = document.getElementById('EmisionReciboInterno');
+            const chkCancelacionAuto = document.getElementById('CancelacionAutomaticaNoConfirmada');
+            const rowMinCancelacionAuto = document.getElementById('rowMinutosCancelacionNoConfirmada');
+            const minCancelacionAuto = document.getElementById('MinutosCancelacionNoConfirmada');
             const tipoDocumento = document.getElementById('TipoDocumento');
             const logoArchivo = document.getElementById('LogoArchivo');
             const quitarLogo = document.getElementById('QuitarLogo');
@@ -323,6 +350,14 @@
                 rowPorcentaje.style.display = requiereAdelanto ? '' : 'none';
                 porcentaje.required = requiereAdelanto;
                 if (!requiereAdelanto) porcentaje.value = '';
+            }
+
+            function toggleCancelacionAuto() {
+                if (!chkCancelacionAuto || !rowMinCancelacionAuto || !minCancelacionAuto) return;
+                const activo = chkCancelacionAuto.checked;
+                rowMinCancelacionAuto.style.display = activo ? '' : 'none';
+                minCancelacionAuto.required = activo;
+                if (!activo) minCancelacionAuto.value = '';
             }
 
             function toggleSeccionesEmision() {
@@ -421,6 +456,7 @@
             if (chkCpe) chkCpe.addEventListener('change', syncHiddenEmisionEnFormsSeries);
             if (chkRecibo) chkRecibo.addEventListener('change', syncHiddenEmisionEnFormsSeries);
             if (chkCpe) chkCpe.addEventListener('change', aplicarReglasCpe);
+            if (chkCancelacionAuto) chkCancelacionAuto.addEventListener('change', toggleCancelacionAuto);
             formsSeries.forEach(f => f.addEventListener('submit', syncHiddenEmisionEnFormsSeries));
             if (logoArchivo) logoArchivo.addEventListener('change', limpiarCheckQuitarLogoConNuevoArchivo);
             const igv = document.getElementById('PorcentajeIgv');
@@ -446,8 +482,31 @@
                 igv.addEventListener('input', normalizarIgv);
                 igv.addEventListener('blur', normalizarIgv);
             }
+            if (minCancelacionAuto) {
+                const normalizarMinutosAuto = () => {
+                    const raw = (minCancelacionAuto.value || '').trim().replace(/\D/g, '');
+                    if (!raw) {
+                        minCancelacionAuto.value = '';
+                        return;
+                    }
+                    let entero = Number.parseInt(raw, 10);
+                    if (!Number.isFinite(entero)) entero = 0;
+                    if (entero < 5) entero = 5;
+                    if (entero > 1440) entero = 1440;
+                    minCancelacionAuto.value = String(entero);
+                };
+                minCancelacionAuto.addEventListener('keydown', (evt) => {
+                    const tecla = evt.key;
+                    if (tecla === '.' || tecla === ',' || tecla === 'e' || tecla === 'E' || tecla === '-' || tecla === '+') {
+                        evt.preventDefault();
+                    }
+                });
+                minCancelacionAuto.addEventListener('input', normalizarMinutosAuto);
+                minCancelacionAuto.addEventListener('blur', normalizarMinutosAuto);
+            }
             toggleRequired();
             togglePoliticaPago();
+            toggleCancelacionAuto();
             normalizarPorcentajeEntero();
             toggleSeccionesEmision();
             syncHiddenEmisionEnFormsSeries();

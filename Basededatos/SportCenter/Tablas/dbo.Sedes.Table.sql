@@ -10,6 +10,11 @@ GO
 -- Create date:   06/04/2026
 -- Description:   Agrega campo ConsideracionesReserva para publicar reglas y condiciones de reserva por sede.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   16/04/2026
+-- Description:   Agrega URLs de redes sociales (Facebook/Instagram/Twitter) por sede para portal publico.
+-- =============================================
 CREATE TABLE [dbo].[Sedes](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[NegocioId] [int] NOT NULL,
@@ -17,6 +22,9 @@ CREATE TABLE [dbo].[Sedes](
 	[Direccion] [nvarchar](max) NOT NULL,
 	[ConsideracionesReserva] [nvarchar](2000) NULL,
 	[Telefono] [nvarchar](max) NULL,
+	[FacebookUrl] [nvarchar](500) NULL,
+	[InstagramUrl] [nvarchar](500) NULL,
+	[TwitterUrl] [nvarchar](500) NULL,
 	[Activo] [bit] NOT NULL,
 	[FechaActualizacion] [datetime2](7) NULL,
 	[FechaCreacion] [datetime2](7) NOT NULL,

@@ -1,0 +1,123 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.PlataformaAltasClubesAdminViewModel
+@{
+    ViewData["Title"] = "Altas de clubes";
+}
+<!-- Firma: Codex - 16/04/2026 | Panel superadmin para aprobar/rechazar solicitudes de clubes y configurar periodo de prueba en dias. -->
+
+<div class="page-header-card mb-3">
+    <div class="page-header-main">
+        <h1 class="page-title">Altas de clubes</h1>
+        <p class="page-subtitle">Confirma solicitudes pendientes para habilitar el modulo del negocio.</p>
+    </div>
+</div>
+
+@if (TempData["PortalWebOk"] is string ok && !string.IsNullOrWhiteSpace(ok))
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (TempData["PortalWebError"] is string err && !string.IsNullOrWhiteSpace(err))
+{
+    <div class="alert alert-danger">@err</div>
+}
+
+<section class="table-card sc-reservas-list-card p-3 mb-3">
+    <form asp-action="ClubesPendientes" method="get" class="row g-2 align-items-end">
+        <div class="col-md-4 col-lg-3">
+            <label class="form-label">Estado</label>
+            <select class="form-select" name="estado">
+                <option value="">Todos</option>
+                <option value="1" selected="@(Model.Estado == 1 ? "selected" : null)">Pendiente</option>
+                <option value="2" selected="@(Model.Estado == 2 ? "selected" : null)">Aprobado</option>
+                <option value="3" selected="@(Model.Estado == 3 ? "selected" : null)">Rechazado</option>
+            </select>
+        </div>
+        <div class="col-md-3 col-lg-2 d-grid">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-search me-1"></i>Consultar</button>
+        </div>
+    </form>
+</section>
+
+<section class="table-card sc-reservas-list-card p-0 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Solicitud</th>
+                    <th>Contacto</th>
+                    <th>Club</th>
+                    <th>Ubicacion</th>
+                    <th>Estado</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Solicitudes.Count == 0)
+                {
+                    <tr><td colspan="6" class="text-center text-muted py-4">No hay solicitudes para mostrar.</td></tr>
+                }
+                else
+                {
+                    foreach (var s in Model.Solicitudes)
+                    {
+                        var badge = s.Estado switch
+                        {
+                            1 => "warning",
+                            2 => "success",
+                            3 => "secondary",
+                            _ => "light"
+                        };
+                        var estadoNombre = s.Estado switch
+                        {
+                            1 => "Pendiente",
+                            2 => "Aprobado",
+                            3 => "Rechazado",
+                            _ => "Desconocido"
+                        };
+                        <tr>
+                            <td>
+                                <strong>@s.CodigoSolicitud</strong>
+                                <div class="text-muted small">@s.FechaRegistro.ToString("dd/MM/yyyy HH:mm")</div>
+                            </td>
+                            <td>
+                                <div><strong>@s.NombreContacto</strong></div>
+                                <div class="small text-muted">@s.Correo</div>
+                                <div class="small text-muted">@s.Telefono</div>
+                            </td>
+                            <td>
+                                <div><strong>@s.NombreClub</strong></div>
+                                <div class="small text-muted">@s.RelacionClub</div>
+                            </td>
+                            <td>
+                                <div>@s.Ciudad, @s.ProvinciaEstado</div>
+                                <div class="small text-muted">@s.Direccion</div>
+                            </td>
+                            <td><span class="badge text-bg-@badge">@estadoNombre</span></td>
+                            <td class="text-end">
+                                @if (s.Estado == 1)
+                                {
+                                    <form asp-action="AprobarClub" method="post" class="d-inline-flex align-items-center gap-2 flex-wrap justify-content-end me-2">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@s.Id" />
+                                        <input type="hidden" name="estado" value="@Model.Estado" />
+                                        <input type="number" min="1" max="365" name="diasPrueba" value="@Model.DiasPruebaDefault" class="form-control form-control-sm" style="width:95px;" title="Dias de prueba" />
+                                        <button type="submit" class="btn btn-sm btn-success"><i class="bi bi-check2-circle me-1"></i>Aprobar</button>
+                                    </form>
+                                    <form asp-action="RechazarClub" method="post" class="d-inline-flex align-items-center gap-2 flex-wrap justify-content-end">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@s.Id" />
+                                        <input type="hidden" name="estado" value="@Model.Estado" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-circle me-1"></i>Rechazar</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">Gestionado</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

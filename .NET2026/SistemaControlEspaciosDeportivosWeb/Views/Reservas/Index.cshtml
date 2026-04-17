@@ -13,6 +13,7 @@
 <!-- Firma: Codex - 27/03/2026 | Calendario en espanol, bloqueos por sede, gestion por modal, bloqueo de fechas pasadas y rediseno visual SaaS del calendario -->
 <!-- Firma: Codex - 13/04/2026 | Cabecera del modulo muestra tarjeta informativa de Club/negocio con ID junto al titulo; KPI del listado general excluye reservas canceladas en conteo de reservas activas y saldo acumulado; filtros de listado agregan presets rapidos Hoy/7d/30d/Mes actual. -->
 <!-- Firma: Codex - 13/04/2026 | En cotizacion del pop-up de reserva, el label de precio muestra aviso "Horario con promocion aplicada del N%" cuando descuentoPct > 0. -->
+<!-- Firma: Codex - 16/04/2026 | Se aplica regla de negocio para precio en reservas: campo visualmente bloqueado cuando el negocio no permite editar precio y mensaje informativo de calculo automatico por tarifa/promocion. -->
 @{
     ViewData["Title"] = "Reservas";
     var sedeSeleccionadaTexto = Model.SedesFiltro.FirstOrDefault(x => x.Value == Model.SedeId?.ToString())?.Text ?? "Seleccione sede";
@@ -794,6 +795,10 @@ else
                         <div class="col-md-6">
                             <label class="form-label" id="modalPrecioLabel">Precio de Espacio (@Model.MonedaSimbolo)</label>
                             <input type="number" min="0.01" step="0.01" class="form-control sc-monto-input" id="modalTotal" name="Total" required />
+                            @if (!Model.PermitirModificarPrecioReserva)
+                            {
+                                <small class="text-muted">El precio se calcula automaticamente segun tarifa y promocion del horario.</small>
+                            }
                         </div>
                         <div class="col-md-6">
                             <div class="d-flex justify-content-between align-items-center mb-1">
@@ -989,6 +994,7 @@ else
             const hoyIso = `${hoyDate.getFullYear()}-${String(hoyDate.getMonth() + 1).padStart(2, '0')}-${String(hoyDate.getDate()).padStart(2, '0')}`;
             const puedeCrearReserva = @Model.PuedeCrear.ToString().ToLowerInvariant();
             const puedeEditarReserva = @Model.PuedeEditar.ToString().ToLowerInvariant();
+            const permiteEditarPrecioReserva = @Model.PermitirModificarPrecioReserva.ToString().ToLowerInvariant();
             const estadosOcultosCalendario = new Set();
             let timerValidacion = null;
             let conflictoReservaIdActual = null;
@@ -1004,6 +1010,10 @@ else
             const debugDragActivo = true;
             const calendarAxisWidth = '122px';
             const clientesDetalleMap = new Map();
+            if (modalTotalEl && !permiteEditarPrecioReserva) {
+                modalTotalEl.readOnly = true;
+                modalTotalEl.classList.add('bg-light');
+            }
             function pad2(n) {
                 return String(n).padStart(2, '0');
             }

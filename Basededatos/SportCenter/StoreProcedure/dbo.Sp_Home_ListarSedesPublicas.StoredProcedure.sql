@@ -14,6 +14,7 @@ GO
 -- =============================================
 -- Firma: Codex - 14/04/2026 | Devuelve NegocioId y NombreComercial para poblar filtro publico por club/negocio.
 -- Firma: Codex - 15/04/2026 | Agrega Servicios (catalogo de sede) para mostrar amenities del club en la vista publica de reserva.
+-- Firma: Codex - 16/04/2026 | Expone URLs sociales por sede (Facebook/Instagram/Twitter) para iconos en tarjetas publicas y agrega codigos de ubigeo del negocio para filtrar combo de club en Home por departamento/provincia/distrito.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Home_ListarSedesPublicas]
 AS
 BEGIN
@@ -27,6 +28,9 @@ BEGIN
             s.Telefono,
             scn.WhatsappContacto,
             COALESCE(scn.PermiteChatWhatsapp, 0) AS PermiteChatWhatsapp,
+            s.FacebookUrl,
+            s.InstagramUrl,
+            s.TwitterUrl,
             s.Latitud,
             s.Longitud,
             s.GoogleMapsUrl,
@@ -42,7 +46,10 @@ BEGIN
                   AND cs.Activo = 1
                 ORDER BY cs.Nombre
                 FOR XML PATH(''), TYPE
-            ).value('.', 'NVARCHAR(MAX)'), 1, 2, N'') AS Servicios
+            ).value('.', 'NVARCHAR(MAX)'), 1, 2, N'') AS Servicios,
+            n.CodigoUbigeo AS CodigoUbigeoNegocio,
+            CASE WHEN n.CodigoUbigeo IS NOT NULL THEN LEFT(n.CodigoUbigeo, 2) END AS CodigoDepartamentoNegocio,
+            CASE WHEN n.CodigoUbigeo IS NOT NULL THEN LEFT(n.CodigoUbigeo, 4) END AS CodigoProvinciaNegocio
         FROM dbo.Sedes s
         INNER JOIN dbo.Negocios n ON n.Id = s.NegocioId
         LEFT JOIN dbo.SedeConfiguracionNotificacion scn ON scn.SedeId = s.Id

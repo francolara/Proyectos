@@ -10,12 +10,18 @@
         .ToList();
     var banners = Model.Banners?.Where(x => !string.IsNullOrWhiteSpace(x.ImagenUrl)).OrderBy(x => x.Orden).ThenBy(x => x.Id).ToList()
         ?? new List<SistemaControlEspaciosDeportivosWeb.ViewModels.WebBannerPublicoViewModel>();
+    var ctaClubUrl = (Model.PortalConfig.CtaBotonClubUrl ?? string.Empty).Trim();
+    if (string.IsNullOrWhiteSpace(ctaClubUrl) || ctaClubUrl.Equals("/Home/SoftwareClubes", StringComparison.OrdinalIgnoreCase))
+    {
+        ctaClubUrl = "/Identity/Account/Register?TipoRegistro=club";
+    }
 }
 <!-- Firma: Codex - 14/04/2026 | Home publico con mini carrusel de fotos por sede en tarjetas de espacios disponibles. -->
 <!-- Firma: Codex - 15/04/2026 | Resultado publico simplificado: boton Reservar ahora (sin formulario embebido) y retiro del bloque Consideraciones en las tarjetas para reducir carga visual. -->
 <!-- Firma: Codex - 15/04/2026 | Home agrega bloque 'Busqueda por dia y horario' con opcion de omitir filtro cuando se selecciona club/negocio. -->
 <!-- Firma: Codex - 15/04/2026 | Home renovado: titulos profesionales, paginacion de 12, bloque de beneficios y CTA/footer administrable desde super admin. -->
 <!-- Firma: Codex - 15/04/2026 | Seccion de beneficios (6 tarjetas fijas) configurable por parametros globales HOME_PORTAL_BENEF_*. -->
+<!-- Firma: Codex - 16/04/2026 | Tarjetas de espacios muestran iconos de redes sociales de la sede junto al boton de reserva; footer resalta WhatsApp y se agrega boton flotante de contacto en Home. -->
 
 <section class="home-hero mb-4">
     <div id="homeHeroCarousel" class="carousel slide home-hero-carousel h-100" data-bs-ride="carousel" data-bs-interval="5500">
@@ -384,30 +390,46 @@
                                 </div>
                             }
 
-                            <div class="mt-auto">
-                                <a class="btn btn-primary btn-sm"
-                                   asp-action="Reservar"
-                                   asp-route-espacioDeportivoId="@item.EspacioDeportivoId"
-                                   asp-route-fecha="@Model.Fecha.ToString("yyyy-MM-dd")"
-                                   asp-route-horaInicio="@Model.HoraInicio.ToString("HH\\:mm")"
-                                   asp-route-horaFin="@Model.HoraFin.ToString("HH\\:mm")"
-                                   asp-route-codigoDepartamento="@Model.CodigoDepartamento"
-                                   asp-route-codigoProvincia="@Model.CodigoProvincia"
-                                   asp-route-codigoUbigeo="@Model.CodigoUbigeo"
-                                   asp-route-tipoDeporteId="@Model.TipoDeporteId"
-                                   asp-route-negocioId="@Model.NegocioId"
-                                   asp-route-omitirFechaHorario="@Model.OmitirFechaHorario">
-                                    Reservar ahora
-                                </a>
-                                @if (item.PermiteChatWhatsapp && !string.IsNullOrWhiteSpace(numeroWhatsappEspacio))
-                                {
-                                    <a class="btn btn-success btn-sm ms-2"
-                                       href="@enlaceWhatsappEspacio"
-                                       target="_blank"
-                                       rel="noopener noreferrer">
-                                        WhatsApp
+                            <div class="mt-auto d-flex align-items-center justify-content-between gap-2">
+                                <div class="d-flex align-items-center flex-wrap gap-2">
+                                    <a class="btn btn-primary btn-sm"
+                                       asp-action="Reservar"
+                                       asp-route-espacioDeportivoId="@item.EspacioDeportivoId"
+                                       asp-route-fecha="@Model.Fecha.ToString("yyyy-MM-dd")"
+                                       asp-route-horaInicio="@Model.HoraInicio.ToString("HH\\:mm")"
+                                       asp-route-horaFin="@Model.HoraFin.ToString("HH\\:mm")"
+                                       asp-route-codigoDepartamento="@Model.CodigoDepartamento"
+                                       asp-route-codigoProvincia="@Model.CodigoProvincia"
+                                       asp-route-codigoUbigeo="@Model.CodigoUbigeo"
+                                       asp-route-tipoDeporteId="@Model.TipoDeporteId"
+                                       asp-route-negocioId="@Model.NegocioId"
+                                       asp-route-omitirFechaHorario="@Model.OmitirFechaHorario">
+                                        Reservar ahora
                                     </a>
-                                }
+                                    @if (item.PermiteChatWhatsapp && !string.IsNullOrWhiteSpace(numeroWhatsappEspacio))
+                                    {
+                                        <a class="btn btn-success btn-sm"
+                                           href="@enlaceWhatsappEspacio"
+                                           target="_blank"
+                                           rel="noopener noreferrer">
+                                            WhatsApp
+                                        </a>
+                                    }
+                                </div>
+                                <div class="home-sede-social">
+                                    @if (!string.IsNullOrWhiteSpace(sedeRef?.FacebookUrl))
+                                    {
+                                        <a href="@sedeRef.FacebookUrl" target="_blank" rel="noopener noreferrer" aria-label="Facebook de la sede"><i class="bi bi-facebook"></i></a>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(sedeRef?.InstagramUrl))
+                                    {
+                                        <a href="@sedeRef.InstagramUrl" target="_blank" rel="noopener noreferrer" aria-label="Instagram de la sede"><i class="bi bi-instagram"></i></a>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(sedeRef?.TwitterUrl))
+                                    {
+                                        <a href="@sedeRef.TwitterUrl" target="_blank" rel="noopener noreferrer" aria-label="Twitter de la sede"><i class="bi bi-twitter-x"></i></a>
+                                    }
+                                </div>
                             </div>
                         </div>
                     </article>
@@ -517,7 +539,7 @@
         <h2>@Model.PortalConfig.CtaTitulo</h2>
         <p>@Model.PortalConfig.CtaSubtitulo</p>
         <div class="d-flex justify-content-center flex-wrap gap-2">
-            <a href="@Model.PortalConfig.CtaBotonClubUrl" class="btn btn-light btn-lg px-4 fw-semibold">@Model.PortalConfig.CtaBotonClubTexto</a>
+            <a href="@ctaClubUrl" class="btn btn-light btn-lg px-4 fw-semibold">@Model.PortalConfig.CtaBotonClubTexto</a>
             <a href="@Model.PortalConfig.CtaBotonUsuarioUrl" class="btn btn-outline-light btn-lg px-4 fw-semibold">@Model.PortalConfig.CtaBotonUsuarioTexto</a>
         </div>
     </div>
@@ -554,13 +576,27 @@
                     }
                     @if (!string.IsNullOrWhiteSpace(Model.PortalConfig.SiguenosWhatsappUrl))
                     {
-                        <a href="@Model.PortalConfig.SiguenosWhatsappUrl" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>
+                        <a href="@Model.PortalConfig.SiguenosWhatsappUrl" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" class="home-platform-whatsapp">
+                            <i class="bi bi-whatsapp"></i>
+                        </a>
                     }
                 </div>
             </div>
         </div>
     </div>
 </section>
+
+@if (!string.IsNullOrWhiteSpace(Model.PortalConfig.SiguenosWhatsappUrl))
+{
+    <a href="@Model.PortalConfig.SiguenosWhatsappUrl"
+       target="_blank"
+       rel="noopener noreferrer"
+       class="home-whatsapp-float"
+       aria-label="Contactanos por WhatsApp"
+       title="Contactanos por WhatsApp">
+        <i class="bi bi-whatsapp"></i>
+    </a>
+}
 
 @section Scripts {
 <script>
@@ -596,6 +632,7 @@
 
     const urlProv = '@Url.Action("UbigeoProvincias", "Home")';
     const urlDist = '@Url.Action("UbigeoDistritos", "Home")';
+    const urlNegocios = '@Url.Action("NegociosPorUbigeo", "Home")';
 
     function renderOptions(select, rows, emptyText) {
         select.innerHTML = '';
@@ -612,10 +649,32 @@
         });
     }
 
+    async function refreshNegocios() {
+        if (!negocio) return;
+        const seleccionadoActual = (negocio.value || '').trim();
+        const query = new URLSearchParams({
+            codigoDepartamento: (dep?.value || '').trim(),
+            codigoProvincia: (prov?.value || '').trim(),
+            codigoUbigeo: (dist?.value || '').trim()
+        });
+
+        const response = await fetch(`${urlNegocios}?${query.toString()}`, { cache: 'no-store' });
+        if (!response.ok) return;
+        const data = await response.json();
+        renderOptions(negocio, data, 'Todos');
+
+        if (seleccionadoActual.length > 0 && data.some(x => (x.value || '') === seleccionadoActual)) {
+            negocio.value = seleccionadoActual;
+        }
+
+        actualizarEstadoFiltroHorario();
+    }
+
     dep.addEventListener('change', async () => {
         const value = (dep.value || '').trim();
         renderOptions(prov, [], 'Todas');
         renderOptions(dist, [], 'Todos');
+        await refreshNegocios();
         if (value.length !== 2) return;
 
         const response = await fetch(`${urlProv}?codigoDepartamento=${encodeURIComponent(value)}`, { cache: 'no-store' });
@@ -627,6 +686,7 @@
     prov.addEventListener('change', async () => {
         const value = (prov.value || '').trim();
         renderOptions(dist, [], 'Todos');
+        await refreshNegocios();
         if (value.length !== 4) return;
 
         const response = await fetch(`${urlDist}?codigoProvincia=${encodeURIComponent(value)}`, { cache: 'no-store' });
@@ -634,6 +694,8 @@
         const data = await response.json();
         renderOptions(dist, data, 'Todos');
     });
+
+    dist.addEventListener('change', refreshNegocios);
 
     function actualizarEstadoFiltroHorario() {
         if (!negocio || !omitirFechaHorario) return;
@@ -650,6 +712,7 @@
     negocio?.addEventListener('change', actualizarEstadoFiltroHorario);
     omitirFechaHorario?.addEventListener('change', actualizarEstadoFiltroHorario);
     actualizarEstadoFiltroHorario();
+    refreshNegocios();
 })();
 </script>
 }

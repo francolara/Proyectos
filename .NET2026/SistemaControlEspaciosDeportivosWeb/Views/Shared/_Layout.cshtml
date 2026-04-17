@@ -108,20 +108,27 @@
     @if (!adminShell && !platformShell)
     {
         <header>
-            <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm">
+            <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm sc-public-navbar">
                 <div class="container">
-                    <a class="navbar-brand fw-bold" asp-area="" asp-controller="Home" asp-action="Index">SportCenter</a>
+                    <a class="navbar-brand fw-bold sc-public-brand" asp-area="" asp-controller="Home" asp-action="Index">
+                        <i class="bi bi-geo-alt-fill"></i>
+                        <span>SportCenter</span>
+                    </a>
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav"
                             aria-expanded="false" aria-label="Toggle navigation">
                         <span class="navbar-toggler-icon"></span>
                     </button>
                     <div id="mainNav" class="collapse navbar-collapse">
-                        <ul class="navbar-nav me-auto">
+                        <ul class="navbar-nav me-auto sc-public-nav-main">
                             <li class="nav-item">
-                                <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Inicio</a>
+                                <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">
+                                    <i class="bi bi-house-door me-1"></i>Inicio
+                                </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="buscar">Disponibilidad</a>
+                                <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index" asp-fragment="buscar">
+                                    <i class="bi bi-search me-1"></i>Disponibilidad
+                                </a>
                             </li>
                         </ul>
                         <partial name="_LoginPartial" />
@@ -135,6 +142,13 @@
     {
         <div class="sc-admin-shell">
             <aside class="sc-admin-sidebar">
+                <a class="sc-admin-homecard" asp-controller="Home" asp-action="Index">
+                    <i class="bi bi-house-door-fill"></i>
+                    <div>
+                        <small>Volver al portal</small>
+                        <strong>Ir al inicio</strong>
+                    </div>
+                </a>
                 <div class="sc-admin-welcome">
                     <small>Bienvenido</small>
                     <strong>@saludoNombre</strong>
@@ -162,7 +176,10 @@
                         <div class="sc-admin-notify-panel d-none" id="scAdminNotifyPanel">
                             <div class="sc-admin-notify-head">
                                 <strong>Reservas web</strong>
-                                <small id="scAdminNotifyCountText">Sin nuevas</small>
+                                <div class="d-flex align-items-center gap-2">
+                                    <small id="scAdminNotifyCountText">Sin nuevas</small>
+                                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" id="scAdminNotifyMarkAll">Marcar todas</button>
+                                </div>
                             </div>
                             <div class="sc-admin-notify-list" id="scAdminNotifyList">
                                 <div class="sc-admin-notify-empty">No hay notificaciones nuevas.</div>
@@ -184,6 +201,7 @@
                     <a class="@menuClass("Usuarios")" href="@menuUrl("Usuarios")"><i class="bi bi-person-gear"></i><span>Usuarios</span></a>
                     <a class="@menuClass("Promociones")" href="@menuUrl("Promociones")"><i class="bi bi-tags"></i><span>Promociones</span></a>
                     <a class="@menuClass("Configuracion")" href="@menuUrl("Configuracion")"><i class="bi bi-sliders2-vertical"></i><span>Configuracion</span></a>
+                    <a class="@menuClass("MiSuscripcion")" href="@menuUrl("MiSuscripcion")"><i class="bi bi-credit-card-2-front"></i><span>Mi suscripcion</span></a>
                 </nav>
 
                 <div class="sc-admin-session-box">
@@ -214,6 +232,13 @@
     {
         <div class="sc-admin-shell">
             <aside class="sc-admin-sidebar">
+                <a class="sc-admin-homecard" asp-controller="Home" asp-action="Index">
+                    <i class="bi bi-house-door-fill"></i>
+                    <div>
+                        <small>Volver al portal</small>
+                        <strong>Ir al inicio</strong>
+                    </div>
+                </a>
                 <div class="sc-admin-welcome">
                     <small>Bienvenido</small>
                     <strong>@saludoNombre</strong>
@@ -226,6 +251,8 @@
                 <nav class="sc-admin-nav">
                     <a class="@menuClassAction("Plataforma", "Index")" href="@Url.Action("Index", "Plataforma")"><i class="bi bi-window-sidebar"></i><span>Dashboard global</span></a>
                     <a class="@menuClass("Banners")" href="@Url.Action("Index", "Banners")"><i class="bi bi-images"></i><span>Banners web</span></a>
+                    <a class="@menuClassAction("Plataforma", "ClubesPendientes")" href="@Url.Action("ClubesPendientes", "Plataforma")"><i class="bi bi-person-check"></i><span>Altas de clubes</span></a>
+                    <a class="@menuClassAction("Plataforma", "Negocios")" href="@Url.Action("Negocios", "Plataforma")"><i class="bi bi-buildings"></i><span>Negocios</span></a>
                     <a class="@menuClassAction("Plataforma", "PortalWeb")" href="@Url.Action("PortalWeb", "Plataforma")"><i class="bi bi-sliders2"></i><span>Portal web</span></a>
                 </nav>
 
@@ -284,12 +311,15 @@
                 const panel = document.getElementById('scAdminNotifyPanel');
                 const list = document.getElementById('scAdminNotifyList');
                 const countText = document.getElementById('scAdminNotifyCountText');
-                if (!wrap || !btn || !badge || !panel || !list || !countText) return;
+                const markAllBtn = document.getElementById('scAdminNotifyMarkAll');
+                if (!wrap || !btn || !badge || !panel || !list || !countText || !markAllBtn) return;
 
                 const negocioId = wrap.getAttribute('data-negocio-id');
                 if (!negocioId) return;
 
                 const endpoint = '@Url.Action("Resumen", "Notificaciones")';
+                const markReadEndpoint = '@Url.Action("MarcarLeida", "Notificaciones")';
+                const markAllEndpoint = '@Url.Action("MarcarTodasLeidas", "Notificaciones")';
                 let busy = false;
 
                 function setBadge(value) {
@@ -311,14 +341,34 @@
                         const mensaje = (x.mensaje || '').toString();
                         const fecha = (x.fechaTexto || '').toString();
                         const href = (x.urlDestino || '').toString();
+                        const id = Number(x.id || 0);
                         const body = `
-                            <div class="sc-admin-notify-item">
+                            <div class="sc-admin-notify-item" data-id="${id}">
                                 <div class="sc-admin-notify-item-title">${title}</div>
                                 <div class="sc-admin-notify-item-msg">${mensaje}</div>
                                 <div class="sc-admin-notify-item-time">${fecha}</div>
                             </div>`;
-                        return href ? `<a class="sc-admin-notify-link" href="${href}">${body}</a>` : body;
+                        return href ? `<a class="sc-admin-notify-link" data-id="${id}" href="${href}">${body}</a>` : body;
                     }).join('');
+                }
+
+                async function postForm(url, formData) {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                        body: formData
+                    });
+                    if (!response.ok) return null;
+                    return await response.json();
+                }
+
+                async function marcarLeida(id) {
+                    if (!id || Number(id) <= 0) return;
+                    const data = new FormData();
+                    data.append('negocioId', negocioId);
+                    data.append('notificacionId', String(id));
+                    const result = await postForm(markReadEndpoint, data);
+                    if (result && result.ok) setBadge(result.noLeidas || 0);
                 }
 
                 async function refreshNotifications() {
@@ -342,6 +392,25 @@
                     const open = !panel.classList.contains('d-none');
                     panel.classList.toggle('d-none', open);
                     btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+                });
+
+                list.addEventListener('click', async (ev) => {
+                    const link = ev.target.closest('.sc-admin-notify-link');
+                    if (!link) return;
+                    ev.preventDefault();
+                    const id = Number(link.getAttribute('data-id') || '0');
+                    await marcarLeida(id);
+                    const href = link.getAttribute('href');
+                    if (href) window.location.href = href;
+                });
+
+                markAllBtn.addEventListener('click', async () => {
+                    const data = new FormData();
+                    data.append('negocioId', negocioId);
+                    const result = await postForm(markAllEndpoint, data);
+                    if (!result || result.ok !== true) return;
+                    setBadge(result.noLeidas || 0);
+                    renderItems([]);
                 });
 
                 document.addEventListener('click', (ev) => {

@@ -134,6 +134,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFlc3Ryb3NcX0NhdGFsb2dvU2ltcGxlLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaControlEspaciosDeportivosWeb/Views/MiSuscripcion/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWlTdXNjcmlwY2lvblxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaControlEspaciosDeportivosWeb/Views/Pagos/Create.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGFnb3NcQ3JlYXRlLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
@@ -150,8 +154,20 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGFuZWxcSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaControlEspaciosDeportivosWeb/Views/PerfilPublico/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGVyZmlsUHVibGljb1xJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaControlEspaciosDeportivosWeb/Views/Plataforma/ClubesPendientes.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGxhdGFmb3JtYVxDbHViZXNQZW5kaWVudGVzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaControlEspaciosDeportivosWeb/Views/Plataforma/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGxhdGFmb3JtYVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaControlEspaciosDeportivosWeb/Views/Plataforma/Negocios.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGxhdGFmb3JtYVxOZWdvY2lvcy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaControlEspaciosDeportivosWeb/Views/Plataforma/PortalWeb.cshtml]

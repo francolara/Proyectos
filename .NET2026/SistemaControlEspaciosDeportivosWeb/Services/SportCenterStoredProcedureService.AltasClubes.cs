@@ -78,7 +78,7 @@ public partial class SportCenterStoredProcedureService
         return result?.ToString() ?? string.Empty;
     }
 
-    public async Task<bool> AltasClubesAprobarAsync(int id, string usuario, string? comentarioGestion = null)
+    public async Task<bool> AltasClubesAprobarAsync(int id, string usuario, string? comentarioGestion = null, int diasPrueba = 30)
     {
         try
         {
@@ -88,6 +88,7 @@ public partial class SportCenterStoredProcedureService
             AddParam(cmd, "@Id", id, SqlDbType.Int);
             AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
             AddParam(cmd, "@ComentarioGestion", comentarioGestion, SqlDbType.NVarChar);
+            AddParam(cmd, "@DiasPrueba", diasPrueba <= 0 ? 30 : diasPrueba, SqlDbType.Int);
             await cmd.ExecuteNonQueryAsync();
             return true;
         }

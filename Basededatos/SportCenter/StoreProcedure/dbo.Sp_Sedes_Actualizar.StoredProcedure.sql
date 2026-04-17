@@ -12,6 +12,11 @@ GO
 -- Create date:   06/04/2026
 -- Description:   Agrega parametro y actualizacion de ConsideracionesReserva en sedes.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   16/04/2026
+-- Description:   Agrega actualizacion de URLs sociales (Facebook/Instagram/Twitter) en sede.
+-- =============================================
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Sedes_Actualizar]
     @Id INT,
     @NegocioId INT,
@@ -19,6 +24,9 @@ CREATE OR ALTER PROCEDURE [dbo].[Sp_Sedes_Actualizar]
     @Direccion NVARCHAR(250),
     @ConsideracionesReserva NVARCHAR(2000) = NULL,
     @Telefono NVARCHAR(20) = NULL,
+    @FacebookUrl NVARCHAR(500) = NULL,
+    @InstagramUrl NVARCHAR(500) = NULL,
+    @TwitterUrl NVARCHAR(500) = NULL,
     @Activo BIT,
     @Latitud DECIMAL(10,7) = NULL,
     @Longitud DECIMAL(10,7) = NULL,
@@ -72,6 +80,9 @@ BEGIN
             Direccion = @Direccion,
             ConsideracionesReserva = @ConsideracionesReserva,
             Telefono = @Telefono,
+            FacebookUrl = NULLIF(LTRIM(RTRIM(@FacebookUrl)), N''),
+            InstagramUrl = NULLIF(LTRIM(RTRIM(@InstagramUrl)), N''),
+            TwitterUrl = NULLIF(LTRIM(RTRIM(@TwitterUrl)), N''),
             Activo = @Activo,
             Latitud = @Latitud,
             Longitud = @Longitud,

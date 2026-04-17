@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace SistemaControlEspaciosDeportivosWeb.ViewModels;
 
@@ -42,11 +43,17 @@ public class SedePublicaViewModel
     public string? Telefono { get; set; }
     public string? WhatsappContacto { get; set; }
     public bool PermiteChatWhatsapp { get; set; }
+    public string? FacebookUrl { get; set; }
+    public string? InstagramUrl { get; set; }
+    public string? TwitterUrl { get; set; }
     public decimal? Latitud { get; set; }
     public decimal? Longitud { get; set; }
     public string? GoogleMapsUrl { get; set; }
     public string? FotoPrincipalUrl { get; set; }
     public List<string> FotosAlternativas { get; set; } = new();
+    public string? CodigoUbigeoNegocio { get; set; }
+    public string? CodigoDepartamentoNegocio { get; set; }
+    public string? CodigoProvinciaNegocio { get; set; }
 }
 
 public class TipoDeportePublicoViewModel
@@ -140,6 +147,8 @@ public class SolicitudReservaPublicaFormViewModel
     public int? TipoDeporteId { get; set; }
     public int? NegocioId { get; set; }
     public bool OmitirFechaHorario { get; set; }
+    public string? UsuarioId { get; set; }
+    [ValidateNever]
     public List<SelectListItem> TiposDocumentoIdentidad { get; set; } = new();
 }
 

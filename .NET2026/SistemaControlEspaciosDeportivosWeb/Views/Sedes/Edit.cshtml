@@ -9,6 +9,7 @@
 <!-- Firma: Codex - 06/04/2026 | Agrega apartado Consideraciones de reserva en mantenimiento de sede para publicacion en portal publico (sin exponer en listado admin). -->
 <!-- Firma: Codex - 08/04/2026 | Unifica selectores de hora de apertura/cierre a listas cada 30 minutos. -->
 <!-- Firma: Codex - 09/04/2026 | Agrega configuracion opcional de serie por documento para la sede en base a series del negocio. -->
+<!-- Firma: Codex - 16/04/2026 | Agrega apartado de redes sociales (Facebook/Instagram/Twitter) por sede para publicacion en tarjetas del portal publico. -->
 
 @{
     ViewData["Title"] = "Editar sede";
@@ -164,6 +165,21 @@
                         </div>
                         <span asp-validation-for="WhatsappCodigoPais" class="text-danger"></span>
                         <span asp-validation-for="WhatsappNumeroLocal" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="FacebookUrl" class="form-label">Facebook URL</label>
+                        <input asp-for="FacebookUrl" class="form-control" placeholder="https://facebook.com/tu-sede" />
+                        <span asp-validation-for="FacebookUrl" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="InstagramUrl" class="form-label">Instagram URL</label>
+                        <input asp-for="InstagramUrl" class="form-control" placeholder="https://instagram.com/tu-sede" />
+                        <span asp-validation-for="InstagramUrl" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="TwitterUrl" class="form-label">Twitter URL</label>
+                        <input asp-for="TwitterUrl" class="form-control" placeholder="https://x.com/tu-sede" />
+                        <span asp-validation-for="TwitterUrl" class="text-danger"></span>
                     </div>
                 </div>
             </div>

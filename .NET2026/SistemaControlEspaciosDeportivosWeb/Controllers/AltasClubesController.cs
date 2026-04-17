@@ -38,7 +38,7 @@ public class AltasClubesController(IModuloPermisoService moduloPermisoService, I
 
         try
         {
-            await spService.AltasClubesAprobarAsync(model.Id, User.Identity?.Name ?? "sistema", model.ComentarioGestion);
+            await spService.AltasClubesAprobarAsync(model.Id, User.Identity?.Name ?? "sistema", model.ComentarioGestion, 30);
             TempData["MensajeAltaClub"] = "Solicitud aprobada y negocio/sede creados correctamente.";
         }
         catch (Exception ex)

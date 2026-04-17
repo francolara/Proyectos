@@ -44,6 +44,16 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
         var baseVm = await ObtenerBaseAsync(resolvedNegocioId.Value, "SEDES");
         if (baseVm is null || !baseVm.PuedeCrear) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
+        var configNegocio = await spService.ConfiguracionClubObtenerAsync(resolvedNegocioId.Value);
+        var sedesActuales = await spService.SedesListarAsync(resolvedNegocioId.Value, null);
+        var totalActivas = sedesActuales.Count(x => x.Activo);
+        var limiteSedes = configNegocio?.SedesPermitidas ?? 2;
+        if (totalActivas >= limiteSedes)
+        {
+            TempData["SedesError"] = $"Limite de sedes alcanzado. Tu plan actual permite hasta {limiteSedes} sede(s) activas. Para continuar, solicita una ampliacion al administrador de plataforma.";
+            return RedirectToAction(nameof(Index), new { negocioId = resolvedNegocioId.Value });
+        }
+
         var vm = new SedeFormViewModel { NegocioId = resolvedNegocioId.Value, NegocioNombre = baseVm.NegocioNombre, RolActual = baseVm.RolActual, Activo = true };
         await CargarCatalogoServiciosAsync(vm);
         InicializarTelefonosParaVista(vm);
@@ -56,6 +66,14 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
     {
         var baseVm = await ObtenerBaseAsync(model.NegocioId, "SEDES");
         if (baseVm is null || !baseVm.PuedeCrear) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
+
+        var configNegocio = await spService.ConfiguracionClubObtenerAsync(model.NegocioId);
+        var sedesActuales = await spService.SedesListarAsync(model.NegocioId, null);
+        var totalActivas = sedesActuales.Count(x => x.Activo);
+        var limiteSedes = configNegocio?.SedesPermitidas ?? 2;
+        if (totalActivas >= limiteSedes)
+            ModelState.AddModelError(string.Empty, $"Limite de sedes alcanzado. Tu plan actual permite hasta {limiteSedes} sede(s) activas. Para continuar, solicita una ampliacion al administrador de plataforma.");
+
         ComponerTelefonos(model);
         NormalizarUbicacionYFotos(model);
         AplicarEliminacionImagenes(model);

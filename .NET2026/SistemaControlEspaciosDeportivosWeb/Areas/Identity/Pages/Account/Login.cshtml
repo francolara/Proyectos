@@ -8,6 +8,7 @@
         : null;
 }
 <!-- Firma: Codex - 14/04/2026 | Login con layout profesional y flujo unico de acceso sin selector de modo. -->
+<!-- Firma: Codex - 16/04/2026 | Ajuste visual de acciones inferiores (estilo profesional) y simplificacion de links como referencia de diseño del proyecto. -->
 
 <section class="auth-shell">
     <aside class="auth-visual" style="@(string.IsNullOrWhiteSpace(bannerUrl) ? string.Empty : $"background-image:linear-gradient(165deg,rgba(3,15,35,.84),rgba(7,24,58,.70)),url('{bannerUrl}');")">
@@ -29,6 +30,12 @@
 
             <form id="account" method="post">
                 <input type="hidden" asp-for="ReturnUrl" />
+                @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+                {
+                    <div class="alert alert-success py-2 px-3 mb-3" role="alert">
+                        @Model.SuccessMessage
+                    </div>
+                }
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-2" role="alert"></div>
 
                 <div class="mb-3">
@@ -52,10 +59,9 @@
 
                 <button id="login-submit" type="submit" class="w-100 btn btn-primary auth-cta">Iniciar sesion</button>
 
-                <div class="auth-foot-links">
-                    <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">No tienes cuenta? Registrate</a>
-                    <a asp-page="./ResendEmailConfirmation">Reenviar confirmacion de correo</a>
-                    <a asp-controller="Home" asp-action="Index">Volver al inicio</a>
+                <div class="auth-foot-links auth-foot-links-pro">
+                    <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">¿No tienes una cuenta? <strong>Regístrate</strong></a>
+                    <a asp-controller="Home" asp-action="Index">← Volver al inicio</a>
                 </div>
             </form>
         </div>

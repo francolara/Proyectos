@@ -63,9 +63,113 @@ public class PlataformaController(ISportCenterStoredProcedureService spService) 
         return View(vm);
     }
 
+    [HttpGet]
+    public async Task<IActionResult> Negocios(string? buscar = null)
+    {
+        ViewData["PlatformShell"] = true;
+        var vm = new PlataformaNegociosAdminViewModel
+        {
+            Buscar = string.IsNullOrWhiteSpace(buscar) ? null : buscar.Trim(),
+            Negocios = await spService.PlataformaNegociosListarAsync(buscar)
+        };
+        return View(vm);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ClubesPendientes(int? estado = 1)
+    {
+        ViewData["PlatformShell"] = true;
+        var vm = new PlataformaAltasClubesAdminViewModel
+        {
+            Estado = estado,
+            DiasPruebaDefault = 30,
+            Solicitudes = await spService.AltasClubesListarAsync(estado)
+        };
+        return View(vm);
+    }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> PortalWeb(PlataformaPortalConfigViewModel model)
+    public async Task<IActionResult> GuardarLimitesNegocio(int negocioId, int sedesPermitidas, int espaciosPermitidos, string? buscar = null)
+    {
+        ViewData["PlatformShell"] = true;
+        sedesPermitidas = Math.Max(1, sedesPermitidas);
+        espaciosPermitidos = Math.Max(1, espaciosPermitidos);
+        var ok = await spService.PlataformaNegocioActualizarLimitesAsync(
+            negocioId,
+            sedesPermitidas,
+            espaciosPermitidos,
+            User.Identity?.Name ?? "owner-platform");
+
+        TempData[ok ? "PortalWebOk" : "PortalWebError"] = ok
+            ? "Limites del negocio actualizados."
+            : "No se pudo actualizar los limites del negocio.";
+
+        return RedirectToAction(nameof(Negocios), new { buscar });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ActivarContratoNegocio(int negocioId, string tipoCobro, DateOnly fechaDesde, DateOnly fechaHasta, int diasGracia = 5, string? buscar = null)
+    {
+        ViewData["PlatformShell"] = true;
+        if (fechaHasta < fechaDesde)
+        {
+            TempData["PortalWebError"] = "La fecha fin no puede ser menor a la fecha inicio.";
+            return RedirectToAction(nameof(Negocios), new { buscar });
+        }
+
+        var ok = await spService.PlataformaNegocioActivarContratoAsync(
+            negocioId,
+            tipoCobro,
+            fechaDesde,
+            fechaHasta,
+            diasGracia <= 0 ? 5 : diasGracia,
+            User.Identity?.Name ?? "owner-platform");
+
+        TempData[ok ? "PortalWebOk" : "PortalWebError"] = ok
+            ? "Contrato activado correctamente."
+            : "No se pudo activar el contrato del negocio.";
+
+        return RedirectToAction(nameof(Negocios), new { buscar });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AprobarClub(int id, int diasPrueba = 30, string? comentarioGestion = null, int? estado = 1)
+    {
+        ViewData["PlatformShell"] = true;
+        var ok = await spService.AltasClubesAprobarAsync(
+            id,
+            User.Identity?.Name ?? "owner-platform",
+            comentarioGestion,
+            diasPrueba <= 0 ? 30 : diasPrueba);
+
+        TempData[ok ? "PortalWebOk" : "PortalWebError"] = ok
+            ? "Solicitud aprobada y negocio activado con periodo de prueba."
+            : "No se pudo aprobar la solicitud.";
+        return RedirectToAction(nameof(ClubesPendientes), new { estado });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RechazarClub(int id, string? comentarioGestion = null, int? estado = 1)
+    {
+        ViewData["PlatformShell"] = true;
+        var ok = await spService.AltasClubesRechazarAsync(
+            id,
+            User.Identity?.Name ?? "owner-platform",
+            comentarioGestion);
+
+        TempData[ok ? "PortalWebOk" : "PortalWebError"] = ok
+            ? "Solicitud rechazada."
+            : "No se pudo rechazar la solicitud.";
+        return RedirectToAction(nameof(ClubesPendientes), new { estado });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> PortalWebGuardar(PlataformaPortalConfigViewModel model)
     {
         ViewData["PlatformShell"] = true;
 
@@ -119,7 +223,7 @@ public class PlataformaController(ISportCenterStoredProcedureService spService) 
             CtaTitulo = (await Get("HOME_PORTAL_CTA_TITULO")) ?? "Unete a la comunidad de SportCenter",
             CtaSubtitulo = (await Get("HOME_PORTAL_CTA_SUBTITULO")) ?? "Registra tu club deportivo y comienza a gestionar tus canchas de manera eficiente.",
             CtaBotonClubTexto = (await Get("HOME_PORTAL_CTA_BTN_CLUB_TEXTO")) ?? "Registrar mi club",
-            CtaBotonClubUrl = (await Get("HOME_PORTAL_CTA_BTN_CLUB_URL")) ?? "/Home/SoftwareClubes",
+            CtaBotonClubUrl = (await Get("HOME_PORTAL_CTA_BTN_CLUB_URL")) ?? "/Identity/Account/Register?TipoRegistro=club",
             CtaBotonUsuarioTexto = (await Get("HOME_PORTAL_CTA_BTN_USUARIO_TEXTO")) ?? "Crear cuenta personal",
             CtaBotonUsuarioUrl = (await Get("HOME_PORTAL_CTA_BTN_USUARIO_URL")) ?? "/Identity/Account/Register",
             MarcaTitulo = (await Get("HOME_PORTAL_MARCA_TITULO")) ?? "SportCenter",

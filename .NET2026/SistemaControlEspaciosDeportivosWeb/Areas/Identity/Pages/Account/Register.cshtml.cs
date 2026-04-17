@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using SistemaControlEspaciosDeportivosWeb.Models;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
@@ -24,13 +25,16 @@ public class RegisterModel(
     [BindProperty]
     public AltaClubSolicitudFormViewModel Club { get; set; } = CrearClubDefault();
 
-    [BindProperty]
-    public string TipoRegistro { get; set; } = "usuario";
+    [BindProperty(SupportsGet = true)]
+    public string? TipoRegistro { get; set; } = "usuario";
 
     [BindProperty(SupportsGet = true)]
-    public string ReturnUrl { get; set; } = string.Empty;
+    public string? ReturnUrl { get; set; } = string.Empty;
 
     public WebBannerPublicoViewModel? BannerLateral { get; set; }
+    public List<SelectListItem> Departamentos { get; set; } = new();
+    public List<SelectListItem> Provincias { get; set; } = new();
+    public List<SelectListItem> Distritos { get; set; } = new();
 
     public class UsuarioInputModel
     {
@@ -52,6 +56,7 @@ public class RegisterModel(
         public string Password { get; set; } = string.Empty;
 
         [DataType(DataType.Password)]
+        [Required(ErrorMessage = "La confirmacion de contrasena es obligatoria.")]
         [Compare(nameof(Password), ErrorMessage = "La contrasena y la confirmacion no coinciden.")]
         public string ConfirmPassword { get; set; } = string.Empty;
     }
@@ -59,25 +64,40 @@ public class RegisterModel(
     public async Task OnGetAsync(string? returnUrl = null)
     {
         ReturnUrl = returnUrl ?? Url.Content("~/");
-        TipoRegistro = "usuario";
+        TipoRegistro = string.Equals(TipoRegistro, "club", StringComparison.OrdinalIgnoreCase) ? "club" : "usuario";
         Club = CrearClubDefault();
         AsignarCaptchaRegistroClub(Club);
+        await CargarCombosUbigeoAsync();
         await CargarBannerLateralAsync();
     }
 
     public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
     {
-        ReturnUrl = returnUrl ?? Url.Content("~/");
-        TipoRegistro = string.Equals(TipoRegistro, "club", StringComparison.OrdinalIgnoreCase)
-            ? "club"
-            : "usuario";
-
-        if (TipoRegistro == "club")
+        // Fallback cuando el navegador envia Enter sin handler explicito.
+        var accionForm = (Request.Form["accionRegistro"].ToString() ?? string.Empty).Trim();
+        var tipoForm = string.IsNullOrWhiteSpace(accionForm)
+            ? (Request.Form["TipoRegistro"].ToString() ?? TipoRegistro ?? string.Empty).Trim()
+            : accionForm;
+        if (string.Equals(tipoForm, "club", StringComparison.OrdinalIgnoreCase))
         {
-            return await ProcesarRegistroClubAsync();
+            return await OnPostClubAsync(returnUrl);
         }
 
+        return await OnPostUsuarioAsync(returnUrl);
+    }
+
+    public async Task<IActionResult> OnPostUsuarioAsync(string? returnUrl = null)
+    {
+        ReturnUrl = returnUrl ?? Url.Content("~/");
+        TipoRegistro = "usuario";
         return await ProcesarRegistroUsuarioAsync();
+    }
+
+    public async Task<IActionResult> OnPostClubAsync(string? returnUrl = null)
+    {
+        ReturnUrl = returnUrl ?? Url.Content("~/");
+        TipoRegistro = "club";
+        return await ProcesarRegistroClubAsync();
     }
 
     private async Task<IActionResult> ProcesarRegistroUsuarioAsync()
@@ -89,16 +109,21 @@ public class RegisterModel(
         ModelState.Remove("Club.ConfirmPassword");
         ModelState.Remove("Club.RelacionClub");
         ModelState.Remove("Club.NombreClub");
+        ModelState.Remove("Club.CodigoDepartamento");
+        ModelState.Remove("Club.CodigoProvincia");
+        ModelState.Remove("Club.CodigoUbigeo");
         ModelState.Remove("Club.Pais");
         ModelState.Remove("Club.ProvinciaEstado");
         ModelState.Remove("Club.Ciudad");
         ModelState.Remove("Club.Direccion");
+        ModelState.Remove("Club.CaptchaTexto");
         ModelState.Remove("Club.CaptchaCodigo");
 
         if (!TryValidateModel(Usuario, nameof(Usuario)))
         {
             Club = CrearClubDefault();
             AsignarCaptchaRegistroClub(Club);
+            await CargarCombosUbigeoAsync();
             await CargarBannerLateralAsync();
             return Page();
         }
@@ -110,6 +135,7 @@ public class RegisterModel(
             ModelState.AddModelError(string.Empty, "Ya existe una cuenta registrada con este correo.");
             Club = CrearClubDefault();
             AsignarCaptchaRegistroClub(Club);
+            await CargarCombosUbigeoAsync();
             await CargarBannerLateralAsync();
             return Page();
         }
@@ -132,13 +158,31 @@ public class RegisterModel(
 
             Club = CrearClubDefault();
             AsignarCaptchaRegistroClub(Club);
+            await CargarCombosUbigeoAsync();
             await CargarBannerLateralAsync();
             return Page();
         }
 
         logger.LogInformation("Nuevo usuario registrado desde portal publico.");
+        try
+        {
+            await spService.UsuariosPublicosGuardarPerfilAsync(new UsuarioPublicoPerfilViewModel
+            {
+                UsuarioId = user.Id,
+                TipoDocumento = "0",
+                Nombres = (Usuario.NombreCompleto ?? string.Empty).Trim(),
+                Apellidos = string.Empty,
+                Telefono = string.IsNullOrWhiteSpace(Usuario.Telefono) ? null : Usuario.Telefono.Trim(),
+                Correo = email
+            }, email);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "No se pudo sincronizar el perfil publico inicial para usuario {Email}.", email);
+        }
+
         await signInManager.SignInAsync(user, isPersistent: false);
-        return LocalRedirect(ReturnUrl);
+        return LocalRedirect(ReturnUrl ?? Url.Content("~/"));
     }
 
     private async Task<IActionResult> ProcesarRegistroClubAsync()
@@ -152,6 +196,7 @@ public class RegisterModel(
         if (!TryValidateModel(Club, nameof(Club)))
         {
             AsignarCaptchaRegistroClub(Club);
+            await CargarCombosUbigeoAsync();
             await CargarBannerLateralAsync();
             return Page();
         }
@@ -162,18 +207,34 @@ public class RegisterModel(
         {
             ModelState.AddModelError("Club.CaptchaCodigo", "El codigo CAPTCHA no es valido.");
             AsignarCaptchaRegistroClub(Club);
+            await CargarCombosUbigeoAsync();
             await CargarBannerLateralAsync();
             return Page();
         }
 
         try
         {
+            var ubigeo = await spService.UbigeoObtenerPorCodigoAsync((Club.CodigoUbigeo ?? string.Empty).Trim());
+            if (ubigeo is null)
+            {
+                ModelState.AddModelError("Club.CodigoUbigeo", "Selecciona un distrito valido.");
+                AsignarCaptchaRegistroClub(Club);
+                await CargarCombosUbigeoAsync();
+                await CargarBannerLateralAsync();
+                return Page();
+            }
+
+            Club.Pais = "Peru";
+            Club.ProvinciaEstado = ubigeo.Provincia;
+            Club.Ciudad = ubigeo.Distrito;
+
             var correo = (Club.Correo ?? string.Empty).Trim();
             var existe = await userManager.FindByEmailAsync(correo);
             if (existe is not null)
             {
                 ModelState.AddModelError("Club.Correo", "Ya existe una cuenta con este correo.");
                 AsignarCaptchaRegistroClub(Club);
+                await CargarCombosUbigeoAsync();
                 await CargarBannerLateralAsync();
                 return Page();
             }
@@ -194,25 +255,16 @@ public class RegisterModel(
                 }
 
                 AsignarCaptchaRegistroClub(Club);
+                await CargarCombosUbigeoAsync();
                 await CargarBannerLateralAsync();
                 return Page();
             }
 
             try
             {
-                await spService.HomeRegistrarClubConPruebaAsync(Club, nuevoUsuario.Id);
-                await signInManager.SignInAsync(nuevoUsuario, isPersistent: false);
-
-                var negocios = await spService.PanelListarNegociosUsuarioAsync(nuevoUsuario.Id);
-                var negocioId = negocios.FirstOrDefault()?.NegocioId;
-
-                TempData["MensajeSolicitudClub"] = "Registro completado. Tu prueba de 1 mes ya esta activa.";
-                if (negocioId.HasValue)
-                {
-                    return RedirectToAction("Create", "Sedes", new { negocioId = negocioId.Value });
-                }
-
-                return RedirectToAction("Index", "Panel");
+                await spService.HomeSolicitarAltaClubAsync(Club);
+                TempData["SuccessMessage"] = "Registro completado correctamente. Tu solicitud fue recibida y sera evaluada por el equipo de plataforma. Te contactaremos por WhatsApp o correo para la activacion.";
+                return RedirectToPage("./Login", new { ReturnUrl });
             }
             catch
             {
@@ -224,6 +276,7 @@ public class RegisterModel(
         {
             ModelState.AddModelError(string.Empty, ex.Message);
             AsignarCaptchaRegistroClub(Club);
+            await CargarCombosUbigeoAsync();
             await CargarBannerLateralAsync();
             return Page();
         }
@@ -250,6 +303,17 @@ public class RegisterModel(
         };
     }
 
+    private async Task CargarCombosUbigeoAsync()
+    {
+        Departamentos = await spService.UbigeoDepartamentosListarAsync();
+        Provincias = !string.IsNullOrWhiteSpace(Club.CodigoDepartamento) && Club.CodigoDepartamento.Length == 2
+            ? await spService.UbigeoProvinciasListarAsync(Club.CodigoDepartamento)
+            : new List<SelectListItem>();
+        Distritos = !string.IsNullOrWhiteSpace(Club.CodigoProvincia) && Club.CodigoProvincia.Length == 4
+            ? await spService.UbigeoDistritosListarAsync(Club.CodigoProvincia)
+            : new List<SelectListItem>();
+    }
+
     private async Task CargarBannerLateralAsync()
     {
         try
@@ -270,12 +334,13 @@ public class RegisterModel(
             "PasswordRequiresLower" => "La contrasena debe incluir al menos una letra minuscula (a-z).",
             "PasswordRequiresUpper" => "La contrasena debe incluir al menos una letra mayuscula (A-Z).",
             "PasswordRequiresDigit" => "La contrasena debe incluir al menos un numero (0-9).",
+            "PasswordRequiresUniqueChars" => "La contrasena debe incluir mas caracteres distintos.",
             "PasswordTooShort" => "La contrasena es muy corta. Usa al menos 6 caracteres.",
             "DuplicateEmail" => "Ya existe una cuenta registrada con este correo.",
             "DuplicateUserName" => "Ese correo/usuario ya esta en uso.",
             "InvalidEmail" => "El correo ingresado no tiene un formato valido.",
             "InvalidUserName" => "El correo/usuario contiene caracteres no permitidos.",
-            _ => fallback
+            _ => "No se pudo completar el registro. Revisa los datos ingresados e intenta nuevamente."
         };
     }
 }

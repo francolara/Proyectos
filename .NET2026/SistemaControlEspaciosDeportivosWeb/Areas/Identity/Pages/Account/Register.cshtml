@@ -6,8 +6,17 @@
     var bannerUrl = !string.IsNullOrWhiteSpace(Model.BannerLateral?.ImagenUrl)
         ? Url.Action("VerImagen", "Sedes", new { url = Model.BannerLateral!.ImagenUrl })
         : null;
+    var hayErroresUsuario = ViewData.ModelState.Any(x =>
+        (x.Key.StartsWith("Usuario") || (string.IsNullOrEmpty(x.Key) && !string.Equals(Model.TipoRegistro, "club", StringComparison.OrdinalIgnoreCase))) &&
+        x.Value?.Errors?.Count > 0);
+    var hayErroresClub = ViewData.ModelState.Any(x =>
+        (x.Key.StartsWith("Club") || (string.IsNullOrEmpty(x.Key) && string.Equals(Model.TipoRegistro, "club", StringComparison.OrdinalIgnoreCase))) &&
+        x.Value?.Errors?.Count > 0);
 }
 <!-- Firma: Codex - 14/04/2026 | Registro unificado con formulario completo para Usuario o Club en una sola pantalla y banner lateral fijo. -->
+<!-- Firma: Codex - 16/04/2026 | Registro club reordenado por filas, ubigeo con combos (departamento/provincia/distrito) y soporte de preseleccion por query TipoRegistro=club. -->
+<!-- Firma: Codex - 16/04/2026 | Se corrige switch Usuario/Club con radios agrupados (binding directo a TipoRegistro), se evita bloqueo al alternar tipo de registro, se mueve CAPTCHA al final del formulario de club, se unifica telefono (codigo pais + numero) para usuario/club y se ajusta layout (correo junto a relacion con el club). -->
+<!-- Firma: Codex - 17/04/2026 | Registro robusto: se elimina dependencia de handlers por boton, se enruta por TipoRegistro/accion de submit y se deshabilitan campos de la seccion oculta para evitar validaciones cruzadas (incluyendo Club.CodigoDepartamento/Provincia/Ubigeo en flujo usuario) y submits que solo refrescaban pantalla. -->
 
 <section class="auth-shell">
     <aside class="auth-visual" style="@(string.IsNullOrWhiteSpace(bannerUrl) ? string.Empty : $"background-image:linear-gradient(165deg,rgba(3,15,35,.84),rgba(7,24,58,.70)),url('{bannerUrl}');")">
@@ -29,32 +38,54 @@
 
             <form method="post" id="registerForm">
                 <input type="hidden" asp-for="ReturnUrl" />
-                <input type="hidden" asp-for="TipoRegistro" id="TipoRegistroHidden" />
-                <div asp-validation-summary="ModelOnly" class="text-danger mb-2" role="alert"></div>
-
                 <div class="auth-mini-switch mb-3" role="group" aria-label="Tipo registro">
-                    <input type="radio" class="btn-check" id="regUsuario" value="usuario" checked="@(Model.TipoRegistro != "club")" />
+                    <input type="radio" class="btn-check" name="TipoRegistro" id="regUsuario" value="usuario" checked="@(string.Equals(Model.TipoRegistro, "club", StringComparison.OrdinalIgnoreCase) ? null : "checked")" />
                     <label class="btn" for="regUsuario">Usuario</label>
 
-                    <input type="radio" class="btn-check" id="regClub" value="club" checked="@(Model.TipoRegistro == "club")" />
+                    <input type="radio" class="btn-check" name="TipoRegistro" id="regClub" value="club" checked="@(string.Equals(Model.TipoRegistro, "club", StringComparison.OrdinalIgnoreCase) ? "checked" : null)" />
                     <label class="btn" for="regClub">Club deportivo</label>
                 </div>
 
                 <div id="registroUsuarioFields">
+                    @if (hayErroresUsuario && !string.Equals(Model.TipoRegistro, "club", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <div asp-validation-summary="All" class="alert alert-danger py-2 px-3 mb-3 small"></div>
+                    }
                     <div class="mb-3">
                         <label asp-for="Usuario.NombreCompleto" class="form-label">Nombre completo</label>
                         <input asp-for="Usuario.NombreCompleto" class="form-control" placeholder="Ej. Juan Perez" />
                         <span asp-validation-for="Usuario.NombreCompleto" class="text-danger"></span>
                     </div>
                     <div class="mb-3">
+                        <label asp-for="Usuario.Telefono" class="form-label">Telefono</label>
+                        <input asp-for="Usuario.Telefono" type="hidden" id="UsuarioTelefonoHidden" />
+                        <div class="input-group">
+                            <select class="form-select" id="usuarioTelefonoCodigoPais" style="max-width: 120px;">
+                                <option value="+51" selected>+51</option>
+                                <option value="+54">+54</option>
+                                <option value="+55">+55</option>
+                                <option value="+56">+56</option>
+                                <option value="+57">+57</option>
+                                <option value="+58">+58</option>
+                                <option value="+593">+593</option>
+                                <option value="+595">+595</option>
+                                <option value="+598">+598</option>
+                                <option value="+1">+1</option>
+                                <option value="+34">+34</option>
+                            </select>
+                            <input type="text"
+                                   id="usuarioTelefonoNumero"
+                                   class="form-control"
+                                   inputmode="numeric"
+                                   placeholder="999999999"
+                                   value="" />
+                        </div>
+                        <span asp-validation-for="Usuario.Telefono" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
                         <label asp-for="Usuario.Email" class="form-label">Correo electronico</label>
                         <input asp-for="Usuario.Email" class="form-control" placeholder="correo@ejemplo.com" />
                         <span asp-validation-for="Usuario.Email" class="text-danger"></span>
-                    </div>
-                    <div class="mb-3">
-                        <label asp-for="Usuario.Telefono" class="form-label">Telefono</label>
-                        <input asp-for="Usuario.Telefono" class="form-control" placeholder="999999999" />
-                        <span asp-validation-for="Usuario.Telefono" class="text-danger"></span>
                     </div>
                     <div class="mb-3">
                         <label asp-for="Usuario.Password" class="form-label">Contrasena</label>
@@ -66,7 +97,7 @@
                         <input asp-for="Usuario.ConfirmPassword" class="form-control" autocomplete="new-password" />
                         <span asp-validation-for="Usuario.ConfirmPassword" class="text-danger"></span>
                     </div>
-                    <button type="submit" class="w-100 btn btn-primary auth-cta">Registrarse como usuario</button>
+                    <button type="submit" name="accionRegistro" value="usuario" class="w-100 btn btn-primary auth-cta">Registrarse como usuario</button>
                 </div>
 
                 <div id="registroClubFields" class="d-none">
@@ -74,6 +105,10 @@
                         <strong>Registro de club deportivo</strong>
                         <p class="mb-0">Completa los datos del negocio y activamos tu prueba de 1 mes.</p>
                     </div>
+                    @if (hayErroresClub && string.Equals(Model.TipoRegistro, "club", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <div asp-validation-summary="All" class="alert alert-danger py-2 px-3 mb-3 small"></div>
+                    }
 
                     <div class="row g-3">
                         <div class="col-md-6">
@@ -81,25 +116,37 @@
                             <input asp-for="Club.NombreContacto" class="form-control" />
                             <span asp-validation-for="Club.NombreContacto" class="text-danger"></span>
                         </div>
-                        <div class="col-md-3">
+
+                        <div class="col-md-6">
                             <label asp-for="Club.Telefono" class="form-label">Telefono</label>
-                            <input asp-for="Club.Telefono" class="form-control" />
+                            <input asp-for="Club.Telefono" type="hidden" id="ClubTelefonoHidden" />
+                            <div class="input-group">
+                                <select class="form-select" id="clubTelefonoCodigoPais" style="max-width: 120px;">
+                                    <option value="+51" selected>+51</option>
+                                    <option value="+54">+54</option>
+                                    <option value="+55">+55</option>
+                                    <option value="+56">+56</option>
+                                    <option value="+57">+57</option>
+                                    <option value="+58">+58</option>
+                                    <option value="+593">+593</option>
+                                    <option value="+595">+595</option>
+                                    <option value="+598">+598</option>
+                                    <option value="+1">+1</option>
+                                    <option value="+34">+34</option>
+                                </select>
+                                <input type="text"
+                                       id="clubTelefonoNumero"
+                                       class="form-control"
+                                       inputmode="numeric"
+                                       placeholder="999999999"
+                                       value="" />
+                            </div>
                             <span asp-validation-for="Club.Telefono" class="text-danger"></span>
                         </div>
-                        <div class="col-md-3">
-                            <label asp-for="Club.Correo" class="form-label">Correo del dueno</label>
+                        <div class="col-md-6">
+                            <label asp-for="Club.Correo" class="form-label">Correo</label>
                             <input asp-for="Club.Correo" class="form-control" />
                             <span asp-validation-for="Club.Correo" class="text-danger"></span>
-                        </div>
-                        <div class="col-md-3">
-                            <label asp-for="Club.Password" class="form-label">Contrasena</label>
-                            <input asp-for="Club.Password" class="form-control" autocomplete="new-password" />
-                            <span asp-validation-for="Club.Password" class="text-danger"></span>
-                        </div>
-                        <div class="col-md-3">
-                            <label asp-for="Club.ConfirmPassword" class="form-label">Confirmar contrasena</label>
-                            <input asp-for="Club.ConfirmPassword" class="form-control" autocomplete="new-password" />
-                            <span asp-validation-for="Club.ConfirmPassword" class="text-danger"></span>
                         </div>
                         <div class="col-md-6">
                             <label asp-for="Club.RelacionClub" class="form-label">Relacion con el club</label>
@@ -111,30 +158,58 @@
                             </select>
                             <span asp-validation-for="Club.RelacionClub" class="text-danger"></span>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <label asp-for="Club.NombreClub" class="form-label">Nombre del club</label>
                             <input asp-for="Club.NombreClub" class="form-control" />
                             <span asp-validation-for="Club.NombreClub" class="text-danger"></span>
                         </div>
                         <div class="col-md-3">
-                            <label asp-for="Club.Pais" class="form-label">Pais</label>
-                            <input asp-for="Club.Pais" class="form-control" />
-                            <span asp-validation-for="Club.Pais" class="text-danger"></span>
+                            <label asp-for="Club.CodigoDepartamento" class="form-label">Departamento</label>
+                            <select asp-for="Club.CodigoDepartamento" class="form-select" id="clubCodigoDepartamento">
+                                <option value="">Selecciona</option>
+                                @foreach (var dep in Model.Departamentos)
+                                {
+                                    <option value="@dep.Value" selected="@(Model.Club.CodigoDepartamento == dep.Value)">@dep.Text</option>
+                                }
+                            </select>
+                            <span asp-validation-for="Club.CodigoDepartamento" class="text-danger"></span>
                         </div>
                         <div class="col-md-3">
-                            <label asp-for="Club.ProvinciaEstado" class="form-label">Provincia / Estado</label>
-                            <input asp-for="Club.ProvinciaEstado" class="form-control" />
-                            <span asp-validation-for="Club.ProvinciaEstado" class="text-danger"></span>
+                            <label asp-for="Club.CodigoProvincia" class="form-label">Provincia</label>
+                            <select asp-for="Club.CodigoProvincia" class="form-select" id="clubCodigoProvincia">
+                                <option value="">Selecciona</option>
+                                @foreach (var prov in Model.Provincias)
+                                {
+                                    <option value="@prov.Value" selected="@(Model.Club.CodigoProvincia == prov.Value)">@prov.Text</option>
+                                }
+                            </select>
+                            <span asp-validation-for="Club.CodigoProvincia" class="text-danger"></span>
                         </div>
-                        <div class="col-md-3">
-                            <label asp-for="Club.Ciudad" class="form-label">Ciudad</label>
-                            <input asp-for="Club.Ciudad" class="form-control" />
-                            <span asp-validation-for="Club.Ciudad" class="text-danger"></span>
+                        <div class="col-md-6">
+                            <label asp-for="Club.CodigoUbigeo" class="form-label">Distrito</label>
+                            <select asp-for="Club.CodigoUbigeo" class="form-select" id="clubCodigoUbigeo">
+                                <option value="">Selecciona</option>
+                                @foreach (var dist in Model.Distritos)
+                                {
+                                    <option value="@dist.Value" selected="@(Model.Club.CodigoUbigeo == dist.Value)">@dist.Text</option>
+                                }
+                            </select>
+                            <span asp-validation-for="Club.CodigoUbigeo" class="text-danger"></span>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-12">
                             <label asp-for="Club.Direccion" class="form-label">Direccion</label>
                             <input asp-for="Club.Direccion" class="form-control" />
                             <span asp-validation-for="Club.Direccion" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Club.Password" class="form-label">Contrasena</label>
+                            <input asp-for="Club.Password" class="form-control" autocomplete="new-password" />
+                            <span asp-validation-for="Club.Password" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Club.ConfirmPassword" class="form-label">Confirmar contrasena</label>
+                            <input asp-for="Club.ConfirmPassword" class="form-control" autocomplete="new-password" />
+                            <span asp-validation-for="Club.ConfirmPassword" class="text-danger"></span>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Codigo CAPTCHA</label>
@@ -146,12 +221,12 @@
                             <span asp-validation-for="Club.CaptchaCodigo" class="text-danger"></span>
                         </div>
                     </div>
-                    <button type="submit" class="w-100 btn btn-primary auth-cta mt-3">Registrarse como club deportivo</button>
+                    <button type="submit" name="accionRegistro" value="club" class="w-100 btn btn-primary auth-cta mt-3">Registrarse como club deportivo</button>
                 </div>
 
-                <div class="auth-foot-links">
-                    <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl">Ya tienes cuenta? Iniciar sesion</a>
-                    <a asp-controller="Home" asp-action="Index">Volver al inicio</a>
+                <div class="auth-foot-links auth-foot-links-pro">
+                    <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl">¿Ya tienes una cuenta? <strong>Iniciar sesión</strong></a>
+                    <a asp-controller="Home" asp-action="Index">← Volver al inicio</a>
                 </div>
             </form>
         </div>
@@ -166,19 +241,116 @@
             const club = document.getElementById('regClub');
             const boxUsuario = document.getElementById('registroUsuarioFields');
             const boxClub = document.getElementById('registroClubFields');
+            const depSel = document.getElementById('clubCodigoDepartamento');
+            const provSel = document.getElementById('clubCodigoProvincia');
+            const distSel = document.getElementById('clubCodigoUbigeo');
+            const usuarioTelefonoHidden = document.getElementById('UsuarioTelefonoHidden');
+            const usuarioTelefonoCodigoPais = document.getElementById('usuarioTelefonoCodigoPais');
+            const usuarioTelefonoNumero = document.getElementById('usuarioTelefonoNumero');
+            const telefonoHidden = document.getElementById('ClubTelefonoHidden');
+            const telefonoCodigoPais = document.getElementById('clubTelefonoCodigoPais');
+            const telefonoNumero = document.getElementById('clubTelefonoNumero');
             if (!usuario || !club || !boxUsuario || !boxClub) return;
 
             function sync() {
                 const isClub = club.checked;
                 boxUsuario.classList.toggle('d-none', isClub);
                 boxClub.classList.toggle('d-none', !isClub);
-                const hidden = document.getElementById('TipoRegistroHidden');
-                if (hidden) hidden.value = isClub ? 'club' : 'usuario';
+                boxUsuario.querySelectorAll('input,select,textarea,button').forEach(el => { el.disabled = isClub; });
+                boxClub.querySelectorAll('input,select,textarea,button').forEach(el => { el.disabled = !isClub; });
             }
 
             usuario.addEventListener('change', sync);
             club.addEventListener('change', sync);
+            async function cargarProvincias() {
+                if (!depSel || !provSel || !distSel) return;
+                const codigo = (depSel.value || '').trim();
+                provSel.innerHTML = '<option value="">Selecciona</option>';
+                distSel.innerHTML = '<option value="">Selecciona</option>';
+                if (codigo.length !== 2) return;
+                const res = await fetch(`@Url.Action("UbigeoProvincias", "Home")?codigoDepartamento=${encodeURIComponent(codigo)}`);
+                if (!res.ok) return;
+                const data = await res.json();
+                (Array.isArray(data) ? data : []).forEach(x => {
+                    const opt = document.createElement('option');
+                    opt.value = x.value;
+                    opt.textContent = x.text;
+                    provSel.appendChild(opt);
+                });
+            }
+
+            async function cargarDistritos() {
+                if (!provSel || !distSel) return;
+                const codigo = (provSel.value || '').trim();
+                distSel.innerHTML = '<option value="">Selecciona</option>';
+                if (codigo.length !== 4) return;
+                const res = await fetch(`@Url.Action("UbigeoDistritos", "Home")?codigoProvincia=${encodeURIComponent(codigo)}`);
+                if (!res.ok) return;
+                const data = await res.json();
+                (Array.isArray(data) ? data : []).forEach(x => {
+                    const opt = document.createElement('option');
+                    opt.value = x.value;
+                    opt.textContent = x.text;
+                    distSel.appendChild(opt);
+                });
+            }
+
+            depSel?.addEventListener('change', () => { void cargarProvincias(); });
+            provSel?.addEventListener('change', () => { void cargarDistritos(); });
+
+            function syncTelefonoClub() {
+                if (!telefonoHidden || !telefonoCodigoPais || !telefonoNumero) return;
+                const codigo = (telefonoCodigoPais.value || '').trim();
+                const numero = (telefonoNumero.value || '').replace(/\D/g, '');
+                telefonoNumero.value = numero;
+                telefonoHidden.value = `${codigo}${numero}`.trim();
+            }
+
+            function syncTelefonoUsuario() {
+                if (!usuarioTelefonoHidden || !usuarioTelefonoCodigoPais || !usuarioTelefonoNumero) return;
+                const codigo = (usuarioTelefonoCodigoPais.value || '').trim();
+                const numero = (usuarioTelefonoNumero.value || '').replace(/\D/g, '');
+                usuarioTelefonoNumero.value = numero;
+                usuarioTelefonoHidden.value = `${codigo}${numero}`.trim();
+            }
+
+            function cargarTelefonoInicial(hiddenInput, codigoPaisSelect, numeroInput) {
+                if (!hiddenInput || !codigoPaisSelect || !numeroInput) return;
+                const raw = (hiddenInput.value || '').trim();
+                if (!raw) return;
+
+                const normalizado = raw.startsWith('+') ? raw : `+${raw.replace(/\D/g, '')}`;
+                const candidatos = Array.from(codigoPaisSelect.options).map(o => o.value).sort((a, b) => b.length - a.length);
+                const codigo = candidatos.find(c => normalizado.startsWith(c));
+                if (codigo) {
+                    codigoPaisSelect.value = codigo;
+                    numeroInput.value = normalizado.slice(codigo.length).replace(/\D/g, '');
+                } else {
+                    numeroInput.value = normalizado.replace(/\D/g, '');
+                }
+            }
+
+            telefonoCodigoPais?.addEventListener('change', syncTelefonoClub);
+            telefonoNumero?.addEventListener('input', syncTelefonoClub);
+            usuarioTelefonoCodigoPais?.addEventListener('change', syncTelefonoUsuario);
+            usuarioTelefonoNumero?.addEventListener('input', syncTelefonoUsuario);
+            document.getElementById('registerForm')?.addEventListener('submit', () => {
+                syncTelefonoClub();
+                syncTelefonoUsuario();
+            });
+
             sync();
+            cargarTelefonoInicial(telefonoHidden, telefonoCodigoPais, telefonoNumero);
+            cargarTelefonoInicial(usuarioTelefonoHidden, usuarioTelefonoCodigoPais, usuarioTelefonoNumero);
+            syncTelefonoClub();
+            syncTelefonoUsuario();
+
+            if (document.querySelector('#registroClubFields .text-danger.field-validation-error, #registroClubFields .alert-danger')) {
+                document.getElementById('registroClubFields')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            if (document.querySelector('#registroUsuarioFields .text-danger.field-validation-error, #registroUsuarioFields .alert-danger')) {
+                document.getElementById('registroUsuarioFields')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         })();
     </script>
 }
