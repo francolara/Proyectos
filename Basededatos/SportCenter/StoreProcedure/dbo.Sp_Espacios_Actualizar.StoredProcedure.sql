@@ -1,4 +1,4 @@
-﻿USE [DbSportCenter]
+USE [DbSportCenter]
 GO
 SET ANSI_NULLS ON
 GO
@@ -7,6 +7,7 @@ GO
 
 -- SOURCE: 31_Espacios_Tarifas_Base.sql (linea 185)
 -- Firma: Codex - 07/04/2026 | Bloquea cambio a mantenimiento/inactivo solo cuando el espacio a modificar tiene reservas activas futuras.
+-- Firma: Codex - 18/04/2026 | Se agrega actualizacion de AdministracionPrivada para controlar visibilidad del espacio en portal publico.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Espacios_Actualizar]
     @Id INT,
     @NegocioId INT,
@@ -18,6 +19,7 @@ CREATE OR ALTER PROCEDURE [dbo].[Sp_Espacios_Actualizar]
     @Capacidad INT,
     @TieneIluminacion BIT,
     @Techada BIT,
+    @AdministracionPrivada BIT = 0,
     @Estado INT,
     @TarifasJson NVARCHAR(MAX),
     @Usuario NVARCHAR(200)
@@ -119,6 +121,7 @@ BEGIN
             e.Capacidad = @Capacidad,
             e.TieneIluminacion = @TieneIluminacion,
             e.Techada = @Techada,
+            e.AdministracionPrivada = @AdministracionPrivada,
             e.Estado = @Estado,
             e.FechaActualizacion = SYSUTCDATETIME(),
             e.UsuarioActualizacion = @Usuario

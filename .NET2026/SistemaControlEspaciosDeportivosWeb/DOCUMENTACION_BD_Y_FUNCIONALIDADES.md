@@ -76,6 +76,12 @@
 - Actualizacion 13/04/2026:
   - `Sp_Espacios_Listar` compacta `TarifaResumen` por dia de semana con rango de precios (`min-max`) y elimina el detalle por cada franja horaria en el listado de espacios.
   - `Sp_Espacios_Listar` expone `TieneIluminacion` y `Techada` para mostrar badges operativos en la grilla.
+- Actualizacion 18/04/2026:
+  - Se agrega columna `AdministracionPrivada` en `dbo.EspaciosDeportivos` (script: `Basededatos/SportCenter/StoreProcedure/99_Espacios_AdministracionPrivada_AlterTable.sql`).
+  - `Sp_Espacios_Crear` y `Sp_Espacios_Actualizar` persisten `AdministracionPrivada`.
+  - `Sp_Espacios_ObtenerPorId` y `Sp_Espacios_Listar` retornan `AdministracionPrivada` para formularios/listado de espacios.
+  - `Sp_Home_BuscarEspaciosDisponibles` excluye espacios con `AdministracionPrivada = 1`.
+  - `Sp_Home_SolicitarReservaPublica` impide reservar por URL directa un espacio marcado como privado.
 - `Sp_Sedes_Eliminar` y `Sp_Espacios_Eliminar` ahora retornan error cuando no existe el registro para el negocio.
 
 ### 04_Reservas_Pagos_Comprobantes.sql
@@ -180,6 +186,11 @@
   - `Sp_Home_SolicitarReservaPublica` ahora crea **reserva real** (canal `CLIENTE_WEB`) en lugar de solicitud.
   - Reutiliza cliente existente por telefono/correo dentro del negocio; si no existe, crea cliente tipo `0` (no domiciliado) y luego registra la reserva.
   - La reserva se crea via `Sp_Reservas_Crear`, por lo que aplica politica de confirmacion/pago y demas reglas vigentes del negocio.
+- Actualizacion 17/04/2026:
+  - `Sp_Home_SolicitarReservaPublica` deja de usar `INSERT ... EXEC` para crear la reserva y ahora consume `Sp_Reservas_Crear` mediante el parametro de salida `@ReservaId`.
+  - `Sp_Reservas_Crear` incorpora `@ReservaId OUTPUT` y mantiene el `SELECT @Id` para compatibilidad con flujos existentes.
+  - `Sp_Notificaciones_Crear` incorpora `@DevolverResultado` (default `1`) para permitir ejecucion sin resultset en flujos internos.
+  - Con esto se elimina el error `Cannot use the ROLLBACK statement within an INSERT-EXEC statement` y `ReservasUsuariosPublicos.ReservaId` mantiene el Id real de `Reservas`.
 
 ### 11_Solicitudes_Gestion.sql
 - `Sp_Seguridad_SeedModulosPermisosBase` (agrega modulo `SOLICITUDES`)
@@ -242,6 +253,8 @@
 - Actualizacion 16/04/2026:
   - Al hacer click en una notificacion de la campanita se marca como leida y se descuenta del badge.
   - Se agrega accion `Marcar todas` en campanita para limpiar en bloque las pendientes del negocio.
+- Actualizacion 17/04/2026:
+  - `Sp_Notificaciones_Crear` agrega el parametro `@DevolverResultado` para que procesos internos puedan insertar notificacion sin devolver `SELECT Id`.
 
 ### 38_Web_Banners_Publicos.sql
 - Tabla:
@@ -1022,6 +1035,8 @@
     - `Sp_UsuariosPublicos_ReservasListar`
   - `Sp_Home_SolicitarReservaPublica` agrega `@UsuarioId` opcional y registra la relacion en `ReservasUsuariosPublicos` cuando la reserva se genera con sesion iniciada.
   - La reserva publica (vista `Home/Reservar`) precarga datos del cliente desde `UsuariosPublicosPerfil` cuando el usuario esta autenticado.
+- Actualizacion 17/04/2026:
+  - `Sp_UsuariosPublicos_ReservasListar` ahora devuelve datos de contacto enriquecidos de sede: `SedeFacebookUrl`, `SedeInstagramUrl`, `SedeTwitterUrl` y `SedeMapaUrl` (con fallback por coordenadas si no existe URL directa).
 
 ### 39_AltasClubes_Suscripcion_Contrato.sql
 - Flujo actualizado 16/04/2026:

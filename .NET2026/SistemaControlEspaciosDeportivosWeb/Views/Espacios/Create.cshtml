@@ -5,6 +5,7 @@
 <!-- Firma: Codex - 28/03/2026 | Registro de multiples tarifas por dia y rango horario en alta de espacio deportivo -->
 <!-- Firma: Codex - 29/03/2026 | Normalizacion de JSON de tarifas a camelCase, validacion por moneda y asistente de bloques con control de cruces -->
 <!-- Firma: Codex - 08/04/2026 | Unifica selectores de hora de tarifas a listas cada 30 minutos (bloques y filas dinamicas). -->
+<!-- Firma: Codex - 18/04/2026 | Se agrega check Administracion privada en registro de espacios para excluirlos del portal publico. -->
 
 @{
     ViewData["Title"] = "Nuevo espacio";
@@ -73,6 +74,12 @@
                         <label class="sc-check-chip">
                             <input asp-for="Techada" class="form-check-input mt-0" />
                             <span>Espacio techado</span>
+                        </label>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="sc-check-chip">
+                            <input asp-for="AdministracionPrivada" class="form-check-input mt-0" />
+                            <span>Administracion privada (no mostrar en portal publico)</span>
                         </label>
                     </div>
                 </div>

@@ -66,6 +66,10 @@ public class UsuarioPublicoReservaItemViewModel
     public string? SedeDireccion { get; set; }
     public string? SedeTelefono { get; set; }
     public string? SedeWhatsapp { get; set; }
+    public string? SedeFacebookUrl { get; set; }
+    public string? SedeInstagramUrl { get; set; }
+    public string? SedeTwitterUrl { get; set; }
+    public string? SedeMapaUrl { get; set; }
 }
 
 public class PerfilPublicoIndexViewModel

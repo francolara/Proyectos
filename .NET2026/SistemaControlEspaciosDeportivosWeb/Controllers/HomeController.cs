@@ -6,13 +6,15 @@ using SistemaControlEspaciosDeportivosWeb.ViewModels;
 using System.Diagnostics;
 using System.Globalization;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 
 public class HomeController(
     ISportCenterStoredProcedureService spService,
     UserManager<ApplicationUser> userManager,
-    SignInManager<ApplicationUser> signInManager) : Controller
+    SignInManager<ApplicationUser> signInManager,
+    ILogger<HomeController> logger) : Controller
 {
     private const string CaptchaSoftwareClubesSessionKey = "CaptchaSoftwareClubes";
     public async Task<IActionResult> Index(
@@ -174,6 +176,10 @@ public class HomeController(
     public async Task<IActionResult> SolicitarReservaPublica(SolicitudReservaPublicaFormViewModel model)
     {
         ViewData["PublicFullWidth"] = true;
+        RemoverModelStatePorPrefijo(ModelState, "TiposDocumentoIdentidad");
+        ModelState.Remove(nameof(model.OmitirFechaHorario));
+        ModelState.Remove("OmitirFechaHorario");
+        var omitirFechaHorario = model.OmitirFechaHorario ?? false;
         if (User.Identity?.IsAuthenticated == true)
             model.UsuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -191,6 +197,14 @@ public class HomeController(
 
         if (!ModelState.IsValid)
         {
+            logger.LogWarning("Reserva publica invalida. Detalle: {Detalle}",
+                string.Join(" | ", ModelState
+                    .Where(x => x.Value?.Errors?.Count > 0)
+                    .SelectMany(x => x.Value!.Errors.Select(e => $"{(string.IsNullOrWhiteSpace(x.Key) ? "<sin-campo>" : x.Key)}: {e.ErrorMessage}"))));
+            var detalleErrores = ObtenerDetalleErroresValidacion(ModelState);
+            if (!string.IsNullOrWhiteSpace(detalleErrores))
+                ModelState.AddModelError(string.Empty, "Campos pendientes: " + detalleErrores);
+
             var vmError = await ConstruirReservaVmAsync(
                 model.EspacioDeportivoId,
                 model.Fecha,
@@ -201,7 +215,7 @@ public class HomeController(
                 model.CodigoUbigeo,
                 model.TipoDeporteId,
                 model.NegocioId,
-                omitirFechaHorario: model.OmitirFechaHorario,
+                omitirFechaHorario: omitirFechaHorario,
                 formBase: model);
 
             if (vmError is null)
@@ -217,7 +231,7 @@ public class HomeController(
                     codigoUbigeo = model.CodigoUbigeo,
                     tipoDeporteId = model.TipoDeporteId,
                     negocioId = model.NegocioId,
-                    omitirFechaHorario = model.OmitirFechaHorario,
+                    omitirFechaHorario = omitirFechaHorario,
                     pagina = 1
                 });
             }
@@ -261,7 +275,7 @@ public class HomeController(
                 codigoUbigeo = model.CodigoUbigeo,
                 tipoDeporteId = model.TipoDeporteId,
                 negocioId = model.NegocioId,
-                omitirFechaHorario = model.OmitirFechaHorario,
+                omitirFechaHorario = omitirFechaHorario,
                 pagina = 1
             });
         }
@@ -278,7 +292,7 @@ public class HomeController(
                 model.CodigoUbigeo,
                 model.TipoDeporteId,
                 model.NegocioId,
-                omitirFechaHorario: model.OmitirFechaHorario,
+                omitirFechaHorario: omitirFechaHorario,
                 formBase: model);
 
             if (vmError is null)
@@ -294,7 +308,7 @@ public class HomeController(
                     codigoUbigeo = model.CodigoUbigeo,
                     tipoDeporteId = model.TipoDeporteId,
                     negocioId = model.NegocioId,
-                    omitirFechaHorario = model.OmitirFechaHorario,
+                    omitirFechaHorario = omitirFechaHorario,
                     pagina = 1
                 });
             }
@@ -411,6 +425,52 @@ public class HomeController(
         var vm = new AltaClubSolicitudFormViewModel();
         AsignarCaptchaSoftwareClubes(vm);
         return View(vm);
+    }
+
+    private static void RemoverModelStatePorPrefijo(ModelStateDictionary modelState, string prefijo)
+    {
+        var keys = modelState.Keys
+            .Where(k => string.Equals(k, prefijo, StringComparison.OrdinalIgnoreCase)
+                     || k.StartsWith(prefijo + ".", StringComparison.OrdinalIgnoreCase)
+                     || k.StartsWith(prefijo + "[", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        foreach (var key in keys)
+            modelState.Remove(key);
+    }
+
+    private static string ObtenerDetalleErroresValidacion(ModelStateDictionary modelState)
+    {
+        var campos = new List<string>();
+        foreach (var entry in modelState)
+        {
+            if (entry.Value.Errors.Count == 0) continue;
+
+            var key = entry.Key;
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                var texto = entry.Value.Errors
+                    .Select(e => (e.ErrorMessage ?? string.Empty).Trim())
+                    .FirstOrDefault(t => !string.IsNullOrWhiteSpace(t));
+                if (!string.IsNullOrWhiteSpace(texto))
+                    campos.Add("<sin-campo>: " + texto);
+                continue;
+            }
+
+            var campo = key.Split('.').Last();
+            if (string.Equals(campo, "OmitirFechaHorario", StringComparison.OrdinalIgnoreCase))
+                continue;
+            campo = campo.Replace("HoraInicio", "Hora inicio")
+                         .Replace("HoraFin", "Hora fin")
+                         .Replace("NumeroDocumento", "Numero de documento")
+                         .Replace("TipoDocumento", "Tipo de documento")
+                         .Replace("NombreEquipo", "Nombre de equipo")
+                         .Replace("EspacioDeportivoId", "Espacio deportivo")
+                         .Replace("CodigoUbigeo", "Distrito");
+            campos.Add(campo);
+        }
+
+        return string.Join(", ", campos.Distinct(StringComparer.OrdinalIgnoreCase));
     }
 
     [HttpPost]

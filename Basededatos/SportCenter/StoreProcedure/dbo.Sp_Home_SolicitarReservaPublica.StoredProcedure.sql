@@ -9,6 +9,8 @@ GO
 -- SOURCE: 10_Home_Solicitudes_Publicas.sql (linea 35)
 -- Firma: Codex - 14/04/2026 | Convierte flujo publico: ahora crea reserva real (canal CLIENTE_WEB), reutiliza/crea cliente y aplica politica de confirmacion/pago del negocio.
 -- Firma: Codex - 16/04/2026 | Registro publico autenticado: recibe UsuarioId opcional y guarda relacion en ReservasUsuariosPublicos para historial del perfil publico.
+-- Firma: Codex - 17/04/2026 | Elimina INSERT-EXEC para crear reserva y usa salida @ReservaId de Sp_Reservas_Crear (evita error ROLLBACK dentro de INSERT-EXEC).
+-- Firma: Codex - 18/04/2026 | Bloquea reservas publicas sobre espacios con AdministracionPrivada activada.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Home_SolicitarReservaPublica]
     @EspacioDeportivoId INT,
     @Fecha DATE,
@@ -55,6 +57,7 @@ BEGIN
         INNER JOIN dbo.Negocios n ON n.Id = s.NegocioId
         WHERE e.Id = @EspacioDeportivoId
           AND e.Estado = 1
+          AND COALESCE(e.AdministracionPrivada, 0) = 0
           AND s.Activo = 1
           AND n.Activo = 1;
 
@@ -137,8 +140,6 @@ BEGIN
         IF @PrecioFinal IS NULL OR @PrecioFinal <= 0
             RAISERROR('No se pudo calcular el precio para el horario seleccionado.', 16, 1);
 
-        DECLARE @ReservaInsert TABLE (Id INT);
-        INSERT INTO @ReservaInsert (Id)
         EXEC dbo.Sp_Reservas_Crear
             @NegocioId = @NegocioId,
             @EspacioDeportivoId = @EspacioDeportivoId,
@@ -155,9 +156,8 @@ BEGIN
             @NumeroOperacion = NULL,
             @Comentario = @ComentarioNorm,
             @CanalOrigen = N'CLIENTE_WEB',
+            @ReservaId = @ReservaId OUTPUT,
             @Usuario = N'portal-web';
-
-        SELECT TOP 1 @ReservaId = Id FROM @ReservaInsert;
 
         IF @ReservaId IS NULL OR @ReservaId <= 0
             RAISERROR('No se pudo generar la reserva.', 16, 1);

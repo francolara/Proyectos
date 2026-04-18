@@ -7,7 +7,7 @@
     var tabRetos = tab == "retos";
 }
 <!-- Firma: Codex - 16/04/2026 | Panel de perfil para usuario publico con tabs Datos personales, Mis reservas y Retar a un equipo (proximamente). -->
-<!-- Firma: Codex - 17/04/2026 | Header de perfil simplificado: se retiran Ir al inicio y Cerrar sesion; Cambiar contrasena adopta estilo estandar de botones del home/navbar publico. -->
+<!-- Firma: Codex - 17/04/2026 | Header de perfil simplificado y rediseño profesional de historial de reservas en mini tarjetas con accesos de contacto/redes/mapa de sede. -->
 
 <div class="container py-4">
     <header class="page-header">
@@ -118,64 +118,114 @@
 
     @if (tabReservas)
     {
-        <section class="table-card">
+        <section class="table-card profile-reservas-card">
             <h2 class="section-title"><i class="bi bi-calendar2-check me-1"></i>Historial de reservas</h2>
-            <div class="table-responsive p-3">
-                <table class="table table-sm align-middle">
-                    <thead>
-                        <tr>
-                            <th># Reserva</th>
-                            <th>Fecha</th>
-                            <th>Horario</th>
-                            <th>Negocio</th>
-                            <th>Sede / espacio</th>
-                            <th>Precio</th>
-                            <th>Estado</th>
-                            <th>Contacto sede</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (Model.Reservas.Count == 0)
+            @if (Model.Reservas.Count == 0)
+            {
+                <div class="p-3 text-center text-muted">Aun no tienes reservas registradas.</div>
+            }
+            else
+            {
+                <div class="profile-reservas-grid p-3">
+                    @foreach (var item in Model.Reservas)
+                    {
+                        var estadoClase = item.EstadoTexto switch
                         {
-                            <tr><td colspan="8" class="text-center text-muted">Aun no tienes reservas registradas.</td></tr>
-                        }
-                        else
-                        {
-                            @foreach (var item in Model.Reservas)
-                            {
-                                <tr>
-                                    <td>R-@item.ReservaId.ToString("D6")</td>
-                                    <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
-                                    <td>@item.HoraInicio.ToString("HH\\:mm") - @item.HoraFin.ToString("HH\\:mm")</td>
-                                    <td>@item.NegocioNombre</td>
-                                    <td>
-                                        <div><strong>@item.SedeNombre</strong> / @item.EspacioNombre</div>
-                                        @if (!string.IsNullOrWhiteSpace(item.SedeDireccion))
-                                        {
-                                            <small class="text-muted">@item.SedeDireccion</small>
-                                        }
-                                    </td>
-                                    <td>
-                                        <div>Total: S/ @item.Total.ToString("0.00")</div>
-                                        <small class="text-muted">Saldo: S/ @item.SaldoPendiente.ToString("0.00")</small>
-                                    </td>
-                                    <td>@item.EstadoTexto</td>
-                                    <td>
-                                        @if (!string.IsNullOrWhiteSpace(item.SedeTelefono))
-                                        {
-                                            <div>@item.SedeTelefono</div>
-                                        }
-                                        @if (!string.IsNullOrWhiteSpace(item.SedeWhatsapp))
-                                        {
-                                            <small class="text-muted">WhatsApp: @item.SedeWhatsapp</small>
-                                        }
-                                    </td>
-                                </tr>
-                            }
-                        }
-                    </tbody>
-                </table>
-            </div>
+                            "Reservada" => "is-reservada",
+                            "Confirmada" => "is-confirmada",
+                            "Pagada" => "is-pagada",
+                            "Completada" => "is-completada",
+                            "Cancelada" => "is-cancelada",
+                            "No Show" => "is-noshow",
+                            _ => "is-default"
+                        };
+                        var waNumero = (item.SedeWhatsapp ?? item.SedeTelefono ?? string.Empty).Replace(" ", string.Empty).Replace("+", string.Empty);
+                        var waUrl = string.IsNullOrWhiteSpace(waNumero) ? null : $"https://wa.me/{waNumero}";
+
+                        <article class="profile-reserva-item">
+                            <header class="profile-reserva-head">
+                                <div>
+                                    <p class="profile-kicker mb-1"><i class="bi bi-hash"></i>Reserva</p>
+                                    <h3 class="profile-reserva-codigo mb-0">R-@item.ReservaId.ToString("D6")</h3>
+                                </div>
+                                <span class="profile-estado-chip @estadoClase">@item.EstadoTexto</span>
+                            </header>
+
+                            <div class="profile-reserva-body">
+                                <div class="profile-mini">
+                                    <span><i class="bi bi-calendar-event"></i>Fecha</span>
+                                    <strong>@item.Fecha.ToString("dd/MM/yyyy")</strong>
+                                </div>
+                                <div class="profile-mini">
+                                    <span><i class="bi bi-clock-history"></i>Horario</span>
+                                    <strong>@item.HoraInicio.ToString("HH\\:mm") - @item.HoraFin.ToString("HH\\:mm")</strong>
+                                </div>
+                                <div class="profile-mini">
+                                    <span><i class="bi bi-building"></i>Negocio</span>
+                                    <strong>@item.NegocioNombre</strong>
+                                </div>
+                                <div class="profile-mini">
+                                    <span><i class="bi bi-geo-alt"></i>Sede / espacio</span>
+                                    <strong>@item.SedeNombre / @item.EspacioNombre</strong>
+                                    @if (!string.IsNullOrWhiteSpace(item.SedeDireccion))
+                                    {
+                                        <small>@item.SedeDireccion</small>
+                                    }
+                                </div>
+                                <div class="profile-mini">
+                                    <span><i class="bi bi-cash-coin"></i>Precio</span>
+                                    <strong>Total: S/ @item.Total.ToString("0.00")</strong>
+                                    <small>Saldo: S/ @item.SaldoPendiente.ToString("0.00")</small>
+                                </div>
+                                <div class="profile-mini">
+                                    <span><i class="bi bi-telephone"></i>Contacto sede</span>
+                                    <strong>@(string.IsNullOrWhiteSpace(item.SedeTelefono) ? "-" : item.SedeTelefono)</strong>
+                                    @if (!string.IsNullOrWhiteSpace(item.SedeWhatsapp))
+                                    {
+                                        <small>WhatsApp: @item.SedeWhatsapp</small>
+                                    }
+                                </div>
+                            </div>
+
+                            <footer class="profile-reserva-foot">
+                                <span class="profile-kicker"><i class="bi bi-share"></i>Canales de la sede</span>
+                                <div class="profile-icon-links">
+                                    @if (!string.IsNullOrWhiteSpace(item.SedeMapaUrl))
+                                    {
+                                        <a class="profile-icon-btn" href="@item.SedeMapaUrl" target="_blank" rel="noopener noreferrer" title="Ver mapa">
+                                            <i class="bi bi-map"></i>
+                                        </a>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(waUrl))
+                                    {
+                                        <a class="profile-icon-btn is-whatsapp" href="@waUrl" target="_blank" rel="noopener noreferrer" title="WhatsApp">
+                                            <i class="bi bi-whatsapp"></i>
+                                        </a>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(item.SedeFacebookUrl))
+                                    {
+                                        <a class="profile-icon-btn" href="@item.SedeFacebookUrl" target="_blank" rel="noopener noreferrer" title="Facebook">
+                                            <i class="bi bi-facebook"></i>
+                                        </a>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(item.SedeInstagramUrl))
+                                    {
+                                        <a class="profile-icon-btn" href="@item.SedeInstagramUrl" target="_blank" rel="noopener noreferrer" title="Instagram">
+                                            <i class="bi bi-instagram"></i>
+                                        </a>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(item.SedeTwitterUrl))
+                                    {
+                                        <a class="profile-icon-btn" href="@item.SedeTwitterUrl" target="_blank" rel="noopener noreferrer" title="X/Twitter">
+                                            <i class="bi bi-twitter-x"></i>
+                                        </a>
+                                    }
+                                </div>
+                            </footer>
+                        </article>
+                    }
+                </div>
+            }
         </section>
     }
 
@@ -187,6 +237,143 @@
         </section>
     }
 </div>
+
+@section Styles {
+    <style>
+        .profile-reservas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: .95rem;
+        }
+        .profile-reserva-item {
+            border: 1px solid #dbe5f6;
+            border-radius: 14px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            box-shadow: 0 10px 22px rgba(15, 23, 42, .06);
+            padding: .9rem;
+            display: flex;
+            flex-direction: column;
+            gap: .8rem;
+        }
+        .profile-reserva-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: .5rem;
+        }
+        .profile-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            color: #4b5f87;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            font-size: .68rem;
+            font-weight: 700;
+        }
+        .profile-reserva-codigo {
+            font-size: 1.08rem;
+            color: #0d2d62;
+            font-weight: 800;
+        }
+        .profile-estado-chip {
+            border-radius: 999px;
+            font-size: .75rem;
+            font-weight: 700;
+            padding: .24rem .6rem;
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+        .profile-estado-chip.is-reservada { background: #fff4dc; border-color: #f9cb74; color: #8a5100; }
+        .profile-estado-chip.is-confirmada { background: #eaf2ff; border-color: #aac6ff; color: #1b4ea0; }
+        .profile-estado-chip.is-pagada,
+        .profile-estado-chip.is-completada { background: #ebf8ee; border-color: #99ddb0; color: #1f6d3c; }
+        .profile-estado-chip.is-cancelada,
+        .profile-estado-chip.is-noshow { background: #feecec; border-color: #f2aaaa; color: #a42d2d; }
+        .profile-estado-chip.is-default { background: #eef2f8; border-color: #ccd6e8; color: #3f567c; }
+        .profile-reserva-body {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: .65rem;
+        }
+        .profile-mini {
+            border: 1px solid #d9e4f7;
+            border-radius: 10px;
+            background: #ffffff;
+            padding: .48rem .58rem;
+            display: flex;
+            flex-direction: column;
+            gap: .18rem;
+        }
+        .profile-mini span {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            font-size: .72rem;
+            color: #4b618d;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+        }
+        .profile-mini strong {
+            font-size: .9rem;
+            color: #0f2f64;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        .profile-mini small {
+            font-size: .78rem;
+            color: #5c6e91;
+            line-height: 1.25;
+        }
+        .profile-reserva-foot {
+            border-top: 1px dashed #cbdaef;
+            padding-top: .55rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .6rem;
+        }
+        .profile-icon-links {
+            display: inline-flex;
+            gap: .45rem;
+            flex-wrap: wrap;
+        }
+        .profile-icon-btn {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 999px;
+            border: 1px solid #b7ccf4;
+            color: #1f4fad;
+            background: #eff5ff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: .18s ease;
+        }
+        .profile-icon-btn:hover {
+            background: #1f4fad;
+            color: #fff;
+            border-color: #1f4fad;
+            transform: translateY(-1px);
+        }
+        .profile-icon-btn.is-whatsapp {
+            color: #16a34a;
+            border-color: #6ee7b7;
+            background: #ecfdf3;
+        }
+        .profile-icon-btn.is-whatsapp:hover {
+            background: #16a34a;
+            border-color: #16a34a;
+            color: #fff;
+        }
+        @@media (max-width: 767px) {
+            .profile-reserva-body { grid-template-columns: 1fr; }
+            .profile-reserva-foot { align-items: flex-start; flex-direction: column; }
+        }
+    </style>
+}
 
 @section Scripts{
     <partial name="_ValidationScriptsPartial" />

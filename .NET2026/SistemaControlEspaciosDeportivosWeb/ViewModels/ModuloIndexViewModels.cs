@@ -140,6 +140,7 @@ public class EspacioItemViewModel
     public string TipoSueloNombre { get; set; } = string.Empty;
     public bool TieneIluminacion { get; set; }
     public bool Techada { get; set; }
+    public bool AdministracionPrivada { get; set; }
     public string Estado { get; set; } = string.Empty;
     public string TarifaResumen { get; set; } = string.Empty;
 }

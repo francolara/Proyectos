@@ -9,6 +9,11 @@ GO
 -- Create date:   16/04/2026
 -- Description:   Lista historial de reservas realizadas por usuario publico autenticado.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   17/04/2026
+-- Description:   Incluye URLs de redes y mapa de la sede para vista en tarjetas del perfil publico.
+-- =============================================
 CREATE OR ALTER PROCEDURE [dbo].[Sp_UsuariosPublicos_ReservasListar]
     @UsuarioId NVARCHAR(450),
     @Top INT = 200
@@ -41,7 +46,21 @@ BEGIN
             e.Nombre AS EspacioNombre,
             s.Direccion AS SedeDireccion,
             s.Telefono AS SedeTelefono,
-            scn.WhatsappContacto AS SedeWhatsapp
+            scn.WhatsappContacto AS SedeWhatsapp,
+            s.FacebookUrl AS SedeFacebookUrl,
+            s.InstagramUrl AS SedeInstagramUrl,
+            s.TwitterUrl AS SedeTwitterUrl,
+            COALESCE(
+                NULLIF(LTRIM(RTRIM(s.GoogleMapsUrl)), N''),
+                CASE
+                    WHEN s.Latitud IS NOT NULL AND s.Longitud IS NOT NULL
+                        THEN N'https://www.google.com/maps?q='
+                            + CONVERT(NVARCHAR(40), s.Latitud)
+                            + N','
+                            + CONVERT(NVARCHAR(40), s.Longitud)
+                    ELSE NULL
+                END
+            ) AS SedeMapaUrl
         FROM dbo.ReservasUsuariosPublicos rup
         INNER JOIN dbo.Reservas r ON r.Id = rup.ReservaId
         INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId

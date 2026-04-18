@@ -248,7 +248,8 @@ public partial class SportCenterStoredProcedureService
                 Estado = dr.GetString(8),
                 TarifaResumen = dr.IsDBNull(9)
                     ? "Sin tarifa configurada"
-                    : dr.GetString(9)
+                    : dr.GetString(9),
+                AdministracionPrivada = dr.FieldCount > 10 && ReadBool(dr, 10)
             });
         }
         return list;
@@ -278,6 +279,7 @@ public partial class SportCenterStoredProcedureService
             Tarifas = dr.IsDBNull(10)
                 ? new List<EspacioTarifaRangoViewModel>()
                 : JsonSerializer.Deserialize<List<EspacioTarifaRangoViewModel>>(dr.GetString(10), TarifaJsonSerializerOptions) ?? new List<EspacioTarifaRangoViewModel>(),
+            AdministracionPrivada = dr.FieldCount > 11 && ReadBool(dr, 11),
             NegocioId = negocioId
         };
     }
@@ -296,6 +298,7 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@Capacidad", model.Capacidad, SqlDbType.Int);
         AddParam(cmd, "@TieneIluminacion", model.TieneIluminacion, SqlDbType.Bit);
         AddParam(cmd, "@Techada", model.Techada, SqlDbType.Bit);
+        AddParam(cmd, "@AdministracionPrivada", model.AdministracionPrivada, SqlDbType.Bit);
         AddParam(cmd, "@Estado", (int)model.Estado, SqlDbType.Int);
         AddParam(cmd, "@TarifasJson", ObtenerTarifasJson(model), SqlDbType.NVarChar);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
@@ -319,6 +322,7 @@ public partial class SportCenterStoredProcedureService
             AddParam(cmd, "@Capacidad", model.Capacidad, SqlDbType.Int);
             AddParam(cmd, "@TieneIluminacion", model.TieneIluminacion, SqlDbType.Bit);
             AddParam(cmd, "@Techada", model.Techada, SqlDbType.Bit);
+            AddParam(cmd, "@AdministracionPrivada", model.AdministracionPrivada, SqlDbType.Bit);
             AddParam(cmd, "@Estado", (int)model.Estado, SqlDbType.Int);
             AddParam(cmd, "@TarifasJson", ObtenerTarifasJson(model), SqlDbType.NVarChar);
             AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);

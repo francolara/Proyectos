@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using SistemaControlEspaciosDeportivosWeb.Models;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
@@ -18,11 +20,14 @@ public class RegisterModel(
     ILogger<RegisterModel> logger) : PageModel
 {
     private const string CaptchaRegistroClubSessionKey = "CaptchaRegistroClub";
+    private const string CaptchaRegistroUsuarioSessionKey = "CaptchaRegistroUsuario";
 
     [BindProperty]
+    [ValidateNever]
     public UsuarioInputModel Usuario { get; set; } = new();
 
     [BindProperty]
+    [ValidateNever]
     public AltaClubSolicitudFormViewModel Club { get; set; } = CrearClubDefault();
 
     [BindProperty(SupportsGet = true)]
@@ -59,6 +64,12 @@ public class RegisterModel(
         [Required(ErrorMessage = "La confirmacion de contrasena es obligatoria.")]
         [Compare(nameof(Password), ErrorMessage = "La contrasena y la confirmacion no coinciden.")]
         public string ConfirmPassword { get; set; } = string.Empty;
+
+        public string? CaptchaTexto { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Este campo es obligatorio.")]
+        [StringLength(10, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+        public string CaptchaCodigo { get; set; } = string.Empty;
     }
 
     public async Task OnGetAsync(string? returnUrl = null)
@@ -66,6 +77,7 @@ public class RegisterModel(
         ReturnUrl = returnUrl ?? Url.Content("~/");
         TipoRegistro = string.Equals(TipoRegistro, "club", StringComparison.OrdinalIgnoreCase) ? "club" : "usuario";
         Club = CrearClubDefault();
+        AsignarCaptchaRegistroUsuario(Usuario);
         AsignarCaptchaRegistroClub(Club);
         await CargarCombosUbigeoAsync();
         await CargarBannerLateralAsync();
@@ -73,6 +85,7 @@ public class RegisterModel(
 
     public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
     {
+        ReturnUrl = returnUrl ?? ReturnUrl ?? Url.Content("~/");
         // Fallback cuando el navegador envia Enter sin handler explicito.
         var accionForm = (Request.Form["accionRegistro"].ToString() ?? string.Empty).Trim();
         var tipoForm = string.IsNullOrWhiteSpace(accionForm)
@@ -88,39 +101,43 @@ public class RegisterModel(
 
     public async Task<IActionResult> OnPostUsuarioAsync(string? returnUrl = null)
     {
-        ReturnUrl = returnUrl ?? Url.Content("~/");
+        ReturnUrl = returnUrl ?? ReturnUrl ?? Url.Content("~/");
         TipoRegistro = "usuario";
         return await ProcesarRegistroUsuarioAsync();
     }
 
     public async Task<IActionResult> OnPostClubAsync(string? returnUrl = null)
     {
-        ReturnUrl = returnUrl ?? Url.Content("~/");
+        ReturnUrl = returnUrl ?? ReturnUrl ?? Url.Content("~/");
         TipoRegistro = "club";
         return await ProcesarRegistroClubAsync();
     }
 
     private async Task<IActionResult> ProcesarRegistroUsuarioAsync()
     {
-        ModelState.Remove("Club.NombreContacto");
-        ModelState.Remove("Club.Telefono");
-        ModelState.Remove("Club.Correo");
-        ModelState.Remove("Club.Password");
-        ModelState.Remove("Club.ConfirmPassword");
-        ModelState.Remove("Club.RelacionClub");
-        ModelState.Remove("Club.NombreClub");
-        ModelState.Remove("Club.CodigoDepartamento");
-        ModelState.Remove("Club.CodigoProvincia");
-        ModelState.Remove("Club.CodigoUbigeo");
-        ModelState.Remove("Club.Pais");
-        ModelState.Remove("Club.ProvinciaEstado");
-        ModelState.Remove("Club.Ciudad");
-        ModelState.Remove("Club.Direccion");
-        ModelState.Remove("Club.CaptchaTexto");
-        ModelState.Remove("Club.CaptchaCodigo");
+        ModelState.Clear();
+        ModelState.ClearValidationState(nameof(Usuario));
 
         if (!TryValidateModel(Usuario, nameof(Usuario)))
         {
+            logger.LogWarning("Registro usuario invalido. Detalle: {Detalle}",
+                string.Join(" | ", ModelState
+                    .Where(x => x.Value?.Errors?.Count > 0)
+                    .SelectMany(x => x.Value!.Errors.Select(e => $"{(string.IsNullOrWhiteSpace(x.Key) ? "<sin-campo>" : x.Key)}: {e.ErrorMessage}"))));
+            AsignarCaptchaRegistroUsuario(Usuario);
+            Club = CrearClubDefault();
+            AsignarCaptchaRegistroClub(Club);
+            await CargarCombosUbigeoAsync();
+            await CargarBannerLateralAsync();
+            return Page();
+        }
+
+        var captchaEsperado = HttpContext.Session.GetString(CaptchaRegistroUsuarioSessionKey);
+        if (string.IsNullOrWhiteSpace(captchaEsperado) ||
+            !string.Equals(Usuario.CaptchaCodigo?.Trim(), captchaEsperado, StringComparison.OrdinalIgnoreCase))
+        {
+            ModelState.AddModelError("Usuario.CaptchaCodigo", "El codigo CAPTCHA no es valido.");
+            AsignarCaptchaRegistroUsuario(Usuario);
             Club = CrearClubDefault();
             AsignarCaptchaRegistroClub(Club);
             await CargarCombosUbigeoAsync();
@@ -133,6 +150,7 @@ public class RegisterModel(
         if (existing is not null)
         {
             ModelState.AddModelError(string.Empty, "Ya existe una cuenta registrada con este correo.");
+            AsignarCaptchaRegistroUsuario(Usuario);
             Club = CrearClubDefault();
             AsignarCaptchaRegistroClub(Club);
             await CargarCombosUbigeoAsync();
@@ -156,6 +174,7 @@ public class RegisterModel(
                 ModelState.AddModelError(string.Empty, TraducirErrorIdentity(error.Code, error.Description));
             }
 
+            AsignarCaptchaRegistroUsuario(Usuario);
             Club = CrearClubDefault();
             AsignarCaptchaRegistroClub(Club);
             await CargarCombosUbigeoAsync();
@@ -164,14 +183,15 @@ public class RegisterModel(
         }
 
         logger.LogInformation("Nuevo usuario registrado desde portal publico.");
+        var (nombresPerfil, apellidosPerfil) = SepararNombreCompleto(Usuario.NombreCompleto);
         try
         {
             await spService.UsuariosPublicosGuardarPerfilAsync(new UsuarioPublicoPerfilViewModel
             {
                 UsuarioId = user.Id,
                 TipoDocumento = "0",
-                Nombres = (Usuario.NombreCompleto ?? string.Empty).Trim(),
-                Apellidos = string.Empty,
+                Nombres = nombresPerfil,
+                Apellidos = apellidosPerfil,
                 Telefono = string.IsNullOrWhiteSpace(Usuario.Telefono) ? null : Usuario.Telefono.Trim(),
                 Correo = email
             }, email);
@@ -182,19 +202,22 @@ public class RegisterModel(
         }
 
         await signInManager.SignInAsync(user, isPersistent: false);
-        return LocalRedirect(ReturnUrl ?? Url.Content("~/"));
+        TempData["PerfilPublicoOk"] = "Usuario creado satisfactoriamente. Ya puedes completar tus datos personales.";
+        return RedirectToAction("Index", "PerfilPublico", new { tab = "datos" });
     }
 
     private async Task<IActionResult> ProcesarRegistroClubAsync()
     {
-        ModelState.Remove("Usuario.NombreCompleto");
-        ModelState.Remove("Usuario.Email");
-        ModelState.Remove("Usuario.Telefono");
-        ModelState.Remove("Usuario.Password");
-        ModelState.Remove("Usuario.ConfirmPassword");
+        ModelState.Clear();
+        ModelState.ClearValidationState(nameof(Club));
 
         if (!TryValidateModel(Club, nameof(Club)))
         {
+            logger.LogWarning("Registro club invalido. Detalle: {Detalle}",
+                string.Join(" | ", ModelState
+                    .Where(x => x.Value?.Errors?.Count > 0)
+                    .SelectMany(x => x.Value!.Errors.Select(e => $"{(string.IsNullOrWhiteSpace(x.Key) ? "<sin-campo>" : x.Key)}: {e.ErrorMessage}"))));
+            AsignarCaptchaRegistroUsuario(Usuario);
             AsignarCaptchaRegistroClub(Club);
             await CargarCombosUbigeoAsync();
             await CargarBannerLateralAsync();
@@ -206,6 +229,7 @@ public class RegisterModel(
             !string.Equals(Club.CaptchaCodigo?.Trim(), captchaEsperado, StringComparison.OrdinalIgnoreCase))
         {
             ModelState.AddModelError("Club.CaptchaCodigo", "El codigo CAPTCHA no es valido.");
+            AsignarCaptchaRegistroUsuario(Usuario);
             AsignarCaptchaRegistroClub(Club);
             await CargarCombosUbigeoAsync();
             await CargarBannerLateralAsync();
@@ -218,6 +242,7 @@ public class RegisterModel(
             if (ubigeo is null)
             {
                 ModelState.AddModelError("Club.CodigoUbigeo", "Selecciona un distrito valido.");
+                AsignarCaptchaRegistroUsuario(Usuario);
                 AsignarCaptchaRegistroClub(Club);
                 await CargarCombosUbigeoAsync();
                 await CargarBannerLateralAsync();
@@ -233,6 +258,7 @@ public class RegisterModel(
             if (existe is not null)
             {
                 ModelState.AddModelError("Club.Correo", "Ya existe una cuenta con este correo.");
+                AsignarCaptchaRegistroUsuario(Usuario);
                 AsignarCaptchaRegistroClub(Club);
                 await CargarCombosUbigeoAsync();
                 await CargarBannerLateralAsync();
@@ -254,6 +280,7 @@ public class RegisterModel(
                     ModelState.AddModelError(string.Empty, TraducirErrorIdentity(error.Code, error.Description));
                 }
 
+                AsignarCaptchaRegistroUsuario(Usuario);
                 AsignarCaptchaRegistroClub(Club);
                 await CargarCombosUbigeoAsync();
                 await CargarBannerLateralAsync();
@@ -275,6 +302,7 @@ public class RegisterModel(
         catch (Exception ex)
         {
             ModelState.AddModelError(string.Empty, ex.Message);
+            AsignarCaptchaRegistroUsuario(Usuario);
             AsignarCaptchaRegistroClub(Club);
             await CargarCombosUbigeoAsync();
             await CargarBannerLateralAsync();
@@ -290,6 +318,18 @@ public class RegisterModel(
             .ToArray());
 
         HttpContext.Session.SetString(CaptchaRegistroClubSessionKey, captcha);
+        model.CaptchaTexto = captcha;
+        model.CaptchaCodigo = string.Empty;
+    }
+
+    private void AsignarCaptchaRegistroUsuario(UsuarioInputModel model)
+    {
+        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        var captcha = new string(Enumerable.Range(0, 5)
+            .Select(_ => chars[Random.Shared.Next(chars.Length)])
+            .ToArray());
+
+        HttpContext.Session.SetString(CaptchaRegistroUsuarioSessionKey, captcha);
         model.CaptchaTexto = captcha;
         model.CaptchaCodigo = string.Empty;
     }
@@ -342,5 +382,42 @@ public class RegisterModel(
             "InvalidUserName" => "El correo/usuario contiene caracteres no permitidos.",
             _ => "No se pudo completar el registro. Revisa los datos ingresados e intenta nuevamente."
         };
+    }
+
+    private static (string Nombres, string Apellidos) SepararNombreCompleto(string? nombreCompleto)
+    {
+        var valor = (nombreCompleto ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(valor))
+            return (string.Empty, string.Empty);
+
+        var partes = valor
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (partes.Length == 1)
+            return (partes[0], partes[0]);
+
+        return (partes[0], string.Join(' ', partes.Skip(1)));
+    }
+
+    private static void RemoverModelStatePorPrefijo(ModelStateDictionary modelState, string prefijo)
+    {
+        var keys = modelState.Keys
+            .Where(k => string.Equals(k, prefijo, StringComparison.OrdinalIgnoreCase)
+                     || k.StartsWith(prefijo + ".", StringComparison.OrdinalIgnoreCase)
+                     || k.StartsWith(prefijo + "[", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        foreach (var key in keys)
+            modelState.Remove(key);
+    }
+
+    private static void RemoverModelStatePorNombres(ModelStateDictionary modelState, params string[] nombres)
+    {
+        if (nombres is null || nombres.Length == 0) return;
+        var set = new HashSet<string>(nombres, StringComparer.OrdinalIgnoreCase);
+        var keys = modelState.Keys
+            .Where(k => set.Contains(k))
+            .ToList();
+        foreach (var key in keys)
+            modelState.Remove(key);
     }
 }

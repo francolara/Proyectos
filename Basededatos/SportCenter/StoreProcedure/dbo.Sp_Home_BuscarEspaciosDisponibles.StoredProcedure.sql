@@ -14,6 +14,7 @@ GO
 -- =============================================
 -- Firma: Codex - 14/04/2026 | Filtra disponibilidad publica por departamento/provincia/distrito/negocio y enriquece tarjetas con ubicacion, tipo de suelo, tarifa, contacto de sede (correo/whatsapp) y fotos para mini carrusel.
 -- Firma: Codex - 15/04/2026 | Agrega @IgnorarFechaHorario (solo para busqueda por negocio): permite listar todos los espacios del club sin filtrar cruce por fecha/hora cuando el usuario marca "obviar dia y horario" en Home.
+-- Firma: Codex - 18/04/2026 | Excluye espacios con AdministracionPrivada=1 para que no aparezcan en el portal publico.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Home_BuscarEspaciosDisponibles]
     @Fecha DATE,
     @HoraInicio TIME,
@@ -66,6 +67,7 @@ BEGIN
               AND t.Activa = 1
         ) tarifaMin
         WHERE e.Estado = 1
+          AND COALESCE(e.AdministracionPrivada, 0) = 0
           AND s.Activo = 1
           AND n.Activo = 1
           AND (@TipoDeporteId IS NULL OR e.TipoDeporteId = @TipoDeporteId)

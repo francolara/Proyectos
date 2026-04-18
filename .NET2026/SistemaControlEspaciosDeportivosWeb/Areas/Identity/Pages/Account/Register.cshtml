@@ -7,16 +7,16 @@
         ? Url.Action("VerImagen", "Sedes", new { url = Model.BannerLateral!.ImagenUrl })
         : null;
     var hayErroresUsuario = ViewData.ModelState.Any(x =>
-        (x.Key.StartsWith("Usuario") || (string.IsNullOrEmpty(x.Key) && !string.Equals(Model.TipoRegistro, "club", StringComparison.OrdinalIgnoreCase))) &&
-        x.Value?.Errors?.Count > 0);
+        x.Value?.Errors?.Count > 0 &&
+        !x.Key.StartsWith("Club", StringComparison.OrdinalIgnoreCase));
     var hayErroresClub = ViewData.ModelState.Any(x =>
-        (x.Key.StartsWith("Club") || (string.IsNullOrEmpty(x.Key) && string.Equals(Model.TipoRegistro, "club", StringComparison.OrdinalIgnoreCase))) &&
-        x.Value?.Errors?.Count > 0);
+        x.Value?.Errors?.Count > 0 &&
+        !x.Key.StartsWith("Usuario", StringComparison.OrdinalIgnoreCase));
 }
 <!-- Firma: Codex - 14/04/2026 | Registro unificado con formulario completo para Usuario o Club en una sola pantalla y banner lateral fijo. -->
 <!-- Firma: Codex - 16/04/2026 | Registro club reordenado por filas, ubigeo con combos (departamento/provincia/distrito) y soporte de preseleccion por query TipoRegistro=club. -->
 <!-- Firma: Codex - 16/04/2026 | Se corrige switch Usuario/Club con radios agrupados (binding directo a TipoRegistro), se evita bloqueo al alternar tipo de registro, se mueve CAPTCHA al final del formulario de club, se unifica telefono (codigo pais + numero) para usuario/club y se ajusta layout (correo junto a relacion con el club). -->
-<!-- Firma: Codex - 17/04/2026 | Registro robusto: se elimina dependencia de handlers por boton, se enruta por TipoRegistro/accion de submit y se deshabilitan campos de la seccion oculta para evitar validaciones cruzadas (incluyendo Club.CodigoDepartamento/Provincia/Ubigeo en flujo usuario) y submits que solo refrescaban pantalla. -->
+<!-- Firma: Codex - 17/04/2026 | Registro robusto: handlers explicitos por tipo (Usuario/Club), CAPTCHA agregado tambien a usuario, eliminacion de bloque amarillo de detalle duplicado y correccion de textos/enlaces para evitar refrescos silenciosos con validacion cruzada. -->
 
 <section class="auth-shell">
     <aside class="auth-visual" style="@(string.IsNullOrWhiteSpace(bannerUrl) ? string.Empty : $"background-image:linear-gradient(165deg,rgba(3,15,35,.84),rgba(7,24,58,.70)),url('{bannerUrl}');")">
@@ -97,7 +97,18 @@
                         <input asp-for="Usuario.ConfirmPassword" class="form-control" autocomplete="new-password" />
                         <span asp-validation-for="Usuario.ConfirmPassword" class="text-danger"></span>
                     </div>
-                    <button type="submit" name="accionRegistro" value="usuario" class="w-100 btn btn-primary auth-cta">Registrarse como usuario</button>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Codigo CAPTCHA</label>
+                            <div class="form-control bg-light fw-bold text-center">@Model.Usuario.CaptchaTexto</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="Usuario.CaptchaCodigo" class="form-label">Ingresa el codigo</label>
+                            <input asp-for="Usuario.CaptchaCodigo" class="form-control text-uppercase" autocomplete="off" />
+                            <span asp-validation-for="Usuario.CaptchaCodigo" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <button type="submit" asp-page-handler="Usuario" class="w-100 btn btn-primary auth-cta">Registrarse como usuario</button>
                 </div>
 
                 <div id="registroClubFields" class="d-none">
@@ -221,12 +232,12 @@
                             <span asp-validation-for="Club.CaptchaCodigo" class="text-danger"></span>
                         </div>
                     </div>
-                    <button type="submit" name="accionRegistro" value="club" class="w-100 btn btn-primary auth-cta mt-3">Registrarse como club deportivo</button>
+                    <button type="submit" asp-page-handler="Club" class="w-100 btn btn-primary auth-cta mt-3">Registrarse como club deportivo</button>
                 </div>
 
                 <div class="auth-foot-links auth-foot-links-pro">
-                    <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl">¿Ya tienes una cuenta? <strong>Iniciar sesión</strong></a>
-                    <a asp-controller="Home" asp-action="Index">← Volver al inicio</a>
+                    <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl">Ya tienes una cuenta? <strong>Iniciar sesion</strong></a>
+                    <a asp-controller="Home" asp-action="Index"><i class="bi bi-arrow-left"></i> Volver al inicio</a>
                 </div>
             </form>
         </div>

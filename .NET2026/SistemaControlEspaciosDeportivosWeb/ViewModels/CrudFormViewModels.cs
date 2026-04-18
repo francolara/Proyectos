@@ -153,6 +153,7 @@ public class EspacioFormViewModel
 
     public bool TieneIluminacion { get; set; }
     public bool Techada { get; set; }
+    public bool AdministracionPrivada { get; set; }
     public EstadoEspacioDeportivo Estado { get; set; } = EstadoEspacioDeportivo.Activo;
     public string? TarifasJson { get; set; }
     public List<EspacioTarifaRangoViewModel> Tarifas { get; set; } = new();

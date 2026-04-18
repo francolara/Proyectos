@@ -9,6 +9,7 @@ GO
 -- SOURCE: 26_Reservas_Validacion_Horario_Sede.sql (linea 9)
 -- Firma: Codex - 07/04/2026 | Crea reserva con politica de pago del negocio, registro opcional de pago en creacion y comentario, incluyendo fecha de pago y numero de operacion alfanumerico opcional.
 -- Firma: Codex - 14/04/2026 | Agrega CanalOrigen en reservas, genera notificacion para origen CLIENTE_WEB y ajusta concatenacion compatible en mensaje/url.
+-- Firma: Codex - 17/04/2026 | Aisla notificacion en flujo CLIENTE_WEB sin INSERT-EXEC, agrega salida opcional @ReservaId y mantiene SELECT final del Id real creado.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Reservas_Crear]
     @NegocioId INT,
     @EspacioDeportivoId INT,
@@ -25,6 +26,7 @@ CREATE OR ALTER PROCEDURE [dbo].[Sp_Reservas_Crear]
     @NumeroOperacion NVARCHAR(50) = NULL,
     @Comentario NVARCHAR(500) = NULL,
     @CanalOrigen NVARCHAR(20) = N'ADMIN',
+    @ReservaId INT = NULL OUTPUT,
     @Usuario NVARCHAR(200)
 AS
 BEGIN
@@ -164,6 +166,7 @@ BEGIN
         );
 
         DECLARE @Id INT = SCOPE_IDENTITY();
+        SET @ReservaId = @Id;
 
         IF @RegistrarPago = 1 AND @Adelanto > 0
         BEGIN
@@ -189,7 +192,6 @@ BEGIN
             DECLARE @UrlNotificacion NVARCHAR(300);
             SET @MensajeNotificacion = N'Reserva #' + CONVERT(NVARCHAR(20), @Id) + N' creada desde portal cliente.';
             SET @UrlNotificacion = N'/Reservas?negocioId=' + CONVERT(NVARCHAR(20), @NegocioId);
-
             EXEC dbo.Sp_Notificaciones_Crear
                 @NegocioId = @NegocioId,
                 @Tipo = N'RESERVA_CLIENTE_WEB',
@@ -197,7 +199,8 @@ BEGIN
                 @Mensaje = @MensajeNotificacion,
                 @Entidad = N'Reserva',
                 @EntidadId = @Id,
-                @UrlDestino = @UrlNotificacion;
+                @UrlDestino = @UrlNotificacion,
+                @DevolverResultado = 0;
         END
 
 
@@ -215,6 +218,4 @@ BEGIN
 END
 
 GO
-
-
 

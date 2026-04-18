@@ -91,7 +91,11 @@ public partial class SportCenterStoredProcedureService
                 EspacioNombre = dr.GetString(10),
                 SedeDireccion = dr.IsDBNull(11) ? null : dr.GetString(11),
                 SedeTelefono = dr.IsDBNull(12) ? null : dr.GetString(12),
-                SedeWhatsapp = dr.IsDBNull(13) ? null : dr.GetString(13)
+                SedeWhatsapp = dr.IsDBNull(13) ? null : dr.GetString(13),
+                SedeFacebookUrl = dr.IsDBNull(14) ? null : dr.GetString(14),
+                SedeInstagramUrl = dr.IsDBNull(15) ? null : dr.GetString(15),
+                SedeTwitterUrl = dr.IsDBNull(16) ? null : dr.GetString(16),
+                SedeMapaUrl = dr.IsDBNull(17) ? null : dr.GetString(17)
             });
         }
 

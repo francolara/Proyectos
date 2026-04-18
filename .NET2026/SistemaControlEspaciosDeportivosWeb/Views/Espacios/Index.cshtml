@@ -4,6 +4,7 @@
 <!-- Firma: Codex - 09/04/2026 | Rediseno de cabecera del listado de espacios con icono superior y etiqueta pequena centrada por columna. -->
 <!-- Firma: Codex - 13/04/2026 | Cabecera del modulo muestra tarjeta informativa de Club/negocio con ID junto al titulo. -->
 <!-- Firma: Codex - 13/04/2026 | Listado de espacios agrega badges de Iluminacion y Techado junto a Tipo de suelo. -->
+<!-- Firma: Codex - 18/04/2026 | Listado incorpora indicador visual de Administracion privada para espacios ocultos del portal publico. -->
 
 @{
     ViewData["Title"] = "Espacios";
@@ -129,6 +130,10 @@
                                         <span class="badge bg-light text-dark border"><i class="bi bi-grid-3x3-gap me-1"></i>@item.TipoSueloNombre</span>
                                         <span class="badge bg-light text-dark border"><i class="bi bi-lightbulb me-1"></i>@(item.TieneIluminacion ? "Iluminacion: Si" : "Iluminacion: No")</span>
                                         <span class="badge bg-light text-dark border"><i class="bi bi-house-door me-1"></i>@(item.Techada ? "Techado: Si" : "Techado: No")</span>
+                                        @if (item.AdministracionPrivada)
+                                        {
+                                            <span class="badge bg-dark-subtle text-dark-emphasis border"><i class="bi bi-shield-lock me-1"></i>Administracion privada</span>
+                                        }
                                     </div>
                                     <div class="small text-muted mt-2">
                                         <i class="bi bi-cash-coin me-1"></i>@item.TarifaResumen

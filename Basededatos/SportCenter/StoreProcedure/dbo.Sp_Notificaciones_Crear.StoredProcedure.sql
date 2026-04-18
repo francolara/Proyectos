@@ -6,6 +6,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 -- Firma: Codex - 14/04/2026 | Crea notificacion de negocio para eventos operativos (reservas cliente web).
+-- Firma: Codex - 17/04/2026 | Agrega parametro @DevolverResultado para permitir ejecucion sin resultset en flujos INSERT-EXEC.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Notificaciones_Crear]
     @NegocioId INT,
     @Tipo NVARCHAR(40),
@@ -13,7 +14,8 @@ CREATE OR ALTER PROCEDURE [dbo].[Sp_Notificaciones_Crear]
     @Mensaje NVARCHAR(300),
     @Entidad NVARCHAR(40) = NULL,
     @EntidadId INT = NULL,
-    @UrlDestino NVARCHAR(300) = NULL
+    @UrlDestino NVARCHAR(300) = NULL,
+    @DevolverResultado BIT = 1
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -36,7 +38,11 @@ BEGIN
             SYSUTCDATETIME()
         );
 
-        SELECT CAST(SCOPE_IDENTITY() AS INT) AS Id;
+        DECLARE @Id INT;
+        SET @Id = CAST(SCOPE_IDENTITY() AS INT);
+
+        IF @DevolverResultado = 1
+            SELECT @Id AS Id;
     END TRY
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;

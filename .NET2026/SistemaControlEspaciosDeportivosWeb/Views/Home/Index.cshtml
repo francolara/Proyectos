@@ -22,6 +22,8 @@
 <!-- Firma: Codex - 15/04/2026 | Home renovado: titulos profesionales, paginacion de 12, bloque de beneficios y CTA/footer administrable desde super admin. -->
 <!-- Firma: Codex - 15/04/2026 | Seccion de beneficios (6 tarjetas fijas) configurable por parametros globales HOME_PORTAL_BENEF_*. -->
 <!-- Firma: Codex - 16/04/2026 | Tarjetas de espacios muestran iconos de redes sociales de la sede junto al boton de reserva; footer resalta WhatsApp y se agrega boton flotante de contacto en Home. -->
+<!-- Firma: Codex - 17/04/2026 | Ajuste de binding para filtro omitirFechaHorario en Home publico (nullable-safe) y compatibilidad con flujo de reserva publica. -->
+<!-- Firma: Codex - 18/04/2026 | Navbar publica agrega ancla Caracteristicas y se fija id de destino en bloque de beneficios. -->
 
 <section class="home-hero mb-4">
     <div id="homeHeroCarousel" class="carousel slide home-hero-carousel h-100" data-bs-ride="carousel" data-bs-interval="5500">
@@ -191,7 +193,7 @@
                                    id="omitirFechaHorario"
                                    name="omitirFechaHorario"
                                    value="true"
-                                   @(Model.OmitirFechaHorario ? "checked" : null) />
+                                   @(Model.OmitirFechaHorario == true ? "checked" : null) />
                             <label class="form-check-label small" for="omitirFechaHorario">Obviar filtro de dia y horario para ver todos los espacios del club</label>
                         </div>
                     </div>
@@ -494,7 +496,7 @@
     }
 </section>
 
-<section class="home-benefits-section mb-4">
+<section id="caracteristicas" class="home-benefits-section mb-4">
     <div class="home-benefits-head">
         <h2>@Model.PortalConfig.BeneficiosTitulo</h2>
         <p>@Model.PortalConfig.BeneficiosSubtitulo</p>

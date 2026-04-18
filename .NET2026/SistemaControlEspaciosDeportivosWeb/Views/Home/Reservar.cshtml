@@ -28,7 +28,7 @@
 }
 <!-- Firma: Codex - 15/04/2026 | Flujo publico de reserva completo: fecha/hora editables con sincronizacion al calendario, recotizacion dinamica, cliente rapido alineado al admin y datos de sede/espacio movidos debajo de consideraciones en mini tarjetas. -->
 <!-- Firma: Codex - 16/04/2026 | Flujo de reserva publica mantiene solo datos operativos del cliente y deja fecha de nacimiento exclusivamente en perfil publico. -->
-<!-- Firma: Codex - 17/04/2026 | Reserva publica muestra todos los errores de validacion/binding en resumen para evitar refrescos sin mensaje cuando no llega a grabar. -->
+<!-- Firma: Codex - 17/04/2026 | Reserva publica muestra errores de validacion/binding y normaliza el flag OmitirFechaHorario en envio POST (true/false) para evitar bloqueos por campo requerido al grabar. -->
 
 <div class="container py-4 home-reservar-page">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
@@ -80,7 +80,7 @@
                 <input type="hidden" name="CodigoUbigeo" value="@Model.Formulario.CodigoUbigeo" />
                 <input type="hidden" name="TipoDeporteId" value="@Model.Formulario.TipoDeporteId" />
                 <input type="hidden" name="NegocioId" value="@Model.Formulario.NegocioId" />
-                <input type="hidden" name="OmitirFechaHorario" value="@Model.Formulario.OmitirFechaHorario" />
+                <input type="hidden" name="OmitirFechaHorario" value="@(Model.Formulario.OmitirFechaHorario == true ? "true" : "false")" />
 
                 <div class="col-md-3">
                     <label class="form-label">Fecha</label>

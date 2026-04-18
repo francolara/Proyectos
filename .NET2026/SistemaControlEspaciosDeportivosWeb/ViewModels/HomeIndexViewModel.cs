@@ -14,7 +14,7 @@ public class HomeIndexViewModel
     public string? CodigoUbigeo { get; set; }
     public int? TipoDeporteId { get; set; }
     public int? NegocioId { get; set; }
-    public bool OmitirFechaHorario { get; set; }
+    public bool? OmitirFechaHorario { get; set; }
     public List<SelectListItem> DepartamentosUbigeo { get; set; } = new();
     public List<SelectListItem> ProvinciasUbigeo { get; set; } = new();
     public List<SelectListItem> DistritosUbigeo { get; set; } = new();
@@ -146,7 +146,7 @@ public class SolicitudReservaPublicaFormViewModel
     public string? CodigoUbigeo { get; set; }
     public int? TipoDeporteId { get; set; }
     public int? NegocioId { get; set; }
-    public bool OmitirFechaHorario { get; set; }
+    public bool? OmitirFechaHorario { get; set; }
     public string? UsuarioId { get; set; }
     [ValidateNever]
     public List<SelectListItem> TiposDocumentoIdentidad { get; set; } = new();
