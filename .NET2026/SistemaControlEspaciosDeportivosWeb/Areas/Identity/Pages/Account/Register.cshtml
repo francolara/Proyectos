@@ -3,8 +3,11 @@
 @{
     ViewData["Title"] = "Crear cuenta";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var bannerUrl = !string.IsNullOrWhiteSpace(Model.BannerLateral?.ImagenUrl)
-        ? Url.Action("VerImagen", "Sedes", new { url = Model.BannerLateral!.ImagenUrl })
+    var bannerArchivo = !string.IsNullOrWhiteSpace(Model.BannerLateral?.ImagenUrlMobile)
+        ? Model.BannerLateral!.ImagenUrlMobile
+        : Model.BannerLateral?.ImagenUrl;
+    var bannerUrl = !string.IsNullOrWhiteSpace(bannerArchivo)
+        ? Url.Action("VerImagen", "Sedes", new { url = bannerArchivo })
         : null;
     var hayErroresUsuario = ViewData.ModelState.Any(x =>
         x.Value?.Errors?.Count > 0 &&
@@ -18,6 +21,7 @@
 <!-- Firma: Codex - 16/04/2026 | Se corrige switch Usuario/Club con radios agrupados (binding directo a TipoRegistro), se evita bloqueo al alternar tipo de registro, se mueve CAPTCHA al final del formulario de club, se unifica telefono (codigo pais + numero) para usuario/club y se ajusta layout (correo junto a relacion con el club). -->
 <!-- Firma: Codex - 17/04/2026 | Registro robusto: handlers explicitos por tipo (Usuario/Club), CAPTCHA agregado tambien a usuario, eliminacion de bloque amarillo de detalle duplicado y correccion de textos/enlaces para evitar refrescos silenciosos con validacion cruzada. -->
 
+<!-- Firma: Codex - 20/04/2026 | Banner lateral de registro ajustado para priorizar la imagen vertical del sistema y dejar la horizontal solo como respaldo. -->
 <section class="auth-shell">
     <aside class="auth-visual" style="@(string.IsNullOrWhiteSpace(bannerUrl) ? string.Empty : $"background-image:linear-gradient(165deg,rgba(3,15,35,.84),rgba(7,24,58,.70)),url('{bannerUrl}');")">
         <div class="auth-visual-content">

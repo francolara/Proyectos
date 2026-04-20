@@ -4,6 +4,7 @@
     var form = Model.Form;
     var esEdicion = form.Id.HasValue;
 }
+<!-- Firma: Codex - 20/04/2026 | Se aclara el uso de banners por tipo: home horizontal y login/registro con prioridad de imagen vertical. -->
 
 <div class="page-header-card mb-3">
     <div class="page-header-main">
@@ -55,6 +56,7 @@
                 <input asp-for="Form.TipoBanner" type="radio" class="btn-check" id="tipoBannerRegistro" value="3" />
                 <label class="btn btn-outline-primary" for="tipoBannerRegistro"><i class="bi bi-person-plus me-1"></i>Registro (fijo)</label>
             </div>
+            <small class="text-muted d-block mt-2">Home pÃºblico usa la imagen horizontal de 1920x760. Login y Registro usan como principal la imagen vertical de 1080x1350; la horizontal queda solo como respaldo si no cargas la vertical.</small>
         </div>
         <div class="col-md-12">
             <label asp-for="Form.Descripcion" class="form-label"></label>

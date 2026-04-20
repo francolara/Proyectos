@@ -108,4 +108,7 @@ public class MiSuscripcionIndexViewModel : ModuloBaseViewModel
     public DateTime? FechaVencimiento { get; set; }
     public int? DiasParaVencer { get; set; }
     public bool EsModoGratuito { get; set; }
+    public int SedesPermitidas { get; set; } = 2;
+    public int EspaciosPermitidos { get; set; } = 6;
+    public int UsuariosPermitidos { get; set; } = 3;
 }

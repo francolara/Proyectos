@@ -32,6 +32,7 @@ public class HomeController(
         ViewData["PublicFullWidth"] = true;
         ViewData["HideDefaultFooter"] = true;
         var vm = await ConstruirHomeVmAsync(fecha, horaInicio, horaFin, codigoDepartamento, codigoProvincia, codigoUbigeo, tipoDeporteId, negocioId, omitirFechaHorario, pagina);
+        ViewData["MostrarPromosNav"] = vm.PopupPromociones.Count > 0;
         vm.MensajeSolicitud = TempData["MensajeSolicitud"]?.ToString();
         return View(vm);
     }
@@ -155,15 +156,21 @@ public class HomeController(
             payload.Add(new
             {
                 id = $"b-{e.Id}",
-                title = "Bloqueado",
+                title = ExtraerTituloPublico(e.Titulo),
                 start = inicio.ToString("yyyy-MM-ddTHH:mm:ss"),
                 end = fin.ToString("yyyy-MM-ddTHH:mm:ss"),
                 color = "#334155",
-                classNames = new[] { "sc-public-event", "is-bloqueado" },
+                display = "background",
+                classNames = new[]
+                {
+                    string.Equals(e.TipoEvento, "NO_ATENCION", StringComparison.OrdinalIgnoreCase) ? "sc-no-atencion-bg" : "sc-bloqueo-bg",
+                    "is-bloqueado"
+                },
                 extendedProps = new
                 {
                     tipo = e.TipoEvento,
-                    estado = "bloqueado"
+                    estado = "bloqueado",
+                    motivo = ExtraerTituloPublico(e.Titulo)
                 }
             });
         }
@@ -763,6 +770,7 @@ public class HomeController(
         var sedes = await spService.HomeListarSedesAsync();
         var deportes = await spService.HomeListarTiposDeporteAsync();
         var banners = await spService.HomeListarBannersPublicosAsync();
+        var popupPromociones = await spService.HomeListarPopupPromocionesActivasAsync();
         var espaciosDisponibles = await spService.HomeBuscarEspaciosDisponiblesAsync(fechaConsulta, horaInicioConsulta, horaFinConsulta, codigoDep, codigoProv, codigoDist, tipoDeporteId, negocioId, omitirHorarioEfectivo);
         var totalResultados = espaciosDisponibles.Count;
         var totalPaginas = Math.Max(1, (int)Math.Ceiling(totalResultados / (double)tamanoPagina));
@@ -782,6 +790,7 @@ public class HomeController(
         if (negocioId.HasValue && !negocios.Any(x => x.Value == negocioId.Value.ToString()))
             negocioId = null;
         var portalConfig = await CargarPortalConfigAsync();
+        var popupPromocionesConfig = await CargarPopupPromocionesConfigAsync();
 
         return new HomeIndexViewModel
         {
@@ -799,6 +808,7 @@ public class HomeController(
             DistritosUbigeo = distritos,
             Negocios = negocios,
             Banners = banners,
+            PopupPromociones = popupPromociones,
             Sedes = sedes,
             TiposDeporte = deportes,
             Disponibles = espaciosPaginados,
@@ -806,7 +816,8 @@ public class HomeController(
             TamanoPagina = tamanoPagina,
             TotalResultados = totalResultados,
             TotalPaginas = totalPaginas,
-            PortalConfig = portalConfig
+            PortalConfig = portalConfig,
+            PopupPromocionesConfig = popupPromocionesConfig
         };
     }
 
@@ -879,5 +890,42 @@ public class HomeController(
         };
 
         return cfg;
+    }
+
+    private async Task<PopupPromocionConfigViewModel> CargarPopupPromocionesConfigAsync()
+    {
+        async Task<string?> Get(string key) => await spService.ParametrosGlobalesObtenerValorAsync(key);
+
+        return new PopupPromocionConfigViewModel
+        {
+            ActivarPopupAutomatico = LeerBool(await Get("POPUP_PROMO_AUTO_ENABLED"), true),
+            SegundosEsperaAntesDeMostrar = LeerEntero(await Get("POPUP_PROMO_DELAY_SECONDS"), 1, 0, 30),
+            ActivarAutoplaySlider = LeerBool(await Get("POPUP_PROMO_AUTOPLAY_ENABLED"), true),
+            VelocidadAutoplayMs = LeerEntero(await Get("POPUP_PROMO_AUTOPLAY_MS"), 4500, 1000, 20000),
+            MostrarFlechas = LeerBool(await Get("POPUP_PROMO_SHOW_ARROWS"), true),
+            MostrarIndicadores = LeerBool(await Get("POPUP_PROMO_SHOW_INDICATORS"), true)
+        };
+    }
+
+    private static bool LeerBool(string? valor, bool fallback)
+    {
+        if (string.IsNullOrWhiteSpace(valor))
+            return fallback;
+
+        valor = valor.Trim();
+        if (valor == "1")
+            return true;
+        if (valor == "0")
+            return false;
+
+        return bool.TryParse(valor, out var parsed) ? parsed : fallback;
+    }
+
+    private static int LeerEntero(string? valor, int fallback, int min, int max)
+    {
+        if (!int.TryParse((valor ?? string.Empty).Trim(), out var parsed))
+            return fallback;
+
+        return Math.Clamp(parsed, min, max);
     }
 }

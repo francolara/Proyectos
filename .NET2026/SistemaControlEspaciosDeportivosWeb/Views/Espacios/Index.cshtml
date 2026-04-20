@@ -5,6 +5,7 @@
 <!-- Firma: Codex - 13/04/2026 | Cabecera del modulo muestra tarjeta informativa de Club/negocio con ID junto al titulo. -->
 <!-- Firma: Codex - 13/04/2026 | Listado de espacios agrega badges de Iluminacion y Techado junto a Tipo de suelo. -->
 <!-- Firma: Codex - 18/04/2026 | Listado incorpora indicador visual de Administracion privada para espacios ocultos del portal publico. -->
+<!-- Firma: Codex - 20/04/2026 | Listado de espacios resalta visualmente la sede dentro del detalle operativo para mejorar lectura rapida del club/recinto asociado. -->
 
 @{
     ViewData["Title"] = "Espacios";
@@ -125,7 +126,7 @@
                                 </td>
                                 <td>
                                     <div class="d-flex flex-wrap gap-2">
-                                        <span class="badge bg-light text-dark border"><i class="bi bi-geo-alt me-1"></i>@item.SedeNombre</span>
+                                        <span class="badge sc-sede-highlight"><i class="bi bi-geo-alt-fill me-1"></i>@item.SedeNombre</span>
                                         <span class="badge bg-light text-dark border"><i class="bi bi-dribbble me-1"></i>@item.TipoDeporteNombre</span>
                                         <span class="badge bg-light text-dark border"><i class="bi bi-grid-3x3-gap me-1"></i>@item.TipoSueloNombre</span>
                                         <span class="badge bg-light text-dark border"><i class="bi bi-lightbulb me-1"></i>@(item.TieneIluminacion ? "Iluminacion: Si" : "Iluminacion: No")</span>

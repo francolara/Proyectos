@@ -18,6 +18,7 @@ public class MiSuscripcionController(
             return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "Acceso denegado." });
 
         var suscripcion = await spService.MiSuscripcionObtenerAsync(resolvedNegocioId.Value);
+        var limites = await spService.NegocioObtenerLimitesOperativosAsync(resolvedNegocioId.Value);
         var contactoEmail = (await spService.ParametrosGlobalesObtenerValorAsync("HOME_PORTAL_CONTACTO_EMAIL")) ?? string.Empty;
         var contactoTelefono = (await spService.ParametrosGlobalesObtenerValorAsync("HOME_PORTAL_CONTACTO_TELEFONO")) ?? string.Empty;
 
@@ -46,7 +47,10 @@ public class MiSuscripcionController(
             ContactoPlataformaTelefono = contactoTelefono,
             FechaVencimiento = fechaVencimiento,
             DiasParaVencer = diasParaVencer,
-            EsModoGratuito = suscripcion?.EsPrueba == true
+            EsModoGratuito = suscripcion?.EsPrueba == true,
+            SedesPermitidas = limites.SedesPermitidas,
+            EspaciosPermitidos = limites.EspaciosPermitidos,
+            UsuariosPermitidos = limites.UsuariosPermitidos
         };
 
         return View(vm);

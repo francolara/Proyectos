@@ -1,4 +1,4 @@
-﻿using Amazon;
+using Amazon;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
@@ -143,6 +143,25 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
             BannerMobileTargetHeight,
             BannerMobileMaxOutputBytes,
             exigirHorizontal: false,
+            cancellationToken);
+
+        return urls.FirstOrDefault();
+    }
+
+    public async Task<string?> UploadBannerAnuncioAsync(IFormFile? archivo, bool esHorizontal, CancellationToken cancellationToken = default)
+    {
+        if (archivo is null || archivo.Length <= 0)
+            return null;
+
+        var urls = await UploadImagenesAsync(
+            negocioId: 0,
+            sedeId: null,
+            categoria: esHorizontal ? "banners-anuncios-horizontal" : "banners-anuncios-vertical",
+            [archivo],
+            esHorizontal ? BannerTargetWidth : BannerMobileTargetWidth,
+            esHorizontal ? BannerTargetHeight : BannerMobileTargetHeight,
+            esHorizontal ? BannerMaxOutputBytes : BannerMobileMaxOutputBytes,
+            exigirHorizontal: esHorizontal,
             cancellationToken);
 
         return urls.FirstOrDefault();
@@ -473,6 +492,10 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
             return $"banners/publico/{DateTime.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}{safeExt}";
         if (string.Equals(categoria, "banners-mobile", StringComparison.OrdinalIgnoreCase))
             return $"banners/publico-mobile/{DateTime.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}{safeExt}";
+        if (string.Equals(categoria, "banners-anuncios-horizontal", StringComparison.OrdinalIgnoreCase))
+            return $"banners/anuncios/horizontal/{DateTime.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}{safeExt}";
+        if (string.Equals(categoria, "banners-anuncios-vertical", StringComparison.OrdinalIgnoreCase))
+            return $"banners/anuncios/vertical/{DateTime.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}{safeExt}";
 
         var sedeSegmento = sedeId.HasValue ? $"sede-{sedeId.Value}" : "sede-nueva";
         return $"sedes/negocio-{negocioId}/{sedeSegmento}/{DateTime.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}{safeExt}";

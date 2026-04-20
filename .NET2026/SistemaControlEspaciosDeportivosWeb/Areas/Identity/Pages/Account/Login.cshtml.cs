@@ -10,6 +10,7 @@ using SistemaControlEspaciosDeportivosWeb.ViewModels;
 
 namespace SistemaControlEspaciosDeportivosWeb.Areas.Identity.Pages.Account;
 
+// Firma: Codex - 20/04/2026 | Login con expiracion deslizante: 30 minutos sin Recordarme y 2 dias con Recordarme.
 [AllowAnonymous]
 public class LoginModel(
     SignInManager<ApplicationUser> signInManager,
@@ -76,9 +77,17 @@ public class LoginModel(
             return Page();
         }
 
-        var result = await signInManager.PasswordSignInAsync(user.UserName ?? email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+        var result = await signInManager.CheckPasswordSignInAsync(user, Input.Password, lockoutOnFailure: false);
         if (result.Succeeded)
         {
+            var propiedadesAutenticacion = new AuthenticationProperties
+            {
+                IsPersistent = Input.RememberMe,
+                AllowRefresh = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.Add(Input.RememberMe ? TimeSpan.FromDays(2) : TimeSpan.FromMinutes(30))
+            };
+
+            await signInManager.SignInAsync(user, propiedadesAutenticacion);
             logger.LogInformation("Usuario inicio sesion.");
             if (!string.IsNullOrWhiteSpace(returnUrl)
                 && Url.IsLocalUrl(returnUrl)

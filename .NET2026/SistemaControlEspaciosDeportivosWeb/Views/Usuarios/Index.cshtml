@@ -3,6 +3,7 @@
 <!-- Firma: Codex - 29/03/2026 | Asignacion de sede obligatoria para usuarios no administradores y visualizacion de sede en gestion de usuarios. -->
 <!-- Firma: Codex - 13/04/2026 | Cabecera del modulo muestra tarjeta informativa de Club/negocio con ID junto al titulo; formulario de alta agrega Nombre de usuario para crear cuenta si el correo aun no existe. -->
 <!-- Firma: Codex - 13/04/2026 | Se agrega accion Resetear clave temporal para que administrador regenere password de usuarios del negocio. -->
+<!-- Firma: Codex - 20/04/2026 | Listado de usuarios alinea cabeceras de detalle al estandar visual del panel con icono superior y etiqueta pequena por columna. -->
 
 @{
     ViewData["Title"] = "Usuarios del negocio";
@@ -77,15 +78,15 @@
 </section>
 
 <div class="table-responsive">
-    <table class="table table-sm table-striped align-middle">
+    <table class="table table-sm table-striped align-middle sc-list-table">
         <thead>
             <tr>
-                <th>Usuario</th>
-                <th>Correo</th>
-                <th>Rol</th>
-                <th>Sede</th>
-                <th>Estado</th>
-                <th class="text-end">Acciones</th>
+                <th class="text-center"><span class="sc-col-header"><i class="bi bi-person-vcard"></i><small>Usuario</small></span></th>
+                <th class="text-center"><span class="sc-col-header"><i class="bi bi-envelope"></i><small>Correo</small></span></th>
+                <th class="text-center"><span class="sc-col-header"><i class="bi bi-shield-check"></i><small>Rol</small></span></th>
+                <th class="text-center"><span class="sc-col-header"><i class="bi bi-geo-alt"></i><small>Sede</small></span></th>
+                <th class="text-center"><span class="sc-col-header"><i class="bi bi-patch-check"></i><small>Estado</small></span></th>
+                <th class="text-center"><span class="sc-col-header"><i class="bi bi-gear"></i><small>Acciones</small></span></th>
             </tr>
         </thead>
         <tbody>

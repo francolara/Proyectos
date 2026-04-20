@@ -619,7 +619,10 @@
 
 #calendarioReservas .fc-timegrid-col.fc-day-today {
   background: #eef5ff !important;
-  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.24) !important;
+  box-shadow:
+    inset 2px 0 0 #2563eb,
+    inset -2px 0 0 #2563eb,
+    inset 0 0 0 1px rgba(37, 99, 235, 0.24) !important;
 }
 
 #calendarioReservas .fc-col-header-cell.fc-day-sat,
@@ -810,6 +813,14 @@
 
 #calendarioReservas.sc-mode-contrast .fc-timegrid-col {
   background: #fdfefe !important;
+}
+
+#calendarioReservas.sc-mode-contrast .fc-timegrid-col.fc-day-today {
+  background: #eef5ff !important;
+  box-shadow:
+    inset 2px 0 0 #1d4ed8,
+    inset -2px 0 0 #1d4ed8,
+    inset 0 0 0 1px rgba(29, 78, 216, 0.28) !important;
 }
 
 #calendarioReservas.sc-hide-pendiente .sc-fc-event.is-pendiente,

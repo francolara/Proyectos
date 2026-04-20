@@ -1794,6 +1794,117 @@ body {
   letter-spacing: 0.01em;
 }
 
+.sc-list-table thead th .sc-col-header {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.08rem;
+  width: 100%;
+  text-align: center;
+  line-height: 1;
+}
+
+.sc-list-table thead th .sc-col-header i {
+  font-size: 0.95rem;
+  color: #1d4ed8;
+}
+
+.sc-list-table thead th .sc-col-header small {
+  font-size: 0.64rem;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.01em;
+}
+
+.sc-sede-highlight {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  padding: 0.26rem 0.62rem;
+  border-radius: 999px;
+  border: 1px solid #93c5fd;
+  background: linear-gradient(180deg, #eef5ff 0%, #dbeafe 100%);
+  color: #1e3a8a;
+  font-weight: 800;
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.12);
+}
+
+.sc-sede-highlight i {
+  color: #2563eb;
+}
+
+.sc-suscripcion-limites-grid,
+.sc-suscripcion-soporte-grid {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.sc-suscripcion-limites-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.sc-suscripcion-soporte-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.sc-suscripcion-info-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.82rem;
+  align-items: flex-start;
+  border-radius: 1rem;
+  border: 1px solid #d9e3f1;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+  padding: 1rem;
+}
+
+.sc-suscripcion-info-icon {
+  width: 2.8rem;
+  height: 2.8rem;
+  border-radius: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #e6f0ff 0%, #dbeafe 100%);
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.sc-suscripcion-info-icon i {
+  font-size: 1.18rem;
+  line-height: 1;
+}
+
+.sc-suscripcion-info-copy {
+  display: grid;
+  gap: 0.22rem;
+  min-width: 0;
+}
+
+.sc-suscripcion-info-copy small {
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: #64748b;
+  letter-spacing: 0.01em;
+}
+
+.sc-suscripcion-info-copy strong {
+  font-size: 1.18rem;
+  line-height: 1.15;
+  font-weight: 800;
+  color: #0f172a;
+  word-break: break-word;
+}
+
+.sc-suscripcion-info-copy span {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
 /* Firma: Codex - 13/04/2026 | Dashboard ejecutivo: KPIs de decision, paneles operativos, tendencia visual y acciones rapidas. */
 .sc-dash-shell {
   display: grid;
@@ -2106,12 +2217,21 @@ body {
   .sc-dash-grid {
     grid-template-columns: 1fr;
   }
+
+  .sc-suscripcion-limites-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 768px) {
   .sc-dash-actions,
   .sc-dash-kpis,
   .sc-dash-mod-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sc-suscripcion-limites-grid,
+  .sc-suscripcion-soporte-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -3299,4 +3419,220 @@ body {
   height: 1.1rem;
   border-radius: 999px;
   background-color: rgba(15, 23, 42, 0.45);
+}
+
+.home-promos-modal .modal-dialog {
+  max-width: min(1120px, calc(100vw - 1.5rem));
+}
+
+.home-promos-modal-content {
+  background: #081221;
+}
+
+.home-promos-modal-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 0.7rem;
+}
+
+.home-promos-header-cta {
+  margin-left: auto;
+  border-radius: 999px;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 12px 24px rgba(34, 197, 94, 0.18);
+}
+
+.home-promos-slide {
+  display: grid;
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.14), transparent 28%),
+    linear-gradient(180deg, #0b1423 0%, #09111d 100%);
+  align-items: stretch;
+}
+
+.home-promos-slide-vertical {
+  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+  min-height: 560px;
+}
+
+.home-promos-slide-horizontal {
+  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+  min-height: 500px;
+}
+
+.home-promos-media-link,
+.home-promos-slide > .home-promos-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.35rem 1rem 1.35rem 1.35rem;
+  min-height: 100%;
+}
+
+.home-promos-media-link-horizontal {
+  padding: 1.35rem 1rem 1.35rem 1.35rem;
+}
+
+.home-promos-image {
+  object-fit: cover;
+  background: #0f172a;
+  border-radius: 1rem;
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.34);
+}
+
+.home-promos-image-vertical {
+  width: 100%;
+  max-width: 360px;
+  height: auto;
+  aspect-ratio: 4 / 5;
+  min-height: 460px;
+}
+
+.home-promos-image-horizontal {
+  width: 100%;
+  max-width: 640px;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  min-height: 320px;
+}
+
+.home-promos-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.95rem;
+  padding: 2rem 2rem 2.2rem;
+  color: #fff;
+}
+
+.home-promos-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: fit-content;
+  padding: 0.34rem 0.72rem;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.18);
+  border: 1px solid rgba(96, 165, 250, 0.26);
+  color: #bfdbfe;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.home-promos-subtitle {
+  font-size: 0.82rem;
+  line-height: 1.35;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: rgba(147, 197, 253, 0.96);
+}
+
+.home-promos-copy h3 {
+  margin: 0;
+  font-size: clamp(1.75rem, 2.4vw, 2.45rem);
+  line-height: 1.05;
+  font-weight: 850;
+  letter-spacing: -0.03em;
+}
+
+.home-promos-copy p {
+  margin: 0;
+  color: rgba(226, 232, 240, 0.9);
+  line-height: 1.7;
+  font-size: 0.98rem;
+}
+
+.home-promos-control {
+  width: 3.3rem;
+}
+
+.home-promos-control .carousel-control-prev-icon,
+.home-promos-control .carousel-control-next-icon {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 999px;
+  background-color: rgba(8, 18, 33, 0.56);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.home-promos-indicators {
+  margin-bottom: 1rem;
+}
+
+.home-promos-indicators [data-bs-target] {
+  width: 0.72rem;
+  height: 0.72rem;
+  border-radius: 999px;
+}
+
+.sc-row-actions {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.42rem;
+  min-width: 8.25rem;
+}
+
+.sc-row-action-form {
+  margin: 0;
+}
+
+.sc-row-action-btn {
+  width: 100%;
+  justify-content: center;
+  font-weight: 700;
+  border-radius: 0.7rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 991.98px) {
+  .home-benefits-top-split {
+    grid-template-columns: 1fr;
+  }
+
+  .home-promos-slide {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .home-promos-media-link,
+  .home-promos-slide > .home-promos-image {
+    padding: 1rem 1rem 0;
+  }
+
+  .home-promos-image-vertical,
+  .home-promos-image-horizontal {
+    min-height: 320px;
+    max-height: 480px;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .home-promos-modal-header {
+    flex-wrap: wrap;
+  }
+
+  .home-promos-header-cta {
+    order: 3;
+    margin-left: 0;
+  }
+
+  .home-promos-copy {
+    padding: 1.35rem 1rem 1.5rem;
+  }
+
+  .home-promos-copy h3 {
+    font-size: 1.5rem;
+  }
+
+  .home-promos-control {
+    width: 2.6rem;
+  }
+
+  .sc-row-actions {
+    min-width: 7.35rem;
+  }
 }

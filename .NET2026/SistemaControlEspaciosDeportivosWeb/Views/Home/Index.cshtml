@@ -15,6 +15,54 @@
     {
         ctaClubUrl = "/Identity/Account/Register?TipoRegistro=club";
     }
+    var popupPromociones = Model.PopupPromociones?.Where(x => !string.IsNullOrWhiteSpace(x.ImagenUrl)).OrderBy(x => x.Orden).ThenByDescending(x => x.IdPopupPromocion).ToList()
+        ?? new List<SistemaControlEspaciosDeportivosWeb.ViewModels.PopupPromocionPublicoViewModel>();
+    var esUsuarioAutenticado = User?.Identity?.IsAuthenticated ?? false;
+    var mostrarPromosNav = popupPromociones.Count > 0;
+    var habilitarPopupAutomatico = !esUsuarioAutenticado && popupPromociones.Count > 0;
+    var popupConfig = Model.PopupPromocionesConfig ?? new SistemaControlEspaciosDeportivosWeb.ViewModels.PopupPromocionConfigViewModel();
+    var popupPromocionesVersion = popupPromociones.Count == 0
+        ? string.Empty
+        : string.Join("|", popupPromociones.Select(x => $"{x.IdPopupPromocion}:{x.Orden}:{x.Orientacion}:{(x.ImagenUrl ?? string.Empty)}"));
+    var whatsappAnunciosMensaje = Uri.EscapeDataString("Hola, quiero anunciar en SportCenter. ¿Podrian brindarme informacion sobre planes, alcance y condiciones para publicar mi anuncio?");
+    var whatsappHomeConfigurado = (Model.PortalConfig.SiguenosWhatsappUrl ?? string.Empty).Trim();
+    var whatsappAnunciosUrl = whatsappHomeConfigurado;
+    if (!string.IsNullOrWhiteSpace(whatsappHomeConfigurado))
+    {
+        var whatsappNumero = new string(whatsappHomeConfigurado.Where(char.IsDigit).ToArray());
+        if (!string.IsNullOrWhiteSpace(whatsappNumero))
+        {
+            whatsappAnunciosUrl = $"https://wa.me/{whatsappNumero}?text={whatsappAnunciosMensaje}";
+        }
+    }
+    if (Uri.TryCreate(whatsappHomeConfigurado, UriKind.Absolute, out var whatsappUriRobusta))
+    {
+        string? whatsappNumeroConfigurado = null;
+        var queryWhatsapp = whatsappUriRobusta.Query?.TrimStart('?') ?? string.Empty;
+        foreach (var part in queryWhatsapp.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var kv = part.Split('=', 2);
+            if (kv.Length == 2 && string.Equals(kv[0], "phone", StringComparison.OrdinalIgnoreCase))
+            {
+                whatsappNumeroConfigurado = new string(Uri.UnescapeDataString(kv[1]).Where(char.IsDigit).ToArray());
+                break;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(whatsappNumeroConfigurado))
+        {
+            var pathNumeroWhatsapp = whatsappUriRobusta.AbsolutePath.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
+            if (!string.IsNullOrWhiteSpace(pathNumeroWhatsapp))
+            {
+                whatsappNumeroConfigurado = new string(pathNumeroWhatsapp.Where(char.IsDigit).ToArray());
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(whatsappNumeroConfigurado))
+        {
+            whatsappAnunciosUrl = $"https://wa.me/{whatsappNumeroConfigurado}?text={Uri.EscapeDataString("Hola, quiero anunciar en SportCenter. ¿Podrían brindarme información sobre planes, alcance y condiciones para publicar mi anuncio?")}";
+        }
+    }
 }
 <!-- Firma: Codex - 14/04/2026 | Home publico con mini carrusel de fotos por sede en tarjetas de espacios disponibles. -->
 <!-- Firma: Codex - 15/04/2026 | Resultado publico simplificado: boton Reservar ahora (sin formulario embebido) y retiro del bloque Consideraciones en las tarjetas para reducir carga visual. -->
@@ -24,6 +72,7 @@
 <!-- Firma: Codex - 16/04/2026 | Tarjetas de espacios muestran iconos de redes sociales de la sede junto al boton de reserva; footer resalta WhatsApp y se agrega boton flotante de contacto en Home. -->
 <!-- Firma: Codex - 17/04/2026 | Ajuste de binding para filtro omitirFechaHorario en Home publico (nullable-safe) y compatibilidad con flujo de reserva publica. -->
 <!-- Firma: Codex - 18/04/2026 | Navbar publica agrega ancla Caracteristicas y se fija id de destino en bloque de beneficios. -->
+<!-- Firma: Codex - 20/04/2026 | Home publico integra acceso de anuncios en navbar superior y modal popup configurable desde super admin para usuarios anonimos, con soporte mixto vertical/horizontal, subtitulo por anuncio, CTA Quiero anunciar reutilizando el WhatsApp configurado del portal y control de apertura automatica por sessionStorage. -->
 
 <section class="home-hero mb-4">
     <div id="homeHeroCarousel" class="carousel slide home-hero-carousel h-100" data-bs-ride="carousel" data-bs-interval="5500">
@@ -534,6 +583,102 @@
         </article>
     </div>
 </section>
+
+@if (mostrarPromosNav)
+{
+    <div class="modal fade home-promos-modal" id="popupPromocionesModal" tabindex="-1" aria-labelledby="popupPromocionesLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content sc-modal-content home-promos-modal-content">
+                <div class="sc-modal-header home-promos-modal-header">
+                    <div class="sc-modal-title-wrap">
+                        <h2 class="sc-modal-title" id="popupPromocionesLabel">Anuncios y Promociones</h2>
+                        <p class="sc-modal-subtitle">Ofertas y campanas activas</p>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(whatsappAnunciosUrl))
+                    {
+                        <a href="@whatsappAnunciosUrl"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="btn btn-success home-promos-header-cta">
+                            <i class="bi bi-whatsapp me-1"></i>Quiero anunciar
+                        </a>
+                    }
+                    <button type="button" class="btn-close sc-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body sc-modal-body px-0 pt-0">
+                    <div id="popupPromocionesCarousel" class="carousel slide" data-bs-touch="true">
+                        @if (popupConfig.MostrarIndicadores && popupPromociones.Count > 1)
+                        {
+                            <div class="carousel-indicators home-promos-indicators">
+                                @for (var idx = 0; idx < popupPromociones.Count; idx++)
+                                {
+                                    <button type="button"
+                                            data-bs-target="#popupPromocionesCarousel"
+                                            data-bs-slide-to="@idx"
+                                            class="@(idx == 0 ? "active" : null)"
+                                            aria-current="@(idx == 0 ? "true" : null)"
+                                            aria-label="Promocion @(idx + 1)"></button>
+                                }
+                            </div>
+                        }
+                        <div class="carousel-inner">
+                            @for (var idx = 0; idx < popupPromociones.Count; idx++)
+                            {
+                                var anuncio = popupPromociones[idx];
+                                var imagenUrl = Url.Action("VerImagen", "Sedes", new { url = anuncio.ImagenUrl }) ?? string.Empty;
+                                var botonUrl = string.IsNullOrWhiteSpace(anuncio.UrlBoton) ? null : anuncio.UrlBoton;
+                                var imagenClickUrl = string.IsNullOrWhiteSpace(anuncio.UrlImagen) ? null : anuncio.UrlImagen;
+                                var target = anuncio.AbrirNuevaPestana ? "_blank" : "_self";
+                                var rel = anuncio.AbrirNuevaPestana ? "noopener noreferrer" : null;
+                                <div class="carousel-item @(idx == 0 ? "active" : null)">
+                                    <article class="home-promos-slide @(anuncio.EsHorizontal ? "home-promos-slide-horizontal" : "home-promos-slide-vertical")">
+                                        @if (!string.IsNullOrWhiteSpace(imagenClickUrl))
+                                        {
+                                            <a href="@imagenClickUrl" target="@target" rel="@rel" class="home-promos-media-link @(anuncio.EsHorizontal ? "home-promos-media-link-horizontal" : null)">
+                                                <img src="@imagenUrl" alt="@anuncio.Titulo" class="home-promos-image @(anuncio.EsHorizontal ? "home-promos-image-horizontal" : "home-promos-image-vertical")" />
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <img src="@imagenUrl" alt="@anuncio.Titulo" class="home-promos-image @(anuncio.EsHorizontal ? "home-promos-image-horizontal" : "home-promos-image-vertical")" />
+                                        }
+                                        <div class="home-promos-copy">
+                                            <span class="home-promos-kicker">Anuncio activo</span>
+                                            @if (!string.IsNullOrWhiteSpace(anuncio.Subtitulo))
+                                            {
+                                                <div class="home-promos-subtitle">@anuncio.Subtitulo</div>
+                                            }
+                                            <h3>@anuncio.Titulo</h3>
+                                            @if (!string.IsNullOrWhiteSpace(anuncio.Descripcion))
+                                            {
+                                                <p>@anuncio.Descripcion</p>
+                                            }
+                                            @if (!string.IsNullOrWhiteSpace(botonUrl) && !string.IsNullOrWhiteSpace(anuncio.TextoBoton))
+                                            {
+                                                <a href="@botonUrl" target="@target" rel="@rel" class="btn btn-primary">
+                                                    @anuncio.TextoBoton
+                                                </a>
+                                            }
+                                        </div>
+                                    </article>
+                                </div>
+                            }
+                        </div>
+                        @if (popupConfig.MostrarFlechas && popupPromociones.Count > 1)
+                        {
+                            <button class="carousel-control-prev home-promos-control" type="button" data-bs-target="#popupPromocionesCarousel" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon"></span>
+                            </button>
+                            <button class="carousel-control-next home-promos-control" type="button" data-bs-target="#popupPromocionesCarousel" data-bs-slide="next">
+                                <span class="carousel-control-next-icon"></span>
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 </div>
 
 <section class="home-platform-cta">
@@ -601,6 +746,83 @@
 }
 
 @section Scripts {
+<script>
+(() => {
+    const popupPromocionesState = {
+        hasItems: @popupPromociones.Count,
+        isAuthenticated: @(esUsuarioAutenticado ? "true" : "false"),
+        autoOpen: @(habilitarPopupAutomatico && popupConfig.ActivarPopupAutomatico ? "true" : "false"),
+        delayMs: @(popupConfig.SegundosEsperaAntesDeMostrar * 1000),
+        autoplay: @(popupConfig.ActivarAutoplaySlider ? "true" : "false"),
+        autoplayMs: @popupConfig.VelocidadAutoplayMs,
+        version: '@popupPromocionesVersion'
+    };
+
+    if (!popupPromocionesState.hasItems) return;
+
+    const modalEl = document.getElementById('popupPromocionesModal');
+    const carouselEl = document.getElementById('popupPromocionesCarousel');
+    const openButtons = document.querySelectorAll('[data-popup-promociones-open]');
+    if (!modalEl || !carouselEl || !window.bootstrap) return;
+
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    let carouselInstance = null;
+
+    function getCarousel() {
+        if (carouselInstance) return carouselInstance;
+        carouselInstance = bootstrap.Carousel.getOrCreateInstance(carouselEl, {
+            interval: popupPromocionesState.autoplay ? popupPromocionesState.autoplayMs : false,
+            ride: popupPromocionesState.autoplay ? 'carousel' : false,
+            pause: false,
+            wrap: true,
+            touch: true
+        });
+        if (!popupPromocionesState.autoplay) {
+            carouselInstance.pause();
+        } else {
+            carouselInstance.cycle();
+        }
+        return carouselInstance;
+    }
+
+    function openPopupPromociones() {
+        const carousel = getCarousel();
+        if (popupPromocionesState.autoplay) {
+            carousel.cycle();
+        }
+        modal.show();
+    }
+
+    openButtons.forEach(button => {
+        button.addEventListener('click', function () {
+            openPopupPromociones();
+        });
+    });
+
+    modalEl.addEventListener('hidden.bs.modal', function () {
+        if (carouselInstance) {
+            carouselInstance.pause();
+        }
+        if (popupPromocionesState.version) {
+            sessionStorage.setItem('popupPromocionesVisto', popupPromocionesState.version);
+        }
+    });
+
+    modalEl.addEventListener('shown.bs.modal', function () {
+        if (!carouselInstance) return;
+        if (popupPromocionesState.autoplay) {
+            carouselInstance.cycle();
+        } else {
+            carouselInstance.pause();
+        }
+    });
+
+    const popupPromocionesVistas = sessionStorage.getItem('popupPromocionesVisto') || '';
+    if (popupPromocionesState.autoOpen && popupPromocionesVistas !== popupPromocionesState.version) {
+        window.setTimeout(openPopupPromociones, popupPromocionesState.delayMs);
+    }
+})();
+</script>
 <script>
 (() => {
     const mediaQueryMobile = window.matchMedia('(max-width: 767.98px)');

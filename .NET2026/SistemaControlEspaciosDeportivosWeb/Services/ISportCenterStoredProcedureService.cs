@@ -8,6 +8,7 @@ public interface ISportCenterStoredProcedureService
     Task<List<SedePublicaViewModel>> HomeListarSedesAsync();
     Task<List<TipoDeportePublicoViewModel>> HomeListarTiposDeporteAsync();
     Task<List<WebBannerPublicoViewModel>> HomeListarBannersPublicosAsync();
+    Task<List<PopupPromocionPublicoViewModel>> HomeListarPopupPromocionesActivasAsync();
     Task<WebBannerPublicoViewModel?> WebBannersObtenerFijoPorTipoAsync(int tipoBanner);
     Task<List<EspacioDisponibleViewModel>> HomeBuscarEspaciosDisponiblesAsync(DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin, string? codigoDepartamento, string? codigoProvincia, string? codigoUbigeo, int? tipoDeporteId, int? negocioId, bool omitirFechaHorario = false);
     Task<int> HomeSolicitarReservaPublicaAsync(SolicitudReservaPublicaFormViewModel model);
@@ -174,6 +175,10 @@ public interface ISportCenterStoredProcedureService
     Task<List<BannerAdminItemViewModel>> BannersAdminListarAsync(bool? soloActivos = null);
     Task<int> BannersAdminGuardarAsync(BannerAdminFormViewModel model, string usuario);
     Task<bool> BannersAdminEliminarAsync(int id, string usuario);
+    Task<List<PopupPromocionAdminItemViewModel>> PopupPromocionesAdminListarAsync(bool? soloActivos = null);
+    Task<int> PopupPromocionesAdminGuardarAsync(PopupPromocionAdminFormViewModel model, string usuario);
+    Task<bool> PopupPromocionesAdminEliminarAsync(int idPopupPromocion, string usuario);
+    Task<bool> PopupPromocionesAdminCambiarEstadoAsync(int idPopupPromocion, bool activo, string usuario);
     Task<(List<PlataformaNegocioLimiteItemViewModel> Negocios, int TotalRegistros)> PlataformaNegociosListarAsync(string? buscar = null, string? estadoContrato = null, int pagina = 1, int tamanoPagina = 20);
     Task<bool> PlataformaNegocioActualizarLimitesAsync(int negocioId, int sedesPermitidas, int espaciosPermitidos, int usuariosPermitidos, string usuario);
     Task<(int SedesPermitidas, int EspaciosPermitidos, int UsuariosPermitidos)> NegocioObtenerLimitesOperativosAsync(int negocioId);

@@ -3,13 +3,17 @@
 @{
     ViewData["Title"] = "Iniciar sesion";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var bannerUrl = !string.IsNullOrWhiteSpace(Model.BannerLateral?.ImagenUrl)
-        ? Url.Action("VerImagen", "Sedes", new { url = Model.BannerLateral!.ImagenUrl })
+    var bannerArchivo = !string.IsNullOrWhiteSpace(Model.BannerLateral?.ImagenUrlMobile)
+        ? Model.BannerLateral!.ImagenUrlMobile
+        : Model.BannerLateral?.ImagenUrl;
+    var bannerUrl = !string.IsNullOrWhiteSpace(bannerArchivo)
+        ? Url.Action("VerImagen", "Sedes", new { url = bannerArchivo })
         : null;
 }
 <!-- Firma: Codex - 14/04/2026 | Login con layout profesional y flujo unico de acceso sin selector de modo. -->
 <!-- Firma: Codex - 16/04/2026 | Ajuste visual de acciones inferiores (estilo profesional) y simplificacion de links como referencia de diseño del proyecto. -->
 
+<!-- Firma: Codex - 20/04/2026 | Banner lateral de login ajustado para priorizar la imagen vertical del sistema y dejar la horizontal solo como respaldo. -->
 <section class="auth-shell">
     <aside class="auth-visual" style="@(string.IsNullOrWhiteSpace(bannerUrl) ? string.Empty : $"background-image:linear-gradient(165deg,rgba(3,15,35,.84),rgba(7,24,58,.70)),url('{bannerUrl}');")">
         <div class="auth-visual-content">

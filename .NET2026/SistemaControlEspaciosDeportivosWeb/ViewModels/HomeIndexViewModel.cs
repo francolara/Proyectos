@@ -20,6 +20,7 @@ public class HomeIndexViewModel
     public List<SelectListItem> DistritosUbigeo { get; set; } = new();
     public List<SelectListItem> Negocios { get; set; } = new();
     public List<WebBannerPublicoViewModel> Banners { get; set; } = new();
+    public List<PopupPromocionPublicoViewModel> PopupPromociones { get; set; } = new();
     public List<SedePublicaViewModel> Sedes { get; set; } = new();
     public List<TipoDeportePublicoViewModel> TiposDeporte { get; set; } = new();
     public List<EspacioDisponibleViewModel> Disponibles { get; set; } = new();
@@ -29,6 +30,7 @@ public class HomeIndexViewModel
     public int TotalResultados { get; set; }
     public int TotalPaginas { get; set; }
     public PlataformaPortalConfigViewModel PortalConfig { get; set; } = new();
+    public PopupPromocionConfigViewModel PopupPromocionesConfig { get; set; } = new();
 }
 
 public class SedePublicaViewModel

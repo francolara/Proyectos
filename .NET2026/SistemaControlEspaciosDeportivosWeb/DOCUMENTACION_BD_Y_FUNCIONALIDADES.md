@@ -19,6 +19,7 @@
 - `Services/SportCenterStoredProcedureService.Promociones.cs`
 - `Services/SportCenterStoredProcedureService.Maestros.cs`
 - `Services/SportCenterStoredProcedureService.Banners.cs`
+- `Services/SportCenterStoredProcedureService.PopupPromociones.cs`
 - `Services/SportCenterStoredProcedureService.ReservasPagosComprobantes.cs` (incluye calendario y bloqueos sprint 5)
 - `Services/SportCenterStoredProcedureService.Automatizacion.cs`
 - Seguridad por modulo via SP:
@@ -27,6 +28,7 @@
 ## Controladores que ya usan ADO.NET + SP
 - `Controllers/HomeController.cs`
 - `Controllers/BannersController.cs`
+- `Controllers/AnunciosController.cs`
 - `Controllers/PanelController.cs`
 - `Controllers/SedesController.cs`
 - `Controllers/ClientesController.cs`
@@ -275,6 +277,40 @@
   - En Home, si existe imagen movil se usa en pantallas pequenas; si no existe, cae a la imagen desktop.
   - Home publico consume banners configurados de `TipoBanner=Home` (sin filtro por vigencia por fecha).
   - Se personaliza `Login` y nuevo `Register` con layout split (banner lateral + formulario), usando paleta visual corporativa del sistema.
+
+### 39_Popup_Promociones_Publicas.sql
+- Tabla:
+  - `PopupPromocion`
+- SP:
+  - `Sp_Home_ListarPopupPromocionesActivas`
+  - `Sp_PopupPromociones_ListarAdmin`
+  - `Sp_PopupPromociones_Guardar`
+  - `Sp_PopupPromociones_Eliminar`
+  - `Sp_PopupPromociones_CambiarEstado`
+  - Actualizacion 20/04/2026:
+    - Se agrega la pestana `Anuncios` en el panel de super admin para gestionar promociones popup del home publico.
+    - `PopupPromocion` almacena titulo, subtitulo opcional, descripcion, imagen, orientacion (`V` vertical / `H` horizontal), enlaces, orden, estado y rango de vigencia.
+    - El campo `ImagenUrl` reutiliza el sistema actual de banners, pero en este modulo se procesa segun la orientacion elegida:
+      - vertical: ruta R2 `banners/anuncios/vertical`, salida WebP `1080x1350`
+      - horizontal: ruta R2 `banners/anuncios/horizontal`, salida WebP `1920x760`
+      - visualizacion por `Sedes/VerImagen`
+    - `Sp_Home_ListarPopupPromocionesActivas` devuelve solo anuncios activos y vigentes, incluyendo orientacion, ordenados por `Orden ASC` y `FechaCreacion DESC`.
+    - `Home` muestra acceso manual `Anuncios y promociones` en navbar cuando existen anuncios vigentes, incluso para usuarios autenticados; la apertura automatica sigue reservada a usuarios anonimos.
+    - El popup usa un unico modal Bootstrap con slider/carrusel y soporta piezas verticales y horizontales conviviendo dentro de la misma secuencia.
+    - Cada anuncio puede mostrar un `Subtitulo` adicional en el detalle del modal para reforzar contexto comercial sin recargar el titulo principal.
+    - La cabecera del modal expone accion `Quiero anunciar`, que reutiliza el WhatsApp configurado en `HOME_PORTAL_WHATSAPP_URL` con mensaje profesional prellenado para captar interesados en publicar.
+    - La apertura automatica se controla por `sessionStorage` con la clave `popupPromocionesVisto`, por lo que se muestra una vez por sesion de navegador para la version actual de anuncios.
+    - Nuevos parametros globales:
+      - `POPUP_PROMO_AUTO_ENABLED`
+      - `POPUP_PROMO_DELAY_SECONDS`
+      - `POPUP_PROMO_AUTOPLAY_ENABLED`
+      - `POPUP_PROMO_AUTOPLAY_MS`
+      - `POPUP_PROMO_SHOW_ARROWS`
+      - `POPUP_PROMO_SHOW_INDICATORS`
+    - Script incremental:
+      - `Basededatos/SportCenter/Script/20260420_PopupPromociones.sql`
+      - `Basededatos/SportCenter/Script/20260420_PopupPromociones_Orientacion.sql`
+      - `Basededatos/SportCenter/Script/20260420_PopupPromociones_Subtitulo.sql`
 
 ### 16_Reservas_CheckIn_CheckOut.sql
 - `Sp_Reservas_CambiarEstadoRapido`

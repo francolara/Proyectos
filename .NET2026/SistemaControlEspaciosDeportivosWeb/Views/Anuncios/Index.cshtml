@@ -1,0 +1,270 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.PopupPromocionesAdminIndexViewModel
+@{
+    ViewData["Title"] = "Anuncios";
+    var form = Model.Form;
+    var esEdicion = form.IdPopupPromocion.HasValue;
+}
+<!-- Firma: Codex - 20/04/2026 | Modulo superadmin de anuncios/popup con configuracion general, formulario reutilizable, orientacion por anuncio (vertical/horizontal), subtitulo opcional por pieza, grilla de gestion, mensajes de validacion visibles por campo, carga de imagen especializada por tipo y acciones del listado alineadas visualmente. -->
+
+<div class="page-header-card mb-3">
+    <div class="page-header-main">
+        <h1 class="page-title">Anuncios</h1>
+        <p class="page-subtitle">Administra promociones popup del home publico con anuncios verticales u horizontales conviviendo en el mismo slider.</p>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.MensajeUi))
+{
+    <div class="alert alert-success">@Model.MensajeUi</div>
+}
+@if (!string.IsNullOrWhiteSpace(Model.Error))
+{
+    <div class="alert alert-danger">@Model.Error</div>
+}
+@if (!ViewData.ModelState.IsValid)
+{
+    <div asp-validation-summary="All" class="alert alert-danger"></div>
+}
+
+<section class="table-card sc-reservas-list-card mb-3">
+    <div class="table-card-header">
+        <h2 class="table-card-title"><i class="bi bi-sliders2 me-1"></i>Configuracion del Popup</h2>
+    </div>
+    <form asp-action="GuardarConfiguracion" method="post" class="row g-3 px-3 pb-3">
+        @Html.AntiForgeryToken()
+
+        <div class="col-md-4">
+            <div class="form-check form-switch mt-2">
+                <input asp-for="Config.ActivarPopupAutomatico" class="form-check-input" />
+                <label asp-for="Config.ActivarPopupAutomatico" class="form-check-label"></label>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Config.SegundosEsperaAntesDeMostrar" class="form-label"></label>
+            <input asp-for="Config.SegundosEsperaAntesDeMostrar" class="form-control" type="number" min="0" max="30" />
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Config.VelocidadAutoplayMs" class="form-label"></label>
+            <input asp-for="Config.VelocidadAutoplayMs" class="form-control" type="number" min="1000" max="20000" step="100" />
+        </div>
+        <div class="col-md-4">
+            <div class="form-check form-switch mt-2">
+                <input asp-for="Config.ActivarAutoplaySlider" class="form-check-input" />
+                <label asp-for="Config.ActivarAutoplaySlider" class="form-check-label"></label>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-check form-switch mt-2">
+                <input asp-for="Config.MostrarFlechas" class="form-check-input" />
+                <label asp-for="Config.MostrarFlechas" class="form-check-label"></label>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-check form-switch mt-2">
+                <input asp-for="Config.MostrarIndicadores" class="form-check-input" />
+                <label asp-for="Config.MostrarIndicadores" class="form-check-label"></label>
+            </div>
+        </div>
+        <div class="col-12">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-save me-1"></i>Guardar configuracion
+            </button>
+        </div>
+    </form>
+</section>
+
+<section class="table-card sc-reservas-list-card mb-3">
+    <div class="table-card-header">
+        <h2 class="table-card-title"><i class="bi bi-megaphone me-1"></i>@(esEdicion ? "Editar anuncio" : "Nuevo anuncio")</h2>
+    </div>
+
+    <form asp-action="Guardar" method="post" enctype="multipart/form-data" class="row g-3 px-3 pb-3">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Form.IdPopupPromocion" />
+        <input type="hidden" asp-for="Form.ImagenUrl" />
+
+        <div class="col-md-6">
+            <label asp-for="Form.Titulo" class="form-label"></label>
+            <input asp-for="Form.Titulo" class="form-control" />
+            <span asp-validation-for="Form.Titulo" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Form.Orden" class="form-label"></label>
+            <input asp-for="Form.Orden" class="form-control" type="number" min="1" max="999" />
+            <span asp-validation-for="Form.Orden" class="text-danger small"></span>
+        </div>
+        <div class="col-md-12">
+            <label asp-for="Form.Descripcion" class="form-label">Descripcion corta</label>
+            <textarea asp-for="Form.Descripcion" class="form-control" rows="2"></textarea>
+            <span asp-validation-for="Form.Descripcion" class="text-danger small"></span>
+        </div>
+        <div class="col-md-12">
+            <label asp-for="Form.Subtitulo" class="form-label"></label>
+            <input asp-for="Form.Subtitulo" class="form-control" />
+            <span asp-validation-for="Form.Subtitulo" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Form.Orientacion" class="form-label">Orientacion</label>
+            <select asp-for="Form.Orientacion" class="form-select">
+                <option value="V">Vertical</option>
+                <option value="H">Horizontal</option>
+            </select>
+            <small class="text-muted">Vertical usa 1080x1350 y horizontal usa 1920x760. Ambos pueden convivir en el popup.</small>
+            <span asp-validation-for="Form.Orientacion" class="text-danger small d-block"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Form.ImagenArchivo" class="form-label">Imagen (JPG/PNG)</label>
+            <input asp-for="Form.ImagenArchivo" class="form-control" type="file" accept=".jpg,.jpeg,.png" />
+            <small class="text-muted">Segun la orientacion, se procesa a WebP vertical 1080x1350 o horizontal 1920x760.</small>
+            <span asp-validation-for="Form.ImagenArchivo" class="text-danger small d-block"></span>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Form.TextoBoton" class="form-label">Texto del boton</label>
+            <input asp-for="Form.TextoBoton" class="form-control" />
+            <span asp-validation-for="Form.TextoBoton" class="text-danger small"></span>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Form.UrlBoton" class="form-label">URL del boton</label>
+            <input asp-for="Form.UrlBoton" class="form-control" placeholder="/Identity/Account/Register o https://..." />
+            <span asp-validation-for="Form.UrlBoton" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Form.UrlImagen" class="form-label">URL al hacer click en la imagen</label>
+            <input asp-for="Form.UrlImagen" class="form-control" placeholder="/Home/Index o https://..." />
+            <span asp-validation-for="Form.UrlImagen" class="text-danger small"></span>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Form.FechaInicio" class="form-label"></label>
+            <input asp-for="Form.FechaInicio" class="form-control" type="date" />
+            <span asp-validation-for="Form.FechaInicio" class="text-danger small"></span>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Form.FechaFin" class="form-label"></label>
+            <input asp-for="Form.FechaFin" class="form-control" type="date" />
+            <span asp-validation-for="Form.FechaFin" class="text-danger small"></span>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+            <div class="form-check">
+                <input asp-for="Form.Activo" class="form-check-input" />
+                <label asp-for="Form.Activo" class="form-check-label"></label>
+            </div>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+            <div class="form-check">
+                <input asp-for="Form.AbrirNuevaPestana" class="form-check-input" />
+                <label asp-for="Form.AbrirNuevaPestana" class="form-check-label">Abrir en nueva pestana</label>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(form.ImagenUrl))
+        {
+            <div class="col-md-12">
+                <div class="border rounded p-2">
+                    <small class="text-muted d-block mb-1">Vista previa</small>
+                    <img src="@Url.Action("VerImagen", "Sedes", new { url = form.ImagenUrl })" alt="Anuncio actual" style="@(string.Equals(form.Orientacion, "H", StringComparison.OrdinalIgnoreCase) ? "max-width:360px;height:auto;border-radius:.65rem;" : "max-height:260px;width:auto;border-radius:.65rem;")" />
+                </div>
+            </div>
+        }
+
+        <div class="col-12 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check2-circle me-1"></i>Guardar anuncio
+            </button>
+            @if (esEdicion)
+            {
+                <a class="btn btn-outline-secondary" asp-action="Index">Cancelar edicion</a>
+            }
+        </div>
+    </form>
+</section>
+
+<section class="table-card sc-reservas-list-card">
+    <div class="table-card-header d-flex justify-content-between align-items-center gap-2">
+        <h2 class="table-card-title"><i class="bi bi-layout-text-window-reverse me-1"></i>Anuncios registrados</h2>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Imagen</th>
+                    <th>Titulo</th>
+                    <th>Orientacion</th>
+                    <th>Orden</th>
+                    <th>Estado</th>
+                    <th>Fecha inicio</th>
+                    <th>Fecha fin</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Anuncios.Count == 0)
+                {
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-3">No hay anuncios registrados.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var item in Model.Anuncios)
+                    {
+                        <tr>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(item.ImagenUrl))
+                                {
+                                    <img src="@Url.Action("VerImagen", "Sedes", new { url = item.ImagenUrl })" alt="@item.Titulo" style="@(item.EsHorizontal ? "width:120px;height:68px;object-fit:cover;border-radius:.6rem;" : "width:72px;height:96px;object-fit:cover;border-radius:.6rem;")" />
+                                }
+                            </td>
+                            <td>
+                                <strong>@item.Titulo</strong>
+                                @if (!string.IsNullOrWhiteSpace(item.Subtitulo))
+                                {
+                                    <div class="small fw-semibold text-primary-emphasis">@item.Subtitulo</div>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(item.Descripcion))
+                                {
+                                    <div class="small text-muted">@item.Descripcion</div>
+                                }
+                            </td>
+                            <td>
+                                <span class="badge text-bg-light border">@(item.EsHorizontal ? "Horizontal" : "Vertical")</span>
+                            </td>
+                            <td>@item.Orden</td>
+                            <td>
+                                <span class="badge @(item.Activo ? "text-bg-success" : "text-bg-secondary")">@(item.Activo ? "Activo" : "Inactivo")</span>
+                            </td>
+                            <td>@(item.FechaInicio?.ToString("dd/MM/yyyy") ?? "-")</td>
+                            <td>@(item.FechaFin?.ToString("dd/MM/yyyy") ?? "-")</td>
+                            <td class="text-end">
+                                <div class="sc-row-actions">
+                                    <a class="btn btn-outline-primary btn-sm sc-row-action-btn"
+                                       asp-action="Index"
+                                       asp-route-editarId="@item.IdPopupPromocion">
+                                        <i class="bi bi-pencil-square me-1"></i>Editar
+                                    </a>
+                                    <form asp-action="CambiarEstado" method="post" class="sc-row-action-form">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="idPopupPromocion" value="@item.IdPopupPromocion" />
+                                        <input type="hidden" name="activo" value="@(!item.Activo)" />
+                                        <button type="submit" class="btn btn-outline-secondary btn-sm sc-row-action-btn">
+                                            <i class="bi @(item.Activo ? "bi-pause-circle" : "bi-play-circle") me-1"></i>@(item.Activo ? "Desactivar" : "Activar")
+                                        </button>
+                                    </form>
+                                    <form asp-action="Eliminar" method="post" class="sc-row-action-form">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="idPopupPromocion" value="@item.IdPopupPromocion" />
+                                        <input type="hidden" name="imagenUrl" value="@item.ImagenUrl" />
+                                        <button type="submit" class="btn btn-outline-danger btn-sm sc-row-action-btn"
+                                                onclick="return confirm('Se eliminara el anuncio seleccionado. Deseas continuar?');">
+                                            <i class="bi bi-trash me-1"></i>Eliminar
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
