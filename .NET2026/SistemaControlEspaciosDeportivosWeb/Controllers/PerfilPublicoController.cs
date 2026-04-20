@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
 
@@ -22,6 +23,7 @@ public class PerfilPublicoController(ISportCenterStoredProcedureService spServic
             TipoDocumento = "0"
         };
 
+        InicializarTelefonosParaVista(perfil);
         await CargarCombosAsync(perfil);
         var reservas = await spService.UsuariosPublicosReservasListarAsync(usuarioId);
 
@@ -47,9 +49,22 @@ public class PerfilPublicoController(ISportCenterStoredProcedureService spServic
         vm.Perfil.Nombres = (vm.Perfil.Nombres ?? string.Empty).Trim();
         vm.Perfil.Apellidos = (vm.Perfil.Apellidos ?? string.Empty).Trim();
         vm.Perfil.NombreEquipo = string.IsNullOrWhiteSpace(vm.Perfil.NombreEquipo) ? null : vm.Perfil.NombreEquipo.Trim();
-        vm.Perfil.Telefono = string.IsNullOrWhiteSpace(vm.Perfil.Telefono) ? null : vm.Perfil.Telefono.Trim();
         vm.Perfil.Correo = string.IsNullOrWhiteSpace(vm.Perfil.Correo) ? null : vm.Perfil.Correo.Trim();
         vm.Perfil.CodigoUbigeo = string.IsNullOrWhiteSpace(vm.Perfil.CodigoUbigeo) ? null : vm.Perfil.CodigoUbigeo.Trim();
+        vm.Perfil.ObservacionDesafio = string.IsNullOrWhiteSpace(vm.Perfil.ObservacionDesafio) ? null : vm.Perfil.ObservacionDesafio.Trim();
+        vm.Perfil.DetalleEquipo = string.IsNullOrWhiteSpace(vm.Perfil.DetalleEquipo) ? null : vm.Perfil.DetalleEquipo.Trim();
+        vm.Perfil.CodigoUbigeoEquipo = string.IsNullOrWhiteSpace(vm.Perfil.CodigoUbigeoEquipo) ? null : vm.Perfil.CodigoUbigeoEquipo.Trim();
+        ComponerTelefonos(vm.Perfil);
+
+        if (vm.Perfil.BuscarDesafios)
+        {
+            if (string.IsNullOrWhiteSpace(vm.Perfil.CodigoUbigeoEquipo))
+                ModelState.AddModelError("Perfil.CodigoUbigeoEquipo", "Debes seleccionar la ubicacion del equipo para habilitar los desafios.");
+            if (!vm.Perfil.IdDeporteDesafio.HasValue || vm.Perfil.IdDeporteDesafio <= 0)
+                ModelState.AddModelError("Perfil.IdDeporteDesafio", "Debes seleccionar un deporte para los desafios.");
+            if (!vm.Perfil.IdNivelDesafio.HasValue || vm.Perfil.IdNivelDesafio <= 0)
+                ModelState.AddModelError("Perfil.IdNivelDesafio", "Debes seleccionar un nivel para los desafios.");
+        }
 
         if (!ModelState.IsValid)
         {
@@ -60,7 +75,7 @@ public class PerfilPublicoController(ISportCenterStoredProcedureService spServic
         }
 
         await spService.UsuariosPublicosGuardarPerfilAsync(vm.Perfil, User.Identity?.Name ?? "perfil-publico");
-        TempData["PerfilPublicoOk"] = "Datos personales actualizados correctamente.";
+        TempData["PerfilPublicoOk"] = "Perfil publico actualizado correctamente.";
         return RedirectToAction(nameof(Index), new { tab = "datos" });
     }
 
@@ -77,5 +92,34 @@ public class PerfilPublicoController(ISportCenterStoredProcedureService spServic
         perfil.DistritosUbigeo = !string.IsNullOrWhiteSpace(perfil.CodigoProvincia) && perfil.CodigoProvincia.Length == 4
             ? await spService.UbigeoDistritosListarAsync(perfil.CodigoProvincia)
             : new();
+        perfil.DepartamentosUbigeoEquipo = await spService.UbigeoDepartamentosListarAsync();
+        perfil.ProvinciasUbigeoEquipo = !string.IsNullOrWhiteSpace(perfil.CodigoDepartamentoEquipo) && perfil.CodigoDepartamentoEquipo.Length == 2
+            ? await spService.UbigeoProvinciasListarAsync(perfil.CodigoDepartamentoEquipo)
+            : new();
+        perfil.DistritosUbigeoEquipo = !string.IsNullOrWhiteSpace(perfil.CodigoProvinciaEquipo) && perfil.CodigoProvinciaEquipo.Length == 4
+            ? await spService.UbigeoDistritosListarAsync(perfil.CodigoProvinciaEquipo)
+            : new();
+        perfil.CodigosPais = TelefonoInternacionalHelper.ObtenerCodigosPais(perfil.TelefonoCodigoPais);
+        perfil.DeportesDesafio = (await spService.HomeListarTiposDeporteAsync())
+            .Select(x => new SelectListItem(x.Nombre, x.Id.ToString()))
+            .ToList();
+        perfil.NivelesDesafio = await spService.DesafiosNivelesListarAsync();
+    }
+
+    private static void InicializarTelefonosParaVista(UsuarioPublicoPerfilViewModel perfil)
+    {
+        TelefonoInternacionalHelper.Descomponer(perfil.Telefono, out var telefonoCodigoPais, out var telefonoNumeroLocal);
+        perfil.TelefonoCodigoPais = telefonoCodigoPais;
+        perfil.TelefonoNumeroLocal = telefonoNumeroLocal;
+
+        TelefonoInternacionalHelper.Descomponer(perfil.WhatsappEquipo, out var whatsappCodigoPais, out var whatsappNumeroLocal);
+        perfil.WhatsappCodigoPais = whatsappCodigoPais;
+        perfil.WhatsappNumeroLocal = whatsappNumeroLocal;
+    }
+
+    private static void ComponerTelefonos(UsuarioPublicoPerfilViewModel perfil)
+    {
+        perfil.Telefono = TelefonoInternacionalHelper.Componer(perfil.TelefonoCodigoPais, perfil.TelefonoNumeroLocal);
+        perfil.WhatsappEquipo = TelefonoInternacionalHelper.Componer(perfil.WhatsappCodigoPais, perfil.WhatsappNumeroLocal);
     }
 }

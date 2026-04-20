@@ -1021,7 +1021,36 @@
   - `Sp_ConfiguracionClub_Obtener` ahora tambien devuelve limites operativos por negocio:
     - `SedesPermitidas`
     - `EspaciosPermitidos`
+    - `UsuariosPermitidos`
   - estos limites se consumen en la capa web para validar alta de nuevas sedes/espacios.
+  - actualizacion 19/04/2026:
+    - `Negocios` agrega `UsuariosPermitidos` con default `3`.
+    - el owner de plataforma puede editar `Sedes`, `Espacios` y `Usuarios permitidos` desde `Plataforma > Negocios`.
+    - el listado de `Plataforma > Negocios` se obtiene via `Sp_Plataforma_Negocios_Listar`.
+    - la actualizacion de limites del negocio se ejecuta via `Sp_Plataforma_Negocios_ActualizarLimites`.
+    - el modulo `Usuarios del negocio` bloquea nuevas asignaciones cuando se alcanza el limite de usuarios activos del negocio.
+    - script incremental: `Basededatos/SportCenter/Script/20260419_Negocios_UsuariosPermitidos.sql`.
+    - si un negocio ya tiene contrato activo, la vista `Plataforma > Negocios` reemplaza `Dar inicio a contrato` por:
+      - `Renovar suscripcion`: extiende `FechaFinPlan` segun `TipoCobro` vigente.
+      - `Dar fin al contrato`: limpia el plan activo y deja el negocio nuevamente en estado comercial sin contrato.
+    - nuevos procedimientos:
+      - `Sp_Plataforma_Negocios_Listar`
+      - `Sp_Plataforma_Negocios_ActualizarLimites`
+      - `Sp_NegociosSuscripcion_RenovarPlan`
+      - `Sp_NegociosSuscripcion_FinalizarPlan`
+    - scripts incrementales:
+      - `Basededatos/SportCenter/Script/20260419_Plataforma_Negocios_SP.sql`
+      - `Basededatos/SportCenter/Script/20260419_NegociosSuscripcion_Renovar_Finalizar.sql`.
+  - actualizacion 20/04/2026:
+    - `Plataforma > Negocios` y `Plataforma > Altas de clubes` resuelven la paginacion de `20 en 20` desde SQL Server.
+    - el backend ya no trae todos los registros para paginar en memoria.
+    - `Sp_Plataforma_Negocios_Listar` ahora recibe `@EstadoContrato`, `@Pagina`, `@TamanoPagina` y devuelve `@TotalRegistros OUTPUT`.
+    - `Sp_AltasClubes_Listar` ahora recibe `@Pagina`, `@TamanoPagina` y devuelve:
+      - `@TotalRegistros OUTPUT`
+      - `@TotalPendientes OUTPUT`
+      - `@TotalAprobados OUTPUT`
+      - `@TotalRechazados OUTPUT`
+    - script incremental: `Basededatos/SportCenter/Script/20260420_Plataforma_Paginacion_SP.sql`.
   - se agrega `Sp_Reservas_AutoCancelarNoConfirmadas` para cancelar en segundo plano reservas en estado `Reservada` sin pagos, usando:
     - `Negocios.CancelacionAutomaticaNoConfirmada = 1`
     - `Negocios.MinutosCancelacionNoConfirmada` como umbral en minutos desde `Reservas.FechaRegistro`.
@@ -1037,6 +1066,31 @@
   - La reserva publica (vista `Home/Reservar`) precarga datos del cliente desde `UsuariosPublicosPerfil` cuando el usuario esta autenticado.
 - Actualizacion 17/04/2026:
   - `Sp_UsuariosPublicos_ReservasListar` ahora devuelve datos de contacto enriquecidos de sede: `SedeFacebookUrl`, `SedeInstagramUrl`, `SedeTwitterUrl` y `SedeMapaUrl` (con fallback por coordenadas si no existe URL directa).
+- Actualizacion 18/04/2026:
+  - El perfil publico agrega dos bloques nuevos:
+    - `Configuracion de desafios`: `BuscarDesafios`, `IdDeporteDesafio`, `IdNivelDesafio`, `ObservacionDesafio`.
+    - `Informacion del equipo`: `DetalleEquipo`, `CodigoUbigeoEquipo`, `WhatsappEquipo`.
+  - Nuevos objetos BD para el modulo:
+    - `NivelDesafio`: catalogo base con `Basico`, `Intermedio` y `Competitivo`.
+    - `Desafio`: tabla transaccional con retador, retado, deporte, nivel, distrito, propuesta de partido y estado.
+    - `DesafioMensaje`: mensajeria interna asociada al desafio para coordinar antes y despues de aceptar.
+  - Nuevos procedimientos:
+    - `Sp_Desafios_Niveles_Listar`
+    - `Sp_Desafios_BuscarRivales`
+    - `Sp_Desafios_Listar`
+    - `Sp_Desafios_Crear`
+    - `Sp_Desafios_CambiarEstado`
+    - `Sp_Desafios_Mensajes_Listar`
+    - `Sp_Desafios_Mensajes_Crear`
+  - Reglas funcionales:
+    - la busqueda exige distrito y solo devuelve perfiles con `BuscarDesafios = 1`
+    - el distrito usado por Desafios sale del ubigeo del equipo (`CodigoUbigeoEquipo`), no del ubigeo personal del usuario
+    - la informacion mostrada en cards sale exclusivamente de `UsuariosPublicosPerfil`
+    - los estados operativos son `Pendiente`, `Aceptado`, `Rechazado`, `Cancelado` y `Finalizado`
+    - el contacto rival (`Telefono` y `WhatsappEquipo`) solo se expone cuando el desafio ya fue aceptado o finalizado
+    - la mensajeria interna del desafio se permite unicamente en estados `Pendiente` y `Aceptado`, ordenada por fecha/hora de registro
+    - `Sp_Desafios_Listar` devuelve la ubicacion visible del desafio en formato completo: `Distrito, Provincia, Departamento`
+    - la busqueda y las bandejas del modulo muestran el contacto responsable del equipo (`Nombres + Apellidos`) y el `UserName` del usuario dueno del perfil
 
 ### 39_AltasClubes_Suscripcion_Contrato.sql
 - Flujo actualizado 16/04/2026:

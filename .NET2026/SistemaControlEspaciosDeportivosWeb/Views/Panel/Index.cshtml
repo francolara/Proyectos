@@ -382,14 +382,18 @@
 
         <div class="modal fade" id="dashboardReservaModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Nueva reserva</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                <div class="modal-content sc-modal-content">
+                    @* Firma: Codex - 19/04/2026 | Cabecera visual homologada para el modal de nueva reserva del dashboard. *@
+                    <div class="modal-header sc-modal-header">
+                        <div class="sc-modal-title-wrap">
+                            <h5 class="modal-title sc-modal-title">Nueva reserva</h5>
+                            <p class="sc-modal-subtitle">Registra una reserva manual sin salir del panel operativo del negocio.</p>
+                        </div>
+                        <button type="button" class="btn-close sc-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                     </div>
                     <form id="dashboardReservaForm" method="post">
                         @Html.AntiForgeryToken()
-                        <div class="modal-body">
+                        <div class="modal-body sc-modal-body">
                             <input type="hidden" name="Id" value="0" />
                             <input type="hidden" name="NegocioId" value="@Model.NegocioSeleccionadoId" />
                             <input type="hidden" id="dashModalClienteId" name="ClienteId" value="" />

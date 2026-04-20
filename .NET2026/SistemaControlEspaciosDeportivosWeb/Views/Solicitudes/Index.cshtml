@@ -6,16 +6,16 @@
     ViewData["Title"] = "Solicitudes publicas";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+<section class="page-header">
     <div>
-        <h1 class="h4 mb-1">Solicitudes publicas</h1>
-        <p class="text-muted mb-0">@Model.NegocioNombre | Rol: @Model.RolActual</p>
+        <h1>Solicitudes publicas</h1>
+        <p class="page-subtitle">@Model.NegocioNombre | Rol: @Model.RolActual</p>
     </div>
-    <div class="d-flex gap-2">
+    <div class="action-toolbar">
         <a class="btn btn-outline-primary" asp-controller="AltasClubes" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Altas de clubes</a>
-        <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Panel</a>
+        <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Volver al panel</a>
     </div>
-</div>
+</section>
 
 @if (TempData["MensajeSolicitudInterna"] is string okMsg)
 {

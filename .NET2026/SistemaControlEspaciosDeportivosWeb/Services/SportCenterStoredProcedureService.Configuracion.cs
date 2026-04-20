@@ -230,29 +230,20 @@ public partial class SportCenterStoredProcedureService
         }
     }
 
-    public async Task<List<PlataformaNegocioLimiteItemViewModel>> PlataformaNegociosListarAsync(string? buscar = null)
+    public async Task<(List<PlataformaNegocioLimiteItemViewModel> Negocios, int TotalRegistros)> PlataformaNegociosListarAsync(string? buscar = null, string? estadoContrato = null, int pagina = 1, int tamanoPagina = 20)
     {
         var list = new List<PlataformaNegocioLimiteItemViewModel>();
+        var paginaNormalizada = pagina < 1 ? 1 : pagina;
+        var tamanoNormalizado = tamanoPagina < 1 ? 20 : tamanoPagina;
         await using var cn = CreateConnection();
         await cn.OpenAsync();
-        await using var cmd = new SqlCommand(
-            @"SELECT n.Id, n.NombreComercial, n.Activo,
-                     CAST(COALESCE(n.SedesPermitidas,2) AS INT) AS SedesPermitidas,
-                     CAST(COALESCE(n.EspaciosPermitidos,6) AS INT) AS EspaciosPermitidos,
-                     CAST(COALESCE(ns.EstadoSuscripcion, 0) AS INT) AS EstadoSuscripcion,
-                     CAST(COALESCE(ns.EsPrueba, 0) AS BIT) AS EsPrueba,
-                     ns.FechaInicioPrueba,
-                     ns.FechaFinPrueba,
-                     ns.TipoCobro,
-                     ns.FechaInicioPlan,
-                     ns.FechaFinPlan,
-                     CAST(COALESCE(ns.DiasGracia, 5) AS INT) AS DiasGracia,
-                     ns.FechaFinGracia
-              FROM dbo.Negocios n
-              LEFT JOIN dbo.NegociosSuscripcion ns ON ns.NegocioId = n.Id
-              WHERE (@Buscar IS NULL OR n.NombreComercial LIKE '%' + @Buscar + '%')
-              ORDER BY n.NombreComercial, n.Id;", cn);
+        await using var cmd = new SqlCommand("Sp_Plataforma_Negocios_Listar", cn) { CommandType = CommandType.StoredProcedure };
         AddParam(cmd, "@Buscar", string.IsNullOrWhiteSpace(buscar) ? null : buscar.Trim(), SqlDbType.NVarChar);
+        AddParam(cmd, "@EstadoContrato", string.IsNullOrWhiteSpace(estadoContrato) ? "todos" : estadoContrato.Trim().ToLowerInvariant(), SqlDbType.NVarChar);
+        AddParam(cmd, "@Pagina", paginaNormalizada, SqlDbType.Int);
+        AddParam(cmd, "@TamanoPagina", tamanoNormalizado, SqlDbType.Int);
+        var totalRegistrosParam = cmd.Parameters.Add("@TotalRegistros", SqlDbType.Int);
+        totalRegistrosParam.Direction = ParameterDirection.Output;
         await using var dr = await cmd.ExecuteReaderAsync();
         while (await dr.ReadAsync())
         {
@@ -263,15 +254,16 @@ public partial class SportCenterStoredProcedureService
                 Activo = !dr.IsDBNull(2) && Convert.ToBoolean(dr.GetValue(2)),
                 SedesPermitidas = dr.IsDBNull(3) ? 2 : Convert.ToInt32(dr.GetValue(3)),
                 EspaciosPermitidos = dr.IsDBNull(4) ? 6 : Convert.ToInt32(dr.GetValue(4)),
-                EstadoSuscripcion = dr.IsDBNull(5) ? 0 : Convert.ToInt32(dr.GetValue(5)),
-                EsPrueba = !dr.IsDBNull(6) && Convert.ToBoolean(dr.GetValue(6)),
-                FechaInicioPrueba = dr.IsDBNull(7) ? null : dr.GetDateTime(7),
-                FechaFinPrueba = dr.IsDBNull(8) ? null : dr.GetDateTime(8),
-                TipoCobro = dr.IsDBNull(9) ? null : dr.GetString(9),
-                FechaInicioPlan = dr.IsDBNull(10) ? null : dr.GetDateTime(10),
-                FechaFinPlan = dr.IsDBNull(11) ? null : dr.GetDateTime(11),
-                DiasGracia = dr.IsDBNull(12) ? 5 : Convert.ToInt32(dr.GetValue(12)),
-                FechaFinGracia = dr.IsDBNull(13) ? null : dr.GetDateTime(13)
+                UsuariosPermitidos = dr.IsDBNull(5) ? 3 : Convert.ToInt32(dr.GetValue(5)),
+                EstadoSuscripcion = dr.IsDBNull(6) ? 0 : Convert.ToInt32(dr.GetValue(6)),
+                EsPrueba = !dr.IsDBNull(7) && Convert.ToBoolean(dr.GetValue(7)),
+                FechaInicioPrueba = dr.IsDBNull(8) ? null : dr.GetDateTime(8),
+                FechaFinPrueba = dr.IsDBNull(9) ? null : dr.GetDateTime(9),
+                TipoCobro = dr.IsDBNull(10) ? null : dr.GetString(10),
+                FechaInicioPlan = dr.IsDBNull(11) ? null : dr.GetDateTime(11),
+                FechaFinPlan = dr.IsDBNull(12) ? null : dr.GetDateTime(12),
+                DiasGracia = dr.IsDBNull(13) ? 5 : Convert.ToInt32(dr.GetValue(13)),
+                FechaFinGracia = dr.IsDBNull(14) ? null : dr.GetDateTime(14)
             });
             list[^1].EstadoSuscripcionNombre = list[^1].EstadoSuscripcion switch
             {
@@ -283,24 +275,55 @@ public partial class SportCenterStoredProcedureService
                 _ => "Pendiente de activacion"
             };
         }
+        await dr.CloseAsync();
 
-        return list;
+        var totalRegistros = totalRegistrosParam.Value is int total ? total : 0;
+        return (list, totalRegistros);
     }
 
-    public async Task<bool> PlataformaNegocioActualizarLimitesAsync(int negocioId, int sedesPermitidas, int espaciosPermitidos, string usuario)
+    public async Task<bool> PlataformaNegocioActualizarLimitesAsync(int negocioId, int sedesPermitidas, int espaciosPermitidos, int usuariosPermitidos, string usuario)
+    {
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_Plataforma_Negocios_ActualizarLimites", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+            AddParam(cmd, "@SedesPermitidas", sedesPermitidas, SqlDbType.Int);
+            AddParam(cmd, "@EspaciosPermitidos", espaciosPermitidos, SqlDbType.Int);
+            AddParam(cmd, "@UsuariosPermitidos", usuariosPermitidos, SqlDbType.Int);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (SqlException ex) when (EsErrorNoEncontrado(ex.Message))
+        {
+            return false;
+        }
+    }
+
+    public async Task<(int SedesPermitidas, int EspaciosPermitidos, int UsuariosPermitidos)> NegocioObtenerLimitesOperativosAsync(int negocioId)
     {
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand(
-            @"UPDATE dbo.Negocios
-              SET SedesPermitidas = @SedesPermitidas,
-                  EspaciosPermitidos = @EspaciosPermitidos
+            @"SELECT
+                  CAST(COALESCE(SedesPermitidas, 2) AS INT) AS SedesPermitidas,
+                  CAST(COALESCE(EspaciosPermitidos, 6) AS INT) AS EspaciosPermitidos,
+                  CAST(COALESCE(UsuariosPermitidos, 3) AS INT) AS UsuariosPermitidos
+              FROM dbo.Negocios
               WHERE Id = @NegocioId;", cn);
         AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
-        AddParam(cmd, "@SedesPermitidas", sedesPermitidas, SqlDbType.Int);
-        AddParam(cmd, "@EspaciosPermitidos", espaciosPermitidos, SqlDbType.Int);
-        var rows = await cmd.ExecuteNonQueryAsync();
-        return rows > 0;
+
+        await using var dr = await cmd.ExecuteReaderAsync();
+        if (!await dr.ReadAsync())
+            return (2, 6, 3);
+
+        return (
+            dr.IsDBNull(0) ? 2 : Convert.ToInt32(dr.GetValue(0)),
+            dr.IsDBNull(1) ? 6 : Convert.ToInt32(dr.GetValue(1)),
+            dr.IsDBNull(2) ? 3 : Convert.ToInt32(dr.GetValue(2))
+        );
     }
 
     public async Task<bool> PlataformaNegocioActivarContratoAsync(int negocioId, string tipoCobro, DateOnly fechaDesde, DateOnly fechaHasta, int diasGracia, string usuario)
@@ -315,6 +338,42 @@ public partial class SportCenterStoredProcedureService
             AddParam(cmd, "@FechaInicioPlan", fechaDesde.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
             AddParam(cmd, "@FechaFinPlan", fechaHasta.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
             AddParam(cmd, "@DiasGracia", diasGracia <= 0 ? 5 : diasGracia, SqlDbType.Int);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async Task<bool> PlataformaNegocioRenovarContratoAsync(int negocioId, string usuario)
+    {
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_NegociosSuscripcion_RenovarPlan", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async Task<bool> PlataformaNegocioFinalizarContratoAsync(int negocioId, string usuario)
+    {
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_NegociosSuscripcion_FinalizarPlan", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
             AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
             await cmd.ExecuteNonQueryAsync();
             return true;

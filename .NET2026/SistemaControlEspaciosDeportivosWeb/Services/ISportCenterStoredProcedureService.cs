@@ -34,6 +34,15 @@ public interface ISportCenterStoredProcedureService
     Task<UsuarioPublicoPerfilViewModel?> UsuariosPublicosObtenerPerfilAsync(string usuarioId);
     Task<int> UsuariosPublicosGuardarPerfilAsync(UsuarioPublicoPerfilViewModel model, string usuario);
     Task<List<UsuarioPublicoReservaItemViewModel>> UsuariosPublicosReservasListarAsync(string usuarioId, int top = 200);
+    Task<List<SelectListItem>> DesafiosNivelesListarAsync();
+    Task<List<DesafioRivalItemViewModel>> DesafiosBuscarRivalesAsync(string usuarioId, string codigoUbigeo, int? idDeporte, int? idNivel);
+    Task<List<DesafioListadoItemViewModel>> DesafiosListarAsync(string usuarioId, string tipoListado);
+    Task<List<DesafioMensajeItemViewModel>> DesafiosMensajesListarAsync(string usuarioId, int? desafioId = null);
+    Task<int> DesafiosCrearAsync(string usuarioId, DesafioCrearViewModel model, string usuario);
+    Task<int> DesafiosMensajeCrearAsync(string usuarioId, DesafioMensajeCrearViewModel model, string usuario);
+    Task<bool> DesafiosCancelarAsync(int desafioId, string usuarioId, string usuario);
+    Task<bool> DesafiosResponderAsync(int desafioId, string usuarioId, string estado, string usuario);
+    Task<bool> DesafiosFinalizarAsync(int desafioId, string usuarioId, string usuario);
 
     Task<List<NegocioAccesoViewModel>> PanelListarNegociosUsuarioAsync(string usuarioId);
     Task<string?> PanelObtenerRolAsync(string usuarioId, int negocioId);
@@ -117,7 +126,7 @@ public interface ISportCenterStoredProcedureService
     Task<int> SolicitudesPublicasConvertirAReservaAsync(SolicitudConvertirFormViewModel model, string usuario);
     Task<string> HomeSolicitarAltaClubAsync(AltaClubSolicitudFormViewModel model);
     Task<string> HomeRegistrarClubConPruebaAsync(AltaClubSolicitudFormViewModel model, string usuarioId);
-    Task<List<AltaClubItemViewModel>> AltasClubesListarAsync(int? estado = null);
+    Task<(List<AltaClubItemViewModel> Solicitudes, int TotalRegistros, int TotalPendientes, int TotalAprobados, int TotalRechazados)> AltasClubesListarAsync(int? estado = null, int pagina = 1, int tamanoPagina = 20);
     Task<bool> AltasClubesAprobarAsync(int id, string usuario, string? comentarioGestion = null, int diasPrueba = 30);
     Task<bool> AltasClubesRechazarAsync(int id, string usuario, string? comentarioGestion = null);
 
@@ -165,9 +174,12 @@ public interface ISportCenterStoredProcedureService
     Task<List<BannerAdminItemViewModel>> BannersAdminListarAsync(bool? soloActivos = null);
     Task<int> BannersAdminGuardarAsync(BannerAdminFormViewModel model, string usuario);
     Task<bool> BannersAdminEliminarAsync(int id, string usuario);
-    Task<List<PlataformaNegocioLimiteItemViewModel>> PlataformaNegociosListarAsync(string? buscar = null);
-    Task<bool> PlataformaNegocioActualizarLimitesAsync(int negocioId, int sedesPermitidas, int espaciosPermitidos, string usuario);
+    Task<(List<PlataformaNegocioLimiteItemViewModel> Negocios, int TotalRegistros)> PlataformaNegociosListarAsync(string? buscar = null, string? estadoContrato = null, int pagina = 1, int tamanoPagina = 20);
+    Task<bool> PlataformaNegocioActualizarLimitesAsync(int negocioId, int sedesPermitidas, int espaciosPermitidos, int usuariosPermitidos, string usuario);
+    Task<(int SedesPermitidas, int EspaciosPermitidos, int UsuariosPermitidos)> NegocioObtenerLimitesOperativosAsync(int negocioId);
     Task<bool> PlataformaNegocioActivarContratoAsync(int negocioId, string tipoCobro, DateOnly fechaDesde, DateOnly fechaHasta, int diasGracia, string usuario);
+    Task<bool> PlataformaNegocioRenovarContratoAsync(int negocioId, string usuario);
+    Task<bool> PlataformaNegocioFinalizarContratoAsync(int negocioId, string usuario);
     Task<MiSuscripcionNegocioViewModel?> MiSuscripcionObtenerAsync(int negocioId);
 
     Task<List<ReservaRecordatorioPendienteViewModel>> ReservasRecordatoriosPendientesAsync(DateTime fechaHoraActual);

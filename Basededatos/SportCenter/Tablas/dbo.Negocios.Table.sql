@@ -6,6 +6,7 @@ GO
 -- Firma: Codex - 09/04/2026 | Agrega configuracion de emision (CPE/Recibo interno) y porcentaje IGV.
 -- Firma: Codex - 13/04/2026 | Agrega LogoUrl para imagen del logo del negocio.
 -- Firma: Codex - 16/04/2026 | Agrega limites operativos (Sedes/Espacios) y flags de reserva (edicion de precio/cancelacion automatica por no confirmacion).
+-- Firma: Codex - 19/04/2026 | Agrega UsuariosPermitidos como limite operativo adicional para gestion de usuarios por negocio.
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -33,6 +34,7 @@ CREATE TABLE [dbo].[Negocios](
     [MinutosCancelacionNoConfirmada] [int] NULL,
     [SedesPermitidas] [int] NOT NULL,
     [EspaciosPermitidos] [int] NOT NULL,
+    [UsuariosPermitidos] [int] NOT NULL,
  CONSTRAINT [PK_Negocios] PRIMARY KEY CLUSTERED 
 (
     [Id] ASC
@@ -56,6 +58,8 @@ GO
 ALTER TABLE [dbo].[Negocios] ADD  CONSTRAINT [DF_Negocios_SedesPermitidas]  DEFAULT ((2)) FOR [SedesPermitidas]
 GO
 ALTER TABLE [dbo].[Negocios] ADD  CONSTRAINT [DF_Negocios_EspaciosPermitidos]  DEFAULT ((6)) FOR [EspaciosPermitidos]
+GO
+ALTER TABLE [dbo].[Negocios] ADD  CONSTRAINT [DF_Negocios_UsuariosPermitidos]  DEFAULT ((3)) FOR [UsuariosPermitidos]
 GO
 ALTER TABLE [dbo].[Negocios]  WITH CHECK ADD  CONSTRAINT [FK_Negocios_Monedas_MonedaId] FOREIGN KEY([MonedaId])
 REFERENCES [dbo].[Monedas] ([Id])

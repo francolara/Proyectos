@@ -33,7 +33,16 @@ public partial class SportCenterStoredProcedureService
             FechaNacimiento = dr.IsDBNull(9) ? null : DateOnly.FromDateTime(dr.GetDateTime(9)),
             CodigoUbigeo = dr.IsDBNull(10) ? null : dr.GetString(10),
             CodigoDepartamento = dr.IsDBNull(11) ? null : dr.GetString(11),
-            CodigoProvincia = dr.IsDBNull(12) ? null : dr.GetString(12)
+            CodigoProvincia = dr.IsDBNull(12) ? null : dr.GetString(12),
+            BuscarDesafios = !dr.IsDBNull(13) && ReadBool(dr, 13),
+            IdDeporteDesafio = dr.IsDBNull(14) ? null : dr.GetInt32(14),
+            IdNivelDesafio = dr.IsDBNull(15) ? null : dr.GetInt32(15),
+            ObservacionDesafio = dr.IsDBNull(16) ? null : dr.GetString(16),
+            DetalleEquipo = dr.IsDBNull(17) ? null : dr.GetString(17),
+            CodigoUbigeoEquipo = dr.IsDBNull(18) ? null : dr.GetString(18),
+            CodigoDepartamentoEquipo = dr.IsDBNull(19) ? null : dr.GetString(19),
+            CodigoProvinciaEquipo = dr.IsDBNull(20) ? null : dr.GetString(20),
+            WhatsappEquipo = dr.IsDBNull(21) ? null : dr.GetString(21)
         };
     }
 
@@ -55,6 +64,13 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@Correo", model.Correo, SqlDbType.NVarChar);
         AddParam(cmd, "@FechaNacimiento", model.FechaNacimiento?.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
         AddParam(cmd, "@CodigoUbigeo", model.CodigoUbigeo, SqlDbType.Char);
+        AddParam(cmd, "@BuscarDesafios", model.BuscarDesafios, SqlDbType.Bit);
+        AddParam(cmd, "@IdDeporteDesafio", model.IdDeporteDesafio, SqlDbType.Int);
+        AddParam(cmd, "@IdNivelDesafio", model.IdNivelDesafio, SqlDbType.Int);
+        AddParam(cmd, "@ObservacionDesafio", model.ObservacionDesafio, SqlDbType.NVarChar);
+        AddParam(cmd, "@DetalleEquipo", model.DetalleEquipo, SqlDbType.NVarChar);
+        AddParam(cmd, "@CodigoUbigeoEquipo", model.CodigoUbigeoEquipo, SqlDbType.Char);
+        AddParam(cmd, "@WhatsappEquipo", model.WhatsappEquipo, SqlDbType.NVarChar);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
 
         var result = await cmd.ExecuteScalarAsync();

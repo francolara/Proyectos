@@ -29,6 +29,12 @@ public class UsuarioPublicoPerfilViewModel
     [StringLength(30)]
     public string? Telefono { get; set; }
 
+    [RegularExpression(@"^\+\d{1,4}$", ErrorMessage = "Selecciona un codigo de pais valido.")]
+    public string TelefonoCodigoPais { get; set; } = "+51";
+
+    [RegularExpression(@"^$|^\d{6,15}$", ErrorMessage = "Ingresa un numero telefonico valido (solo digitos).")]
+    public string? TelefonoNumeroLocal { get; set; }
+
     [StringLength(200)]
     [EmailAddress(ErrorMessage = "Ingresa un correo electronico valido.")]
     public string? Correo { get; set; }
@@ -44,10 +50,46 @@ public class UsuarioPublicoPerfilViewModel
     [StringLength(4)]
     public string? CodigoProvincia { get; set; }
 
+    public bool BuscarDesafios { get; set; }
+
+    public int? IdDeporteDesafio { get; set; }
+
+    public int? IdNivelDesafio { get; set; }
+
+    [StringLength(500)]
+    public string? ObservacionDesafio { get; set; }
+
+    [StringLength(1000)]
+    public string? DetalleEquipo { get; set; }
+
+    [StringLength(6)]
+    public string? CodigoUbigeoEquipo { get; set; }
+
+    [StringLength(2)]
+    public string? CodigoDepartamentoEquipo { get; set; }
+
+    [StringLength(4)]
+    public string? CodigoProvinciaEquipo { get; set; }
+
+    [StringLength(30)]
+    public string? WhatsappEquipo { get; set; }
+
+    [RegularExpression(@"^\+\d{1,4}$", ErrorMessage = "Selecciona un codigo de pais valido.")]
+    public string WhatsappCodigoPais { get; set; } = "+51";
+
+    [RegularExpression(@"^$|^\d{6,15}$", ErrorMessage = "Ingresa un numero de WhatsApp valido (solo digitos).")]
+    public string? WhatsappNumeroLocal { get; set; }
+
     public List<SelectListItem> TiposDocumento { get; set; } = new();
     public List<SelectListItem> DepartamentosUbigeo { get; set; } = new();
     public List<SelectListItem> ProvinciasUbigeo { get; set; } = new();
     public List<SelectListItem> DistritosUbigeo { get; set; } = new();
+    public List<SelectListItem> DepartamentosUbigeoEquipo { get; set; } = new();
+    public List<SelectListItem> ProvinciasUbigeoEquipo { get; set; } = new();
+    public List<SelectListItem> DistritosUbigeoEquipo { get; set; } = new();
+    public List<SelectListItem> DeportesDesafio { get; set; } = new();
+    public List<SelectListItem> NivelesDesafio { get; set; } = new();
+    public List<SelectListItem> CodigosPais { get; set; } = new();
 }
 
 public class UsuarioPublicoReservaItemViewModel

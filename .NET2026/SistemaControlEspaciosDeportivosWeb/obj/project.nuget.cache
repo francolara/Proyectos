@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "9qQ7JL9zBV0=",
+  "dgSpecHash": "FAoExWVgwfA=",
   "success": true,
   "projectFilePath": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\SistemaControlEspaciosDeportivosWeb.csproj",
   "expectedPackageFiles": [
@@ -69,15 +69,5 @@
     "C:\\Users\\Franco Lara\\.nuget\\packages\\system.security.cryptography.pkcs\\9.0.4\\system.security.cryptography.pkcs.9.0.4.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\system.security.cryptography.protecteddata\\9.0.4\\system.security.cryptography.protecteddata.9.0.4.nupkg.sha512"
   ],
-  "logs": [
-    {
-      "code": "NU1900",
-      "level": "Warning",
-      "message": "Error al obtener los datos de vulnerabilidad del paquete: No se puede cargar el índice de servicio del origen https://api.nuget.org/v3/index.json.",
-      "projectPath": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\SistemaControlEspaciosDeportivosWeb.csproj",
-      "warningLevel": 1,
-      "filePath": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\SistemaControlEspaciosDeportivosWeb.csproj",
-      "targetGraphs": []
-    }
-  ]
+  "logs": []
 }

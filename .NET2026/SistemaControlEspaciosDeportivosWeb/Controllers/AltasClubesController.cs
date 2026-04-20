@@ -11,6 +11,7 @@ public class AltasClubesController(IModuloPermisoService moduloPermisoService, I
     {
         var baseVm = await ObtenerBaseAsync(negocioId, "SOLICITUDES");
         if (baseVm is null || !string.IsNullOrWhiteSpace(baseVm.Mensaje)) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "Acceso denegado." });
+        var resultado = await spService.AltasClubesListarAsync(estado);
 
         var vm = new AltasClubesIndexViewModel
         {
@@ -23,7 +24,7 @@ public class AltasClubesController(IModuloPermisoService moduloPermisoService, I
             PuedeEditar = baseVm.PuedeEditar,
             PuedeEliminar = baseVm.PuedeEliminar,
             Estado = estado,
-            Solicitudes = await spService.AltasClubesListarAsync(estado)
+            Solicitudes = resultado.Solicitudes
         };
 
         return View(vm);

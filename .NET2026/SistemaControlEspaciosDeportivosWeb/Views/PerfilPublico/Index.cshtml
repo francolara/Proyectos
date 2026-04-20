@@ -4,16 +4,22 @@
     var tab = (ViewData["Tab"]?.ToString() ?? "datos").ToLowerInvariant();
     var tabDatos = tab == "datos";
     var tabReservas = tab == "reservas";
-    var tabRetos = tab == "retos";
 }
 <!-- Firma: Codex - 16/04/2026 | Panel de perfil para usuario publico con tabs Datos personales, Mis reservas y Retar a un equipo (proximamente). -->
-<!-- Firma: Codex - 17/04/2026 | Header de perfil simplificado y rediseño profesional de historial de reservas en mini tarjetas con accesos de contacto/redes/mapa de sede. -->
+<!-- Firma: Codex - 17/04/2026 | Header de perfil simplificado y rediseno profesional de historial de reservas en mini tarjetas con accesos de contacto/redes/mapa de sede. -->
+<!-- Firma: Codex - 18/04/2026 | Perfil publico incorpora configuracion de desafios, bloque visible de informacion del equipo, ubigeo propio del equipo, telefonos con codigo de pais estandar, WhatsApp operativo del equipo y acceso directo al modulo independiente de Desafios. -->
 
 <div class="container py-4">
     <header class="page-header">
         <div>
             <h1>Mi perfil</h1>
-            <p class="page-subtitle">Gestiona tus datos personales y consulta el historial de reservas realizadas.</p>
+            <p class="page-subtitle">Gestiona tus datos personales, la configuracion de desafios y la informacion publica de tu equipo.</p>
+            @if (Model.Perfil.BuscarDesafios)
+            {
+                <span class="profile-availability-badge">
+                    <i class="bi bi-lightning-charge-fill"></i>Disponible para desafios
+                </span>
+            }
         </div>
         <div class="action-toolbar">
             <a class="auth-nav-mini auth-nav-mini-outline" asp-controller="Cuenta" asp-action="CambiarContrasena">
@@ -35,7 +41,7 @@
             <a class="nav-link @(tabReservas ? "active" : null)" asp-action="Index" asp-route-tab="reservas">Mis reservas</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link @(tabRetos ? "active" : null)" asp-action="Index" asp-route-tab="retos">Retar a un equipo</a>
+            <a class="nav-link" asp-controller="Desafios" asp-action="Index">Desafios</a>
         </li>
     </ul>
 
@@ -47,70 +53,172 @@
             <input type="hidden" asp-for="Perfil.Id" />
             <input type="hidden" asp-for="Perfil.UsuarioId" />
 
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label">Tipo de documento</label>
-                    <select asp-for="Perfil.TipoDocumento" asp-items="Model.Perfil.TiposDocumento" class="form-select"></select>
-                    <span asp-validation-for="Perfil.TipoDocumento" class="text-danger"></span>
+            <section class="profile-form-section">
+                <div class="section-heading">
+                    <span class="section-chip"><i class="bi bi-person-badge"></i>Perfil base</span>
+                    <h2>Datos personales</h2>
+                    <p>Informacion principal del usuario para reservas y visualizacion publica del perfil.</p>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Numero de documento</label>
-                    <input asp-for="Perfil.NumeroDocumento" class="form-control" maxlength="20" />
-                    <span asp-validation-for="Perfil.NumeroDocumento" class="text-danger"></span>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Tipo de documento</label>
+                        <select asp-for="Perfil.TipoDocumento" asp-items="Model.Perfil.TiposDocumento" class="form-select"></select>
+                        <span asp-validation-for="Perfil.TipoDocumento" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Numero de documento</label>
+                        <input asp-for="Perfil.NumeroDocumento" class="form-control" maxlength="20" />
+                        <span asp-validation-for="Perfil.NumeroDocumento" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Fecha de nacimiento</label>
+                        <input asp-for="Perfil.FechaNacimiento" type="date" class="form-control" />
+                        <span asp-validation-for="Perfil.FechaNacimiento" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Nombres</label>
+                        <input asp-for="Perfil.Nombres" class="form-control" maxlength="120" />
+                        <span asp-validation-for="Perfil.Nombres" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Apellidos</label>
+                        <input asp-for="Perfil.Apellidos" class="form-control" maxlength="120" />
+                        <span asp-validation-for="Perfil.Apellidos" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Telefono</label>
+                        <input asp-for="Perfil.Telefono" type="hidden" />
+                        <div class="input-group">
+                            <select asp-for="Perfil.TelefonoCodigoPais" asp-items="Model.Perfil.CodigosPais" class="form-select" style="max-width: 180px;"></select>
+                            <input asp-for="Perfil.TelefonoNumeroLocal" class="form-control" inputmode="numeric" placeholder="999999999" />
+                        </div>
+                        <span asp-validation-for="Perfil.TelefonoCodigoPais" class="text-danger"></span>
+                        <span asp-validation-for="Perfil.TelefonoNumeroLocal" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Correo</label>
+                        <input asp-for="Perfil.Correo" class="form-control" maxlength="200" />
+                        <span asp-validation-for="Perfil.Correo" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Departamento</label>
+                        <select asp-for="Perfil.CodigoDepartamento" asp-items="Model.Perfil.DepartamentosUbigeo" class="form-select" id="CodigoDepartamento">
+                            <option value="">Selecciona</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Provincia</label>
+                        <select asp-for="Perfil.CodigoProvincia" asp-items="Model.Perfil.ProvinciasUbigeo" class="form-select" id="CodigoProvincia">
+                            <option value="">Selecciona</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Distrito</label>
+                        <select asp-for="Perfil.CodigoUbigeo" asp-items="Model.Perfil.DistritosUbigeo" class="form-select" id="CodigoUbigeo">
+                            <option value="">Selecciona</option>
+                        </select>
+                        <span asp-validation-for="Perfil.CodigoUbigeo" class="text-danger"></span>
+                    </div>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Fecha de nacimiento</label>
-                    <input asp-for="Perfil.FechaNacimiento" type="date" class="form-control" />
-                    <span asp-validation-for="Perfil.FechaNacimiento" class="text-danger"></span>
+            </section>
+
+            <section class="profile-form-section profile-form-section-highlight">
+                <div class="section-heading">
+                    <span class="section-chip"><i class="bi bi-trophy"></i>Configuracion de desafios</span>
+                    <h2>Configuracion de desafios</h2>
+                    <p>Estos datos alimentan el modulo Desafios para que otros equipos te encuentren y te reten.</p>
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label">Nombres</label>
-                    <input asp-for="Perfil.Nombres" class="form-control" maxlength="120" />
-                    <span asp-validation-for="Perfil.Nombres" class="text-danger"></span>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="challenge-switch">
+                            <input asp-for="Perfil.BuscarDesafios" class="form-check-input" type="checkbox" />
+                            <div>
+                                <label asp-for="Perfil.BuscarDesafios" class="form-check-label fw-semibold">Buscar desafios</label>
+                                <div class="text-muted small">Permitir que otros equipos me encuentren y me desafien.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Deporte</label>
+                        <select asp-for="Perfil.IdDeporteDesafio" asp-items="Model.Perfil.DeportesDesafio" class="form-select">
+                            <option value="">Selecciona</option>
+                        </select>
+                        <span asp-validation-for="Perfil.IdDeporteDesafio" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Nivel</label>
+                        <select asp-for="Perfil.IdNivelDesafio" asp-items="Model.Perfil.NivelesDesafio" class="form-select">
+                            <option value="">Selecciona</option>
+                        </select>
+                        <span asp-validation-for="Perfil.IdNivelDesafio" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Nombre de equipo</label>
+                        <input asp-for="Perfil.NombreEquipo" class="form-control" maxlength="120" />
+                        <span asp-validation-for="Perfil.NombreEquipo" class="text-danger"></span>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Observacion</label>
+                        <textarea asp-for="Perfil.ObservacionDesafio" class="form-control" rows="3" maxlength="500" placeholder="Solo amistosos, jugamos futbol 7, disponible fines de semana..."></textarea>
+                        <span asp-validation-for="Perfil.ObservacionDesafio" class="text-danger"></span>
+                    </div>
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label">Apellidos</label>
-                    <input asp-for="Perfil.Apellidos" class="form-control" maxlength="120" />
-                    <span asp-validation-for="Perfil.Apellidos" class="text-danger"></span>
+            </section>
+
+            <section class="profile-form-section">
+                <div class="section-heading">
+                    <span class="section-chip"><i class="bi bi-people"></i>Informacion del equipo</span>
+                    <h2>Informacion del equipo</h2>
+                    <p>Descripcion general del equipo, separada de las especificaciones puntuales del desafio.</p>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Nombre de equipo</label>
-                    <input asp-for="Perfil.NombreEquipo" class="form-control" maxlength="120" />
-                    <span asp-validation-for="Perfil.NombreEquipo" class="text-danger"></span>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label">Detalle del equipo</label>
+                        <textarea asp-for="Perfil.DetalleEquipo" class="form-control" rows="4" maxlength="1000" placeholder="Equipo con 5 anos jugando torneos locales, grupo de amigos nivel intermedio, juego recreativo..."></textarea>
+                        <span asp-validation-for="Perfil.DetalleEquipo" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Departamento del equipo</label>
+                        <select asp-for="Perfil.CodigoDepartamentoEquipo" asp-items="Model.Perfil.DepartamentosUbigeoEquipo" class="form-select" id="CodigoDepartamentoEquipo">
+                            <option value="">Selecciona</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Provincia del equipo</label>
+                        <select asp-for="Perfil.CodigoProvinciaEquipo" asp-items="Model.Perfil.ProvinciasUbigeoEquipo" class="form-select" id="CodigoProvinciaEquipo">
+                            <option value="">Selecciona</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Distrito del equipo</label>
+                        <select asp-for="Perfil.CodigoUbigeoEquipo" asp-items="Model.Perfil.DistritosUbigeoEquipo" class="form-select" id="CodigoUbigeoEquipo">
+                            <option value="">Selecciona</option>
+                        </select>
+                        <span asp-validation-for="Perfil.CodigoUbigeoEquipo" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">WhatsApp del equipo</label>
+                        <input asp-for="Perfil.WhatsappEquipo" type="hidden" />
+                        <div class="input-group">
+                            <select asp-for="Perfil.WhatsappCodigoPais" asp-items="Model.Perfil.CodigosPais" class="form-select" style="max-width: 180px;"></select>
+                            <input asp-for="Perfil.WhatsappNumeroLocal" class="form-control" inputmode="numeric" placeholder="999999999" />
+                        </div>
+                        <span asp-validation-for="Perfil.WhatsappCodigoPais" class="text-danger"></span>
+                        <span asp-validation-for="Perfil.WhatsappNumeroLocal" class="text-danger"></span>
+                    </div>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Telefono</label>
-                    <input asp-for="Perfil.Telefono" class="form-control" maxlength="30" />
-                    <span asp-validation-for="Perfil.Telefono" class="text-danger"></span>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Correo</label>
-                    <input asp-for="Perfil.Correo" class="form-control" maxlength="200" />
-                    <span asp-validation-for="Perfil.Correo" class="text-danger"></span>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Departamento</label>
-                    <select asp-for="Perfil.CodigoDepartamento" asp-items="Model.Perfil.DepartamentosUbigeo" class="form-select" id="CodigoDepartamento">
-                        <option value="">Selecciona</option>
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Provincia</label>
-                    <select asp-for="Perfil.CodigoProvincia" asp-items="Model.Perfil.ProvinciasUbigeo" class="form-select" id="CodigoProvincia">
-                        <option value="">Selecciona</option>
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Distrito</label>
-                    <select asp-for="Perfil.CodigoUbigeo" asp-items="Model.Perfil.DistritosUbigeo" class="form-select" id="CodigoUbigeo">
-                        <option value="">Selecciona</option>
-                    </select>
-                </div>
-            </div>
+                @if (!string.IsNullOrWhiteSpace(Model.Perfil.DetalleEquipo))
+                {
+                    <div class="team-preview-card mt-3">
+                        <div class="team-preview-kicker">Vista publica del equipo</div>
+                        <p class="mb-0">@Model.Perfil.DetalleEquipo</p>
+                    </div>
+                }
+            </section>
 
             <div class="mt-3 d-flex justify-content-end">
                 <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-save me-1"></i>Guardar datos personales
+                    <i class="bi bi-save me-1"></i>Guardar perfil publico
                 </button>
             </div>
         </form>
@@ -228,18 +336,89 @@
             }
         </section>
     }
-
-    @if (tabRetos)
-    {
-        <section class="content-card p-4 text-center">
-            <h2 class="h5 mb-2"><i class="bi bi-trophy me-1"></i>Retar a un equipo</h2>
-            <p class="text-muted mb-0">Proximamente habilitaremos esta funcionalidad para organizar partidos entre equipos.</p>
-        </section>
-    }
 </div>
 
 @section Styles {
     <style>
+        .profile-availability-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            margin-top: .55rem;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #e7fff2 0%, #d8fff0 100%);
+            border: 1px solid #7ce0aa;
+            color: #0e6a3f;
+            font-weight: 800;
+            padding: .4rem .8rem;
+            font-size: .8rem;
+        }
+        .profile-form-section {
+            border: 1px solid #d8e3f5;
+            border-radius: 18px;
+            padding: 1rem;
+            background: #fff;
+            margin-bottom: 1rem;
+        }
+        .profile-form-section-highlight {
+            background: linear-gradient(180deg, #f7fbff 0%, #eef7ff 100%);
+            border-color: #bdd8ff;
+        }
+        .section-heading {
+            margin-bottom: 1rem;
+        }
+        .section-heading h2 {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #12366f;
+            margin-bottom: .25rem;
+        }
+        .section-heading p {
+            margin: 0;
+            color: #5b6f92;
+            font-size: .92rem;
+        }
+        .section-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            border-radius: 999px;
+            padding: .3rem .7rem;
+            background: #eaf2ff;
+            color: #1c4fa4;
+            font-size: .72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            margin-bottom: .55rem;
+        }
+        .challenge-switch {
+            display: flex;
+            align-items: flex-start;
+            gap: .8rem;
+            padding: .9rem 1rem;
+            border: 1px solid #cce0ff;
+            border-radius: 14px;
+            background: rgba(255,255,255,.8);
+        }
+        .challenge-switch .form-check-input {
+            margin-top: .15rem;
+        }
+        .team-preview-card {
+            border-radius: 16px;
+            padding: 1rem;
+            background: linear-gradient(135deg, #0d2d62 0%, #1550a8 100%);
+            color: #fff;
+            box-shadow: 0 16px 30px rgba(13, 45, 98, .18);
+        }
+        .team-preview-kicker {
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            font-size: .73rem;
+            font-weight: 800;
+            opacity: .82;
+            margin-bottom: .45rem;
+        }
         .profile-reservas-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -382,9 +561,12 @@
             const dep = document.getElementById('CodigoDepartamento');
             const prov = document.getElementById('CodigoProvincia');
             const dist = document.getElementById('CodigoUbigeo');
-            if (!dep || !prov || !dist) return;
+            const depEquipo = document.getElementById('CodigoDepartamentoEquipo');
+            const provEquipo = document.getElementById('CodigoProvinciaEquipo');
+            const distEquipo = document.getElementById('CodigoUbigeoEquipo');
 
             function renderOptions(select, rows, emptyText) {
+                if (!select) return;
                 select.innerHTML = '';
                 const first = document.createElement('option');
                 first.value = '';
@@ -398,26 +580,31 @@
                 });
             }
 
-            dep.addEventListener('change', async () => {
-                const codigo = (dep.value || '').trim();
-                renderOptions(prov, [], 'Selecciona');
-                renderOptions(dist, [], 'Selecciona');
-                if (codigo.length !== 2) return;
-                const resp = await fetch(`@Url.Action("UbigeoProvincias", "Home")?codigoDepartamento=${encodeURIComponent(codigo)}`, { cache: 'no-store' });
-                if (!resp.ok) return;
-                const data = await resp.json();
-                renderOptions(prov, data, 'Selecciona');
-            });
+            async function enlazarUbigeo(depSelect, provSelect, distSelect) {
+                if (!depSelect || !provSelect || !distSelect) return;
 
-            prov.addEventListener('change', async () => {
-                const codigo = (prov.value || '').trim();
-                renderOptions(dist, [], 'Selecciona');
-                if (codigo.length !== 4) return;
-                const resp = await fetch(`@Url.Action("UbigeoDistritos", "Home")?codigoProvincia=${encodeURIComponent(codigo)}`, { cache: 'no-store' });
-                if (!resp.ok) return;
-                const data = await resp.json();
-                renderOptions(dist, data, 'Selecciona');
-            });
+                depSelect.addEventListener('change', async () => {
+                    const codigo = (depSelect.value || '').trim();
+                    renderOptions(provSelect, [], 'Selecciona');
+                    renderOptions(distSelect, [], 'Selecciona');
+                    if (codigo.length !== 2) return;
+                    const resp = await fetch(`@Url.Action("UbigeoProvincias", "Home")?codigoDepartamento=${encodeURIComponent(codigo)}`, { cache: 'no-store' });
+                    if (!resp.ok) return;
+                    renderOptions(provSelect, await resp.json(), 'Selecciona');
+                });
+
+                provSelect.addEventListener('change', async () => {
+                    const codigo = (provSelect.value || '').trim();
+                    renderOptions(distSelect, [], 'Selecciona');
+                    if (codigo.length !== 4) return;
+                    const resp = await fetch(`@Url.Action("UbigeoDistritos", "Home")?codigoProvincia=${encodeURIComponent(codigo)}`, { cache: 'no-store' });
+                    if (!resp.ok) return;
+                    renderOptions(distSelect, await resp.json(), 'Selecciona');
+                });
+            }
+
+            enlazarUbigeo(dep, prov, dist);
+            enlazarUbigeo(depEquipo, provEquipo, distEquipo);
         })();
     </script>
 }

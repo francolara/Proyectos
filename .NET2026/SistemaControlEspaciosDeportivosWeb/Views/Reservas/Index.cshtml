@@ -41,7 +41,7 @@
         </div>
     </div>
     <div class="action-toolbar">
-        <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Panel</a>
+        <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId"><i class="bi bi-arrow-left me-1"></i>Volver al panel</a>
     </div>
 </header>
 
@@ -708,14 +708,18 @@ else
 
 <div class="modal fade" id="reservaModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="reservaModalTitulo">Nueva reserva</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        <div class="modal-content sc-modal-content">
+            @* Firma: Codex - 19/04/2026 | Cabecera visual homologada para el modal principal de reservas. *@
+            <div class="modal-header sc-modal-header">
+                <div class="sc-modal-title-wrap">
+                    <h5 class="modal-title sc-modal-title" id="reservaModalTitulo">Nueva reserva</h5>
+                    <p class="sc-modal-subtitle">Completa los datos principales de la reserva y valida la disponibilidad antes de confirmar.</p>
+                </div>
+                <button type="button" class="btn-close sc-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <form id="reservaModalForm" asp-action="GuardarReservaModal" method="post">
                 @Html.AntiForgeryToken()
-                <div class="modal-body">
+                <div class="modal-body sc-modal-body">
                     <input type="hidden" id="modalReservaId" name="Id" value="0" />
                     <input type="hidden" id="modalNegocioId" name="NegocioId" value="@Model.NegocioId" />
                     <div id="reservaModalError" class="alert alert-danger d-none py-2"></div>
@@ -854,13 +858,17 @@ else
 
 <div class="modal fade" id="clienteRapidoModal" tabindex="-1" aria-labelledby="clienteRapidoModalTitulo" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="clienteRapidoModalTitulo">Nuevo cliente</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        <div class="modal-content sc-modal-content">
+            @* Firma: Codex - 19/04/2026 | Cabecera visual homologada para el modal de cliente rapido. *@
+            <div class="modal-header sc-modal-header">
+                <div class="sc-modal-title-wrap">
+                    <h5 class="modal-title sc-modal-title" id="clienteRapidoModalTitulo">Nuevo cliente</h5>
+                    <p class="sc-modal-subtitle">Da de alta un cliente rapidamente para continuar con la reserva sin romper el flujo.</p>
+                </div>
+                <button type="button" class="btn-close sc-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <form id="clienteRapidoForm">
-                <div class="modal-body">
+                <div class="modal-body sc-modal-body">
                     <div id="clienteRapidoError" class="alert alert-danger d-none py-2"></div>
                     <div class="row g-3">
                         <div class="col-md-6">

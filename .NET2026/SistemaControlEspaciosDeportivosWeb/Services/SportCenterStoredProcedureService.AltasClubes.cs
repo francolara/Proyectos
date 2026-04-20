@@ -24,13 +24,25 @@ public partial class SportCenterStoredProcedureService
         return result?.ToString() ?? string.Empty;
     }
 
-    public async Task<List<AltaClubItemViewModel>> AltasClubesListarAsync(int? estado = null)
+    public async Task<(List<AltaClubItemViewModel> Solicitudes, int TotalRegistros, int TotalPendientes, int TotalAprobados, int TotalRechazados)> AltasClubesListarAsync(int? estado = null, int pagina = 1, int tamanoPagina = 20)
     {
         var list = new List<AltaClubItemViewModel>();
+        var paginaNormalizada = pagina < 1 ? 1 : pagina;
+        var tamanoNormalizado = tamanoPagina < 1 ? 20 : tamanoPagina;
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_AltasClubes_Listar", cn) { CommandType = CommandType.StoredProcedure };
         AddParam(cmd, "@Estado", estado, SqlDbType.Int);
+        AddParam(cmd, "@Pagina", paginaNormalizada, SqlDbType.Int);
+        AddParam(cmd, "@TamanoPagina", tamanoNormalizado, SqlDbType.Int);
+        var totalRegistrosParam = cmd.Parameters.Add("@TotalRegistros", SqlDbType.Int);
+        totalRegistrosParam.Direction = ParameterDirection.Output;
+        var totalPendientesParam = cmd.Parameters.Add("@TotalPendientes", SqlDbType.Int);
+        totalPendientesParam.Direction = ParameterDirection.Output;
+        var totalAprobadosParam = cmd.Parameters.Add("@TotalAprobados", SqlDbType.Int);
+        totalAprobadosParam.Direction = ParameterDirection.Output;
+        var totalRechazadosParam = cmd.Parameters.Add("@TotalRechazados", SqlDbType.Int);
+        totalRechazadosParam.Direction = ParameterDirection.Output;
         await using var dr = await cmd.ExecuteReaderAsync();
         while (await dr.ReadAsync())
         {
@@ -55,8 +67,13 @@ public partial class SportCenterStoredProcedureService
                 FechaGestion = dr.IsDBNull(16) ? null : dr.GetDateTime(16)
             });
         }
+        await dr.CloseAsync();
 
-        return list;
+        var totalRegistros = totalRegistrosParam.Value is int total ? total : 0;
+        var totalPendientes = totalPendientesParam.Value is int pendientes ? pendientes : 0;
+        var totalAprobados = totalAprobadosParam.Value is int aprobados ? aprobados : 0;
+        var totalRechazados = totalRechazadosParam.Value is int rechazados ? rechazados : 0;
+        return (list, totalRegistros, totalPendientes, totalAprobados, totalRechazados);
     }
 
     public async Task<string> HomeRegistrarClubConPruebaAsync(AltaClubSolicitudFormViewModel model, string usuarioId)

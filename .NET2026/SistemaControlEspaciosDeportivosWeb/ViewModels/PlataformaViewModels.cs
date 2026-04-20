@@ -43,6 +43,11 @@ public class PlataformaPortalConfigViewModel
 public class PlataformaNegociosAdminViewModel
 {
     public string? Buscar { get; set; }
+    public string EstadoContrato { get; set; } = "todos";
+    public int Pagina { get; set; } = 1;
+    public int TamanoPagina { get; set; } = 20;
+    public int TotalRegistros { get; set; }
+    public int TotalPaginas { get; set; } = 1;
     public List<PlataformaNegocioLimiteItemViewModel> Negocios { get; set; } = new();
 }
 
@@ -53,6 +58,7 @@ public class PlataformaNegocioLimiteItemViewModel
     public bool Activo { get; set; }
     public int SedesPermitidas { get; set; } = 2;
     public int EspaciosPermitidos { get; set; } = 6;
+    public int UsuariosPermitidos { get; set; } = 3;
     public int EstadoSuscripcion { get; set; }
     public string EstadoSuscripcionNombre { get; set; } = "Sin suscripcion";
     public bool EsPrueba { get; set; }
@@ -69,6 +75,13 @@ public class PlataformaAltasClubesAdminViewModel
 {
     public int? Estado { get; set; }
     public int DiasPruebaDefault { get; set; } = 30;
+    public int Pagina { get; set; } = 1;
+    public int TamanoPagina { get; set; } = 20;
+    public int TotalRegistros { get; set; }
+    public int TotalPaginas { get; set; } = 1;
+    public int TotalPendientes { get; set; }
+    public int TotalAprobados { get; set; }
+    public int TotalRechazados { get; set; }
     public List<AltaClubItemViewModel> Solicitudes { get; set; } = new();
 }
 

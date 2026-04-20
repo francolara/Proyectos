@@ -1,13 +1,15 @@
-﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.PlataformaNegociosAdminViewModel
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.PlataformaNegociosAdminViewModel
 @{
     ViewData["Title"] = "Negocios";
 }
 <!-- Firma: Codex - 16/04/2026 | Panel owner para buscar negocios, editar limites y activar contrato con tipo de cobro/vigencia y dias de gracia. -->
+<!-- Firma: Codex - 19/04/2026 | Agrega cabecera visual, paginacion, filtro comercial, limite de usuarios permitidos, iconos superiores en tabla, acciones para renovar/finalizar contrato y calculo automatico de vigencia. -->
+<!-- Firma: Codex - 20/04/2026 | Simplifica el titulo principal quitando el icono decorativo del encabezado general. -->
 
 <div class="page-header-card mb-3">
     <div class="page-header-main">
         <h1 class="page-title">Negocios registrados</h1>
-        <p class="page-subtitle">Administra limites operativos por negocio: sedes y espacios permitidos.</p>
+        <p class="page-subtitle">Administra limites operativos por negocio: sedes, espacios y usuarios permitidos.</p>
     </div>
 </div>
 
@@ -22,9 +24,18 @@
 
 <section class="table-card sc-reservas-list-card p-3 mb-3">
     <form asp-action="Negocios" method="get" class="row g-2 align-items-end">
-        <div class="col-md-6 col-lg-5">
+        <div class="col-md-5 col-lg-4">
             <label class="form-label">Buscar negocio</label>
             <input type="text" name="buscar" value="@Model.Buscar" class="form-control" placeholder="Nombre comercial" />
+        </div>
+        <div class="col-md-4 col-lg-3">
+            <label class="form-label">Estado comercial</label>
+            <select class="form-select" name="estadoContrato">
+                <option value="todos" selected="@(Model.EstadoContrato == "todos" ? "selected" : null)">Todos</option>
+                <option value="con-contrato" selected="@(Model.EstadoContrato == "con-contrato" ? "selected" : null)">Con contrato</option>
+                <option value="sin-contrato" selected="@(Model.EstadoContrato == "sin-contrato" ? "selected" : null)">Sin contrato</option>
+                <option value="prueba-por-vencer" selected="@(Model.EstadoContrato == "prueba-por-vencer" ? "selected" : null)">Prueba por vencer</option>
+            </select>
         </div>
         <div class="col-md-3 col-lg-2 d-grid">
             <button type="submit" class="btn btn-primary"><i class="bi bi-search me-1"></i>Buscar</button>
@@ -36,15 +47,44 @@
 </section>
 
 <section class="table-card sc-reservas-list-card p-0 overflow-hidden">
+    <div class="table-card-header d-flex justify-content-between align-items-center">
+        <h2 class="table-card-title"><i class="bi bi-diagram-3 me-1"></i>Negocios listados</h2>
+        <span class="badge text-bg-light border">Pagina @Model.Pagina de @Model.TotalPaginas</span>
+    </div>
     <div class="table-responsive">
         <table class="table table-sm align-middle mb-0">
             <thead>
                 <tr>
-                    <th>Negocio</th>
-                    <th>Estado</th>
-                    <th class="text-center">Limites</th>
-                    <th>Suscripcion</th>
-                    <th class="text-end">Accion</th>
+                    <th>
+                        <span class="sc-col-header">
+                            <i class="bi bi-buildings"></i>
+                            <small>Negocio</small>
+                        </span>
+                    </th>
+                    <th>
+                        <span class="sc-col-header">
+                            <i class="bi bi-activity"></i>
+                            <small>Estado</small>
+                        </span>
+                    </th>
+                    <th class="text-center">
+                        <span class="sc-col-header">
+                            <i class="bi bi-sliders2"></i>
+                            <small>Limites</small>
+                        </span>
+                    </th>
+                    <th>
+                        <span class="sc-col-header">
+                            <i class="bi bi-journal-check"></i>
+                            <small>Suscripcion</small>
+                        </span>
+                    </th>
+                    <th class="text-end">
+                        <span class="sc-col-header">
+                            <i class="bi bi-tools"></i>
+                            <small>Accion</small>
+                        </span>
+                    </th>
                 </tr>
             </thead>
             <tbody>
@@ -58,6 +98,18 @@
                 {
                     foreach (var item in Model.Negocios)
                     {
+                        var tieneContratoActivo = !item.EsPrueba
+                            && !string.IsNullOrWhiteSpace(item.TipoCobro)
+                            && item.FechaFinPlan.HasValue;
+                        var contratoEnGracia = tieneContratoActivo
+                            && item.FechaFinPlan.HasValue
+                            && item.FechaFinGracia.HasValue
+                            && item.FechaFinPlan.Value.Date < DateTime.Today.Date
+                            && item.FechaFinGracia.Value.Date >= DateTime.Today.Date;
+                        var pruebaPorVencer = item.EsPrueba
+                            && item.FechaFinPrueba.HasValue
+                            && item.FechaFinPrueba.Value.Date >= DateTime.Today.Date
+                            && item.FechaFinPrueba.Value.Date <= DateTime.Today.AddDays(7).Date;
                         <tr>
                             <td>
                                 <strong>@item.NombreComercial</strong>
@@ -78,10 +130,14 @@
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="negocioId" value="@item.NegocioId" />
                                     <input type="hidden" name="buscar" value="@Model.Buscar" />
+                                    <input type="hidden" name="estadoContrato" value="@Model.EstadoContrato" />
+                                    <input type="hidden" name="pagina" value="@Model.Pagina" />
                                     <label class="small text-muted mb-0">Sedes</label>
                                     <input type="number" min="1" max="999" name="sedesPermitidas" value="@item.SedesPermitidas" class="form-control form-control-sm" style="max-width:90px;" />
                                     <label class="small text-muted mb-0">Espacios</label>
                                     <input type="number" min="1" max="9999" name="espaciosPermitidos" value="@item.EspaciosPermitidos" class="form-control form-control-sm" style="max-width:110px;" />
+                                    <label class="small text-muted mb-0">Usuarios</label>
+                                    <input type="number" min="1" max="999" name="usuariosPermitidos" value="@item.UsuariosPermitidos" class="form-control form-control-sm" style="max-width:95px;" />
                                     <div class="ms-2">
                                         <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-save me-1"></i>Guardar</button>
                                     </div>
@@ -90,6 +146,10 @@
                             <td>
                                 <div class="small">
                                     <span class="badge text-bg-@(item.EstadoSuscripcion is 1 or 2 ? "success" : item.EstadoSuscripcion == 3 ? "danger" : "secondary")">@item.EstadoSuscripcionNombre</span>
+                                    @if (pruebaPorVencer)
+                                    {
+                                        <span class="badge text-bg-warning text-dark ms-1">Prueba por vencer</span>
+                                    }
                                 </div>
                                 @if (item.EsPrueba && item.FechaFinPrueba.HasValue)
                                 {
@@ -100,31 +160,83 @@
                                     <div class="small text-muted">Plan: @item.TipoCobro | @item.FechaInicioPlan?.ToString("dd/MM/yyyy") - @item.FechaFinPlan?.ToString("dd/MM/yyyy")</div>
                                     <div class="small text-muted">Gracia: @item.DiasGracia dias (hasta @item.FechaFinGracia?.ToString("dd/MM/yyyy"))</div>
                                 }
-                                <form asp-action="ActivarContratoNegocio" method="post" class="row g-1 mt-2">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="negocioId" value="@item.NegocioId" />
-                                    <input type="hidden" name="buscar" value="@Model.Buscar" />
-                                    <div class="col-12">
-                                        <select name="tipoCobro" class="form-select form-select-sm">
-                                            <option value="MENSUAL">Mensual</option>
-                                            <option value="TRIMESTRAL">Trimestral</option>
-                                            <option value="SEMESTRAL">Semestral</option>
-                                            <option value="ANUAL">Anual</option>
-                                        </select>
+                                @if (tieneContratoActivo)
+                                {
+                                    <div class="small mt-1">
+                                        @if (contratoEnGracia)
+                                        {
+                                            <span class="badge text-bg-warning text-dark">En gracia hasta @item.FechaFinGracia?.ToString("dd/MM/yyyy")</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge text-bg-info">Contrato activo hasta @item.FechaFinPlan?.ToString("dd/MM/yyyy")</span>
+                                        }
                                     </div>
-                                    <div class="col-6">
-                                        <input type="date" name="fechaDesde" class="form-control form-control-sm" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                }
+                                else if (!item.EsPrueba)
+                                {
+                                    <div class="small mt-1">
+                                        <span class="badge text-bg-secondary">Sin contrato activo</span>
                                     </div>
-                                    <div class="col-6">
-                                        <input type="date" name="fechaHasta" class="form-control form-control-sm" value="@DateTime.Today.AddMonths(1).ToString("yyyy-MM-dd")" />
+                                }
+                                @if (tieneContratoActivo)
+                                {
+                                    <div class="row g-1 mt-2">
+                                        <div class="col-12 d-grid">
+                                            <form asp-action="RenovarContratoNegocio" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="negocioId" value="@item.NegocioId" />
+                                                <input type="hidden" name="buscar" value="@Model.Buscar" />
+                                                <input type="hidden" name="estadoContrato" value="@Model.EstadoContrato" />
+                                                <input type="hidden" name="pagina" value="@Model.Pagina" />
+                                                <button type="submit" class="btn btn-sm btn-outline-primary w-100">Renovar suscripcion</button>
+                                            </form>
+                                        </div>
+                                        <div class="col-12 d-grid">
+                                            <form asp-action="FinalizarContratoNegocio" method="post" onsubmit="return confirm('Se dara fin al contrato actual del negocio. Deseas continuar?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="negocioId" value="@item.NegocioId" />
+                                                <input type="hidden" name="buscar" value="@Model.Buscar" />
+                                                <input type="hidden" name="estadoContrato" value="@Model.EstadoContrato" />
+                                                <input type="hidden" name="pagina" value="@Model.Pagina" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger w-100">Dar fin al contrato</button>
+                                            </form>
+                                        </div>
                                     </div>
-                                    <div class="col-6">
-                                        <input type="number" min="1" max="30" name="diasGracia" value="@item.DiasGracia" class="form-control form-control-sm" />
-                                    </div>
-                                    <div class="col-6 d-grid">
-                                        <button type="submit" class="btn btn-sm btn-outline-primary">Dar inicio a contrato</button>
-                                    </div>
-                                </form>
+                                }
+                                else
+                                {
+                                    <form asp-action="ActivarContratoNegocio" method="post" class="row g-1 mt-2 js-contrato-form">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="negocioId" value="@item.NegocioId" />
+                                        <input type="hidden" name="buscar" value="@Model.Buscar" />
+                                        <input type="hidden" name="estadoContrato" value="@Model.EstadoContrato" />
+                                        <input type="hidden" name="pagina" value="@Model.Pagina" />
+                                        <div class="col-12">
+                                            <select name="tipoCobro" class="form-select form-select-sm js-tipo-cobro">
+                                                <option value="MENSUAL">Mensual</option>
+                                                <option value="TRIMESTRAL">Trimestral</option>
+                                                <option value="SEMESTRAL">Semestral</option>
+                                                <option value="ANUAL">Anual</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-6">
+                                            <input type="date" name="fechaDesde" class="form-control form-control-sm js-fecha-desde" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                        </div>
+                                        <div class="col-6">
+                                            <input type="date" name="fechaHasta" class="form-control form-control-sm js-fecha-hasta" value="@DateTime.Today.AddMonths(1).ToString("yyyy-MM-dd")" readonly />
+                                        </div>
+                                        <div class="col-12">
+                                            <small class="text-muted">La fecha fin se calcula automaticamente segun el tipo de cobro y la fecha de inicio.</small>
+                                        </div>
+                                        <div class="col-6">
+                                            <input type="number" min="1" max="30" name="diasGracia" value="@item.DiasGracia" class="form-control form-control-sm" />
+                                        </div>
+                                        <div class="col-6 d-grid">
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">Dar inicio a contrato</button>
+                                        </div>
+                                    </form>
+                                }
                             </td>
                             <td class="text-end">
                                 <span class="text-muted small">ID @item.NegocioId</span>
@@ -135,4 +247,90 @@
             </tbody>
         </table>
     </div>
+    @if (Model.TotalPaginas > 1)
+    {
+        <div class="px-3 py-3 d-flex justify-content-between align-items-center">
+            <small class="text-muted">Pagina @Model.Pagina de @Model.TotalPaginas (@Model.TotalRegistros negocios)</small>
+            <nav aria-label="Paginacion negocios plataforma">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item @(Model.Pagina <= 1 ? "disabled" : null)">
+                        <a class="page-link" asp-action="Negocios" asp-route-buscar="@Model.Buscar" asp-route-estadoContrato="@Model.EstadoContrato" asp-route-pagina="@(Model.Pagina - 1)">Anterior</a>
+                    </li>
+                    <li class="page-item @(Model.Pagina >= Model.TotalPaginas ? "disabled" : null)">
+                        <a class="page-link" asp-action="Negocios" asp-route-buscar="@Model.Buscar" asp-route-estadoContrato="@Model.EstadoContrato" asp-route-pagina="@(Model.Pagina + 1)">Siguiente</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
 </section>
+
+@section Scripts
+{
+    <script>
+        (function () {
+            function addMonths(isoDate, months) {
+                const parts = (isoDate || '').split('-');
+                if (parts.length !== 3) return '';
+                const year = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10) - 1;
+                const day = parseInt(parts[2], 10);
+                if (Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) return '';
+
+                const base = new Date(year, month, day);
+                if (Number.isNaN(base.getTime())) return '';
+
+                const result = new Date(base);
+                result.setMonth(result.getMonth() + months);
+
+                const yyyy = result.getFullYear();
+                const mm = String(result.getMonth() + 1).padStart(2, '0');
+                const dd = String(result.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
+            }
+
+            function addYears(isoDate, years) {
+                const parts = (isoDate || '').split('-');
+                if (parts.length !== 3) return '';
+                const year = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10) - 1;
+                const day = parseInt(parts[2], 10);
+                if (Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) return '';
+
+                const result = new Date(year + years, month, day);
+                const yyyy = result.getFullYear();
+                const mm = String(result.getMonth() + 1).padStart(2, '0');
+                const dd = String(result.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
+            }
+
+            function calcularFechaFin(tipoCobro, fechaDesde) {
+                switch ((tipoCobro || 'MENSUAL').toUpperCase()) {
+                    case 'TRIMESTRAL':
+                        return addMonths(fechaDesde, 3);
+                    case 'SEMESTRAL':
+                        return addMonths(fechaDesde, 6);
+                    case 'ANUAL':
+                        return addYears(fechaDesde, 1);
+                    default:
+                        return addMonths(fechaDesde, 1);
+                }
+            }
+
+            document.querySelectorAll('.js-contrato-form').forEach(function (form) {
+                const tipoCobro = form.querySelector('.js-tipo-cobro');
+                const fechaDesde = form.querySelector('.js-fecha-desde');
+                const fechaHasta = form.querySelector('.js-fecha-hasta');
+                if (!tipoCobro || !fechaDesde || !fechaHasta) return;
+
+                function actualizarFechaFin() {
+                    fechaHasta.value = calcularFechaFin(tipoCobro.value, fechaDesde.value);
+                }
+
+                actualizarFechaFin();
+                tipoCobro.addEventListener('change', actualizarFechaFin);
+                fechaDesde.addEventListener('change', actualizarFechaFin);
+            });
+        })();
+    </script>
+}

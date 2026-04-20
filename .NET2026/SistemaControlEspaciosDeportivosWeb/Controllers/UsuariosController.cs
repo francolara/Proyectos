@@ -55,16 +55,22 @@ public class UsuariosController(
 
         try
         {
-            var (usuarioSistema, creadoNuevo, claveTemporal) = await ObtenerOCrearUsuarioSistemaAsync(model.Correo, model.NombreUsuario);
-
             if (!baseVm.EsAdministrador && model.RolNegocio == 1)
                 throw new InvalidOperationException("Solo un administrador puede asignar el rol Administrador.");
+
+            var limites = await spService.NegocioObtenerLimitesOperativosAsync(model.NegocioId);
+            var usuariosActivos = (await spService.UsuariosNegocioListarAsync(model.NegocioId))
+                .Count(x => x.Activo);
+            if (usuariosActivos >= limites.UsuariosPermitidos)
+                throw new InvalidOperationException($"Limite de usuarios alcanzado. Tu plan actual permite hasta {limites.UsuariosPermitidos} usuario(s) activos. Para continuar, solicita una ampliacion al administrador de plataforma.");
 
             var sedeAsignada = baseVm.EsAdministrador ? model.SedeId : baseVm.SedeIdAsignada;
             if (RolRequiereSede(model.RolNegocio) && !sedeAsignada.HasValue)
                 throw new InvalidOperationException("Debes seleccionar una sede para usuarios no administradores.");
             if (!SedePermitida(baseVm, sedeAsignada))
                 throw new InvalidOperationException("No puedes asignar una sede distinta a la que tienes permitida.");
+
+            var (usuarioSistema, creadoNuevo, claveTemporal) = await ObtenerOCrearUsuarioSistemaAsync(model.Correo, model.NombreUsuario);
 
             await spService.UsuariosNegocioAsignarPorCorreoAsync(model.NegocioId, model.Correo, model.RolNegocio, sedeAsignada, User.Identity?.Name ?? "sistema");
             TempData["UsuariosMsg"] = creadoNuevo

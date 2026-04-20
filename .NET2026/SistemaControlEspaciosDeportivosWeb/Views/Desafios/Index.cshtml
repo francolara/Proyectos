@@ -1,0 +1,1501 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.DesafiosIndexViewModel
+@{
+    ViewData["Title"] = "Desafios";
+    var abrirModal = (ViewData["AbrirModalDesafio"] as bool?) == true;
+    var horasDesafio = Enumerable.Range(0, 24)
+        .Select(x => new SelectListItem($"{x:00}:00", $"{x:00}:00"))
+        .ToList();
+    string EstadoClave(string? estado) => string.IsNullOrWhiteSpace(estado) ? "sin-estado" : estado.Trim().ToLowerInvariant();
+}
+<!-- Firma: Codex - 18/04/2026 | Modulo independiente de Desafios con busqueda por distrito, modal de invitacion corregido, hora tentativa en horas exactas, contacto rival condicionado por estado aceptado/finalizado y mensajeria interna por desafio. -->
+<!-- Firma: Codex - 19/04/2026 | Datos operativos del desafio visibles en mini tarjetas con iconos y selector de hora estandarizado solo por horas exactas. -->
+<!-- Firma: Codex - 19/04/2026 | El resumen operacional del desafio pasa a mini tarjetas para deporte, nivel, fecha, hora y ubicacion completa con distrito, provincia y departamento. -->
+<!-- Firma: Codex - 19/04/2026 | La busqueda y los listados de desafios muestran el contacto responsable del equipo y reorganizan enviados/recibidos/historial con resumen visible, detalle expandible, filtros rapidos por estado, prioridad visual a recibidos en movil y pie de acciones consistente. -->
+
+<div class="container py-4 desafios-page">
+    <header class="desafios-hero">
+        <div>
+            <div class="desafios-kicker">Modulo independiente</div>
+            <h1>Desafios</h1>
+            <p>Encuentra rivales por distrito, envia invitaciones y administra los desafios de tu equipo sin afectar el flujo actual de reservas.</p>
+        </div>
+        <div class="desafios-hero-side">
+            @if (Model.PerfilActual.BuscarDesafios)
+            {
+                <span class="desafios-badge is-ready"><i class="bi bi-lightning-charge-fill"></i>Disponible para desafios</span>
+            }
+            else
+            {
+                <span class="desafios-badge"><i class="bi bi-slash-circle"></i>No visible en busquedas</span>
+            }
+            <a class="btn btn-outline-primary" asp-controller="PerfilPublico" asp-action="Index" asp-route-tab="datos">
+                <i class="bi bi-person-lines-fill me-1"></i>Editar perfil publico
+            </a>
+        </div>
+    </header>
+
+    <ul class="nav nav-tabs mb-3">
+        <li class="nav-item">
+            <a class="nav-link" asp-controller="PerfilPublico" asp-action="Index" asp-route-tab="datos">Datos personales</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" asp-controller="PerfilPublico" asp-action="Index" asp-route-tab="reservas">Mis reservas</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" asp-action="Index">Desafios</a>
+        </li>
+    </ul>
+
+    @if (TempData["DesafiosOk"] is string ok && !string.IsNullOrWhiteSpace(ok))
+    {
+        <div class="alert alert-success">@ok</div>
+    }
+
+    @if (TempData["DesafiosError"] is string error && !string.IsNullOrWhiteSpace(error))
+    {
+        <div class="alert alert-danger">@error</div>
+    }
+
+    @if (!Model.PerfilActual.BuscarDesafios)
+    {
+        <div class="alert alert-warning">
+            Tu perfil aun no esta habilitado para aparecer en la busqueda de rivales. Activalo desde <a asp-controller="PerfilPublico" asp-action="Index" asp-route-tab="datos">Datos personales</a>.
+        </div>
+    }
+
+    <section class="content-card p-3 p-md-4 mb-4">
+        <div class="section-title-row">
+            <div>
+                <h2 class="section-title mb-1"><i class="bi bi-search-heart me-1"></i>Buscar rival</h2>
+                <p class="text-muted mb-0">La busqueda siempre exige distrito. No se muestran equipos sin filtro geografico.</p>
+            </div>
+        </div>
+
+        <form asp-action="BuscarRivales" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Departamento</label>
+                    <select asp-for="Filtros.CodigoDepartamento" asp-items="Model.Filtros.Departamentos" class="form-select" id="BusquedaCodigoDepartamento">
+                        <option value="">Selecciona</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Provincia</label>
+                    <select asp-for="Filtros.CodigoProvincia" asp-items="Model.Filtros.Provincias" class="form-select" id="BusquedaCodigoProvincia">
+                        <option value="">Selecciona</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Distrito</label>
+                    <select asp-for="Filtros.CodigoUbigeo" asp-items="Model.Filtros.Distritos" class="form-select" id="BusquedaCodigoUbigeo">
+                        <option value="">Selecciona</option>
+                    </select>
+                    <span asp-validation-for="Filtros.CodigoUbigeo" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Deporte</label>
+                    <select asp-for="Filtros.IdDeporte" asp-items="Model.Filtros.Deportes" class="form-select">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Nivel</label>
+                    <select asp-for="Filtros.IdNivel" asp-items="Model.Filtros.Niveles" class="form-select">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mt-3 d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-search me-1"></i>Buscar rivales
+                </button>
+            </div>
+        </form>
+
+        @if (Model.BusquedaEjecutada)
+        {
+            <div class="mt-4">
+                @if (Model.ResultadosBusqueda.Count == 0)
+                {
+                    <div class="empty-state">
+                        <i class="bi bi-search-heart"></i>
+                        <p class="mb-0">No se encontraron equipos disponibles con los filtros seleccionados.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="desafios-grid">
+                        @foreach (var item in Model.ResultadosBusqueda)
+                        {
+                            <article class="desafio-card">
+                                <header class="desafio-card-head">
+                                    <div>
+                                        <h3>@item.NombreEquipo</h3>
+                                        <p class="mb-0"><i class="bi bi-geo-alt me-1"></i>@item.Distrito</p>
+                                    </div>
+                                    <span class="desafios-badge is-ready">Disponible</span>
+                                </header>
+
+                                <div class="desafio-meta">
+                                    <div>
+                                        <span>Deporte</span>
+                                        <strong>@item.Deporte</strong>
+                                    </div>
+                                    <div>
+                                        <span>Nivel</span>
+                                        <strong>@item.Nivel</strong>
+                                    </div>
+                                </div>
+
+                                <div class="desafio-copy-block is-challenge">
+                                    <div class="copy-label">Observacion del desafio</div>
+                                    <p>@(string.IsNullOrWhiteSpace(item.ObservacionDesafio) ? "Sin observaciones adicionales." : item.ObservacionDesafio)</p>
+                                </div>
+
+                                <div class="desafio-copy-block">
+                                    <div class="copy-label">Informacion del equipo</div>
+                                    <p>@(string.IsNullOrWhiteSpace(item.DetalleEquipo) ? "El equipo aun no registro una descripcion general." : item.DetalleEquipo)</p>
+                                </div>
+
+                                <div class="desafio-contact-card">
+                                    <div class="copy-label">Contacto del equipo</div>
+                                    <div class="desafio-contact-grid">
+                                        <div>
+                                            <span><i class="bi bi-person-badge"></i>Nombre</span>
+                                            <strong>@item.ContactoNombre</strong>
+                                        </div>
+                                        <div>
+                                            <span><i class="bi bi-at"></i>Usuario</span>
+                                            <strong>@(string.IsNullOrWhiteSpace(item.ContactoUsuario) ? "Sin usuario visible" : item.ContactoUsuario)</strong>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button type="button"
+                                        class="btn btn-primary w-100 open-desafio-modal"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#crearDesafioModal"
+                                        data-perfil-id="@item.PerfilId"
+                                        data-rival="@item.NombreEquipo"
+                                        data-deporte-id="@item.IdDeporte"
+                                        data-nivel-id="@item.IdNivel"
+                                        data-distrito-codigo="@item.CodigoUbigeo"
+                                        data-distrito-texto="@item.Distrito">
+                                    <i class="bi bi-send-check me-1"></i>Desafiar
+                                </button>
+                            </article>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </section>
+
+    <div class="row g-4">
+        <div class="col-12 col-xl-6 order-2 order-xl-1">
+            <section class="content-card p-3 p-md-4 h-100 desafio-section desafio-section-sent">
+                <div class="desafio-section-head">
+                    <div>
+                        <h2 class="section-title mb-1"><i class="bi bi-arrow-up-right-circle me-1"></i>Desafios enviados</h2>
+                        <p class="desafio-section-copy mb-0">Seguimiento de tus invitaciones y su avance actual.</p>
+                    </div>
+                    <div class="desafio-filter-group" data-target="#desafiosEnviadosList">
+                        <button type="button" class="desafio-filter-chip is-active" data-filter="todos">Todos</button>
+                        <button type="button" class="desafio-filter-chip" data-filter="pendiente">Pendientes</button>
+                        <button type="button" class="desafio-filter-chip" data-filter="aceptado">Aceptados</button>
+                        <button type="button" class="desafio-filter-chip" data-filter="finalizado">Finalizados</button>
+                    </div>
+                </div>
+                @if (Model.DesafiosEnviados.Count == 0)
+                {
+                    <div class="empty-state compact"><p class="mb-0">Aun no has enviado desafios.</p></div>
+                }
+                else
+                {
+                    <div class="desafio-list" id="desafiosEnviadosList">
+                        @foreach (var item in Model.DesafiosEnviados)
+                        {
+                            <article class="desafio-list-item desafio-list-item-sent" data-estado="@EstadoClave(item.Estado)">
+                                <div class="desafio-list-top">
+                                    <div>
+                                        <div class="desafio-code">@item.CodigoDesafio</div>
+                                        <h3>@item.RivalNombre</h3>
+                                    </div>
+                                    <span class="estado-chip @EstadoClase(item.Estado)">@item.Estado</span>
+                                </div>
+                                <div class="desafio-detail-grid is-extended">
+                                    <div class="desafio-detail-card">
+                                        <span class="desafio-detail-label"><i class="bi bi-trophy"></i>Deporte</span>
+                                        <strong>@item.Deporte</strong>
+                                    </div>
+                                    <div class="desafio-detail-card">
+                                        <span class="desafio-detail-label"><i class="bi bi-bar-chart-line"></i>Nivel</span>
+                                        <strong>@item.Nivel</strong>
+                                    </div>
+                                    <div class="desafio-detail-card">
+                                        <span class="desafio-detail-label"><i class="bi bi-calendar-event"></i>Fecha tentativa</span>
+                                        <strong>@item.FechaTentativa.ToString("dd/MM/yyyy")</strong>
+                                    </div>
+                                    <div class="desafio-detail-card">
+                                        <span class="desafio-detail-label"><i class="bi bi-clock"></i>Hora tentativa</span>
+                                        <strong>@item.HoraTentativa.ToString("HH\\:mm")</strong>
+                                    </div>
+                                    <div class="desafio-detail-card is-wide">
+                                        <span class="desafio-detail-label"><i class="bi bi-geo-alt"></i>Ubicacion del desafio</span>
+                                        <strong>@item.Distrito</strong>
+                                    </div>
+                                </div>
+                                <div class="desafio-detail-grid">
+                                    <div class="desafio-detail-card">
+                                        <span class="desafio-detail-label"><i class="bi bi-person-badge"></i>Contacto</span>
+                                        <strong>@item.ContactoNombreRival</strong>
+                                    </div>
+                                    <div class="desafio-detail-card">
+                                        <span class="desafio-detail-label"><i class="bi bi-at"></i>Usuario</span>
+                                        <strong>@(string.IsNullOrWhiteSpace(item.ContactoUsuarioRival) ? "Sin usuario visible" : item.ContactoUsuarioRival)</strong>
+                                    </div>
+                                    <div class="desafio-detail-card">
+                                        <span class="desafio-detail-label"><i class="bi bi-dribbble"></i>Cancha sugerida</span>
+                                        <strong>@(string.IsNullOrWhiteSpace(item.CanchaSugerida) ? "Por definir" : item.CanchaSugerida)</strong>
+                                    </div>
+                                    <div class="desafio-detail-card">
+                                        <span class="desafio-detail-label"><i class="bi bi-grid-3x3-gap"></i>Modalidad</span>
+                                        <strong>@item.Modalidad</strong>
+                                    </div>
+                                    <div class="desafio-detail-card">
+                                        <span class="desafio-detail-label"><i class="bi bi-wallet2"></i>Forma de pago</span>
+                                        <strong>@item.FormaPago</strong>
+                                    </div>
+                                </div>
+                                <details class="desafio-collapsible mt-3">
+                                    <summary>
+                                        <span><i class="bi bi-layout-text-window-reverse me-1"></i>Ver detalle</span>
+                                        <small>Observaciones, contacto y mensajes</small>
+                                    </summary>
+                                    <div class="desafio-collapsible-body">
+                                        <div class="desafio-copy-inline">
+                                            <strong>Observacion del rival:</strong> @(string.IsNullOrWhiteSpace(item.ObservacionDesafioRival) ? "Sin observaciones." : item.ObservacionDesafioRival)
+                                        </div>
+                                        <div class="desafio-copy-inline">
+                                            <strong>Equipo rival:</strong> @(string.IsNullOrWhiteSpace(item.DetalleEquipoRival) ? "Sin descripcion general." : item.DetalleEquipoRival)
+                                        </div>
+                                        @if (item.PuedeVerContactoRival)
+                                        {
+                                            <div class="desafio-contact-card mt-3">
+                                                <div class="copy-label">Contacto habilitado</div>
+                                                <div class="desafio-contact-grid">
+                                                    <div>
+                                                        <span><i class="bi bi-telephone"></i>Celular</span>
+                                                        <strong>@(string.IsNullOrWhiteSpace(item.TelefonoRival) ? "Sin celular registrado" : item.TelefonoRival)</strong>
+                                                    </div>
+                                                    <div>
+                                                        <span><i class="bi bi-whatsapp"></i>WhatsApp</span>
+                                                        @if (!string.IsNullOrWhiteSpace(item.WhatsappUrlRival))
+                                                        {
+                                                            <a href="@item.WhatsappUrlRival" target="_blank" rel="noopener noreferrer">@item.WhatsappRival</a>
+                                                        }
+                                                        else
+                                                        {
+                                                            <strong>Sin WhatsApp registrado</strong>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                        @if (item.Mensajes.Count > 0 || item.PermiteMensajes)
+                                        {
+                                            <div class="desafio-thread mt-3">
+                                                <div class="copy-label">Mensajes del desafio</div>
+                                                @if (item.Mensajes.Count == 0)
+                                                {
+                                                    <p class="desafio-thread-empty mb-0">Todavia no hay mensajes en esta coordinacion.</p>
+                                                }
+                                                else
+                                                {
+                                                    <div class="desafio-thread-list">
+                                                        @foreach (var mensaje in item.Mensajes)
+                                                        {
+                                                            <div class="desafio-message @(mensaje.EsMio ? "is-own" : null)">
+                                                                <div class="desafio-message-head">
+                                                                    <strong>@mensaje.NombreEmisor</strong>
+                                                                    <span>@mensaje.FechaRegistro.ToString("dd/MM/yyyy HH:mm")</span>
+                                                                </div>
+                                                                <p class="mb-0">@mensaje.Mensaje</p>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                }
+                                                @if (item.PermiteMensajes)
+                                                {
+                                                    <form asp-action="EnviarMensaje" method="post" class="desafio-thread-form mt-2">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@item.Id" />
+                                                        <textarea name="mensaje" class="form-control" rows="2" maxlength="500" placeholder="Escribe un mensaje para coordinar fecha, cancha o pago."></textarea>
+                                                        <div class="mt-2 d-flex justify-content-end">
+                                                            <button type="submit" class="btn btn-outline-primary btn-sm">Enviar mensaje</button>
+                                                        </div>
+                                                    </form>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                </details>
+                                <div class="desafio-actions-footer">
+                                    @if (item.Estado == "Pendiente")
+                                    {
+                                        <form asp-action="Cancelar" method="post" class="desafio-action-row">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <button type="submit" class="btn btn-outline-danger btn-sm">Cancelar</button>
+                                        </form>
+                                    }
+                                    else if (item.Estado == "Aceptado")
+                                    {
+                                        <form asp-action="Finalizar" method="post" class="desafio-action-row">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <button type="submit" class="btn btn-outline-success btn-sm">Marcar finalizado</button>
+                                        </form>
+                                    }
+                                </div>
+                            </article>
+                        }
+                    </div>
+                    <div class="desafio-filter-empty" data-empty-for="desafiosEnviadosList">No hay desafios enviados en este estado.</div>
+                }
+            </section>
+        </div>
+
+        <div class="col-12 col-xl-6 order-1 order-xl-2">
+            <section class="content-card p-3 p-md-4 h-100 desafio-section desafio-section-received">
+                <div class="desafio-section-head">
+                    <div>
+                        <h2 class="section-title mb-1"><i class="bi bi-arrow-down-left-circle me-1"></i>Desafios recibidos</h2>
+                        <p class="desafio-section-copy mb-0">Prioriza lo pendiente y responde sin perder contexto.</p>
+                    </div>
+                    <div class="desafio-filter-group" data-target="#desafiosRecibidosList">
+                        <button type="button" class="desafio-filter-chip is-active" data-filter="todos">Todos</button>
+                        <button type="button" class="desafio-filter-chip" data-filter="pendiente">Pendientes</button>
+                        <button type="button" class="desafio-filter-chip" data-filter="aceptado">Aceptados</button>
+                        <button type="button" class="desafio-filter-chip" data-filter="finalizado">Finalizados</button>
+                    </div>
+                </div>
+                @if (Model.DesafiosRecibidos.Count == 0)
+                {
+                    <div class="empty-state compact"><p class="mb-0">Aun no tienes desafios recibidos.</p></div>
+                }
+                else
+                {
+                    <div class="desafio-list" id="desafiosRecibidosList">
+                        @foreach (var item in Model.DesafiosRecibidos)
+                        {
+                            <article class="desafio-list-item desafio-list-item-received" data-estado="@EstadoClave(item.Estado)">
+                                <div class="desafio-list-top">
+                                    <div>
+                                        <div class="desafio-code">@item.CodigoDesafio</div>
+                                        <h3>@item.RivalNombre</h3>
+                                    </div>
+                                    <span class="estado-chip @EstadoClase(item.Estado)">@item.Estado</span>
+                                </div>
+                                <div class="desafio-detail-grid is-extended">
+                                    <div class="desafio-detail-card">
+                                        <span class="desafio-detail-label"><i class="bi bi-trophy"></i>Deporte</span>
+                                        <strong>@item.Deporte</strong>
+                                    </div>
+                                    <div class="desafio-detail-card">
+                                        <span class="desafio-detail-label"><i class="bi bi-bar-chart-line"></i>Nivel</span>
+                                        <strong>@item.Nivel</strong>
+                                    </div>
+                                    <div class="desafio-detail-card">
+                                        <span class="desafio-detail-label"><i class="bi bi-calendar-event"></i>Fecha tentativa</span>
+                                        <strong>@item.FechaTentativa.ToString("dd/MM/yyyy")</strong>
+                                    </div>
+                                    <div class="desafio-detail-card">
+                                        <span class="desafio-detail-label"><i class="bi bi-clock"></i>Hora tentativa</span>
+                                        <strong>@item.HoraTentativa.ToString("HH\\:mm")</strong>
+                                    </div>
+                                    <div class="desafio-detail-card is-wide">
+                                        <span class="desafio-detail-label"><i class="bi bi-geo-alt"></i>Ubicacion del desafio</span>
+                                        <strong>@item.Distrito</strong>
+                                    </div>
+                                </div>
+                                <div class="desafio-detail-grid">
+                                    <div class="desafio-detail-card">
+                                        <span class="desafio-detail-label"><i class="bi bi-person-badge"></i>Contacto</span>
+                                        <strong>@item.ContactoNombreRival</strong>
+                                    </div>
+                                    <div class="desafio-detail-card">
+                                        <span class="desafio-detail-label"><i class="bi bi-at"></i>Usuario</span>
+                                        <strong>@(string.IsNullOrWhiteSpace(item.ContactoUsuarioRival) ? "Sin usuario visible" : item.ContactoUsuarioRival)</strong>
+                                    </div>
+                                    <div class="desafio-detail-card">
+                                        <span class="desafio-detail-label"><i class="bi bi-dribbble"></i>Cancha sugerida</span>
+                                        <strong>@(string.IsNullOrWhiteSpace(item.CanchaSugerida) ? "Por definir" : item.CanchaSugerida)</strong>
+                                    </div>
+                                    <div class="desafio-detail-card">
+                                        <span class="desafio-detail-label"><i class="bi bi-grid-3x3-gap"></i>Modalidad</span>
+                                        <strong>@item.Modalidad</strong>
+                                    </div>
+                                    <div class="desafio-detail-card">
+                                        <span class="desafio-detail-label"><i class="bi bi-wallet2"></i>Forma de pago</span>
+                                        <strong>@item.FormaPago</strong>
+                                    </div>
+                                </div>
+                                <details class="desafio-collapsible mt-3">
+                                    <summary>
+                                        <span><i class="bi bi-layout-text-window-reverse me-1"></i>Ver detalle</span>
+                                        <small>Mensaje, contacto y coordinacion</small>
+                                    </summary>
+                                    <div class="desafio-collapsible-body">
+                                        <div class="desafio-copy-inline">
+                                            <strong>Mensaje:</strong> @(string.IsNullOrWhiteSpace(item.Mensaje) ? "Sin mensaje adicional." : item.Mensaje)
+                                        </div>
+                                        @if (item.PuedeVerContactoRival)
+                                        {
+                                            <div class="desafio-contact-card mt-3">
+                                                <div class="copy-label">Contacto habilitado</div>
+                                                <div class="desafio-contact-grid">
+                                                    <div>
+                                                        <span><i class="bi bi-telephone"></i>Celular</span>
+                                                        <strong>@(string.IsNullOrWhiteSpace(item.TelefonoRival) ? "Sin celular registrado" : item.TelefonoRival)</strong>
+                                                    </div>
+                                                    <div>
+                                                        <span><i class="bi bi-whatsapp"></i>WhatsApp</span>
+                                                        @if (!string.IsNullOrWhiteSpace(item.WhatsappUrlRival))
+                                                        {
+                                                            <a href="@item.WhatsappUrlRival" target="_blank" rel="noopener noreferrer">@item.WhatsappRival</a>
+                                                        }
+                                                        else
+                                                        {
+                                                            <strong>Sin WhatsApp registrado</strong>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                        @if (item.Mensajes.Count > 0 || item.PermiteMensajes)
+                                        {
+                                            <div class="desafio-thread mt-3">
+                                                <div class="copy-label">Mensajes del desafio</div>
+                                                @if (item.Mensajes.Count == 0)
+                                                {
+                                                    <p class="desafio-thread-empty mb-0">Todavia no hay mensajes en esta coordinacion.</p>
+                                                }
+                                                else
+                                                {
+                                                    <div class="desafio-thread-list">
+                                                        @foreach (var mensaje in item.Mensajes)
+                                                        {
+                                                            <div class="desafio-message @(mensaje.EsMio ? "is-own" : null)">
+                                                                <div class="desafio-message-head">
+                                                                    <strong>@mensaje.NombreEmisor</strong>
+                                                                    <span>@mensaje.FechaRegistro.ToString("dd/MM/yyyy HH:mm")</span>
+                                                                </div>
+                                                                <p class="mb-0">@mensaje.Mensaje</p>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                }
+                                                @if (item.PermiteMensajes)
+                                                {
+                                                    <form asp-action="EnviarMensaje" method="post" class="desafio-thread-form mt-2">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@item.Id" />
+                                                        <textarea name="mensaje" class="form-control" rows="2" maxlength="500" placeholder="Responde con ajustes de hora, cancha o forma de pago."></textarea>
+                                                        <div class="mt-2 d-flex justify-content-end">
+                                                            <button type="submit" class="btn btn-outline-primary btn-sm">Enviar mensaje</button>
+                                                        </div>
+                                                    </form>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                </details>
+                                <div class="desafio-actions-footer">
+                                    @if (item.Estado == "Pendiente")
+                                    {
+                                        <div class="d-flex gap-2 flex-wrap desafio-action-row desafio-action-row-strong">
+                                            <form asp-action="Responder" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@item.Id" />
+                                                <input type="hidden" name="decision" value="aceptar" />
+                                                <button type="submit" class="btn btn-success btn-sm">Aceptar</button>
+                                            </form>
+                                            <form asp-action="Responder" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@item.Id" />
+                                                <input type="hidden" name="decision" value="rechazar" />
+                                                <button type="submit" class="btn btn-outline-danger btn-sm">Rechazar</button>
+                                            </form>
+                                        </div>
+                                    }
+                                    else if (item.Estado == "Aceptado")
+                                    {
+                                        <form asp-action="Finalizar" method="post" class="desafio-action-row">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <button type="submit" class="btn btn-outline-success btn-sm">Marcar finalizado</button>
+                                        </form>
+                                    }
+                                </div>
+                            </article>
+                        }
+                    </div>
+                    <div class="desafio-filter-empty" data-empty-for="desafiosRecibidosList">No hay desafios recibidos en este estado.</div>
+                }
+            </section>
+        </div>
+
+        <div class="col-12 order-3">
+            <section class="content-card p-3 p-md-4 desafio-section desafio-section-history">
+                <div class="desafio-section-head">
+                    <div>
+                        <h2 class="section-title mb-1"><i class="bi bi-clock-history me-1"></i>Historial</h2>
+                        <p class="desafio-section-copy mb-0">Registro compacto de desafios cerrados y coordinaciones terminadas.</p>
+                    </div>
+                    <div class="desafio-filter-group" data-target="#desafiosHistorialList">
+                        <button type="button" class="desafio-filter-chip is-active" data-filter="todos">Todos</button>
+                        <button type="button" class="desafio-filter-chip" data-filter="finalizado">Finalizados</button>
+                    </div>
+                </div>
+                @if (Model.Historial.Count == 0)
+                {
+                    <div class="empty-state compact"><p class="mb-0">Todavia no hay desafios finalizados.</p></div>
+                }
+                else
+                {
+                    <div class="desafio-history-grid" id="desafiosHistorialList">
+                        @foreach (var item in Model.Historial)
+                        {
+                            <article class="desafio-history-item desafio-history-item-compact" data-estado="@EstadoClave(item.Estado)">
+                                <div class="d-flex justify-content-between gap-2 align-items-start">
+                                    <div>
+                                        <div class="desafio-code">@item.CodigoDesafio</div>
+                                        <h3>@item.RivalNombre</h3>
+                                        <p class="mb-0 text-muted">@item.Deporte - @item.Nivel - @item.Distrito</p>
+                                    </div>
+                                    <span class="estado-chip @EstadoClase(item.Estado)">@item.Estado</span>
+                                </div>
+                                <div class="desafio-detail-grid is-extended desafio-detail-grid-compact">
+                                    <div class="desafio-detail-card">
+                                        <span class="desafio-detail-label"><i class="bi bi-trophy"></i>Deporte</span>
+                                        <strong>@item.Deporte</strong>
+                                    </div>
+                                    <div class="desafio-detail-card">
+                                        <span class="desafio-detail-label"><i class="bi bi-bar-chart-line"></i>Nivel</span>
+                                        <strong>@item.Nivel</strong>
+                                    </div>
+                                    <div class="desafio-detail-card">
+                                        <span class="desafio-detail-label"><i class="bi bi-calendar-event"></i>Fecha tentativa</span>
+                                        <strong>@item.FechaTentativa.ToString("dd/MM/yyyy")</strong>
+                                    </div>
+                                    <div class="desafio-detail-card">
+                                        <span class="desafio-detail-label"><i class="bi bi-clock"></i>Hora tentativa</span>
+                                        <strong>@item.HoraTentativa.ToString("HH\\:mm")</strong>
+                                    </div>
+                                    <div class="desafio-detail-card is-wide">
+                                        <span class="desafio-detail-label"><i class="bi bi-geo-alt"></i>Ubicacion del desafio</span>
+                                        <strong>@item.Distrito</strong>
+                                    </div>
+                                </div>
+                                <div class="desafio-detail-grid desafio-detail-grid-compact">
+                                    <div class="desafio-detail-card">
+                                        <span class="desafio-detail-label"><i class="bi bi-person-badge"></i>Contacto</span>
+                                        <strong>@item.ContactoNombreRival</strong>
+                                    </div>
+                                    <div class="desafio-detail-card">
+                                        <span class="desafio-detail-label"><i class="bi bi-at"></i>Usuario</span>
+                                        <strong>@(string.IsNullOrWhiteSpace(item.ContactoUsuarioRival) ? "Sin usuario visible" : item.ContactoUsuarioRival)</strong>
+                                    </div>
+                                    <div class="desafio-detail-card">
+                                        <span class="desafio-detail-label"><i class="bi bi-dribbble"></i>Cancha sugerida</span>
+                                        <strong>@(string.IsNullOrWhiteSpace(item.CanchaSugerida) ? "Por definir" : item.CanchaSugerida)</strong>
+                                    </div>
+                                    <div class="desafio-detail-card">
+                                        <span class="desafio-detail-label"><i class="bi bi-grid-3x3-gap"></i>Modalidad</span>
+                                        <strong>@item.Modalidad</strong>
+                                    </div>
+                                    <div class="desafio-detail-card">
+                                        <span class="desafio-detail-label"><i class="bi bi-wallet2"></i>Forma de pago</span>
+                                        <strong>@item.FormaPago</strong>
+                                    </div>
+                                </div>
+                                <details class="desafio-collapsible desafio-collapsible-compact mt-3">
+                                    <summary>
+                                        <span><i class="bi bi-layout-text-window-reverse me-1"></i>Ver detalle</span>
+                                        <small>Contacto, bitacora y contexto final</small>
+                                    </summary>
+                                    <div class="desafio-collapsible-body">
+                                        @if (item.PuedeVerContactoRival)
+                                        {
+                                            <div class="desafio-contact-card">
+                                                <div class="copy-label">Contacto registrado</div>
+                                                <div class="desafio-contact-grid">
+                                                    <div>
+                                                        <span><i class="bi bi-telephone"></i>Celular</span>
+                                                        <strong>@(string.IsNullOrWhiteSpace(item.TelefonoRival) ? "Sin celular registrado" : item.TelefonoRival)</strong>
+                                                    </div>
+                                                    <div>
+                                                        <span><i class="bi bi-whatsapp"></i>WhatsApp</span>
+                                                        @if (!string.IsNullOrWhiteSpace(item.WhatsappUrlRival))
+                                                        {
+                                                            <a href="@item.WhatsappUrlRival" target="_blank" rel="noopener noreferrer">@item.WhatsappRival</a>
+                                                        }
+                                                        else
+                                                        {
+                                                            <strong>Sin WhatsApp registrado</strong>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                        @if (item.Mensajes.Count > 0)
+                                        {
+                                            <div class="desafio-thread mt-3">
+                                                <div class="copy-label">Bitacora de mensajes</div>
+                                                <div class="desafio-thread-list">
+                                                    @foreach (var mensaje in item.Mensajes)
+                                                    {
+                                                        <div class="desafio-message @(mensaje.EsMio ? "is-own" : null)">
+                                                            <div class="desafio-message-head">
+                                                                <strong>@mensaje.NombreEmisor</strong>
+                                                                <span>@mensaje.FechaRegistro.ToString("dd/MM/yyyy HH:mm")</span>
+                                                            </div>
+                                                            <p class="mb-0">@mensaje.Mensaje</p>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </details>
+                            </article>
+                        }
+                    </div>
+                    <div class="desafio-filter-empty" data-empty-for="desafiosHistorialList">No hay registros del historial para este filtro.</div>
+                }
+            </section>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade @(abrirModal ? "show desafio-modal-autoshow" : null)" id="crearDesafioModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content sc-modal-content">
+            <form asp-action="Crear" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Filtros.CodigoDepartamento" />
+                <input type="hidden" asp-for="Filtros.CodigoProvincia" />
+                <input type="hidden" asp-for="Filtros.CodigoUbigeo" />
+                <input type="hidden" asp-for="Filtros.IdDeporte" />
+                <input type="hidden" asp-for="Filtros.IdNivel" />
+                @* Firma: Codex - 19/04/2026 | Cabecera estandarizada para el modal de desafio. *@
+                <div class="modal-header sc-modal-header">
+                    <div class="sc-modal-title-wrap">
+                        <h2 class="modal-title sc-modal-title">Crear desafio</h2>
+                        <p class="sc-modal-subtitle">Invita a un rival con una propuesta clara de fecha, cancha y pago.</p>
+                    </div>
+                    <button type="button" class="btn-close sc-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body sc-modal-body">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                    <input type="hidden" asp-for="NuevoDesafio.IdUsuarioRetadoPerfil" id="NuevoDesafio_IdUsuarioRetadoPerfil" />
+
+                    <div class="desafio-modal-rival">
+                        <span class="copy-label">Rival seleccionado</span>
+                        <strong id="desafioRivalNombre">@(string.IsNullOrWhiteSpace(Model.NuevoDesafio.RivalNombre) ? "Selecciona un rival desde la busqueda." : Model.NuevoDesafio.RivalNombre)</strong>
+                        <input asp-for="NuevoDesafio.RivalNombre" type="hidden" id="NuevoDesafio_RivalNombre" />
+                        <small id="desafioDistritoTexto">El distrito puede ajustarse antes de enviar el desafio.</small>
+                    </div>
+
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-6">
+                            <label class="form-label">Deporte</label>
+                            <select asp-for="NuevoDesafio.IdDeporte" asp-items="Model.PerfilActual.DeportesDesafio" class="form-select" id="NuevoDesafio_IdDeporte">
+                                <option value="">Selecciona</option>
+                            </select>
+                            <span asp-validation-for="NuevoDesafio.IdDeporte" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Nivel</label>
+                            <select asp-for="NuevoDesafio.IdNivel" asp-items="Model.PerfilActual.NivelesDesafio" class="form-select" id="NuevoDesafio_IdNivel">
+                                <option value="">Selecciona</option>
+                            </select>
+                            <span asp-validation-for="NuevoDesafio.IdNivel" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Fecha tentativa</label>
+                            <input asp-for="NuevoDesafio.FechaTentativa" type="date" class="form-control" />
+                            <span asp-validation-for="NuevoDesafio.FechaTentativa" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Hora tentativa</label>
+                            <select asp-for="NuevoDesafio.HoraTentativa" asp-items="horasDesafio" class="form-select">
+                                <option value="">Selecciona</option>
+                            </select>
+                            <span asp-validation-for="NuevoDesafio.HoraTentativa" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Departamento del desafio</label>
+                            <select asp-for="NuevoDesafio.CodigoDepartamento" asp-items="Model.NuevoDesafio.Departamentos" class="form-select" id="NuevoDesafio_CodigoDepartamento">
+                                <option value="">Selecciona</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Provincia del desafio</label>
+                            <select asp-for="NuevoDesafio.CodigoProvincia" asp-items="Model.NuevoDesafio.Provincias" class="form-select" id="NuevoDesafio_CodigoProvincia">
+                                <option value="">Selecciona</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Distrito</label>
+                            <select asp-for="NuevoDesafio.Distrito" asp-items="Model.NuevoDesafio.Distritos" class="form-select" id="NuevoDesafio_Distrito">
+                                <option value="">Selecciona</option>
+                            </select>
+                            <span asp-validation-for="NuevoDesafio.Distrito" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Cancha sugerida</label>
+                            <input asp-for="NuevoDesafio.CanchaSugerida" class="form-control" maxlength="150" />
+                            <span asp-validation-for="NuevoDesafio.CanchaSugerida" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Modalidad</label>
+                            <input asp-for="NuevoDesafio.Modalidad" class="form-control" maxlength="120" placeholder="Futbol 7, fulbito, amistoso..." />
+                            <span asp-validation-for="NuevoDesafio.Modalidad" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Forma de pago</label>
+                            <input asp-for="NuevoDesafio.FormaPago" class="form-control" maxlength="120" placeholder="Mitad y mitad, retador cubre la cancha..." />
+                            <span asp-validation-for="NuevoDesafio.FormaPago" class="text-danger"></span>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Mensaje</label>
+                            <textarea asp-for="NuevoDesafio.Mensaje" class="form-control" rows="3" maxlength="500"></textarea>
+                            <span asp-validation-for="NuevoDesafio.Mensaje" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="submit" class="btn btn-primary">Enviar desafio</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string EstadoClase(string estado) => estado switch
+    {
+        "Pendiente" => "is-pendiente",
+        "Aceptado" => "is-aceptado",
+        "Rechazado" => "is-rechazado",
+        "Cancelado" => "is-cancelado",
+        "Finalizado" => "is-finalizado",
+        _ => "is-default"
+    };
+}
+
+@section Styles {
+    <style>
+        .desafios-page {
+            --accent: #0f4daa;
+            --accent-dark: #0c2d63;
+            --accent-soft: #eef5ff;
+            --success-soft: #ebfff2;
+            --border-soft: #d8e4f7;
+        }
+        .desafios-hero {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1.35rem 1.5rem;
+            border-radius: 24px;
+            background:
+                radial-gradient(circle at top right, rgba(45, 125, 255, .18), transparent 30%),
+                linear-gradient(135deg, #07214a 0%, #0c3677 48%, #1460c2 100%);
+            color: #fff;
+            box-shadow: 0 18px 40px rgba(8, 33, 74, .18);
+            margin-bottom: 1.2rem;
+        }
+        .desafios-hero h1 {
+            font-size: clamp(2rem, 4vw, 2.6rem);
+            font-weight: 900;
+            letter-spacing: -.03em;
+            margin-bottom: .35rem;
+        }
+        .desafios-hero p {
+            max-width: 760px;
+            margin: 0;
+            color: rgba(255,255,255,.84);
+        }
+        .desafios-kicker {
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            font-size: .76rem;
+            font-weight: 800;
+            opacity: .78;
+            margin-bottom: .5rem;
+        }
+        .desafios-hero-side {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: .75rem;
+        }
+        .desafios-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            border-radius: 999px;
+            padding: .42rem .85rem;
+            background: rgba(255,255,255,.14);
+            border: 1px solid rgba(255,255,255,.18);
+            font-weight: 700;
+        }
+        .desafios-badge.is-ready {
+            background: var(--success-soft);
+            color: #147041;
+            border-color: #97dfb2;
+        }
+        .section-title-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .desafio-section-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .desafio-section-copy {
+            color: #60779d;
+            font-size: .92rem;
+        }
+        .desafio-filter-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .45rem;
+            justify-content: flex-end;
+        }
+        .desafio-filter-chip {
+            border: 1px solid #cddcf1;
+            background: #fff;
+            color: #48617f;
+            border-radius: 999px;
+            padding: .38rem .82rem;
+            font-size: .78rem;
+            font-weight: 800;
+            line-height: 1;
+            transition: all .18s ease;
+        }
+        .desafio-filter-chip:hover {
+            border-color: #8db4f3;
+            color: var(--accent);
+        }
+        .desafio-filter-chip.is-active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+            box-shadow: 0 8px 16px rgba(34, 92, 184, .18);
+        }
+        .desafios-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+        .desafio-card {
+            border: 1px solid var(--border-soft);
+            border-radius: 18px;
+            padding: 1rem;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            box-shadow: 0 12px 24px rgba(15, 23, 42, .06);
+            display: flex;
+            flex-direction: column;
+            gap: .85rem;
+        }
+        .desafio-card-head {
+            display: flex;
+            justify-content: space-between;
+            gap: .75rem;
+            align-items: flex-start;
+        }
+        .desafio-card h3,
+        .desafio-list-item h3,
+        .desafio-history-item h3 {
+            margin: 0;
+            color: var(--accent-dark);
+            font-size: 1.08rem;
+            font-weight: 800;
+        }
+        .desafio-card-head p {
+            color: #56729d;
+            font-size: .9rem;
+        }
+        .desafio-meta {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: .75rem;
+        }
+        .desafio-meta div,
+        .desafio-copy-inline {
+            border: 1px solid #d9e5f7;
+            border-radius: 12px;
+            padding: .7rem .8rem;
+            background: #fff;
+        }
+        .desafio-meta span,
+        .copy-label {
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            font-size: .72rem;
+            font-weight: 800;
+            color: #5b6f92;
+            margin-bottom: .25rem;
+        }
+        .desafio-meta strong {
+            color: var(--accent-dark);
+            font-size: .95rem;
+        }
+        .desafio-copy-block {
+            border-radius: 14px;
+            padding: .85rem .95rem;
+            background: #fff;
+            border: 1px solid #dce7f8;
+        }
+        .desafio-copy-block.is-challenge {
+            background: linear-gradient(180deg, #eef6ff 0%, #f9fcff 100%);
+            border-color: #b9d5ff;
+        }
+        .desafio-copy-block p,
+        .desafio-copy-inline {
+            margin: 0;
+            color: #324b72;
+            line-height: 1.45;
+        }
+        .desafio-list,
+        .desafio-history-grid {
+            display: grid;
+            gap: .9rem;
+        }
+        .desafio-list-item,
+        .desafio-history-item {
+            border: 1px solid var(--border-soft);
+            border-radius: 16px;
+            background: #fff;
+            padding: .95rem;
+            box-shadow: 0 10px 20px rgba(15, 23, 42, .04);
+        }
+        .desafio-section {
+            position: relative;
+        }
+        .desafio-section-sent {
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        }
+        .desafio-section-received {
+            background: linear-gradient(180deg, #fffdf7 0%, #f7fbff 100%);
+            border: 1px solid #dce7f8;
+            box-shadow: 0 14px 28px rgba(15, 23, 42, .06);
+        }
+        .desafio-section-history {
+            background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
+        }
+        .desafio-list-item-sent {
+            border-left: 4px solid #b9d5ff;
+        }
+        .desafio-list-item-received {
+            border-left: 4px solid #ffd36f;
+            box-shadow: 0 14px 26px rgba(148, 98, 0, .08);
+        }
+        .desafio-history-item-compact {
+            padding: .8rem .85rem;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, .035);
+        }
+        .desafio-list-item.is-hidden,
+        .desafio-history-item.is-hidden {
+            display: none;
+        }
+        .desafio-list-top {
+            display: flex;
+            justify-content: space-between;
+            gap: .75rem;
+            align-items: flex-start;
+            margin-bottom: .55rem;
+        }
+        .desafio-code {
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            font-size: .72rem;
+            font-weight: 800;
+            color: #5a7095;
+            margin-bottom: .2rem;
+        }
+        .desafio-list-meta,
+        .history-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .5rem;
+            margin-bottom: .7rem;
+        }
+        .desafio-list-meta span,
+        .history-details span {
+            border-radius: 999px;
+            padding: .28rem .6rem;
+            background: var(--accent-soft);
+            color: var(--accent);
+            font-size: .78rem;
+            font-weight: 700;
+        }
+        .desafio-detail-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: .7rem;
+            margin-bottom: .7rem;
+        }
+        .desafio-detail-grid-compact {
+            gap: .55rem;
+            margin-bottom: .55rem;
+        }
+        .desafio-detail-grid.is-extended {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+        .desafio-detail-card {
+            border: 1px solid #d9e5f7;
+            border-radius: 14px;
+            padding: .75rem .8rem;
+            background: linear-gradient(180deg, #ffffff 0%, #f6faff 100%);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+        }
+        .desafio-detail-grid-compact .desafio-detail-card {
+            padding: .62rem .7rem;
+        }
+        .desafio-detail-card.is-wide {
+            grid-column: span 2;
+        }
+        .desafio-detail-label {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            margin-bottom: .3rem;
+            color: #55719a;
+            font-size: .73rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+        .desafio-detail-card strong {
+            display: block;
+            color: var(--accent-dark);
+            line-height: 1.3;
+        }
+        .estado-chip {
+            border-radius: 999px;
+            padding: .26rem .7rem;
+            font-size: .75rem;
+            font-weight: 800;
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+        .estado-chip.is-pendiente { background: #fff6de; color: #946200; border-color: #ffd36f; }
+        .estado-chip.is-aceptado,
+        .estado-chip.is-finalizado { background: #ebfff2; color: #187046; border-color: #9ce0b5; }
+        .estado-chip.is-rechazado,
+        .estado-chip.is-cancelado { background: #fff0f0; color: #a63535; border-color: #f3b1b1; }
+        .estado-chip.is-default { background: #eef2f8; color: #48617f; border-color: #d1dae8; }
+        .desafio-contact-card {
+            border: 1px solid #bfe9cd;
+            border-radius: 14px;
+            padding: .8rem .9rem;
+            background: linear-gradient(180deg, #f1fff5 0%, #ffffff 100%);
+        }
+        .desafio-contact-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: .7rem;
+        }
+        .desafio-contact-grid div {
+            border: 1px solid #d8efe0;
+            border-radius: 12px;
+            padding: .65rem .75rem;
+            background: #fff;
+        }
+        .desafio-contact-grid span {
+            display: block;
+            font-size: .72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: #4b7c60;
+            margin-bottom: .2rem;
+        }
+        .desafio-contact-grid strong,
+        .desafio-contact-grid a {
+            color: #155b38;
+            font-weight: 800;
+            text-decoration: none;
+        }
+        .desafio-thread {
+            border: 1px solid #dce7f8;
+            border-radius: 14px;
+            padding: .8rem .9rem;
+            background: #fbfdff;
+        }
+        .desafio-thread-empty {
+            color: #60779d;
+        }
+        .desafio-thread-list {
+            display: grid;
+            gap: .6rem;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+        .desafio-message {
+            border-radius: 14px;
+            padding: .7rem .8rem;
+            background: #ffffff;
+            border: 1px solid #dbe5f6;
+        }
+        .desafio-message.is-own {
+            background: #eef6ff;
+            border-color: #bfd5ff;
+        }
+        .desafio-message-head {
+            display: flex;
+            justify-content: space-between;
+            gap: .75rem;
+            margin-bottom: .25rem;
+        }
+        .desafio-message-head strong {
+            color: var(--accent-dark);
+            font-size: .87rem;
+        }
+        .desafio-message-head span {
+            color: #60779d;
+            font-size: .76rem;
+            white-space: nowrap;
+        }
+        .desafio-thread-form textarea {
+            resize: vertical;
+        }
+        .desafio-collapsible {
+            border: 1px solid #dce7f8;
+            border-radius: 14px;
+            background: #f9fbff;
+            overflow: hidden;
+        }
+        .desafio-collapsible summary {
+            list-style: none;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: .75rem;
+            padding: .85rem .95rem;
+            font-weight: 800;
+            color: var(--accent-dark);
+        }
+        .desafio-collapsible summary::-webkit-details-marker {
+            display: none;
+        }
+        .desafio-collapsible summary small {
+            color: #60779d;
+            font-weight: 600;
+        }
+        .desafio-collapsible summary::after {
+            content: "\F282";
+            font-family: bootstrap-icons;
+            color: #4f76af;
+            transition: transform .18s ease;
+        }
+        .desafio-collapsible[open] summary::after {
+            transform: rotate(180deg);
+        }
+        .desafio-collapsible-body {
+            padding: 0 .95rem .95rem;
+        }
+        .desafio-collapsible-compact summary {
+            padding: .7rem .8rem;
+        }
+        .desafio-collapsible-compact .desafio-collapsible-body {
+            padding: 0 .8rem .8rem;
+        }
+        .desafio-action-row {
+            padding-top: .2rem;
+        }
+        .desafio-actions-footer {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            min-height: 2.85rem;
+            margin-top: .85rem;
+        }
+        .desafio-actions-footer .desafio-action-row {
+            margin: 0;
+        }
+        .desafio-action-row-strong {
+            border-top: 1px dashed #f0c86a;
+            padding-top: .75rem;
+        }
+        .desafio-section-received .btn-success {
+            box-shadow: 0 8px 16px rgba(24, 112, 70, .18);
+        }
+        .desafio-section-received .btn-outline-danger {
+            border-width: 2px;
+        }
+        .empty-state {
+            border: 1px dashed #c8d7ee;
+            border-radius: 16px;
+            padding: 1rem;
+            background: #f9fbff;
+            text-align: center;
+            color: #5a7095;
+        }
+        .empty-state.compact {
+            padding: .9rem;
+        }
+        .desafio-filter-empty {
+            display: none;
+            margin-top: .8rem;
+            border: 1px dashed #c8d7ee;
+            border-radius: 14px;
+            padding: .85rem .95rem;
+            background: #f9fbff;
+            color: #60779d;
+            text-align: center;
+            font-size: .92rem;
+        }
+        .desafio-filter-empty.is-visible {
+            display: block;
+        }
+        .empty-state i {
+            font-size: 1.6rem;
+            display: block;
+            margin-bottom: .4rem;
+        }
+        .desafio-modal-rival {
+            border-radius: 16px;
+            padding: .9rem 1rem;
+            background: linear-gradient(180deg, #f1f7ff 0%, #ffffff 100%);
+            border: 1px solid #c9dcfb;
+        }
+        .desafio-modal-rival strong {
+            display: block;
+            color: var(--accent-dark);
+            font-size: 1.05rem;
+        }
+        .desafio-modal-rival small {
+            color: #60779d;
+        }
+        @@media (max-width: 991px) {
+            .desafios-hero {
+                flex-direction: column;
+            }
+            .desafios-hero-side {
+                align-items: flex-start;
+            }
+            .desafio-section-head {
+                flex-direction: column;
+            }
+            .desafio-filter-group {
+                justify-content: flex-start;
+            }
+        }
+        @@media (max-width: 767px) {
+            .desafio-meta {
+                grid-template-columns: 1fr;
+            }
+            .desafio-detail-grid.is-extended {
+                grid-template-columns: 1fr;
+            }
+            .desafio-detail-card.is-wide {
+                grid-column: auto;
+            }
+            .desafio-detail-grid {
+                grid-template-columns: 1fr;
+            }
+            .desafio-contact-grid {
+                grid-template-columns: 1fr;
+            }
+            .desafio-list-top {
+                flex-direction: column;
+            }
+            .desafio-message-head {
+                flex-direction: column;
+            }
+            .desafio-actions-footer {
+                justify-content: stretch;
+            }
+            .desafio-actions-footer .desafio-action-row,
+            .desafio-actions-footer .desafio-action-row-strong,
+            .desafio-actions-footer form,
+            .desafio-actions-footer .btn {
+                width: 100%;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const dep = document.getElementById('BusquedaCodigoDepartamento');
+            const prov = document.getElementById('BusquedaCodigoProvincia');
+            const dist = document.getElementById('BusquedaCodigoUbigeo');
+            const filterGroups = document.querySelectorAll('.desafio-filter-group[data-target]');
+
+            function renderOptions(select, rows, emptyText) {
+                if (!select) return;
+                select.innerHTML = '';
+                const first = document.createElement('option');
+                first.value = '';
+                first.textContent = emptyText;
+                select.appendChild(first);
+                (rows || []).forEach(x => {
+                    const opt = document.createElement('option');
+                    opt.value = x.value || '';
+                    opt.textContent = x.text || '';
+                    select.appendChild(opt);
+                });
+            }
+
+            function applyStateFilter(targetSelector, filter) {
+                const list = document.querySelector(targetSelector);
+                if (!list) return;
+
+                const items = list.querySelectorAll('[data-estado]');
+                let visibleCount = 0;
+
+                items.forEach(item => {
+                    const matches = filter === 'todos' || item.getAttribute('data-estado') === filter;
+                    item.classList.toggle('is-hidden', !matches);
+                    if (matches) visibleCount += 1;
+                });
+
+                const emptyState = document.querySelector(`[data-empty-for="${list.id}"]`);
+                if (emptyState) {
+                    emptyState.classList.toggle('is-visible', visibleCount === 0);
+                }
+            }
+
+            filterGroups.forEach(group => {
+                const targetSelector = group.getAttribute('data-target');
+                const buttons = group.querySelectorAll('.desafio-filter-chip');
+                buttons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        const filter = button.getAttribute('data-filter') || 'todos';
+                        buttons.forEach(x => x.classList.toggle('is-active', x === button));
+                        applyStateFilter(targetSelector, filter);
+                    });
+                });
+
+                const activeButton = group.querySelector('.desafio-filter-chip.is-active') || buttons[0];
+                if (activeButton) {
+                    applyStateFilter(targetSelector, activeButton.getAttribute('data-filter') || 'todos');
+                }
+            });
+
+            if (dep && prov && dist) {
+                dep.addEventListener('change', async () => {
+                    const codigo = (dep.value || '').trim();
+                    renderOptions(prov, [], 'Selecciona');
+                    renderOptions(dist, [], 'Selecciona');
+                    if (codigo.length !== 2) return;
+                    const resp = await fetch(`@Url.Action("UbigeoProvincias", "Home")?codigoDepartamento=${encodeURIComponent(codigo)}`, { cache: 'no-store' });
+                    if (!resp.ok) return;
+                    renderOptions(prov, await resp.json(), 'Selecciona');
+                });
+
+                prov.addEventListener('change', async () => {
+                    const codigo = (prov.value || '').trim();
+                    renderOptions(dist, [], 'Selecciona');
+                    if (codigo.length !== 4) return;
+                    const resp = await fetch(`@Url.Action("UbigeoDistritos", "Home")?codigoProvincia=${encodeURIComponent(codigo)}`, { cache: 'no-store' });
+                    if (!resp.ok) return;
+                    renderOptions(dist, await resp.json(), 'Selecciona');
+                });
+            }
+
+            const modalEl = document.getElementById('crearDesafioModal');
+            const desafioDep = document.getElementById('NuevoDesafio_CodigoDepartamento');
+            const desafioProv = document.getElementById('NuevoDesafio_CodigoProvincia');
+            const desafioDist = document.getElementById('NuevoDesafio_Distrito');
+            if (!modalEl) return;
+
+            async function cargarProvinciasDesafio(codigoDepartamento, selectedProvincia) {
+                renderOptions(desafioProv, [], 'Selecciona');
+                renderOptions(desafioDist, [], 'Selecciona');
+                if (!desafioDep || !desafioProv || !desafioDist || !codigoDepartamento || codigoDepartamento.length !== 2) return;
+                const resp = await fetch(`@Url.Action("UbigeoProvincias", "Home")?codigoDepartamento=${encodeURIComponent(codigoDepartamento)}`, { cache: 'no-store' });
+                if (!resp.ok) return;
+                const data = await resp.json();
+                renderOptions(desafioProv, data, 'Selecciona');
+                if (selectedProvincia) desafioProv.value = selectedProvincia;
+            }
+
+            async function cargarDistritosDesafio(codigoProvincia, selectedDistrito) {
+                renderOptions(desafioDist, [], 'Selecciona');
+                if (!desafioProv || !desafioDist || !codigoProvincia || codigoProvincia.length !== 4) return;
+                const resp = await fetch(`@Url.Action("UbigeoDistritos", "Home")?codigoProvincia=${encodeURIComponent(codigoProvincia)}`, { cache: 'no-store' });
+                if (!resp.ok) return;
+                const data = await resp.json();
+                renderOptions(desafioDist, data, 'Selecciona');
+                if (selectedDistrito) desafioDist.value = selectedDistrito;
+            }
+
+            if (desafioDep && desafioProv && desafioDist) {
+                desafioDep.addEventListener('change', async () => {
+                    await cargarProvinciasDesafio((desafioDep.value || '').trim(), null);
+                });
+
+                desafioProv.addEventListener('change', async () => {
+                    await cargarDistritosDesafio((desafioProv.value || '').trim(), null);
+                });
+            }
+
+            modalEl.addEventListener('show.bs.modal', event => {
+                const button = event.relatedTarget;
+                if (!button) return;
+
+                const perfilId = button.getAttribute('data-perfil-id') || '';
+                const rival = button.getAttribute('data-rival') || '';
+                const deporteId = button.getAttribute('data-deporte-id') || '';
+                const nivelId = button.getAttribute('data-nivel-id') || '';
+                const distritoCodigo = button.getAttribute('data-distrito-codigo') || '';
+                const distritoTexto = button.getAttribute('data-distrito-texto') || '';
+                const codigoDepartamento = distritoCodigo.substring(0, 2);
+                const codigoProvincia = distritoCodigo.substring(0, 4);
+
+                document.getElementById('NuevoDesafio_IdUsuarioRetadoPerfil').value = perfilId;
+                document.getElementById('NuevoDesafio_RivalNombre').value = rival;
+                document.getElementById('NuevoDesafio_IdDeporte').value = deporteId;
+                document.getElementById('NuevoDesafio_IdNivel').value = nivelId;
+                document.getElementById('desafioRivalNombre').textContent = rival;
+                document.getElementById('desafioDistritoTexto').textContent = `Ubicacion sugerida: ${distritoTexto}`;
+
+                if (desafioDep) desafioDep.value = codigoDepartamento;
+                cargarProvinciasDesafio(codigoDepartamento, codigoProvincia)
+                    .then(() => cargarDistritosDesafio(codigoProvincia, distritoCodigo));
+            });
+
+            if (modalEl.classList.contains('desafio-modal-autoshow')) {
+                modalEl.classList.add('show');
+                modalEl.style.display = 'block';
+                modalEl.removeAttribute('aria-hidden');
+                document.body.classList.add('modal-open');
+                const backdrop = document.createElement('div');
+                backdrop.className = 'modal-backdrop fade show';
+                document.body.appendChild(backdrop);
+            }
+        })();
+    </script>
+}

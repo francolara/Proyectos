@@ -92,18 +92,8 @@
            asp-route-bloque="todo">
             <i class="bi bi-file-earmark-excel"></i> Exportar Excel
         </a>
-        <a class="btn btn-outline-success"
-           asp-action="ExportCsv"
-           asp-route-negocioId="@Model.NegocioId"
-           asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")"
-           asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")"
-           asp-route-sedeId="@Model.SedeId"
-           asp-route-preset="@Model.Preset"
-           asp-route-bloque="todo">
-            <i class="bi bi-filetype-csv"></i> Exportar CSV
-        </a>
         <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">
-            <i class="bi bi-arrow-left"></i> Panel
+            <i class="bi bi-arrow-left"></i> Volver al panel
         </a>
     </div>
 </header>
