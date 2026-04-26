@@ -4,7 +4,10 @@ using SistemaControlEspaciosDeportivosWeb.ViewModels;
 
 namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 
-public class PagosController(IModuloPermisoService moduloPermisoService, ISportCenterStoredProcedureService spService)
+public class PagosController(
+    IModuloPermisoService moduloPermisoService,
+    ISportCenterStoredProcedureService spService,
+    IReservationEmailNotificationService reservationEmailNotificationService)
     : ModuloControllerBase(moduloPermisoService)
 {
     public async Task<IActionResult> Index(int? negocioId, string? buscar = null, DateOnly? fechaDesde = null, DateOnly? fechaHasta = null, string? preset = null, int pagina = 1)
@@ -115,10 +118,15 @@ public class PagosController(IModuloPermisoService moduloPermisoService, ISportC
         model.FormasPago = await spService.PagosComboFormasPagoAsync(model.NegocioId);
         await PoblarResumenReservaPagoAsync(model);
         if (!ModelState.IsValid) return View(model);
+        var estadoAnterior = await ObtenerEstadoReservaAsync(model.NegocioId, model.ReservaId);
 
         try
         {
             await spService.PagosCrearAsync(model, User.Identity?.Name ?? "sistema");
+            await reservationEmailNotificationService.NotifyReservationConfirmedIfAppliesAsync(
+                model.NegocioId,
+                model.ReservaId,
+                estadoAnterior);
             return RedirectToAction(nameof(Index), new { negocioId = model.NegocioId });
         }
         catch (Exception ex)
@@ -194,6 +202,7 @@ public class PagosController(IModuloPermisoService moduloPermisoService, ISportC
                 ModelState.AddModelError(string.Empty, "Selecciona fecha de pago para el nuevo pago.");
         }
         if (!ModelState.IsValid) return View(model);
+        var estadoAnterior = await ObtenerEstadoReservaAsync(model.NegocioId, model.ReservaId);
 
         try
         {
@@ -232,6 +241,10 @@ public class PagosController(IModuloPermisoService moduloPermisoService, ISportC
                     Observacion = string.IsNullOrWhiteSpace(model.NuevaObservacion) ? null : model.NuevaObservacion.Trim()
                 };
                 await spService.PagosCrearAsync(nuevoPago, usuario);
+                await reservationEmailNotificationService.NotifyReservationConfirmedIfAppliesAsync(
+                    model.NegocioId,
+                    model.ReservaId,
+                    estadoAnterior);
             }
 
             return RedirectToAction(nameof(Index), new { negocioId = model.NegocioId });
@@ -241,6 +254,13 @@ public class PagosController(IModuloPermisoService moduloPermisoService, ISportC
             ModelState.AddModelError(string.Empty, ex.Message);
             return View(model);
         }
+    }
+
+    private async Task<int?> ObtenerEstadoReservaAsync(int negocioId, int reservaId)
+    {
+        if (reservaId <= 0) return null;
+        var contexto = await spService.ReservasObtenerContextoEmailAsync(negocioId, reservaId);
+        return contexto?.Estado;
     }
 
     private void AplicarSeleccionEliminacionDesdeForm(PagoReservaEditViewModel model)

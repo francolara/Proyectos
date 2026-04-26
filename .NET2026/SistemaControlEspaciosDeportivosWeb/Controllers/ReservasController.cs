@@ -8,7 +8,8 @@ namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 public class ReservasController(
     IModuloPermisoService moduloPermisoService,
     ISportCenterStoredProcedureService spService,
-    INotificacionEmailService notificacionEmailService)
+    IEmailService emailService,
+    IReservationEmailNotificationService reservationEmailNotificationService)
     : ModuloControllerBase(moduloPermisoService)
 {
     private const string CodigoDocumentoRucSunat = "6";
@@ -447,6 +448,7 @@ public class ReservasController(
     {
         var baseVm = await ObtenerBaseAsync(model.NegocioId, "RESERVAS");
         var requiereEditar = model.Id > 0;
+        var estadoAnterior = await ObtenerEstadoReservaAsync(model.NegocioId, model.Id, requiereEditar);
         var autorizado = baseVm is not null &&
                          string.IsNullOrWhiteSpace(baseVm.Mensaje) &&
                          ((requiereEditar && baseVm.PuedeEditar) || (!requiereEditar && baseVm.PuedeCrear));
@@ -525,6 +527,11 @@ public class ReservasController(
             {
                 model.Id = await spService.ReservasCrearAsync(model, User.Identity?.Name ?? "sistema");
             }
+
+            await reservationEmailNotificationService.NotifyReservationConfirmedIfAppliesAsync(
+                model.NegocioId,
+                model.Id,
+                requiereEditar ? estadoAnterior : (int)EstadoReserva.Pendiente);
 
             return Json(new { ok = true, id = model.Id, mensaje = "Reserva guardada correctamente." });
         }
@@ -623,8 +630,14 @@ public class ReservasController(
             {
                 if (accion == "confirmar")
                 {
+                    var estadoAnteriorReserva = await ObtenerEstadoReservaAsync(request.NegocioId, reservaId);
                     var ok = await spService.ReservasCambiarEstadoRapidoAsync(request.NegocioId, reservaId, 2, User.Identity?.Name ?? "sistema");
-                    if (ok) procesadas++; else omitidas++;
+                    if (ok)
+                    {
+                        procesadas++;
+                        await reservationEmailNotificationService.NotifyReservationConfirmedIfAppliesAsync(request.NegocioId, reservaId, estadoAnteriorReserva);
+                    }
+                    else omitidas++;
                     continue;
                 }
 
@@ -642,11 +655,19 @@ public class ReservasController(
                     continue;
                 }
 
-                var enviado = await notificacionEmailService.EnviarRecordatorioReservaAsync(reserva);
-                if (!enviado)
+                await emailService.SendEmailAsync(
+                    reserva.Correo,
+                    reserva.Cliente,
+                    $"Recordatorio de reserva - #{reserva.ReservaId}",
+                    ConstruirHtmlRecordatorio(reserva));
+
+                if (!string.IsNullOrWhiteSpace(reserva.CorreoNotificacion))
                 {
-                    omitidas++;
-                    continue;
+                    await emailService.SendEmailAsync(
+                        reserva.CorreoNotificacion,
+                        reserva.Sede,
+                        $"Recordatorio de reserva - #{reserva.ReservaId}",
+                        ConstruirHtmlRecordatorio(reserva));
                 }
 
                 await spService.ReservasMarcarRecordatorioEnviadoAsync(request.NegocioId, reservaId, User.Identity?.Name ?? "sistema");
@@ -671,6 +692,30 @@ public class ReservasController(
                 _ => $"Recordatorios enviados: {procesadas}. Omitidas: {omitidas}."
             }
         });
+    }
+
+    private static string ConstruirHtmlRecordatorio(ReservaRecordatorioPendienteViewModel reserva)
+    {
+        var whatsapp = string.IsNullOrWhiteSpace(reserva.WhatsappContacto)
+            ? string.Empty
+            : $"<p><strong>WhatsApp de contacto:</strong> {reserva.WhatsappContacto}</p>";
+
+        return
+$"""
+<h2>La Zona Deportiva</h2>
+<p>Hola {reserva.Cliente},</p>
+<p>Te recordamos tu reserva programada.</p>
+<ul>
+  <li><strong>Reserva:</strong> #{reserva.ReservaId}</li>
+  <li><strong>Sede:</strong> {reserva.Sede}</li>
+  <li><strong>Espacio:</strong> {reserva.Espacio}</li>
+  <li><strong>Fecha:</strong> {reserva.Fecha:dd/MM/yyyy}</li>
+  <li><strong>Horario:</strong> {reserva.HoraInicio:HH\:mm} - {reserva.HoraFin:HH\:mm}</li>
+</ul>
+{whatsapp}
+<p>Gracias por usar La Zona Deportiva.</p>
+<p><small>Este correo fue enviado automaticamente.</small></p>
+""";
     }
 
     [HttpGet]
@@ -858,6 +903,7 @@ public class ReservasController(
         if (baseVm is null || !baseVm.PuedeEditar) return Forbid();
         if (!await ReservaPermitidaAsync(baseVm, request.NegocioId, request.ReservaId))
             return Forbid();
+        var estadoAnterior = await ObtenerEstadoReservaAsync(request.NegocioId, request.ReservaId);
 
         try
         {
@@ -868,6 +914,10 @@ public class ReservasController(
                 User.Identity?.Name ?? "sistema");
 
             if (!ok) return NotFound(new { ok = false, mensaje = "No se encontro la reserva." });
+            await reservationEmailNotificationService.NotifyReservationConfirmedIfAppliesAsync(
+                request.NegocioId,
+                request.ReservaId,
+                estadoAnterior);
             return Json(new { ok = true });
         }
         catch (Exception ex)
@@ -884,10 +934,12 @@ public class ReservasController(
         if (baseVm is null || !baseVm.PuedeEditar) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
         if (!await ReservaPermitidaAsync(baseVm, negocioId, id))
             return Forbid();
+        var estadoAnterior = await ObtenerEstadoReservaAsync(negocioId, id);
 
         try
         {
             await spService.ReservasCambiarEstadoRapidoAsync(negocioId, id, nuevoEstado, User.Identity?.Name ?? "sistema");
+            await reservationEmailNotificationService.NotifyReservationConfirmedIfAppliesAsync(negocioId, id, estadoAnterior);
         }
         catch (Exception ex)
         {
@@ -990,7 +1042,11 @@ public class ReservasController(
 
         try
         {
-            await spService.ReservasCrearAsync(model, User.Identity?.Name ?? "sistema");
+            var reservaId = await spService.ReservasCrearAsync(model, User.Identity?.Name ?? "sistema");
+            await reservationEmailNotificationService.NotifyReservationConfirmedIfAppliesAsync(
+                model.NegocioId,
+                reservaId,
+                (int)EstadoReserva.Pendiente);
             return RedirectToAction(nameof(Index), new { negocioId = model.NegocioId });
         }
         catch (Exception ex)
@@ -1042,6 +1098,7 @@ public class ReservasController(
             ModelState.AddModelError(string.Empty, "No tienes acceso a la sede del espacio seleccionado.");
             return View(model);
         }
+        var estadoAnterior = await ObtenerEstadoReservaAsync(model.NegocioId, model.Id);
 
         try
         {
@@ -1051,6 +1108,10 @@ public class ReservasController(
                 ModelState.AddModelError(string.Empty, "No se pudo guardar la reserva. Verifica el negocio seleccionado.");
                 return View(model);
             }
+            await reservationEmailNotificationService.NotifyReservationConfirmedIfAppliesAsync(
+                model.NegocioId,
+                model.Id,
+                estadoAnterior);
             return RedirectToAction(nameof(Index), new { negocioId = model.NegocioId });
         }
         catch (Exception ex)
@@ -1122,5 +1183,13 @@ public class ReservasController(
         var reserva = await spService.ReservasObtenerAsync(negocioId, reservaId);
         if (reserva is null) return false;
         return await EspacioPermitidoAsync(baseVm, negocioId, reserva.EspacioDeportivoId);
+    }
+
+    private async Task<int?> ObtenerEstadoReservaAsync(int negocioId, int reservaId, bool validarId = true)
+    {
+        if (!validarId) return null;
+        if (validarId && reservaId <= 0) return null;
+        var contexto = await spService.ReservasObtenerContextoEmailAsync(negocioId, reservaId);
+        return contexto?.Estado;
     }
 }

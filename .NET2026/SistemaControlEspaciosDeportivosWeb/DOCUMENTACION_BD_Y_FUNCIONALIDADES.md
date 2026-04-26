@@ -100,6 +100,9 @@
 - `Sp_Reservas_Eliminar`
 - `Sp_Reservas_Eliminar` valida `@NegocioId` por join con `Sedes` y devuelve error si no encuentra la reserva.
 - `Sp_Reservas_Eliminar` bloquea cancelar cuando la reserva tiene pagos registrados (`RAISERROR` para validacion funcional).
+- Actualizacion 26/04/2026:
+  - Nuevo `Sp_Reservas_ObtenerContextoEmail` para centralizar datos de notificacion (cliente/sede/correo/notificaciones activas) y consumirlo desde backend ADO.NET en los correos de reservas.
+  - `Sp_Reservas_ObtenerContextoEmail` incluye `Negocio` (`Negocios.NombreORazonSocial`) para mostrar el club/negocio como primer dato en el cuerpo del correo.
 - `Sp_Pagos_Listar`
 - `Sp_Pagos_ObtenerPorId`
 - `Sp_Pagos_Crear`
@@ -891,7 +894,7 @@
 - Validacion de permisos `PuedeVer/PuedeCrear/PuedeEditar/PuedeEliminar` se resuelve por SP de seguridad.
 - Auditoria de acciones CRUD se registra con `Sp_Auditoria_Registrar`.
 - Home publica permite registro de solicitudes de reserva con codigo de seguimiento.
-- Notificacion por correo configurable via `EmailSettings` (SMTP).
+- Notificacion por correo configurable via `Brevo` (API transaccional).
 - Modulo de promociones permite descuentos por sede/espacio con vigencia por fecha y franja horaria.
 - Panel privado muestra KPIs avanzados para operacion diaria y seguimiento mensual.
 - Reservas integra FullCalendar con vista semana/dia/mes, arrastre para mover horarios y bloqueos operativos por espacio.

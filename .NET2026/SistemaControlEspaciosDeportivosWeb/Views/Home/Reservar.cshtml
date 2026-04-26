@@ -31,6 +31,7 @@
 <!-- Firma: Codex - 16/04/2026 | Flujo de reserva publica mantiene solo datos operativos del cliente y deja fecha de nacimiento exclusivamente en perfil publico. -->
 <!-- Firma: Codex - 17/04/2026 | Reserva publica muestra errores de validacion/binding y normaliza el flag OmitirFechaHorario en envio POST (true/false) para evitar bloqueos por campo requerido al grabar. -->
 <!-- Firma: Codex - 20/04/2026 | Cabecera publica de reserva reforzada con bloque profesional para titulo y negocio, calendario con bloqueos tipo background/etiqueta y modo HC con mayor contraste visual en cabeceras, grilla, eje horario y estados. -->
+<!-- Firma: Codex - 26/04/2026 | Formulario de reserva publica actualizado para publicar en CrearReservaPublica (flujo de creacion) y mantener compatibilidad con endpoint legacy. -->
 
 <div class="container py-4 home-reservar-page">
     <section class="sc-public-reserva-hero mb-3">
@@ -85,7 +86,7 @@
                 <div asp-validation-summary="All" class="alert alert-danger py-2"></div>
             }
 
-            <form asp-action="SolicitarReservaPublica" method="post" class="row g-3" id="formReservaPublica">
+            <form asp-action="CrearReservaPublica" method="post" class="row g-3" id="formReservaPublica">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="EspacioDeportivoId" value="@Model.Formulario.EspacioDeportivoId" />
                 <input type="hidden" name="CodigoDepartamento" value="@Model.Formulario.CodigoDepartamento" />

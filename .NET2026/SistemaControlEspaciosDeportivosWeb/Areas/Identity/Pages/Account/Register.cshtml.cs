@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using Microsoft.AspNetCore.WebUtilities;
 using SistemaControlEspaciosDeportivosWeb.Models;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
@@ -15,8 +17,9 @@ namespace SistemaControlEspaciosDeportivosWeb.Areas.Identity.Pages.Account;
 [AllowAnonymous]
 public class RegisterModel(
     UserManager<ApplicationUser> userManager,
-    SignInManager<ApplicationUser> signInManager,
     ISportCenterStoredProcedureService spService,
+    IAccountEmailService accountEmailService,
+    IClubRegistrationNotificationService clubRegistrationNotificationService,
     ILogger<RegisterModel> logger) : PageModel
 {
     private const string CaptchaRegistroClubSessionKey = "CaptchaRegistroClub";
@@ -201,9 +204,11 @@ public class RegisterModel(
             logger.LogWarning(ex, "No se pudo sincronizar el perfil publico inicial para usuario {Email}.", email);
         }
 
-        await signInManager.SignInAsync(user, isPersistent: false);
-        TempData["PerfilPublicoOk"] = "Usuario creado satisfactoriamente. Ya puedes completar tus datos personales.";
-        return RedirectToAction("Index", "PerfilPublico", new { tab = "datos" });
+        var correoEnviado = await IntentarEnviarCorreoConfirmacionAsync(user, email, Usuario.NombreCompleto);
+        TempData["SuccessMessage"] = correoEnviado
+            ? "Usuario creado satisfactoriamente. Te enviamos un correo para confirmar tu cuenta."
+            : "Usuario creado satisfactoriamente, pero no pudimos enviar el correo de confirmacion. Usa la opcion de reenvio en el login.";
+        return RedirectToPage("./Login", new { ReturnUrl });
     }
 
     private async Task<IActionResult> ProcesarRegistroClubAsync()
@@ -287,17 +292,31 @@ public class RegisterModel(
                 return Page();
             }
 
+            string codigoSolicitud;
             try
             {
-                await spService.HomeSolicitarAltaClubAsync(Club);
-                TempData["SuccessMessage"] = "Registro completado correctamente. Tu solicitud fue recibida y sera evaluada por el equipo de plataforma. Te contactaremos por WhatsApp o correo para la activacion.";
-                return RedirectToPage("./Login", new { ReturnUrl });
+                codigoSolicitud = await spService.HomeSolicitarAltaClubAsync(Club);
             }
             catch
             {
                 await userManager.DeleteAsync(nuevoUsuario);
                 throw;
             }
+
+            try
+            {
+                await clubRegistrationNotificationService.NotifyNewClubRegistrationAsync(Club, codigoSolicitud);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "No se pudo enviar notificacion interna por alta de club para {Correo}.", correo);
+            }
+
+            var correoEnviado = await IntentarEnviarCorreoConfirmacionAsync(nuevoUsuario, correo, Club.NombreContacto);
+            TempData["SuccessMessage"] = correoEnviado
+                ? "Registro completado correctamente. Tu solicitud fue recibida y te enviamos un correo para confirmar tu cuenta."
+                : "Registro completado correctamente. Tu solicitud fue recibida, pero no pudimos enviar el correo de confirmacion. Usa la opcion de reenvio en el login.";
+            return RedirectToPage("./Login", new { ReturnUrl });
         }
         catch (Exception ex)
         {
@@ -419,5 +438,42 @@ public class RegisterModel(
             .ToList();
         foreach (var key in keys)
             modelState.Remove(key);
+    }
+
+    private async Task EnviarCorreoConfirmacionAsync(ApplicationUser user, string email, string? nombre)
+    {
+        var code = await userManager.GenerateEmailConfirmationTokenAsync(user);
+        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+        var callbackUrl = Url.Page(
+            "/Account/ConfirmEmail",
+            pageHandler: null,
+            values: new { area = "Identity", userId = user.Id, code, returnUrl = ReturnUrl },
+            protocol: Request.Scheme);
+
+        if (string.IsNullOrWhiteSpace(callbackUrl))
+        {
+            throw new InvalidOperationException("No se pudo construir la URL de confirmacion.");
+        }
+
+        await accountEmailService.SendConfirmationEmailAsync(email, nombre, callbackUrl);
+    }
+
+    private async Task<bool> IntentarEnviarCorreoConfirmacionAsync(ApplicationUser user, string email, string? nombre)
+    {
+        try
+        {
+            await EnviarCorreoConfirmacionAsync(user, email, nombre);
+            return true;
+        }
+        catch (EmailDeliveryException ex)
+        {
+            logger.LogWarning(ex, "No se pudo enviar correo de confirmacion para {Email}.", email);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error no controlado al intentar enviar correo de confirmacion para {Email}.", email);
+            return false;
+        }
     }
 }

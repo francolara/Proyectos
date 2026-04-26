@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using SistemaControlEspaciosDeportivosWeb.Data;
 using SistemaControlEspaciosDeportivosWeb.Models;
 using SistemaControlEspaciosDeportivosWeb.Services;
+using System.Net.Http.Headers;
 using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,7 +22,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = false)
+builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddErrorDescriber<SpanishIdentityErrorDescriber>()
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
@@ -56,13 +57,20 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
     options.IdleTimeout = TimeSpan.FromMinutes(20);
 });
-builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.Configure<BrevoSettings>(builder.Configuration.GetSection("Brevo"));
 builder.Services.Configure<AutomationSettings>(builder.Configuration.GetSection("AutomationSettings"));
 builder.Services.Configure<SedeImagenStorageSettings>(builder.Configuration.GetSection("SedeImagenStorage"));
+builder.Services.AddHttpClient<IEmailService, BrevoEmailService>(httpClient =>
+{
+    httpClient.BaseAddress = new Uri("https://api.brevo.com/v3/");
+    httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+});
 builder.Services.AddScoped<IModuloPermisoService, ModuloPermisoService>();
 builder.Services.AddScoped<ISportCenterStoredProcedureService, SportCenterStoredProcedureService>();
 builder.Services.AddScoped<ISedeImagenStorageService, R2SedeImagenStorageService>();
-builder.Services.AddScoped<INotificacionEmailService, NotificacionEmailService>();
+builder.Services.AddScoped<IAccountEmailService, AccountEmailService>();
+builder.Services.AddScoped<IClubRegistrationNotificationService, ClubRegistrationNotificationService>();
+builder.Services.AddScoped<IReservationEmailNotificationService, ReservationEmailNotificationService>();
 builder.Services.AddHostedService<ReservaAutomationHostedService>();
 
 var app = builder.Build();

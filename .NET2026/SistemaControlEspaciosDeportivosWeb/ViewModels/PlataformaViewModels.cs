@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace SistemaControlEspaciosDeportivosWeb.ViewModels;
 
 public class PlataformaIndexViewModel
@@ -38,6 +40,14 @@ public class PlataformaPortalConfigViewModel
     public string? SiguenosFacebookUrl { get; set; } = string.Empty;
     public string? SiguenosInstagramUrl { get; set; } = string.Empty;
     public string? SiguenosWhatsappUrl { get; set; } = string.Empty;
+
+    [EmailAddress(ErrorMessage = "Ingresa un correo valido en Notificacion 1.")]
+    [StringLength(500, ErrorMessage = "Notificacion 1 permite hasta 500 caracteres.")]
+    public string? NotificacionCorreo1 { get; set; } = string.Empty;
+
+    [EmailAddress(ErrorMessage = "Ingresa un correo valido en Notificacion 2.")]
+    [StringLength(500, ErrorMessage = "Notificacion 2 permite hasta 500 caracteres.")]
+    public string? NotificacionCorreo2 { get; set; } = string.Empty;
 }
 
 public class PlataformaNegociosAdminViewModel

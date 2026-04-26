@@ -36,7 +36,9 @@ public class PlataformaController(ISportCenterStoredProcedureService spService) 
         ("HOME_PORTAL_CONTACTO_TELEFONO", "Contacto telefono", null, x => x.ContactoTelefono),
         ("HOME_PORTAL_FACEBOOK_URL", "Facebook URL", null, x => x.SiguenosFacebookUrl),
         ("HOME_PORTAL_INSTAGRAM_URL", "Instagram URL", null, x => x.SiguenosInstagramUrl),
-        ("HOME_PORTAL_WHATSAPP_URL", "WhatsApp URL", null, x => x.SiguenosWhatsappUrl)
+        ("HOME_PORTAL_WHATSAPP_URL", "WhatsApp URL", null, x => x.SiguenosWhatsappUrl),
+        ("HOME_PORTAL_NOTIF_CORREO_1", "Notificaciones correo 1", "Correo principal para futuras notificaciones internas del portal web.", x => x.NotificacionCorreo1),
+        ("HOME_PORTAL_NOTIF_CORREO_2", "Notificaciones correo 2", "Correo secundario para futuras notificaciones internas del portal web.", x => x.NotificacionCorreo2)
     ];
 
     public async Task<IActionResult> Index()
@@ -298,7 +300,9 @@ public class PlataformaController(ISportCenterStoredProcedureService spService) 
             ContactoTelefono = (await Get("HOME_PORTAL_CONTACTO_TELEFONO")) ?? "+51 900 000 000",
             SiguenosFacebookUrl = (await Get("HOME_PORTAL_FACEBOOK_URL")) ?? string.Empty,
             SiguenosInstagramUrl = (await Get("HOME_PORTAL_INSTAGRAM_URL")) ?? string.Empty,
-            SiguenosWhatsappUrl = (await Get("HOME_PORTAL_WHATSAPP_URL")) ?? string.Empty
+            SiguenosWhatsappUrl = (await Get("HOME_PORTAL_WHATSAPP_URL")) ?? string.Empty,
+            NotificacionCorreo1 = (await Get("HOME_PORTAL_NOTIF_CORREO_1")) ?? string.Empty,
+            NotificacionCorreo2 = (await Get("HOME_PORTAL_NOTIF_CORREO_2")) ?? string.Empty
         };
     }
 

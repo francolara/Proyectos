@@ -5,6 +5,7 @@
 <!-- Firma: Codex - 15/04/2026 | Formulario owner para configurar CTA y barra final del Home (contacto y redes). -->
 <!-- Firma: Codex - 15/04/2026 | Se agrega configuracion de seccion beneficios (6 tarjetas fijas) y resumen de errores de guardado en pantalla. -->
 <!-- Firma: Codex - 16/04/2026 | Ajuste de post explicito a accion PortalWebGuardar para estabilizar submit del formulario de configuracion; se amplia limite de entrada a 500 caracteres en todos los campos del formulario. -->
+<!-- Firma: Codex - 25/04/2026 | Se agrega apartado Notificaciones en Portal Web con dos correos de mantenimiento (parametros globales), visible solo en esta pestaña. -->
 
 <div class="page-header-card mb-3">
     <div class="page-header-main">
@@ -145,6 +146,18 @@
         <div class="col-lg-4">
             <label class="form-label">WhatsApp URL</label>
             <input asp-for="SiguenosWhatsappUrl" class="form-control" maxlength="500" />
+        </div>
+    </div>
+
+    <h2 class="section-title mt-4 mb-3"><i class="bi bi-bell me-1"></i>Notificaciones</h2>
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <label class="form-label">Correo de notificacion 1</label>
+            <input asp-for="NotificacionCorreo1" class="form-control" maxlength="500" />
+        </div>
+        <div class="col-lg-6">
+            <label class="form-label">Correo de notificacion 2</label>
+            <input asp-for="NotificacionCorreo2" class="form-control" maxlength="500" />
         </div>
     </div>
 

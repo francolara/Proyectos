@@ -10,6 +10,7 @@
 <!-- Firma: Codex - 08/04/2026 | Unifica selectores de hora de apertura/cierre a listas cada 30 minutos. -->
 <!-- Firma: Codex - 09/04/2026 | Agrega configuracion opcional de serie por documento para la sede en base a series del negocio. -->
 <!-- Firma: Codex - 16/04/2026 | Agrega apartado de redes sociales (Facebook/Instagram/Twitter) por sede para publicacion en tarjetas del portal publico. -->
+<!-- Firma: Codex - 25/04/2026 | Oculta en formulario los campos Minutos antes del recordatorio y Tolerancia No Asistio, manteniendo envio por inputs hidden para conservar validacion y persistencia. -->
 
 @{
     ViewData["Title"] = "Editar sede";
@@ -135,16 +136,8 @@
                             <span>Notificaciones activas</span>
                         </label>
                     </div>
-                    <div class="col-md-3">
-                        <label asp-for="MinutosAnticipacionRecordatorio" class="form-label">Minutos antes del recordatorio</label>
-                        <input asp-for="MinutosAnticipacionRecordatorio" class="form-control" />
-                        <span asp-validation-for="MinutosAnticipacionRecordatorio" class="text-danger"></span>
-                    </div>
-                    <div class="col-md-3">
-                        <label asp-for="MinutosToleranciaNoShow" class="form-label">Tolerancia No Asistio (min)</label>
-                        <input asp-for="MinutosToleranciaNoShow" class="form-control" />
-                        <span asp-validation-for="MinutosToleranciaNoShow" class="text-danger"></span>
-                    </div>
+                    <input asp-for="MinutosAnticipacionRecordatorio" type="hidden" />
+                    <input asp-for="MinutosToleranciaNoShow" type="hidden" />
                     <div class="col-md-3">
                         <label class="sc-check-chip mt-md-4">
                             <input asp-for="PermiteChatWhatsapp" class="form-check-input mt-0" />

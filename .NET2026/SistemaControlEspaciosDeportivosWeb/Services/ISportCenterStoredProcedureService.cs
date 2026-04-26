@@ -77,6 +77,7 @@ public interface ISportCenterStoredProcedureService
     Task<bool> ReservasCambiarEstadoRapidoAsync(int negocioId, int id, int nuevoEstado, string usuario);
     Task<List<ReservaHistorialItemViewModel>> ReservasHistorialAsync(int negocioId, int reservaId);
     Task<ReservaRecordatorioPendienteViewModel?> ReservasObtenerParaRecordatorioAsync(int negocioId, int reservaId);
+    Task<ReservaEmailContextViewModel?> ReservasObtenerContextoEmailAsync(int? negocioId, int reservaId);
     Task<List<ReservaCalendarioEventoViewModel>> ReservasCalendarioEventosAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null, int? espacioDeportivoId = null, int? estado = null);
     Task<bool> ReservasMoverAsync(int negocioId, int id, DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin, string usuario);
     Task<ReservaDisponibilidadValidacionViewModel> ReservasValidarDisponibilidadAsync(int negocioId, int? reservaId, int espacioDeportivoId, DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin);

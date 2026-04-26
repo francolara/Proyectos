@@ -12,6 +12,7 @@ namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 
 public class HomeController(
     ISportCenterStoredProcedureService spService,
+    IReservationEmailNotificationService reservationEmailNotificationService,
     UserManager<ApplicationUser> userManager,
     SignInManager<ApplicationUser> signInManager,
     ILogger<HomeController> logger) : Controller
@@ -180,8 +181,29 @@ public class HomeController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SolicitarReservaPublica(SolicitudReservaPublicaFormViewModel model)
+    public async Task<IActionResult> CrearReservaPublica(SolicitudReservaPublicaFormViewModel model)
     {
+        return await ProcesarCreacionReservaPublicaAsync(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [ActionName("SolicitarReservaPublica")]
+    public async Task<IActionResult> SolicitarReservaPublicaLegacy(SolicitudReservaPublicaFormViewModel model)
+    {
+        return await ProcesarCreacionReservaPublicaAsync(model);
+    }
+
+    private async Task<IActionResult> ProcesarCreacionReservaPublicaAsync(SolicitudReservaPublicaFormViewModel model)
+    {
+        logger.LogInformation(
+            "Inicio crear reserva publica. EspacioDeportivoId={EspacioDeportivoId}, NegocioId={NegocioId}, Fecha={Fecha}, HoraInicio={HoraInicio}, HoraFin={HoraFin}.",
+            model.EspacioDeportivoId,
+            model.NegocioId,
+            model.Fecha,
+            model.HoraInicio,
+            model.HoraFin);
+
         ViewData["PublicFullWidth"] = true;
         RemoverModelStatePorPrefijo(ModelState, "TiposDocumentoIdentidad");
         ModelState.Remove(nameof(model.OmitirFechaHorario));
@@ -271,6 +293,10 @@ public class HomeController(
             }
 
             var reservaId = await spService.HomeSolicitarReservaPublicaAsync(model);
+            await reservationEmailNotificationService.NotifyPublicReservationCreatedAsync(null, reservaId);
+            logger.LogInformation(
+                "Reserva publica creada con exito. ReservaId={ReservaId}.",
+                reservaId);
             TempData["MensajeSolicitud"] = $"Reserva registrada correctamente. Codigo: R-{reservaId:D6}.";
             return RedirectToAction(nameof(Index), new
             {

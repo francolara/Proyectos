@@ -258,6 +258,39 @@ public partial class SportCenterStoredProcedureService
         };
     }
 
+    public async Task<ReservaEmailContextViewModel?> ReservasObtenerContextoEmailAsync(int? negocioId, int reservaId)
+    {
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_Reservas_ObtenerContextoEmail", cn)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+        AddParam(cmd, "@ReservaId", reservaId, SqlDbType.Int);
+        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+        await using var dr = await cmd.ExecuteReaderAsync();
+        if (!await dr.ReadAsync()) return null;
+
+        return new ReservaEmailContextViewModel
+        {
+            ReservaId = dr.GetInt32(0),
+            NegocioId = dr.GetInt32(1),
+            Negocio = dr.IsDBNull(2) ? string.Empty : dr.GetString(2),
+            Estado = dr.GetInt32(3),
+            Cliente = dr.IsDBNull(4) ? string.Empty : dr.GetString(4),
+            ClienteCorreo = dr.IsDBNull(5) ? null : dr.GetString(5),
+            ClienteTelefono = dr.IsDBNull(6) ? null : dr.GetString(6),
+            NombreEquipo = dr.IsDBNull(7) ? null : dr.GetString(7),
+            Sede = dr.IsDBNull(8) ? string.Empty : dr.GetString(8),
+            Espacio = dr.IsDBNull(9) ? string.Empty : dr.GetString(9),
+            Fecha = DateOnly.FromDateTime(dr.GetDateTime(10)),
+            HoraInicio = TimeOnly.FromTimeSpan(dr.GetTimeSpan(11)),
+            HoraFin = TimeOnly.FromTimeSpan(dr.GetTimeSpan(12)),
+            NotificacionesActivasSede = ReadBool(dr, 13),
+            CorreoNotificacionSede = dr.IsDBNull(14) ? null : dr.GetString(14)
+        };
+    }
+
     public async Task<List<ReservaCalendarioEventoViewModel>> ReservasCalendarioEventosAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null, int? espacioDeportivoId = null, int? estado = null)
     {
         var list = new List<ReservaCalendarioEventoViewModel>();

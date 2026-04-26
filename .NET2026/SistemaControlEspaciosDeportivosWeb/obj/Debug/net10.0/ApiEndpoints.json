@@ -1,1 +1,38 @@
-[]
+[
+  {
+    "ContainingType": "SistemaControlEspaciosDeportivosWeb.Controllers.EmailTestController",
+    "Method": "Send",
+    "RelativePath": "dev/email-test/send",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "toEmail",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "toName",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "senderEmail",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "senderName",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "attachmentUrl",
+        "Type": "System.String[]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  }
+]
