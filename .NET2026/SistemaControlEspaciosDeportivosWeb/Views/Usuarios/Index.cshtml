@@ -4,6 +4,7 @@
 <!-- Firma: Codex - 13/04/2026 | Cabecera del modulo muestra tarjeta informativa de Club/negocio con ID junto al titulo; formulario de alta agrega Nombre de usuario para crear cuenta si el correo aun no existe. -->
 <!-- Firma: Codex - 13/04/2026 | Se agrega accion Resetear clave temporal para que administrador regenere password de usuarios del negocio. -->
 <!-- Firma: Codex - 20/04/2026 | Listado de usuarios alinea cabeceras de detalle al estandar visual del panel con icono superior y etiqueta pequena por columna. -->
+<!-- Firma: Codex - 28/04/2026 | Roles del modulo Usuarios ahora se cargan desde catalogo SP (sin opciones hardcodeadas en la vista). -->
 
 @{
     ViewData["Title"] = "Usuarios del negocio";
@@ -52,11 +53,10 @@
             <div class="col-md-2">
                 <label class="form-label">Rol</label>
                 <select class="form-select" name="RolNegocio">
-                    <option value="1">Administrador</option>
-                    <option value="2" selected>Trabajador</option>
-                    <option value="3">Recepcion</option>
-                    <option value="4">Caja</option>
-                    <option value="5">Supervisor</option>
+                    @foreach (var rol in Model.Roles)
+                    {
+                        <option value="@rol.Value" selected="@(rol.Value == Model.AsignarForm.RolNegocio.ToString())">@rol.Text</option>
+                    }
                 </select>
             </div>
             <div class="col-md-2">
@@ -101,11 +101,10 @@
                             <input type="hidden" name="NegocioId" value="@Model.NegocioId" />
                             <input type="hidden" name="UsuarioNegocioId" value="@item.UsuarioNegocioId" />
                             <select class="form-select form-select-sm js-rol-edicion" name="RolNegocio">
-                                <option value="1" selected="@(item.RolNegocio == 1)">Administrador</option>
-                                <option value="2" selected="@(item.RolNegocio == 2)">Trabajador</option>
-                                <option value="3" selected="@(item.RolNegocio == 3)">Recepcion</option>
-                                <option value="4" selected="@(item.RolNegocio == 4)">Caja</option>
-                                <option value="5" selected="@(item.RolNegocio == 5)">Supervisor</option>
+                                @foreach (var rol in Model.Roles)
+                                {
+                                    <option value="@rol.Value" selected="@(rol.Value == item.RolNegocio.ToString())">@rol.Text</option>
+                                }
                             </select>
                             <select class="form-select form-select-sm js-sede-edicion" name="SedeId">
                                 <option value="">Selecciona</option>

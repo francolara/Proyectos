@@ -1,5 +1,5 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.PanelDashboardViewModel
-<!-- Firma: Codex - 13/04/2026 | Dashboard en 3 fases con filtros globales; Club/Negocio se muestra junto al titulo como referencia fija; Nueva reserva abre modal dentro del Dashboard con carga de espacios por sede/todas las sedes; bloque de cobranza muestra Monto y Saldo pendiente real. -->
+<!-- Firma: Codex - 28/04/2026 | Dashboard en 3 fases con filtros globales; Club/Negocio se muestra junto al titulo como referencia fija; boton Nueva reserva redirige al flujo unico de Reservas (abrirModal=nueva) para unificar comportamiento con el calendario; bloque de cobranza muestra Monto y Saldo pendiente real. -->
 @{
     ViewData["Title"] = "Panel administrativo";
     ViewData["AdminShell"] = true;
@@ -25,7 +25,7 @@
 
     var acciones = new List<(string Label, string Icon, string Href)>
     {
-        ("Nueva reserva", "bi-calendar-plus", "#"),
+        ("Nueva reserva", "bi-calendar-plus", Url.Action("Index", "Reservas", new { negocioId = Model.NegocioSeleccionadoId, abrirModal = "nueva" }) ?? "#"),
         ("Registrar pago", "bi-cash-coin", Url.Action("Create", "Pagos", new { negocioId = Model.NegocioSeleccionadoId }) ?? "#"),
         ("Emitir comprobante", "bi-receipt", Url.Action("Create", "Comprobantes", new { negocioId = Model.NegocioSeleccionadoId }) ?? "#"),
         ("Ver reportes", "bi-bar-chart", Url.Action("Index", "Reportes", new { negocioId = Model.NegocioSeleccionadoId }) ?? "#")
@@ -620,7 +620,7 @@
                 modal?.show();
             }
 
-            if (nuevaReservaLink) {
+            if (nuevaReservaLink && (nuevaReservaLink.getAttribute('href') || '#') === '#') {
                 nuevaReservaLink.addEventListener('click', async (e) => {
                     e.preventDefault();
                     try {

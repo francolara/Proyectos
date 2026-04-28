@@ -14,6 +14,7 @@
 <!-- Firma: Codex - 13/04/2026 | Cabecera del modulo muestra tarjeta informativa de Club/negocio con ID junto al titulo; KPI del listado general excluye reservas canceladas en conteo de reservas activas y saldo acumulado; filtros de listado agregan presets rapidos Hoy/7d/30d/Mes actual. -->
 <!-- Firma: Codex - 13/04/2026 | En cotizacion del pop-up de reserva, el label de precio muestra aviso "Horario con promocion aplicada del N%" cuando descuentoPct > 0. -->
 <!-- Firma: Codex - 16/04/2026 | Se aplica regla de negocio para precio en reservas: campo visualmente bloqueado cuando el negocio no permite editar precio y mensaje informativo de calculo automatico por tarifa/promocion. -->
+<!-- Firma: Codex - 28/04/2026 | Modal de reservas/clientes en movil migrado a patron Bootstrap fullscreen-sm-down + dialog-scrollable para scroll nativo del popup (sin arrastrar el fondo). -->
 @{
     ViewData["Title"] = "Reservas";
     var sedeSeleccionadaTexto = Model.SedesFiltro.FirstOrDefault(x => x.Value == Model.SedeId?.ToString())?.Text ?? "Seleccione sede";
@@ -707,7 +708,7 @@ else
 }
 
 <div class="modal fade" id="reservaModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-dialog modal-lg modal-fullscreen-sm-down modal-dialog-scrollable">
         <div class="modal-content sc-modal-content">
             @* Firma: Codex - 19/04/2026 | Cabecera visual homologada para el modal principal de reservas. *@
             <div class="modal-header sc-modal-header">
@@ -857,7 +858,7 @@ else
 </div>
 
 <div class="modal fade" id="clienteRapidoModal" tabindex="-1" aria-labelledby="clienteRapidoModalTitulo" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-dialog modal-lg modal-fullscreen-sm-down modal-dialog-scrollable">
         <div class="modal-content sc-modal-content">
             @* Firma: Codex - 19/04/2026 | Cabecera visual homologada para el modal de cliente rapido. *@
             <div class="modal-header sc-modal-header">

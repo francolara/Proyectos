@@ -221,6 +221,7 @@
 - `Sp_UsuariosNegocio_Desactivar` retorna error si no existe el usuario del negocio.
 - `Sp_UsuariosNegocio_PermisosListar`
 - `Sp_UsuariosNegocio_PermisoGuardar`
+- `Sp_UsuariosNegocio_RolesListar` (28/04/2026): devuelve catalogo de roles negocio (`Value`/`Text`) para cargar combos desde BD y evitar hardcode en MVC.
 
 ### 14_Promociones_Kpis.sql
 - Tabla:

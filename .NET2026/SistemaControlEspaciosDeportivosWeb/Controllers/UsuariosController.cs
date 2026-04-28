@@ -38,6 +38,7 @@ public class UsuariosController(
         var sedeFiltro = AplicarSedeAsignada(baseVm, null);
         vm.Usuarios = await spService.UsuariosNegocioListarAsync(negocioId, sedeFiltro);
         vm.Sedes = await spService.EspaciosComboSedesAsync(negocioId, sedeFiltro);
+        vm.Roles = await ObtenerRolesAsync();
         if (!baseVm.EsAdministrador && baseVm.SedeIdAsignada.HasValue)
         {
             vm.AsignarForm.SedeId = baseVm.SedeIdAsignada;
@@ -210,7 +211,7 @@ public class UsuariosController(
             UsuarioNombre = $"{usuario.Nombres} {usuario.Apellidos}".Trim(),
             UsuarioCorreo = usuario.Correo,
             RolUsuarioNegocio = usuario.RolNegocio,
-            Roles = ObtenerRoles(),
+            Roles = await ObtenerRolesAsync(),
             Modulos = await spService.UsuariosNegocioPermisosListarAsync(negocioId, usuarioNegocioId)
         };
 
@@ -244,16 +245,9 @@ public class UsuariosController(
         return RedirectToAction(nameof(Permisos), new { negocioId, usuarioNegocioId });
     }
 
-    private static List<SelectListItem> ObtenerRoles()
+    private async Task<List<SelectListItem>> ObtenerRolesAsync()
     {
-        return new()
-        {
-            new("Administrador", "1"),
-            new("Trabajador", "2"),
-            new("Recepcion", "3"),
-            new("Caja", "4"),
-            new("Supervisor", "5")
-        };
+        return await spService.UsuariosNegocioRolesListarAsync();
     }
 
     private static bool RolRequiereSede(int rolNegocio) => rolNegocio != 1;

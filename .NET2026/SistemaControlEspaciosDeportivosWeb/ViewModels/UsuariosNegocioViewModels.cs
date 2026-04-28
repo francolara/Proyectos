@@ -8,6 +8,7 @@ public class UsuariosNegocioIndexViewModel : ModuloBaseViewModel
     public List<UsuarioNegocioItemViewModel> Usuarios { get; set; } = new();
     public UsuarioNegocioAsignarFormViewModel AsignarForm { get; set; } = new();
     public List<SelectListItem> Sedes { get; set; } = new();
+    public List<SelectListItem> Roles { get; set; } = new();
 }
 
 public class UsuarioNegocioItemViewModel

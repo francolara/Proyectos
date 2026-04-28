@@ -1,4 +1,5 @@
 using System.Data;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Data.SqlClient;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
 
@@ -6,6 +7,9 @@ namespace SistemaControlEspaciosDeportivosWeb.Services;
 
 public partial class SportCenterStoredProcedureService
 {
+    public async Task<List<SelectListItem>> UsuariosNegocioRolesListarAsync()
+        => await ComboAsync("Sp_UsuariosNegocio_RolesListar");
+
     public async Task<List<UsuarioNegocioItemViewModel>> UsuariosNegocioListarAsync(int negocioId, int? sedeId = null)
     {
         var list = new List<UsuarioNegocioItemViewModel>();

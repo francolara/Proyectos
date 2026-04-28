@@ -34,5 +34,37 @@
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SistemaControlEspaciosDeportivosWeb.Controllers.JobsController",
+    "Method": "AutoCancelarNoConfirmadasPost",
+    "RelativePath": "jobs/reservas/autocancelar-no-confirmadas",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "token",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SistemaControlEspaciosDeportivosWeb.Controllers.JobsController",
+    "Method": "AutoCancelarNoConfirmadasGet",
+    "RelativePath": "jobs/reservas/autocancelar-no-confirmadas",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "token",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
   }
 ]

@@ -843,6 +843,7 @@
     };
 }
 
+<!-- Firma: Codex - 28/04/2026 | Tabs de perfil en Desafios adaptadas a movil con scroll horizontal tactil para evitar recortes. -->
 @section Styles {
     <style>
         .desafios-page {
@@ -924,6 +925,22 @@
             background: linear-gradient(135deg, #0d3b66 0%, #175b95 100%);
             border-color: #0d3b66;
             box-shadow: 0 8px 18px rgba(13, 59, 102, .26);
+        }
+        @@media (max-width: 768px) {
+            .profile-tabs {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: thin;
+                padding-bottom: .35rem;
+            }
+            .profile-tab-item {
+                flex: 0 0 auto;
+                min-width: max-content;
+                white-space: nowrap;
+                padding-inline: .95rem;
+            }
         }
         .desafios-badge {
             display: inline-flex;

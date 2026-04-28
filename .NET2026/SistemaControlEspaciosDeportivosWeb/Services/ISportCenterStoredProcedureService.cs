@@ -138,6 +138,7 @@ public interface ISportCenterStoredProcedureService
     Task<bool> AltasClubesRechazarAsync(int id, string usuario, string? comentarioGestion = null);
 
     Task<List<UsuarioNegocioItemViewModel>> UsuariosNegocioListarAsync(int negocioId, int? sedeId = null);
+    Task<List<SelectListItem>> UsuariosNegocioRolesListarAsync();
     Task<bool> UsuariosNegocioAsignarPorCorreoAsync(int negocioId, string correo, int rolNegocio, int? sedeId, string usuario);
     Task<bool> UsuariosNegocioActualizarRolAsync(int negocioId, int usuarioNegocioId, int rolNegocio, int? sedeId, string usuario);
     Task<bool> UsuariosNegocioDesactivarAsync(int negocioId, int usuarioNegocioId, string usuario);

@@ -186,6 +186,7 @@ builder.Services.AddRateLimiter(options =>
 builder.Services.AddHttpContextAccessor();
 builder.Services.Configure<BrevoSettings>(builder.Configuration.GetSection("Brevo"));
 builder.Services.Configure<AutomationSettings>(builder.Configuration.GetSection("AutomationSettings"));
+builder.Services.Configure<JobsSettings>(builder.Configuration.GetSection("Jobs"));
 builder.Services.Configure<SedeImagenStorageSettings>(builder.Configuration.GetSection("SedeImagenStorage"));
 builder.Services.AddHttpClient<IEmailService, BrevoEmailService>(httpClient =>
 {

@@ -9,6 +9,7 @@
 <!-- Firma: Codex - 17/04/2026 | Header de perfil simplificado y rediseno profesional de historial de reservas en mini tarjetas con accesos de contacto/redes/mapa de sede. -->
 <!-- Firma: Codex - 18/04/2026 | Perfil publico incorpora configuracion de desafios, bloque visible de informacion del equipo, ubigeo propio del equipo, telefonos con codigo de pais estandar, WhatsApp operativo del equipo y acceso directo al modulo independiente de Desafios. -->
 <!-- Firma: Codex - 27/04/2026 | Mis reservas pasa a vista ejecutiva compacta con filtros por estado, orden y detalle expandible para reducir saturacion visual. -->
+<!-- Firma: Codex - 28/04/2026 | Tabs de perfil adaptadas para movil con scroll horizontal tactil y sin recorte de opciones. -->
 
 <div class="container py-4">
     <header class="page-header">
@@ -470,6 +471,22 @@
             background: linear-gradient(135deg, #0d3b66 0%, #175b95 100%);
             border-color: #0d3b66;
             box-shadow: 0 8px 18px rgba(13, 59, 102, .26);
+        }
+        @@media (max-width: 768px) {
+            .profile-tabs {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: thin;
+                padding-bottom: .35rem;
+            }
+            .profile-tab-item {
+                flex: 0 0 auto;
+                min-width: max-content;
+                white-space: nowrap;
+                padding-inline: .95rem;
+            }
         }
         .challenge-switch {
             display: flex;
