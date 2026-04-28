@@ -8,6 +8,7 @@
 <!-- Firma: Codex - 16/04/2026 | Panel de perfil para usuario publico con tabs Datos personales, Mis reservas y Retar a un equipo (proximamente). -->
 <!-- Firma: Codex - 17/04/2026 | Header de perfil simplificado y rediseno profesional de historial de reservas en mini tarjetas con accesos de contacto/redes/mapa de sede. -->
 <!-- Firma: Codex - 18/04/2026 | Perfil publico incorpora configuracion de desafios, bloque visible de informacion del equipo, ubigeo propio del equipo, telefonos con codigo de pais estandar, WhatsApp operativo del equipo y acceso directo al modulo independiente de Desafios. -->
+<!-- Firma: Codex - 27/04/2026 | Mis reservas pasa a vista ejecutiva compacta con filtros por estado, orden y detalle expandible para reducir saturacion visual. -->
 
 <div class="container py-4">
     <header class="page-header">
@@ -32,18 +33,25 @@
     {
         <div class="alert alert-success">@ok</div>
     }
+    @if (TempData["PerfilPublicoInfo"] is string info && !string.IsNullOrWhiteSpace(info))
+    {
+        <div class="alert alert-warning">@info</div>
+    }
 
-    <ul class="nav nav-tabs mb-3">
-        <li class="nav-item">
-            <a class="nav-link @(tabDatos ? "active" : null)" asp-action="Index" asp-route-tab="datos">Datos personales</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link @(tabReservas ? "active" : null)" asp-action="Index" asp-route-tab="reservas">Mis reservas</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" asp-controller="Desafios" asp-action="Index">Desafios</a>
-        </li>
-    </ul>
+    <nav class="profile-tabs mb-3" aria-label="Navegacion de perfil">
+        <a class="profile-tab-item @(tabDatos ? "is-active" : null)" asp-action="Index" asp-route-tab="datos">
+            <i class="bi bi-person-vcard"></i>
+            <span>Datos personales</span>
+        </a>
+        <a class="profile-tab-item @(tabReservas ? "is-active" : null)" asp-action="Index" asp-route-tab="reservas" asp-route-pagina="1">
+            <i class="bi bi-calendar2-check"></i>
+            <span>Mis reservas</span>
+        </a>
+        <a class="profile-tab-item" asp-controller="Desafios" asp-action="Index">
+            <i class="bi bi-trophy"></i>
+            <span>Desafios</span>
+        </a>
+    </nav>
 
     @if (tabDatos)
     {
@@ -228,6 +236,12 @@
     {
         <section class="table-card profile-reservas-card">
             <h2 class="section-title"><i class="bi bi-calendar2-check me-1"></i>Historial de reservas</h2>
+            @if (Model.TotalReservas > 0)
+            {
+                var inicio = ((Model.PaginaReservas - 1) * Model.TamanoPaginaReservas) + 1;
+                var fin = Math.Min(Model.PaginaReservas * Model.TamanoPaginaReservas, Model.TotalReservas);
+                <p class="profile-reservas-summary">Mostrando <strong>@inicio</strong> - <strong>@fin</strong> de <strong>@Model.TotalReservas</strong> reservas.</p>
+            }
             @if (Model.Reservas.Count == 0)
             {
                 <div class="p-3 text-center text-muted">Aun no tienes reservas registradas.</div>
@@ -283,7 +297,7 @@
                                 <div class="profile-mini">
                                     <span><i class="bi bi-cash-coin"></i>Precio</span>
                                     <strong>Total: S/ @item.Total.ToString("0.00")</strong>
-                                    <small>Saldo: S/ @item.SaldoPendiente.ToString("0.00")</small>
+                                    <span>Saldo: S/ @item.SaldoPendiente.ToString("0.00")</span>
                                 </div>
                                 <div class="profile-mini">
                                     <span><i class="bi bi-telephone"></i>Contacto sede</span>
@@ -333,6 +347,31 @@
                         </article>
                     }
                 </div>
+
+                @if (Model.TotalPaginasReservas > 1)
+                {
+                    var paginaAnterior = Model.PaginaReservas > 1 ? Model.PaginaReservas - 1 : 1;
+                    var paginaSiguiente = Model.PaginaReservas < Model.TotalPaginasReservas ? Model.PaginaReservas + 1 : Model.TotalPaginasReservas;
+                    <nav class="profile-pagination" aria-label="Paginacion de reservas">
+                        <a class="profile-page-link @(Model.PaginaReservas <= 1 ? "is-disabled" : null)"
+                           asp-action="Index"
+                           asp-route-tab="reservas"
+                           asp-route-pagina="@paginaAnterior">Anterior</a>
+
+                        @for (var p = 1; p <= Model.TotalPaginasReservas; p++)
+                        {
+                            <a class="profile-page-link @(p == Model.PaginaReservas ? "is-active" : null)"
+                               asp-action="Index"
+                               asp-route-tab="reservas"
+                               asp-route-pagina="@p">@p</a>
+                        }
+
+                        <a class="profile-page-link @(Model.PaginaReservas >= Model.TotalPaginasReservas ? "is-disabled" : null)"
+                           asp-action="Index"
+                           asp-route-tab="reservas"
+                           asp-route-pagina="@paginaSiguiente">Siguiente</a>
+                    </nav>
+                }
             }
         </section>
     }
@@ -392,6 +431,46 @@
             letter-spacing: .04em;
             margin-bottom: .55rem;
         }
+        .profile-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .65rem;
+            background: linear-gradient(145deg, #f6f9ff 0%, #ecf3ff 100%);
+            border: 1px solid #d6e3fb;
+            border-radius: 16px;
+            padding: .55rem;
+        }
+        .profile-tab-item {
+            flex: 1 1 190px;
+            min-height: 52px;
+            border-radius: 12px;
+            padding: .7rem .9rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .5rem;
+            text-decoration: none;
+            color: #345280;
+            font-weight: 700;
+            background: transparent;
+            border: 1px solid transparent;
+            transition: .2s ease;
+        }
+        .profile-tab-item i {
+            font-size: 1rem;
+        }
+        .profile-tab-item:hover {
+            color: #12366f;
+            background: #fdfefe;
+            border-color: #c5d8fb;
+            transform: translateY(-1px);
+        }
+        .profile-tab-item.is-active {
+            color: #fff;
+            background: linear-gradient(135deg, #0d3b66 0%, #175b95 100%);
+            border-color: #0d3b66;
+            box-shadow: 0 8px 18px rgba(13, 59, 102, .26);
+        }
         .challenge-switch {
             display: flex;
             align-items: flex-start;
@@ -423,6 +502,164 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: .95rem;
+        }
+        .profile-reservas-summary {
+            margin: 0 0 .25rem;
+            padding: 0 1rem;
+            color: #4f658c;
+            font-size: .9rem;
+        }
+        .profile-reservas-toolbar {
+            display: flex;
+            gap: 1rem;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            padding: 0 1rem .9rem;
+        }
+        .profile-reservas-kpis {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(120px, 1fr));
+            gap: .6rem;
+            flex: 1 1 500px;
+        }
+        .profile-reservas-kpi {
+            border: 1px solid #dbe5f6;
+            border-radius: 12px;
+            background: #f8fbff;
+            padding: .55rem .7rem;
+            display: flex;
+            flex-direction: column;
+            gap: .15rem;
+        }
+        .profile-reservas-kpi small {
+            color: #5c7093;
+            font-size: .75rem;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+            font-weight: 700;
+        }
+        .profile-reservas-kpi strong {
+            color: #12366f;
+            font-size: 1.1rem;
+            line-height: 1.1;
+        }
+        .profile-reservas-filters {
+            display: flex;
+            gap: .8rem;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+        .profile-reservas-filter-group {
+            display: flex;
+            gap: .45rem;
+            flex-wrap: wrap;
+        }
+        .profile-filter-chip {
+            border: 1px solid #ccdaf4;
+            background: #fff;
+            color: #2b4f89;
+            border-radius: 999px;
+            font-size: .8rem;
+            font-weight: 700;
+            padding: .35rem .7rem;
+            line-height: 1;
+        }
+        .profile-filter-chip:hover {
+            background: #eef4ff;
+            border-color: #a8c3ef;
+        }
+        .profile-filter-chip.is-active {
+            background: #1f4fad;
+            border-color: #1f4fad;
+            color: #fff;
+        }
+        .profile-reservas-sort {
+            min-width: 165px;
+        }
+        .profile-reserva-list {
+            display: flex;
+            flex-direction: column;
+            gap: .8rem;
+            border-top: 1px solid #e1e9f8;
+        }
+        .profile-reserva-row {
+            border: 1px solid #dbe5f6;
+            border-radius: 14px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            box-shadow: 0 10px 22px rgba(15, 23, 42, .05);
+            overflow: hidden;
+        }
+        .profile-reserva-row-summary {
+            padding: .8rem;
+            display: grid;
+            grid-template-columns: minmax(140px, 1.1fr) minmax(170px, 1.2fr) minmax(120px, .8fr) auto auto;
+            align-items: center;
+            gap: .75rem;
+            margin: 0;
+        }
+        .profile-reserva-main {
+            display: flex;
+            flex-direction: column;
+            gap: .2rem;
+            min-width: 0;
+        }
+        .profile-reserva-code {
+            font-size: .95rem;
+            color: #0d2d62;
+            font-weight: 800;
+            letter-spacing: .02em;
+        }
+        .profile-reserva-datetime {
+            color: #50658b;
+            font-size: .84rem;
+            white-space: nowrap;
+        }
+        .profile-reserva-venue {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .profile-reserva-venue strong {
+            color: #113368;
+            font-size: .92rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .profile-reserva-venue span {
+            color: #567095;
+            font-size: .82rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .profile-reserva-money {
+            display: flex;
+            flex-direction: column;
+            text-align: right;
+            white-space: nowrap;
+        }
+        .profile-reserva-money strong {
+            color: #113368;
+            font-size: .9rem;
+        }
+        .profile-reserva-money span {
+            color: #5f759a;
+            font-size: .8rem;
+        }
+        .profile-reserva-toggle {
+            white-space: nowrap;
+        }
+        .profile-reserva-detail {
+            border-top: 1px dashed #cbdaef;
+            padding: .75rem .8rem .8rem;
+            background: #ffffff;
+        }
+        .profile-reserva-detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: .65rem;
+            margin-bottom: .7rem;
         }
         .profile-reserva-item {
             border: 1px solid #dbe5f6;
@@ -547,8 +784,61 @@
             border-color: #16a34a;
             color: #fff;
         }
+        .profile-pagination {
+            border-top: 1px solid #dbe5f4;
+            margin-top: .35rem;
+            padding: .9rem 1rem 1rem;
+            display: flex;
+            gap: .45rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .profile-page-link {
+            min-width: 2.2rem;
+            height: 2.2rem;
+            padding: 0 .75rem;
+            border-radius: 10px;
+            border: 1px solid #cad8f2;
+            background: #fff;
+            color: #1d4ea1;
+            text-decoration: none;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: .18s ease;
+        }
+        .profile-page-link:hover {
+            background: #eef4ff;
+            border-color: #9ebbf2;
+        }
+        .profile-page-link.is-active {
+            background: #1f4fad;
+            color: #fff;
+            border-color: #1f4fad;
+            box-shadow: 0 8px 16px rgba(31, 79, 173, .25);
+        }
+        .profile-page-link.is-disabled {
+            pointer-events: none;
+            opacity: .45;
+        }
         @@media (max-width: 767px) {
+            .profile-tab-item {
+                flex: 1 1 100%;
+                justify-content: flex-start;
+            }
+            .profile-reservas-kpis {
+                grid-template-columns: repeat(2, minmax(120px, 1fr));
+            }
+            .profile-reserva-row-summary {
+                grid-template-columns: 1fr;
+                align-items: flex-start;
+            }
+            .profile-reserva-money {
+                text-align: left;
+            }
             .profile-reserva-body { grid-template-columns: 1fr; }
+            .profile-reserva-detail-grid { grid-template-columns: 1fr; }
             .profile-reserva-foot { align-items: flex-start; flex-direction: column; }
         }
     </style>
@@ -605,6 +895,71 @@
 
             enlazarUbigeo(dep, prov, dist);
             enlazarUbigeo(depEquipo, provEquipo, distEquipo);
+
+            const reservaList = document.getElementById('profileReservaList');
+            const sortSelect = document.getElementById('reservasSort');
+            const filterButtons = Array.from(document.querySelectorAll('.profile-filter-chip'));
+
+            if (reservaList) {
+                const rows = Array.from(reservaList.querySelectorAll('.profile-reserva-row'));
+                let activeFilter = 'all';
+
+                const aplicarFiltro = () => {
+                    rows.forEach(row => {
+                        const status = (row.getAttribute('data-status') || '').toLowerCase();
+                        const visible = activeFilter === 'all' || status === activeFilter;
+                        row.hidden = !visible;
+                    });
+                };
+
+                const aplicarOrden = () => {
+                    const order = sortSelect?.value === 'asc' ? 'asc' : 'desc';
+                    rows.sort((a, b) => {
+                        const da = new Date(a.getAttribute('data-start') || '');
+                        const db = new Date(b.getAttribute('data-start') || '');
+                        return order === 'asc' ? da - db : db - da;
+                    });
+                    rows.forEach(row => reservaList.appendChild(row));
+                };
+
+                const actualizarChips = () => {
+                    filterButtons.forEach(btn => {
+                        btn.classList.toggle('is-active', (btn.getAttribute('data-filter') || '') === activeFilter);
+                    });
+                };
+
+                filterButtons.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        activeFilter = (btn.getAttribute('data-filter') || 'all').toLowerCase();
+                        actualizarChips();
+                        aplicarFiltro();
+                    });
+                });
+
+                sortSelect?.addEventListener('change', aplicarOrden);
+
+                reservaList.addEventListener('click', event => {
+                    const target = event.target;
+                    if (!(target instanceof Element)) return;
+                    const toggle = target.closest('.profile-reserva-toggle');
+                    if (!toggle) return;
+                    const targetId = toggle.getAttribute('data-target');
+                    if (!targetId) return;
+                    const detail = document.getElementById(targetId);
+                    if (!detail) return;
+                    const isHidden = detail.hasAttribute('hidden');
+                    if (isHidden) {
+                        detail.removeAttribute('hidden');
+                        toggle.textContent = 'Ocultar detalle';
+                    } else {
+                        detail.setAttribute('hidden', 'hidden');
+                        toggle.textContent = 'Ver detalle';
+                    }
+                });
+
+                aplicarOrden();
+                aplicarFiltro();
+            }
         })();
     </script>
 }

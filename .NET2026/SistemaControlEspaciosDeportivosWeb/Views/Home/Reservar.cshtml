@@ -26,12 +26,22 @@
         .Distinct(StringComparer.OrdinalIgnoreCase)
         .ToList();
     var negocioNombre = string.IsNullOrWhiteSpace(Model.Sede?.NegocioNombre) ? "Club / negocio" : Model.Sede!.NegocioNombre!;
+    var telefonoSedeContacto = (Model.Espacio.TelefonoContacto ?? Model.Sede?.Telefono ?? string.Empty).Trim();
+    var correoSedeContacto = (Model.Espacio.CorreoNotificacion ?? string.Empty).Trim();
+    var whatsappSedeContacto = (Model.Espacio.WhatsappContacto ?? Model.Sede?.WhatsappContacto ?? string.Empty).Trim();
+    var numeroWhatsappSede = string.IsNullOrWhiteSpace(whatsappSedeContacto)
+        ? string.Empty
+        : new string(whatsappSedeContacto.Where(char.IsDigit).ToArray());
+    var mensajeWhatsappSede = Uri.EscapeDataString($"Hola, quiero informacion para reservar {Model.Espacio.NombreEspacio} en la sede {Model.Espacio.SedeNombre}.");
+    var enlaceWhatsappSede = string.IsNullOrWhiteSpace(numeroWhatsappSede)
+        ? string.Empty
+        : $"https://wa.me/{numeroWhatsappSede}?text={mensajeWhatsappSede}";
 }
 <!-- Firma: Codex - 15/04/2026 | Flujo publico de reserva completo: fecha/hora editables con sincronizacion al calendario, recotizacion dinamica, cliente rapido alineado al admin y datos de sede/espacio movidos debajo de consideraciones en mini tarjetas. -->
 <!-- Firma: Codex - 16/04/2026 | Flujo de reserva publica mantiene solo datos operativos del cliente y deja fecha de nacimiento exclusivamente en perfil publico. -->
 <!-- Firma: Codex - 17/04/2026 | Reserva publica muestra errores de validacion/binding y normaliza el flag OmitirFechaHorario en envio POST (true/false) para evitar bloqueos por campo requerido al grabar. -->
 <!-- Firma: Codex - 20/04/2026 | Cabecera publica de reserva reforzada con bloque profesional para titulo y negocio, calendario con bloqueos tipo background/etiqueta y modo HC con mayor contraste visual en cabeceras, grilla, eje horario y estados. -->
-<!-- Firma: Codex - 26/04/2026 | Formulario de reserva publica actualizado para publicar en CrearReservaPublica (flujo de creacion) y mantener compatibilidad con endpoint legacy. -->
+<!-- Firma: Codex - 27/04/2026 | Tarjeta de contacto en reserva publica incorpora telefono visible y acciones directas (WhatsApp + redes sociales de sede) para mejorar conversion. -->
 
 <div class="container py-4 home-reservar-page">
     <section class="sc-public-reserva-hero mb-3">
@@ -304,8 +314,45 @@
                 <div class="col-lg-3 col-md-6">
                     <div class="sc-mini-info">
                         <span class="sc-mini-kicker"><i class="bi bi-telephone"></i> Contacto</span>
-                        <strong>@(string.IsNullOrWhiteSpace(Model.Espacio.CorreoNotificacion) ? "-" : Model.Espacio.CorreoNotificacion)</strong>
-                        <small class="text-muted">WhatsApp: @(string.IsNullOrWhiteSpace(Model.Espacio.WhatsappContacto) ? "-" : Model.Espacio.WhatsappContacto)</small>
+                        @if (!string.IsNullOrWhiteSpace(telefonoSedeContacto))
+                        {
+                            <strong>Telefono: @telefonoSedeContacto</strong>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(correoSedeContacto))
+                        {
+                            <small class="text-muted">Correo: @correoSedeContacto</small>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(whatsappSedeContacto))
+                        {
+                            <small class="text-muted">WhatsApp: @whatsappSedeContacto</small>
+                        }
+                        @if (string.IsNullOrWhiteSpace(telefonoSedeContacto) && string.IsNullOrWhiteSpace(correoSedeContacto) && string.IsNullOrWhiteSpace(whatsappSedeContacto))
+                        {
+                            <strong>-</strong>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(enlaceWhatsappSede) || !string.IsNullOrWhiteSpace(Model.Sede?.FacebookUrl) || !string.IsNullOrWhiteSpace(Model.Sede?.InstagramUrl) || !string.IsNullOrWhiteSpace(Model.Sede?.TwitterUrl))
+                        {
+                            <div class="sc-contact-actions mt-2">
+                                @if (!string.IsNullOrWhiteSpace(enlaceWhatsappSede))
+                                {
+                                    <a class="btn btn-success btn-sm" href="@enlaceWhatsappSede" target="_blank" rel="noopener noreferrer">
+                                        <i class="bi bi-whatsapp me-1"></i>WhatsApp
+                                    </a>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(Model.Sede?.FacebookUrl))
+                                {
+                                    <a class="sc-social-btn" href="@Model.Sede.FacebookUrl" target="_blank" rel="noopener noreferrer" aria-label="Facebook de la sede"><i class="bi bi-facebook"></i></a>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(Model.Sede?.InstagramUrl))
+                                {
+                                    <a class="sc-social-btn" href="@Model.Sede.InstagramUrl" target="_blank" rel="noopener noreferrer" aria-label="Instagram de la sede"><i class="bi bi-instagram"></i></a>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(Model.Sede?.TwitterUrl))
+                                {
+                                    <a class="sc-social-btn" href="@Model.Sede.TwitterUrl" target="_blank" rel="noopener noreferrer" aria-label="Twitter de la sede"><i class="bi bi-twitter-x"></i></a>
+                                }
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
@@ -354,6 +401,30 @@
             font-weight: 700;
         }
         .home-reservar-page .sc-mini-info strong { font-size: .98rem; color: #0b1f46; }
+        .home-reservar-page .sc-contact-actions {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: .42rem;
+        }
+        .home-reservar-page .sc-social-btn {
+            width: 1.9rem;
+            height: 1.9rem;
+            border-radius: 50%;
+            border: 1px solid #c8d8f6;
+            background: #f2f7ff;
+            color: #1f4fad;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: .2s ease;
+        }
+        .home-reservar-page .sc-social-btn:hover {
+            background: #1f4fad;
+            border-color: #1f4fad;
+            color: #fff;
+        }
         .home-reservar-page .sc-public-reserva-hero {
             display: flex;
             justify-content: space-between;

@@ -11,11 +11,13 @@ namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 public class PerfilPublicoController(ISportCenterStoredProcedureService spService) : Controller
 {
     [HttpGet]
-    public async Task<IActionResult> Index(string? tab = null)
+    public async Task<IActionResult> Index(string? tab = null, int pagina = 1)
     {
         ViewData["PublicFullWidth"] = true;
         var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(usuarioId)) return Challenge();
+        const int tamanoPaginaReservas = 6;
+        var paginaActualReservas = pagina < 1 ? 1 : pagina;
 
         var perfil = await spService.UsuariosPublicosObtenerPerfilAsync(usuarioId) ?? new UsuarioPublicoPerfilViewModel
         {
@@ -25,13 +27,23 @@ public class PerfilPublicoController(ISportCenterStoredProcedureService spServic
 
         InicializarTelefonosParaVista(perfil);
         await CargarCombosAsync(perfil);
-        var reservas = await spService.UsuariosPublicosReservasListarAsync(usuarioId);
+        var (reservas, totalReservas) = await spService.UsuariosPublicosReservasListarAsync(usuarioId, paginaActualReservas, tamanoPaginaReservas);
+        var totalPaginasReservas = Math.Max(1, (int)Math.Ceiling(totalReservas / (double)tamanoPaginaReservas));
+        if (paginaActualReservas > totalPaginasReservas)
+        {
+            paginaActualReservas = totalPaginasReservas;
+            (reservas, totalReservas) = await spService.UsuariosPublicosReservasListarAsync(usuarioId, paginaActualReservas, tamanoPaginaReservas);
+        }
 
         ViewData["Tab"] = string.IsNullOrWhiteSpace(tab) ? "datos" : tab.Trim().ToLowerInvariant();
         return View(new PerfilPublicoIndexViewModel
         {
             Perfil = perfil,
-            Reservas = reservas
+            Reservas = reservas,
+            PaginaReservas = paginaActualReservas,
+            TamanoPaginaReservas = tamanoPaginaReservas,
+            TotalReservas = totalReservas,
+            TotalPaginasReservas = totalPaginasReservas
         });
     }
 
@@ -69,7 +81,12 @@ public class PerfilPublicoController(ISportCenterStoredProcedureService spServic
         if (!ModelState.IsValid)
         {
             await CargarCombosAsync(vm.Perfil);
-            vm.Reservas = await spService.UsuariosPublicosReservasListarAsync(usuarioId);
+            var (reservas, totalReservas) = await spService.UsuariosPublicosReservasListarAsync(usuarioId, 1, 6);
+            vm.Reservas = reservas;
+            vm.PaginaReservas = 1;
+            vm.TamanoPaginaReservas = 6;
+            vm.TotalReservas = totalReservas;
+            vm.TotalPaginasReservas = Math.Max(1, (int)Math.Ceiling(totalReservas / 6d));
             ViewData["Tab"] = "datos";
             return View("Index", vm);
         }

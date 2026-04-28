@@ -1,13 +1,19 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
 
 namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 
 [Authorize(Roles = "OwnerPlataforma")]
-public class PlataformaController(ISportCenterStoredProcedureService spService) : Controller
+public class PlataformaController(
+    ISportCenterStoredProcedureService spService,
+    IClubRegistrationNotificationService clubRegistrationNotificationService,
+    IHomeReferencialesExternosSyncService referencialesExternosSyncService) : Controller
 {
+    private const string ParamRefExternosBarridoHabilitado = "HOME_REFEXT_BARRIDO_HABILITADO";
+
     private static readonly (string Key, string Label, string? Desc, Func<PlataformaPortalConfigViewModel, string?> GetValue)[] PortalParamMap =
     [
         ("HOME_PORTAL_BENEF_TITULO", "Beneficios titulo", "Titulo global de la seccion de beneficios del Home.", x => x.BeneficiosTitulo),
@@ -121,6 +127,118 @@ public class PlataformaController(ISportCenterStoredProcedureService spService) 
         return View(vm);
     }
 
+    [HttpGet]
+    public async Task<IActionResult> ReferencialesExternos(
+        string? buscarNombre = null,
+        string? filtroCodigoDepartamento = null,
+        string? filtroCodigoProvincia = null,
+        string? filtroCodigoUbigeo = null,
+        bool incluirInactivos = false,
+        int paginaListado = 1)
+    {
+        ViewData["PlatformShell"] = true;
+        var vm = new PlataformaReferencialesExternosViewModel
+        {
+            BuscarNombre = string.IsNullOrWhiteSpace(buscarNombre) ? null : buscarNombre.Trim(),
+            FiltroCodigoDepartamento = string.IsNullOrWhiteSpace(filtroCodigoDepartamento) ? null : filtroCodigoDepartamento.Trim(),
+            FiltroCodigoProvincia = string.IsNullOrWhiteSpace(filtroCodigoProvincia) ? null : filtroCodigoProvincia.Trim(),
+            FiltroCodigoUbigeo = string.IsNullOrWhiteSpace(filtroCodigoUbigeo) ? null : filtroCodigoUbigeo.Trim(),
+            IncluirInactivos = incluirInactivos,
+            PaginaListado = paginaListado <= 0 ? 1 : paginaListado,
+            TamanoPaginaListado = 50
+        };
+        vm = await CargarReferencialesExternosVmAsync(vm);
+        return View(vm);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ReferencialesExternos(PlataformaReferencialesExternosViewModel model)
+    {
+        ViewData["PlatformShell"] = true;
+        if (!await ObtenerFlagBarridoReferencialesAsync())
+        {
+            TempData["PortalWebError"] = "El barrido manual de referenciales externos esta deshabilitado por configuracion global.";
+            var vmDisabled = await CargarReferencialesExternosVmAsync(model);
+            return View(vmDisabled);
+        }
+
+        model.PalabraClave = (model.PalabraClave ?? string.Empty).Trim();
+        model.CodigoDepartamento = (model.CodigoDepartamento ?? string.Empty).Trim();
+        model.CodigoProvincia = (model.CodigoProvincia ?? string.Empty).Trim();
+        model.CodigoUbigeo = (model.CodigoUbigeo ?? string.Empty).Trim();
+        model.MaxResultados = Math.Clamp(model.MaxResultados, 1, 60);
+
+        if (model.TipoDeporteSuperId <= 0)
+            ModelState.AddModelError(nameof(model.TipoDeporteSuperId), "Debes seleccionar un tipo de deporte valido.");
+        if (string.IsNullOrWhiteSpace(model.PalabraClave))
+            ModelState.AddModelError(nameof(model.PalabraClave), "Debes ingresar una palabra clave.");
+
+        if (model.CodigoDepartamento.Length != 2)
+            ModelState.AddModelError(nameof(model.CodigoDepartamento), "Debes seleccionar un departamento valido.");
+        if (model.CodigoProvincia.Length != 4)
+            ModelState.AddModelError(nameof(model.CodigoProvincia), "Debes seleccionar una provincia valida.");
+        if (model.CodigoUbigeo.Length != 6)
+            ModelState.AddModelError(nameof(model.CodigoUbigeo), "Debes seleccionar un distrito valido.");
+
+        if (!ModelState.IsValid)
+        {
+            var vmInvalid = await CargarReferencialesExternosVmAsync(model);
+            return View(vmInvalid);
+        }
+
+        try
+        {
+            model.Resultado = await referencialesExternosSyncService.EjecutarBarridoAsync(
+                model.CodigoUbigeo,
+                model.TipoDeporteSuperId,
+                model.PalabraClave,
+                model.MaxResultados,
+                model.DescargarTelefonos,
+                model.DescargarFotos,
+                User.Identity?.Name ?? "owner-platform");
+
+            TempData["PortalWebOk"] = "Barrido ejecutado correctamente.";
+        }
+        catch (Exception ex)
+        {
+            TempData["PortalWebError"] = $"No se pudo ejecutar el barrido: {ex.Message}";
+        }
+
+        var vm = await CargarReferencialesExternosVmAsync(model);
+        return View(vm);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ReferencialesExternosInactivar(
+        int id,
+        string? buscarNombre = null,
+        string? filtroCodigoDepartamento = null,
+        string? filtroCodigoProvincia = null,
+        string? filtroCodigoUbigeo = null,
+        bool incluirInactivos = false,
+        int paginaListado = 1)
+    {
+        ViewData["PlatformShell"] = true;
+        var ok = await spService.HomeReferencialesExternosInactivarAsync(id, User.Identity?.Name ?? "owner-platform");
+        TempData[ok ? "PortalWebOk" : "PortalWebError"] = ok
+            ? "Referencial externo inactivado."
+            : "No se pudo inactivar el referencial seleccionado.";
+
+        return RedirectToAction(
+            nameof(ReferencialesExternos),
+            new
+            {
+                buscarNombre,
+                filtroCodigoDepartamento,
+                filtroCodigoProvincia,
+                filtroCodigoUbigeo,
+                incluirInactivos,
+                paginaListado
+            });
+    }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> GuardarLimitesNegocio(int negocioId, int sedesPermitidas, int espaciosPermitidos, int usuariosPermitidos, string? buscar = null, string? estadoContrato = null, int pagina = 1)
@@ -207,11 +325,24 @@ public class PlataformaController(ISportCenterStoredProcedureService spService) 
     public async Task<IActionResult> AprobarClub(int id, int diasPrueba = 30, string? comentarioGestion = null, int? estado = 1, int pagina = 1)
     {
         ViewData["PlatformShell"] = true;
+        var diasPruebaNormalizado = diasPrueba <= 0 ? 30 : diasPrueba;
+        var solicitud = await spService.AltasClubesObtenerPorIdAsync(id);
+        if (solicitud is null)
+        {
+            TempData["PortalWebError"] = "No se encontro la solicitud seleccionada.";
+            return RedirectToAction(nameof(ClubesPendientes), new { estado, pagina });
+        }
+
         var ok = await spService.AltasClubesAprobarAsync(
             id,
             User.Identity?.Name ?? "owner-platform",
             comentarioGestion,
-            diasPrueba <= 0 ? 30 : diasPrueba);
+            diasPruebaNormalizado);
+
+        if (ok)
+        {
+            await clubRegistrationNotificationService.NotifyClubApprovalAsync(solicitud, diasPruebaNormalizado);
+        }
 
         TempData[ok ? "PortalWebOk" : "PortalWebError"] = ok
             ? "Solicitud aprobada y negocio activado con periodo de prueba."
@@ -328,5 +459,76 @@ public class PlataformaController(ISportCenterStoredProcedureService spService) 
             "ANUAL" => fechaDesde.AddYears(1),
             _ => fechaDesde.AddMonths(1)
         };
+    }
+
+    private async Task<PlataformaReferencialesExternosViewModel> CargarReferencialesExternosVmAsync(PlataformaReferencialesExternosViewModel model)
+    {
+        var codigoDep = (model.CodigoDepartamento ?? string.Empty).Trim();
+        var codigoProv = (model.CodigoProvincia ?? string.Empty).Trim();
+        var filtroCodigoDep = (model.FiltroCodigoDepartamento ?? string.Empty).Trim();
+        var filtroCodigoProv = (model.FiltroCodigoProvincia ?? string.Empty).Trim();
+        model.BuscarNombre = string.IsNullOrWhiteSpace(model.BuscarNombre) ? null : model.BuscarNombre.Trim();
+        model.PaginaListado = model.PaginaListado <= 0 ? 1 : model.PaginaListado;
+        model.TamanoPaginaListado = model.TamanoPaginaListado <= 0 ? 50 : model.TamanoPaginaListado;
+
+        model.DepartamentosUbigeo = await spService.UbigeoDepartamentosListarAsync();
+        model.ProvinciasUbigeo = codigoDep.Length == 2
+            ? await spService.UbigeoProvinciasListarAsync(codigoDep)
+            : new List<SelectListItem>();
+        model.DistritosUbigeo = codigoProv.Length == 4
+            ? await spService.UbigeoDistritosListarAsync(codigoProv)
+            : new List<SelectListItem>();
+
+        model.TiposDeporte = await spService.HomeReferencialesExternosListarTiposDeporteSuperAsync();
+        model.FiltroDepartamentosUbigeo = await spService.UbigeoDepartamentosListarAsync();
+        model.FiltroProvinciasUbigeo = filtroCodigoDep.Length == 2
+            ? await spService.UbigeoProvinciasListarAsync(filtroCodigoDep)
+            : new List<SelectListItem>();
+        model.FiltroDistritosUbigeo = filtroCodigoProv.Length == 4
+            ? await spService.UbigeoDistritosListarAsync(filtroCodigoProv)
+            : new List<SelectListItem>();
+
+        var (items, totalRegistros) = await spService.HomeReferencialesExternosListarAdminAsync(
+            model.FiltroCodigoDepartamento,
+            model.FiltroCodigoProvincia,
+            model.FiltroCodigoUbigeo,
+            model.BuscarNombre,
+            model.PaginaListado,
+            model.TamanoPaginaListado,
+            model.IncluirInactivos ? null : true);
+
+        model.ReferencialesListado = items;
+        model.TotalRegistrosListado = totalRegistros;
+        model.TotalPaginasListado = Math.Max(1, (int)Math.Ceiling(totalRegistros / (double)model.TamanoPaginaListado));
+        if (model.PaginaListado > model.TotalPaginasListado)
+            model.PaginaListado = model.TotalPaginasListado;
+
+        if (model.ReferencialesListado.Count == 0 && totalRegistros > 0)
+        {
+            var (itemsRecalc, _) = await spService.HomeReferencialesExternosListarAdminAsync(
+                model.FiltroCodigoDepartamento,
+                model.FiltroCodigoProvincia,
+                model.FiltroCodigoUbigeo,
+                model.BuscarNombre,
+                model.PaginaListado,
+                model.TamanoPaginaListado,
+                model.IncluirInactivos ? null : true);
+            model.ReferencialesListado = itemsRecalc;
+        }
+
+        model.BarridoHabilitado = await ObtenerFlagBarridoReferencialesAsync();
+
+        return model;
+    }
+
+    private async Task<bool> ObtenerFlagBarridoReferencialesAsync()
+    {
+        var raw = (await spService.ParametrosGlobalesObtenerValorAsync(ParamRefExternosBarridoHabilitado) ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(raw)) return false;
+
+        return raw.Equals("1", StringComparison.OrdinalIgnoreCase)
+               || raw.Equals("true", StringComparison.OrdinalIgnoreCase)
+               || raw.Equals("si", StringComparison.OrdinalIgnoreCase)
+               || raw.Equals("yes", StringComparison.OrdinalIgnoreCase);
     }
 }

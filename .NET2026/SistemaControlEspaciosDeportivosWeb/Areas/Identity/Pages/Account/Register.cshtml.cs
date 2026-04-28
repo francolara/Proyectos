@@ -59,7 +59,7 @@ public class RegisterModel(
         public string? Telefono { get; set; }
 
         [Required(ErrorMessage = "La contrasena es obligatoria.")]
-        [StringLength(100, ErrorMessage = "La contrasena debe tener al menos {2} y como maximo {1} caracteres.", MinimumLength = 6)]
+        [StringLength(100, ErrorMessage = "La contrasena debe tener al menos {2} y como maximo {1} caracteres.", MinimumLength = 8)]
         [DataType(DataType.Password)]
         public string Password { get; set; } = string.Empty;
 

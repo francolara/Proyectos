@@ -12,13 +12,23 @@ namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 public class DesafiosController(ISportCenterStoredProcedureService spService) : Controller
 {
     [HttpGet]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(int hpage = 1)
     {
         var usuarioId = ObtenerUsuarioId();
         if (usuarioId is null) return Challenge();
 
         ViewData["PublicFullWidth"] = true;
-        var vm = await ConstruirViewModelAsync(usuarioId, new DesafiosIndexViewModel(), incluirBusqueda: false);
+        var perfil = await spService.UsuariosPublicosObtenerPerfilAsync(usuarioId);
+        if (perfil is null || !perfil.BuscarDesafios)
+        {
+            TempData["PerfilPublicoInfo"] = "Primero activa la opcion 'Buscar desafios' en tu perfil para ingresar al modulo de Desafios.";
+            return RedirectToAction("Index", "PerfilPublico", new { tab = "datos" });
+        }
+
+        var vm = await ConstruirViewModelAsync(usuarioId, new DesafiosIndexViewModel
+        {
+            PerfilActual = perfil
+        }, incluirBusqueda: false, paginaHistorial: hpage);
         return View(vm);
     }
 
@@ -31,7 +41,7 @@ public class DesafiosController(ISportCenterStoredProcedureService spService) : 
 
         ViewData["PublicFullWidth"] = true;
         LimpiarErroresNuevoDesafio();
-        vm = await ConstruirViewModelAsync(usuarioId, vm, incluirBusqueda: true);
+        vm = await ConstruirViewModelAsync(usuarioId, vm, incluirBusqueda: true, paginaHistorial: vm.PaginaHistorial);
         return View("Index", vm);
     }
 
@@ -49,7 +59,7 @@ public class DesafiosController(ISportCenterStoredProcedureService spService) : 
         {
             Filtros = filtros,
             NuevoDesafio = nuevoDesafio
-        }, incluirBusqueda: true);
+        }, incluirBusqueda: true, paginaHistorial: 1);
         ViewData["AbrirModalDesafio"] = true;
 
         ValidarNuevoDesafio(vm);
@@ -149,8 +159,11 @@ public class DesafiosController(ISportCenterStoredProcedureService spService) : 
         return RedirectToAction(nameof(Index));
     }
 
-    private async Task<DesafiosIndexViewModel> ConstruirViewModelAsync(string usuarioId, DesafiosIndexViewModel vm, bool incluirBusqueda)
+    private async Task<DesafiosIndexViewModel> ConstruirViewModelAsync(string usuarioId, DesafiosIndexViewModel vm, bool incluirBusqueda, int paginaHistorial = 1)
     {
+        const int tamanoPaginaHistorial = 4;
+        var paginaActualHistorial = paginaHistorial < 1 ? 1 : paginaHistorial;
+
         vm.PerfilActual = await spService.UsuariosPublicosObtenerPerfilAsync(usuarioId) ?? new UsuarioPublicoPerfilViewModel
         {
             UsuarioId = usuarioId,
@@ -160,7 +173,19 @@ public class DesafiosController(ISportCenterStoredProcedureService spService) : 
         await CargarCombosAsync(vm);
         vm.DesafiosEnviados = await spService.DesafiosListarAsync(usuarioId, "enviados");
         vm.DesafiosRecibidos = await spService.DesafiosListarAsync(usuarioId, "recibidos");
-        vm.Historial = await spService.DesafiosListarAsync(usuarioId, "historial");
+        var (historial, totalHistorial) = await spService.DesafiosHistorialListarAsync(usuarioId, paginaActualHistorial, tamanoPaginaHistorial);
+        var totalPaginasHistorial = Math.Max(1, (int)Math.Ceiling(totalHistorial / (double)tamanoPaginaHistorial));
+        if (paginaActualHistorial > totalPaginasHistorial)
+        {
+            paginaActualHistorial = totalPaginasHistorial;
+            (historial, totalHistorial) = await spService.DesafiosHistorialListarAsync(usuarioId, paginaActualHistorial, tamanoPaginaHistorial);
+        }
+
+        vm.Historial = historial;
+        vm.PaginaHistorial = paginaActualHistorial;
+        vm.TamanoPaginaHistorial = tamanoPaginaHistorial;
+        vm.TotalHistorial = totalHistorial;
+        vm.TotalPaginasHistorial = totalPaginasHistorial;
         AdjuntarMensajes(
             vm,
             await spService.DesafiosMensajesListarAsync(usuarioId));

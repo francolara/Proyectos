@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace SistemaControlEspaciosDeportivosWeb.ViewModels;
 
@@ -121,4 +122,87 @@ public class MiSuscripcionIndexViewModel : ModuloBaseViewModel
     public int SedesPermitidas { get; set; } = 2;
     public int EspaciosPermitidos { get; set; } = 6;
     public int UsuariosPermitidos { get; set; } = 3;
+}
+
+public class PlataformaReferencialesExternosViewModel
+{
+    [Required(ErrorMessage = "Debes seleccionar un departamento.")]
+    [StringLength(2)]
+    public string CodigoDepartamento { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Debes seleccionar una provincia.")]
+    [StringLength(4)]
+    public string CodigoProvincia { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Debes seleccionar un distrito.")]
+    [StringLength(6)]
+    public string CodigoUbigeo { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Debes seleccionar un tipo de deporte.")]
+    [Range(1, int.MaxValue, ErrorMessage = "Tipo de deporte invalido.")]
+    public int TipoDeporteSuperId { get; set; }
+
+    [Required(ErrorMessage = "Debes ingresar una palabra clave.")]
+    [StringLength(120, ErrorMessage = "Palabra clave excede la longitud permitida.")]
+    public string PalabraClave { get; set; } = string.Empty;
+
+    [Range(1, 60, ErrorMessage = "El maximo de resultados permitidos es 60.")]
+    public int MaxResultados { get; set; } = 40;
+    public bool DescargarTelefonos { get; set; } = true;
+    public bool DescargarFotos { get; set; } = false;
+
+    public List<SelectListItem> DepartamentosUbigeo { get; set; } = new();
+    public List<SelectListItem> ProvinciasUbigeo { get; set; } = new();
+    public List<SelectListItem> DistritosUbigeo { get; set; } = new();
+    public List<SelectListItem> TiposDeporte { get; set; } = new();
+    public ReferencialesExternosSyncResultadoViewModel? Resultado { get; set; }
+
+    [StringLength(180, ErrorMessage = "La busqueda por nombre permite hasta 180 caracteres.")]
+    public string? BuscarNombre { get; set; }
+
+    [StringLength(2)]
+    public string? FiltroCodigoDepartamento { get; set; }
+
+    [StringLength(4)]
+    public string? FiltroCodigoProvincia { get; set; }
+
+    [StringLength(6)]
+    public string? FiltroCodigoUbigeo { get; set; }
+
+    public bool IncluirInactivos { get; set; }
+    public int PaginaListado { get; set; } = 1;
+    public int TamanoPaginaListado { get; set; } = 50;
+    public int TotalRegistrosListado { get; set; }
+    public int TotalPaginasListado { get; set; } = 1;
+    public List<SelectListItem> FiltroDepartamentosUbigeo { get; set; } = new();
+    public List<SelectListItem> FiltroProvinciasUbigeo { get; set; } = new();
+    public List<SelectListItem> FiltroDistritosUbigeo { get; set; } = new();
+    public List<ReferencialExternoAdminItemViewModel> ReferencialesListado { get; set; } = new();
+    public bool BarridoHabilitado { get; set; }
+}
+
+public class ReferencialesExternosSyncResultadoViewModel
+{
+    public int Procesados { get; set; }
+    public int Insertados { get; set; }
+    public int Actualizados { get; set; }
+    public int Omitidos { get; set; }
+    public int Errores { get; set; }
+    public List<string> Detalles { get; set; } = new();
+}
+
+public class ReferencialExternoAdminItemViewModel
+{
+    public int Id { get; set; }
+    public string NombreComplejo { get; set; } = string.Empty;
+    public string? NombreEspacio { get; set; }
+    public string TipoDeporte { get; set; } = string.Empty;
+    public string Departamento { get; set; } = string.Empty;
+    public string Provincia { get; set; } = string.Empty;
+    public string Distrito { get; set; } = string.Empty;
+    public string? Direccion { get; set; }
+    public string? GoogleMapsUrl { get; set; }
+    public bool Activo { get; set; }
+    public DateTime? FechaActualizacion { get; set; }
+    public string? UsuarioActualizacion { get; set; }
 }

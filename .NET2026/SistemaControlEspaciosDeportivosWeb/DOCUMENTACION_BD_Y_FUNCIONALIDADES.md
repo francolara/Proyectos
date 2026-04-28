@@ -60,6 +60,9 @@
 - `Sp_Home_ListarSedesPublicas`
 - `Sp_Home_ListarTiposDeporte`
 - `Sp_Home_BuscarEspaciosDisponibles`
+- Actualizacion 27/04/2026:
+  - `Sp_Home_BuscarEspaciosDisponibles` agrega filtro opcional por cercania con `@BuscarCercaDeMi`, `@LatitudUsuario`, `@LongitudUsuario` y `@RadioKm`.
+  - Calcula `DistanciaKm` para sedes registradas y referenciales externos (usando lat/long), filtra por radio en km y prioriza orden por menor distancia cuando el modo cercania esta activo.
 - `Sp_Home_ListarBannersPublicos`
 
 ### 03_Sedes_Espacios.sql
@@ -380,9 +383,13 @@
   - `Sp_Home_SolicitarAltaClub`
 - Gestion interna:
   - `Sp_AltasClubes_Listar`
+  - `Sp_AltasClubes_ObtenerPorId`
   - `Sp_AltasClubes_Aprobar`
   - `Sp_AltasClubes_Rechazar`
 - `Sp_AltasClubes_Rechazar` devuelve error cuando la solicitud no existe o ya fue gestionada.
+- Actualizacion 26/04/2026:
+  - Al aprobar desde `Plataforma/ClubesPendientes`, el backend envia correo de bienvenida al correo del club con asunto de aprobacion y periodo de prueba.
+  - El envio usa remitente `info@lazonadeportiva.com` y plantilla HTML corporativa.
 - Al aprobar:
   - crea `Negocio`
   - crea primera `Sede`
@@ -1146,3 +1153,56 @@
   - Para contrato vencido aplica gracia y bloquea modulos cuando vence `FechaFinGracia`.
 - Tabla `NegociosSuscripcion`:
   - Nuevas columnas: `TipoCobro`, `DiasGracia`, `FechaFinGracia`.
+
+## Actualizacion 26/04/2026
+- `Sp_UsuariosPublicos_ReservasListar` ahora pagina directamente en SQL con `@Pagina` y `@TamanoPagina` (default 6), y devuelve `TotalRegistros` por ventana para construir el paginador de `PerfilPublico` en backend sin traer todo el historial.
+- Actualizacion 26/04/2026 (Desafios):
+  - `Sp_Desafios_Listar` incorpora paginacion opcional con `@Pagina` y `@TamanoPagina`.
+  - El historial en `Desafios` consume la paginacion desde SP en bloques de 4 registros por pagina.
+
+## Actualizacion 27/04/2026 (Sedes y Ubigeo)
+- Se agrega `Sedes.CodigoUbigeo` (FK a `UbigeoDistritos`) para que la ubicacion de filtros publicos dependa de cada sede y no del negocio.
+- Se crea tabla `UbigeoMapsMatch` para persistir equivalencias Google Maps -> UBIGEO SUNAT usando:
+  - `GooglePlaceId` (match directo cuando existe)
+  - y/o componentes de texto (`GoogleDepartamento/GoogleProvincia/GoogleDistrito`) normalizados.
+- `Sp_Sedes_Crear` y `Sp_Sedes_Actualizar`:
+  - reciben `@CodigoUbigeo` obligatorio
+  - reciben `@GoogleDepartamento`, `@GoogleProvincia`, `@GoogleDistrito`
+  - guardan/actualizan match en `UbigeoMapsMatch`.
+- `Sp_Sedes_ObtenerPorId` ahora devuelve:
+  - `CodigoUbigeo`
+  - `CodigoDepartamento`
+  - `CodigoProvincia`
+  para precargar combos SUNAT en formulario.
+- `Sp_Home_BuscarEspaciosDisponibles` cambia filtros geograficos de `Negocios.CodigoUbigeo` a `Sedes.CodigoUbigeo`.
+- `Sp_Home_ListarSedesPublicas` expone codigos de ubigeo por sede (manteniendo alias de salida para compatibilidad de capa web).
+- Home (tipos de deporte publicos):
+  - `Sp_Home_ListarTiposDeporte` ahora lista deportes unicos por `TipoDeporteSuperId` (sin duplicados), consolidando deportes de negocios afiliados y referenciales externos activos.
+  - el combo de `Tipo de deporte` en Home usa como `value` el `Id` de `TiposDeporteSuperMaestro`.
+  - `Sp_Home_BuscarEspaciosDisponibles` filtra por `TiposDeporte.TipoDeporteSuperId` (con fallback a `EspaciosDeportivos.TipoDeporteId` si el dato legacy no tiene super id).
+- Home (referenciales externos):
+  - se crea tabla `HomeEspaciosReferencialesExternos` para almacenar complejos/espacios externos usados solo en el buscador publico Home.
+  - la tabla incorpora `GooglePlaceId` como llave tecnica de sincronizacion para evitar duplicados por barridos sucesivos.
+  - la tabla incorpora `TelefonoContacto` y coordenadas (`LatitudReferencia`, `LongitudReferencia`) para guardar datos obtenidos desde Google Place Details/TextSearch.
+  - nuevo procedimiento `Sp_Home_ReferencialExterno_UpsertDesdeGoogle` para insert/update por `GooglePlaceId`.
+  - `Sp_Home_ReferencialExterno_UpsertDesdeGoogle` ahora recibe/persiste `@TelefonoContacto`, `@LatitudReferencia` y `@LongitudReferencia`.
+  - nuevo procedimiento `Sp_Home_ReferencialesExternos_ListarAdmin` para listado superadmin con filtros por ubigeo/nombre y paginacion de `50 en 50`.
+  - nuevo procedimiento `Sp_Home_ReferencialesExternos_Inactivar` para descartar registros externos no relevantes desde el listado admin.
+  - `Sp_Home_BuscarEspaciosDisponibles` ahora hace `UNION ALL` entre:
+    - resultados de negocios registrados (afiliados)
+    - resultados referenciales externos (`HomeEspaciosReferencialesExternos`).
+  - `Sp_Home_BuscarEspaciosDisponibles` expone `SedeMapaUrl` (`GoogleMapsUrl`) y `TelefonoContacto` para habilitar boton `Ver en mapa` y tarjeta de contacto tanto en afiliados como externos.
+  - el orden del listado prioriza afiliados y luego muestra referenciales externos.
+  - cuando `@NegocioId` viene informado, no se incluyen filas referenciales externas.
+  - superadmin incorpora pestaña `Plataforma > Referenciales externos` para ejecutar barrido manual desde Google Places (por ubigeo + deporte + palabra clave) y refrescar data en el tiempo.
+  - el barrido backend usa `GoogleMaps:ApiKeyServer` (con fallback temporal a `GoogleMaps:ApiKey`) para separar la key server-to-server de la key frontend de mapas en Sedes.
+  - el barrido backend consulta Google Place Details para enriquecer telefono y fotos (`FotoPrincipalUrl`, `FotosUrlsCsv`) antes de upsert.
+  - el boton de barrido manual se controla por parametro global `HOME_REFEXT_BARRIDO_HABILITADO`:
+    - `1|true|si|yes`: habilitado
+    - vacio o cualquier otro valor: deshabilitado/oculto
+  - nuevo procedimiento `Sp_Home_ReferencialesExternos_ListarTiposDeporteSuper` para poblar el combo `Tipo de deporte` desde `TiposDeporteSuperMaestro` (no depende de deportes registrados por clubes).
+- Script incremental:
+  - `Basededatos/SportCenter/Script/20260427_Sedes_Ubigeo_MapsMatch.sql`
+  - agrega `CodigoUbigeo` en `Sedes`, crea `UbigeoMapsMatch`, crea indices y realiza precarga inicial desde maestro SUNAT.
+  - `Basededatos/SportCenter/Script/20260427_Home_EspaciosReferencialesExternos.sql`
+  - crea tabla `HomeEspaciosReferencialesExternos` con FKs a `UbigeoDistritos` y `TiposDeporteSuperMaestro`, e indice de busqueda.

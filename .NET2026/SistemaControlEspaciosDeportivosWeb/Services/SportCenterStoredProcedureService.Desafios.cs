@@ -97,6 +97,60 @@ public partial class SportCenterStoredProcedureService
         return list;
     }
 
+    public async Task<(List<DesafioListadoItemViewModel> Items, int TotalRegistros)> DesafiosHistorialListarAsync(string usuarioId, int pagina = 1, int tamanoPagina = 4)
+    {
+        var list = new List<DesafioListadoItemViewModel>();
+        var totalRegistros = 0;
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_Desafios_Listar", cn)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        AddParam(cmd, "@UsuarioId", usuarioId, SqlDbType.NVarChar);
+        AddParam(cmd, "@TipoListado", "historial", SqlDbType.NVarChar);
+        AddParam(cmd, "@Pagina", pagina <= 0 ? 1 : pagina, SqlDbType.Int);
+        AddParam(cmd, "@TamanoPagina", tamanoPagina <= 0 ? 4 : tamanoPagina, SqlDbType.Int);
+
+        await using var dr = await cmd.ExecuteReaderAsync();
+        while (await dr.ReadAsync())
+        {
+            if (totalRegistros == 0 && !dr.IsDBNull(22))
+            {
+                totalRegistros = dr.GetInt32(22);
+            }
+
+            list.Add(new DesafioListadoItemViewModel
+            {
+                Id = dr.GetInt32(0),
+                RivalNombre = dr.GetString(1),
+                ContactoNombreRival = dr.GetString(2),
+                ContactoUsuarioRival = dr.IsDBNull(3) ? string.Empty : dr.GetString(3),
+                RolVista = dr.GetString(4),
+                Deporte = dr.GetString(5),
+                Nivel = dr.GetString(6),
+                Distrito = dr.GetString(7),
+                FechaTentativa = DateOnly.FromDateTime(dr.GetDateTime(8)),
+                HoraTentativa = TimeOnly.FromTimeSpan(dr.GetTimeSpan(9)),
+                CanchaSugerida = dr.IsDBNull(10) ? null : dr.GetString(10),
+                Modalidad = dr.GetString(11),
+                Mensaje = dr.IsDBNull(12) ? null : dr.GetString(12),
+                FormaPago = dr.GetString(13),
+                Estado = dr.GetString(14),
+                FechaCreacion = dr.GetDateTime(15),
+                FechaRespuesta = dr.IsDBNull(16) ? null : dr.GetDateTime(16),
+                ObservacionDesafioRival = dr.IsDBNull(17) ? null : dr.GetString(17),
+                DetalleEquipoRival = dr.IsDBNull(18) ? null : dr.GetString(18),
+                TelefonoRival = dr.IsDBNull(19) ? null : dr.GetString(19),
+                WhatsappRival = dr.IsDBNull(20) ? null : dr.GetString(20),
+                PuedeVerContactoRival = !dr.IsDBNull(21) && ReadBool(dr, 21)
+            });
+        }
+
+        return (list, totalRegistros);
+    }
+
     public async Task<List<DesafioMensajeItemViewModel>> DesafiosMensajesListarAsync(string usuarioId, int? desafioId = null)
     {
         var list = new List<DesafioMensajeItemViewModel>();

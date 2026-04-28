@@ -77,9 +77,10 @@ public partial class SportCenterStoredProcedureService
         return Convert.ToInt32(result);
     }
 
-    public async Task<List<UsuarioPublicoReservaItemViewModel>> UsuariosPublicosReservasListarAsync(string usuarioId, int top = 200)
+    public async Task<(List<UsuarioPublicoReservaItemViewModel> Reservas, int TotalRegistros)> UsuariosPublicosReservasListarAsync(string usuarioId, int pagina = 1, int tamanoPagina = 6)
     {
         var list = new List<UsuarioPublicoReservaItemViewModel>();
+        var totalRegistros = 0;
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_UsuariosPublicos_ReservasListar", cn)
@@ -87,11 +88,17 @@ public partial class SportCenterStoredProcedureService
             CommandType = CommandType.StoredProcedure
         };
         AddParam(cmd, "@UsuarioId", usuarioId, SqlDbType.NVarChar);
-        AddParam(cmd, "@Top", top <= 0 ? 200 : top, SqlDbType.Int);
+        AddParam(cmd, "@Pagina", pagina <= 0 ? 1 : pagina, SqlDbType.Int);
+        AddParam(cmd, "@TamanoPagina", tamanoPagina <= 0 ? 6 : tamanoPagina, SqlDbType.Int);
 
         await using var dr = await cmd.ExecuteReaderAsync();
         while (await dr.ReadAsync())
         {
+            if (totalRegistros == 0 && !dr.IsDBNull(18))
+            {
+                totalRegistros = dr.GetInt32(18);
+            }
+
             list.Add(new UsuarioPublicoReservaItemViewModel
             {
                 ReservaId = dr.GetInt32(0),
@@ -115,6 +122,6 @@ public partial class SportCenterStoredProcedureService
             });
         }
 
-        return list;
+        return (list, totalRegistros);
     }
 }

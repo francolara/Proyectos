@@ -13,6 +13,10 @@ public class DesafiosIndexViewModel
     public List<DesafioListadoItemViewModel> DesafiosRecibidos { get; set; } = new();
     public List<DesafioListadoItemViewModel> Historial { get; set; } = new();
     public bool BusquedaEjecutada { get; set; }
+    public int PaginaHistorial { get; set; } = 1;
+    public int TamanoPaginaHistorial { get; set; } = 4;
+    public int TotalHistorial { get; set; }
+    public int TotalPaginasHistorial { get; set; } = 1;
 }
 
 public class DesafioBusquedaViewModel

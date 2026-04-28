@@ -11,6 +11,7 @@
 <!-- Firma: Codex - 09/04/2026 | Agrega configuracion opcional de serie por documento para la sede en base a series del negocio. -->
 <!-- Firma: Codex - 16/04/2026 | Agrega apartado de redes sociales (Facebook/Instagram/Twitter) por sede para publicacion en tarjetas del portal publico. -->
 <!-- Firma: Codex - 25/04/2026 | Oculta en formulario los campos Minutos antes del recordatorio y Tolerancia No Asistio, manteniendo envio por inputs hidden para conservar validacion y persistencia. -->
+<!-- Firma: Codex - 27/04/2026 | Edicion de sede incorpora ubigeo SUNAT (departamento/provincia/distrito) obligatorio, match automatico con UbigeoMapsMatch y autocompletado reforzado desde mapa/direccion para componentes Google no estandar (ej. Lima Province). -->
 
 @{
     ViewData["Title"] = "Editar sede";
@@ -69,8 +70,35 @@
                     </div>
                     <div class="col-12">
                         <input asp-for="GooglePlaceId" type="hidden" />
+                        <input asp-for="GoogleDepartamento" type="hidden" />
+                        <input asp-for="GoogleProvincia" type="hidden" />
+                        <input asp-for="GoogleDistrito" type="hidden" />
                         <input asp-for="Latitud" type="hidden" />
                         <input asp-for="Longitud" type="hidden" />
+                    </div>
+                    <div class="col-12">
+                        <div class="alert alert-info mb-1 py-2 px-3 small" role="alert">
+                            Selecciona tu complejo deportivo en el mapa o escribe la direccion. Si el ubigeo no se completa correctamente, ajustalo manualmente.
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Departamento</label>
+                        <select asp-for="CodigoDepartamento" asp-items="Model.DepartamentosUbigeo" class="form-select" id="CodigoDepartamento">
+                            <option value="">Selecciona</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Provincia</label>
+                        <select asp-for="CodigoProvincia" asp-items="Model.ProvinciasUbigeo" class="form-select" id="CodigoProvincia">
+                            <option value="">Selecciona</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="CodigoUbigeo" class="form-label">Distrito</label>
+                        <select asp-for="CodigoUbigeo" asp-items="Model.DistritosUbigeo" class="form-select" id="CodigoUbigeo">
+                            <option value="">Selecciona</option>
+                        </select>
+                        <span asp-validation-for="CodigoUbigeo" class="text-danger"></span>
                     </div>
                     <div class="col-md-8">
                         <label asp-for="Direccion" class="form-label"></label>
@@ -356,6 +384,49 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         (() => {
+            const dep = document.getElementById('CodigoDepartamento');
+            const prov = document.getElementById('CodigoProvincia');
+            const dist = document.getElementById('CodigoUbigeo');
+
+            function renderOptions(select, rows, emptyText) {
+                if (!select) return;
+                select.innerHTML = '';
+                const first = document.createElement('option');
+                first.value = '';
+                first.textContent = emptyText;
+                select.appendChild(first);
+                (rows || []).forEach(x => {
+                    const opt = document.createElement('option');
+                    opt.value = x.value || '';
+                    opt.textContent = x.text || '';
+                    select.appendChild(opt);
+                });
+            }
+
+            if (dep && prov && dist) {
+                dep.addEventListener('change', async () => {
+                    const codigo = (dep.value || '').trim();
+                    renderOptions(prov, [], 'Selecciona');
+                    renderOptions(dist, [], 'Selecciona');
+                    if (codigo.length !== 2) return;
+                    const resp = await fetch(`@Url.Action("UbigeoProvincias", "Home")?codigoDepartamento=${encodeURIComponent(codigo)}`, { cache: 'no-store' });
+                    if (!resp.ok) return;
+                    renderOptions(prov, await resp.json(), 'Selecciona');
+                });
+
+                prov.addEventListener('change', async () => {
+                    const codigo = (prov.value || '').trim();
+                    renderOptions(dist, [], 'Selecciona');
+                    if (codigo.length !== 4) return;
+                    const resp = await fetch(`@Url.Action("UbigeoDistritos", "Home")?codigoProvincia=${encodeURIComponent(codigo)}`, { cache: 'no-store' });
+                    if (!resp.ok) return;
+                    renderOptions(dist, await resp.json(), 'Selecciona');
+                });
+            }
+        })();
+    </script>
+    <script>
+        (() => {
             const input = document.getElementById('fechaNoLaborableInput');
             const btn = document.getElementById('btnAgregarFechaNoLaborable');
             const list = document.getElementById('fechasNoLaborablesList');
@@ -393,7 +464,13 @@
             const latInput = document.getElementById('Latitud');
             const lngInput = document.getElementById('Longitud');
             const placeIdInput = document.getElementById('GooglePlaceId');
+            const googleDepartamentoInput = document.getElementById('GoogleDepartamento');
+            const googleProvinciaInput = document.getElementById('GoogleProvincia');
+            const googleDistritoInput = document.getElementById('GoogleDistrito');
             const dirInput = document.getElementById('Direccion');
+            const depSelect = document.getElementById('CodigoDepartamento');
+            const provSelect = document.getElementById('CodigoProvincia');
+            const distSelect = document.getElementById('CodigoUbigeo');
             const mapsUrlInput = document.getElementById('GoogleMapsUrl');
             const mapsUrlDisplay = document.getElementById('GoogleMapsUrlDisplay');
             const mapsUrlLink = document.getElementById('GoogleMapsUrlLink');
@@ -404,6 +481,133 @@
             let marker;
             let geocoder;
             let autocomplete;
+            let geocodeAddressTimer;
+
+            function clearUbigeoSelection() {
+                if (!depSelect || !provSelect || !distSelect) return;
+                depSelect.value = '';
+                provSelect.innerHTML = '<option value="">Selecciona</option>';
+                distSelect.innerHTML = '<option value="">Selecciona</option>';
+            }
+
+            function setAddressComponents(place) {
+                if (!googleDepartamentoInput || !googleProvinciaInput || !googleDistritoInput) return;
+
+                const components = Array.isArray(place?.address_components) ? place.address_components : [];
+                const getLongNameByAnyType = (...types) =>
+                    components.find(c => c.types.some(t => types.includes(t)))?.long_name || '';
+
+                const getLongNameByPriority = (...types) => {
+                    for (const type of types) {
+                        const value = getLongNameByAnyType(type);
+                        if ((value || '').trim()) return value;
+                    }
+                    return '';
+                };
+
+                const departamento = getLongNameByPriority('administrative_area_level_1');
+                const provincia = getLongNameByPriority('administrative_area_level_2');
+                const distrito = getLongNameByPriority('administrative_area_level_3', 'locality', 'sublocality_level_1', 'sublocality', 'neighborhood');
+
+                googleDepartamentoInput.value = (departamento || '').trim();
+                googleProvinciaInput.value = (provincia || '').trim();
+                googleDistritoInput.value = (distrito || '').trim();
+            }
+
+            async function seleccionarUbigeoPorNombre(departamentoNombre, provinciaNombre, distritoNombre) {
+                if (!depSelect || !provSelect || !distSelect) return;
+                clearUbigeoSelection();
+                if (!departamentoNombre || !provinciaNombre || !distritoNombre) return;
+
+                const normalize = text => (text || '')
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .replace(/\b(PROVINCIA|PROV|DISTRITO|DIST)\b\.?/gi, '')
+                    .replace(/\b(PROVINCE|DISTRICT|MUNICIPALITY|MUNICIPIO)\b\.?/gi, '')
+                    .replace(/\b(DEL|DE|LA|EL|METROPOLITANA)\b/gi, '')
+                    .replace(/\s+/g, ' ')
+                    .trim()
+                    .toUpperCase();
+
+                const findByText = (select, target) => {
+                    const targetNorm = normalize(target);
+                    for (const option of Array.from(select.options)) {
+                        if (normalize(option.text) === targetNorm) {
+                            return option.value || '';
+                        }
+                    }
+                    return '';
+                };
+
+                const depValue = findByText(depSelect, departamentoNombre);
+                if (!depValue) return;
+                depSelect.value = depValue;
+                depSelect.dispatchEvent(new Event('change'));
+
+                const respProv = await fetch(`@Url.Action("UbigeoProvincias", "Home")?codigoDepartamento=${encodeURIComponent(depValue)}`, { cache: 'no-store' });
+                if (!respProv.ok) return;
+                const dataProv = await respProv.json();
+                provSelect.innerHTML = '<option value="">Selecciona</option>';
+                (dataProv || []).forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.value || '';
+                    option.textContent = item.text || '';
+                    provSelect.appendChild(option);
+                });
+
+                const provValue = findByText(provSelect, provinciaNombre);
+                const trySelectDistritoInProvincia = async (provinciaCodigo) => {
+                    const respDist = await fetch(`@Url.Action("UbigeoDistritos", "Home")?codigoProvincia=${encodeURIComponent(provinciaCodigo)}`, { cache: 'no-store' });
+                    if (!respDist.ok) return false;
+                    const dataDist = await respDist.json();
+                    distSelect.innerHTML = '<option value="">Selecciona</option>';
+                    (dataDist || []).forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.value || '';
+                        option.textContent = item.text || '';
+                        distSelect.appendChild(option);
+                    });
+
+                    const distValue = findByText(distSelect, distritoNombre);
+                    if (!distValue) return false;
+                    provSelect.value = provinciaCodigo;
+                    distSelect.value = distValue;
+                    return true;
+                };
+
+                if (provValue) {
+                    const matched = await trySelectDistritoInProvincia(provValue);
+                    if (matched) return;
+                }
+
+                for (const item of (dataProv || [])) {
+                    const provinciaCodigo = item.value || '';
+                    if (!provinciaCodigo || provinciaCodigo === provValue) continue;
+                    const matched = await trySelectDistritoInProvincia(provinciaCodigo);
+                    if (matched) return;
+                }
+            }
+
+            async function applyAddressAndUbigeoFromPlace(place) {
+                if (!place) {
+                    clearUbigeoSelection();
+                    return;
+                }
+
+                if (place.formatted_address) {
+                    dirInput.value = place.formatted_address;
+                }
+
+                if (placeIdInput) {
+                    placeIdInput.value = place.place_id || '';
+                }
+
+                setAddressComponents(place);
+                await seleccionarUbigeoPorNombre(
+                    googleDepartamentoInput?.value || '',
+                    googleProvinciaInput?.value || '',
+                    googleDistritoInput?.value || '');
+            }
 
             function setCoords(lat, lng) {
                 const latNorm = Number(lat).toFixed(7);
@@ -431,29 +635,36 @@
                 map = new google.maps.Map(targetMap, { center: { lat, lng }, zoom: 15 });
                 marker = new google.maps.Marker({ position: { lat, lng }, map, draggable: true });
                 autocomplete = new google.maps.places.Autocomplete(dirInput, {
-                    fields: ['place_id', 'formatted_address', 'geometry'],
+                    fields: ['place_id', 'formatted_address', 'geometry', 'address_components'],
                     componentRestrictions: { country: ['pe'] }
                 });
 
                 marker.addListener('dragend', () => {
                     const pos = marker.getPosition();
                     setCoords(pos.lat(), pos.lng());
+                    geocoder.geocode({ location: { lat: pos.lat(), lng: pos.lng() } }, async (results, status) => {
+                        if (status !== 'OK' || !results || !results.length) return;
+                        await applyAddressAndUbigeoFromPlace(results[0]);
+                    });
                 });
                 map.addListener('click', (e) => {
                     marker.setPosition(e.latLng);
                     setCoords(e.latLng.lat(), e.latLng.lng());
+                    geocoder.geocode({ location: { lat: e.latLng.lat(), lng: e.latLng.lng() } }, async (results, status) => {
+                        if (status !== 'OK' || !results || !results.length) return;
+                        await applyAddressAndUbigeoFromPlace(results[0]);
+                    });
                 });
-                autocomplete.addListener('place_changed', () => {
+                autocomplete.addListener('place_changed', async () => {
                     const place = autocomplete.getPlace();
                     if (!place || !place.geometry || !place.geometry.location) return;
                     const latPlace = place.geometry.location.lat();
                     const lngPlace = place.geometry.location.lng();
-                    if (place.formatted_address) dirInput.value = place.formatted_address;
-                    if (placeIdInput) placeIdInput.value = place.place_id || '';
                     map.setCenter({ lat: latPlace, lng: lngPlace });
                     map.setZoom(16);
                     marker.setPosition({ lat: latPlace, lng: lngPlace });
                     setCoords(latPlace, lngPlace);
+                    await applyAddressAndUbigeoFromPlace(place);
                 });
             }
 
@@ -467,8 +678,18 @@
                     map.setCenter(loc);
                     marker.setPosition(loc);
                     setCoords(loc.lat(), loc.lng());
-                    if (placeIdInput) placeIdInput.value = results[0].place_id || '';
+                    applyAddressAndUbigeoFromPlace(results[0]);
                 });
+            }
+
+            function buscarDireccionConDelay() {
+                if (!hasGoogleApi || !geocoder) return;
+                const value = (dirInput.value || '').trim();
+                if (value.length < 8) return;
+                clearTimeout(geocodeAddressTimer);
+                geocodeAddressTimer = setTimeout(() => {
+                    buscarDireccion();
+                }, 650);
             }
 
             if (!hasGoogleApi) {
@@ -484,6 +705,14 @@
 
             window.initSedeMapa = initMap;
             btnBuscar.addEventListener('click', buscarDireccion);
+            dirInput?.addEventListener('blur', buscarDireccion);
+            dirInput?.addEventListener('input', buscarDireccionConDelay);
+            dirInput?.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    buscarDireccion();
+                }
+            });
         })();
     </script>
     <script>

@@ -11,40 +11,46 @@
 <!-- Firma: Codex - 19/04/2026 | Datos operativos del desafio visibles en mini tarjetas con iconos y selector de hora estandarizado solo por horas exactas. -->
 <!-- Firma: Codex - 19/04/2026 | El resumen operacional del desafio pasa a mini tarjetas para deporte, nivel, fecha, hora y ubicacion completa con distrito, provincia y departamento. -->
 <!-- Firma: Codex - 19/04/2026 | La busqueda y los listados de desafios muestran el contacto responsable del equipo y reorganizan enviados/recibidos/historial con resumen visible, detalle expandible, filtros rapidos por estado, prioridad visual a recibidos en movil y pie de acciones consistente. -->
+<!-- Firma: Codex - 26/04/2026 | En historial se deja visible solo el resumen principal del desafio y se mueve contacto/usuario/cancha/modalidad/pago al bloque Ver detalle. -->
+<!-- Firma: Codex - 26/04/2026 | Historial de desafios con paginacion 4x4 desde SP y navegacion por pagina en la vista. -->
+<!-- Firma: Codex - 27/04/2026 | Header de Desafios alineado con Perfil: etiqueta de estado debajo del subtitulo, boton Cambiar contrasena en panel derecho y retiro de Editar perfil publico. -->
+<!-- Firma: Codex - 27/04/2026 | Se retira el texto "Modulo independiente", se normalizan tamanos de titulo/subtitulo del header de Desafios y se rediseña el historial con vista ejecutiva compacta, KPIs y orden por fecha. -->
 
 <div class="container py-4 desafios-page">
     <header class="desafios-hero">
         <div>
-            <div class="desafios-kicker">Modulo independiente</div>
             <h1>Desafios</h1>
             <p>Encuentra rivales por distrito, envia invitaciones y administra los desafios de tu equipo sin afectar el flujo actual de reservas.</p>
-        </div>
-        <div class="desafios-hero-side">
             @if (Model.PerfilActual.BuscarDesafios)
             {
-                <span class="desafios-badge is-ready"><i class="bi bi-lightning-charge-fill"></i>Disponible para desafios</span>
+                <span class="desafios-badge is-ready desafios-status-inline"><i class="bi bi-lightning-charge-fill"></i>Lista para desafios</span>
             }
             else
             {
-                <span class="desafios-badge"><i class="bi bi-slash-circle"></i>No visible en busquedas</span>
+                <span class="desafios-badge desafios-status-inline"><i class="bi bi-slash-circle"></i>No visible en busquedas</span>
             }
-            <a class="btn btn-outline-primary" asp-controller="PerfilPublico" asp-action="Index" asp-route-tab="datos">
-                <i class="bi bi-person-lines-fill me-1"></i>Editar perfil publico
+        </div>
+        <div class="desafios-hero-side">
+            <a class="auth-nav-mini auth-nav-mini-outline" asp-controller="Cuenta" asp-action="CambiarContrasena">
+                <i class="bi bi-key me-1"></i>Cambiar contrasena
             </a>
         </div>
     </header>
 
-    <ul class="nav nav-tabs mb-3">
-        <li class="nav-item">
-            <a class="nav-link" asp-controller="PerfilPublico" asp-action="Index" asp-route-tab="datos">Datos personales</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" asp-controller="PerfilPublico" asp-action="Index" asp-route-tab="reservas">Mis reservas</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link active" asp-action="Index">Desafios</a>
-        </li>
-    </ul>
+    <nav class="profile-tabs mb-3" aria-label="Navegacion de perfil">
+        <a class="profile-tab-item" asp-controller="PerfilPublico" asp-action="Index" asp-route-tab="datos">
+            <i class="bi bi-person-vcard"></i>
+            <span>Datos personales</span>
+        </a>
+        <a class="profile-tab-item" asp-controller="PerfilPublico" asp-action="Index" asp-route-tab="reservas" asp-route-pagina="1">
+            <i class="bi bi-calendar2-check"></i>
+            <span>Mis reservas</span>
+        </a>
+        <a class="profile-tab-item is-active" asp-action="Index">
+            <i class="bi bi-trophy"></i>
+            <span>Desafios</span>
+        </a>
+    </nav>
 
     @if (TempData["DesafiosOk"] is string ok && !string.IsNullOrWhiteSpace(ok))
     {
@@ -556,11 +562,26 @@
                         <h2 class="section-title mb-1"><i class="bi bi-clock-history me-1"></i>Historial</h2>
                         <p class="desafio-section-copy mb-0">Registro compacto de desafios cerrados y coordinaciones terminadas.</p>
                     </div>
-                    <div class="desafio-filter-group" data-target="#desafiosHistorialList">
-                        <button type="button" class="desafio-filter-chip is-active" data-filter="todos">Todos</button>
-                        <button type="button" class="desafio-filter-chip" data-filter="finalizado">Finalizados</button>
+                    <div class="desafio-history-toolbar">
+                        <div class="desafio-filter-group" data-target="#desafiosHistorialList">
+                            <button type="button" class="desafio-filter-chip is-active" data-filter="todos">Todos</button>
+                            <button type="button" class="desafio-filter-chip" data-filter="finalizado">Finalizados</button>
+                        </div>
+                        <div class="desafio-history-sort">
+                            <label for="historialSort" class="form-label mb-1">Orden</label>
+                            <select id="historialSort" class="form-select form-select-sm">
+                                <option value="desc">Mas recientes</option>
+                                <option value="asc">Mas antiguos</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
+                @if (Model.TotalHistorial > 0)
+                {
+                    var inicioHistorial = ((Model.PaginaHistorial - 1) * Model.TamanoPaginaHistorial) + 1;
+                    var finHistorial = Math.Min(Model.PaginaHistorial * Model.TamanoPaginaHistorial, Model.TotalHistorial);
+                    <p class="profile-reservas-summary">Mostrando <strong>@inicioHistorial</strong> - <strong>@finHistorial</strong> de <strong>@Model.TotalHistorial</strong> desafios.</p>
+                }
                 @if (Model.Historial.Count == 0)
                 {
                     <div class="empty-state compact"><p class="mb-0">Todavia no hay desafios finalizados.</p></div>
@@ -570,9 +591,10 @@
                     <div class="desafio-history-grid" id="desafiosHistorialList">
                         @foreach (var item in Model.Historial)
                         {
-                            <article class="desafio-history-item desafio-history-item-compact" data-estado="@EstadoClave(item.Estado)">
-                                <div class="d-flex justify-content-between gap-2 align-items-start">
-                                    <div>
+                            var historialSortDate = item.FechaTentativa.ToDateTime(item.HoraTentativa).ToString("yyyy-MM-ddTHH:mm:ss");
+                            <article class="desafio-history-item desafio-history-item-compact" data-estado="@EstadoClave(item.Estado)" data-fecha="@historialSortDate">
+                                <div class="desafio-history-head">
+                                    <div class="desafio-history-main">
                                         <div class="desafio-code">@item.CodigoDesafio</div>
                                         <h3>@item.RivalNombre</h3>
                                         <p class="mb-0 text-muted">@item.Deporte - @item.Nivel - @item.Distrito</p>
@@ -601,37 +623,37 @@
                                         <strong>@item.Distrito</strong>
                                     </div>
                                 </div>
-                                <div class="desafio-detail-grid desafio-detail-grid-compact">
-                                    <div class="desafio-detail-card">
-                                        <span class="desafio-detail-label"><i class="bi bi-person-badge"></i>Contacto</span>
-                                        <strong>@item.ContactoNombreRival</strong>
-                                    </div>
-                                    <div class="desafio-detail-card">
-                                        <span class="desafio-detail-label"><i class="bi bi-at"></i>Usuario</span>
-                                        <strong>@(string.IsNullOrWhiteSpace(item.ContactoUsuarioRival) ? "Sin usuario visible" : item.ContactoUsuarioRival)</strong>
-                                    </div>
-                                    <div class="desafio-detail-card">
-                                        <span class="desafio-detail-label"><i class="bi bi-dribbble"></i>Cancha sugerida</span>
-                                        <strong>@(string.IsNullOrWhiteSpace(item.CanchaSugerida) ? "Por definir" : item.CanchaSugerida)</strong>
-                                    </div>
-                                    <div class="desafio-detail-card">
-                                        <span class="desafio-detail-label"><i class="bi bi-grid-3x3-gap"></i>Modalidad</span>
-                                        <strong>@item.Modalidad</strong>
-                                    </div>
-                                    <div class="desafio-detail-card">
-                                        <span class="desafio-detail-label"><i class="bi bi-wallet2"></i>Forma de pago</span>
-                                        <strong>@item.FormaPago</strong>
-                                    </div>
-                                </div>
                                 <details class="desafio-collapsible desafio-collapsible-compact mt-3">
                                     <summary>
                                         <span><i class="bi bi-layout-text-window-reverse me-1"></i>Ver detalle</span>
-                                        <small>Contacto, bitacora y contexto final</small>
+                                        <small>Coordinacion, contacto y bitacora final</small>
                                     </summary>
                                     <div class="desafio-collapsible-body">
+                                        <div class="desafio-detail-grid desafio-detail-grid-compact">
+                                            <div class="desafio-detail-card">
+                                                <span class="desafio-detail-label"><i class="bi bi-person-badge"></i>Contacto</span>
+                                                <strong>@item.ContactoNombreRival</strong>
+                                            </div>
+                                            <div class="desafio-detail-card">
+                                                <span class="desafio-detail-label"><i class="bi bi-at"></i>Usuario</span>
+                                                <strong>@(string.IsNullOrWhiteSpace(item.ContactoUsuarioRival) ? "Sin usuario visible" : item.ContactoUsuarioRival)</strong>
+                                            </div>
+                                            <div class="desafio-detail-card">
+                                                <span class="desafio-detail-label"><i class="bi bi-dribbble"></i>Cancha sugerida</span>
+                                                <strong>@(string.IsNullOrWhiteSpace(item.CanchaSugerida) ? "Por definir" : item.CanchaSugerida)</strong>
+                                            </div>
+                                            <div class="desafio-detail-card">
+                                                <span class="desafio-detail-label"><i class="bi bi-grid-3x3-gap"></i>Modalidad</span>
+                                                <strong>@item.Modalidad</strong>
+                                            </div>
+                                            <div class="desafio-detail-card">
+                                                <span class="desafio-detail-label"><i class="bi bi-wallet2"></i>Forma de pago</span>
+                                                <strong>@item.FormaPago</strong>
+                                            </div>
+                                        </div>
                                         @if (item.PuedeVerContactoRival)
                                         {
-                                            <div class="desafio-contact-card">
+                                            <div class="desafio-contact-card mt-3">
                                                 <div class="copy-label">Contacto registrado</div>
                                                 <div class="desafio-contact-grid">
                                                     <div>
@@ -676,6 +698,27 @@
                         }
                     </div>
                     <div class="desafio-filter-empty" data-empty-for="desafiosHistorialList">No hay registros del historial para este filtro.</div>
+                    @if (Model.TotalPaginasHistorial > 1)
+                    {
+                        var paginaAnteriorHistorial = Model.PaginaHistorial > 1 ? Model.PaginaHistorial - 1 : 1;
+                        var paginaSiguienteHistorial = Model.PaginaHistorial < Model.TotalPaginasHistorial ? Model.PaginaHistorial + 1 : Model.TotalPaginasHistorial;
+                        <nav class="profile-pagination" aria-label="Paginacion de historial de desafios">
+                            <a class="profile-page-link @(Model.PaginaHistorial <= 1 ? "is-disabled" : null)"
+                               asp-action="Index"
+                               asp-route-hpage="@paginaAnteriorHistorial">Anterior</a>
+
+                            @for (var p = 1; p <= Model.TotalPaginasHistorial; p++)
+                            {
+                                <a class="profile-page-link @(p == Model.PaginaHistorial ? "is-active" : null)"
+                                   asp-action="Index"
+                                   asp-route-hpage="@p">@p</a>
+                            }
+
+                            <a class="profile-page-link @(Model.PaginaHistorial >= Model.TotalPaginasHistorial ? "is-disabled" : null)"
+                               asp-action="Index"
+                               asp-route-hpage="@paginaSiguienteHistorial">Siguiente</a>
+                        </nav>
+                    }
                 }
             </section>
         </div>
@@ -823,29 +866,64 @@
             margin-bottom: 1.2rem;
         }
         .desafios-hero h1 {
-            font-size: clamp(2rem, 4vw, 2.6rem);
-            font-weight: 900;
-            letter-spacing: -.03em;
-            margin-bottom: .35rem;
+            font-size: clamp(1.65rem, 2.8vw, 2rem);
+            font-weight: 800;
+            letter-spacing: -.015em;
+            margin-bottom: .3rem;
         }
         .desafios-hero p {
             max-width: 760px;
             margin: 0;
-            color: rgba(255,255,255,.84);
-        }
-        .desafios-kicker {
-            text-transform: uppercase;
-            letter-spacing: .08em;
-            font-size: .76rem;
-            font-weight: 800;
-            opacity: .78;
-            margin-bottom: .5rem;
+            color: rgba(255,255,255,.9);
+            font-size: .98rem;
+            line-height: 1.45;
         }
         .desafios-hero-side {
             display: flex;
             flex-direction: column;
             align-items: flex-end;
-            gap: .75rem;
+            justify-content: flex-start;
+            gap: .5rem;
+        }
+        .profile-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .65rem;
+            background: linear-gradient(145deg, #f6f9ff 0%, #ecf3ff 100%);
+            border: 1px solid #d6e3fb;
+            border-radius: 16px;
+            padding: .55rem;
+        }
+        .profile-tab-item {
+            flex: 1 1 190px;
+            min-height: 52px;
+            border-radius: 12px;
+            padding: .7rem .9rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .5rem;
+            text-decoration: none;
+            color: #345280;
+            font-weight: 700;
+            background: transparent;
+            border: 1px solid transparent;
+            transition: .2s ease;
+        }
+        .profile-tab-item i {
+            font-size: 1rem;
+        }
+        .profile-tab-item:hover {
+            color: #12366f;
+            background: #fdfefe;
+            border-color: #c5d8fb;
+            transform: translateY(-1px);
+        }
+        .profile-tab-item.is-active {
+            color: #fff;
+            background: linear-gradient(135deg, #0d3b66 0%, #175b95 100%);
+            border-color: #0d3b66;
+            box-shadow: 0 8px 18px rgba(13, 59, 102, .26);
         }
         .desafios-badge {
             display: inline-flex;
@@ -861,6 +939,9 @@
             background: var(--success-soft);
             color: #147041;
             border-color: #97dfb2;
+        }
+        .desafios-status-inline {
+            margin-top: .7rem;
         }
         .section-title-row {
             display: flex;
@@ -1276,6 +1357,68 @@
         .desafio-filter-empty.is-visible {
             display: block;
         }
+        .profile-reservas-summary {
+            margin: .2rem 0 .7rem;
+            color: #4f658c;
+            font-size: .9rem;
+        }
+        .desafio-history-toolbar {
+            display: flex;
+            gap: .85rem;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+        .desafio-history-sort {
+            min-width: 165px;
+        }
+        .desafio-history-head {
+            display: grid;
+            grid-template-columns: minmax(240px, 1fr) auto;
+            gap: .75rem;
+            align-items: start;
+            margin-bottom: .55rem;
+        }
+        .desafio-history-main h3 {
+            margin-bottom: .2rem;
+        }
+        .profile-pagination {
+            border-top: 1px solid #dbe5f4;
+            margin-top: .45rem;
+            padding: .9rem 0 .2rem;
+            display: flex;
+            gap: .45rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .profile-page-link {
+            min-width: 2.2rem;
+            height: 2.2rem;
+            padding: 0 .75rem;
+            border-radius: 10px;
+            border: 1px solid #cad8f2;
+            background: #fff;
+            color: #1d4ea1;
+            text-decoration: none;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: .18s ease;
+        }
+        .profile-page-link:hover {
+            background: #eef4ff;
+            border-color: #9ebbf2;
+        }
+        .profile-page-link.is-active {
+            background: #1f4fad;
+            color: #fff;
+            border-color: #1f4fad;
+            box-shadow: 0 8px 16px rgba(31, 79, 173, .25);
+        }
+        .profile-page-link.is-disabled {
+            pointer-events: none;
+            opacity: .45;
+        }
         .empty-state i {
             font-size: 1.6rem;
             display: block;
@@ -1310,6 +1453,10 @@
             }
         }
         @@media (max-width: 767px) {
+            .profile-tab-item {
+                flex: 1 1 100%;
+                justify-content: flex-start;
+            }
             .desafio-meta {
                 grid-template-columns: 1fr;
             }
@@ -1330,6 +1477,12 @@
             }
             .desafio-message-head {
                 flex-direction: column;
+            }
+            .desafio-history-head {
+                grid-template-columns: 1fr;
+            }
+            .desafio-history-sort {
+                min-width: 100%;
             }
             .desafio-actions-footer {
                 justify-content: stretch;
@@ -1352,6 +1505,7 @@
             const prov = document.getElementById('BusquedaCodigoProvincia');
             const dist = document.getElementById('BusquedaCodigoUbigeo');
             const filterGroups = document.querySelectorAll('.desafio-filter-group[data-target]');
+            const historialSort = document.getElementById('historialSort');
 
             function renderOptions(select, rows, emptyText) {
                 if (!select) return;
@@ -1403,6 +1557,24 @@
                     applyStateFilter(targetSelector, activeButton.getAttribute('data-filter') || 'todos');
                 }
             });
+
+            function ordenarHistorial() {
+                const list = document.getElementById('desafiosHistorialList');
+                if (!list || !historialSort) return;
+                const items = Array.from(list.querySelectorAll('.desafio-history-item'));
+                const order = historialSort.value === 'asc' ? 'asc' : 'desc';
+                items.sort((a, b) => {
+                    const da = new Date(a.getAttribute('data-fecha') || '');
+                    const db = new Date(b.getAttribute('data-fecha') || '');
+                    return order === 'asc' ? da - db : db - da;
+                });
+                items.forEach(item => list.appendChild(item));
+            }
+
+            if (historialSort) {
+                historialSort.addEventListener('change', ordenarHistorial);
+                ordenarHistorial();
+            }
 
             if (dep && prov && dist) {
                 dep.addEventListener('change', async () => {

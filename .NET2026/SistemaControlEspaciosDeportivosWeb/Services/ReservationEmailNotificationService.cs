@@ -1,6 +1,7 @@
 using System.Text;
 using SistemaControlEspaciosDeportivosWeb.Models;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
+using Microsoft.AspNetCore.Http;
 
 namespace SistemaControlEspaciosDeportivosWeb.Services;
 
@@ -8,7 +9,8 @@ public class ReservationEmailNotificationService(
     ISportCenterStoredProcedureService spService,
     IEmailService emailService,
     ILogger<ReservationEmailNotificationService> logger,
-    IHostEnvironment environment) : IReservationEmailNotificationService
+    IHostEnvironment environment,
+    IHttpContextAccessor httpContextAccessor) : IReservationEmailNotificationService
 {
     private const string SenderEmailReservas = "reservas@lazonadeportiva.com";
     private const string SenderNameReservas = "La Zona Deportiva";
@@ -50,7 +52,10 @@ public class ReservationEmailNotificationService(
                 reserva.CorreoNotificacionSede.Trim(),
                 reserva.Sede,
                 $"Nueva reserva generada - #{reserva.ReservaId:D6}",
-                ReservationEmailTemplateBuilder.BuildReservationGeneratedTemplate(reserva),
+                ReservationEmailTemplateBuilder.BuildReservationGeneratedTemplate(
+                    reserva,
+                    BuildLoginReturnUrl("/Reservas"),
+                    "Gestionar reserva"),
                 new EmailSendOptions
                 {
                     SenderEmail = SenderEmailReservas,
@@ -111,7 +116,10 @@ public class ReservationEmailNotificationService(
                 reserva.ClienteCorreo.Trim(),
                 reserva.Cliente,
                 $"Tu reserva fue confirmada - #{reserva.ReservaId:D6}",
-                ReservationEmailTemplateBuilder.BuildReservationConfirmedTemplate(reserva),
+                ReservationEmailTemplateBuilder.BuildReservationConfirmedTemplate(
+                    reserva,
+                    BuildLoginReturnUrl("/PerfilPublico?tab=reservas"),
+                    "Ver reserva"),
                 new EmailSendOptions
                 {
                     SenderEmail = SenderEmailReservas,
@@ -142,34 +150,61 @@ public class ReservationEmailNotificationService(
     {
         return estado == (int)EstadoReserva.Confirmada || estado == (int)EstadoReserva.Pagada;
     }
+
+    private string BuildLoginReturnUrl(string returnUrl)
+    {
+        var encodedReturnUrl = Uri.EscapeDataString(returnUrl);
+        var loginPath = $"/Identity/Account/Login?returnUrl={encodedReturnUrl}";
+
+        var request = httpContextAccessor.HttpContext?.Request;
+        if (request is null || !request.Host.HasValue)
+        {
+            return loginPath;
+        }
+
+        var baseUrl = $"{request.Scheme}://{request.Host}{request.PathBase}";
+        return $"{baseUrl.TrimEnd('/')}{loginPath}";
+    }
 }
 
 public static class ReservationEmailTemplateBuilder
 {
-    public static string BuildReservationGeneratedTemplate(ReservaEmailContextViewModel reserva)
+    public static string BuildReservationGeneratedTemplate(
+        ReservaEmailContextViewModel reserva,
+        string actionUrl,
+        string actionText)
     {
         return BuildBaseTemplate(
             title: "Reserva generada",
             intro: "Se registro una nueva reserva desde el Home.",
             body: "Revisa la informacion para gestionar el seguimiento de esta reserva.",
-            reserva: reserva);
+            reserva: reserva,
+            actionUrl: actionUrl,
+            actionText: actionText);
     }
 
-    public static string BuildReservationConfirmedTemplate(ReservaEmailContextViewModel reserva)
+    public static string BuildReservationConfirmedTemplate(
+        ReservaEmailContextViewModel reserva,
+        string actionUrl,
+        string actionText)
     {
         var estadoTexto = reserva.Estado == (int)EstadoReserva.Pagada ? "pagada" : "confirmada";
         return BuildBaseTemplate(
             title: "Reserva confirmada",
             intro: $"Tu reserva fue {estadoTexto} correctamente.",
             body: "Te compartimos el detalle para tu control.",
-            reserva: reserva);
+            reserva: reserva,
+            actionUrl: actionUrl,
+            actionText: actionText);
     }
 
     private static string BuildBaseTemplate(
         string title,
         string intro,
         string body,
-        ReservaEmailContextViewModel reserva)
+        ReservaEmailContextViewModel reserva,
+        string actionUrl,
+        string actionText)
     {
         var rows = new List<(string Label, string Value)>
         {
@@ -218,6 +253,15 @@ $"""
                 <p style="margin:0 0 8px;font-size:14px;line-height:1.6;color:#475569;">{Escape(body)}</p>
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:16px;border:1px solid #dbe6f4;border-radius:10px;overflow:hidden;">
                   {rowsHtml}
+                </table>
+                <table role="presentation" cellspacing="0" cellpadding="0" style="margin-top:18px;">
+                  <tr>
+                    <td style="border-radius:10px;background:linear-gradient(135deg,#0d3b66 0%,#164f86 60%,#17a2b8 100%);">
+                      <a href="{Escape(actionUrl)}" style="display:inline-block;padding:12px 22px;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;border-radius:10px;">
+                        {Escape(actionText)}
+                      </a>
+                    </td>
+                  </tr>
                 </table>
                 <p style="margin:18px 0 0;font-size:12px;line-height:1.5;color:#94a3b8;">
                   Este correo fue enviado automaticamente por La Zona Deportiva.

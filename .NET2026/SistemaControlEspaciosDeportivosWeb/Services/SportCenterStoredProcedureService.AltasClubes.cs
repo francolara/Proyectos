@@ -76,6 +76,18 @@ public partial class SportCenterStoredProcedureService
         return (list, totalRegistros, totalPendientes, totalAprobados, totalRechazados);
     }
 
+    public async Task<AltaClubItemViewModel?> AltasClubesObtenerPorIdAsync(int id)
+    {
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_AltasClubes_ObtenerPorId", cn) { CommandType = CommandType.StoredProcedure };
+        AddParam(cmd, "@Id", id, SqlDbType.Int);
+        await using var dr = await cmd.ExecuteReaderAsync();
+        if (!await dr.ReadAsync()) return null;
+
+        return MapAltaClubItem(dr);
+    }
+
     public async Task<string> HomeRegistrarClubConPruebaAsync(AltaClubSolicitudFormViewModel model, string usuarioId)
     {
         await using var cn = CreateConnection();
@@ -132,5 +144,29 @@ public partial class SportCenterStoredProcedureService
         {
             return false;
         }
+    }
+
+    private static AltaClubItemViewModel MapAltaClubItem(SqlDataReader dr)
+    {
+        return new AltaClubItemViewModel
+        {
+            Id = dr.GetInt32(0),
+            CodigoSolicitud = dr.GetString(1),
+            NombreContacto = dr.GetString(2),
+            Telefono = dr.GetString(3),
+            Correo = dr.GetString(4),
+            RelacionClub = dr.GetString(5),
+            NombreClub = dr.GetString(6),
+            Pais = dr.GetString(7),
+            ProvinciaEstado = dr.GetString(8),
+            Ciudad = dr.GetString(9),
+            Direccion = dr.GetString(10),
+            Estado = dr.GetInt32(11),
+            ComentarioGestion = dr.IsDBNull(12) ? null : dr.GetString(12),
+            NegocioId = dr.IsDBNull(13) ? null : dr.GetInt32(13),
+            SedeId = dr.IsDBNull(14) ? null : dr.GetInt32(14),
+            FechaRegistro = dr.GetDateTime(15),
+            FechaGestion = dr.IsDBNull(16) ? null : dr.GetDateTime(16)
+        };
     }
 }

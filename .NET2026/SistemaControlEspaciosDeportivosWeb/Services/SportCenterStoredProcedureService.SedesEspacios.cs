@@ -58,6 +58,9 @@ public partial class SportCenterStoredProcedureService
             NegocioId = dr.GetInt32(1),
             Nombre = dr.GetString(2),
             Direccion = dr.GetString(3),
+            CodigoUbigeo = dr.FieldCount > 33 && !dr.IsDBNull(33) ? dr.GetString(33) : string.Empty,
+            CodigoDepartamento = dr.FieldCount > 34 && !dr.IsDBNull(34) ? dr.GetString(34) : null,
+            CodigoProvincia = dr.FieldCount > 35 && !dr.IsDBNull(35) ? dr.GetString(35) : null,
             ConsideracionesReserva = dr.FieldCount > 4 && !dr.IsDBNull(4) ? dr.GetString(4) : null,
             Telefono = dr.IsDBNull(5) ? null : dr.GetString(5),
             FacebookUrl = dr.FieldCount > 6 && !dr.IsDBNull(6) ? dr.GetString(6) : null,
@@ -120,6 +123,7 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@NegocioId", model.NegocioId, SqlDbType.Int);
         AddParam(cmd, "@Nombre", model.Nombre, SqlDbType.NVarChar);
         AddParam(cmd, "@Direccion", model.Direccion, SqlDbType.NVarChar);
+        AddParam(cmd, "@CodigoUbigeo", model.CodigoUbigeo, SqlDbType.Char);
         AddParam(cmd, "@ConsideracionesReserva", model.ConsideracionesReserva, SqlDbType.NVarChar);
         AddParam(cmd, "@Telefono", model.Telefono, SqlDbType.NVarChar);
         AddParam(cmd, "@FacebookUrl", model.FacebookUrl, SqlDbType.NVarChar);
@@ -129,6 +133,9 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@Latitud", model.Latitud, SqlDbType.Decimal);
         AddParam(cmd, "@Longitud", model.Longitud, SqlDbType.Decimal);
         AddParam(cmd, "@GooglePlaceId", model.GooglePlaceId, SqlDbType.NVarChar);
+        AddParam(cmd, "@GoogleDepartamento", model.GoogleDepartamento, SqlDbType.NVarChar);
+        AddParam(cmd, "@GoogleProvincia", model.GoogleProvincia, SqlDbType.NVarChar);
+        AddParam(cmd, "@GoogleDistrito", model.GoogleDistrito, SqlDbType.NVarChar);
         AddParam(cmd, "@GoogleMapsUrl", model.GoogleMapsUrl, SqlDbType.NVarChar);
         AddParam(cmd, "@FotoPrincipalUrl", model.FotoPrincipalUrl, SqlDbType.NVarChar);
         AddParam(cmd, "@FotosUrlsCsv", model.FotosUrlsCsv, SqlDbType.NVarChar);
@@ -164,6 +171,7 @@ public partial class SportCenterStoredProcedureService
             AddParam(cmd, "@NegocioId", model.NegocioId, SqlDbType.Int);
             AddParam(cmd, "@Nombre", model.Nombre, SqlDbType.NVarChar);
             AddParam(cmd, "@Direccion", model.Direccion, SqlDbType.NVarChar);
+            AddParam(cmd, "@CodigoUbigeo", model.CodigoUbigeo, SqlDbType.Char);
             AddParam(cmd, "@ConsideracionesReserva", model.ConsideracionesReserva, SqlDbType.NVarChar);
             AddParam(cmd, "@Telefono", model.Telefono, SqlDbType.NVarChar);
             AddParam(cmd, "@FacebookUrl", model.FacebookUrl, SqlDbType.NVarChar);
@@ -173,6 +181,9 @@ public partial class SportCenterStoredProcedureService
             AddParam(cmd, "@Latitud", model.Latitud, SqlDbType.Decimal);
             AddParam(cmd, "@Longitud", model.Longitud, SqlDbType.Decimal);
             AddParam(cmd, "@GooglePlaceId", model.GooglePlaceId, SqlDbType.NVarChar);
+            AddParam(cmd, "@GoogleDepartamento", model.GoogleDepartamento, SqlDbType.NVarChar);
+            AddParam(cmd, "@GoogleProvincia", model.GoogleProvincia, SqlDbType.NVarChar);
+            AddParam(cmd, "@GoogleDistrito", model.GoogleDistrito, SqlDbType.NVarChar);
             AddParam(cmd, "@GoogleMapsUrl", model.GoogleMapsUrl, SqlDbType.NVarChar);
             AddParam(cmd, "@FotoPrincipalUrl", model.FotoPrincipalUrl, SqlDbType.NVarChar);
             AddParam(cmd, "@FotosUrlsCsv", model.FotosUrlsCsv, SqlDbType.NVarChar);

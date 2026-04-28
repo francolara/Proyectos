@@ -15,6 +15,10 @@ public class HomeIndexViewModel
     public int? TipoDeporteId { get; set; }
     public int? NegocioId { get; set; }
     public bool? OmitirFechaHorario { get; set; }
+    public bool BuscarCercaDeMi { get; set; }
+    public decimal? LatitudUsuario { get; set; }
+    public decimal? LongitudUsuario { get; set; }
+    public decimal? RadioKm { get; set; }
     public List<SelectListItem> DepartamentosUbigeo { get; set; } = new();
     public List<SelectListItem> ProvinciasUbigeo { get; set; } = new();
     public List<SelectListItem> DistritosUbigeo { get; set; } = new();
@@ -95,10 +99,13 @@ public class EspacioDisponibleViewModel
     public bool TieneIluminacion { get; set; }
     public bool Techada { get; set; }
     public string? CorreoNotificacion { get; set; }
+    public string? TelefonoContacto { get; set; }
     public string? WhatsappContacto { get; set; }
     public bool PermiteChatWhatsapp { get; set; }
+    public string? SedeMapaUrl { get; set; }
     public string? SedeFotoPrincipalUrl { get; set; }
     public List<string> SedeFotos { get; set; } = new();
+    public decimal? DistanciaKm { get; set; }
 }
 
 public class SolicitudReservaPublicaFormViewModel

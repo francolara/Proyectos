@@ -1,0 +1,362 @@
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.PlataformaReferencialesExternosViewModel
+<!-- Firma: Codex - 27/04/2026 | Nueva pestaña superadmin para barrido manual Google Places y listado administrable de referenciales externos con filtros, paginación, inactivación y checkboxes opcionales para descargar telefonos/fotos. -->
+@{
+    ViewData["Title"] = "Referenciales externos";
+    var paginaActual = Model.PaginaListado <= 0 ? 1 : Model.PaginaListado;
+    var totalPaginas = Model.TotalPaginasListado <= 0 ? 1 : Model.TotalPaginasListado;
+    var paginaInicio = Math.Max(1, paginaActual - 2);
+    var paginaFin = Math.Min(totalPaginas, paginaActual + 2);
+}
+
+<div class="page-header-card mb-3">
+    <div class="page-header-main">
+        <h1 class="page-title">Referenciales externos del Home</h1>
+        <p class="page-subtitle">Ejecuta un barrido manual para cargar/actualizar complejos externos y mostrarlos despues de los afiliados.</p>
+    </div>
+</div>
+
+@if (TempData["PortalWebOk"] is string okMsg && !string.IsNullOrWhiteSpace(okMsg))
+{
+    <div class="alert alert-success">@okMsg</div>
+}
+@if (TempData["PortalWebError"] is string errMsg && !string.IsNullOrWhiteSpace(errMsg))
+{
+    <div class="alert alert-danger">@errMsg</div>
+}
+
+<section class="table-card sc-reservas-list-card">
+    <div class="table-card-header d-flex justify-content-between align-items-center">
+        <h2 class="table-card-title"><i class="bi bi-search me-1"></i>Barrido desde Google Places</h2>
+    </div>
+    <div class="p-3">
+        <form asp-action="ReferencialesExternos" method="post" class="row g-3">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <input type="hidden" asp-for="BuscarNombre" />
+            <input type="hidden" asp-for="FiltroCodigoDepartamento" />
+            <input type="hidden" asp-for="FiltroCodigoProvincia" />
+            <input type="hidden" asp-for="FiltroCodigoUbigeo" />
+            <input type="hidden" asp-for="IncluirInactivos" />
+            <input type="hidden" asp-for="PaginaListado" />
+
+            <div class="col-md-4">
+                <label asp-for="CodigoDepartamento" class="form-label">Departamento</label>
+                <select asp-for="CodigoDepartamento" asp-items="Model.DepartamentosUbigeo" class="form-select" id="codigoDepartamento">
+                    <option value="">Selecciona</option>
+                </select>
+                <span asp-validation-for="CodigoDepartamento" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="CodigoProvincia" class="form-label">Provincia</label>
+                <select asp-for="CodigoProvincia" asp-items="Model.ProvinciasUbigeo" class="form-select" id="codigoProvincia">
+                    <option value="">Selecciona</option>
+                </select>
+                <span asp-validation-for="CodigoProvincia" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="CodigoUbigeo" class="form-label">Distrito</label>
+                <select asp-for="CodigoUbigeo" asp-items="Model.DistritosUbigeo" class="form-select" id="codigoUbigeo">
+                    <option value="">Selecciona</option>
+                </select>
+                <span asp-validation-for="CodigoUbigeo" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="TipoDeporteSuperId" class="form-label">Tipo de deporte</label>
+                <select asp-for="TipoDeporteSuperId" asp-items="Model.TiposDeporte" class="form-select">
+                    <option value="">Selecciona</option>
+                </select>
+                <span asp-validation-for="TipoDeporteSuperId" class="text-danger"></span>
+            </div>
+            <div class="col-md-5">
+                <label asp-for="PalabraClave" class="form-label">Palabra clave</label>
+                <input asp-for="PalabraClave" class="form-control" placeholder="Ejemplo: complejo deportivo, cancha futbol, losa sintetica" />
+                <span asp-validation-for="PalabraClave" class="text-danger"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="MaxResultados" class="form-label">Maximo de resultados</label>
+                <input asp-for="MaxResultados" type="number" class="form-control" min="1" max="60" />
+                <span asp-validation-for="MaxResultados" class="text-danger"></span>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <div class="form-check form-switch">
+                    <input asp-for="DescargarTelefonos" class="form-check-input" />
+                    <label asp-for="DescargarTelefonos" class="form-check-label">Descargar telefonos</label>
+                </div>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <div class="form-check form-switch">
+                    <input asp-for="DescargarFotos" class="form-check-input" />
+                    <label asp-for="DescargarFotos" class="form-check-label">Descargar fotos</label>
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="alert alert-info mb-0">
+                    El proceso crea/actualiza por <strong>GooglePlaceId</strong> y guarda la data en la tabla externa del Home. Activa solo los checks que necesites para controlar consumo de Google Places Details.
+                </div>
+            </div>
+            @if (!Model.BarridoHabilitado)
+            {
+                <div class="col-12">
+                    <div class="alert alert-warning mb-0">
+                        El barrido manual esta deshabilitado por el parametro global <strong>HOME_REFEXT_BARRIDO_HABILITADO</strong>.
+                    </div>
+                </div>
+            }
+            <div class="col-12 d-flex gap-2">
+                @if (Model.BarridoHabilitado)
+                {
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-arrow-repeat me-1"></i>Actualizar referenciales externos
+                    </button>
+                }
+                <a asp-action="Index" class="btn btn-outline-secondary">Volver</a>
+            </div>
+        </form>
+    </div>
+</section>
+
+@if (Model.Resultado is not null)
+{
+    <section class="table-card sc-reservas-list-card mt-3">
+        <div class="table-card-header d-flex justify-content-between align-items-center">
+            <h2 class="table-card-title"><i class="bi bi-clipboard-data me-1"></i>Resultado de ejecucion</h2>
+        </div>
+        <div class="p-3">
+            <div class="row g-2">
+                <div class="col-md-2"><span class="badge text-bg-light border w-100 p-2">Procesados: @Model.Resultado.Procesados</span></div>
+                <div class="col-md-2"><span class="badge text-bg-success w-100 p-2">Insertados: @Model.Resultado.Insertados</span></div>
+                <div class="col-md-2"><span class="badge text-bg-primary w-100 p-2">Actualizados: @Model.Resultado.Actualizados</span></div>
+                <div class="col-md-2"><span class="badge text-bg-secondary w-100 p-2">Omitidos: @Model.Resultado.Omitidos</span></div>
+                <div class="col-md-2"><span class="badge text-bg-danger w-100 p-2">Errores: @Model.Resultado.Errores</span></div>
+            </div>
+            @if (Model.Resultado.Detalles.Count > 0)
+            {
+                <ul class="mt-3 mb-0 small text-muted">
+                    @foreach (var d in Model.Resultado.Detalles)
+                    {
+                        <li>@d</li>
+                    }
+                </ul>
+            }
+        </div>
+    </section>
+}
+
+<section class="table-card sc-reservas-list-card mt-3">
+    <div class="table-card-header d-flex justify-content-between align-items-center">
+        <h2 class="table-card-title"><i class="bi bi-table me-1"></i>Listado de referenciales externos</h2>
+    </div>
+    <div class="p-3 border-bottom">
+        <form asp-action="ReferencialesExternos" method="get" class="row g-3">
+            <div class="col-md-4">
+                <label asp-for="BuscarNombre" class="form-label">Buscar por nombre</label>
+                <input asp-for="BuscarNombre" class="form-control" placeholder="Nombre del complejo, espacio o direccion" />
+            </div>
+            <div class="col-md-3">
+                <label asp-for="FiltroCodigoDepartamento" class="form-label">Departamento</label>
+                <select asp-for="FiltroCodigoDepartamento" asp-items="Model.FiltroDepartamentosUbigeo" class="form-select" id="filtroCodigoDepartamento">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="FiltroCodigoProvincia" class="form-label">Provincia</label>
+                <select asp-for="FiltroCodigoProvincia" asp-items="Model.FiltroProvinciasUbigeo" class="form-select" id="filtroCodigoProvincia">
+                    <option value="">Todas</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label asp-for="FiltroCodigoUbigeo" class="form-label">Distrito</label>
+                <select asp-for="FiltroCodigoUbigeo" asp-items="Model.FiltroDistritosUbigeo" class="form-select" id="filtroCodigoUbigeo">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <div class="form-check form-switch">
+                    <input asp-for="IncluirInactivos" class="form-check-input" />
+                    <label asp-for="IncluirInactivos" class="form-check-label">Incluir inactivos</label>
+                </div>
+            </div>
+            <div class="col-md-9 d-flex justify-content-end align-items-end gap-2">
+                <input type="hidden" asp-for="PaginaListado" value="1" />
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-funnel me-1"></i>Filtrar
+                </button>
+                <a asp-action="ReferencialesExternos" class="btn btn-outline-secondary">Limpiar</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Complejo / Espacio</th>
+                    <th>Deporte</th>
+                    <th>Ubigeo</th>
+                    <th>Direccion</th>
+                    <th>Estado</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.ReferencialesListado.Count == 0)
+                {
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">No se encontraron referenciales con los filtros aplicados.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var item in Model.ReferencialesListado)
+                    {
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">@item.NombreComplejo</div>
+                                @if (!string.IsNullOrWhiteSpace(item.NombreEspacio))
+                                {
+                                    <div class="small text-muted">@item.NombreEspacio</div>
+                                }
+                            </td>
+                            <td>@item.TipoDeporte</td>
+                            <td>@item.Distrito, @item.Provincia, @item.Departamento</td>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(item.Direccion))
+                                {
+                                    <div>@item.Direccion</div>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(item.GoogleMapsUrl))
+                                {
+                                    <a href="@item.GoogleMapsUrl" target="_blank" rel="noopener noreferrer" class="small">Ver mapa</a>
+                                }
+                            </td>
+                            <td>
+                                <span class="badge @(item.Activo ? "bg-success-subtle text-success-emphasis border border-success-subtle" : "bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle")">
+                                    @(item.Activo ? "Activo" : "Inactivo")
+                                </span>
+                                @if (item.FechaActualizacion.HasValue)
+                                {
+                                    <div class="small text-muted mt-1">@item.FechaActualizacion.Value.ToString("dd/MM/yyyy HH:mm")</div>
+                                }
+                            </td>
+                            <td class="text-end">
+                                @if (item.Activo)
+                                {
+                                    <form asp-action="ReferencialesExternosInactivar" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <input type="hidden" name="buscarNombre" value="@Model.BuscarNombre" />
+                                        <input type="hidden" name="filtroCodigoDepartamento" value="@Model.FiltroCodigoDepartamento" />
+                                        <input type="hidden" name="filtroCodigoProvincia" value="@Model.FiltroCodigoProvincia" />
+                                        <input type="hidden" name="filtroCodigoUbigeo" value="@Model.FiltroCodigoUbigeo" />
+                                        <input type="hidden" name="incluirInactivos" value="@Model.IncluirInactivos.ToString().ToLowerInvariant()" />
+                                        <input type="hidden" name="paginaListado" value="@Model.PaginaListado" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Inactivar este referencial externo?');">
+                                            <i class="bi bi-x-circle me-1"></i>Inactivar
+                                        </button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Model.TotalRegistrosListado > 0)
+    {
+        <div class="p-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 border-top">
+            <div class="small text-muted">
+                Mostrando @Model.ReferencialesListado.Count registro(s) de @Model.TotalRegistrosListado total(es).
+            </div>
+            <nav aria-label="Paginacion referenciales externos">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item @(paginaActual <= 1 ? "disabled" : null)">
+                        <a class="page-link" asp-action="ReferencialesExternos"
+                           asp-route-buscarNombre="@Model.BuscarNombre"
+                           asp-route-filtroCodigoDepartamento="@Model.FiltroCodigoDepartamento"
+                           asp-route-filtroCodigoProvincia="@Model.FiltroCodigoProvincia"
+                           asp-route-filtroCodigoUbigeo="@Model.FiltroCodigoUbigeo"
+                           asp-route-incluirInactivos="@Model.IncluirInactivos"
+                           asp-route-paginaListado="@(paginaActual - 1)">Anterior</a>
+                    </li>
+                    @for (var p = paginaInicio; p <= paginaFin; p++)
+                    {
+                        <li class="page-item @(p == paginaActual ? "active" : null)">
+                            <a class="page-link" asp-action="ReferencialesExternos"
+                               asp-route-buscarNombre="@Model.BuscarNombre"
+                               asp-route-filtroCodigoDepartamento="@Model.FiltroCodigoDepartamento"
+                               asp-route-filtroCodigoProvincia="@Model.FiltroCodigoProvincia"
+                               asp-route-filtroCodigoUbigeo="@Model.FiltroCodigoUbigeo"
+                               asp-route-incluirInactivos="@Model.IncluirInactivos"
+                               asp-route-paginaListado="@p">@p</a>
+                        </li>
+                    }
+                    <li class="page-item @(paginaActual >= totalPaginas ? "disabled" : null)">
+                        <a class="page-link" asp-action="ReferencialesExternos"
+                           asp-route-buscarNombre="@Model.BuscarNombre"
+                           asp-route-filtroCodigoDepartamento="@Model.FiltroCodigoDepartamento"
+                           asp-route-filtroCodigoProvincia="@Model.FiltroCodigoProvincia"
+                           asp-route-filtroCodigoUbigeo="@Model.FiltroCodigoUbigeo"
+                           asp-route-incluirInactivos="@Model.IncluirInactivos"
+                           asp-route-paginaListado="@(paginaActual + 1)">Siguiente</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const urlProv = '@Url.Action("UbigeoProvincias", "Home")';
+            const urlDist = '@Url.Action("UbigeoDistritos", "Home")';
+
+            function renderOptions(select, rows, emptyText) {
+                select.innerHTML = '';
+                const first = document.createElement('option');
+                first.value = '';
+                first.textContent = emptyText;
+                select.appendChild(first);
+                (rows || []).forEach(x => {
+                    const option = document.createElement('option');
+                    option.value = x.value || '';
+                    option.textContent = x.text || '';
+                    select.appendChild(option);
+                });
+            }
+
+            function bindUbigeoCascade(depId, provId, distId, provEmpty, distEmpty) {
+                const dep = document.getElementById(depId);
+                const prov = document.getElementById(provId);
+                const dist = document.getElementById(distId);
+                if (!dep || !prov || !dist) return;
+
+                dep.addEventListener('change', async () => {
+                    const codigo = (dep.value || '').trim();
+                    renderOptions(prov, [], provEmpty);
+                    renderOptions(dist, [], distEmpty);
+                    if (codigo.length !== 2) return;
+                    const resp = await fetch(`${urlProv}?codigoDepartamento=${encodeURIComponent(codigo)}`, { cache: 'no-store' });
+                    if (!resp.ok) return;
+                    renderOptions(prov, await resp.json(), provEmpty);
+                });
+
+                prov.addEventListener('change', async () => {
+                    const codigo = (prov.value || '').trim();
+                    renderOptions(dist, [], distEmpty);
+                    if (codigo.length !== 4) return;
+                    const resp = await fetch(`${urlDist}?codigoProvincia=${encodeURIComponent(codigo)}`, { cache: 'no-store' });
+                    if (!resp.ok) return;
+                    renderOptions(dist, await resp.json(), distEmpty);
+                });
+            }
+
+            bindUbigeoCascade('codigoDepartamento', 'codigoProvincia', 'codigoUbigeo', 'Selecciona', 'Selecciona');
+            bindUbigeoCascade('filtroCodigoDepartamento', 'filtroCodigoProvincia', 'filtroCodigoUbigeo', 'Todas', 'Todos');
+        })();
+    </script>
+}

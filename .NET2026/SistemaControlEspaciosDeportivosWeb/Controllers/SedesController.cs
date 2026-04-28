@@ -55,7 +55,7 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
         }
 
         var vm = new SedeFormViewModel { NegocioId = resolvedNegocioId.Value, NegocioNombre = baseVm.NegocioNombre, RolActual = baseVm.RolActual, Activo = true };
-        await CargarCatalogoServiciosAsync(vm);
+        await CargarCatalogoSedeAsync(vm);
         InicializarTelefonosParaVista(vm);
         return View(vm);
     }
@@ -76,11 +76,12 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
 
         ComponerTelefonos(model);
         NormalizarUbicacionYFotos(model);
+        await ValidarUbigeoSedeAsync(model);
         AplicarEliminacionImagenes(model);
         await ProcesarCargaImagenesAsync(model);
         if (!ModelState.IsValid)
         {
-            await CargarCatalogoServiciosAsync(model);
+            await CargarCatalogoSedeAsync(model);
             model.CodigosPais = TelefonoInternacionalHelper.ObtenerCodigosPais(model.TelefonoCodigoPais);
             return View(model);
         }
@@ -103,7 +104,7 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
             return Forbid();
         vm.NegocioNombre = baseVm.NegocioNombre;
         vm.RolActual = baseVm.RolActual;
-        await CargarCatalogoServiciosAsync(vm);
+        await CargarCatalogoSedeAsync(vm);
         vm.SeriesDocumentoConfig = await spService.SedesSeriesDocumentoListarAsync(resolvedNegocioId.Value, vm.Id);
         InicializarTelefonosParaVista(vm);
         return View(vm);
@@ -120,11 +121,12 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
         var urlsEliminar = ObtenerUrlsAEliminar(model);
         ComponerTelefonos(model);
         NormalizarUbicacionYFotos(model);
+        await ValidarUbigeoSedeAsync(model);
         AplicarEliminacionImagenes(model);
         await ProcesarCargaImagenesAsync(model);
         if (!ModelState.IsValid)
         {
-            await CargarCatalogoServiciosAsync(model);
+            await CargarCatalogoSedeAsync(model);
             model.SeriesDocumentoConfig = await spService.SedesSeriesDocumentoListarAsync(model.NegocioId, model.Id);
             model.CodigosPais = TelefonoInternacionalHelper.ObtenerCodigosPais(model.TelefonoCodigoPais);
             return View(model);
@@ -134,7 +136,7 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
         if (!ok)
         {
             ModelState.AddModelError(string.Empty, "No se pudo actualizar la sede. Verifica el negocio seleccionado.");
-            await CargarCatalogoServiciosAsync(model);
+            await CargarCatalogoSedeAsync(model);
             model.SeriesDocumentoConfig = await spService.SedesSeriesDocumentoListarAsync(model.NegocioId, model.Id);
             model.CodigosPais = TelefonoInternacionalHelper.ObtenerCodigosPais(model.TelefonoCodigoPais);
             return View(model);
@@ -180,9 +182,39 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
         return File(imagen.Value.Contenido, imagen.Value.ContentType);
     }
 
-    private async Task CargarCatalogoServiciosAsync(SedeFormViewModel model)
+    private async Task CargarCatalogoSedeAsync(SedeFormViewModel model)
     {
         model.ServiciosDisponibles = await spService.SedesComboServiciosAsync();
+        model.DepartamentosUbigeo = await spService.UbigeoDepartamentosListarAsync();
+        model.ProvinciasUbigeo = !string.IsNullOrWhiteSpace(model.CodigoDepartamento) && model.CodigoDepartamento.Length == 2
+            ? await spService.UbigeoProvinciasListarAsync(model.CodigoDepartamento)
+            : new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+        model.DistritosUbigeo = !string.IsNullOrWhiteSpace(model.CodigoProvincia) && model.CodigoProvincia.Length == 4
+            ? await spService.UbigeoDistritosListarAsync(model.CodigoProvincia)
+            : new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+    }
+
+    private async Task ValidarUbigeoSedeAsync(SedeFormViewModel model)
+    {
+        model.CodigoDepartamento = string.IsNullOrWhiteSpace(model.CodigoDepartamento) ? null : model.CodigoDepartamento.Trim();
+        model.CodigoProvincia = string.IsNullOrWhiteSpace(model.CodigoProvincia) ? null : model.CodigoProvincia.Trim();
+        model.CodigoUbigeo = string.IsNullOrWhiteSpace(model.CodigoUbigeo) ? string.Empty : model.CodigoUbigeo.Trim();
+
+        if (model.CodigoUbigeo.Length != 6)
+        {
+            ModelState.AddModelError(nameof(model.CodigoUbigeo), "Debes seleccionar un distrito valido.");
+            return;
+        }
+
+        var ubigeo = await spService.UbigeoObtenerPorCodigoAsync(model.CodigoUbigeo);
+        if (ubigeo is null)
+        {
+            ModelState.AddModelError(nameof(model.CodigoUbigeo), "Debes seleccionar un distrito valido.");
+            return;
+        }
+
+        model.CodigoDepartamento = ubigeo.CodigoDepartamento;
+        model.CodigoProvincia = ubigeo.CodigoProvincia;
     }
 
     private static void InicializarTelefonosParaVista(SedeFormViewModel model)
@@ -207,6 +239,9 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
     {
         model.ConsideracionesReserva = string.IsNullOrWhiteSpace(model.ConsideracionesReserva) ? null : model.ConsideracionesReserva.Trim();
         model.GooglePlaceId = string.IsNullOrWhiteSpace(model.GooglePlaceId) ? null : model.GooglePlaceId.Trim();
+        model.GoogleDepartamento = string.IsNullOrWhiteSpace(model.GoogleDepartamento) ? null : model.GoogleDepartamento.Trim();
+        model.GoogleProvincia = string.IsNullOrWhiteSpace(model.GoogleProvincia) ? null : model.GoogleProvincia.Trim();
+        model.GoogleDistrito = string.IsNullOrWhiteSpace(model.GoogleDistrito) ? null : model.GoogleDistrito.Trim();
         model.GoogleMapsUrl = string.IsNullOrWhiteSpace(model.GoogleMapsUrl) ? null : model.GoogleMapsUrl.Trim();
         model.FotoPrincipalUrl = string.IsNullOrWhiteSpace(model.FotoPrincipalUrl) ? null : model.FotoPrincipalUrl.Trim();
 

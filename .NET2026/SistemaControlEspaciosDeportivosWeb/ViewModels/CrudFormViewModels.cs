@@ -20,6 +20,16 @@ public class SedeFormViewModel
     [StringLength(250, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string Direccion { get; set; } = string.Empty;
 
+    [Required(ErrorMessage = "Debes seleccionar un distrito valido.")]
+    [StringLength(6, ErrorMessage = "El codigo ubigeo debe tener 6 caracteres.")]
+    public string CodigoUbigeo { get; set; } = string.Empty;
+
+    [StringLength(2)]
+    public string? CodigoDepartamento { get; set; }
+
+    [StringLength(4)]
+    public string? CodigoProvincia { get; set; }
+
     [StringLength(2000, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string? ConsideracionesReserva { get; set; }
 
@@ -31,6 +41,15 @@ public class SedeFormViewModel
 
     [StringLength(200, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string? GooglePlaceId { get; set; }
+
+    [StringLength(120, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+    public string? GoogleDepartamento { get; set; }
+
+    [StringLength(120, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+    public string? GoogleProvincia { get; set; }
+
+    [StringLength(120, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+    public string? GoogleDistrito { get; set; }
 
     [StringLength(500, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     [Url(ErrorMessage = "Ingresa una URL valida.")]
@@ -111,6 +130,9 @@ public class SedeFormViewModel
     public string? FechasInhabilitadasCsv { get; set; }
     public List<DateOnly> FechasInhabilitadas { get; set; } = new();
     public List<SelectListItem> CodigosPais { get; set; } = new();
+    public List<SelectListItem> DepartamentosUbigeo { get; set; } = new();
+    public List<SelectListItem> ProvinciasUbigeo { get; set; } = new();
+    public List<SelectListItem> DistritosUbigeo { get; set; } = new();
     public List<SedeSerieDocumentoConfigItemViewModel> SeriesDocumentoConfig { get; set; } = new();
 }
 

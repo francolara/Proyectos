@@ -88,7 +88,7 @@ public class LoginModel(
             return Page();
         }
 
-        var result = await signInManager.CheckPasswordSignInAsync(user, Input.Password, lockoutOnFailure: false);
+        var result = await signInManager.CheckPasswordSignInAsync(user, Input.Password, lockoutOnFailure: true);
         if (result.Succeeded)
         {
             var propiedadesAutenticacion = new AuthenticationProperties

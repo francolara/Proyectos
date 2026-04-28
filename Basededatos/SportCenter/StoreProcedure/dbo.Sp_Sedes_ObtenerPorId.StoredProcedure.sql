@@ -17,6 +17,7 @@ GO
 -- Create date:   16/04/2026
 -- Description:   Devuelve URLs sociales (Facebook/Instagram/Twitter) para mantenimiento de sedes.
 -- =============================================
+-- Firma: Codex - 27/04/2026 | Devuelve CodigoUbigeo de sede y codigos de departamento/provincia para precargar combos SUNAT en mantenimiento.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Sedes_ObtenerPorId]
     @NegocioId INT,
     @Id INT
@@ -50,7 +51,10 @@ BEGIN
             COALESCE(sha.AtiendeDomingo, 1) AS AtiendeDomingo,
             COALESCE(sha.HoraApertura, CAST('08:00' AS TIME)) AS HoraApertura,
             COALESCE(sha.HoraCierre, CAST('23:00' AS TIME)) AS HoraCierre,
-            STUFF((SELECT N',' + CONVERT(NVARCHAR(10), sfi.Fecha, 23) FROM dbo.SedeFechasInhabilitadas sfi WHERE sfi.SedeId = s.Id AND sfi.Activo = 1 ORDER BY sfi.Fecha FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, N'') AS FechasInhabilitadasCsv
+            STUFF((SELECT N',' + CONVERT(NVARCHAR(10), sfi.Fecha, 23) FROM dbo.SedeFechasInhabilitadas sfi WHERE sfi.SedeId = s.Id AND sfi.Activo = 1 ORDER BY sfi.Fecha FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, N'') AS FechasInhabilitadasCsv,
+            s.CodigoUbigeo,
+            CASE WHEN s.CodigoUbigeo IS NOT NULL THEN LEFT(s.CodigoUbigeo, 2) END AS CodigoDepartamento,
+            CASE WHEN s.CodigoUbigeo IS NOT NULL THEN LEFT(s.CodigoUbigeo, 4) END AS CodigoProvincia
         FROM dbo.Sedes s
         LEFT JOIN dbo.SedeConfiguracionNotificacion scn ON scn.SedeId = s.Id
         LEFT JOIN dbo.SedeHorarioAtencion sha ON sha.SedeId = s.Id

@@ -7,10 +7,13 @@ public interface ISportCenterStoredProcedureService
 {
     Task<List<SedePublicaViewModel>> HomeListarSedesAsync();
     Task<List<TipoDeportePublicoViewModel>> HomeListarTiposDeporteAsync();
+    Task<List<SelectListItem>> HomeReferencialesExternosListarTiposDeporteSuperAsync();
+    Task<(List<ReferencialExternoAdminItemViewModel> Items, int TotalRegistros)> HomeReferencialesExternosListarAdminAsync(string? codigoDepartamento = null, string? codigoProvincia = null, string? codigoUbigeo = null, string? buscarNombre = null, int pagina = 1, int tamanoPagina = 50, bool? soloActivos = true);
+    Task<bool> HomeReferencialesExternosInactivarAsync(int id, string usuario);
     Task<List<WebBannerPublicoViewModel>> HomeListarBannersPublicosAsync();
     Task<List<PopupPromocionPublicoViewModel>> HomeListarPopupPromocionesActivasAsync();
     Task<WebBannerPublicoViewModel?> WebBannersObtenerFijoPorTipoAsync(int tipoBanner);
-    Task<List<EspacioDisponibleViewModel>> HomeBuscarEspaciosDisponiblesAsync(DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin, string? codigoDepartamento, string? codigoProvincia, string? codigoUbigeo, int? tipoDeporteId, int? negocioId, bool omitirFechaHorario = false);
+    Task<List<EspacioDisponibleViewModel>> HomeBuscarEspaciosDisponiblesAsync(DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin, string? codigoDepartamento, string? codigoProvincia, string? codigoUbigeo, int? tipoDeporteId, int? negocioId, bool omitirFechaHorario = false, bool buscarCercaDeMi = false, decimal? latitudUsuario = null, decimal? longitudUsuario = null, decimal? radioKm = null);
     Task<int> HomeSolicitarReservaPublicaAsync(SolicitudReservaPublicaFormViewModel model);
     Task<SolicitudPublicaDetalleViewModel?> HomeConsultarSolicitudAsync(string codigoSolicitud, string telefono);
     Task<SolicitudNotificacionEmailViewModel?> HomeObtenerSolicitudParaNotificacionAsync(string codigoSolicitud);
@@ -34,10 +37,11 @@ public interface ISportCenterStoredProcedureService
     Task<UbigeoLookupViewModel?> UbigeoObtenerPorCodigoAsync(string codigoUbigeo);
     Task<UsuarioPublicoPerfilViewModel?> UsuariosPublicosObtenerPerfilAsync(string usuarioId);
     Task<int> UsuariosPublicosGuardarPerfilAsync(UsuarioPublicoPerfilViewModel model, string usuario);
-    Task<List<UsuarioPublicoReservaItemViewModel>> UsuariosPublicosReservasListarAsync(string usuarioId, int top = 200);
+    Task<(List<UsuarioPublicoReservaItemViewModel> Reservas, int TotalRegistros)> UsuariosPublicosReservasListarAsync(string usuarioId, int pagina = 1, int tamanoPagina = 6);
     Task<List<SelectListItem>> DesafiosNivelesListarAsync();
     Task<List<DesafioRivalItemViewModel>> DesafiosBuscarRivalesAsync(string usuarioId, string codigoUbigeo, int? idDeporte, int? idNivel);
     Task<List<DesafioListadoItemViewModel>> DesafiosListarAsync(string usuarioId, string tipoListado);
+    Task<(List<DesafioListadoItemViewModel> Items, int TotalRegistros)> DesafiosHistorialListarAsync(string usuarioId, int pagina = 1, int tamanoPagina = 4);
     Task<List<DesafioMensajeItemViewModel>> DesafiosMensajesListarAsync(string usuarioId, int? desafioId = null);
     Task<int> DesafiosCrearAsync(string usuarioId, DesafioCrearViewModel model, string usuario);
     Task<int> DesafiosMensajeCrearAsync(string usuarioId, DesafioMensajeCrearViewModel model, string usuario);
@@ -129,6 +133,7 @@ public interface ISportCenterStoredProcedureService
     Task<string> HomeSolicitarAltaClubAsync(AltaClubSolicitudFormViewModel model);
     Task<string> HomeRegistrarClubConPruebaAsync(AltaClubSolicitudFormViewModel model, string usuarioId);
     Task<(List<AltaClubItemViewModel> Solicitudes, int TotalRegistros, int TotalPendientes, int TotalAprobados, int TotalRechazados)> AltasClubesListarAsync(int? estado = null, int pagina = 1, int tamanoPagina = 20);
+    Task<AltaClubItemViewModel?> AltasClubesObtenerPorIdAsync(int id);
     Task<bool> AltasClubesAprobarAsync(int id, string usuario, string? comentarioGestion = null, int diasPrueba = 30);
     Task<bool> AltasClubesRechazarAsync(int id, string usuario, string? comentarioGestion = null);
 

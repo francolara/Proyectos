@@ -14,17 +14,21 @@ GO
 -- Create date:   17/04/2026
 -- Description:   Incluye URLs de redes y mapa de la sede para vista en tarjetas del perfil publico.
 -- =============================================
+-- Firma:         Codex - 26/04/2026 | Se implementa paginacion real por pagina/tamano (6 por defecto) desde SQL para Mis Reservas.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_UsuariosPublicos_ReservasListar]
     @UsuarioId NVARCHAR(450),
-    @Top INT = 200
+    @Pagina INT = 1,
+    @TamanoPagina INT = 6
 AS
 BEGIN
     SET NOCOUNT ON;
 
     BEGIN TRY
-        DECLARE @TopFinal INT = CASE WHEN @Top IS NULL OR @Top <= 0 THEN 200 ELSE @Top END;
+        DECLARE @PaginaFinal INT = CASE WHEN @Pagina IS NULL OR @Pagina < 1 THEN 1 ELSE @Pagina END;
+        DECLARE @TamanoPaginaFinal INT = CASE WHEN @TamanoPagina IS NULL OR @TamanoPagina < 1 THEN 6 ELSE @TamanoPagina END;
+        DECLARE @Offset INT = (@PaginaFinal - 1) * @TamanoPaginaFinal;
 
-        SELECT TOP (@TopFinal)
+        SELECT
             r.Id AS ReservaId,
             r.Fecha,
             r.HoraInicio,
@@ -60,7 +64,8 @@ BEGIN
                             + CONVERT(NVARCHAR(40), s.Longitud)
                     ELSE NULL
                 END
-            ) AS SedeMapaUrl
+            ) AS SedeMapaUrl,
+            COUNT(1) OVER() AS TotalRegistros
         FROM dbo.ReservasUsuariosPublicos rup
         INNER JOIN dbo.Reservas r ON r.Id = rup.ReservaId
         INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
@@ -68,7 +73,8 @@ BEGIN
         INNER JOIN dbo.Negocios n ON n.Id = s.NegocioId
         LEFT JOIN dbo.SedeConfiguracionNotificacion scn ON scn.SedeId = s.Id
         WHERE rup.UsuarioId = @UsuarioId
-        ORDER BY r.Fecha DESC, r.HoraInicio DESC, r.Id DESC;
+        ORDER BY r.Fecha DESC, r.HoraInicio DESC, r.Id DESC
+        OFFSET @Offset ROWS FETCH NEXT @TamanoPaginaFinal ROWS ONLY;
     END TRY
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;

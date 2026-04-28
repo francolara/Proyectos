@@ -22,6 +22,7 @@
 <!-- Firma: Codex - 17/04/2026 | Registro robusto: handlers explicitos por tipo (Usuario/Club), CAPTCHA agregado tambien a usuario, eliminacion de bloque amarillo de detalle duplicado y correccion de textos/enlaces para evitar refrescos silenciosos con validacion cruzada. -->
 
 <!-- Firma: Codex - 20/04/2026 | Banner lateral de registro ajustado para priorizar la imagen vertical del sistema y dejar la horizontal solo como respaldo. -->
+<!-- Firma: Codex - 27/04/2026 | Registro usuario/club muestra politica de contrasena en ambos formularios y alinea minimo de validacion a 8 caracteres segun politica de seguridad. -->
 <section class="auth-shell">
     <aside class="auth-visual" style="@(string.IsNullOrWhiteSpace(bannerUrl) ? string.Empty : $"background-image:linear-gradient(165deg,rgba(3,15,35,.84),rgba(7,24,58,.70)),url('{bannerUrl}');")">
         <div class="auth-visual-content">
@@ -94,6 +95,7 @@
                     <div class="mb-3">
                         <label asp-for="Usuario.Password" class="form-label">Contrasena</label>
                         <input asp-for="Usuario.Password" class="form-control" autocomplete="new-password" />
+                        <div class="form-text">La contrasena debe tener minimo 8 caracteres e incluir mayuscula, minuscula, numero y simbolo.</div>
                         <span asp-validation-for="Usuario.Password" class="text-danger"></span>
                     </div>
                     <div class="mb-3">
@@ -219,6 +221,7 @@
                         <div class="col-md-6">
                             <label asp-for="Club.Password" class="form-label">Contrasena</label>
                             <input asp-for="Club.Password" class="form-control" autocomplete="new-password" />
+                            <div class="form-text">La contrasena debe tener minimo 8 caracteres e incluir mayuscula, minuscula, numero y simbolo.</div>
                             <span asp-validation-for="Club.Password" class="text-danger"></span>
                         </div>
                         <div class="col-md-6">

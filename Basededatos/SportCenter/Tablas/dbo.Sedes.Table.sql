@@ -15,11 +15,17 @@ GO
 -- Create date:   16/04/2026
 -- Description:   Agrega URLs de redes sociales (Facebook/Instagram/Twitter) por sede para portal publico.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   27/04/2026
+-- Description:   Agrega CodigoUbigeo por sede para filtros publicos por ubicacion real de cada sede.
+-- =============================================
 CREATE TABLE [dbo].[Sedes](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[NegocioId] [int] NOT NULL,
 	[Nombre] [nvarchar](max) NOT NULL,
 	[Direccion] [nvarchar](max) NOT NULL,
+	[CodigoUbigeo] [char](6) NULL,
 	[ConsideracionesReserva] [nvarchar](2000) NULL,
 	[Telefono] [nvarchar](max) NULL,
 	[FacebookUrl] [nvarchar](500) NULL,
@@ -49,4 +55,9 @@ REFERENCES [dbo].[Negocios] ([Id])
 ON DELETE CASCADE
 GO
 ALTER TABLE [dbo].[Sedes] CHECK CONSTRAINT [FK_Sedes_Negocios_NegocioId]
+GO
+ALTER TABLE [dbo].[Sedes]  WITH CHECK ADD  CONSTRAINT [FK_Sedes_UbigeoDistritos_CodigoUbigeo] FOREIGN KEY([CodigoUbigeo])
+REFERENCES [dbo].[UbigeoDistritos] ([CodigoUbigeo])
+GO
+ALTER TABLE [dbo].[Sedes] CHECK CONSTRAINT [FK_Sedes_UbigeoDistritos_CodigoUbigeo]
 GO

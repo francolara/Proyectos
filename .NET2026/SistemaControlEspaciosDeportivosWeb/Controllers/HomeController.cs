@@ -18,6 +18,49 @@ public class HomeController(
     ILogger<HomeController> logger) : Controller
 {
     private const string CaptchaSoftwareClubesSessionKey = "CaptchaSoftwareClubes";
+
+    private static (DateOnly Fecha, TimeOnly HoraInicio, TimeOnly HoraFin) ObtenerRangoSugeridoBusqueda(DateTime ahoraLocal)
+    {
+        var ahoraSinSegundos = new DateTime(
+            ahoraLocal.Year,
+            ahoraLocal.Month,
+            ahoraLocal.Day,
+            ahoraLocal.Hour,
+            ahoraLocal.Minute,
+            0,
+            ahoraLocal.Kind);
+
+        var minutosRestantes = 30 - (ahoraSinSegundos.Minute % 30);
+        if (minutosRestantes == 30)
+            minutosRestantes = 0;
+
+        var baseHora = ahoraSinSegundos.AddMinutes(minutosRestantes);
+        if (baseHora <= ahoraSinSegundos)
+            baseHora = baseHora.AddMinutes(30);
+
+        var horaInicio = new TimeOnly(baseHora.Hour, baseHora.Minute);
+        var fecha = DateOnly.FromDateTime(baseHora.Date);
+
+        // Evita sugerir horarios de madrugada como predeterminados en el portal.
+        if (horaInicio < new TimeOnly(6, 0))
+        {
+            horaInicio = new TimeOnly(18, 0);
+            fecha = DateOnly.FromDateTime(ahoraLocal.Date);
+        }
+
+        // Si es muy tarde, propone el siguiente dia en franja comercial.
+        if (horaInicio >= new TimeOnly(23, 0))
+        {
+            fecha = fecha.AddDays(1);
+            horaInicio = new TimeOnly(18, 0);
+        }
+
+        var horaFin = horaInicio.AddHours(1);
+        if (horaFin <= horaInicio)
+            horaFin = new TimeOnly(23, 59);
+
+        return (fecha, horaInicio, horaFin);
+    }
     public async Task<IActionResult> Index(
         DateOnly? fecha,
         TimeOnly? horaInicio,
@@ -27,12 +70,30 @@ public class HomeController(
         string? codigoUbigeo,
         int? tipoDeporteId,
         int? negocioId,
-        bool omitirFechaHorario = false,
+        bool buscarCercaDeMi = false,
+        decimal? latitudUsuario = null,
+        decimal? longitudUsuario = null,
+        decimal? radioKm = null,
+        bool omitirFechaHorario = true,
         int pagina = 1)
     {
         ViewData["PublicFullWidth"] = true;
         ViewData["HideDefaultFooter"] = true;
-        var vm = await ConstruirHomeVmAsync(fecha, horaInicio, horaFin, codigoDepartamento, codigoProvincia, codigoUbigeo, tipoDeporteId, negocioId, omitirFechaHorario, pagina);
+        var vm = await ConstruirHomeVmAsync(
+            fecha,
+            horaInicio,
+            horaFin,
+            codigoDepartamento,
+            codigoProvincia,
+            codigoUbigeo,
+            tipoDeporteId,
+            negocioId,
+            buscarCercaDeMi,
+            latitudUsuario,
+            longitudUsuario,
+            radioKm,
+            omitirFechaHorario,
+            pagina);
         ViewData["MostrarPromosNav"] = vm.PopupPromociones.Count > 0;
         vm.MensajeSolicitud = TempData["MensajeSolicitud"]?.ToString();
         return View(vm);
@@ -778,17 +839,24 @@ public class HomeController(
         string? codigoUbigeo,
         int? tipoDeporteId,
         int? negocioId,
-        bool omitirFechaHorario = false,
+        bool buscarCercaDeMi = false,
+        decimal? latitudUsuario = null,
+        decimal? longitudUsuario = null,
+        decimal? radioKm = null,
+        bool omitirFechaHorario = true,
         int pagina = 1)
     {
         const int tamanoPagina = 12;
-        var fechaConsulta = fecha ?? DateOnly.FromDateTime(DateTime.Today);
-        var horaInicioConsulta = horaInicio ?? new TimeOnly(18, 0);
-        var horaFinConsulta = horaFin ?? new TimeOnly(19, 0);
+        var sugerido = ObtenerRangoSugeridoBusqueda(DateTime.Now);
+        var fechaConsulta = fecha ?? sugerido.Fecha;
+        var horaInicioConsulta = horaInicio ?? sugerido.HoraInicio;
+        var horaFinConsulta = horaFin ?? sugerido.HoraFin;
         var codigoDep = string.IsNullOrWhiteSpace(codigoDepartamento) ? null : codigoDepartamento.Trim();
         var codigoProv = string.IsNullOrWhiteSpace(codigoProvincia) ? null : codigoProvincia.Trim();
         var codigoDist = string.IsNullOrWhiteSpace(codigoUbigeo) ? null : codigoUbigeo.Trim();
-        var omitirHorarioEfectivo = omitirFechaHorario && negocioId.HasValue;
+        var omitirHorarioEfectivo = omitirFechaHorario;
+        var usarCercania = buscarCercaDeMi && latitudUsuario.HasValue && longitudUsuario.HasValue;
+        var radioEfectivo = radioKm is > 0 ? radioKm : 5m;
 
         if (horaFinConsulta <= horaInicioConsulta)
             horaFinConsulta = horaInicioConsulta.AddHours(1);
@@ -797,7 +865,20 @@ public class HomeController(
         var deportes = await spService.HomeListarTiposDeporteAsync();
         var banners = await spService.HomeListarBannersPublicosAsync();
         var popupPromociones = await spService.HomeListarPopupPromocionesActivasAsync();
-        var espaciosDisponibles = await spService.HomeBuscarEspaciosDisponiblesAsync(fechaConsulta, horaInicioConsulta, horaFinConsulta, codigoDep, codigoProv, codigoDist, tipoDeporteId, negocioId, omitirHorarioEfectivo);
+        var espaciosDisponibles = await spService.HomeBuscarEspaciosDisponiblesAsync(
+            fechaConsulta,
+            horaInicioConsulta,
+            horaFinConsulta,
+            codigoDep,
+            codigoProv,
+            codigoDist,
+            tipoDeporteId,
+            negocioId,
+            omitirHorarioEfectivo,
+            usarCercania,
+            latitudUsuario,
+            longitudUsuario,
+            radioEfectivo);
         var totalResultados = espaciosDisponibles.Count;
         var totalPaginas = Math.Max(1, (int)Math.Ceiling(totalResultados / (double)tamanoPagina));
         var paginaActual = Math.Clamp(pagina, 1, totalPaginas);
@@ -829,6 +910,10 @@ public class HomeController(
             TipoDeporteId = tipoDeporteId,
             NegocioId = negocioId,
             OmitirFechaHorario = omitirHorarioEfectivo,
+            BuscarCercaDeMi = usarCercania,
+            LatitudUsuario = latitudUsuario,
+            LongitudUsuario = longitudUsuario,
+            RadioKm = radioEfectivo,
             DepartamentosUbigeo = departamentos,
             ProvinciasUbigeo = provincias,
             DistritosUbigeo = distritos,

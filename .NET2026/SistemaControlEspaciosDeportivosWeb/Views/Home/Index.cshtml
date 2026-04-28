@@ -73,6 +73,7 @@
 <!-- Firma: Codex - 17/04/2026 | Ajuste de binding para filtro omitirFechaHorario en Home publico (nullable-safe) y compatibilidad con flujo de reserva publica. -->
 <!-- Firma: Codex - 18/04/2026 | Navbar publica agrega ancla Caracteristicas y se fija id de destino en bloque de beneficios. -->
 <!-- Firma: Codex - 20/04/2026 | Home publico integra acceso de anuncios en navbar superior y modal popup configurable desde super admin para usuarios anonimos, con soporte mixto vertical/horizontal, subtitulo por anuncio, CTA Quiero anunciar reutilizando el WhatsApp configurado del portal y control de apertura automatica por sessionStorage. -->
+<!-- Firma: Codex - 27/04/2026 | Home refuerza tarjetas con club/negocio destacado, mejora UX del filtro (defaults dinamicos, botones "Usar mi ubicacion" y "Buscar cerca de mi"), autocompletado ubigeo, distancia en km por tarjeta, contacto con telefono y visual de externos/paginacion estilo perfil. -->
 
 <section class="home-hero mb-4">
     <div id="homeHeroCarousel" class="carousel slide home-hero-carousel h-100" data-bs-ride="carousel" data-bs-interval="5500">
@@ -173,7 +174,10 @@
             <p class="home-section-subtitle mb-0">Ubica canchas por departamento, provincia, distrito y tipo de deporte en una sola consulta.</p>
         </div>
 
-        <form asp-action="Index" method="get" class="row g-3">
+        <form asp-action="Index" method="get" class="row g-3" id="homeSearchForm">
+            <input type="hidden" id="buscarCercaDeMi" name="buscarCercaDeMi" value="@(Model.BuscarCercaDeMi ? "true" : "false")" />
+            <input type="hidden" id="latitudUsuario" name="latitudUsuario" value="@(Model.LatitudUsuario?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" />
+            <input type="hidden" id="longitudUsuario" name="longitudUsuario" value="@(Model.LongitudUsuario?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" />
             <div class="col-md-3">
                 <label class="form-label">Departamento</label>
                 <select class="form-select" id="codigoDepartamento" name="codigoDepartamento">
@@ -204,6 +208,14 @@
                     }
                 </select>
             </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="button" class="btn w-100 auth-nav-mini auth-nav-mini-outline home-action-btn" id="btnUsarUbicacionActual">
+                    <i class="bi bi-crosshair me-1"></i>Usar mi ubicacion
+                </button>
+            </div>
+            <div class="col-12">
+                <div id="ubicacionActualEstado" class="form-text"></div>
+            </div>
             <div class="col-md-3">
                 <label class="form-label">Tipo de deporte</label>
                 <select class="form-select" name="tipoDeporteId">
@@ -231,19 +243,37 @@
                     }
                 </select>
             </div>
+            <div class="col-md-3">
+                <label class="form-label">Radio (km)</label>
+                <select class="form-select" id="radioKm" name="radioKm">
+                    @{
+                        var radios = new decimal[] { 3m, 5m, 10m, 20m };
+                        var radioSeleccionado = Model.RadioKm ?? 5m;
+                    }
+                    @foreach (var radio in radios)
+                    {
+                        <option value="@radio.ToString(CultureInfo.InvariantCulture)" selected="@(radioSeleccionado == radio)">@radio km</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="button" class="btn w-100 auth-nav-mini auth-nav-mini-solid home-action-btn home-nearby-btn" id="btnBuscarCercaDeMi">
+                    <i class="bi bi-geo-alt-fill me-1"></i>Buscar cerca de mi
+                </button>
+            </div>
 
             <div class="col-12">
                 <div class="border rounded-3 p-3 bg-light-subtle">
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
                         <h3 class="home-subsection-title mb-0"><i class="bi bi-calendar-week me-1"></i>Busqueda por dia y horario</h3>
-                        <div class="form-check mb-0">
+                        <div class="form-check mb-0 home-omit-toggle">
                             <input class="form-check-input"
                                    type="checkbox"
                                    id="omitirFechaHorario"
                                    name="omitirFechaHorario"
                                    value="true"
                                    @(Model.OmitirFechaHorario == true ? "checked" : null) />
-                            <label class="form-check-label small" for="omitirFechaHorario">Obviar filtro de dia y horario para ver todos los espacios del club</label>
+                            <label class="form-check-label small fw-semibold" for="omitirFechaHorario">Mostrar todos los espacios (sin filtrar por dia y horario)</label>
                         </div>
                     </div>
                     <div class="row g-3">
@@ -286,11 +316,11 @@
                             </select>
                         </div>
                     </div>
-                    <div class="form-text mt-2">Si seleccionas club/negocio puedes marcar "obviar" para explorar todos sus espacios y luego revisar disponibilidad al reservar.</div>
+                    <div class="form-text mt-2">Recomendado: deja activado este modo para explorar opciones y luego ajusta fecha/hora exacta al reservar.</div>
                 </div>
             </div>
             <div class="col-md-12 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary w-100">Buscar espacios deportivos</button>
+                <button type="submit" class="btn w-100 auth-nav-mini auth-nav-mini-solid home-action-btn">Buscar espacios deportivos</button>
             </div>
         </form>
     </div>
@@ -324,7 +354,21 @@
                 var sedeRef = item.SedeId.HasValue
                     ? Model.Sedes.FirstOrDefault(x => x.Id == item.SedeId.Value)
                     : null;
-                var mapaUrl = sedeRef?.GoogleMapsUrl;
+                var negocioNombreDestacado = (sedeRef?.NegocioNombre ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(negocioNombreDestacado) && Model.NegocioId.HasValue)
+                {
+                    negocioNombreDestacado = (Model.Negocios.FirstOrDefault(x => x.Value == Model.NegocioId.Value.ToString())?.Text ?? string.Empty).Trim();
+                }
+                var telefonoContactoTarjeta = (item.TelefonoContacto ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(telefonoContactoTarjeta))
+                {
+                    telefonoContactoTarjeta = (sedeRef?.Telefono ?? string.Empty).Trim();
+                }
+                var mapaUrl = item.SedeMapaUrl;
+                if (string.IsNullOrWhiteSpace(mapaUrl))
+                {
+                    mapaUrl = sedeRef?.GoogleMapsUrl;
+                }
                 if (string.IsNullOrWhiteSpace(mapaUrl) && sedeRef?.Latitud is decimal lat && sedeRef.Longitud is decimal lng)
                 {
                     mapaUrl = $"https://www.google.com/maps?q={lat.ToString(CultureInfo.InvariantCulture)},{lng.ToString(CultureInfo.InvariantCulture)}";
@@ -379,14 +423,36 @@
                                 </div>
                             }
 
+                            @if (!string.IsNullOrWhiteSpace(negocioNombreDestacado))
+                            {
+                                <div class="home-negocio-highlight mb-2">
+                                    <span class="home-negocio-label"><i class="bi bi-buildings me-1"></i>Club / Negocio</span>
+                                    <h3 class="home-negocio-title mb-0">@negocioNombreDestacado</h3>
+                                </div>
+                            }
+
                             <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
                                 <div>
                                     <span class="home-item-label">Nombre del espacio</span>
                                     <h3 class="h6 fw-bold mb-1 home-item-title">@item.NombreEspacio</h3>
                                     <span class="home-space-code">@item.Codigo</span>
                                 </div>
-                                <span class="badge text-bg-success">Disponible</span>
+                                @if (item.SedeId.HasValue)
+                                {
+                                    <span class="badge text-bg-success">Disponible</span>
+                                }
+                                else
+                                {
+                                    <span class="home-ref-chip"><i class="bi bi-geo-alt-fill me-1"></i>Referencia externa</span>
+                                }
                             </div>
+                            @if (item.DistanciaKm.HasValue)
+                            {
+                                <div class="home-distance-chip mb-2">
+                                    <i class="bi bi-signpost-split me-1"></i>
+                                    A @item.DistanciaKm.Value.ToString("0.0", CultureInfo.InvariantCulture) km de tu ubicacion
+                                </div>
+                            }
 
                             <div class="home-sede-head mb-1">
                                 <p class="mb-0 home-item-sede">
@@ -395,7 +461,7 @@
                                 </p>
                                 @if (!string.IsNullOrWhiteSpace(mapaUrl))
                                 {
-                                    <a class="btn btn-outline-primary btn-sm home-map-btn"
+                                    <a class="btn btn-sm auth-nav-mini auth-nav-mini-outline home-map-btn"
                                        href="@mapaUrl"
                                        target="_blank"
                                        rel="noopener noreferrer">Ver en mapa</a>
@@ -426,13 +492,17 @@
                                     Desde <strong>S/ @item.TarifaDesde.Value.ToString("0.00", CultureInfo.InvariantCulture)</strong>
                                 </p>
                             }
-                            @if (!string.IsNullOrWhiteSpace(item.CorreoNotificacion) || !string.IsNullOrWhiteSpace(item.WhatsappContacto))
+                            @if (!string.IsNullOrWhiteSpace(item.CorreoNotificacion) || !string.IsNullOrWhiteSpace(item.WhatsappContacto) || !string.IsNullOrWhiteSpace(telefonoContactoTarjeta))
                             {
                                 <div class="home-contact-box mb-2">
                                     <span class="home-item-label">Contacto</span>
                                     @if (!string.IsNullOrWhiteSpace(item.CorreoNotificacion))
                                     {
                                         <div><strong>Correo:</strong> @item.CorreoNotificacion</div>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(telefonoContactoTarjeta))
+                                    {
+                                        <div><strong>Telefono:</strong> @telefonoContactoTarjeta</div>
                                     }
                                     @if (!string.IsNullOrWhiteSpace(item.WhatsappContacto))
                                     {
@@ -443,20 +513,31 @@
 
                             <div class="mt-auto d-flex align-items-center justify-content-between gap-2">
                                 <div class="d-flex align-items-center flex-wrap gap-2">
-                                    <a class="btn btn-primary btn-sm"
-                                       asp-action="Reservar"
-                                       asp-route-espacioDeportivoId="@item.EspacioDeportivoId"
-                                       asp-route-fecha="@Model.Fecha.ToString("yyyy-MM-dd")"
-                                       asp-route-horaInicio="@Model.HoraInicio.ToString("HH\\:mm")"
-                                       asp-route-horaFin="@Model.HoraFin.ToString("HH\\:mm")"
-                                       asp-route-codigoDepartamento="@Model.CodigoDepartamento"
-                                       asp-route-codigoProvincia="@Model.CodigoProvincia"
-                                       asp-route-codigoUbigeo="@Model.CodigoUbigeo"
-                                       asp-route-tipoDeporteId="@Model.TipoDeporteId"
-                                       asp-route-negocioId="@Model.NegocioId"
-                                       asp-route-omitirFechaHorario="@Model.OmitirFechaHorario">
-                                        Reservar ahora
-                                    </a>
+                                    @if (item.SedeId.HasValue)
+                                    {
+                                        <a class="btn btn-sm auth-nav-mini auth-nav-mini-solid home-reserve-btn"
+                                           asp-action="Reservar"
+                                           asp-route-espacioDeportivoId="@item.EspacioDeportivoId"
+                                           asp-route-fecha="@Model.Fecha.ToString("yyyy-MM-dd")"
+                                           asp-route-horaInicio="@Model.HoraInicio.ToString("HH\\:mm")"
+                                           asp-route-horaFin="@Model.HoraFin.ToString("HH\\:mm")"
+                                           asp-route-codigoDepartamento="@Model.CodigoDepartamento"
+                                           asp-route-codigoProvincia="@Model.CodigoProvincia"
+                                           asp-route-codigoUbigeo="@Model.CodigoUbigeo"
+                                           asp-route-tipoDeporteId="@Model.TipoDeporteId"
+                                           asp-route-negocioId="@Model.NegocioId"
+                                           asp-route-buscarCercaDeMi="@Model.BuscarCercaDeMi"
+                                           asp-route-latitudUsuario="@Model.LatitudUsuario?.ToString(CultureInfo.InvariantCulture)"
+                                           asp-route-longitudUsuario="@Model.LongitudUsuario?.ToString(CultureInfo.InvariantCulture)"
+                                           asp-route-radioKm="@Model.RadioKm?.ToString(CultureInfo.InvariantCulture)"
+                                           asp-route-omitirFechaHorario="@Model.OmitirFechaHorario">
+                                            Reservar ahora
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="home-ref-cta"><i class="bi bi-pin-map-fill me-1"></i>No afiliado</span>
+                                    }
                                     @if (item.PermiteChatWhatsapp && !string.IsNullOrWhiteSpace(numeroWhatsappEspacio))
                                     {
                                         <a class="btn btn-success btn-sm"
@@ -491,11 +572,10 @@
 
     @if (Model.TotalPaginas > 1)
     {
-        <nav class="mt-4 d-flex justify-content-center" aria-label="Paginacion de espacios">
-            <ul class="pagination pagination-sm mb-0">
-                <li class="page-item @(Model.PaginaActual <= 1 ? "disabled" : null)">
-                    <a class="page-link"
+        <nav class="home-results-pagination mt-3" aria-label="Paginacion de espacios">
+            <a class="home-page-link @(Model.PaginaActual <= 1 ? "is-disabled" : null)"
                        asp-action="Index"
+                       asp-fragment="resultados"
                        asp-route-fecha="@Model.Fecha.ToString("yyyy-MM-dd")"
                        asp-route-horaInicio="@Model.HoraInicio.ToString("HH\\:mm")"
                        asp-route-horaFin="@Model.HoraFin.ToString("HH\\:mm")"
@@ -504,15 +584,18 @@
                        asp-route-codigoUbigeo="@Model.CodigoUbigeo"
                        asp-route-tipoDeporteId="@Model.TipoDeporteId"
                        asp-route-negocioId="@Model.NegocioId"
+                       asp-route-buscarCercaDeMi="@Model.BuscarCercaDeMi"
+                       asp-route-latitudUsuario="@Model.LatitudUsuario?.ToString(CultureInfo.InvariantCulture)"
+                       asp-route-longitudUsuario="@Model.LongitudUsuario?.ToString(CultureInfo.InvariantCulture)"
+                       asp-route-radioKm="@Model.RadioKm?.ToString(CultureInfo.InvariantCulture)"
                        asp-route-omitirFechaHorario="@Model.OmitirFechaHorario"
                        asp-route-pagina="@(Model.PaginaActual - 1)">Anterior</a>
-                </li>
 
                 @for (var p = 1; p <= Model.TotalPaginas; p++)
                 {
-                    <li class="page-item @(p == Model.PaginaActual ? "active" : null)">
-                        <a class="page-link"
+                    <a class="home-page-link @(p == Model.PaginaActual ? "is-active" : null)"
                            asp-action="Index"
+                           asp-fragment="resultados"
                            asp-route-fecha="@Model.Fecha.ToString("yyyy-MM-dd")"
                            asp-route-horaInicio="@Model.HoraInicio.ToString("HH\\:mm")"
                            asp-route-horaFin="@Model.HoraFin.ToString("HH\\:mm")"
@@ -521,14 +604,17 @@
                            asp-route-codigoUbigeo="@Model.CodigoUbigeo"
                            asp-route-tipoDeporteId="@Model.TipoDeporteId"
                            asp-route-negocioId="@Model.NegocioId"
+                           asp-route-buscarCercaDeMi="@Model.BuscarCercaDeMi"
+                           asp-route-latitudUsuario="@Model.LatitudUsuario?.ToString(CultureInfo.InvariantCulture)"
+                           asp-route-longitudUsuario="@Model.LongitudUsuario?.ToString(CultureInfo.InvariantCulture)"
+                           asp-route-radioKm="@Model.RadioKm?.ToString(CultureInfo.InvariantCulture)"
                            asp-route-omitirFechaHorario="@Model.OmitirFechaHorario"
                            asp-route-pagina="@p">@p</a>
-                    </li>
                 }
 
-                <li class="page-item @(Model.PaginaActual >= Model.TotalPaginas ? "disabled" : null)">
-                    <a class="page-link"
+                <a class="home-page-link @(Model.PaginaActual >= Model.TotalPaginas ? "is-disabled" : null)"
                        asp-action="Index"
+                       asp-fragment="resultados"
                        asp-route-fecha="@Model.Fecha.ToString("yyyy-MM-dd")"
                        asp-route-horaInicio="@Model.HoraInicio.ToString("HH\\:mm")"
                        asp-route-horaFin="@Model.HoraFin.ToString("HH\\:mm")"
@@ -537,10 +623,12 @@
                        asp-route-codigoUbigeo="@Model.CodigoUbigeo"
                        asp-route-tipoDeporteId="@Model.TipoDeporteId"
                        asp-route-negocioId="@Model.NegocioId"
+                       asp-route-buscarCercaDeMi="@Model.BuscarCercaDeMi"
+                       asp-route-latitudUsuario="@Model.LatitudUsuario?.ToString(CultureInfo.InvariantCulture)"
+                       asp-route-longitudUsuario="@Model.LongitudUsuario?.ToString(CultureInfo.InvariantCulture)"
+                       asp-route-radioKm="@Model.RadioKm?.ToString(CultureInfo.InvariantCulture)"
                        asp-route-omitirFechaHorario="@Model.OmitirFechaHorario"
                        asp-route-pagina="@(Model.PaginaActual + 1)">Siguiente</a>
-                </li>
-            </ul>
         </nav>
     }
 </section>
@@ -848,6 +936,14 @@
     const prov = document.getElementById('codigoProvincia');
     const dist = document.getElementById('codigoUbigeo');
     const negocio = document.getElementById('negocioId');
+    const homeSearchForm = document.getElementById('homeSearchForm');
+    const btnUbicacionActual = document.getElementById('btnUsarUbicacionActual');
+    const btnBuscarCercaDeMi = document.getElementById('btnBuscarCercaDeMi');
+    const buscarCercaDeMiInput = document.getElementById('buscarCercaDeMi');
+    const latitudUsuarioInput = document.getElementById('latitudUsuario');
+    const longitudUsuarioInput = document.getElementById('longitudUsuario');
+    const radioKmInput = document.getElementById('radioKm');
+    const ubicacionActualEstado = document.getElementById('ubicacionActualEstado');
     const omitirFechaHorario = document.getElementById('omitirFechaHorario');
     const fechaFiltro = document.getElementById('fechaFiltro');
     const horaInicioFiltro = document.getElementById('horaInicioFiltro');
@@ -873,6 +969,49 @@
         });
     }
 
+    function normalizeText(value) {
+        return (value || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/\b(PROVINCIA|PROV|DISTRITO|DIST)\b\.?/gi, '')
+            .replace(/\b(PROVINCE|DISTRICT|MUNICIPALITY|MUNICIPIO)\b\.?/gi, '')
+            .replace(/\b(DEL|DE|LA|EL|METROPOLITANA)\b/gi, '')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .toUpperCase();
+    }
+
+    function findOptionValueByText(select, targetText) {
+        const targetNorm = normalizeText(targetText);
+        if (!targetNorm) return '';
+        for (const option of Array.from(select.options)) {
+            if (normalizeText(option.textContent || '') === targetNorm) {
+                return option.value || '';
+            }
+        }
+        return '';
+    }
+
+    function setUbicacionEstado(text, type = 'muted') {
+        if (!ubicacionActualEstado) return;
+        ubicacionActualEstado.className = type === 'error' ? 'form-text text-danger' : 'form-text';
+        ubicacionActualEstado.textContent = text || '';
+    }
+
+    function desactivarFiltroCercania() {
+        if (buscarCercaDeMiInput) buscarCercaDeMiInput.value = 'false';
+    }
+
+    function setCoordenadasUsuario(latitud, longitud) {
+        if (latitudUsuarioInput) latitudUsuarioInput.value = Number(latitud).toFixed(7);
+        if (longitudUsuarioInput) longitudUsuarioInput.value = Number(longitud).toFixed(7);
+    }
+
+    function getRadioKmEfectivo() {
+        const radio = radioKmInput?.value || '';
+        return radio.length > 0 ? radio : '5';
+    }
+
     async function refreshNegocios() {
         if (!negocio) return;
         const seleccionadoActual = (negocio.value || '').trim();
@@ -894,7 +1033,147 @@
         actualizarEstadoFiltroHorario();
     }
 
+    async function autoSeleccionarUbigeoPorNombres(departamentoNombre, provinciaNombre, distritoNombre) {
+        const depValue = findOptionValueByText(dep, departamentoNombre);
+        if (!depValue) {
+            setUbicacionEstado('No se pudo mapear el departamento detectado. Ajusta el ubigeo manualmente.', 'error');
+            return;
+        }
+
+        dep.value = depValue;
+        renderOptions(prov, [], 'Todas');
+        renderOptions(dist, [], 'Todos');
+
+        const responseProv = await fetch(`${urlProv}?codigoDepartamento=${encodeURIComponent(depValue)}`, { cache: 'no-store' });
+        if (!responseProv.ok) {
+            setUbicacionEstado('No se pudieron cargar provincias para tu ubicacion.', 'error');
+            return;
+        }
+        const dataProv = await responseProv.json();
+        renderOptions(prov, dataProv, 'Todas');
+
+        const provinciaValue = findOptionValueByText(prov, provinciaNombre);
+
+        const tryDistritoEnProvincia = async (provinciaCodigo) => {
+            const responseDist = await fetch(`${urlDist}?codigoProvincia=${encodeURIComponent(provinciaCodigo)}`, { cache: 'no-store' });
+            if (!responseDist.ok) return false;
+            const dataDist = await responseDist.json();
+            renderOptions(dist, dataDist, 'Todos');
+            const distritoValue = findOptionValueByText(dist, distritoNombre);
+            if (!distritoValue) return false;
+            prov.value = provinciaCodigo;
+            dist.value = distritoValue;
+            return true;
+        };
+
+        if (provinciaValue) {
+            const ok = await tryDistritoEnProvincia(provinciaValue);
+            if (ok) {
+                await refreshNegocios();
+                return;
+            }
+        }
+
+        for (const item of (dataProv || [])) {
+            const codigo = item.value || '';
+            if (!codigo || codigo === provinciaValue) continue;
+            const ok = await tryDistritoEnProvincia(codigo);
+            if (ok) {
+                await refreshNegocios();
+                return;
+            }
+        }
+
+        setUbicacionEstado('Ubicacion detectada parcialmente. Completa provincia/distrito manualmente.', 'error');
+        await refreshNegocios();
+    }
+
+    async function usarUbicacionActual() {
+        if (!btnUbicacionActual) return;
+        if (!navigator.geolocation) {
+            setUbicacionEstado('Tu navegador no soporta geolocalizacion.', 'error');
+            return;
+        }
+
+        btnUbicacionActual.disabled = true;
+        setUbicacionEstado('Detectando ubicacion...');
+
+        navigator.geolocation.getCurrentPosition(async (position) => {
+            try {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                setCoordenadasUsuario(lat, lon);
+                const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&accept-language=es`;
+                const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                if (!response.ok) {
+                    setUbicacionEstado('No se pudo resolver tu direccion automaticamente.', 'error');
+                    return;
+                }
+
+                const data = await response.json();
+                const address = data?.address || {};
+                const departamento = address.state || address.region || '';
+                const provincia = address.county || address.state_district || '';
+                const distrito = address.city_district || address.suburb || address.city || address.town || address.village || '';
+
+                if (!departamento) {
+                    setUbicacionEstado('No se pudo detectar departamento desde tu ubicacion.', 'error');
+                    return;
+                }
+
+                await autoSeleccionarUbigeoPorNombres(departamento, provincia, distrito);
+                desactivarFiltroCercania();
+                setUbicacionEstado('Ubicacion detectada. Verifica provincia/distrito antes de buscar.');
+            } catch {
+                setUbicacionEstado('No se pudo completar la deteccion de ubicacion.', 'error');
+            } finally {
+                btnUbicacionActual.disabled = false;
+            }
+        }, () => {
+            btnUbicacionActual.disabled = false;
+            setUbicacionEstado('No se obtuvo permiso para usar tu ubicacion.', 'error');
+        }, {
+            enableHighAccuracy: false,
+            timeout: 12000,
+            maximumAge: 600000
+        });
+    }
+
+    function buscarCercaDeMi() {
+        if (!btnBuscarCercaDeMi || !navigator.geolocation) {
+            setUbicacionEstado('Tu navegador no soporta geolocalizacion.', 'error');
+            return;
+        }
+
+        btnBuscarCercaDeMi.disabled = true;
+        setUbicacionEstado('Obteniendo tu ubicacion para buscar espacios cercanos...');
+
+        navigator.geolocation.getCurrentPosition((position) => {
+            try {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                setCoordenadasUsuario(lat, lon);
+                if (buscarCercaDeMiInput) buscarCercaDeMiInput.value = 'true';
+                if (radioKmInput && !radioKmInput.value) {
+                    radioKmInput.value = getRadioKmEfectivo();
+                }
+                setUbicacionEstado('Buscando espacios cercanos a tu ubicacion actual...');
+                homeSearchForm?.submit();
+            } finally {
+                btnBuscarCercaDeMi.disabled = false;
+            }
+        }, () => {
+            btnBuscarCercaDeMi.disabled = false;
+            setUbicacionEstado('No se obtuvo permiso para usar tu ubicacion.', 'error');
+        }, {
+            enableHighAccuracy: true,
+            timeout: 12000,
+            maximumAge: 120000
+        });
+    }
+
     dep.addEventListener('change', async () => {
+        desactivarFiltroCercania();
         const value = (dep.value || '').trim();
         renderOptions(prov, [], 'Todas');
         renderOptions(dist, [], 'Todos');
@@ -908,6 +1187,7 @@
     });
 
     prov.addEventListener('change', async () => {
+        desactivarFiltroCercania();
         const value = (prov.value || '').trim();
         renderOptions(dist, [], 'Todos');
         await refreshNegocios();
@@ -919,15 +1199,20 @@
         renderOptions(dist, data, 'Todos');
     });
 
-    dist.addEventListener('change', refreshNegocios);
+    dist.addEventListener('change', () => {
+        desactivarFiltroCercania();
+        refreshNegocios();
+    });
+    negocio?.addEventListener('change', desactivarFiltroCercania);
+    radioKmInput?.addEventListener('change', () => {
+        if (buscarCercaDeMiInput?.value === 'true') {
+            homeSearchForm?.submit();
+        }
+    });
 
     function actualizarEstadoFiltroHorario() {
-        if (!negocio || !omitirFechaHorario) return;
-        const negocioSeleccionado = String(negocio.value || '').trim().length > 0;
-        omitirFechaHorario.disabled = !negocioSeleccionado;
-        if (!negocioSeleccionado) omitirFechaHorario.checked = false;
-
-        const deshabilitarCampos = negocioSeleccionado && omitirFechaHorario.checked;
+        if (!omitirFechaHorario) return;
+        const deshabilitarCampos = omitirFechaHorario.checked;
         if (fechaFiltro) fechaFiltro.disabled = deshabilitarCampos;
         if (horaInicioFiltro) horaInicioFiltro.disabled = deshabilitarCampos;
         if (horaFinFiltro) horaFinFiltro.disabled = deshabilitarCampos;
@@ -935,8 +1220,49 @@
 
     negocio?.addEventListener('change', actualizarEstadoFiltroHorario);
     omitirFechaHorario?.addEventListener('change', actualizarEstadoFiltroHorario);
+    btnUbicacionActual?.addEventListener('click', usarUbicacionActual);
+    btnBuscarCercaDeMi?.addEventListener('click', buscarCercaDeMi);
     actualizarEstadoFiltroHorario();
     refreshNegocios();
+})();
+
+(() => {
+    document.addEventListener('click', async (event) => {
+        const link = event.target instanceof Element
+            ? event.target.closest('a.home-page-link')
+            : null;
+        if (!link) return;
+        if (link.classList.contains('is-disabled')) {
+            event.preventDefault();
+            return;
+        }
+
+        if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        if (link.target && link.target !== '_self') return;
+
+        event.preventDefault();
+
+        try {
+            const response = await fetch(link.href, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                cache: 'no-store'
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const nuevosResultados = doc.getElementById('resultados');
+            const resultadosActuales = document.getElementById('resultados');
+
+            if (!nuevosResultados || !resultadosActuales) throw new Error('No se encontro la seccion de resultados.');
+
+            resultadosActuales.replaceWith(nuevosResultados);
+            history.replaceState(null, '', link.href);
+        } catch {
+            window.location.href = link.href;
+        }
+    });
 })();
 </script>
 }

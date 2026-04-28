@@ -17,11 +17,13 @@ GO
 -- Create date:   16/04/2026
 -- Description:   Agrega actualizacion de URLs sociales (Facebook/Instagram/Twitter) en sede.
 -- =============================================
+-- Firma: Codex - 27/04/2026 | Agrega CodigoUbigeo por sede y actualiza match Google->SUNAT en UbigeoMapsMatch al editar sede.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Sedes_Actualizar]
     @Id INT,
     @NegocioId INT,
     @Nombre NVARCHAR(150),
     @Direccion NVARCHAR(250),
+    @CodigoUbigeo CHAR(6) = NULL,
     @ConsideracionesReserva NVARCHAR(2000) = NULL,
     @Telefono NVARCHAR(20) = NULL,
     @FacebookUrl NVARCHAR(500) = NULL,
@@ -31,6 +33,9 @@ CREATE OR ALTER PROCEDURE [dbo].[Sp_Sedes_Actualizar]
     @Latitud DECIMAL(10,7) = NULL,
     @Longitud DECIMAL(10,7) = NULL,
     @GooglePlaceId NVARCHAR(200) = NULL,
+    @GoogleDepartamento NVARCHAR(120) = NULL,
+    @GoogleProvincia NVARCHAR(120) = NULL,
+    @GoogleDistrito NVARCHAR(120) = NULL,
     @GoogleMapsUrl NVARCHAR(500) = NULL,
     @FotoPrincipalUrl NVARCHAR(500) = NULL,
     @FotosUrlsCsv NVARCHAR(MAX) = NULL,
@@ -72,12 +77,17 @@ BEGIN
             RAISERROR('Debes registrar una foto principal cuando existan fotos alternativas.', 16, 1);
         IF (CASE WHEN @FotoPrincipalUrl IS NULL OR LEN(LTRIM(RTRIM(@FotoPrincipalUrl))) = 0 THEN 0 ELSE 1 END) + @FotosAlternativasCount > 6
             RAISERROR('Solo se permiten 6 imagenes por sede (1 principal y 5 alternativas).', 16, 1);
+        IF @CodigoUbigeo IS NULL OR LEN(LTRIM(RTRIM(@CodigoUbigeo))) <> 6
+            RAISERROR('Debes seleccionar un distrito valido para la sede.', 16, 1);
+        IF NOT EXISTS (SELECT 1 FROM dbo.UbigeoDistritos ud WHERE ud.CodigoUbigeo = @CodigoUbigeo)
+            RAISERROR('El codigo ubigeo de sede no existe en el maestro.', 16, 1);
 
         BEGIN TRANSACTION;
 
         UPDATE dbo.Sedes
         SET Nombre = @Nombre,
             Direccion = @Direccion,
+            CodigoUbigeo = @CodigoUbigeo,
             ConsideracionesReserva = @ConsideracionesReserva,
             Telefono = @Telefono,
             FacebookUrl = NULLIF(LTRIM(RTRIM(@FacebookUrl)), N''),
@@ -154,6 +164,67 @@ BEGIN
             INSERT INTO dbo.SedeFechasInhabilitadas (SedeId, Fecha, Activo, FechaCreacion, UsuarioCreacion)
             SELECT @Id, f.Fecha, 1, SYSUTCDATETIME(), @Usuario
             FROM Fechas f;
+        END;
+
+        DECLARE @GooglePlaceIdTrim NVARCHAR(200) = NULLIF(LTRIM(RTRIM(@GooglePlaceId)), N'');
+        DECLARE @GoogleDepartamentoNorm NVARCHAR(120) = NULLIF(UPPER(LTRIM(RTRIM(@GoogleDepartamento))), N'');
+        DECLARE @GoogleProvinciaNorm NVARCHAR(120) = NULLIF(UPPER(LTRIM(RTRIM(@GoogleProvincia))), N'');
+        DECLARE @GoogleDistritoNorm NVARCHAR(120) = NULLIF(UPPER(LTRIM(RTRIM(@GoogleDistrito))), N'');
+
+        IF @GooglePlaceIdTrim IS NOT NULL
+        BEGIN
+            UPDATE dbo.UbigeoMapsMatch
+            SET CountryCode = 'PE',
+                GoogleDepartamento = COALESCE(NULLIF(LTRIM(RTRIM(@GoogleDepartamento)), N''), GoogleDepartamento),
+                GoogleProvincia = COALESCE(NULLIF(LTRIM(RTRIM(@GoogleProvincia)), N''), GoogleProvincia),
+                GoogleDistrito = COALESCE(NULLIF(LTRIM(RTRIM(@GoogleDistrito)), N''), GoogleDistrito),
+                CodigoUbigeo = @CodigoUbigeo,
+                EsManual = 0,
+                Activo = 1,
+                FechaActualizacion = SYSUTCDATETIME(),
+                UsuarioActualizacion = @Usuario
+            WHERE GooglePlaceId = @GooglePlaceIdTrim;
+
+            IF @@ROWCOUNT = 0
+            BEGIN
+                INSERT INTO dbo.UbigeoMapsMatch
+                (
+                    CountryCode, GooglePlaceId, GoogleDepartamento, GoogleProvincia, GoogleDistrito,
+                    CodigoUbigeo, EsManual, Activo, FechaCreacion, UsuarioCreacion
+                )
+                VALUES
+                (
+                    'PE', @GooglePlaceIdTrim, NULLIF(LTRIM(RTRIM(@GoogleDepartamento)), N''), NULLIF(LTRIM(RTRIM(@GoogleProvincia)), N''), NULLIF(LTRIM(RTRIM(@GoogleDistrito)), N''),
+                    @CodigoUbigeo, 0, 1, SYSUTCDATETIME(), @Usuario
+                );
+            END
+        END
+        ELSE IF @GoogleDepartamentoNorm IS NOT NULL AND @GoogleProvinciaNorm IS NOT NULL AND @GoogleDistritoNorm IS NOT NULL
+        BEGIN
+            UPDATE dbo.UbigeoMapsMatch
+            SET CodigoUbigeo = @CodigoUbigeo,
+                EsManual = 0,
+                Activo = 1,
+                FechaActualizacion = SYSUTCDATETIME(),
+                UsuarioActualizacion = @Usuario
+            WHERE CountryCode = 'PE'
+              AND GoogleDepartamentoNorm = @GoogleDepartamentoNorm
+              AND GoogleProvinciaNorm = @GoogleProvinciaNorm
+              AND GoogleDistritoNorm = @GoogleDistritoNorm;
+
+            IF @@ROWCOUNT = 0
+            BEGIN
+                INSERT INTO dbo.UbigeoMapsMatch
+                (
+                    CountryCode, GooglePlaceId, GoogleDepartamento, GoogleProvincia, GoogleDistrito,
+                    CodigoUbigeo, EsManual, Activo, FechaCreacion, UsuarioCreacion
+                )
+                VALUES
+                (
+                    'PE', NULL, NULLIF(LTRIM(RTRIM(@GoogleDepartamento)), N''), NULLIF(LTRIM(RTRIM(@GoogleProvincia)), N''), NULLIF(LTRIM(RTRIM(@GoogleDistrito)), N''),
+                    @CodigoUbigeo, 0, 1, SYSUTCDATETIME(), @Usuario
+                );
+            END
         END;
 
         DECLARE @EntidadIdAudit NVARCHAR(80);

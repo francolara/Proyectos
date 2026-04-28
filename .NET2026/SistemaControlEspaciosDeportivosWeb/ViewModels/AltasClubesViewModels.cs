@@ -19,7 +19,7 @@ public class AltaClubSolicitudFormViewModel
 
     [Required(ErrorMessage = "Este campo es obligatorio.")]
     [DataType(DataType.Password)]
-    [StringLength(100, MinimumLength = 6, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+    [StringLength(100, MinimumLength = 8, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string Password { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Este campo es obligatorio.")]

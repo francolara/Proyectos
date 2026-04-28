@@ -110,11 +110,113 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
         return list;
     }
 
-    public async Task<List<EspacioDisponibleViewModel>> HomeBuscarEspaciosDisponiblesAsync(DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin, string? codigoDepartamento, string? codigoProvincia, string? codigoUbigeo, int? tipoDeporteId, int? negocioId, bool omitirFechaHorario = false)
+    public async Task<List<SelectListItem>> HomeReferencialesExternosListarTiposDeporteSuperAsync()
+    {
+        return await ComboAsync("Sp_Home_ReferencialesExternos_ListarTiposDeporteSuper");
+    }
+
+    public async Task<(List<ReferencialExternoAdminItemViewModel> Items, int TotalRegistros)> HomeReferencialesExternosListarAdminAsync(
+        string? codigoDepartamento = null,
+        string? codigoProvincia = null,
+        string? codigoUbigeo = null,
+        string? buscarNombre = null,
+        int pagina = 1,
+        int tamanoPagina = 50,
+        bool? soloActivos = true)
+    {
+        var list = new List<ReferencialExternoAdminItemViewModel>();
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_Home_ReferencialesExternos_ListarAdmin", cn) { CommandType = CommandType.StoredProcedure };
+
+        AddParam(cmd, "@CodigoDepartamento", string.IsNullOrWhiteSpace(codigoDepartamento) ? null : codigoDepartamento.Trim(), SqlDbType.Char);
+        AddParam(cmd, "@CodigoProvincia", string.IsNullOrWhiteSpace(codigoProvincia) ? null : codigoProvincia.Trim(), SqlDbType.Char);
+        AddParam(cmd, "@CodigoUbigeo", string.IsNullOrWhiteSpace(codigoUbigeo) ? null : codigoUbigeo.Trim(), SqlDbType.Char);
+        AddParam(cmd, "@BuscarNombre", string.IsNullOrWhiteSpace(buscarNombre) ? null : buscarNombre.Trim(), SqlDbType.NVarChar);
+        AddParam(cmd, "@Pagina", pagina <= 0 ? 1 : pagina, SqlDbType.Int);
+        AddParam(cmd, "@TamanoPagina", tamanoPagina <= 0 ? 50 : tamanoPagina, SqlDbType.Int);
+        AddParam(cmd, "@SoloActivos", soloActivos, SqlDbType.Bit);
+
+        var totalRegistrosParam = cmd.Parameters.Add("@TotalRegistros", SqlDbType.Int);
+        totalRegistrosParam.Direction = ParameterDirection.Output;
+
+        await using var dr = await cmd.ExecuteReaderAsync();
+        while (await dr.ReadAsync())
+        {
+            list.Add(new ReferencialExternoAdminItemViewModel
+            {
+                Id = dr.GetInt32(0),
+                NombreComplejo = dr.IsDBNull(1) ? string.Empty : dr.GetString(1),
+                NombreEspacio = dr.IsDBNull(2) ? null : dr.GetString(2),
+                TipoDeporte = dr.IsDBNull(3) ? string.Empty : dr.GetString(3),
+                Departamento = dr.IsDBNull(4) ? string.Empty : dr.GetString(4),
+                Provincia = dr.IsDBNull(5) ? string.Empty : dr.GetString(5),
+                Distrito = dr.IsDBNull(6) ? string.Empty : dr.GetString(6),
+                Direccion = dr.IsDBNull(7) ? null : dr.GetString(7),
+                GoogleMapsUrl = dr.IsDBNull(8) ? null : dr.GetString(8),
+                Activo = ReadBool(dr, 9),
+                FechaActualizacion = dr.IsDBNull(10) ? null : dr.GetDateTime(10),
+                UsuarioActualizacion = dr.IsDBNull(11) ? null : dr.GetString(11)
+            });
+        }
+
+        var totalRegistros = totalRegistrosParam.Value is int total ? total : 0;
+        return (list, totalRegistros);
+    }
+
+    public async Task<bool> HomeReferencialesExternosInactivarAsync(int id, string usuario)
     {
         try
         {
-            return await HomeBuscarEspaciosDisponiblesInternoAsync(fecha, horaInicio, horaFin, codigoDepartamento, codigoProvincia, codigoUbigeo, tipoDeporteId, negocioId, omitirFechaHorario, usarUbigeo: true, usarNegocio: true, usarIgnorarHorario: true);
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_Home_ReferencialesExternos_Inactivar", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@Id", id, SqlDbType.Int);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (SqlException ex) when (EsErrorNoEncontrado(ex.Message))
+        {
+            return false;
+        }
+    }
+
+    public async Task<List<EspacioDisponibleViewModel>> HomeBuscarEspaciosDisponiblesAsync(
+        DateOnly fecha,
+        TimeOnly horaInicio,
+        TimeOnly horaFin,
+        string? codigoDepartamento,
+        string? codigoProvincia,
+        string? codigoUbigeo,
+        int? tipoDeporteId,
+        int? negocioId,
+        bool omitirFechaHorario = false,
+        bool buscarCercaDeMi = false,
+        decimal? latitudUsuario = null,
+        decimal? longitudUsuario = null,
+        decimal? radioKm = null)
+    {
+        try
+        {
+            return await HomeBuscarEspaciosDisponiblesInternoAsync(
+                fecha,
+                horaInicio,
+                horaFin,
+                codigoDepartamento,
+                codigoProvincia,
+                codigoUbigeo,
+                tipoDeporteId,
+                negocioId,
+                omitirFechaHorario,
+                buscarCercaDeMi,
+                latitudUsuario,
+                longitudUsuario,
+                radioKm,
+                usarUbigeo: true,
+                usarNegocio: true,
+                usarIgnorarHorario: true,
+                usarFiltroDistancia: true);
         }
         catch (SqlException ex) when (
             ex.Message.Contains("@CodigoDepartamento", StringComparison.OrdinalIgnoreCase) ||
@@ -122,21 +224,115 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
             ex.Message.Contains("@CodigoUbigeo", StringComparison.OrdinalIgnoreCase))
         {
             // Compatibilidad temporal con SP antiguo (filtro por sede).
-            return await HomeBuscarEspaciosDisponiblesInternoAsync(fecha, horaInicio, horaFin, null, null, null, tipoDeporteId, negocioId, omitirFechaHorario, usarUbigeo: false, usarNegocio: true, usarIgnorarHorario: true);
+            return await HomeBuscarEspaciosDisponiblesInternoAsync(
+                fecha,
+                horaInicio,
+                horaFin,
+                null,
+                null,
+                null,
+                tipoDeporteId,
+                negocioId,
+                omitirFechaHorario,
+                buscarCercaDeMi,
+                latitudUsuario,
+                longitudUsuario,
+                radioKm,
+                usarUbigeo: false,
+                usarNegocio: true,
+                usarIgnorarHorario: true,
+                usarFiltroDistancia: true);
         }
         catch (SqlException ex) when (ex.Message.Contains("@NegocioId", StringComparison.OrdinalIgnoreCase))
         {
             // Compatibilidad temporal mientras se despliega el filtro por negocio en BD.
-            return await HomeBuscarEspaciosDisponiblesInternoAsync(fecha, horaInicio, horaFin, codigoDepartamento, codigoProvincia, codigoUbigeo, tipoDeporteId, null, omitirFechaHorario, usarUbigeo: true, usarNegocio: false, usarIgnorarHorario: true);
+            return await HomeBuscarEspaciosDisponiblesInternoAsync(
+                fecha,
+                horaInicio,
+                horaFin,
+                codigoDepartamento,
+                codigoProvincia,
+                codigoUbigeo,
+                tipoDeporteId,
+                null,
+                omitirFechaHorario,
+                buscarCercaDeMi,
+                latitudUsuario,
+                longitudUsuario,
+                radioKm,
+                usarUbigeo: true,
+                usarNegocio: false,
+                usarIgnorarHorario: true,
+                usarFiltroDistancia: true);
         }
         catch (SqlException ex) when (ex.Message.Contains("@IgnorarFechaHorario", StringComparison.OrdinalIgnoreCase))
         {
             // Compatibilidad temporal mientras se despliega el nuevo parametro opcional de horario.
-            return await HomeBuscarEspaciosDisponiblesInternoAsync(fecha, horaInicio, horaFin, codigoDepartamento, codigoProvincia, codigoUbigeo, tipoDeporteId, negocioId, omitirFechaHorario, usarUbigeo: true, usarNegocio: true, usarIgnorarHorario: false);
+            return await HomeBuscarEspaciosDisponiblesInternoAsync(
+                fecha,
+                horaInicio,
+                horaFin,
+                codigoDepartamento,
+                codigoProvincia,
+                codigoUbigeo,
+                tipoDeporteId,
+                negocioId,
+                omitirFechaHorario,
+                buscarCercaDeMi,
+                latitudUsuario,
+                longitudUsuario,
+                radioKm,
+                usarUbigeo: true,
+                usarNegocio: true,
+                usarIgnorarHorario: false,
+                usarFiltroDistancia: true);
+        }
+        catch (SqlException ex) when (
+            ex.Message.Contains("@BuscarCercaDeMi", StringComparison.OrdinalIgnoreCase) ||
+            ex.Message.Contains("@LatitudUsuario", StringComparison.OrdinalIgnoreCase) ||
+            ex.Message.Contains("@LongitudUsuario", StringComparison.OrdinalIgnoreCase) ||
+            ex.Message.Contains("@RadioKm", StringComparison.OrdinalIgnoreCase))
+        {
+            // Compatibilidad temporal mientras se despliega el filtro de distancia en BD.
+            return await HomeBuscarEspaciosDisponiblesInternoAsync(
+                fecha,
+                horaInicio,
+                horaFin,
+                codigoDepartamento,
+                codigoProvincia,
+                codigoUbigeo,
+                tipoDeporteId,
+                negocioId,
+                omitirFechaHorario,
+                buscarCercaDeMi,
+                latitudUsuario,
+                longitudUsuario,
+                radioKm,
+                usarUbigeo: true,
+                usarNegocio: true,
+                usarIgnorarHorario: true,
+                usarFiltroDistancia: false);
         }
     }
 
-    private async Task<List<EspacioDisponibleViewModel>> HomeBuscarEspaciosDisponiblesInternoAsync(DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin, string? codigoDepartamento, string? codigoProvincia, string? codigoUbigeo, int? tipoDeporteId, int? negocioId, bool omitirFechaHorario, bool usarUbigeo, bool usarNegocio, bool usarIgnorarHorario)
+    private async Task<List<EspacioDisponibleViewModel>> HomeBuscarEspaciosDisponiblesInternoAsync(
+        DateOnly fecha,
+        TimeOnly horaInicio,
+        TimeOnly horaFin,
+        string? codigoDepartamento,
+        string? codigoProvincia,
+        string? codigoUbigeo,
+        int? tipoDeporteId,
+        int? negocioId,
+        bool omitirFechaHorario,
+        bool buscarCercaDeMi,
+        decimal? latitudUsuario,
+        decimal? longitudUsuario,
+        decimal? radioKm,
+        bool usarUbigeo,
+        bool usarNegocio,
+        bool usarIgnorarHorario,
+        bool usarFiltroDistancia)
     {
         var list = new List<EspacioDisponibleViewModel>();
         await using var cn = CreateConnection();
@@ -160,6 +356,13 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
             AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
         if (usarIgnorarHorario)
             AddParam(cmd, "@IgnorarFechaHorario", omitirFechaHorario, SqlDbType.Bit);
+        if (usarFiltroDistancia)
+        {
+            AddParam(cmd, "@BuscarCercaDeMi", buscarCercaDeMi, SqlDbType.Bit);
+            AddParam(cmd, "@LatitudUsuario", latitudUsuario, SqlDbType.Decimal);
+            AddParam(cmd, "@LongitudUsuario", longitudUsuario, SqlDbType.Decimal);
+            AddParam(cmd, "@RadioKm", radioKm, SqlDbType.Decimal);
+        }
         await using var dr = await cmd.ExecuteReaderAsync();
         while (await dr.ReadAsync())
         {
@@ -182,17 +385,42 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
                     TieneIluminacion = ReadBool(dr, 12),
                     Techada = ReadBool(dr, 13),
                     CorreoNotificacion = !dr.IsDBNull(14) ? dr.GetString(14) : null,
-                    WhatsappContacto = !dr.IsDBNull(15) ? dr.GetString(15) : null,
-                    PermiteChatWhatsapp = ReadBool(dr, 16),
-                    SedeId = dr.FieldCount > 17 && !dr.IsDBNull(17) ? dr.GetInt32(17) : null,
-                    SedeFotoPrincipalUrl = dr.FieldCount > 18 && !dr.IsDBNull(18) ? dr.GetString(18) : null,
-                    SedeFotos = dr.FieldCount > 19 && !dr.IsDBNull(19)
-                        ? dr.GetString(19)
-                            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                            .Where(x => !string.IsNullOrWhiteSpace(x))
-                            .Distinct(StringComparer.OrdinalIgnoreCase)
-                            .ToList()
-                        : new List<string>()
+                    TelefonoContacto = dr.FieldCount > 21
+                        ? (dr.IsDBNull(15) ? null : dr.GetString(15))
+                        : null,
+                    WhatsappContacto = dr.FieldCount > 21
+                        ? (!dr.IsDBNull(16) ? dr.GetString(16) : null)
+                        : (!dr.IsDBNull(15) ? dr.GetString(15) : null),
+                    PermiteChatWhatsapp = dr.FieldCount > 21
+                        ? ReadBool(dr, 17)
+                        : ReadBool(dr, 16),
+                    SedeId = dr.FieldCount > 21
+                        ? (dr.IsDBNull(18) ? null : dr.GetInt32(18))
+                        : (dr.FieldCount > 17 && !dr.IsDBNull(17) ? dr.GetInt32(17) : null),
+                    SedeMapaUrl = dr.FieldCount > 21
+                        ? (dr.IsDBNull(19) ? null : dr.GetString(19))
+                        : (dr.FieldCount > 20 && !dr.IsDBNull(18) ? dr.GetString(18) : null),
+                    SedeFotoPrincipalUrl = dr.FieldCount > 21
+                        ? (dr.IsDBNull(20) ? null : dr.GetString(20))
+                        : (dr.FieldCount > 20
+                            ? (dr.IsDBNull(19) ? null : dr.GetString(19))
+                            : (dr.FieldCount > 18 && !dr.IsDBNull(18) ? dr.GetString(18) : null)),
+                    SedeFotos = dr.FieldCount > 21
+                        ? (dr.IsDBNull(21)
+                            ? new List<string>()
+                            : dr.GetString(21)
+                                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                                .Where(x => !string.IsNullOrWhiteSpace(x))
+                                .Distinct(StringComparer.OrdinalIgnoreCase)
+                                .ToList())
+                        : (dr.FieldCount > 19 && !dr.IsDBNull(19)
+                            ? dr.GetString(19)
+                                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                                .Where(x => !string.IsNullOrWhiteSpace(x))
+                                .Distinct(StringComparer.OrdinalIgnoreCase)
+                                .ToList()
+                            : new List<string>()),
+                    DistanciaKm = dr.FieldCount > 22 && !dr.IsDBNull(22) ? dr.GetDecimal(22) : null
                 });
             }
             else
@@ -208,7 +436,8 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
                     TieneIluminacion = dr.FieldCount > 6 && ReadBool(dr, 6),
                     Techada = dr.FieldCount > 7 && ReadBool(dr, 7),
                     WhatsappContacto = dr.FieldCount > 8 && !dr.IsDBNull(8) ? dr.GetString(8) : null,
-                    PermiteChatWhatsapp = dr.FieldCount > 9 && ReadBool(dr, 9)
+                    PermiteChatWhatsapp = dr.FieldCount > 9 && ReadBool(dr, 9),
+                    DistanciaKm = null
                 });
             }
         }
