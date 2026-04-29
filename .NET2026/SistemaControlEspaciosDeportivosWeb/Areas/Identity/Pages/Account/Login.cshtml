@@ -1,20 +1,30 @@
 @page
 @model SistemaControlEspaciosDeportivosWeb.Areas.Identity.Pages.Account.LoginModel
+@inject Microsoft.Extensions.Options.IOptions<SistemaControlEspaciosDeportivosWeb.Services.SedeImagenStorageSettings> SedeImagenStorageOptions
 @{
     ViewData["Title"] = "Iniciar sesion";
     Layout = "~/Views/Shared/_Layout.cshtml";
     var bannerArchivo = !string.IsNullOrWhiteSpace(Model.BannerLateral?.ImagenUrlMobile)
         ? Model.BannerLateral!.ImagenUrlMobile
         : Model.BannerLateral?.ImagenUrl;
+    // Antes: URL proxy por backend (mas latencia).
+    // var bannerUrl = !string.IsNullOrWhiteSpace(bannerArchivo)
+    //     ? Url.Action("VerImagen", "Sedes", new { url = bannerArchivo })
+    //     : null;
     var bannerUrl = !string.IsNullOrWhiteSpace(bannerArchivo)
-        ? Url.Action("VerImagen", "Sedes", new { url = bannerArchivo })
+        ? bannerArchivo
         : null;
+    bannerUrl = SistemaControlEspaciosDeportivosWeb.Services.SedeImagenUrlHelper.NormalizarUrlPublica(
+        bannerUrl,
+        SedeImagenStorageOptions.Value.PublicBaseUrl,
+        SedeImagenStorageOptions.Value.BucketName);
 }
 <!-- Firma: Codex - 14/04/2026 | Login con layout profesional y flujo unico de acceso sin selector de modo. -->
 <!-- Firma: Codex - 16/04/2026 | Ajuste visual de acciones inferiores (estilo profesional) y simplificacion de links como referencia de diseño del proyecto. -->
 
 <!-- Firma: Codex - 20/04/2026 | Banner lateral de login ajustado para priorizar la imagen vertical del sistema y dejar la horizontal solo como respaldo. -->
 <!-- Firma: Codex - 25/04/2026 | Login reforzado con reenvio de confirmacion de correo para cuentas pendientes de activar. -->
+<!-- Firma: Codex - 28/04/2026 | Login consume banner lateral por URL directa para reducir latencia, mantiene comentada la ruta por VerImagen y normaliza URLs heredadas de R2 endpoint S3 hacia la URL publica configurada. -->
 <section class="auth-shell">
     <aside class="auth-visual" style="@(string.IsNullOrWhiteSpace(bannerUrl) ? string.Empty : $"background-image:linear-gradient(165deg,rgba(3,15,35,.84),rgba(7,24,58,.70)),url('{bannerUrl}');")">
         <div class="auth-visual-content">

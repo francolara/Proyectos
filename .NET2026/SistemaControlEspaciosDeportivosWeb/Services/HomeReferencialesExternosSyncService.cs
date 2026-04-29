@@ -100,7 +100,6 @@ public class HomeReferencialesExternosSyncService(
                 }
 
                 var direccion = TryGetString(place, "formatted_address");
-                var mapsUrl = string.IsNullOrWhiteSpace(placeId) ? null : $"https://www.google.com/maps/place/?q=place_id:{placeId}";
                 var detalle = await ObtenerDetallePlaceAsync(client, placeId!, apiKey, descargarTelefonos, descargarFotos, cancellationToken);
                 decimal? lat = null;
                 decimal? lng = null;
@@ -110,6 +109,8 @@ public class HomeReferencialesExternosSyncService(
                     lat = TryGetDecimal(location, "lat");
                     lng = TryGetDecimal(location, "lng");
                 }
+
+                var mapsUrl = ConstruirGoogleMapsUrl(lat, lng, placeId);
 
                 var upsert = await UpsertReferencialAsync(
                     placeId!,
@@ -304,6 +305,18 @@ public class HomeReferencialesExternosSyncService(
             return value;
 
         return null;
+    }
+
+    private static string? ConstruirGoogleMapsUrl(decimal? latitud, decimal? longitud, string? placeId)
+    {
+        if (latitud.HasValue && longitud.HasValue)
+        {
+            return $"https://www.google.com/maps?q={latitud.Value.ToString(CultureInfo.InvariantCulture)},{longitud.Value.ToString(CultureInfo.InvariantCulture)}";
+        }
+
+        return string.IsNullOrWhiteSpace(placeId)
+            ? null
+            : $"https://www.google.com/maps/place/?q=place_id:{placeId}";
     }
 
     private readonly record struct GooglePlaceDetalle(

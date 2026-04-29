@@ -1198,6 +1198,7 @@
   - superadmin incorpora pestaña `Plataforma > Referenciales externos` para ejecutar barrido manual desde Google Places (por ubigeo + deporte + palabra clave) y refrescar data en el tiempo.
   - el barrido backend usa `GoogleMaps:ApiKeyServer` (con fallback temporal a `GoogleMaps:ApiKey`) para separar la key server-to-server de la key frontend de mapas en Sedes.
   - el barrido backend consulta Google Place Details para enriquecer telefono y fotos (`FotoPrincipalUrl`, `FotosUrlsCsv`) antes de upsert.
+  - `GoogleMapsUrl` de `HomeEspaciosReferencialesExternos` se persiste priorizando coordenadas en formato `https://www.google.com/maps?q=lat,long` (fallback a `place_id` solo si no se recibe lat/long).
   - el boton de barrido manual se controla por parametro global `HOME_REFEXT_BARRIDO_HABILITADO`:
     - `1|true|si|yes`: habilitado
     - vacio o cualquier otro valor: deshabilitado/oculto

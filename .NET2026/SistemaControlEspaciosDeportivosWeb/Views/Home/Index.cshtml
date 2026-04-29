@@ -1,4 +1,5 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.HomeIndexViewModel
+@inject Microsoft.Extensions.Options.IOptions<SistemaControlEspaciosDeportivosWeb.Services.SedeImagenStorageSettings> SedeImagenStorageOptions
 @using System.Linq
 @using System.Globalization
 @using System
@@ -74,6 +75,7 @@
 <!-- Firma: Codex - 18/04/2026 | Navbar publica agrega ancla Caracteristicas y se fija id de destino en bloque de beneficios. -->
 <!-- Firma: Codex - 20/04/2026 | Home publico integra acceso de anuncios en navbar superior y modal popup configurable desde super admin para usuarios anonimos, con soporte mixto vertical/horizontal, subtitulo por anuncio, CTA Quiero anunciar reutilizando el WhatsApp configurado del portal y control de apertura automatica por sessionStorage. -->
 <!-- Firma: Codex - 27/04/2026 | Home refuerza tarjetas con club/negocio destacado, mejora UX del filtro (defaults dinamicos, botones "Usar mi ubicacion" y "Buscar cerca de mi"), autocompletado ubigeo, distancia en km por tarjeta, contacto con telefono y visual de externos/paginacion estilo perfil. -->
+<!-- Firma: Codex - 28/04/2026 | Home (banners, promociones y fotos de sede) usa URLs directas para carga de imagenes, deja comentada la ruta por VerImagen y normaliza URLs heredadas de R2 endpoint S3 hacia la URL publica configurada. -->
 
 <section class="home-hero mb-4">
     <div id="homeHeroCarousel" class="carousel slide home-hero-carousel h-100" data-bs-ride="carousel" data-bs-interval="5500">
@@ -111,10 +113,21 @@
                         var idx = 0;
                         foreach (var banner in banners)
                         {
-                            var imageUrlDesktop = Url.Action("VerImagen", "Sedes", new { url = banner.ImagenUrl }) ?? string.Empty;
+                            // Antes: URL proxy por backend (mas latencia).
+                            // var imageUrlDesktop = Url.Action("VerImagen", "Sedes", new { url = banner.ImagenUrl }) ?? string.Empty;
+                            // var imageUrlMobile = string.IsNullOrWhiteSpace(banner.ImagenUrlMobile)
+                            //     ? imageUrlDesktop
+                            //     : (Url.Action("VerImagen", "Sedes", new { url = banner.ImagenUrlMobile }) ?? imageUrlDesktop);
+                            var imageUrlDesktop = SistemaControlEspaciosDeportivosWeb.Services.SedeImagenUrlHelper.NormalizarUrlPublica(
+                                banner.ImagenUrl,
+                                SedeImagenStorageOptions.Value.PublicBaseUrl,
+                                SedeImagenStorageOptions.Value.BucketName) ?? string.Empty;
                             var imageUrlMobile = string.IsNullOrWhiteSpace(banner.ImagenUrlMobile)
                                 ? imageUrlDesktop
-                                : (Url.Action("VerImagen", "Sedes", new { url = banner.ImagenUrlMobile }) ?? imageUrlDesktop);
+                                : (SistemaControlEspaciosDeportivosWeb.Services.SedeImagenUrlHelper.NormalizarUrlPublica(
+                                    banner.ImagenUrlMobile,
+                                    SedeImagenStorageOptions.Value.PublicBaseUrl,
+                                    SedeImagenStorageOptions.Value.BucketName) ?? imageUrlDesktop);
                             var botonTexto = string.IsNullOrWhiteSpace(banner.BotonTexto) ? "Explorar espacios" : banner.BotonTexto;
                             var botonUrl = string.IsNullOrWhiteSpace(banner.BotonUrl) ? "#buscar" : banner.BotonUrl;
                             var esExterno = botonUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || botonUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
@@ -394,7 +407,10 @@
                                 <div class="home-space-media mb-3">
                                     @if (sedeFotos.Count == 1)
                                     {
-                                        <img src="@(Url.Action("VerImagen", "Sedes", new { url = sedeFotos[0] }))"
+                                        <img src="@(SistemaControlEspaciosDeportivosWeb.Services.SedeImagenUrlHelper.NormalizarUrlPublica(
+                                            sedeFotos[0],
+                                            SedeImagenStorageOptions.Value.PublicBaseUrl,
+                                            SedeImagenStorageOptions.Value.BucketName) ?? sedeFotos[0])"
                                              alt="Foto de @item.SedeNombre"
                                              class="home-space-media-img" />
                                     }
@@ -406,7 +422,10 @@
                                                 {
                                                     var foto = sedeFotos[fotoIdx];
                                                     <div class="carousel-item @(fotoIdx == 0 ? "active" : null)">
-                                                        <img src="@(Url.Action("VerImagen", "Sedes", new { url = foto }))"
+                                                        <img src="@(SistemaControlEspaciosDeportivosWeb.Services.SedeImagenUrlHelper.NormalizarUrlPublica(
+                                                            foto,
+                                                            SedeImagenStorageOptions.Value.PublicBaseUrl,
+                                                            SedeImagenStorageOptions.Value.BucketName) ?? foto)"
                                                              alt="Foto @(fotoIdx + 1) de @item.SedeNombre"
                                                              class="home-space-media-img" />
                                                     </div>
@@ -713,7 +732,12 @@
                             @for (var idx = 0; idx < popupPromociones.Count; idx++)
                             {
                                 var anuncio = popupPromociones[idx];
-                                var imagenUrl = Url.Action("VerImagen", "Sedes", new { url = anuncio.ImagenUrl }) ?? string.Empty;
+                                // Antes: URL proxy por backend (mas latencia).
+                                // var imagenUrl = Url.Action("VerImagen", "Sedes", new { url = anuncio.ImagenUrl }) ?? string.Empty;
+                                var imagenUrl = SistemaControlEspaciosDeportivosWeb.Services.SedeImagenUrlHelper.NormalizarUrlPublica(
+                                    anuncio.ImagenUrl,
+                                    SedeImagenStorageOptions.Value.PublicBaseUrl,
+                                    SedeImagenStorageOptions.Value.BucketName) ?? string.Empty;
                                 var botonUrl = string.IsNullOrWhiteSpace(anuncio.UrlBoton) ? null : anuncio.UrlBoton;
                                 var imagenClickUrl = string.IsNullOrWhiteSpace(anuncio.UrlImagen) ? null : anuncio.UrlImagen;
                                 var target = anuncio.AbrirNuevaPestana ? "_blank" : "_self";

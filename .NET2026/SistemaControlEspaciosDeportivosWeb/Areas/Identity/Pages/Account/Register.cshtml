@@ -1,14 +1,23 @@
 @page
 @model SistemaControlEspaciosDeportivosWeb.Areas.Identity.Pages.Account.RegisterModel
+@inject Microsoft.Extensions.Options.IOptions<SistemaControlEspaciosDeportivosWeb.Services.SedeImagenStorageSettings> SedeImagenStorageOptions
 @{
     ViewData["Title"] = "Crear cuenta";
     Layout = "~/Views/Shared/_Layout.cshtml";
     var bannerArchivo = !string.IsNullOrWhiteSpace(Model.BannerLateral?.ImagenUrlMobile)
         ? Model.BannerLateral!.ImagenUrlMobile
         : Model.BannerLateral?.ImagenUrl;
+    // Antes: URL proxy por backend (mas latencia).
+    // var bannerUrl = !string.IsNullOrWhiteSpace(bannerArchivo)
+    //     ? Url.Action("VerImagen", "Sedes", new { url = bannerArchivo })
+    //     : null;
     var bannerUrl = !string.IsNullOrWhiteSpace(bannerArchivo)
-        ? Url.Action("VerImagen", "Sedes", new { url = bannerArchivo })
+        ? bannerArchivo
         : null;
+    bannerUrl = SistemaControlEspaciosDeportivosWeb.Services.SedeImagenUrlHelper.NormalizarUrlPublica(
+        bannerUrl,
+        SedeImagenStorageOptions.Value.PublicBaseUrl,
+        SedeImagenStorageOptions.Value.BucketName);
     var hayErroresUsuario = ViewData.ModelState.Any(x =>
         x.Value?.Errors?.Count > 0 &&
         !x.Key.StartsWith("Club", StringComparison.OrdinalIgnoreCase));
@@ -23,6 +32,7 @@
 
 <!-- Firma: Codex - 20/04/2026 | Banner lateral de registro ajustado para priorizar la imagen vertical del sistema y dejar la horizontal solo como respaldo. -->
 <!-- Firma: Codex - 27/04/2026 | Registro usuario/club muestra politica de contrasena en ambos formularios y alinea minimo de validacion a 8 caracteres segun politica de seguridad. -->
+<!-- Firma: Codex - 28/04/2026 | Registro consume banner lateral por URL directa para reducir latencia, mantiene comentada la ruta por VerImagen y normaliza URLs heredadas de R2 endpoint S3 hacia la URL publica configurada. -->
 <section class="auth-shell">
     <aside class="auth-visual" style="@(string.IsNullOrWhiteSpace(bannerUrl) ? string.Empty : $"background-image:linear-gradient(165deg,rgba(3,15,35,.84),rgba(7,24,58,.70)),url('{bannerUrl}');")">
         <div class="auth-visual-content">
