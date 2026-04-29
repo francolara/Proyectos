@@ -1,7 +1,4 @@
-@model SistemaControlEspaciosDeportivosWeb.ViewModels.PromocionFormViewModel
-<!-- Firma: Codex - 27/03/2026 | Estandar visual pro para formulario de promociones -->
-<!-- Firma: Codex - 08/04/2026 | Unifica selectores de hora a listas de intervalos de 30 minutos. -->
-<!-- Firma: Codex - 13/04/2026 | Separa campos del formulario, normaliza etiquetas con nombres legibles (Fecha Inicio, Hora Inicio, etc.), alinea porcentaje de descuento a la derecha y restringe ingreso a numeros enteros. -->
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.PromocionFormViewModel
 @{
     ViewData["Title"] = "Nueva promocion";
     var horasMediaHora = Enumerable.Range(0, 48)
@@ -113,3 +110,4 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }
+

@@ -1,7 +1,4 @@
-@model SistemaControlEspaciosDeportivosWeb.ViewModels.PagosIndexViewModel
-<!-- Firma: Codex - 09/04/2026 | Rediseno integral de listado de pagos por reserva (una fila por reserva), cabecera estandar con iconos, paginacion backend 20x20, accion eliminar por reserva y columna de saldo pendiente con simbolo de moneda. -->
-<!-- Firma: Codex - 13/04/2026 | Cabecera del modulo muestra tarjeta informativa de Club/negocio con ID junto al titulo; agrega filtro por fecha (Desde/Hasta) y presets rapidos Hoy/7d/30d/Mes actual en listado. -->
-
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.PagosIndexViewModel
 @{
     ViewData["Title"] = "Pagos";
     var montoTotal = Model.Pagos.Sum(x => x.MontoTotal);
@@ -202,7 +199,7 @@
                                             <input type="hidden" name="reservaId" value="@item.ReservaId" />
                                             <button type="submit"
                                                     class="btn btn-sm sc-action-btn sc-action-delete"
-                                                    onclick="return confirm('Se eliminarán todos los pagos de la reserva @item.ReservaCodigo y la reserva se cancelará. ¿Deseas continuar?');">
+                                                    onclick="return confirm('Se eliminarÃ¡n todos los pagos de la reserva @item.ReservaCodigo y la reserva se cancelarÃ¡. Â¿Deseas continuar?');">
                                                 <i class="bi bi-trash3"></i> Eliminar
                                             </button>
                                         </form>
@@ -216,3 +213,4 @@
         }
     </section>
 </div>
+

@@ -1,5 +1,4 @@
-@model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobanteFormViewModel
-<!-- Firma: Codex - 11/04/2026 | Flujo nuevo para generar Nota de Credito/Debito desde comprobante aceptado SUNAT, con documento referencia y tipo de nota SUNAT. -->
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobanteFormViewModel
 @{
     var esNotaCredito = string.Equals(Model.TipoNota, "NC", StringComparison.OrdinalIgnoreCase);
     var titulo = esNotaCredito ? "Generar nota de credito" : "Generar nota de debito";
@@ -277,3 +276,4 @@
         })();
     </script>
 }
+

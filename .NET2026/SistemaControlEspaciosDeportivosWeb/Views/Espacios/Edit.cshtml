@@ -1,12 +1,6 @@
-@using SistemaControlEspaciosDeportivosWeb.Models
+﻿@using SistemaControlEspaciosDeportivosWeb.Models
 @using System.Text.Json
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.EspacioFormViewModel
-<!-- Firma: Codex - 27/03/2026 | Estandar visual pro para formulario de espacios -->
-<!-- Firma: Codex - 28/03/2026 | Edicion de multiples tarifas por dia y rango horario en espacio deportivo -->
-<!-- Firma: Codex - 29/03/2026 | Normalizacion de JSON de tarifas a camelCase, validacion por moneda y asistente de bloques con control de cruces -->
-<!-- Firma: Codex - 08/04/2026 | Unifica selectores de hora de tarifas a listas cada 30 minutos (bloques y filas dinamicas). -->
-<!-- Firma: Codex - 18/04/2026 | Se agrega check Administracion privada en edicion de espacios para excluirlos del portal publico. -->
-
 @{
     ViewData["Title"] = "Editar espacio";
     var monedaEtiqueta = string.IsNullOrWhiteSpace(Model.MonedaEtiqueta) ? "-" : Model.MonedaEtiqueta;
@@ -444,3 +438,4 @@
         })();
     </script>
 }
+

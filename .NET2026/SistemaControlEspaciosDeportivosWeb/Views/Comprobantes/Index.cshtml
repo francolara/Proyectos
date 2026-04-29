@@ -1,9 +1,4 @@
-@model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobantesIndexViewModel
-<!-- Firma: Codex - 09/04/2026 | Rediseno de cabecera/listado de comprobantes con estandar de iconos, buscador y paginacion 20x20; accion Ver abre preview web y desde ahi descarga PDF interno (RI) o redirecciona a URL proveedor en tributarios. -->
-<!-- Firma: Codex - 10/04/2026 | Listado de comprobantes agrega filtro por tipo de documento configurado para el negocio (maestros), con paginacion conservando filtro. -->
-<!-- Firma: Codex - 11/04/2026 | Listado agrega botones Generar NC/ND por fila; solo habilitados para Factura/Boleta aceptadas SUNAT. -->
-<!-- Firma: Codex - 11/04/2026 | Listado agrega columna Referencia y bloquea NC/ND + Anular cuando el comprobante ya tiene notas relacionadas; para RI oculta NC/ND. -->
-<!-- Firma: Codex - 13/04/2026 | Cabecera del modulo muestra tarjeta informativa de Club/negocio con ID junto al titulo; agrega filtro por fecha de emision (Desde/Hasta) y presets rapidos Hoy/7d/30d/Mes actual. -->
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobantesIndexViewModel
 @{
     ViewData["Title"] = "Comprobantes";
     var totalComprobantes = Model.TotalRegistros;
@@ -334,3 +329,4 @@
         line-height: 1.2;
     }
 </style>
+

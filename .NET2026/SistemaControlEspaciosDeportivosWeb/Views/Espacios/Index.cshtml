@@ -1,12 +1,4 @@
-@model SistemaControlEspaciosDeportivosWeb.ViewModels.EspaciosIndexViewModel
-<!-- Firma: Codex - 29/03/2026 | Rediseno del listado de espacios con detalle operativo, estados visuales y filtro rapido -->
-<!-- Firma: Codex - 30/03/2026 | Incorporacion de resumen breve de tarifas por dias y horarios en la lista detallada -->
-<!-- Firma: Codex - 09/04/2026 | Rediseno de cabecera del listado de espacios con icono superior y etiqueta pequena centrada por columna. -->
-<!-- Firma: Codex - 13/04/2026 | Cabecera del modulo muestra tarjeta informativa de Club/negocio con ID junto al titulo. -->
-<!-- Firma: Codex - 13/04/2026 | Listado de espacios agrega badges de Iluminacion y Techado junto a Tipo de suelo. -->
-<!-- Firma: Codex - 18/04/2026 | Listado incorpora indicador visual de Administracion privada para espacios ocultos del portal publico. -->
-<!-- Firma: Codex - 20/04/2026 | Listado de espacios resalta visualmente la sede dentro del detalle operativo para mejorar lectura rapida del club/recinto asociado. -->
-
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.EspaciosIndexViewModel
 @{
     ViewData["Title"] = "Espacios";
     var totalEspacios = Model.Espacios.Count;
@@ -196,3 +188,4 @@
         })();
     </script>
 }
+

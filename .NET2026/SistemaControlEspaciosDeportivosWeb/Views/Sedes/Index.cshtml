@@ -1,9 +1,4 @@
-@model SistemaControlEspaciosDeportivosWeb.ViewModels.SedesIndexViewModel
-<!-- Firma: Codex - 30/03/2026 | Rediseno del listado de sedes con KPIs, filtro rapido y tabla detallada -->
-<!-- Firma: Codex - 05/04/2026 | Estandariza texto de estado para mostrar "No Asistio" en lugar de "No-show" en resumen de sedes. -->
-<!-- Firma: Codex - 09/04/2026 | Rediseno de cabecera del listado de sedes con icono superior y etiqueta pequena centrada por columna. -->
-<!-- Firma: Codex - 13/04/2026 | Cabecera del modulo muestra tarjeta informativa de Club/negocio con ID junto al titulo. -->
-
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.SedesIndexViewModel
 @{
     ViewData["Title"] = "Sedes";
     var totalSedes = Model.Sedes.Count;
@@ -228,3 +223,4 @@
         })();
     </script>
 }
+

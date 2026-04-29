@@ -1,7 +1,4 @@
-@model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobanteFormViewModel
-<!-- Firma: Codex - 09/04/2026 | Emision de comprobante con reserva pagada, numero correlativo autogenerado, datos editables de cliente (con ubigeo) y validaciones tributarias en backend. -->
-<!-- Firma: Codex - 10/04/2026 | Reordena campos en datos de comprobante (tipo/serie/fecha primero y SubTotal/IGV/Total al final) y limpia datos del comprobante al cambiar reserva seleccionada. -->
-<!-- Firma: Codex - 11/04/2026 | Muestra validacion inline en Serie (NegocioSerieId) para hacer visible el mensaje obligatorio al grabar. -->
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobanteFormViewModel
 @{
     ViewData["Title"] = "Emitir comprobante";
 }
@@ -85,7 +82,7 @@
                             <th class="text-center"><span class="sc-col-header"><i class="bi bi-calendar-check"></i><small>Fecha</small></span></th>
                             <th class="text-center"><span class="sc-col-header"><i class="bi bi-cash"></i><small>Monto</small></span></th>
                             <th class="text-center"><span class="sc-col-header"><i class="bi bi-wallet2"></i><small>Forma</small></span></th>
-                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-upc"></i><small>N° Operación</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-upc"></i><small>NÂ° OperaciÃ³n</small></span></th>
                         </tr>
                     </thead>
                     <tbody id="pagosReservaBody">
@@ -100,7 +97,7 @@
                 <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
                     <h2 class="sc-form-title mb-0"><i class="bi bi-file-earmark-text"></i> Datos del comprobante</h2>
                     <div class="d-flex align-items-center gap-2">
-                        <label asp-for="Numero" class="form-label fw-bold mb-0">Número</label>
+                        <label asp-for="Numero" class="form-label fw-bold mb-0">NÃºmero</label>
                         <input asp-for="Numero" class="form-control text-center fw-bold" readonly />
                     </div>
                 </div>
@@ -133,11 +130,11 @@
                     </div>
 
                     <div class="col-md-4">
-                        <label asp-for="ClienteNumeroDocumento" class="form-label">Número de documento</label>
+                        <label asp-for="ClienteNumeroDocumento" class="form-label">NÃºmero de documento</label>
                         <input asp-for="ClienteNumeroDocumento" class="form-control" />
                     </div>
                     <div class="col-md-8">
-                        <label asp-for="ClienteDireccionFiscal" class="form-label">Dirección</label>
+                        <label asp-for="ClienteDireccionFiscal" class="form-label">DirecciÃ³n</label>
                         <input asp-for="ClienteDireccionFiscal" class="form-control" />
                     </div>
 
@@ -505,3 +502,4 @@
         })();
     </script>
 }
+

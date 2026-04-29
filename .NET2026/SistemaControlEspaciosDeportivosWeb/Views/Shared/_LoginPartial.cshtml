@@ -1,11 +1,9 @@
-@using Microsoft.AspNetCore.Identity
+﻿@using Microsoft.AspNetCore.Identity
 @using SistemaControlEspaciosDeportivosWeb.Models
 @using SistemaControlEspaciosDeportivosWeb.Services
 @inject SignInManager<ApplicationUser> SignInManager
 @inject UserManager<ApplicationUser> UserManager
 @inject ISportCenterStoredProcedureService spService
-<!-- Firma: Codex - 16/04/2026 | El acceso "Perfil" del navbar publico ahora dirige al panel de perfil de usuario publico (no al cambio de contrasena directo). -->
-
 @{
     var mostrarPanel = false;
     if (SignInManager.IsSignedIn(User))
@@ -62,3 +60,4 @@ else
     </li>
 }
 </ul>
+

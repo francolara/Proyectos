@@ -1,9 +1,5 @@
-@using SistemaControlEspaciosDeportivosWeb.Models
+﻿@using SistemaControlEspaciosDeportivosWeb.Models
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ReservaFormViewModel
-<!-- Firma: Codex - 27/03/2026 | Estandar visual pro para formulario de reservas y bloqueo de fechas pasadas -->
-<!-- Firma: Codex - 05/04/2026 | Estados de reserva ajustados: se retira En uso, Finalizada pasa a Pagada y No Show pasa a No Asistio. -->
-<!-- Firma: Codex - 08/04/2026 | Unifica selectores de hora a listas cada 30 minutos. -->
-
 @{
     ViewData["Title"] = "Editar reserva";
     var horasMediaHora = Enumerable.Range(0, 48)
@@ -97,3 +93,4 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }
+

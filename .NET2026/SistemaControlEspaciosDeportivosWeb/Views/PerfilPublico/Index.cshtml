@@ -1,16 +1,10 @@
-@model SistemaControlEspaciosDeportivosWeb.ViewModels.PerfilPublicoIndexViewModel
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.PerfilPublicoIndexViewModel
 @{
     ViewData["Title"] = "Perfil";
     var tab = (ViewData["Tab"]?.ToString() ?? "datos").ToLowerInvariant();
     var tabDatos = tab == "datos";
     var tabReservas = tab == "reservas";
 }
-<!-- Firma: Codex - 16/04/2026 | Panel de perfil para usuario publico con tabs Datos personales, Mis reservas y Retar a un equipo (proximamente). -->
-<!-- Firma: Codex - 17/04/2026 | Header de perfil simplificado y rediseno profesional de historial de reservas en mini tarjetas con accesos de contacto/redes/mapa de sede. -->
-<!-- Firma: Codex - 18/04/2026 | Perfil publico incorpora configuracion de desafios, bloque visible de informacion del equipo, ubigeo propio del equipo, telefonos con codigo de pais estandar, WhatsApp operativo del equipo y acceso directo al modulo independiente de Desafios. -->
-<!-- Firma: Codex - 27/04/2026 | Mis reservas pasa a vista ejecutiva compacta con filtros por estado, orden y detalle expandible para reducir saturacion visual. -->
-<!-- Firma: Codex - 28/04/2026 | Tabs de perfil adaptadas para movil con scroll horizontal tactil y sin recorte de opciones. -->
-
 <div class="container py-4">
     <header class="page-header">
         <div>
@@ -980,3 +974,4 @@
         })();
     </script>
 }
+

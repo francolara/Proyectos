@@ -1,8 +1,4 @@
-@model SistemaControlEspaciosDeportivosWeb.ViewModels.PagoReservaEditViewModel
-<!-- Firma: Codex - 09/04/2026 | Edicion de pagos por reserva: resumen unico, edicion de observacion, alta/eliminacion de pagos con confirmacion SI/NO, tarjeta de saldo en datos de reserva y deteccion automatica de intento de nuevo pago para evitar redireccion sin validacion. -->
-<!-- Firma: Codex - 12/04/2026 | Modo solo visualizacion cuando la reserva tiene comprobante activo: bloquea agregar/eliminar pagos y oculta acciones de guardado. -->
-<!-- Firma: Codex - 13/04/2026 | Eliminar pago: validaciones completas, desactiva alta al marcar eliminacion y evita marcar intento de nuevo pago por valores por defecto (fecha/forma) para no bloquear el guardado. -->
-
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.PagoReservaEditViewModel
 @{
     ViewData["Title"] = $"Editar pagos reserva {Model.ReservaCodigo}";
     var totalPagos = Model.Pagos?.Count ?? 0;
@@ -260,3 +256,4 @@
         })();
     </script>
 }
+

@@ -1,10 +1,4 @@
-@model SistemaControlEspaciosDeportivosWeb.ViewModels.MaestrosIndexViewModel
-<!-- Firma: Codex - 01/04/2026 | Nueva pestaña Maestros para mantenimiento de Monedas, Tipos de suelo, Tipos de deporte y Formas de pago -->
-<!-- Firma: Codex - 02/04/2026 | Monedas por negocio desde supermaestro LATAM, mantenimiento por NegocioId y mejora visual Fase 1/Fase 2 en navegación, paneles y composición visual de Maestros -->
-<!-- Firma: Codex - 06/04/2026 | Tipos de suelo y tipos de deporte migran a alta desde supermaestro (combo), igual que Monedas; se mantiene edición/inactivación por negocio sin edición manual de nombre; se retira el código del supermaestro en combo y listado (solo nombre); se reordena navegación de Maestros a: Tipos de deporte, Tipos de suelo, Monedas, Formas de pago; y se preserva la pestaña activa tras registrar/actualizar/inactivar para no regresar por defecto al primer maestro. -->
-<!-- Firma: Codex - 09/04/2026 | Se agrega supermaestro de tipos de documento de comprobante por negocio en Maestros. -->
-<!-- Firma: Codex - 13/04/2026 | Cabecera del modulo muestra tarjeta informativa de Club/negocio con ID junto al titulo. -->
-
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.MaestrosIndexViewModel
 @{
     ViewData["Title"] = "Maestros";
 }
@@ -130,9 +124,9 @@
                 <table class="table table-sm align-middle sc-maestro-table" data-table-id="monedas">
                     <thead>
                         <tr>
-                            <th>Código</th>
+                            <th>CÃ³digo</th>
                             <th>Nombre</th>
-                            <th>Símbolo</th>
+                            <th>SÃ­mbolo</th>
                             <th>Estado</th>
                             <th class="text-end">Acciones</th>
                         </tr>
@@ -426,7 +420,7 @@
                 <table class="table table-sm align-middle sc-maestro-table" data-table-id="tipos-documento">
                     <thead>
                         <tr>
-                            <th>Código</th>
+                            <th>CÃ³digo</th>
                             <th>Nombre</th>
                             <th>Clase</th>
                             <th>Habilitado Super</th>
@@ -447,7 +441,7 @@
                                 </td>
                                 <td>
                                     <span class="badge @(item.HabilitadoSuper ? "bg-success-subtle text-success-emphasis border border-success-subtle" : "bg-danger-subtle text-danger-emphasis border border-danger-subtle")">
-                                        @(item.HabilitadoSuper ? "Sí" : "No")
+                                        @(item.HabilitadoSuper ? "SÃ­" : "No")
                                     </span>
                                 </td>
                                 <td>
@@ -550,3 +544,4 @@
         });
     })();
 </script>
+

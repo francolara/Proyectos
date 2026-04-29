@@ -1,18 +1,5 @@
-@model SistemaControlEspaciosDeportivosWeb.ViewModels.SedeFormViewModel
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.SedeFormViewModel
 @inject IConfiguration Configuration
-<!-- Firma: Codex - 27/03/2026 | Rediseño visual pro del formulario de sedes (estructura SaaS y jerarquia por secciones) -->
-<!-- Firma: Codex - 30/03/2026 | Selector de codigo pais para telefonos de sede y WhatsApp -->
-<!-- Firma: Codex - 02/04/2026 | Agrega ubicacion/fotos de sede, PlaceId y URL ocultos, autocomplete de Places y carga de maximo 6 imagenes en nube (principal+alternativas), estandarizando subida a JPG/PNG de entrada, conversion automatica a WebP 1200x900 <= 400KB, listado visual de archivos seleccionados y ajuste de region R2. -->
-<!-- Firma: Codex - 03/04/2026 | Quita boton de validacion R2, cambia edicion de imagenes a manejo incremental y agrega visualizacion estable (miniatura + lupa) mediante endpoint de vista para URLs de storage no publicas. -->
-<!-- Firma: Codex - 04/04/2026 | Habilita reordenamiento de imagenes actuales (subir/bajar) para poder cambiar el rol principal entre fotos ya registradas. -->
-<!-- Firma: Codex - 05/04/2026 | Estandariza texto de estado para mostrar "No Asistio" en lugar de "no-show" en etiquetas de configuracion de sede. -->
-<!-- Firma: Codex - 06/04/2026 | Agrega apartado Consideraciones de reserva en mantenimiento de sede para publicacion en portal publico (sin exponer en listado admin). -->
-<!-- Firma: Codex - 08/04/2026 | Unifica selectores de hora de apertura/cierre a listas cada 30 minutos. -->
-<!-- Firma: Codex - 09/04/2026 | Agrega configuracion opcional de serie por documento para la sede en base a series del negocio. -->
-<!-- Firma: Codex - 16/04/2026 | Agrega apartado de redes sociales (Facebook/Instagram/Twitter) por sede para publicacion en tarjetas del portal publico. -->
-<!-- Firma: Codex - 25/04/2026 | Oculta en formulario los campos Minutos antes del recordatorio y Tolerancia No Asistio, manteniendo envio por inputs hidden para conservar validacion y persistencia. -->
-<!-- Firma: Codex - 27/04/2026 | Edicion de sede incorpora ubigeo SUNAT (departamento/provincia/distrito) obligatorio, match automatico con UbigeoMapsMatch y autocompletado reforzado desde mapa/direccion para componentes Google no estandar (ej. Lima Province). -->
-
 @{
     ViewData["Title"] = "Editar sede";
     var mapsApiKey = Configuration["GoogleMaps:ApiKey"];
@@ -345,7 +332,7 @@
                     @if (Model.SeriesDocumentoConfig is null || !Model.SeriesDocumentoConfig.Any())
                     {
                         <div class="col-12">
-                            <div class="text-muted small">No hay documentos habilitados en Maestros/Configuración para asignar series a la sede.</div>
+                            <div class="text-muted small">No hay documentos habilitados en Maestros/ConfiguraciÃ³n para asignar series a la sede.</div>
                         </div>
                     }
                     else
@@ -363,7 +350,7 @@
                                         class="form-select">
                                     <option value="">Sin serie asignada</option>
                                 </select>
-                                <div class="form-text">Selecciona una serie configurada en Configuración para este documento.</div>
+                                <div class="form-text">Selecciona una serie configurada en ConfiguraciÃ³n para este documento.</div>
                             </div>
                         }
                     }
@@ -784,8 +771,8 @@
                         <td class="text-truncate" style="max-width:380px;" title="${url}">${nombreArchivo(url)}</td>
                         <td><span class="badge ${index === 0 ? 'text-bg-primary' : 'text-bg-secondary'}">${rol}</span></td>
                         <td class="d-flex gap-1">
-                            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="up-current" data-index="${index}" ${index === 0 ? 'disabled' : ''}>↑</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="down-current" data-index="${index}" ${index === actuales.length - 1 ? 'disabled' : ''}>↓</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="up-current" data-index="${index}" ${index === 0 ? 'disabled' : ''}>â†‘</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="down-current" data-index="${index}" ${index === actuales.length - 1 ? 'disabled' : ''}>â†“</button>
                             <button type="button" class="btn btn-sm btn-outline-danger" data-action="remove-current" data-url="${url}">Quitar</button>
                         </td>
                     `;
@@ -881,8 +868,8 @@
                         <td><span class="badge ${index === 0 ? 'text-bg-primary' : 'text-bg-secondary'}">${rol}</span></td>
                         <td>${formatBytes(file.size)}</td>
                         <td class="d-flex gap-1">
-                            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="up" data-index="${index}" ${index === 0 ? 'disabled' : ''}>↑</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="down" data-index="${index}" ${index === selectedFiles.length - 1 ? 'disabled' : ''}>↓</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="up" data-index="${index}" ${index === 0 ? 'disabled' : ''}>â†‘</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="down" data-index="${index}" ${index === selectedFiles.length - 1 ? 'disabled' : ''}>â†“</button>
                             <button type="button" class="btn btn-sm btn-outline-danger" data-action="remove" data-index="${index}">Quitar</button>
                         </td>
                     `;
@@ -913,3 +900,4 @@
         <script async defer src="https://maps.googleapis.com/maps/api/js?key=@mapsApiKey&libraries=places&callback=initSedeMapa"></script>
     }
 }
+

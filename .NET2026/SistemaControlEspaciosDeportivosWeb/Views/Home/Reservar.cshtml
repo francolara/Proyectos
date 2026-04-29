@@ -1,4 +1,4 @@
-
+﻿
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ReservaPublicaPageViewModel
 @using System.Globalization
 @using System.Linq
@@ -37,12 +37,6 @@
         ? string.Empty
         : $"https://wa.me/{numeroWhatsappSede}?text={mensajeWhatsappSede}";
 }
-<!-- Firma: Codex - 15/04/2026 | Flujo publico de reserva completo: fecha/hora editables con sincronizacion al calendario, recotizacion dinamica, cliente rapido alineado al admin y datos de sede/espacio movidos debajo de consideraciones en mini tarjetas. -->
-<!-- Firma: Codex - 16/04/2026 | Flujo de reserva publica mantiene solo datos operativos del cliente y deja fecha de nacimiento exclusivamente en perfil publico. -->
-<!-- Firma: Codex - 17/04/2026 | Reserva publica muestra errores de validacion/binding y normaliza el flag OmitirFechaHorario en envio POST (true/false) para evitar bloqueos por campo requerido al grabar. -->
-<!-- Firma: Codex - 20/04/2026 | Cabecera publica de reserva reforzada con bloque profesional para titulo y negocio, calendario con bloqueos tipo background/etiqueta y modo HC con mayor contraste visual en cabeceras, grilla, eje horario y estados. -->
-<!-- Firma: Codex - 27/04/2026 | Tarjeta de contacto en reserva publica incorpora telefono visible y acciones directas (WhatsApp + redes sociales de sede) para mejorar conversion. -->
-
 <div class="container py-4 home-reservar-page">
     <section class="sc-public-reserva-hero mb-3">
         <div class="sc-public-reserva-hero-main">
@@ -1006,3 +1000,4 @@
         })();
     </script>
 }
+

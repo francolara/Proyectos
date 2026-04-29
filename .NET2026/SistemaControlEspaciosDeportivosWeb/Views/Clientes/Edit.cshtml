@@ -1,11 +1,4 @@
-@model SistemaControlEspaciosDeportivosWeb.ViewModels.ClienteFormViewModel
-<!-- Firma: Codex - 27/03/2026 | Estandar visual pro para formulario de clientes -->
-<!-- Firma: Codex - 30/03/2026 | Selector de codigo pais para telefono de cliente -->
-<!-- Firma: Codex - 01/04/2026 | Nuevo campo Nombre de equipo en edicion de cliente. -->
-<!-- Firma: Codex - 04/04/2026 | Ubigeo fiscal obligatorio por direccion (departamento/provincia/distrito) con combos encadenados y tipo de documento centralizado desde tabla SUNAT en edicion de cliente. -->
-<!-- Firma: Codex - 06/04/2026 | Ajusta etiquetas del formulario y agrega captura dinamica por tipo de documento: RUC usa razon social; no RUC usa nombres y apellidos. -->
-<!-- Firma: Codex - 07/04/2026 | Corrige deteccion de RUC: tipo 0 (No domiciliado sin RUC) ahora usa Nombres y Apellidos, no Razon social. -->
-
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.ClienteFormViewModel
 @{
     ViewData["Title"] = "Editar cliente";
 }
@@ -234,3 +227,4 @@
         })();
     </script>
 }
+

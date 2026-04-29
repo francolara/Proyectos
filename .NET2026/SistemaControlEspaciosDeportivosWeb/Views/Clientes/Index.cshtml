@@ -1,12 +1,4 @@
-@model SistemaControlEspaciosDeportivosWeb.ViewModels.ClientesIndexViewModel
-<!-- Firma: Codex - 29/03/2026 | Rediseno del listado de clientes con KPIs, filtro rapido y tabla detallada -->
-<!-- Firma: Codex - 01/04/2026 | Se agrega visualizacion de Nombre de equipo en listado de clientes. -->
-<!-- Firma: Codex - 06/04/2026 | Se agrega filtro de estado (todos/activos/inactivos) en listado de clientes. -->
-<!-- Firma: Codex - 06/04/2026 | El filtro de estado consulta backend y preserva el estado seleccionado. -->
-<!-- Firma: Codex - 07/04/2026 | La busqueda de clientes ahora consulta backend (SP) y se mantiene en paginacion. -->
-<!-- Firma: Codex - 09/04/2026 | Rediseno de cabecera del listado de clientes con icono superior y etiqueta pequena centrada por columna; separa columnas ID/Cliente/Equipo en el listado. -->
-<!-- Firma: Codex - 13/04/2026 | Cabecera del modulo muestra tarjeta informativa de Club/negocio con ID junto al titulo. -->
-
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.ClientesIndexViewModel
 @{
     ViewData["Title"] = "Clientes";
     var totalClientes = Model.TotalActivos + Model.TotalInactivos;
@@ -205,3 +197,4 @@
         }
     </section>
 </div>
+

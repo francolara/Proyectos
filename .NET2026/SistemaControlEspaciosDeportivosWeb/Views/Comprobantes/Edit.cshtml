@@ -1,6 +1,4 @@
-@model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobanteFormViewModel
-<!-- Firma: Codex - 09/04/2026 | Edicion de comprobante alineada al flujo de registro: reserva bloqueada, importe solo lectura y edicion de datos de cliente solo en estado pendiente. -->
-<!-- Firma: Codex - 10/04/2026 | Unifica orden visual con registro: tipo/serie/fecha al inicio y SubTotal/IGV/Total al final en una fila. -->
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobanteFormViewModel
 @{
     ViewData["Title"] = "Editar comprobante";
     var puedeEditarCliente = Model.PuedeEditarDatosCliente;
@@ -252,3 +250,4 @@
         })();
     </script>
 }
+

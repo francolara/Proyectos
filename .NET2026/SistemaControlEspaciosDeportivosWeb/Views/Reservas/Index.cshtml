@@ -1,20 +1,4 @@
-<!-- Firma: Codex - 28/03/2026 | Ajustes visuales de acciones y calendario backend; tooltip y etiquetas visibles de estado/motivo en franjas bloqueadas; fix horario drag/drop, color bloqueado tomado del backend, eliminacion de texto duplicado en NO_ATENCION/BLOQUEO, cabecera del calendario en dos filas obligatorias y estilos centralizados en site.css. -->
-<!-- Firma: Codex - 30/03/2026 | Calendario backend-driven: disponibilidad y pendientes por dia consultan BD via endpoint diario; panel operativo condicionado a sede+espacio; persistencia de filtros; nueva seccion "Pendiente de confirmar por dia"; listado general con filtro propio de rango y estados multiples (backend); refuerzo visual Fase 1 aplicado tambien por JS para evitar cache/orden de CSS, incluyendo toolbar, botones, grilla, columna horaria y fines de semana. -->
-<!-- Firma: Codex - 31/03/2026 | Fase 2/3 del calendario: leyenda interactiva por estado, modos visuales (compacto/contraste), grilla operativa con cabecera y eje horario sticky, realce de columna por hover, drawer de detalle y ajuste robusto del eje horario (ancho fijo en colgroup/frame/cushion/shrink, titulo sin corte y horas centradas/legibles, re-aplicado tras filtrar/refetch). -->
-<!-- Firma: Codex - 01/04/2026 | Reservas: cabecera con rango largo centrado, modo opcional Bloqueos HC, KPI operativo diario, vista por espacios, historial de cambios en drawer, validacion visual de solape en modal, acciones masivas (confirmar/no-show/recordatorio) backend-driven y estandar visual unificado para botones de acciones en listado (editar/check-in/no-show/cancelar). -->
-<!-- Firma: Codex - 05/04/2026 | Se retira Reserva manual y controles de modo; calendario fijo en Contraste + Bloqueos HC; se elimina panel "Vista por espacios (dia)"; la leyenda muestra contadores dinamicos por rango visible con formato "Estado (N)" excepto "Bloqueada / No atencion"; se reubica "Listado general de reservas" debajo de "Pendiente de confirmar por dia" y se restituye su visibilidad en la vista por defecto (sin sede/espacio); se eliminan 4 botones de acciones masivas del listado general y su JS; en "Disponibilidad por dia" ya no se muestran slots de horas pasadas cuando la fecha filtrada es hoy; el boton Editar del listado abre modal pop-up; se retira la tarjeta "Bloqueos" del KPI operativo; ajustes de estados: "No Show" pasa a "No Asistio", se retira "En uso/Check-in" y "Finalizada" se renombra a "Pagada"; y se elimina el panel lateral de detalle para que el calendario abra solo el pop-up modal de reserva. -->
-<!-- Firma: Codex - 06/04/2026 | Reservas calendario drag/drop: correccion de raiz por bloqueo en ciclo de FullCalendar cuando eventAllow rechaza; la validacion de cruce con BLOQUEO/NO_ATENCION se mueve al momento de soltar (eventDrop/eventResize) con revert inmediato + notificacion + refetch, evitando que la tarjeta quede superpuesta o el drag atrapado; y en Listado general de reservas se retira el boton de accion "Pagada". -->
-<!-- Firma: Codex - 07/04/2026 | Pop-up de reserva con bloques de 30 minutos, cotizacion automatica de precio (tarifa/promocion), politica de pago visible aun sin tarifa, registro de adelanto con forma de pago + fecha de pago y NÂ° operacion alfanumerico opcional, estado solo editable al editar y campo comentario; busqueda+lista de clientes integrada con filtro en vivo (disparo por texto con debounce), boton + de cliente en modal dentro de la misma pestana, precio editable/obligatorio, visualizacion de pagado acumulado y saldo al reingresar, y en listado general separa columnas Cliente/Equipo con montos de Precio y Saldo alineados a la derecha. -->
-@model SistemaControlEspaciosDeportivosWeb.ViewModels.ReservasIndexViewModel
-<!-- Firma: Codex - 08/04/2026 | Unifica selectores de hora del bloqueo manual al mismo formato de lista cada 30 minutos usado en reservas; tarjetas del calendario de reserva muestran cliente/equipo + horario(precio) sin nombre de espacio; busqueda de cliente en pop-up con una sola caja y listado por Enter; KPI del listado general en Pendientes/Pagadas/Saldo total con conteo robusto por estado y detalle del listado en mini tarjetas con iconos (incluyendo horario, precio y saldo centrados), mas cabeceras con icono superior y etiqueta pequena. -->
-<!-- Firma: Codex - 09/04/2026 | KPI operativo movido debajo del titulo de modulo, paginacion del listado general reubicada debajo de filtros, botones Filtrar estandarizados a Buscar con icono, y el pop-up de reserva ahora muestra numero/correo del cliente tanto por busqueda como por alta rapida. -->
-<!-- Firma: Codex - 10/04/2026 | Paginacion del listado general de reservas visible siempre (incluye estado 1/1 con botones deshabilitados) para mantener estandar. -->
-<!-- Firma: Codex - 10/04/2026 | Corrige listado general: paginacion tambien en modo sin panel operativo, filtros/paginacion por AJAX sin recargar toda la pagina, y cambio/limpieza de sede fuerza ocultar panel hasta seleccionar sede+espacio valido; tarjeta de calendario en reservas muestra prefijo #NNN-Equipo (Cliente). -->
-<!-- Firma: Codex - 27/03/2026 | Calendario en espanol, bloqueos por sede, gestion por modal, bloqueo de fechas pasadas y rediseno visual SaaS del calendario -->
-<!-- Firma: Codex - 13/04/2026 | Cabecera del modulo muestra tarjeta informativa de Club/negocio con ID junto al titulo; KPI del listado general excluye reservas canceladas en conteo de reservas activas y saldo acumulado; filtros de listado agregan presets rapidos Hoy/7d/30d/Mes actual. -->
-<!-- Firma: Codex - 13/04/2026 | En cotizacion del pop-up de reserva, el label de precio muestra aviso "Horario con promocion aplicada del N%" cuando descuentoPct > 0. -->
-<!-- Firma: Codex - 16/04/2026 | Se aplica regla de negocio para precio en reservas: campo visualmente bloqueado cuando el negocio no permite editar precio y mensaje informativo de calculo automatico por tarifa/promocion. -->
-<!-- Firma: Codex - 28/04/2026 | Modal de reservas/clientes en movil migrado a patron Bootstrap fullscreen-sm-down + dialog-scrollable para scroll nativo del popup (sin arrastrar el fondo). -->
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.ReservasIndexViewModel
 @{
     ViewData["Title"] = "Reservas";
     var sedeSeleccionadaTexto = Model.SedesFiltro.FirstOrDefault(x => x.Value == Model.SedeId?.ToString())?.Text ?? "Seleccione sede";
@@ -831,7 +815,7 @@ else
                             <input type="date" class="form-control" id="modalFechaPago" name="FechaPago" value="@DateTime.Today.ToString("yyyy-MM-dd")" max="@DateTime.Today.ToString("yyyy-MM-dd")" disabled />
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">NÂ° Operacion</label>
+                            <label class="form-label">NÃ‚Â° Operacion</label>
                             <input type="text" class="form-control" id="modalNumeroOperacion" name="NumeroOperacion" maxlength="50" placeholder="Opcional" autocomplete="off" disabled />
                         </div>
                         <div class="col-md-6">
@@ -2167,7 +2151,7 @@ else
                     info?.revert?.();
                     limpiarArrastreVisual();
                     const mensaje = err?.name === 'AbortError'
-                        ? 'La validacion tardÃ³ demasiado. Se restauro la reserva a su posicion original.'
+                        ? 'La validacion tardÃƒÂ³ demasiado. Se restauro la reserva a su posicion original.'
                         : (err?.message || mensajeErrorPorDefecto);
                     notificarCalendario(mensaje, 'warning');
                 } finally {
@@ -2830,6 +2814,7 @@ else
         })();
     </script>
 }
+
 
 
 

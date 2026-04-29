@@ -1,7 +1,4 @@
 ﻿@model (List<SistemaControlEspaciosDeportivosWeb.ViewModels.MaestroCatalogoItemViewModel> Items, string Titulo, string CreateAction, string EditAction, string DeleteAction, int NegocioId, bool PuedeCrear, bool PuedeEditar, bool PuedeEliminar)
-<!-- Firma: Codex - 01/04/2026 | Parcial reutilizable para mantenimiento de catalogos simples de Maestros -->
-<!-- Firma: Codex - 02/04/2026 | Mejora visual Fase 1/Fase 2 en paneles de catálogos simples para Maestros -->
-
 @{
     var panelId = Model.Titulo.ToLowerInvariant().Replace(" ", "-");
     var icon = Model.Titulo.Contains("suelo") ? "bi-grid-1x2" : Model.Titulo.Contains("deporte") ? "bi-dribbble" : "bi-wallet2";
@@ -103,3 +100,4 @@
         </table>
     </div>
 </section>
+

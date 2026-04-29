@@ -1,4 +1,4 @@
-@model SistemaControlEspaciosDeportivosWeb.ViewModels.DesafiosIndexViewModel
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.DesafiosIndexViewModel
 @{
     ViewData["Title"] = "Desafios";
     var abrirModal = (ViewData["AbrirModalDesafio"] as bool?) == true;
@@ -7,15 +7,6 @@
         .ToList();
     string EstadoClave(string? estado) => string.IsNullOrWhiteSpace(estado) ? "sin-estado" : estado.Trim().ToLowerInvariant();
 }
-<!-- Firma: Codex - 18/04/2026 | Modulo independiente de Desafios con busqueda por distrito, modal de invitacion corregido, hora tentativa en horas exactas, contacto rival condicionado por estado aceptado/finalizado y mensajeria interna por desafio. -->
-<!-- Firma: Codex - 19/04/2026 | Datos operativos del desafio visibles en mini tarjetas con iconos y selector de hora estandarizado solo por horas exactas. -->
-<!-- Firma: Codex - 19/04/2026 | El resumen operacional del desafio pasa a mini tarjetas para deporte, nivel, fecha, hora y ubicacion completa con distrito, provincia y departamento. -->
-<!-- Firma: Codex - 19/04/2026 | La busqueda y los listados de desafios muestran el contacto responsable del equipo y reorganizan enviados/recibidos/historial con resumen visible, detalle expandible, filtros rapidos por estado, prioridad visual a recibidos en movil y pie de acciones consistente. -->
-<!-- Firma: Codex - 26/04/2026 | En historial se deja visible solo el resumen principal del desafio y se mueve contacto/usuario/cancha/modalidad/pago al bloque Ver detalle. -->
-<!-- Firma: Codex - 26/04/2026 | Historial de desafios con paginacion 4x4 desde SP y navegacion por pagina en la vista. -->
-<!-- Firma: Codex - 27/04/2026 | Header de Desafios alineado con Perfil: etiqueta de estado debajo del subtitulo, boton Cambiar contrasena en panel derecho y retiro de Editar perfil publico. -->
-<!-- Firma: Codex - 27/04/2026 | Se retira el texto "Modulo independiente", se normalizan tamanos de titulo/subtitulo del header de Desafios y se rediseña el historial con vista ejecutiva compacta, KPIs y orden por fecha. -->
-
 <div class="container py-4 desafios-page">
     <header class="desafios-hero">
         <div>
@@ -842,8 +833,6 @@
         _ => "is-default"
     };
 }
-
-<!-- Firma: Codex - 28/04/2026 | Tabs de perfil en Desafios adaptadas a movil con scroll horizontal tactil para evitar recortes. -->
 @section Styles {
     <style>
         .desafios-page {
@@ -1688,3 +1677,4 @@
         })();
     </script>
 }
+

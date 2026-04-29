@@ -1,19 +1,11 @@
-@model SistemaControlEspaciosDeportivosWeb.ViewModels.ConfiguracionClubViewModel
-<!-- Firma: Codex - 27/03/2026 | Configuracion del club editable con combo de moneda desde tabla Maestra -->
-<!-- Firma: Codex - 28/03/2026 | Se agrega Tipo de Documento, Numero Documento y Direccion Fiscal en configuracion del club -->
-<!-- Firma: Codex - 04/04/2026 | Ubigeo fiscal obligatorio por direccion (departamento/provincia/distrito) con combos encadenados y tipo de documento centralizado desde tabla SUNAT. -->
-<!-- Firma: Codex - 06/04/2026 | Se actualiza el titulo de la pantalla a "Configuracion del Club / Negocio", se agrega politica configurable para confirmar reservas por pago (sin pago, adelanto minimo %, o pago total 100%) y el porcentaje queda alineado a la derecha, solo entero y sin permitir punto/decimales. -->
-<!-- Firma: Codex - 09/04/2026 | Se agrega configuracion de emision CPE/Recibo interno, porcentaje IGV y mantenimiento de series por documento del negocio. -->
-<!-- Firma: Codex - 10/04/2026 | Reordena campos: IGV despues de moneda de trabajo y checks de emision debajo de direccion fiscal. -->
-<!-- Firma: Codex - 13/04/2026 | Se separa formulario en "Datos del club" y "Configuracion de Atributos"; confirmar reserva + porcentaje en primera fila, moneda + IGV en segunda fila. Agrega gestion de logo del club (subida/reemplazo/eliminacion) para uso en menu administrativo. -->
-<!-- Firma: Codex - 16/04/2026 | Configuracion de negocio agrega flags: permitir modificar precio en reservas y cancelacion automatica por no confirmacion (minutos). -->
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.ConfiguracionClubViewModel
 @{
     ViewData["Title"] = "Configuracion";
 }
 
 <header class="page-header">
     <div>
-        <h1>Configuración del Club / Negocio</h1>
+        <h1>ConfiguraciÃ³n del Club / Negocio</h1>
         <p class="page-subtitle">Edita los datos principales del negocio y la moneda de trabajo.</p>
     </div>
     <div class="action-toolbar">
@@ -514,3 +506,4 @@
         })();
     </script>
 }
+
