@@ -1,4 +1,4 @@
-@model SistemaControlEspaciosDeportivosWeb.ViewModels.HomeIndexViewModel
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.HomeIndexViewModel
 @inject Microsoft.Extensions.Options.IOptions<SistemaControlEspaciosDeportivosWeb.Services.SedeImagenStorageSettings> SedeImagenStorageOptions
 @using System.Linq
 @using System.Globalization
@@ -25,7 +25,7 @@
     var popupPromocionesVersion = popupPromociones.Count == 0
         ? string.Empty
         : string.Join("|", popupPromociones.Select(x => $"{x.IdPopupPromocion}:{x.Orden}:{x.Orientacion}:{(x.ImagenUrl ?? string.Empty)}"));
-    var whatsappAnunciosMensaje = Uri.EscapeDataString("Hola, quiero anunciar en SportCenter. ¿Podrian brindarme informacion sobre planes, alcance y condiciones para publicar mi anuncio?");
+    var whatsappAnunciosMensaje = Uri.EscapeDataString("Hola, quiero anunciar en SportCenter. Â¿Podrian brindarme informacion sobre planes, alcance y condiciones para publicar mi anuncio?");
     var whatsappHomeConfigurado = (Model.PortalConfig.SiguenosWhatsappUrl ?? string.Empty).Trim();
     var whatsappAnunciosUrl = whatsappHomeConfigurado;
     if (!string.IsNullOrWhiteSpace(whatsappHomeConfigurado))
@@ -61,22 +61,10 @@
 
         if (!string.IsNullOrWhiteSpace(whatsappNumeroConfigurado))
         {
-            whatsappAnunciosUrl = $"https://wa.me/{whatsappNumeroConfigurado}?text={Uri.EscapeDataString("Hola, quiero anunciar en SportCenter. ¿Podrían brindarme información sobre planes, alcance y condiciones para publicar mi anuncio?")}";
+            whatsappAnunciosUrl = $"https://wa.me/{whatsappNumeroConfigurado}?text={Uri.EscapeDataString("Hola, quiero anunciar en SportCenter. Â¿PodrÃ­an brindarme informaciÃ³n sobre planes, alcance y condiciones para publicar mi anuncio?")}";
         }
     }
 }
-<!-- Firma: Codex - 14/04/2026 | Home publico con mini carrusel de fotos por sede en tarjetas de espacios disponibles. -->
-<!-- Firma: Codex - 15/04/2026 | Resultado publico simplificado: boton Reservar ahora (sin formulario embebido) y retiro del bloque Consideraciones en las tarjetas para reducir carga visual. -->
-<!-- Firma: Codex - 15/04/2026 | Home agrega bloque 'Busqueda por dia y horario' con opcion de omitir filtro cuando se selecciona club/negocio. -->
-<!-- Firma: Codex - 15/04/2026 | Home renovado: titulos profesionales, paginacion de 12, bloque de beneficios y CTA/footer administrable desde super admin. -->
-<!-- Firma: Codex - 15/04/2026 | Seccion de beneficios (6 tarjetas fijas) configurable por parametros globales HOME_PORTAL_BENEF_*. -->
-<!-- Firma: Codex - 16/04/2026 | Tarjetas de espacios muestran iconos de redes sociales de la sede junto al boton de reserva; footer resalta WhatsApp y se agrega boton flotante de contacto en Home. -->
-<!-- Firma: Codex - 17/04/2026 | Ajuste de binding para filtro omitirFechaHorario en Home publico (nullable-safe) y compatibilidad con flujo de reserva publica. -->
-<!-- Firma: Codex - 18/04/2026 | Navbar publica agrega ancla Caracteristicas y se fija id de destino en bloque de beneficios. -->
-<!-- Firma: Codex - 20/04/2026 | Home publico integra acceso de anuncios en navbar superior y modal popup configurable desde super admin para usuarios anonimos, con soporte mixto vertical/horizontal, subtitulo por anuncio, CTA Quiero anunciar reutilizando el WhatsApp configurado del portal y control de apertura automatica por sessionStorage. -->
-<!-- Firma: Codex - 27/04/2026 | Home refuerza tarjetas con club/negocio destacado, mejora UX del filtro (defaults dinamicos, botones "Usar mi ubicacion" y "Buscar cerca de mi"), autocompletado ubigeo, distancia en km por tarjeta, contacto con telefono y visual de externos/paginacion estilo perfil. -->
-<!-- Firma: Codex - 28/04/2026 | Home (banners, promociones y fotos de sede) usa URLs directas para carga de imagenes, deja comentada la ruta por VerImagen y normaliza URLs heredadas de R2 endpoint S3 hacia la URL publica configurada. -->
-
 <section class="home-hero mb-4">
     <div id="homeHeroCarousel" class="carousel slide home-hero-carousel h-100" data-bs-ride="carousel" data-bs-interval="5500">
         <div class="carousel-inner rounded-4 h-100">
@@ -182,12 +170,49 @@
 <section id="buscar" class="card border-0 shadow-sm mb-4 home-search-card">
     <div class="card-body">
         <div class="home-section-head mb-3">
-            <span class="home-section-kicker"><i class="bi bi-compass"></i>Busqueda inteligente</span>
-            <h2 class="home-section-title mb-0">Buscar por zona y deporte</h2>
+            <div class="home-section-head-top">
+                <div>
+                    <span class="home-section-kicker"><i class="bi bi-compass"></i>Busqueda inteligente</span>
+                    <h2 class="home-section-title mb-0">Buscar por zona y deporte</h2>
+                </div>
+                <div class="home-section-head-actions d-flex align-items-end">
+                    <div class="home-head-radio-wrap">
+                        <label class="home-head-radio-label" for="tipoDeporteId">Tipo de deporte</label>
+                        <select class="form-select form-select-sm home-head-radio-select" id="tipoDeporteId" name="tipoDeporteId" form="homeSearchForm">
+                            <option value="">Todos</option>
+                            @foreach (var deporte in Model.TiposDeporte)
+                            {
+                                <option value="@deporte.Id" selected="@(Model.TipoDeporteId == deporte.Id)">@deporte.Nombre</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="d-flex flex-column gap-2">
+                        <div class="home-head-radio-wrap">
+                            <label class="home-head-radio-label" for="radioKm">Radio (km)</label>
+                            <select class="form-select form-select-sm home-head-radio-select" id="radioKm" name="radioKm" form="homeSearchForm">
+                                @{
+                                    var radiosHead = new decimal[] { 3m, 5m, 10m, 20m };
+                                    var radioSeleccionadoHead = Model.RadioKm ?? 5m;
+                                }
+                                @foreach (var radio in radiosHead)
+                                {
+                                    <option value="@radio.ToString(CultureInfo.InvariantCulture)" selected="@(radioSeleccionadoHead == radio)">@radio km</option>
+                                }
+                            </select>
+                        </div>
+                        <button type="button" class="btn auth-nav-mini auth-nav-mini-solid home-head-btn home-nearby-btn w-100" id="btnBuscarCercaDeMi">
+                            <i class="bi bi-geo-alt-fill me-1"></i>Buscar cerca de mi
+                        </button>
+                    </div>
+                    <button type="button" class="btn auth-nav-mini auth-nav-mini-outline home-head-btn home-nearby-btn" id="btnUsarUbicacionActual">
+                        <i class="bi bi-crosshair me-1"></i>Usar mi ubicacion
+                    </button>
+                </div>
+            </div>
             <p class="home-section-subtitle mb-0">Ubica canchas por departamento, provincia, distrito y tipo de deporte en una sola consulta.</p>
         </div>
 
-        <form asp-action="Index" method="get" class="row g-3" id="homeSearchForm">
+        <form asp-action="Index" method="get" class="row g-3 home-search-form-tight" id="homeSearchForm">
             <input type="hidden" id="buscarCercaDeMi" name="buscarCercaDeMi" value="@(Model.BuscarCercaDeMi ? "true" : "false")" />
             <input type="hidden" id="latitudUsuario" name="latitudUsuario" value="@(Model.LatitudUsuario?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" />
             <input type="hidden" id="longitudUsuario" name="longitudUsuario" value="@(Model.LongitudUsuario?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" />
@@ -221,24 +246,6 @@
                     }
                 </select>
             </div>
-            <div class="col-md-3 d-flex align-items-end">
-                <button type="button" class="btn w-100 auth-nav-mini auth-nav-mini-outline home-action-btn" id="btnUsarUbicacionActual">
-                    <i class="bi bi-crosshair me-1"></i>Usar mi ubicacion
-                </button>
-            </div>
-            <div class="col-12">
-                <div id="ubicacionActualEstado" class="form-text"></div>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Tipo de deporte</label>
-                <select class="form-select" name="tipoDeporteId">
-                    <option value="">Todos</option>
-                    @foreach (var deporte in Model.TiposDeporte)
-                    {
-                        <option value="@deporte.Id" selected="@(Model.TipoDeporteId == deporte.Id)">@deporte.Nombre</option>
-                    }
-                </select>
-            </div>
             <div class="col-md-3">
                 <label class="form-label">Club / negocio</label>
                 <select class="form-select" id="negocioId" name="negocioId">
@@ -256,26 +263,10 @@
                     }
                 </select>
             </div>
-            <div class="col-md-3">
-                <label class="form-label">Radio (km)</label>
-                <select class="form-select" id="radioKm" name="radioKm">
-                    @{
-                        var radios = new decimal[] { 3m, 5m, 10m, 20m };
-                        var radioSeleccionado = Model.RadioKm ?? 5m;
-                    }
-                    @foreach (var radio in radios)
-                    {
-                        <option value="@radio.ToString(CultureInfo.InvariantCulture)" selected="@(radioSeleccionado == radio)">@radio km</option>
-                    }
-                </select>
-            </div>
-            <div class="col-md-3 d-flex align-items-end">
-                <button type="button" class="btn w-100 auth-nav-mini auth-nav-mini-solid home-action-btn home-nearby-btn" id="btnBuscarCercaDeMi">
-                    <i class="bi bi-geo-alt-fill me-1"></i>Buscar cerca de mi
-                </button>
-            </div>
-
             <div class="col-12">
+                <div id="ubicacionActualEstado" class="form-text"></div>
+            </div>
+            <div class="col-12 mt-1">
                 <div class="border rounded-3 p-3 bg-light-subtle">
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
                         <h3 class="home-subsection-title mb-0"><i class="bi bi-calendar-week me-1"></i>Busqueda por dia y horario</h3>
@@ -357,6 +348,7 @@
             @foreach (var item in Model.Disponibles)
             {
                 var carouselId = $"sedeFotos-{item.EspacioDeportivoId}";
+                var detalleId = $"detalle-{item.EspacioDeportivoId}";
                 var numeroWhatsappEspacio = string.IsNullOrWhiteSpace(item.WhatsappContacto)
                     ? string.Empty
                     : new string(item.WhatsappContacto.Where(char.IsDigit).ToArray());
@@ -462,7 +454,7 @@
                                 }
                                 else
                                 {
-                                    <span class="home-ref-chip"><i class="bi bi-geo-alt-fill me-1"></i>Referencia externa</span>
+                                    <span class="home-ref-cta"><i class="bi bi-geo-alt-fill me-1"></i>Referencia externa</span>
                                 }
                             </div>
                             @if (item.DistanciaKm.HasValue)
@@ -487,9 +479,7 @@
                                 }
                             </div>
                             @if (!string.IsNullOrWhiteSpace(item.SedeDireccion))
-                            {
-                                <p class="mb-1 text-muted small">@item.SedeDireccion</p>
-                            }
+                            { }
                             <p class="mb-2 text-muted small">
                                 @string.Join(" / ", new[] { item.Departamento, item.Provincia, item.Distrito }.Where(x => !string.IsNullOrWhiteSpace(x)))
                             </p>
@@ -500,8 +490,11 @@
                                 {
                                     <span class="badge text-bg-light border">@item.TipoSueloNombre</span>
                                 }
-                                <span class="badge text-bg-light border">@(item.Techada ? "Techada" : "No techada")</span>
-                                <span class="badge text-bg-light border">@(item.TieneIluminacion ? "Iluminacion" : "Sin iluminacion")</span>
+                                @if (item.SedeId.HasValue)
+                                {
+                                    <span class="badge text-bg-light border">@(item.Techada ? "Techada" : "No techada")</span>
+                                    <span class="badge text-bg-light border">@(item.TieneIluminacion ? "Iluminacion" : "Sin iluminacion")</span>
+                                }
                             </div>
 
                             @if (item.TarifaDesde.HasValue)
@@ -511,24 +504,42 @@
                                     Desde <strong>S/ @item.TarifaDesde.Value.ToString("0.00", CultureInfo.InvariantCulture)</strong>
                                 </p>
                             }
-                            @if (!string.IsNullOrWhiteSpace(item.CorreoNotificacion) || !string.IsNullOrWhiteSpace(item.WhatsappContacto) || !string.IsNullOrWhiteSpace(telefonoContactoTarjeta))
-                            {
-                                <div class="home-contact-box mb-2">
-                                    <span class="home-item-label">Contacto</span>
-                                    @if (!string.IsNullOrWhiteSpace(item.CorreoNotificacion))
-                                    {
-                                        <div><strong>Correo:</strong> @item.CorreoNotificacion</div>
-                                    }
-                                    @if (!string.IsNullOrWhiteSpace(telefonoContactoTarjeta))
-                                    {
-                                        <div><strong>Telefono:</strong> @telefonoContactoTarjeta</div>
-                                    }
-                                    @if (!string.IsNullOrWhiteSpace(item.WhatsappContacto))
-                                    {
-                                        <div><strong>WhatsApp:</strong> @item.WhatsappContacto</div>
-                                    }
-                                </div>
-                            }
+                            <button class="btn btn-sm auth-nav-mini auth-nav-mini-outline mb-2 js-detalle-toggle"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#@detalleId"
+                                    aria-expanded="false"
+                                    aria-controls="@detalleId">
+                                Ver detalle
+                            </button>
+
+                            <div class="collapse mb-2" id="@detalleId">
+                                @if (!string.IsNullOrWhiteSpace(item.SedeDireccion))
+                                {
+                                    <div class="home-contact-box mb-2">
+                                        <span class="home-item-label">Direccion</span>
+                                        <div>@item.SedeDireccion</div>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(item.CorreoNotificacion) || !string.IsNullOrWhiteSpace(item.WhatsappContacto) || !string.IsNullOrWhiteSpace(telefonoContactoTarjeta))
+                                {
+                                    <div class="home-contact-box">
+                                        <span class="home-item-label">Contacto</span>
+                                        @if (!string.IsNullOrWhiteSpace(item.CorreoNotificacion))
+                                        {
+                                            <div><strong>Correo:</strong> @item.CorreoNotificacion</div>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(telefonoContactoTarjeta))
+                                        {
+                                            <div><strong>Telefono:</strong> @telefonoContactoTarjeta</div>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(item.WhatsappContacto))
+                                        {
+                                            <div><strong>WhatsApp:</strong> @item.WhatsappContacto</div>
+                                        }
+                                    </div>
+                                }
+                            </div>
 
                             <div class="mt-auto d-flex align-items-center justify-content-between gap-2">
                                 <div class="d-flex align-items-center flex-wrap gap-2">
@@ -789,9 +800,17 @@
                 </div>
             </div>
         </div>
-    </div>
+</div>
 }
 </div>
+
+<section class="home-platform-brand-strip">
+    <div class="container text-center">
+        <div class="home-platform-strip-head">
+            <h3 class="home-platform-strip-title"><i class="bi bi-geo-alt-fill"></i>@Model.PortalConfig.MarcaTitulo</h3>
+        </div>
+    </div>
+</section>
 
 <section class="home-platform-cta">
     <div class="container text-center">
@@ -808,8 +827,10 @@
     <div class="container">
         <div class="row g-4 align-items-start">
             <div class="col-lg-5">
-                <h3 class="home-platform-title"><i class="bi bi-geo-alt-fill"></i>@Model.PortalConfig.MarcaTitulo</h3>
-                <p class="mb-0">@Model.PortalConfig.MarcaDescripcion</p>
+                <div class="home-platform-brand-head">
+                    <img src="~/img/logo-sportcenter-header.png" alt="Logo SportCenter" class="home-platform-brand-logo" />
+                </div>
+                <p class="home-platform-brand-text mb-0">@Model.PortalConfig.MarcaDescripcion</p>
             </div>
             <div class="col-lg-4">
                 <h4 class="home-platform-subtitle">Contactanos</h4>
@@ -973,6 +994,12 @@
     const horaInicioFiltro = document.getElementById('horaInicioFiltro');
     const horaFinFiltro = document.getElementById('horaFinFiltro');
     if (!dep || !prov || !dist) return;
+
+    const garantizarAnclaResultados = () => {
+        if (!homeSearchForm) return;
+        const actionBase = (homeSearchForm.getAttribute('action') || '').split('#')[0];
+        homeSearchForm.setAttribute('action', `${actionBase}#resultados`);
+    };
 
     const urlProv = '@Url.Action("UbigeoProvincias", "Home")';
     const urlDist = '@Url.Action("UbigeoDistritos", "Home")';
@@ -1246,7 +1273,9 @@
     omitirFechaHorario?.addEventListener('change', actualizarEstadoFiltroHorario);
     btnUbicacionActual?.addEventListener('click', usarUbicacionActual);
     btnBuscarCercaDeMi?.addEventListener('click', buscarCercaDeMi);
+    homeSearchForm?.addEventListener('submit', garantizarAnclaResultados);
     actualizarEstadoFiltroHorario();
+    garantizarAnclaResultados();
     refreshNegocios();
 })();
 
@@ -1288,5 +1317,33 @@
         }
     });
 })();
+
+(() => {
+    if (!window.location.hash || window.location.hash !== '#resultados') return;
+    const resultados = document.getElementById('resultados');
+    if (!resultados) return;
+    window.requestAnimationFrame(() => {
+        resultados.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+})();
+
+(() => {
+    document.querySelectorAll('.js-detalle-toggle').forEach((btn) => {
+        const selector = btn.getAttribute('data-bs-target');
+        if (!selector) return;
+        const panel = document.querySelector(selector);
+        if (!panel) return;
+
+        const syncLabel = () => {
+            const expanded = btn.getAttribute('aria-expanded') === 'true' || panel.classList.contains('show');
+            btn.textContent = expanded ? 'Ocultar detalle' : 'Ver detalle';
+        };
+
+        panel.addEventListener('shown.bs.collapse', syncLabel);
+        panel.addEventListener('hidden.bs.collapse', syncLabel);
+        syncLabel();
+    });
+})();
 </script>
 }
+

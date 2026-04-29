@@ -1,11 +1,7 @@
-@model SistemaControlEspaciosDeportivosWeb.ViewModels.PlataformaNegociosAdminViewModel
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.PlataformaNegociosAdminViewModel
 @{
     ViewData["Title"] = "Negocios";
 }
-<!-- Firma: Codex - 16/04/2026 | Panel owner para buscar negocios, editar limites y activar contrato con tipo de cobro/vigencia y dias de gracia. -->
-<!-- Firma: Codex - 19/04/2026 | Agrega cabecera visual, paginacion, filtro comercial, limite de usuarios permitidos, iconos superiores en tabla, acciones para renovar/finalizar contrato y calculo automatico de vigencia. -->
-<!-- Firma: Codex - 20/04/2026 | Simplifica el titulo principal quitando el icono decorativo del encabezado general. -->
-
 <div class="page-header-card mb-3">
     <div class="page-header-main">
         <h1 class="page-title">Negocios registrados</h1>
@@ -48,7 +44,7 @@
 
 <section class="table-card sc-reservas-list-card p-0 overflow-hidden">
     <div class="table-card-header d-flex justify-content-between align-items-center">
-        <h2 class="table-card-title"><i class="bi bi-diagram-3 me-1"></i>Negocios listados</h2>
+        <h2 class="table-card-title platform-card-title"><span class="platform-card-icon"><i class="bi bi-diagram-3"></i></span><span class="platform-card-title-text">Negocios listados</span></h2>
         <span class="badge text-bg-light border">Pagina @Model.Pagina de @Model.TotalPaginas</span>
     </div>
     <div class="table-responsive">
@@ -334,3 +330,4 @@
         })();
     </script>
 }
+

@@ -52,15 +52,129 @@ public class PlataformaController(
         ViewData["PlatformShell"] = true;
 
         var banners = await spService.BannersAdminListarAsync(null);
+        var anuncios = await spService.PopupPromocionesAdminListarAsync(null);
+        var (negocios, _) = await spService.PlataformaNegociosListarAsync(null, "todos", 1, 5000);
+        var (_, _, totalPendientes, totalAprobados, totalRechazados) = await spService.AltasClubesListarAsync(null, 1, 1);
+        var (_, totalReferencialesActivos) = await spService.HomeReferencialesExternosListarAdminAsync(null, null, null, null, 1, 1, true);
+        var (_, totalReferencialesGeneral) = await spService.HomeReferencialesExternosListarAdminAsync(null, null, null, null, 1, 1, null);
+        var totalReferencialesInactivos = Math.Max(0, totalReferencialesGeneral - totalReferencialesActivos);
+        var hoy = DateTime.UtcNow.Date;
+        var negociosEnPrueba = negocios.Count(x => x.EsPrueba && (x.FechaFinPrueba is null || x.FechaFinPrueba.Value.Date >= hoy));
+        var negociosConContrato = negocios.Count(x =>
+            !x.EsPrueba &&
+            x.FechaFinPlan.HasValue &&
+            x.FechaFinPlan.Value.Date >= hoy &&
+            x.EstadoSuscripcion > 0);
+        var negociosVencidos = Math.Max(0, negocios.Count - negociosEnPrueba - negociosConContrato);
+        var anunciosVigentesHoy = anuncios.Count(a =>
+            a.Activo &&
+            (!a.FechaInicio.HasValue || a.FechaInicio.Value <= DateOnly.FromDateTime(hoy)) &&
+            (!a.FechaFin.HasValue || a.FechaFin.Value >= DateOnly.FromDateTime(hoy)));
+
         var vm = new PlataformaIndexViewModel
         {
             CorreoUsuario = User.Identity?.Name ?? string.Empty,
             TotalBanners = banners.Count,
             BannersActivos = banners.Count(x => x.Activo),
-            BannersInactivos = banners.Count(x => !x.Activo)
+            BannersInactivos = banners.Count(x => !x.Activo),
+            TotalNegocios = negocios.Count,
+            NegociosConContrato = negociosConContrato,
+            NegociosEnPrueba = negociosEnPrueba,
+            NegociosVencidos = negociosVencidos,
+            TotalSolicitudesPendientes = totalPendientes,
+            TotalSolicitudesAprobadas = totalAprobados,
+            TotalSolicitudesRechazadas = totalRechazados,
+            TotalReferencialesActivos = totalReferencialesActivos,
+            TotalReferencialesInactivos = totalReferencialesInactivos,
+            TotalAnuncios = anuncios.Count,
+            AnunciosActivos = anuncios.Count(x => x.Activo),
+            AnunciosInactivos = anuncios.Count(x => !x.Activo),
+            AnunciosVigentesHoy = anunciosVigentesHoy
         };
 
         return View(vm);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> DashboardDetalle(string bloque)
+    {
+        ViewData["PlatformShell"] = true;
+        var key = (bloque ?? string.Empty).Trim().ToLowerInvariant();
+        var hoy = DateTime.UtcNow.Date;
+        var hoyDateOnly = DateOnly.FromDateTime(hoy);
+
+        var payload = key switch
+        {
+            "negocios-contrato" => await BuildDetallePayloadAsync(
+                "Detalle de negocios con contrato activo",
+                ["Negocio", "Estado", "Vigencia"],
+                (await spService.PlataformaNegociosListarAsync(null, "todos", 1, 5000)).Negocios
+                    .Where(n => !n.EsPrueba && n.FechaFinPlan.HasValue && n.FechaFinPlan.Value.Date >= hoy && n.EstadoSuscripcion > 0)
+                    .Take(20)
+                    .Select(n => new[] { n.NombreComercial, n.EstadoSuscripcionNombre, $"{n.FechaInicioPlan:dd/MM/yyyy} - {n.FechaFinPlan:dd/MM/yyyy}" })),
+            "negocios-prueba" => await BuildDetallePayloadAsync(
+                "Detalle de negocios en prueba",
+                ["Negocio", "Inicio prueba", "Fin prueba"],
+                (await spService.PlataformaNegociosListarAsync(null, "todos", 1, 5000)).Negocios
+                    .Where(n => n.EsPrueba && (n.FechaFinPrueba is null || n.FechaFinPrueba.Value.Date >= hoy))
+                    .Take(20)
+                    .Select(n => new[] { n.NombreComercial, $"{n.FechaInicioPrueba:dd/MM/yyyy}", $"{n.FechaFinPrueba:dd/MM/yyyy}" })),
+            "negocios-vencido" => await BuildDetallePayloadAsync(
+                "Detalle de negocios vencidos",
+                ["Negocio", "Estado", "Ultima vigencia"],
+                (await spService.PlataformaNegociosListarAsync(null, "todos", 1, 5000)).Negocios
+                    .Where(n => n.EsPrueba ? (n.FechaFinPrueba.HasValue && n.FechaFinPrueba.Value.Date < hoy) : (!n.FechaFinPlan.HasValue || n.FechaFinPlan.Value.Date < hoy))
+                    .Take(20)
+                    .Select(n => new[] { n.NombreComercial, n.EstadoSuscripcionNombre, $"{(n.EsPrueba ? n.FechaFinPrueba : n.FechaFinPlan):dd/MM/yyyy}" })),
+            "solicitudes-pendiente" => await BuildDetallePayloadAsync(
+                "Detalle de solicitudes pendientes",
+                ["Codigo", "Club", "Contacto"],
+                (await spService.AltasClubesListarAsync(1, 1, 20)).Solicitudes
+                    .Select(s => new[] { s.CodigoSolicitud, s.NombreClub, $"{s.NombreContacto} / {s.Telefono}" })),
+            "solicitudes-aprobada" => await BuildDetallePayloadAsync(
+                "Detalle de solicitudes aprobadas",
+                ["Codigo", "Club", "Fecha gestion"],
+                (await spService.AltasClubesListarAsync(2, 1, 20)).Solicitudes
+                    .Select(s => new[] { s.CodigoSolicitud, s.NombreClub, $"{s.FechaGestion:dd/MM/yyyy HH:mm}" })),
+            "solicitudes-rechazada" => await BuildDetallePayloadAsync(
+                "Detalle de solicitudes rechazadas",
+                ["Codigo", "Club", "Fecha gestion"],
+                (await spService.AltasClubesListarAsync(3, 1, 20)).Solicitudes
+                    .Select(s => new[] { s.CodigoSolicitud, s.NombreClub, $"{s.FechaGestion:dd/MM/yyyy HH:mm}" })),
+            "referenciales-activo" => await BuildDetallePayloadAsync(
+                "Detalle de referenciales activos",
+                ["Complejo", "Ubicacion", "Actualizacion"],
+                (await spService.HomeReferencialesExternosListarAdminAsync(null, null, null, null, 1, 20, true)).Items
+                    .Select(r => new[] { r.NombreComplejo, $"{r.Distrito}, {r.Provincia}", $"{r.FechaActualizacion:dd/MM/yyyy HH:mm}" })),
+            "referenciales-inactivo" => await BuildDetallePayloadAsync(
+                "Detalle de referenciales inactivos",
+                ["Complejo", "Ubicacion", "Actualizacion"],
+                (await spService.HomeReferencialesExternosListarAdminAsync(null, null, null, null, 1, 20, false)).Items
+                    .Select(r => new[] { r.NombreComplejo, $"{r.Distrito}, {r.Provincia}", $"{r.FechaActualizacion:dd/MM/yyyy HH:mm}" })),
+            "anuncios-activo" => await BuildDetallePayloadAsync(
+                "Detalle de anuncios activos",
+                ["Titulo", "Vigencia", "Estado"],
+                (await spService.PopupPromocionesAdminListarAsync(true))
+                    .Take(20)
+                    .Select(a => new[] { a.Titulo, $"{a.FechaInicio:dd/MM/yyyy} - {a.FechaFin:dd/MM/yyyy}", "Activo" })),
+            "anuncios-inactivo" => await BuildDetallePayloadAsync(
+                "Detalle de anuncios inactivos",
+                ["Titulo", "Vigencia", "Estado"],
+                (await spService.PopupPromocionesAdminListarAsync(false))
+                    .Take(20)
+                    .Select(a => new[] { a.Titulo, $"{a.FechaInicio:dd/MM/yyyy} - {a.FechaFin:dd/MM/yyyy}", "Inactivo" })),
+            "anuncios-vigente" => await BuildDetallePayloadAsync(
+                "Detalle de anuncios vigentes hoy",
+                ["Titulo", "Vigencia", "Estado"],
+                (await spService.PopupPromocionesAdminListarAsync(true))
+                    .Where(a => (!a.FechaInicio.HasValue || a.FechaInicio.Value <= hoyDateOnly)
+                                && (!a.FechaFin.HasValue || a.FechaFin.Value >= hoyDateOnly))
+                    .Take(20)
+                    .Select(a => new[] { a.Titulo, $"{a.FechaInicio:dd/MM/yyyy} - {a.FechaFin:dd/MM/yyyy}", "Vigente" })),
+            _ => await Task.FromResult(new { titulo = "Detalle no disponible", columnas = Array.Empty<string>(), filas = Array.Empty<string[]>() })
+        };
+
+        return Json(payload);
     }
 
     [HttpGet]
@@ -145,7 +259,7 @@ public class PlataformaController(
             FiltroCodigoUbigeo = string.IsNullOrWhiteSpace(filtroCodigoUbigeo) ? null : filtroCodigoUbigeo.Trim(),
             IncluirInactivos = incluirInactivos,
             PaginaListado = paginaListado <= 0 ? 1 : paginaListado,
-            TamanoPaginaListado = 50
+            TamanoPaginaListado = 20
         };
         vm = await CargarReferencialesExternosVmAsync(vm);
         return View(vm);
@@ -237,6 +351,90 @@ public class PlataformaController(
                 incluirInactivos,
                 paginaListado
             });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ReferencialesExternosActivar(
+        int id,
+        string? buscarNombre = null,
+        string? filtroCodigoDepartamento = null,
+        string? filtroCodigoProvincia = null,
+        string? filtroCodigoUbigeo = null,
+        bool incluirInactivos = false,
+        int paginaListado = 1)
+    {
+        ViewData["PlatformShell"] = true;
+        var ok = await spService.HomeReferencialesExternosActivarAsync(id, User.Identity?.Name ?? "owner-platform");
+        TempData[ok ? "PortalWebOk" : "PortalWebError"] = ok
+            ? "Referencial externo activado."
+            : "No se pudo activar el referencial seleccionado.";
+
+        return RedirectToAction(
+            nameof(ReferencialesExternos),
+            new
+            {
+                buscarNombre,
+                filtroCodigoDepartamento,
+                filtroCodigoProvincia,
+                filtroCodigoUbigeo,
+                incluirInactivos,
+                paginaListado
+            });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ReferencialesExternosEditar(
+        int id,
+        string nombreComplejo,
+        string? telefonoContacto,
+        int tipoDeporteSuperId,
+        string? direccion,
+        string codigoDepartamento,
+        string codigoProvincia,
+        string codigoUbigeo,
+        string? buscarNombre = null,
+        string? filtroCodigoDepartamento = null,
+        string? filtroCodigoProvincia = null,
+        string? filtroCodigoUbigeo = null,
+        bool incluirInactivos = false,
+        int paginaListado = 1)
+    {
+        ViewData["PlatformShell"] = true;
+        var nombreNormalizado = (nombreComplejo ?? string.Empty).Trim();
+        var codigoDepartamentoNormalizado = (codigoDepartamento ?? string.Empty).Trim();
+        var codigoProvinciaNormalizado = (codigoProvincia ?? string.Empty).Trim();
+        var codigoUbigeoNormalizado = (codigoUbigeo ?? string.Empty).Trim();
+        var ubigeoValido = codigoDepartamentoNormalizado.Length == 2
+                           && codigoProvinciaNormalizado.Length == 4
+                           && codigoUbigeoNormalizado.Length == 6
+                           && codigoProvinciaNormalizado.StartsWith(codigoDepartamentoNormalizado, StringComparison.Ordinal)
+                           && codigoUbigeoNormalizado.StartsWith(codigoProvinciaNormalizado, StringComparison.Ordinal);
+        if (id <= 0 || string.IsNullOrWhiteSpace(nombreNormalizado) || tipoDeporteSuperId <= 0 || !ubigeoValido)
+        {
+            TempData["PortalWebError"] = "Datos invalidos para editar el referencial externo.";
+            return RedirectToAction(
+                nameof(ReferencialesExternos),
+                new { buscarNombre, filtroCodigoDepartamento, filtroCodigoProvincia, filtroCodigoUbigeo, incluirInactivos, paginaListado });
+        }
+
+        var ok = await spService.HomeReferencialesExternosActualizarAsync(
+            id,
+            nombreNormalizado,
+            telefonoContacto,
+            tipoDeporteSuperId,
+            direccion,
+            codigoUbigeoNormalizado,
+            User.Identity?.Name ?? "owner-platform");
+
+        TempData[ok ? "PortalWebOk" : "PortalWebError"] = ok
+            ? "Referencial externo actualizado."
+            : "No se pudo actualizar el referencial seleccionado.";
+
+        return RedirectToAction(
+            nameof(ReferencialesExternos),
+            new { buscarNombre, filtroCodigoDepartamento, filtroCodigoProvincia, filtroCodigoUbigeo, incluirInactivos, paginaListado });
     }
 
     [HttpPost]
@@ -469,7 +667,7 @@ public class PlataformaController(
         var filtroCodigoProv = (model.FiltroCodigoProvincia ?? string.Empty).Trim();
         model.BuscarNombre = string.IsNullOrWhiteSpace(model.BuscarNombre) ? null : model.BuscarNombre.Trim();
         model.PaginaListado = model.PaginaListado <= 0 ? 1 : model.PaginaListado;
-        model.TamanoPaginaListado = model.TamanoPaginaListado <= 0 ? 50 : model.TamanoPaginaListado;
+        model.TamanoPaginaListado = model.TamanoPaginaListado <= 0 ? 20 : model.TamanoPaginaListado;
 
         model.DepartamentosUbigeo = await spService.UbigeoDepartamentosListarAsync();
         model.ProvinciasUbigeo = codigoDep.Length == 2
@@ -530,5 +728,13 @@ public class PlataformaController(
                || raw.Equals("true", StringComparison.OrdinalIgnoreCase)
                || raw.Equals("si", StringComparison.OrdinalIgnoreCase)
                || raw.Equals("yes", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static Task<object> BuildDetallePayloadAsync(string titulo, string[] columnas, IEnumerable<string[]> filas)
+    {
+        var filasNormalizadas = filas
+            .Select(f => f.Select(c => string.IsNullOrWhiteSpace(c) ? "-" : c).ToArray())
+            .ToList();
+        return Task.FromResult<object>(new { titulo, columnas, filas = filasNormalizadas });
     }
 }

@@ -55,7 +55,7 @@ public class PanelController(ISportCenterStoredProcedureService spService, IModu
             });
         }
 
-        var rolActual = await spService.PanelObtenerRolAsync(usuarioId, negocioSeleccionadoId);
+        var rolActual = contextoDashboard.RolActual;
         if (string.IsNullOrWhiteSpace(rolActual))
         {
             return RedirectToAction(nameof(Index), new { negocioId = membresias[0].NegocioId });

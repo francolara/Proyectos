@@ -846,7 +846,7 @@ public class HomeController(
         bool omitirFechaHorario = true,
         int pagina = 1)
     {
-        const int tamanoPagina = 12;
+        const int tamanoPagina = 9;
         var sugerido = ObtenerRangoSugeridoBusqueda(DateTime.Now);
         var fechaConsulta = fecha ?? sugerido.Fecha;
         var horaInicioConsulta = horaInicio ?? sugerido.HoraInicio;
@@ -865,7 +865,8 @@ public class HomeController(
         var deportes = await spService.HomeListarTiposDeporteAsync();
         var banners = await spService.HomeListarBannersPublicosAsync();
         var popupPromociones = await spService.HomeListarPopupPromocionesActivasAsync();
-        var espaciosDisponibles = await spService.HomeBuscarEspaciosDisponiblesAsync(
+        var paginaSolicitada = Math.Max(1, pagina);
+        var espaciosPaginadosResponse = await spService.HomeBuscarEspaciosDisponiblesPaginadoAsync(
             fechaConsulta,
             horaInicioConsulta,
             horaFinConsulta,
@@ -874,18 +875,36 @@ public class HomeController(
             codigoDist,
             tipoDeporteId,
             negocioId,
+            paginaSolicitada,
+            tamanoPagina,
             omitirHorarioEfectivo,
             usarCercania,
             latitudUsuario,
             longitudUsuario,
             radioEfectivo);
-        var totalResultados = espaciosDisponibles.Count;
+        var totalResultados = espaciosPaginadosResponse.TotalRegistros;
         var totalPaginas = Math.Max(1, (int)Math.Ceiling(totalResultados / (double)tamanoPagina));
-        var paginaActual = Math.Clamp(pagina, 1, totalPaginas);
-        var espaciosPaginados = espaciosDisponibles
-            .Skip((paginaActual - 1) * tamanoPagina)
-            .Take(tamanoPagina)
-            .ToList();
+        var paginaActual = Math.Clamp(paginaSolicitada, 1, totalPaginas);
+        if (paginaActual != paginaSolicitada)
+        {
+            espaciosPaginadosResponse = await spService.HomeBuscarEspaciosDisponiblesPaginadoAsync(
+                fechaConsulta,
+                horaInicioConsulta,
+                horaFinConsulta,
+                codigoDep,
+                codigoProv,
+                codigoDist,
+                tipoDeporteId,
+                negocioId,
+                paginaActual,
+                tamanoPagina,
+                omitirHorarioEfectivo,
+                usarCercania,
+                latitudUsuario,
+                longitudUsuario,
+                radioEfectivo);
+        }
+        var espaciosPaginados = espaciosPaginadosResponse.Espacios;
         var departamentos = await spService.UbigeoDepartamentosListarAsync();
         var provincias = !string.IsNullOrWhiteSpace(codigoDep) && codigoDep.Length == 2
             ? await spService.UbigeoProvinciasListarAsync(codigoDep)

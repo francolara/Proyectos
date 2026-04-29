@@ -9,6 +9,19 @@ public class PlataformaIndexViewModel
     public int TotalBanners { get; set; }
     public int BannersActivos { get; set; }
     public int BannersInactivos { get; set; }
+    public int TotalNegocios { get; set; }
+    public int NegociosConContrato { get; set; }
+    public int NegociosEnPrueba { get; set; }
+    public int NegociosVencidos { get; set; }
+    public int TotalSolicitudesPendientes { get; set; }
+    public int TotalSolicitudesAprobadas { get; set; }
+    public int TotalSolicitudesRechazadas { get; set; }
+    public int TotalReferencialesActivos { get; set; }
+    public int TotalReferencialesInactivos { get; set; }
+    public int TotalAnuncios { get; set; }
+    public int AnunciosActivos { get; set; }
+    public int AnunciosInactivos { get; set; }
+    public int AnunciosVigentesHoy { get; set; }
 }
 
 public class PlataformaPortalConfigViewModel
@@ -171,7 +184,7 @@ public class PlataformaReferencialesExternosViewModel
 
     public bool IncluirInactivos { get; set; }
     public int PaginaListado { get; set; } = 1;
-    public int TamanoPaginaListado { get; set; } = 50;
+    public int TamanoPaginaListado { get; set; } = 20;
     public int TotalRegistrosListado { get; set; }
     public int TotalPaginasListado { get; set; } = 1;
     public List<SelectListItem> FiltroDepartamentosUbigeo { get; set; } = new();
@@ -196,11 +209,14 @@ public class ReferencialExternoAdminItemViewModel
     public int Id { get; set; }
     public string NombreComplejo { get; set; } = string.Empty;
     public string? NombreEspacio { get; set; }
+    public string CodigoUbigeo { get; set; } = string.Empty;
+    public int TipoDeporteSuperId { get; set; }
     public string TipoDeporte { get; set; } = string.Empty;
     public string Departamento { get; set; } = string.Empty;
     public string Provincia { get; set; } = string.Empty;
     public string Distrito { get; set; } = string.Empty;
     public string? Direccion { get; set; }
+    public string? TelefonoContacto { get; set; }
     public string? GoogleMapsUrl { get; set; }
     public bool Activo { get; set; }
     public DateTime? FechaActualizacion { get; set; }

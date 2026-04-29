@@ -1,11 +1,9 @@
-@model SistemaControlEspaciosDeportivosWeb.ViewModels.PopupPromocionesAdminIndexViewModel
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.PopupPromocionesAdminIndexViewModel
 @{
     ViewData["Title"] = "Anuncios";
     var form = Model.Form;
     var esEdicion = form.IdPopupPromocion.HasValue;
 }
-<!-- Firma: Codex - 20/04/2026 | Modulo superadmin de anuncios/popup con configuracion general, formulario reutilizable, orientacion por anuncio (vertical/horizontal), subtitulo opcional por pieza, grilla de gestion, mensajes de validacion visibles por campo, carga de imagen especializada por tipo y acciones del listado alineadas visualmente. -->
-
 <div class="page-header-card mb-3">
     <div class="page-header-main">
         <h1 class="page-title">Anuncios</h1>
@@ -28,7 +26,7 @@
 
 <section class="table-card sc-reservas-list-card mb-3">
     <div class="table-card-header">
-        <h2 class="table-card-title"><i class="bi bi-sliders2 me-1"></i>Configuracion del Popup</h2>
+        <h2 class="table-card-title platform-card-title"><span class="platform-card-icon"><i class="bi bi-sliders2"></i></span><span class="platform-card-title-text">Configuracion del Popup</span></h2>
     </div>
     <form asp-action="GuardarConfiguracion" method="post" class="row g-3 px-3 pb-3">
         @Html.AntiForgeryToken()
@@ -75,7 +73,7 @@
 
 <section class="table-card sc-reservas-list-card mb-3">
     <div class="table-card-header">
-        <h2 class="table-card-title"><i class="bi bi-megaphone me-1"></i>@(esEdicion ? "Editar anuncio" : "Nuevo anuncio")</h2>
+        <h2 class="table-card-title platform-card-title"><span class="platform-card-icon"><i class="bi bi-megaphone"></i></span><span class="platform-card-title-text">@(esEdicion ? "Editar anuncio" : "Nuevo anuncio")</span></h2>
     </div>
 
     <form asp-action="Guardar" method="post" enctype="multipart/form-data" class="row g-3 px-3 pb-3">
@@ -180,7 +178,7 @@
 
 <section class="table-card sc-reservas-list-card">
     <div class="table-card-header d-flex justify-content-between align-items-center gap-2">
-        <h2 class="table-card-title"><i class="bi bi-layout-text-window-reverse me-1"></i>Anuncios registrados</h2>
+        <h2 class="table-card-title platform-card-title"><span class="platform-card-icon"><i class="bi bi-layout-text-window-reverse"></i></span><span class="platform-card-title-text">Anuncios registrados</span></h2>
     </div>
 
     <div class="table-responsive">
@@ -268,3 +266,4 @@
         </table>
     </div>
 </section>
+

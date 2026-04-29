@@ -1,22 +1,9 @@
 wwwroot\css\reservas-calendario.css
 wwwroot\css\site.css
 wwwroot\favicon.ico
-wwwroot\img\banners\banner_promocion_negocio_desktop_1920x760.webp
-wwwroot\img\banners\banner_promocion_negocio_mobile_1080x1350.webp
-wwwroot\img\banners\banner_promocion_negocio_pro_desktop_1920x760.webp
-wwwroot\img\banners\banner_promocion_negocio_pro_mobile_1080x1350.webp
-wwwroot\img\banners\banner_reserva_desktop_1920x760.jpg
-wwwroot\img\banners\banner_reserva_desktop_1920x760.webp
-wwwroot\img\banners\banner_reserva_mobile_1080x1350.jpg
-wwwroot\img\banners\banner_reserva_mobile_1080x1350.webp
-wwwroot\img\banners\banner_tenis_desktop_1920x760.jpg
-wwwroot\img\banners\banner_tenis_desktop_1920x760.webp
-wwwroot\img\banners\banner_tenis_mobile_1080x1350.jpg
-wwwroot\img\banners\banner_tenis_mobile_1080x1350.webp
-wwwroot\img\banners\banner_voley_desktop_1920x760.jpg
-wwwroot\img\banners\banner_voley_desktop_1920x760.webp
-wwwroot\img\banners\banner_voley_mobile_1080x1350.jpg
-wwwroot\img\banners\banner_voley_mobile_1080x1350.webp
+wwwroot\img\logo-simbolo.png
+wwwroot\img\logo-sportcenter-header.png
+wwwroot\img\logo-sportcenter.png
 wwwroot\js\site.js
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css.map
@@ -82,8 +69,8 @@ C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlE
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\lib\jquery\dist\jquery.slim.min.js
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\lib\jquery\dist\jquery.slim.min.map
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\lib\jquery\LICENSE.txt
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\css\site.css
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\favicon.ico
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\css\site.css
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\js\site.js
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css.map

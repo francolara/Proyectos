@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
+using System.Security.Claims;
 
 namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 
@@ -14,8 +15,33 @@ public class MiSuscripcionController(
         if (!resolvedNegocioId.HasValue) return Forbid();
 
         var baseVm = await ObtenerBaseAsync(resolvedNegocioId.Value, "DASHBOARD");
-        if (baseVm is null || !string.IsNullOrWhiteSpace(baseVm.Mensaje))
-            return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "Acceso denegado." });
+        if (baseVm is null)
+            return SinAcceso(new ModuloBaseViewModel { Mensaje = "Acceso denegado." });
+
+        // Mi suscripcion siempre debe ser accesible, incluso con vigencia vencida.
+        if (!string.IsNullOrWhiteSpace(baseVm.Mensaje))
+        {
+            var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(usuarioId))
+                return SinAcceso(baseVm);
+
+            var negocios = await spService.PanelListarNegociosUsuarioAsync(usuarioId);
+            var negocioActual = negocios.FirstOrDefault(x => x.NegocioId == resolvedNegocioId.Value);
+            if (negocioActual is null)
+                return SinAcceso(baseVm);
+
+            baseVm = new ModuloBaseViewModel
+            {
+                NegocioId = negocioActual.NegocioId,
+                NegocioNombre = negocioActual.NombreNegocio,
+                RolActual = negocioActual.Rol,
+                ModuloCodigo = "SUSCRIPCION",
+                ModuloNombre = "Mi suscripcion",
+                PuedeCrear = false,
+                PuedeEditar = false,
+                PuedeEliminar = false
+            };
+        }
 
         var suscripcion = await spService.MiSuscripcionObtenerAsync(resolvedNegocioId.Value);
         var limites = await spService.NegocioObtenerLimitesOperativosAsync(resolvedNegocioId.Value);

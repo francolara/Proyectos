@@ -1,12 +1,7 @@
-@model SistemaControlEspaciosDeportivosWeb.ViewModels.PlataformaPortalConfigViewModel
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.PlataformaPortalConfigViewModel
 @{
     ViewData["Title"] = "Portal web";
 }
-<!-- Firma: Codex - 15/04/2026 | Formulario owner para configurar CTA y barra final del Home (contacto y redes). -->
-<!-- Firma: Codex - 15/04/2026 | Se agrega configuracion de seccion beneficios (6 tarjetas fijas) y resumen de errores de guardado en pantalla. -->
-<!-- Firma: Codex - 16/04/2026 | Ajuste de post explicito a accion PortalWebGuardar para estabilizar submit del formulario de configuracion; se amplia limite de entrada a 500 caracteres en todos los campos del formulario. -->
-<!-- Firma: Codex - 25/04/2026 | Se agrega apartado Notificaciones en Portal Web con dos correos de mantenimiento (parametros globales), visible solo en esta pestaña. -->
-
 <div class="page-header-card mb-3">
     <div class="page-header-main">
         <h1 class="page-title">Configuracion del portal web</h1>
@@ -23,7 +18,7 @@
 <form asp-controller="Plataforma" asp-action="PortalWebGuardar" method="post" novalidate class="table-card sc-reservas-list-card p-3">
     @Html.AntiForgeryToken()
 
-    <h2 class="section-title mb-3"><i class="bi bi-grid-3x3-gap me-1"></i>Seccion beneficios (6 tarjetas fijas)</h2>
+    <h2 class="section-title mb-3 platform-card-title"><span class="platform-card-icon"><i class="bi bi-grid-3x3-gap"></i></span><span class="platform-card-title-text">Seccion beneficios (6 tarjetas fijas)</span></h2>
     <div class="row g-3 mb-4">
         <div class="col-lg-7">
             <label class="form-label">Titulo global de beneficios</label>
@@ -89,7 +84,7 @@
         </div>
     </div>
 
-    <h2 class="section-title mb-3"><i class="bi bi-megaphone me-1"></i>Bloque CTA</h2>
+    <h2 class="section-title mb-3 platform-card-title"><span class="platform-card-icon"><i class="bi bi-megaphone"></i></span><span class="platform-card-title-text">Bloque CTA</span></h2>
     <div class="row g-3 mb-4">
         <div class="col-lg-8">
             <label class="form-label">Titulo CTA</label>
@@ -117,7 +112,7 @@
         </div>
     </div>
 
-    <h2 class="section-title mb-3"><i class="bi bi-layout-text-window-reverse me-1"></i>Barra final del portal</h2>
+    <h2 class="section-title mb-3 platform-card-title"><span class="platform-card-icon"><i class="bi bi-layout-text-window-reverse"></i></span><span class="platform-card-title-text">Barra final del portal</span></h2>
     <div class="row g-3">
         <div class="col-lg-4">
             <label class="form-label">Marca / titulo</label>
@@ -149,7 +144,7 @@
         </div>
     </div>
 
-    <h2 class="section-title mt-4 mb-3"><i class="bi bi-bell me-1"></i>Notificaciones</h2>
+    <h2 class="section-title mt-4 mb-3 platform-card-title"><span class="platform-card-icon"><i class="bi bi-bell"></i></span><span class="platform-card-title-text">Notificaciones</span></h2>
     <div class="row g-3">
         <div class="col-lg-6">
             <label class="form-label">Correo de notificacion 1</label>
@@ -167,3 +162,4 @@
         </button>
     </div>
 </form>
+

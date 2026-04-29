@@ -1,50 +1,533 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.PlataformaIndexViewModel
 @{
     ViewData["Title"] = "Plataforma";
+    var negociosData = new[] { Model.NegociosConContrato, Model.NegociosEnPrueba, Model.NegociosVencidos };
+    var negociosMax = Math.Max(1, negociosData.Max());
+    var solicitudesTotal = Math.Max(1, Model.TotalSolicitudesPendientes + Model.TotalSolicitudesAprobadas + Model.TotalSolicitudesRechazadas);
+    var pctPendientes = Math.Round((Model.TotalSolicitudesPendientes * 100m) / solicitudesTotal, 1);
+    var pctAprobadas = Math.Round((Model.TotalSolicitudesAprobadas * 100m) / solicitudesTotal, 1);
+    var pctRechazadas = Math.Max(0m, 100m - pctPendientes - pctAprobadas);
+    var referencialesTotal = Math.Max(1, Model.TotalReferencialesActivos + Model.TotalReferencialesInactivos);
+    var pctReferencialesActivos = Math.Round((Model.TotalReferencialesActivos * 100m) / referencialesTotal, 1);
+    var pctReferencialesInactivos = Math.Max(0m, 100m - pctReferencialesActivos);
+    var anunciosTotal = Math.Max(1, Model.TotalAnuncios);
+    var pctAnunciosActivos = Math.Round((Model.AnunciosActivos * 100m) / anunciosTotal, 1);
+    var pctAnunciosInactivos = Math.Max(0m, 100m - pctAnunciosActivos);
 }
 
 <div class="page-header-card mb-3">
     <div class="page-header-main">
         <h1 class="page-title">Panel global de plataforma</h1>
-        <p class="page-subtitle">Gestion central para modulos globales (owner).</p>
+        <p class="page-subtitle">Control operativo del ecosistema comercial y administrativo.</p>
+    </div>
+    <div class="page-header-meta">
+        <span class="badge text-bg-light border">Owner: @Model.CorreoUsuario</span>
     </div>
 </div>
 
 <section class="sc-dash-kpis mb-3">
     <article class="sc-kpi-card">
-        <div class="sc-kpi-label">Owner conectado</div>
-        <div class="sc-kpi-value" style="font-size:1rem;">@Model.CorreoUsuario</div>
+        <div class="sc-kpi-label">Negocios totales</div>
+        <div class="sc-kpi-value">@Model.TotalNegocios</div>
+        <div class="sc-kpi-foot">Con contrato: @Model.NegociosConContrato</div>
     </article>
     <article class="sc-kpi-card">
-        <div class="sc-kpi-label">Banners totales</div>
-        <div class="sc-kpi-value">@Model.TotalBanners</div>
+        <div class="sc-kpi-label">Negocios en prueba</div>
+        <div class="sc-kpi-value">@Model.NegociosEnPrueba</div>
+        <div class="sc-kpi-foot">Vencidos: @Model.NegociosVencidos</div>
     </article>
     <article class="sc-kpi-card">
-        <div class="sc-kpi-label">Banners activos</div>
-        <div class="sc-kpi-value">@Model.BannersActivos</div>
+        <div class="sc-kpi-label">Solicitudes pendientes</div>
+        <div class="sc-kpi-value">@Model.TotalSolicitudesPendientes</div>
+        <div class="sc-kpi-foot">Aprobadas: @Model.TotalSolicitudesAprobadas</div>
     </article>
     <article class="sc-kpi-card">
-        <div class="sc-kpi-label">Banners inactivos</div>
-        <div class="sc-kpi-value">@Model.BannersInactivos</div>
+        <div class="sc-kpi-label">Referenciales activos</div>
+        <div class="sc-kpi-value">@Model.TotalReferencialesActivos</div>
+        <div class="sc-kpi-foot">Inactivos: @Model.TotalReferencialesInactivos</div>
     </article>
+</section>
+
+<section class="row g-3 mb-3">
+    <div class="col-12 col-xl-7">
+        <article class="table-card h-100">
+            <div class="table-card-header d-flex justify-content-between align-items-center">
+                <h2 class="table-card-title mb-0 platform-card-title"><span class="platform-card-icon"><i class="bi bi-bar-chart-line"></i></span><span class="platform-card-title-text">Estado de negocios</span></h2>
+            </div>
+            <div class="p-3">
+                <div class="platform-bars">
+                    <button type="button" class="platform-bar-item platform-click" data-bloque="negocios-contrato">
+                        <div class="platform-bar-track">
+                            <div class="platform-bar-fill bg-primary" style="height:@Math.Max(8, (int)Math.Round(negociosData[0] * 100d / negociosMax))%"></div>
+                        </div>
+                        <div class="platform-bar-label">Contrato</div>
+                        <div class="platform-bar-value">@negociosData[0]</div>
+                    </button>
+                    <button type="button" class="platform-bar-item platform-click" data-bloque="negocios-prueba">
+                        <div class="platform-bar-track">
+                            <div class="platform-bar-fill bg-info" style="height:@Math.Max(8, (int)Math.Round(negociosData[1] * 100d / negociosMax))%"></div>
+                        </div>
+                        <div class="platform-bar-label">Prueba</div>
+                        <div class="platform-bar-value">@negociosData[1]</div>
+                    </button>
+                    <button type="button" class="platform-bar-item platform-click" data-bloque="negocios-vencido">
+                        <div class="platform-bar-track">
+                            <div class="platform-bar-fill bg-danger" style="height:@Math.Max(8, (int)Math.Round(negociosData[2] * 100d / negociosMax))%"></div>
+                        </div>
+                        <div class="platform-bar-label">Vencido</div>
+                        <div class="platform-bar-value">@negociosData[2]</div>
+                    </button>
+                </div>
+            </div>
+        </article>
+    </div>
+    <div class="col-12 col-xl-5">
+        <article class="table-card h-100">
+            <div class="table-card-header d-flex justify-content-between align-items-center">
+                <h2 class="table-card-title mb-0 platform-card-title"><span class="platform-card-icon"><i class="bi bi-pie-chart"></i></span><span class="platform-card-title-text">Solicitudes de alta</span></h2>
+            </div>
+            <div class="p-3">
+                <div class="platform-donut-wrap">
+                    <div class="platform-donut"
+                         style="background:conic-gradient(#0d6efd 0% @pctPendientes%, #198754 @pctPendientes% @(pctPendientes + pctAprobadas)%, #dc3545 @(pctPendientes + pctAprobadas)% 100%);">
+                        <div class="platform-donut-center">@solicitudesTotal</div>
+                    </div>
+                </div>
+                <div class="platform-legend">
+                    <button type="button" class="platform-legend-btn platform-click" data-bloque="solicitudes-pendiente"><i class="bi bi-square-fill text-primary"></i> Pendientes: @Model.TotalSolicitudesPendientes (@pctPendientes%)</button>
+                    <button type="button" class="platform-legend-btn platform-click" data-bloque="solicitudes-aprobada"><i class="bi bi-square-fill text-success"></i> Aprobadas: @Model.TotalSolicitudesAprobadas (@pctAprobadas%)</button>
+                    <button type="button" class="platform-legend-btn platform-click" data-bloque="solicitudes-rechazada"><i class="bi bi-square-fill text-danger"></i> Rechazadas: @Model.TotalSolicitudesRechazadas (@pctRechazadas%)</button>
+                </div>
+            </div>
+        </article>
+    </div>
+</section>
+
+<section class="row g-3 mb-3">
+    <div class="col-12 col-lg-6">
+        <article class="table-card h-100">
+            <div class="table-card-header d-flex justify-content-between align-items-center">
+                <h2 class="table-card-title mb-0 platform-card-title"><span class="platform-card-icon"><i class="bi bi-pin-map"></i></span><span class="platform-card-title-text">Referenciales externos</span></h2>
+            </div>
+            <div class="p-3">
+                <div class="platform-progress-block">
+                    <div class="d-flex justify-content-between small fw-semibold mb-1">
+                        <button type="button" class="platform-inline-link platform-click" data-bloque="referenciales-activo">Activos</button>
+                        <span>@Model.TotalReferencialesActivos (@pctReferencialesActivos%)</span>
+                    </div>
+                    <div class="progress" role="progressbar" aria-valuenow="@pctReferencialesActivos" aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-bar bg-success" style="width:@pctReferencialesActivos%"></div>
+                    </div>
+                </div>
+                <div class="platform-progress-block mt-3">
+                    <div class="d-flex justify-content-between small fw-semibold mb-1">
+                        <button type="button" class="platform-inline-link platform-click" data-bloque="referenciales-inactivo">Inactivos</button>
+                        <span>@Model.TotalReferencialesInactivos (@pctReferencialesInactivos%)</span>
+                    </div>
+                    <div class="progress" role="progressbar" aria-valuenow="@pctReferencialesInactivos" aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-bar bg-secondary" style="width:@pctReferencialesInactivos%"></div>
+                    </div>
+                </div>
+            </div>
+        </article>
+    </div>
+    <div class="col-12 col-lg-6">
+        <article class="table-card h-100">
+            <div class="table-card-header d-flex justify-content-between align-items-center">
+                <h2 class="table-card-title mb-0 platform-card-title"><span class="platform-card-icon"><i class="bi bi-image"></i></span><span class="platform-card-title-text">Estado de banners</span></h2>
+            </div>
+            <div class="p-3">
+                <div class="platform-legend mb-2">
+                    <span><i class="bi bi-square-fill text-success"></i> Activos: @Model.BannersActivos</span>
+                    <span><i class="bi bi-square-fill text-secondary"></i> Inactivos: @Model.BannersInactivos</span>
+                    <span><i class="bi bi-square-fill text-primary"></i> Total: @Model.TotalBanners</span>
+                </div>
+                <div class="progress" style="height:14px;">
+                    <div class="progress-bar bg-success" style="width:@(Math.Round((Model.BannersActivos * 100m) / Math.Max(1, Model.TotalBanners), 1))%"></div>
+                    <div class="progress-bar bg-secondary" style="width:@(Math.Round((Model.BannersInactivos * 100m) / Math.Max(1, Model.TotalBanners), 1))%"></div>
+                </div>
+            </div>
+        </article>
+    </div>
+</section>
+
+<section class="row g-3 mb-3">
+    <div class="col-12">
+        <article class="table-card h-100">
+            <div class="table-card-header d-flex justify-content-between align-items-center">
+                <h2 class="table-card-title mb-0 platform-card-title"><span class="platform-card-icon"><i class="bi bi-megaphone"></i></span><span class="platform-card-title-text">Anuncios</span></h2>
+            </div>
+            <div class="p-3">
+                <div class="sc-dash-kpis mb-2">
+                    <article class="sc-kpi-card">
+                        <div class="sc-kpi-label">Totales</div>
+                        <div class="sc-kpi-value">@Model.TotalAnuncios</div>
+                    </article>
+                    <article class="sc-kpi-card platform-click" data-bloque="anuncios-activo" role="button">
+                        <div class="sc-kpi-label">Activos</div>
+                        <div class="sc-kpi-value">@Model.AnunciosActivos</div>
+                    </article>
+                    <article class="sc-kpi-card platform-click" data-bloque="anuncios-inactivo" role="button">
+                        <div class="sc-kpi-label">Inactivos</div>
+                        <div class="sc-kpi-value">@Model.AnunciosInactivos</div>
+                    </article>
+                    <article class="sc-kpi-card platform-click" data-bloque="anuncios-vigente" role="button">
+                        <div class="sc-kpi-label">Vigentes hoy</div>
+                        <div class="sc-kpi-value">@Model.AnunciosVigentesHoy</div>
+                    </article>
+                </div>
+                <div class="platform-legend mb-2">
+                    <button type="button" class="platform-legend-btn platform-click" data-bloque="anuncios-activo"><i class="bi bi-square-fill text-success"></i> Activos: @Model.AnunciosActivos (@pctAnunciosActivos%)</button>
+                    <button type="button" class="platform-legend-btn platform-click" data-bloque="anuncios-inactivo"><i class="bi bi-square-fill text-secondary"></i> Inactivos: @Model.AnunciosInactivos (@pctAnunciosInactivos%)</button>
+                    <button type="button" class="platform-legend-btn platform-click" data-bloque="anuncios-vigente"><i class="bi bi-square-fill text-primary"></i> Vigentes hoy: @Model.AnunciosVigentesHoy</button>
+                </div>
+                <div class="progress" style="height:14px;">
+                    <div class="progress-bar bg-success" style="width:@pctAnunciosActivos%"></div>
+                    <div class="progress-bar bg-secondary" style="width:@pctAnunciosInactivos%"></div>
+                </div>
+            </div>
+        </article>
+    </div>
+</section>
+
+<section class="table-card sc-reservas-list-card mb-3">
+    <div class="table-card-header d-flex justify-content-between align-items-center">
+        <h2 class="table-card-title platform-card-title"><span class="platform-card-icon"><i class="bi bi-list-task"></i></span><span class="platform-card-title-text" id="detalle-titulo">Detalle seleccionado</span></h2>
+    </div>
+    <div class="p-3" id="detalle-body">
+        <div class="text-muted small">Haz clic en cualquier bloque del dashboard para ver el detalle aquí.</div>
+    </div>
 </section>
 
 <section class="table-card sc-reservas-list-card">
     <div class="table-card-header d-flex justify-content-between align-items-center">
-        <h2 class="table-card-title"><i class="bi bi-window-sidebar me-1"></i>Modulos globales</h2>
+        <h2 class="table-card-title platform-card-title"><span class="platform-card-icon"><i class="bi bi-window-sidebar"></i></span><span class="platform-card-title-text">Modulos globales</span></h2>
     </div>
-    <div class="p-3">
-        <a class="btn btn-primary" asp-controller="Banners" asp-action="Index">
-            <i class="bi bi-images me-1"></i>Gestionar banners web
+    <div class="p-3 platform-modules-grid">
+        <a class="platform-module-btn" asp-controller="Banners" asp-action="Index">
+            <span class="platform-module-icon"><i class="bi bi-images"></i></span>
+            <span class="platform-module-text">
+                <strong>Banners web</strong>
+                <small>Gestion visual del home</small>
+            </span>
         </a>
-        <a class="btn btn-outline-primary ms-2" asp-controller="Anuncios" asp-action="Index">
-            <i class="bi bi-megaphone me-1"></i>Gestionar anuncios
+        <a class="platform-module-btn" asp-controller="Plataforma" asp-action="PortalWeb">
+            <span class="platform-module-icon"><i class="bi bi-sliders2"></i></span>
+            <span class="platform-module-text">
+                <strong>Portal web</strong>
+                <small>Textos y configuraciones</small>
+            </span>
         </a>
-        <a class="btn btn-outline-primary ms-2" asp-controller="Plataforma" asp-action="PortalWeb">
-            <i class="bi bi-sliders2 me-1"></i>Configurar portal web
+        <a class="platform-module-btn" asp-controller="Plataforma" asp-action="ClubesPendientes">
+            <span class="platform-module-icon"><i class="bi bi-clipboard2-check"></i></span>
+            <span class="platform-module-text">
+                <strong>Altas de clubes</strong>
+                <small>Aprobaciones pendientes</small>
+            </span>
         </a>
-        <a class="btn btn-outline-primary ms-2" asp-controller="Plataforma" asp-action="ReferencialesExternos">
-            <i class="bi bi-binoculars me-1"></i>Referenciales externos
+        <a class="platform-module-btn" asp-controller="Plataforma" asp-action="Negocios">
+            <span class="platform-module-icon"><i class="bi bi-buildings"></i></span>
+            <span class="platform-module-text">
+                <strong>Negocios</strong>
+                <small>Limites y contratos</small>
+            </span>
+        </a>
+        <a class="platform-module-btn" asp-controller="Plataforma" asp-action="ReferencialesExternos">
+            <span class="platform-module-icon"><i class="bi bi-binoculars"></i></span>
+            <span class="platform-module-text">
+                <strong>Referenciales externos</strong>
+                <small>Listado y barrido Google</small>
+            </span>
+        </a>
+        <a class="platform-module-btn" asp-controller="Anuncios" asp-action="Index">
+            <span class="platform-module-icon"><i class="bi bi-megaphone"></i></span>
+            <span class="platform-module-text">
+                <strong>Anuncios</strong>
+                <small>Promociones popup</small>
+            </span>
         </a>
     </div>
 </section>
+
+<style>
+    .page-header-card {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .sc-kpi-foot {
+        color: #6b7280;
+        font-size: .8rem;
+        margin-top: .2rem;
+    }
+
+    .platform-bars {
+        display: flex;
+        gap: 1rem;
+        min-height: 220px;
+        align-items: end;
+    }
+
+    .platform-bar-item {
+        flex: 1;
+        min-width: 90px;
+        border: 0;
+        background: transparent;
+        text-align: left;
+        padding: 0;
+    }
+
+    .platform-bar-track {
+        border-radius: .85rem;
+        background: #e7edf7;
+        height: 175px;
+        padding: .35rem;
+        display: flex;
+        align-items: end;
+    }
+
+    .platform-bar-fill {
+        width: 100%;
+        border-radius: .6rem;
+        transition: height .35s ease;
+    }
+
+    .platform-bar-label {
+        margin-top: .5rem;
+        font-size: .82rem;
+        color: #41506a;
+        font-weight: 600;
+    }
+
+    .platform-bar-value {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #0b1f44;
+    }
+
+    .platform-donut-wrap {
+        display: flex;
+        justify-content: center;
+        margin-bottom: .85rem;
+    }
+
+    .platform-donut {
+        width: 170px;
+        height: 170px;
+        border-radius: 50%;
+        position: relative;
+    }
+
+    .platform-donut::after {
+        content: "";
+        position: absolute;
+        inset: 22px;
+        border-radius: 50%;
+        background: #f8fbff;
+    }
+
+    .platform-donut-center {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #0b1f44;
+        z-index: 1;
+    }
+
+    .platform-legend {
+        display: flex;
+        flex-direction: column;
+        gap: .35rem;
+        font-size: .88rem;
+        color: #41506a;
+    }
+
+    .platform-progress-block .progress {
+        height: 12px;
+    }
+
+    .platform-card-title {
+        display: inline-flex;
+        align-items: center;
+        gap: .55rem;
+        font-size: 1.05rem;
+        font-weight: 800;
+        letter-spacing: .01em;
+        color: #0d2a57;
+    }
+
+    .platform-card-icon {
+        width: 1.75rem;
+        height: 1.75rem;
+        border-radius: .55rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #eaf2ff 0%, #d9e8ff 100%);
+        border: 1px solid #c6dbff;
+        color: #1f5fd4;
+        font-size: .9rem;
+    }
+
+    .platform-card-title-text {
+        line-height: 1.2;
+    }
+
+    .platform-click {
+        cursor: pointer;
+    }
+
+    .platform-click:hover .platform-bar-track {
+        box-shadow: inset 0 0 0 2px #b8d1ff;
+    }
+
+    .platform-legend-btn {
+        border: 0;
+        background: transparent;
+        color: inherit;
+        text-align: left;
+        padding: 0;
+    }
+
+    .platform-inline-link {
+        border: 0;
+        background: transparent;
+        color: #0d6efd;
+        font-weight: 700;
+        padding: 0;
+    }
+
+    .platform-modules-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: .65rem;
+    }
+
+    .platform-module-btn {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        border: 1px solid #c8dcff;
+        border-radius: .85rem;
+        padding: .7rem .8rem;
+        text-decoration: none;
+        background: linear-gradient(180deg, #ffffff 0%, #f6f9ff 100%);
+        color: #1f4f9e;
+        transition: all .2s ease;
+    }
+
+    .platform-module-btn:hover {
+        border-color: #8cb5ff;
+        box-shadow: 0 8px 18px rgba(28, 86, 191, .12);
+        transform: translateY(-1px);
+        color: #123d82;
+    }
+
+    .platform-module-btn-active {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        border-color: #1d4ed8;
+        color: #fff;
+    }
+
+    .platform-module-btn-active .platform-module-icon {
+        background: rgba(255, 255, 255, .14);
+        border-color: rgba(255, 255, 255, .22);
+        color: #fff;
+    }
+
+    .platform-module-btn-active .platform-module-text small {
+        color: rgba(241, 245, 255, .92);
+    }
+
+    .platform-module-icon {
+        width: 2rem;
+        height: 2rem;
+        border-radius: .65rem;
+        border: 1px solid #bfdbfe;
+        background: #ebf3ff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #1f5fd4;
+        flex-shrink: 0;
+    }
+
+    .platform-module-text {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.15;
+    }
+
+    .platform-module-text strong {
+        font-size: .9rem;
+        font-weight: 800;
+        letter-spacing: .01em;
+    }
+
+    .platform-module-text small {
+        margin-top: .22rem;
+        font-size: .75rem;
+        color: #5f6f8e;
+    }
+</style>
+
+<script>
+    (() => {
+        const detalleBody = document.getElementById('detalle-body');
+        const detalleTitulo = document.getElementById('detalle-titulo');
+        if (!detalleBody || !detalleTitulo) return;
+
+        const renderTable = (data) => {
+            const columns = Array.isArray(data.columnas) ? data.columnas : [];
+            const rows = Array.isArray(data.filas) ? data.filas : [];
+            detalleTitulo.textContent = data.titulo || 'Detalle seleccionado';
+
+            if (!columns.length) {
+                detalleBody.innerHTML = '<div class="text-muted small">No hay datos para mostrar.</div>';
+                return;
+            }
+
+            let html = '<div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr>';
+            for (const col of columns) html += `<th>${col}</th>`;
+            html += '</tr></thead><tbody>';
+
+            if (!rows.length) {
+                html += `<tr><td colspan="${columns.length}" class="text-muted">Sin registros.</td></tr>`;
+            } else {
+                for (const row of rows) {
+                    html += '<tr>';
+                    for (const cell of row) html += `<td>${cell ?? '-'}</td>`;
+                    html += '</tr>';
+                }
+            }
+
+            html += '</tbody></table></div>';
+            detalleBody.innerHTML = html;
+        };
+
+        const loadDetail = async (bloque) => {
+            detalleBody.innerHTML = '<div class="text-muted small">Cargando detalle...</div>';
+            try {
+                const response = await fetch(`@Url.Action("DashboardDetalle", "Plataforma")?bloque=${encodeURIComponent(bloque)}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                if (!response.ok) throw new Error('No se pudo obtener el detalle.');
+                const data = await response.json();
+                renderTable(data);
+            } catch (error) {
+                detalleBody.innerHTML = `<div class="text-danger small">${error.message}</div>`;
+            }
+        };
+
+        document.querySelectorAll('.platform-click[data-bloque]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const bloque = btn.getAttribute('data-bloque');
+                if (!bloque) return;
+                loadDetail(bloque);
+            });
+        });
+    })();
+</script>

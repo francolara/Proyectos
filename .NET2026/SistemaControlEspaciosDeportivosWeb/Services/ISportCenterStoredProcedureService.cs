@@ -8,12 +8,15 @@ public interface ISportCenterStoredProcedureService
     Task<List<SedePublicaViewModel>> HomeListarSedesAsync();
     Task<List<TipoDeportePublicoViewModel>> HomeListarTiposDeporteAsync();
     Task<List<SelectListItem>> HomeReferencialesExternosListarTiposDeporteSuperAsync();
-    Task<(List<ReferencialExternoAdminItemViewModel> Items, int TotalRegistros)> HomeReferencialesExternosListarAdminAsync(string? codigoDepartamento = null, string? codigoProvincia = null, string? codigoUbigeo = null, string? buscarNombre = null, int pagina = 1, int tamanoPagina = 50, bool? soloActivos = true);
+    Task<(List<ReferencialExternoAdminItemViewModel> Items, int TotalRegistros)> HomeReferencialesExternosListarAdminAsync(string? codigoDepartamento = null, string? codigoProvincia = null, string? codigoUbigeo = null, string? buscarNombre = null, int pagina = 1, int tamanoPagina = 20, bool? soloActivos = true);
     Task<bool> HomeReferencialesExternosInactivarAsync(int id, string usuario);
+    Task<bool> HomeReferencialesExternosActivarAsync(int id, string usuario);
+    Task<bool> HomeReferencialesExternosActualizarAsync(int id, string nombreComplejo, string? telefonoContacto, int tipoDeporteSuperId, string? direccion, string codigoUbigeo, string usuario);
     Task<List<WebBannerPublicoViewModel>> HomeListarBannersPublicosAsync();
     Task<List<PopupPromocionPublicoViewModel>> HomeListarPopupPromocionesActivasAsync();
     Task<WebBannerPublicoViewModel?> WebBannersObtenerFijoPorTipoAsync(int tipoBanner);
     Task<List<EspacioDisponibleViewModel>> HomeBuscarEspaciosDisponiblesAsync(DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin, string? codigoDepartamento, string? codigoProvincia, string? codigoUbigeo, int? tipoDeporteId, int? negocioId, bool omitirFechaHorario = false, bool buscarCercaDeMi = false, decimal? latitudUsuario = null, decimal? longitudUsuario = null, decimal? radioKm = null);
+    Task<(List<EspacioDisponibleViewModel> Espacios, int TotalRegistros)> HomeBuscarEspaciosDisponiblesPaginadoAsync(DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin, string? codigoDepartamento, string? codigoProvincia, string? codigoUbigeo, int? tipoDeporteId, int? negocioId, int pagina = 1, int tamanoPagina = 9, bool omitirFechaHorario = false, bool buscarCercaDeMi = false, decimal? latitudUsuario = null, decimal? longitudUsuario = null, decimal? radioKm = null);
     Task<int> HomeSolicitarReservaPublicaAsync(SolicitudReservaPublicaFormViewModel model);
     Task<SolicitudPublicaDetalleViewModel?> HomeConsultarSolicitudAsync(string codigoSolicitud, string telefono);
     Task<SolicitudNotificacionEmailViewModel?> HomeObtenerSolicitudParaNotificacionAsync(string codigoSolicitud);
@@ -50,7 +53,6 @@ public interface ISportCenterStoredProcedureService
     Task<bool> DesafiosFinalizarAsync(int desafioId, string usuarioId, string usuario);
 
     Task<List<NegocioAccesoViewModel>> PanelListarNegociosUsuarioAsync(string usuarioId);
-    Task<string?> PanelObtenerRolAsync(string usuarioId, int negocioId);
     Task<List<PermisoModuloViewModel>> PanelListarModulosPermitidosAsync(string usuarioId, int negocioId);
     Task<(int TotalSedes, int TotalEspacios, int ReservasHoy, decimal IngresosHoy, decimal OcupacionHoyPct, int NoShowMes, decimal TicketPromedioMes)> PanelObtenerMetricasAsync(int negocioId, DateOnly fecha, int? sedeId = null);
 

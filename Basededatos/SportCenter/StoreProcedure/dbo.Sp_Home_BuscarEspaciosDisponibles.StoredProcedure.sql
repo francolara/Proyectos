@@ -16,6 +16,7 @@ GO
 -- Firma: Codex - 15/04/2026 | Agrega @IgnorarFechaHorario (solo para busqueda por negocio): permite listar todos los espacios del club sin filtrar cruce por fecha/hora cuando el usuario marca "obviar dia y horario" en Home.
 -- Firma: Codex - 18/04/2026 | Excluye espacios con AdministracionPrivada=1 para que no aparezcan en el portal publico.
 -- Firma: Codex - 27/04/2026 | Cambia filtros de ubigeo en Home para usar CodigoUbigeo de Sede (no Negocio), alinea deporte con TipoDeporteSuperId, agrega union con referenciales externos, expone GoogleMapsUrl/Telefono por fila y agrega busqueda "cerca de mi" por lat/long (sedes + externos) con radio en km.
+-- Firma: Codex - 29/04/2026 | Agrega paginacion SQL real para Home con @Pagina/@TamanoPagina y salida @TotalRegistros para evitar paginacion en memoria.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Home_BuscarEspaciosDisponibles]
     @Fecha DATE,
     @HoraInicio TIME,
@@ -29,7 +30,10 @@ CREATE OR ALTER PROCEDURE [dbo].[Sp_Home_BuscarEspaciosDisponibles]
     @BuscarCercaDeMi BIT = 0,
     @LatitudUsuario DECIMAL(10,7) = NULL,
     @LongitudUsuario DECIMAL(10,7) = NULL,
-    @RadioKm DECIMAL(6,2) = NULL
+    @RadioKm DECIMAL(6,2) = NULL,
+    @Pagina INT = NULL,
+    @TamanoPagina INT = NULL,
+    @TotalRegistros INT = NULL OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -122,7 +126,7 @@ BEGIN
                 (-1 * he.Id) AS Id,
                 COALESCE(NULLIF(LTRIM(RTRIM(he.NombreEspacio)), ''), he.NombreComplejo) AS Nombre,
                 COALESCE(NULLIF(LTRIM(RTRIM(he.CodigoReferencia)), ''), CONCAT('EXT-', he.Id)) AS Codigo,
-                he.NombreComplejo AS SedeNombre,
+                '-' AS SedeNombre,
                 he.Direccion AS SedeDireccion,
                 he.Referencia AS SedeConsideracionesReserva,
                 depEx.Nombre AS Departamento,
@@ -166,7 +170,10 @@ BEGIN
               AND (@CodigoProvincia IS NULL OR LEFT(he.CodigoUbigeo, 4) = @CodigoProvincia)
               AND (@CodigoUbigeo IS NULL OR he.CodigoUbigeo = @CodigoUbigeo)
         )
-        SELECT
+        , Filtrados AS
+        (
+            SELECT
+            OrdenFuente,
             Id,
             Nombre,
             Codigo,
@@ -190,22 +197,116 @@ BEGIN
             SedeFotoPrincipalUrl,
             SedeFotosUrlsCsv,
             DistanciaKm
-        FROM Resultados
-        WHERE
-            @BuscarCercaDeMi = 0
-            OR
-            (
-                DistanciaKm IS NOT NULL
-                AND DistanciaKm <= COALESCE(NULLIF(@RadioKm, 0), 5)
-            )
-        ORDER BY
-            CASE WHEN @BuscarCercaDeMi = 1 THEN DistanciaKm ELSE NULL END,
+            FROM Resultados
+            WHERE
+                @BuscarCercaDeMi = 0
+                OR
+                (
+                    DistanciaKm IS NOT NULL
+                    AND DistanciaKm <= COALESCE(NULLIF(@RadioKm, 0), 5)
+                )
+        )
+        SELECT
             OrdenFuente,
+            Id,
+            Nombre,
+            Codigo,
+            SedeNombre,
+            SedeDireccion,
+            SedeConsideracionesReserva,
             Departamento,
             Provincia,
             Distrito,
-            SedeNombre,
-            Nombre;
+            TipoDeporte,
+            TipoSuelo,
+            TarifaDesde,
+            TieneIluminacion,
+            Techada,
+            CorreoNotificacion,
+            TelefonoContacto,
+            WhatsappContacto,
+            PermiteChatWhatsapp,
+            SedeId,
+            SedeMapaUrl,
+            SedeFotoPrincipalUrl,
+            SedeFotosUrlsCsv,
+            DistanciaKm
+        INTO #Filtrados
+        FROM Filtrados;
+
+        SELECT @TotalRegistros = COUNT(1)
+        FROM #Filtrados;
+
+        IF @Pagina IS NOT NULL AND @TamanoPagina IS NOT NULL AND @TamanoPagina > 0
+        BEGIN
+            SELECT
+                Id,
+                Nombre,
+                Codigo,
+                SedeNombre,
+                SedeDireccion,
+                SedeConsideracionesReserva,
+                Departamento,
+                Provincia,
+                Distrito,
+                TipoDeporte,
+                TipoSuelo,
+                TarifaDesde,
+                TieneIluminacion,
+                Techada,
+                CorreoNotificacion,
+                TelefonoContacto,
+                WhatsappContacto,
+                PermiteChatWhatsapp,
+                SedeId,
+                SedeMapaUrl,
+                SedeFotoPrincipalUrl,
+                SedeFotosUrlsCsv,
+                DistanciaKm
+            FROM #Filtrados
+            ORDER BY
+                CASE WHEN @BuscarCercaDeMi = 1 THEN DistanciaKm ELSE NULL END,
+                CASE WHEN @BuscarCercaDeMi = 0 THEN OrdenFuente ELSE 0 END,
+                CASE WHEN @BuscarCercaDeMi = 1 THEN OrdenFuente ELSE 0 END,
+                SedeNombre,
+                Nombre
+            OFFSET ((@Pagina - 1) * @TamanoPagina) ROWS
+            FETCH NEXT @TamanoPagina ROWS ONLY;
+        END
+        ELSE
+        BEGIN
+            SELECT
+                Id,
+                Nombre,
+                Codigo,
+                SedeNombre,
+                SedeDireccion,
+                SedeConsideracionesReserva,
+                Departamento,
+                Provincia,
+                Distrito,
+                TipoDeporte,
+                TipoSuelo,
+                TarifaDesde,
+                TieneIluminacion,
+                Techada,
+                CorreoNotificacion,
+                TelefonoContacto,
+                WhatsappContacto,
+                PermiteChatWhatsapp,
+                SedeId,
+                SedeMapaUrl,
+                SedeFotoPrincipalUrl,
+                SedeFotosUrlsCsv,
+                DistanciaKm
+            FROM #Filtrados
+            ORDER BY
+                CASE WHEN @BuscarCercaDeMi = 1 THEN DistanciaKm ELSE NULL END,
+                CASE WHEN @BuscarCercaDeMi = 0 THEN OrdenFuente ELSE 0 END,
+                CASE WHEN @BuscarCercaDeMi = 1 THEN OrdenFuente ELSE 0 END,
+                SedeNombre,
+                Nombre;
+        END
     END TRY
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;

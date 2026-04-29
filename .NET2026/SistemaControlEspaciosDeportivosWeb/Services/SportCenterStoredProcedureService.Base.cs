@@ -121,7 +121,7 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
         string? codigoUbigeo = null,
         string? buscarNombre = null,
         int pagina = 1,
-        int tamanoPagina = 50,
+        int tamanoPagina = 20,
         bool? soloActivos = true)
     {
         var list = new List<ReferencialExternoAdminItemViewModel>();
@@ -134,30 +134,35 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
         AddParam(cmd, "@CodigoUbigeo", string.IsNullOrWhiteSpace(codigoUbigeo) ? null : codigoUbigeo.Trim(), SqlDbType.Char);
         AddParam(cmd, "@BuscarNombre", string.IsNullOrWhiteSpace(buscarNombre) ? null : buscarNombre.Trim(), SqlDbType.NVarChar);
         AddParam(cmd, "@Pagina", pagina <= 0 ? 1 : pagina, SqlDbType.Int);
-        AddParam(cmd, "@TamanoPagina", tamanoPagina <= 0 ? 50 : tamanoPagina, SqlDbType.Int);
+        AddParam(cmd, "@TamanoPagina", tamanoPagina <= 0 ? 20 : tamanoPagina, SqlDbType.Int);
         AddParam(cmd, "@SoloActivos", soloActivos, SqlDbType.Bit);
 
         var totalRegistrosParam = cmd.Parameters.Add("@TotalRegistros", SqlDbType.Int);
         totalRegistrosParam.Direction = ParameterDirection.Output;
 
-        await using var dr = await cmd.ExecuteReaderAsync();
-        while (await dr.ReadAsync())
+        await using (var dr = await cmd.ExecuteReaderAsync())
         {
-            list.Add(new ReferencialExternoAdminItemViewModel
+            while (await dr.ReadAsync())
             {
+                list.Add(new ReferencialExternoAdminItemViewModel
+                {
                 Id = dr.GetInt32(0),
                 NombreComplejo = dr.IsDBNull(1) ? string.Empty : dr.GetString(1),
                 NombreEspacio = dr.IsDBNull(2) ? null : dr.GetString(2),
-                TipoDeporte = dr.IsDBNull(3) ? string.Empty : dr.GetString(3),
-                Departamento = dr.IsDBNull(4) ? string.Empty : dr.GetString(4),
-                Provincia = dr.IsDBNull(5) ? string.Empty : dr.GetString(5),
-                Distrito = dr.IsDBNull(6) ? string.Empty : dr.GetString(6),
-                Direccion = dr.IsDBNull(7) ? null : dr.GetString(7),
-                GoogleMapsUrl = dr.IsDBNull(8) ? null : dr.GetString(8),
-                Activo = ReadBool(dr, 9),
-                FechaActualizacion = dr.IsDBNull(10) ? null : dr.GetDateTime(10),
-                UsuarioActualizacion = dr.IsDBNull(11) ? null : dr.GetString(11)
+                CodigoUbigeo = dr.IsDBNull(3) ? string.Empty : dr.GetString(3),
+                TipoDeporteSuperId = dr.IsDBNull(4) ? 0 : dr.GetInt32(4),
+                TipoDeporte = dr.IsDBNull(5) ? string.Empty : dr.GetString(5),
+                Departamento = dr.IsDBNull(6) ? string.Empty : dr.GetString(6),
+                Provincia = dr.IsDBNull(7) ? string.Empty : dr.GetString(7),
+                Distrito = dr.IsDBNull(8) ? string.Empty : dr.GetString(8),
+                Direccion = dr.IsDBNull(9) ? null : dr.GetString(9),
+                TelefonoContacto = dr.IsDBNull(10) ? null : dr.GetString(10),
+                GoogleMapsUrl = dr.IsDBNull(11) ? null : dr.GetString(11),
+                Activo = ReadBool(dr, 12),
+                FechaActualizacion = dr.IsDBNull(13) ? null : dr.GetDateTime(13),
+                UsuarioActualizacion = dr.IsDBNull(14) ? null : dr.GetString(14)
             });
+        }
         }
 
         var totalRegistros = totalRegistrosParam.Value is int total ? total : 0;
@@ -172,6 +177,47 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
             await cn.OpenAsync();
             await using var cmd = new SqlCommand("Sp_Home_ReferencialesExternos_Inactivar", cn) { CommandType = CommandType.StoredProcedure };
             AddParam(cmd, "@Id", id, SqlDbType.Int);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (SqlException ex) when (EsErrorNoEncontrado(ex.Message))
+        {
+            return false;
+        }
+    }
+
+    public async Task<bool> HomeReferencialesExternosActivarAsync(int id, string usuario)
+    {
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_Home_ReferencialesExternos_Activar", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@Id", id, SqlDbType.Int);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch (SqlException ex) when (EsErrorNoEncontrado(ex.Message))
+        {
+            return false;
+        }
+    }
+
+    public async Task<bool> HomeReferencialesExternosActualizarAsync(int id, string nombreComplejo, string? telefonoContacto, int tipoDeporteSuperId, string? direccion, string codigoUbigeo, string usuario)
+    {
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_Home_ReferencialesExternos_ActualizarAdmin", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@Id", id, SqlDbType.Int);
+            AddParam(cmd, "@NombreComplejo", nombreComplejo.Trim(), SqlDbType.NVarChar);
+            AddParam(cmd, "@TelefonoContacto", string.IsNullOrWhiteSpace(telefonoContacto) ? null : telefonoContacto.Trim(), SqlDbType.NVarChar);
+            AddParam(cmd, "@TipoDeporteSuperId", tipoDeporteSuperId, SqlDbType.Int);
+            AddParam(cmd, "@Direccion", string.IsNullOrWhiteSpace(direccion) ? null : direccion.Trim(), SqlDbType.NVarChar);
+            AddParam(cmd, "@CodigoUbigeo", codigoUbigeo.Trim(), SqlDbType.Char);
             AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
             await cmd.ExecuteNonQueryAsync();
             return true;
@@ -313,6 +359,111 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
                 usarIgnorarHorario: true,
                 usarFiltroDistancia: false);
         }
+    }
+
+    public async Task<(List<EspacioDisponibleViewModel> Espacios, int TotalRegistros)> HomeBuscarEspaciosDisponiblesPaginadoAsync(
+        DateOnly fecha,
+        TimeOnly horaInicio,
+        TimeOnly horaFin,
+        string? codigoDepartamento,
+        string? codigoProvincia,
+        string? codigoUbigeo,
+        int? tipoDeporteId,
+        int? negocioId,
+        int pagina = 1,
+        int tamanoPagina = 9,
+        bool omitirFechaHorario = false,
+        bool buscarCercaDeMi = false,
+        decimal? latitudUsuario = null,
+        decimal? longitudUsuario = null,
+        decimal? radioKm = null)
+    {
+        var paginaEfectiva = pagina < 1 ? 1 : pagina;
+        var tamanoEfectivo = tamanoPagina < 1 ? 9 : tamanoPagina;
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_Home_BuscarEspaciosDisponibles", cn) { CommandType = CommandType.StoredProcedure };
+        AddParam(cmd, "@Fecha", fecha.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
+        AddParam(cmd, "@HoraInicio", horaInicio.ToTimeSpan(), SqlDbType.Time);
+        AddParam(cmd, "@HoraFin", horaFin.ToTimeSpan(), SqlDbType.Time);
+        AddParam(cmd, "@CodigoDepartamento", string.IsNullOrWhiteSpace(codigoDepartamento) ? null : codigoDepartamento.Trim(), SqlDbType.Char);
+        AddParam(cmd, "@CodigoProvincia", string.IsNullOrWhiteSpace(codigoProvincia) ? null : codigoProvincia.Trim(), SqlDbType.Char);
+        AddParam(cmd, "@CodigoUbigeo", string.IsNullOrWhiteSpace(codigoUbigeo) ? null : codigoUbigeo.Trim(), SqlDbType.Char);
+        AddParam(cmd, "@TipoDeporteId", tipoDeporteId, SqlDbType.Int);
+        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+        AddParam(cmd, "@IgnorarFechaHorario", omitirFechaHorario, SqlDbType.Bit);
+        AddParam(cmd, "@BuscarCercaDeMi", buscarCercaDeMi, SqlDbType.Bit);
+        AddParam(cmd, "@LatitudUsuario", latitudUsuario, SqlDbType.Decimal);
+        AddParam(cmd, "@LongitudUsuario", longitudUsuario, SqlDbType.Decimal);
+        AddParam(cmd, "@RadioKm", radioKm, SqlDbType.Decimal);
+        AddParam(cmd, "@Pagina", paginaEfectiva, SqlDbType.Int);
+        AddParam(cmd, "@TamanoPagina", tamanoEfectivo, SqlDbType.Int);
+        var totalParam = new SqlParameter("@TotalRegistros", SqlDbType.Int) { Direction = ParameterDirection.Output };
+        cmd.Parameters.Add(totalParam);
+
+        var list = new List<EspacioDisponibleViewModel>();
+        await using (var dr = await cmd.ExecuteReaderAsync())
+        {
+            while (await dr.ReadAsync())
+            {
+                if (dr.FieldCount >= 16)
+                {
+                    list.Add(new EspacioDisponibleViewModel
+                    {
+                        EspacioDeportivoId = dr.GetInt32(0),
+                        NombreEspacio = dr.GetString(1),
+                        Codigo = dr.GetString(2),
+                        SedeNombre = dr.GetString(3),
+                        SedeDireccion = !dr.IsDBNull(4) ? dr.GetString(4) : null,
+                        SedeConsideracionesReserva = !dr.IsDBNull(5) ? dr.GetString(5) : null,
+                        Departamento = !dr.IsDBNull(6) ? dr.GetString(6) : null,
+                        Provincia = !dr.IsDBNull(7) ? dr.GetString(7) : null,
+                        Distrito = !dr.IsDBNull(8) ? dr.GetString(8) : null,
+                        TipoDeporteNombre = dr.GetString(9),
+                        TipoSueloNombre = !dr.IsDBNull(10) ? dr.GetString(10) : null,
+                        TarifaDesde = !dr.IsDBNull(11) ? dr.GetDecimal(11) : null,
+                        TieneIluminacion = ReadBool(dr, 12),
+                        Techada = ReadBool(dr, 13),
+                        CorreoNotificacion = !dr.IsDBNull(14) ? dr.GetString(14) : null,
+                        TelefonoContacto = dr.FieldCount > 21 ? (dr.IsDBNull(15) ? null : dr.GetString(15)) : null,
+                        WhatsappContacto = dr.FieldCount > 21
+                            ? (!dr.IsDBNull(16) ? dr.GetString(16) : null)
+                            : (!dr.IsDBNull(15) ? dr.GetString(15) : null),
+                        PermiteChatWhatsapp = dr.FieldCount > 21 ? ReadBool(dr, 17) : ReadBool(dr, 16),
+                        SedeId = dr.FieldCount > 21
+                            ? (dr.IsDBNull(18) ? null : dr.GetInt32(18))
+                            : (dr.FieldCount > 17 && !dr.IsDBNull(17) ? dr.GetInt32(17) : null),
+                        SedeMapaUrl = dr.FieldCount > 21
+                            ? (dr.IsDBNull(19) ? null : dr.GetString(19))
+                            : (dr.FieldCount > 20 && !dr.IsDBNull(18) ? dr.GetString(18) : null),
+                        SedeFotoPrincipalUrl = dr.FieldCount > 21
+                            ? (dr.IsDBNull(20) ? null : dr.GetString(20))
+                            : (dr.FieldCount > 20
+                                ? (dr.IsDBNull(19) ? null : dr.GetString(19))
+                                : (dr.FieldCount > 18 && !dr.IsDBNull(18) ? dr.GetString(18) : null)),
+                        SedeFotos = dr.FieldCount > 21
+                            ? (dr.IsDBNull(21)
+                                ? new List<string>()
+                                : dr.GetString(21)
+                                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                                    .ToList())
+                            : (dr.FieldCount > 19 && !dr.IsDBNull(19)
+                                ? dr.GetString(19)
+                                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                                    .ToList()
+                                : new List<string>()),
+                        DistanciaKm = dr.FieldCount > 22 && !dr.IsDBNull(22) ? dr.GetDecimal(22) : null
+                    });
+                }
+            }
+        }
+
+        var total = totalParam.Value is int t ? t : list.Count;
+        return (list, total);
     }
 
     private async Task<List<EspacioDisponibleViewModel>> HomeBuscarEspaciosDisponiblesInternoAsync(
@@ -553,16 +704,6 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
             list.Add(new NegocioAccesoViewModel { NegocioId = dr.GetInt32(0), NombreNegocio = dr.GetString(1), Rol = dr.GetString(2) });
         }
         return list;
-    }
-
-    public async Task<string?> PanelObtenerRolAsync(string usuarioId, int negocioId)
-    {
-        await using var cn = CreateConnection();
-        await cn.OpenAsync();
-        await using var cmd = new SqlCommand("Sp_Panel_ObtenerRolUsuario", cn) { CommandType = CommandType.StoredProcedure };
-        AddParam(cmd, "@UsuarioId", usuarioId, SqlDbType.NVarChar);
-        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
-        return (await cmd.ExecuteScalarAsync())?.ToString();
     }
 
     public async Task<List<PermisoModuloViewModel>> PanelListarModulosPermitidosAsync(string usuarioId, int negocioId)

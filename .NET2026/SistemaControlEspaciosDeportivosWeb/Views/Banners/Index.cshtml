@@ -1,11 +1,9 @@
-@model SistemaControlEspaciosDeportivosWeb.ViewModels.BannersAdminIndexViewModel
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.BannersAdminIndexViewModel
 @{
     ViewData["Title"] = "Banners web";
     var form = Model.Form;
     var esEdicion = form.Id.HasValue;
 }
-<!-- Firma: Codex - 20/04/2026 | Se aclara el uso de banners por tipo: home horizontal y login/registro con prioridad de imagen vertical. -->
-
 <div class="page-header-card mb-3">
     <div class="page-header-main">
         <h1 class="page-title">Banners web</h1>
@@ -28,7 +26,7 @@
 
 <section class="table-card sc-reservas-list-card mb-3">
     <div class="table-card-header">
-        <h2 class="table-card-title"><i class="bi bi-images me-1"></i>@(esEdicion ? "Editar banner" : "Nuevo banner")</h2>
+        <h2 class="table-card-title platform-card-title"><span class="platform-card-icon"><i class="bi bi-images"></i></span><span class="platform-card-title-text">@(esEdicion ? "Editar banner" : "Nuevo banner")</span></h2>
     </div>
 
     <form asp-action="Guardar" method="post" enctype="multipart/form-data" class="row g-3 px-3 pb-3">
@@ -50,13 +48,13 @@
             <label class="form-label">Tipo de banner</label>
             <div class="d-flex flex-wrap gap-2">
                 <input asp-for="Form.TipoBanner" type="radio" class="btn-check" id="tipoBannerHome" value="1" />
-                <label class="btn btn-outline-primary" for="tipoBannerHome"><i class="bi bi-house me-1"></i>Home público</label>
+                <label class="btn btn-outline-primary" for="tipoBannerHome"><i class="bi bi-house me-1"></i>Home pÃºblico</label>
                 <input asp-for="Form.TipoBanner" type="radio" class="btn-check" id="tipoBannerLogin" value="2" />
                 <label class="btn btn-outline-primary" for="tipoBannerLogin"><i class="bi bi-box-arrow-in-right me-1"></i>Login (fijo)</label>
                 <input asp-for="Form.TipoBanner" type="radio" class="btn-check" id="tipoBannerRegistro" value="3" />
                 <label class="btn btn-outline-primary" for="tipoBannerRegistro"><i class="bi bi-person-plus me-1"></i>Registro (fijo)</label>
             </div>
-            <small class="text-muted d-block mt-2">Home pÃºblico usa la imagen horizontal de 1920x760. Login y Registro usan como principal la imagen vertical de 1080x1350; la horizontal queda solo como respaldo si no cargas la vertical.</small>
+            <small class="text-muted d-block mt-2">Home pÃƒÂºblico usa la imagen horizontal de 1920x760. Login y Registro usan como principal la imagen vertical de 1080x1350; la horizontal queda solo como respaldo si no cargas la vertical.</small>
         </div>
         <div class="col-md-12">
             <label asp-for="Form.Descripcion" class="form-label"></label>
@@ -94,7 +92,7 @@
             <small class="text-muted">Se convierte a WebP 1920x760 para el carrusel.</small>
         </div>
         <div class="col-md-6">
-            <label asp-for="Form.ImagenArchivoMobile" class="form-label">Imagen móvil (JPG/PNG)</label>
+            <label asp-for="Form.ImagenArchivoMobile" class="form-label">Imagen mÃ³vil (JPG/PNG)</label>
             <input asp-for="Form.ImagenArchivoMobile" class="form-control" type="file" accept=".jpg,.jpeg,.png" />
             <small class="text-muted">Opcional. Se convierte a WebP 1080x1350 (si no cargas, se usa la imagen desktop).</small>
         </div>
@@ -111,8 +109,8 @@
         {
             <div class="col-md-6">
                 <div class="border rounded p-2">
-                    <small class="text-muted d-block mb-1">Vista previa móvil</small>
-                    <img src="@Url.Action("VerImagen", "Sedes", new { url = form.ImagenUrlMobile })" alt="Banner móvil actual" style="max-height:140px; width:auto; border-radius:.5rem;" />
+                    <small class="text-muted d-block mb-1">Vista previa mÃ³vil</small>
+                    <img src="@Url.Action("VerImagen", "Sedes", new { url = form.ImagenUrlMobile })" alt="Banner mÃ³vil actual" style="max-height:140px; width:auto; border-radius:.5rem;" />
                 </div>
             </div>
         }
@@ -130,7 +128,7 @@
 
 <section class="table-card sc-reservas-list-card">
     <div class="table-card-header d-flex justify-content-between align-items-center gap-2">
-        <h2 class="table-card-title"><i class="bi bi-list-check me-1"></i>Banners registrados</h2>
+        <h2 class="table-card-title platform-card-title"><span class="platform-card-icon"><i class="bi bi-list-check"></i></span><span class="platform-card-title-text">Banners registrados</span></h2>
         <form asp-action="Index" method="get" class="d-flex align-items-center gap-2">
             <label class="form-label mb-0 small text-muted">Estado</label>
             <select class="form-select form-select-sm" name="soloActivos" onchange="this.form.submit()">
@@ -151,7 +149,7 @@
                     <th>Vigencia</th>
                     <th>Estado</th>
                     <th>Imagen</th>
-                    <th>Imagen móvil</th>
+                    <th>Imagen mÃ³vil</th>
                     <th class="text-end">Acciones</th>
                 </tr>
             </thead>
@@ -226,3 +224,4 @@
         </table>
     </div>
 </section>
+

@@ -1176,6 +1176,10 @@
   - `CodigoProvincia`
   para precargar combos SUNAT en formulario.
 - `Sp_Home_BuscarEspaciosDisponibles` cambia filtros geograficos de `Negocios.CodigoUbigeo` a `Sedes.CodigoUbigeo`.
+- `Sp_Home_BuscarEspaciosDisponibles` (29/04/2026) incorpora paginacion backend:
+  - nuevos parametros `@Pagina`, `@TamanoPagina` y `@TotalRegistros OUTPUT`.
+  - la consulta ahora pagina en SQL Server (`OFFSET/FETCH`) y evita traer todos los registros para paginar en memoria.
+  - `HomeController` consume `@TotalRegistros` para calcular `TotalPaginas` manteniendo la navegacion del listado.
 - `Sp_Home_ListarSedesPublicas` expone codigos de ubigeo por sede (manteniendo alias de salida para compatibilidad de capa web).
 - Home (tipos de deporte publicos):
   - `Sp_Home_ListarTiposDeporte` ahora lista deportes unicos por `TipoDeporteSuperId` (sin duplicados), consolidando deportes de negocios afiliados y referenciales externos activos.
@@ -1187,8 +1191,12 @@
   - la tabla incorpora `TelefonoContacto` y coordenadas (`LatitudReferencia`, `LongitudReferencia`) para guardar datos obtenidos desde Google Place Details/TextSearch.
   - nuevo procedimiento `Sp_Home_ReferencialExterno_UpsertDesdeGoogle` para insert/update por `GooglePlaceId`.
   - `Sp_Home_ReferencialExterno_UpsertDesdeGoogle` ahora recibe/persiste `@TelefonoContacto`, `@LatitudReferencia` y `@LongitudReferencia`.
-  - nuevo procedimiento `Sp_Home_ReferencialesExternos_ListarAdmin` para listado superadmin con filtros por ubigeo/nombre y paginacion de `50 en 50`.
-  - nuevo procedimiento `Sp_Home_ReferencialesExternos_Inactivar` para descartar registros externos no relevantes desde el listado admin.
+  - nuevo procedimiento `Sp_Home_ReferencialesExternos_ListarAdmin` para listado superadmin con filtros por ubigeo/nombre y paginacion de `20 en 20`.
+- `Sp_Home_ReferencialesExternos_ListarAdmin` ahora tambien devuelve `TelefonoContacto` para visualizacion directa en la grilla de superadmin.
+- `Sp_Home_ReferencialesExternos_ListarAdmin` ahora tambien devuelve `TipoDeporteSuperId` y `CodigoUbigeo` para permitir edicion directa del deporte y correccion de ubigeo desde superadmin.
+- nuevo procedimiento `Sp_Home_ReferencialesExternos_Inactivar` para descartar registros externos no relevantes desde el listado admin.
+- nuevo procedimiento `Sp_Home_ReferencialesExternos_Activar` para reactivar registros inactivos desde el mismo listado admin.
+- nuevo procedimiento `Sp_Home_ReferencialesExternos_ActualizarAdmin` para editar `NombreComplejo`, `TelefonoContacto`, `TipoDeporteSuperId`, `Direccion` y `CodigoUbigeo` sin alterar `GooglePlaceId`.
   - `Sp_Home_BuscarEspaciosDisponibles` ahora hace `UNION ALL` entre:
     - resultados de negocios registrados (afiliados)
     - resultados referenciales externos (`HomeEspaciosReferencialesExternos`).

@@ -22,6 +22,13 @@ public class ModuloPermisoService(IConfiguration configuration) : IModuloPermiso
             return ModuloPermisoContexto.SinAcceso("No se pudo identificar al usuario.");
         }
 
+        var moduloNormalizado = (moduloCodigo ?? string.Empty).Trim().ToUpperInvariant();
+        var exentoPorSuscripcion = moduloNormalizado is "DASHBOARD" or "SUSCRIPCION";
+        if (!exentoPorSuscripcion && await DebeBloquearPorSuscripcionAsync(negocioId))
+        {
+            return ModuloPermisoContexto.SinAcceso("Tu suscripcion no esta activa. Solo puedes acceder a Dashboard y Mi suscripcion.");
+        }
+
         await using var cn = new SqlConnection(_connectionString);
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_Seguridad_ObtenerContextoModulo", cn)
@@ -60,6 +67,42 @@ public class ModuloPermisoService(IConfiguration configuration) : IModuloPermiso
             SedeIdAsignada = dr.FieldCount > 11 && !dr.IsDBNull(11) ? dr.GetInt32(11) : null,
             EsAdministrador = dr.FieldCount > 12 && !dr.IsDBNull(12) && dr.GetBoolean(12)
         };
+    }
+
+    private async Task<bool> DebeBloquearPorSuscripcionAsync(int negocioId)
+    {
+        await using var cn = new SqlConnection(_connectionString);
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand(
+            @"SELECT TOP 1
+                    CAST(COALESCE(ns.EstadoSuscripcion, 0) AS INT) AS EstadoSuscripcion,
+                    CAST(COALESCE(ns.EsPrueba, 0) AS BIT) AS EsPrueba,
+                    ns.FechaFinPrueba,
+                    ns.FechaFinPlan
+              FROM dbo.NegociosSuscripcion ns
+              WHERE ns.NegocioId = @NegocioId;", cn);
+        cmd.Parameters.Add("@NegocioId", SqlDbType.Int).Value = negocioId;
+
+        await using var dr = await cmd.ExecuteReaderAsync();
+        if (!await dr.ReadAsync()) return true;
+
+        var estado = dr.IsDBNull(0) ? 0 : Convert.ToInt32(dr.GetValue(0));
+        var esPrueba = !dr.IsDBNull(1) && Convert.ToBoolean(dr.GetValue(1));
+        var fechaFinPrueba = dr.IsDBNull(2) ? (DateTime?)null : dr.GetDateTime(2);
+        var fechaFinPlan = dr.IsDBNull(3) ? (DateTime?)null : dr.GetDateTime(3);
+
+        // Estados habilitados: 1 (activa/prueba) y 2 (contrato activo).
+        if (estado is not 1 and not 2) return true;
+
+        // Si esta en prueba, valida vigencia de la fecha fin de prueba.
+        if (estado == 1 && esPrueba && fechaFinPrueba.HasValue && fechaFinPrueba.Value.Date < DateTime.Today)
+            return true;
+
+        // Si es contrato, valida vigencia de la fecha fin de plan.
+        if (estado == 2 && fechaFinPlan.HasValue && fechaFinPlan.Value.Date < DateTime.Today)
+            return true;
+
+        return false;
     }
 }
 

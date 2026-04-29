@@ -3,12 +3,20 @@
 @using Microsoft.AspNetCore.Identity
 @using SistemaControlEspaciosDeportivosWeb.Models
 @inject ISportCenterStoredProcedureService spService
+@inject IModuloPermisoService moduloPermisoService
 @inject UserManager<ApplicationUser> userManager
 <html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - SportCenter</title>
+    <title>@ViewData["Title"] - La Zona Deportiva</title>
+    <meta property="og:title" content="@($"{ViewData["Title"]} - La Zona Deportiva")" />
+    <meta property="og:site_name" content="La Zona Deportiva" />
+    <meta property="og:description" content="Reserva de espacios deportivos en línea de forma rápida y segura." />
+    <meta property="og:image" content="https://lazonadeportiva.com/img/logo-sportcenter.png" />
+    <meta property="og:url" content="https://lazonadeportiva.com/" />
+    <meta property="og:type" content="website" />
+    <link rel="icon" type="image/x-icon" href="~/favicon.ico" asp-append-version="true" />
     <script type="importmap"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -40,6 +48,7 @@
     var rolActualSidebar = "Sin rol";
     var esOwnerPlataforma = User.IsInRole("OwnerPlataforma");
     var usuarioId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var bloquearModulosPorSuscripcion = false;
 
     if (!string.IsNullOrWhiteSpace(usuarioId))
     {
@@ -54,6 +63,26 @@
     {
         try
         {
+            var suscripcionNegocio = await spService.MiSuscripcionObtenerAsync(adminNegocioId);
+            if (suscripcionNegocio is null)
+            {
+                bloquearModulosPorSuscripcion = true;
+            }
+            else
+            {
+                var estadoSuscripcion = suscripcionNegocio.EstadoSuscripcion;
+                var esPruebaVencida = suscripcionNegocio.EstadoSuscripcion == 1
+                                      && suscripcionNegocio.EsPrueba
+                                      && suscripcionNegocio.FechaFinPrueba.HasValue
+                                      && suscripcionNegocio.FechaFinPrueba.Value.Date < DateTime.Today;
+                var contratoVencido = suscripcionNegocio.EstadoSuscripcion == 2
+                                      && suscripcionNegocio.FechaFinPlan.HasValue
+                                      && suscripcionNegocio.FechaFinPlan.Value.Date < DateTime.Today;
+                bloquearModulosPorSuscripcion = estadoSuscripcion is not 1 and not 2
+                                                || esPruebaVencida
+                                                || contratoVencido;
+            }
+
             var configuracionNegocio = await spService.ConfiguracionClubObtenerAsync(adminNegocioId);
             if (configuracionNegocio is not null)
             {
@@ -67,9 +96,9 @@
 
             if (!string.IsNullOrWhiteSpace(usuarioId))
             {
-                var rol = await spService.PanelObtenerRolAsync(usuarioId, adminNegocioId);
-                if (!string.IsNullOrWhiteSpace(rol))
-                    rolActualSidebar = rol;
+                var contextoRol = await moduloPermisoService.ObtenerContextoAsync(User, adminNegocioId, "DASHBOARD");
+                if (contextoRol.Autorizado && !string.IsNullOrWhiteSpace(contextoRol.RolActual))
+                    rolActualSidebar = contextoRol.RolActual;
             }
         }
         catch
@@ -110,9 +139,8 @@
         <header>
             <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm sc-public-navbar">
                 <div class="container">
-                    <a class="navbar-brand fw-bold sc-public-brand" asp-area="" asp-controller="Home" asp-action="Index">
-                        <i class="bi bi-geo-alt-fill"></i>
-                        <span>SportCenter</span>
+                    <a class="navbar-brand fw-bold sc-public-brand" asp-area="" asp-controller="Home" asp-action="Index" aria-label="SportCenter">
+                        <img src="~/img/logo-sportcenter-header.png" alt="SportCenter" class="sc-public-logo" />
                     </a>
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav"
                             aria-expanded="false" aria-label="Toggle navigation">
@@ -203,17 +231,20 @@
 
                 <nav class="sc-admin-nav">
                     <a class="@menuClass("Panel")" href="@menuUrl("Panel")"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
-                    <a class="@menuClass("Maestros")" href="@menuUrl("Maestros")"><i class="bi bi-collection"></i><span>Maestros</span></a>
-                    <a class="@menuClass("Sedes")" href="@menuUrl("Sedes")"><i class="bi bi-geo-alt"></i><span>Sedes</span></a>
-                    <a class="@menuClass("Espacios")" href="@menuUrl("Espacios")"><i class="bi bi-grid-1x2"></i><span>Espacio deportivo</span></a>
-                    <a class="@menuClass("Clientes")" href="@menuUrl("Clientes")"><i class="bi bi-people"></i><span>Clientes</span></a>
-                    <a class="@menuClass("Reservas")" href="@menuUrl("Reservas")"><i class="bi bi-calendar-check"></i><span>Reservas</span></a>
-                    <a class="@menuClass("Pagos")" href="@menuUrl("Pagos")"><i class="bi bi-wallet2"></i><span>Pagos</span></a>
-                    <a class="@menuClass("Comprobantes")" href="@menuUrl("Comprobantes")"><i class="bi bi-receipt-cutoff"></i><span>Comprobantes</span></a>
-                    <a class="@menuClass("Reportes")" href="@menuUrl("Reportes")"><i class="bi bi-graph-up-arrow"></i><span>Reportes</span></a>
-                    <a class="@menuClass("Usuarios")" href="@menuUrl("Usuarios")"><i class="bi bi-person-gear"></i><span>Usuarios</span></a>
-                    <a class="@menuClass("Promociones")" href="@menuUrl("Promociones")"><i class="bi bi-tags"></i><span>Promociones</span></a>
-                    <a class="@menuClass("Configuracion")" href="@menuUrl("Configuracion")"><i class="bi bi-sliders2-vertical"></i><span>Configuracion</span></a>
+                    @if (!bloquearModulosPorSuscripcion)
+                    {
+                        <a class="@menuClass("Maestros")" href="@menuUrl("Maestros")"><i class="bi bi-collection"></i><span>Maestros</span></a>
+                        <a class="@menuClass("Sedes")" href="@menuUrl("Sedes")"><i class="bi bi-geo-alt"></i><span>Sedes</span></a>
+                        <a class="@menuClass("Espacios")" href="@menuUrl("Espacios")"><i class="bi bi-grid-1x2"></i><span>Espacio deportivo</span></a>
+                        <a class="@menuClass("Clientes")" href="@menuUrl("Clientes")"><i class="bi bi-people"></i><span>Clientes</span></a>
+                        <a class="@menuClass("Reservas")" href="@menuUrl("Reservas")"><i class="bi bi-calendar-check"></i><span>Reservas</span></a>
+                        <a class="@menuClass("Pagos")" href="@menuUrl("Pagos")"><i class="bi bi-wallet2"></i><span>Pagos</span></a>
+                        <a class="@menuClass("Comprobantes")" href="@menuUrl("Comprobantes")"><i class="bi bi-receipt-cutoff"></i><span>Comprobantes</span></a>
+                        <a class="@menuClass("Reportes")" href="@menuUrl("Reportes")"><i class="bi bi-graph-up-arrow"></i><span>Reportes</span></a>
+                        <a class="@menuClass("Usuarios")" href="@menuUrl("Usuarios")"><i class="bi bi-person-gear"></i><span>Usuarios</span></a>
+                        <a class="@menuClass("Promociones")" href="@menuUrl("Promociones")"><i class="bi bi-tags"></i><span>Promociones</span></a>
+                        <a class="@menuClass("Configuracion")" href="@menuUrl("Configuracion")"><i class="bi bi-sliders2-vertical"></i><span>Configuracion</span></a>
+                    }
                     <a class="@menuClass("MiSuscripcion")" href="@menuUrl("MiSuscripcion")"><i class="bi bi-credit-card-2-front"></i><span>Mi suscripcion</span></a>
                 </nav>
 
@@ -256,8 +287,8 @@
                     <small>Bienvenido</small>
                     <strong>@saludoNombre</strong>
                 </div>
-                <div class="sc-admin-brand">
-                    <span class="sc-admin-brand-logo">SC</span>
+                <div class="sc-admin-brand sc-platform-brand-card">
+                    <img src="~/img/logo-sportcenter-header.png" alt="La Zona Deportiva" class="sc-platform-brand-logo" asp-append-version="true" />
                     <p class="sc-admin-brand-title">Control de plataforma</p>
                 </div>
 
@@ -308,7 +339,7 @@
     {
         <footer class="border-top footer text-muted py-3 mt-auto">
             <div class="container">
-                &copy; 2026 - SportCenter
+                &copy; @DateTime.Now.Year La Zona Deportiva. Todos los derechos reservados.
             </div>
         </footer>
     }
