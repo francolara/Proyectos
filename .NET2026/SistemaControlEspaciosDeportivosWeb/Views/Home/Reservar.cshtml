@@ -51,19 +51,6 @@
                 <span class="sc-public-reserva-negocio-meta">@Model.Espacio.SedeNombre</span>
             </div>
         </div>
-        <a class="btn btn-outline-secondary btn-sm sc-public-reserva-back"
-           asp-action="Index"
-           asp-route-fecha="@fecha.ToString("yyyy-MM-dd")"
-           asp-route-horaInicio="@horaInicio.ToString("HH\\:mm")"
-           asp-route-horaFin="@horaFin.ToString("HH\\:mm")"
-           asp-route-codigoDepartamento="@Model.Formulario.CodigoDepartamento"
-           asp-route-codigoProvincia="@Model.Formulario.CodigoProvincia"
-           asp-route-codigoUbigeo="@Model.Formulario.CodigoUbigeo"
-           asp-route-tipoDeporteId="@Model.Formulario.TipoDeporteId"
-           asp-route-negocioId="@Model.Formulario.NegocioId"
-           asp-route-omitirFechaHorario="@Model.Formulario.OmitirFechaHorario">
-            <i class="bi bi-arrow-left-short"></i>Volver a resultados
-        </a>
     </section>
 
     <div class="card border-0 shadow-sm mb-3">
@@ -77,7 +64,9 @@
                 </div>
             </div>
             <p class="text-muted small mb-2">Selecciona un bloque disponible o ajusta fecha y horario desde el formulario.</p>
-            <div id="calendarioPublicoReserva"></div>
+            <div class="sc-public-cal-scroll">
+                <div id="calendarioPublicoReserva"></div>
+            </div>
         </div>
     </div>
 
@@ -478,6 +467,7 @@
             flex-direction: column;
             justify-content: center;
             gap: .2rem;
+            margin-left: auto;
             min-width: min(300px, 100%);
             padding: .95rem 1rem;
             border-radius: 1rem;
@@ -501,20 +491,6 @@
             color: rgba(226, 232, 240, .9);
             font-size: .87rem;
             font-weight: 600;
-        }
-        .home-reservar-page .sc-public-reserva-back {
-            align-self: flex-start;
-            display: inline-flex;
-            align-items: center;
-            gap: .2rem;
-            border-color: rgba(191, 219, 254, .36);
-            color: #eff6ff;
-            background: rgba(7, 18, 37, .18);
-        }
-        .home-reservar-page .sc-public-reserva-back:hover {
-            color: #fff;
-            background: rgba(7, 18, 37, .28);
-            border-color: rgba(191, 219, 254, .52);
         }
         .home-reservar-page .sc-service-chip {
             display: inline-flex;
@@ -544,8 +520,8 @@
             border-radius: 50%;
             display: inline-block;
         }
-        .home-reservar-page .sc-legend-chip.is-disponible { background: #edf8f0; border-color: #bde7c7; color: #1f5f2f; }
-        .home-reservar-page .sc-legend-chip.is-disponible i { background: #22c55e; }
+        .home-reservar-page .sc-legend-chip.is-disponible { background: #ffffff; border-color: #cfd9e8; color: #3a4b63; }
+        .home-reservar-page .sc-legend-chip.is-disponible i { background: #94a3b8; }
         .home-reservar-page .sc-legend-chip.is-reservada { background: #fff7e8; border-color: #fcd9a7; color: #8a4a00; }
         .home-reservar-page .sc-legend-chip.is-reservada i { background: #f59f00; }
         .home-reservar-page .sc-legend-chip.is-confirmada { background: #edf4ff; border-color: #b5ccff; color: #1e3a8a; }
@@ -589,6 +565,18 @@
             --sc-public-cal-header-a: #0e2c55;
             --sc-public-cal-header-b: #18467d;
             --sc-public-cal-today: rgba(37, 99, 235, .09);
+        }
+        .home-reservar-page .sc-public-cal-scroll {
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: .2rem;
+        }
+        .home-reservar-page .sc-public-cal-scroll > #calendarioPublicoReserva {
+            min-width: 1120px;
+        }
+        #calendarioPublicoReserva .fc {
+            min-width: 1120px;
         }
         #calendarioPublicoReserva .fc-scrollgrid,
         #calendarioPublicoReserva .fc-theme-standard td,
@@ -733,6 +721,11 @@
             }
             .home-reservar-page .sc-public-reserva-negocio-card {
                 min-width: 0;
+                margin-left: 0;
+            }
+            .home-reservar-page .sc-public-cal-scroll > #calendarioPublicoReserva,
+            #calendarioPublicoReserva .fc {
+                min-width: 1080px;
             }
         }
     </style>

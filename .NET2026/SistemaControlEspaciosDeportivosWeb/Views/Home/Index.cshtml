@@ -25,7 +25,7 @@
     var popupPromocionesVersion = popupPromociones.Count == 0
         ? string.Empty
         : string.Join("|", popupPromociones.Select(x => $"{x.IdPopupPromocion}:{x.Orden}:{x.Orientacion}:{(x.ImagenUrl ?? string.Empty)}"));
-    var whatsappAnunciosMensaje = Uri.EscapeDataString("Hola, quiero anunciar en SportCenter. Â¿Podrian brindarme informacion sobre planes, alcance y condiciones para publicar mi anuncio?");
+    var whatsappAnunciosMensaje = Uri.EscapeDataString("Hola, quiero anunciar en SportCenter. ¿Podrian brindarme informacion sobre planes, alcance y condiciones para publicar mi anuncio?");
     var whatsappHomeConfigurado = (Model.PortalConfig.SiguenosWhatsappUrl ?? string.Empty).Trim();
     var whatsappAnunciosUrl = whatsappHomeConfigurado;
     if (!string.IsNullOrWhiteSpace(whatsappHomeConfigurado))
@@ -61,12 +61,12 @@
 
         if (!string.IsNullOrWhiteSpace(whatsappNumeroConfigurado))
         {
-            whatsappAnunciosUrl = $"https://wa.me/{whatsappNumeroConfigurado}?text={Uri.EscapeDataString("Hola, quiero anunciar en SportCenter. Â¿PodrÃ­an brindarme informaciÃ³n sobre planes, alcance y condiciones para publicar mi anuncio?")}";
+            whatsappAnunciosUrl = $"https://wa.me/{whatsappNumeroConfigurado}?text={Uri.EscapeDataString("Hola, quiero anunciar en SportCenter. ¿Podrían brindarme información sobre planes, alcance y condiciones para publicar mi anuncio?")}";
         }
     }
 }
 <section class="home-hero mb-4">
-    <div id="homeHeroCarousel" class="carousel slide home-hero-carousel h-100" data-bs-ride="carousel" data-bs-interval="5500">
+    <div id="homeHeroCarousel" class="carousel slide home-hero-carousel h-100" data-bs-ride="carousel" data-bs-interval="5500" data-bs-touch="false">
         <div class="carousel-inner rounded-4 h-100">
                     @if (banners.Count == 0)
                     {
@@ -77,9 +77,9 @@
                                     <h1>Encuentra tu espacio deportivo en segundos</h1>
                                     <p>Filtra por ubicacion y deporte, valida disponibilidad en tiempo real y reserva al instante.</p>
                                 </div>
-                                <div class="d-flex gap-2 flex-wrap">
+                                <div class="d-flex gap-2 flex-wrap align-items-center">
                                     <a href="#buscar" class="btn btn-light fw-semibold">Buscar espacios</a>
-                                    <a asp-action="ConsultarSolicitud" class="btn btn-outline-light fw-semibold">Consultar solicitud</a>
+                                    <a asp-controller="PerfilPublico" asp-action="Index" asp-route-tab="reservas" class="btn btn-outline-light fw-semibold ms-auto js-hero-direct-link">Ver mis reservas</a>
                                 </div>
                             </div>
                         </div>
@@ -137,9 +137,9 @@
                                             <p>@banner.Descripcion</p>
                                         }
                                     </div>
-                                    <div class="d-flex gap-2 flex-wrap">
+                                    <div class="d-flex gap-2 flex-wrap align-items-center">
                                         <a href="@botonUrl" target="@target" rel="@rel" class="btn btn-light fw-semibold">@botonTexto</a>
-                                        <a asp-action="ConsultarSolicitud" class="btn btn-outline-light fw-semibold">Consultar solicitud</a>
+                                        <a asp-controller="PerfilPublico" asp-action="Index" asp-route-tab="reservas" class="btn btn-outline-light fw-semibold ms-auto js-hero-direct-link">Ver mis reservas</a>
                                     </div>
                                 </div>
                             </div>
@@ -147,10 +147,10 @@
                         }
                     }
         </div>
-        <button class="carousel-control-prev" type="button" data-bs-target="#homeHeroCarousel" data-bs-slide="prev">
+        <button class="carousel-control-prev home-hero-control" type="button" data-bs-target="#homeHeroCarousel" data-bs-slide="prev">
             <span class="carousel-control-prev-icon"></span>
         </button>
-        <button class="carousel-control-next" type="button" data-bs-target="#homeHeroCarousel" data-bs-slide="next">
+        <button class="carousel-control-next home-hero-control" type="button" data-bs-target="#homeHeroCarousel" data-bs-slide="next">
             <span class="carousel-control-next-icon"></span>
         </button>
     </div>
@@ -960,6 +960,15 @@
 (() => {
     const mediaQueryMobile = window.matchMedia('(max-width: 767.98px)');
     const slides = document.querySelectorAll('.home-hero-slide-dynamic');
+    const heroDirectLinks = document.querySelectorAll('.js-hero-direct-link');
+
+    heroDirectLinks.forEach(link => {
+        ['pointerdown', 'touchstart', 'mousedown', 'click'].forEach(evtName => {
+            link.addEventListener(evtName, function (event) {
+                event.stopPropagation();
+            }, { passive: true });
+        });
+    });
 
     function applyBannerBackgrounds() {
         slides.forEach(slide => {
@@ -1346,4 +1355,5 @@
 })();
 </script>
 }
+
 

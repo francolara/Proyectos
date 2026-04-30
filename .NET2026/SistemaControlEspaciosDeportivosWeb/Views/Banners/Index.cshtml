@@ -48,13 +48,13 @@
             <label class="form-label">Tipo de banner</label>
             <div class="d-flex flex-wrap gap-2">
                 <input asp-for="Form.TipoBanner" type="radio" class="btn-check" id="tipoBannerHome" value="1" />
-                <label class="btn btn-outline-primary" for="tipoBannerHome"><i class="bi bi-house me-1"></i>Home pÃºblico</label>
+                <label class="btn btn-outline-primary" for="tipoBannerHome"><i class="bi bi-house me-1"></i>Home público</label>
                 <input asp-for="Form.TipoBanner" type="radio" class="btn-check" id="tipoBannerLogin" value="2" />
                 <label class="btn btn-outline-primary" for="tipoBannerLogin"><i class="bi bi-box-arrow-in-right me-1"></i>Login (fijo)</label>
                 <input asp-for="Form.TipoBanner" type="radio" class="btn-check" id="tipoBannerRegistro" value="3" />
                 <label class="btn btn-outline-primary" for="tipoBannerRegistro"><i class="bi bi-person-plus me-1"></i>Registro (fijo)</label>
             </div>
-            <small class="text-muted d-block mt-2">Home pÃƒÂºblico usa la imagen horizontal de 1920x760. Login y Registro usan como principal la imagen vertical de 1080x1350; la horizontal queda solo como respaldo si no cargas la vertical.</small>
+            <small class="text-muted d-block mt-2">Home público usa la imagen horizontal de 1920x760. Login y Registro usan como principal la imagen vertical de 1080x1350; la horizontal queda solo como respaldo si no cargas la vertical.</small>
         </div>
         <div class="col-md-12">
             <label asp-for="Form.Descripcion" class="form-label"></label>
@@ -92,7 +92,7 @@
             <small class="text-muted">Se convierte a WebP 1920x760 para el carrusel.</small>
         </div>
         <div class="col-md-6">
-            <label asp-for="Form.ImagenArchivoMobile" class="form-label">Imagen mÃ³vil (JPG/PNG)</label>
+            <label asp-for="Form.ImagenArchivoMobile" class="form-label">Imagen móvil (JPG/PNG)</label>
             <input asp-for="Form.ImagenArchivoMobile" class="form-control" type="file" accept=".jpg,.jpeg,.png" />
             <small class="text-muted">Opcional. Se convierte a WebP 1080x1350 (si no cargas, se usa la imagen desktop).</small>
         </div>
@@ -109,8 +109,8 @@
         {
             <div class="col-md-6">
                 <div class="border rounded p-2">
-                    <small class="text-muted d-block mb-1">Vista previa mÃ³vil</small>
-                    <img src="@Url.Action("VerImagen", "Sedes", new { url = form.ImagenUrlMobile })" alt="Banner mÃ³vil actual" style="max-height:140px; width:auto; border-radius:.5rem;" />
+                    <small class="text-muted d-block mb-1">Vista previa móvil</small>
+                    <img src="@Url.Action("VerImagen", "Sedes", new { url = form.ImagenUrlMobile })" alt="Banner móvil actual" style="max-height:140px; width:auto; border-radius:.5rem;" />
                 </div>
             </div>
         }
@@ -149,7 +149,7 @@
                     <th>Vigencia</th>
                     <th>Estado</th>
                     <th>Imagen</th>
-                    <th>Imagen mÃ³vil</th>
+                    <th>Imagen móvil</th>
                     <th class="text-end">Acciones</th>
                 </tr>
             </thead>
@@ -224,4 +224,5 @@
         </table>
     </div>
 </section>
+
 

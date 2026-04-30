@@ -1179,6 +1179,7 @@
 - `Sp_Home_BuscarEspaciosDisponibles` (29/04/2026) incorpora paginacion backend:
   - nuevos parametros `@Pagina`, `@TamanoPagina` y `@TotalRegistros OUTPUT`.
   - la consulta ahora pagina en SQL Server (`OFFSET/FETCH`) y evita traer todos los registros para paginar en memoria.
+  - para filas de referenciales externos retorna `Codigo` vacio, evitando mostrar identificadores tecnicos en tarjetas publicas del Home.
   - `HomeController` consume `@TotalRegistros` para calcular `TotalPaginas` manteniendo la navegacion del listado.
 - `Sp_Home_ListarSedesPublicas` expone codigos de ubigeo por sede (manteniendo alias de salida para compatibilidad de capa web).
 - Home (tipos de deporte publicos):

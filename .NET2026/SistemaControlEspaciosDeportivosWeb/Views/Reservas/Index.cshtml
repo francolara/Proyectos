@@ -815,7 +815,7 @@ else
                             <input type="date" class="form-control" id="modalFechaPago" name="FechaPago" value="@DateTime.Today.ToString("yyyy-MM-dd")" max="@DateTime.Today.ToString("yyyy-MM-dd")" disabled />
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">NÃ‚Â° Operacion</label>
+                            <label class="form-label">N° Operación</label>
                             <input type="text" class="form-control" id="modalNumeroOperacion" name="NumeroOperacion" maxlength="50" placeholder="Opcional" autocomplete="off" disabled />
                         </div>
                         <div class="col-md-6">
@@ -2151,7 +2151,7 @@ else
                     info?.revert?.();
                     limpiarArrastreVisual();
                     const mensaje = err?.name === 'AbortError'
-                        ? 'La validacion tardÃƒÂ³ demasiado. Se restauro la reserva a su posicion original.'
+                        ? 'La validación tardó demasiado. Se restauró la reserva a su posición original.'
                         : (err?.message || mensajeErrorPorDefecto);
                     notificarCalendario(mensaje, 'warning');
                 } finally {
@@ -2814,6 +2814,7 @@ else
         })();
     </script>
 }
+
 
 
 

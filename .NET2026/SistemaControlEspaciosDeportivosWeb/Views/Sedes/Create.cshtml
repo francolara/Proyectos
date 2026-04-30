@@ -304,13 +304,13 @@
                                         <th style="width:70px;">Orden</th>
                                         <th>Archivo</th>
                                         <th style="width:160px;">Rol</th>
-                                        <th style="width:140px;">TamaÃƒÂ±o</th>
+                                        <th style="width:140px;">Tamaño</th>
                                         <th style="width:170px;">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody id="imagenesSeleccionadasBody">
                                     <tr>
-                                        <td colspan="5" class="text-muted small">AÃƒÂºn no has seleccionado archivos.</td>
+                                        <td colspan="5" class="text-muted small">Aún no has seleccionado archivos.</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -703,7 +703,7 @@
 
             function render() {
                 if (selectedFiles.length === 0) {
-                    body.innerHTML = '<tr><td colspan="5" class="text-muted small">AÃƒÂºn no has seleccionado archivos.</td></tr>';
+                    body.innerHTML = '<tr><td colspan="5" class="text-muted small">Aún no has seleccionado archivos.</td></tr>';
                     return;
                 }
 
@@ -717,8 +717,8 @@
                         <td><span class="badge ${index === 0 ? 'text-bg-primary' : 'text-bg-secondary'}">${rol}</span></td>
                         <td>${formatBytes(file.size)}</td>
                         <td class="d-flex gap-1">
-                            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="up" data-index="${index}" ${index === 0 ? 'disabled' : ''}>Ã¢â€ â€˜</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="down" data-index="${index}" ${index === selectedFiles.length - 1 ? 'disabled' : ''}>Ã¢â€ â€œ</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="up" data-index="${index}" ${index === 0 ? 'disabled' : ''}>↑</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="down" data-index="${index}" ${index === selectedFiles.length - 1 ? 'disabled' : ''}>↓</button>
                             <button type="button" class="btn btn-sm btn-outline-danger" data-action="remove" data-index="${index}">Quitar</button>
                         </td>
                     `;
@@ -749,4 +749,5 @@
         <script async defer src="https://maps.googleapis.com/maps/api/js?key=@mapsApiKey&libraries=places&callback=initSedeMapa"></script>
     }
 }
+
 

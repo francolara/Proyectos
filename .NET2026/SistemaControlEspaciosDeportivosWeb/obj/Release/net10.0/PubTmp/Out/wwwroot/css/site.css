@@ -2379,6 +2379,27 @@ body {
   background-repeat: no-repeat;
 }
 
+.home-hero-slide > .d-flex {
+  position: relative;
+  z-index: 4;
+}
+
+.home-hero-carousel .home-hero-control {
+  width: 52px;
+  opacity: 0.95;
+  z-index: 2;
+}
+
+.home-hero-carousel .carousel-control-prev.home-hero-control {
+  justify-content: flex-start;
+  left: 6px;
+}
+
+.home-hero-carousel .carousel-control-next.home-hero-control {
+  justify-content: flex-end;
+  right: 6px;
+}
+
 .home-hero-slide h1,
 .home-hero-slide h2 {
   margin: 0.2rem 0 0.45rem;

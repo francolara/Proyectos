@@ -70,7 +70,7 @@
                     <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2" id="refPagado">Pagado: -</span></div>
                     <div class="col-md-2"><span class="badge bg-light text-dark border w-100 py-2" id="refSaldo">Saldo: -</span></div>
                 </div>
-                <div class="mt-2 small text-muted" id="refPolitica">PolÃ­tica de confirmaciÃ³n: -</div>
+                <div class="mt-2 small text-muted" id="refPolitica">Política de confirmación: -</div>
             </div>
         </section>
 
@@ -112,8 +112,8 @@
                             <th class="text-center"><span class="sc-col-header"><i class="bi bi-calendar-check"></i><small>Fecha</small></span></th>
                             <th class="text-center"><span class="sc-col-header"><i class="bi bi-cash"></i><small>Monto</small></span></th>
                             <th class="text-center"><span class="sc-col-header"><i class="bi bi-wallet2"></i><small>Forma</small></span></th>
-                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-upc"></i><small>NÂ° OperaciÃ³n</small></span></th>
-                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-chat-left-text"></i><small>ObservaciÃ³n</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-upc"></i><small>N° Operación</small></span></th>
+                            <th class="text-center"><span class="sc-col-header"><i class="bi bi-chat-left-text"></i><small>Observación</small></span></th>
                         </tr>
                     </thead>
                     <tbody id="pagosPreviosBody">
@@ -192,17 +192,17 @@
                 refTotal.textContent = 'Monto: -';
                 refPagado.textContent = 'Pagado: -';
                 refSaldo.textContent = 'Saldo: -';
-                refPolitica.textContent = 'PolÃ­tica de confirmaciÃ³n: -';
+                refPolitica.textContent = 'Política de confirmación: -';
                 pagosPreviosBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No hay pagos previos.</td></tr>';
             };
 
             const renderPolitica = (data) => {
-                if (!data) return 'PolÃ­tica de confirmaciÃ³n: -';
-                if (data.politicaConfirmacionPago === 2) return 'PolÃ­tica de confirmaciÃ³n: Exigir pago total (100%).';
+                if (!data) return 'Política de confirmación: -';
+                if (data.politicaConfirmacionPago === 2) return 'Política de confirmación: Exigir pago total (100%).';
                 if (data.politicaConfirmacionPago === 1) {
-                    return `PolÃ­tica de confirmaciÃ³n: Exigir adelanto mÃ­nimo de ${Number(data.porcentajeAdelantoMinimo || 0)}%.`;
+                    return `Política de confirmación: Exigir adelanto mínimo de ${Number(data.porcentajeAdelantoMinimo || 0)}%.`;
                 }
-                return 'PolÃ­tica de confirmaciÃ³n: No exigir pago para confirmar.';
+                return 'Política de confirmación: No exigir pago para confirmar.';
             };
 
             const cargarResumenReserva = async (reservaId) => {
@@ -314,4 +314,5 @@
         })();
     </script>
 }
+
 

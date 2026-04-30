@@ -16,7 +16,7 @@ GO
 -- Firma: Codex - 15/04/2026 | Agrega @IgnorarFechaHorario (solo para busqueda por negocio): permite listar todos los espacios del club sin filtrar cruce por fecha/hora cuando el usuario marca "obviar dia y horario" en Home.
 -- Firma: Codex - 18/04/2026 | Excluye espacios con AdministracionPrivada=1 para que no aparezcan en el portal publico.
 -- Firma: Codex - 27/04/2026 | Cambia filtros de ubigeo en Home para usar CodigoUbigeo de Sede (no Negocio), alinea deporte con TipoDeporteSuperId, agrega union con referenciales externos, expone GoogleMapsUrl/Telefono por fila y agrega busqueda "cerca de mi" por lat/long (sedes + externos) con radio en km.
--- Firma: Codex - 29/04/2026 | Agrega paginacion SQL real para Home con @Pagina/@TamanoPagina y salida @TotalRegistros para evitar paginacion en memoria.
+-- Firma: Codex - 29/04/2026 | Agrega paginacion SQL real para Home con @Pagina/@TamanoPagina y salida @TotalRegistros para evitar paginacion en memoria; en referenciales externos retorna Codigo vacio para no exponer identificadores tecnicos en tarjetas publicas.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Home_BuscarEspaciosDisponibles]
     @Fecha DATE,
     @HoraInicio TIME,
@@ -125,7 +125,7 @@ BEGIN
                 1 AS OrdenFuente,
                 (-1 * he.Id) AS Id,
                 COALESCE(NULLIF(LTRIM(RTRIM(he.NombreEspacio)), ''), he.NombreComplejo) AS Nombre,
-                COALESCE(NULLIF(LTRIM(RTRIM(he.CodigoReferencia)), ''), CONCAT('EXT-', he.Id)) AS Codigo,
+                CAST('' AS NVARCHAR(80)) AS Codigo,
                 '-' AS SedeNombre,
                 he.Direccion AS SedeDireccion,
                 he.Referencia AS SedeConsideracionesReserva,
