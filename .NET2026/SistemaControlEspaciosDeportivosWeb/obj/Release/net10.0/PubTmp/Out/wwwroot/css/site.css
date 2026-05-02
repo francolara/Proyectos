@@ -2861,6 +2861,14 @@ body {
   background-repeat: no-repeat;
 }
 
+.auth-visual.auth-visual-has-banner {
+  padding: 0;
+  aspect-ratio: 4 / 5;
+  background-size: contain;
+  background-position: center;
+  background-color: #0b1731;
+}
+
 .auth-visual-content {
   max-width: 520px;
 }
@@ -3342,6 +3350,12 @@ body {
 
   .auth-visual {
     min-height: 250px;
+  }
+
+  .auth-visual.auth-visual-has-banner {
+    min-height: auto;
+    aspect-ratio: 4 / 5;
+    background-position: center top;
   }
 
   .auth-panel {

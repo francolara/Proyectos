@@ -21,7 +21,7 @@
 }
 @if (!ViewData.ModelState.IsValid)
 {
-    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+    <div asp-validation-summary="All" class="alert alert-danger"></div>
 }
 
 <section class="table-card sc-reservas-list-card mb-3">
@@ -39,10 +39,12 @@
         <div class="col-md-6">
             <label asp-for="Form.Titulo" class="form-label"></label>
             <input asp-for="Form.Titulo" class="form-control" />
+            <span asp-validation-for="Form.Titulo" class="text-danger"></span>
         </div>
         <div class="col-md-6">
             <label asp-for="Form.Subtitulo" class="form-label"></label>
             <input asp-for="Form.Subtitulo" class="form-control" />
+            <span asp-validation-for="Form.Subtitulo" class="text-danger"></span>
         </div>
         <div class="col-md-12">
             <label class="form-label">Tipo de banner</label>
@@ -54,23 +56,27 @@
                 <input asp-for="Form.TipoBanner" type="radio" class="btn-check" id="tipoBannerRegistro" value="3" />
                 <label class="btn btn-outline-primary" for="tipoBannerRegistro"><i class="bi bi-person-plus me-1"></i>Registro (fijo)</label>
             </div>
-            <small class="text-muted d-block mt-2">Home público usa la imagen horizontal de 1920x760. Login y Registro usan como principal la imagen vertical de 1080x1350; la horizontal queda solo como respaldo si no cargas la vertical.</small>
+            <small class="text-muted d-block mt-2">Home público usa imagen horizontal 1920x760. Login/Registro: solo imagen vertical 1080x1350 (no se acepta horizontal).</small>
         </div>
         <div class="col-md-12">
             <label asp-for="Form.Descripcion" class="form-label"></label>
             <textarea asp-for="Form.Descripcion" class="form-control" rows="2"></textarea>
+            <span asp-validation-for="Form.Descripcion" class="text-danger"></span>
         </div>
         <div class="col-md-3">
             <label asp-for="Form.BotonTexto" class="form-label"></label>
             <input asp-for="Form.BotonTexto" class="form-control" />
+            <span asp-validation-for="Form.BotonTexto" class="text-danger"></span>
         </div>
         <div class="col-md-5">
             <label asp-for="Form.BotonUrl" class="form-label"></label>
             <input asp-for="Form.BotonUrl" class="form-control" placeholder="/Home/SoftwareClubes o https://..." />
+            <span asp-validation-for="Form.BotonUrl" class="text-danger"></span>
         </div>
         <div class="col-md-2">
             <label asp-for="Form.Orden" class="form-label"></label>
             <input asp-for="Form.Orden" class="form-control" type="number" min="1" max="999" />
+            <span asp-validation-for="Form.Orden" class="text-danger"></span>
         </div>
         <div class="col-md-2 d-flex align-items-end">
             <div class="form-check">
@@ -81,20 +87,24 @@
         <div class="col-md-3">
             <label asp-for="Form.FechaInicio" class="form-label"></label>
             <input asp-for="Form.FechaInicio" class="form-control" type="date" />
+            <span asp-validation-for="Form.FechaInicio" class="text-danger"></span>
         </div>
         <div class="col-md-3">
             <label asp-for="Form.FechaFin" class="form-label"></label>
             <input asp-for="Form.FechaFin" class="form-control" type="date" />
+            <span asp-validation-for="Form.FechaFin" class="text-danger"></span>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-6" id="grupoImagenDesktop">
             <label asp-for="Form.ImagenArchivo" class="form-label">Imagen (JPG/PNG)</label>
             <input asp-for="Form.ImagenArchivo" class="form-control" type="file" accept=".jpg,.jpeg,.png" />
-            <small class="text-muted">Se convierte a WebP 1920x760 para el carrusel.</small>
+            <small class="text-muted">Home: horizontal 1920x760. Login/Registro: este campo tambien debe ser vertical.</small>
+            <span asp-validation-for="Form.ImagenArchivo" class="text-danger d-block"></span>
         </div>
         <div class="col-md-6">
             <label asp-for="Form.ImagenArchivoMobile" class="form-label">Imagen móvil (JPG/PNG)</label>
             <input asp-for="Form.ImagenArchivoMobile" class="form-control" type="file" accept=".jpg,.jpeg,.png" />
-            <small class="text-muted">Opcional. Se convierte a WebP 1080x1350 (si no cargas, se usa la imagen desktop).</small>
+            <small class="text-muted">Se convierte a WebP 1080x1350 (vertical, principal para Login/Registro).</small>
+            <span asp-validation-for="Form.ImagenArchivoMobile" class="text-danger d-block"></span>
         </div>
         @if (!string.IsNullOrWhiteSpace(form.ImagenUrl))
         {
@@ -125,6 +135,29 @@
         </div>
     </form>
 </section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const tipoHome = document.getElementById('tipoBannerHome');
+            const tipoLogin = document.getElementById('tipoBannerLogin');
+            const tipoRegistro = document.getElementById('tipoBannerRegistro');
+            const grupoDesktop = document.getElementById('grupoImagenDesktop');
+            if (!tipoHome || !tipoLogin || !tipoRegistro || !grupoDesktop) return;
+
+            function syncCamposBanner() {
+                const esLoginRegistro = tipoLogin.checked || tipoRegistro.checked;
+                grupoDesktop.classList.toggle('d-none', esLoginRegistro);
+            }
+
+            tipoHome.addEventListener('change', syncCamposBanner);
+            tipoLogin.addEventListener('change', syncCamposBanner);
+            tipoRegistro.addEventListener('change', syncCamposBanner);
+            syncCamposBanner();
+        })();
+    </script>
+}
 
 <section class="table-card sc-reservas-list-card">
     <div class="table-card-header d-flex justify-content-between align-items-center gap-2">

@@ -644,4 +644,4 @@ C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlE
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Release\net10.0\compressed\fdmqcrxzoz-{0}-che9krf0vl-che9krf0vl.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Release\net10.0\web.config
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Release\net10.0\compressed\nbd5rqjso4-{0}-imho8yh6il-imho8yh6il.gz
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Release\net10.0\compressed\vnbh1609s7-{0}-2e9up163hx-2e9up163hx.gz
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Release\net10.0\compressed\vnbh1609s7-{0}-n6uylpm6mi-n6uylpm6mi.gz

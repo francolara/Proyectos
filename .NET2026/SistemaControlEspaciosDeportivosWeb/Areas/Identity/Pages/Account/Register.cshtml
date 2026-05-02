@@ -18,6 +18,15 @@
         bannerUrl,
         SedeImagenStorageOptions.Value.PublicBaseUrl,
         SedeImagenStorageOptions.Value.BucketName);
+    var visualTitulo = Model.BannerLateral?.Titulo?.Trim();
+    var visualSubtitulo = Model.BannerLateral?.Subtitulo?.Trim();
+    var visualDescripcion = Model.BannerLateral?.Descripcion?.Trim();
+    var visualItems = string.IsNullOrWhiteSpace(visualDescripcion)
+        ? Array.Empty<string>()
+        : visualDescripcion
+            .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToArray();
     var hayErroresUsuario = ViewData.ModelState.Any(x =>
         x.Value?.Errors?.Count > 0 &&
         !x.Key.StartsWith("Club", StringComparison.OrdinalIgnoreCase));
@@ -26,16 +35,29 @@
         !x.Key.StartsWith("Usuario", StringComparison.OrdinalIgnoreCase));
 }
 <section class="auth-shell">
-    <aside class="auth-visual" style="@(string.IsNullOrWhiteSpace(bannerUrl) ? string.Empty : $"background-image:linear-gradient(165deg,rgba(3,15,35,.84),rgba(7,24,58,.70)),url('{bannerUrl}');")">
+    <aside class="auth-visual @(string.IsNullOrWhiteSpace(bannerUrl) ? string.Empty : "auth-visual-has-banner")" style="@(string.IsNullOrWhiteSpace(bannerUrl) ? string.Empty : $"background-image:url('{bannerUrl}');")">
+        @if (string.IsNullOrWhiteSpace(bannerUrl))
+        {
         <div class="auth-visual-content">
-            <p class="auth-visual-tag">SportCenter</p>
-            <h2>@(string.IsNullOrWhiteSpace(Model.BannerLateral?.Titulo) ? "Impulsa tu operacion deportiva" : Model.BannerLateral!.Titulo)</h2>
-            <ul class="auth-visual-list">
-                <li>Gestion de espacios y horarios.</li>
-                <li>Control por sede y reportes de consumo.</li>
-                <li>Panel unificado para tu club.</li>
-            </ul>
+            @if (!string.IsNullOrWhiteSpace(visualSubtitulo))
+            {
+                <p class="auth-visual-tag">@visualSubtitulo</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(visualTitulo))
+            {
+                <h2>@visualTitulo</h2>
+            }
+            @if (visualItems.Length > 0)
+            {
+                <ul class="auth-visual-list">
+                    @foreach (var item in visualItems)
+                    {
+                        <li>@item</li>
+                    }
+                </ul>
+            }
         </div>
+        }
     </aside>
 
     <section class="auth-panel">

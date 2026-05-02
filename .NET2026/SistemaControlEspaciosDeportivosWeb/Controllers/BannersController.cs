@@ -2,6 +2,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 
 namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 
@@ -25,7 +28,21 @@ public class BannersController(
     {
         ViewData["PlatformShell"] = true;
 
+        form.TipoBanner = form.TipoBanner is >= 1 and <= 3 ? form.TipoBanner : (int)BannerTipo.Home;
+        var esHome = form.TipoBanner == (int)BannerTipo.Home;
+        var esLoginRegistro = form.TipoBanner is (int)BannerTipo.Login or (int)BannerTipo.Registro;
         var banners = await spService.BannersAdminListarAsync(null);
+        if (!form.Id.HasValue && esLoginRegistro)
+        {
+            var existenteMismoTipo = banners
+                .Where(x => x.TipoBanner == form.TipoBanner)
+                .OrderBy(x => x.Orden)
+                .ThenBy(x => x.Id)
+                .FirstOrDefault();
+            if (existenteMismoTipo is not null)
+                form.Id = existenteMismoTipo.Id;
+        }
+
         var bannerActual = form.Id.HasValue ? banners.FirstOrDefault(x => x.Id == form.Id.Value) : null;
         var imagenAnterior = string.IsNullOrWhiteSpace(bannerActual?.ImagenUrl) ? null : bannerActual!.ImagenUrl.Trim();
         var imagenMobileAnterior = string.IsNullOrWhiteSpace(bannerActual?.ImagenUrlMobile) ? null : bannerActual!.ImagenUrlMobile!.Trim();
@@ -36,8 +53,31 @@ public class BannersController(
         {
             try
             {
-                imagenNueva = await sedeImagenStorageService.UploadBannerPublicoAsync(form.ImagenArchivo, HttpContext.RequestAborted);
-                form.ImagenUrl = imagenNueva;
+                if (esHome)
+                {
+                    imagenNueva = await sedeImagenStorageService.UploadBannerPublicoAsync(form.ImagenArchivo, HttpContext.RequestAborted);
+                    form.ImagenUrl = imagenNueva;
+                }
+                else
+                {
+                    var orientacion = await ObtenerOrientacionAsync(form.ImagenArchivo, HttpContext.RequestAborted);
+                    if (orientacion.EsHorizontal)
+                    {
+                        ModelState.AddModelError(nameof(form.ImagenArchivo), "En Login/Registro solo se permite imagen vertical.");
+                    }
+                    else
+                    {
+                        if (!orientacion.EsRelacionLoginValida)
+                        {
+                            ModelState.AddModelError(nameof(form.ImagenArchivo), "En Login/Registro la imagen debe tener proporcion 4:5 (ejemplo: 1080x1350).");
+                        }
+                        else
+                        {
+                            imagenMobileNueva = await sedeImagenStorageService.UploadBannerPublicoMobileAsync(form.ImagenArchivo, HttpContext.RequestAborted);
+                            form.ImagenUrlMobile = imagenMobileNueva;
+                        }
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -49,8 +89,31 @@ public class BannersController(
         {
             try
             {
-                imagenMobileNueva = await sedeImagenStorageService.UploadBannerPublicoMobileAsync(form.ImagenArchivoMobile, HttpContext.RequestAborted);
-                form.ImagenUrlMobile = imagenMobileNueva;
+                if (esHome)
+                {
+                    imagenMobileNueva = await sedeImagenStorageService.UploadBannerPublicoMobileAsync(form.ImagenArchivoMobile, HttpContext.RequestAborted);
+                    form.ImagenUrlMobile = imagenMobileNueva;
+                }
+                else
+                {
+                    var orientacion = await ObtenerOrientacionAsync(form.ImagenArchivoMobile, HttpContext.RequestAborted);
+                    if (orientacion.EsHorizontal)
+                    {
+                        ModelState.AddModelError(nameof(form.ImagenArchivoMobile), "En Login/Registro solo se permite imagen vertical.");
+                    }
+                    else
+                    {
+                        if (!orientacion.EsRelacionLoginValida)
+                        {
+                            ModelState.AddModelError(nameof(form.ImagenArchivoMobile), "En Login/Registro la imagen debe tener proporcion 4:5 (ejemplo: 1080x1350).");
+                        }
+                        else
+                        {
+                            imagenMobileNueva = await sedeImagenStorageService.UploadBannerPublicoMobileAsync(form.ImagenArchivoMobile, HttpContext.RequestAborted);
+                            form.ImagenUrlMobile = imagenMobileNueva;
+                        }
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -65,10 +128,15 @@ public class BannersController(
         form.BotonUrl = string.IsNullOrWhiteSpace(form.BotonUrl) ? null : form.BotonUrl.Trim();
         form.ImagenUrl = string.IsNullOrWhiteSpace(form.ImagenUrl) ? imagenAnterior : form.ImagenUrl.Trim();
         form.ImagenUrlMobile = string.IsNullOrWhiteSpace(form.ImagenUrlMobile) ? imagenMobileAnterior : form.ImagenUrlMobile.Trim();
-        form.TipoBanner = form.TipoBanner is >= 1 and <= 3 ? form.TipoBanner : (int)BannerTipo.Home;
 
-        if (string.IsNullOrWhiteSpace(form.ImagenUrl))
-            ModelState.AddModelError(nameof(form.ImagenArchivo), "Debes cargar una imagen para el banner.");
+        if (esLoginRegistro && string.IsNullOrWhiteSpace(form.ImagenUrl) && !string.IsNullOrWhiteSpace(form.ImagenUrlMobile))
+            form.ImagenUrl = form.ImagenUrlMobile;
+
+        if (esHome && string.IsNullOrWhiteSpace(form.ImagenUrl))
+            ModelState.AddModelError(nameof(form.ImagenArchivo), "Para Home debes cargar una imagen horizontal.");
+
+        if (esLoginRegistro && string.IsNullOrWhiteSpace(form.ImagenUrlMobile))
+            ModelState.AddModelError(nameof(form.ImagenArchivoMobile), "Para Login/Registro debes cargar una imagen vertical.");
 
         if (!ModelState.IsValid)
         {
@@ -79,9 +147,16 @@ public class BannersController(
             if (urlsSubidas.Length > 0)
                 await sedeImagenStorageService.DeleteSedeImagenesAsync(urlsSubidas, HttpContext.RequestAborted);
 
+            var primerError = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
+
             var vmError = await BuildVmAsync(soloActivos, null);
             vmError.Form = form;
-            vmError.Error = "No se pudo guardar el banner. Revisa los campos.";
+            vmError.Error = string.IsNullOrWhiteSpace(primerError)
+                ? "No se pudo guardar el banner. Revisa los campos."
+                : $"No se pudo guardar el banner. {primerError}";
             return View(nameof(Index), vmError);
         }
 
@@ -187,5 +262,21 @@ public class BannersController(
             MensajeUi = TempData["BannersOk"]?.ToString(),
             Error = TempData["BannersError"]?.ToString()
         };
+    }
+
+    private static async Task<(bool EsHorizontal, bool EsRelacionLoginValida)> ObtenerOrientacionAsync(IFormFile archivo, CancellationToken cancellationToken)
+    {
+        await using var stream = archivo.OpenReadStream();
+        using var image = await Image.LoadAsync<Rgba32>(stream, cancellationToken);
+        image.Mutate(ctx => ctx.AutoOrient());
+        if (image.Width <= 0 || image.Height <= 0)
+            throw new InvalidOperationException($"No se pudo leer la imagen {archivo.FileName}.");
+
+        var esHorizontal = image.Width >= image.Height;
+        var ratio = image.Width / (decimal)image.Height;
+        var ratioObjetivo = 1080m / 1350m; // 4:5
+        var tolerancia = 0.03m; // +/-3%
+        var esRelacionLoginValida = Math.Abs(ratio - ratioObjetivo) <= tolerancia;
+        return (esHorizontal, esRelacionLoginValida);
     }
 }

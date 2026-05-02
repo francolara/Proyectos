@@ -129,6 +129,25 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
         return urls.FirstOrDefault();
     }
 
+    public async Task<string?> UploadBannerPublicoFlexibleAsync(IFormFile? archivo, CancellationToken cancellationToken = default)
+    {
+        if (archivo is null || archivo.Length <= 0)
+            return null;
+
+        var urls = await UploadImagenesAsync(
+            negocioId: 0,
+            sedeId: null,
+            categoria: "banners",
+            [archivo],
+            BannerTargetWidth,
+            BannerTargetHeight,
+            BannerMaxOutputBytes,
+            exigirHorizontal: false,
+            cancellationToken);
+
+        return urls.FirstOrDefault();
+    }
+
     public async Task<string?> UploadBannerPublicoMobileAsync(IFormFile? archivo, CancellationToken cancellationToken = default)
     {
         if (archivo is null || archivo.Length <= 0)
@@ -147,6 +166,7 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
 
         return urls.FirstOrDefault();
     }
+
 
     public async Task<string?> UploadBannerAnuncioAsync(IFormFile? archivo, bool esHorizontal, CancellationToken cancellationToken = default)
     {
@@ -608,4 +628,5 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
 
         throw new InvalidOperationException($"La imagen {nombreArchivo} no pudo comprimirse a {maxOutputBytes / 1024} KB manteniendo la resolucion estandar.");
     }
+
 }

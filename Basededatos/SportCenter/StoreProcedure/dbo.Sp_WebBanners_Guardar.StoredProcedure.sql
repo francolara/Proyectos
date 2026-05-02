@@ -6,6 +6,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 -- Firma: Codex - 14/04/2026 | Inserta/actualiza banners web (Home/Login/Registro) y retorna Id generado/actualizado.
+-- Firma: Codex - 02/05/2026 | Corrige validacion por tipo: Home exige imagen horizontal; Login/Registro exigen imagen vertical y permiten fallback de ImagenUrl desde ImagenUrlMobile.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_WebBanners_Guardar]
     @Id INT = NULL,
     @Titulo NVARCHAR(120),
@@ -39,8 +40,14 @@ BEGIN
         IF @Titulo = N''
             RAISERROR(N'El titulo del banner es obligatorio.', 16, 1);
 
-        IF @ImagenUrl = N''
-            RAISERROR(N'La imagen del banner es obligatoria.', 16, 1);
+        IF @TipoBanner = 1 AND @ImagenUrl = N''
+            RAISERROR(N'La imagen del banner es obligatoria para Home.', 16, 1);
+
+        IF @TipoBanner IN (2, 3) AND ISNULL(@ImagenUrlMobile, N'') = N''
+            RAISERROR(N'La imagen vertical del banner es obligatoria para Login/Registro.', 16, 1);
+
+        IF @TipoBanner IN (2, 3) AND @ImagenUrl = N'' AND ISNULL(@ImagenUrlMobile, N'') <> N''
+            SET @ImagenUrl = @ImagenUrlMobile;
 
         IF @FechaInicio IS NOT NULL AND @FechaFin IS NOT NULL AND @FechaInicio > @FechaFin
             RAISERROR(N'La fecha inicio no puede ser mayor a la fecha fin.', 16, 1);
