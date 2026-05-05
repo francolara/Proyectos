@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -194,6 +195,107 @@ public class LoginModel(
         return Page();
     }
 
+    public IActionResult OnPostExternalLogin(string provider, string? returnUrl = null, string? flow = null)
+    {
+        returnUrl ??= Url.Content("~/");
+        flow = string.Equals(flow, "register", StringComparison.OrdinalIgnoreCase) ? "register" : "login";
+        var redirectUrl = Url.Page("./Login", pageHandler: "ExternalLoginCallback", values: new { returnUrl, flow });
+        var properties = signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
+        return Challenge(properties, provider);
+    }
+
+    public async Task<IActionResult> OnGetExternalLoginCallbackAsync(string? returnUrl = null, string? remoteError = null, string? flow = null)
+    {
+        returnUrl ??= Url.Content("~/");
+        flow = string.Equals(flow, "register", StringComparison.OrdinalIgnoreCase) ? "register" : "login";
+
+        if (!string.IsNullOrWhiteSpace(remoteError))
+        {
+            ErrorMessage = $"Error del proveedor externo: {remoteError}";
+            return RedirectToPage("./Login", new { returnUrl });
+        }
+
+        var info = await signInManager.GetExternalLoginInfoAsync();
+        if (info is null)
+        {
+            ErrorMessage = "No se pudo cargar la informacion del proveedor externo.";
+            return RedirectToPage("./Login", new { returnUrl });
+        }
+
+        var result = await signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
+        if (result.Succeeded)
+        {
+            logger.LogInformation("Usuario inicio sesion con {Provider}.", info.LoginProvider);
+            return await RedirigirPostLoginAsync(returnUrl, flow);
+        }
+
+        if (result.IsLockedOut)
+        {
+            logger.LogWarning("Cuenta bloqueada.");
+            return RedirectToPage("./Lockout");
+        }
+
+        var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            ErrorMessage = "El proveedor externo no devolvio un correo electronico valido.";
+            return RedirectToPage("./Login", new { returnUrl });
+        }
+
+        email = email.Trim();
+        var user = await userManager.FindByEmailAsync(email);
+        if (user is null)
+        {
+            var nombreCompleto = (info.Principal.FindFirstValue(ClaimTypes.Name) ?? string.Empty).Trim();
+            var givenName = (info.Principal.FindFirstValue(ClaimTypes.GivenName) ?? string.Empty).Trim();
+            var surname = (info.Principal.FindFirstValue(ClaimTypes.Surname) ?? string.Empty).Trim();
+            var nombres = !string.IsNullOrWhiteSpace(givenName) ? givenName : nombreCompleto;
+            var apellidos = !string.IsNullOrWhiteSpace(surname) ? surname : (string.IsNullOrWhiteSpace(nombreCompleto) ? "Usuario" : nombreCompleto);
+
+            user = new ApplicationUser
+            {
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true,
+                Nombres = string.IsNullOrWhiteSpace(nombres) ? email : nombres
+            };
+
+            var createResult = await userManager.CreateAsync(user);
+            if (!createResult.Succeeded)
+            {
+                ErrorMessage = "No se pudo crear la cuenta con el proveedor externo.";
+                return RedirectToPage("./Login", new { returnUrl });
+            }
+
+            try
+            {
+                await spService.UsuariosPublicosGuardarPerfilAsync(new UsuarioPublicoPerfilViewModel
+                {
+                    UsuarioId = user.Id,
+                    TipoDocumento = "0",
+                    Nombres = user.Nombres ?? string.Empty,
+                    Apellidos = apellidos,
+                    Correo = email
+                }, email);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "No se pudo sincronizar perfil publico para login externo de {Email}.", email);
+            }
+        }
+
+        var addLoginResult = await userManager.AddLoginAsync(user, info);
+        if (!addLoginResult.Succeeded && !addLoginResult.Errors.Any(x => string.Equals(x.Code, "LoginAlreadyAssociated", StringComparison.OrdinalIgnoreCase)))
+        {
+            ErrorMessage = "No se pudo vincular la cuenta externa.";
+            return RedirectToPage("./Login", new { returnUrl });
+        }
+
+        await signInManager.SignInAsync(user, isPersistent: false);
+        logger.LogInformation("Usuario creo o vinculo cuenta con {Provider}.", info.LoginProvider);
+        return await RedirigirPostLoginAsync(returnUrl, flow);
+    }
+
     private async Task CargarBannerLateralAsync()
     {
         try
@@ -204,5 +306,32 @@ public class LoginModel(
         {
             BannerLateral = null;
         }
+    }
+
+    private async Task<IActionResult> RedirigirPostLoginAsync(string? returnUrl, string? flow)
+    {
+        if (!string.IsNullOrWhiteSpace(returnUrl)
+            && Url.IsLocalUrl(returnUrl)
+            && !string.Equals(returnUrl, Url.Content("~/"), StringComparison.OrdinalIgnoreCase))
+        {
+            return LocalRedirect(returnUrl);
+        }
+
+        if (string.Equals(flow, "register", StringComparison.OrdinalIgnoreCase))
+        {
+            return RedirectToAction("Index", "Home");
+        }
+
+        var usuario = await userManager.GetUserAsync(User);
+        if (usuario is not null)
+        {
+            var negocios = await spService.PanelListarNegociosUsuarioAsync(usuario.Id);
+            if (negocios.Count > 0)
+            {
+                return RedirectToAction("Index", "Panel", new { negocioId = negocios[0].NegocioId });
+            }
+        }
+
+        return RedirectToAction("Index", "Home");
     }
 }

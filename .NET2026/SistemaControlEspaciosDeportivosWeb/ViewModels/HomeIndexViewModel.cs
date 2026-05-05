@@ -149,6 +149,8 @@ public class SolicitudReservaPublicaFormViewModel
 
     [StringLength(300, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string? Comentario { get; set; }
+    [StringLength(30, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+    public string? CodigoCupon { get; set; }
 
     public string? CodigoDepartamento { get; set; }
     public string? CodigoProvincia { get; set; }

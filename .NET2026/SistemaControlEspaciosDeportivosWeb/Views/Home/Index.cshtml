@@ -1,4 +1,4 @@
-ï»¿@model SistemaControlEspaciosDeportivosWeb.ViewModels.HomeIndexViewModel
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.HomeIndexViewModel
 @inject Microsoft.Extensions.Options.IOptions<SistemaControlEspaciosDeportivosWeb.Services.SedeImagenStorageSettings> SedeImagenStorageOptions
 @using System.Linq
 @using System.Globalization
@@ -25,7 +25,7 @@
     var popupPromocionesVersion = popupPromociones.Count == 0
         ? string.Empty
         : string.Join("|", popupPromociones.Select(x => $"{x.IdPopupPromocion}:{x.Orden}:{x.Orientacion}:{(x.ImagenUrl ?? string.Empty)}"));
-    var whatsappAnunciosMensaje = Uri.EscapeDataString("Hola, quiero anunciar en SportCenter. Â¿Podrian brindarme informacion sobre planes, alcance y condiciones para publicar mi anuncio?");
+    var whatsappAnunciosMensaje = Uri.EscapeDataString("Hola, quiero anunciar en SportCenter. ¿Podrian brindarme informacion sobre planes, alcance y condiciones para publicar mi anuncio?");
     var whatsappHomeConfigurado = (Model.PortalConfig.SiguenosWhatsappUrl ?? string.Empty).Trim();
     var whatsappAnunciosUrl = whatsappHomeConfigurado;
     if (!string.IsNullOrWhiteSpace(whatsappHomeConfigurado))
@@ -61,7 +61,7 @@
 
         if (!string.IsNullOrWhiteSpace(whatsappNumeroConfigurado))
         {
-            whatsappAnunciosUrl = $"https://wa.me/{whatsappNumeroConfigurado}?text={Uri.EscapeDataString("Hola, quiero anunciar en SportCenter. Â¿PodrÃ­an brindarme informaciÃ³n sobre planes, alcance y condiciones para publicar mi anuncio?")}";
+            whatsappAnunciosUrl = $"https://wa.me/{whatsappNumeroConfigurado}?text={Uri.EscapeDataString("Hola, quiero anunciar en SportCenter. ¿Podrían brindarme información sobre planes, alcance y condiciones para publicar mi anuncio?")}";
         }
     }
 }
@@ -247,7 +247,7 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <label class="form-label">Club / negocio</label>
+                <label class="form-label">Complejo Deportivo</label>
                 <select class="form-select" id="negocioId" name="negocioId">
                     <option value="">Todos</option>
                     @foreach (var negocio in Model.Negocios)
@@ -359,6 +359,7 @@
                 var sedeRef = item.SedeId.HasValue
                     ? Model.Sedes.FirstOrDefault(x => x.Id == item.SedeId.Value)
                     : null;
+                var negocioIdCotizacion = Model.NegocioId ?? sedeRef?.NegocioId;
                 var negocioNombreDestacado = (sedeRef?.NegocioNombre ?? string.Empty).Trim();
                 if (string.IsNullOrWhiteSpace(negocioNombreDestacado) && Model.NegocioId.HasValue)
                 {
@@ -437,7 +438,7 @@
                             @if (!string.IsNullOrWhiteSpace(negocioNombreDestacado))
                             {
                                 <div class="home-negocio-highlight mb-2">
-                                    <span class="home-negocio-label"><i class="bi bi-buildings me-1"></i>Club / Negocio</span>
+                                    <span class="home-negocio-label"><i class="bi bi-buildings me-1"></i>Complejo Deportivo</span>
                                     <h3 class="home-negocio-title mb-0">@negocioNombreDestacado</h3>
                                 </div>
                             }
@@ -499,10 +500,19 @@
 
                             @if (item.TarifaDesde.HasValue)
                             {
-                                <p class="mb-2 home-price-from">
+                                <div class="mb-2 home-price-from js-home-price-quote"
+                                     data-espacio-id="@item.EspacioDeportivoId"
+                                     data-negocio-id="@(negocioIdCotizacion?.ToString() ?? string.Empty)"
+                                     data-fecha="@Model.Fecha.ToString("yyyy-MM-dd")"
+                                     data-hora-inicio="@Model.HoraInicio.ToString("HH\\:mm")"
+                                     data-hora-fin="@Model.HoraFin.ToString("HH\\:mm")">
                                     <span class="home-item-label">Precio por hora</span>
-                                    Desde <strong>S/ @item.TarifaDesde.Value.ToString("0.00", CultureInfo.InvariantCulture)</strong>
-                                </p>
+                                    <div class="home-price-main">Desde <strong>S/ @item.TarifaDesde.Value.ToString("0.00", CultureInfo.InvariantCulture)</strong></div>
+                                    <div class="home-price-promo d-none">
+                                        <span class="home-price-base"></span>
+                                        <span class="home-price-discount-badge"></span>
+                                    </div>
+                                </div>
                             }
                             <button class="btn btn-sm auth-nav-mini auth-nav-mini-outline mb-2 js-detalle-toggle"
                                     type="button"
@@ -954,6 +964,64 @@
     if (popupPromocionesState.autoOpen && popupPromocionesVistas !== popupPromocionesState.version) {
         window.setTimeout(openPopupPromociones, popupPromocionesState.delayMs);
     }
+})();
+</script>
+<script>
+(() => {
+    const quoteCards = document.querySelectorAll('.js-home-price-quote');
+    if (!quoteCards.length) return;
+
+    async function cotizarCard(card) {
+        const negocioId = (card.getAttribute('data-negocio-id') || '').trim();
+        const espacioId = (card.getAttribute('data-espacio-id') || '').trim();
+        const fecha = (card.getAttribute('data-fecha') || '').trim();
+        const horaInicio = (card.getAttribute('data-hora-inicio') || '').trim();
+        const horaFin = (card.getAttribute('data-hora-fin') || '').trim();
+        if (!negocioId || !espacioId || !fecha || !horaInicio || !horaFin) return;
+
+        const priceMain = card.querySelector('.home-price-main');
+        const promoWrap = card.querySelector('.home-price-promo');
+        const baseEl = card.querySelector('.home-price-base');
+        const badgeEl = card.querySelector('.home-price-discount-badge');
+
+        const params = new URLSearchParams({
+            negocioId,
+            espacioDeportivoId: espacioId,
+            fecha,
+            horaInicio,
+            horaFin
+        });
+
+        try {
+            const resp = await fetch('@Url.Action("CotizarReservaPublica", "Home")' + '?' + params.toString(), { credentials: 'same-origin' });
+            const data = await resp.json();
+            if (!data || data.ok !== true) return;
+
+            const c = data.cotizacion || {};
+            const precioFinal = Number(c.precioFinal || 0);
+            const precioBase = Number(c.precioBase || 0);
+            const descuento = Number(c.descuentoPct || 0);
+            const simbolo = c.monedaSimbolo || 'S/';
+
+            if (priceMain && Number.isFinite(precioFinal) && precioFinal > 0) {
+                priceMain.innerHTML = `Desde <strong>${simbolo} ${precioFinal.toFixed(2)}</strong>`;
+            }
+
+            if (descuento > 0 && promoWrap && baseEl && badgeEl) {
+                promoWrap.classList.remove('d-none');
+                baseEl.textContent = `${simbolo} ${precioBase.toFixed(2)}`;
+                badgeEl.textContent = `-${Math.round(descuento)}%`;
+            } else if (promoWrap && baseEl && badgeEl) {
+                promoWrap.classList.add('d-none');
+                baseEl.textContent = '';
+                badgeEl.textContent = '';
+            }
+        } catch {
+            // Mantener tarifa base si falla la cotizacion.
+        }
+    }
+
+    quoteCards.forEach(card => { void cotizarCard(card); });
 })();
 </script>
 <script>

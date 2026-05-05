@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+Disallow: /Identity/
+Disallow: /Panel
+Disallow: /Configuracion
+Disallow: /Reservas
+Disallow: /Pagos
+Disallow: /Comprobantes
+Disallow: /Usuarios
+Disallow: /Promociones
+Disallow: /Cupones
+Disallow: /Reportes
+Disallow: /Sedes
+Disallow: /Espacios
+Disallow: /Maestros
+Disallow: /Plataforma
+Disallow: /Anuncios
+Disallow: /Banners
+Disallow: /MiSuscripcion
+
+Sitemap: https://lazonadeportiva.com/sitemap.xml

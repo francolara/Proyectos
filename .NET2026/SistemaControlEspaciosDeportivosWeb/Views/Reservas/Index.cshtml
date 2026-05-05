@@ -1,4 +1,4 @@
-ï»¿@model SistemaControlEspaciosDeportivosWeb.ViewModels.ReservasIndexViewModel
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.ReservasIndexViewModel
 @{
     ViewData["Title"] = "Reservas";
     var sedeSeleccionadaTexto = Model.SedesFiltro.FirstOrDefault(x => x.Value == Model.SedeId?.ToString())?.Text ?? "Seleccione sede";
@@ -20,7 +20,7 @@
             <p class="page-subtitle">Planificacion de reservas y calendario operativo.</p>
         </div>
         <div class="sc-negocio-ref-card" aria-readonly="true">
-            <div class="sc-negocio-ref-card-head"><i class="bi bi-building"></i><span>Club / negocio</span></div>
+            <div class="sc-negocio-ref-card-head"><i class="bi bi-building"></i><span>Complejo Deportivo</span></div>
             <div class="sc-negocio-ref-card-name">@Model.NegocioNombre</div>
             <div class="sc-negocio-ref-card-id">ID: @Model.NegocioId</div>
         </div>
@@ -784,10 +784,26 @@ else
                         <div class="col-md-6">
                             <label class="form-label" id="modalPrecioLabel">Precio de Espacio (@Model.MonedaSimbolo)</label>
                             <input type="number" min="0.01" step="0.01" class="form-control sc-monto-input" id="modalTotal" name="Total" required />
+                            <input type="hidden" id="modalTotalBaseCupon" value="0.00" />
                             @if (!Model.PermitirModificarPrecioReserva)
                             {
                                 <small class="text-muted">El precio se calcula automaticamente segun tarifa y promocion del horario.</small>
                             }
+                        </div>
+                        @* Firma: Franco Lara - 03/05/2026 | Se agrega bloque de cupon en modal de reserva administrativa. *@
+                        <div class="col-md-6" id="modalCuponWrap">
+                            <label class="form-label d-block">Cupon</label>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="modalTieneCupon" />
+                                <label class="form-check-label" for="modalTieneCupon">Tengo un cupon</label>
+                            </div>
+                            <div id="modalCuponContainer" class="d-none">
+                                <div class="input-group input-group-sm">
+                                    <input type="text" class="form-control" id="modalCodigoCupon" name="CodigoCupon" maxlength="50" placeholder="Ingresa codigo de cupon" autocomplete="off" />
+                                    <button type="button" class="btn btn-outline-primary" id="btnValidarCuponModal">Validar</button>
+                                </div>
+                                <small id="modalCuponMensaje" class="d-block mt-1 text-muted">Ingresa el cupon y valida para aplicar descuento.</small>
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <div class="d-flex justify-content-between align-items-center mb-1">
@@ -815,7 +831,7 @@ else
                             <input type="date" class="form-control" id="modalFechaPago" name="FechaPago" value="@DateTime.Today.ToString("yyyy-MM-dd")" max="@DateTime.Today.ToString("yyyy-MM-dd")" disabled />
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">NÂ° OperaciÃ³n</label>
+                            <label class="form-label">N° Operación</label>
                             <input type="text" class="form-control" id="modalNumeroOperacion" name="NumeroOperacion" maxlength="50" placeholder="Opcional" autocomplete="off" disabled />
                         </div>
                         <div class="col-md-6">
@@ -937,6 +953,12 @@ else
             const modalTotalEl = document.getElementById('modalTotal');
             const modalPoliticaPagoInfoEl = document.getElementById('modalPoliticaPagoInfo');
             const modalPrecioLabelEl = document.getElementById('modalPrecioLabel');
+            const modalTieneCuponEl = document.getElementById('modalTieneCupon');
+            const modalCuponWrapEl = document.getElementById('modalCuponWrap');
+            const modalCuponContainerEl = document.getElementById('modalCuponContainer');
+            const modalCodigoCuponEl = document.getElementById('modalCodigoCupon');
+            const btnValidarCuponModalEl = document.getElementById('btnValidarCuponModal');
+            const modalCuponMensajeEl = document.getElementById('modalCuponMensaje');
             const modalClienteBuscarEl = document.getElementById('modalClienteBuscar');
             const modalClienteIdEl = document.getElementById('modalClienteId');
             const modalClienteNumeroEl = document.getElementById('modalClienteNumero');
@@ -967,6 +989,7 @@ else
             const guardarReservaModalUrl = '@Url.Action("GuardarReservaModal", "Reservas")';
             const validarDisponibilidadModalUrl = '@Url.Action("ValidarDisponibilidadModal", "Reservas")';
             const cotizarReservaModalUrl = '@Url.Action("CotizarReserva", "Reservas")';
+            const validarCuponReservaUrl = '@Url.Action("ValidarCuponReserva", "Reservas")';
             const comboClientesUrl = '@Url.Action("ObtenerClientesFiltro", "Reservas")';
             const crearClienteRapidoUrl = '@Url.Action("CrearClienteRapido", "Reservas")';
             const cambiarEstadoRapidoUrl = '@Url.Action("CambiarEstadoRapido", "Reservas")';
@@ -1000,6 +1023,8 @@ else
             let dragEnCurso = false;
             let dragRechazadoPorBloqueo = false;
             let ignorarClicksCalendarioHasta = 0;
+            let modalPrecioBaseActual = 0;
+            let cuponAplicadoModal = false;
             const debugDragActivo = true;
             const calendarAxisWidth = '122px';
             const clientesDetalleMap = new Map();
@@ -1473,6 +1498,134 @@ else
                 }
             }
 
+            function limpiarMensajeCuponModal() {
+                if (!modalCuponMensajeEl) return;
+                modalCuponMensajeEl.classList.remove('text-success', 'text-danger');
+                modalCuponMensajeEl.classList.add('text-muted');
+                modalCuponMensajeEl.textContent = 'Ingresa el cupon y valida para aplicar descuento.';
+            }
+
+            function mostrarMensajeCuponModal(mensaje, esError) {
+                if (!modalCuponMensajeEl) return;
+                modalCuponMensajeEl.classList.remove('text-muted', 'text-success', 'text-danger');
+                modalCuponMensajeEl.classList.add(esError ? 'text-danger' : 'text-success');
+                modalCuponMensajeEl.textContent = mensaje;
+            }
+
+            function actualizarUICuponModal() {
+                const mostrar = !!modalTieneCuponEl?.checked;
+                if (modalCuponContainerEl) {
+                    modalCuponContainerEl.classList.toggle('d-none', !mostrar);
+                }
+                if (modalCodigoCuponEl) {
+                    modalCodigoCuponEl.disabled = !mostrar;
+                    if (!mostrar) modalCodigoCuponEl.value = '';
+                }
+                if (!mostrar) {
+                    cuponAplicadoModal = false;
+                    if (btnValidarCuponModalEl) {
+                        btnValidarCuponModalEl.disabled = false;
+                        btnValidarCuponModalEl.textContent = 'Validar';
+                    }
+                    limpiarMensajeCuponModal();
+                    if (modalTotalEl && modalPrecioBaseActual > 0) {
+                        modalTotalEl.value = formatMoney(modalPrecioBaseActual);
+                    }
+                }
+            }
+
+            function resetCuponAplicadoModal() {
+                cuponAplicadoModal = false;
+                if (btnValidarCuponModalEl) {
+                    btnValidarCuponModalEl.disabled = false;
+                    btnValidarCuponModalEl.textContent = 'Validar';
+                }
+                if (modalTotalEl && modalPrecioBaseActual > 0) {
+                    modalTotalEl.value = formatMoney(modalPrecioBaseActual);
+                }
+                limpiarMensajeCuponModal();
+            }
+
+            async function validarCuponModal(silencioso = false) {
+                const espacioId = String(document.getElementById('modalEspacioDeportivoId')?.value || '').trim();
+                const fecha = String(document.getElementById('modalFecha')?.value || '').trim();
+                const horaInicio = String(document.getElementById('modalHoraInicio')?.value || '').trim();
+                const horaFin = String(document.getElementById('modalHoraFin')?.value || '').trim();
+                const codigoCupon = String(modalCodigoCuponEl?.value || '').trim();
+                if (cuponAplicadoModal) {
+                    if (!silencioso) mostrarMensajeCuponModal('Este cupon ya fue aplicado para esta reserva.', false);
+                    return true;
+                }
+                if (!modalTieneCuponEl?.checked || !codigoCupon) {
+                    if (!silencioso) mostrarMensajeCuponModal('Ingresa el codigo del cupon.', true);
+                    return false;
+                }
+                if (!espacioId || !fecha || !horaInicio || !horaFin) {
+                    if (!silencioso) mostrarMensajeCuponModal('Selecciona espacio, fecha y horario antes de validar cupon.', true);
+                    return false;
+                }
+
+                const montoBaseVisible = Number(modalTotalEl?.value || 0);
+                const montoBase = montoBaseVisible > 0 ? montoBaseVisible : Number(modalPrecioBaseActual || 0);
+                if (!(montoBase > 0)) {
+                    if (!silencioso) mostrarMensajeCuponModal('Primero cotiza un monto valido para aplicar cupon.', true);
+                    return false;
+                }
+
+                if (btnValidarCuponModalEl) btnValidarCuponModalEl.disabled = true;
+                try {
+                    const params = new URLSearchParams();
+                    params.append('negocioId', String(negocioId));
+                    params.append('espacioDeportivoId', espacioId);
+                    params.append('fecha', fecha);
+                    params.append('horaInicio', horaInicio);
+                    params.append('horaFin', horaFin);
+                    params.append('codigoCupon', codigoCupon);
+                    const resp = await fetch(`${validarCuponReservaUrl}?${params.toString()}`, { cache: 'no-store' });
+                    const payload = await resp.json();
+                    if (!resp.ok || !payload.ok || payload.esValido === false) {
+                        throw new Error(payload.mensaje || 'Cupon no valido para esta reserva.');
+                    }
+
+                    const montoDescuento = Number(payload.montoDescuento || 0);
+                    const montoAntesServidor = Number(payload.montoAntes || 0);
+                    const montoVisibleActual = Number(modalTotalEl?.value || 0);
+                    const baseAplicada = montoVisibleActual > 0 ? montoVisibleActual : (montoAntesServidor > 0 ? montoAntesServidor : montoBase);
+                    const montoFinal = Math.max(0, Number((baseAplicada - Math.max(0, montoDescuento)).toFixed(2)));
+                    modalPrecioBaseActual = baseAplicada;
+                    const modalTotalBaseCuponEl = document.getElementById('modalTotalBaseCupon');
+                    if (modalTotalBaseCuponEl) modalTotalBaseCuponEl.value = formatMoney(baseAplicada);
+                    if (modalTotalEl) modalTotalEl.value = formatMoney(montoFinal);
+                    cuponAplicadoModal = true;
+                    if (btnValidarCuponModalEl) {
+                        btnValidarCuponModalEl.disabled = true;
+                        btnValidarCuponModalEl.textContent = 'Aplicado';
+                    }
+                    if (modalCodigoCuponEl && payload.codigoCupon) {
+                        modalCodigoCuponEl.value = String(payload.codigoCupon);
+                    }
+                    mostrarMensajeCuponModal(`Cupon aplicado. Descuento: ${formatMoney(montoDescuento)}. Total: ${formatMoney(montoFinal)}.`, false);
+                    return true;
+                } catch (err) {
+                    if (modalTotalEl && modalPrecioBaseActual > 0) {
+                        modalTotalEl.value = formatMoney(modalPrecioBaseActual);
+                    }
+                    cuponAplicadoModal = false;
+                    if (btnValidarCuponModalEl) {
+                        btnValidarCuponModalEl.disabled = false;
+                        btnValidarCuponModalEl.textContent = 'Validar';
+                    }
+                    if (!silencioso) {
+                        mostrarMensajeCuponModal(err?.message || 'No se pudo validar el cupon.', true);
+                    } else {
+                        limpiarMensajeCuponModal();
+                    }
+                    return false;
+                } finally {
+                    if (btnValidarCuponModalEl) btnValidarCuponModalEl.disabled = false;
+                }
+            }
+
             async function cotizarReservaModal(preservarTotalActual = false) {
                 const espacioId = document.getElementById('modalEspacioDeportivoId').value || '';
                 const fecha = document.getElementById('modalFecha').value || '';
@@ -1503,12 +1656,22 @@ else
                     }
                     if (modalTotalEl) {
                         const precioFinal = Number(payload.precioFinal || 0);
+                        modalPrecioBaseActual = precioFinal > 0 ? precioFinal : 0;
+                        const modalTotalBaseCuponEl = document.getElementById('modalTotalBaseCupon');
+                        if (modalTotalBaseCuponEl && modalPrecioBaseActual > 0) {
+                            modalTotalBaseCuponEl.value = formatMoney(modalPrecioBaseActual);
+                        }
                         if (!preservarTotalActual && precioFinal > 0) {
                             modalTotalEl.value = formatMoney(precioFinal);
                         }
                     }
                     if (modalPoliticaPagoInfoEl) {
                         modalPoliticaPagoInfoEl.textContent = politicaPagoTexto(payload.politicaConfirmacionPago, payload.porcentajeAdelantoMinimo);
+                    }
+                    if (modalTieneCuponEl?.checked && String(modalCodigoCuponEl?.value || '').trim()) {
+                        await validarCuponModal(true);
+                    } else {
+                        limpiarMensajeCuponModal();
                     }
                 } catch (err) {
                     if (modalPoliticaPagoInfoEl) {
@@ -1732,6 +1895,7 @@ else
                 limpiarDisponibilidadModal();
                 reservaModalTitulo.textContent = 'Nueva reserva';
                 if (modalEstadoWrap) modalEstadoWrap.classList.add('d-none');
+                if (modalCuponWrapEl) modalCuponWrapEl.classList.remove('d-none');
                 setValue('modalReservaId', 0);
                 const fechaInicial = fechaIso && !esFechaPasadaIso(fechaIso) ? fechaIso : hoyIso;
                 setValue('modalFecha', fechaInicial);
@@ -1739,6 +1903,8 @@ else
                 setValue('modalHoraFin', horaFin || '19:00');
                 setValue('modalEstado', 1);
                 setValue('modalTotal', '0.00');
+                setValue('modalTotalBaseCupon', '0.00');
+                modalPrecioBaseActual = 0;
                 setValue('modalAdelanto', '0.00');
                 if (modalAdelantoActualInfoEl) {
                     modalAdelantoActualInfoEl.textContent = 'Pagado acumulado actual: 0.00';
@@ -1749,6 +1915,9 @@ else
                 setValue('modalNumeroOperacion', '');
                 if (modalRegistrarPagoEl) modalRegistrarPagoEl.checked = false;
                 actualizarUIRegistroPago();
+                if (modalTieneCuponEl) modalTieneCuponEl.checked = false;
+                actualizarUICuponModal();
+                cuponAplicadoModal = false;
                 setValue('modalEspacioDeportivoId', espacioId || getFiltroEspacioSeleccionado());
                 setValue('modalClienteId', '');
                 if (modalClienteBuscarEl) modalClienteBuscarEl.value = '';
@@ -1772,6 +1941,7 @@ else
                     .then(data => {
                         reservaModalTitulo.textContent = `Editar reserva #${data.id}`;
                         if (modalEstadoWrap) modalEstadoWrap.classList.remove('d-none');
+                        if (modalCuponWrapEl) modalCuponWrapEl.classList.add('d-none');
                         setValue('modalReservaId', data.id);
                         setValue('modalEspacioDeportivoId', data.espacioDeportivoId);
                         setValue('modalClienteId', data.clienteId);
@@ -1780,6 +1950,8 @@ else
                         setValue('modalHoraFin', data.horaFin);
                         setValue('modalEstado', data.estado);
                         setValue('modalTotal', data.total ?? '0.00');
+                        setValue('modalTotalBaseCupon', data.total ?? '0.00');
+                        modalPrecioBaseActual = Number(data.total || 0);
                         setValue('modalAdelanto', '0.00');
                         if (modalAdelantoActualInfoEl) {
                             const pagado = Number(data.adelanto || 0);
@@ -1791,6 +1963,10 @@ else
                         setValue('modalFormaPagoId', '');
                         setValue('modalFechaPago', hoyIso);
                         setValue('modalNumeroOperacion', '');
+                        if (modalTieneCuponEl) modalTieneCuponEl.checked = false;
+                        if (modalCodigoCuponEl) modalCodigoCuponEl.value = '';
+                        actualizarUICuponModal();
+                        cuponAplicadoModal = false;
                         if (modalRegistrarPagoEl) modalRegistrarPagoEl.checked = false;
                         actualizarUIRegistroPago();
                         reservaModal.show();
@@ -2151,7 +2327,7 @@ else
                     info?.revert?.();
                     limpiarArrastreVisual();
                     const mensaje = err?.name === 'AbortError'
-                        ? 'La validaciÃ³n tardÃ³ demasiado. Se restaurÃ³ la reserva a su posiciÃ³n original.'
+                        ? 'La validación tardó demasiado. Se restauró la reserva a su posición original.'
                         : (err?.message || mensajeErrorPorDefecto);
                     notificarCalendario(mensaje, 'warning');
                 } finally {
@@ -2578,6 +2754,9 @@ else
                     const el = document.getElementById(id);
                     if (!el) return;
                     el.addEventListener('change', () => {
+                        if (modalTieneCuponEl?.checked) {
+                            resetCuponAplicadoModal();
+                        }
                         validarDisponibilidadModalDebounce();
                         cotizarReservaModal();
                     });
@@ -2585,6 +2764,30 @@ else
                 });
             if (modalRegistrarPagoEl) {
                 modalRegistrarPagoEl.addEventListener('change', actualizarUIRegistroPago);
+            }
+            if (modalTieneCuponEl) {
+                modalTieneCuponEl.addEventListener('change', async () => {
+                    actualizarUICuponModal();
+                    if (modalTieneCuponEl.checked && String(modalCodigoCuponEl?.value || '').trim()) {
+                        await validarCuponModal(true);
+                    }
+                });
+            }
+            if (modalCodigoCuponEl) {
+                modalCodigoCuponEl.addEventListener('keyup', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        void validarCuponModal(false);
+                    }
+                });
+                modalCodigoCuponEl.addEventListener('input', () => {
+                    resetCuponAplicadoModal();
+                });
+            }
+            if (btnValidarCuponModalEl) {
+                btnValidarCuponModalEl.addEventListener('click', () => {
+                    void validarCuponModal(false);
+                });
             }
             if (modalClienteBuscarEl && modalClienteIdEl && modalClienteResultadosEl) {
                 modalClienteBuscarEl.addEventListener('input', () => {
@@ -2696,6 +2899,13 @@ else
                 if (Number(modalTotalEl?.value || 0) <= 0) {
                     mostrarErrorModal('El precio de espacio es obligatorio y debe ser mayor que cero.');
                     return;
+                }
+                if (modalTieneCuponEl?.checked && String(modalCodigoCuponEl?.value || '').trim() && cuponAplicadoModal) {
+                    const modalTotalBaseCuponEl = document.getElementById('modalTotalBaseCupon');
+                    const baseParaServidor = Number(modalTotalBaseCuponEl?.value || 0);
+                    if (baseParaServidor > 0 && modalTotalEl) {
+                        modalTotalEl.value = formatMoney(baseParaServidor);
+                    }
                 }
                 if (!String(modalClienteIdEl?.value || '').trim()) {
                     mostrarErrorModal('Selecciona un cliente. Escribe en la caja y presiona Enter para buscar.');
@@ -2809,6 +3019,7 @@ else
                 setTimeout(() => abrirModalEditarReserva(reservaIdParam), 120);
             }
 
+            actualizarUICuponModal();
             conectarListadoGeneralAjax();
 
         })();

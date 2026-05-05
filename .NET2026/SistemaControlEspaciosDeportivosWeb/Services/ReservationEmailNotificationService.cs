@@ -208,7 +208,7 @@ public static class ReservationEmailTemplateBuilder
     {
         var rows = new List<(string Label, string Value)>
         {
-            ("Club / negocio", SanitizeValue(reserva.Negocio)),
+            ("Complejo Deportivo", SanitizeValue(reserva.Negocio)),
             ("Codigo de reserva", $"#{reserva.ReservaId:D6}"),
             ("Sede", SanitizeValue(reserva.Sede)),
             ("Espacio deportivo", SanitizeValue(reserva.Espacio)),

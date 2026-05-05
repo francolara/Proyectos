@@ -294,7 +294,7 @@ $"""
         var rows = new List<(string Label, string Value)>
         {
             ("Codigo de solicitud", request.CodigoSolicitud),
-            ("Club / negocio", request.NombreClub),
+            ("Complejo Deportivo", request.NombreClub),
             ("Responsable", request.NombreContacto),
             ("Correo", request.Correo),
             ("Telefono", request.Telefono),

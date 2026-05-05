@@ -56,25 +56,38 @@
             </div>
             <div class="p-3">
                 <div class="platform-bars">
+                    @* Firma: FRANCO LARA - 03/05/2026 | Mejora visual del bloque estado de negocios con iconos y jerarquia de titulos; detalle muestra correo y telefono por negocio. *@
                     <button type="button" class="platform-bar-item platform-click" data-bloque="negocios-contrato">
                         <div class="platform-bar-track">
                             <div class="platform-bar-fill bg-primary" style="height:@Math.Max(8, (int)Math.Round(negociosData[0] * 100d / negociosMax))%"></div>
                         </div>
-                        <div class="platform-bar-label">Contrato</div>
+                        <div class="platform-bar-meta">
+                            <span class="platform-bar-icon"><i class="bi bi-patch-check"></i></span>
+                            <div class="platform-bar-label">Contrato</div>
+                            <div class="platform-bar-subtitle">Plan activo</div>
+                        </div>
                         <div class="platform-bar-value">@negociosData[0]</div>
                     </button>
                     <button type="button" class="platform-bar-item platform-click" data-bloque="negocios-prueba">
                         <div class="platform-bar-track">
                             <div class="platform-bar-fill bg-info" style="height:@Math.Max(8, (int)Math.Round(negociosData[1] * 100d / negociosMax))%"></div>
                         </div>
-                        <div class="platform-bar-label">Prueba</div>
+                        <div class="platform-bar-meta">
+                            <span class="platform-bar-icon"><i class="bi bi-hourglass-split"></i></span>
+                            <div class="platform-bar-label">Prueba</div>
+                            <div class="platform-bar-subtitle">Periodo demo</div>
+                        </div>
                         <div class="platform-bar-value">@negociosData[1]</div>
                     </button>
                     <button type="button" class="platform-bar-item platform-click" data-bloque="negocios-vencido">
                         <div class="platform-bar-track">
                             <div class="platform-bar-fill bg-danger" style="height:@Math.Max(8, (int)Math.Round(negociosData[2] * 100d / negociosMax))%"></div>
                         </div>
-                        <div class="platform-bar-label">Vencido</div>
+                        <div class="platform-bar-meta">
+                            <span class="platform-bar-icon"><i class="bi bi-exclamation-octagon"></i></span>
+                            <div class="platform-bar-label">Vencido</div>
+                            <div class="platform-bar-subtitle">Reactivacion</div>
+                        </div>
                         <div class="platform-bar-value">@negociosData[2]</div>
                     </button>
                 </div>
@@ -191,6 +204,8 @@
 </section>
 
 <section class="table-card sc-reservas-list-card mb-3">
+    @* Firma: FRANCO LARA - 03/05/2026 | Agrega accion de envio de recordatorio comercial por correo desde detalle del dashboard global. *@
+    @Html.AntiForgeryToken()
     <div class="table-card-header d-flex justify-content-between align-items-center">
         <h2 class="table-card-title platform-card-title"><span class="platform-card-icon"><i class="bi bi-list-task"></i></span><span class="platform-card-title-text" id="detalle-titulo">Detalle seleccionado</span></h2>
     </div>
@@ -274,9 +289,11 @@
         flex: 1;
         min-width: 90px;
         border: 0;
-        background: transparent;
+        background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+        border: 1px solid #d9e5fa;
+        border-radius: .85rem;
         text-align: left;
-        padding: 0;
+        padding: .65rem;
     }
 
     .platform-bar-track {
@@ -295,13 +312,42 @@
     }
 
     .platform-bar-label {
-        margin-top: .5rem;
+        margin-top: .25rem;
         font-size: .82rem;
-        color: #41506a;
-        font-weight: 600;
+        color: #1d2b45;
+        font-weight: 700;
+        letter-spacing: .01em;
+    }
+
+    .platform-bar-subtitle {
+        font-size: .72rem;
+        color: #6b7a96;
+        letter-spacing: .01em;
+    }
+
+    .platform-bar-meta {
+        margin-top: .45rem;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: .05rem;
+    }
+
+    .platform-bar-icon {
+        width: 1.35rem;
+        height: 1.35rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: .45rem;
+        background: #eef4ff;
+        border: 1px solid #c7d9ff;
+        color: #2459bd;
+        font-size: .75rem;
     }
 
     .platform-bar-value {
+        margin-top: .5rem;
         font-size: 1.05rem;
         font-weight: 700;
         color: #0b1f44;
@@ -384,6 +430,11 @@
 
     .platform-click:hover .platform-bar-track {
         box-shadow: inset 0 0 0 2px #b8d1ff;
+    }
+
+    .platform-click:hover.platform-bar-item {
+        border-color: #9fc0f9;
+        box-shadow: 0 8px 18px rgba(21, 84, 183, .10);
     }
 
     .platform-legend-btn {
@@ -480,6 +531,8 @@
     (() => {
         const detalleBody = document.getElementById('detalle-body');
         const detalleTitulo = document.getElementById('detalle-titulo');
+        const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+        const antiforgeryToken = tokenInput ? tokenInput.value : '';
         if (!detalleBody || !detalleTitulo) return;
 
         const renderTable = (data) => {
@@ -521,6 +574,42 @@
                 detalleBody.innerHTML = `<div class="text-danger small">${error.message}</div>`;
             }
         };
+
+        detalleBody.addEventListener('click', async (evt) => {
+            const btn = evt.target instanceof Element ? evt.target.closest('.js-enviar-recordatorio') : null;
+            if (!btn) return;
+            const negocioId = Number(btn.getAttribute('data-negocio-id') || '0');
+            const tipo = (btn.getAttribute('data-tipo') || '').trim();
+            if (!negocioId || !tipo) return;
+            btn.setAttribute('disabled', 'disabled');
+            const textoOriginal = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-envelope-check"></i> Enviando...';
+            try {
+                const formData = new FormData();
+                formData.append('negocioId', String(negocioId));
+                formData.append('tipo', tipo);
+                const response = await fetch('@Url.Action("EnviarRecordatorioNegocio", "Plataforma")', {
+                    method: 'POST',
+                    headers: { 'RequestVerificationToken': antiforgeryToken },
+                    body: formData
+                });
+                const raw = await response.text();
+                let payload;
+                try {
+                    payload = raw ? JSON.parse(raw) : {};
+                } catch {
+                    payload = { ok: false, mensaje: raw || 'Respuesta no valida del servidor.' };
+                }
+                if (!response.ok || !payload.ok) throw new Error(payload.mensaje || 'No se pudo enviar el recordatorio.');
+                btn.classList.remove('btn-outline-primary');
+                btn.classList.add('btn-outline-success');
+                btn.innerHTML = '<i class="bi bi-check2-circle"></i> Enviado';
+            } catch (error) {
+                alert(error.message || 'No se pudo enviar el recordatorio.');
+                btn.removeAttribute('disabled');
+                btn.innerHTML = textoOriginal;
+            }
+        });
 
         document.querySelectorAll('.platform-click[data-bloque]').forEach(btn => {
             btn.addEventListener('click', () => {

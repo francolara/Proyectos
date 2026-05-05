@@ -10,6 +10,7 @@ GO
 -- Firma: Codex - 07/04/2026 | Crea reserva con politica de pago del negocio, registro opcional de pago en creacion y comentario, incluyendo fecha de pago y numero de operacion alfanumerico opcional.
 -- Firma: Codex - 14/04/2026 | Agrega CanalOrigen en reservas, genera notificacion para origen CLIENTE_WEB y ajusta concatenacion compatible en mensaje/url.
 -- Firma: Codex - 17/04/2026 | Aisla notificacion en flujo CLIENTE_WEB sin INSERT-EXEC, agrega salida opcional @ReservaId y mantiene SELECT final del Id real creado.
+-- Firma: FRANCO LARA - 03/05/2026 | Permite aplicar cupon por codigo en reserva (admin/web), valida vigencia/limite por sede-espacio y registra uso acumulado. Ajusta validacion de adelanto/estado para evaluar el total final luego del cupon.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Reservas_Crear]
     @NegocioId INT,
     @EspacioDeportivoId INT,
@@ -25,6 +26,7 @@ CREATE OR ALTER PROCEDURE [dbo].[Sp_Reservas_Crear]
     @FechaPago DATETIME2 = NULL,
     @NumeroOperacion NVARCHAR(50) = NULL,
     @Comentario NVARCHAR(500) = NULL,
+    @CodigoCupon NVARCHAR(30) = NULL,
     @CanalOrigen NVARCHAR(20) = N'ADMIN',
     @ReservaId INT = NULL OUTPUT,
     @Usuario NVARCHAR(200)
@@ -38,6 +40,10 @@ BEGIN
         IF @Total <= 0
             RAISERROR('El precio de espacio debe ser mayor que cero.', 16, 1);
 
+        DECLARE @TotalOriginal DECIMAL(10,2) = @Total;
+        DECLARE @DescuentoCupon DECIMAL(10,2) = 0;
+        DECLARE @CuponId INT = NULL;
+
         IF @Adelanto < 0
             RAISERROR('El monto de pago no puede ser negativo.', 16, 1);
 
@@ -46,9 +52,6 @@ BEGIN
 
         IF @RegistrarPago = 1 AND @Adelanto <= 0
             RAISERROR('Debes ingresar un pago mayor que cero para registrar adelanto/pago.', 16, 1);
-
-        IF @Adelanto > @Total
-            RAISERROR('El adelanto/pago no puede ser mayor que el total.', 16, 1);
 
         SET @NumeroOperacion = NULLIF(LTRIM(RTRIM(@NumeroOperacion)), N'');
         IF @NumeroOperacion IS NOT NULL AND @NumeroOperacion LIKE N'%[^0-9A-Za-z]%'
@@ -73,33 +76,6 @@ BEGIN
         DECLARE @PorcentajeAdelantoMinimo DECIMAL(5,2);
         DECLARE @PagoMinimoRequerido DECIMAL(10,2);
         DECLARE @EstadoCalculado INT;
-
-        SELECT
-            @PoliticaConfirmacionPago = COALESCE(n.PoliticaConfirmacionPago, 0),
-            @PorcentajeAdelantoMinimo = n.PorcentajeAdelantoMinimo
-        FROM dbo.Negocios n
-        WHERE n.Id = @NegocioId;
-
-        IF @PoliticaConfirmacionPago NOT IN (0, 1, 2)
-            SET @PoliticaConfirmacionPago = 0;
-
-        SET @EstadoCalculado = 1;
-        IF @Adelanto >= @Total
-            SET @EstadoCalculado = 4;
-        ELSE IF @Adelanto > 0
-        BEGIN
-            IF @PoliticaConfirmacionPago = 0
-                SET @EstadoCalculado = 2;
-            ELSE IF @PoliticaConfirmacionPago = 1
-            BEGIN
-                IF @PorcentajeAdelantoMinimo IS NULL OR @PorcentajeAdelantoMinimo <= 0 OR @PorcentajeAdelantoMinimo > 100
-                    RAISERROR('La configuracion del porcentaje minimo de adelanto no es valida.', 16, 1);
-
-                SET @PagoMinimoRequerido = ROUND(@Total * (@PorcentajeAdelantoMinimo / 100.0), 2);
-                IF @Adelanto >= @PagoMinimoRequerido
-                    SET @EstadoCalculado = 2;
-            END
-        END
 
         DECLARE @SedeId INT, @HoraApertura TIME, @HoraCierre TIME;
         DECLARE @AtiendeLunes BIT, @AtiendeMartes BIT, @AtiendeMiercoles BIT, @AtiendeJueves BIT, @AtiendeViernes BIT, @AtiendeSabado BIT, @AtiendeDomingo BIT;
@@ -152,17 +128,75 @@ BEGIN
         IF EXISTS (SELECT 1 FROM dbo.BloqueosHorario b WHERE b.EspacioDeportivoId = @EspacioDeportivoId AND b.Fecha = @Fecha AND b.Activo = 1 AND @HoraInicio < b.HoraFin AND @HoraFin > b.HoraInicio)
             RAISERROR('El horario esta bloqueado para ese espacio.', 16, 1);
 
+        SET @CodigoCupon = UPPER(NULLIF(LTRIM(RTRIM(@CodigoCupon)), N''));
+        IF @CodigoCupon IS NOT NULL
+        BEGIN
+            DECLARE @HoyCupon DATE = CAST(SYSUTCDATETIME() AS DATE);
+            SELECT TOP 1
+                @CuponId = c.Id,
+                @DescuentoCupon = CASE
+                    WHEN c.TipoDescuento = N'PORCENTAJE' THEN ROUND(@TotalOriginal * (c.ValorDescuento / 100.0), 2)
+                    ELSE c.ValorDescuento
+                END
+            FROM dbo.Cupones c WITH (UPDLOCK, HOLDLOCK)
+            WHERE c.NegocioId = @NegocioId
+              AND c.CodigoCupon = @CodigoCupon
+              AND c.Activo = 1
+              AND c.FechaInicio <= @HoyCupon
+              AND c.FechaFin >= @HoyCupon
+              AND c.CantidadUsosActuales < c.CantidadMaxUsos
+              AND (c.SedeId IS NULL OR c.SedeId = @SedeId)
+              AND (c.EspacioDeportivoId IS NULL OR c.EspacioDeportivoId = @EspacioDeportivoId);
+
+            IF @CuponId IS NULL
+                RAISERROR('El cupon no es valido para la reserva seleccionada.', 16, 1);
+
+            IF @DescuentoCupon < 0 SET @DescuentoCupon = 0;
+            IF @DescuentoCupon > @TotalOriginal SET @DescuentoCupon = @TotalOriginal;
+            SET @Total = @TotalOriginal - @DescuentoCupon;
+        END
+
+        IF @Adelanto > @Total
+            RAISERROR('El adelanto/pago no puede ser mayor que el total.', 16, 1);
+
+        SELECT
+            @PoliticaConfirmacionPago = COALESCE(n.PoliticaConfirmacionPago, 0),
+            @PorcentajeAdelantoMinimo = n.PorcentajeAdelantoMinimo
+        FROM dbo.Negocios n
+        WHERE n.Id = @NegocioId;
+
+        IF @PoliticaConfirmacionPago NOT IN (0, 1, 2)
+            SET @PoliticaConfirmacionPago = 0;
+
+        SET @EstadoCalculado = 1;
+        IF @Adelanto >= @Total
+            SET @EstadoCalculado = 4;
+        ELSE IF @Adelanto > 0
+        BEGIN
+            IF @PoliticaConfirmacionPago = 0
+                SET @EstadoCalculado = 2;
+            ELSE IF @PoliticaConfirmacionPago = 1
+            BEGIN
+                IF @PorcentajeAdelantoMinimo IS NULL OR @PorcentajeAdelantoMinimo <= 0 OR @PorcentajeAdelantoMinimo > 100
+                    RAISERROR('La configuracion del porcentaje minimo de adelanto no es valida.', 16, 1);
+
+                SET @PagoMinimoRequerido = ROUND(@Total * (@PorcentajeAdelantoMinimo / 100.0), 2);
+                IF @Adelanto >= @PagoMinimoRequerido
+                    SET @EstadoCalculado = 2;
+            END
+        END
+
         BEGIN TRANSACTION;
 
         INSERT INTO dbo.Reservas
         (
             EspacioDeportivoId, ClienteId, Fecha, HoraInicio, HoraFin, Estado,
-            Total, Adelanto, Saldo, Comentario, CanalOrigen, FechaRegistro, UsuarioCreacion
+            Total, Adelanto, Saldo, Comentario, CodigoCuponAplicado, DescuentoCupon, CanalOrigen, FechaRegistro, UsuarioCreacion
         )
         VALUES
         (
             @EspacioDeportivoId, @ClienteId, @Fecha, @HoraInicio, @HoraFin, @EstadoCalculado,
-            @Total, @Adelanto, (@Total - @Adelanto), NULLIF(LTRIM(RTRIM(@Comentario)), N''), COALESCE(NULLIF(LTRIM(RTRIM(@CanalOrigen)), N''), N'ADMIN'), SYSUTCDATETIME(), @Usuario
+            @Total, @Adelanto, (@Total - @Adelanto), NULLIF(LTRIM(RTRIM(@Comentario)), N''), @CodigoCupon, @DescuentoCupon, COALESCE(NULLIF(LTRIM(RTRIM(@CanalOrigen)), N''), N'ADMIN'), SYSUTCDATETIME(), @Usuario
         );
 
         DECLARE @Id INT = SCOPE_IDENTITY();
@@ -179,6 +213,24 @@ BEGIN
             (
                 @Id, @FechaPago, @Adelanto, @FormaPagoId, @NumeroOperacion, N'Pago registrado al crear reserva.',
                 SYSUTCDATETIME(), @Usuario
+            );
+        END
+
+        IF @CuponId IS NOT NULL
+        BEGIN
+            UPDATE dbo.Cupones
+            SET CantidadUsosActuales = CantidadUsosActuales + 1,
+                FechaActualizacion = SYSUTCDATETIME(),
+                UsuarioActualizacion = @Usuario
+            WHERE Id = @CuponId;
+
+            INSERT INTO dbo.CuponesUso
+            (
+                CuponId, ReservaId, ClienteId, MontoAntes, MontoDescuento, MontoFinal, CanalOrigen, FechaUso, UsuarioCreacion
+            )
+            VALUES
+            (
+                @CuponId, @Id, @ClienteId, @TotalOriginal, @DescuentoCupon, @Total, COALESCE(NULLIF(LTRIM(RTRIM(@CanalOrigen)), N''), N'ADMIN'), SYSUTCDATETIME(), @Usuario
             );
         END
 
@@ -218,4 +270,3 @@ BEGIN
 END
 
 GO
-

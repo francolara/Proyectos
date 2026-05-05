@@ -236,6 +236,8 @@ public class ReservaFormViewModel
 
     [StringLength(500, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string? Comentario { get; set; }
+    [StringLength(30, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+    public string? CodigoCupon { get; set; }
 
     public List<SelectListItem> Espacios { get; set; } = new();
     public List<SelectListItem> Clientes { get; set; } = new();
@@ -550,6 +552,45 @@ public class PromocionFormViewModel
 
     [Range(0, 100, ErrorMessage = "El campo {0} debe estar entre {1} y {2}.")]
     public decimal PorcentajeDescuento { get; set; }
+
+    public bool Activo { get; set; } = true;
+
+    public List<SelectListItem> Sedes { get; set; } = new();
+    public List<SelectListItem> Espacios { get; set; } = new();
+}
+
+public class CuponFormViewModel
+{
+    public int Id { get; set; }
+    public int NegocioId { get; set; }
+    public string NegocioNombre { get; set; } = string.Empty;
+    public string RolActual { get; set; } = string.Empty;
+    public int? SedeId { get; set; }
+    public int? EspacioDeportivoId { get; set; }
+
+    [Required(ErrorMessage = "Este campo es obligatorio.")]
+    [StringLength(30, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+    public string CodigoCupon { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Este campo es obligatorio.")]
+    [StringLength(150, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+    public string Nombre { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Este campo es obligatorio.")]
+    [StringLength(20, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+    public string TipoDescuento { get; set; } = "PORCENTAJE";
+
+    [Range(0.01, 999999, ErrorMessage = "El campo {0} debe estar entre {1} y {2}.")]
+    public decimal ValorDescuento { get; set; }
+
+    [Range(1, 999999, ErrorMessage = "El campo {0} debe estar entre {1} y {2}.")]
+    public int CantidadMaxUsos { get; set; } = 1;
+
+    [Required(ErrorMessage = "Este campo es obligatorio.")]
+    public DateOnly FechaInicio { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+
+    [Required(ErrorMessage = "Este campo es obligatorio.")]
+    public DateOnly FechaFin { get; set; } = DateOnly.FromDateTime(DateTime.Today.AddDays(30));
 
     public bool Activo { get; set; } = true;
 

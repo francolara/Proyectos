@@ -110,6 +110,7 @@ public partial class SportCenterStoredProcedureService
             Adelanto = dr.GetDecimal(7),
             Estado = (EstadoReserva)dr.GetInt32(8),
             Comentario = dr.FieldCount > 9 && !dr.IsDBNull(9) ? dr.GetString(9) : null,
+            CodigoCupon = dr.FieldCount > 10 && !dr.IsDBNull(10) ? dr.GetString(10) : null,
             NegocioId = negocioId
         };
     }
@@ -133,6 +134,7 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@FechaPago", model.FechaPago, SqlDbType.DateTime2);
         AddParam(cmd, "@NumeroOperacion", model.NumeroOperacion, SqlDbType.NVarChar);
         AddParam(cmd, "@Comentario", model.Comentario, SqlDbType.NVarChar);
+        AddParam(cmd, "@CodigoCupon", string.IsNullOrWhiteSpace(model.CodigoCupon) ? null : model.CodigoCupon.Trim().ToUpperInvariant(), SqlDbType.NVarChar);
         AddParam(cmd, "@CanalOrigen", "ADMIN", SqlDbType.NVarChar);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
         return Convert.ToInt32(await cmd.ExecuteScalarAsync());

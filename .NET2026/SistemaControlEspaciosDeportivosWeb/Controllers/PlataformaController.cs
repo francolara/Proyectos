@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Net;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
 
@@ -9,10 +10,12 @@ namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 [Authorize(Roles = "OwnerPlataforma")]
 public class PlataformaController(
     ISportCenterStoredProcedureService spService,
+    IEmailService emailService,
     IClubRegistrationNotificationService clubRegistrationNotificationService,
     IHomeReferencialesExternosSyncService referencialesExternosSyncService) : Controller
 {
     private const string ParamRefExternosBarridoHabilitado = "HOME_REFEXT_BARRIDO_HABILITADO";
+    private const string SenderReminderEmail = "info@lazonadeportiva.com";
 
     private static readonly (string Key, string Label, string? Desc, Func<PlataformaPortalConfigViewModel, string?> GetValue)[] PortalParamMap =
     [
@@ -103,29 +106,55 @@ public class PlataformaController(
         var hoy = DateTime.UtcNow.Date;
         var hoyDateOnly = DateOnly.FromDateTime(hoy);
 
+        var negociosDashboard = (await spService.PlataformaNegociosListarAsync(null, "todos", 1, 5000)).Negocios;
+        await EnriquecerContactosNegociosAsync(negociosDashboard);
         var payload = key switch
         {
             "negocios-contrato" => await BuildDetallePayloadAsync(
                 "Detalle de negocios con contrato activo",
-                ["Negocio", "Estado", "Vigencia"],
-                (await spService.PlataformaNegociosListarAsync(null, "todos", 1, 5000)).Negocios
+                ["Negocio", "Estado", "Vigencia", "Correo", "Telefono", "Accion"],
+                negociosDashboard
                     .Where(n => !n.EsPrueba && n.FechaFinPlan.HasValue && n.FechaFinPlan.Value.Date >= hoy && n.EstadoSuscripcion > 0)
                     .Take(20)
-                    .Select(n => new[] { n.NombreComercial, n.EstadoSuscripcionNombre, $"{n.FechaInicioPlan:dd/MM/yyyy} - {n.FechaFinPlan:dd/MM/yyyy}" })),
+                    .Select(n => new[]
+                    {
+                        n.NombreComercial,
+                        n.EstadoSuscripcionNombre,
+                        $"{n.FechaInicioPlan:dd/MM/yyyy} - {n.FechaFinPlan:dd/MM/yyyy}",
+                        FormatearCeldaTexto(n.CorreoContacto),
+                        FormatearCeldaTexto(n.TelefonoContacto),
+                        BuildReminderButtonHtml(n.NegocioId, "contrato")
+                    })),
             "negocios-prueba" => await BuildDetallePayloadAsync(
                 "Detalle de negocios en prueba",
-                ["Negocio", "Inicio prueba", "Fin prueba"],
-                (await spService.PlataformaNegociosListarAsync(null, "todos", 1, 5000)).Negocios
+                ["Negocio", "Inicio prueba", "Fin prueba", "Correo", "Telefono", "Accion"],
+                negociosDashboard
                     .Where(n => n.EsPrueba && (n.FechaFinPrueba is null || n.FechaFinPrueba.Value.Date >= hoy))
                     .Take(20)
-                    .Select(n => new[] { n.NombreComercial, $"{n.FechaInicioPrueba:dd/MM/yyyy}", $"{n.FechaFinPrueba:dd/MM/yyyy}" })),
+                    .Select(n => new[]
+                    {
+                        n.NombreComercial,
+                        $"{n.FechaInicioPrueba:dd/MM/yyyy}",
+                        $"{n.FechaFinPrueba:dd/MM/yyyy}",
+                        FormatearCeldaTexto(n.CorreoContacto),
+                        FormatearCeldaTexto(n.TelefonoContacto),
+                        BuildReminderButtonHtml(n.NegocioId, "prueba")
+                    })),
             "negocios-vencido" => await BuildDetallePayloadAsync(
                 "Detalle de negocios vencidos",
-                ["Negocio", "Estado", "Ultima vigencia"],
-                (await spService.PlataformaNegociosListarAsync(null, "todos", 1, 5000)).Negocios
+                ["Negocio", "Estado", "Ultima vigencia", "Correo", "Telefono", "Accion"],
+                negociosDashboard
                     .Where(n => n.EsPrueba ? (n.FechaFinPrueba.HasValue && n.FechaFinPrueba.Value.Date < hoy) : (!n.FechaFinPlan.HasValue || n.FechaFinPlan.Value.Date < hoy))
                     .Take(20)
-                    .Select(n => new[] { n.NombreComercial, n.EstadoSuscripcionNombre, $"{(n.EsPrueba ? n.FechaFinPrueba : n.FechaFinPlan):dd/MM/yyyy}" })),
+                    .Select(n => new[]
+                    {
+                        n.NombreComercial,
+                        n.EstadoSuscripcionNombre,
+                        $"{(n.EsPrueba ? n.FechaFinPrueba : n.FechaFinPlan):dd/MM/yyyy}",
+                        FormatearCeldaTexto(n.CorreoContacto),
+                        FormatearCeldaTexto(n.TelefonoContacto),
+                        BuildReminderButtonHtml(n.NegocioId, "vencido")
+                    })),
             "solicitudes-pendiente" => await BuildDetallePayloadAsync(
                 "Detalle de solicitudes pendientes",
                 ["Codigo", "Club", "Contacto"],
@@ -175,6 +204,47 @@ public class PlataformaController(
         };
 
         return Json(payload);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EnviarRecordatorioNegocio(int negocioId, string tipo)
+    {
+        try
+        {
+            var tipoNormalizado = (tipo ?? string.Empty).Trim().ToLowerInvariant();
+            if (tipoNormalizado is not ("contrato" or "prueba" or "vencido"))
+                return BadRequest(new { ok = false, mensaje = "Tipo de recordatorio invalido." });
+
+            var (negocios, _) = await spService.PlataformaNegociosListarAsync(null, "todos", 1, 5000);
+            var negocio = negocios.FirstOrDefault(x => x.NegocioId == negocioId);
+            if (negocio is null)
+                return NotFound(new { ok = false, mensaje = "No se encontro el negocio." });
+
+            var contacto = await spService.PlataformaNegocioObtenerContactoCorreoAsync(negocioId);
+            if (string.IsNullOrWhiteSpace(contacto.Correo))
+                return BadRequest(new { ok = false, mensaje = "El negocio no tiene correo de contacto configurado." });
+
+            var fechaVigencia = tipoNormalizado switch
+            {
+                "prueba" => negocio.FechaFinPrueba?.Date,
+                _ => negocio.FechaFinPlan?.Date
+            };
+
+            var (asunto, html) = BuildReminderEmailByTipo(tipoNormalizado, negocio.NombreComercial, contacto.NombreDestino, fechaVigencia);
+            await emailService.SendEmailAsync(
+                contacto.Correo!,
+                string.IsNullOrWhiteSpace(contacto.NombreDestino) ? negocio.NombreComercial : contacto.NombreDestino!,
+                asunto,
+                html,
+                new EmailSendOptions { SenderEmail = SenderReminderEmail });
+
+            return Json(new { ok = true, mensaje = $"Recordatorio enviado a {contacto.Correo}." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { ok = false, mensaje = ex.Message });
+        }
     }
 
     [HttpGet]
@@ -736,5 +806,99 @@ public class PlataformaController(
             .Select(f => f.Select(c => string.IsNullOrWhiteSpace(c) ? "-" : c).ToArray())
             .ToList();
         return Task.FromResult<object>(new { titulo, columnas, filas = filasNormalizadas });
+    }
+
+    private static string BuildReminderButtonHtml(int negocioId, string tipo)
+    {
+        return $"<button type=\"button\" class=\"btn btn-sm btn-outline-primary js-enviar-recordatorio\" data-negocio-id=\"{negocioId}\" data-tipo=\"{tipo}\"><i class=\"bi bi-envelope\"></i> Enviar recordatorio</button>";
+    }
+
+    private async Task EnriquecerContactosNegociosAsync(IEnumerable<PlataformaNegocioLimiteItemViewModel> negocios)
+    {
+        var lista = negocios?.ToList() ?? [];
+        if (lista.Count == 0)
+            return;
+
+        var tasks = lista.Select(async n =>
+        {
+            var contacto = await spService.PlataformaNegocioObtenerContactoCorreoAsync(n.NegocioId);
+            n.CorreoContacto = contacto.Correo;
+            n.TelefonoContacto = contacto.Telefono;
+        });
+        await Task.WhenAll(tasks);
+    }
+
+    private static string FormatearCeldaTexto(string? valor)
+        => string.IsNullOrWhiteSpace(valor) ? "-" : WebUtility.HtmlEncode(valor.Trim());
+
+    private static (string Asunto, string Html) BuildReminderEmailByTipo(string tipo, string nombreNegocio, string? nombreDestino, DateTime? fechaVigencia)
+    {
+        var saludoNombre = string.IsNullOrWhiteSpace(nombreDestino) ? "cliente" : nombreDestino!;
+        var negocioSeguro = WebUtility.HtmlEncode(nombreNegocio);
+        var saludoSeguro = WebUtility.HtmlEncode(saludoNombre);
+        var vigenciaTexto = fechaVigencia.HasValue ? fechaVigencia.Value.ToString("dd/MM/yyyy") : string.Empty;
+
+        var (asunto, mensajePrincipal, mensajeSecundario) = tipo switch
+        {
+            "contrato" => (
+                $"Recordatorio de vigencia - {nombreNegocio}",
+                $"Le recordamos que la vigencia de su suscripcion para <strong>{negocioSeguro}</strong> vence el <strong>{vigenciaTexto}</strong>.",
+                "Le invitamos a renovar su suscripcion para mantener su operacion activa sin interrupciones."
+            ),
+            "prueba" => (
+                $"Tu periodo de prueba esta por vencer - {nombreNegocio}",
+                $"Su periodo de prueba para <strong>{negocioSeguro}</strong> vence el <strong>{vigenciaTexto}</strong>.",
+                "Queremos ayudarle a continuar creciendo; podemos activar su plan comercial de forma inmediata."
+            ),
+            _ => (
+                $"Te invitamos a volver - {nombreNegocio}",
+                fechaVigencia.HasValue
+                    ? $"Hemos detectado que la vigencia de <strong>{negocioSeguro}</strong> vencio el <strong>{vigenciaTexto}</strong>."
+                    : $"Hemos detectado que la vigencia de <strong>{negocioSeguro}</strong> ya vencio.",
+                "Nos encantaria tenerlos de regreso. Podemos reactivar su suscripcion y dejar su operacion nuevamente en linea."
+            )
+        };
+
+        var html = $@"
+<div style=""font-family: Arial, sans-serif; font-size:14px; color:#333;"">
+  <p>Estimado cliente <strong>{saludoSeguro}</strong>,</p>
+  <p>{mensajePrincipal}</p>
+  <p>{mensajeSecundario}</p>
+  <p>Si desea, podemos coordinar hoy mismo la renovacion/reactivacion de su servicio.</p>
+  <p>Saludos cordiales,</p>
+
+  <table style=""font-family: Arial, sans-serif; font-size:14px; color:#333;"">
+    <tr>
+      <td style=""padding-right:12px;"">
+        <a href=""https://lazonadeportiva.com"" target=""_blank"">
+          <img src=""https://pub-3afaea6b0b354821989565fa4b8bd250.r2.dev/logos/LaZonaDeportiva/Logo.png"" style=""width:120px;"" alt=""La Zona Deportiva""/>
+        </a>
+      </td>
+      <td>
+        <strong style=""font-size:16px; color:#0d6efd;"">La Zona Deportiva</strong><br/>
+        <span style=""color:#555;"">Plataforma de reservas para complejos deportivos</span>
+      </td>
+    </tr>
+  </table>
+
+  <br/>
+  <strong>Franco Lara Seguil</strong><br/>
+  <span>Telefono: <a href=""tel:+51950305708"" style=""color:#0d6efd; text-decoration:none;"">+51 950 305 708</a></span><br/>
+        <span>Email: <a href=""mailto:informes@lazonadeportiva.com"" style=""color:#0d6efd; text-decoration:none;"">informes@lazonadeportiva.com</a></span><br/>
+  <span>Web: <a href=""https://lazonadeportiva.com"" style=""color:#0d6efd; text-decoration:none;"">lazonadeportiva.com</a></span>
+
+  <br/><br/>
+  <div style=""background:#f5f5f5; padding:10px; border-radius:6px;"">
+    <strong>Tienes un complejo deportivo?</strong><br/>
+    Aumenta tus reservas y gestiona tus canchas desde una sola plataforma.
+  </div>
+
+  <br/>
+  <a href=""https://lazonadeportiva.com"" target=""_blank"" style=""background:#0d6efd; color:#ffffff; padding:10px 16px; text-decoration:none; border-radius:6px; font-weight:bold; display:inline-block;"">
+    Publicar mi complejo deportivo
+  </a>
+</div>";
+
+        return (asunto, html);
     }
 }

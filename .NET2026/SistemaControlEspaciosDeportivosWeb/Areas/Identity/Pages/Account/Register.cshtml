@@ -72,7 +72,7 @@
                     <label class="btn" for="regUsuario">Usuario</label>
 
                     <input type="radio" class="btn-check" name="TipoRegistro" id="regClub" value="club" checked="@(string.Equals(Model.TipoRegistro, "club", StringComparison.OrdinalIgnoreCase) ? "checked" : null)" />
-                    <label class="btn" for="regClub">Club deportivo</label>
+                    <label class="btn" for="regClub">Complejo deportivo</label>
                 </div>
 
                 <div id="registroUsuarioFields">
@@ -118,13 +118,19 @@
                     </div>
                     <div class="mb-3">
                         <label asp-for="Usuario.Password" class="form-label">Contrasena</label>
-                        <input asp-for="Usuario.Password" class="form-control" autocomplete="new-password" />
+                        <div class="input-group">
+                            <input asp-for="Usuario.Password" class="form-control" autocomplete="new-password" id="usuarioPassword" />
+                            <button class="btn btn-outline-secondary" type="button" id="toggleUsuarioPassword" aria-label="Mostrar u ocultar contrasena">👁</button>
+                        </div>
                         <div class="form-text">La contrasena debe tener minimo 8 caracteres e incluir mayuscula, minuscula, numero y simbolo.</div>
                         <span asp-validation-for="Usuario.Password" class="text-danger"></span>
                     </div>
                     <div class="mb-3">
                         <label asp-for="Usuario.ConfirmPassword" class="form-label">Confirmar contrasena</label>
-                        <input asp-for="Usuario.ConfirmPassword" class="form-control" autocomplete="new-password" />
+                        <div class="input-group">
+                            <input asp-for="Usuario.ConfirmPassword" class="form-control" autocomplete="new-password" id="usuarioConfirmPassword" />
+                            <button class="btn btn-outline-secondary" type="button" id="toggleUsuarioConfirmPassword" aria-label="Mostrar u ocultar contrasena">👁</button>
+                        </div>
                         <span asp-validation-for="Usuario.ConfirmPassword" class="text-danger"></span>
                     </div>
                     <div class="row g-3 mb-3">
@@ -139,11 +145,30 @@
                         </div>
                     </div>
                     <button type="submit" asp-page-handler="Usuario" class="w-100 btn btn-primary auth-cta">Registrarse como usuario</button>
+                    @if (Model.ExternalLogins?.Count > 0)
+                    {
+                        @foreach (var provider in Model.ExternalLogins)
+                        {
+                            <button type="submit"
+                                    class="w-100 btn btn-outline-dark auth-cta mt-2"
+                                    asp-page="/Account/Login"
+                                    asp-page-handler="ExternalLogin"
+                                    asp-route-provider="@provider.Name"
+                                    asp-route-returnUrl="@Model.ReturnUrl"
+                                    asp-route-flow="register"
+                                    formnovalidate>
+                                <span class="d-inline-flex align-items-center justify-content-center gap-2">
+                                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" width="18" height="18" />
+                                    <span>Registrarse con @provider.DisplayName</span>
+                                </span>
+                            </button>
+                        }
+                    }
                 </div>
 
                 <div id="registroClubFields" class="d-none">
                     <div class="auth-club-box mb-3">
-                        <strong>Registro de club deportivo</strong>
+                            <strong>Registro de complejo deportivo</strong>
                         <p class="mb-0">Completa los datos del negocio y activamos tu prueba de 1 mes.</p>
                     </div>
                     @if (hayErroresClub && string.Equals(Model.TipoRegistro, "club", StringComparison.OrdinalIgnoreCase))
@@ -244,13 +269,19 @@
                         </div>
                         <div class="col-md-6">
                             <label asp-for="Club.Password" class="form-label">Contrasena</label>
-                            <input asp-for="Club.Password" class="form-control" autocomplete="new-password" />
+                            <div class="input-group">
+                                <input asp-for="Club.Password" class="form-control" autocomplete="new-password" id="clubPassword" />
+                                <button class="btn btn-outline-secondary" type="button" id="toggleClubPassword" aria-label="Mostrar u ocultar contrasena">👁</button>
+                            </div>
                             <div class="form-text">La contrasena debe tener minimo 8 caracteres e incluir mayuscula, minuscula, numero y simbolo.</div>
                             <span asp-validation-for="Club.Password" class="text-danger"></span>
                         </div>
                         <div class="col-md-6">
                             <label asp-for="Club.ConfirmPassword" class="form-label">Confirmar contrasena</label>
-                            <input asp-for="Club.ConfirmPassword" class="form-control" autocomplete="new-password" />
+                            <div class="input-group">
+                                <input asp-for="Club.ConfirmPassword" class="form-control" autocomplete="new-password" id="clubConfirmPassword" />
+                                <button class="btn btn-outline-secondary" type="button" id="toggleClubConfirmPassword" aria-label="Mostrar u ocultar contrasena">👁</button>
+                            </div>
                             <span asp-validation-for="Club.ConfirmPassword" class="text-danger"></span>
                         </div>
                         <div class="col-md-4">
@@ -263,7 +294,7 @@
                             <span asp-validation-for="Club.CaptchaCodigo" class="text-danger"></span>
                         </div>
                     </div>
-                    <button type="submit" asp-page-handler="Club" class="w-100 btn btn-primary auth-cta mt-3">Registrarse como club deportivo</button>
+                        <button type="submit" asp-page-handler="Club" class="w-100 btn btn-primary auth-cta mt-3">Registrarse como complejo deportivo</button>
                 </div>
 
                 <div class="auth-foot-links auth-foot-links-pro">
@@ -393,6 +424,22 @@
             if (document.querySelector('#registroUsuarioFields .text-danger.field-validation-error, #registroUsuarioFields .alert-danger')) {
                 document.getElementById('registroUsuarioFields')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
+
+            function bindPasswordToggle(inputId, buttonId) {
+                const input = document.getElementById(inputId);
+                const button = document.getElementById(buttonId);
+                if (!input || !button) return;
+                button.addEventListener('click', () => {
+                    const show = input.type === 'password';
+                    input.type = show ? 'text' : 'password';
+                    button.textContent = show ? '🙈' : '👁';
+                });
+            }
+
+            bindPasswordToggle('usuarioPassword', 'toggleUsuarioPassword');
+            bindPasswordToggle('usuarioConfirmPassword', 'toggleUsuarioConfirmPassword');
+            bindPasswordToggle('clubPassword', 'toggleClubPassword');
+            bindPasswordToggle('clubConfirmPassword', 'toggleClubConfirmPassword');
         })();
     </script>
 }

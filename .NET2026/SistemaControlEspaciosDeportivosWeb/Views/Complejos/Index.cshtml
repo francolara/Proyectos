@@ -1,0 +1,35 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.ComplejosIndexViewModel
+@{
+    ViewData["Title"] = "Complejos deportivos";
+}
+
+<section class="container py-4">
+    <h1 class="mb-3">Complejos deportivos</h1>
+
+    @if (!Model.Complejos.Any())
+    {
+        <p class="text-muted">No hay complejos disponibles por ahora.</p>
+    }
+    else
+    {
+        <div class="list-group">
+            @foreach (var item in Model.Complejos)
+            {
+                <a class="list-group-item list-group-item-action"
+                   asp-controller="Complejos"
+                   asp-action="Detalle"
+                   asp-route-slug="@item.Slug"
+                   asp-route-negocioId="@item.NegocioId">
+                    <div class="d-flex w-100 justify-content-between">
+                        <strong>@item.Nombre</strong>
+                        <small>@item.TotalSedes sede(s)</small>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(item.DireccionReferencia))
+                    {
+                        <small class="text-muted">@item.DireccionReferencia</small>
+                    }
+                </a>
+            }
+        </div>
+    }
+</section>

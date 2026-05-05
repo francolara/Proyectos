@@ -99,6 +99,9 @@
 - Actualizacion 14/04/2026:
   - `Reservas` incorpora columna `CanalOrigen` (`ADMIN`/`CLIENTE_WEB`), usada para distinguir reservas creadas desde portal cliente.
   - `Sp_Reservas_Crear` recibe `@CanalOrigen` (default `ADMIN`) y genera notificacion cuando el origen es `CLIENTE_WEB`.
+- Actualizacion 03/05/2026:
+  - `Sp_Reservas_Crear` aplica primero descuento de cupon sobre el total base y luego evalua `@Adelanto`/estado automatico con el total final.
+  - Con esto, si el adelanto cubre el 100% del total ya descontado por cupon, la reserva pasa a `Pagada` (estado `4`).
 - `Sp_Reservas_Actualizar`
 - `Sp_Reservas_Eliminar`
 - `Sp_Reservas_Eliminar` valida `@NegocioId` por join con `Sedes` y devuelve error si no encuentra la reserva.
@@ -1217,3 +1220,25 @@
   - agrega `CodigoUbigeo` en `Sedes`, crea `UbigeoMapsMatch`, crea indices y realiza precarga inicial desde maestro SUNAT.
   - `Basededatos/SportCenter/Script/20260427_Home_EspaciosReferencialesExternos.sql`
   - crea tabla `HomeEspaciosReferencialesExternos` con FKs a `UbigeoDistritos` y `TiposDeporteSuperMaestro`, e indice de busqueda.
+
+## Actualizacion 03/05/2026 - Cupones y reservas
+
+### Scripts incorporados
+- `Basededatos/SportCenter/Tablas/dbo.Cupones.Table.sql`
+- `Basededatos/SportCenter/Tablas/dbo.CuponesUso.Table.sql`
+- `Basededatos/SportCenter/StoreProcedure/dbo.Sp_Cupones_Listar.StoredProcedure.sql`
+- `Basededatos/SportCenter/StoreProcedure/dbo.Sp_Cupones_ObtenerPorId.StoredProcedure.sql`
+- `Basededatos/SportCenter/StoreProcedure/dbo.Sp_Cupones_Crear.StoredProcedure.sql`
+- `Basededatos/SportCenter/StoreProcedure/dbo.Sp_Cupones_Actualizar.StoredProcedure.sql`
+- `Basededatos/SportCenter/StoreProcedure/dbo.Sp_Cupones_Eliminar.StoredProcedure.sql`
+- `Basededatos/SportCenter/Script/20260503_Cupones_Reservas_Alter.sql`
+- `Basededatos/SportCenter/Script/20260503_Cupones_Modulo_Seguridad.sql`
+
+### Cambios funcionales
+- Se agrega módulo `Cupones` en panel de administración de negocio con listado paginado de 20 registros por página.
+- Se permite crear cupones por negocio, con restricción opcional por sede y espacio deportivo.
+- Se define límite máximo de usos por cupón y acumulación de usos en cada aplicación.
+- `Sp_Reservas_Crear` ahora acepta `@CodigoCupon` opcional y aplica descuento validando vigencia, estado activo y disponibilidad de usos.
+- El uso exitoso de cupón incrementa contador y se registra en `CuponesUso`.
+- `Sp_Home_SolicitarReservaPublica` ahora recibe y reenvía `@CodigoCupon` al crear la reserva pública.
+- La tabla `Reservas` incorpora trazabilidad de cupón aplicado y descuento (`CodigoCuponAplicado`, `DescuentoCupon`).

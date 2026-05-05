@@ -402,6 +402,18 @@ public class PromocionesIndexViewModel : ModuloBaseViewModel
     public List<PromocionItemViewModel> Promociones { get; set; } = new();
 }
 
+public class CuponesIndexViewModel : ModuloBaseViewModel
+{
+    public DateOnly FechaDesde { get; set; } = DateOnly.FromDateTime(DateTime.Today.AddDays(-6));
+    public DateOnly FechaHasta { get; set; } = DateOnly.FromDateTime(DateTime.Today.AddDays(30));
+    public string EstadoFiltro { get; set; } = "vigentes";
+    public int Pagina { get; set; } = 1;
+    public int TamanoPagina { get; set; } = 20;
+    public int TotalRegistros { get; set; }
+    public int TotalPaginas { get; set; } = 1;
+    public List<CuponItemViewModel> Cupones { get; set; } = new();
+}
+
 public class MaestrosIndexViewModel : ModuloBaseViewModel
 {
     public List<MonedaMaestroItemViewModel> Monedas { get; set; } = new();
@@ -456,6 +468,34 @@ public class PromocionItemViewModel
     public TimeOnly HoraFin { get; set; }
     public decimal PorcentajeDescuento { get; set; }
     public bool Activo { get; set; }
+}
+
+public class CuponItemViewModel
+{
+    public int Id { get; set; }
+    public string CodigoCupon { get; set; } = string.Empty;
+    public string Nombre { get; set; } = string.Empty;
+    public string TipoDescuento { get; set; } = string.Empty;
+    public decimal ValorDescuento { get; set; }
+    public int CantidadMaxUsos { get; set; }
+    public int CantidadUsosActuales { get; set; }
+    public int CantidadUsosDisponibles { get; set; }
+    public DateOnly FechaInicio { get; set; }
+    public DateOnly FechaFin { get; set; }
+    public string Sede { get; set; } = string.Empty;
+    public string Espacio { get; set; } = string.Empty;
+    public bool Activo { get; set; }
+    public bool VigenteHoy { get; set; }
+}
+
+public class CuponValidacionViewModel
+{
+    public bool EsValido { get; set; }
+    public string Mensaje { get; set; } = string.Empty;
+    public string CodigoCupon { get; set; } = string.Empty;
+    public decimal MontoAntes { get; set; }
+    public decimal MontoDescuento { get; set; }
+    public decimal MontoFinal { get; set; }
 }
 
 public class ClienteItemViewModel

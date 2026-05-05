@@ -624,6 +624,7 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
         AddParam(cmd, "@Telefono", model.Telefono, SqlDbType.NVarChar);
         AddParam(cmd, "@Correo", model.Correo, SqlDbType.NVarChar);
         AddParam(cmd, "@Comentario", model.Comentario, SqlDbType.NVarChar);
+        AddParam(cmd, "@CodigoCupon", string.IsNullOrWhiteSpace(model.CodigoCupon) ? null : model.CodigoCupon.Trim().ToUpperInvariant(), SqlDbType.NVarChar);
         if (incluirUsuarioId)
             AddParam(cmd, "@UsuarioId", string.IsNullOrWhiteSpace(model.UsuarioId) ? null : model.UsuarioId.Trim(), SqlDbType.NVarChar);
         var result = await cmd.ExecuteScalarAsync();

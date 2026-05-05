@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +18,7 @@ namespace SistemaControlEspaciosDeportivosWeb.Areas.Identity.Pages.Account;
 [AllowAnonymous]
 public class RegisterModel(
     UserManager<ApplicationUser> userManager,
+    SignInManager<ApplicationUser> signInManager,
     ISportCenterStoredProcedureService spService,
     IAccountEmailService accountEmailService,
     IClubRegistrationNotificationService clubRegistrationNotificationService,
@@ -40,6 +42,7 @@ public class RegisterModel(
     public string? ReturnUrl { get; set; } = string.Empty;
 
     public WebBannerPublicoViewModel? BannerLateral { get; set; }
+    public IList<AuthenticationScheme> ExternalLogins { get; set; } = new List<AuthenticationScheme>();
     public List<SelectListItem> Departamentos { get; set; } = new();
     public List<SelectListItem> Provincias { get; set; } = new();
     public List<SelectListItem> Distritos { get; set; } = new();
@@ -79,6 +82,7 @@ public class RegisterModel(
     {
         ReturnUrl = returnUrl ?? Url.Content("~/");
         TipoRegistro = string.Equals(TipoRegistro, "club", StringComparison.OrdinalIgnoreCase) ? "club" : "usuario";
+        ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
         Club = CrearClubDefault();
         AsignarCaptchaRegistroUsuario(Usuario);
         AsignarCaptchaRegistroClub(Club);
@@ -89,6 +93,7 @@ public class RegisterModel(
     public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
     {
         ReturnUrl = returnUrl ?? ReturnUrl ?? Url.Content("~/");
+        ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
         // Fallback cuando el navegador envia Enter sin handler explicito.
         var accionForm = (Request.Form["accionRegistro"].ToString() ?? string.Empty).Trim();
         var tipoForm = string.IsNullOrWhiteSpace(accionForm)
@@ -105,6 +110,7 @@ public class RegisterModel(
     public async Task<IActionResult> OnPostUsuarioAsync(string? returnUrl = null)
     {
         ReturnUrl = returnUrl ?? ReturnUrl ?? Url.Content("~/");
+        ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
         TipoRegistro = "usuario";
         return await ProcesarRegistroUsuarioAsync();
     }
@@ -112,6 +118,7 @@ public class RegisterModel(
     public async Task<IActionResult> OnPostClubAsync(string? returnUrl = null)
     {
         ReturnUrl = returnUrl ?? ReturnUrl ?? Url.Content("~/");
+        ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
         TipoRegistro = "club";
         return await ProcesarRegistroClubAsync();
     }

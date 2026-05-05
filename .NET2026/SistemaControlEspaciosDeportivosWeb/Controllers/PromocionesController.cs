@@ -175,6 +175,19 @@ public class PromocionesController(IModuloPermisoService moduloPermisoService, I
         return RedirectToAction(nameof(Index), new { negocioId = model.NegocioId });
     }
 
+    [HttpGet]
+    public async Task<IActionResult> EspaciosPorSede(int negocioId, int? sedeId)
+    {
+        var baseVm = await ObtenerBaseAsync(negocioId, "PROMOCIONES");
+        if (baseVm is null || (!baseVm.PuedeCrear && !baseVm.PuedeEditar))
+            return Forbid();
+
+        var sedeFiltro = AplicarSedeAsignada(baseVm, sedeId);
+        var espacios = await spService.ReservasComboEspaciosAsync(negocioId, sedeFiltro);
+        var payload = espacios.Select(x => new { value = x.Value, text = x.Text }).ToList();
+        return Json(payload);
+    }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int negocioId, int id)

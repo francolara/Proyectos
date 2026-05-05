@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "II5AT7/zkTs=",
+  "dgSpecHash": "upvYIfIR5xc=",
   "success": true,
   "projectFilePath": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\SistemaControlEspaciosDeportivosWeb.csproj",
   "expectedPackageFiles": [
@@ -14,6 +14,7 @@
     "C:\\Users\\Franco Lara\\.nuget\\packages\\documentformat.openxml.framework\\3.1.1\\documentformat.openxml.framework.3.1.1.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\excelnumberformat\\1.1.0\\excelnumberformat.1.1.0.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
+    "C:\\Users\\Franco Lara\\.nuget\\packages\\microsoft.aspnetcore.authentication.google\\10.0.5\\microsoft.aspnetcore.authentication.google.10.0.5.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\microsoft.aspnetcore.diagnostics.entityframeworkcore\\10.0.5\\microsoft.aspnetcore.diagnostics.entityframeworkcore.10.0.5.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\microsoft.aspnetcore.identity.entityframeworkcore\\10.0.5\\microsoft.aspnetcore.identity.entityframeworkcore.10.0.5.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\microsoft.aspnetcore.identity.ui\\10.0.5\\microsoft.aspnetcore.identity.ui.10.0.5.nupkg.sha512",

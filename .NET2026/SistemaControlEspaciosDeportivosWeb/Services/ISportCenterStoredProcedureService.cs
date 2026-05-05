@@ -152,6 +152,12 @@ public interface ISportCenterStoredProcedureService
     Task<int> PromocionesCrearAsync(PromocionFormViewModel model, string usuario);
     Task<bool> PromocionesActualizarAsync(PromocionFormViewModel model, string usuario);
     Task<bool> PromocionesEliminarAsync(int negocioId, int id, string usuario);
+    Task<(List<CuponItemViewModel> Cupones, int TotalRegistros)> CuponesListarAsync(int negocioId, int? sedeId = null, DateOnly? fechaDesde = null, DateOnly? fechaHasta = null, string? estado = "vigentes", int pagina = 1, int tamanoPagina = 20);
+    Task<CuponFormViewModel?> CuponesObtenerAsync(int negocioId, int id);
+    Task<int> CuponesCrearAsync(CuponFormViewModel model, string usuario);
+    Task<bool> CuponesActualizarAsync(CuponFormViewModel model, string usuario);
+    Task<bool> CuponesEliminarAsync(int negocioId, int id, string usuario);
+    Task<CuponValidacionViewModel> CuponesValidarAsync(int negocioId, int? sedeId, int espacioDeportivoId, string? codigoCupon, decimal montoBase);
 
     Task<List<MonedaMaestroItemViewModel>> MaestrosMonedasListarAsync(int negocioId);
     Task<List<SelectListItem>> MaestrosMonedasSuperListarAsync();
@@ -189,6 +195,7 @@ public interface ISportCenterStoredProcedureService
     Task<bool> PopupPromocionesAdminEliminarAsync(int idPopupPromocion, string usuario);
     Task<bool> PopupPromocionesAdminCambiarEstadoAsync(int idPopupPromocion, bool activo, string usuario);
     Task<(List<PlataformaNegocioLimiteItemViewModel> Negocios, int TotalRegistros)> PlataformaNegociosListarAsync(string? buscar = null, string? estadoContrato = null, int pagina = 1, int tamanoPagina = 20);
+    Task<(string? Correo, string? NombreDestino, string? Telefono)> PlataformaNegocioObtenerContactoCorreoAsync(int negocioId);
     Task<bool> PlataformaNegocioActualizarLimitesAsync(int negocioId, int sedesPermitidas, int espaciosPermitidos, int usuariosPermitidos, string usuario);
     Task<(int SedesPermitidas, int EspaciosPermitidos, int UsuariosPermitidos)> NegocioObtenerLimitesOperativosAsync(int negocioId);
     Task<bool> PlataformaNegocioActivarContratoAsync(int negocioId, string tipoCobro, DateOnly fechaDesde, DateOnly fechaHasta, int diasGracia, string usuario);

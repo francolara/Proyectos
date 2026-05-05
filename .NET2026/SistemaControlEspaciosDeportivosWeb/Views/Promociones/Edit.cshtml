@@ -36,6 +36,7 @@
                     <div class="col-md-4">
                         <label asp-for="PorcentajeDescuento" class="form-label">Porcentaje descuento</label>
                         <div class="input-group">
+                            @* Firma: Codex - 03/05/2026 | Forzar porcentaje entero y encadenar filtro de espacios por sede en formulario de promociones. *@
                             <input asp-for="PorcentajeDescuento"
                                    class="form-control text-end"
                                    type="number"
@@ -110,5 +111,53 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const negocioId = document.getElementById('NegocioId')?.value;
+            const sedeSel = document.getElementById('SedeId');
+            const espacioSel = document.getElementById('EspacioDeportivoId');
+            const descuentoInput = document.getElementById('PorcentajeDescuento');
+            if (!negocioId || !sedeSel || !espacioSel) return;
+
+            if (descuentoInput) {
+                const n = Number.parseInt(descuentoInput.value || '0', 10);
+                descuentoInput.value = Number.isFinite(n) ? String(n) : '';
+            }
+
+            async function cargarEspacios() {
+                const params = new URLSearchParams({
+                    negocioId: String(negocioId),
+                    sedeId: (sedeSel.value || '').trim()
+                });
+                const seleccionActual = (espacioSel.value || '').trim();
+                const resp = await fetch('@Url.Action("EspaciosPorSede", "Promociones")' + '?' + params.toString(), { credentials: 'same-origin' });
+                if (!resp.ok) return;
+                const data = await resp.json();
+                const items = Array.isArray(data) ? data : [];
+
+                espacioSel.innerHTML = '';
+                const optTodos = document.createElement('option');
+                optTodos.value = '';
+                optTodos.textContent = 'Todos los espacios';
+                espacioSel.appendChild(optTodos);
+
+                items.forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = String(item.value ?? '');
+                    opt.textContent = String(item.text ?? '');
+                    espacioSel.appendChild(opt);
+                });
+
+                if (seleccionActual && items.some(x => String(x.value ?? '') === seleccionActual)) {
+                    espacioSel.value = seleccionActual;
+                } else {
+                    espacioSel.value = '';
+                }
+            }
+
+            sedeSel.addEventListener('change', () => { void cargarEspacios(); });
+            void cargarEspacios();
+        })();
+    </script>
 }
 

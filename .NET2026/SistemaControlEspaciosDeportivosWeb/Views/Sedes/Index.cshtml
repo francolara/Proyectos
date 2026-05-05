@@ -1,4 +1,4 @@
-﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.SedesIndexViewModel
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.SedesIndexViewModel
 @{
     ViewData["Title"] = "Sedes";
     var totalSedes = Model.Sedes.Count;
@@ -24,7 +24,7 @@
                 <p class="page-subtitle">Administracion de sedes y cobertura operativa.</p>
             </div>
             <div class="sc-negocio-ref-card" aria-readonly="true">
-                <div class="sc-negocio-ref-card-head"><i class="bi bi-building"></i><span>Club / negocio</span></div>
+                <div class="sc-negocio-ref-card-head"><i class="bi bi-building"></i><span>Complejo Deportivo</span></div>
                 <div class="sc-negocio-ref-card-name">@Model.NegocioNombre</div>
                 <div class="sc-negocio-ref-card-id">ID: @Model.NegocioId</div>
             </div>

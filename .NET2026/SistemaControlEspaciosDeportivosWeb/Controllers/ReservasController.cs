@@ -404,6 +404,51 @@ public class ReservasController(
     }
 
     [HttpGet]
+    public async Task<IActionResult> ValidarCuponReserva(
+        int negocioId,
+        int espacioDeportivoId,
+        DateOnly fecha,
+        TimeOnly horaInicio,
+        TimeOnly horaFin,
+        string? codigoCupon)
+    {
+        var baseVm = await ObtenerBaseAsync(negocioId, "RESERVAS");
+        if (baseVm is null || !string.IsNullOrWhiteSpace(baseVm.Mensaje)) return Forbid();
+        if (!await EspacioPermitidoAsync(baseVm, negocioId, espacioDeportivoId)) return Forbid();
+        if (EsFechaPasada(fecha)) return BadRequest(new { ok = false, mensaje = "No se permite registrar reservas en fechas pasadas." });
+
+        var cotizacion = await spService.ReservasCotizarAsync(negocioId, espacioDeportivoId, fecha, horaInicio, horaFin);
+        if (!cotizacion.Ok || cotizacion.PrecioFinal <= 0)
+        {
+            return BadRequest(new
+            {
+                ok = false,
+                mensaje = string.IsNullOrWhiteSpace(cotizacion.Mensaje)
+                    ? "No se pudo calcular la tarifa del horario seleccionado."
+                    : cotizacion.Mensaje
+            });
+        }
+
+        var validacion = await spService.CuponesValidarAsync(
+            negocioId,
+            baseVm.EsAdministrador ? null : baseVm.SedeIdAsignada,
+            espacioDeportivoId,
+            codigoCupon,
+            cotizacion.PrecioFinal);
+
+        return Json(new
+        {
+            ok = true,
+            esValido = validacion.EsValido,
+            mensaje = validacion.Mensaje,
+            codigoCupon = validacion.CodigoCupon,
+            montoAntes = validacion.MontoAntes,
+            montoDescuento = validacion.MontoDescuento,
+            montoFinal = validacion.MontoFinal
+        });
+    }
+
+    [HttpGet]
     public async Task<IActionResult> ValidarDisponibilidadModal(int negocioId, int? reservaId, int espacioDeportivoId, DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin)
     {
         var baseVm = await ObtenerBaseAsync(negocioId, "RESERVAS");

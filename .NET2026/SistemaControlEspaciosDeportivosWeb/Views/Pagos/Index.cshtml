@@ -1,4 +1,4 @@
-ï»¿@model SistemaControlEspaciosDeportivosWeb.ViewModels.PagosIndexViewModel
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.PagosIndexViewModel
 @{
     ViewData["Title"] = "Pagos";
     var montoTotal = Model.Pagos.Sum(x => x.MontoTotal);
@@ -23,7 +23,7 @@
                 <p class="page-subtitle">Control de pagos y saldos por reserva.</p>
             </div>
             <div class="sc-negocio-ref-card" aria-readonly="true">
-                <div class="sc-negocio-ref-card-head"><i class="bi bi-building"></i><span>Club / negocio</span></div>
+                <div class="sc-negocio-ref-card-head"><i class="bi bi-building"></i><span>Complejo Deportivo</span></div>
                 <div class="sc-negocio-ref-card-name">@Model.NegocioNombre</div>
                 <div class="sc-negocio-ref-card-id">ID: @Model.NegocioId</div>
             </div>
@@ -199,7 +199,7 @@
                                             <input type="hidden" name="reservaId" value="@item.ReservaId" />
                                             <button type="submit"
                                                     class="btn btn-sm sc-action-btn sc-action-delete"
-                                                    onclick="return confirm('Se eliminarÃ¡n todos los pagos de la reserva @item.ReservaCodigo y la reserva se cancelarÃ¡. Â¿Deseas continuar?');">
+                                                    onclick="return confirm('Se eliminarán todos los pagos de la reserva @item.ReservaCodigo y la reserva se cancelará. ¿Deseas continuar?');">
                                                 <i class="bi bi-trash3"></i> Eliminar
                                             </button>
                                         </form>

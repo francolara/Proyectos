@@ -281,6 +281,89 @@ public partial class SportCenterStoredProcedureService
         return (list, totalRegistros);
     }
 
+public async Task<(string? Correo, string? NombreDestino, string? Telefono)> PlataformaNegocioObtenerContactoCorreoAsync(int negocioId)
+    {
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+
+        const string sql = @"
+SELECT TOP (1)
+    u.Email AS Correo,
+    COALESCE(
+        NULLIF(LTRIM(RTRIM(u.PhoneNumber)), N''),
+        NULLIF(LTRIM(RTRIM(sref.Telefono)), N''),
+        NULLIF(LTRIM(RTRIM(acref.Telefono)), N'')
+    ) AS Telefono,
+    COALESCE(
+        NULLIF(LTRIM(RTRIM(CONCAT(COALESCE(u.Nombres, N''), N' ', COALESCE(u.Apellidos, N'')))), N''),
+        NULLIF(LTRIM(RTRIM(u.UserName)), N''),
+        NULLIF(LTRIM(RTRIM(n.NombreComercial)), N''),
+        N'Cliente') AS NombreDestino
+FROM dbo.UsuariosNegocio un
+INNER JOIN dbo.AspNetUsers u ON u.Id = un.UsuarioId
+INNER JOIN dbo.Negocios n ON n.Id = un.NegocioId
+OUTER APPLY (
+    SELECT TOP (1) s.Telefono
+    FROM dbo.Sedes s
+    WHERE s.NegocioId = n.Id
+      AND s.Telefono IS NOT NULL
+      AND LTRIM(RTRIM(s.Telefono)) <> N''
+    ORDER BY s.Id ASC
+) sref
+OUTER APPLY (
+    SELECT TOP (1) ac.Telefono
+    FROM dbo.SolicitudesAltaClub ac
+    WHERE ac.NegocioId = n.Id
+      AND ac.Telefono IS NOT NULL
+      AND LTRIM(RTRIM(ac.Telefono)) <> N''
+    ORDER BY ac.Id DESC
+) acref
+WHERE un.NegocioId = @NegocioId
+  AND u.Email IS NOT NULL
+  AND LTRIM(RTRIM(u.Email)) <> N''
+ORDER BY un.Id ASC;
+
+IF @@ROWCOUNT = 0
+BEGIN
+SELECT TOP (1)
+        scn.CorreoNotificacion AS Correo,
+        COALESCE(
+            NULLIF(LTRIM(RTRIM(s.Telefono)), N''),
+            NULLIF(LTRIM(RTRIM(acref.Telefono)), N'')
+        ) AS Telefono,
+        COALESCE(NULLIF(LTRIM(RTRIM(n.NombreComercial)), N''), N'Cliente') AS NombreDestino
+    FROM dbo.Sedes s
+    INNER JOIN dbo.Negocios n ON n.Id = s.NegocioId
+    INNER JOIN dbo.SedeConfiguracionNotificacion scn ON scn.SedeId = s.Id
+    OUTER APPLY (
+        SELECT TOP (1) ac.Telefono
+        FROM dbo.SolicitudesAltaClub ac
+        WHERE ac.NegocioId = n.Id
+          AND ac.Telefono IS NOT NULL
+          AND LTRIM(RTRIM(ac.Telefono)) <> N''
+        ORDER BY ac.Id DESC
+    ) acref
+    WHERE s.NegocioId = @NegocioId
+      AND scn.CorreoNotificacion IS NOT NULL
+      AND LTRIM(RTRIM(scn.CorreoNotificacion)) <> N''
+    ORDER BY s.Id ASC;
+END";
+
+        await using var cmd = new SqlCommand(sql, cn);
+        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+        await using var dr = await cmd.ExecuteReaderAsync();
+    if (!await dr.ReadAsync())
+        return (null, null, null);
+
+    var correo = dr.IsDBNull(0) ? null : dr.GetString(0)?.Trim();
+    var telefono = dr.IsDBNull(1) ? null : dr.GetString(1)?.Trim();
+    var nombre = dr.IsDBNull(2) ? null : dr.GetString(2)?.Trim();
+    return (
+        string.IsNullOrWhiteSpace(correo) ? null : correo,
+        string.IsNullOrWhiteSpace(nombre) ? null : nombre,
+        string.IsNullOrWhiteSpace(telefono) ? null : telefono);
+}
+
     public async Task<bool> PlataformaNegocioActualizarLimitesAsync(int negocioId, int sedesPermitidas, int espaciosPermitidos, int usuariosPermitidos, string usuario)
     {
         try

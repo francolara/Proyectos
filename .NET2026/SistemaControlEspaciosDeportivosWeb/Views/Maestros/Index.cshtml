@@ -1,4 +1,4 @@
-ï»¿@model SistemaControlEspaciosDeportivosWeb.ViewModels.MaestrosIndexViewModel
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.MaestrosIndexViewModel
 @{
     ViewData["Title"] = "Maestros";
 }
@@ -11,7 +11,7 @@
                 <p class="page-subtitle">Configuracion de catalogos base del negocio.</p>
             </div>
             <div class="sc-negocio-ref-card" aria-readonly="true">
-                <div class="sc-negocio-ref-card-head"><i class="bi bi-building"></i><span>Club / negocio</span></div>
+                <div class="sc-negocio-ref-card-head"><i class="bi bi-building"></i><span>Complejo Deportivo</span></div>
                 <div class="sc-negocio-ref-card-name">@Model.NegocioNombre</div>
                 <div class="sc-negocio-ref-card-id">ID: @Model.NegocioId</div>
             </div>
@@ -124,9 +124,9 @@
                 <table class="table table-sm align-middle sc-maestro-table" data-table-id="monedas">
                     <thead>
                         <tr>
-                            <th>CÃ³digo</th>
+                            <th>Código</th>
                             <th>Nombre</th>
-                            <th>SÃ­mbolo</th>
+                            <th>Símbolo</th>
                             <th>Estado</th>
                             <th class="text-end">Acciones</th>
                         </tr>
@@ -420,7 +420,7 @@
                 <table class="table table-sm align-middle sc-maestro-table" data-table-id="tipos-documento">
                     <thead>
                         <tr>
-                            <th>CÃ³digo</th>
+                            <th>Código</th>
                             <th>Nombre</th>
                             <th>Clase</th>
                             <th>Habilitado Super</th>
@@ -441,7 +441,7 @@
                                 </td>
                                 <td>
                                     <span class="badge @(item.HabilitadoSuper ? "bg-success-subtle text-success-emphasis border border-success-subtle" : "bg-danger-subtle text-danger-emphasis border border-danger-subtle")">
-                                        @(item.HabilitadoSuper ? "SÃ­" : "No")
+                                        @(item.HabilitadoSuper ? "Sí" : "No")
                                     </span>
                                 </td>
                                 <td>

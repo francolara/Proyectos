@@ -1,6 +1,7 @@
 wwwroot\css\reservas-calendario.css
 wwwroot\css\site.css
 wwwroot\favicon.ico
+wwwroot\img\logo-lazona-oficial.png
 wwwroot\img\logo-simbolo.png
 wwwroot\img\logo-sportcenter-header.png
 wwwroot\img\logo-sportcenter.png
@@ -65,6 +66,7 @@ wwwroot\lib\jquery\dist\jquery.slim.js
 wwwroot\lib\jquery\dist\jquery.slim.min.js
 wwwroot\lib\jquery\dist\jquery.slim.min.map
 wwwroot\lib\jquery\LICENSE.txt
+wwwroot\robots.txt
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\lib\jquery\LICENSE.txt
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\lib\jquery\dist\jquery.slim.min.map
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\lib\jquery\dist\jquery.slim.min.js
@@ -128,3 +130,4 @@ C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlE
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\favicon.ico
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\css\site.css
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\css\reservas-calendario.css
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\robots.txt

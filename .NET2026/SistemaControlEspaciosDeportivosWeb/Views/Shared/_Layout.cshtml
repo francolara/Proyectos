@@ -240,9 +240,10 @@
                         <a class="@menuClass("Reservas")" href="@menuUrl("Reservas")"><i class="bi bi-calendar-check"></i><span>Reservas</span></a>
                         <a class="@menuClass("Pagos")" href="@menuUrl("Pagos")"><i class="bi bi-wallet2"></i><span>Pagos</span></a>
                         <a class="@menuClass("Comprobantes")" href="@menuUrl("Comprobantes")"><i class="bi bi-receipt-cutoff"></i><span>Comprobantes</span></a>
-                        <a class="@menuClass("Reportes")" href="@menuUrl("Reportes")"><i class="bi bi-graph-up-arrow"></i><span>Reportes</span></a>
                         <a class="@menuClass("Usuarios")" href="@menuUrl("Usuarios")"><i class="bi bi-person-gear"></i><span>Usuarios</span></a>
                         <a class="@menuClass("Promociones")" href="@menuUrl("Promociones")"><i class="bi bi-tags"></i><span>Promociones</span></a>
+                        <a class="@menuClass("Cupones")" href="@menuUrl("Cupones")"><i class="bi bi-ticket-perforated"></i><span>Cupones</span></a>
+                        <a class="@menuClass("Reportes")" href="@menuUrl("Reportes")"><i class="bi bi-graph-up-arrow"></i><span>Reportes</span></a>
                         <a class="@menuClass("Configuracion")" href="@menuUrl("Configuracion")"><i class="bi bi-sliders2-vertical"></i><span>Configuracion</span></a>
                     }
                     <a class="@menuClass("MiSuscripcion")" href="@menuUrl("MiSuscripcion")"><i class="bi bi-credit-card-2-front"></i><span>Mi suscripcion</span></a>
@@ -347,6 +348,48 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    @if (adminShell || platformShell)
+    {
+        <script>
+            (() => {
+                const nav = document.querySelector('.sc-admin-nav');
+                if (!nav) return;
+
+                const pageKey = `${location.pathname}${location.search}`;
+                const navKey = `sc-admin-nav-scroll:${pageKey}`;
+                const pageScrollKey = `sc-admin-page-scroll:${pageKey}`;
+
+                try {
+                    const savedNavScroll = sessionStorage.getItem(navKey);
+                    if (savedNavScroll !== null) {
+                        nav.scrollTop = Number(savedNavScroll) || 0;
+                    }
+
+                    const savedPageScroll = sessionStorage.getItem(pageScrollKey);
+                    if (savedPageScroll !== null) {
+                        requestAnimationFrame(() => window.scrollTo(0, Number(savedPageScroll) || 0));
+                    }
+                } catch {
+                }
+
+                const persistScrollState = () => {
+                    try {
+                        sessionStorage.setItem(navKey, String(nav.scrollTop || 0));
+                        sessionStorage.setItem(pageScrollKey, String(window.scrollY || 0));
+                    } catch {
+                    }
+                };
+
+                nav.addEventListener('scroll', persistScrollState, { passive: true });
+                window.addEventListener('scroll', persistScrollState, { passive: true });
+                window.addEventListener('beforeunload', persistScrollState);
+
+                document.querySelectorAll('.sc-admin-nav a, .sc-admin-homecard').forEach(anchor => {
+                    anchor.addEventListener('click', persistScrollState);
+                });
+            })();
+        </script>
+    }
     @if (adminShell && hasNegocioId)
     {
         <script>

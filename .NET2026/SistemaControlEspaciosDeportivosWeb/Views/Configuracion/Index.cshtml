@@ -1,11 +1,11 @@
-﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.ConfiguracionClubViewModel
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.ConfiguracionClubViewModel
 @{
     ViewData["Title"] = "Configuracion";
 }
 
 <header class="page-header">
     <div>
-        <h1>Configuración del Club / Negocio</h1>
+        <h1>Configuraci�n del Complejo Deportivo</h1>
         <p class="page-subtitle">Edita los datos principales del negocio y la moneda de trabajo.</p>
     </div>
     <div class="action-toolbar">
@@ -33,7 +33,7 @@
 
     <section class="sc-form-card">
         <div class="sc-form-section">
-            <h2 class="sc-form-title"><i class="bi bi-building"></i> Datos del club</h2>
+            <h2 class="sc-form-title"><i class="bi bi-building"></i> Datos del complejo deportivo</h2>
             <div class="row g-3">
                 <div class="col-md-4">
                     <label asp-for="NombreComercial" class="form-label">Nombre comercial</label>
@@ -96,7 +96,7 @@
                 <div class="col-12">
                     <label class="form-label d-flex align-items-center gap-2">
                         <i class="bi bi-image"></i>
-                        <span>Logo del club</span>
+                        <span>Logo del complejo deportivo</span>
                     </label>
                     <div class="row g-3 align-items-start">
                         <div class="col-lg-4 col-md-5">
@@ -104,7 +104,7 @@
                             {
                                 <img id="logoClubPreview"
                                      src="@Url.Action("VerImagen", "Sedes", new { url = Model.LogoUrl })"
-                                     alt="Logo del club"
+                                     alt="Logo del complejo deportivo"
                                      class="img-fluid rounded-3 border"
                                      style="max-width: 220px; aspect-ratio: 1 / 1; object-fit: contain; background: #fff;" />
                             }

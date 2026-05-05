@@ -17,6 +17,7 @@ public class HomeController(
     SignInManager<ApplicationUser> signInManager,
     ILogger<HomeController> logger) : Controller
 {
+    private const int DuracionReservaPublicaMinutos = 60;
     private const string CaptchaSoftwareClubesSessionKey = "CaptchaSoftwareClubes";
 
     private static (DateOnly Fecha, TimeOnly HoraInicio, TimeOnly HoraFin) ObtenerRangoSugeridoBusqueda(DateTime ahoraLocal)
@@ -281,9 +282,16 @@ public class HomeController(
         model.Telefono = string.IsNullOrWhiteSpace(model.Telefono) ? null : model.Telefono.Trim();
         model.Correo = string.IsNullOrWhiteSpace(model.Correo) ? null : model.Correo.Trim();
         model.Comentario = string.IsNullOrWhiteSpace(model.Comentario) ? null : model.Comentario.Trim();
+        model.CodigoCupon = string.IsNullOrWhiteSpace(model.CodigoCupon) ? null : model.CodigoCupon.Trim().ToUpperInvariant();
 
         if (model.HoraFin <= model.HoraInicio)
             ModelState.AddModelError(string.Empty, "La hora fin debe ser mayor que la hora inicio.");
+        else
+        {
+            var duracion = (int)(model.HoraFin.ToTimeSpan() - model.HoraInicio.ToTimeSpan()).TotalMinutes;
+            if (duracion != DuracionReservaPublicaMinutos)
+                ModelState.AddModelError(string.Empty, "La reserva publica solo permite bloques de 1 hora.");
+        }
 
         if (!ModelState.IsValid)
         {
@@ -417,7 +425,8 @@ public class HomeController(
         int espacioDeportivoId,
         string fecha,
         string horaInicio,
-        string horaFin)
+        string horaFin,
+        string? codigoCupon = null)
     {
         if (!DateOnly.TryParseExact(fecha, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var fechaParsed) ||
             !TimeOnly.TryParseExact(horaInicio, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var horaInicioParsed) ||
@@ -428,10 +437,29 @@ public class HomeController(
 
         if (horaFinParsed <= horaInicioParsed)
             return Json(new { ok = false, mensaje = "La hora fin debe ser mayor que la hora inicio." });
+        var duracionCotizada = (int)(horaFinParsed.ToTimeSpan() - horaInicioParsed.ToTimeSpan()).TotalMinutes;
+        if (duracionCotizada != DuracionReservaPublicaMinutos)
+            return Json(new { ok = false, mensaje = "La reserva publica solo permite bloques de 1 hora." });
 
         try
         {
             var cotizacion = await spService.ReservasCotizarAsync(negocioId, espacioDeportivoId, fechaParsed, horaInicioParsed, horaFinParsed);
+            var montoDescuentoCupon = 0m;
+            var montoFinalConCupon = cotizacion.PrecioFinal;
+            var cuponAplicado = string.Empty;
+            var mensajeCupon = string.Empty;
+            if (!string.IsNullOrWhiteSpace(codigoCupon))
+            {
+                var validacion = await spService.CuponesValidarAsync(negocioId, null, espacioDeportivoId, codigoCupon, cotizacion.PrecioFinal);
+                if (validacion.EsValido)
+                {
+                    montoDescuentoCupon = validacion.MontoDescuento;
+                    montoFinalConCupon = validacion.MontoFinal;
+                    cuponAplicado = validacion.CodigoCupon;
+                }
+
+                mensajeCupon = validacion.Mensaje;
+            }
             return Json(new
             {
                 ok = true,
@@ -441,6 +469,10 @@ public class HomeController(
                     precioBase = cotizacion.PrecioBase,
                     descuentoPct = cotizacion.DescuentoPct,
                     precioFinal = cotizacion.PrecioFinal,
+                    montoDescuentoCupon,
+                    montoFinalConCupon,
+                    cuponAplicado,
+                    mensajeCupon,
                     monedaSimbolo = cotizacion.MonedaSimbolo,
                     politicaConfirmacionPago = cotizacion.PoliticaConfirmacionPago,
                     porcentajeAdelantoMinimo = cotizacion.PorcentajeAdelantoMinimo

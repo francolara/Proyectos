@@ -93,6 +93,8 @@ public class PlataformaNegocioLimiteItemViewModel
     public DateTime? FechaFinPlan { get; set; }
     public int DiasGracia { get; set; } = 5;
     public DateTime? FechaFinGracia { get; set; }
+    public string? CorreoContacto { get; set; }
+    public string? TelefonoContacto { get; set; }
 }
 
 public class PlataformaAltasClubesAdminViewModel

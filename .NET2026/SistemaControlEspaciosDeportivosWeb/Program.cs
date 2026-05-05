@@ -2,12 +2,14 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.CookiePolicy;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using SistemaControlEspaciosDeportivosWeb.Data;
 using SistemaControlEspaciosDeportivosWeb.Models;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using System.Net.Http.Headers;
 using System.Globalization;
+using System.IO;
 using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,6 +19,15 @@ var builder = WebApplication.CreateBuilder(args);
 if (builder.Environment.IsDevelopment())
 {
     builder.Configuration.AddUserSecrets<Program>(optional: true, reloadOnChange: true);
+}
+
+var dataProtectionKeysPath = (builder.Configuration["DataProtection:KeysPath"] ?? string.Empty).Trim();
+if (!string.IsNullOrWhiteSpace(dataProtectionKeysPath))
+{
+    Directory.CreateDirectory(dataProtectionKeysPath);
+    builder.Services.AddDataProtection()
+        .SetApplicationName("SistemaControlEspaciosDeportivosWeb")
+        .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
 }
 
 // Add services to the container.
@@ -43,6 +54,19 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
     .AddErrorDescriber<SpanishIdentityErrorDescriber>()
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
+
+var googleClientId = (builder.Configuration["Authentication:Google:ClientId"] ?? string.Empty).Trim();
+var googleClientSecret = (builder.Configuration["Authentication:Google:ClientSecret"] ?? string.Empty).Trim();
+if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(googleClientSecret))
+{
+    builder.Services.AddAuthentication()
+        .AddGoogle("Google", options =>
+        {
+            options.ClientId = googleClientId;
+            options.ClientSecret = googleClientSecret;
+            options.SignInScheme = IdentityConstants.ExternalScheme;
+        });
+}
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/Identity/Account/Login";

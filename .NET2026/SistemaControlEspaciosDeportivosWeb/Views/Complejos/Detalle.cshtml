@@ -1,0 +1,38 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.ComplejoDetalleViewModel
+@{
+    ViewData["Title"] = Model.Nombre;
+}
+
+<section class="container py-4">
+    <a asp-controller="Complejos" asp-action="Index" class="btn btn-link px-0 mb-2">← Volver a complejos</a>
+    <h1 class="mb-3">@Model.Nombre</h1>
+
+    @if (!Model.Sedes.Any())
+    {
+        <p class="text-muted">Este complejo aun no tiene sedes publicadas.</p>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var sede in Model.Sedes)
+            {
+                <div class="col-md-6">
+                    <article class="card h-100">
+                        <div class="card-body">
+                            <h2 class="h5 mb-2">@sede.Nombre</h2>
+                            <p class="mb-2">@sede.Direccion</p>
+                            @if (!string.IsNullOrWhiteSpace(sede.Telefono))
+                            {
+                                <p class="mb-1"><strong>Telefono:</strong> @sede.Telefono</p>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(sede.GoogleMapsUrl))
+                            {
+                                <a href="@sede.GoogleMapsUrl" target="_blank" rel="noopener">Ver en mapa</a>
+                            }
+                        </div>
+                    </article>
+                </div>
+            }
+        </div>
+    }
+</section>

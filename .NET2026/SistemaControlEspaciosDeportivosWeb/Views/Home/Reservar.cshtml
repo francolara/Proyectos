@@ -25,7 +25,7 @@
         .Where(x => !string.IsNullOrWhiteSpace(x))
         .Distinct(StringComparer.OrdinalIgnoreCase)
         .ToList();
-    var negocioNombre = string.IsNullOrWhiteSpace(Model.Sede?.NegocioNombre) ? "Club / negocio" : Model.Sede!.NegocioNombre!;
+    var negocioNombre = string.IsNullOrWhiteSpace(Model.Sede?.NegocioNombre) ? "Complejo Deportivo" : Model.Sede!.NegocioNombre!;
     var telefonoSedeContacto = (Model.Espacio.TelefonoContacto ?? Model.Sede?.Telefono ?? string.Empty).Trim();
     var correoSedeContacto = (Model.Espacio.CorreoNotificacion ?? string.Empty).Trim();
     var whatsappSedeContacto = (Model.Espacio.WhatsappContacto ?? Model.Sede?.WhatsappContacto ?? string.Empty).Trim();
@@ -36,6 +36,7 @@
     var enlaceWhatsappSede = string.IsNullOrWhiteSpace(numeroWhatsappSede)
         ? string.Empty
         : $"https://wa.me/{numeroWhatsappSede}?text={mensajeWhatsappSede}";
+    var cotizacionTieneDescuento = (Model.Cotizacion?.DescuentoPct ?? 0m) > 0m;
 }
 <div class="container py-4 home-reservar-page">
     <section class="sc-public-reserva-hero mb-3">
@@ -46,7 +47,7 @@
                 <p class="mb-0">Selecciona una franja disponible, revisa el calendario operativo y confirma tu solicitud con una vista mas clara del espacio.</p>
             </div>
             <div class="sc-public-reserva-negocio-card">
-                <span class="sc-public-reserva-negocio-label">Club / negocio</span>
+                <span class="sc-public-reserva-negocio-label">Complejo Deportivo</span>
                 <strong>@negocioNombre</strong>
                 <span class="sc-public-reserva-negocio-meta">@Model.Espacio.SedeNombre</span>
             </div>
@@ -72,7 +73,11 @@
 
     <div class="card border-0 shadow-sm mb-3" id="formularioReservaPublica">
         <div class="card-body">
-            <h2 class="h6 mb-3"><i class="bi bi-pencil-square me-1"></i>Datos para registrar la reserva</h2>
+            @* Firma: FRANCO LARA - 03/05/2026 | Reserva publica restringida a bloques exactos de 1 hora con aviso visible y validacion cliente. *@
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                <h2 class="h6 mb-0"><i class="bi bi-pencil-square me-1"></i>Datos para registrar la reserva</h2>
+                <span class="badge text-bg-info"><i class="bi bi-clock-history me-1"></i>Solo reservas de 1 hora</span>
+            </div>
 
             @if (!ViewData.ModelState.IsValid)
             {
@@ -114,26 +119,23 @@
                             }
                         }
                     </select>
+                    <small class="text-muted">Hora maxima de inicio: 22:30.</small>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Hora fin</label>
-                    <select id="formHoraFin" name="HoraFin" class="form-select" required>
-                        @foreach (var hora in horasMediaHora)
-                        {
-                            var valor = hora.ToString("HH\\:mm");
-                            if (hora == Model.Formulario.HoraFin)
-                            {
-                                <option value="@valor" selected="selected">@valor</option>
-                            }
-                            else
-                            {
-                                <option value="@valor">@valor</option>
-                            }
-                        }
-                    </select>
+                    <input id="formHoraFin"
+                           name="HoraFin"
+                           type="time"
+                           class="form-control"
+                           value="@Model.Formulario.HoraFin.ToString("HH\\:mm")"
+                           step="1800"
+                           readonly
+                           required />
+                    <small class="text-muted">La hora fin se ajusta automaticamente a +1 hora.</small>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Costo de la cancha</label>
+                    <label class="form-label">Precio del espacio</label>
+                    <!-- Firma: Codex - 03/05/2026 | Visual de promocion en reserva publica: precio base tachado y etiqueta de descuento. -->
                     <div class="sc-price-box">
                         <strong id="cotizacionPrecio">
                             @if (Model.Cotizacion is not null)
@@ -145,10 +147,31 @@
                                 @:A cotizar
                             }
                         </strong>
+                        <div id="cotizacionPromo" class="sc-price-promo @(cotizacionTieneDescuento ? string.Empty : "d-none")">
+                            <span id="cotizacionPrecioBase" class="sc-price-base">
+                                @if (cotizacionTieneDescuento)
+                                {
+                                    @($"{Model.Cotizacion!.MonedaSimbolo} {Model.Cotizacion.PrecioBase.ToString("0.00", CultureInfo.InvariantCulture)}")
+                                }
+                            </span>
+                            <span id="cotizacionDescuentoBadge" class="sc-price-discount-badge">
+                                @if (cotizacionTieneDescuento)
+                                {
+                                    @($"-{Math.Round(Model.Cotizacion!.DescuentoPct, 0).ToString("0", CultureInfo.InvariantCulture)}%")
+                                }
+                            </span>
+                        </div>
                         <span id="cotizacionDetalle" class="small text-muted">
                             @if (Model.Cotizacion is not null)
                             {
-                                @($"Base {Model.Cotizacion.MonedaSimbolo} {Model.Cotizacion.PrecioBase.ToString("0.00", CultureInfo.InvariantCulture)}")
+                                @if (cotizacionTieneDescuento)
+                                {
+                                    @("Precio final con promocion aplicada.")
+                                }
+                                else
+                                {
+                                    @($"Base {Model.Cotizacion.MonedaSimbolo} {Model.Cotizacion.PrecioBase.ToString("0.00", CultureInfo.InvariantCulture)}")
+                                }
                             }
                         </span>
                     </div>
@@ -235,6 +258,14 @@
                 <div class="col-12">
                     <label class="form-label">Comentario (opcional)</label>
                     <textarea name="Comentario" class="form-control" rows="3">@Model.Formulario.Comentario</textarea>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Codigo de cupon (opcional)</label>
+                    <div class="input-group">
+                        <input id="formCodigoCupon" name="CodigoCupon" class="form-control" maxlength="30" value="@Model.Formulario.CodigoCupon" />
+                        <button type="button" class="btn btn-outline-primary" id="btnValidarCuponPublico">Validar</button>
+                    </div>
+                    <small id="cuponMensajePublico" class="text-muted"></small>
                 </div>
 
                 <div class="col-12 d-flex gap-2">
@@ -341,7 +372,7 @@
             </div>
 
             <div class="mt-3">
-                <h2 class="h6 mb-2"><i class="bi bi-stars me-1"></i>Servicios del club</h2>
+                <h2 class="h6 mb-2"><i class="bi bi-stars me-1"></i>Servicios del complejo deportivo</h2>
                 @if (servicios.Count == 0)
                 {
                     <div class="text-muted small">No se registraron servicios para esta sede.</div>
@@ -527,17 +558,44 @@
         .home-reservar-page .sc-legend-chip.is-confirmada { background: #edf4ff; border-color: #b5ccff; color: #1e3a8a; }
         .home-reservar-page .sc-legend-chip.is-confirmada i { background: #2563eb; }
         .home-reservar-page .sc-price-box {
-            border: 1px solid #dbe3f3;
-            background: #f8fbff;
+            border: 1px solid #93c5fd;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
             border-radius: 12px;
             min-height: 58px;
-            padding: .5rem .7rem;
+            padding: .65rem .8rem;
             display: flex;
             flex-direction: column;
             justify-content: center;
             gap: 0;
+            box-shadow: 0 8px 20px rgba(29, 78, 216, .18);
         }
-        .home-reservar-page .sc-price-box strong { font-size: 1rem; color: #0b1f46; }
+        .home-reservar-page .sc-price-box strong { font-size: 1.2rem; color: #0b1f46; font-weight: 800; }
+        .home-reservar-page .sc-price-promo {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            margin-top: .05rem;
+        }
+        .home-reservar-page .sc-price-base {
+            font-size: .86rem;
+            color: #64748b;
+            text-decoration: line-through;
+            text-decoration-thickness: 1px;
+        }
+        .home-reservar-page .sc-price-discount-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: .08rem .42rem;
+            border-radius: 999px;
+            background: #dcfce7;
+            border: 1px solid #86efac;
+            color: #166534;
+            font-size: .72rem;
+            font-weight: 800;
+            letter-spacing: .01em;
+            line-height: 1.2;
+        }
         .home-reservar-page .sc-slot-summary {
             display: inline-flex;
             align-items: center;
@@ -745,11 +803,17 @@
             const inputFecha = document.getElementById('formFecha');
             const inputInicio = document.getElementById('formHoraInicio');
             const inputFin = document.getElementById('formHoraFin');
+            const inputCodigoCupon = document.getElementById('formCodigoCupon');
+            const btnValidarCuponPublico = document.getElementById('btnValidarCuponPublico');
+            const cuponMensajePublico = document.getElementById('cuponMensajePublico');
             const inputTipoDocumento = document.getElementById('formTipoDocumento');
             const inputNumeroDocumento = document.getElementById('formNumeroDocumento');
             const slotFechaTexto = document.getElementById('slotFechaTexto');
             const slotHorarioTexto = document.getElementById('slotHorarioTexto');
             const cotizacionPrecio = document.getElementById('cotizacionPrecio');
+            const cotizacionPromo = document.getElementById('cotizacionPromo');
+            const cotizacionPrecioBase = document.getElementById('cotizacionPrecioBase');
+            const cotizacionDescuentoBadge = document.getElementById('cotizacionDescuentoBadge');
             const cotizacionDetalle = document.getElementById('cotizacionDetalle');
             const cotizacionMensaje = document.getElementById('cotizacionMensaje');
             const formContainer = document.getElementById('formularioReservaPublica');
@@ -833,7 +897,11 @@
                 const fin = parseTimeToMinutes(inputFin.value);
                 if (ini === null || fin === null || fin <= ini) {
                     if (cotizacionMensaje) cotizacionMensaje.textContent = 'La hora fin debe ser mayor que la hora inicio.';
+                    if (cotizacionMensaje) cotizacionMensaje.className = 'text-danger';
                     if (cotizacionPrecio) cotizacionPrecio.textContent = 'A cotizar';
+                    if (cotizacionPromo) cotizacionPromo.classList.add('d-none');
+                    if (cotizacionPrecioBase) cotizacionPrecioBase.textContent = '';
+                    if (cotizacionDescuentoBadge) cotizacionDescuentoBadge.textContent = '';
                     if (cotizacionDetalle) cotizacionDetalle.textContent = '';
                     return;
                 }
@@ -845,32 +913,75 @@
                     horaInicio: String(inputInicio.value || ''),
                     horaFin: String(inputFin.value || '')
                 });
+                const codigoCupon = String(inputCodigoCupon?.value || '').trim();
+                if (codigoCupon) params.append('codigoCupon', codigoCupon);
 
                 try {
                     const resp = await fetch('@Url.Action("CotizarReservaPublica", "Home")' + '?' + params.toString(), { credentials: 'same-origin' });
                     const data = await resp.json();
                     if (!data || data.ok !== true) {
                         if (cotizacionPrecio) cotizacionPrecio.textContent = 'A cotizar';
+                        if (cotizacionPromo) cotizacionPromo.classList.add('d-none');
+                        if (cotizacionPrecioBase) cotizacionPrecioBase.textContent = '';
+                        if (cotizacionDescuentoBadge) cotizacionDescuentoBadge.textContent = '';
                         if (cotizacionDetalle) cotizacionDetalle.textContent = '';
                         if (cotizacionMensaje) cotizacionMensaje.textContent = data?.mensaje || 'No se pudo calcular el precio para este horario.';
+                        if (cotizacionMensaje) cotizacionMensaje.className = 'text-danger';
                         return;
                     }
 
                     const c = data.cotizacion || {};
                     const simbolo = c.monedaSimbolo || 'S/';
-                    const precioFinal = Number(c.precioFinal || 0);
+                    const precioFinal = Number((c.montoFinalConCupon ?? c.precioFinal) || 0);
                     const precioBase = Number(c.precioBase || 0);
                     const desc = Number(c.descuentoPct || 0);
+                    const descCupon = Number(c.montoDescuentoCupon || 0);
                     if (cotizacionPrecio) cotizacionPrecio.textContent = `${simbolo} ${precioFinal.toFixed(2)}`;
-                    if (cotizacionDetalle) {
-                        cotizacionDetalle.textContent = desc > 0
-                            ? `Base ${simbolo} ${precioBase.toFixed(2)} - Descuento ${desc.toFixed(2)}%`
-                            : `Base ${simbolo} ${precioBase.toFixed(2)}`;
+                    if (desc > 0) {
+                        if (cotizacionPromo) cotizacionPromo.classList.remove('d-none');
+                        if (cotizacionPrecioBase) cotizacionPrecioBase.textContent = `${simbolo} ${precioBase.toFixed(2)}`;
+                        if (cotizacionDescuentoBadge) cotizacionDescuentoBadge.textContent = `-${Math.round(desc)}%`;
+                    } else {
+                        if (cotizacionPromo) cotizacionPromo.classList.add('d-none');
+                        if (cotizacionPrecioBase) cotizacionPrecioBase.textContent = '';
+                        if (cotizacionDescuentoBadge) cotizacionDescuentoBadge.textContent = '';
                     }
-                    if (cotizacionMensaje) cotizacionMensaje.textContent = c.mensaje || 'Cotizacion actualizada.';
+                    if (cotizacionDetalle) {
+                        cotizacionDetalle.textContent = descCupon > 0
+                            ? `Cupon aplicado: -${simbolo} ${descCupon.toFixed(2)}.`
+                            : (desc > 0
+                                ? 'Precio final con promocion aplicada.'
+                                : `Base ${simbolo} ${precioBase.toFixed(2)}`);
+                    }
+                    if (cotizacionMensaje) cotizacionMensaje.textContent = c.mensajeCupon || c.mensaje || 'Cotizacion actualizada.';
+                    if (cotizacionMensaje) cotizacionMensaje.className = descCupon > 0 ? 'text-success' : 'text-muted';
+                    if (cuponMensajePublico && codigoCupon) {
+                        cuponMensajePublico.className = descCupon > 0 ? 'text-success' : 'text-danger';
+                        cuponMensajePublico.textContent = c.mensajeCupon || '';
+                    }
                 } catch {
                     if (cotizacionMensaje) cotizacionMensaje.textContent = 'No se pudo cotizar en este momento.';
+                    if (cotizacionMensaje) cotizacionMensaje.className = 'text-danger';
                 }
+            }
+            function formatMinutesToHm(totalMinutes) {
+                const h = Math.floor(totalMinutes / 60);
+                const m = totalMinutes % 60;
+                return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+            }
+            function forzarDuracionUnaHora() {
+                if (!inputInicio || !inputFin) return;
+                const ini = parseTimeToMinutes(inputInicio.value);
+                if (ini === null) return;
+                const maxInicio = (22 * 60) + 30;
+                if (ini > maxInicio) {
+                    inputInicio.value = '22:30';
+                }
+                const iniAjustado = parseTimeToMinutes(inputInicio.value);
+                if (iniAjustado === null) return;
+                const finEsperado = iniAjustado + 60;
+                if (finEsperado > (23 * 60 + 59)) return;
+                inputFin.value = formatMinutesToHm(finEsperado);
             }
             function cotizarDebounced() {
                 clearTimeout(debounceCotizar);
@@ -900,6 +1011,7 @@
                 inputFecha.value = toIsoDateLocal(start);
                 inputInicio.value = toHm(start);
                 inputFin.value = toHm(end);
+                forzarDuracionUnaHora();
                 actualizarResumenSlot();
                 cotizarDebounced();
                 if (formContainer) formContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -974,20 +1086,34 @@
 
             calendar.render();
             aplicarHeaderHorarios();
+            forzarDuracionUnaHora();
             actualizarResumenSlot();
             actualizarEstadoNumeroDocumento();
             cotizarDebounced();
 
             inputTipoDocumento?.addEventListener('change', actualizarEstadoNumeroDocumento);
+            inputCodigoCupon?.addEventListener('change', cotizarDebounced);
+            btnValidarCuponPublico?.addEventListener('click', cotizarDebounced);
             inputFecha?.addEventListener('change', () => sincronizarCalendarioConFormulario(calendar));
-            inputInicio?.addEventListener('change', () => sincronizarCalendarioConFormulario(calendar));
-            inputFin?.addEventListener('change', () => sincronizarCalendarioConFormulario(calendar));
+            inputInicio?.addEventListener('change', () => {
+                forzarDuracionUnaHora();
+                sincronizarCalendarioConFormulario(calendar);
+            });
+            inputFin?.addEventListener('change', () => {
+                forzarDuracionUnaHora();
+                sincronizarCalendarioConFormulario(calendar);
+            });
             formReserva?.addEventListener('submit', (e) => {
                 const ini = parseTimeToMinutes(inputInicio?.value);
                 const fin = parseTimeToMinutes(inputFin?.value);
                 if (ini === null || fin === null || fin <= ini) {
                     e.preventDefault();
                     alert('La hora fin debe ser mayor que la hora inicio.');
+                    return;
+                }
+                if ((fin - ini) !== 60) {
+                    e.preventDefault();
+                    alert('La reserva publica solo permite bloques de 1 hora.');
                 }
             });
         })();

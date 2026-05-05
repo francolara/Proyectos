@@ -11,6 +11,8 @@ GO
 -- Firma: Codex - 16/04/2026 | Registro publico autenticado: recibe UsuarioId opcional y guarda relacion en ReservasUsuariosPublicos para historial del perfil publico.
 -- Firma: Codex - 17/04/2026 | Elimina INSERT-EXEC para crear reserva y usa salida @ReservaId de Sp_Reservas_Crear (evita error ROLLBACK dentro de INSERT-EXEC).
 -- Firma: Codex - 18/04/2026 | Bloquea reservas publicas sobre espacios con AdministracionPrivada activada.
+-- Firma: FRANCO LARA - 03/05/2026 | Incluye codigo de cupon opcional para aplicar descuento en reserva publica.
+-- Firma: FRANCO LARA - 03/05/2026 | Reserva publica restringida a duracion fija de 1 hora (60 minutos).
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Home_SolicitarReservaPublica]
     @EspacioDeportivoId INT,
     @Fecha DATE,
@@ -24,6 +26,7 @@ CREATE OR ALTER PROCEDURE [dbo].[Sp_Home_SolicitarReservaPublica]
     @Telefono NVARCHAR(30) = NULL,
     @Correo NVARCHAR(200) = NULL,
     @Comentario NVARCHAR(300) = NULL,
+    @CodigoCupon NVARCHAR(30) = NULL,
     @UsuarioId NVARCHAR(450) = NULL
 AS
 BEGIN
@@ -49,6 +52,9 @@ BEGIN
 
         IF @HoraFin <= @HoraInicio
             RAISERROR('La hora fin debe ser mayor que la hora inicio.', 16, 1);
+
+        IF DATEDIFF(MINUTE, @HoraInicio, @HoraFin) <> 60
+            RAISERROR('La reserva publica solo permite bloques de 1 hora.', 16, 1);
 
         SELECT
             @NegocioId = s.NegocioId
@@ -155,6 +161,7 @@ BEGIN
             @FechaPago = NULL,
             @NumeroOperacion = NULL,
             @Comentario = @ComentarioNorm,
+            @CodigoCupon = @CodigoCupon,
             @CanalOrigen = N'CLIENTE_WEB',
             @ReservaId = @ReservaId OUTPUT,
             @Usuario = N'portal-web';

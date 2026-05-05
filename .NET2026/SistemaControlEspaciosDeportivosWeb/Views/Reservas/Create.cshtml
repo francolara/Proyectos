@@ -76,6 +76,18 @@
                         <label asp-for="Adelanto" class="form-label"></label>
                         <input asp-for="Adelanto" class="form-control" />
                     </div>
+                    <div class="col-md-4">
+                        <div class="form-check mb-1">
+                            <input class="form-check-input" type="checkbox" id="chkTengoCupon" />
+                            <label class="form-check-label" for="chkTengoCupon">Tengo un cupon</label>
+                        </div>
+                        <label asp-for="CodigoCupon" class="form-label">Codigo cupon</label>
+                        <div class="input-group">
+                            <input asp-for="CodigoCupon" class="form-control" maxlength="30" />
+                            <button type="button" class="btn btn-outline-primary" id="btnValidarCupon">Validar</button>
+                        </div>
+                        <small id="cuponMensaje" class="text-muted"></small>
+                    </div>
                 </div>
             </div>
         </section>
@@ -91,5 +103,69 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const btn = document.getElementById('btnValidarCupon');
+            const msg = document.getElementById('cuponMensaje');
+            const codigo = document.getElementById('CodigoCupon');
+            const chk = document.getElementById('chkTengoCupon');
+            const total = document.getElementById('Total');
+            const espacio = document.getElementById('EspacioDeportivoId');
+            if (!btn || !msg || !codigo || !chk || !total || !espacio) return;
+            const negocioId = @Model.NegocioId;
+            function syncCuponUI() {
+                const enabled = chk.checked;
+                codigo.disabled = !enabled;
+                btn.disabled = !enabled;
+                if (!enabled) {
+                    codigo.value = '';
+                    msg.textContent = '';
+                    msg.className = 'text-muted';
+                }
+            }
+            chk.addEventListener('change', syncCuponUI);
+            syncCuponUI();
+
+            btn.addEventListener('click', async () => {
+                msg.className = 'text-muted';
+                msg.textContent = '';
+                const cod = (codigo.value || '').trim();
+                const monto = Number(total.value || '0');
+                const espacioId = Number(espacio.value || '0');
+                if (!cod) {
+                    msg.textContent = 'Ingresa un cupón.';
+                    return;
+                }
+                if (espacioId <= 0 || monto <= 0) {
+                    msg.textContent = 'Selecciona espacio y monto válido antes de validar.';
+                    return;
+                }
+
+                const qs = new URLSearchParams({
+                    negocioId: String(negocioId),
+                    espacioDeportivoId: String(espacioId),
+                    codigoCupon: cod,
+                    montoBase: String(monto)
+                });
+                const r = await fetch('@Url.Action("ValidarCuponReserva", "Reservas")' + '?' + qs.toString(), { cache: 'no-store' });
+                if (!r.ok) {
+                    msg.className = 'text-danger';
+                    msg.textContent = 'No se pudo validar el cupón.';
+                    return;
+                }
+                const data = await r.json();
+                if (!data.ok || !data.esValido) {
+                    msg.className = 'text-danger';
+                    msg.textContent = data.mensaje || 'Cupón inválido.';
+                    return;
+                }
+
+                total.value = Number(data.montoFinal || monto).toFixed(2);
+                codigo.value = data.codigoCupon || cod.toUpperCase();
+                msg.className = 'text-success';
+                msg.textContent = `${data.mensaje} Nuevo total: ${Number(data.montoFinal).toFixed(2)}`;
+            });
+        })();
+    </script>
 }
 
