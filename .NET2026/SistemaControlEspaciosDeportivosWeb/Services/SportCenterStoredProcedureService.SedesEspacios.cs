@@ -373,6 +373,7 @@ public partial class SportCenterStoredProcedureService
     public async Task<List<SedeSerieDocumentoConfigItemViewModel>> SedesSeriesDocumentoListarAsync(int negocioId, int sedeId)
     {
         var list = new List<SedeSerieDocumentoConfigItemViewModel>();
+        var lookup = new Dictionary<string, SedeSerieDocumentoConfigItemViewModel>(StringComparer.OrdinalIgnoreCase);
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_Sedes_SeriesDocumentoComprobante_Listar", cn) { CommandType = CommandType.StoredProcedure };
@@ -382,21 +383,32 @@ public partial class SportCenterStoredProcedureService
         while (await dr.ReadAsync())
         {
             var codigo = dr.GetString(0);
-            var item = new SedeSerieDocumentoConfigItemViewModel
+            if (!lookup.TryGetValue(codigo, out var item))
             {
-                CodigoSunat = codigo,
-                NombreDocumento = dr.GetString(1),
-                Tributario = dr.GetBoolean(2),
-                NegocioSerieId = dr.IsDBNull(3) ? null : dr.GetInt32(3),
-                SerieSeleccionada = dr.IsDBNull(4) ? null : dr.GetString(4)
-            };
+                item = new SedeSerieDocumentoConfigItemViewModel
+                {
+                    CodigoSunat = codigo,
+                    NombreDocumento = dr.GetString(1),
+                    Tributario = dr.GetBoolean(2),
+                    SerieSeleccionada = dr.IsDBNull(4) ? null : dr.GetString(4)
+                };
+                lookup[codigo] = item;
+                list.Add(item);
+            }
 
-            list.Add(item);
+            if (!dr.IsDBNull(3))
+            {
+                var negocioSerieId = dr.GetInt32(3);
+                if (!item.NegocioSeriesIds.Contains(negocioSerieId))
+                    item.NegocioSeriesIds.Add(negocioSerieId);
+            }
         }
 
         foreach (var item in list)
         {
             item.SeriesDisponibles = await CombosSeriesDocumentoComprobanteAsync(negocioId, item.CodigoSunat);
+            if (!item.PermiteMultiplesSeries)
+                item.NegocioSerieId = item.NegocioSeriesIds.FirstOrDefault() > 0 ? item.NegocioSeriesIds.First() : null;
         }
 
         return list;
@@ -411,6 +423,21 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@SedeId", sedeId, SqlDbType.Int);
         AddParam(cmd, "@CodigoSunat", codigoSunat, SqlDbType.NVarChar);
         AddParam(cmd, "@NegocioSerieId", negocioSerieId, SqlDbType.Int);
+        AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+        await cmd.ExecuteNonQueryAsync();
+    }
+
+    public async Task SedesSeriesDocumentoGuardarMultiplesAsync(int negocioId, int sedeId, string codigoSunat, IEnumerable<int> negocioSeriesIds, string usuario)
+    {
+        var csvSeries = ToCsv(negocioSeriesIds);
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_Sedes_SeriesDocumentoComprobante_Guardar", cn) { CommandType = CommandType.StoredProcedure };
+        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+        AddParam(cmd, "@SedeId", sedeId, SqlDbType.Int);
+        AddParam(cmd, "@CodigoSunat", codigoSunat, SqlDbType.NVarChar);
+        AddParam(cmd, "@NegocioSerieId", null, SqlDbType.Int);
+        AddParam(cmd, "@NegocioSeriesIdsCsv", csvSeries, SqlDbType.NVarChar);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
         await cmd.ExecuteNonQueryAsync();
     }

@@ -125,6 +125,7 @@
 - `Sp_Comprobantes_Crear`
 - `Sp_Comprobantes_Actualizar`
 - `Sp_Comprobantes_Eliminar`
+- `Sp_Comprobantes_RegistrarEnvioProveedor`
 - `Sp_Comprobantes_Actualizar` y `Sp_Comprobantes_Eliminar` devuelven error si no existe el comprobante para el negocio.
 - `Sp_Comprobantes_Eliminar` marca el comprobante como anulado (`Estado = 5`) y libera la reserva asociada para permitir nueva emision de comprobante sobre reservas pagadas.
 - `Sp_ParametrosGlobales_ObtenerValor` retorna `ValorParametro` por `NombreParametro` para reglas de validacion configurables.
@@ -1242,3 +1243,54 @@
 - El uso exitoso de cupón incrementa contador y se registra en `CuponesUso`.
 - `Sp_Home_SolicitarReservaPublica` ahora recibe y reenvía `@CodigoCupon` al crear la reserva pública.
 - La tabla `Reservas` incorpora trazabilidad de cupón aplicado y descuento (`CodigoCuponAplicado`, `DescuentoCupon`).
+
+## Actualizacion 05/05/2026 - Integracion multi proveedor de facturacion electronica
+
+### Scripts incorporados
+- `Basededatos/SportCenter/Tablas/dbo.FacturacionProveedores.Table.sql`
+- `Basededatos/SportCenter/Tablas/dbo.NegociosFacturacionProveedorConfig.Table.sql`
+- `Basededatos/SportCenter/Tablas/dbo.NegociosFacturacionProveedorCredencial.Table.sql`
+- `Basededatos/SportCenter/Script/20260505_Negocios_Facturacion_Proveedor_Default.sql`
+- `Basededatos/SportCenter/StoreProcedure/dbo.Sp_FacturacionProveedorConfig_ObtenerPorNegocio.StoredProcedure.sql`
+- `Basededatos/SportCenter/StoreProcedure/dbo.Sp_FacturacionProveedorConfig_Guardar.StoredProcedure.sql`
+
+### Cambios funcionales
+- Se crea un catalogo de proveedores (`FacturacionProveedores`) con codigo unico y tipo de autenticacion para desacoplar la emision de comprobantes del proveedor especifico.
+- Se agrega configuracion por negocio/proveedor/ambiente (`NegociosFacturacionProveedorConfig`) para soportar multiples credenciales y URLs por cada negocio sin depender de variables de entorno por cliente.
+- Se agrega almacenamiento de secretos cifrados (`NegociosFacturacionProveedorCredencial`) con `KeyVersion` y expiracion para rotacion de claves y refresh de token.
+- Se agregan campos en `Negocios` para control operativo de emision: `ProveedorElectronicoDefaultId`, `ModoEmisionElectronica`, `EnviarComprobanteAutomatico`, `UsaContingenciaFacturacion` y `FechaUltimaSyncCatalogosFacturacion`.
+- `Sp_FacturacionProveedorConfig_ObtenerPorNegocio` devuelve configuraciones activas por ambiente y las credenciales activas asociadas.
+- `Sp_FacturacionProveedorConfig_Guardar` permite crear/actualizar configuraciones por negocio y marca proveedor default por ambiente.
+
+### Orden sugerido de ejecucion
+1. `Basededatos/SportCenter/Tablas/dbo.FacturacionProveedores.Table.sql`
+2. `Basededatos/SportCenter/Tablas/dbo.NegociosFacturacionProveedorConfig.Table.sql`
+3. `Basededatos/SportCenter/Tablas/dbo.NegociosFacturacionProveedorCredencial.Table.sql`
+4. `Basededatos/SportCenter/Script/20260505_Negocios_Facturacion_Proveedor_Default.sql`
+5. `Basededatos/SportCenter/StoreProcedure/dbo.Sp_FacturacionProveedorConfig_ObtenerPorNegocio.StoredProcedure.sql`
+6. `Basededatos/SportCenter/StoreProcedure/dbo.Sp_FacturacionProveedorConfig_Guardar.StoredProcedure.sql`
+- `Basededatos/SportCenter/StoreProcedure/dbo.Sp_Comprobantes_RegistrarEnvioProveedor.StoredProcedure.sql`
+- `Basededatos/SportCenter/Script/20260505_ComprobantesElectronicos_UrlsSunat.sql`
+- `ComprobantesController` ahora dispara envio a proveedor inmediatamente despues de `Sp_Comprobantes_Crear` usando la configuracion/credenciales por negocio.
+- Integracion NubeFact reforzada en backend: construccion de JSON para operacion regular (`generar_comprobante`) en boleta/factura/nota credito/nota debito con una sola linea de servicio de alquiler.
+- El envio ahora respeta `Negocios.EnviarComprobanteAutomatico`; si esta desactivado no dispara llamada HTTP al proveedor.
+- Se mejora manejo de respuesta/errores de NubeFact (`errors`, `codigo`, `mensaje`, `enlace_del_pdf`, `sunat_ticket_numero`) y se registra resultado en `ComprobantesElectronicos` via `Sp_Comprobantes_RegistrarEnvioProveedor`.
+- Se agregan columnas `UrlPdfSunat`, `UrlXmlSunat`, `UrlCdrSunat` y se persisten en el registro de envio/consulta al proveedor.
+- `Sp_Comprobantes_ObtenerVisualizacion` prioriza `UrlPdfSunat` y usa fallback XML/CDR para `UrlDescargaProveedor`.
+
+
+
+## Actualizacion 05/05/2026 - Sedes: multiples series para NC/ND
+- Se habilita configuracion de multiples series por sede para `Nota de Credito (07)` y `Nota de Debito (08)`.
+- Se mantiene restriccion de una sola serie activa por sede/documento para el resto de codigos (Factura, Boleta, Recibo, etc.).
+- SP actualizado: `Sp_Sedes_SeriesDocumentoComprobante_Guardar` ahora acepta `@NegocioSeriesIdsCsv` para persistencia multiple en codigos `07/08`.
+- Estructura/indices de `SedesSeriesDocumentoComprobante` ajustados con indice unico filtrado:
+  - `UX_SedesSeriesDocumentoComprobante_Sede_Documento_Activo_NoNotas`.
+- Script incremental:
+  - `Basededatos/SportCenter/Script/20260505_Sedes_SeriesMultiples_Notas.sql`.
+
+- Actualizacion 06/05/2026:
+  - Configuracion de negocio incorpora EnviarComprobanteAutomatico como check editable en Configuracion > Datos del complejo deportivo (debajo de EmisionComprobantesElectronicos).
+  - Sp_ConfiguracionClub_Obtener ahora devuelve Negocios.EnviarComprobanteAutomatico.
+  - Sp_ConfiguracionClub_Actualizar persiste @EnviarComprobanteAutomatico.
+  - Sp_ConfiguracionClub_ActualizarEmision tambien persiste @EnviarComprobanteAutomatico para mantener consistencia cuando se agregan/inactivan series desde la misma pantalla.

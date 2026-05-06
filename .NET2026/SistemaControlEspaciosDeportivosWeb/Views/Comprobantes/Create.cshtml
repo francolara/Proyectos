@@ -127,11 +127,13 @@
                     <div class="col-md-4">
                         <label asp-for="ClienteTipoDocumento" class="form-label">Tipo de documento</label>
                         <select asp-for="ClienteTipoDocumento" asp-items="Model.TiposDocumentoIdentidad" class="form-select" id="clienteTipoDocumentoSelect"></select>
+                        <span asp-validation-for="ClienteTipoDocumento" class="text-danger"></span>
                     </div>
 
                     <div class="col-md-4">
                         <label asp-for="ClienteNumeroDocumento" class="form-label">Número de documento</label>
                         <input asp-for="ClienteNumeroDocumento" class="form-control" />
+                        <span asp-validation-for="ClienteNumeroDocumento" class="text-danger"></span>
                     </div>
                     <div class="col-md-8">
                         <label asp-for="ClienteDireccionFiscal" class="form-label">Dirección</label>
@@ -489,6 +491,24 @@
                     e.preventDefault();
                     alert('El total del comprobante debe ser mayor que cero.');
                     return;
+                }
+                const codigoSunat = String(codigoSunatSelect?.value || '').trim().toUpperCase();
+                const tipoDocCliente = String(clienteTipoDocumentoSelect?.value || '').trim();
+                const numeroDocCliente = String(clienteNumeroDocumentoInput?.value || '').trim();
+                if (codigoSunat === '01') {
+                    const rucRegex = /^\d{11}$/;
+                    if (tipoDocCliente !== '6') {
+                        e.preventDefault();
+                        alert('Para factura el tipo de documento del cliente debe ser RUC (6).');
+                        clienteTipoDocumentoSelect?.focus();
+                        return;
+                    }
+                    if (!rucRegex.test(numeroDocCliente)) {
+                        e.preventDefault();
+                        alert('Para factura el número de documento debe ser un RUC de 11 dígitos.');
+                        clienteNumeroDocumentoInput?.focus();
+                        return;
+                    }
                 }
                 recalcularMontos();
             });

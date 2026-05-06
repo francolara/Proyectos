@@ -88,6 +88,12 @@
                 </div>
                 <div class="col-md-4">
                     <label class="sc-check-chip">
+                        <input asp-for="EnviarComprobanteAutomatico" class="form-check-input mt-0" />
+                        <span>Enviar comprobante automatico</span>
+                    </label>
+                </div>
+                <div class="col-md-4">
+                    <label class="sc-check-chip">
                         <input asp-for="EmisionReciboInterno" class="form-check-input mt-0" />
                         <span>Emision de recibo interno</span>
                     </label>
@@ -202,6 +208,7 @@
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="negocioId" value="@Model.NegocioId" />
                 <input type="hidden" name="emisionComprobantesElectronicos" class="js-emision-cpe-hidden" value="@(Model.EmisionComprobantesElectronicos ? "true" : "false")" />
+                <input type="hidden" name="enviarComprobanteAutomatico" class="js-enviar-cpe-auto-hidden" value="@(Model.EnviarComprobanteAutomatico ? "true" : "false")" />
                 <input type="hidden" name="emisionReciboInterno" class="js-emision-recibo-hidden" value="@(Model.EmisionReciboInterno ? "true" : "false")" />
                 <div class="col-12">
                     <label class="form-label">Documento tributario</label>
@@ -227,6 +234,7 @@
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="negocioId" value="@Model.NegocioId" />
                 <input type="hidden" name="emisionComprobantesElectronicos" class="js-emision-cpe-hidden" value="@(Model.EmisionComprobantesElectronicos ? "true" : "false")" />
+                <input type="hidden" name="enviarComprobanteAutomatico" class="js-enviar-cpe-auto-hidden" value="@(Model.EnviarComprobanteAutomatico ? "true" : "false")" />
                 <input type="hidden" name="emisionReciboInterno" class="js-emision-recibo-hidden" value="@(Model.EmisionReciboInterno ? "true" : "false")" />
                 <div class="col-12">
                     <label class="form-label">Documento no tributario</label>
@@ -289,6 +297,7 @@
                                     <input type="hidden" name="negocioId" value="@Model.NegocioId" />
                                     <input type="hidden" name="id" value="@item.Id" />
                                     <input type="hidden" name="emisionComprobantesElectronicos" class="js-emision-cpe-hidden" value="@(Model.EmisionComprobantesElectronicos ? "true" : "false")" />
+                                    <input type="hidden" name="enviarComprobanteAutomatico" class="js-enviar-cpe-auto-hidden" value="@(Model.EnviarComprobanteAutomatico ? "true" : "false")" />
                                     <input type="hidden" name="emisionReciboInterno" class="js-emision-recibo-hidden" value="@(Model.EmisionReciboInterno ? "true" : "false")" />
                                     <button type="submit" class="btn btn-sm sc-action-btn sc-action-delete"><i class="bi bi-trash3"></i>Inactivar</button>
                                 </form>
@@ -313,6 +322,7 @@
             const rowPorcentaje = document.getElementById('rowPorcentajeAdelantoMinimo');
             const porcentaje = document.getElementById('PorcentajeAdelantoMinimo');
             const chkCpe = document.getElementById('EmisionComprobantesElectronicos');
+            const chkEnviarComprobanteAutomatico = document.getElementById('EnviarComprobanteAutomatico');
             const chkRecibo = document.getElementById('EmisionReciboInterno');
             const chkCancelacionAuto = document.getElementById('CancelacionAutomaticaNoConfirmada');
             const rowMinCancelacionAuto = document.getElementById('rowMinutosCancelacionNoConfirmada');
@@ -322,6 +332,7 @@
             const quitarLogo = document.getElementById('QuitarLogo');
             const formsSeries = Array.from(document.querySelectorAll('.js-form-serie-documento'));
             const hiddenCpe = Array.from(document.querySelectorAll('.js-emision-cpe-hidden'));
+            const hiddenEnviarAuto = Array.from(document.querySelectorAll('.js-enviar-cpe-auto-hidden'));
             const hiddenRecibo = Array.from(document.querySelectorAll('.js-emision-recibo-hidden'));
             const panelSeriesTrib = document.getElementById('panelSeriesTributarias');
             const panelSeriesNoTrib = document.getElementById('panelSeriesNoTributarias');

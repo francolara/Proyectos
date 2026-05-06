@@ -10,6 +10,7 @@ GO
 -- Firma: Codex - 09/04/2026 | Se agrega configuracion de emision (CPE/Recibo interno) y porcentaje IGV.
 -- Firma: Codex - 13/04/2026 | Se agrega persistencia de LogoUrl para logo del negocio.
 -- Firma: Codex - 16/04/2026 | Se agregan flags de reserva: permitir modificar precio y cancelacion automatica por no confirmacion.
+-- Firma: Codex - 06/05/2026 | Se agrega persistencia de EnviarComprobanteAutomatico desde configuracion del negocio.
 CREATE OR ALTER PROCEDURE dbo.Sp_ConfiguracionClub_Actualizar
     @NegocioId INT,
     @NombreComercial NVARCHAR(200),
@@ -22,6 +23,7 @@ CREATE OR ALTER PROCEDURE dbo.Sp_ConfiguracionClub_Actualizar
     @PoliticaConfirmacionPago TINYINT = 0,
     @PorcentajeAdelantoMinimo DECIMAL(5,2) = NULL,
     @EmisionComprobantesElectronicos BIT = 0,
+    @EnviarComprobanteAutomatico BIT = 0,
     @EmisionReciboInterno BIT = 0,
     @PorcentajeIgv INT = 18,
     @LogoUrl NVARCHAR(500) = NULL,
@@ -132,6 +134,7 @@ BEGIN
             n.PoliticaConfirmacionPago = @PoliticaConfirmacionPago,
             n.PorcentajeAdelantoMinimo = @PorcentajeAdelantoNormalizado,
             n.EmisionComprobantesElectronicos = @EmisionComprobantesElectronicos,
+            n.EnviarComprobanteAutomatico = @EnviarComprobanteAutomatico,
             n.EmisionReciboInterno = @EmisionReciboInterno,
             n.PorcentajeIgv = @PorcentajeIgv,
             n.LogoUrl = @LogoUrlNormalizado,

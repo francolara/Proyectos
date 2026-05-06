@@ -1,6 +1,46 @@
 ﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobanteVisualizacionViewModel
 @{
     ViewData["Title"] = "Vista previa de comprobante";
+    var estado = ViewBag.EstadoComprobante is SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico ec
+        ? ec
+        : SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico.PendienteEnvio;
+    var codigoDoc = (Model.CodigoDocumentoComprobante ?? string.Empty).Trim().ToUpperInvariant();
+    var tipoDocumentoNombre = codigoDoc switch
+    {
+        "01" => "Factura",
+        "03" => "Boleta",
+        "07" => "Nota de Credito",
+        "08" => "Nota de Debito",
+        "RI" => "Recibo Interno",
+        _ => Model.TipoDocumentoNombre
+    };
+    var estadoSunatTexto = estado switch
+    {
+        SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico.PendienteEnvio => "Pendiente de envio",
+        SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico.EnviadoSunat => "Enviado a SUNAT",
+        SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico.AceptadoSunat => "Aceptado por SUNAT",
+        SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico.RechazadoSunat => "Rechazado por SUNAT",
+        SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico.Anulado => "Anulado",
+        _ => estado.ToString()
+    };
+    var estadoSunatClase = estado switch
+    {
+        SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico.AceptadoSunat => "bg-success-subtle text-success-emphasis border border-success-subtle",
+        SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico.EnviadoSunat => "bg-info-subtle text-info-emphasis border border-info-subtle",
+        SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico.RechazadoSunat => "bg-danger-subtle text-danger-emphasis border border-danger-subtle",
+        SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico.Anulado => "bg-danger-subtle text-danger-emphasis border border-danger-subtle",
+        _ => "bg-warning-subtle text-warning-emphasis border border-warning-subtle"
+    };
+    var puedeEnviarSunat = Model.EsTributario && estado == SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico.PendienteEnvio;
+    var puedeImprimirTributario = Model.EsTributario
+                                  && estado != SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico.PendienteEnvio
+                                  && estado != SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico.RechazadoSunat
+                                  && estado != SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico.Anulado;
+    var puedeDescargarDocsSunat = Model.EsTributario
+                                  && estado == SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico.AceptadoSunat
+                                  && !string.IsNullOrWhiteSpace(Model.UrlDescargaProveedor);
+    var puedeEnviarCorreoComprobante = Model.EsTributario
+                                       && estado == SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico.AceptadoSunat;
     var numeroComprobante = $"{Model.Serie}-{Model.Numero:D8}";
     var descripcionDetalle = $"Reserva de {Model.EspacioNombre} | {Model.FechaReserva:dd/MM/yyyy} {Model.HoraInicioReserva:HH\\:mm}-{Model.HoraFinReserva:HH\\:mm}";
     var documentoCliente = string.IsNullOrWhiteSpace(Model.ClienteDocumento) ? "-" : Model.ClienteDocumento;
@@ -12,18 +52,51 @@
 }
 
 <div class="admin-page-frame comprobante-preview-page">
+    @if (TempData["ComprobanteError"] is string comprobanteError && !string.IsNullOrWhiteSpace(comprobanteError))
+    {
+        <div class="alert alert-danger">@comprobanteError</div>
+    }
+    @if (TempData["ComprobanteOk"] is string comprobanteOk && !string.IsNullOrWhiteSpace(comprobanteOk))
+    {
+        <div class="alert alert-success">@comprobanteOk</div>
+    }
     <section class="page-header">
         <div>
             <h1>Vista previa de comprobante</h1>
-            <p class="page-subtitle">@Model.TipoDocumentoNombre | @numeroComprobante</p>
+            <p class="page-subtitle">@tipoDocumentoNombre | @numeroComprobante</p>
         </div>
         <div class="action-toolbar">
             @if (Model.EsTributario)
             {
-                if (!string.IsNullOrWhiteSpace(Model.UrlDescargaProveedor))
+                if (puedeEnviarSunat)
                 {
-                    <a class="btn btn-primary" href="@Model.UrlDescargaProveedor" target="_blank" rel="noopener">
-                        <i class="bi bi-box-arrow-up-right me-1"></i> Abrir proveedor
+                    <form method="post" asp-action="EnviarSunat" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-send me-1"></i> Enviar a SUNAT
+                        </button>
+                    </form>
+                }
+                if (puedeImprimirTributario)
+                {
+                    <form method="post" asp-action="ImprimirTributario" class="d-inline" target="_blank" rel="noopener">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-printer me-1"></i> Imprimir
+                        </button>
+                    </form>
+                }
+                if (puedeDescargarDocsSunat)
+                {
+                    <a class="btn btn-outline-primary"
+                       asp-action="DescargarDocsSunat"
+                       asp-route-negocioId="@Model.NegocioId"
+                       asp-route-id="@Model.Id">
+                        <i class="bi bi-download me-1"></i> Descargar docs SUNAT
                     </a>
                 }
             }
@@ -41,6 +114,13 @@
 
     @if (Model.EsTributario)
     {
+        <div class="mb-3">
+            <span class="badge @estadoSunatClase px-3 py-2">Estado SUNAT: @estadoSunatTexto</span>
+        </div>
+    }
+
+    @if (Model.EsTributario)
+    {
         <div class="alert alert-info mb-3">
             Documento tributario. La descarga oficial se realiza desde el proveedor electronico.
         </div>
@@ -50,7 +130,7 @@
         <article class="summary-card summary-card-highlight">
             <small>Documento</small>
             <h3>@numeroComprobante</h3>
-            <p>@Model.TipoDocumentoNombre</p>
+            <p>@tipoDocumentoNombre</p>
         </article>
         <article class="summary-card">
             <small>Fecha emision</small>
@@ -141,6 +221,22 @@
             </div>
         </div>
     </section>
+
+    @if (puedeEnviarCorreoComprobante)
+    {
+        <section class="table-card mb-3">
+            <div class="px-3 py-3 d-flex justify-content-center">
+                <form method="post" asp-action="EnviarComprobanteCorreo" class="w-100 d-flex justify-content-center">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <button type="submit" class="btn btn-lg btn-primary px-4 py-2 fw-bold">
+                        <i class="bi bi-envelope-fill me-2"></i> Enviar Comprobante
+                    </button>
+                </form>
+            </div>
+        </section>
+    }
 
 </div>
 

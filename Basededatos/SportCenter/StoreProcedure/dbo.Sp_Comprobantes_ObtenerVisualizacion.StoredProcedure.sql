@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿USE [DbSportCenter]
 GO
 SET ANSI_NULLS ON
 GO
@@ -6,6 +6,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 -- Firma: Codex - 09/04/2026 | Obtiene datos completos para visualizar comprobante (PDF interno o URL proveedor para tributarios), incluyendo ubigeo de negocio y cliente.
 -- Firma: Codex - 11/04/2026 | Agrega soporte de codigos 07/08 para visualizacion de NC/ND.
+-- Firma: Codex - 05/05/2026 | URL de descarga prioriza campos dedicados URL PDF/XML/CDR.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Comprobantes_ObtenerVisualizacion]
     @NegocioId INT,
     @Id INT
@@ -18,21 +19,21 @@ BEGIN
             ce.NegocioId,
             ce.ReservaId,
             ce.TipoComprobante,
+            --CASE
+            --    WHEN ce.TipoComprobante = 2 THEN N'01'
+            --    WHEN ce.TipoComprobante = 1 THEN N'03'
+            --    WHEN ce.TipoComprobante = 3 THEN N'RI'
+            --    WHEN ce.TipoComprobante = 4 THEN N'07'
+            --    WHEN ce.TipoComprobante = 5 THEN N'08'
+            --    ELSE N'03'
+            --END AS CodigoDocumentoComprobante,
+            d.CodigoSunat AS CodigoDocumentoComprobante,
             CASE
-                WHEN ce.TipoComprobante = 2 THEN N'01'
-                WHEN ce.TipoComprobante = 1 THEN N'03'
-                WHEN ce.TipoComprobante = 3 THEN N'RI'
-                WHEN ce.TipoComprobante = 4 THEN N'07'
-                WHEN ce.TipoComprobante = 5 THEN N'08'
-                ELSE N'03'
-            END AS CodigoDocumentoComprobante,
-            CASE
-                WHEN ce.TipoComprobante = 2 THEN N'Factura'
-                WHEN ce.TipoComprobante = 1 THEN N'Boleta'
-                WHEN ce.TipoComprobante = 3 THEN N'Recibo Interno'
-                WHEN ce.TipoComprobante = 4 THEN N'Nota de Credito'
-                WHEN ce.TipoComprobante = 5 THEN N'Nota de Debito'
-                ELSE CONCAT(N'Tipo ', ce.TipoComprobante)
+                WHEN d.CodigoSunat = '01' THEN N'Factura'
+                WHEN d.CodigoSunat = '03' THEN N'Boleta'
+                WHEN d.CodigoSunat = 'RI' THEN N'Recibo Interno'
+                WHEN d.CodigoSunat = '07' THEN N'Nota de Credito'
+                WHEN d.CodigoSunat = '08' THEN N'Nota de Debito'
             END AS TipoDocumentoNombre,
             CAST(CASE WHEN ce.TipoComprobante IN (1,2,4,5) THEN 1 ELSE 0 END AS BIT) AS EsTributario,
             ce.Serie,
@@ -66,13 +67,20 @@ BEGIN
             r.Fecha,
             r.HoraInicio,
             r.HoraFin,
-            CASE WHEN ce.MensajeRespuestaSunat LIKE N'http%' THEN ce.MensajeRespuestaSunat ELSE NULL END AS UrlDescargaProveedor
+            COALESCE(
+                NULLIF(LTRIM(RTRIM(ce.UrlPdfSunat)), N''),
+                NULLIF(LTRIM(RTRIM(ce.UrlXmlSunat)), N''),
+                NULLIF(LTRIM(RTRIM(ce.UrlCdrSunat)), N''),
+                CASE WHEN ce.MensajeRespuestaSunat LIKE N'http%' THEN ce.MensajeRespuestaSunat ELSE NULL END
+            ) AS UrlDescargaProveedor
         FROM dbo.ComprobantesElectronicos ce
         INNER JOIN dbo.Negocios n ON n.Id = ce.NegocioId
         INNER JOIN dbo.Reservas r ON r.Id = ce.ReservaId
         INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
         INNER JOIN dbo.Clientes c ON c.Id = ce.ClienteId
+        INNER JOIN NegociosTiposDocumentoComprobante d
+        ON ce.TipoComprobante = d.Id AND d.NegocioId = @NegocioId
         LEFT JOIN dbo.UbigeoDistritos ndis ON ndis.CodigoUbigeo = n.CodigoUbigeo
         LEFT JOIN dbo.UbigeoProvincias nprov ON nprov.CodigoProvincia = ndis.CodigoProvincia
         LEFT JOIN dbo.UbigeoDepartamentos ndep ON ndep.CodigoDepartamento = ndis.CodigoDepartamento

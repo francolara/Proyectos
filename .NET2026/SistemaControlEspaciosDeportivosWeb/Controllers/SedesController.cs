@@ -144,12 +144,24 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
 
         foreach (var item in model.SeriesDocumentoConfig ?? new List<SedeSerieDocumentoConfigItemViewModel>())
         {
-            await spService.SedesSeriesDocumentoGuardarAsync(
-                model.NegocioId,
-                model.Id,
-                item.CodigoSunat,
-                item.NegocioSerieId,
-                User.Identity?.Name ?? "sistema");
+            if (item.PermiteMultiplesSeries)
+            {
+                await spService.SedesSeriesDocumentoGuardarMultiplesAsync(
+                    model.NegocioId,
+                    model.Id,
+                    item.CodigoSunat,
+                    item.NegocioSeriesIds,
+                    User.Identity?.Name ?? "sistema");
+            }
+            else
+            {
+                await spService.SedesSeriesDocumentoGuardarAsync(
+                    model.NegocioId,
+                    model.Id,
+                    item.CodigoSunat,
+                    item.NegocioSerieId,
+                    User.Identity?.Name ?? "sistema");
+            }
         }
 
         if (urlsEliminar.Count > 0)

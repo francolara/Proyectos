@@ -8,6 +8,7 @@ GO
 -- Author:        FRANCO LARA
 -- Create date:   09/04/2026
 -- Description:   Series configuradas por sede para cada tipo de documento habilitado.
+-- Firma:         Codex - 05/05/2026 | Ajusta indices para permitir multiples series activas por sede en NC/ND (07/08).
 -- =============================================
 CREATE TABLE [dbo].[SedesSeriesDocumentoComprobante](
     [Id] [int] IDENTITY(1,1) NOT NULL,
@@ -23,11 +24,6 @@ CREATE TABLE [dbo].[SedesSeriesDocumentoComprobante](
 (
     [Id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY],
- CONSTRAINT [UX_SedesSeriesDocumentoComprobante_Sede_Documento] UNIQUE NONCLUSTERED
-(
-    [SedeId] ASC,
-    [CodigoSunat] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
 ALTER TABLE [dbo].[SedesSeriesDocumentoComprobante] ADD CONSTRAINT [DF_SedesSeriesDocumentoComprobante_Activo] DEFAULT ((1)) FOR [Activo]
@@ -48,4 +44,14 @@ ALTER TABLE [dbo].[SedesSeriesDocumentoComprobante]  WITH CHECK ADD  CONSTRAINT 
 REFERENCES [dbo].[NegociosSeriesDocumentoComprobante] ([Id])
 GO
 ALTER TABLE [dbo].[SedesSeriesDocumentoComprobante] CHECK CONSTRAINT [FK_SedesSeriesDocumentoComprobante_NegociosSeriesDocumentoComprobante]
+GO
+CREATE UNIQUE NONCLUSTERED INDEX [UX_SedesSeriesDocumentoComprobante_Sede_Documento_Activo_NoNotas]
+ON [dbo].[SedesSeriesDocumentoComprobante]
+(
+    [SedeId] ASC,
+    [CodigoSunat] ASC
+)
+WHERE [Activo] = 1 AND [CodigoSunat] NOT IN (N'07', N'08')
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
+ON [PRIMARY]
 GO

@@ -122,6 +122,7 @@ public class ConfiguracionController(
         string serie,
         bool activo = true,
         bool emisionComprobantesElectronicos = false,
+        bool enviarComprobanteAutomatico = false,
         bool emisionReciboInterno = false)
     {
         var baseVm = await ObtenerBaseAsync(negocioId, "SEDES");
@@ -134,6 +135,7 @@ public class ConfiguracionController(
             await spService.ConfiguracionClubActualizarEmisionAsync(
                 negocioId,
                 emisionComprobantesElectronicos,
+                enviarComprobanteAutomatico,
                 emisionReciboInterno,
                 User.Identity?.Name ?? "sistema");
             TempData["ConfiguracionOk"] = "Serie configurada correctamente.";
@@ -152,6 +154,7 @@ public class ConfiguracionController(
         int negocioId,
         int id,
         bool emisionComprobantesElectronicos = false,
+        bool enviarComprobanteAutomatico = false,
         bool emisionReciboInterno = false)
     {
         var baseVm = await ObtenerBaseAsync(negocioId, "SEDES");
@@ -164,6 +167,7 @@ public class ConfiguracionController(
             await spService.ConfiguracionClubActualizarEmisionAsync(
                 negocioId,
                 emisionComprobantesElectronicos,
+                enviarComprobanteAutomatico,
                 emisionReciboInterno,
                 User.Identity?.Name ?? "sistema");
             TempData["ConfiguracionOk"] = ok ? "Serie inactivada correctamente." : null;

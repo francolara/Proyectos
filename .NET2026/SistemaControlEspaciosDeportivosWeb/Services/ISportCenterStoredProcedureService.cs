@@ -24,7 +24,7 @@ public interface ISportCenterStoredProcedureService
     Task<ConfiguracionClubViewModel?> ConfiguracionClubObtenerAsync(int negocioId);
     Task<bool> ConfiguracionClubActualizarAsync(ConfiguracionClubViewModel model, string usuario);
     Task<List<SelectListItem>> ConfiguracionClubComboMonedasAsync(int negocioId);
-    Task<bool> ConfiguracionClubActualizarEmisionAsync(int negocioId, bool emisionComprobantesElectronicos, bool emisionReciboInterno, string usuario);
+    Task<bool> ConfiguracionClubActualizarEmisionAsync(int negocioId, bool emisionComprobantesElectronicos, bool enviarComprobanteAutomatico, bool emisionReciboInterno, string usuario);
     Task<List<SerieDocumentoComprobanteItemViewModel>> ConfiguracionSeriesDocumentoListarAsync(int negocioId);
     Task ConfiguracionSeriesDocumentoGuardarAsync(int negocioId, string codigoSunat, string serie, bool activo, string usuario);
     Task<bool> ConfiguracionSeriesDocumentoEliminarAsync(int negocioId, int id, string usuario);
@@ -64,6 +64,7 @@ public interface ISportCenterStoredProcedureService
     Task<List<SelectListItem>> SedesComboServiciosAsync();
     Task<List<SedeSerieDocumentoConfigItemViewModel>> SedesSeriesDocumentoListarAsync(int negocioId, int sedeId);
     Task SedesSeriesDocumentoGuardarAsync(int negocioId, int sedeId, string codigoSunat, int? negocioSerieId, string usuario);
+    Task SedesSeriesDocumentoGuardarMultiplesAsync(int negocioId, int sedeId, string codigoSunat, IEnumerable<int> negocioSeriesIds, string usuario);
 
     Task<List<EspacioItemViewModel>> EspaciosListarAsync(int negocioId, int? sedeId = null);
     Task<EspacioFormViewModel?> EspaciosObtenerAsync(int negocioId, int id);

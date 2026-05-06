@@ -1,4 +1,8 @@
 using System.Text.RegularExpressions;
+using System.Text;
+using System.IO.Compression;
+using System.Data;
+using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using SistemaControlEspaciosDeportivosWeb.Services;
@@ -7,9 +11,17 @@ using System.Globalization;
 
 namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 
-public class ComprobantesController(IModuloPermisoService moduloPermisoService, ISportCenterStoredProcedureService spService)
+public class ComprobantesController(
+    IModuloPermisoService moduloPermisoService,
+    ISportCenterStoredProcedureService spService,
+    IComprobanteElectronicoEmisionService emisionService,
+    IEmailService emailService,
+    IConfiguration configuration,
+    IHttpClientFactory httpClientFactory)
     : ModuloControllerBase(moduloPermisoService)
 {
+    private readonly string _connectionString = configuration.GetConnectionString("DefaultConnection")
+                                               ?? throw new InvalidOperationException("No se encontro DefaultConnection.");
     public async Task<IActionResult> Index(int? negocioId, string? buscar = null, string? codigoDocumento = null, DateOnly? fechaDesde = null, DateOnly? fechaHasta = null, string? preset = null, int pagina = 1)
     {
         var resolvedNegocioId = await ResolverNegocioIdAsync(negocioId, spService);
@@ -175,20 +187,27 @@ public class ComprobantesController(IModuloPermisoService moduloPermisoService, 
         model.TipoComprobante = MapearTipoComprobante(model.CodigoDocumentoComprobante);
         if (!ModelState.IsValid) return View(model);
 
+        var usuarioActual = User.Identity?.Name ?? "sistema";
         int id;
         try
         {
-            id = await spService.ComprobantesCrearAsync(model, User.Identity?.Name ?? "sistema");
+            id = await spService.ComprobantesCrearAsync(model, usuarioActual);
         }
         catch (SqlException ex)
         {
             ModelState.AddModelError(string.Empty, ex.Message);
             return View(model);
         }
+
+        var resultadoEmision = await emisionService.EmitirAsync(model.NegocioId, id, usuarioActual);
         var comprobanteCreado = await spService.ComprobantesObtenerAsync(model.NegocioId, id);
         if (comprobanteCreado is not null)
         {
             TempData["ComprobanteOk"] = $"Comprobante emitido: {comprobanteCreado.Serie}-{comprobanteCreado.Numero:D8}.";
+            if (!resultadoEmision.Exito)
+            {
+                TempData["ComprobanteError"] = $"Se genero el comprobante, pero fallo el envio al proveedor: {resultadoEmision.Mensaje}";
+            }
         }
         return RedirectToAction(nameof(Edit), new { negocioId = model.NegocioId, id });
     }
@@ -340,26 +359,34 @@ public class ComprobantesController(IModuloPermisoService moduloPermisoService, 
             model.Serie = serieElegida?.Text ?? model.Serie;
         }
 
+        ValidarSerieNotaSegunReferencia(model, referencia);
+
         AplicarCalculoComprobante(model);
         NormalizarDatosCliente(model);
         var montoMaximoBoletaSinDoc = await ObtenerMontoMaximoBoletaSinDocAsync();
         ValidarReglasDocumento(model, montoMaximoBoletaSinDoc);
         if (!ModelState.IsValid) return View(model);
 
+        var usuarioActual = User.Identity?.Name ?? "sistema";
         int idGenerado;
         try
         {
-            idGenerado = await spService.ComprobantesCrearAsync(model, User.Identity?.Name ?? "sistema");
+            idGenerado = await spService.ComprobantesCrearAsync(model, usuarioActual);
         }
         catch (SqlException ex)
         {
             ModelState.AddModelError(string.Empty, ex.Message);
             return View(model);
         }
+        var resultadoEmision = await emisionService.EmitirAsync(model.NegocioId, idGenerado, usuarioActual);
         var comprobanteCreado = await spService.ComprobantesObtenerAsync(model.NegocioId, idGenerado);
         if (comprobanteCreado is not null)
         {
             TempData["ComprobanteOk"] = $"{(tipoNotaNormalizado == "NC" ? "Nota de credito" : "Nota de debito")} generada: {comprobanteCreado.Serie}-{comprobanteCreado.Numero:D8}.";
+            if (!resultadoEmision.Exito)
+            {
+                TempData["ComprobanteError"] = $"Se genero el comprobante, pero fallo el envio al proveedor: {resultadoEmision.Mensaje}";
+            }
         }
 
         return RedirectToAction(nameof(Edit), new { negocioId = model.NegocioId, id = idGenerado });
@@ -470,6 +497,35 @@ public class ComprobantesController(IModuloPermisoService moduloPermisoService, 
         var data = await spService.ComprobantesObtenerContextoReservaAsync(negocioId, reservaId, codigoSunat);
         if (data is null) return Json(new { ok = false, mensaje = "No se encontro la reserva pagada seleccionada." });
 
+        var codigo = (codigoSunat ?? string.Empty).Trim().ToUpperInvariant();
+        var documentosFiltrados = data.DocumentosDisponibles;
+        if (codigo is "01" or "03")
+        {
+            documentosFiltrados = data.DocumentosDisponibles
+                .Where(x =>
+                {
+                    var v = (x.Value ?? string.Empty).Trim().ToUpperInvariant();
+                    return v is "01" or "03";
+                })
+                .ToList();
+        }
+        else if (codigo == "RI")
+        {
+            documentosFiltrados = data.DocumentosDisponibles
+                .Where(x => string.Equals((x.Value ?? string.Empty).Trim(), "RI", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+        else
+        {
+            documentosFiltrados = data.DocumentosDisponibles
+                .Where(x =>
+                {
+                    var v = (x.Value ?? string.Empty).Trim().ToUpperInvariant();
+                    return v is not ("07" or "08");
+                })
+                .ToList();
+        }
+
         return Json(new
         {
             ok = true,
@@ -496,7 +552,7 @@ public class ComprobantesController(IModuloPermisoService moduloPermisoService, 
                 saldoPendiente = data.SaldoPendiente,
                 monedaSimbolo = data.MonedaSimbolo,
                 porcentajeIgv = config?.PorcentajeIgv ?? 18,
-                documentos = data.DocumentosDisponibles.Select(x => new { value = x.Value, text = x.Text }).ToList(),
+                documentos = documentosFiltrados.Select(x => new { value = x.Value, text = x.Text }).ToList(),
                 series = data.SeriesDisponibles.Select(x => new { value = x.Value, text = x.Text }).ToList(),
                 pagos = data.PagosReserva.Select(p => new
                 {
@@ -568,8 +624,313 @@ public class ComprobantesController(IModuloPermisoService moduloPermisoService, 
 
         var data = await spService.ComprobantesObtenerVisualizacionAsync(negocioId, id);
         if (data is null) return NotFound();
+        var comprobanteBase = await spService.ComprobantesObtenerAsync(negocioId, id);
+        ViewBag.EstadoComprobante = comprobanteBase?.Estado;
 
         return View(data);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EnviarSunat(int negocioId, int id)
+    {
+        var baseVm = await ObtenerBaseAsync(negocioId, "COMPROBANTES");
+        if (baseVm is null || !baseVm.PuedeEditar) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
+
+        var usuarioActual = User.Identity?.Name ?? "sistema";
+        var resultado = await emisionService.EmitirManualAsync(negocioId, id, usuarioActual);
+        TempData[resultado.Exito ? "ComprobanteOk" : "ComprobanteError"] = resultado.Mensaje;
+        return RedirectToAction(nameof(Preview), new { negocioId, id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ImprimirTributario(int negocioId, int id)
+    {
+        var baseVm = await ObtenerBaseAsync(negocioId, "COMPROBANTES");
+        if (baseVm is null) return Forbid();
+
+        var usuarioActual = User.Identity?.Name ?? "sistema";
+        var resultadoConsulta = await emisionService.ConsultarEstadoAsync(negocioId, id, usuarioActual);
+        if (!resultadoConsulta.Exito)
+        {
+            TempData["ComprobanteError"] = $"No se pudo consultar estado en proveedor: {resultadoConsulta.Mensaje}";
+            return RedirectToAction(nameof(Preview), new { negocioId, id });
+        }
+
+        var data = await spService.ComprobantesObtenerVisualizacionAsync(negocioId, id);
+        if (data is null) return NotFound();
+
+        if (!string.IsNullOrWhiteSpace(data.UrlDescargaProveedor))
+        {
+            return Redirect(data.UrlDescargaProveedor);
+        }
+
+        TempData["ComprobanteError"] = "El proveedor no devolvio URL de descarga para este comprobante.";
+        return RedirectToAction(nameof(Preview), new { negocioId, id });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> DescargarDocsSunat(int negocioId, int id)
+    {
+        var baseVm = await ObtenerBaseAsync(negocioId, "COMPROBANTES");
+        if (baseVm is null) return Forbid();
+
+        var comprobante = await spService.ComprobantesObtenerVisualizacionAsync(negocioId, id);
+        if (comprobante is null) return NotFound();
+
+        var urls = await ObtenerUrlsDocumentosSunatAsync(negocioId, id);
+        var pares = new List<(string Nombre, string Url)>();
+
+        if (!string.IsNullOrWhiteSpace(urls.UrlPdfSunat)) pares.Add(("PDF", urls.UrlPdfSunat!));
+        if (!string.IsNullOrWhiteSpace(urls.UrlXmlSunat)) pares.Add(("XML", urls.UrlXmlSunat!));
+        if (!string.IsNullOrWhiteSpace(urls.UrlCdrSunat)) pares.Add(("CDR", urls.UrlCdrSunat!));
+
+        if (pares.Count == 0)
+        {
+            TempData["ComprobanteError"] = "No hay URLs PDF/XML/CDR disponibles para este comprobante.";
+            return RedirectToAction(nameof(Preview), new { negocioId, id });
+        }
+
+        var client = httpClientFactory.CreateClient();
+        client.Timeout = TimeSpan.FromSeconds(30);
+
+        await using var zipStream = new MemoryStream();
+        using (var zip = new ZipArchive(zipStream, ZipArchiveMode.Create, leaveOpen: true))
+        {
+            foreach (var (nombre, url) in pares)
+            {
+                if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+                    continue;
+
+                byte[] contenido;
+                try
+                {
+                    contenido = await client.GetByteArrayAsync(uri);
+                }
+                catch
+                {
+                    continue;
+                }
+
+                var extension = Path.GetExtension(uri.AbsolutePath);
+                if (string.IsNullOrWhiteSpace(extension))
+                {
+                    extension = nombre switch
+                    {
+                        "PDF" => ".pdf",
+                        "XML" => ".xml",
+                        _ => ".zip"
+                    };
+                }
+
+                var nombreBase = $"{comprobante.Serie}-{comprobante.Numero:D8}";
+                var entry = zip.CreateEntry($"{nombreBase}_{nombre}{extension}", CompressionLevel.Optimal);
+                await using var entryStream = entry.Open();
+                await entryStream.WriteAsync(contenido);
+            }
+        }
+
+        if (zipStream.Length == 0)
+        {
+            TempData["ComprobanteError"] = "No se pudo descargar ningun documento desde las URLs registradas.";
+            return RedirectToAction(nameof(Preview), new { negocioId, id });
+        }
+
+        zipStream.Position = 0;
+        return File(zipStream.ToArray(), "application/zip", $"{comprobante.Serie}-{comprobante.Numero:D8}_SUNAT.zip");
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EnviarComprobanteCorreo(int negocioId, int id)
+    {
+        var baseVm = await ObtenerBaseAsync(negocioId, "COMPROBANTES");
+        if (baseVm is null) return Forbid();
+
+        var comprobante = await spService.ComprobantesObtenerVisualizacionAsync(negocioId, id);
+        if (comprobante is null) return NotFound();
+
+        var comprobanteBase = await spService.ComprobantesObtenerAsync(negocioId, id);
+        if (comprobanteBase is null) return NotFound();
+
+        if (comprobanteBase.Estado != SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico.AceptadoSunat)
+        {
+            TempData["ComprobanteError"] = "Solo se puede enviar por correo un comprobante aceptado por SUNAT.";
+            return RedirectToAction(nameof(Preview), new { negocioId, id });
+        }
+
+        var correoDestino = (comprobante.ClienteCorreo ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(correoDestino))
+        {
+            TempData["ComprobanteError"] = "El cliente no tiene correo registrado para enviar el comprobante.";
+            return RedirectToAction(nameof(Preview), new { negocioId, id });
+        }
+
+        var urls = await ObtenerUrlsDocumentosSunatAsync(negocioId, id);
+        var adjuntos = ConstruirAdjuntosCorreo(comprobante, urls);
+
+        if (adjuntos.Count == 0)
+        {
+            TempData["ComprobanteError"] = "No hay URLs PDF/XML/CDR disponibles para adjuntar en el correo.";
+            return RedirectToAction(nameof(Preview), new { negocioId, id });
+        }
+
+        var asunto = $"Comprobante electronico {comprobante.Serie}-{comprobante.Numero:D8}";
+        var html = BuildComprobanteEmailHtml(comprobante, urls);
+        try
+        {
+            await emailService.SendEmailAsync(
+                correoDestino,
+                string.IsNullOrWhiteSpace(comprobante.ClienteNombre) ? correoDestino : comprobante.ClienteNombre,
+                asunto,
+                html,
+                new EmailSendOptions
+                {
+                    SenderEmail = "info@lazonadeportiva.com",
+                    SenderName = "La Zona Deportiva",
+                    AttachmentUrls = adjuntos
+                });
+        }
+        catch (EmailDeliveryException ex)
+        {
+            TempData["ComprobanteError"] = $"No se pudo enviar el correo: {ex.Message}";
+            return RedirectToAction(nameof(Preview), new { negocioId, id });
+        }
+
+        TempData["ComprobanteOk"] = $"Comprobante enviado por correo a {correoDestino}.";
+        return RedirectToAction(nameof(Preview), new { negocioId, id });
+    }
+
+    private async Task<(string? UrlPdfSunat, string? UrlXmlSunat, string? UrlCdrSunat)> ObtenerUrlsDocumentosSunatAsync(int negocioId, int comprobanteId)
+    {
+        await using var cn = new SqlConnection(_connectionString);
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand(
+            @"SELECT TOP (1) UrlPdfSunat, UrlXmlSunat, UrlCdrSunat
+              FROM dbo.ComprobantesElectronicos
+              WHERE NegocioId = @NegocioId
+                AND Id = @Id;", cn);
+        cmd.Parameters.Add("@NegocioId", SqlDbType.Int).Value = negocioId;
+        cmd.Parameters.Add("@Id", SqlDbType.Int).Value = comprobanteId;
+        await using var dr = await cmd.ExecuteReaderAsync();
+        if (!await dr.ReadAsync())
+            return (null, null, null);
+
+        return (
+            dr.IsDBNull(0) ? null : dr.GetString(0),
+            dr.IsDBNull(1) ? null : dr.GetString(1),
+            dr.IsDBNull(2) ? null : dr.GetString(2)
+        );
+    }
+
+    private static List<EmailAttachmentUrlOption> ConstruirAdjuntosCorreo(
+        ComprobanteVisualizacionViewModel comprobante,
+        (string? UrlPdfSunat, string? UrlXmlSunat, string? UrlCdrSunat) urls)
+    {
+        var nombreBase = $"{comprobante.Serie}-{comprobante.Numero:D8}";
+        var resultado = new List<EmailAttachmentUrlOption>();
+
+        if (!string.IsNullOrWhiteSpace(urls.UrlPdfSunat))
+        {
+            resultado.Add(new EmailAttachmentUrlOption
+            {
+                Url = urls.UrlPdfSunat!,
+                FileName = $"{nombreBase}.pdf"
+            });
+        }
+
+        return resultado;
+    }
+
+    private static string BuildComprobanteEmailHtml(
+        ComprobanteVisualizacionViewModel comprobante,
+        (string? UrlPdfSunat, string? UrlXmlSunat, string? UrlCdrSunat) urls)
+    {
+        var tipoDocumento = ResolverNombreDocumento(comprobante.CodigoDocumentoComprobante, comprobante.TipoDocumentoNombre);
+        var numero = $"{comprobante.Serie}-{comprobante.Numero:D8}";
+        var ubigeoCliente = $"{Sanitize(comprobante.ClienteDepartamento)} / {Sanitize(comprobante.ClienteProvincia)} / {Sanitize(comprobante.ClienteDistrito)}";
+        var links = new List<string>();
+        if (!string.IsNullOrWhiteSpace(urls.UrlPdfSunat)) links.Add($"<li><a href=\"{EscapeUrl(urls.UrlPdfSunat!)}\">Descargar PDF</a></li>");
+        if (!string.IsNullOrWhiteSpace(urls.UrlXmlSunat)) links.Add($"<li><a href=\"{EscapeUrl(urls.UrlXmlSunat!)}\">Descargar XML</a></li>");
+        if (!string.IsNullOrWhiteSpace(urls.UrlCdrSunat)) links.Add($"<li><a href=\"{EscapeUrl(urls.UrlCdrSunat!)}\">Descargar CDR</a></li>");
+
+        var linksHtml = links.Count > 0 ? string.Join(Environment.NewLine, links) : "<li>No se registraron URLs de descarga.</li>";
+
+        return $"""
+<!doctype html>
+<html lang="es">
+  <body style="margin:0;padding:0;background-color:#f4f7fb;font-family:Manrope,'Segoe UI',Arial,sans-serif;color:#1f2937;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f4f7fb;padding:24px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="680" cellspacing="0" cellpadding="0" style="max-width:680px;background:#ffffff;border:1px solid #dbe6f4;border-radius:14px;overflow:hidden;">
+            <tr>
+              <td style="background:linear-gradient(135deg,#0d3b66 0%,#164f86 60%,#17a2b8 100%);padding:22px 24px;">
+                <div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#dbeafe;font-weight:800;">La Zona Deportiva</div>
+                <h1 style="margin:8px 0 0;font-size:26px;line-height:1.15;color:#ffffff;">Comprobante electronico</h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:24px;">
+                <p style="margin:0 0 8px;font-size:16px;line-height:1.6;color:#334155;">Hola {Escape(Sanitize(comprobante.ClienteNombre))},</p>
+                <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#475569;">Te enviamos tu comprobante tributario aceptado por SUNAT.</p>
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:8px;border:1px solid #dbe6f4;border-radius:10px;overflow:hidden;">
+                  <tr><td style="padding:10px 12px;background:#f8fbff;border-bottom:1px solid #e2e8f0;font-size:13px;font-weight:700;color:#0f172a;width:220px;">Complejo deportivo</td><td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;font-size:13px;color:#334155;">{Escape(Sanitize(comprobante.NegocioNombre))}</td></tr>
+                  <tr><td style="padding:10px 12px;background:#f8fbff;border-bottom:1px solid #e2e8f0;font-size:13px;font-weight:700;color:#0f172a;width:220px;">Tipo de documento</td><td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;font-size:13px;color:#334155;">{Escape(tipoDocumento)}</td></tr>
+                  <tr><td style="padding:10px 12px;background:#f8fbff;border-bottom:1px solid #e2e8f0;font-size:13px;font-weight:700;color:#0f172a;">Numero</td><td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;font-size:13px;color:#334155;">{Escape(numero)}</td></tr>
+                  <tr><td style="padding:10px 12px;background:#f8fbff;border-bottom:1px solid #e2e8f0;font-size:13px;font-weight:700;color:#0f172a;">Fecha de emision</td><td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;font-size:13px;color:#334155;">{comprobante.FechaEmision:dd/MM/yyyy}</td></tr>
+                  <tr><td style="padding:10px 12px;background:#f8fbff;border-bottom:1px solid #e2e8f0;font-size:13px;font-weight:700;color:#0f172a;">Cliente</td><td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;font-size:13px;color:#334155;">{Escape(Sanitize(comprobante.ClienteNombre))}</td></tr>
+                  <tr><td style="padding:10px 12px;background:#f8fbff;border-bottom:1px solid #e2e8f0;font-size:13px;font-weight:700;color:#0f172a;">Documento cliente</td><td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;font-size:13px;color:#334155;">{Escape(Sanitize(comprobante.ClienteDocumento))}</td></tr>
+                  <tr><td style="padding:10px 12px;background:#f8fbff;border-bottom:1px solid #e2e8f0;font-size:13px;font-weight:700;color:#0f172a;">Ubigeo cliente</td><td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;font-size:13px;color:#334155;">{Escape(ubigeoCliente)}</td></tr>
+                  <tr><td style="padding:10px 12px;background:#f8fbff;font-size:13px;font-weight:700;color:#0f172a;">Total</td><td style="padding:10px 12px;font-size:13px;color:#334155;font-weight:700;">{Escape(comprobante.MonedaSimbolo)} {comprobante.Total:N2}</td></tr>
+                </table>
+                <div style="margin-top:16px;padding:12px;border:1px solid #dbe6f4;border-radius:10px;background:#f8fbff;">
+                  <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:6px;">Documentos SUNAT</div>
+                  <p style="margin:0 0 8px;color:#475569;font-size:12px;">Se adjunta el PDF. XML y CDR estan disponibles en estos enlaces:</p>
+                  <ul style="margin:0;padding-left:18px;color:#334155;font-size:13px;line-height:1.6;">
+                    {linksHtml}
+                  </ul>
+                </div>
+                <p style="margin:16px 0 0;font-size:12px;line-height:1.5;color:#94a3b8;">Este correo fue enviado automaticamente por La Zona Deportiva.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+""";
+    }
+
+    private static string ResolverNombreDocumento(string? codigoDoc, string? fallback)
+    {
+        var codigo = (codigoDoc ?? string.Empty).Trim().ToUpperInvariant();
+        return codigo switch
+        {
+            "01" => "Factura",
+            "03" => "Boleta",
+            "07" => "Nota de Credito",
+            "08" => "Nota de Debito",
+            "RI" => "Recibo Interno",
+            _ => string.IsNullOrWhiteSpace(fallback) ? "Comprobante" : fallback.Trim()
+        };
+    }
+
+    private static string Escape(string value)
+    {
+        return WebUtility.HtmlEncode(value ?? string.Empty);
+    }
+
+    private static string EscapeUrl(string value)
+    {
+        return WebUtility.HtmlEncode(value ?? string.Empty);
+    }
+
+    private static string Sanitize(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? "-" : value.Trim();
     }
 
     private async Task PoblarDatosComprobanteAsync(ComprobanteFormViewModel model, ModuloBaseViewModel baseVm, int? reservaId)
@@ -606,6 +967,28 @@ public class ComprobantesController(IModuloPermisoService moduloPermisoService, 
                     return codigo is not ("07" or "08");
                 })
                 .ToList();
+
+            var restringirPorCodigo = reservaId.HasValue && reservaId.Value > 0;
+            if (restringirPorCodigo)
+            {
+                var codigoActual = (model.CodigoDocumentoComprobante ?? string.Empty).Trim().ToUpperInvariant();
+                if (codigoActual == "RI")
+                {
+                    documentos = documentos
+                        .Where(d => string.Equals((d.Value ?? string.Empty).Trim(), "RI", StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+                }
+                else if (codigoActual is "01" or "03")
+                {
+                    documentos = documentos
+                        .Where(d =>
+                        {
+                            var codigo = (d.Value ?? string.Empty).Trim().ToUpperInvariant();
+                            return codigo is "01" or "03";
+                        })
+                        .ToList();
+                }
+            }
         }
         model.TiposDocumentoComprobante = documentos;
         if (string.IsNullOrWhiteSpace(model.CodigoDocumentoComprobante))
@@ -856,7 +1239,38 @@ public class ComprobantesController(IModuloPermisoService moduloPermisoService, 
                 ModelState.AddModelError(nameof(model.ClienteTipoDocumento), "Para factura el cliente debe tener RUC (6).");
 
             if (string.IsNullOrWhiteSpace(model.ClienteNumeroDocumento))
+            {
                 ModelState.AddModelError(nameof(model.ClienteNumeroDocumento), "Para factura el numero de documento (RUC) es obligatorio.");
+            }
+            else
+            {
+                var numeroDocumento = model.ClienteNumeroDocumento.Trim();
+                if (!Regex.IsMatch(numeroDocumento, "^\\d{11}$"))
+                    ModelState.AddModelError(nameof(model.ClienteNumeroDocumento), "Para factura, el RUC del cliente debe tener exactamente 11 digitos numericos.");
+            }
+        }
+    }
+
+    private void ValidarSerieNotaSegunReferencia(ComprobanteFormViewModel model, ComprobanteFormViewModel? referencia)
+    {
+        if (!model.EsNota || referencia is null)
+            return;
+
+        var codigoReferencia = (referencia.CodigoDocumentoComprobante ?? string.Empty).Trim().ToUpperInvariant();
+        if (codigoReferencia is not ("01" or "03"))
+            return;
+
+        var serieNota = (model.Serie ?? string.Empty).Trim().ToUpperInvariant();
+        if (string.IsNullOrWhiteSpace(serieNota))
+            return;
+
+        var prefijoEsperado = codigoReferencia == "01" ? 'F' : 'B';
+        if (serieNota[0] != prefijoEsperado)
+        {
+            var tipoRef = codigoReferencia == "01" ? "Factura" : "Boleta";
+            ModelState.AddModelError(
+                nameof(model.NegocioSerieId),
+                $"La serie de la nota debe iniciar con '{prefijoEsperado}' porque el comprobante de referencia es {tipoRef}.");
         }
     }
 }

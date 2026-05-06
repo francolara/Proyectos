@@ -66,6 +66,7 @@ public class ConfiguracionClubViewModel : ModuloBaseViewModel
     [Range(1, 9999, ErrorMessage = "Espacios permitidos debe ser mayor a 0.")]
     public int EspaciosPermitidos { get; set; } = 6;
     public bool EmisionComprobantesElectronicos { get; set; }
+    public bool EnviarComprobanteAutomatico { get; set; }
     public bool EmisionReciboInterno { get; set; }
 
     [Range(0, 100, ErrorMessage = "El porcentaje de IGV debe estar entre 0 y 100.")]

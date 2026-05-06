@@ -30,14 +30,15 @@ public partial class SportCenterStoredProcedureService
             PoliticaConfirmacionPago = dr.FieldCount > 8 && !dr.IsDBNull(8) ? Convert.ToInt32(dr.GetValue(8)) : 0,
             PorcentajeAdelantoMinimo = dr.FieldCount > 9 && !dr.IsDBNull(9) ? Convert.ToDecimal(dr.GetValue(9)) : null,
             EmisionComprobantesElectronicos = dr.FieldCount > 10 && !dr.IsDBNull(10) && Convert.ToBoolean(dr.GetValue(10)),
-            EmisionReciboInterno = dr.FieldCount > 11 && !dr.IsDBNull(11) && Convert.ToBoolean(dr.GetValue(11)),
-            PorcentajeIgv = dr.FieldCount > 12 && !dr.IsDBNull(12) ? Convert.ToInt32(dr.GetValue(12)) : 18,
-            LogoUrl = dr.FieldCount > 13 && !dr.IsDBNull(13) ? dr.GetString(13) : null,
-            PermitirModificarPrecioReserva = dr.FieldCount > 14 && !dr.IsDBNull(14) && Convert.ToBoolean(dr.GetValue(14)),
-            CancelacionAutomaticaNoConfirmada = dr.FieldCount > 15 && !dr.IsDBNull(15) && Convert.ToBoolean(dr.GetValue(15)),
-            MinutosCancelacionNoConfirmada = dr.FieldCount > 16 && !dr.IsDBNull(16) ? Convert.ToInt32(dr.GetValue(16)) : null,
-            SedesPermitidas = dr.FieldCount > 17 && !dr.IsDBNull(17) ? Convert.ToInt32(dr.GetValue(17)) : 2,
-            EspaciosPermitidos = dr.FieldCount > 18 && !dr.IsDBNull(18) ? Convert.ToInt32(dr.GetValue(18)) : 6
+            EnviarComprobanteAutomatico = dr.FieldCount > 11 && !dr.IsDBNull(11) && Convert.ToBoolean(dr.GetValue(11)),
+            EmisionReciboInterno = dr.FieldCount > 12 && !dr.IsDBNull(12) && Convert.ToBoolean(dr.GetValue(12)),
+            PorcentajeIgv = dr.FieldCount > 13 && !dr.IsDBNull(13) ? Convert.ToInt32(dr.GetValue(13)) : 18,
+            LogoUrl = dr.FieldCount > 14 && !dr.IsDBNull(14) ? dr.GetString(14) : null,
+            PermitirModificarPrecioReserva = dr.FieldCount > 15 && !dr.IsDBNull(15) && Convert.ToBoolean(dr.GetValue(15)),
+            CancelacionAutomaticaNoConfirmada = dr.FieldCount > 16 && !dr.IsDBNull(16) && Convert.ToBoolean(dr.GetValue(16)),
+            MinutosCancelacionNoConfirmada = dr.FieldCount > 17 && !dr.IsDBNull(17) ? Convert.ToInt32(dr.GetValue(17)) : null,
+            SedesPermitidas = dr.FieldCount > 18 && !dr.IsDBNull(18) ? Convert.ToInt32(dr.GetValue(18)) : 2,
+            EspaciosPermitidos = dr.FieldCount > 19 && !dr.IsDBNull(19) ? Convert.ToInt32(dr.GetValue(19)) : 6
         };
     }
 
@@ -59,6 +60,7 @@ public partial class SportCenterStoredProcedureService
             AddParam(cmd, "@PoliticaConfirmacionPago", model.PoliticaConfirmacionPago, SqlDbType.TinyInt);
             AddParam(cmd, "@PorcentajeAdelantoMinimo", model.PorcentajeAdelantoMinimo, SqlDbType.Decimal);
             AddParam(cmd, "@EmisionComprobantesElectronicos", model.EmisionComprobantesElectronicos, SqlDbType.Bit);
+            AddParam(cmd, "@EnviarComprobanteAutomatico", model.EnviarComprobanteAutomatico, SqlDbType.Bit);
             AddParam(cmd, "@EmisionReciboInterno", model.EmisionReciboInterno, SqlDbType.Bit);
             AddParam(cmd, "@PorcentajeIgv", model.PorcentajeIgv, SqlDbType.Int);
             AddParam(cmd, "@LogoUrl", model.LogoUrl, SqlDbType.NVarChar);
@@ -90,7 +92,7 @@ public partial class SportCenterStoredProcedureService
         return list;
     }
 
-    public async Task<bool> ConfiguracionClubActualizarEmisionAsync(int negocioId, bool emisionComprobantesElectronicos, bool emisionReciboInterno, string usuario)
+    public async Task<bool> ConfiguracionClubActualizarEmisionAsync(int negocioId, bool emisionComprobantesElectronicos, bool enviarComprobanteAutomatico, bool emisionReciboInterno, string usuario)
     {
         try
         {
@@ -99,6 +101,7 @@ public partial class SportCenterStoredProcedureService
             await using var cmd = new SqlCommand("Sp_ConfiguracionClub_ActualizarEmision", cn) { CommandType = CommandType.StoredProcedure };
             AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
             AddParam(cmd, "@EmisionComprobantesElectronicos", emisionComprobantesElectronicos, SqlDbType.Bit);
+            AddParam(cmd, "@EnviarComprobanteAutomatico", enviarComprobanteAutomatico, SqlDbType.Bit);
             AddParam(cmd, "@EmisionReciboInterno", emisionReciboInterno, SqlDbType.Bit);
             AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
             await cmd.ExecuteNonQueryAsync();

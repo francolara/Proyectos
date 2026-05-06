@@ -142,7 +142,11 @@ public class SedeSerieDocumentoConfigItemViewModel
     public string NombreDocumento { get; set; } = string.Empty;
     public bool Tributario { get; set; }
     public int? NegocioSerieId { get; set; }
+    public List<int> NegocioSeriesIds { get; set; } = new();
     public string? SerieSeleccionada { get; set; }
+    public bool PermiteMultiplesSeries =>
+        string.Equals(CodigoSunat, "07", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(CodigoSunat, "08", StringComparison.OrdinalIgnoreCase);
     public List<SelectListItem> SeriesDisponibles { get; set; } = new();
 }
 
@@ -398,6 +402,8 @@ public class ComprobanteFormViewModel
     public int? ComprobanteReferenciaNumero { get; set; }
     public string? TipoNotaCodigoSunat { get; set; }
     public List<SelectListItem> TiposNotaSunat { get; set; } = new();
+    public int CodigoDocumentoComprobantenb { get; set; }
+    public int MonedaNubefact { get; set; } = 1;
 
     public bool EsEdicion { get; set; }
     public bool PuedeEditarDatosCliente => EsEdicion && Estado == EstadoComprobanteElectronico.PendienteEnvio;

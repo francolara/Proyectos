@@ -12,6 +12,10 @@ public class BrevoEmailService(
     private static readonly HashSet<string> ContentTypesPermitidosPorDefecto = new(StringComparer.OrdinalIgnoreCase)
     {
         "application/pdf",
+        "application/xml",
+        "text/xml",
+        "application/zip",
+        "application/octet-stream",
         "image/jpeg",
         "image/png",
         "text/plain"
@@ -193,14 +197,20 @@ public class BrevoEmailService(
             throw new EmailDeliveryException("No se pudo validar el tipo de contenido del adjunto.");
         }
 
+        var contentTypeNormalizado = contentType.Split(';', 2, StringSplitOptions.TrimEntries)[0].Trim();
+        if (string.IsNullOrWhiteSpace(contentTypeNormalizado))
+        {
+            throw new EmailDeliveryException("No se pudo validar el tipo de contenido del adjunto.");
+        }
+
         var permitidos = _settings.AllowedAttachmentContentTypes.Any()
             ? _settings.AllowedAttachmentContentTypes
             : ContentTypesPermitidosPorDefecto.ToList();
 
-        var esPermitido = permitidos.Any(x => string.Equals(x?.Trim(), contentType.Trim(), StringComparison.OrdinalIgnoreCase));
+        var esPermitido = permitidos.Any(x => string.Equals(x?.Trim(), contentTypeNormalizado, StringComparison.OrdinalIgnoreCase));
         if (!esPermitido)
         {
-            throw new EmailDeliveryException($"Tipo de adjunto no permitido: {contentType}");
+            throw new EmailDeliveryException($"Tipo de adjunto no permitido: {contentTypeNormalizado}");
         }
     }
 

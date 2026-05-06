@@ -222,8 +222,10 @@ builder.Services.AddHttpClient("GooglePlacesTextSearch", httpClient =>
     httpClient.BaseAddress = new Uri("https://maps.googleapis.com/");
     httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 });
+builder.Services.AddHttpClient();
 builder.Services.AddScoped<IModuloPermisoService, ModuloPermisoService>();
 builder.Services.AddScoped<ISportCenterStoredProcedureService, SportCenterStoredProcedureService>();
+builder.Services.AddScoped<IComprobanteElectronicoEmisionService, ComprobanteElectronicoEmisionService>();
 builder.Services.AddScoped<IHomeReferencialesExternosSyncService, HomeReferencialesExternosSyncService>();
 builder.Services.AddScoped<ISedeImagenStorageService, R2SedeImagenStorageService>();
 builder.Services.AddScoped<IAccountEmailService, AccountEmailService>();

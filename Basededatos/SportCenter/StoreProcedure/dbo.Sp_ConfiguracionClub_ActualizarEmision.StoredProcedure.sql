@@ -9,9 +9,11 @@ GO
 -- Create date:   09/04/2026
 -- Description:   Actualiza checks de emision de comprobantes en Negocios.
 -- =============================================
+-- Firma: Codex - 06/05/2026 | Se agrega EnviarComprobanteAutomatico en actualizacion rapida de emision desde configuracion.
 CREATE OR ALTER PROCEDURE dbo.Sp_ConfiguracionClub_ActualizarEmision
     @NegocioId INT,
     @EmisionComprobantesElectronicos BIT = 0,
+    @EnviarComprobanteAutomatico BIT = 0,
     @EmisionReciboInterno BIT = 0,
     @Usuario NVARCHAR(200)
 AS
@@ -22,6 +24,7 @@ BEGIN
         UPDATE n
         SET
             n.EmisionComprobantesElectronicos = @EmisionComprobantesElectronicos,
+            n.EnviarComprobanteAutomatico = @EnviarComprobanteAutomatico,
             n.EmisionReciboInterno = @EmisionReciboInterno
         FROM dbo.Negocios n
         WHERE n.Id = @NegocioId

@@ -765,14 +765,15 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@Id", id, SqlDbType.Int);
         await using var dr = await cmd.ExecuteReaderAsync();
         if (!await dr.ReadAsync()) return null;
+        var codigoDocumento = dr.GetString(4);
         return new ComprobanteVisualizacionViewModel
         {
             Id = dr.GetInt32(0),
             NegocioId = dr.GetInt32(1),
             ReservaId = dr.GetInt32(2),
             TipoComprobante = dr.GetInt32(3),
-            CodigoDocumentoComprobante = dr.GetString(4),
-            TipoDocumentoNombre = dr.GetString(5),
+            CodigoDocumentoComprobante = codigoDocumento,
+            TipoDocumentoNombre = NombreDocumentoPorCodigoSunat(codigoDocumento),
             EsTributario = dr.GetBoolean(6),
             Serie = dr.GetString(7),
             Numero = dr.GetInt32(8),
@@ -805,6 +806,20 @@ public partial class SportCenterStoredProcedureService
         };
     }
 
+    private static string NombreDocumentoPorCodigoSunat(string? codigoDocumento)
+    {
+        var codigo = (codigoDocumento ?? string.Empty).Trim().ToUpperInvariant();
+        return codigo switch
+        {
+            "01" => "Factura",
+            "03" => "Boleta",
+            "07" => "Nota de Credito",
+            "08" => "Nota de Debito",
+            "RI" => "Recibo Interno",
+            _ => "Comprobante"
+        };
+    }
+
     public async Task<ComprobanteFormViewModel?> ComprobantesObtenerAsync(int negocioId, int id)
     {
         await using var cn = CreateConnection();
@@ -831,6 +846,11 @@ public partial class SportCenterStoredProcedureService
             ComprobanteReferenciaId = dr.FieldCount > 12 && !dr.IsDBNull(12) ? dr.GetInt32(12) : null,
             TipoNota = dr.FieldCount > 13 && !dr.IsDBNull(13) ? dr.GetString(13) : null,
             TipoNotaCodigoSunat = dr.FieldCount > 14 && !dr.IsDBNull(14) ? dr.GetString(14) : null,
+            CodigoDocumentoComprobantenb = dr.FieldCount > 15 && !dr.IsDBNull(15) ? dr.GetInt32(15) : 0,
+            ClienteCodigoUbigeo = dr.FieldCount > 16 && !dr.IsDBNull(16) ? dr.GetString(16) : null,
+            ClienteTipoDocumento = dr.FieldCount > 17 && !dr.IsDBNull(17) ? dr.GetString(17) : null,
+            ClienteNumeroDocumento = dr.FieldCount > 18 && !dr.IsDBNull(18) ? dr.GetString(18) : null,
+            MonedaNubefact = dr.FieldCount > 19 && !dr.IsDBNull(19) ? dr.GetInt32(19) : 1,
             NegocioId = negocioId
         };
     }

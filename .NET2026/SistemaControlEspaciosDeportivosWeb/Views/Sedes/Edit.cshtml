@@ -345,12 +345,25 @@
 
                             <div class="col-md-6">
                                 <label class="form-label">@Model.SeriesDocumentoConfig[i].NombreDocumento (@Model.SeriesDocumentoConfig[i].CodigoSunat)</label>
-                                <select asp-for="SeriesDocumentoConfig[i].NegocioSerieId"
-                                        asp-items="Model.SeriesDocumentoConfig[i].SeriesDisponibles"
-                                        class="form-select">
-                                    <option value="">Sin serie asignada</option>
-                                </select>
-                                <div class="form-text">Selecciona una serie configurada en Configuración para este documento.</div>
+                                @if (Model.SeriesDocumentoConfig[i].PermiteMultiplesSeries)
+                                {
+                                    <select asp-for="SeriesDocumentoConfig[i].NegocioSeriesIds"
+                                            asp-items="Model.SeriesDocumentoConfig[i].SeriesDisponibles"
+                                            class="form-select"
+                                            multiple
+                                            size="5">
+                                    </select>
+                                    <div class="form-text">Puedes seleccionar multiples series para notas (mantener Ctrl para seleccion multiple).</div>
+                                }
+                                else
+                                {
+                                    <select asp-for="SeriesDocumentoConfig[i].NegocioSerieId"
+                                            asp-items="Model.SeriesDocumentoConfig[i].SeriesDisponibles"
+                                            class="form-select">
+                                        <option value="">Sin serie asignada</option>
+                                    </select>
+                                    <div class="form-text">Selecciona una serie configurada en Configuración para este documento.</div>
+                                }
                             </div>
                         }
                     }

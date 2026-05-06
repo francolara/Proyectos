@@ -8,11 +8,18 @@
 
     string estadoClase(string estado)
     {
+        if (estado.Contains("Rechaz", StringComparison.OrdinalIgnoreCase) ||
+            estado.Contains("Error", StringComparison.OrdinalIgnoreCase))
+            return "bg-danger-subtle text-danger-emphasis border border-danger-subtle";
         if (estado.Contains("Anul", StringComparison.OrdinalIgnoreCase))
             return "bg-danger-subtle text-danger-emphasis border border-danger-subtle";
         if (estado.Contains("Pend", StringComparison.OrdinalIgnoreCase))
             return "bg-warning-subtle text-warning-emphasis border border-warning-subtle";
-        return "bg-success-subtle text-success-emphasis border border-success-subtle";
+        if (estado.Contains("Envi", StringComparison.OrdinalIgnoreCase))
+            return "bg-info-subtle text-info-emphasis border border-info-subtle";
+        if (estado.Contains("Acept", StringComparison.OrdinalIgnoreCase))
+            return "bg-success-subtle text-success-emphasis border border-success-subtle";
+        return "bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle";
     }
 }
 
@@ -229,7 +236,6 @@
                                                asp-action="Preview"
                                                asp-route-negocioId="@Model.NegocioId"
                                                asp-route-id="@item.Id"
-                                               target="_blank"
                                                title="Visualizar comprobante">
                                                 <i class="bi bi-eye"></i> Ver
                                             </a>
