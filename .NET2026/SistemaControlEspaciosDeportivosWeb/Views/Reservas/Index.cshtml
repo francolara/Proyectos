@@ -279,18 +279,17 @@
                 </div>
             </div>
         </form>
-        <div class="d-flex justify-content-between align-items-center mt-2 mb-2">
-            <small class="text-muted">Pagina @Model.PaginaListado de @Model.TotalPaginasListado (@Model.TotalReservasListado registros)</small>
-            <nav aria-label="Paginacion listado reservas">
-                <ul class="pagination pagination-sm mb-0">
-                    <li class="page-item @(Model.PaginaListado <= 1 ? "disabled" : null)">
-                        <a class="page-link" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")" asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")" asp-route-sedeId="@Model.SedeId" asp-route-espacioDeportivoId="@Model.EspacioDeportivoId" asp-route-estado="@Model.Estado" asp-route-listadoDesde="@Model.ListadoFechaDesde.ToString("yyyy-MM-dd")" asp-route-listadoHasta="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" asp-route-estadosListadoCsv="@string.Join(",", Model.EstadosListadoSeleccionados)" asp-route-paginaListado="@(Model.PaginaListado - 1)">Anterior</a>
-                    </li>
-                    <li class="page-item @(Model.PaginaListado >= Model.TotalPaginasListado ? "disabled" : null)">
-                        <a class="page-link" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")" asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")" asp-route-sedeId="@Model.SedeId" asp-route-espacioDeportivoId="@Model.EspacioDeportivoId" asp-route-estado="@Model.Estado" asp-route-listadoDesde="@Model.ListadoFechaDesde.ToString("yyyy-MM-dd")" asp-route-listadoHasta="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" asp-route-estadosListadoCsv="@string.Join(",", Model.EstadosListadoSeleccionados)" asp-route-paginaListado="@(Model.PaginaListado + 1)">Siguiente</a>
-                    </li>
-                </ul>
+        <div class="sc-pagination-bar mt-2 mb-2">
+            <small class="sc-pagination-meta">Pagina @Model.PaginaListado de @Model.TotalPaginasListado (@Model.TotalReservasListado registros)</small>
+            <nav class="sc-pagination-nav" aria-label="Paginacion listado reservas">
+                <a class="sc-page-link @(Model.PaginaListado <= 1 ? "is-disabled" : null)" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")" asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")" asp-route-sedeId="@Model.SedeId" asp-route-espacioDeportivoId="@Model.EspacioDeportivoId" asp-route-estado="@Model.Estado" asp-route-listadoDesde="@Model.ListadoFechaDesde.ToString("yyyy-MM-dd")" asp-route-listadoHasta="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" asp-route-estadosListadoCsv="@string.Join(",", Model.EstadosListadoSeleccionados)" asp-route-paginaListado="@(Model.PaginaListado - 1)">Anterior</a>
+                @for (var p = 1; p <= Model.TotalPaginasListado; p++)
+                {
+                    <a class="sc-page-link @(p == Model.PaginaListado ? "is-active" : null)" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")" asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")" asp-route-sedeId="@Model.SedeId" asp-route-espacioDeportivoId="@Model.EspacioDeportivoId" asp-route-estado="@Model.Estado" asp-route-listadoDesde="@Model.ListadoFechaDesde.ToString("yyyy-MM-dd")" asp-route-listadoHasta="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" asp-route-estadosListadoCsv="@string.Join(",", Model.EstadosListadoSeleccionados)" asp-route-paginaListado="@p">@p</a>
+                }
+                <a class="sc-page-link @(Model.PaginaListado >= Model.TotalPaginasListado ? "is-disabled" : null)" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")" asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")" asp-route-sedeId="@Model.SedeId" asp-route-espacioDeportivoId="@Model.EspacioDeportivoId" asp-route-estado="@Model.Estado" asp-route-listadoDesde="@Model.ListadoFechaDesde.ToString("yyyy-MM-dd")" asp-route-listadoHasta="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" asp-route-estadosListadoCsv="@string.Join(",", Model.EstadosListadoSeleccionados)" asp-route-paginaListado="@(Model.PaginaListado + 1)">Siguiente</a>
             </nav>
+            <span class="sc-pagination-spacer" aria-hidden="true"></span>
         </div>
         @if (Model.Reservas.Count == 0)
         {
@@ -542,18 +541,17 @@ else
                 </div>
             </div>
         </form>
-        <div class="d-flex justify-content-between align-items-center mt-2 mb-2">
-            <small class="text-muted">Pagina @Model.PaginaListado de @Model.TotalPaginasListado (@Model.TotalReservasListado registros)</small>
-            <nav aria-label="Paginacion listado reservas">
-                <ul class="pagination pagination-sm mb-0">
-                    <li class="page-item @(Model.PaginaListado <= 1 ? "disabled" : null)">
-                        <a class="page-link" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")" asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")" asp-route-sedeId="@Model.SedeId" asp-route-espacioDeportivoId="@Model.EspacioDeportivoId" asp-route-estado="@Model.Estado" asp-route-listadoDesde="@Model.ListadoFechaDesde.ToString("yyyy-MM-dd")" asp-route-listadoHasta="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" asp-route-estadosListadoCsv="@string.Join(",", Model.EstadosListadoSeleccionados)" asp-route-paginaListado="@(Model.PaginaListado - 1)">Anterior</a>
-                    </li>
-                    <li class="page-item @(Model.PaginaListado >= Model.TotalPaginasListado ? "disabled" : null)">
-                        <a class="page-link" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")" asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")" asp-route-sedeId="@Model.SedeId" asp-route-espacioDeportivoId="@Model.EspacioDeportivoId" asp-route-estado="@Model.Estado" asp-route-listadoDesde="@Model.ListadoFechaDesde.ToString("yyyy-MM-dd")" asp-route-listadoHasta="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" asp-route-estadosListadoCsv="@string.Join(",", Model.EstadosListadoSeleccionados)" asp-route-paginaListado="@(Model.PaginaListado + 1)">Siguiente</a>
-                    </li>
-                </ul>
+        <div class="sc-pagination-bar mt-2 mb-2">
+            <small class="sc-pagination-meta">Pagina @Model.PaginaListado de @Model.TotalPaginasListado (@Model.TotalReservasListado registros)</small>
+            <nav class="sc-pagination-nav" aria-label="Paginacion listado reservas">
+                <a class="sc-page-link @(Model.PaginaListado <= 1 ? "is-disabled" : null)" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")" asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")" asp-route-sedeId="@Model.SedeId" asp-route-espacioDeportivoId="@Model.EspacioDeportivoId" asp-route-estado="@Model.Estado" asp-route-listadoDesde="@Model.ListadoFechaDesde.ToString("yyyy-MM-dd")" asp-route-listadoHasta="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" asp-route-estadosListadoCsv="@string.Join(",", Model.EstadosListadoSeleccionados)" asp-route-paginaListado="@(Model.PaginaListado - 1)">Anterior</a>
+                @for (var p = 1; p <= Model.TotalPaginasListado; p++)
+                {
+                    <a class="sc-page-link @(p == Model.PaginaListado ? "is-active" : null)" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")" asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")" asp-route-sedeId="@Model.SedeId" asp-route-espacioDeportivoId="@Model.EspacioDeportivoId" asp-route-estado="@Model.Estado" asp-route-listadoDesde="@Model.ListadoFechaDesde.ToString("yyyy-MM-dd")" asp-route-listadoHasta="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" asp-route-estadosListadoCsv="@string.Join(",", Model.EstadosListadoSeleccionados)" asp-route-paginaListado="@p">@p</a>
+                }
+                <a class="sc-page-link @(Model.PaginaListado >= Model.TotalPaginasListado ? "is-disabled" : null)" asp-action="Index" asp-route-negocioId="@Model.NegocioId" asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")" asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")" asp-route-sedeId="@Model.SedeId" asp-route-espacioDeportivoId="@Model.EspacioDeportivoId" asp-route-estado="@Model.Estado" asp-route-listadoDesde="@Model.ListadoFechaDesde.ToString("yyyy-MM-dd")" asp-route-listadoHasta="@Model.ListadoFechaHasta.ToString("yyyy-MM-dd")" asp-route-estadosListadoCsv="@string.Join(",", Model.EstadosListadoSeleccionados)" asp-route-paginaListado="@(Model.PaginaListado + 1)">Siguiente</a>
             </nav>
+            <span class="sc-pagination-spacer" aria-hidden="true"></span>
         </div>
         @if (Model.Reservas.Count == 0)
         {
@@ -694,7 +692,7 @@ else
 <div class="modal fade" id="reservaModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-fullscreen-sm-down modal-dialog-scrollable">
         <div class="modal-content sc-modal-content">
-            @* Firma: Codex - 19/04/2026 | Cabecera visual homologada para el modal principal de reservas. *@
+            
             <div class="modal-header sc-modal-header">
                 <div class="sc-modal-title-wrap">
                     <h5 class="modal-title sc-modal-title" id="reservaModalTitulo">Nueva reserva</h5>
@@ -860,7 +858,7 @@ else
 <div class="modal fade" id="clienteRapidoModal" tabindex="-1" aria-labelledby="clienteRapidoModalTitulo" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-fullscreen-sm-down modal-dialog-scrollable">
         <div class="modal-content sc-modal-content">
-            @* Firma: Codex - 19/04/2026 | Cabecera visual homologada para el modal de cliente rapido. *@
+            
             <div class="modal-header sc-modal-header">
                 <div class="sc-modal-title-wrap">
                     <h5 class="modal-title sc-modal-title" id="clienteRapidoModalTitulo">Nuevo cliente</h5>

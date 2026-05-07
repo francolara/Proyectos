@@ -13,21 +13,27 @@ using SistemaControlEspaciosDeportivosWeb.ViewModels;
 
 namespace SistemaControlEspaciosDeportivosWeb.Areas.Identity.Pages.Account;
 
-// Firma: Codex - 20/04/2026 | Login con expiracion deslizante: 30 minutos sin Recordarme y 2 dias con Recordarme.
 [AllowAnonymous]
 public class LoginModel(
     SignInManager<ApplicationUser> signInManager,
     UserManager<ApplicationUser> userManager,
     IAccountEmailService accountEmailService,
     ISportCenterStoredProcedureService spService,
+    ITurnstileValidationService turnstileValidationService,
+    Microsoft.Extensions.Options.IOptions<CloudflareTurnstileSettings> turnstileOptions,
     ILogger<LoginModel> logger) : PageModel
 {
+    private const string LoginFailuresSessionKey = "Auth:LoginFailures";
+    private const string ResendAttemptsSessionKey = "Auth:ResendAttempts";
+
     [BindProperty]
     public InputModel Input { get; set; } = new();
 
     public IList<AuthenticationScheme> ExternalLogins { get; set; } = new List<AuthenticationScheme>();
     public string ReturnUrl { get; set; } = string.Empty;
     public WebBannerPublicoViewModel? BannerLateral { get; set; }
+    public string TurnstileSiteKey { get; private set; } = string.Empty;
+    public bool MostrarTurnstile { get; private set; }
 
     [TempData]
     public string? ErrorMessage { get; set; }
@@ -58,6 +64,8 @@ public class LoginModel(
 
         await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
         ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+        TurnstileSiteKey = turnstileOptions.Value.SiteKey;
+        MostrarTurnstile = DebeMostrarTurnstile();
         ReturnUrl = returnUrl ?? Url.Content("~/");
         await CargarBannerLateralAsync();
     }
@@ -66,8 +74,17 @@ public class LoginModel(
     {
         returnUrl ??= Url.Content("~/");
         ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+        TurnstileSiteKey = turnstileOptions.Value.SiteKey;
+        MostrarTurnstile = DebeMostrarTurnstile();
         if (!ModelState.IsValid)
         {
+            await CargarBannerLateralAsync();
+            return Page();
+        }
+        if (DebeValidarTurnstileEnLogin() && !await ValidarTurnstileAsync())
+        {
+            IncrementarContador(LoginFailuresSessionKey);
+            MostrarTurnstile = true;
             await CargarBannerLateralAsync();
             return Page();
         }
@@ -77,6 +94,8 @@ public class LoginModel(
         var user = await userManager.FindByEmailAsync(email);
         if (user is null)
         {
+            IncrementarContador(LoginFailuresSessionKey);
+            MostrarTurnstile = DebeMostrarTurnstile();
             ModelState.AddModelError(string.Empty, "Intento de inicio de sesion no valido.");
             await CargarBannerLateralAsync();
             return Page();
@@ -84,6 +103,8 @@ public class LoginModel(
 
         if (!await userManager.IsEmailConfirmedAsync(user))
         {
+            IncrementarContador(LoginFailuresSessionKey);
+            MostrarTurnstile = DebeMostrarTurnstile();
             ModelState.AddModelError(string.Empty, "Tu cuenta aun no esta confirmada. Revisa tu correo o reenvia el enlace de confirmacion.");
             await CargarBannerLateralAsync();
             return Page();
@@ -92,6 +113,7 @@ public class LoginModel(
         var result = await signInManager.CheckPasswordSignInAsync(user, Input.Password, lockoutOnFailure: true);
         if (result.Succeeded)
         {
+            ReiniciarContador(LoginFailuresSessionKey);
             var propiedadesAutenticacion = new AuthenticationProperties
             {
                 IsPersistent = Input.RememberMe,
@@ -124,10 +146,14 @@ public class LoginModel(
 
         if (result.IsLockedOut)
         {
+            IncrementarContador(LoginFailuresSessionKey);
+            MostrarTurnstile = true;
             logger.LogWarning("Cuenta bloqueada.");
             return RedirectToPage("./Lockout");
         }
 
+        IncrementarContador(LoginFailuresSessionKey);
+        MostrarTurnstile = DebeMostrarTurnstile();
         ModelState.AddModelError(string.Empty, "Intento de inicio de sesion no valido.");
         await CargarBannerLateralAsync();
         return Page();
@@ -137,6 +163,8 @@ public class LoginModel(
     {
         returnUrl ??= Url.Content("~/");
         ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+        TurnstileSiteKey = turnstileOptions.Value.SiteKey;
+        MostrarTurnstile = DebeMostrarTurnstile();
         ReturnUrl = returnUrl;
 
         var email = (Input.Email ?? string.Empty).Trim();
@@ -144,6 +172,13 @@ public class LoginModel(
         if (string.IsNullOrWhiteSpace(email))
         {
             ModelState.AddModelError(string.Empty, "Ingresa tu correo para reenviar la confirmacion.");
+            await CargarBannerLateralAsync();
+            return Page();
+        }
+        var totalReenvios = IncrementarContador(ResendAttemptsSessionKey);
+        if (DebeValidarTurnstileEnReenvio(totalReenvios) && !await ValidarTurnstileAsync())
+        {
+            MostrarTurnstile = true;
             await CargarBannerLateralAsync();
             return Page();
         }
@@ -192,6 +227,7 @@ public class LoginModel(
         }
 
         await CargarBannerLateralAsync();
+        MostrarTurnstile = DebeMostrarTurnstile();
         return Page();
     }
 
@@ -333,5 +369,58 @@ public class LoginModel(
         }
 
         return RedirectToAction("Index", "Home");
+    }
+
+    private async Task<bool> ValidarTurnstileAsync()
+    {
+        var token = (Request.Form["cf-turnstile-response"].ToString() ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            ModelState.AddModelError(string.Empty, "Completa la verificacion de seguridad.");
+            return false;
+        }
+
+        var remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var resultado = await turnstileValidationService.VerifyAsync(token, remoteIp, HttpContext.RequestAborted);
+        if (resultado.Success)
+            return true;
+
+        logger.LogWarning("Turnstile rechazo login/reenvio confirmacion. Errores: {Errores}", string.Join(",", resultado.ErrorCodes ?? Array.Empty<string>()));
+        ModelState.AddModelError(string.Empty, "No se pudo validar la verificacion de seguridad. Intenta nuevamente.");
+        return false;
+    }
+
+    private bool DebeMostrarTurnstile()
+    {
+        var loginFailures = ObtenerContador(LoginFailuresSessionKey);
+        var resendAttempts = ObtenerContador(ResendAttemptsSessionKey);
+        return DebeValidarTurnstileEnLogin(loginFailures) || DebeValidarTurnstileEnReenvio(resendAttempts);
+    }
+
+    private bool DebeValidarTurnstileEnLogin()
+        => DebeValidarTurnstileEnLogin(ObtenerContador(LoginFailuresSessionKey));
+
+    private bool DebeValidarTurnstileEnLogin(int loginFailures)
+        => loginFailures >= Math.Max(1, turnstileOptions.Value.LoginFailuresBeforeChallenge);
+
+    private bool DebeValidarTurnstileEnReenvio(int resendAttempts)
+        => resendAttempts >= Math.Max(1, turnstileOptions.Value.ResendAttemptsBeforeChallenge);
+
+    private int ObtenerContador(string key)
+    {
+        var valor = HttpContext.Session.GetInt32(key);
+        return valor.GetValueOrDefault();
+    }
+
+    private int IncrementarContador(string key)
+    {
+        var siguiente = ObtenerContador(key) + 1;
+        HttpContext.Session.SetInt32(key, siguiente);
+        return siguiente;
+    }
+
+    private void ReiniciarContador(string key)
+    {
+        HttpContext.Session.Remove(key);
     }
 }

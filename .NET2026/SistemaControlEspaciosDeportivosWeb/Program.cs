@@ -212,6 +212,7 @@ builder.Services.Configure<BrevoSettings>(builder.Configuration.GetSection("Brev
 builder.Services.Configure<AutomationSettings>(builder.Configuration.GetSection("AutomationSettings"));
 builder.Services.Configure<JobsSettings>(builder.Configuration.GetSection("Jobs"));
 builder.Services.Configure<SedeImagenStorageSettings>(builder.Configuration.GetSection("SedeImagenStorage"));
+builder.Services.Configure<CloudflareTurnstileSettings>(builder.Configuration.GetSection("CloudflareTurnstile"));
 builder.Services.AddHttpClient<IEmailService, BrevoEmailService>(httpClient =>
 {
     httpClient.BaseAddress = new Uri("https://api.brevo.com/v3/");
@@ -223,6 +224,7 @@ builder.Services.AddHttpClient("GooglePlacesTextSearch", httpClient =>
     httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 });
 builder.Services.AddHttpClient();
+builder.Services.AddHttpClient<ITurnstileValidationService, TurnstileValidationService>();
 builder.Services.AddScoped<IModuloPermisoService, ModuloPermisoService>();
 builder.Services.AddScoped<ISportCenterStoredProcedureService, SportCenterStoredProcedureService>();
 builder.Services.AddScoped<IComprobanteElectronicoEmisionService, ComprobanteElectronicoEmisionService>();
@@ -288,3 +290,4 @@ app.MapRazorPages();
 await IdentitySeeder.SeedRolesAsync(app.Services);
 
 app.Run();
+

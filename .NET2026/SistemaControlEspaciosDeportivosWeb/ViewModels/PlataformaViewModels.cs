@@ -44,7 +44,7 @@ public class PlataformaPortalConfigViewModel
     public string? CtaTitulo { get; set; } = "Unete a la comunidad de SportCenter";
     public string? CtaSubtitulo { get; set; } = "Registra tu club deportivo y comienza a gestionar tus canchas de manera eficiente.";
     public string? CtaBotonClubTexto { get; set; } = "Registrar mi club";
-    public string? CtaBotonClubUrl { get; set; } = "/Home/SoftwareClubes";
+    public string? CtaBotonClubUrl { get; set; } = "/Identity/Account/Register?TipoRegistro=club";
     public string? CtaBotonUsuarioTexto { get; set; } = "Crear cuenta personal";
     public string? CtaBotonUsuarioUrl { get; set; } = "/Identity/Account/Register";
     public string? MarcaTitulo { get; set; } = "SportCenter";

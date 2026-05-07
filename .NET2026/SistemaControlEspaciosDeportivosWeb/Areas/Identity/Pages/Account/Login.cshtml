@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model SistemaControlEspaciosDeportivosWeb.Areas.Identity.Pages.Account.LoginModel
 @inject Microsoft.Extensions.Options.IOptions<SistemaControlEspaciosDeportivosWeb.Services.SedeImagenStorageSettings> SedeImagenStorageOptions
 @{
@@ -90,6 +90,12 @@
                     </div>
                     <a asp-page="./ForgotPassword" class="auth-link">Olvidaste tu contrasena?</a>
                 </div>
+                @if (Model.MostrarTurnstile)
+                {
+                    <div class="mb-3">
+                        <div class="cf-turnstile" data-sitekey="@Model.TurnstileSiteKey"></div>
+                    </div>
+                }
 
                 <button id="login-submit" type="submit" class="w-100 btn btn-primary auth-cta">Iniciar sesion</button>
                 <button asp-page-handler="ResendConfirmation" type="submit" class="w-100 btn btn-outline-primary auth-cta mt-2">Reenviar confirmacion</button>
@@ -123,6 +129,10 @@
 </section>
 
 @section Scripts {
+    @if (Model.MostrarTurnstile)
+    {
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    }
     <partial name="_ValidationScriptsPartial" />
     <script>
         (() => {
@@ -138,5 +148,4 @@
         })();
     </script>
 }
-
 

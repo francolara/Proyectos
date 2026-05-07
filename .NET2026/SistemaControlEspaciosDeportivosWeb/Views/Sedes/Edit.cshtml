@@ -345,24 +345,40 @@
 
                             <div class="col-md-6">
                                 <label class="form-label">@Model.SeriesDocumentoConfig[i].NombreDocumento (@Model.SeriesDocumentoConfig[i].CodigoSunat)</label>
-                                @if (Model.SeriesDocumentoConfig[i].PermiteMultiplesSeries)
+                                <div class="serie-checklist border rounded-3 p-2"
+                                     data-single-select="@(!Model.SeriesDocumentoConfig[i].PermiteMultiplesSeries ? "true" : "false")">
+                                @if (Model.SeriesDocumentoConfig[i].SeriesDisponibles is not null && Model.SeriesDocumentoConfig[i].SeriesDisponibles.Any())
                                 {
-                                    <select asp-for="SeriesDocumentoConfig[i].NegocioSeriesIds"
-                                            asp-items="Model.SeriesDocumentoConfig[i].SeriesDisponibles"
-                                            class="form-select"
-                                            multiple
-                                            size="5">
-                                    </select>
-                                    <div class="form-text">Puedes seleccionar multiples series para notas (mantener Ctrl para seleccion multiple).</div>
+                                    var serieUnicaActual = Model.SeriesDocumentoConfig[i].NegocioSeriesIds?.FirstOrDefault()
+                                        ?? Model.SeriesDocumentoConfig[i].NegocioSerieId
+                                        ?? 0;
+                                    @foreach (var serie in Model.SeriesDocumentoConfig[i].SeriesDisponibles)
+                                    {
+                                        var serieId = int.TryParse(serie.Value, out var parsedId) ? parsedId : 0;
+                                        var selected = (Model.SeriesDocumentoConfig[i].NegocioSeriesIds?.Contains(serieId) ?? false)
+                                            || (!Model.SeriesDocumentoConfig[i].PermiteMultiplesSeries && serieUnicaActual == serieId);
+                                        <label class="sc-check-chip d-flex mb-1">
+                                            <input class="form-check-input mt-0 js-serie-checkbox"
+                                                   type="checkbox"
+                                                   name="SeriesDocumentoConfig[@i].NegocioSeriesIds"
+                                                   value="@serie.Value"
+                                                   @(selected ? "checked" : null) />
+                                            <span>@serie.Text</span>
+                                        </label>
+                                    }
                                 }
                                 else
                                 {
-                                    <select asp-for="SeriesDocumentoConfig[i].NegocioSerieId"
-                                            asp-items="Model.SeriesDocumentoConfig[i].SeriesDisponibles"
-                                            class="form-select">
-                                        <option value="">Sin serie asignada</option>
-                                    </select>
-                                    <div class="form-text">Selecciona una serie configurada en Configuración para este documento.</div>
+                                    <div class="text-muted small">No hay series disponibles para este documento.</div>
+                                }
+                                </div>
+                                @if (Model.SeriesDocumentoConfig[i].PermiteMultiplesSeries)
+                                {
+                                    <div class="form-text">Puedes marcar multiples series para notas.</div>
+                                }
+                                else
+                                {
+                                    <div class="form-text">Marca solo una serie para este documento.</div>
                                 }
                             </div>
                         }
@@ -382,6 +398,21 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const bloquesSeries = Array.from(document.querySelectorAll('.serie-checklist[data-single-select="true"]'));
+            bloquesSeries.forEach(bloque => {
+                bloque.addEventListener('change', (e) => {
+                    const checkbox = e.target.closest('.js-serie-checkbox');
+                    if (!checkbox || !checkbox.checked) return;
+                    const checks = bloque.querySelectorAll('.js-serie-checkbox');
+                    checks.forEach(c => {
+                        if (c !== checkbox) c.checked = false;
+                    });
+                });
+            });
+        })();
+    </script>
     <script>
         (() => {
             const dep = document.getElementById('CodigoDepartamento');

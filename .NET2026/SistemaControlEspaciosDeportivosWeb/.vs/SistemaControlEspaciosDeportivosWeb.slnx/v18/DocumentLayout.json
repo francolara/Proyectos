@@ -3,6 +3,10 @@
   "WorkspaceRootPath": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{B38B87E0-A314-2550-8AD5-A553BE378447}|SistemaControlEspaciosDeportivosWeb.csproj|c:\\users\\franco lara\\desktop\\github proyectos\\proyectos\\.net2026\\sistemacontrolespaciosdeportivosweb\\controllers\\homecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B38B87E0-A314-2550-8AD5-A553BE378447}|SistemaControlEspaciosDeportivosWeb.csproj|solutionrelative:controllers\\homecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{B38B87E0-A314-2550-8AD5-A553BE378447}|SistemaControlEspaciosDeportivosWeb.csproj|c:\\users\\franco lara\\desktop\\github proyectos\\proyectos\\.net2026\\sistemacontrolespaciosdeportivosweb\\services\\comprobanteelectronicoemisionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{B38B87E0-A314-2550-8AD5-A553BE378447}|SistemaControlEspaciosDeportivosWeb.csproj|solutionrelative:services\\comprobanteelectronicoemisionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
@@ -19,15 +23,27 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "HomeController.cs",
+              "DocumentMoniker": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\Controllers\\HomeController.cs",
+              "RelativeDocumentMoniker": "Controllers\\HomeController.cs",
+              "ToolTip": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\Controllers\\HomeController.cs",
+              "RelativeToolTip": "Controllers\\HomeController.cs",
+              "ViewState": "AgIAAFoCAAAAAAAAAAAAAGMCAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-07T03:18:52.678Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
               "Title": "ComprobanteElectronicoEmisionService.cs",
               "DocumentMoniker": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\Services\\ComprobanteElectronicoEmisionService.cs",
               "RelativeDocumentMoniker": "Services\\ComprobanteElectronicoEmisionService.cs",
               "ToolTip": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\Services\\ComprobanteElectronicoEmisionService.cs",
               "RelativeToolTip": "Services\\ComprobanteElectronicoEmisionService.cs",
-              "ViewState": "AgIAAGIBAAAAAAAAAAAAAGoBAAA8AAAAAAAAAA==",
+              "ViewState": "AgIAAE8BAAAAAAAAAOB/wHQBAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-05T18:46:35.373Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-05T18:46:35.373Z"
             }
           ]
         }

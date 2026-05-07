@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using SistemaControlEspaciosDeportivosWeb.Models;
 using SistemaControlEspaciosDeportivosWeb.Services;
@@ -14,12 +14,10 @@ public class HomeController(
     ISportCenterStoredProcedureService spService,
     IReservationEmailNotificationService reservationEmailNotificationService,
     UserManager<ApplicationUser> userManager,
-    SignInManager<ApplicationUser> signInManager,
     ILogger<HomeController> logger) : Controller
 {
     private const int DuracionReservaPublicaMinutos = 60;
-    private const string CaptchaSoftwareClubesSessionKey = "CaptchaSoftwareClubes";
-
+    
     private static (DateOnly Fecha, TimeOnly HoraInicio, TimeOnly HoraFin) ObtenerRangoSugeridoBusqueda(DateTime ahoraLocal)
     {
         var ahoraSinSegundos = new DateTime(
@@ -548,9 +546,14 @@ public class HomeController(
     [HttpGet]
     public IActionResult SoftwareClubes()
     {
-        var vm = new AltaClubSolicitudFormViewModel();
-        AsignarCaptchaSoftwareClubes(vm);
-        return View(vm);
+        return RedirectToPage("/Account/Register", new { area = "Identity", TipoRegistro = "club" });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult SoftwareClubes(AltaClubSolicitudFormViewModel model)
+    {
+        return RedirectToPage("/Account/Register", new { area = "Identity", TipoRegistro = "club" });
     }
 
     private static void RemoverModelStatePorPrefijo(ModelStateDictionary modelState, string prefijo)
@@ -597,112 +600,6 @@ public class HomeController(
         }
 
         return string.Join(", ", campos.Distinct(StringComparer.OrdinalIgnoreCase));
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SoftwareClubes(AltaClubSolicitudFormViewModel model)
-    {
-        var captchaEsperado = HttpContext.Session.GetString(CaptchaSoftwareClubesSessionKey);
-        if (string.IsNullOrWhiteSpace(captchaEsperado) ||
-            !string.Equals(model.CaptchaCodigo?.Trim(), captchaEsperado, StringComparison.OrdinalIgnoreCase))
-        {
-            ModelState.AddModelError(nameof(model.CaptchaCodigo), "El codigo CAPTCHA no es valido.");
-        }
-
-        if (!ModelState.IsValid)
-        {
-            AsignarCaptchaSoftwareClubes(model);
-            return View(model);
-        }
-
-        try
-        {
-            var correo = model.Correo.Trim();
-            var existe = await userManager.FindByEmailAsync(correo);
-            if (existe is not null)
-            {
-                ModelState.AddModelError(nameof(model.Correo), "Ya existe una cuenta con este correo.");
-                AsignarCaptchaSoftwareClubes(model);
-                return View(model);
-            }
-
-            var nuevoUsuario = new ApplicationUser
-            {
-                UserName = correo,
-                Email = correo,
-                Nombres = model.NombreContacto.Trim()
-            };
-
-            var resultadoCreacion = await userManager.CreateAsync(nuevoUsuario, model.Password);
-            if (!resultadoCreacion.Succeeded)
-            {
-                foreach (var error in resultadoCreacion.Errors)
-                {
-                    ModelState.AddModelError(string.Empty, TraducirErrorIdentity(error.Code, error.Description));
-                }
-
-                AsignarCaptchaSoftwareClubes(model);
-                return View(model);
-            }
-
-            try
-            {
-                var codigo = await spService.HomeRegistrarClubConPruebaAsync(model, nuevoUsuario.Id);
-                await signInManager.SignInAsync(nuevoUsuario, isPersistent: false);
-
-                var negocios = await spService.PanelListarNegociosUsuarioAsync(nuevoUsuario.Id);
-                var negocioId = negocios.FirstOrDefault()?.NegocioId;
-
-                TempData["MensajeSolicitudClub"] = $"Registro completado. Codigo: {codigo}. Tu prueba de 1 mes ya esta activa.";
-                if (negocioId.HasValue)
-                {
-                    return RedirectToAction("Create", "Sedes", new { negocioId = negocioId.Value });
-                }
-
-                return RedirectToAction("Index", "Panel");
-            }
-            catch
-            {
-                await userManager.DeleteAsync(nuevoUsuario);
-                throw;
-            }
-        }
-        catch (Exception ex)
-        {
-            ModelState.AddModelError(string.Empty, ex.Message);
-            AsignarCaptchaSoftwareClubes(model);
-            return View(model);
-        }
-    }
-
-    private void AsignarCaptchaSoftwareClubes(AltaClubSolicitudFormViewModel model)
-    {
-        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        var captcha = new string(Enumerable.Range(0, 5)
-            .Select(_ => chars[Random.Shared.Next(chars.Length)])
-            .ToArray());
-
-        HttpContext.Session.SetString(CaptchaSoftwareClubesSessionKey, captcha);
-        model.CaptchaTexto = captcha;
-        model.CaptchaCodigo = string.Empty;
-    }
-
-    private static string TraducirErrorIdentity(string code, string fallback)
-    {
-        return code switch
-        {
-            "PasswordRequiresNonAlphanumeric" => "La contraseña debe incluir al menos un símbolo (por ejemplo: !, @, #).",
-            "PasswordRequiresLower" => "La contraseña debe incluir al menos una letra minúscula (a-z).",
-            "PasswordRequiresUpper" => "La contraseña debe incluir al menos una letra mayúscula (A-Z).",
-            "PasswordRequiresDigit" => "La contraseña debe incluir al menos un número (0-9).",
-            "PasswordTooShort" => "La contraseña es muy corta. Usa al menos 6 caracteres.",
-            "DuplicateEmail" => "Ya existe una cuenta registrada con este correo.",
-            "DuplicateUserName" => "Ese correo/usuario ya está en uso.",
-            "InvalidEmail" => "El correo ingresado no tiene un formato válido.",
-            "InvalidUserName" => "El correo/usuario contiene caracteres no permitidos.",
-            _ => fallback
-        };
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
@@ -1091,3 +988,4 @@ public class HomeController(
         return Math.Clamp(parsed, min, max);
     }
 }
+

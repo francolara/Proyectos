@@ -22,11 +22,10 @@ public class RegisterModel(
     ISportCenterStoredProcedureService spService,
     IAccountEmailService accountEmailService,
     IClubRegistrationNotificationService clubRegistrationNotificationService,
+    ITurnstileValidationService turnstileValidationService,
+    Microsoft.Extensions.Options.IOptions<CloudflareTurnstileSettings> turnstileOptions,
     ILogger<RegisterModel> logger) : PageModel
 {
-    private const string CaptchaRegistroClubSessionKey = "CaptchaRegistroClub";
-    private const string CaptchaRegistroUsuarioSessionKey = "CaptchaRegistroUsuario";
-
     [BindProperty]
     [ValidateNever]
     public UsuarioInputModel Usuario { get; set; } = new();
@@ -46,6 +45,7 @@ public class RegisterModel(
     public List<SelectListItem> Departamentos { get; set; } = new();
     public List<SelectListItem> Provincias { get; set; } = new();
     public List<SelectListItem> Distritos { get; set; } = new();
+    public string TurnstileSiteKey { get; private set; } = string.Empty;
 
     public class UsuarioInputModel
     {
@@ -71,11 +71,6 @@ public class RegisterModel(
         [Compare(nameof(Password), ErrorMessage = "La contrasena y la confirmacion no coinciden.")]
         public string ConfirmPassword { get; set; } = string.Empty;
 
-        public string? CaptchaTexto { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Este campo es obligatorio.")]
-        [StringLength(10, ErrorMessage = "El campo {0} excede la longitud permitida.")]
-        public string CaptchaCodigo { get; set; } = string.Empty;
     }
 
     public async Task OnGetAsync(string? returnUrl = null)
@@ -83,9 +78,8 @@ public class RegisterModel(
         ReturnUrl = returnUrl ?? Url.Content("~/");
         TipoRegistro = string.Equals(TipoRegistro, "club", StringComparison.OrdinalIgnoreCase) ? "club" : "usuario";
         ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+        TurnstileSiteKey = turnstileOptions.Value.SiteKey;
         Club = CrearClubDefault();
-        AsignarCaptchaRegistroUsuario(Usuario);
-        AsignarCaptchaRegistroClub(Club);
         await CargarCombosUbigeoAsync();
         await CargarBannerLateralAsync();
     }
@@ -94,6 +88,7 @@ public class RegisterModel(
     {
         ReturnUrl = returnUrl ?? ReturnUrl ?? Url.Content("~/");
         ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+        TurnstileSiteKey = turnstileOptions.Value.SiteKey;
         // Fallback cuando el navegador envia Enter sin handler explicito.
         var accionForm = (Request.Form["accionRegistro"].ToString() ?? string.Empty).Trim();
         var tipoForm = string.IsNullOrWhiteSpace(accionForm)
@@ -111,6 +106,7 @@ public class RegisterModel(
     {
         ReturnUrl = returnUrl ?? ReturnUrl ?? Url.Content("~/");
         ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+        TurnstileSiteKey = turnstileOptions.Value.SiteKey;
         TipoRegistro = "usuario";
         return await ProcesarRegistroUsuarioAsync();
     }
@@ -119,6 +115,7 @@ public class RegisterModel(
     {
         ReturnUrl = returnUrl ?? ReturnUrl ?? Url.Content("~/");
         ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+        TurnstileSiteKey = turnstileOptions.Value.SiteKey;
         TipoRegistro = "club";
         return await ProcesarRegistroClubAsync();
     }
@@ -134,22 +131,15 @@ public class RegisterModel(
                 string.Join(" | ", ModelState
                     .Where(x => x.Value?.Errors?.Count > 0)
                     .SelectMany(x => x.Value!.Errors.Select(e => $"{(string.IsNullOrWhiteSpace(x.Key) ? "<sin-campo>" : x.Key)}: {e.ErrorMessage}"))));
-            AsignarCaptchaRegistroUsuario(Usuario);
             Club = CrearClubDefault();
-            AsignarCaptchaRegistroClub(Club);
             await CargarCombosUbigeoAsync();
             await CargarBannerLateralAsync();
             return Page();
         }
 
-        var captchaEsperado = HttpContext.Session.GetString(CaptchaRegistroUsuarioSessionKey);
-        if (string.IsNullOrWhiteSpace(captchaEsperado) ||
-            !string.Equals(Usuario.CaptchaCodigo?.Trim(), captchaEsperado, StringComparison.OrdinalIgnoreCase))
+        if (!await ValidarTurnstileAsync())
         {
-            ModelState.AddModelError("Usuario.CaptchaCodigo", "El codigo CAPTCHA no es valido.");
-            AsignarCaptchaRegistroUsuario(Usuario);
             Club = CrearClubDefault();
-            AsignarCaptchaRegistroClub(Club);
             await CargarCombosUbigeoAsync();
             await CargarBannerLateralAsync();
             return Page();
@@ -160,9 +150,7 @@ public class RegisterModel(
         if (existing is not null)
         {
             ModelState.AddModelError(string.Empty, "Ya existe una cuenta registrada con este correo.");
-            AsignarCaptchaRegistroUsuario(Usuario);
             Club = CrearClubDefault();
-            AsignarCaptchaRegistroClub(Club);
             await CargarCombosUbigeoAsync();
             await CargarBannerLateralAsync();
             return Page();
@@ -184,9 +172,7 @@ public class RegisterModel(
                 ModelState.AddModelError(string.Empty, TraducirErrorIdentity(error.Code, error.Description));
             }
 
-            AsignarCaptchaRegistroUsuario(Usuario);
             Club = CrearClubDefault();
-            AsignarCaptchaRegistroClub(Club);
             await CargarCombosUbigeoAsync();
             await CargarBannerLateralAsync();
             return Page();
@@ -229,20 +215,13 @@ public class RegisterModel(
                 string.Join(" | ", ModelState
                     .Where(x => x.Value?.Errors?.Count > 0)
                     .SelectMany(x => x.Value!.Errors.Select(e => $"{(string.IsNullOrWhiteSpace(x.Key) ? "<sin-campo>" : x.Key)}: {e.ErrorMessage}"))));
-            AsignarCaptchaRegistroUsuario(Usuario);
-            AsignarCaptchaRegistroClub(Club);
             await CargarCombosUbigeoAsync();
             await CargarBannerLateralAsync();
             return Page();
         }
 
-        var captchaEsperado = HttpContext.Session.GetString(CaptchaRegistroClubSessionKey);
-        if (string.IsNullOrWhiteSpace(captchaEsperado) ||
-            !string.Equals(Club.CaptchaCodigo?.Trim(), captchaEsperado, StringComparison.OrdinalIgnoreCase))
+        if (!await ValidarTurnstileAsync())
         {
-            ModelState.AddModelError("Club.CaptchaCodigo", "El codigo CAPTCHA no es valido.");
-            AsignarCaptchaRegistroUsuario(Usuario);
-            AsignarCaptchaRegistroClub(Club);
             await CargarCombosUbigeoAsync();
             await CargarBannerLateralAsync();
             return Page();
@@ -254,8 +233,6 @@ public class RegisterModel(
             if (ubigeo is null)
             {
                 ModelState.AddModelError("Club.CodigoUbigeo", "Selecciona un distrito valido.");
-                AsignarCaptchaRegistroUsuario(Usuario);
-                AsignarCaptchaRegistroClub(Club);
                 await CargarCombosUbigeoAsync();
                 await CargarBannerLateralAsync();
                 return Page();
@@ -270,8 +247,6 @@ public class RegisterModel(
             if (existe is not null)
             {
                 ModelState.AddModelError("Club.Correo", "Ya existe una cuenta con este correo.");
-                AsignarCaptchaRegistroUsuario(Usuario);
-                AsignarCaptchaRegistroClub(Club);
                 await CargarCombosUbigeoAsync();
                 await CargarBannerLateralAsync();
                 return Page();
@@ -292,8 +267,6 @@ public class RegisterModel(
                     ModelState.AddModelError(string.Empty, TraducirErrorIdentity(error.Code, error.Description));
                 }
 
-                AsignarCaptchaRegistroUsuario(Usuario);
-                AsignarCaptchaRegistroClub(Club);
                 await CargarCombosUbigeoAsync();
                 await CargarBannerLateralAsync();
                 return Page();
@@ -328,36 +301,10 @@ public class RegisterModel(
         catch (Exception ex)
         {
             ModelState.AddModelError(string.Empty, ex.Message);
-            AsignarCaptchaRegistroUsuario(Usuario);
-            AsignarCaptchaRegistroClub(Club);
             await CargarCombosUbigeoAsync();
             await CargarBannerLateralAsync();
             return Page();
         }
-    }
-
-    private void AsignarCaptchaRegistroClub(AltaClubSolicitudFormViewModel model)
-    {
-        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        var captcha = new string(Enumerable.Range(0, 5)
-            .Select(_ => chars[Random.Shared.Next(chars.Length)])
-            .ToArray());
-
-        HttpContext.Session.SetString(CaptchaRegistroClubSessionKey, captcha);
-        model.CaptchaTexto = captcha;
-        model.CaptchaCodigo = string.Empty;
-    }
-
-    private void AsignarCaptchaRegistroUsuario(UsuarioInputModel model)
-    {
-        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        var captcha = new string(Enumerable.Range(0, 5)
-            .Select(_ => chars[Random.Shared.Next(chars.Length)])
-            .ToArray());
-
-        HttpContext.Session.SetString(CaptchaRegistroUsuarioSessionKey, captcha);
-        model.CaptchaTexto = captcha;
-        model.CaptchaCodigo = string.Empty;
     }
 
     private static AltaClubSolicitudFormViewModel CrearClubDefault()
@@ -482,5 +429,24 @@ public class RegisterModel(
             logger.LogError(ex, "Error no controlado al intentar enviar correo de confirmacion para {Email}.", email);
             return false;
         }
+    }
+
+    private async Task<bool> ValidarTurnstileAsync()
+    {
+        var token = (Request.Form["cf-turnstile-response"].ToString() ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            ModelState.AddModelError(string.Empty, "Completa la verificacion de seguridad.");
+            return false;
+        }
+
+        var remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var resultado = await turnstileValidationService.VerifyAsync(token, remoteIp, HttpContext.RequestAborted);
+        if (resultado.Success)
+            return true;
+
+        logger.LogWarning("Turnstile rechazo registro. Errores: {Errores}", string.Join(",", resultado.ErrorCodes ?? Array.Empty<string>()));
+        ModelState.AddModelError(string.Empty, "No se pudo validar la verificacion de seguridad. Intenta nuevamente.");
+        return false;
     }
 }

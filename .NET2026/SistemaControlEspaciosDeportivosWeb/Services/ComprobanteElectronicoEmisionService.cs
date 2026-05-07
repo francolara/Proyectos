@@ -63,8 +63,8 @@ public sealed class ComprobanteElectronicoEmisionService(
             return new ComprobanteEmisionResultado
             {
                 Exito = false,
-                Codigo = "PROVEEDOR_NO_SOPORTADO",
-                Mensaje = $"Proveedor no soportado: {config.ProveedorCodigo}"
+                Codigo = "PROVEEDOR_NO_IMPLEMENTADO",
+                Mensaje = $"Proveedor SUNAT no implementado: {config.ProveedorCodigo}."
             };
         }
 
@@ -173,12 +173,23 @@ public sealed class ComprobanteElectronicoEmisionService(
         }
         if (!string.Equals(config.ProveedorCodigo, "NUBEFACT", StringComparison.OrdinalIgnoreCase))
         {
-            await RegistrarResultadoAsync(negocioId, comprobanteId, 4, "PROVEEDOR_NO_SOPORTADO", $"Proveedor no soportado: {config.ProveedorCodigo}", null, null, null, null, null, usuario);
+            await RegistrarResultadoAsync(
+                negocioId,
+                comprobanteId,
+                1,
+                "PROVEEDOR_NO_IMPLEMENTADO",
+                $"Proveedor SUNAT no implementado: {config.ProveedorCodigo}. Comprobante pendiente de envio.",
+                null,
+                null,
+                null,
+                null,
+                null,
+                usuario);
             return new ComprobanteEmisionResultado
             {
                 Exito = false,
-                Codigo = "PROVEEDOR_NO_SOPORTADO",
-                Mensaje = $"Proveedor no soportado: {config.ProveedorCodigo}"
+                Codigo = "PROVEEDOR_NO_IMPLEMENTADO",
+                Mensaje = $"Proveedor SUNAT no implementado: {config.ProveedorCodigo}. El comprobante quedo pendiente."
             };
         }
 

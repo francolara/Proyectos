@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace SistemaControlEspaciosDeportivosWeb.ViewModels;
 
@@ -66,6 +66,7 @@ public class AltaClubSolicitudFormViewModel
     [Required(ErrorMessage = "Este campo es obligatorio.")]
     [StringLength(10, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string CaptchaCodigo { get; set; } = string.Empty;
+
 }
 
 public class AltasClubesIndexViewModel : ModuloBaseViewModel

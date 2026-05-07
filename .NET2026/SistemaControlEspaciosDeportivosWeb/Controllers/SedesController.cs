@@ -144,22 +144,28 @@ public class SedesController(IModuloPermisoService moduloPermisoService, ISportC
 
         foreach (var item in model.SeriesDocumentoConfig ?? new List<SedeSerieDocumentoConfigItemViewModel>())
         {
+            var seriesSeleccionadas = (item.NegocioSeriesIds ?? new List<int>())
+                .Where(x => x > 0)
+                .Distinct()
+                .ToList();
+
             if (item.PermiteMultiplesSeries)
             {
                 await spService.SedesSeriesDocumentoGuardarMultiplesAsync(
                     model.NegocioId,
                     model.Id,
                     item.CodigoSunat,
-                    item.NegocioSeriesIds,
+                    seriesSeleccionadas,
                     User.Identity?.Name ?? "sistema");
             }
             else
             {
+                var serieUnica = seriesSeleccionadas.FirstOrDefault();
                 await spService.SedesSeriesDocumentoGuardarAsync(
                     model.NegocioId,
                     model.Id,
                     item.CodigoSunat,
-                    item.NegocioSerieId,
+                    serieUnica > 0 ? serieUnica : null,
                     User.Identity?.Name ?? "sistema");
             }
         }

@@ -39,8 +39,10 @@
     var puedeDescargarDocsSunat = Model.EsTributario
                                   && estado == SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico.AceptadoSunat
                                   && !string.IsNullOrWhiteSpace(Model.UrlDescargaProveedor);
+    var esBoleta = string.Equals(codigoDoc, "03", StringComparison.OrdinalIgnoreCase);
     var puedeEnviarCorreoComprobante = Model.EsTributario
-                                       && estado == SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico.AceptadoSunat;
+                                       && (estado == SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico.AceptadoSunat
+                                           || (esBoleta && estado == SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico.EnviadoSunat));
     var numeroComprobante = $"{Model.Serie}-{Model.Numero:D8}";
     var descripcionDetalle = $"Reserva de {Model.EspacioNombre} | {Model.FechaReserva:dd/MM/yyyy} {Model.HoraInicioReserva:HH\\:mm}-{Model.HoraFinReserva:HH\\:mm}";
     var documentoCliente = string.IsNullOrWhiteSpace(Model.ClienteDocumento) ? "-" : Model.ClienteDocumento;

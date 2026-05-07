@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model SistemaControlEspaciosDeportivosWeb.Areas.Identity.Pages.Account.RegisterModel
 @inject Microsoft.Extensions.Options.IOptions<SistemaControlEspaciosDeportivosWeb.Services.SedeImagenStorageSettings> SedeImagenStorageOptions
 @{
@@ -133,18 +133,11 @@
                         </div>
                         <span asp-validation-for="Usuario.ConfirmPassword" class="text-danger"></span>
                     </div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-4">
-                            <label class="form-label">Codigo CAPTCHA</label>
-                            <div class="form-control bg-light fw-bold text-center">@Model.Usuario.CaptchaTexto</div>
-                        </div>
-                        <div class="col-md-4">
-                            <label asp-for="Usuario.CaptchaCodigo" class="form-label">Ingresa el codigo</label>
-                            <input asp-for="Usuario.CaptchaCodigo" class="form-control text-uppercase" autocomplete="off" />
-                            <span asp-validation-for="Usuario.CaptchaCodigo" class="text-danger"></span>
-                        </div>
-                    </div>
+                    <div class="mb-3">
+                    <div class="cf-turnstile" data-sitekey="@Model.TurnstileSiteKey"></div>
+                </div>
                     <button type="submit" asp-page-handler="Usuario" class="w-100 btn btn-primary auth-cta">Registrarse como usuario</button>
+
                     @if (Model.ExternalLogins?.Count > 0)
                     {
                         @foreach (var provider in Model.ExternalLogins)
@@ -284,17 +277,12 @@
                             </div>
                             <span asp-validation-for="Club.ConfirmPassword" class="text-danger"></span>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Codigo CAPTCHA</label>
-                            <div class="form-control bg-light fw-bold text-center">@Model.Club.CaptchaTexto</div>
-                        </div>
-                        <div class="col-md-4">
-                            <label asp-for="Club.CaptchaCodigo" class="form-label">Ingresa el codigo</label>
-                            <input asp-for="Club.CaptchaCodigo" class="form-control text-uppercase" autocomplete="off" />
-                            <span asp-validation-for="Club.CaptchaCodigo" class="text-danger"></span>
-                        </div>
                     </div>
-                        <button type="submit" asp-page-handler="Club" class="w-100 btn btn-primary auth-cta mt-3">Registrarse como complejo deportivo</button>
+                    <div class="mb-3">
+                    <div class="cf-turnstile" data-sitekey="@Model.TurnstileSiteKey"></div>
+                </div>
+                    <button type="submit" asp-page-handler="Club" class="w-100 btn btn-primary auth-cta mt-3">Registrarse como complejo deportivo</button>
+
                 </div>
 
                 <div class="auth-foot-links auth-foot-links-pro">
@@ -307,6 +295,7 @@
 </section>
 
 @section Scripts {
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <partial name="_ValidationScriptsPartial" />
     <script>
         (() => {

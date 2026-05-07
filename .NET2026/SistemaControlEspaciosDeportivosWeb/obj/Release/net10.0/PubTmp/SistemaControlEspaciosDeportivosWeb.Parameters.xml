@@ -1,6 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<parameters>
-  <parameter name="IIS Web Application Name" description="" value="larasoftdev-001-site1" tags="IisApp">
-    <parameterEntry kind="ProviderPath" scope="IisApp" match="^C:\\Users\\Franco\ Lara\\Desktop\\GitHub\ Proyectos\\Proyectos\\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\obj\\Release\\net10\.0\\PubTmp\\Out\\$" />
-  </parameter>
-</parameters>

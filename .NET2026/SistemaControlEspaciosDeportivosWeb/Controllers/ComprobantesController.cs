@@ -206,7 +206,9 @@ public class ComprobantesController(
             TempData["ComprobanteOk"] = $"Comprobante emitido: {comprobanteCreado.Serie}-{comprobanteCreado.Numero:D8}.";
             if (!resultadoEmision.Exito)
             {
-                TempData["ComprobanteError"] = $"Se genero el comprobante, pero fallo el envio al proveedor: {resultadoEmision.Mensaje}";
+                TempData["ComprobanteError"] = string.Equals(resultadoEmision.Codigo, "PROVEEDOR_NO_IMPLEMENTADO", StringComparison.OrdinalIgnoreCase)
+                    ? "Proveedor SUNAT no configurado para envio automatico."
+                    : $"Se genero el comprobante, pero fallo el envio al proveedor: {resultadoEmision.Mensaje}";
             }
         }
         return RedirectToAction(nameof(Edit), new { negocioId = model.NegocioId, id });
@@ -385,7 +387,9 @@ public class ComprobantesController(
             TempData["ComprobanteOk"] = $"{(tipoNotaNormalizado == "NC" ? "Nota de credito" : "Nota de debito")} generada: {comprobanteCreado.Serie}-{comprobanteCreado.Numero:D8}.";
             if (!resultadoEmision.Exito)
             {
-                TempData["ComprobanteError"] = $"Se genero el comprobante, pero fallo el envio al proveedor: {resultadoEmision.Mensaje}";
+                TempData["ComprobanteError"] = string.Equals(resultadoEmision.Codigo, "PROVEEDOR_NO_IMPLEMENTADO", StringComparison.OrdinalIgnoreCase)
+                    ? "Proveedor SUNAT no configurado para envio automatico."
+                    : $"Se genero el comprobante, pero fallo el envio al proveedor: {resultadoEmision.Mensaje}";
             }
         }
 
@@ -754,9 +758,13 @@ public class ComprobantesController(
         var comprobanteBase = await spService.ComprobantesObtenerAsync(negocioId, id);
         if (comprobanteBase is null) return NotFound();
 
-        if (comprobanteBase.Estado != SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico.AceptadoSunat)
+        var codigoDocumento = (comprobanteBase.CodigoDocumentoComprobante ?? string.Empty).Trim();
+        var esBoleta = string.Equals(codigoDocumento, "03", StringComparison.OrdinalIgnoreCase);
+        var estadoPermitido = comprobanteBase.Estado == SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico.AceptadoSunat
+                              || (esBoleta && comprobanteBase.Estado == SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico.EnviadoSunat);
+        if (!estadoPermitido)
         {
-            TempData["ComprobanteError"] = "Solo se puede enviar por correo un comprobante aceptado por SUNAT.";
+            TempData["ComprobanteError"] = "Solo se puede enviar por correo un comprobante aceptado por SUNAT o una boleta enviada a SUNAT.";
             return RedirectToAction(nameof(Preview), new { negocioId, id });
         }
 
