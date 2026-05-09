@@ -1,9 +1,9 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.PagosIndexViewModel
 @{
     ViewData["Title"] = "Pagos";
-    var montoTotal = Model.Pagos.Sum(x => x.MontoTotal);
-    var pagoTotal = Model.Pagos.Sum(x => x.MontoTotal - x.SaldoPendiente);
-    var saldoTotal = Model.Pagos.Sum(x => x.SaldoPendiente);
+
+
+
 }
 
 <div class="admin-page-frame">
@@ -44,15 +44,15 @@
     <section class="kpi-grid mb-3">
         <article class="kpi-card">
             <p class="kpi-card-label">Monto</p>
-            <h3 class="kpi-card-value">@Model.MonedaSimbolo @montoTotal.ToString("N2")</h3>
+            <h3 class="kpi-card-value">@Model.MonedaSimbolo @Model.TotalMontoGeneral.ToString("N2")</h3>
         </article>
         <article class="kpi-card">
             <p class="kpi-card-label">Pago</p>
-            <h3 class="kpi-card-value">@Model.MonedaSimbolo @pagoTotal.ToString("N2")</h3>
+            <h3 class="kpi-card-value">@Model.MonedaSimbolo @Model.TotalPagadoGeneral.ToString("N2")</h3>
         </article>
         <article class="kpi-card">
             <p class="kpi-card-label">Saldo</p>
-            <h3 class="kpi-card-value">@Model.MonedaSimbolo @saldoTotal.ToString("N2")</h3>
+            <h3 class="kpi-card-value">@Model.MonedaSimbolo @Model.TotalSaldoGeneral.ToString("N2")</h3>
         </article>
     </section>
 
@@ -60,6 +60,8 @@
         <h2 class="section-title">Filtro rapido</h2>
         <form method="get" asp-action="Index">
             <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+            <input type="hidden" name="pagina" value="1" />
+            <input type="hidden" name="preset" value="" />
             <div class="row g-2 align-items-end px-3 pb-3">
                 <div class="col-lg-8 col-md-7">
                     <label class="form-label">Buscar por reserva, sede, espacio, cliente, forma o fecha</label>
@@ -80,14 +82,14 @@
                 <div class="col-md-4">
                     <label class="form-label d-block">Seleccion rapida</label>
                     <div class="d-flex flex-wrap gap-2">
-                        <button type="submit" class="btn btn-sm btn-outline-primary" name="preset" value="hoy">Hoy</button>
-                        <button type="submit" class="btn btn-sm btn-outline-primary" name="preset" value="7d">7 dias</button>
-                        <button type="submit" class="btn btn-sm btn-outline-primary" name="preset" value="30d">30 dias</button>
-                        <button type="submit" class="btn btn-sm btn-outline-primary" name="preset" value="mes">Mes actual</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="this.form.preset.value='hoy'; this.form.submit();">Hoy</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="this.form.preset.value='7d'; this.form.submit();">7 dias</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="this.form.preset.value='30d'; this.form.submit();">30 dias</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="this.form.preset.value='mes'; this.form.submit();">Mes actual</button>
                     </div>
                 </div>
                 <div class="col-md-2 d-flex align-items-end justify-content-md-end">
-                    <button type="submit" class="btn btn-outline-primary">
+                    <button type="submit" class="btn btn-outline-primary" onclick="this.form.preset.value='' ;">
                         <i class="bi bi-search me-1"></i> Buscar
                     </button>
                 </div>

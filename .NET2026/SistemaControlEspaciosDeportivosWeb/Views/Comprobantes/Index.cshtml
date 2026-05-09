@@ -2,9 +2,6 @@
 @{
     ViewData["Title"] = "Comprobantes";
     var totalComprobantes = Model.TotalRegistros;
-    var totalMonto = Model.Comprobantes.Sum(x => x.Total);
-    var pendientes = Model.Comprobantes.Count(x => x.Estado.Contains("Pend", StringComparison.OrdinalIgnoreCase));
-    var anulados = Model.Comprobantes.Count(x => x.Estado.Contains("Anul", StringComparison.OrdinalIgnoreCase));
 
     string estadoClase(string estado)
     {
@@ -64,15 +61,15 @@
         </article>
         <article class="kpi-card">
             <p class="kpi-card-label">Monto emitido</p>
-            <h3 class="kpi-card-value">S/ @totalMonto.ToString("N2")</h3>
+            <h3 class="kpi-card-value">S/ @Model.TotalMontoEmitidoGeneral.ToString("N2")</h3>
         </article>
         <article class="kpi-card">
             <p class="kpi-card-label">Pendientes</p>
-            <h3 class="kpi-card-value">@pendientes</h3>
+            <h3 class="kpi-card-value">@Model.TotalPendientesGeneral</h3>
         </article>
         <article class="kpi-card">
             <p class="kpi-card-label">Anulados</p>
-            <h3 class="kpi-card-value">@anulados</h3>
+            <h3 class="kpi-card-value">@Model.TotalAnuladosGeneral</h3>
         </article>
     </section>
 
@@ -80,6 +77,8 @@
         <h2 class="section-title">Filtro rapido</h2>
         <form method="get" asp-action="Index">
             <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+            <input type="hidden" name="pagina" value="1" />
+            <input type="hidden" name="preset" value="" />
             <div class="row g-2 align-items-end px-3 pb-3">
                 <div class="col-lg-5 col-md-6">
                     <label class="form-label">Buscar por comprobante, reserva, cliente, tipo o estado</label>
@@ -117,14 +116,14 @@
                 <div class="col-md-4">
                     <label class="form-label d-block">Seleccion rapida</label>
                     <div class="d-flex flex-wrap gap-2">
-                        <button type="submit" class="btn btn-sm btn-outline-primary" name="preset" value="hoy">Hoy</button>
-                        <button type="submit" class="btn btn-sm btn-outline-primary" name="preset" value="7d">7 dias</button>
-                        <button type="submit" class="btn btn-sm btn-outline-primary" name="preset" value="30d">30 dias</button>
-                        <button type="submit" class="btn btn-sm btn-outline-primary" name="preset" value="mes">Mes actual</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="this.form.preset.value='hoy'; this.form.submit();">Hoy</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="this.form.preset.value='7d'; this.form.submit();">7 dias</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="this.form.preset.value='30d'; this.form.submit();">30 dias</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="this.form.preset.value='mes'; this.form.submit();">Mes actual</button>
                     </div>
                 </div>
                 <div class="col-md-2 d-flex align-items-end justify-content-md-end">
-                    <button type="submit" class="btn btn-outline-primary">
+                    <button type="submit" class="btn btn-outline-primary" onclick="this.form.preset.value='' ;">
                         <i class="bi bi-search me-1"></i> Buscar
                     </button>
                 </div>
@@ -177,7 +176,9 @@
                             var codigoDoc = (item.CodigoDocumentoComprobante ?? string.Empty).Trim().ToUpperInvariant();
                             var mostrarBotonesNota = codigoDoc is "01" or "03";
                             var puedeGenerarNota = (codigoDoc == "01" || codigoDoc == "03") && item.EstadoCodigo == 3 && !item.TieneNotasRelacionadas;
-                            var puedeAnular = !item.TieneNotasRelacionadas;
+                            var esPendiente = (item.Estado ?? string.Empty).Contains("Pend", StringComparison.OrdinalIgnoreCase);
+                            var esAnulado = (item.Estado ?? string.Empty).Contains("Anul", StringComparison.OrdinalIgnoreCase);
+                            var puedeAnular = !item.TieneNotasRelacionadas && item.EstadoCodigo != 3 && !esAnulado;
                             <tr>
                                 <td class="text-center">
                                     @{
@@ -259,15 +260,10 @@
                                                         Generar ND
                                                     </a>
                                                 }
-                                                else
-                                                {
-                                                    <button type="button" class="btn btn-sm sc-action-btn btn-outline-secondary" disabled>Generar NC</button>
-                                                    <button type="button" class="btn btn-sm sc-action-btn btn-outline-secondary" disabled>Generar ND</button>
-                                                }
                                             }
                                         </div>
                                         <div class="d-inline-flex gap-1">
-                                            @if (Model.PuedeEditar)
+                                            @if (Model.PuedeEditar && esPendiente)
                                             {
                                                 <a class="btn btn-sm sc-action-btn sc-action-edit" asp-action="Edit" asp-route-negocioId="@Model.NegocioId" asp-route-id="@item.Id">
                                                     <i class="bi bi-pencil-square"></i> Editar
@@ -275,23 +271,17 @@
                                             }
                                             @if (Model.PuedeEliminar)
                                             {
-                                                <form asp-action="Delete" method="post" class="d-inline">
-                                                    @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="negocioId" value="@Model.NegocioId" />
-                                                    <input type="hidden" name="id" value="@item.Id" />
-                                                    @if (puedeAnular)
-                                                    {
+                                                @if (puedeAnular)
+                                                {
+                                                    <form asp-action="Delete" method="post" class="d-inline">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                                                        <input type="hidden" name="id" value="@item.Id" />
                                                         <button type="submit" class="btn btn-sm sc-action-btn sc-action-delete">
                                                             <i class="bi bi-trash3"></i> Anular
                                                         </button>
-                                                    }
-                                                    else
-                                                    {
-                                                        <button type="button" class="btn btn-sm sc-action-btn sc-action-delete" disabled>
-                                                            <i class="bi bi-trash3"></i> Anular
-                                                        </button>
-                                                    }
-                                                </form>
+                                                    </form>
+                                                }
                                             }
                                         </div>
                                     </div>

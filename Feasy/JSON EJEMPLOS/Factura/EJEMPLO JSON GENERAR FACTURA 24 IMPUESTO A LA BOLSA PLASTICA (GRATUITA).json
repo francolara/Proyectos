@@ -1,0 +1,110 @@
+{
+  "informacion_documento": {
+    "codigo_interno": "01F00100000025",
+    "fecha_emision": "2023-08-02",
+    "hora_emision": "22:00:00",
+    "fecha_vencimiento": "2023-08-02",
+    "forma_pago": "1",
+    "codigo_tipo_documento": "01",
+    "serie_documento": "F001",
+    "numero_documento": "00000025",
+    "observacion": null,
+    "correo": "cliente@mail.com",
+    "numero_orden_compra": null,
+    "codigo_moneda": "PEN",
+    "porcentaje_igv": 18.00,
+    "monto_tipo_cambio": null,
+    "monto_descuento_global": null,
+    "monto_total_anticipo": null,
+    "monto_total_gravado": 3.39,
+    "monto_total_inafecto": null,
+    "monto_total_exonerado": null,
+    "monto_total_exportacion": null,
+    "monto_total_descuento": null,
+    "monto_total_isc": null,
+    "monto_total_igv": 0.61,
+    "monto_total_impuesto_bolsa": 1.00,
+    "monto_total_gratuito": 0.17,
+    "monto_total_otros_cargos": null,
+    "monto_total": 5.00
+  },
+  "informacion_emisor": {
+    "codigo_tipo_documento_emisor": "6",
+    "numero_documento_emisor": "99999999999",
+    "nombre_razon_social_emisor": "EMISOR S.A",
+    "ubigeo_emisor": "150101",
+    "departamento_emisor": "LIMA",
+    "provincia_emisor": "LIMA",
+    "distrito_emisor": "LIMA",
+    "urbanizacion_emisor": null,
+    "direccion_emisor": "Av. Lima 123"
+  },
+  "informacion_adquiriente": {
+    "codigo_tipo_documento_adquiriente": "6",
+    "numero_documento_adquiriente": "10000000001",
+    "nombre_razon_social_adquiriente": "CLIENTE 01",
+    "codigo_pais_adquiriente": "PE",
+    "ubigeo_adquiriente": "150101",
+    "departamento_adquiriente": "LIMA",
+    "provincia_adquiriente": "LIMA",
+    "distrito_adquiriente": "LIMA",
+    "urbanizacion_adquiriente": null,
+    "direccion_adquiriente": "Calle Lima 123",
+    "correo_adquiriente": "cliente@mail.com"
+  },
+  "informacion_entrega_bienes": {
+    "codigo_pais_entrega": "PE",
+    "ubigeo_entrega": "150102",
+    "departamento_entrega": "LIMA",
+    "provincia_entrega": "LIMA",
+    "distrito_entrega": "LIMA",
+    "urbanizacion_entrega": null,
+    "direccion_entrega": "Jr. Lima 123"
+  },
+  "indicadores": {
+    "indicador_entrega_bienes": true
+  },
+  "lista_items": [
+    {
+      "correlativo": 1,
+      "codigo_interno": "P01",
+      "codigo_sunat": null,
+      "tipo": "P",
+      "codigo_unidad_medida": "NIU",
+      "descripcion": "PRODUCTO 1",
+      "cantidad": 10.00,
+      "monto_valor_unitario": 0.3389830508,
+      "monto_precio_unitario": 0.4000000000,
+      "monto_descuento": null,
+      "monto_valor_total": 3.3898000000,
+      "codigo_isc": null,
+      "monto_isc": null,
+      "codigo_indicador_afecto": "10",
+      "monto_igv": 0.61,
+      "monto_impuesto_bolsa": null,
+      "monto_total": 4.00
+    },
+    {
+      "correlativo": 2,
+      "codigo_interno": "P04",
+      "codigo_sunat": null,
+      "tipo": "P",
+      "codigo_unidad_medida": "NIU",
+      "descripcion": "BOLSA",
+      "cantidad": 2.00,
+      "monto_valor_unitario": 0.0847457627,
+      "monto_precio_unitario": 0.6000000000,
+      "monto_descuento": null,
+      "monto_valor_total": 0.1695000000,
+      "codigo_isc": null,
+      "monto_isc": null,
+      "codigo_indicador_afecto": "11",
+      "monto_igv": 0.03,
+      "monto_impuesto_bolsa": 1.00,
+      "monto_total": 1.20,
+      "indicadores": {
+        "indicador_transferencia_gratuita": true
+      }
+    }
+  ]
+}

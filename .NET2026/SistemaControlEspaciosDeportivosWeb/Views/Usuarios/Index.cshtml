@@ -66,7 +66,7 @@
                 <button type="submit" class="btn btn-primary">Asignar</button>
             </div>
         </form>
-        <small class="text-muted d-block mt-2">Si el correo no existe, se creara el usuario y este valor se guardara en Nombres.</small>
+        <small class="text-muted d-block mt-2">Si el correo no existe, se creara el usuario y se enviara un correo de confirmacion para activar su acceso.</small>
     </div>
 </section>
 
@@ -79,6 +79,7 @@
                 <th class="text-center"><span class="sc-col-header"><i class="bi bi-shield-check"></i><small>Rol</small></span></th>
                 <th class="text-center"><span class="sc-col-header"><i class="bi bi-geo-alt"></i><small>Sede</small></span></th>
                 <th class="text-center"><span class="sc-col-header"><i class="bi bi-patch-check"></i><small>Estado</small></span></th>
+                <th class="text-center"><span class="sc-col-header"><i class="bi bi-envelope-check"></i><small>Correo confirmado</small></span></th>
                 <th class="text-center"><span class="sc-col-header"><i class="bi bi-gear"></i><small>Acciones</small></span></th>
             </tr>
         </thead>
@@ -114,6 +115,7 @@
                     </td>
                     <td>@(string.IsNullOrWhiteSpace(item.SedeNombre) ? "-" : item.SedeNombre)</td>
                     <td>@(item.Activo ? "Activo" : "Inactivo")</td>
+                    <td>@(item.CorreoConfirmado ? "Si" : "No")</td>
                     <td class="text-end">
                         @if (Model.PuedeEditar)
                         {
@@ -122,12 +124,12 @@
                             </a>
                             @if (Model.EsAdministrador && item.Activo)
                             {
-                                <form asp-action="ResetearClaveTemporal" method="post" class="d-inline" onsubmit="return confirm('Se generara una nueva clave temporal para este usuario. Deseas continuar?');">
+                                <form asp-action="EnviarEnlaceRecuperacion" method="post" class="d-inline" onsubmit="return confirm('Se enviara un enlace de acceso al correo del usuario. Deseas continuar?');">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="negocioId" value="@Model.NegocioId" />
                                     <input type="hidden" name="usuarioNegocioId" value="@item.UsuarioNegocioId" />
                                     <button type="submit" class="btn btn-sm sc-action-btn sc-action-neutral">
-                                        <i class="bi bi-key"></i> Reset clave
+                                        <i class="bi bi-envelope-paper"></i> Enviar enlace
                                     </button>
                                 </form>
                             }

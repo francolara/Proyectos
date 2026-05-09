@@ -49,16 +49,9 @@ public sealed class ComprobanteElectronicoEmisionService(
             };
         }
 
-        if (!config.EnviarComprobanteAutomatico)
-        {
-            return new ComprobanteEmisionResultado
-            {
-                Exito = true,
-                Codigo = "AUTO_ENVIO_OFF",
-                Mensaje = "El negocio tiene desactivado el envio automatico de comprobantes."
-            };
-        }
-        if (!string.Equals(config.ProveedorCodigo, "NUBEFACT", StringComparison.OrdinalIgnoreCase))
+        var esNubeFactConsulta = string.Equals(config.ProveedorCodigo, "NUBEFACT", StringComparison.OrdinalIgnoreCase);
+        var esFeasyConsulta = string.Equals(config.ProveedorCodigo, "FEASY", StringComparison.OrdinalIgnoreCase);
+        if (!esNubeFactConsulta && !esFeasyConsulta)
         {
             return new ComprobanteEmisionResultado
             {
@@ -68,11 +61,22 @@ public sealed class ComprobanteElectronicoEmisionService(
             };
         }
 
-        var payload = await ConstruirPayloadConsultaNubeFactAsync(negocioId, comprobanteId);
+        object payload;
+        if (esNubeFactConsulta)
+        {
+            payload = await ConstruirPayloadConsultaNubeFactAsync(negocioId, comprobanteId);
+        }
+        else
+        {
+            payload = await ConstruirPayloadConsultaFeasyAsync(negocioId, comprobanteId);
+        }
 
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Post, config.BaseUrl);
+            var endpointConsulta = esNubeFactConsulta
+                ? config.BaseUrl
+                : ResolverEndpointFeasyConsulta(config);
+            using var request = new HttpRequestMessage(HttpMethod.Post, endpointConsulta);
             request.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
             AplicarAutenticacion(request, config);
 
@@ -92,13 +96,21 @@ public sealed class ComprobanteElectronicoEmisionService(
                 };
             }
 
-            var respuesta = ParsearRespuestaNubeFact(body);
+            var respuesta = esNubeFactConsulta ? ParsearRespuestaNubeFact(body) : ParsearRespuestaFeasy(body);
+            var comprobanteActual = await spService.ComprobantesObtenerVisualizacionAsync(negocioId, comprobanteId);
+            var debeForzarAceptado = await DebeForzarAceptadoPorPdfNubefactAsync(
+                negocioId,
+                comprobanteId,
+                comprobanteActual?.CodigoDocumentoComprobante,
+                esNubeFactConsulta,
+                respuesta.UrlPdf);
+            var esAceptadoFinal = respuesta.EsAceptado || debeForzarAceptado;
             var urlPrincipal = respuesta.UrlPdf ?? respuesta.UrlXml ?? respuesta.UrlCdr ?? respuesta.Url;
             var mensajeResultado = string.IsNullOrWhiteSpace(urlPrincipal) ? Truncar(respuesta.Mensaje, 500) : urlPrincipal;
             await RegistrarResultadoAsync(
                 negocioId,
                 comprobanteId,
-                respuesta.EsAceptado ? 3 : 2,
+                esAceptadoFinal ? 3 : 2,
                 Truncar(respuesta.Codigo, 50),
                 Truncar(mensajeResultado, 500),
                 Truncar(respuesta.Ticket, 40),
@@ -171,7 +183,9 @@ public sealed class ComprobanteElectronicoEmisionService(
                 Mensaje = "El negocio tiene desactivado el envio automatico de comprobantes."
             };
         }
-        if (!string.Equals(config.ProveedorCodigo, "NUBEFACT", StringComparison.OrdinalIgnoreCase))
+        var esNubeFact = string.Equals(config.ProveedorCodigo, "NUBEFACT", StringComparison.OrdinalIgnoreCase);
+        var esFeasy = string.Equals(config.ProveedorCodigo, "FEASY", StringComparison.OrdinalIgnoreCase);
+        if (!esNubeFact && !esFeasy)
         {
             await RegistrarResultadoAsync(
                 negocioId,
@@ -193,11 +207,22 @@ public sealed class ComprobanteElectronicoEmisionService(
             };
         }
 
-        var payload = await ConstruirPayloadNubeFactAsync(negocioId, comprobanteId, comprobante);
+        object payload;
+        if (esNubeFact)
+        {
+            payload = await ConstruirPayloadNubeFactAsync(negocioId, comprobanteId, comprobante);
+        }
+        else
+        {
+            payload = await ConstruirPayloadFeasyAsync(negocioId, comprobanteId, comprobante, config);
+        }
 
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Post, config.BaseUrl);
+            var endpoint = esNubeFact
+                ? config.BaseUrl
+                : ResolverEndpointFeasy(config, comprobante.CodigoDocumentoComprobante);
+            using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
             request.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
             AplicarAutenticacion(request, config);
 
@@ -218,13 +243,29 @@ public sealed class ComprobanteElectronicoEmisionService(
                 };
             }
 
-            var respuesta = ParsearRespuestaNubeFact(body);
+            var respuesta = esNubeFact ? ParsearRespuestaNubeFact(body) : ParsearRespuestaFeasy(body);
             var urlPrincipal = respuesta.UrlPdf ?? respuesta.UrlXml ?? respuesta.UrlCdr ?? respuesta.Url;
+            var debeForzarAceptado = await DebeForzarAceptadoPorPdfNubefactAsync(
+                negocioId,
+                comprobanteId,
+                comprobante.CodigoDocumentoComprobante,
+                esNubeFact,
+                respuesta.UrlPdf);
+            var esAceptadoFinal = respuesta.EsAceptado || debeForzarAceptado;
+
+            if (esFeasy && respuesta.EsAceptado && string.IsNullOrWhiteSpace(urlPrincipal))
+            {
+                // FEASY puede aceptar la emision y publicar URLs unos segundos despues; consultamos inmediatamente.
+                await ConsultarEstadoAsync(negocioId, comprobanteId, usuario);
+                var recargado = await spService.ComprobantesObtenerVisualizacionAsync(negocioId, comprobanteId);
+                urlPrincipal = recargado?.UrlDescargaProveedor;
+            }
+
             var mensajeResultado = string.IsNullOrWhiteSpace(urlPrincipal) ? respuesta.Mensaje : urlPrincipal;
             await RegistrarResultadoAsync(
                 negocioId,
                 comprobanteId,
-                respuesta.EsAceptado ? 3 : 2,
+                esAceptadoFinal ? 3 : 2,
                 Truncar(respuesta.Codigo, 50),
                 Truncar(mensajeResultado, 500),
                 Truncar(respuesta.Ticket, 40),
@@ -233,9 +274,16 @@ public sealed class ComprobanteElectronicoEmisionService(
                 Truncar(respuesta.UrlXml, 500),
                 Truncar(respuesta.UrlCdr, 500),
                 usuario);
+
+            var exitoOperacion = !string.IsNullOrWhiteSpace(respuesta.Codigo)
+                                 && !respuesta.Codigo.StartsWith("ERROR", StringComparison.OrdinalIgnoreCase)
+                                 && !respuesta.Codigo.StartsWith("HTTP_", StringComparison.OrdinalIgnoreCase)
+                                 && !respuesta.Mensaje.Contains("token incorrecto", StringComparison.OrdinalIgnoreCase)
+                                 && !respuesta.Mensaje.Contains("acceso denegado", StringComparison.OrdinalIgnoreCase);
+
             return new ComprobanteEmisionResultado
             {
-                Exito = true,
+                Exito = exitoOperacion,
                 Codigo = respuesta.Codigo,
                 Mensaje = respuesta.Mensaje
             };
@@ -266,6 +314,29 @@ public sealed class ComprobanteElectronicoEmisionService(
         };
     }
 
+    private async Task<object> ConstruirPayloadConsultaFeasyAsync(int negocioId, int comprobanteId)
+    {
+        var comprobanteBase = await spService.ComprobantesObtenerAsync(negocioId, comprobanteId)
+                             ?? throw new InvalidOperationException("No se pudo cargar el comprobante base para consulta.");
+
+        var visual = await spService.ComprobantesObtenerVisualizacionAsync(negocioId, comprobanteId)
+                     ?? throw new InvalidOperationException("No se pudo cargar la visualizacion del comprobante para consulta.");
+
+        var codigoSunat = (visual.CodigoDocumentoComprobante ?? string.Empty).Trim();
+        if (codigoSunat is not ("01" or "03" or "07" or "08"))
+            throw new InvalidOperationException($"Tipo de documento no soportado para consulta FEASY: {codigoSunat}.");
+        var (tipoDocumentoEmisor, numeroDocumentoEmisor) = SepararTipoNumeroDocumento((visual.NegocioDocumento ?? string.Empty).Trim(), "6");
+
+        return new Dictionary<string, object?>
+        {
+            ["codigo_tipo_documento_emisor"] = tipoDocumentoEmisor,
+            ["numero_documento_emisor"] = numeroDocumentoEmisor,
+            ["codigo_tipo_documento"] = codigoSunat,
+            ["serie_documento"] = (comprobanteBase.Serie ?? string.Empty).Trim().ToUpperInvariant(),
+            ["numero_documento"] = comprobanteBase.Numero.ToString("D8", CultureInfo.InvariantCulture)
+        };
+    }
+
     private static string? LeerString(JsonDocument json, string propiedad)
     {
         return json.RootElement.TryGetProperty(propiedad, out var node) && node.ValueKind == JsonValueKind.String
@@ -273,24 +344,77 @@ public sealed class ComprobanteElectronicoEmisionService(
             : null;
     }
 
+    private async Task<bool> DebeForzarAceptadoPorPdfNubefactAsync(
+        int negocioId,
+        int comprobanteId,
+        string? codigoDocumento,
+        bool esNubefact,
+        string? urlPdf)
+    {
+        if (!esNubefact || string.IsNullOrWhiteSpace(urlPdf))
+            return false;
+
+        var codigo = (codigoDocumento ?? string.Empty).Trim().ToUpperInvariant();
+        if (codigo == "03")
+            return true;
+
+        if (codigo != "07")
+            return false;
+
+        var actual = await spService.ComprobantesObtenerAsync(negocioId, comprobanteId);
+        if (actual?.ComprobanteReferenciaId is null or <= 0)
+            return false;
+
+        var referencia = await spService.ComprobantesObtenerAsync(negocioId, actual.ComprobanteReferenciaId.Value);
+        var codigoRef = (referencia?.CodigoDocumentoComprobante ?? string.Empty).Trim().ToUpperInvariant();
+        return codigoRef == "03";
+    }
+
     private void AplicarAutenticacion(HttpRequestMessage request, FacturacionConfig config)
     {
         string? Get(string key) => config.Credenciales.TryGetValue(key, out var value) ? value : null;
+        static string NormalizarBearer(string raw)
+        {
+            var value = (raw ?? string.Empty).Trim();
+            value = value.Trim('"', '\'');
+            value = value.Replace("\0", string.Empty, StringComparison.Ordinal);
+            if (value.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                value = value[7..].Trim();
+            return value;
+        }
 
         switch ((config.TipoAutenticacion ?? string.Empty).Trim().ToUpperInvariant())
         {
             case "API_KEY":
                 var apiKey = Get("API_KEY");
-                if (!string.IsNullOrWhiteSpace(apiKey))
+                var tokenApiKey = Get("TOKEN");
+                if (!string.IsNullOrWhiteSpace(tokenApiKey))
                 {
-                    request.Headers.TryAddWithoutValidation("Authorization", apiKey.Trim());
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", NormalizarBearer(tokenApiKey));
+                }
+                else if (!string.IsNullOrWhiteSpace(apiKey))
+                {
+                    var apiKeyNormalizada = apiKey.Trim();
+                    if (apiKeyNormalizada.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", NormalizarBearer(apiKeyNormalizada));
+                    }
+                    else if (string.Equals(config.ProveedorCodigo, "FEASY", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // FEASY requiere token Bearer aun cuando la credencial este guardada en API_KEY.
+                        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", NormalizarBearer(apiKeyNormalizada));
+                    }
+                    else
+                    {
+                        request.Headers.TryAddWithoutValidation("Authorization", apiKeyNormalizada);
+                    }
                 }
                 break;
             case "TOKEN_FIJO":
                 var token = Get("TOKEN");
                 if (!string.IsNullOrWhiteSpace(token))
                 {
-                    request.Headers.TryAddWithoutValidation("Authorization", token.Trim());
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", NormalizarBearer(token));
                 }
                 break;
             case "USER_PASS":
@@ -312,6 +436,171 @@ public sealed class ComprobanteElectronicoEmisionService(
                 }
                 break;
         }
+    }
+
+    private async Task<object> ConstruirPayloadFeasyAsync(int negocioId, int comprobanteId, ComprobanteVisualizacionViewModel comprobante, FacturacionConfig config)
+    {
+        var comprobanteBase = await spService.ComprobantesObtenerAsync(negocioId, comprobanteId)
+                             ?? throw new InvalidOperationException("No se pudo cargar el comprobante base para emision.");
+
+        var codigoSunat = (comprobante.CodigoDocumentoComprobante ?? string.Empty).Trim();
+        if (codigoSunat is not ("01" or "03" or "07" or "08"))
+            throw new InvalidOperationException($"Tipo de documento no soportado para FEASY: {codigoSunat}.");
+
+        var clienteTipoDoc = (comprobanteBase.ClienteTipoDocumento ?? string.Empty).Trim();
+        var clienteNumeroDoc = (comprobanteBase.ClienteNumeroDocumento ?? string.Empty).Trim();
+        var clienteUbigeo = (comprobanteBase.ClienteCodigoUbigeo ?? string.Empty).Trim();
+        var descripcion = $"ALQUILER DE ESPACIO DEPORTIVO - {comprobante.EspacioNombre} ({comprobante.FechaReserva:dd/MM/yyyy} {comprobante.HoraInicioReserva:HH\\:mm}-{comprobante.HoraFinReserva:HH\\:mm})";
+        if (descripcion.Length > 250)
+            descripcion = descripcion[..250];
+
+        string? LeerCredencial(string key) => config.Credenciales.TryGetValue(key, out var value) ? value?.Trim() : null;
+
+        var serie = (comprobante.Serie ?? string.Empty).Trim().ToUpperInvariant();
+        var numeroDocumento = comprobante.Numero.ToString("D8", CultureInfo.InvariantCulture);
+        var codigoInterno = $"{codigoSunat}{serie}{numeroDocumento}";
+        var porcentajeIgv = decimal.Round(comprobante.PorcentajeIgv <= 0 ? 18m : comprobante.PorcentajeIgv, 2, MidpointRounding.AwayFromZero);
+        var montoTotal = decimal.Round(comprobante.Total, 2, MidpointRounding.AwayFromZero);
+        var montoIgv = decimal.Round(comprobante.Igv, 2, MidpointRounding.AwayFromZero);
+        var montoGravado = decimal.Round(comprobante.SubTotal, 2, MidpointRounding.AwayFromZero);
+        var cantidad = 1m;
+        var montoValorUnitario = montoGravado;
+        var montoPrecioUnitario = montoTotal;
+        var codigoMoneda = comprobanteBase.MonedaNubefact == 2 ? "USD" : "PEN";
+        var documentoEmisorRaw = (comprobante.NegocioDocumento ?? string.Empty).Trim();
+        var (tipoDocumentoEmisor, numeroDocumentoEmisor) = SepararTipoNumeroDocumento(documentoEmisorRaw, "6");
+
+        var informacionDocumento = new Dictionary<string, object?>
+        {
+            ["codigo_interno"] = codigoInterno,
+            ["fecha_emision"] = comprobante.FechaEmision.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            ["hora_emision"] = comprobante.FechaEmision.ToString("HH:mm:ss", CultureInfo.InvariantCulture),
+            ["codigo_tipo_documento"] = codigoSunat,
+            ["serie_documento"] = serie,
+            ["numero_documento"] = numeroDocumento,
+            ["observacion"] = $"Reserva {comprobante.ReservaId} - {comprobante.SedeNombre}".Trim(),
+            ["correo"] = (comprobante.ClienteCorreo ?? string.Empty).Trim(),
+            ["codigo_moneda"] = codigoMoneda,
+            ["porcentaje_igv"] = porcentajeIgv,
+            ["monto_total_gravado"] = montoGravado,
+            ["monto_total_igv"] = montoIgv,
+            ["monto_total"] = montoTotal
+        };
+
+        if (codigoSunat == "01")
+        {
+            informacionDocumento["fecha_vencimiento"] = comprobante.FechaEmision.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            informacionDocumento["forma_pago"] = "1";
+        }
+
+        var informacionEmisor = new Dictionary<string, object?>
+        {
+            ["codigo_tipo_documento_emisor"] = tipoDocumentoEmisor,
+            ["numero_documento_emisor"] = numeroDocumentoEmisor,
+            ["nombre_razon_social_emisor"] = (comprobante.NegocioRazonSocial ?? comprobante.NegocioNombre ?? string.Empty).Trim(),
+            ["ubigeo_emisor"] = LeerCredencial("EMISOR_UBIGEO"),
+            ["departamento_emisor"] = LeerCredencial("EMISOR_DEPARTAMENTO") ?? comprobante.NegocioDepartamento,
+            ["provincia_emisor"] = LeerCredencial("EMISOR_PROVINCIA") ?? comprobante.NegocioProvincia,
+            ["distrito_emisor"] = LeerCredencial("EMISOR_DISTRITO") ?? comprobante.NegocioDistrito,
+            ["urbanizacion_emisor"] = LeerCredencial("EMISOR_URBANIZACION"),
+            ["direccion_emisor"] = (comprobante.NegocioDireccionFiscal ?? string.Empty).Trim()
+        };
+
+        var informacionAdquiriente = new Dictionary<string, object?>
+        {
+            ["codigo_tipo_documento_adquiriente"] = string.IsNullOrWhiteSpace(clienteTipoDoc) ? "0" : clienteTipoDoc,
+            ["numero_documento_adquiriente"] = clienteNumeroDoc,
+            ["nombre_razon_social_adquiriente"] = (comprobante.ClienteNombre ?? string.Empty).Trim(),
+            ["codigo_pais_adquiriente"] = "PE",
+            ["ubigeo_adquiriente"] = clienteUbigeo,
+            ["departamento_adquiriente"] = comprobante.ClienteDepartamento,
+            ["provincia_adquiriente"] = comprobante.ClienteProvincia,
+            ["distrito_adquiriente"] = comprobante.ClienteDistrito,
+            ["urbanizacion_adquiriente"] = null,
+            ["direccion_adquiriente"] = (comprobante.ClienteDireccion ?? string.Empty).Trim(),
+            ["correo_adquiriente"] = (comprobante.ClienteCorreo ?? string.Empty).Trim()
+        };
+
+        var listaItems = new[]
+        {
+            new Dictionary<string, object?>
+            {
+                ["correlativo"] = 1,
+                ["codigo_interno"] = "S001",
+                ["codigo_sunat"] = null,
+                ["tipo"] = "S",
+                ["codigo_unidad_medida"] = "ZZ",
+                ["descripcion"] = descripcion,
+                ["cantidad"] = cantidad,
+                ["monto_valor_unitario"] = decimal.Round(montoValorUnitario, 10, MidpointRounding.AwayFromZero),
+                ["monto_precio_unitario"] = decimal.Round(montoPrecioUnitario, 10, MidpointRounding.AwayFromZero),
+                ["monto_descuento"] = null,
+                ["monto_valor_total"] = decimal.Round(montoGravado, 10, MidpointRounding.AwayFromZero),
+                ["codigo_isc"] = null,
+                ["monto_isc"] = null,
+                ["codigo_indicador_afecto"] = "10",
+                ["monto_igv"] = montoIgv,
+                ["monto_impuesto_bolsa"] = null,
+                ["monto_total"] = montoTotal
+            }
+        };
+
+        var payload = new Dictionary<string, object?>
+        {
+            ["informacion_documento"] = informacionDocumento,
+            ["informacion_emisor"] = informacionEmisor,
+            ["informacion_adquiriente"] = informacionAdquiriente,
+            ["lista_items"] = listaItems
+        };
+
+        if (codigoSunat == "01")
+        {
+            payload["informacion_entrega_bienes"] = new Dictionary<string, object?>
+            {
+                ["codigo_pais_entrega"] = "PE",
+                ["ubigeo_entrega"] = clienteUbigeo,
+                ["departamento_entrega"] = comprobante.ClienteDepartamento,
+                ["provincia_entrega"] = comprobante.ClienteProvincia,
+                ["distrito_entrega"] = comprobante.ClienteDistrito,
+                ["urbanizacion_entrega"] = null,
+                ["direccion_entrega"] = (comprobante.ClienteDireccion ?? string.Empty).Trim()
+            };
+            payload["indicadores"] = new Dictionary<string, object?>
+            {
+                ["indicador_entrega_bienes"] = false
+            };
+        }
+
+        if (codigoSunat is "07" or "08")
+        {
+            if (!comprobanteBase.ComprobanteReferenciaId.HasValue)
+                throw new InvalidOperationException("NC/ND requiere comprobante de referencia.");
+
+            var referencia = await spService.ComprobantesObtenerAsync(negocioId, comprobanteBase.ComprobanteReferenciaId.Value)
+                             ?? throw new InvalidOperationException("No se encontro comprobante de referencia para NC/ND.");
+            var referenciaCodigoSunat = (referencia.CodigoDocumentoComprobante ?? string.Empty).Trim();
+            if (referenciaCodigoSunat is not ("01" or "03"))
+                throw new InvalidOperationException($"Documento referencia no valido para NC/ND FEASY: {referenciaCodigoSunat}.");
+
+            informacionDocumento["forma_pago"] = "1";
+            var codigoNota = (comprobanteBase.TipoNotaCodigoSunat ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(codigoNota))
+                throw new InvalidOperationException("NC/ND requiere TipoNotaCodigoSunat.");
+
+            if (codigoSunat == "07")
+                informacionDocumento["codigo_tipo_nota_credito"] = codigoNota;
+            else
+                informacionDocumento["codigo_tipo_nota_debito"] = codigoNota;
+
+            payload["informacion_documento_referencia"] = new Dictionary<string, object?>
+            {
+                ["codigo_tipo_documento_referencia"] = referenciaCodigoSunat,
+                ["serie_documento_referencia"] = (referencia.Serie ?? string.Empty).Trim().ToUpperInvariant(),
+                ["numero_documento_referencia"] = referencia.Numero.ToString("D8", CultureInfo.InvariantCulture)
+            };
+        }
+
+        return payload;
     }
 
     private async Task<FacturacionConfig?> ObtenerConfiguracionAsync(int negocioId)
@@ -559,6 +848,152 @@ public sealed class ComprobanteElectronicoEmisionService(
             UrlCdr = LeerString(json, "enlace_del_cdr") ?? LeerString(json, "url_cdr"),
             EsAceptado = aceptado
         };
+    }
+
+    private static RespuestaNubeFact ParsearRespuestaFeasy(string body)
+    {
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return new RespuestaNubeFact
+            {
+                Codigo = "SIN_RESPUESTA",
+                Mensaje = "Proveedor no devolvio contenido."
+            };
+        }
+
+        using var json = JsonDocument.Parse(body);
+        var root = json.RootElement;
+
+        string? BuscarTexto(JsonElement node, params string[] keys)
+        {
+            foreach (var key in keys)
+            {
+                if (node.TryGetProperty(key, out var child) && child.ValueKind == JsonValueKind.String)
+                {
+                    var value = child.GetString();
+                    if (!string.IsNullOrWhiteSpace(value))
+                        return value;
+                }
+            }
+            return null;
+        }
+
+        JsonElement? dataNode = null;
+        if (root.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Object)
+            dataNode = data;
+        else if (root.TryGetProperty("resultado", out var resultado) && resultado.ValueKind == JsonValueKind.Object)
+            dataNode = resultado;
+
+        var mensaje = (dataNode.HasValue ? BuscarTexto(dataNode.Value, "mensaje_respuesta", "mensaje", "message") : null)
+                      ?? BuscarTexto(root, "mensaje", "message")
+                      ?? (dataNode.HasValue ? BuscarTexto(dataNode.Value, "mensaje", "message") : null)
+                      ?? "Comprobante enviado.";
+        var codigo = (dataNode.HasValue ? BuscarTexto(dataNode.Value, "codigo_respuesta", "codigo", "code") : null)
+                     ?? BuscarTexto(root, "codigo", "code", "status_code")
+                     ?? (dataNode.HasValue ? BuscarTexto(dataNode.Value, "codigo", "code") : null);
+        var ticket = BuscarTexto(root, "ticket", "numero_ticket", "sunat_ticket")
+                     ?? (dataNode.HasValue ? BuscarTexto(dataNode.Value, "ticket", "numero_ticket", "sunat_ticket") : null);
+        var hash = BuscarTexto(root, "hash", "codigo_hash", "hash_cpe")
+                   ?? (dataNode.HasValue ? BuscarTexto(dataNode.Value, "hash", "codigo_hash", "hash_cpe") : null);
+        var urlPdf = BuscarTexto(root, "url_pdf", "enlace_pdf", "pdf")
+                     ?? (dataNode.HasValue ? BuscarTexto(dataNode.Value, "url_pdf", "enlace_pdf", "pdf", "ruta_reporte") : null);
+        var urlXml = BuscarTexto(root, "url_xml", "enlace_xml", "xml")
+                     ?? (dataNode.HasValue ? BuscarTexto(dataNode.Value, "url_xml", "enlace_xml", "xml", "ruta_xml") : null);
+        var urlCdr = BuscarTexto(root, "url_cdr", "enlace_cdr", "cdr")
+                     ?? (dataNode.HasValue ? BuscarTexto(dataNode.Value, "url_cdr", "enlace_cdr", "cdr", "ruta_cdr") : null);
+        var url = BuscarTexto(root, "url", "enlace")
+                  ?? (dataNode.HasValue ? BuscarTexto(dataNode.Value, "url", "enlace") : null);
+
+        var exito = true;
+        if (root.TryGetProperty("success", out var successNode))
+        {
+            exito = successNode.ValueKind switch
+            {
+                JsonValueKind.True => true,
+                JsonValueKind.False => false,
+                JsonValueKind.Number => successNode.GetInt32() == 1,
+                JsonValueKind.String => string.Equals(successNode.GetString(), "true", StringComparison.OrdinalIgnoreCase)
+                                        || successNode.GetString() == "1",
+                _ => true
+            };
+        }
+        else if (root.TryGetProperty("aceptada_por_sunat", out var aceptadaNode))
+        {
+            exito = aceptadaNode.ValueKind switch
+            {
+                JsonValueKind.True => true,
+                JsonValueKind.False => false,
+                JsonValueKind.Number => aceptadaNode.GetInt32() == 1,
+                JsonValueKind.String => string.Equals(aceptadaNode.GetString(), "true", StringComparison.OrdinalIgnoreCase)
+                                        || aceptadaNode.GetString() == "1",
+                _ => true
+            };
+        }
+        else if (mensaje.Contains("error", StringComparison.OrdinalIgnoreCase))
+        {
+            exito = false;
+        }
+
+        codigo ??= exito ? "ENVIADO" : "ERROR_FEASY";
+
+        return new RespuestaNubeFact
+        {
+            Codigo = codigo,
+            Mensaje = mensaje,
+            Ticket = ticket,
+            Hash = hash,
+            Url = url,
+            UrlPdf = urlPdf,
+            UrlXml = urlXml,
+            UrlCdr = urlCdr,
+            EsAceptado = exito
+        };
+    }
+
+    private static string ResolverEndpointFeasy(FacturacionConfig config, string? codigoDocumentoSunat)
+    {
+        var baseUrl = (config.BaseUrl ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(baseUrl))
+            throw new InvalidOperationException("FEASY requiere BaseUrl configurada.");
+
+        var codigo = (codigoDocumentoSunat ?? string.Empty).Trim().ToUpperInvariant();
+        var endpoint = codigo switch
+        {
+            "01" => "comprobante/enviar_factura",
+            "03" => "comprobante/enviar_boleta",
+            "07" => "comprobante/enviar_nota_credito",
+            "08" => "comprobante/enviar_nota_debito",
+            _ => throw new InvalidOperationException($"FEASY no soporta el tipo de documento {codigo}.")
+        };
+
+        return $"{baseUrl.TrimEnd('/')}/{endpoint}";
+    }
+
+    private static string ResolverEndpointFeasyConsulta(FacturacionConfig config)
+    {
+        var baseUrl = (config.BaseUrl ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(baseUrl))
+            throw new InvalidOperationException("FEASY requiere BaseUrl configurada.");
+
+        return $"{baseUrl.TrimEnd('/')}/comprobante/consultar";
+    }
+
+    private static (string Tipo, string Numero) SepararTipoNumeroDocumento(string? valor, string tipoPorDefecto)
+    {
+        var raw = (valor ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(raw))
+            return (tipoPorDefecto, string.Empty);
+
+        var idx = raw.IndexOf('-', StringComparison.Ordinal);
+        if (idx > 0 && idx < raw.Length - 1)
+        {
+            var tipo = raw[..idx].Trim();
+            var numero = raw[(idx + 1)..].Trim();
+            if (!string.IsNullOrWhiteSpace(tipo) && !string.IsNullOrWhiteSpace(numero))
+                return (tipo, numero);
+        }
+
+        return (tipoPorDefecto, raw);
     }
 
     private string Descifrar(byte[] secretoCifrado, string? keyVersion)

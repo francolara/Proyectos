@@ -38,6 +38,13 @@ public class MaestrosController(IModuloPermisoService moduloPermisoService, ISpo
             TiposDocumentoComprobanteSuper = await spService.MaestrosTiposDocumentoComprobanteSuperListarAsync(),
             TiposDocumentoComprobante = await spService.MaestrosTiposDocumentoComprobanteListarAsync(baseVm.NegocioId)
         };
+        var configClub = await spService.ConfiguracionClubObtenerAsync(baseVm.NegocioId);
+        vm.EmisionComprobantesElectronicos = configClub?.EmisionComprobantesElectronicos ?? false;
+        vm.EnviarComprobanteAutomatico = configClub?.EnviarComprobanteAutomatico ?? false;
+        vm.EmisionReciboInterno = configClub?.EmisionReciboInterno ?? false;
+        vm.TiposDocumentoComprobanteTributarios = await spService.CombosDocumentosComprobanteNegocioAsync(baseVm.NegocioId, true);
+        vm.TiposDocumentoComprobanteNoTributarios = await spService.CombosDocumentosComprobanteNegocioAsync(baseVm.NegocioId, false);
+        vm.SeriesDocumentoComprobante = await spService.ConfiguracionSeriesDocumentoListarAsync(baseVm.NegocioId);
         return View(vm);
     }
 
@@ -342,6 +349,73 @@ public class MaestrosController(IModuloPermisoService moduloPermisoService, ISpo
             var ok = await spService.MaestrosTiposDocumentoComprobanteEliminarAsync(negocioId, id, User.Identity?.Name ?? "sistema");
             TempData["MaestrosError"] = ok ? null : "No se pudo inactivar el tipo de documento.";
             TempData["MaestrosOk"] = ok ? "Tipo de documento inactivado correctamente." : null;
+        }
+        catch (Exception ex)
+        {
+            TempData["MaestrosError"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Index), new { negocioId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> GuardarSerieDocumento(
+        int negocioId,
+        string codigoSunat,
+        string serie,
+        bool activo = true,
+        bool emisionComprobantesElectronicos = false,
+        bool enviarComprobanteAutomatico = false,
+        bool emisionReciboInterno = false)
+    {
+        var baseVm = await ObtenerBaseAsync(negocioId, "MAESTROS");
+        if (baseVm is null || !baseVm.PuedeEditar)
+            return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
+
+        try
+        {
+            await spService.ConfiguracionSeriesDocumentoGuardarAsync(negocioId, codigoSunat, serie, activo, User.Identity?.Name ?? "sistema");
+            await spService.ConfiguracionClubActualizarEmisionAsync(
+                negocioId,
+                emisionComprobantesElectronicos,
+                enviarComprobanteAutomatico,
+                emisionReciboInterno,
+                User.Identity?.Name ?? "sistema");
+            TempData["MaestrosOk"] = "Serie configurada correctamente.";
+        }
+        catch (Exception ex)
+        {
+            TempData["MaestrosError"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Index), new { negocioId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EliminarSerieDocumento(
+        int negocioId,
+        int id,
+        bool emisionComprobantesElectronicos = false,
+        bool enviarComprobanteAutomatico = false,
+        bool emisionReciboInterno = false)
+    {
+        var baseVm = await ObtenerBaseAsync(negocioId, "MAESTROS");
+        if (baseVm is null || !baseVm.PuedeEditar)
+            return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
+
+        try
+        {
+            var ok = await spService.ConfiguracionSeriesDocumentoEliminarAsync(negocioId, id, User.Identity?.Name ?? "sistema");
+            await spService.ConfiguracionClubActualizarEmisionAsync(
+                negocioId,
+                emisionComprobantesElectronicos,
+                enviarComprobanteAutomatico,
+                emisionReciboInterno,
+                User.Identity?.Name ?? "sistema");
+            TempData["MaestrosOk"] = ok ? "Serie inactivada correctamente." : null;
+            TempData["MaestrosError"] = ok ? null : "No se pudo inactivar la serie.";
         }
         catch (Exception ex)
         {

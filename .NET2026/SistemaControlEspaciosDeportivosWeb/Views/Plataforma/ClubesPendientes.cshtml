@@ -1,11 +1,12 @@
 ﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.PlataformaAltasClubesAdminViewModel
 @{
-    ViewData["Title"] = "Altas de clubes";
+    ViewData["Title"] = "Altas de complejos deportivos";
 }
+@* Firma: FRANCO LARA - 09/05/2026 | Ajuste de etiquetas en Super Admin para reemplazar Club/Negocio por Complejo deportivo. *@
 <div class="page-header-card mb-3">
     <div class="page-header-main">
-        <h1 class="page-title">Altas de clubes</h1>
-        <p class="page-subtitle">Confirma solicitudes pendientes para habilitar el modulo del negocio.</p>
+        <h1 class="page-title">Altas de complejos deportivos</h1>
+        <p class="page-subtitle">Confirma solicitudes pendientes para habilitar el modulo del complejo deportivo.</p>
     </div>
 </div>
 
@@ -78,7 +79,7 @@
                     <th>
                         <span class="sc-col-header">
                             <i class="bi bi-shield-check"></i>
-                            <small>Club</small>
+                            <small>Complejo deportivo</small>
                         </span>
                     </th>
                     <th>
@@ -177,7 +178,7 @@
     {
         <div class="px-3 py-3 d-flex justify-content-between align-items-center">
             <small class="text-muted">Pagina @Model.Pagina de @Model.TotalPaginas (@Model.TotalRegistros solicitudes)</small>
-            <nav aria-label="Paginacion altas de clubes">
+            <nav aria-label="Paginacion altas de complejos deportivos">
                 <ul class="pagination pagination-sm mb-0">
                     <li class="page-item @(Model.Pagina <= 1 ? "disabled" : null)">
                         <a class="page-link" asp-action="ClubesPendientes" asp-route-estado="@Model.Estado" asp-route-pagina="@(Model.Pagina - 1)">Anterior</a>

@@ -382,18 +382,6 @@ public class ConfiguracionController(
             }
         }
 
-        if (model.EmisionComprobantesElectronicos &&
-            !model.SeriesDocumentoComprobante.Any(x => x.Tributario && x.Activo))
-        {
-            ModelState.AddModelError(nameof(model.EmisionComprobantesElectronicos),
-                "Para activar emisión de comprobantes electrónicos, primero configura al menos una serie tributaria.");
-        }
-
-        if (model.EmisionReciboInterno &&
-            !model.SeriesDocumentoComprobante.Any(x => !x.Tributario && x.Activo))
-        {
-            ModelState.AddModelError(nameof(model.EmisionReciboInterno),
-                "Para activar emisión de recibo interno, primero configura al menos una serie no tributaria.");
-        }
+        // La configuración de series por documento se valida y administra desde Maestros.
     }
 }

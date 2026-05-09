@@ -60,6 +60,7 @@
         <h2 class="section-title">Filtro rapido</h2>
         <form method="get" asp-action="Index">
             <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+            <input type="hidden" name="pagina" value="1" />
             <div class="row g-2 align-items-end px-3 pb-3">
                 <div class="col-lg-6 col-md-6">
                     <label class="form-label">Buscar por nombre, documento, telefono o correo</label>

@@ -29,6 +29,12 @@ public class PagosController(
             paginaActual = totalPaginas;
             (pagos, totalRegistros) = await spService.PagosListarAsync(resolvedNegocioId.Value, AplicarSedeAsignada(baseVm, null), buscar, desde, hasta, paginaActual, tamanoPagina);
         }
+        var (totalMontoGeneral, totalPagadoGeneral, totalSaldoGeneral) = await CalcularTotalesPagosAsync(
+            resolvedNegocioId.Value,
+            AplicarSedeAsignada(baseVm, null),
+            buscar,
+            desde,
+            hasta);
 
         var vm = new PagosIndexViewModel
         {
@@ -49,12 +55,49 @@ public class PagosController(
             TamanoPagina = tamanoPagina,
             TotalRegistros = totalRegistros,
             TotalPaginas = totalPaginas,
+            TotalMontoGeneral = totalMontoGeneral,
+            TotalPagadoGeneral = totalPagadoGeneral,
+            TotalSaldoGeneral = totalSaldoGeneral,
             MonedaSimbolo = pagos.FirstOrDefault()?.MonedaSimbolo ?? "S/",
             EmisionComprobantesElectronicos = configClub?.EmisionComprobantesElectronicos == true,
             EmisionReciboInterno = configClub?.EmisionReciboInterno == true,
             Pagos = pagos
         };
         return View(vm);
+    }
+
+    private async Task<(decimal TotalMonto, decimal TotalPagado, decimal TotalSaldo)> CalcularTotalesPagosAsync(
+        int negocioId,
+        int? sedeId,
+        string? buscar,
+        DateOnly desde,
+        DateOnly hasta)
+    {
+        const int tamanoLote = 500;
+        var pagina = 1;
+        var totalMonto = 0m;
+        var totalPagado = 0m;
+        var totalSaldo = 0m;
+        var totalRegistros = 0;
+
+        do
+        {
+            var (items, total) = await spService.PagosListarAsync(negocioId, sedeId, buscar, desde, hasta, pagina, tamanoLote);
+            totalRegistros = total;
+            foreach (var item in items)
+            {
+                totalMonto += item.MontoTotal;
+                totalSaldo += item.SaldoPendiente;
+                totalPagado += Math.Max(0m, item.MontoTotal - item.SaldoPendiente);
+            }
+
+            if (items.Count == 0)
+                break;
+
+            pagina++;
+        } while ((pagina - 1) * tamanoLote < totalRegistros);
+
+        return (totalMonto, totalPagado, totalSaldo);
     }
 
     private static (DateOnly Desde, DateOnly Hasta) ResolverRangoFechas(DateOnly? fechaDesde, DateOnly? fechaHasta, string? preset)
@@ -290,7 +333,24 @@ public class PagosController(
         var baseVm = await ObtenerBaseAsync(negocioId, "PAGOS");
         if (baseVm is null || !baseVm.PuedeEliminar) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
 
-        var ok = await spService.PagosEliminarPorReservaAsync(negocioId, reservaId, User.Identity?.Name ?? "sistema");
+        var estadoReserva = await spService.PagosObtenerAsync(negocioId, reservaId);
+        if (estadoReserva?.TieneComprobanteActivo == true)
+        {
+            TempData["PagosError"] = "No se puede eliminar pagos: la reserva ya tiene un comprobante generado.";
+            return RedirectToAction(nameof(Index), new { negocioId });
+        }
+
+        bool ok;
+        try
+        {
+            ok = await spService.PagosEliminarPorReservaAsync(negocioId, reservaId, User.Identity?.Name ?? "sistema");
+        }
+        catch (Exception ex)
+        {
+            TempData["PagosError"] = ex.Message;
+            return RedirectToAction(nameof(Index), new { negocioId });
+        }
+
         if (!ok)
         {
             TempData["PagosError"] = "No se pudo eliminar los pagos de la reserva seleccionada.";

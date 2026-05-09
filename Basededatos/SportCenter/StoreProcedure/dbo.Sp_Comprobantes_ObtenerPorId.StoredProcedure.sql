@@ -7,7 +7,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 -- Firma: Codex - 09/04/2026 | Ajuste a CREATE OR ALTER y salida de codigo de documento para UI de comprobantes.
 -- Firma: Codex - 11/04/2026 | Incluye datos de referencia/tipo de nota y codigos 07/08 para NC/ND.
-ALTER   PROCEDURE [dbo].[Sp_Comprobantes_ObtenerPorId]
+CREATE OR ALTER PROCEDURE [dbo].[Sp_Comprobantes_ObtenerPorId]
     @NegocioId INT,
     @Id INT
 AS
@@ -42,7 +42,7 @@ BEGIN
             CASE WHEN ISNULL(e.TipoDocumento,0) = 0 THEN '-' ELSE ISNULL(e.TipoDocumento,0) END AS ClienteTipoDocumento,
             CASE WHEN ISNULL(e.TipoDocumento,0) = 0 THEN '-' ELSE e.NumeroDocumento END AS ClienteNumeroDocumento,
             CASE WHEN M.Codigo = 'PEN' THEN 1 
-                 WHEN M.Codigo = 'USD' THEN 2 END MonedaNubefact 
+                 WHEN M.Codigo = 'USD' THEN 2 END MonedaNubefact
             
         FROM dbo.ComprobantesElectronicos c
         inner join NegociosTiposDocumentoComprobante d

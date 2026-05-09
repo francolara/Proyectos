@@ -1,7 +1,9 @@
 using System.Security.Cryptography;
+using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.WebUtilities;
 using SistemaControlEspaciosDeportivosWeb.Models;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
@@ -12,7 +14,8 @@ namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 public class UsuariosController(
     IModuloPermisoService moduloPermisoService,
     ISportCenterStoredProcedureService spService,
-    UserManager<ApplicationUser> userManager)
+    UserManager<ApplicationUser> userManager,
+    IAccountEmailService accountEmailService)
     : ModuloControllerBase(moduloPermisoService)
 {
     public async Task<IActionResult> Index(int negocioId)
@@ -37,6 +40,11 @@ public class UsuariosController(
 
         var sedeFiltro = AplicarSedeAsignada(baseVm, null);
         vm.Usuarios = await spService.UsuariosNegocioListarAsync(negocioId, sedeFiltro);
+        foreach (var usuario in vm.Usuarios)
+        {
+            var usuarioSistema = await userManager.FindByIdAsync(usuario.UsuarioId);
+            usuario.CorreoConfirmado = usuarioSistema?.EmailConfirmed ?? false;
+        }
         vm.Sedes = await spService.EspaciosComboSedesAsync(negocioId, sedeFiltro);
         vm.Roles = await ObtenerRolesAsync();
         if (!baseVm.EsAdministrador && baseVm.SedeIdAsignada.HasValue)
@@ -71,12 +79,18 @@ public class UsuariosController(
             if (!SedePermitida(baseVm, sedeAsignada))
                 throw new InvalidOperationException("No puedes asignar una sede distinta a la que tienes permitida.");
 
-            var (usuarioSistema, creadoNuevo, claveTemporal) = await ObtenerOCrearUsuarioSistemaAsync(model.Correo, model.NombreUsuario);
+            var (usuarioSistema, creadoNuevo) = await ObtenerOCrearUsuarioSistemaAsync(model.Correo, model.NombreUsuario);
 
             await spService.UsuariosNegocioAsignarPorCorreoAsync(model.NegocioId, model.Correo, model.RolNegocio, sedeAsignada, User.Identity?.Name ?? "sistema");
-            TempData["UsuariosMsg"] = creadoNuevo
-                ? $"Usuario creado y asignado correctamente. Usuario: {usuarioSistema.UserName}. Clave temporal: {claveTemporal}"
-                : "Usuario asignado correctamente.";
+            if (creadoNuevo)
+            {
+                await EnviarCorreoConfirmacionAsync(usuarioSistema);
+                TempData["UsuariosMsg"] = "Usuario creado y asignado correctamente. Se envio correo para confirmar la cuenta.";
+            }
+            else
+            {
+                TempData["UsuariosMsg"] = "Usuario asignado correctamente.";
+            }
         }
         catch (Exception ex)
         {
@@ -149,11 +163,11 @@ public class UsuariosController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ResetearClaveTemporal(int negocioId, int usuarioNegocioId)
+    public async Task<IActionResult> EnviarEnlaceRecuperacion(int negocioId, int usuarioNegocioId)
     {
         var baseVm = await ObtenerBaseAsync(negocioId, "USUARIOS");
         if (baseVm is null || !baseVm.PuedeEditar || !baseVm.EsAdministrador)
-            return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "Solo un administrador puede resetear claves." });
+            return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "Solo un administrador puede enviar enlaces de recuperacion." });
 
         try
         {
@@ -166,19 +180,19 @@ public class UsuariosController(
             var usuarioSistema = await userManager.FindByIdAsync(usuarioObjetivo.UsuarioId);
             if (usuarioSistema is null)
                 throw new InvalidOperationException("El usuario no existe en Identity.");
+            if (string.IsNullOrWhiteSpace(usuarioSistema.Email))
+                throw new InvalidOperationException("El usuario no tiene correo configurado.");
 
-            var claveTemporal = GenerarClaveTemporal();
-            var token = await userManager.GeneratePasswordResetTokenAsync(usuarioSistema);
-            var result = await userManager.ResetPasswordAsync(usuarioSistema, token, claveTemporal);
-            if (!result.Succeeded)
+            if (usuarioSistema.EmailConfirmed)
             {
-                var errores = string.Join(" ", result.Errors.Select(e => e.Description));
-                throw new InvalidOperationException(string.IsNullOrWhiteSpace(errores)
-                    ? "No se pudo resetear la clave."
-                    : errores);
+                await EnviarCorreoRecuperacionAsync(usuarioSistema);
+                TempData["UsuariosMsg"] = $"Se envio enlace de recuperacion a {usuarioSistema.Email}.";
             }
-
-            TempData["UsuariosMsg"] = $"Clave temporal generada para {usuarioSistema.Email}: {claveTemporal}";
+            else
+            {
+                await EnviarCorreoConfirmacionAsync(usuarioSistema);
+                TempData["UsuariosMsg"] = $"La cuenta no esta confirmada. Se envio correo de confirmacion a {usuarioSistema.Email}.";
+            }
         }
         catch (Exception ex)
         {
@@ -252,7 +266,7 @@ public class UsuariosController(
 
     private static bool RolRequiereSede(int rolNegocio) => rolNegocio != 1;
 
-    private async Task<(ApplicationUser Usuario, bool Creado, string? ClaveTemporal)> ObtenerOCrearUsuarioSistemaAsync(string correo, string? nombreUsuario)
+    private async Task<(ApplicationUser Usuario, bool Creado)> ObtenerOCrearUsuarioSistemaAsync(string correo, string? nombreUsuario)
     {
         var correoNormalizado = (correo ?? string.Empty).Trim();
         if (string.IsNullOrWhiteSpace(correoNormalizado))
@@ -260,7 +274,7 @@ public class UsuariosController(
 
         var usuarioExistente = await userManager.FindByEmailAsync(correoNormalizado);
         if (usuarioExistente is not null)
-            return (usuarioExistente, false, null);
+            return (usuarioExistente, false);
 
         var nombreUsuarioLimpio = (nombreUsuario ?? string.Empty).Trim();
         if (string.IsNullOrWhiteSpace(nombreUsuarioLimpio))
@@ -285,7 +299,59 @@ public class UsuariosController(
                 : errores);
         }
 
-        return (usuarioNuevo, true, claveTemporal);
+        return (usuarioNuevo, true);
+    }
+
+    private async Task EnviarCorreoRecuperacionAsync(ApplicationUser usuario)
+    {
+        var code = await userManager.GeneratePasswordResetTokenAsync(usuario);
+        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+        var callbackUrl = Url.Page(
+            "/Account/ResetPassword",
+            pageHandler: null,
+            values: new { area = "Identity", code, email = usuario.Email },
+            protocol: Request.Scheme);
+
+        if (string.IsNullOrWhiteSpace(callbackUrl))
+            throw new InvalidOperationException("No se pudo generar el enlace de recuperacion.");
+
+        try
+        {
+            await accountEmailService.SendResetPasswordEmailAsync(
+                usuario.Email!,
+                usuario.Nombres,
+                callbackUrl);
+        }
+        catch (EmailDeliveryException ex)
+        {
+            throw new InvalidOperationException($"No se pudo enviar el correo de recuperacion: {ex.Message}");
+        }
+    }
+
+    private async Task EnviarCorreoConfirmacionAsync(ApplicationUser usuario)
+    {
+        var code = await userManager.GenerateEmailConfirmationTokenAsync(usuario);
+        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+        var callbackUrl = Url.Page(
+            "/Account/ConfirmEmail",
+            pageHandler: null,
+            values: new { area = "Identity", userId = usuario.Id, code },
+            protocol: Request.Scheme);
+
+        if (string.IsNullOrWhiteSpace(callbackUrl))
+            throw new InvalidOperationException("No se pudo generar el enlace de confirmacion.");
+
+        try
+        {
+            await accountEmailService.SendConfirmationEmailAsync(
+                usuario.Email!,
+                usuario.Nombres,
+                callbackUrl);
+        }
+        catch (EmailDeliveryException ex)
+        {
+            throw new InvalidOperationException($"No se pudo enviar el correo de confirmacion: {ex.Message}");
+        }
     }
 
     private static string GenerarClaveTemporal()

@@ -368,6 +368,7 @@ public class ComprobanteFormViewModel
     public string MonedaSimbolo { get; set; } = "S/";
     public bool EmisionComprobantesElectronicos { get; set; }
     public bool EmisionReciboInterno { get; set; }
+    public bool ForzarFiltroDocumentoPorCodigo { get; set; }
 
     public string? ReservaCodigo { get; set; }
     public string? Sede { get; set; }

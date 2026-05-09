@@ -1,11 +1,12 @@
 ﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.PlataformaNegociosAdminViewModel
 @{
-    ViewData["Title"] = "Negocios";
+    ViewData["Title"] = "Complejo deportivo";
 }
+@* Firma: FRANCO LARA - 09/05/2026 | Ajuste de etiquetas en Super Admin para reemplazar Club/Negocio por Complejo deportivo. *@
 <div class="page-header-card mb-3">
     <div class="page-header-main">
-        <h1 class="page-title">Negocios registrados</h1>
-        <p class="page-subtitle">Administra limites operativos por negocio: sedes, espacios y usuarios permitidos.</p>
+        <h1 class="page-title">Complejos deportivos registrados</h1>
+        <p class="page-subtitle">Administra limites operativos por complejo deportivo: sedes, espacios y usuarios permitidos.</p>
     </div>
 </div>
 
@@ -21,7 +22,7 @@
 <section class="table-card sc-reservas-list-card p-3 mb-3">
     <form asp-action="Negocios" method="get" class="row g-2 align-items-end">
         <div class="col-md-5 col-lg-4">
-            <label class="form-label">Buscar negocio</label>
+            <label class="form-label">Buscar complejo deportivo</label>
             <input type="text" name="buscar" value="@Model.Buscar" class="form-control" placeholder="Nombre comercial" />
         </div>
         <div class="col-md-4 col-lg-3">
@@ -44,7 +45,7 @@
 
 <section class="table-card sc-reservas-list-card p-0 overflow-hidden">
     <div class="table-card-header d-flex justify-content-between align-items-center">
-        <h2 class="table-card-title platform-card-title"><span class="platform-card-icon"><i class="bi bi-diagram-3"></i></span><span class="platform-card-title-text">Negocios listados</span></h2>
+        <h2 class="table-card-title platform-card-title"><span class="platform-card-icon"><i class="bi bi-diagram-3"></i></span><span class="platform-card-title-text">Complejos deportivos listados</span></h2>
         <span class="badge text-bg-light border">Pagina @Model.Pagina de @Model.TotalPaginas</span>
     </div>
     <div class="table-responsive">
@@ -54,7 +55,7 @@
                     <th>
                         <span class="sc-col-header">
                             <i class="bi bi-buildings"></i>
-                            <small>Negocio</small>
+                            <small>Complejo deportivo</small>
                         </span>
                     </th>
                     <th>
@@ -87,7 +88,7 @@
                 @if (Model.Negocios.Count == 0)
                 {
                     <tr>
-                        <td colspan="5" class="text-center text-muted py-4">No se encontraron negocios.</td>
+                        <td colspan="5" class="text-center text-muted py-4">No se encontraron complejos deportivos.</td>
                     </tr>
                 }
                 else
@@ -189,7 +190,7 @@
                                             </form>
                                         </div>
                                         <div class="col-12 d-grid">
-                                            <form asp-action="FinalizarContratoNegocio" method="post" onsubmit="return confirm('Se dara fin al contrato actual del negocio. Deseas continuar?');">
+                                            <form asp-action="FinalizarContratoNegocio" method="post" onsubmit="return confirm('Se dara fin al contrato actual del complejo deportivo. Deseas continuar?');">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="negocioId" value="@item.NegocioId" />
                                                 <input type="hidden" name="buscar" value="@Model.Buscar" />
@@ -246,8 +247,8 @@
     @if (Model.TotalPaginas > 1)
     {
         <div class="px-3 py-3 d-flex justify-content-between align-items-center">
-            <small class="text-muted">Pagina @Model.Pagina de @Model.TotalPaginas (@Model.TotalRegistros negocios)</small>
-            <nav aria-label="Paginacion negocios plataforma">
+            <small class="text-muted">Pagina @Model.Pagina de @Model.TotalPaginas (@Model.TotalRegistros complejos deportivos)</small>
+            <nav aria-label="Paginacion complejos deportivos plataforma">
                 <ul class="pagination pagination-sm mb-0">
                     <li class="page-item @(Model.Pagina <= 1 ? "disabled" : null)">
                         <a class="page-link" asp-action="Negocios" asp-route-buscar="@Model.Buscar" asp-route-estadoContrato="@Model.EstadoContrato" asp-route-pagina="@(Model.Pagina - 1)">Anterior</a>

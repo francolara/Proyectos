@@ -1,6 +1,8 @@
 /*
 Firma: Codex - 09/04/2026
 Descripcion: Actualiza Sp_Comprobantes_Actualizar para permitir solo edicion de datos del cliente cuando el comprobante esta pendiente.
+Firma: Codex - 08/05/2026
+Descripcion: Corrige validacion por tipo en edicion obteniendo CodigoSunat desde NegociosTiposDocumentoComprobante segun TipoComprobante + NegocioId (sin CASE hardcodeado).
 */
 USE [DbSportCenter]
 GO
@@ -20,7 +22,6 @@ BEGIN
     BEGIN TRY
         DECLARE @ClienteId INT;
         DECLARE @EstadoActual INT;
-        DECLARE @TipoComprobante INT;
         DECLARE @Total DECIMAL(10,2);
         DECLARE @TipoDocumentoFinal NVARCHAR(20);
         DECLARE @NumeroDocumentoFinal NVARCHAR(20);
@@ -31,9 +32,12 @@ BEGIN
         SELECT
             @ClienteId = c.ClienteId,
             @EstadoActual = c.Estado,
-            @TipoComprobante = c.TipoComprobante,
-            @Total = c.Total
+            @Total = c.Total,
+            @CodigoDocComprobante = NULLIF(LTRIM(RTRIM(nt.CodigoSunat)), N'')
         FROM dbo.ComprobantesElectronicos c
+        INNER JOIN dbo.NegociosTiposDocumentoComprobante nt
+            ON nt.Id = c.TipoComprobante
+           AND nt.NegocioId = c.NegocioId
         WHERE c.Id = @Id
           AND c.NegocioId = @NegocioId;
 
@@ -43,13 +47,8 @@ BEGIN
         IF @EstadoActual <> 1
             RAISERROR('Solo se permite editar datos del cliente cuando el comprobante esta pendiente.', 16, 1);
 
-        SET @CodigoDocComprobante =
-            CASE
-                WHEN @TipoComprobante = 2 THEN N'01'
-                WHEN @TipoComprobante = 1 THEN N'03'
-                WHEN @TipoComprobante = 3 THEN N'RI'
-                ELSE N'03'
-            END;
+        IF @CodigoDocComprobante IS NULL
+            RAISERROR('El tipo de documento del comprobante no esta configurado para el negocio.', 16, 1);
 
         SET @ClienteCorreo = NULLIF(LTRIM(RTRIM(@ClienteCorreo)), N'');
         SET @ClienteTipoDocumento = NULLIF(LTRIM(RTRIM(@ClienteTipoDocumento)), N'');

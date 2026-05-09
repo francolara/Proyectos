@@ -200,116 +200,6 @@
     </div>
 </form>
 
-<section class="table-card mt-3">
-    <h2 class="section-title"><i class="bi bi-receipt me-1"></i>Series por documento</h2>
-    <div class="row g-3 px-3 pb-3">
-        <div class="col-md-4" id="panelSeriesTributarias">
-            <form asp-action="GuardarSerieDocumento" method="post" class="row g-2 js-form-serie-documento">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="negocioId" value="@Model.NegocioId" />
-                <input type="hidden" name="emisionComprobantesElectronicos" class="js-emision-cpe-hidden" value="@(Model.EmisionComprobantesElectronicos ? "true" : "false")" />
-                <input type="hidden" name="enviarComprobanteAutomatico" class="js-enviar-cpe-auto-hidden" value="@(Model.EnviarComprobanteAutomatico ? "true" : "false")" />
-                <input type="hidden" name="emisionReciboInterno" class="js-emision-recibo-hidden" value="@(Model.EmisionReciboInterno ? "true" : "false")" />
-                <div class="col-12">
-                    <label class="form-label">Documento tributario</label>
-                    <select name="codigoSunat" class="form-select" required>
-                        <option value="">Selecciona documento</option>
-                        @foreach (var item in Model.TiposDocumentoComprobanteTributarios)
-                        {
-                            <option value="@item.Value">@item.Text</option>
-                        }
-                    </select>
-                </div>
-                <div class="col-8">
-                    <label class="form-label">Serie (4)</label>
-                    <input type="text" name="serie" maxlength="4" class="form-control text-uppercase" required />
-                </div>
-                <div class="col-4 d-grid align-items-end">
-                    <button type="submit" class="btn btn-outline-primary"><i class="bi bi-plus-circle me-1"></i>Agregar</button>
-                </div>
-            </form>
-        </div>
-        <div class="col-md-4" id="panelSeriesNoTributarias">
-            <form asp-action="GuardarSerieDocumento" method="post" class="row g-2 js-form-serie-documento">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="negocioId" value="@Model.NegocioId" />
-                <input type="hidden" name="emisionComprobantesElectronicos" class="js-emision-cpe-hidden" value="@(Model.EmisionComprobantesElectronicos ? "true" : "false")" />
-                <input type="hidden" name="enviarComprobanteAutomatico" class="js-enviar-cpe-auto-hidden" value="@(Model.EnviarComprobanteAutomatico ? "true" : "false")" />
-                <input type="hidden" name="emisionReciboInterno" class="js-emision-recibo-hidden" value="@(Model.EmisionReciboInterno ? "true" : "false")" />
-                <div class="col-12">
-                    <label class="form-label">Documento no tributario</label>
-                    <select name="codigoSunat" class="form-select" required>
-                        <option value="">Selecciona documento</option>
-                        @foreach (var item in Model.TiposDocumentoComprobanteNoTributarios)
-                        {
-                            <option value="@item.Value">@item.Text</option>
-                        }
-                    </select>
-                </div>
-                <div class="col-8">
-                    <label class="form-label">Serie (4)</label>
-                    <input type="text" name="serie" maxlength="4" class="form-control text-uppercase" required />
-                </div>
-                <div class="col-4 d-grid align-items-end">
-                    <button type="submit" class="btn btn-outline-primary"><i class="bi bi-plus-circle me-1"></i>Agregar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    <div class="table-responsive px-3 pb-3">
-        <table class="table table-sm align-middle">
-            <thead>
-                <tr>
-                    <th>Documento</th>
-                    <th>Codigo</th>
-                    <th>Serie</th>
-                    <th>Clase</th>
-                    <th>Estado</th>
-                    <th class="text-end">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (!Model.SeriesDocumentoComprobante.Any())
-                {
-                    <tr><td colspan="6" class="text-center text-muted">Aun no hay series configuradas.</td></tr>
-                }
-                else
-                {
-                    @foreach (var item in Model.SeriesDocumentoComprobante)
-                    {
-                        <tr>
-                            <td>@item.NombreDocumento</td>
-                            <td>@item.CodigoSunat</td>
-                            <td>@item.Serie</td>
-                            <td>
-                                <span class="badge @(item.Tributario ? "bg-info-subtle text-info-emphasis border border-info-subtle" : "bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle")">
-                                    @(item.Tributario ? "Tributario" : "No tributario")
-                                </span>
-                            </td>
-                            <td>
-                                <span class="badge @(item.Activo ? "bg-success-subtle text-success-emphasis border border-success-subtle" : "bg-danger-subtle text-danger-emphasis border border-danger-subtle")">
-                                    @(item.Activo ? "Activa" : "Inactiva")
-                                </span>
-                            </td>
-                            <td class="text-end">
-                                <form asp-action="EliminarSerieDocumento" method="post" class="d-inline">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="negocioId" value="@Model.NegocioId" />
-                                    <input type="hidden" name="id" value="@item.Id" />
-                                    <input type="hidden" name="emisionComprobantesElectronicos" class="js-emision-cpe-hidden" value="@(Model.EmisionComprobantesElectronicos ? "true" : "false")" />
-                                    <input type="hidden" name="enviarComprobanteAutomatico" class="js-enviar-cpe-auto-hidden" value="@(Model.EnviarComprobanteAutomatico ? "true" : "false")" />
-                                    <input type="hidden" name="emisionReciboInterno" class="js-emision-recibo-hidden" value="@(Model.EmisionReciboInterno ? "true" : "false")" />
-                                    <button type="submit" class="btn btn-sm sc-action-btn sc-action-delete"><i class="bi bi-trash3"></i>Inactivar</button>
-                                </form>
-                            </td>
-                        </tr>
-                    }
-                }
-            </tbody>
-        </table>
-    </div>
-</section>
-
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
@@ -330,12 +220,6 @@
             const tipoDocumento = document.getElementById('TipoDocumento');
             const logoArchivo = document.getElementById('LogoArchivo');
             const quitarLogo = document.getElementById('QuitarLogo');
-            const formsSeries = Array.from(document.querySelectorAll('.js-form-serie-documento'));
-            const hiddenCpe = Array.from(document.querySelectorAll('.js-emision-cpe-hidden'));
-            const hiddenEnviarAuto = Array.from(document.querySelectorAll('.js-enviar-cpe-auto-hidden'));
-            const hiddenRecibo = Array.from(document.querySelectorAll('.js-emision-recibo-hidden'));
-            const panelSeriesTrib = document.getElementById('panelSeriesTributarias');
-            const panelSeriesNoTrib = document.getElementById('panelSeriesNoTributarias');
             if (!direccion || !dep || !prov || !dist || !politicaPago || !rowPorcentaje || !porcentaje) return;
 
             const urlProv = '@Url.Action("UbigeoProvincias", "Configuracion")';
@@ -361,14 +245,7 @@
                 rowMinCancelacionAuto.style.display = activo ? '' : 'none';
                 minCancelacionAuto.required = activo;
                 if (!activo) minCancelacionAuto.value = '';
-            }
-
-            function toggleSeccionesEmision() {
-                if (panelSeriesTrib && chkCpe) panelSeriesTrib.style.display = chkCpe.checked ? '' : 'none';
-                if (panelSeriesNoTrib && chkRecibo) panelSeriesNoTrib.style.display = chkRecibo.checked ? '' : 'none';
-            }
-
-            function aplicarReglasCpe() {
+            }function aplicarReglasCpe() {
                 const activo = !!(chkCpe && chkCpe.checked);
                 if (tipoDocumento) {
                     if (activo) {
@@ -379,16 +256,7 @@
                 if (igv) igv.required = activo;
                 if (direccion) direccion.required = activo;
                 toggleRequired();
-            }
-
-            function syncHiddenEmisionEnFormsSeries() {
-                const cpe = chkCpe && chkCpe.checked ? 'true' : 'false';
-                const recibo = chkRecibo && chkRecibo.checked ? 'true' : 'false';
-                hiddenCpe.forEach(i => i.value = cpe);
-                hiddenRecibo.forEach(i => i.value = recibo);
-            }
-
-            function limpiarCheckQuitarLogoConNuevoArchivo() {
+            }function limpiarCheckQuitarLogoConNuevoArchivo() {
                 if (!logoArchivo || !quitarLogo) return;
                 if ((logoArchivo.files || []).length > 0) quitarLogo.checked = false;
             }
@@ -454,13 +322,8 @@
             });
             porcentaje.addEventListener('input', normalizarPorcentajeEntero);
             porcentaje.addEventListener('blur', normalizarPorcentajeEntero);
-            if (chkCpe) chkCpe.addEventListener('change', toggleSeccionesEmision);
-            if (chkRecibo) chkRecibo.addEventListener('change', toggleSeccionesEmision);
-            if (chkCpe) chkCpe.addEventListener('change', syncHiddenEmisionEnFormsSeries);
-            if (chkRecibo) chkRecibo.addEventListener('change', syncHiddenEmisionEnFormsSeries);
             if (chkCpe) chkCpe.addEventListener('change', aplicarReglasCpe);
             if (chkCancelacionAuto) chkCancelacionAuto.addEventListener('change', toggleCancelacionAuto);
-            formsSeries.forEach(f => f.addEventListener('submit', syncHiddenEmisionEnFormsSeries));
             if (logoArchivo) logoArchivo.addEventListener('change', limpiarCheckQuitarLogoConNuevoArchivo);
             const igv = document.getElementById('PorcentajeIgv');
             if (igv) {
@@ -511,12 +374,11 @@
             togglePoliticaPago();
             toggleCancelacionAuto();
             normalizarPorcentajeEntero();
-            toggleSeccionesEmision();
-            syncHiddenEmisionEnFormsSeries();
             aplicarReglasCpe();
         })();
     </script>
 }
+
 
 
 

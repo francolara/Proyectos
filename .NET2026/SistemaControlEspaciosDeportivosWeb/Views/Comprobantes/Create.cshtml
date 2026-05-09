@@ -194,6 +194,7 @@
             const ubigeoProvUrl = '@Url.Action("UbigeoProvincias", "Comprobantes")';
             const ubigeoDistUrl = '@Url.Action("UbigeoDistritos", "Comprobantes")';
             const porcentajeIgv = Number('@Model.PorcentajeIgvConfigurado');
+            const forzarFiltroCodigo = '@(Model.ForzarFiltroDocumentoPorCodigo ? "true" : "false")' === 'true';
 
             const form = document.getElementById('comprobanteCreateForm');
             const inputBuscar = document.getElementById('reservaBuscarInput');
@@ -361,7 +362,7 @@
                     return;
                 }
                 const codigoSunat = String(codigoSunatSelect?.value || '');
-                const resp = await fetch(`${contextoUrl}?negocioId=${encodeURIComponent(negocioId)}&reservaId=${encodeURIComponent(reservaId)}&codigoSunat=${encodeURIComponent(codigoSunat)}`);
+                const resp = await fetch(`${contextoUrl}?negocioId=${encodeURIComponent(negocioId)}&reservaId=${encodeURIComponent(reservaId)}&codigoSunat=${encodeURIComponent(codigoSunat)}&forzarFiltroCodigo=${forzarFiltroCodigo ? 'true' : 'false'}`);
                 const payload = await resp.json();
                 if (!resp.ok || !payload.ok || !payload.data) {
                     limpiarContextoReserva();

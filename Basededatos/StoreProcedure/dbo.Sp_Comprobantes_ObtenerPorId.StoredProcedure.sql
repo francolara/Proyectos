@@ -7,7 +7,8 @@ SET QUOTED_IDENTIFIER ON
 GO
 -- Firma: Codex - 09/04/2026 | Ajuste a CREATE OR ALTER y salida de codigo de documento para UI de comprobantes.
 -- Firma: Codex - 11/04/2026 | Incluye datos de referencia/tipo de nota y codigos 07/08 para NC/ND.
-ALTER   PROCEDURE [dbo].[Sp_Comprobantes_ObtenerPorId]
+-- Firma: Codex - 07/05/2026 | Normaliza a CREATE OR ALTER para mantener despliegues idempotentes.
+CREATE OR ALTER PROCEDURE [dbo].[Sp_Comprobantes_ObtenerPorId]
     @NegocioId INT,
     @Id INT
 AS

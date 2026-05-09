@@ -22,6 +22,7 @@ public class UsuarioNegocioItemViewModel
     public int? SedeId { get; set; }
     public string SedeNombre { get; set; } = string.Empty;
     public bool Activo { get; set; }
+    public bool CorreoConfirmado { get; set; }
 }
 
 public class UsuarioNegocioAsignarFormViewModel

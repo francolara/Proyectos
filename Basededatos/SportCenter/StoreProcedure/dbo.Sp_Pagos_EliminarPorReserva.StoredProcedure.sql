@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿USE [DbSportCenter]
 GO
 SET ANSI_NULLS ON
 GO
@@ -6,6 +6,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 -- Firma: Codex - 09/04/2026 | Elimina todos los pagos de una reserva y deja la reserva en estado Cancelada.
+-- Firma: Codex - 08/05/2026 | Bloquea eliminacion masiva de pagos cuando la reserva ya tiene comprobante activo generado.
 CREATE OR ALTER PROCEDURE dbo.Sp_Pagos_EliminarPorReserva
     @NegocioId INT,
     @ReservaId INT,
@@ -25,6 +26,17 @@ BEGIN
               AND s.NegocioId = @NegocioId
         )
             RAISERROR('No se encontro la reserva para eliminar pagos en el negocio.', 16, 1);
+
+        IF EXISTS
+        (
+            SELECT 1
+            FROM dbo.ComprobantesElectronicos ce
+            WHERE ce.NegocioId = @NegocioId
+              AND ce.ReservaId = @ReservaId
+              AND ce.Estado IN(1,2,3)
+              AND ce.ComprobanteReferenciaId IS NULL
+        )
+            RAISERROR('No se puede eliminar pagos porque la reserva ya tiene un comprobante generado.', 16, 1);
 
         BEGIN TRANSACTION;
 

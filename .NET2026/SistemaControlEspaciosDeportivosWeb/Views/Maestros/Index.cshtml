@@ -69,6 +69,13 @@
                     <small>@Model.TiposDocumentoComprobante.Count registro(s)</small>
                 </span>
             </button>
+            <button type="button" class="sc-maestro-tab" data-target="series-documento">
+                <span class="sc-maestro-tab-icon"><i class="bi bi-receipt"></i></span>
+                <span class="sc-maestro-tab-text">
+                    <strong>Series por documento</strong>
+                    <small>@Model.SeriesDocumentoComprobante.Count registro(s)</small>
+                </span>
+            </button>
         </div>
     </section>
 
@@ -479,6 +486,150 @@
                 </table>
             </div>
         </section>
+        <section class="table-card sc-reservas-list-card mb-3 sc-maestro-panel" data-panel="series-documento">
+            @{
+                var seriesActivas = Model.SeriesDocumentoComprobante.Count(x => x.Activo);
+                var seriesInactivas = Model.SeriesDocumentoComprobante.Count - seriesActivas;
+            }
+            <div class="sc-maestro-panel-header">
+                <div>
+                    <h2 class="section-title mb-1"><i class="bi bi-receipt me-1 text-primary"></i>Series por documento</h2>
+                    <p class="text-secondary-emphasis small mb-0">Administra las series por tipo de documento de acuerdo con la modalidad de emisión habilitada en la sección Configuración.</p>
+                </div>
+            </div>
+            <div class="sc-maestro-stats px-3">
+                <span class="sc-maestro-stat-pill"><i class="bi bi-collection"></i>Total: @Model.SeriesDocumentoComprobante.Count</span>
+                <span class="sc-maestro-stat-pill is-success"><i class="bi bi-check2-circle"></i>Activos: @seriesActivas</span>
+                <span class="sc-maestro-stat-pill is-danger"><i class="bi bi-x-circle"></i>Inactivos: @seriesInactivas</span>
+            </div>
+            @if (!Model.EmisionComprobantesElectronicos && !Model.EmisionReciboInterno)
+            {
+                <div class="px-3 pb-3">
+                    <div class="alert alert-warning mb-0">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Configura la emision de comprobantes en la opcion de Configuracion para habilitar la gestion de series por documento.
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="row g-3 px-3 pb-3">
+                    @if (Model.EmisionComprobantesElectronicos)
+                    {
+                        <div class="col-md-4">
+                            <form asp-action="GuardarSerieDocumento" method="post" class="row g-2">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                                <input type="hidden" name="emisionComprobantesElectronicos" value="@(Model.EmisionComprobantesElectronicos ? "true" : "false")" />
+                                <input type="hidden" name="enviarComprobanteAutomatico" value="@(Model.EnviarComprobanteAutomatico ? "true" : "false")" />
+                                <input type="hidden" name="emisionReciboInterno" value="@(Model.EmisionReciboInterno ? "true" : "false")" />
+                                <div class="col-12">
+                                    <label class="form-label">Documento tributario</label>
+                                    <select name="codigoSunat" class="form-select" required>
+                                        <option value="">Selecciona documento</option>
+                                        @foreach (var item in Model.TiposDocumentoComprobanteTributarios)
+                                        {
+                                            <option value="@item.Value">@item.Text</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-8">
+                                    <label class="form-label">Serie (4)</label>
+                                    <input type="text" name="serie" maxlength="4" class="form-control text-uppercase" required />
+                                </div>
+                                <div class="col-4 d-grid align-items-end">
+                                    <button type="submit" class="btn btn-outline-primary"><i class="bi bi-plus-circle me-1"></i>Agregar</button>
+                                </div>
+                            </form>
+                        </div>
+                    }
+                    @if (Model.EmisionReciboInterno)
+                    {
+                        <div class="col-md-4">
+                            <form asp-action="GuardarSerieDocumento" method="post" class="row g-2">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                                <input type="hidden" name="emisionComprobantesElectronicos" value="@(Model.EmisionComprobantesElectronicos ? "true" : "false")" />
+                                <input type="hidden" name="enviarComprobanteAutomatico" value="@(Model.EnviarComprobanteAutomatico ? "true" : "false")" />
+                                <input type="hidden" name="emisionReciboInterno" value="@(Model.EmisionReciboInterno ? "true" : "false")" />
+                                <div class="col-12">
+                                    <label class="form-label">Documento no tributario</label>
+                                    <select name="codigoSunat" class="form-select" required>
+                                        <option value="">Selecciona documento</option>
+                                        @foreach (var item in Model.TiposDocumentoComprobanteNoTributarios)
+                                        {
+                                            <option value="@item.Value">@item.Text</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-8">
+                                    <label class="form-label">Serie (4)</label>
+                                    <input type="text" name="serie" maxlength="4" class="form-control text-uppercase" required />
+                                </div>
+                                <div class="col-4 d-grid align-items-end">
+                                    <button type="submit" class="btn btn-outline-primary"><i class="bi bi-plus-circle me-1"></i>Agregar</button>
+                                </div>
+                            </form>
+                        </div>
+                    }
+                </div>
+            }
+            <div class="table-responsive px-3 pb-3">
+                <table class="table table-sm align-middle sc-maestro-table" data-table-id="series-documento">
+                    <thead>
+                        <tr>
+                            <th>Documento</th>
+                            <th>Codigo</th>
+                            <th>Serie</th>
+                            <th>Clase</th>
+                            <th>Estado</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.SeriesDocumentoComprobante.Any())
+                        {
+                            <tr><td colspan="6" class="text-center text-muted">Aun no hay series configuradas.</td></tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.SeriesDocumentoComprobante)
+                            {
+                                <tr data-search-text="@($"{item.NombreDocumento} {item.CodigoSunat} {item.Serie}")">
+                                    <td>@item.NombreDocumento</td>
+                                    <td>@item.CodigoSunat</td>
+                                    <td>@item.Serie</td>
+                                    <td>
+                                        <span class="badge @(item.Tributario ? "bg-info-subtle text-info-emphasis border border-info-subtle" : "bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle")">
+                                            @(item.Tributario ? "Tributario" : "No tributario")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge @(item.Activo ? "bg-success-subtle text-success-emphasis border border-success-subtle" : "bg-danger-subtle text-danger-emphasis border border-danger-subtle")">
+                                            @(item.Activo ? "Activa" : "Inactiva")
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        @if (Model.PuedeEliminar)
+                                        {
+                                            <form asp-action="EliminarSerieDocumento" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                                                <input type="hidden" name="id" value="@item.Id" />
+                                                <input type="hidden" name="emisionComprobantesElectronicos" value="@(Model.EmisionComprobantesElectronicos ? "true" : "false")" />
+                                                <input type="hidden" name="enviarComprobanteAutomatico" value="@(Model.EnviarComprobanteAutomatico ? "true" : "false")" />
+                                                <input type="hidden" name="emisionReciboInterno" value="@(Model.EmisionReciboInterno ? "true" : "false")" />
+                                                <button type="submit" class="btn btn-sm sc-action-btn sc-action-delete"><i class="bi bi-trash3"></i>Inactivar</button>
+                                            </form>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
     </div>
 </div>
 
@@ -544,5 +695,11 @@
         });
     })();
 </script>
+
+
+
+
+
+
 
 

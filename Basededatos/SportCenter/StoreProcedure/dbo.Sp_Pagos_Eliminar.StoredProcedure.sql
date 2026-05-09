@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿USE [DbSportCenter]
 GO
 SET ANSI_NULLS ON
 GO
@@ -7,6 +7,7 @@ GO
 
 -- SOURCE: 07_Reservas_Pagos_Reglas.sql (linea 340)
 -- Firma: Codex - 09/04/2026 | Al eliminar pago: si reserva queda sin pagos cambia a Cancelada; si mantiene pagos cambia a Confirmada y recalcula adelanto/saldo.
+-- Firma: Codex - 08/05/2026 | Bloquea eliminacion de pagos cuando la reserva ya tiene comprobante activo generado.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Pagos_Eliminar]
     @NegocioId INT,
     @Id INT,
@@ -28,6 +29,17 @@ BEGIN
 
         IF @ReservaId IS NULL
             RAISERROR('No se encontro el pago para eliminar en el negocio.', 16, 1);
+
+        IF EXISTS
+        (
+            SELECT 1
+            FROM dbo.ComprobantesElectronicos ce
+            WHERE ce.NegocioId = @NegocioId
+              AND ce.ReservaId = @ReservaId
+              AND ce.Estado IN(1,2,3)
+              AND ce.ComprobanteReferenciaId IS NULL
+        )
+            RAISERROR('No se puede eliminar pagos porque la reserva ya tiene un comprobante generado.', 16, 1);
 
         BEGIN TRANSACTION;
 

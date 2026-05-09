@@ -11,6 +11,7 @@ GO
 -- Firma: Codex - 13/04/2026 | Se agrega persistencia de LogoUrl para logo del negocio.
 -- Firma: Codex - 16/04/2026 | Se agregan flags de reserva: permitir modificar precio y cancelacion automatica por no confirmacion.
 -- Firma: Codex - 06/05/2026 | Se agrega persistencia de EnviarComprobanteAutomatico desde configuracion del negocio.
+-- Firma: Codex - 08/05/2026 | Se retira validacion de documentos en Maestros para emision; la gestion se controla desde la opcion Maestros.
 CREATE OR ALTER PROCEDURE dbo.Sp_ConfiguracionClub_Actualizar
     @NegocioId INT,
     @NombreComercial NVARCHAR(200),
@@ -94,32 +95,6 @@ BEGIN
         BEGIN
             SET @MinutosCancelacionNoConfirmada = NULL;
         END
-
-        IF @EmisionComprobantesElectronicos = 1
-           AND NOT EXISTS (
-                SELECT 1
-                FROM dbo.NegociosTiposDocumentoComprobante ntd
-                INNER JOIN dbo.TiposDocumentoComprobanteSuperMaestro t ON t.CodigoSunat = ntd.CodigoSunat
-                WHERE ntd.NegocioId = @NegocioId
-                  AND ntd.Activo = 1
-                  AND t.Activo = 1
-                  AND t.Habilitado = 1
-                  AND t.Tributario = 1
-            )
-            RAISERROR('Debes habilitar al menos un documento tributario en Maestros para activar emision de comprobantes electronicos.', 16, 1);
-
-        IF @EmisionReciboInterno = 1
-           AND NOT EXISTS (
-                SELECT 1
-                FROM dbo.NegociosTiposDocumentoComprobante ntd
-                INNER JOIN dbo.TiposDocumentoComprobanteSuperMaestro t ON t.CodigoSunat = ntd.CodigoSunat
-                WHERE ntd.NegocioId = @NegocioId
-                  AND ntd.Activo = 1
-                  AND t.Activo = 1
-                  AND t.Habilitado = 1
-                  AND t.Tributario = 0
-            )
-            RAISERROR('Debes habilitar al menos un documento no tributario en Maestros para activar emision de recibo interno.', 16, 1);
 
         UPDATE n
         SET

@@ -281,6 +281,9 @@ public class PagosIndexViewModel : ModuloBaseViewModel
     public int TamanoPagina { get; set; } = 20;
     public int TotalRegistros { get; set; }
     public int TotalPaginas { get; set; } = 1;
+    public decimal TotalMontoGeneral { get; set; }
+    public decimal TotalPagadoGeneral { get; set; }
+    public decimal TotalSaldoGeneral { get; set; }
     public string MonedaSimbolo { get; set; } = "S/";
     public bool EmisionComprobantesElectronicos { get; set; }
     public bool EmisionReciboInterno { get; set; }
@@ -356,6 +359,9 @@ public class ComprobantesIndexViewModel : ModuloBaseViewModel
     public int TamanoPagina { get; set; } = 20;
     public int TotalRegistros { get; set; }
     public int TotalPaginas { get; set; } = 1;
+    public decimal TotalMontoEmitidoGeneral { get; set; }
+    public int TotalPendientesGeneral { get; set; }
+    public int TotalAnuladosGeneral { get; set; }
     public List<SelectListItem> TiposDocumentoFiltro { get; set; } = new();
     public List<ComprobanteItemViewModel> Comprobantes { get; set; } = new();
 }
@@ -426,6 +432,12 @@ public class MaestrosIndexViewModel : ModuloBaseViewModel
     public List<MaestroCatalogoItemViewModel> FormasPago { get; set; } = new();
     public List<SelectListItem> TiposDocumentoComprobanteSuper { get; set; } = new();
     public List<TipoDocumentoComprobanteNegocioItemViewModel> TiposDocumentoComprobante { get; set; } = new();
+    public bool EmisionComprobantesElectronicos { get; set; }
+    public bool EnviarComprobanteAutomatico { get; set; }
+    public bool EmisionReciboInterno { get; set; }
+    public List<SelectListItem> TiposDocumentoComprobanteTributarios { get; set; } = new();
+    public List<SelectListItem> TiposDocumentoComprobanteNoTributarios { get; set; } = new();
+    public List<SerieDocumentoComprobanteItemViewModel> SeriesDocumentoComprobante { get; set; } = new();
 }
 
 public class MonedaMaestroItemViewModel

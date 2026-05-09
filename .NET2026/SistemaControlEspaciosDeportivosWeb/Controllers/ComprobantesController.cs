@@ -63,6 +63,13 @@ public class ComprobantesController(
                 paginaActual,
                 tamanoPagina);
         }
+        var (totalMontoEmitidoGeneral, totalPendientesGeneral, totalAnuladosGeneral) = await CalcularTotalesComprobantesAsync(
+            resolvedNegocioId.Value,
+            AplicarSedeAsignada(baseVm, null),
+            buscar,
+            codigoDocumentoFiltro,
+            desde,
+            hasta);
 
         var vm = new ComprobantesIndexViewModel
         {
@@ -84,10 +91,59 @@ public class ComprobantesController(
             TamanoPagina = tamanoPagina,
             TotalRegistros = totalRegistros,
             TotalPaginas = totalPaginas,
+            TotalMontoEmitidoGeneral = totalMontoEmitidoGeneral,
+            TotalPendientesGeneral = totalPendientesGeneral,
+            TotalAnuladosGeneral = totalAnuladosGeneral,
             TiposDocumentoFiltro = tiposDocumentoFiltro,
             Comprobantes = comprobantes
         };
         return View(vm);
+    }
+
+    private async Task<(decimal TotalMonto, int TotalPendientes, int TotalAnulados)> CalcularTotalesComprobantesAsync(
+        int negocioId,
+        int? sedeId,
+        string? buscar,
+        string? codigoDocumento,
+        DateOnly desde,
+        DateOnly hasta)
+    {
+        const int tamanoLote = 500;
+        var pagina = 1;
+        var totalMonto = 0m;
+        var totalPendientes = 0;
+        var totalAnulados = 0;
+        var totalRegistros = 0;
+
+        do
+        {
+            var (items, total) = await spService.ComprobantesListarAsync(
+                negocioId,
+                sedeId,
+                buscar,
+                codigoDocumento,
+                desde,
+                hasta,
+                pagina,
+                tamanoLote);
+            totalRegistros = total;
+
+            foreach (var item in items)
+            {
+                totalMonto += item.Total;
+                if (item.Estado.Contains("Pend", StringComparison.OrdinalIgnoreCase))
+                    totalPendientes++;
+                if (item.Estado.Contains("Anul", StringComparison.OrdinalIgnoreCase))
+                    totalAnulados++;
+            }
+
+            if (items.Count == 0)
+                break;
+
+            pagina++;
+        } while ((pagina - 1) * tamanoLote < totalRegistros);
+
+        return (totalMonto, totalPendientes, totalAnulados);
     }
 
     private static (DateOnly Desde, DateOnly Hasta) ResolverRangoFechas(DateOnly? fechaDesde, DateOnly? fechaHasta, string? preset)
@@ -144,6 +200,7 @@ public class ComprobantesController(
             FechaEmision = DateTime.Today,
             EmisionComprobantesElectronicos = config?.EmisionComprobantesElectronicos == true,
             EmisionReciboInterno = config?.EmisionReciboInterno == true,
+            ForzarFiltroDocumentoPorCodigo = reservaId.HasValue && reservaId.Value > 0 && !string.IsNullOrWhiteSpace(codigoSunat),
             PorcentajeIgvConfigurado = config?.PorcentajeIgv ?? 18,
             CodigoDocumentoComprobante = string.IsNullOrWhiteSpace(codigoSunat) ? "03" : codigoSunat.Trim().ToUpperInvariant()
         };
@@ -211,7 +268,7 @@ public class ComprobantesController(
                     : $"Se genero el comprobante, pero fallo el envio al proveedor: {resultadoEmision.Mensaje}";
             }
         }
-        return RedirectToAction(nameof(Edit), new { negocioId = model.NegocioId, id });
+        return RedirectToAction(nameof(Preview), new { negocioId = model.NegocioId, id });
     }
 
     public async Task<IActionResult> CreateNota(int id, string tipoNota, int? negocioId)
@@ -253,6 +310,7 @@ public class ComprobantesController(
             ClienteNumeroDocumento = referencia.ClienteNumeroDocumento,
             ClienteDireccionFiscal = referencia.ClienteDireccionFiscal,
             ClienteCodigoUbigeo = referencia.ClienteCodigoUbigeo,
+            TipoMoneda = referencia.TipoMoneda,
             EsNota = true,
             TipoNota = tipoNotaNormalizado,
             ComprobanteReferenciaId = referencia.Id,
@@ -262,6 +320,7 @@ public class ComprobantesController(
         };
 
         await PoblarDatosComprobanteAsync(vm, baseVm, vm.ReservaId);
+        vm.TipoMoneda = referencia.TipoMoneda;
         vm.CodigoDocumentoComprobante = codigoDocumentoNota;
         vm.TipoComprobante = MapearTipoComprobante(codigoDocumentoNota);
         vm.TiposDocumentoComprobante = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>
@@ -332,6 +391,10 @@ public class ComprobantesController(
         }
 
         await PoblarDatosComprobanteAsync(model, baseVm, model.ReservaId);
+        if (referencia is not null)
+        {
+            model.TipoMoneda = referencia.TipoMoneda;
+        }
         model.CodigoDocumentoComprobante = codigoDocumentoNota;
         model.TipoComprobante = MapearTipoComprobante(codigoDocumentoNota);
         model.TiposDocumentoComprobante = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>
@@ -393,7 +456,7 @@ public class ComprobantesController(
             }
         }
 
-        return RedirectToAction(nameof(Edit), new { negocioId = model.NegocioId, id = idGenerado });
+        return RedirectToAction(nameof(Preview), new { negocioId = model.NegocioId, id = idGenerado });
     }
 
     public async Task<IActionResult> Edit(int id, int? negocioId)
@@ -455,7 +518,16 @@ public class ComprobantesController(
         ValidarReglasDocumento(model, montoMaximoBoletaSinDoc);
         if (!ModelState.IsValid) return View(model);
 
-        var ok = await spService.ComprobantesActualizarAsync(model, User.Identity?.Name ?? "sistema");
+        bool ok;
+        try
+        {
+            ok = await spService.ComprobantesActualizarAsync(model, User.Identity?.Name ?? "sistema");
+        }
+        catch (SqlException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            return View(model);
+        }
         if (!ok)
         {
             ModelState.AddModelError(string.Empty, "No se pudo guardar el comprobante. Verifica el negocio seleccionado.");
@@ -492,7 +564,7 @@ public class ComprobantesController(
     }
 
     [HttpGet]
-    public async Task<IActionResult> ObtenerContextoReserva(int negocioId, int reservaId, string? codigoSunat = null)
+    public async Task<IActionResult> ObtenerContextoReserva(int negocioId, int reservaId, string? codigoSunat = null, bool forzarFiltroCodigo = false)
     {
         var baseVm = await ObtenerBaseAsync(negocioId, "COMPROBANTES");
         if (baseVm is null) return Forbid();
@@ -503,7 +575,7 @@ public class ComprobantesController(
 
         var codigo = (codigoSunat ?? string.Empty).Trim().ToUpperInvariant();
         var documentosFiltrados = data.DocumentosDisponibles;
-        if (codigo is "01" or "03")
+        if (forzarFiltroCodigo && codigo is "01" or "03")
         {
             documentosFiltrados = data.DocumentosDisponibles
                 .Where(x =>
@@ -513,7 +585,7 @@ public class ComprobantesController(
                 })
                 .ToList();
         }
-        else if (codigo == "RI")
+        else if (forzarFiltroCodigo && codigo == "RI")
         {
             documentosFiltrados = data.DocumentosDisponibles
                 .Where(x => string.Equals((x.Value ?? string.Empty).Trim(), "RI", StringComparison.OrdinalIgnoreCase))
@@ -947,6 +1019,10 @@ public class ComprobantesController(
         model.EmisionComprobantesElectronicos = config?.EmisionComprobantesElectronicos == true;
         model.EmisionReciboInterno = config?.EmisionReciboInterno == true;
         model.PorcentajeIgvConfigurado = config?.PorcentajeIgv ?? 18;
+        if (model.Id == 0 && config is not null && config.MonedaId > 0)
+        {
+            model.TipoMoneda = (SistemaControlEspaciosDeportivosWeb.Models.TipoMoneda)config.MonedaId;
+        }
 
         model.Reservas = await spService.ComprobantesBuscarReservasPagadasAsync(model.NegocioId, null, reservaId, 20);
         List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> documentos;

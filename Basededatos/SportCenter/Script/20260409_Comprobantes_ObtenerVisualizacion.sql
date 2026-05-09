@@ -1,6 +1,7 @@
 /*
 Firma: Codex - 09/04/2026
 Descripcion: Crea/actualiza SP para visualizar comprobante (PDF interno o redireccion URL proveedor en tributarios), incluyendo ubigeo de negocio y cliente.
+Firma: Codex - 07/05/2026 | Corrige EsTributario usando CodigoSunat por negocio (sin IDs fijos).
 */
 USE [DbSportCenter]
 GO
@@ -29,7 +30,7 @@ BEGIN
                 WHEN ce.TipoComprobante = 3 THEN N'Recibo Interno'
                 ELSE CONCAT(N'Tipo ', ce.TipoComprobante)
             END AS TipoDocumentoNombre,
-            CAST(CASE WHEN ce.TipoComprobante IN (1,2) THEN 1 ELSE 0 END AS BIT) AS EsTributario,
+            CAST(CASE WHEN d.CodigoSunat IN (N'01', N'03', N'07', N'08') THEN 1 ELSE 0 END AS BIT) AS EsTributario,
             ce.Serie,
             ce.Numero,
             ce.FechaEmision,
@@ -68,6 +69,9 @@ BEGIN
         INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
         INNER JOIN dbo.Clientes c ON c.Id = ce.ClienteId
+        INNER JOIN dbo.NegociosTiposDocumentoComprobante d
+            ON d.Id = ce.TipoComprobante
+           AND d.NegocioId = ce.NegocioId
         LEFT JOIN dbo.UbigeoDistritos ndis ON ndis.CodigoUbigeo = n.CodigoUbigeo
         LEFT JOIN dbo.UbigeoProvincias nprov ON nprov.CodigoProvincia = ndis.CodigoProvincia
         LEFT JOIN dbo.UbigeoDepartamentos ndep ON ndep.CodigoDepartamento = ndis.CodigoDepartamento

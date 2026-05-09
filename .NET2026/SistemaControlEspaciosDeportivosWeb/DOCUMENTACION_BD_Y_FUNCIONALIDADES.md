@@ -122,6 +122,7 @@
 - Actualizacion 13/04/2026:
   - `Sp_Comprobantes_Listar` agrega rango opcional `@FechaDesde/@FechaHasta` (fecha de emision) para filtros rapidos en UI.
 - `Sp_Comprobantes_ObtenerPorId`
+  - `Sp_Comprobantes_ObtenerVisualizacion` corrige `EsTributario` para evaluarse por `CodigoSunat` (`01`,`03`,`07`,`08`) y no por IDs fijos de `TipoComprobante`.
 - `Sp_Comprobantes_Crear`
 - `Sp_Comprobantes_Actualizar`
 - `Sp_Comprobantes_Eliminar`
@@ -1014,7 +1015,9 @@
   - `Sp_Comprobantes_Crear` valida reserva pagada, documento habilitado por negocio y serie habilitada por sede.
   - `Sp_Comprobantes_Crear` valida que la reserva pertenezca al negocio y bloquea duplicado de comprobante por reserva activa.
   - `Sp_Comprobantes_Crear` soporta documento `RI` (recibo interno), forzando `Igv = 0` y `SubTotal = Total`.
-  - `Sp_Comprobantes_ObtenerPorId` devuelve `CodigoDocumentoComprobante` para la UI.
+  - Sp_Comprobantes_ObtenerPorId`r
+- Actualizacion 07/05/2026:
+  - Sp_Comprobantes_ObtenerVisualizacion corrige EsTributario para evaluarse por CodigoSunat ( 1, 3, 7, 8) y no por IDs fijos de TipoComprobante. devuelve `CodigoDocumentoComprobante` para la UI.
   - `Sp_Comprobantes_Listar` muestra etiquetas legibles para tipo (`Factura/Boleta/Recibo Interno`) y estado.
 - Pagos (integracion con comprobantes):
   - el listado agrega botones `Emitir CPE` y `Emitir Recibo` segun checks de configuracion del negocio.
@@ -1022,6 +1025,7 @@
   - los botones `Emitir CPE` y `Emitir Recibo` solo se muestran cuando la reserva esta pagada al 100% (sin saldo).
   - `Sp_Pagos_Listar` expone banderas `PagadaCompleta` y `TieneComprobanteActivo` para decidir habilitacion de emision desde backend.
   - si la reserva ya tiene comprobante activo (estado distinto de anulado), no se muestran botones de emision en listado de pagos.
+  - Sp_Pagos_Eliminar y Sp_Pagos_EliminarPorReserva bloquean la eliminacion de pagos cuando la reserva ya tiene comprobante principal activo generado.
 - Comprobantes (registro y validaciones comerciales):
   - en `Emitir comprobante`, el campo `Numero` queda solo lectura y se genera automaticamente al grabar (correlativo por `TipoComprobante + Serie`).
   - si falta `Serie` al grabar, se muestra validacion inline en el combo (`NegocioSerieId`) ademas del resumen general.
@@ -1032,6 +1036,7 @@
   - `Sp_Comprobantes_Listar` ahora soporta `@Buscar`, `@Pagina`, `@TamanoPagina` y devuelve `@TotalRegistros` para paginacion backend 20x20.
   - en `Editar comprobante`, la reserva queda fija y el importe queda solo lectura.
   - `Sp_Comprobantes_Actualizar` solo permite editar datos del cliente cuando el comprobante esta en estado `Pendiente`.
+  - Actualizacion 08/05/2026: `Sp_Comprobantes_Actualizar` ahora toma primero `CodigoDocumentoComprobante` del comprobante (01/03/RI) para validar reglas de documento; usa `TipoComprobante` solo como respaldo si el codigo no existe. Con esto se evita disparar validacion de Factura al editar boletas pendientes.
   - si el comprobante no esta pendiente, la UI y backend dejan el registro en solo lectura.
   - al grabar crear/editar comprobante, la aplicacion recarga el mismo registro (no regresa al listado).
   - en el listado de comprobantes se agrega accion `Ver` para visualizar el comprobante.
@@ -1059,7 +1064,9 @@
   - se agrega `Sp_Combos_TiposNotaComprobanteSunat` para poblar el combo de tipo de nota.
   - `Sp_Comprobantes_Crear` valida y crea NC/ND solo con comprobante referencia valido (Factura/Boleta aceptada SUNAT) y tipo de nota SUNAT activo.
   - al generar `NC (07)`, el comprobante referencia se mantiene activo; la reemision del comprobante principal se habilita por regla de negocio en `Sp_Comprobantes_Crear` cuando existe NC activa sobre el comprobante principal.
-  - `Sp_Comprobantes_ObtenerPorId`, `Sp_Comprobantes_Listar` y `Sp_Comprobantes_ObtenerVisualizacion` ahora soportan codigos `07/08` y datos de nota/referencia.
+  - Sp_Comprobantes_ObtenerPorId`r
+- Actualizacion 07/05/2026:
+  - Sp_Comprobantes_ObtenerVisualizacion corrige EsTributario para evaluarse por CodigoSunat ( 1, 3, 7, 8) y no por IDs fijos de TipoComprobante., `Sp_Comprobantes_Listar` y `Sp_Comprobantes_ObtenerVisualizacion` ahora soportan codigos `07/08` y datos de nota/referencia.
   - `Sp_Comprobantes_Listar` obtiene tipo/codigo/referencias desde `NegociosTiposDocumentoComprobante` + `TiposDocumentoComprobanteSuperMaestro` (sin mapeo rigido por Id), manteniendo comportamiento multi-negocio.
   - en columnas `Referencia` (listado de comprobantes y pagos), el prefijo del documento usa `TiposDocumentoComprobanteSuperMaestro.Abreviatura` (con fallback a `Nombre`).
   - en pagos y combos de reservas para comprobantes, la reserva se considera disponible para reemision cuando el comprobante principal activo tiene una NC activa asociada.
@@ -1294,3 +1301,4 @@
   - Sp_ConfiguracionClub_Obtener ahora devuelve Negocios.EnviarComprobanteAutomatico.
   - Sp_ConfiguracionClub_Actualizar persiste @EnviarComprobanteAutomatico.
   - Sp_ConfiguracionClub_ActualizarEmision tambien persiste @EnviarComprobanteAutomatico para mantener consistencia cuando se agregan/inactivan series desde la misma pantalla.
+

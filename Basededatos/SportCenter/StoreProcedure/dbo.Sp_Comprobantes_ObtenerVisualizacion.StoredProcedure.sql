@@ -7,6 +7,7 @@ GO
 -- Firma: Codex - 09/04/2026 | Obtiene datos completos para visualizar comprobante (PDF interno o URL proveedor para tributarios), incluyendo ubigeo de negocio y cliente.
 -- Firma: Codex - 11/04/2026 | Agrega soporte de codigos 07/08 para visualizacion de NC/ND.
 -- Firma: Codex - 05/05/2026 | URL de descarga prioriza campos dedicados URL PDF/XML/CDR.
+-- Firma: Codex - 07/05/2026 | Corrige EsTributario para usar CodigoSunat por negocio (IDs de TipoComprobante son dinamicos).
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Comprobantes_ObtenerVisualizacion]
     @NegocioId INT,
     @Id INT
@@ -35,7 +36,7 @@ BEGIN
                 WHEN d.CodigoSunat = '07' THEN N'Nota de Credito'
                 WHEN d.CodigoSunat = '08' THEN N'Nota de Debito'
             END AS TipoDocumentoNombre,
-            CAST(CASE WHEN ce.TipoComprobante IN (1,2,4,5) THEN 1 ELSE 0 END AS BIT) AS EsTributario,
+            CAST(CASE WHEN d.CodigoSunat IN (N'01', N'03', N'07', N'08') THEN 1 ELSE 0 END AS BIT) AS EsTributario,
             ce.Serie,
             ce.Numero,
             ce.FechaEmision,
