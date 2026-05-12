@@ -53,10 +53,10 @@ FOREIGN KEY([IdUsuarioRetado]) REFERENCES [dbo].[AspNetUsers] ([Id]);
 GO
 ALTER TABLE [dbo].[Desafio] CHECK CONSTRAINT [FK_Desafio_AspNetUsers_IdUsuarioRetado];
 GO
-ALTER TABLE [dbo].[Desafio]  WITH CHECK ADD CONSTRAINT [FK_Desafio_TiposDeporte_IdDeporte]
-FOREIGN KEY([IdDeporte]) REFERENCES [dbo].[TiposDeporte] ([Id]);
+ALTER TABLE [dbo].[Desafio]  WITH CHECK ADD CONSTRAINT [FK_Desafio_TiposDeporteSuperMaestro_IdDeporte]
+FOREIGN KEY([IdDeporte]) REFERENCES [dbo].[TiposDeporteSuperMaestro] ([Id]);
 GO
-ALTER TABLE [dbo].[Desafio] CHECK CONSTRAINT [FK_Desafio_TiposDeporte_IdDeporte];
+ALTER TABLE [dbo].[Desafio] CHECK CONSTRAINT [FK_Desafio_TiposDeporteSuperMaestro_IdDeporte];
 GO
 ALTER TABLE [dbo].[Desafio]  WITH CHECK ADD CONSTRAINT [FK_Desafio_NivelDesafio_IdNivel]
 FOREIGN KEY([IdNivel]) REFERENCES [dbo].[NivelDesafio] ([IdNivel]);

@@ -228,6 +228,36 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
         }
     }
 
+    public async Task<int> HomeReferencialesExternosCrearManualAsync(
+        string nombreComplejo,
+        int tipoDeporteSuperId,
+        string codigoUbigeo,
+        string? direccion,
+        string? telefonoContacto,
+        string? correoContacto,
+        decimal? latitudReferencia,
+        decimal? longitudReferencia,
+        string? googleMapsUrl,
+        string usuario)
+    {
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_Home_ReferencialesExternos_CrearManualAdmin", cn) { CommandType = CommandType.StoredProcedure };
+        AddParam(cmd, "@NombreComplejo", nombreComplejo?.Trim(), SqlDbType.NVarChar);
+        AddParam(cmd, "@TipoDeporteSuperId", tipoDeporteSuperId, SqlDbType.Int);
+        AddParam(cmd, "@CodigoUbigeo", codigoUbigeo?.Trim(), SqlDbType.Char);
+        AddParam(cmd, "@Direccion", string.IsNullOrWhiteSpace(direccion) ? null : direccion.Trim(), SqlDbType.NVarChar);
+        AddParam(cmd, "@TelefonoContacto", string.IsNullOrWhiteSpace(telefonoContacto) ? null : telefonoContacto.Trim(), SqlDbType.NVarChar);
+        AddParam(cmd, "@CorreoContacto", string.IsNullOrWhiteSpace(correoContacto) ? null : correoContacto.Trim(), SqlDbType.NVarChar);
+        AddParam(cmd, "@LatitudReferencia", latitudReferencia, SqlDbType.Decimal);
+        AddParam(cmd, "@LongitudReferencia", longitudReferencia, SqlDbType.Decimal);
+        AddParam(cmd, "@GoogleMapsUrl", string.IsNullOrWhiteSpace(googleMapsUrl) ? null : googleMapsUrl.Trim(), SqlDbType.NVarChar);
+        AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+
+        var result = await cmd.ExecuteScalarAsync();
+        return result is null || result == DBNull.Value ? 0 : Convert.ToInt32(result);
+    }
+
     public async Task<List<EspacioDisponibleViewModel>> HomeBuscarEspaciosDisponiblesAsync(
         DateOnly fecha,
         TimeOnly horaInicio,

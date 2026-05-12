@@ -167,3 +167,23 @@ public class DesafioMensajeCrearViewModel
     [StringLength(500, ErrorMessage = "El mensaje no puede superar los 500 caracteres.")]
     public string Mensaje { get; set; } = string.Empty;
 }
+
+public class DesafioEmailContextViewModel
+{
+    public int DesafioId { get; set; }
+    public string? CorreoRetado { get; set; }
+    public string NombreRetado { get; set; } = string.Empty;
+    public string EquipoRetador { get; set; } = string.Empty;
+    public string ContactoRetador { get; set; } = string.Empty;
+    public string UsuarioRetador { get; set; } = string.Empty;
+    public string? TelefonoRetador { get; set; }
+    public string Deporte { get; set; } = string.Empty;
+    public string Nivel { get; set; } = string.Empty;
+    public string Distrito { get; set; } = string.Empty;
+    public DateOnly FechaTentativa { get; set; }
+    public TimeOnly HoraTentativa { get; set; }
+    public string? CanchaSugerida { get; set; }
+    public string Modalidad { get; set; } = string.Empty;
+    public string? Mensaje { get; set; }
+    public string FormaPago { get; set; } = string.Empty;
+}

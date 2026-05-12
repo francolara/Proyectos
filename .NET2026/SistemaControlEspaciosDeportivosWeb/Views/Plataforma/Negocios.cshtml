@@ -1,4 +1,4 @@
-﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.PlataformaNegociosAdminViewModel
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.PlataformaNegociosAdminViewModel
 @{
     ViewData["Title"] = "Complejo deportivo";
 }
@@ -35,10 +35,10 @@
             </select>
         </div>
         <div class="col-md-3 col-lg-2 d-grid">
-            <button type="submit" class="btn btn-primary"><i class="bi bi-search me-1"></i>Buscar</button>
+            <button type="submit" class="btn btn-primary btn-accion-filtro"><i class="bi bi-search me-1"></i>Buscar</button>
         </div>
         <div class="col-md-3 col-lg-2 d-grid">
-            <a asp-action="Negocios" class="btn btn-outline-secondary">Limpiar</a>
+            <a asp-action="Negocios" class="btn btn-outline-secondary btn-cancelar">Limpiar</a>
         </div>
     </form>
 </section>
@@ -136,7 +136,7 @@
                                     <label class="small text-muted mb-0">Usuarios</label>
                                     <input type="number" min="1" max="999" name="usuariosPermitidos" value="@item.UsuariosPermitidos" class="form-control form-control-sm" style="max-width:95px;" />
                                     <div class="ms-2">
-                                        <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-save me-1"></i>Guardar</button>
+                                        <button type="submit" class="btn btn-sm btn-primary btn-grabar"><i class="bi bi-save me-1"></i>Guardar</button>
                                     </div>
                                 </form>
                             </td>

@@ -1,4 +1,4 @@
-﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.PagoReservaEditViewModel
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.PagoReservaEditViewModel
 @{
     ViewData["Title"] = $"Editar pagos reserva {Model.ReservaCodigo}";
     var totalPagos = Model.Pagos?.Count ?? 0;
@@ -71,7 +71,7 @@
         <div asp-validation-summary="All" class="alert alert-danger shadow-sm mb-3"></div>
 
         <section class="table-card mb-3">
-            <h2 class="section-title">Pagos registrados</h2>
+            <h2 class="section-title"><i class="bi bi-cash-stack me-1"></i>Pagos registrados</h2>
             @if (Model.Pagos is null || !Model.Pagos.Any())
             {
                 <div class="empty-state">
@@ -184,11 +184,11 @@
         <div class="sc-form-actions">
             @if (!soloLecturaComprobante)
             {
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-primary btn-grabar">
                     <i class="bi bi-check2-circle me-1"></i> Guardar cambios
                 </button>
             }
-            <a class="btn btn-outline-secondary" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Cancelar</a>
+            <a class="btn btn-outline-secondary btn-cancelar" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Cancelar</a>
         </div>
     </form>
 </div>
@@ -256,4 +256,3 @@
         })();
     </script>
 }
-

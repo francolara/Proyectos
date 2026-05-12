@@ -58,8 +58,7 @@
 
             <section class="profile-form-section">
                 <div class="section-heading">
-                    <span class="section-chip"><i class="bi bi-person-badge"></i>Perfil base</span>
-                    <h2>Datos personales</h2>
+                    <span class="section-chip"><i class="bi bi-person-badge"></i>Datos personales</span>
                     <p>Informacion principal del usuario para reservas y visualizacion publica del perfil.</p>
                 </div>
                 <div class="row g-3">
@@ -125,53 +124,9 @@
                 </div>
             </section>
 
-            <section class="profile-form-section profile-form-section-highlight">
-                <div class="section-heading">
-                    <span class="section-chip"><i class="bi bi-trophy"></i>Configuracion de desafios</span>
-                    <h2>Configuracion de desafios</h2>
-                    <p>Estos datos alimentan el modulo Desafios para que otros equipos te encuentren y te reten.</p>
-                </div>
-                <div class="row g-3">
-                    <div class="col-12">
-                        <div class="challenge-switch">
-                            <input asp-for="Perfil.BuscarDesafios" class="form-check-input" type="checkbox" />
-                            <div>
-                                <label asp-for="Perfil.BuscarDesafios" class="form-check-label fw-semibold">Buscar desafios</label>
-                                <div class="text-muted small">Permitir que otros equipos me encuentren y me desafien.</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Deporte</label>
-                        <select asp-for="Perfil.IdDeporteDesafio" asp-items="Model.Perfil.DeportesDesafio" class="form-select">
-                            <option value="">Selecciona</option>
-                        </select>
-                        <span asp-validation-for="Perfil.IdDeporteDesafio" class="text-danger"></span>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Nivel</label>
-                        <select asp-for="Perfil.IdNivelDesafio" asp-items="Model.Perfil.NivelesDesafio" class="form-select">
-                            <option value="">Selecciona</option>
-                        </select>
-                        <span asp-validation-for="Perfil.IdNivelDesafio" class="text-danger"></span>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Nombre de equipo</label>
-                        <input asp-for="Perfil.NombreEquipo" class="form-control" maxlength="120" />
-                        <span asp-validation-for="Perfil.NombreEquipo" class="text-danger"></span>
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label">Observacion</label>
-                        <textarea asp-for="Perfil.ObservacionDesafio" class="form-control" rows="3" maxlength="500" placeholder="Solo amistosos, jugamos futbol 7, disponible fines de semana..."></textarea>
-                        <span asp-validation-for="Perfil.ObservacionDesafio" class="text-danger"></span>
-                    </div>
-                </div>
-            </section>
-
             <section class="profile-form-section">
                 <div class="section-heading">
                     <span class="section-chip"><i class="bi bi-people"></i>Informacion del equipo</span>
-                    <h2>Informacion del equipo</h2>
                     <p>Descripcion general del equipo, separada de las especificaciones puntuales del desafio.</p>
                 </div>
                 <div class="row g-3">
@@ -219,8 +174,50 @@
                 }
             </section>
 
+            <section class="profile-form-section profile-form-section-highlight">
+                <div class="section-heading">
+                    <span class="section-chip"><i class="bi bi-trophy"></i>Configuracion de desafios</span>
+                    <p>Estos datos alimentan el modulo Desafios para que otros equipos te encuentren y te reten.</p>
+                </div>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="challenge-switch">
+                            <input asp-for="Perfil.BuscarDesafios" class="form-check-input" type="checkbox" />
+                            <div>
+                                <label asp-for="Perfil.BuscarDesafios" class="form-check-label fw-semibold">Buscar desafios</label>
+                                <div class="text-muted small">Permitir que otros equipos me encuentren y me desafien.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Deporte</label>
+                        <select asp-for="Perfil.IdDeporteDesafio" asp-items="Model.Perfil.DeportesDesafio" class="form-select">
+                            <option value="">Selecciona</option>
+                        </select>
+                        <span asp-validation-for="Perfil.IdDeporteDesafio" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Nivel</label>
+                        <select asp-for="Perfil.IdNivelDesafio" asp-items="Model.Perfil.NivelesDesafio" class="form-select">
+                            <option value="">Selecciona</option>
+                        </select>
+                        <span asp-validation-for="Perfil.IdNivelDesafio" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Nombre de equipo</label>
+                        <input asp-for="Perfil.NombreEquipo" class="form-control" maxlength="120" />
+                        <span asp-validation-for="Perfil.NombreEquipo" class="text-danger"></span>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Observacion</label>
+                        <textarea asp-for="Perfil.ObservacionDesafio" class="form-control" rows="3" maxlength="500" placeholder="Solo amistosos, jugamos futbol 7, disponible fines de semana..."></textarea>
+                        <span asp-validation-for="Perfil.ObservacionDesafio" class="text-danger"></span>
+                    </div>
+                </div>
+            </section>
+
             <div class="mt-3 d-flex justify-content-end">
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="auth-nav-mini auth-nav-mini-solid">
                     <i class="bi bi-save me-1"></i>Guardar perfil publico
                 </button>
             </div>
@@ -230,7 +227,7 @@
     @if (tabReservas)
     {
         <section class="table-card profile-reservas-card">
-            <h2 class="section-title"><i class="bi bi-calendar2-check me-1"></i>Historial de reservas</h2>
+            <span class="section-chip"><i class="bi bi-calendar2-check"></i>Historial de reservas</span>
             @if (Model.TotalReservas > 0)
             {
                 var inicio = ((Model.PaginaReservas - 1) * Model.TamanoPaginaReservas) + 1;
@@ -391,12 +388,25 @@
             border: 1px solid #d8e3f5;
             border-radius: 18px;
             padding: 1rem;
-            background: #fff;
+            background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
             margin-bottom: 1rem;
+            box-shadow: 0 12px 24px rgba(18, 54, 111, .08);
         }
         .profile-form-section-highlight {
             background: linear-gradient(180deg, #f7fbff 0%, #eef7ff 100%);
             border-color: #bdd8ff;
+            box-shadow: 0 12px 24px rgba(31, 88, 173, .12);
+        }
+        .profile-form-section:nth-of-type(1) {
+            border-left: 5px solid #2f73d9;
+            box-shadow: 0 12px 24px rgba(47, 115, 217, .12);
+        }
+        .profile-form-section:nth-of-type(2) {
+            border-left: 5px solid #2a9958;
+            box-shadow: 0 12px 24px rgba(42, 153, 88, .12);
+        }
+        .profile-form-section.profile-form-section-highlight {
+            border-left: 5px solid #d08a1b;
         }
         .section-heading {
             margin-bottom: 1rem;
@@ -415,16 +425,21 @@
         .section-chip {
             display: inline-flex;
             align-items: center;
-            gap: .35rem;
+            gap: .5rem;
             border-radius: 999px;
-            padding: .3rem .7rem;
-            background: #eaf2ff;
-            color: #1c4fa4;
-            font-size: .72rem;
-            font-weight: 800;
+            padding: .5rem .95rem;
+            background: linear-gradient(180deg, #eaf3ff 0%, #d9e9ff 100%);
+            color: #174892;
+            font-size: .84rem;
+            font-weight: 900;
             text-transform: uppercase;
-            letter-spacing: .04em;
-            margin-bottom: .55rem;
+            letter-spacing: .05em;
+            margin-bottom: .65rem;
+            border: 1px solid #b9d2fb;
+            box-shadow: 0 6px 14px rgba(28, 79, 164, .14);
+        }
+        .section-chip i {
+            font-size: .9rem;
         }
         .profile-tabs {
             display: flex;
@@ -674,6 +689,7 @@
         }
         .profile-reserva-item {
             border: 1px solid #dbe5f6;
+            border-left: 4px dashed #2f73d9;
             border-radius: 14px;
             background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
             box-shadow: 0 10px 22px rgba(15, 23, 42, .06);
@@ -681,6 +697,36 @@
             display: flex;
             flex-direction: column;
             gap: .8rem;
+        }
+        .profile-reserva-item.is-reservada {
+            border-color: #f2d295;
+            border-top: 4px solid #d08a1b;
+            background: linear-gradient(180deg, #fffaf1 0%, #ffffff 70%);
+            box-shadow: 0 12px 24px rgba(208, 138, 27, .15);
+        }
+        .profile-reserva-item.is-confirmada {
+            border-color: #bdd4ff;
+            border-top: 4px solid #2f73d9;
+            background: linear-gradient(180deg, #f4f9ff 0%, #ffffff 70%);
+            box-shadow: 0 12px 24px rgba(47, 115, 217, .14);
+        }
+        .profile-reserva-item.is-pagada,
+        .profile-reserva-item.is-completada {
+            border-color: #a9dfb9;
+            border-top: 4px solid #2a9958;
+            background: linear-gradient(180deg, #f3fcf6 0%, #ffffff 70%);
+            box-shadow: 0 12px 24px rgba(42, 153, 88, .14);
+        }
+        .profile-reserva-item.is-cancelada,
+        .profile-reserva-item.is-noshow {
+            border-color: #f0b8b8;
+            border-top: 4px solid #be4545;
+            background: linear-gradient(180deg, #fff6f6 0%, #ffffff 70%);
+            box-shadow: 0 12px 24px rgba(190, 69, 69, .12);
+        }
+        .profile-reserva-item.is-default {
+            border-color: #dbe5f6;
+            border-top: 4px solid #6d83a8;
         }
         .profile-reserva-head {
             display: flex;

@@ -27,7 +27,7 @@
 <ul class="navbar-nav">
 @if (SignInManager.IsSignedIn(User))
 {
-    <li class="nav-item d-flex align-items-center gap-2">
+    <li class="nav-item d-flex align-items-center gap-2 sc-public-auth-actions">
         @if (mostrarPanel)
         {
             <a class="auth-nav-mini auth-nav-mini-solid" asp-controller="Panel" asp-action="Index">
@@ -42,7 +42,7 @@
               asp-page="/Account/Logout"
               asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
             @Html.AntiForgeryToken()
-            <button type="submit" class="auth-nav-mini auth-nav-mini-outline">
+            <button type="submit" class="auth-nav-mini auth-nav-mini-outline auth-nav-mini-danger">
                 <i class="bi bi-box-arrow-right"></i><span>Cerrar sesion</span>
             </button>
         </form>
@@ -50,7 +50,7 @@
 }
 else
 {
-    <li class="nav-item d-flex align-items-center gap-2">
+    <li class="nav-item d-flex align-items-center gap-2 sc-public-auth-actions">
         <a class="auth-nav-mini auth-nav-mini-outline" asp-area="Identity" asp-page="/Account/Login">
             <i class="bi bi-box-arrow-in-right"></i><span>Iniciar sesion</span>
         </a>

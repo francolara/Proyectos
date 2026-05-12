@@ -1,4 +1,4 @@
-﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobanteVisualizacionViewModel
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobanteVisualizacionViewModel
 @{
     ViewData["Title"] = "Vista previa de comprobante";
     var estado = ViewBag.EstadoComprobante is SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico ec
@@ -152,7 +152,7 @@
     </section>
 
     <section class="table-card mb-3">
-        <h2 class="section-title">Datos del emisor y cliente</h2>
+        <h2 class="section-title"><i class="bi bi-people me-1"></i>Datos del emisor y cliente</h2>
         <div class="row g-2 px-3 pb-3">
             <div class="col-lg-6">
                 <div class="info-block">
@@ -181,7 +181,7 @@
     </section>
 
     <section class="table-card mb-3">
-        <h2 class="section-title">Detalle del comprobante</h2>
+        <h2 class="section-title"><i class="bi bi-file-earmark-text me-1"></i>Detalle del comprobante</h2>
         <div class="px-3 pb-3">
             <article class="detalle-item-card">
                 <header>
@@ -198,7 +198,7 @@
     </section>
 
     <section class="table-card mb-3">
-        <h2 class="section-title">Resumen de importes</h2>
+        <h2 class="section-title"><i class="bi bi-calculator me-1"></i>Resumen de importes</h2>
         <div class="row g-2 px-3 pb-3 justify-content-end">
             @if (Model.EsTributario)
             {
@@ -450,4 +450,3 @@
 
     }
 </style>
-

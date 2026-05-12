@@ -125,7 +125,7 @@
             </select>
         </div>
         <div class="col-md-1 d-grid">
-            <button type="submit" class="btn btn-outline-primary"><i class="bi bi-search me-1"></i> Buscar</button>
+            <button type="submit" class="btn btn-outline-primary btn-accion-filtro"><i class="bi bi-search me-1"></i> Buscar</button>
         </div>
     </div>
 </form>
@@ -254,10 +254,10 @@
                 <div class="col-md-3">
                     <label class="form-label d-block mb-1">Seleccion rapida</label>
                     <div class="d-flex flex-wrap gap-2">
-                        <button type="submit" class="btn btn-sm btn-outline-primary" name="listadoPreset" value="hoy">Hoy</button>
-                        <button type="submit" class="btn btn-sm btn-outline-primary" name="listadoPreset" value="7d">7 dias</button>
-                        <button type="submit" class="btn btn-sm btn-outline-primary" name="listadoPreset" value="30d">30 dias</button>
-                        <button type="submit" class="btn btn-sm btn-outline-primary" name="listadoPreset" value="mes">Mes actual</button>
+                        <button type="submit" class="btn btn-sm btn-outline-primary btn-accion-filtro" name="listadoPreset" value="hoy">Hoy</button>
+                        <button type="submit" class="btn btn-sm btn-outline-primary btn-accion-filtro" name="listadoPreset" value="7d">7 dias</button>
+                        <button type="submit" class="btn btn-sm btn-outline-primary btn-accion-filtro" name="listadoPreset" value="30d">30 dias</button>
+                        <button type="submit" class="btn btn-sm btn-outline-primary btn-accion-filtro" name="listadoPreset" value="mes">Mes actual</button>
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -275,7 +275,7 @@
                     </div>
                 </div>
                 <div class="col-md-1 d-grid">
-                    <button type="submit" class="btn btn-outline-primary"><i class="bi bi-search me-1"></i> Buscar</button>
+                    <button type="submit" class="btn btn-outline-primary btn-accion-filtro"><i class="bi bi-search me-1"></i> Buscar</button>
                 </div>
             </div>
         </form>
@@ -358,7 +358,7 @@
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="negocioId" value="@Model.NegocioId" />
                                             <input type="hidden" name="id" value="@item.Id" />
-                                            <button type="submit" class="btn btn-sm sc-action-btn sc-action-delete">
+                                            <button type="submit" class="btn btn-sm sc-action-btn sc-action-delete btn-cancelar">
                                                 <i class="bi bi-trash3"></i> Cancelar
                                             </button>
                                         </form>
@@ -516,10 +516,10 @@ else
                 <div class="col-md-3">
                     <label class="form-label d-block mb-1">Seleccion rapida</label>
                     <div class="d-flex flex-wrap gap-2">
-                        <button type="submit" class="btn btn-sm btn-outline-primary" name="listadoPreset" value="hoy">Hoy</button>
-                        <button type="submit" class="btn btn-sm btn-outline-primary" name="listadoPreset" value="7d">7 dias</button>
-                        <button type="submit" class="btn btn-sm btn-outline-primary" name="listadoPreset" value="30d">30 dias</button>
-                        <button type="submit" class="btn btn-sm btn-outline-primary" name="listadoPreset" value="mes">Mes actual</button>
+                        <button type="submit" class="btn btn-sm btn-outline-primary btn-accion-filtro" name="listadoPreset" value="hoy">Hoy</button>
+                        <button type="submit" class="btn btn-sm btn-outline-primary btn-accion-filtro" name="listadoPreset" value="7d">7 dias</button>
+                        <button type="submit" class="btn btn-sm btn-outline-primary btn-accion-filtro" name="listadoPreset" value="30d">30 dias</button>
+                        <button type="submit" class="btn btn-sm btn-outline-primary btn-accion-filtro" name="listadoPreset" value="mes">Mes actual</button>
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -537,7 +537,7 @@ else
                     </div>
                 </div>
                 <div class="col-md-1 d-grid">
-                    <button type="submit" class="btn btn-outline-primary"><i class="bi bi-search me-1"></i> Buscar</button>
+                    <button type="submit" class="btn btn-outline-primary btn-accion-filtro"><i class="bi bi-search me-1"></i> Buscar</button>
                 </div>
             </div>
         </form>
@@ -620,7 +620,7 @@ else
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="negocioId" value="@Model.NegocioId" />
                                             <input type="hidden" name="id" value="@item.Id" />
-                                            <button type="submit" class="btn btn-sm sc-action-btn sc-action-delete">
+                                            <button type="submit" class="btn btn-sm sc-action-btn sc-action-delete btn-cancelar">
                                                 <i class="bi bi-trash3"></i> Cancelar
                                             </button>
                                         </form>
@@ -829,7 +829,7 @@ else
                             <input type="date" class="form-control" id="modalFechaPago" name="FechaPago" value="@DateTime.Today.ToString("yyyy-MM-dd")" max="@DateTime.Today.ToString("yyyy-MM-dd")" disabled />
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">N° Operación</label>
+                            <label class="form-label">Nro Operacion</label>
                             <input type="text" class="form-control" id="modalNumeroOperacion" name="NumeroOperacion" maxlength="50" placeholder="Opcional" autocomplete="off" disabled />
                         </div>
                         <div class="col-md-6">
@@ -845,8 +845,8 @@ else
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary" id="btnGuardarReservaModal">
+                    <button type="button" class="btn btn-outline-secondary btn-cancelar" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-grabar" id="btnGuardarReservaModal">
                         <i class="bi bi-check2-circle me-1"></i> Guardar
                     </button>
                 </div>
@@ -910,8 +910,8 @@ else
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary" id="clienteRapidoGuardarBtn">Guardar cliente</button>
+                    <button type="button" class="btn btn-outline-secondary btn-cancelar" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-grabar" id="clienteRapidoGuardarBtn">Guardar cliente</button>
                 </div>
             </form>
             </div>
@@ -2325,7 +2325,7 @@ else
                     info?.revert?.();
                     limpiarArrastreVisual();
                     const mensaje = err?.name === 'AbortError'
-                        ? 'La validación tardó demasiado. Se restauró la reserva a su posición original.'
+                        ? 'La validacion tardo demasiado. Se restauro la reserva a su posicion original.'
                         : (err?.message || mensajeErrorPorDefecto);
                     notificarCalendario(mensaje, 'warning');
                 } finally {

@@ -209,6 +209,11 @@ public class RegisterModel(
         ModelState.Clear();
         ModelState.ClearValidationState(nameof(Club));
 
+        // Campo legado del captcha interno: en este flujo se valida con Turnstile.
+        // Se completa para evitar error generico "Este campo es obligatorio." sin campo visible.
+        if (string.IsNullOrWhiteSpace(Club.CaptchaCodigo))
+            Club.CaptchaCodigo = "TURNSTILE";
+
         if (!TryValidateModel(Club, nameof(Club)))
         {
             logger.LogWarning("Registro club invalido. Detalle: {Detalle}",
@@ -256,7 +261,8 @@ public class RegisterModel(
             {
                 UserName = correo,
                 Email = correo,
-                Nombres = (Club.NombreContacto ?? string.Empty).Trim()
+                Nombres = (Club.NombreContacto ?? string.Empty).Trim(),
+                PhoneNumber = string.IsNullOrWhiteSpace(Club.Telefono) ? null : Club.Telefono.Trim()
             };
 
             var resultadoCreacion = await userManager.CreateAsync(nuevoUsuario, Club.Password);
@@ -270,6 +276,24 @@ public class RegisterModel(
                 await CargarCombosUbigeoAsync();
                 await CargarBannerLateralAsync();
                 return Page();
+            }
+
+            var (nombresPerfilClub, apellidosPerfilClub) = SepararNombreCompleto(Club.NombreContacto);
+            try
+            {
+                await spService.UsuariosPublicosGuardarPerfilAsync(new UsuarioPublicoPerfilViewModel
+                {
+                    UsuarioId = nuevoUsuario.Id,
+                    TipoDocumento = "0",
+                    Nombres = nombresPerfilClub,
+                    Apellidos = apellidosPerfilClub,
+                    Telefono = string.IsNullOrWhiteSpace(Club.Telefono) ? null : Club.Telefono.Trim(),
+                    Correo = correo
+                }, correo);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "No se pudo sincronizar el perfil publico inicial para club {Correo}.", correo);
             }
 
             string codigoSolicitud;
@@ -433,7 +457,12 @@ public class RegisterModel(
 
     private async Task<bool> ValidarTurnstileAsync()
     {
-        var token = (Request.Form["cf-turnstile-response"].ToString() ?? string.Empty).Trim();
+        var valoresToken = Request.Form["cf-turnstile-response"];
+        var token = valoresToken
+            .SelectMany(v => (v ?? string.Empty)
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            .LastOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty;
+
         if (string.IsNullOrWhiteSpace(token))
         {
             ModelState.AddModelError(string.Empty, "Completa la verificacion de seguridad.");
@@ -445,7 +474,10 @@ public class RegisterModel(
         if (resultado.Success)
             return true;
 
-        logger.LogWarning("Turnstile rechazo registro. Errores: {Errores}", string.Join(",", resultado.ErrorCodes ?? Array.Empty<string>()));
+        logger.LogWarning(
+            "Turnstile rechazo registro. Errores: {Errores}. TokensRecibidos: {TotalTokens}",
+            string.Join(",", resultado.ErrorCodes ?? Array.Empty<string>()),
+            valoresToken.Count);
         ModelState.AddModelError(string.Empty, "No se pudo validar la verificacion de seguridad. Intenta nuevamente.");
         return false;
     }

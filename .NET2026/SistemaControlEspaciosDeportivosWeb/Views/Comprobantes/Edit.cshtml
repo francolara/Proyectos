@@ -1,4 +1,4 @@
-﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobanteFormViewModel
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobanteFormViewModel
 @{
     ViewData["Title"] = "Editar comprobante";
     var puedeEditarCliente = Model.PuedeEditarDatosCliente;
@@ -178,10 +178,10 @@
         @if (puedeEditarCliente)
         {
             <div class="sc-form-actions">
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-primary btn-grabar">
                     <i class="bi bi-check2-circle me-1"></i> Guardar comprobante
                 </button>
-                <a class="btn btn-outline-secondary" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Cancelar</a>
+                <a class="btn btn-outline-secondary btn-cancelar" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Cancelar</a>
             </div>
         }
         else

@@ -12,6 +12,7 @@ public interface ISportCenterStoredProcedureService
     Task<bool> HomeReferencialesExternosInactivarAsync(int id, string usuario);
     Task<bool> HomeReferencialesExternosActivarAsync(int id, string usuario);
     Task<bool> HomeReferencialesExternosActualizarAsync(int id, string nombreComplejo, string? telefonoContacto, int tipoDeporteSuperId, string? direccion, string codigoUbigeo, string usuario);
+    Task<int> HomeReferencialesExternosCrearManualAsync(string nombreComplejo, int tipoDeporteSuperId, string codigoUbigeo, string? direccion, string? telefonoContacto, string? correoContacto, decimal? latitudReferencia, decimal? longitudReferencia, string? googleMapsUrl, string usuario);
     Task<List<WebBannerPublicoViewModel>> HomeListarBannersPublicosAsync();
     Task<List<PopupPromocionPublicoViewModel>> HomeListarPopupPromocionesActivasAsync();
     Task<WebBannerPublicoViewModel?> WebBannersObtenerFijoPorTipoAsync(int tipoBanner);
@@ -47,6 +48,7 @@ public interface ISportCenterStoredProcedureService
     Task<(List<DesafioListadoItemViewModel> Items, int TotalRegistros)> DesafiosHistorialListarAsync(string usuarioId, int pagina = 1, int tamanoPagina = 4);
     Task<List<DesafioMensajeItemViewModel>> DesafiosMensajesListarAsync(string usuarioId, int? desafioId = null);
     Task<int> DesafiosCrearAsync(string usuarioId, DesafioCrearViewModel model, string usuario);
+    Task<DesafioEmailContextViewModel?> DesafiosObtenerContextoEmailAsync(int desafioId);
     Task<int> DesafiosMensajeCrearAsync(string usuarioId, DesafioMensajeCrearViewModel model, string usuario);
     Task<bool> DesafiosCancelarAsync(int desafioId, string usuarioId, string usuario);
     Task<bool> DesafiosResponderAsync(int desafioId, string usuarioId, string estado, string usuario);

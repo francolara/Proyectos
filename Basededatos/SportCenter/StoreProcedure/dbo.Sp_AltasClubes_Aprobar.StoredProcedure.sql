@@ -7,7 +7,7 @@ CREATE OR ALTER PROCEDURE dbo.Sp_AltasClubes_Aprobar
     @Id INT,
     @Usuario NVARCHAR(200),
     @ComentarioGestion NVARCHAR(300) = NULL,
-    @DiasPrueba INT = 30
+    @DiasPrueba INT = 7
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -17,7 +17,7 @@ BEGIN
         DECLARE @Hoy DATE = CAST(SYSUTCDATETIME() AS DATE);
 
         IF @DiasPrueba IS NULL OR @DiasPrueba <= 0
-            SET @DiasPrueba = 30;
+            SET @DiasPrueba = 7;
 
         SELECT
             @Correo = ac.Correo,
@@ -37,8 +37,8 @@ BEGIN
 
         BEGIN TRANSACTION;
 
-        INSERT INTO dbo.Negocios (NombreComercial, RazonSocial, DocumentoFiscal, Activo, FechaRegistro)
-        VALUES (@NombreClub, NULL, NULL, 1, SYSUTCDATETIME());
+        INSERT INTO dbo.Negocios (NombreComercial, RazonSocial, DocumentoFiscal, Activo, FechaRegistro, MonedaId)
+        VALUES (@NombreClub, NULL, NULL, 1, SYSUTCDATETIME(), NULL);
         SET @NegocioId = SCOPE_IDENTITY();
 
         INSERT INTO dbo.Sedes (NegocioId, Nombre, Direccion, Telefono, Activo, FechaCreacion, UsuarioCreacion)

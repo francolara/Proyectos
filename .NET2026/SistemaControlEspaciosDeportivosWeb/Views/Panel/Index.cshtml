@@ -66,13 +66,19 @@
                     <h1>Dashboard ejecutivo</h1>
                     <p>Control operativo y comercial con filtros globales en tiempo real.</p>
                 </div>
-                <div class="sc-dash-negocio-card sc-dash-negocio-card-inline" aria-readonly="true">
-                    <div class="sc-dash-negocio-card-head">
+                <div class="sc-dash-negocio-card sc-dash-negocio-card-inline sc-dash-negocio-card--focus" aria-readonly="true">
+                    <div class="sc-dash-negocio-card-focus-avatar" aria-hidden="true">
                         <i class="bi bi-building"></i>
-                        <span>Complejo Deportivo</span>
                     </div>
-                    <div class="sc-dash-negocio-card-name">@negocioActualTexto</div>
-                    <div class="sc-dash-negocio-card-id">ID: @Model.NegocioSeleccionadoId</div>
+                    <div class="sc-dash-negocio-card-focus-body">
+                        <div class="sc-dash-negocio-card-head">
+                            <span>Complejo deportivo</span>
+                        </div>
+                        <div class="sc-dash-negocio-card-name">@negocioActualTexto</div>
+                        <div class="sc-dash-negocio-card-focus-note">
+                            <span class="sc-dash-negocio-card-focus-idchip">ID #@Model.NegocioSeleccionadoId</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -106,7 +112,7 @@
                     <input id="fechaHasta" name="fechaHasta" type="date" class="form-control" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
                 </div>
                 <div class="sc-dash-filter-actions">
-                    <button type="submit" class="btn btn-primary">Aplicar</button>
+                    <button type="submit" class="btn btn-primary btn-accion-filtro">Aplicar</button>
                 </div>
             </form>
         </section>
@@ -165,7 +171,7 @@
         <section class="sc-dash-grid">
             <article class="sc-dash-panel">
                 <div class="sc-dash-panel-head">
-                    <h3>Ingresos por dia</h3>
+                    <h3><i class="bi bi-graph-up-arrow me-1"></i>Ingresos por dia</h3>
                     <p>Cada barra representa monto cobrado (S/) por fecha del rango.</p>
                 </div>
                 @if (Model.SerieIngresosPorDia.Any())
@@ -191,7 +197,7 @@
 
             <article class="sc-dash-panel">
                 <div class="sc-dash-panel-head">
-                    <h3>Reservas por dia</h3>
+                    <h3><i class="bi bi-calendar-check me-1"></i>Reservas por dia</h3>
                     <p>Conteo diario para evaluar ritmo operativo.</p>
                 </div>
                 @if (Model.SerieReservasPorDia.Any())
@@ -220,7 +226,7 @@
         <section class="sc-dash-grid">
             <article class="sc-dash-panel">
                 <div class="sc-dash-panel-head">
-                    <h3>Top espacios por cobro</h3>
+                    <h3><i class="bi bi-trophy me-1"></i>Top espacios por cobro</h3>
                     <p>Tabla accionable por sede y espacio.</p>
                 </div>
                 @if (Model.TopEspacios.Any())
@@ -263,7 +269,7 @@
 
             <article class="sc-dash-panel">
                 <div class="sc-dash-panel-head">
-                    <h3>Salud operativa</h3>
+                    <h3><i class="bi bi-heart-pulse me-1"></i>Salud operativa</h3>
                     <p>Variables clave para el turno actual.</p>
                 </div>
                 <div class="sc-dash-health-list">
@@ -294,7 +300,7 @@
         <section class="sc-dash-grid">
             <article class="sc-dash-panel">
                 <div class="sc-dash-panel-head">
-                    <h3>Reservas por confirmar (proximas 48h)</h3>
+                    <h3><i class="bi bi-hourglass-split me-1"></i>Reservas por confirmar (proximas 48h)</h3>
                     <p>Acciones inmediatas para no perder ocupacion.</p>
                 </div>
                 @if (Model.ReservasPendientesConfirmacion.Any())
@@ -337,7 +343,7 @@
 
             <article class="sc-dash-panel">
                 <div class="sc-dash-panel-head">
-                    <h3>Reservas con saldo pendiente</h3>
+                    <h3><i class="bi bi-cash-coin me-1"></i>Reservas con saldo pendiente</h3>
                     <p>Prioriza cobranza y cierre de caja.</p>
                 </div>
                 @if (Model.ReservasConSaldoPendiente.Any())
@@ -364,7 +370,9 @@
                                     <td class="text-end">@Model.MonedaSimbolo @item.MontoTotal.ToString("N2")</td>
                                     <td class="text-end">@Model.MonedaSimbolo @item.SaldoPendiente.ToString("N2")</td>
                                     <td class="text-end">
-                                        <a class="btn btn-sm btn-outline-success" href="@Url.Action("Edit", "Pagos", new { id = item.ReservaId, negocioId = Model.NegocioSeleccionadoId })">Cobrar</a>
+                                        <a class="btn btn-sm btn-cobrar" href="@Url.Action("Edit", "Pagos", new { id = item.ReservaId, negocioId = Model.NegocioSeleccionadoId })">
+                                            <i class="bi bi-cash-coin me-1"></i>Cobrar
+                                        </a>
                                     </td>
                                 </tr>
                             }
@@ -444,8 +452,8 @@
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-primary" id="dashModalGuardarBtn">Guardar reserva</button>
+                            <button type="button" class="btn btn-outline-secondary btn-cancelar" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary btn-grabar" id="dashModalGuardarBtn">Guardar reserva</button>
                         </div>
                     </form>
                 </div>
@@ -690,4 +698,3 @@
         })();
     </script>
 }
-

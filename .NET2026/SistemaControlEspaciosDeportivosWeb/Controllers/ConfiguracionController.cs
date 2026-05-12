@@ -346,10 +346,10 @@ public class ConfiguracionController(
             return;
         }
 
-        if (model.MinutosCancelacionNoConfirmada.Value < 5 || model.MinutosCancelacionNoConfirmada.Value > 1440)
+        if (model.MinutosCancelacionNoConfirmada.Value <= 0)
         {
             ModelState.AddModelError(nameof(model.MinutosCancelacionNoConfirmada),
-                "El tiempo de cancelacion automatica debe estar entre 5 y 1440 minutos.");
+                "El tiempo de cancelacion automatica debe ser mayor a 0 minutos.");
         }
     }
 

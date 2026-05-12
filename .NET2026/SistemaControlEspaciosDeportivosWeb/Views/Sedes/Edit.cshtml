@@ -1,4 +1,4 @@
-﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.SedeFormViewModel
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.SedeFormViewModel
 @inject IConfiguration Configuration
 @{
     ViewData["Title"] = "Editar sede";
@@ -238,7 +238,7 @@
                         <label class="form-label">Agregar fecha</label>
                         <div class="input-group">
                             <input id="fechaNoLaborableInput" type="date" class="form-control" />
-                            <button id="btnAgregarFechaNoLaborable" type="button" class="btn btn-outline-secondary">Agregar</button>
+                            <button id="btnAgregarFechaNoLaborable" type="button" class="btn btn-outline-secondary btn-accion-filtro">Agregar</button>
                         </div>
                     </div>
                     <div class="col-12">
@@ -388,10 +388,10 @@
         </section>
 
         <div class="sc-form-actions">
-            <button type="submit" class="btn btn-primary">
+            <button type="submit" class="btn btn-primary btn-grabar">
                 <i class="bi bi-check2-circle me-1"></i> Guardar cambios
             </button>
-            <a class="btn btn-outline-secondary" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Cancelar</a>
+            <a class="btn btn-outline-secondary btn-cancelar" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Cancelar</a>
         </div>
     </form>
 </div>

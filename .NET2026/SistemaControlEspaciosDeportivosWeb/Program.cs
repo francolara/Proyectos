@@ -233,6 +233,7 @@ builder.Services.AddScoped<ISedeImagenStorageService, R2SedeImagenStorageService
 builder.Services.AddScoped<IAccountEmailService, AccountEmailService>();
 builder.Services.AddScoped<IClubRegistrationNotificationService, ClubRegistrationNotificationService>();
 builder.Services.AddScoped<IReservationEmailNotificationService, ReservationEmailNotificationService>();
+builder.Services.AddScoped<IDesafioEmailNotificationService, DesafioEmailNotificationService>();
 builder.Services.AddHostedService<ReservaAutomationHostedService>();
 
 var app = builder.Build();
@@ -290,4 +291,3 @@ app.MapRazorPages();
 await IdentitySeeder.SeedRolesAsync(app.Services);
 
 app.Run();
-

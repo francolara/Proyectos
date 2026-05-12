@@ -1,4 +1,4 @@
-﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobanteFormViewModel
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobanteFormViewModel
 @{
     var esNotaCredito = string.Equals(Model.TipoNota, "NC", StringComparison.OrdinalIgnoreCase);
     var titulo = esNotaCredito ? "Generar nota de credito" : "Generar nota de debito";
@@ -183,10 +183,10 @@
         </section>
 
         <div class="sc-form-actions">
-            <button type="submit" class="btn btn-primary">
+            <button type="submit" class="btn btn-primary btn-grabar">
                 <i class="bi bi-check2-circle me-1"></i> Guardar @(esNotaCredito ? "nota de credito" : "nota de debito")
             </button>
-            <a class="btn btn-outline-secondary" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Cancelar</a>
+            <a class="btn btn-outline-secondary btn-cancelar" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Cancelar</a>
         </div>
     </form>
 </div>

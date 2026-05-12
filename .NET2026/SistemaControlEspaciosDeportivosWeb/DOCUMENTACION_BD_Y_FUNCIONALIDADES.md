@@ -1302,3 +1302,15 @@
   - Sp_ConfiguracionClub_Actualizar persiste @EnviarComprobanteAutomatico.
   - Sp_ConfiguracionClub_ActualizarEmision tambien persiste @EnviarComprobanteAutomatico para mantener consistencia cuando se agregan/inactivan series desde la misma pantalla.
 
+## Actualizacion 11/05/2026 - Desafios (deporte global)
+- Se corrige de raiz el modelo de desafios para usar catalogo global de deportes.
+- UsuariosPublicosPerfil.IdDeporteDesafio ahora referencia TiposDeporteSuperMaestro.Id y ya no TiposDeporte.Id.
+- Desafio.IdDeporte ahora referencia TiposDeporteSuperMaestro.Id y ya no TiposDeporte.Id.
+- SP ajustados: Sp_UsuariosPublicos_GuardarPerfil, Sp_Desafios_BuscarRivales, Sp_Desafios_Listar, Sp_Desafios_Crear.
+- Script de migracion: Basededatos/SportCenter/Script/20260511_Desafios_DeporteSuperMaestro.sql.
+
+- Se agrega Sp_Desafios_ObtenerContextoEmail para centralizar datos del correo de 'Desafio recibido' (correo de retado, datos del desafiante y detalle del desafio).
+## Referenciales Externos - Alta Manual (12/05/2026)
+- Nuevo stored procedure: dbo.Sp_Home_ReferencialesExternos_CrearManualAdmin.
+- Permite crear referenciales externos manuales desde Super Admin con: NombreComplejo, TipoDeporteSuperId, CodigoUbigeo, Direccion, TelefonoContacto, CorreoContacto, LatitudReferencia, LongitudReferencia, GoogleMapsUrl.
+- Convencion de origen: GooglePlaceId = NULL identifica registros manuales.

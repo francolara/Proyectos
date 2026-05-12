@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Globalization;
 using System.Net;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
@@ -395,6 +396,95 @@ public class PlataformaController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ReferencialesExternosCrearManual(
+        string nombreComplejo,
+        int tipoDeporteSuperId,
+        string codigoDepartamento,
+        string codigoProvincia,
+        string codigoUbigeo,
+        string? direccion,
+        string? telefonoContacto,
+        string? correoContacto,
+        string? latitudReferencia,
+        string? longitudReferencia,
+        string? buscarNombre = null,
+        string? filtroCodigoDepartamento = null,
+        string? filtroCodigoProvincia = null,
+        string? filtroCodigoUbigeo = null,
+        bool incluirInactivos = false,
+        int paginaListado = 1)
+    {
+        ViewData["PlatformShell"] = true;
+
+        var nombreNormalizado = (nombreComplejo ?? string.Empty).Trim();
+        var codigoDepartamentoNormalizado = (codigoDepartamento ?? string.Empty).Trim();
+        var codigoProvinciaNormalizado = (codigoProvincia ?? string.Empty).Trim();
+        var codigoUbigeoNormalizado = (codigoUbigeo ?? string.Empty).Trim();
+        var correoNormalizado = string.IsNullOrWhiteSpace(correoContacto) ? null : correoContacto.Trim();
+
+        var ubigeoValido = codigoDepartamentoNormalizado.Length == 2
+                           && codigoProvinciaNormalizado.Length == 4
+                           && codigoUbigeoNormalizado.Length == 6
+                           && codigoProvinciaNormalizado.StartsWith(codigoDepartamentoNormalizado, StringComparison.Ordinal)
+                           && codigoUbigeoNormalizado.StartsWith(codigoProvinciaNormalizado, StringComparison.Ordinal);
+
+        if (string.IsNullOrWhiteSpace(nombreNormalizado) || tipoDeporteSuperId <= 0 || !ubigeoValido)
+        {
+            TempData["PortalWebError"] = "Datos invalidos para crear el referencial externo manual.";
+            return RedirectToAction(nameof(ReferencialesExternos), new { buscarNombre, filtroCodigoDepartamento, filtroCodigoProvincia, filtroCodigoUbigeo, incluirInactivos, paginaListado });
+        }
+
+        if (!string.IsNullOrWhiteSpace(correoNormalizado))
+        {
+            try
+            {
+                _ = new System.Net.Mail.MailAddress(correoNormalizado);
+            }
+            catch
+            {
+                TempData["PortalWebError"] = "El correo de contacto no tiene un formato valido.";
+                return RedirectToAction(nameof(ReferencialesExternos), new { buscarNombre, filtroCodigoDepartamento, filtroCodigoProvincia, filtroCodigoUbigeo, incluirInactivos, paginaListado });
+            }
+        }
+
+        if (!TryParseCoordinate(latitudReferencia, out var latitud) ||
+            !TryParseCoordinate(longitudReferencia, out var longitud))
+        {
+            TempData["PortalWebError"] = "Debes seleccionar un punto valido en el mapa para obtener latitud y longitud.";
+            return RedirectToAction(nameof(ReferencialesExternos), new { buscarNombre, filtroCodigoDepartamento, filtroCodigoProvincia, filtroCodigoUbigeo, incluirInactivos, paginaListado });
+        }
+
+        if (latitud is < -90m or > 90m || longitud is < -180m or > 180m)
+        {
+            TempData["PortalWebError"] = "Las coordenadas del mapa estan fuera de rango.";
+            return RedirectToAction(nameof(ReferencialesExternos), new { buscarNombre, filtroCodigoDepartamento, filtroCodigoProvincia, filtroCodigoUbigeo, incluirInactivos, paginaListado });
+        }
+
+        var latitudDecimal = latitud ?? 0m;
+        var longitudDecimal = longitud ?? 0m;
+        var googleMapsUrl = $"https://www.google.com/maps?q={latitudDecimal.ToString("0.0000000", CultureInfo.InvariantCulture)},{longitudDecimal.ToString("0.0000000", CultureInfo.InvariantCulture)}";
+
+        var idCreado = await spService.HomeReferencialesExternosCrearManualAsync(
+            nombreNormalizado,
+            tipoDeporteSuperId,
+            codigoUbigeoNormalizado,
+            direccion,
+            telefonoContacto,
+            correoNormalizado,
+            latitudDecimal,
+            longitudDecimal,
+            googleMapsUrl,
+            User.Identity?.Name ?? "owner-platform");
+
+        TempData[idCreado > 0 ? "PortalWebOk" : "PortalWebError"] = idCreado > 0
+            ? "Referencial externo manual creado correctamente."
+            : "No se pudo crear el referencial externo manual.";
+
+        return RedirectToAction(nameof(ReferencialesExternos), new { buscarNombre, filtroCodigoDepartamento, filtroCodigoProvincia, filtroCodigoUbigeo, incluirInactivos, paginaListado = 1 });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> ReferencialesExternosInactivar(
         int id,
         string? buscarNombre = null,
@@ -727,6 +817,21 @@ public class PlataformaController(
             "ANUAL" => fechaDesde.AddYears(1),
             _ => fechaDesde.AddMonths(1)
         };
+    }
+
+    private static bool TryParseCoordinate(string? raw, out decimal? value)
+    {
+        value = null;
+        var text = (raw ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(text))
+            return false;
+
+        text = text.Replace(',', '.');
+        if (!decimal.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed))
+            return false;
+
+        value = parsed;
+        return true;
     }
 
     private async Task<PlataformaReferencialesExternosViewModel> CargarReferencialesExternosVmAsync(PlataformaReferencialesExternosViewModel model)

@@ -9,7 +9,9 @@ using SistemaControlEspaciosDeportivosWeb.ViewModels;
 namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 
 [Authorize]
-public class DesafiosController(ISportCenterStoredProcedureService spService) : Controller
+public class DesafiosController(
+    ISportCenterStoredProcedureService spService,
+    IDesafioEmailNotificationService desafioEmailNotificationService) : Controller
 {
     [HttpGet]
     public async Task<IActionResult> Index(int hpage = 1)
@@ -74,6 +76,8 @@ public class DesafiosController(ISportCenterStoredProcedureService spService) : 
                 ModelState.AddModelError(string.Empty, "No se pudo registrar el desafio.");
                 return View("Index", vm);
             }
+
+            await desafioEmailNotificationService.NotifyDesafioReceivedAsync(desafioId);
         }
         catch (Exception ex)
         {

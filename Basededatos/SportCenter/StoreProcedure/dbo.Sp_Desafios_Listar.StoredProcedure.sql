@@ -25,6 +25,11 @@ GO
 -- Description:   Agrega paginacion opcional para historial de desafios (4 por pagina desde backend).
 -- =============================================
 -- Firma:         Codex - 26/04/2026 | Paginacion desde SP para historial de desafios usando @Pagina y @TamanoPagina.
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   11/05/2026
+-- Description:   Alinea deporte del desafio con TiposDeporteSuperMaestro para consistencia del modulo publico.
+-- =============================================
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Desafios_Listar]
     @UsuarioId NVARCHAR(450),
     @TipoListado NVARCHAR(20),
@@ -107,7 +112,7 @@ BEGIN
                 ELSE uRetador.UserName
             END AS ContactoUsuarioRival,
             CASE WHEN d.IdUsuarioRetador = @UsuarioId THEN N'Retador' ELSE N'Retado' END AS RolVista,
-            td.Nombre AS Deporte,
+            tsm.Nombre AS Deporte,
             nd.Nombre AS Nivel,
             CONCAT(ud.Nombre, N', ', up.Nombre, N', ', udp.Nombre) AS Distrito,
             d.FechaTentativa,
@@ -139,8 +144,9 @@ BEGIN
             END AS WhatsappRival,
             CASE WHEN d.Estado IN (N'Aceptado', N'Finalizado') THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS PuedeVerContactoRival
         FROM dbo.Desafio d
-        INNER JOIN dbo.TiposDeporte td
-            ON td.Id = d.IdDeporte
+        INNER JOIN dbo.TiposDeporteSuperMaestro tsm
+            ON tsm.Id = d.IdDeporte
+           AND tsm.Activo = 1
         INNER JOIN dbo.NivelDesafio nd
             ON nd.IdNivel = d.IdNivel
         INNER JOIN dbo.UbigeoDistritos ud

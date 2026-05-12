@@ -37,7 +37,7 @@
     </section>
 
     <section class="filter-card mb-3">
-        <h2 class="section-title">Filtro</h2>
+        <h2 class="section-title"><i class="bi bi-funnel me-1"></i>Filtro</h2>
         <form method="get" asp-action="Index">
             <input type="hidden" name="negocioId" value="@Model.NegocioId" />
             <div class="row g-2 align-items-end px-3 pb-3">
@@ -62,11 +62,11 @@
                 <div class="col-md-3">
                     <label class="form-label d-block">Seleccion rapida</label>
                     <div class="d-flex flex-wrap gap-2">
-                        <button type="submit" class="btn btn-sm btn-outline-primary" name="preset" value="hoy">Hoy</button>
-                        <button type="submit" class="btn btn-sm btn-outline-primary" name="preset" value="7d">7 dias</button>
-                        <button type="submit" class="btn btn-sm btn-outline-primary" name="preset" value="30d">30 dias</button>
-                        <button type="submit" class="btn btn-sm btn-outline-primary" name="preset" value="mes">Mes actual</button>
-                        <button type="submit" class="btn btn-outline-primary"><i class="bi bi-search me-1"></i> Buscar</button>
+                        <button type="submit" class="btn btn-sm btn-outline-primary btn-accion-filtro" name="preset" value="hoy">Hoy</button>
+                        <button type="submit" class="btn btn-sm btn-outline-primary btn-accion-filtro" name="preset" value="7d">7 dias</button>
+                        <button type="submit" class="btn btn-sm btn-outline-primary btn-accion-filtro" name="preset" value="30d">30 dias</button>
+                        <button type="submit" class="btn btn-sm btn-outline-primary btn-accion-filtro" name="preset" value="mes">Mes actual</button>
+                        <button type="submit" class="btn btn-outline-primary btn-accion-filtro"><i class="bi bi-search me-1"></i> Buscar</button>
                     </div>
                 </div>
             </div>
@@ -74,7 +74,7 @@
     </section>
 
     <section class="table-card">
-        <h2 class="section-title">Listado de cupones</h2>
+        <h2 class="section-title"><i class="bi bi-list-ul me-1"></i>Listado de cupones</h2>
         @if (!Model.Cupones.Any())
         {
             <div class="empty-state"><i class="bi bi-info-circle"></i><span>No hay cupones para el filtro seleccionado.</span></div>

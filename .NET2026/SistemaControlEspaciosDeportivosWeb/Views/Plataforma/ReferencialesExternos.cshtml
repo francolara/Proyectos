@@ -1,6 +1,8 @@
-﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.PlataformaReferencialesExternosViewModel
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.PlataformaReferencialesExternosViewModel
+@inject IConfiguration Configuration
 @{
     ViewData["Title"] = "Referenciales externos";
+    var mapsApiKey = Configuration["GoogleMaps:ApiKey"];
     var paginaActual = Model.PaginaListado <= 0 ? 1 : Model.PaginaListado;
     var totalPaginas = Model.TotalPaginasListado <= 0 ? 1 : Model.TotalPaginasListado;
     var paginaInicio = Math.Max(1, paginaActual - 2);
@@ -26,6 +28,9 @@
 <section class="table-card sc-reservas-list-card">
     <div class="table-card-header d-flex justify-content-between align-items-center">
         <h2 class="table-card-title platform-card-title"><span class="platform-card-icon"><i class="bi bi-search"></i></span><span class="platform-card-title-text">Barrido desde Google Places</span></h2>
+        <button type="button" class="btn btn-primary btn-grabar" data-bs-toggle="modal" data-bs-target="#modalCrearReferencialManual">
+            <i class="bi bi-plus-circle me-1"></i>Agregar manual
+        </button>
     </div>
     <div class="p-3">
         <form asp-action="ReferencialesExternos" method="post" class="row g-3">
@@ -105,15 +110,106 @@
             <div class="col-12 d-flex gap-2">
                 @if (Model.BarridoHabilitado)
                 {
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary btn-grabar">
                         <i class="bi bi-arrow-repeat me-1"></i>Actualizar referenciales externos
                     </button>
                 }
-                <a asp-action="Index" class="btn btn-outline-secondary">Volver</a>
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-cancelar">Volver</a>
             </div>
         </form>
     </div>
 </section>
+
+<div class="modal fade" id="modalCrearReferencialManual" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <form asp-action="ReferencialesExternosCrearManual" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-plus-circle me-1"></i>Nuevo referencial externo manual</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="buscarNombre" value="@Model.BuscarNombre" />
+                    <input type="hidden" name="filtroCodigoDepartamento" value="@Model.FiltroCodigoDepartamento" />
+                    <input type="hidden" name="filtroCodigoProvincia" value="@Model.FiltroCodigoProvincia" />
+                    <input type="hidden" name="filtroCodigoUbigeo" value="@Model.FiltroCodigoUbigeo" />
+                    <input type="hidden" name="incluirInactivos" value="@Model.IncluirInactivos.ToString().ToLowerInvariant()" />
+                    <input type="hidden" name="paginaListado" value="@Model.PaginaListado" />
+                    <input type="hidden" id="manualLatitudReferencia" name="latitudReferencia" />
+                    <input type="hidden" id="manualLongitudReferencia" name="longitudReferencia" />
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nombre del complejo</label>
+                            <input type="text" name="nombreComplejo" class="form-control" maxlength="180" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Tipo de deporte</label>
+                            <select name="tipoDeporteSuperId" class="form-select" required>
+                                <option value="">Selecciona</option>
+                                @foreach (var deporte in Model.TiposDeporte)
+                                {
+                                    <option value="@deporte.Value">@deporte.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Departamento</label>
+                            <select id="manualCodigoDepartamento" name="codigoDepartamento" class="form-select" required>
+                                <option value="">Selecciona</option>
+                                @foreach (var dep in Model.DepartamentosUbigeo)
+                                {
+                                    <option value="@dep.Value">@dep.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Provincia</label>
+                            <select id="manualCodigoProvincia" name="codigoProvincia" class="form-select" required>
+                                <option value="">Selecciona departamento</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Distrito</label>
+                            <select id="manualCodigoUbigeo" name="codigoUbigeo" class="form-select" required>
+                                <option value="">Selecciona provincia</option>
+                            </select>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Direccion</label>
+                            <input id="manualDireccion" type="text" name="direccion" class="form-control" maxlength="250" placeholder="Direccion o referencia del complejo" />
+                        </div>
+                        <div class="col-md-4 d-grid align-items-end">
+                            <button id="btnBuscarManualMapa" type="button" class="btn btn-outline-primary mt-md-4">
+                                <i class="bi bi-geo-alt me-1"></i>Buscar en mapa
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Telefono</label>
+                            <input type="text" name="telefonoContacto" class="form-control" maxlength="40" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Correo</label>
+                            <input type="email" name="correoContacto" class="form-control" maxlength="200" />
+                        </div>
+                        <div class="col-12">
+                            <div id="manualReferencialMapa" class="border rounded-3" style="min-height: 280px;"></div>
+                            <div class="form-text">Haz clic o arrastra el marcador para fijar latitud y longitud.</div>
+                            <div id="manualCoordsText" class="small text-muted mt-1">Latitud: - | Longitud: -</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary btn-cancelar" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-grabar">
+                        <i class="bi bi-check2-circle me-1"></i>Guardar manualmente
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 @if (Model.Resultado is not null)
 {
@@ -178,10 +274,10 @@
             </div>
             <div class="col-md-9 d-flex justify-content-end align-items-end gap-2">
                 <input type="hidden" asp-for="PaginaListado" value="1" />
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-funnel me-1"></i>Filtrar
-                </button>
-                <a asp-action="ReferencialesExternos" class="btn btn-outline-secondary">Limpiar</a>
+                    <button type="submit" class="btn btn-primary btn-accion-filtro">
+                        <i class="bi bi-funnel me-1"></i>Filtrar
+                    </button>
+                    <a asp-action="ReferencialesExternos" class="btn btn-outline-secondary btn-cancelar">Limpiar</a>
             </div>
         </form>
     </div>
@@ -382,8 +478,8 @@
                                             </div>
                                         </div>
                                         <div class="modal-footer">
-                                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                            <button type="submit" class="btn btn-primary">
+                                            <button type="button" class="btn btn-outline-secondary btn-cancelar" data-bs-dismiss="modal">Cancelar</button>
+                                            <button type="submit" class="btn btn-primary btn-grabar">
                                                 <i class="bi bi-check2-circle me-1"></i>Guardar cambios
                                             </button>
                                         </div>
@@ -490,6 +586,139 @@
 
             bindUbigeoCascade('codigoDepartamento', 'codigoProvincia', 'codigoUbigeo', 'Selecciona', 'Selecciona');
             bindUbigeoCascade('filtroCodigoDepartamento', 'filtroCodigoProvincia', 'filtroCodigoUbigeo', 'Todas', 'Todos');
+            bindUbigeoCascade('manualCodigoDepartamento', 'manualCodigoProvincia', 'manualCodigoUbigeo', 'Selecciona', 'Selecciona');
+
+            const hasGoogleApi = @(!string.IsNullOrWhiteSpace(mapsApiKey) ? "true" : "false");
+            const manualDireccion = document.getElementById('manualDireccion');
+            const manualLat = document.getElementById('manualLatitudReferencia');
+            const manualLng = document.getElementById('manualLongitudReferencia');
+            const manualCoordsText = document.getElementById('manualCoordsText');
+            const btnBuscarManualMapa = document.getElementById('btnBuscarManualMapa');
+            const targetMap = document.getElementById('manualReferencialMapa');
+            const modalCrearManual = document.getElementById('modalCrearReferencialManual');
+            let manualMap;
+            let manualMarker;
+            let manualGeocoder;
+            let manualAutocomplete;
+
+            function renderManualCoords(lat, lng) {
+                if (!manualCoordsText || !manualLat || !manualLng) return;
+                const latNorm = Number(lat).toFixed(7);
+                const lngNorm = Number(lng).toFixed(7);
+                manualLat.value = latNorm;
+                manualLng.value = lngNorm;
+                manualCoordsText.textContent = `Latitud: ${latNorm} | Longitud: ${lngNorm}`;
+            }
+
+            function actualizarDireccionDesdeCoordenada(lat, lng) {
+                if (!manualGeocoder || !manualDireccion) return;
+                manualGeocoder.geocode({ location: { lat, lng } }, (results, status) => {
+                    if (status !== 'OK' || !results || !results.length) return;
+                    const direccionGoogle = (results[0].formatted_address || '').trim();
+                    if (direccionGoogle) {
+                        manualDireccion.value = direccionGoogle;
+                    }
+                });
+            }
+
+            function paintManualFallback() {
+                if (!targetMap) return;
+                targetMap.classList.add('d-flex', 'align-items-center', 'justify-content-center', 'text-muted', 'bg-light');
+                targetMap.innerHTML = 'Configura GoogleMaps:ApiKey para habilitar el mapa interactivo.';
+                if (btnBuscarManualMapa) btnBuscarManualMapa.disabled = true;
+            }
+
+            function initManualMapa() {
+                if (!hasGoogleApi || !targetMap) {
+                    paintManualFallback();
+                    return;
+                }
+                if (!window.google || !google.maps) {
+                    return;
+                }
+                const lat = parseFloat((manualLat?.value || '-12.046374').replace(',', '.'));
+                const lng = parseFloat((manualLng?.value || '-77.042793').replace(',', '.'));
+                manualGeocoder = new google.maps.Geocoder();
+                manualMap = new google.maps.Map(targetMap, { center: { lat, lng }, zoom: 13 });
+                manualMarker = new google.maps.Marker({ position: { lat, lng }, map: manualMap, draggable: true });
+                manualAutocomplete = new google.maps.places.Autocomplete(manualDireccion, {
+                    fields: ['formatted_address', 'geometry'],
+                    componentRestrictions: { country: ['pe'] }
+                });
+
+                renderManualCoords(lat, lng);
+
+                manualMarker.addListener('dragend', () => {
+                    const pos = manualMarker.getPosition();
+                    renderManualCoords(pos.lat(), pos.lng());
+                    actualizarDireccionDesdeCoordenada(pos.lat(), pos.lng());
+                });
+
+                manualMap.addListener('click', (e) => {
+                    manualMarker.setPosition(e.latLng);
+                    renderManualCoords(e.latLng.lat(), e.latLng.lng());
+                    actualizarDireccionDesdeCoordenada(e.latLng.lat(), e.latLng.lng());
+                });
+
+                manualAutocomplete.addListener('place_changed', () => {
+                    const place = manualAutocomplete.getPlace();
+                    if (!place || !place.geometry || !place.geometry.location) return;
+                    const latPlace = place.geometry.location.lat();
+                    const lngPlace = place.geometry.location.lng();
+                    manualMap.setCenter({ lat: latPlace, lng: lngPlace });
+                    manualMap.setZoom(16);
+                    manualMarker.setPosition({ lat: latPlace, lng: lngPlace });
+                    renderManualCoords(latPlace, lngPlace);
+                    if (place.formatted_address && manualDireccion) {
+                        manualDireccion.value = place.formatted_address;
+                    }
+                });
+            }
+
+            function buscarDireccionManual() {
+                if (!hasGoogleApi || !manualGeocoder || !manualDireccion) return;
+                const value = (manualDireccion.value || '').trim();
+                if (!value) return;
+                manualGeocoder.geocode({ address: value }, (results, status) => {
+                    if (status !== 'OK' || !results || !results.length) return;
+                    const loc = results[0].geometry.location;
+                    manualMap.setCenter(loc);
+                    manualMap.setZoom(16);
+                    manualMarker.setPosition(loc);
+                    renderManualCoords(loc.lat(), loc.lng());
+                    if (manualDireccion) {
+                        const formatted = (results[0].formatted_address || '').trim();
+                        if (formatted) {
+                            manualDireccion.value = formatted;
+                        }
+                    }
+                });
+            }
+
+            if (btnBuscarManualMapa) {
+                btnBuscarManualMapa.addEventListener('click', buscarDireccionManual);
+            }
+            if (manualDireccion) {
+                manualDireccion.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        buscarDireccionManual();
+                    }
+                });
+            }
+            if (modalCrearManual) {
+                modalCrearManual.addEventListener('shown.bs.modal', () => {
+                    if (!manualMap) {
+                        initManualMapa();
+                        if (!manualMap) {
+                            setTimeout(() => initManualMapa(), 300);
+                        }
+                    } else {
+                        google.maps.event.trigger(manualMap, 'resize');
+                        manualMap.setCenter(manualMarker.getPosition());
+                    }
+                });
+            }
 
             async function cargarProvincias(selectProvincia, codigoDepartamento, codigoProvinciaSeleccionado) {
                 renderOptions(selectProvincia, [], 'Selecciona');
@@ -548,5 +777,9 @@
             });
         })();
     </script>
+    @if (!string.IsNullOrWhiteSpace(mapsApiKey))
+    {
+        <script async defer src="https://maps.googleapis.com/maps/api/js?key=@mapsApiKey&libraries=places"></script>
+    }
 }
 

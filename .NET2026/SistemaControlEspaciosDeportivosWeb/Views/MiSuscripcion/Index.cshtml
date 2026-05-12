@@ -15,9 +15,16 @@
     }
 }
 <header class="page-header">
-    <div>
-        <h1>Mi suscripcion</h1>
-        <p class="page-subtitle">Revisa tu estado actual, fecha de vencimiento y datos de contacto de la plataforma.</p>
+    <div class="sc-page-title-wrap">
+        <div>
+            <h1>Mi suscripcion</h1>
+            <p class="page-subtitle">Revisa tu estado actual, fecha de vencimiento y datos de contacto de la plataforma.</p>
+        </div>
+        <div class="sc-negocio-ref-card" aria-readonly="true">
+            <div class="sc-negocio-ref-card-head"><i class="bi bi-building"></i><span>Complejo deportivo</span></div>
+            <div class="sc-negocio-ref-card-name">@(string.IsNullOrWhiteSpace(Model.NegocioNombre) ? "Complejo sin nombre" : Model.NegocioNombre)</div>
+            <div class="sc-negocio-ref-card-id">ID: @Model.NegocioId</div>
+        </div>
     </div>
     <div class="action-toolbar">
         <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">

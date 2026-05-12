@@ -19,6 +19,11 @@ GO
 -- Create date:   18/04/2026
 -- Description:   Guarda la ubicacion y WhatsApp del equipo y usa ese ubigeo como referencia del modulo Desafios.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   11/05/2026
+-- Description:   Valida IdDeporteDesafio contra TiposDeporteSuperMaestro para mantener modelo publico desacoplado de TiposDeporte por negocio.
+-- =============================================
 CREATE OR ALTER PROCEDURE [dbo].[Sp_UsuariosPublicos_GuardarPerfil]
     @UsuarioId NVARCHAR(450),
     @TipoDocumento NVARCHAR(20) = N'0',
@@ -66,6 +71,13 @@ BEGIN
                 RAISERROR('Debes seleccionar la ubicacion del equipo para habilitar desafios.', 16, 1);
             IF @IdDeporteDesafio IS NULL OR @IdDeporteDesafio <= 0
                 RAISERROR('Debes seleccionar un deporte para desafios.', 16, 1);
+            IF NOT EXISTS (
+                SELECT 1
+                FROM dbo.TiposDeporteSuperMaestro tsm
+                WHERE tsm.Id = @IdDeporteDesafio
+                  AND tsm.Activo = 1
+            )
+                RAISERROR('El deporte seleccionado no existe en el catalogo publico.', 16, 1);
             IF @IdNivelDesafio IS NULL OR @IdNivelDesafio <= 0
                 RAISERROR('Debes seleccionar un nivel para desafios.', 16, 1);
         END

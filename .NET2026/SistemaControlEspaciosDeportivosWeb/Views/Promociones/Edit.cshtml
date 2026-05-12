@@ -1,4 +1,4 @@
-﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.PromocionFormViewModel
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.PromocionFormViewModel
 @{
     ViewData["Title"] = "Editar promocion";
     var horasMediaHora = Enumerable.Range(0, 48)
@@ -100,10 +100,10 @@
         </section>
 
         <div class="sc-form-actions">
-            <button type="submit" class="btn btn-primary">
+            <button type="submit" class="btn btn-primary btn-grabar">
                 <i class="bi bi-check2-circle me-1"></i> Guardar cambios
             </button>
-            <a class="btn btn-outline-secondary" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Cancelar</a>
+            <a class="btn btn-outline-secondary btn-cancelar" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Cancelar</a>
         </div>
     </form>
 </div>

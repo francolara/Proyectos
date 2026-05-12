@@ -19,6 +19,11 @@ GO
 -- Create date:   19/04/2026
 -- Description:   Expone el contacto responsable del equipo usando nombre del perfil y usuario registrado.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   11/05/2026
+-- Description:   Usa TiposDeporteSuperMaestro como fuente de deporte publico para evitar dependencias con catalogo por negocio.
+-- =============================================
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Desafios_BuscarRivales]
     @UsuarioId NVARCHAR(450),
     @CodigoUbigeo CHAR(6),
@@ -41,7 +46,7 @@ BEGIN
             LTRIM(RTRIM(CONCAT(p.Nombres, N' ', p.Apellidos))) AS ContactoNombre,
             u.UserName AS ContactoUsuario,
             ud.Nombre AS Distrito,
-            td.Nombre AS Deporte,
+            tsm.Nombre AS Deporte,
             nd.Nombre AS Nivel,
             p.ObservacionDesafio,
             p.DetalleEquipo,
@@ -54,8 +59,9 @@ BEGIN
             ON u.Id = p.UsuarioId
         INNER JOIN dbo.UbigeoDistritos ud
             ON ud.CodigoUbigeo = p.CodigoUbigeoEquipo
-        INNER JOIN dbo.TiposDeporte td
-            ON td.Id = p.IdDeporteDesafio
+        INNER JOIN dbo.TiposDeporteSuperMaestro tsm
+            ON tsm.Id = p.IdDeporteDesafio
+           AND tsm.Activo = 1
         INNER JOIN dbo.NivelDesafio nd
             ON nd.IdNivel = p.IdNivelDesafio
         WHERE p.BuscarDesafios = 1
@@ -63,7 +69,7 @@ BEGIN
           AND p.CodigoUbigeoEquipo = @CodigoUbigeoNorm
           AND (@IdDeporte IS NULL OR p.IdDeporteDesafio = @IdDeporte)
           AND (@IdNivel IS NULL OR p.IdNivelDesafio = @IdNivel)
-        ORDER BY NombreEquipo, td.Nombre, nd.Orden;
+        ORDER BY NombreEquipo, tsm.Nombre, nd.Orden;
     END TRY
     BEGIN CATCH
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;

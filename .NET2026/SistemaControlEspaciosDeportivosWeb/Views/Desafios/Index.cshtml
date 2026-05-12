@@ -63,7 +63,7 @@
     <section class="content-card p-3 p-md-4 mb-4">
         <div class="section-title-row">
             <div>
-                <h2 class="section-title mb-1"><i class="bi bi-search-heart me-1"></i>Buscar rival</h2>
+                <span class="section-chip section-chip-lg"><i class="bi bi-search-heart"></i>Buscar rival</span>
                 <p class="text-muted mb-0">La busqueda siempre exige distrito. No se muestran equipos sin filtro geografico.</p>
             </div>
         </div>
@@ -106,7 +106,7 @@
             </div>
 
             <div class="mt-3 d-flex justify-content-end">
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="auth-nav-mini auth-nav-mini-solid">
                     <i class="bi bi-search me-1"></i>Buscar rivales
                 </button>
             </div>
@@ -127,38 +127,52 @@
                     <div class="desafios-grid">
                         @foreach (var item in Model.ResultadosBusqueda)
                         {
+                            var logoSigla = string.Join(string.Empty,
+                                (item.NombreEquipo ?? string.Empty)
+                                    .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                                    .Take(2)
+                                    .Select(x => char.ToUpperInvariant(x[0])));
+                            if (string.IsNullOrWhiteSpace(logoSigla))
+                            {
+                                logoSigla = "EQ";
+                            }
                             <article class="desafio-card">
                                 <header class="desafio-card-head">
-                                    <div>
-                                        <h3>@item.NombreEquipo</h3>
-                                        <p class="mb-0"><i class="bi bi-geo-alt me-1"></i>@item.Distrito</p>
+                                    <div class="desafio-team-head">
+                                        <div class="desafio-team-logo" aria-hidden="true">
+                                            <span>@logoSigla</span>
+                                        </div>
+                                        <div>
+                                            <h3>@item.NombreEquipo</h3>
+                                            <p class="mb-0"><i class="bi bi-geo-alt me-1"></i>@item.Distrito</p>
+                                        </div>
                                     </div>
                                     <span class="desafios-badge is-ready">Disponible</span>
                                 </header>
 
                                 <div class="desafio-meta">
                                     <div>
-                                        <span>Deporte</span>
+                                        <span><i class="bi bi-trophy-fill me-1"></i>Deporte</span>
                                         <strong>@item.Deporte</strong>
                                     </div>
                                     <div>
-                                        <span>Nivel</span>
+                                        <span><i class="bi bi-bar-chart-steps me-1"></i>Nivel</span>
                                         <strong>@item.Nivel</strong>
                                     </div>
                                 </div>
 
                                 <div class="desafio-copy-block is-challenge">
-                                    <div class="copy-label">Observacion del desafio</div>
+                                    <div class="copy-label"><i class="bi bi-chat-left-quote me-1"></i>Observacion del desafio</div>
                                     <p>@(string.IsNullOrWhiteSpace(item.ObservacionDesafio) ? "Sin observaciones adicionales." : item.ObservacionDesafio)</p>
                                 </div>
 
                                 <div class="desafio-copy-block">
-                                    <div class="copy-label">Informacion del equipo</div>
+                                    <div class="copy-label"><i class="bi bi-shield-check me-1"></i>Informacion del equipo</div>
                                     <p>@(string.IsNullOrWhiteSpace(item.DetalleEquipo) ? "El equipo aun no registro una descripcion general." : item.DetalleEquipo)</p>
                                 </div>
 
                                 <div class="desafio-contact-card">
-                                    <div class="copy-label">Contacto del equipo</div>
+                                    <div class="copy-label"><i class="bi bi-person-lines-fill me-1"></i>Contacto del equipo</div>
                                     <div class="desafio-contact-grid">
                                         <div>
                                             <span><i class="bi bi-person-badge"></i>Nombre</span>
@@ -172,7 +186,7 @@
                                 </div>
 
                                 <button type="button"
-                                        class="btn btn-primary w-100 open-desafio-modal"
+                                        class="auth-nav-mini auth-nav-mini-solid w-100 justify-content-center open-desafio-modal"
                                         data-bs-toggle="modal"
                                         data-bs-target="#crearDesafioModal"
                                         data-perfil-id="@item.PerfilId"
@@ -196,7 +210,7 @@
             <section class="content-card p-3 p-md-4 h-100 desafio-section desafio-section-sent">
                 <div class="desafio-section-head">
                     <div>
-                        <h2 class="section-title mb-1"><i class="bi bi-arrow-up-right-circle me-1"></i>Desafios enviados</h2>
+                        <span class="section-chip section-chip-lg"><i class="bi bi-arrow-up-right-circle"></i>Desafios enviados</span>
                         <p class="desafio-section-copy mb-0">Seguimiento de tus invitaciones y su avance actual.</p>
                     </div>
                     <div class="desafio-filter-group" data-target="#desafiosEnviadosList">
@@ -370,7 +384,7 @@
             <section class="content-card p-3 p-md-4 h-100 desafio-section desafio-section-received">
                 <div class="desafio-section-head">
                     <div>
-                        <h2 class="section-title mb-1"><i class="bi bi-arrow-down-left-circle me-1"></i>Desafios recibidos</h2>
+                        <span class="section-chip section-chip-lg"><i class="bi bi-arrow-down-left-circle"></i>Desafios recibidos</span>
                         <p class="desafio-section-copy mb-0">Prioriza lo pendiente y responde sin perder contexto.</p>
                     </div>
                     <div class="desafio-filter-group" data-target="#desafiosRecibidosList">
@@ -550,7 +564,7 @@
             <section class="content-card p-3 p-md-4 desafio-section desafio-section-history">
                 <div class="desafio-section-head">
                     <div>
-                        <h2 class="section-title mb-1"><i class="bi bi-clock-history me-1"></i>Historial</h2>
+                        <span class="section-chip section-chip-lg"><i class="bi bi-clock-history"></i>Historial</span>
                         <p class="desafio-section-copy mb-0">Registro compacto de desafios cerrados y coordinaciones terminadas.</p>
                     </div>
                     <div class="desafio-history-toolbar">
@@ -1337,6 +1351,141 @@
         .desafio-section-received .btn-outline-danger {
             border-width: 2px;
         }
+        .desafio-section .desafio-list-item {
+            border-radius: 14px;
+            border-left-width: 4px;
+            background: #fff;
+            padding: .8rem .9rem;
+            box-shadow: 0 4px 12px rgba(15, 41, 82, .06);
+        }
+        .desafio-section .desafio-list-top {
+            align-items: flex-start;
+            margin-bottom: .55rem;
+            gap: .65rem;
+        }
+        .desafio-section .desafio-list-top h3 {
+            font-size: 1rem;
+            margin-bottom: 0;
+        }
+        .desafio-section .desafio-code {
+            margin-bottom: .15rem;
+            font-size: .72rem;
+        }
+        .desafio-section .desafio-detail-grid,
+        .desafio-section .desafio-detail-grid.is-extended {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .45rem .7rem;
+            margin-bottom: .35rem;
+        }
+        .desafio-section .desafio-detail-card,
+        .desafio-section .desafio-detail-card.is-wide {
+            background: transparent;
+            border: 0;
+            border-radius: 0;
+            padding: 0;
+            min-height: 0;
+            box-shadow: none;
+            display: inline-flex;
+            gap: .35rem;
+            align-items: baseline;
+            flex: 0 1 auto;
+        }
+        .desafio-section .desafio-detail-label {
+            margin: 0;
+            font-size: .7rem;
+            color: #637da7;
+            letter-spacing: .02em;
+            white-space: nowrap;
+        }
+        .desafio-section .desafio-detail-card strong {
+            font-size: .86rem;
+            color: #16335f;
+            font-weight: 700;
+        }
+        .desafio-section .desafio-collapsible {
+            margin-top: .55rem !important;
+        }
+        .desafio-section .desafio-actions-footer {
+            margin-top: .55rem;
+            min-height: 0;
+            padding-top: .45rem;
+            border-top: 1px solid #e6eefb;
+        }
+        .desafios-grid .desafio-card {
+            border: 1px solid #cfe0ff;
+            border-top: 4px solid #2f73d9;
+            background: linear-gradient(180deg, #f5f9ff 0%, #ffffff 35%);
+            box-shadow: 0 10px 20px rgba(47, 115, 217, .12);
+        }
+        .desafio-team-head {
+            display: flex;
+            gap: .8rem;
+            align-items: center;
+        }
+        .desafio-team-logo {
+            width: 3.1rem;
+            height: 3.1rem;
+            border-radius: 12px;
+            border: 1px solid #9dc2ff;
+            background: radial-gradient(circle at 20% 20%, #3d8cff 0%, #1f4fad 80%);
+            box-shadow: 0 8px 16px rgba(31, 79, 173, .24);
+            display: grid;
+            place-items: center;
+            flex: 0 0 auto;
+        }
+        .desafio-team-logo span {
+            color: #fff;
+            font-weight: 900;
+            letter-spacing: .06em;
+            font-size: .92rem;
+        }
+        .desafios-grid .desafio-card h3 {
+            font-size: 1.15rem;
+            letter-spacing: .01em;
+        }
+        .desafios-grid .desafio-card .copy-label {
+            color: #2b67bf;
+        }
+        .desafio-section-sent {
+            background: linear-gradient(180deg, #fffaf1 0%, #ffffff 42%);
+            border: 1px solid #f3dec0;
+        }
+        .desafio-section-received {
+            background: linear-gradient(180deg, #f3faff 0%, #ffffff 42%);
+            border: 1px solid #cbe4ff;
+        }
+        .desafio-section-sent .desafio-list-item {
+            border: 1px solid #f5d8ab;
+            border-left-color: #d78b22;
+            background: linear-gradient(180deg, #fffcf6 0%, #ffffff 65%);
+            box-shadow: 0 8px 16px rgba(215, 139, 34, .12);
+        }
+        .desafio-section-received .desafio-list-item {
+            border: 1px solid #c8ddff;
+            border-left-color: #2f73d9;
+            background: linear-gradient(180deg, #f7fbff 0%, #ffffff 65%);
+            box-shadow: 0 8px 16px rgba(47, 115, 217, .12);
+        }
+        .desafio-section-sent .desafio-code {
+            color: #a05b00;
+        }
+        .desafio-section-received .desafio-code {
+            color: #1f5fb8;
+        }
+        .desafio-history-item {
+            border: 1px solid #d8e1f1;
+            border-left: 4px solid #6c7f9d;
+            background: linear-gradient(180deg, #f9fbff 0%, #ffffff 65%);
+            box-shadow: 0 8px 16px rgba(42, 62, 97, .1);
+        }
+        .desafio-history-item .desafio-code {
+            color: #4d6388;
+        }
+        .desafio-history-item .desafio-collapsible {
+            background: #f7faff;
+            border-color: #d7e2f4;
+        }
         .empty-state {
             border: 1px dashed #c8d7ee;
             border-radius: 16px;
@@ -1442,6 +1591,28 @@
         }
         .desafio-modal-rival small {
             color: #60779d;
+        }
+        .section-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: .5rem;
+            border-radius: 999px;
+            padding: .45rem .9rem;
+            background: linear-gradient(180deg, #eaf3ff 0%, #d9e9ff 100%);
+            color: #174892;
+            font-size: .82rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            border: 1px solid #b9d2fb;
+            box-shadow: 0 6px 14px rgba(28, 79, 164, .14);
+            margin-bottom: .45rem;
+        }
+        .section-chip i {
+            font-size: .9rem;
+        }
+        .section-chip.section-chip-lg {
+            font-size: .84rem;
         }
         @@media (max-width: 991px) {
             .desafios-hero {

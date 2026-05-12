@@ -9,6 +9,11 @@ GO
 -- Create date:   18/04/2026
 -- Description:   Registra un nuevo desafio entre usuarios publicos.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   11/05/2026
+-- Description:   Valida IdDeporte contra TiposDeporteSuperMaestro para mantener coherencia del catalogo publico.
+-- =============================================
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Desafios_Crear]
     @UsuarioIdRetador NVARCHAR(450),
     @PerfilRetadoId INT,
@@ -43,6 +48,14 @@ BEGIN
 
         IF @FormaPagoNorm IS NULL
             RAISERROR('La forma de pago es obligatoria.', 16, 1);
+
+        IF NOT EXISTS (
+            SELECT 1
+            FROM dbo.TiposDeporteSuperMaestro tsm
+            WHERE tsm.Id = @IdDeporte
+              AND tsm.Activo = 1
+        )
+            RAISERROR('El deporte seleccionado no existe en el catalogo publico.', 16, 1);
 
         IF @FechaTentativa < CAST(GETDATE() AS DATE)
             RAISERROR('La fecha tentativa no puede ser anterior a hoy.', 16, 1);

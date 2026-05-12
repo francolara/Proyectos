@@ -4,9 +4,16 @@
 }
 
 <header class="page-header">
-    <div>
-        <h1>Configuración del Complejo Deportivo</h1>
-        <p class="page-subtitle">Edita los datos principales del negocio y la moneda de trabajo.</p>
+    <div class="sc-page-title-wrap">
+        <div>
+            <h1>Configuración del Complejo Deportivo</h1>
+            <p class="page-subtitle">Edita los datos principales del negocio y la moneda de trabajo.</p>
+        </div>
+        <div class="sc-negocio-ref-card" aria-readonly="true">
+            <div class="sc-negocio-ref-card-head"><i class="bi bi-building"></i><span>Complejo deportivo</span></div>
+            <div class="sc-negocio-ref-card-name">@Model.NombreComercial</div>
+            <div class="sc-negocio-ref-card-id">ID: @Model.NegocioId</div>
+        </div>
     </div>
     <div class="action-toolbar">
         <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">
@@ -186,6 +193,7 @@
                            inputmode="numeric"
                            pattern="[0-9]*"
                            maxlength="4"
+                           autocomplete="off"
                            id="MinutosCancelacionNoConfirmada" />
                     <span asp-validation-for="MinutosCancelacionNoConfirmada" class="text-danger"></span>
                 </div>
@@ -194,7 +202,7 @@
     </section>
 
     <div class="sc-form-actions">
-        <button type="submit" class="btn btn-primary">
+        <button type="submit" class="btn btn-primary btn-grabar">
             <i class="bi bi-check2-circle me-1"></i> Guardar configuracion
         </button>
     </div>
@@ -357,8 +365,7 @@
                     }
                     let entero = Number.parseInt(raw, 10);
                     if (!Number.isFinite(entero)) entero = 0;
-                    if (entero < 5) entero = 5;
-                    if (entero > 1440) entero = 1440;
+
                     minCancelacionAuto.value = String(entero);
                 };
                 minCancelacionAuto.addEventListener('keydown', (evt) => {
@@ -378,6 +385,7 @@
         })();
     </script>
 }
+
 
 
 

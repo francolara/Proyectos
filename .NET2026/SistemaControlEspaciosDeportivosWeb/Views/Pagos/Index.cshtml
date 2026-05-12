@@ -57,7 +57,7 @@
     </section>
 
     <section class="filter-card mb-3">
-        <h2 class="section-title">Filtro rapido</h2>
+        <h2 class="section-title"><i class="bi bi-funnel me-1"></i>Filtro rapido</h2>
         <form method="get" asp-action="Index">
             <input type="hidden" name="negocioId" value="@Model.NegocioId" />
             <input type="hidden" name="pagina" value="1" />
@@ -82,14 +82,14 @@
                 <div class="col-md-4">
                     <label class="form-label d-block">Seleccion rapida</label>
                     <div class="d-flex flex-wrap gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="this.form.preset.value='hoy'; this.form.submit();">Hoy</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="this.form.preset.value='7d'; this.form.submit();">7 dias</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="this.form.preset.value='30d'; this.form.submit();">30 dias</button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="this.form.preset.value='mes'; this.form.submit();">Mes actual</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary btn-accion-filtro" onclick="this.form.preset.value='hoy'; this.form.submit();">Hoy</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary btn-accion-filtro" onclick="this.form.preset.value='7d'; this.form.submit();">7 dias</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary btn-accion-filtro" onclick="this.form.preset.value='30d'; this.form.submit();">30 dias</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary btn-accion-filtro" onclick="this.form.preset.value='mes'; this.form.submit();">Mes actual</button>
                     </div>
                 </div>
                 <div class="col-md-2 d-flex align-items-end justify-content-md-end">
-                    <button type="submit" class="btn btn-outline-primary" onclick="this.form.preset.value='' ;">
+                    <button type="submit" class="btn btn-outline-primary btn-accion-filtro" onclick="this.form.preset.value='' ;">
                         <i class="bi bi-search me-1"></i> Buscar
                     </button>
                 </div>
@@ -115,7 +115,7 @@
     </section>
 
     <section class="table-card">
-        <h2 class="section-title">Listado detallado de pagos</h2>
+        <h2 class="section-title"><i class="bi bi-list-ul me-1"></i>Listado detallado de pagos</h2>
         @if (!Model.Pagos.Any())
         {
             <div class="empty-state">
@@ -202,7 +202,7 @@
                                             <input type="hidden" name="reservaId" value="@item.ReservaId" />
                                             <button type="submit"
                                                     class="btn btn-sm sc-action-btn sc-action-delete"
-                                                    onclick="return confirm('Se eliminarán todos los pagos de la reserva @item.ReservaCodigo y la reserva se cancelará. ¿Deseas continuar?');">
+                                                    onclick="return confirm('Se eliminaran todos los pagos de la reserva @item.ReservaCodigo y la reserva se cancelara. Deseas continuar?');">
                                                 <i class="bi bi-trash3"></i> Eliminar
                                             </button>
                                         </form>
@@ -216,5 +216,3 @@
         }
     </section>
 </div>
-
-

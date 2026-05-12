@@ -64,10 +64,10 @@ FOREIGN KEY([CodigoUbigeo]) REFERENCES [dbo].[UbigeoDistritos] ([CodigoUbigeo]);
 GO
 ALTER TABLE [dbo].[UsuariosPublicosPerfil] CHECK CONSTRAINT [FK_UsuariosPublicosPerfil_UbigeoDistritos_CodigoUbigeo];
 GO
-ALTER TABLE [dbo].[UsuariosPublicosPerfil]  WITH CHECK ADD CONSTRAINT [FK_UsuariosPublicosPerfil_TiposDeporte_IdDeporteDesafio]
-FOREIGN KEY([IdDeporteDesafio]) REFERENCES [dbo].[TiposDeporte] ([Id]);
+ALTER TABLE [dbo].[UsuariosPublicosPerfil]  WITH CHECK ADD CONSTRAINT [FK_UsuariosPublicosPerfil_TiposDeporteSuperMaestro_IdDeporteDesafio]
+FOREIGN KEY([IdDeporteDesafio]) REFERENCES [dbo].[TiposDeporteSuperMaestro] ([Id]);
 GO
-ALTER TABLE [dbo].[UsuariosPublicosPerfil] CHECK CONSTRAINT [FK_UsuariosPublicosPerfil_TiposDeporte_IdDeporteDesafio];
+ALTER TABLE [dbo].[UsuariosPublicosPerfil] CHECK CONSTRAINT [FK_UsuariosPublicosPerfil_TiposDeporteSuperMaestro_IdDeporteDesafio];
 GO
 ALTER TABLE [dbo].[UsuariosPublicosPerfil]  WITH CHECK ADD CONSTRAINT [FK_UsuariosPublicosPerfil_NivelDesafio_IdNivelDesafio]
 FOREIGN KEY([IdNivelDesafio]) REFERENCES [dbo].[NivelDesafio] ([IdNivel]);

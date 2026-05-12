@@ -211,6 +211,41 @@ public partial class SportCenterStoredProcedureService
         return Convert.ToInt32(result);
     }
 
+    public async Task<DesafioEmailContextViewModel?> DesafiosObtenerContextoEmailAsync(int desafioId)
+    {
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_Desafios_ObtenerContextoEmail", cn)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        AddParam(cmd, "@IdDesafio", desafioId, SqlDbType.Int);
+
+        await using var dr = await cmd.ExecuteReaderAsync();
+        if (!await dr.ReadAsync()) return null;
+
+        return new DesafioEmailContextViewModel
+        {
+            DesafioId = dr.GetInt32(0),
+            CorreoRetado = dr.IsDBNull(1) ? null : dr.GetString(1),
+            NombreRetado = dr.IsDBNull(2) ? string.Empty : dr.GetString(2),
+            EquipoRetador = dr.IsDBNull(3) ? string.Empty : dr.GetString(3),
+            ContactoRetador = dr.IsDBNull(4) ? string.Empty : dr.GetString(4),
+            UsuarioRetador = dr.IsDBNull(5) ? string.Empty : dr.GetString(5),
+            TelefonoRetador = dr.IsDBNull(6) ? null : dr.GetString(6),
+            Deporte = dr.IsDBNull(7) ? string.Empty : dr.GetString(7),
+            Nivel = dr.IsDBNull(8) ? string.Empty : dr.GetString(8),
+            Distrito = dr.IsDBNull(9) ? string.Empty : dr.GetString(9),
+            FechaTentativa = DateOnly.FromDateTime(dr.GetDateTime(10)),
+            HoraTentativa = TimeOnly.FromTimeSpan(dr.GetTimeSpan(11)),
+            CanchaSugerida = dr.IsDBNull(12) ? null : dr.GetString(12),
+            Modalidad = dr.IsDBNull(13) ? string.Empty : dr.GetString(13),
+            Mensaje = dr.IsDBNull(14) ? null : dr.GetString(14),
+            FormaPago = dr.IsDBNull(15) ? string.Empty : dr.GetString(15)
+        };
+    }
+
     public async Task<int> DesafiosMensajeCrearAsync(string usuarioId, DesafioMensajeCrearViewModel model, string usuario)
     {
         await using var cn = CreateConnection();

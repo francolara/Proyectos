@@ -4,6 +4,10 @@ Versión: 1.0
 Fecha: 04/05/2026  
 Sistema: La Zona Deportiva - Panel Administrador de Negocio
 
+## Nota técnica de codificación
+Este manual debe mantenerse en UTF-8.  
+Si se regenera DOCX/PDF automáticamente, la lectura de este archivo debe hacerse en UTF-8 y evitar literales con acentos hardcodeados fuera del contenido del `.md`.
+
 ## 1. Objetivo
 Este manual explica el uso operativo del panel de administración del complejo deportivo para gestionar reservas, clientes, pagos, usuarios, promociones, cupones, reportes y configuración del negocio.
 
@@ -42,6 +46,9 @@ Adicionalmente:
 ---
 
 ## 5. Dashboard
+
+### Evidencia visual
+![Dashboard](C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\Pantallasos\Dashboard.png)
 ### 5.1 Para qué sirve
 Vista resumen del estado operativo del negocio.
 
@@ -56,8 +63,10 @@ Vista resumen del estado operativo del negocio.
 3. Usar notificaciones para atender reservas web rápido.
 
 ---
-
 ## 6. Maestros
+
+### Evidencia visual
+![Maestros](C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\Pantallasos\Maestros.png)
 ### 6.1 Para qué sirve
 Mantiene catálogos base del negocio.
 
@@ -67,14 +76,20 @@ Mantiene catálogos base del negocio.
 3. Tipos de documento
 4. Monedas
 5. Formas de pago
+6. Series por documento
 
 ### 6.3 Reglas
 - No eliminar catálogos en uso activo si impactan reservas/comprobantes.
 - Mantener formas de pago coherentes con operación real.
+- Configurar series por documento con formato y correlativo válidos antes de emitir comprobantes.
+- Mantener una serie activa por tipo de documento según sede/negocio para evitar conflictos de numeración.
 
 ---
-
 ## 7. Sedes
+
+### Evidencias visuales
+![Sedes listado](C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\Pantallasos\Sedes_listado.png)
+![Sedes registro](C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\Pantallasos\Sedes_registro.png)
 ### 7.1 Para qué sirve
 Gestión de sedes del complejo.
 
@@ -90,8 +105,11 @@ Gestión de sedes del complejo.
 2. Mantener teléfono/correo actualizados para comunicación con clientes.
 
 ---
-
 ## 8. Espacio deportivo
+
+### Evidencias visuales
+![Espacio deportivo listado](C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\Pantallasos\eSPACIODEPORTIVO_LISTADO.png)
+![Espacio deportivo registro](C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\Pantallasos\eSPACIODEPORTIVO_REGISTRO.png)
 ### 8.1 Para qué sirve
 Gestión de canchas/espacios reservables por sede.
 
@@ -107,8 +125,11 @@ Gestión de canchas/espacios reservables por sede.
 2. Desactivar espacios fuera de servicio para evitar errores de reserva.
 
 ---
-
 ## 9. Clientes
+
+### Evidencias visuales
+![Clientes listado](C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\Pantallasos\clientes_listado.png)
+![Clientes registro](C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\Pantallasos\clientes_Registro.png)
 ### 9.1 Para qué sirve
 Padrón de clientes del negocio.
 
@@ -122,8 +143,13 @@ Padrón de clientes del negocio.
 - Completar teléfono/correo para recordatorios y seguimiento.
 
 ---
-
 ## 10. Reservas
+
+### Evidencias visuales
+![Reservas listado 1](C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\Pantallasos\Reservas_litado1.png)
+![Reservas listado 2](C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\Pantallasos\Reserva_Listado2.png)
+![Reserva registro 1](C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\Pantallasos\Reserva_Registro.png)
+![Reserva registro 2](C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\Pantallasos\Reserva_Registro2.png)
 ### 10.1 Para qué sirve
 Gestión completa de agenda y registro de reservas.
 
@@ -158,8 +184,11 @@ Gestión completa de agenda y registro de reservas.
 3. Auditar cambios de estado al cierre del turno.
 
 ---
-
 ## 11. Pagos
+
+### Evidencias visuales
+![Pagos listado](C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\Pantallasos\Pagos_Listado.png)
+![Pago registro](C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\Pantallasos\Pago_Registro.png)
 ### 11.1 Para qué sirve
 Control de movimientos de pago por reserva.
 
@@ -173,8 +202,11 @@ Control de movimientos de pago por reserva.
 2. Registrar forma de pago y referencia operativa cuando aplique.
 
 ---
-
 ## 12. Comprobantes
+
+### Evidencias visuales
+![Comprobantes listado](C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\Pantallasos\comprobante_Listado.png)
+![Comprobante registro](C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\Pantallasos\Comprobnate_Registro.png)
 ### 12.1 Para qué sirve
 Gestión de comprobantes asociados a operaciones.
 
@@ -186,8 +218,10 @@ Gestión de comprobantes asociados a operaciones.
 - Verificar datos fiscales en Configuración antes de emitir.
 
 ---
-
 ## 13. Usuarios
+
+### Evidencia visual
+![Usuario registro](C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\Pantallasos\usuario_registro.png)
 ### 13.1 Para qué sirve
 Gestión de accesos al panel de negocio.
 
@@ -201,8 +235,11 @@ Gestión de accesos al panel de negocio.
 2. Revisar permisos de cajas/pagos/comprobantes con especial cuidado.
 
 ---
-
 ## 14. Promociones
+
+### Evidencias visuales
+![Promociones listado](C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\Pantallasos\Promocion_Listado.png)
+![Promociones registro](C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\Pantallasos\Promocion_Registro.png)
 ### 14.1 Para qué sirve
 Descuentos/promociones por rango de fechas y reglas de horario.
 
@@ -215,8 +252,11 @@ Descuentos/promociones por rango de fechas y reglas de horario.
 2. Evitar solapes no deseados de descuentos.
 
 ---
-
 ## 15. Cupones
+
+### Evidencias visuales
+![Cupones listado](C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\Pantallasos\cupones_listado.png)
+![Cupones registro](C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\Pantallasos\Cupones_Registro.png)
 ### 15.1 Para qué sirve
 Gestión de cupones con control de uso.
 
@@ -236,8 +276,10 @@ Gestión de cupones con control de uso.
 5. Debe verse en cotización y respetarse en grabación final.
 
 ---
-
 ## 16. Reportes
+
+### Evidencia visual
+![Reportes](C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\Pantallasos\Reportes.png)
 ### 16.1 Para qué sirve
 Análisis operativo/comercial del negocio.
 
@@ -247,8 +289,10 @@ Análisis operativo/comercial del negocio.
 3. Seguimiento mensual de clientes y conversión.
 
 ---
-
 ## 17. Configuración
+
+### Evidencia visual
+![Configuración](C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\Pantallasos\configuracion.png)
 ### 17.1 Para qué sirve
 Parámetros estructurales del complejo.
 
@@ -265,6 +309,9 @@ Parámetros estructurales del complejo.
 ---
 
 ## 18. Mi suscripción
+
+### Evidencia visual
+![Mi suscripción](C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\Pantallasos\mususcripcion.png)
 ### 18.1 Para qué sirve
 Consulta del estado comercial del negocio.
 
@@ -283,6 +330,7 @@ Consulta del estado comercial del negocio.
 2. Reserva pública actualmente restringida a bloques de 1 hora.
 3. Hora fin se ajusta automáticamente en +1 hora respecto de hora inicio.
 4. Si no cumple 60 minutos exactos, la grabación se rechaza por validaciones de interfaz, backend y SP.
+5. El calendario público diferencia visualmente reservas en estado "Reservada" y "Confirmada" con estilos de color más claros para lectura rápida.
 
 ---
 
@@ -330,5 +378,16 @@ Agregar capturas de estas pantallas para versión ilustrada del manual:
 
 ---
 
-## 23. Control de cambios del manual
+## 23. Ajustes recientes de experiencia visual (portal público)
+1. Barra superior pública y acciones de sesión con estilo más claro y consistente (incluye botón de cierre con variante visual de alerta).
+2. Buscador principal de espacios con mayor jerarquía visual y botón de búsqueda con icono.
+3. Sección de beneficios y tarjetas de espacios mejoradas para lectura móvil/escritorio (contraste, profundidad, jerarquía tipográfica y estados hover).
+4. Tarjetas de disponibilidad en reserva pública con mejor distinción visual entre estado Reservada y Confirmada.
+5. En registro, el texto de relación fue ajustado a: "Relación con el complejo deportivo".
+
+---
+
+## 24. Control de cambios del manual
 - 04/05/2026: Versión inicial operativa para Administrador de Negocio.
+- 11/05/2026: Actualización por mejoras funcionales y visuales en portal público, refinamiento de etiquetas de negocio/complejo y ajustes de experiencia en reserva pública.
+- 12/05/2026: Las pantallas quedan integradas dentro de cada sección del manual (se retira el anexo final consolidado).

@@ -59,7 +59,6 @@ public class ConfiguracionClubViewModel : ModuloBaseViewModel
     public bool PermitirModificarPrecioReserva { get; set; }
     public bool CancelacionAutomaticaNoConfirmada { get; set; }
 
-    [Range(5, 1440, ErrorMessage = "El tiempo de cancelacion automatica debe estar entre 5 y 1440 minutos.")]
     public int? MinutosCancelacionNoConfirmada { get; set; }
     [Range(1, 999, ErrorMessage = "Sedes permitidas debe ser mayor a 0.")]
     public int SedesPermitidas { get; set; } = 2;

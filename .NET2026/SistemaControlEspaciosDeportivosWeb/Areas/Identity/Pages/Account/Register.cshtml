@@ -162,7 +162,7 @@
                 <div id="registroClubFields" class="d-none">
                     <div class="auth-club-box mb-3">
                             <strong>Registro de complejo deportivo</strong>
-                        <p class="mb-0">Completa los datos del negocio y activamos tu prueba de 1 mes.</p>
+                                <p class="mb-0">Completa los datos del negocio y activamos tu periodo de prueba.</p>
                     </div>
                     @if (hayErroresClub && string.Equals(Model.TipoRegistro, "club", StringComparison.OrdinalIgnoreCase))
                     {
@@ -208,7 +208,7 @@
                             <span asp-validation-for="Club.Correo" class="text-danger"></span>
                         </div>
                         <div class="col-md-6">
-                            <label asp-for="Club.RelacionClub" class="form-label">Relacion con el club</label>
+                            <label asp-for="Club.RelacionClub" class="form-label">Relacion con el complejo deportivo</label>
                             <select asp-for="Club.RelacionClub" class="form-select">
                                 <option value="Dueno">Dueno</option>
                                 <option value="Administrador">Administrador</option>

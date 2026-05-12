@@ -57,7 +57,7 @@
     </section>
 
     <section class="filter-card mb-3">
-        <h2 class="section-title">Filtro rapido</h2>
+        <h2 class="section-title"><i class="bi bi-funnel me-1"></i>Filtro rapido</h2>
         <form method="get" asp-action="Index">
             <input type="hidden" name="negocioId" value="@Model.NegocioId" />
             <input type="hidden" name="pagina" value="1" />
@@ -79,7 +79,7 @@
                     <div class="form-control bg-light" id="contadorClientes">@Model.TotalRegistros</div>
                 </div>
                 <div class="col-12 d-flex justify-content-end">
-                    <button type="submit" class="btn btn-outline-primary">
+                    <button type="submit" class="btn btn-outline-primary btn-accion-filtro">
                         <i class="bi bi-search me-1"></i> Buscar
                     </button>
                 </div>
@@ -105,7 +105,7 @@
     </section>
 
     <section class="table-card">
-        <h2 class="section-title">Listado detallado de clientes</h2>
+        <h2 class="section-title"><i class="bi bi-list-ul me-1"></i>Listado detallado de clientes</h2>
         @if (!Model.Clientes.Any())
         {
             <div class="empty-state">
@@ -199,4 +199,3 @@
         }
     </section>
 </div>
-
