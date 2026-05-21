@@ -1,6 +1,8 @@
 /*
 Firma: Codex - 07/04/2026
 Descripcion: Reserva pop-up con politica de pago, cotizacion, comentario y limite maximo de 2 pagos por reserva.
+Firma: FRANCO LARA - 20/05/2026
+Descripcion: El tramo 23:00-23:59 se factura como hora completa (60 min) en cotizacion.
 */
 USE [DbSportCenter]
 GO
@@ -34,7 +36,13 @@ BEGIN
 
         DECLARE @DuracionMinutos INT = DATEDIFF(MINUTE, @HoraInicio, @HoraFin);
         IF @DuracionMinutos NOT IN (30, 60)
+           AND NOT (@HoraInicio = '23:00:00' AND @HoraFin = '23:59:00')
             RAISERROR('Solo se permite reservas de 30 o 60 minutos.', 16, 1);
+        DECLARE @DuracionFacturableMinutos INT =
+            CASE
+                WHEN @HoraInicio = '23:00:00' AND @HoraFin = '23:59:00' THEN 60
+                ELSE @DuracionMinutos
+            END;
 
         DECLARE @SedeId INT;
         DECLARE @DiaSemana INT = (DATEDIFF(DAY, '19000101', @Fecha) % 7) + 1;
@@ -64,7 +72,7 @@ BEGIN
         IF @PrecioHora IS NULL
             RAISERROR('No existe tarifa configurada para el horario seleccionado.', 16, 1);
 
-        DECLARE @PrecioBase DECIMAL(10,2) = ROUND(@PrecioHora * (@DuracionMinutos / 60.0), 2);
+        DECLARE @PrecioBase DECIMAL(10,2) = ROUND(@PrecioHora * (@DuracionFacturableMinutos / 60.0), 2);
         DECLARE @DescuentoPct DECIMAL(5,2) = 0;
 
         SELECT TOP 1

@@ -1,6 +1,8 @@
 /*
 Firma: Codex - 07/04/2026
 Descripcion: Ajusta Sp_Reservas_Cotizar para devolver politica de confirmacion incluso sin tarifa configurada y permitir precio manual en modal.
+Firma: FRANCO LARA - 20/05/2026
+Descripcion: El tramo 23:00-23:59 se factura como hora completa (60 min) en cotizacion.
 */
 
 USE [DbSportCenter]
@@ -27,7 +29,13 @@ BEGIN
 
         DECLARE @DuracionMinutos INT = DATEDIFF(MINUTE, @HoraInicio, @HoraFin);
         IF @DuracionMinutos NOT IN (30, 60)
+           AND NOT (@HoraInicio = '23:00:00' AND @HoraFin = '23:59:00')
             RAISERROR('Solo se permite reservas de 30 o 60 minutos.', 16, 1);
+        DECLARE @DuracionFacturableMinutos INT =
+            CASE
+                WHEN @HoraInicio = '23:00:00' AND @HoraFin = '23:59:00' THEN 60
+                ELSE @DuracionMinutos
+            END;
 
         DECLARE @SedeId INT;
         DECLARE @DiaSemana INT = (DATEDIFF(DAY, '19000101', @Fecha) % 7) + 1;
@@ -55,7 +63,7 @@ BEGIN
         ORDER BY t.HoraInicio DESC;
 
         DECLARE @TieneTarifa BIT = CASE WHEN @PrecioHora IS NULL THEN 0 ELSE 1 END;
-        DECLARE @PrecioBase DECIMAL(10,2) = CASE WHEN @TieneTarifa = 1 THEN ROUND(@PrecioHora * (@DuracionMinutos / 60.0), 2) ELSE 0 END;
+        DECLARE @PrecioBase DECIMAL(10,2) = CASE WHEN @TieneTarifa = 1 THEN ROUND(@PrecioHora * (@DuracionFacturableMinutos / 60.0), 2) ELSE 0 END;
         DECLARE @DescuentoPct DECIMAL(5,2) = 0;
 
         IF @TieneTarifa = 1

@@ -6,6 +6,11 @@
     var horasMediaHora = Enumerable.Range(0, 48)
         .Select(i => TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(i * 30)))
         .ToList();
+    var horasCierre = horasMediaHora.ToList();
+    if (!horasCierre.Contains(new TimeOnly(23, 59)))
+    {
+        horasCierre.Add(new TimeOnly(23, 59));
+    }
 
     var galeriaSede = new List<string>();
     if (!string.IsNullOrWhiteSpace(Model.FotoPrincipalUrl))
@@ -221,9 +226,12 @@
                     <div class="col-md-3">
                         <label asp-for="HoraCierre" class="form-label">Hora de cierre</label>
                         <select asp-for="HoraCierre" class="form-select">
-                            @foreach (var hora in horasMediaHora)
+                            @foreach (var hora in horasCierre)
                             {
-                                <option value="@hora.ToString("HH\\:mm")">@hora.ToString("HH\\:mm")</option>
+                                var etiquetaHora = hora == new TimeOnly(23, 59)
+                                    ? "24:00"
+                                    : hora.ToString("HH\\:mm");
+                                <option value="@hora.ToString("HH\\:mm")">@etiquetaHora</option>
                             }
                         </select>
                         <span asp-validation-for="HoraCierre" class="text-danger"></span>

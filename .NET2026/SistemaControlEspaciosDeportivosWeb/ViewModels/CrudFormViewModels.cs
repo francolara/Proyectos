@@ -183,6 +183,8 @@ public class EspacioFormViewModel
     public EstadoEspacioDeportivo Estado { get; set; } = EstadoEspacioDeportivo.Activo;
     public string? TarifasJson { get; set; }
     public List<EspacioTarifaRangoViewModel> Tarifas { get; set; } = new();
+    public string? TarifasFeriadoJson { get; set; }
+    public List<EspacioTarifaFeriadoRangoViewModel> TarifasFeriado { get; set; } = new();
     public int? MonedaIdConfigurada { get; set; }
     public string MonedaEtiqueta { get; set; } = string.Empty;
     public bool PuedeEditarTarifas { get; set; }
@@ -196,6 +198,13 @@ public class EspacioFormViewModel
 public class EspacioTarifaRangoViewModel
 {
     public int DiaSemana { get; set; }
+    public TimeOnly HoraInicio { get; set; }
+    public TimeOnly HoraFin { get; set; }
+    public decimal Precio { get; set; }
+}
+
+public class EspacioTarifaFeriadoRangoViewModel
+{
     public TimeOnly HoraInicio { get; set; }
     public TimeOnly HoraFin { get; set; }
     public decimal Precio { get; set; }

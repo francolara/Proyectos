@@ -8,6 +8,7 @@
         .Select(i => TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(i * 30)))
         .ToList();
 }
+@* Firma: FRANCO LARA - 20/05/2026 | En tarifas de espacios muestra 24:00 en hora fin y guarda internamente 23:59 para cierre de jornada. *@
 
 <div class="admin-page-frame">
     <section class="page-header">
@@ -137,6 +138,7 @@
                                             <option value="@valor">@valor</option>
                                         }
                                     }
+                                    <option value="23:59">24:00</option>
                                 </select>
                             </div>
                             <div class="col-lg-3 col-md-6">
@@ -186,6 +188,78 @@
                     <i class="bi bi-plus-circle"></i> Agregar rango
                 </button>
                 <div class="form-text mt-2">Puedes registrar varios rangos por dia. Evita superponer horarios del mismo dia.</div>
+
+                <hr class="my-4" />
+                <h2 class="sc-form-title"><i class="bi bi-calendar-event"></i> Configurar tarifa por feriado</h2>
+                <div class="card border-0 bg-light-subtle mb-3">
+                    <div class="card-body">
+                        <div class="row g-2 align-items-end">
+                            <div class="col-lg-3 col-md-6">
+                                <label class="form-label">Hora inicio</label>
+                                <select id="feriadoHoraInicio" class="form-select form-select-sm" @(Model.PuedeEditarTarifas ? null : "disabled")>
+                                    @foreach (var hora in horasMediaHora)
+                                    {
+                                        var valor = hora.ToString("HH\\:mm");
+                                        if (valor == "09:00")
+                                        {
+                                            <option value="@valor" selected="selected">@valor</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@valor">@valor</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-lg-3 col-md-6">
+                                <label class="form-label">Hora fin</label>
+                                <select id="feriadoHoraFin" class="form-select form-select-sm" @(Model.PuedeEditarTarifas ? null : "disabled")>
+                                    @foreach (var hora in horasMediaHora)
+                                    {
+                                        var valor = hora.ToString("HH\\:mm");
+                                        if (valor == "10:00")
+                                        {
+                                            <option value="@valor" selected="selected">@valor</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@valor">@valor</option>
+                                        }
+                                    }
+                                    <option value="23:59">24:00</option>
+                                </select>
+                            </div>
+                            <div class="col-lg-4 col-md-6">
+                                <label class="form-label">Precio feriado</label>
+                                <div class="input-group input-group-sm">
+                                    <input id="feriadoPrecio" type="text" inputmode="decimal" autocomplete="off" class="form-control text-end" value="0.01" @(Model.PuedeEditarTarifas ? null : "disabled") />
+                                    <span class="input-group-text">@monedaEtiqueta</span>
+                                </div>
+                            </div>
+                            <div class="col-lg-2 col-md-12 d-grid">
+                                <button type="button" id="btnAgregarTarifaFeriado" class="btn btn-primary btn-sm btn-accion-filtro" @(Model.PuedeEditarTarifas ? null : "disabled")>
+                                    <i class="bi bi-plus-circle me-1"></i> Agregar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="tarifasFeriadoErrorBox" class="alert alert-danger d-none mb-3 py-2"></div>
+                <input type="hidden" asp-for="TarifasFeriadoJson" id="tarifasFeriadoJson" />
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-2" id="tablaTarifasFeriadoEspacio">
+                        <thead>
+                            <tr>
+                                <th>Hora inicio</th>
+                                <th>Hora fin</th>
+                                <th class="text-end">Precio</th>
+                                <th class="text-end">Accion</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="form-text mt-2">Estas tarifas aplican a cualquier fecha registrada como feriado.</div>
             </div>
         </section>
 
@@ -203,9 +277,12 @@
     <script>
         (() => {
             const tarifasIniciales = @Html.Raw(JsonSerializer.Serialize(Model.Tarifas, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
+            const tarifasFeriadoIniciales = @Html.Raw(JsonSerializer.Serialize(Model.TarifasFeriado, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
             const dias = @Html.Raw(JsonSerializer.Serialize(Model.TarifaDiasSemana.Select(d => new { value = d.Value, text = d.Text })));
             const tabla = document.querySelector('#tablaTarifasEspacio tbody');
             const inputJson = document.getElementById('tarifasJson');
+            const tablaFeriado = document.querySelector('#tablaTarifasFeriadoEspacio tbody');
+            const inputFeriadoJson = document.getElementById('tarifasFeriadoJson');
             const btnAgregar = document.getElementById('btnAgregarTarifa');
             const form = document.querySelector('form.sc-form-shell');
             const monedaEtiqueta = @Html.Raw(JsonSerializer.Serialize(Model.MonedaEtiqueta));
@@ -217,6 +294,11 @@
             const btnAgregarBloque = document.getElementById('btnAgregarBloque');
             const bloqueDiasPersonalizado = document.getElementById('bloqueDiasPersonalizado');
             const errorBox = document.getElementById('tarifasErrorBox');
+            const feriadoHoraInicio = document.getElementById('feriadoHoraInicio');
+            const feriadoHoraFin = document.getElementById('feriadoHoraFin');
+            const feriadoPrecio = document.getElementById('feriadoPrecio');
+            const btnAgregarTarifaFeriado = document.getElementById('btnAgregarTarifaFeriado');
+            const tarifasFeriadoErrorBox = document.getElementById('tarifasFeriadoErrorBox');
 
             function mostrarError(msg) {
                 errorBox.textContent = msg;
@@ -226,6 +308,16 @@
             function limpiarError() {
                 errorBox.textContent = '';
                 errorBox.classList.add('d-none');
+            }
+
+            function mostrarErrorFeriado(msg) {
+                tarifasFeriadoErrorBox.textContent = msg;
+                tarifasFeriadoErrorBox.classList.remove('d-none');
+            }
+
+            function limpiarErrorFeriado() {
+                tarifasFeriadoErrorBox.textContent = '';
+                tarifasFeriadoErrorBox.classList.add('d-none');
             }
 
             function optionDias(selected) {
@@ -241,6 +333,26 @@
                 });
                 const valor = String(selected || '').substring(0, 5);
                 return horas.map(h => `<option value="${h}" ${h === valor ? 'selected' : ''}>${h}</option>`).join('');
+            }
+
+            function optionHorasFin(selected) {
+                const horas = Array.from({ length: 48 }, (_, i) => {
+                    const total = i * 30;
+                    const h = String(Math.floor(total / 60)).padStart(2, '0');
+                    const m = String(total % 60).padStart(2, '0');
+                    return `${h}:${m}`;
+                });
+                horas.push('23:59');
+                const valor = String(selected || '').substring(0, 5);
+                return horas.map(h => {
+                    const texto = h === '23:59' ? '24:00' : h;
+                    return `<option value="${h}" ${h === valor ? 'selected' : ''}>${texto}</option>`;
+                }).join('');
+            }
+
+            function normalizarHoraFin(valor) {
+                const hora = String(valor || '').substring(0, 5);
+                return hora === '24:00' ? '23:59' : hora;
             }
 
             function nombreDia(valorDia) {
@@ -269,8 +381,16 @@
                 return [...tabla.querySelectorAll('tr')].map(tr => ({
                     diaSemana: Number(tr.querySelector('.js-dia').value),
                     horaInicio: tr.querySelector('.js-hora-inicio').value,
-                    horaFin: tr.querySelector('.js-hora-fin').value,
+                    horaFin: normalizarHoraFin(tr.querySelector('.js-hora-fin').value),
                     precio: parsePrecio(tr.querySelector('.js-precio').value)
+                }));
+            }
+
+            function filasTarifasFeriado() {
+                return [...tablaFeriado.querySelectorAll('tr')].map(tr => ({
+                    horaInicio: tr.querySelector('.js-feriado-hora-inicio').value,
+                    horaFin: normalizarHoraFin(tr.querySelector('.js-feriado-hora-fin').value),
+                    precio: parsePrecio(tr.querySelector('.js-feriado-precio').value)
                 }));
             }
 
@@ -305,6 +425,29 @@
                 return null;
             }
 
+            function validarCrucesFeriado() {
+                const filas = filasTarifasFeriado();
+                for (const fila of filas) {
+                    if (!fila.horaInicio || !fila.horaFin) {
+                        return 'Completa hora inicio y hora fin en todas las tarifas por feriado.';
+                    }
+                    if (fila.horaFin <= fila.horaInicio) {
+                        return 'En tarifas por feriado, la hora fin debe ser mayor que la hora inicio.';
+                    }
+                    if (fila.precio <= 0) {
+                        return 'En tarifas por feriado, el precio debe ser mayor que cero.';
+                    }
+                }
+
+                const ordenadas = filas.sort((a, b) => a.horaInicio.localeCompare(b.horaInicio));
+                for (let i = 1; i < ordenadas.length; i++) {
+                    if (rangosSeCruzan(ordenadas[i - 1].horaInicio, ordenadas[i - 1].horaFin, ordenadas[i].horaInicio, ordenadas[i].horaFin)) {
+                        return 'Hay cruce de horarios en tarifas por feriado.';
+                    }
+                }
+                return null;
+            }
+
             function obtenerDiasBloque() {
                 const preset = bloquePreset.value;
                 if (preset === 'lv') return [1, 2, 3, 4, 5];
@@ -315,13 +458,13 @@
 
             function nuevaFila(tarifa) {
                 const horaInicio = (tarifa.horaInicio ?? '08:00').toString().substring(0, 5);
-                const horaFin = (tarifa.horaFin ?? '09:00').toString().substring(0, 5);
+                const horaFin = normalizarHoraFin((tarifa.horaFin ?? '09:00').toString().substring(0, 5));
                 const precio = Number(tarifa.precio ?? 0).toFixed(2);
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td><select class="form-select form-select-sm js-dia">${optionDias(tarifa.diaSemana ?? 1)}</select></td>
                     <td><select class="form-select form-select-sm js-hora-inicio">${optionHoras(horaInicio)}</select></td>
-                    <td><select class="form-select form-select-sm js-hora-fin">${optionHoras(horaFin)}</select></td>
+                    <td><select class="form-select form-select-sm js-hora-fin">${optionHorasFin(horaFin)}</select></td>
                     <td class="text-end">
                         <div class="input-group input-group-sm">
                             <input type="text" inputmode="decimal" autocomplete="off" class="form-control form-control-sm text-end js-precio" value="${precio}">
@@ -345,6 +488,37 @@
                 tabla.appendChild(row);
             }
 
+            function nuevaFilaFeriado(tarifa) {
+                const horaInicio = (tarifa.horaInicio ?? '08:00').toString().substring(0, 5);
+                const horaFin = normalizarHoraFin((tarifa.horaFin ?? '09:00').toString().substring(0, 5));
+                const precio = Number(tarifa.precio ?? 0).toFixed(2);
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><select class="form-select form-select-sm js-feriado-hora-inicio">${optionHoras(horaInicio)}</select></td>
+                    <td><select class="form-select form-select-sm js-feriado-hora-fin">${optionHorasFin(horaFin)}</select></td>
+                    <td class="text-end">
+                        <div class="input-group input-group-sm">
+                            <input type="text" inputmode="decimal" autocomplete="off" class="form-control form-control-sm text-end js-feriado-precio" value="${precio}">
+                            <span class="input-group-text">${monedaEtiqueta || ''}</span>
+                        </div>
+                    </td>
+                    <td class="text-end"><button type="button" class="btn btn-sm sc-action-btn sc-action-delete js-feriado-quitar"><i class="bi bi-trash3"></i> Quitar</button></td>`;
+                row.querySelector('.js-feriado-quitar').addEventListener('click', () => {
+                    row.remove();
+                    sincronizarJsonFeriado();
+                });
+                row.querySelector('.js-feriado-precio').addEventListener('input', (e) => {
+                    e.target.value = limpiarPrecio(e.target.value);
+                    sincronizarJsonFeriado();
+                });
+                row.querySelectorAll('select,input').forEach(el => el.addEventListener('change', () => {
+                    sincronizarJsonFeriado();
+                    const err = validarCrucesFeriado();
+                    if (err) mostrarErrorFeriado(err); else limpiarErrorFeriado();
+                }));
+                tablaFeriado.appendChild(row);
+            }
+
             function sincronizarJson() {
                 if (!puedeEditarTarifas) {
                     inputJson.value = "[]";
@@ -353,10 +527,23 @@
                 const data = [...tabla.querySelectorAll('tr')].map(tr => ({
                     diaSemana: Number(tr.querySelector('.js-dia').value),
                     horaInicio: tr.querySelector('.js-hora-inicio').value,
-                    horaFin: tr.querySelector('.js-hora-fin').value,
+                    horaFin: normalizarHoraFin(tr.querySelector('.js-hora-fin').value),
                     precio: parsePrecio(tr.querySelector('.js-precio').value)
                 }));
                 inputJson.value = JSON.stringify(data);
+            }
+
+            function sincronizarJsonFeriado() {
+                if (!puedeEditarTarifas) {
+                    inputFeriadoJson.value = "[]";
+                    return;
+                }
+                const data = [...tablaFeriado.querySelectorAll('tr')].map(tr => ({
+                    horaInicio: tr.querySelector('.js-feriado-hora-inicio').value,
+                    horaFin: normalizarHoraFin(tr.querySelector('.js-feriado-hora-fin').value),
+                    precio: parsePrecio(tr.querySelector('.js-feriado-precio').value)
+                }));
+                inputFeriadoJson.value = JSON.stringify(data);
             }
 
             if (bloquePreset) {
@@ -371,6 +558,11 @@
                     e.target.value = limpiarPrecio(e.target.value);
                 });
             }
+            if (feriadoPrecio) {
+                feriadoPrecio.addEventListener('input', (e) => {
+                    e.target.value = limpiarPrecio(e.target.value);
+                });
+            }
 
             if (btnAgregarBloque) {
                 btnAgregarBloque.addEventListener('click', () => {
@@ -379,7 +571,7 @@
 
                     const diasSeleccionados = obtenerDiasBloque();
                     const horaInicio = bloqueHoraInicio.value;
-                    const horaFin = bloqueHoraFin.value;
+                    const horaFin = normalizarHoraFin(bloqueHoraFin.value);
                     const precio = parsePrecio(bloquePrecio.value);
 
                     if (!diasSeleccionados.length) {
@@ -413,6 +605,38 @@
                 });
             }
 
+            if (btnAgregarTarifaFeriado) {
+                btnAgregarTarifaFeriado.addEventListener('click', () => {
+                    if (!puedeEditarTarifas) return;
+                    limpiarErrorFeriado();
+
+                    const horaInicio = feriadoHoraInicio.value;
+                    const horaFin = normalizarHoraFin(feriadoHoraFin.value);
+                    const precio = parsePrecio(feriadoPrecio.value);
+
+                    if (!horaInicio || !horaFin || horaFin <= horaInicio) {
+                        mostrarErrorFeriado('En tarifas por feriado, la hora fin debe ser mayor que la hora inicio.');
+                        return;
+                    }
+                    if (precio <= 0) {
+                        mostrarErrorFeriado('En tarifas por feriado, el precio debe ser mayor que cero.');
+                        return;
+                    }
+
+                    const actuales = filasTarifasFeriado();
+                    const cruza = actuales.some(t => rangosSeCruzan(horaInicio, horaFin, t.horaInicio, t.horaFin));
+                    if (cruza) {
+                        mostrarErrorFeriado('No se puede agregar porque cruza horarios en tarifas por feriado.');
+                        return;
+                    }
+
+                    nuevaFilaFeriado({ horaInicio, horaFin, precio });
+                    sincronizarJsonFeriado();
+                    const err = validarCrucesFeriado();
+                    if (err) mostrarErrorFeriado(err); else limpiarErrorFeriado();
+                });
+            }
+
             btnAgregar.addEventListener('click', () => {
                 if (!puedeEditarTarifas) return;
                 nuevaFila({ diaSemana: 1, horaInicio: '08:00', horaFin: '09:00', precio: 0.01 });
@@ -422,17 +646,24 @@
             if (puedeEditarTarifas) {
                 (tarifasIniciales && tarifasIniciales.length ? tarifasIniciales : [{ diaSemana: 1, horaInicio: '08:00', horaFin: '09:00', precio: 0.01 }])
                     .forEach(nuevaFila);
+                (tarifasFeriadoIniciales && tarifasFeriadoIniciales.length ? tarifasFeriadoIniciales : [])
+                    .forEach(nuevaFilaFeriado);
             }
             sincronizarJson();
+            sincronizarJsonFeriado();
 
             form.addEventListener('submit', (e) => {
                 sincronizarJson();
+                sincronizarJsonFeriado();
                 const err = validarCrucesCliente();
-                if (err) {
+                const errFeriado = validarCrucesFeriado();
+                if (err || errFeriado) {
                     e.preventDefault();
-                    mostrarError(err);
+                    if (err) mostrarError(err); else limpiarError();
+                    if (errFeriado) mostrarErrorFeriado(errFeriado); else limpiarErrorFeriado();
                 } else {
                     limpiarError();
+                    limpiarErrorFeriado();
                 }
             });
         })();

@@ -1,4 +1,4 @@
-@model SistemaControlEspaciosDeportivosWeb.ViewModels.HomeIndexViewModel
+ï»¿@model SistemaControlEspaciosDeportivosWeb.ViewModels.HomeIndexViewModel
 @inject Microsoft.Extensions.Options.IOptions<SistemaControlEspaciosDeportivosWeb.Services.SedeImagenStorageSettings> SedeImagenStorageOptions
 @using System.Linq
 @using System.Globalization
@@ -25,7 +25,7 @@
     var popupPromocionesVersion = popupPromociones.Count == 0
         ? string.Empty
         : string.Join("|", popupPromociones.Select(x => $"{x.IdPopupPromocion}:{x.Orden}:{x.Orientacion}:{(x.ImagenUrl ?? string.Empty)}"));
-    var whatsappAnunciosMensaje = Uri.EscapeDataString("Hola, quiero anunciar en SportCenter. ¿Podrian brindarme informacion sobre planes, alcance y condiciones para publicar mi anuncio?");
+    var whatsappAnunciosMensaje = Uri.EscapeDataString("Hola, quiero anunciar en SportCenter. ï¿½Podrian brindarme informacion sobre planes, alcance y condiciones para publicar mi anuncio?");
     var whatsappHomeConfigurado = (Model.PortalConfig.SiguenosWhatsappUrl ?? string.Empty).Trim();
     var whatsappAnunciosUrl = whatsappHomeConfigurado;
     if (!string.IsNullOrWhiteSpace(whatsappHomeConfigurado))
@@ -61,7 +61,7 @@
 
         if (!string.IsNullOrWhiteSpace(whatsappNumeroConfigurado))
         {
-            whatsappAnunciosUrl = $"https://wa.me/{whatsappNumeroConfigurado}?text={Uri.EscapeDataString("Hola, quiero anunciar en SportCenter. ¿Podrían brindarme información sobre planes, alcance y condiciones para publicar mi anuncio?")}";
+            whatsappAnunciosUrl = $"https://wa.me/{whatsappNumeroConfigurado}?text={Uri.EscapeDataString("Hola, quiero anunciar en SportCenter. ï¿½Podrï¿½an brindarme informaciï¿½n sobre planes, alcance y condiciones para publicar mi anuncio?")}";
         }
     }
 }
@@ -1425,5 +1425,3 @@
 })();
 </script>
 }
-
-

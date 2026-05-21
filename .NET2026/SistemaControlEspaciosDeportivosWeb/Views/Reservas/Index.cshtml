@@ -11,6 +11,11 @@
     var horasMediaHora = Enumerable.Range(0, 48)
         .Select(i => TimeOnly.MinValue.AddMinutes(i * 30))
         .ToList();
+    var horasCierre = horasMediaHora.ToList();
+    if (!horasCierre.Contains(new TimeOnly(23, 59)))
+    {
+        horasCierre.Add(new TimeOnly(23, 59));
+    }
 }
 
 <header class="page-header">
@@ -436,16 +441,17 @@
                     <div class="col-md-2">
                         <label class="form-label">Fin</label>
                         <select class="form-select" name="HoraFin" required>
-                            @foreach (var hora in horasMediaHora)
+                            @foreach (var hora in horasCierre)
                             {
                                 var valor = hora.ToString("HH\\:mm");
+                                var etiqueta = hora == new TimeOnly(23, 59) ? "24:00" : valor;
                                 if (valor == "09:00")
                                 {
-                                    <option value="@valor" selected="selected">@valor</option>
+                                    <option value="@valor" selected="selected">@etiqueta</option>
                                 }
                                 else
                                 {
-                                    <option value="@valor">@valor</option>
+                                    <option value="@valor">@etiqueta</option>
                                 }
                             }
                         </select>
@@ -763,9 +769,10 @@ else
                         <div class="col-md-3">
                             <label class="form-label">Hora fin</label>
                             <select class="form-select" id="modalHoraFin" name="HoraFin" required>
-                                @foreach (var hora in horasMediaHora)
+                                @foreach (var hora in horasCierre)
                                 {
-                                    <option value="@hora.ToString("HH\\:mm")">@hora.ToString("HH\\:mm")</option>
+                                    var etiquetaHora = hora == new TimeOnly(23, 59) ? "24:00" : hora.ToString("HH\\:mm");
+                                    <option value="@hora.ToString("HH\\:mm")">@etiquetaHora</option>
                                 }
                             </select>
                         </div>
@@ -1045,6 +1052,54 @@ else
 
             function formatTime(h, m) {
                 return `${pad2(h)}:${pad2(m)}`;
+            }
+
+            function calcularFinReservaCalendario(inicio) {
+                const fin = new Date(inicio.getTime() + (60 * 60000));
+                const cruzaDia = fin.getFullYear() !== inicio.getFullYear()
+                    || fin.getMonth() !== inicio.getMonth()
+                    || fin.getDate() !== inicio.getDate();
+
+                if (cruzaDia) {
+                    const finAjustado = new Date(inicio);
+                    finAjustado.setHours(23, 59, 0, 0);
+                    return finAjustado;
+                }
+
+                return fin;
+            }
+
+            function parseTimeToMinutes(hhmm) {
+                const text = String(hhmm || '').trim();
+                if (!/^\d{2}:\d{2}$/.test(text)) return null;
+                const parts = text.split(':');
+                const h = Number(parts[0]);
+                const m = Number(parts[1]);
+                if (!Number.isInteger(h) || !Number.isInteger(m) || h < 0 || h > 23 || m < 0 || m > 59) return null;
+                return (h * 60) + m;
+            }
+
+            function normalizeReservaRange(horaInicio, horaFin) {
+                const inicio = parseTimeToMinutes(horaInicio ?? '18:00');
+                const finRaw = parseTimeToMinutes(horaFin ?? '19:00');
+                const inicioSafe = inicio ?? (18 * 60);
+                let finSafe = finRaw ?? (inicioSafe + 60);
+
+                // Evita cruzar al dia siguiente: el limite operativo es 23:59.
+                if (finSafe <= inicioSafe) {
+                    finSafe = inicioSafe + 60;
+                }
+                if (finSafe > 1439) {
+                    finSafe = 1439;
+                }
+                if (finSafe <= inicioSafe) {
+                    finSafe = Math.min(1439, inicioSafe + 30);
+                }
+
+                return {
+                    horaInicio: formatTime(Math.floor(inicioSafe / 60), inicioSafe % 60),
+                    horaFin: formatTime(Math.floor(finSafe / 60), finSafe % 60)
+                };
             }
 
             function hexToRgba(hexColor, alpha) {
@@ -1802,7 +1857,7 @@ else
                 if (formatDateIso(fechaHora) < hoyIso) {
                     return { ok: false, mensaje: 'No se permiten reservas en fechas pasadas.' };
                 }
-                const fin = new Date(fechaHora.getTime() + (60 * 60000));
+                const fin = calcularFinReservaCalendario(fechaHora);
                 const bloqueo = buscarBloqueoBackendEnRango(fechaHora, fin, espacioId);
                 if (bloqueo) {
                     return { ok: false, mensaje: bloqueo.motivo || bloqueo.titulo || bloqueo.estadoTexto || 'Horario bloqueado/no atencion.' };
@@ -1896,9 +1951,10 @@ else
                 if (modalCuponWrapEl) modalCuponWrapEl.classList.remove('d-none');
                 setValue('modalReservaId', 0);
                 const fechaInicial = fechaIso && !esFechaPasadaIso(fechaIso) ? fechaIso : hoyIso;
+                const rangoHorario = normalizeReservaRange(horaInicio || '18:00', horaFin || '19:00');
                 setValue('modalFecha', fechaInicial);
-                setValue('modalHoraInicio', horaInicio || '18:00');
-                setValue('modalHoraFin', horaFin || '19:00');
+                setValue('modalHoraInicio', rangoHorario.horaInicio);
+                setValue('modalHoraFin', rangoHorario.horaFin);
                 setValue('modalEstado', 1);
                 setValue('modalTotal', '0.00');
                 setValue('modalTotalBaseCupon', '0.00');
@@ -2559,11 +2615,12 @@ else
                                 alert(validacion.mensaje);
                                 return;
                             }
-                            const fin = new Date(inicio.getTime() + (60 * 60000));
+                            const fin = calcularFinReservaCalendario(inicio);
+                            const horaFinTexto = formatTime(fin.getHours(), fin.getMinutes());
                             abrirModalNuevaReserva(
                                 formatDateIso(inicio),
                                 formatTime(inicio.getHours(), inicio.getMinutes()),
-                                formatTime(fin.getHours(), fin.getMinutes()),
+                                horaFinTexto,
                                 getFiltroEspacioSeleccionado()
                             );
                             return;

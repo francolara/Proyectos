@@ -291,11 +291,44 @@ public partial class SportCenterStoredProcedureService
                 ? new List<EspacioTarifaRangoViewModel>()
                 : JsonSerializer.Deserialize<List<EspacioTarifaRangoViewModel>>(dr.GetString(10), TarifaJsonSerializerOptions) ?? new List<EspacioTarifaRangoViewModel>(),
             AdministracionPrivada = dr.FieldCount > 11 && ReadBool(dr, 11),
+            TarifasFeriado = dr.FieldCount > 12 && !dr.IsDBNull(12)
+                ? JsonSerializer.Deserialize<List<EspacioTarifaFeriadoRangoViewModel>>(dr.GetString(12), TarifaJsonSerializerOptions) ?? new List<EspacioTarifaFeriadoRangoViewModel>()
+                : new List<EspacioTarifaFeriadoRangoViewModel>(),
             NegocioId = negocioId
         };
     }
 
     public async Task<int> EspaciosCrearAsync(EspacioFormViewModel model, string usuario)
+    {
+        try
+        {
+            return await EspaciosCrearInternoAsync(model, usuario, incluirTarifasFeriado: true);
+        }
+        catch (SqlException ex) when (ex.Message.Contains("@TarifasFeriadoJson", StringComparison.OrdinalIgnoreCase))
+        {
+            return await EspaciosCrearInternoAsync(model, usuario, incluirTarifasFeriado: false);
+        }
+    }
+
+    public async Task<bool> EspaciosActualizarAsync(EspacioFormViewModel model, string usuario)
+    {
+        try
+        {
+            await EspaciosActualizarInternoAsync(model, usuario, incluirTarifasFeriado: true);
+            return true;
+        }
+        catch (SqlException ex) when (ex.Message.Contains("@TarifasFeriadoJson", StringComparison.OrdinalIgnoreCase))
+        {
+            await EspaciosActualizarInternoAsync(model, usuario, incluirTarifasFeriado: false);
+            return true;
+        }
+        catch (SqlException ex) when (EsErrorNoEncontrado(ex.Message))
+        {
+            return false;
+        }
+    }
+
+    private async Task<int> EspaciosCrearInternoAsync(EspacioFormViewModel model, string usuario, bool incluirTarifasFeriado)
     {
         await using var cn = CreateConnection();
         await cn.OpenAsync();
@@ -312,38 +345,34 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@AdministracionPrivada", model.AdministracionPrivada, SqlDbType.Bit);
         AddParam(cmd, "@Estado", (int)model.Estado, SqlDbType.Int);
         AddParam(cmd, "@TarifasJson", ObtenerTarifasJson(model), SqlDbType.NVarChar);
+        if (incluirTarifasFeriado)
+            AddParam(cmd, "@TarifasFeriadoJson", ObtenerTarifasFeriadoJson(model), SqlDbType.NVarChar);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
         return Convert.ToInt32(await cmd.ExecuteScalarAsync());
     }
 
-    public async Task<bool> EspaciosActualizarAsync(EspacioFormViewModel model, string usuario)
+    private async Task EspaciosActualizarInternoAsync(EspacioFormViewModel model, string usuario, bool incluirTarifasFeriado)
     {
-        try
-        {
-            await using var cn = CreateConnection();
-            await cn.OpenAsync();
-            await using var cmd = new SqlCommand("Sp_Espacios_Actualizar", cn) { CommandType = CommandType.StoredProcedure };
-            AddParam(cmd, "@Id", model.Id, SqlDbType.Int);
-            AddParam(cmd, "@NegocioId", model.NegocioId, SqlDbType.Int);
-            AddParam(cmd, "@SedeId", model.SedeId, SqlDbType.Int);
-            AddParam(cmd, "@TipoDeporteId", model.TipoDeporteId, SqlDbType.Int);
-            AddParam(cmd, "@TipoSueloId", model.TipoSueloId, SqlDbType.Int);
-            AddParam(cmd, "@Codigo", model.Codigo, SqlDbType.NVarChar);
-            AddParam(cmd, "@Nombre", model.Nombre, SqlDbType.NVarChar);
-            AddParam(cmd, "@Capacidad", model.Capacidad, SqlDbType.Int);
-            AddParam(cmd, "@TieneIluminacion", model.TieneIluminacion, SqlDbType.Bit);
-            AddParam(cmd, "@Techada", model.Techada, SqlDbType.Bit);
-            AddParam(cmd, "@AdministracionPrivada", model.AdministracionPrivada, SqlDbType.Bit);
-            AddParam(cmd, "@Estado", (int)model.Estado, SqlDbType.Int);
-            AddParam(cmd, "@TarifasJson", ObtenerTarifasJson(model), SqlDbType.NVarChar);
-            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-            await cmd.ExecuteNonQueryAsync();
-            return true;
-        }
-        catch (SqlException ex) when (EsErrorNoEncontrado(ex.Message))
-        {
-            return false;
-        }
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_Espacios_Actualizar", cn) { CommandType = CommandType.StoredProcedure };
+        AddParam(cmd, "@Id", model.Id, SqlDbType.Int);
+        AddParam(cmd, "@NegocioId", model.NegocioId, SqlDbType.Int);
+        AddParam(cmd, "@SedeId", model.SedeId, SqlDbType.Int);
+        AddParam(cmd, "@TipoDeporteId", model.TipoDeporteId, SqlDbType.Int);
+        AddParam(cmd, "@TipoSueloId", model.TipoSueloId, SqlDbType.Int);
+        AddParam(cmd, "@Codigo", model.Codigo, SqlDbType.NVarChar);
+        AddParam(cmd, "@Nombre", model.Nombre, SqlDbType.NVarChar);
+        AddParam(cmd, "@Capacidad", model.Capacidad, SqlDbType.Int);
+        AddParam(cmd, "@TieneIluminacion", model.TieneIluminacion, SqlDbType.Bit);
+        AddParam(cmd, "@Techada", model.Techada, SqlDbType.Bit);
+        AddParam(cmd, "@AdministracionPrivada", model.AdministracionPrivada, SqlDbType.Bit);
+        AddParam(cmd, "@Estado", (int)model.Estado, SqlDbType.Int);
+        AddParam(cmd, "@TarifasJson", ObtenerTarifasJson(model), SqlDbType.NVarChar);
+        if (incluirTarifasFeriado)
+            AddParam(cmd, "@TarifasFeriadoJson", ObtenerTarifasFeriadoJson(model), SqlDbType.NVarChar);
+        AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+        await cmd.ExecuteNonQueryAsync();
     }
 
     public async Task<bool> EspaciosEliminarAsync(int negocioId, int id, string usuario)
@@ -453,4 +482,9 @@ public partial class SportCenterStoredProcedureService
         => string.IsNullOrWhiteSpace(model.TarifasJson)
             ? JsonSerializer.Serialize(model.Tarifas, TarifaJsonSerializerOptions)
             : model.TarifasJson;
+
+    private static string ObtenerTarifasFeriadoJson(EspacioFormViewModel model)
+        => string.IsNullOrWhiteSpace(model.TarifasFeriadoJson)
+            ? JsonSerializer.Serialize(model.TarifasFeriado, TarifaJsonSerializerOptions)
+            : model.TarifasFeriadoJson;
 }

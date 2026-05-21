@@ -1,0 +1,321 @@
+﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.ModuloBaseViewModel
+@{
+    ViewData["AdminShell"] = true;
+    ViewData["AdminNegocioId"] = Model.NegocioId;
+    var moduloAyuda = (ViewData["ModuloAyuda"]?.ToString() ?? string.Empty).Trim().ToUpperInvariant();
+    var panelObjetivo = moduloAyuda switch
+    {
+        "PANEL" => "faq-dashboard",
+        "MAESTROS" => "faq-maestros",
+        "SEDES" => "faq-sedes",
+        "ESPACIOS" => "faq-espacios",
+        "CLIENTES" => "faq-clientes",
+        "RESERVAS" => "faq-reservas",
+        "PAGOS" => "faq-pagos",
+        "COMPROBANTES" => "faq-comprobantes",
+        "USUARIOS" => "faq-usuarios",
+        "PROMOCIONES" => "faq-promociones",
+        "CUPONES" => "faq-cupones",
+        "REPORTES" => "faq-reportes",
+        "CONFIGURACION" => "faq-configuracion",
+        "MISUSCRIPCION" => "faq-suscripcion",
+        _ => "faq-dashboard"
+    };
+}
+
+<section class="admin-page-frame admin-faq-page" data-admin-faq data-faq-panel-default="@panelObjetivo">
+    <header class="page-header">
+        <div>
+            <h1>FAQ operativo del panel</h1>
+            <p class="page-subtitle">Guia de operacion por modulos para administradores y operadores del complejo deportivo.</p>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(moduloAyuda))
+    {
+        <div class="alert alert-info py-2 px-3 mb-3">
+            <i class="bi bi-compass me-1"></i>Estas viendo ayuda contextual del modulo <strong>@moduloAyuda</strong>.
+        </div>
+    }
+
+    <div class="admin-faq-layout" data-faq-home-root>
+        <aside class="admin-faq-sidebar" aria-label="Secciones FAQ operativo">
+            <button type="button" class="admin-faq-tab" data-faq-target="faq-dashboard">1. Dashboard</button>
+            <button type="button" class="admin-faq-tab" data-faq-target="faq-maestros">2. Maestros</button>
+            <button type="button" class="admin-faq-tab" data-faq-target="faq-sedes">3. Sedes</button>
+            <button type="button" class="admin-faq-tab" data-faq-target="faq-espacios">4. Espacios deportivos</button>
+            <button type="button" class="admin-faq-tab" data-faq-target="faq-clientes">5. Clientes</button>
+            <button type="button" class="admin-faq-tab" data-faq-target="faq-reservas">6. Reservas</button>
+            <button type="button" class="admin-faq-tab" data-faq-target="faq-pagos">7. Pagos</button>
+            <button type="button" class="admin-faq-tab" data-faq-target="faq-comprobantes">8. Comprobantes</button>
+            <button type="button" class="admin-faq-tab" data-faq-target="faq-usuarios">9. Usuarios</button>
+            <button type="button" class="admin-faq-tab" data-faq-target="faq-promociones">10. Promociones</button>
+            <button type="button" class="admin-faq-tab" data-faq-target="faq-cupones">11. Cupones</button>
+            <button type="button" class="admin-faq-tab" data-faq-target="faq-reportes">12. Reportes</button>
+            <button type="button" class="admin-faq-tab" data-faq-target="faq-configuracion">13. Configuracion</button>
+            <button type="button" class="admin-faq-tab" data-faq-target="faq-suscripcion">14. Mi suscripcion</button>
+        </aside>
+
+        <div class="admin-faq-content">
+            <div class="admin-faq-search-wrap">
+                <label class="visually-hidden" for="faqAdminSearch">Buscar pregunta</label>
+                <input id="faqAdminSearch" type="search" class="form-control admin-faq-search" placeholder="Buscar en FAQ (ej: reservas, pagos, comprobantes, sedes)" data-faq-search />
+                <small class="text-muted" data-faq-search-state>Mostrando todas las preguntas del modulo.</small>
+            </div>
+
+            <article id="faq-dashboard" class="admin-faq-panel" data-faq-panel>
+                <div class="accordion admin-faq-accordion" id="faqDashAccordion">
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#fd1">¿Que reviso primero al iniciar turno?</button></h2><div id="fd1" class="accordion-collapse collapse show" data-bs-parent="#faqDashAccordion"><div class="accordion-body">KPIs de reservas del dia, ingresos, pendientes por confirmar y saldos por cobrar.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fd2">¿Que significa salud operativa?</button></h2><div id="fd2" class="accordion-collapse collapse" data-bs-parent="#faqDashAccordion"><div class="accordion-body">Indicador combinado de no-show, ocupacion y ritmo de operacion.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fd3">¿Para que sirven las acciones rapidas?</button></h2><div id="fd3" class="accordion-collapse collapse" data-bs-parent="#faqDashAccordion"><div class="accordion-body">Crear reserva, registrar pago, emitir comprobante y abrir reportes sin navegar por varias pantallas.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fd4">¿Cada cuanto revisar dashboard?</button></h2><div id="fd4" class="accordion-collapse collapse" data-bs-parent="#faqDashAccordion"><div class="accordion-body">Al inicio de turno, mitad de jornada y antes del cierre.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fd5">¿Que alerta priorizo primero?</button></h2><div id="fd5" class="accordion-collapse collapse" data-bs-parent="#faqDashAccordion"><div class="accordion-body">Reservas del dia sin confirmar y saldos pendientes de cobro.</div></div></div>
+                </div>
+            </article>
+
+            <article id="faq-maestros" class="admin-faq-panel" data-faq-panel>
+                <div class="accordion admin-faq-accordion" id="faqMaeAccordion">
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#fm1">¿Que debo tener listo aqui?</button></h2><div id="fm1" class="accordion-collapse collapse show" data-bs-parent="#faqMaeAccordion"><div class="accordion-body">Tipos de documento, monedas, formas de pago y catalogos base.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fm2">¿Por que es critico?</button></h2><div id="fm2" class="accordion-collapse collapse" data-bs-parent="#faqMaeAccordion"><div class="accordion-body">Si maestros estan incompletos, fallan reservas, pagos o emision.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fm3">¿Puedo eliminar un maestro en uso?</button></h2><div id="fm3" class="accordion-collapse collapse" data-bs-parent="#faqMaeAccordion"><div class="accordion-body">No se recomienda. Mejor desactivar y mantener historial.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fm4">¿Como evito duplicados?</button></h2><div id="fm4" class="accordion-collapse collapse" data-bs-parent="#faqMaeAccordion"><div class="accordion-body">Buscar antes de crear y usar nombres normalizados.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fm5">¿En que impacta el maestro de Tipo de documento?</button></h2><div id="fm5" class="accordion-collapse collapse" data-bs-parent="#faqMaeAccordion"><div class="accordion-body">Se usa en Clientes, Reservas y Comprobantes para identificar correctamente a personas/empresas y validar datos fiscales.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fm6">¿En que impacta el maestro de Moneda?</button></h2><div id="fm6" class="accordion-collapse collapse" data-bs-parent="#faqMaeAccordion"><div class="accordion-body">Define como se presentan importes en cotizacion, pagos, reportes y comprobantes; una moneda mal configurada altera lectura financiera.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fm7">¿En que impacta el maestro de Forma de pago?</button></h2><div id="fm7" class="accordion-collapse collapse" data-bs-parent="#faqMaeAccordion"><div class="accordion-body">Afecta el registro de pagos y caja; si una forma no esta activa no podra seleccionarse al cobrar una reserva.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fm8">¿En que impacta el maestro de Tipo de comprobante?</button></h2><div id="fm8" class="accordion-collapse collapse" data-bs-parent="#faqMaeAccordion"><div class="accordion-body">Controla que documentos puedes emitir (boleta/factura u otros) y se cruza con serie por sede y datos del cliente.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fm9">¿En que impacta el maestro de Deportes/Categorias deportivas?</button></h2><div id="fm9" class="accordion-collapse collapse" data-bs-parent="#faqMaeAccordion"><div class="accordion-body">Se usa en Espacios deportivos para clasificar canchas/ambientes y en filtros de reserva publica para mejorar busqueda de disponibilidad.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fm10">¿En que impacta el maestro de Tipo de suelo/superficie?</button></h2><div id="fm10" class="accordion-collapse collapse" data-bs-parent="#faqMaeAccordion"><div class="accordion-body">Aporta informacion comercial del espacio deportivo y puede usarse para filtros y descripcion en la experiencia de reserva web.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fm11">¿Que pasa si desactivo un maestro usado en reservas antiguas?</button></h2><div id="fm11" class="accordion-collapse collapse" data-bs-parent="#faqMaeAccordion"><div class="accordion-body">No rompe historial previo, pero deja de estar disponible para nuevas operaciones; por eso se recomienda desactivar y no eliminar.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fm12">¿Que validacion hacer antes de activar un nuevo maestro?</button></h2><div id="fm12" class="accordion-collapse collapse" data-bs-parent="#faqMaeAccordion"><div class="accordion-body">Confirmar nombre unico, estado activo correcto, orden de uso y prueba rapida en el modulo que lo consume (reserva/pago/comprobante).</div></div></div>
+                </div>
+            </article>
+
+            <article id="faq-sedes" class="admin-faq-panel" data-faq-panel>
+                <div class="accordion admin-faq-accordion" id="faqSedAccordion">
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#fs1">¿Cuales son los prerrequisitos?</button></h2><div id="fs1" class="accordion-collapse collapse show" data-bs-parent="#faqSedAccordion"><div class="accordion-body">Negocio activo, datos de contacto validos y politica de atencion definida.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fs2">¿Que impacta una sede mal configurada?</button></h2><div id="fs2" class="accordion-collapse collapse" data-bs-parent="#faqSedAccordion"><div class="accordion-body">Horarios, reservas publicas, pagos y comprobantes por sede.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fs3">¿Debo activar domingos y feriados?</button></h2><div id="fs3" class="accordion-collapse collapse" data-bs-parent="#faqSedAccordion"><div class="accordion-body">Si atiendes esos dias, activalo para que disponibilidad y validaciones sean coherentes.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fs4">¿Que validar al crear una sede?</button></h2><div id="fs4" class="accordion-collapse collapse" data-bs-parent="#faqSedAccordion"><div class="accordion-body">Nombre unico, direccion, horario de apertura/cierre, canales de contacto y estado activo.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fs5">¿Que hacer antes de desactivar sede?</button></h2><div id="fs5" class="accordion-collapse collapse" data-bs-parent="#faqSedAccordion"><div class="accordion-body">Reasignar reservas futuras, revisar espacios y comunicar al equipo.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fs6">¿Por que no sale disponibilidad?</button></h2><div id="fs6" class="accordion-collapse collapse" data-bs-parent="#faqSedAccordion"><div class="accordion-body">Revisar dias de atencion, bloqueos y fechas inhabilitadas.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fs7">¿Debo usar series por sede?</button></h2><div id="fs7" class="accordion-collapse collapse" data-bs-parent="#faqSedAccordion"><div class="accordion-body">Si, para comprobantes ordenados y trazables por cada local.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fs8">¿Checklist minimo de sede?</button></h2><div id="fs8" class="accordion-collapse collapse" data-bs-parent="#faqSedAccordion"><div class="accordion-body">Horario correcto, sede activa, contacto visible y servicios actualizados.</div></div></div>
+                </div>
+            </article>
+
+            <article id="faq-espacios" class="admin-faq-panel" data-faq-panel>
+                <div class="accordion admin-faq-accordion" id="faqEspAccordion">
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#fe1">¿Que prerrequisitos debo cumplir?</button></h2><div id="fe1" class="accordion-collapse collapse show" data-bs-parent="#faqEspAccordion"><div class="accordion-body">Sede activa y catalogos de deporte/suelo definidos.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fe2">¿Que campos son criticos?</button></h2><div id="fe2" class="accordion-collapse collapse" data-bs-parent="#faqEspAccordion"><div class="accordion-body">Nombre/codigo, tipo de deporte, precio base y estado activo.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fe3">¿Como evitar conflictos de agenda?</button></h2><div id="fe3" class="accordion-collapse collapse" data-bs-parent="#faqEspAccordion"><div class="accordion-body">Validar bloqueos, horarios y cruces antes de publicar.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fe4">¿Cuando desactivar un espacio?</button></h2><div id="fe4" class="accordion-collapse collapse" data-bs-parent="#faqEspAccordion"><div class="accordion-body">Mantenimiento, cierre temporal o cambios de uso.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fe5">¿No aparece en reservas, que reviso?</button></h2><div id="fe5" class="accordion-collapse collapse" data-bs-parent="#faqEspAccordion"><div class="accordion-body">Estado activo, sede asociada, filtros y horario operativo.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fe6">¿Puedo variar precio por horario?</button></h2><div id="fe6" class="accordion-collapse collapse" data-bs-parent="#faqEspAccordion"><div class="accordion-body">Si, usando reglas comerciales y promociones.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fe7">¿Checklist de publicacion?</button></h2><div id="fe7" class="accordion-collapse collapse" data-bs-parent="#faqEspAccordion"><div class="accordion-body">Espacio activo, tarifa vigente y horario consistente con sede.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fe8">¿Como registro el precio de un espacio deportivo?</button></h2><div id="fe8" class="accordion-collapse collapse" data-bs-parent="#faqEspAccordion"><div class="accordion-body">En el formulario del espacio define el precio base y guarda; ese valor se usa como referencia inicial de cotizacion en reservas.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fe9">¿Puedo tener precios distintos por sede o por horario?</button></h2><div id="fe9" class="accordion-collapse collapse" data-bs-parent="#faqEspAccordion"><div class="accordion-body">Si. Puedes manejar precios por contexto operativo (sede/horario) con reglas comerciales para reflejar demanda real.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fe10">¿Que pasa si cambio el precio de un espacio?</button></h2><div id="fe10" class="accordion-collapse collapse" data-bs-parent="#faqEspAccordion"><div class="accordion-body">El nuevo precio aplica a reservas nuevas; las reservas ya registradas conservan su total guardado, salvo que se recotice manualmente.</div></div></div>
+                </div>
+            </article>
+
+            <article id="faq-clientes" class="admin-faq-panel" data-faq-panel>
+                <div class="accordion admin-faq-accordion" id="faqCliAccordion">
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#fc1">¿Que datos minimos debo registrar?</button></h2><div id="fc1" class="accordion-collapse collapse show" data-bs-parent="#faqCliAccordion"><div class="accordion-body">Documento, nombres/razon social, telefono y correo.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fc2">¿Como evitar clientes duplicados?</button></h2><div id="fc2" class="accordion-collapse collapse" data-bs-parent="#faqCliAccordion"><div class="accordion-body">Buscar por documento o telefono antes de crear.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fc3">¿Por que completar correo?</button></h2><div id="fc3" class="accordion-collapse collapse" data-bs-parent="#faqCliAccordion"><div class="accordion-body">Facilita envio de comprobantes y confirmaciones.</div></div></div>
+                </div>
+            </article>
+
+            <article id="faq-reservas" class="admin-faq-panel" data-faq-panel>
+                <div class="accordion admin-faq-accordion" id="faqResAccordion">
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#fr1">¿Cuales son los prerrequisitos?</button></h2><div id="fr1" class="accordion-collapse collapse show" data-bs-parent="#faqResAccordion"><div class="accordion-body">Sede y espacio activos, horarios validos y cliente identificado.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fr2">¿Que estados clave maneja?</button></h2><div id="fr2" class="accordion-collapse collapse" data-bs-parent="#faqResAccordion"><div class="accordion-body">Pendiente, Confirmada, Pagada, Cancelada y No asistio.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fr3">¿Se permiten fechas pasadas?</button></h2><div id="fr3" class="accordion-collapse collapse" data-bs-parent="#faqResAccordion"><div class="accordion-body">No, la reserva debe ser en fecha y hora futura.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fr4">¿Regla publica para web?</button></h2><div id="fr4" class="accordion-collapse collapse" data-bs-parent="#faqResAccordion"><div class="accordion-body">Bloques de 1 hora para reserva online publica.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fr5">¿Cuando usar bloqueos?</button></h2><div id="fr5" class="accordion-collapse collapse" data-bs-parent="#faqResAccordion"><div class="accordion-body">Mantenimiento, eventos internos y cierres especiales.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fr6">¿Cuando pasa a pagada?</button></h2><div id="fr6" class="accordion-collapse collapse" data-bs-parent="#faqResAccordion"><div class="accordion-body">Cuando la suma de pagos cubre el total final.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fr7">¿Como se valida un cupon?</button></h2><div id="fr7" class="accordion-collapse collapse" data-bs-parent="#faqResAccordion"><div class="accordion-body">Por vigencia, estado, limite de usos y reglas de aplicacion.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fr8">¿Error no disponible, que reviso?</button></h2><div id="fr8" class="accordion-collapse collapse" data-bs-parent="#faqResAccordion"><div class="accordion-body">Cruce horario, bloqueos, estado del espacio y reglas de sede.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fr9">¿Error total inconsistente?</button></h2><div id="fr9" class="accordion-collapse collapse" data-bs-parent="#faqResAccordion"><div class="accordion-body">Revisar cotizacion, descuentos, cupon y ajustes manuales.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fr10">¿Puedo registrar un cliente nuevo desde la reserva?</button></h2><div id="fr10" class="accordion-collapse collapse" data-bs-parent="#faqResAccordion"><div class="accordion-body">Si. Si el cliente no existe, puedes crearlo durante el flujo de reserva y continuar sin salir del modulo.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fr11">¿Como aplico un cupon en una reserva?</button></h2><div id="fr11" class="accordion-collapse collapse" data-bs-parent="#faqResAccordion"><div class="accordion-body">Ingresa el codigo en la reserva, valida y verifica el nuevo total; si no aplica, revisa vigencia, estado y condiciones.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fr12">¿Puedo registrar un pago desde la misma reserva?</button></h2><div id="fr12" class="accordion-collapse collapse" data-bs-parent="#faqResAccordion"><div class="accordion-body">Si. Desde la reserva puedes registrar adelanto o pago total y el sistema recalcula saldo y estado en tiempo real.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fr13">¿Como funciona la cotizacion dentro de reserva?</button></h2><div id="fr13" class="accordion-collapse collapse" data-bs-parent="#faqResAccordion"><div class="accordion-body">Toma precio del espacio, aplica reglas comerciales y descuentos/cupones, y muestra total final antes de confirmar.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fr14">¿Puedo cambiar cliente o horario despues de creada?</button></h2><div id="fr14" class="accordion-collapse collapse" data-bs-parent="#faqResAccordion"><div class="accordion-body">Si, segun permisos y estado de la reserva. Siempre valida disponibilidad y total luego de editar.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fr15">¿Como se comporta el estado Pendiente?</button></h2><div id="fr15" class="accordion-collapse collapse" data-bs-parent="#faqResAccordion"><div class="accordion-body">Es una reserva creada pero aun no consolidada comercialmente; puede pasar a confirmada, pagada o cancelada segun el flujo.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fr16">¿Como se comporta el estado Confirmada?</button></h2><div id="fr16" class="accordion-collapse collapse" data-bs-parent="#faqResAccordion"><div class="accordion-body">La reserva ya fue validada operativamente y mantiene su cupo; puede recibir pagos y luego cambiar a pagada.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fr17">¿Como se comporta el estado Pagada?</button></h2><div id="fr17" class="accordion-collapse collapse" data-bs-parent="#faqResAccordion"><div class="accordion-body">Se activa cuando el acumulado cubre el total final; normalmente bloquea cambios de monto sin permisos especiales.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fr18">¿Como se comporta el estado Cancelada?</button></h2><div id="fr18" class="accordion-collapse collapse" data-bs-parent="#faqResAccordion"><div class="accordion-body">La reserva deja de ocupar el horario y no debe operar como activa; cualquier devolucion o ajuste se gestiona por politica interna.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fr19">¿Como se comporta el estado No asistio?</button></h2><div id="fr19" class="accordion-collapse collapse" data-bs-parent="#faqResAccordion"><div class="accordion-body">Se usa cuando el cliente no se presenta en la fecha/hora reservada; ayuda al analisis de no-show y decisiones comerciales.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fr20">¿Cuales son transiciones recomendadas entre estados?</button></h2><div id="fr20" class="accordion-collapse collapse" data-bs-parent="#faqResAccordion"><div class="accordion-body">Pendiente a confirmada a pagada para flujo normal; pendiente/confirmada a cancelada por baja; confirmada/pagada a no asistio si no hubo asistencia.</div></div></div>
+                </div>
+            </article>
+
+            <article id="faq-pagos" class="admin-faq-panel" data-faq-panel>
+                <div class="accordion admin-faq-accordion" id="faqPagAccordion">
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#fp1">¿Que se registra siempre?</button></h2><div id="fp1" class="accordion-collapse collapse show" data-bs-parent="#faqPagAccordion"><div class="accordion-body">Monto, forma de pago, referencia y usuario responsable.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fp2">¿Se admiten adelantos?</button></h2><div id="fp2" class="accordion-collapse collapse" data-bs-parent="#faqPagAccordion"><div class="accordion-body">Si, manteniendo trazabilidad de saldo pendiente.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fp3">¿Puede quedar pago parcial?</button></h2><div id="fp3" class="accordion-collapse collapse" data-bs-parent="#faqPagAccordion"><div class="accordion-body">Si, hasta completar el total de la reserva.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fp4">¿Estado no cambia a pagada?</button></h2><div id="fp4" class="accordion-collapse collapse" data-bs-parent="#faqPagAccordion"><div class="accordion-body">Revisar total final, descuentos y suma real de pagos.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fp5">¿Puedo editar un pago ya registrado?</button></h2><div id="fp5" class="accordion-collapse collapse" data-bs-parent="#faqPagAccordion"><div class="accordion-body">Solo con permisos y trazabilidad para auditoria.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fp6">¿Checklist de cierre de pagos?</button></h2><div id="fp6" class="accordion-collapse collapse" data-bs-parent="#faqPagAccordion"><div class="accordion-body">Validar referencia, cuadrar monto y confirmar saldo final.</div></div></div>
+                </div>
+            </article>
+
+            <article id="faq-comprobantes" class="admin-faq-panel" data-faq-panel>
+                <div class="accordion admin-faq-accordion" id="faqComAccordion">
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#fco1">¿Cuales son los prerrequisitos?</button></h2><div id="fco1" class="accordion-collapse collapse show" data-bs-parent="#faqComAccordion"><div class="accordion-body">Negocio activo, emision habilitada, sede operativa, serie asignada y usuario con permisos.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fco2">¿Que validar antes de emitir?</button></h2><div id="fco2" class="accordion-collapse collapse" data-bs-parent="#faqComAccordion"><div class="accordion-body">Datos fiscales, tipo de documento del cliente y correlativo.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fco3">¿Debo activar domingos para emitir?</button></h2><div id="fco3" class="accordion-collapse collapse" data-bs-parent="#faqComAccordion"><div class="accordion-body">Si el negocio opera ese dia, la sede debe tener atencion activa.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fco4">¿Que pasa si no hay serie asignada?</button></h2><div id="fco4" class="accordion-collapse collapse" data-bs-parent="#faqComAccordion"><div class="accordion-body">No se podra emitir hasta asignar serie activa a la sede.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fco5">¿Puedo emitir sin pago completo?</button></h2><div id="fco5" class="accordion-collapse collapse" data-bs-parent="#faqComAccordion"><div class="accordion-body">Depende de tu politica, pero la operacion debe quedar consistente.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fco6">¿Error de correlativo repetido?</button></h2><div id="fco6" class="accordion-collapse collapse" data-bs-parent="#faqComAccordion"><div class="accordion-body">Revisar serie vigente y configuracion de emision por sede.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fco7">¿Checklist antes de emitir?</button></h2><div id="fco7" class="accordion-collapse collapse" data-bs-parent="#faqComAccordion"><div class="accordion-body">Serie activa, datos fiscales completos y reserva/pago coherentes.</div></div></div>
+                </div>
+            </article>
+
+            <article id="faq-usuarios" class="admin-faq-panel" data-faq-panel>
+                <div class="accordion admin-faq-accordion" id="faqUsuAccordion">
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#fu1">¿Que criterio de permisos usar?</button></h2><div id="fu1" class="accordion-collapse collapse show" data-bs-parent="#faqUsuAccordion"><div class="accordion-body">Principio de minimo privilegio.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fu2">¿Perfiles sugeridos?</button></h2><div id="fu2" class="accordion-collapse collapse" data-bs-parent="#faqUsuAccordion"><div class="accordion-body">Administrador, operador y caja.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fu3">¿Cada cuanto auditar permisos?</button></h2><div id="fu3" class="accordion-collapse collapse" data-bs-parent="#faqUsuAccordion"><div class="accordion-body">Mensual o al cambiar funciones del personal.</div></div></div>
+                </div>
+            </article>
+
+            <article id="faq-promociones" class="admin-faq-panel" data-faq-panel>
+                <div class="accordion admin-faq-accordion" id="faqProAccordion">
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#fpr1">¿Que debo definir al crear?</button></h2><div id="fpr1" class="accordion-collapse collapse show" data-bs-parent="#faqProAccordion"><div class="accordion-body">Vigencia, alcance por sede/espacio y reglas sin solapes no deseados.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fpr2">¿Como medir si funciono?</button></h2><div id="fpr2" class="accordion-collapse collapse" data-bs-parent="#faqProAccordion"><div class="accordion-body">Comparando ocupacion y ticket promedio antes y despues.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fpr3">¿Puede convivir con cupon?</button></h2><div id="fpr3" class="accordion-collapse collapse" data-bs-parent="#faqProAccordion"><div class="accordion-body">Si, segun reglas comerciales y prioridad de descuentos.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fpr4">¿Las promociones se reflejan en la reserva publica web?</button></h2><div id="fpr4" class="accordion-collapse collapse" data-bs-parent="#faqProAccordion"><div class="accordion-body">Si. Si la promocion esta activa y aplica al contexto (sede/espacio/horario), puede verse y aplicarse en la reserva publica.</div></div></div>
+                </div>
+            </article>
+
+            <article id="faq-cupones" class="admin-faq-panel" data-faq-panel>
+                <div class="accordion admin-faq-accordion" id="faqCupAccordion">
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#fcu1">¿Que configurar en cada cupon?</button></h2><div id="fcu1" class="accordion-collapse collapse show" data-bs-parent="#faqCupAccordion"><div class="accordion-body">Codigo, vigencia, estado y maximo de usos.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fcu2">¿Por que rechaza un cupon?</button></h2><div id="fcu2" class="accordion-collapse collapse" data-bs-parent="#faqCupAccordion"><div class="accordion-body">Vencido, inactivo, sin cupos o fuera de condiciones.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fcu3">¿Puedo limitar por cliente?</button></h2><div id="fcu3" class="accordion-collapse collapse" data-bs-parent="#faqCupAccordion"><div class="accordion-body">Si, para evitar uso repetido no deseado.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fcu4">¿El cupon puede usarse desde la reserva publica web?</button></h2><div id="fcu4" class="accordion-collapse collapse" data-bs-parent="#faqCupAccordion"><div class="accordion-body">Si. El cliente puede ingresar el codigo en la reserva publica y el sistema lo aplicara si cumple vigencia, estado y reglas.</div></div></div>
+                </div>
+            </article>
+
+            <article id="faq-reportes" class="admin-faq-panel" data-faq-panel>
+                <div class="accordion admin-faq-accordion" id="faqRepAccordion">
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#fre1">¿Frecuencia sugerida de revision?</button></h2><div id="fre1" class="accordion-collapse collapse show" data-bs-parent="#faqRepAccordion"><div class="accordion-body">Corte diario, revision semanal de ocupacion y cierre mensual comercial.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fre2">¿Que indicadores mirar?</button></h2><div id="fre2" class="accordion-collapse collapse" data-bs-parent="#faqRepAccordion"><div class="accordion-body">Reservas, ocupacion, no-show, ingresos y conversion comercial.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fre3">¿Como detectar horas muertas?</button></h2><div id="fre3" class="accordion-collapse collapse" data-bs-parent="#faqRepAccordion"><div class="accordion-body">Filtrando demanda por franja y comparando historicos.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fre4">¿Que reporte reviso para validar ocupacion real?</button></h2><div id="fre4" class="accordion-collapse collapse" data-bs-parent="#faqRepAccordion"><div class="accordion-body">El reporte de reservas por sede/espacio y franja horaria; te muestra que horarios se llenan y cuales quedan subutilizados.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fre5">¿Que reporte usar para controlar ingresos?</button></h2><div id="fre5" class="accordion-collapse collapse" data-bs-parent="#faqRepAccordion"><div class="accordion-body">Reporte de pagos por periodo y por sede, comparando total cobrado vs total reservado para identificar brechas de cobranza.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fre6">¿Como medir impacto de promociones y cupones?</button></h2><div id="fre6" class="accordion-collapse collapse" data-bs-parent="#faqRepAccordion"><div class="accordion-body">Comparar reservas, ocupacion e ingresos antes y despues de la campaña, separando periodos y sedes equivalentes.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fre7">¿Que reporte ayuda a reducir no-show?</button></h2><div id="fre7" class="accordion-collapse collapse" data-bs-parent="#faqRepAccordion"><div class="accordion-body">El reporte de estado de reservas (incluyendo no asistio) por cliente, sede y franja; permite ajustar politicas y recordatorios.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fre8">¿Como usar reportes para decisiones de precio?</button></h2><div id="fre8" class="accordion-collapse collapse" data-bs-parent="#faqRepAccordion"><div class="accordion-body">Cruza ocupacion por horario con ingreso promedio; si hay alta demanda sostenida puedes ajustar tarifa o reducir descuentos.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fre9">¿Con que periodicidad presentar reporte al dueño?</button></h2><div id="fre9" class="accordion-collapse collapse" data-bs-parent="#faqRepAccordion"><div class="accordion-body">Resumen ejecutivo semanal y cierre mensual con tendencia, variaciones y acciones recomendadas.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fre10">¿Que errores evitar al interpretar reportes?</button></h2><div id="fre10" class="accordion-collapse collapse" data-bs-parent="#faqRepAccordion"><div class="accordion-body">Comparar periodos no equivalentes, no separar por sede y no considerar canceladas/no-show al analizar conversion real.</div></div></div>
+                </div>
+            </article>
+
+            <article id="faq-configuracion" class="admin-faq-panel" data-faq-panel>
+                <div class="accordion admin-faq-accordion" id="faqCfgAccordion">
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#fcfg1">¿Por que es un modulo sensible?</button></h2><div id="fcfg1" class="accordion-collapse collapse show" data-bs-parent="#faqCfgAccordion"><div class="accordion-body">Porque los cambios aqui impactan reservas, pagos y comprobantes.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fcfg2">¿Que validar despues de cambiar parametros?</button></h2><div id="fcfg2" class="accordion-collapse collapse" data-bs-parent="#faqCfgAccordion"><div class="accordion-body">Prueba corta de reserva, pago y emision.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fcfg3">¿Puedo cambiar politicas en hora pico?</button></h2><div id="fcfg3" class="accordion-collapse collapse" data-bs-parent="#faqCfgAccordion"><div class="accordion-body">Mejor hacerlo fuera de horario critico para evitar errores.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fcfg4">¿Que hace el check de cancelacion automatica?</button></h2><div id="fcfg4" class="accordion-collapse collapse" data-bs-parent="#faqCfgAccordion"><div class="accordion-body">Permite anular reservas pendientes segun la regla configurada de tiempo limite sin confirmacion o sin pago.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fcfg5">¿Cuando conviene activar cancelacion automatica?</button></h2><div id="fcfg5" class="accordion-collapse collapse" data-bs-parent="#faqCfgAccordion"><div class="accordion-body">Cuando tienes alta demanda y necesitas liberar cupos no confirmados para evitar bloqueos de agenda.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fcfg6">¿Que hace el check de emision de comprobantes?</button></h2><div id="fcfg6" class="accordion-collapse collapse" data-bs-parent="#faqCfgAccordion"><div class="accordion-body">Habilita el flujo de emision para el negocio; sin este check activo no se debe permitir emitir desde operaciones.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fcfg7">¿Que implica el envio automatico a SUNAT?</button></h2><div id="fcfg7" class="accordion-collapse collapse" data-bs-parent="#faqCfgAccordion"><div class="accordion-body">Al emitir, el comprobante se intenta enviar automaticamente al proveedor fiscal/SUNAT segun tu integracion configurada.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fcfg8">¿Que validar antes de activar envio automatico a SUNAT?</button></h2><div id="fcfg8" class="accordion-collapse collapse" data-bs-parent="#faqCfgAccordion"><div class="accordion-body">Credenciales vigentes, serie por sede, tipo de comprobante correcto y datos fiscales completos del negocio.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fcfg9">¿Que pasa si desactivo emision pero tengo pagos/reservas activas?</button></h2><div id="fcfg9" class="accordion-collapse collapse" data-bs-parent="#faqCfgAccordion"><div class="accordion-body">Podras seguir operando reservas y pagos, pero quedara bloqueada la emision hasta reactivar y validar configuracion.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fcfg10">¿Para que sirve configurar logo del negocio?</button></h2><div id="fcfg10" class="accordion-collapse collapse" data-bs-parent="#faqCfgAccordion"><div class="accordion-body">Mejora identidad visual en panel y documentos visibles para clientes; usar imagen clara y proporcion adecuada.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fcfg11">¿Cambiar el logo afecta reservas o pagos?</button></h2><div id="fcfg11" class="accordion-collapse collapse" data-bs-parent="#faqCfgAccordion"><div class="accordion-body">No afecta reglas de negocio; impacta presentacion visual y elementos de marca del complejo deportivo.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fcfg12">¿Checklist rapido de configuracion antes de operar?</button></h2><div id="fcfg12" class="accordion-collapse collapse" data-bs-parent="#faqCfgAccordion"><div class="accordion-body">Revisar checks activos, horarios de sede, emision habilitada, serie asignada y prueba integral de reserva-pago-comprobante.</div></div></div>
+                </div>
+            </article>
+
+            <article id="faq-suscripcion" class="admin-faq-panel" data-faq-panel>
+                <div class="accordion admin-faq-accordion" id="faqSusAccordion">
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#fsu1">¿Que debo monitorear?</button></h2><div id="fsu1" class="accordion-collapse collapse show" data-bs-parent="#faqSusAccordion"><div class="accordion-body">Estado y vencimiento para evitar bloqueos operativos.</div></div></div>
+                    <div class="accordion-item admin-faq-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fsu2">¿Que hacer si esta por vencer?</button></h2><div id="fsu2" class="accordion-collapse collapse" data-bs-parent="#faqSusAccordion"><div class="accordion-body">Renovar con anticipacion y validar continuidad de servicio.</div></div></div>
+                </div>
+            </article>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+<script>
+(() => {
+    const root = document.querySelector('[data-admin-faq]');
+    if (!root) return;
+
+    const tabs = Array.from(root.querySelectorAll('.admin-faq-tab'));
+    const panels = Array.from(root.querySelectorAll('[data-faq-panel]'));
+    const panelDefault = root.getAttribute('data-faq-panel-default') || 'faq-dashboard';
+    const search = root.querySelector('[data-faq-search]');
+    const state = root.querySelector('[data-faq-search-state]');
+
+    const limpiarBusqueda = () => {
+        panels.forEach((panel) => {
+            panel.querySelectorAll('.admin-faq-item').forEach((item) => {
+                item.classList.remove('is-hidden-by-search');
+            });
+        });
+        if (search) search.value = '';
+        if (state) state.textContent = 'Mostrando todas las preguntas del modulo.';
+    };
+
+    const aplicarBusqueda = () => {
+        const panelActivo = root.querySelector('[data-faq-panel].is-active');
+        if (!panelActivo || !search) return;
+
+        const term = (search.value || '').toLowerCase().trim();
+        const items = Array.from(panelActivo.querySelectorAll('.admin-faq-item'));
+        let visibles = 0;
+
+        items.forEach((item) => {
+            const text = (item.textContent || '').toLowerCase();
+            const match = term.length === 0 || text.includes(term);
+            item.classList.toggle('is-hidden-by-search', !match);
+            if (match) visibles++;
+        });
+
+        if (!state) return;
+        if (term.length === 0) {
+            state.textContent = 'Mostrando todas las preguntas del modulo.';
+            return;
+        }
+
+        state.textContent = visibles > 0
+            ? `Se encontraron ${visibles} pregunta(s) en este modulo.`
+            : 'No se encontraron resultados en este modulo.';
+    };
+
+    const activarPanel = (panelId) => {
+        tabs.forEach((tab) => {
+            const active = tab.getAttribute('data-faq-target') === panelId;
+            tab.classList.toggle('is-active', active);
+            tab.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+
+        panels.forEach((panel) => {
+            const active = panel.id === panelId;
+            panel.classList.toggle('is-active', active);
+        });
+
+        limpiarBusqueda();
+    };
+
+    tabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+            const panelId = tab.getAttribute('data-faq-target');
+            if (!panelId) return;
+            activarPanel(panelId);
+        });
+    });
+
+    search?.addEventListener('input', aplicarBusqueda);
+
+    activarPanel(panelDefault);
+})();
+</script>
+}

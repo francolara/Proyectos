@@ -5,6 +5,7 @@
         .Select(i => TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(i * 30)))
         .ToList();
 }
+@* Firma: FRANCO LARA - 20/05/2026 | En promociones muestra 24:00 en hora fin y persiste 23:59 internamente. *@
 
 <div class="admin-page-frame">
     <section class="page-header">
@@ -83,8 +84,10 @@
                         <select asp-for="HoraFin" class="form-select">
                             @foreach (var hora in horasMediaHora)
                             {
-                                <option value="@hora.ToString("HH\\:mm")">@hora.ToString("HH\\:mm")</option>
+                                var valorHoraFin = hora.ToString("HH\\:mm");
+                                <option value="@valorHoraFin">@valorHoraFin</option>
                             }
+                            <option value="23:59">24:00</option>
                         </select>
                         <span asp-validation-for="HoraFin" class="text-danger"></span>
                     </div>

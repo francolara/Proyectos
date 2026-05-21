@@ -11,6 +11,9 @@
     var horasMediaHora = Enumerable.Range(0, 48)
         .Select(i => TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(i * 30)))
         .ToList();
+    var horasInicioReservaPublica = horasMediaHora
+        .Where(h => h <= new TimeOnly(23, 0))
+        .ToList();
     var duracionMinutos = (int)(horaFin.ToTimeSpan() - horaInicio.ToTimeSpan()).TotalMinutes;
     if (duracionMinutos <= 0) { duracionMinutos = 60; }
 
@@ -73,7 +76,8 @@
 
     <div class="card border-0 shadow-sm mb-3 sc-public-section-card" id="formularioReservaPublica">
         <div class="card-body">
-            @* Firma: FRANCO LARA - 03/05/2026 | Reserva publica restringida a bloques exactos de 1 hora con aviso visible y validacion cliente. *@
+@* Firma: FRANCO LARA - 03/05/2026 | Reserva publica restringida a bloques exactos de 1 hora con aviso visible y validacion cliente. *@
+@* Firma: FRANCO LARA - 20/05/2026 | Se permite el cierre especial 23:00-23:59 desde calendario publico sin bloquear por validacion de 60 minutos y se evita mensaje rojo de 30/60 para ese caso. *@
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                 <h2 class="h6 mb-0 sc-public-section-title"><i class="bi bi-pencil-square me-1"></i>Datos para registrar la reserva</h2>
                 <span class="badge text-bg-info"><i class="bi bi-clock-history me-1"></i>Solo reservas de 1 hora</span>
@@ -106,7 +110,7 @@
                 <div class="col-md-3">
                     <label class="form-label">Hora inicio</label>
                     <select id="formHoraInicio" name="HoraInicio" class="form-select" required>
-                        @foreach (var hora in horasMediaHora)
+                        @foreach (var hora in horasInicioReservaPublica)
                         {
                             var valor = hora.ToString("HH\\:mm");
                             if (hora == Model.Formulario.HoraInicio)
@@ -119,18 +123,16 @@
                             }
                         }
                     </select>
-                    <small class="text-muted">Hora maxima de inicio: 22:30.</small>
+                    <small class="text-muted">Hora maxima de inicio: 23:00.</small>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Hora fin</label>
-                    <input id="formHoraFin"
-                           name="HoraFin"
-                           type="time"
+                    <input id="formHoraFin" name="HoraFin" type="hidden" value="@Model.Formulario.HoraFin.ToString("HH\\:mm")" />
+                    <input id="formHoraFinDisplay"
+                           type="text"
                            class="form-control"
-                           value="@Model.Formulario.HoraFin.ToString("HH\\:mm")"
-                           step="1800"
-                           readonly
-                           required />
+                           value="@(Model.Formulario.HoraInicio == new TimeOnly(23, 0) && Model.Formulario.HoraFin == new TimeOnly(23, 59) ? "24:00" : Model.Formulario.HoraFin.ToString("HH\\:mm"))"
+                           readonly />
                     <small class="text-muted">La hora fin se ajusta automaticamente a +1 hora.</small>
                 </div>
                 <div class="col-md-3">
@@ -180,7 +182,7 @@
                         <i class="bi bi-calendar2-check"></i>
                         <span id="slotFechaTexto">@Model.Formulario.Fecha.ToString("dd/MM/yyyy")</span>
                         <span class="dot"></span>
-                        <span id="slotHorarioTexto">@Model.Formulario.HoraInicio.ToString("HH\\:mm") - @Model.Formulario.HoraFin.ToString("HH\\:mm")</span>
+                        <span id="slotHorarioTexto">@Model.Formulario.HoraInicio.ToString("HH\\:mm") - @(Model.Formulario.HoraInicio == new TimeOnly(23, 0) && Model.Formulario.HoraFin == new TimeOnly(23, 59) ? "24:00" : Model.Formulario.HoraFin.ToString("HH\\:mm"))</span>
                     </div>
                     <small id="cotizacionMensaje" class="text-muted">
                         @(Model.Cotizacion?.Mensaje ?? "El costo se actualiza automaticamente cuando cambias fecha u horario.")
@@ -933,6 +935,7 @@
             const inputFecha = document.getElementById('formFecha');
             const inputInicio = document.getElementById('formHoraInicio');
             const inputFin = document.getElementById('formHoraFin');
+            const inputFinDisplay = document.getElementById('formHoraFinDisplay');
             const inputCodigoCupon = document.getElementById('formCodigoCupon');
             const btnValidarCuponPublico = document.getElementById('btnValidarCuponPublico');
             const cuponMensajePublico = document.getElementById('cuponMensajePublico');
@@ -959,6 +962,17 @@
             }
             function toHm(date) {
                 return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+            }
+
+            function setHoraFin(horaFin) {
+                if (!inputFin) return;
+                const valor = String(horaFin || '').trim();
+                inputFin.value = valor;
+                if (inputFinDisplay) {
+                    inputFinDisplay.value = (inputInicio?.value === '23:00' && valor === '23:59')
+                        ? '24:00'
+                        : valor;
+                }
             }
             function titleCaseEs(texto) {
                 if (!texto) return '';
@@ -1011,7 +1025,11 @@
                 if (partes.length === 3) {
                     slotFechaTexto.textContent = `${partes[2]}/${partes[1]}/${partes[0]}`;
                 }
-                slotHorarioTexto.textContent = `${inputInicio.value} - ${inputFin.value}`;
+                const finTexto = inputInicio.value === '23:00' && inputFin.value === '23:59'
+                    ? '24:00'
+                    : inputFin.value;
+                slotHorarioTexto.textContent = `${inputInicio.value} - ${finTexto}`;
+                if (inputFinDisplay) inputFinDisplay.value = finTexto;
             }
             function actualizarEstadoNumeroDocumento() {
                 if (!inputTipoDocumento || !inputNumeroDocumento) return;
@@ -1025,6 +1043,7 @@
                 if (!inputFecha || !inputInicio || !inputFin) return;
                 const ini = parseTimeToMinutes(inputInicio.value);
                 const fin = parseTimeToMinutes(inputFin.value);
+                const esCierreMedianocheEspecial = inputInicio.value === '23:00' && inputFin.value === '23:59';
                 if (ini === null || fin === null || fin <= ini) {
                     if (cotizacionMensaje) cotizacionMensaje.textContent = 'La hora fin debe ser mayor que la hora inicio.';
                     if (cotizacionMensaje) cotizacionMensaje.className = 'text-danger';
@@ -1050,12 +1069,23 @@
                     const resp = await fetch('@Url.Action("CotizarReservaPublica", "Home")' + '?' + params.toString(), { credentials: 'same-origin' });
                     const data = await resp.json();
                     if (!data || data.ok !== true) {
+                        const mensajeError = String(data?.mensaje || 'No se pudo calcular el precio para este horario.');
+                        if (esCierreMedianocheEspecial && /30\s*o\s*60\s*minutos/i.test(mensajeError)) {
+                            if (cotizacionPrecio) cotizacionPrecio.textContent = 'A cotizar';
+                            if (cotizacionPromo) cotizacionPromo.classList.add('d-none');
+                            if (cotizacionPrecioBase) cotizacionPrecioBase.textContent = '';
+                            if (cotizacionDescuentoBadge) cotizacionDescuentoBadge.textContent = '';
+                            if (cotizacionDetalle) cotizacionDetalle.textContent = '';
+                            if (cotizacionMensaje) cotizacionMensaje.textContent = 'Horario de cierre permitido (23:00 - 24:00). El monto final se confirmara al guardar.';
+                            if (cotizacionMensaje) cotizacionMensaje.className = 'text-muted';
+                            return;
+                        }
                         if (cotizacionPrecio) cotizacionPrecio.textContent = 'A cotizar';
                         if (cotizacionPromo) cotizacionPromo.classList.add('d-none');
                         if (cotizacionPrecioBase) cotizacionPrecioBase.textContent = '';
                         if (cotizacionDescuentoBadge) cotizacionDescuentoBadge.textContent = '';
                         if (cotizacionDetalle) cotizacionDetalle.textContent = '';
-                        if (cotizacionMensaje) cotizacionMensaje.textContent = data?.mensaje || 'No se pudo calcular el precio para este horario.';
+                        if (cotizacionMensaje) cotizacionMensaje.textContent = mensajeError;
                         if (cotizacionMensaje) cotizacionMensaje.className = 'text-danger';
                         return;
                     }
@@ -1103,15 +1133,19 @@
                 if (!inputInicio || !inputFin) return;
                 const ini = parseTimeToMinutes(inputInicio.value);
                 if (ini === null) return;
-                const maxInicio = (22 * 60) + 30;
+                const maxInicio = (23 * 60);
                 if (ini > maxInicio) {
-                    inputInicio.value = '22:30';
+                    inputInicio.value = '23:00';
                 }
                 const iniAjustado = parseTimeToMinutes(inputInicio.value);
                 if (iniAjustado === null) return;
+                if (iniAjustado === (23 * 60)) {
+                    setHoraFin('23:59');
+                    return;
+                }
                 const finEsperado = iniAjustado + 60;
                 if (finEsperado > (23 * 60 + 59)) return;
-                inputFin.value = formatMinutesToHm(finEsperado);
+                setHoraFin(formatMinutesToHm(finEsperado));
             }
             function cotizarDebounced() {
                 clearTimeout(debounceCotizar);
@@ -1125,7 +1159,7 @@
                 cotizarDebounced();
             }
             function aplicarSeleccion(start, endSeleccionado) {
-                const end = (endSeleccionado && endSeleccionado > start)
+                let end = (endSeleccionado && endSeleccionado > start)
                     ? new Date(endSeleccionado)
                     : new Date(start.getTime() + 60 * 60000);
 
@@ -1133,14 +1167,25 @@
                     alert('Ese horario ya paso. Selecciona una hora futura.');
                     return;
                 }
+                const inicioMinutos = (start.getHours() * 60) + start.getMinutes();
+                if (inicioMinutos === (23 * 60)) {
+                    end = new Date(start);
+                    end.setHours(23, 59, 0, 0);
+                }
+
                 if (hayCruceBloqueado(start, end)) {
                     alert('Ese horario no esta disponible. Elige otro bloque libre.');
                     return;
                 }
 
+                if (inicioMinutos > (23 * 60)) {
+                    alert('La ultima hora de inicio disponible es 23:00 para cerrar a las 23:59.');
+                    return;
+                }
+
                 inputFecha.value = toIsoDateLocal(start);
                 inputInicio.value = toHm(start);
-                inputFin.value = toHm(end);
+                setHoraFin(toHm(end));
                 forzarDuracionUnaHora();
                 actualizarResumenSlot();
                 cotizarDebounced();
@@ -1236,12 +1281,13 @@
             formReserva?.addEventListener('submit', (e) => {
                 const ini = parseTimeToMinutes(inputInicio?.value);
                 const fin = parseTimeToMinutes(inputFin?.value);
+                const esCierreMedianocheEspecial = inputInicio?.value === '23:00' && inputFin?.value === '23:59';
                 if (ini === null || fin === null || fin <= ini) {
                     e.preventDefault();
                     alert('La hora fin debe ser mayor que la hora inicio.');
                     return;
                 }
-                if ((fin - ini) !== 60) {
+                if ((fin - ini) !== 60 && !esCierreMedianocheEspecial) {
                     e.preventDefault();
                     alert('La reserva publica solo permite bloques de 1 hora.');
                 }

@@ -11,6 +11,13 @@ namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 public class PerfilPublicoController(ISportCenterStoredProcedureService spService) : Controller
 {
     [HttpGet]
+    public IActionResult FaqUsuario()
+    {
+        ViewData["PublicFullWidth"] = true;
+        return View();
+    }
+
+    [HttpGet]
     public async Task<IActionResult> Index(string? tab = null, int pagina = 1)
     {
         ViewData["PublicFullWidth"] = true;

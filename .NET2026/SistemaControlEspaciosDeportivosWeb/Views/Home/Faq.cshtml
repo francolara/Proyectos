@@ -1,0 +1,173 @@
+﻿@{
+    ViewData["Title"] = "FAQ";
+}
+
+<section id="faq-home" class="home-faq-section">
+    <div class="container">
+        <div class="home-faq-head">
+            <span class="home-faq-kicker"><i class="bi bi-question-circle"></i>FAQ para dueños y administradores</span>
+            <h2 class="home-faq-title">Conoce cómo la plataforma impulsa tu complejo deportivo</h2>
+            <p>Respuestas rápidas sobre funcionalidades, beneficios, implementación y control operativo.</p>
+        </div>
+        <div class="home-faq-layout" data-faq-home-root>
+            <aside class="home-faq-sidebar" aria-label="Secciones FAQ">
+                <button type="button" class="home-faq-tab is-active" data-faq-target="faq-general">1. General</button>
+                <button type="button" class="home-faq-tab" data-faq-target="faq-funcionalidades">2. Funcionalidades</button>
+                <button type="button" class="home-faq-tab" data-faq-target="faq-beneficios">3. Beneficios</button>
+                <button type="button" class="home-faq-tab" data-faq-target="faq-implementacion">4. Implementación</button>
+                <button type="button" class="home-faq-tab" data-faq-target="faq-seguridad">5. Seguridad y control</button>
+                <button type="button" class="home-faq-tab" data-faq-target="faq-soporte">6. Soporte y crecimiento</button>
+            </aside>
+            <div class="home-faq-content">
+                <div class="home-faq-search-wrap">
+                    <label class="visually-hidden" for="faqHomeSearch">Buscar pregunta</label>
+                    <input id="faqHomeSearch" type="search" class="form-control home-faq-search" placeholder="Buscar en FAQ (ej: reservas, pagos, comprobantes, sedes)" data-faq-search />
+                    <small class="text-muted" data-faq-search-state>Mostrando todas las preguntas de la sección.</small>
+                </div>
+
+                <article id="faq-general" class="home-faq-panel is-active" data-faq-panel>
+                    <h3>General</h3>
+                    <div class="accordion home-faq-accordion" id="homeFaqGeneral">
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header" id="faqg1h"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faqg1">¿Qué es esta plataforma?</button></h4><div id="faqg1" class="accordion-collapse collapse show" data-bs-parent="#homeFaqGeneral"><div class="accordion-body">Es un sistema web para gestionar reservas, sedes, espacios deportivos, clientes, pagos, comprobantes y reportes desde un solo panel.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header" id="faqg2h"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqg2">¿A quién está dirigida?</button></h4><div id="faqg2" class="accordion-collapse collapse" data-bs-parent="#homeFaqGeneral"><div class="accordion-body">A dueños, administradores y equipos operativos de complejos deportivos que necesitan control comercial y operativo diario.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header" id="faqg3h"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqg3">¿Puedo usarla con una sola sede o con varias?</button></h4><div id="faqg3" class="accordion-collapse collapse" data-bs-parent="#homeFaqGeneral"><div class="accordion-body">Funciona para ambos escenarios. Puedes empezar con una sede y escalar a multi-sede sin cambiar de plataforma.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header" id="faqg4h"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqg4">¿Es solo para fútbol?</button></h4><div id="faqg4" class="accordion-collapse collapse" data-bs-parent="#homeFaqGeneral"><div class="accordion-body">No. Permite configurar distintos deportes y tipos de espacios de acuerdo con la realidad de cada negocio.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header" id="faqg5h"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqg5">¿Cuál es el principal beneficio para el dueño?</button></h4><div id="faqg5" class="accordion-collapse collapse" data-bs-parent="#homeFaqGeneral"><div class="accordion-body">Tener visibilidad clara del negocio: ocupación, reservas, pagos e ingresos para decidir mejor y crecer con orden.</div></div></div>
+                    </div>
+                </article>
+
+                <article id="faq-funcionalidades" class="home-faq-panel" data-faq-panel>
+                    <h3>Funcionalidades</h3>
+                    <div class="accordion home-faq-accordion" id="homeFaqFuncionalidades">
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faqf1">¿Mis clientes pueden reservar directamente desde mi página web?</button></h4><div id="faqf1" class="accordion-collapse collapse show" data-bs-parent="#homeFaqFuncionalidades"><div class="accordion-body">Sí. La plataforma permite que tus clientes consulten disponibilidad y registren reservas en línea desde la web, sin depender de atención manual por llamada o WhatsApp. Esto acelera la captación de reservas y reduce carga operativa del equipo.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqf2">¿Puedo crear reservas desde el panel administrativo?</button></h4><div id="faqf2" class="accordion-collapse collapse" data-bs-parent="#homeFaqFuncionalidades"><div class="accordion-body">Sí. El equipo puede registrar reservas directas, validar horarios y gestionar cambios de estado de forma controlada.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqf3">¿La plataforma permite pagos parciales y adelantos?</button></h4><div id="faqf3" class="accordion-collapse collapse" data-bs-parent="#homeFaqFuncionalidades"><div class="accordion-body">Sí. Puedes registrar adelantos, pagos parciales y pago total, con control de saldo pendiente por reserva.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqf4">¿Se pueden emitir comprobantes?</button></h4><div id="faqf4" class="accordion-collapse collapse" data-bs-parent="#homeFaqFuncionalidades"><div class="accordion-body">Sí, siempre que el negocio tenga configurados los parámetros de emisión y series activas correspondientes.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqf5">¿Puedo manejar promociones y cupones?</button></h4><div id="faqf5" class="accordion-collapse collapse" data-bs-parent="#homeFaqFuncionalidades"><div class="accordion-body">Sí. Puedes crear promociones por vigencia y reglas, y cupones con límites de uso, estado y restricciones.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqf6">¿Incluye reportes para medir el negocio?</button></h4><div id="faqf6" class="accordion-collapse collapse" data-bs-parent="#homeFaqFuncionalidades"><div class="accordion-body">Sí. Dispones de reportes de reservas, ingresos, ocupación y comportamiento comercial para tomar decisiones.</div></div></div>
+                    </div>
+                </article>
+
+                <article id="faq-beneficios" class="home-faq-panel" data-faq-panel>
+                    <h3>Beneficios</h3>
+                    <div class="accordion home-faq-accordion" id="homeFaqBeneficios">
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faqb1">¿Cómo ayuda a vender más?</button></h4><div id="faqb1" class="accordion-collapse collapse show" data-bs-parent="#homeFaqBeneficios"><div class="accordion-body">Mejora la ocupación de horarios, acelera la reserva online y facilita campañas de promociones para horas de baja demanda.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqb2">¿Cómo reduce errores operativos?</button></h4><div id="faqb2" class="accordion-collapse collapse" data-bs-parent="#homeFaqBeneficios"><div class="accordion-body">Centraliza la agenda, evita registros dispersos y mejora la consistencia entre reserva, cobro y comprobante.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqb3">¿Qué mejora para el cliente final?</button></h4><div id="faqb3" class="accordion-collapse collapse" data-bs-parent="#homeFaqBeneficios"><div class="accordion-body">Reserva más rápida, mejor experiencia digital y mayor claridad de disponibilidad, precio y confirmación.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqb4">¿Aporta control para cierres diarios?</button></h4><div id="faqb4" class="accordion-collapse collapse" data-bs-parent="#homeFaqBeneficios"><div class="accordion-body">Sí. El registro estructurado de pagos y estados facilita cierre de caja y seguimiento de pendientes.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqb5">¿Ayuda cuando hay alta demanda?</button></h4><div id="faqb5" class="accordion-collapse collapse" data-bs-parent="#homeFaqBeneficios"><div class="accordion-body">Sí. Permite ordenar el flujo de reservas y reducir saturación del equipo en horas pico.</div></div></div>
+                    </div>
+                </article>
+
+                <article id="faq-implementacion" class="home-faq-panel" data-faq-panel>
+                    <h3>Implementación</h3>
+                    <div class="accordion home-faq-accordion" id="homeFaqImplementacion">
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faqi1">¿Es difícil de implementar?</button></h4><div id="faqi1" class="accordion-collapse collapse show" data-bs-parent="#homeFaqImplementacion"><div class="accordion-body">No. Se implementa por fases: configuración inicial, carga operativa y salida en producción con el equipo.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqi2">¿Con qué módulos se recomienda empezar?</button></h4><div id="faqi2" class="accordion-collapse collapse" data-bs-parent="#homeFaqImplementacion"><div class="accordion-body">Sedes, espacios deportivos, reservas, pagos y comprobantes. Son el núcleo de operación y control comercial.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqi3">¿Mi equipo necesita capacitación?</button></h4><div id="faqi3" class="accordion-collapse collapse" data-bs-parent="#homeFaqImplementacion"><div class="accordion-body">Sí, una capacitación práctica y corta por roles suele ser suficiente para una adopción ordenada.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqi4">¿Se adapta a mi forma de trabajo?</button></h4><div id="faqi4" class="accordion-collapse collapse" data-bs-parent="#homeFaqImplementacion"><div class="accordion-body">Sí. Puedes ajustar parámetros, políticas y reglas comerciales según tu operación real.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqi5">¿Puedo empezar con una sede y crecer después?</button></h4><div id="faqi5" class="accordion-collapse collapse" data-bs-parent="#homeFaqImplementacion"><div class="accordion-body">Sí. La plataforma está preparada para escalar en sedes, usuarios y volumen de reservas.</div></div></div>
+                    </div>
+                </article>
+
+                <article id="faq-seguridad" class="home-faq-panel" data-faq-panel>
+                    <h3>Seguridad y control</h3>
+                    <div class="accordion home-faq-accordion" id="homeFaqSeguridad">
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faqs1">¿Puedo limitar lo que cada usuario puede hacer?</button></h4><div id="faqs1" class="accordion-collapse collapse show" data-bs-parent="#homeFaqSeguridad"><div class="accordion-body">Sí. Puedes configurar permisos por módulo según el rol de cada colaborador.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqs2">¿El sistema ayuda con trazabilidad?</button></h4><div id="faqs2" class="accordion-collapse collapse" data-bs-parent="#homeFaqSeguridad"><div class="accordion-body">Sí. Mantiene trazabilidad operativa de reservas, pagos y acciones relevantes para auditoría.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqs3">¿Ayuda a controlar procesos sensibles como cobros y comprobantes?</button></h4><div id="faqs3" class="accordion-collapse collapse" data-bs-parent="#homeFaqSeguridad"><div class="accordion-body">Sí. Permite separar responsabilidades por permisos y mantener un flujo más seguro de caja y emisión.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqs4">¿Se puede operar con mayor confianza en cierre diario?</button></h4><div id="faqs4" class="accordion-collapse collapse" data-bs-parent="#homeFaqSeguridad"><div class="accordion-body">Sí. Al tener estados y movimientos registrados en el sistema, se reducen discrepancias al cierre.</div></div></div>
+                    </div>
+                </article>
+
+                <article id="faq-soporte" class="home-faq-panel" data-faq-panel>
+                    <h3>Soporte y crecimiento</h3>
+                    <div class="accordion home-faq-accordion" id="homeFaqSoporte">
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faqsp1">¿Qué sigue después de implementar?</button></h4><div id="faqsp1" class="accordion-collapse collapse show" data-bs-parent="#homeFaqSoporte"><div class="accordion-body">Optimizar ocupación, mejorar conversión web, estandarizar operación y escalar con decisiones basadas en reportes.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqsp2">¿Puedo usar este FAQ como guía para evaluar la plataforma?</button></h4><div id="faqsp2" class="accordion-collapse collapse" data-bs-parent="#homeFaqSoporte"><div class="accordion-body">Sí. Este FAQ resume capacidades clave para ayudarte a decidir con claridad si encaja con tu negocio.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqsp3">¿El sistema permite crecer de forma ordenada?</button></h4><div id="faqsp3" class="accordion-collapse collapse" data-bs-parent="#homeFaqSoporte"><div class="accordion-body">Sí. Está pensado para escalar en módulos, usuarios y sedes sin perder control operativo.</div></div></div>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="text-center py-3">
+    <a href="/Identity/Account/Register?TipoRegistro=club" class="btn home-faq-cta-btn fw-semibold py-3 px-5 fs-5">
+        Registrar mi complejo deportivo
+    </a>
+</section>
+
+@section Scripts {
+<script>
+(() => {
+    const root = document.querySelector('[data-faq-home-root]');
+    if (!root) return;
+
+    const tabs = Array.from(root.querySelectorAll('.home-faq-tab'));
+    const panels = Array.from(root.querySelectorAll('[data-faq-panel]'));
+    const search = root.querySelector('[data-faq-search]');
+    const state = root.querySelector('[data-faq-search-state]');
+
+    const limpiarBusqueda = () => {
+        panels.forEach((panel) => {
+            panel.querySelectorAll('.home-faq-item').forEach((item) => {
+                item.classList.remove('is-hidden-by-search');
+            });
+        });
+        if (search) search.value = '';
+        if (state) state.textContent = 'Mostrando todas las preguntas de la sección.';
+    };
+
+    const activarPanel = (panelId) => {
+        tabs.forEach((tab) => {
+            const active = tab.getAttribute('data-faq-target') === panelId;
+            tab.classList.toggle('is-active', active);
+            tab.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+
+        panels.forEach((panel) => {
+            const active = panel.id === panelId;
+            panel.classList.toggle('is-active', active);
+        });
+
+        limpiarBusqueda();
+    };
+
+    tabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+            const panelId = tab.getAttribute('data-faq-target');
+            if (!panelId) return;
+            activarPanel(panelId);
+        });
+    });
+
+    search?.addEventListener('input', () => {
+        const panelActivo = root.querySelector('[data-faq-panel].is-active');
+        if (!panelActivo) return;
+
+        const term = (search.value || '').toLowerCase().trim();
+        const items = Array.from(panelActivo.querySelectorAll('.home-faq-item'));
+        let visibles = 0;
+
+        items.forEach((item) => {
+            const text = (item.textContent || '').toLowerCase();
+            const match = term.length === 0 || text.includes(term);
+            item.classList.toggle('is-hidden-by-search', !match);
+            if (match) visibles++;
+        });
+
+        if (!state) return;
+        if (term.length === 0) {
+            state.textContent = 'Mostrando todas las preguntas de la sección.';
+            return;
+        }
+
+        state.textContent = visibles > 0
+            ? `Se encontraron ${visibles} pregunta(s) en esta sección.`
+            : 'No se encontraron resultados en esta sección.';
+    });
+})();
+</script>
+}

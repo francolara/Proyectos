@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using SistemaControlEspaciosDeportivosWeb.Models;
 using SistemaControlEspaciosDeportivosWeb.Services;
@@ -17,6 +17,8 @@ public class HomeController(
     ILogger<HomeController> logger) : Controller
 {
     private const int DuracionReservaPublicaMinutos = 60;
+    private static readonly TimeOnly HoraInicioCierreMedianoche = new(23, 0);
+    private static readonly TimeOnly HoraFinCierreMedianoche = new(23, 59);
     
     private static (DateOnly Fecha, TimeOnly HoraInicio, TimeOnly HoraFin) ObtenerRangoSugeridoBusqueda(DateTime ahoraLocal)
     {
@@ -99,6 +101,13 @@ public class HomeController(
     }
 
     [HttpGet]
+    public IActionResult Faq()
+    {
+        ViewData["PublicFullWidth"] = true;
+        return View();
+    }
+
+    [HttpGet]
     public async Task<IActionResult> Reservar(
         int espacioDeportivoId,
         DateOnly? fecha,
@@ -117,7 +126,7 @@ public class HomeController(
         var horaInicioConsulta = horaInicio ?? new TimeOnly(18, 0);
         var horaFinConsulta = horaFin ?? horaInicioConsulta.AddHours(1);
         if (horaFinConsulta <= horaInicioConsulta)
-            horaFinConsulta = horaInicioConsulta.AddHours(1);
+            horaFinConsulta = new TimeOnly(23, 59);
 
         var codigoDep = string.IsNullOrWhiteSpace(codigoDepartamento) ? null : codigoDepartamento.Trim();
         var codigoProv = string.IsNullOrWhiteSpace(codigoProvincia) ? null : codigoProvincia.Trim();
@@ -281,15 +290,12 @@ public class HomeController(
         model.Correo = string.IsNullOrWhiteSpace(model.Correo) ? null : model.Correo.Trim();
         model.Comentario = string.IsNullOrWhiteSpace(model.Comentario) ? null : model.Comentario.Trim();
         model.CodigoCupon = string.IsNullOrWhiteSpace(model.CodigoCupon) ? null : model.CodigoCupon.Trim().ToUpperInvariant();
+        model.HoraFin = NormalizarHoraFinReservaPublica(model.HoraInicio, model.HoraFin);
 
         if (model.HoraFin <= model.HoraInicio)
             ModelState.AddModelError(string.Empty, "La hora fin debe ser mayor que la hora inicio.");
-        else
-        {
-            var duracion = (int)(model.HoraFin.ToTimeSpan() - model.HoraInicio.ToTimeSpan()).TotalMinutes;
-            if (duracion != DuracionReservaPublicaMinutos)
-                ModelState.AddModelError(string.Empty, "La reserva publica solo permite bloques de 1 hora.");
-        }
+        else if (!EsDuracionReservaPublicaValida(model.HoraInicio, model.HoraFin))
+            ModelState.AddModelError(string.Empty, "La reserva publica solo permite bloques de 1 hora (o de 23:00 a 23:59).");
 
         if (!ModelState.IsValid)
         {
@@ -433,11 +439,12 @@ public class HomeController(
             return Json(new { ok = false, mensaje = "Fecha u hora invalidas." });
         }
 
+        horaFinParsed = NormalizarHoraFinReservaPublica(horaInicioParsed, horaFinParsed);
+
         if (horaFinParsed <= horaInicioParsed)
             return Json(new { ok = false, mensaje = "La hora fin debe ser mayor que la hora inicio." });
-        var duracionCotizada = (int)(horaFinParsed.ToTimeSpan() - horaInicioParsed.ToTimeSpan()).TotalMinutes;
-        if (duracionCotizada != DuracionReservaPublicaMinutos)
-            return Json(new { ok = false, mensaje = "La reserva publica solo permite bloques de 1 hora." });
+        if (!EsDuracionReservaPublicaValida(horaInicioParsed, horaFinParsed))
+            return Json(new { ok = false, mensaje = "La reserva publica solo permite bloques de 1 hora (o de 23:00 a 23:59)." });
 
         try
         {
@@ -623,6 +630,23 @@ public class HomeController(
         return string.IsNullOrWhiteSpace(baseTitulo) ? "Reservada" : baseTitulo;
     }
 
+    private static bool EsDuracionReservaPublicaValida(TimeOnly horaInicio, TimeOnly horaFin)
+    {
+        var duracion = (int)(horaFin.ToTimeSpan() - horaInicio.ToTimeSpan()).TotalMinutes;
+        if (duracion == DuracionReservaPublicaMinutos)
+            return true;
+
+        return horaInicio == HoraInicioCierreMedianoche && horaFin == HoraFinCierreMedianoche;
+    }
+
+    private static TimeOnly NormalizarHoraFinReservaPublica(TimeOnly horaInicio, TimeOnly horaFin)
+    {
+        if (horaInicio != HoraInicioCierreMedianoche)
+            return horaFin;
+
+        return HoraFinCierreMedianoche;
+    }
+
     private async Task<ReservaPublicaPageViewModel?> ConstruirReservaVmAsync(
         int espacioDeportivoId,
         DateOnly fecha,
@@ -641,7 +665,7 @@ public class HomeController(
         var codigoDist = string.IsNullOrWhiteSpace(codigoUbigeo) ? null : codigoUbigeo.Trim();
 
         if (horaFin <= horaInicio)
-            horaFin = horaInicio.AddHours(1);
+            horaFin = new TimeOnly(23, 59);
 
         var disponibles = await spService.HomeBuscarEspaciosDisponiblesAsync(
             fecha,
@@ -788,7 +812,7 @@ public class HomeController(
         var radioEfectivo = radioKm is > 0 ? radioKm : 5m;
 
         if (horaFinConsulta <= horaInicioConsulta)
-            horaFinConsulta = horaInicioConsulta.AddHours(1);
+            horaFinConsulta = new TimeOnly(23, 59);
 
         var sedes = await spService.HomeListarSedesAsync();
         var deportes = await spService.HomeListarTiposDeporteAsync();
@@ -988,4 +1012,3 @@ public class HomeController(
         return Math.Clamp(parsed, min, max);
     }
 }
-

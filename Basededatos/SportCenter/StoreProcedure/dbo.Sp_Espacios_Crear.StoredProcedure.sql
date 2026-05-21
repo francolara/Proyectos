@@ -8,6 +8,7 @@ GO
 
 -- SOURCE: 31_Espacios_Tarifas_Base.sql (linea 72)
 -- Firma: Codex - 18/04/2026 | Se agrega soporte de AdministracionPrivada para controlar visibilidad del espacio en portal publico.
+-- Firma: FRANCO LARA - 20/05/2026 | Agrega soporte de TarifaFeriado por rango horario para aplicar precios en fechas feriadas.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Espacios_Crear]
     @NegocioId INT,
     @SedeId INT,
@@ -21,6 +22,7 @@ CREATE OR ALTER PROCEDURE [dbo].[Sp_Espacios_Crear]
     @AdministracionPrivada BIT = 0,
     @Estado INT,
     @TarifasJson NVARCHAR(MAX),
+    @TarifasFeriadoJson NVARCHAR(MAX) = N'[]',
     @Usuario NVARCHAR(200)
 AS
 BEGIN
@@ -36,6 +38,13 @@ BEGIN
         (
             Id INT IDENTITY(1,1) NOT NULL,
             DiaSemana INT NOT NULL,
+            HoraInicio TIME NOT NULL,
+            HoraFin TIME NOT NULL,
+            Precio DECIMAL(10,2) NOT NULL
+        );
+        DECLARE @TarifasFeriado TABLE
+        (
+            Id INT IDENTITY(1,1) NOT NULL,
             HoraInicio TIME NOT NULL,
             HoraFin TIME NOT NULL,
             Precio DECIMAL(10,2) NOT NULL
@@ -73,6 +82,32 @@ BEGIN
         )
             RAISERROR('Existen rangos de tarifas superpuestos en el mismo dia.', 16, 1);
 
+        INSERT INTO @TarifasFeriado (HoraInicio, HoraFin, Precio)
+        SELECT
+            TRY_CONVERT(TIME, j.HoraInicio),
+            TRY_CONVERT(TIME, j.HoraFin),
+            j.Precio
+        FROM OPENJSON(COALESCE(@TarifasFeriadoJson, N'[]'))
+        WITH
+        (
+            HoraInicio NVARCHAR(8) '$.horaInicio',
+            HoraFin NVARCHAR(8) '$.horaFin',
+            Precio DECIMAL(10,2) '$.precio'
+        ) j;
+
+        IF EXISTS (SELECT 1 FROM @TarifasFeriado WHERE HoraInicio IS NULL OR HoraFin IS NULL OR HoraFin <= HoraInicio OR Precio <= 0)
+            RAISERROR('Hay tarifas por feriado con horario o precio invalido.', 16, 1);
+
+        IF EXISTS
+        (
+            SELECT 1
+            FROM @TarifasFeriado a
+            INNER JOIN @TarifasFeriado b ON a.Id < b.Id
+                AND a.HoraInicio < b.HoraFin
+                AND a.HoraFin > b.HoraInicio
+        )
+            RAISERROR('Existen rangos de tarifas por feriado superpuestos.', 16, 1);
+
         INSERT INTO dbo.EspaciosDeportivos
         (
             SedeId, TipoDeporteId, TipoSueloId, Codigo, Nombre, Capacidad,
@@ -99,6 +134,18 @@ BEGIN
             t.Precio,
             1
         FROM @Tarifas t;
+
+        INSERT INTO dbo.TarifaFeriado
+        (
+            EspacioDeportivoId, HoraInicio, HoraFin, Precio, Activa
+        )
+        SELECT
+            @Id,
+            t.HoraInicio,
+            t.HoraFin,
+            t.Precio,
+            1
+        FROM @TarifasFeriado t;
 
         DECLARE @EntidadIdAudit NVARCHAR(80);
         SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);

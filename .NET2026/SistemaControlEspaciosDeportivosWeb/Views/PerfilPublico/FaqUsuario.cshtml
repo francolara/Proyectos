@@ -1,0 +1,175 @@
+@{
+    ViewData["Title"] = "FAQ usuario";
+}
+
+<section id="faq-usuario" class="home-faq-section">
+    <div class="container">
+        <div class="home-faq-head">
+            <span class="home-faq-kicker"><i class="bi bi-person-circle"></i>FAQ para usuarios</span>
+            <h2 class="home-faq-title">Resuelve tus dudas para reservar y gestionar tu perfil</h2>
+            <p>Guia rapida para cuenta, reservas publicas, pagos, cupones, desafios y soporte.</p>
+        </div>
+        <div class="home-faq-layout" data-faq-home-root>
+            <aside class="home-faq-sidebar" aria-label="Secciones FAQ usuario">
+                <button type="button" class="home-faq-tab is-active" data-faq-target="faq-cuenta">1. Cuenta y perfil</button>
+                <button type="button" class="home-faq-tab" data-faq-target="faq-reserva">2. Reserva publica</button>
+                <button type="button" class="home-faq-tab" data-faq-target="faq-pagos">3. Pagos y comprobantes</button>
+                <button type="button" class="home-faq-tab" data-faq-target="faq-cupones">4. Cupones y promociones</button>
+                <button type="button" class="home-faq-tab" data-faq-target="faq-desafios">5. Desafios</button>
+                <button type="button" class="home-faq-tab" data-faq-target="faq-soporte">6. Cambios y soporte</button>
+            </aside>
+            <div class="home-faq-content">
+                <div class="home-faq-search-wrap">
+                    <label class="visually-hidden" for="faqUsuarioSearch">Buscar pregunta</label>
+                    <input id="faqUsuarioSearch" type="search" class="form-control home-faq-search" placeholder="Buscar en FAQ (ej: perfil, reserva, cupon, desafio)" data-faq-search />
+                    <small class="text-muted" data-faq-search-state>Mostrando todas las preguntas de la seccion.</small>
+                </div>
+
+                <article id="faq-cuenta" class="home-faq-panel is-active" data-faq-panel>
+                    <h3>Cuenta y perfil</h3>
+                    <div class="accordion home-faq-accordion" id="faqCuentaAccordion">
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#fuc1">¿Para que sirve completar mi perfil?</button></h4><div id="fuc1" class="accordion-collapse collapse show" data-bs-parent="#faqCuentaAccordion"><div class="accordion-body">Permite reservar mas rapido, recibir comprobantes y participar en desafios con datos correctos.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fuc2">¿Puedo cambiar mis datos personales?</button></h4><div id="fuc2" class="accordion-collapse collapse" data-bs-parent="#faqCuentaAccordion"><div class="accordion-body">Si. Desde Mi perfil puedes actualizar nombres, telefono, correo y ubicacion.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fuc3">¿Como cambio mi contrasena?</button></h4><div id="fuc3" class="accordion-collapse collapse" data-bs-parent="#faqCuentaAccordion"><div class="accordion-body">Usa la opcion Cambiar contrasena dentro de tu perfil para mantener tu cuenta segura.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fuc4">¿Por que me pide tipo y numero de documento?</button></h4><div id="fuc4" class="accordion-collapse collapse" data-bs-parent="#faqCuentaAccordion"><div class="accordion-body">Se usa para identificarte en reservas y para emitir comprobantes cuando corresponda.</div></div></div>
+                    </div>
+                </article>
+
+                <article id="faq-reserva" class="home-faq-panel" data-faq-panel>
+                    <h3>Reserva publica</h3>
+                    <div class="accordion home-faq-accordion" id="faqReservaAccordion">
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#fur1">¿Como hago una reserva publica?</button></h4><div id="fur1" class="accordion-collapse collapse show" data-bs-parent="#faqReservaAccordion"><div class="accordion-body">Busca disponibilidad, elige sede y espacio, selecciona horario, completa datos y confirma la solicitud.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fur2">¿Puedo reservar sin llamar o escribir por WhatsApp?</button></h4><div id="fur2" class="accordion-collapse collapse" data-bs-parent="#faqReservaAccordion"><div class="accordion-body">Si. La reserva publica se realiza en linea directamente desde la web.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fur3">¿Como se si mi reserva quedo registrada?</button></h4><div id="fur3" class="accordion-collapse collapse" data-bs-parent="#faqReservaAccordion"><div class="accordion-body">Veras confirmacion en pantalla y luego podras revisar el estado en Mis reservas.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fur4">¿Que significa cada estado de reserva?</button></h4><div id="fur4" class="accordion-collapse collapse" data-bs-parent="#faqReservaAccordion"><div class="accordion-body">Pendiente: en proceso. Confirmada: validada. Pagada: con pago completo. Cancelada: anulada. No asistio: sin presentacion.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fur5">¿Puedo ver historial de reservas?</button></h4><div id="fur5" class="accordion-collapse collapse" data-bs-parent="#faqReservaAccordion"><div class="accordion-body">Si. En Mi perfil, pestaña Mis reservas, tienes tu historial por pagina.</div></div></div>
+                    </div>
+                </article>
+
+                <article id="faq-pagos" class="home-faq-panel" data-faq-panel>
+                    <h3>Pagos y comprobantes</h3>
+                    <div class="accordion home-faq-accordion" id="faqPagosAccordion">
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#fup1">¿Puedo pagar por partes?</button></h4><div id="fup1" class="accordion-collapse collapse show" data-bs-parent="#faqPagosAccordion"><div class="accordion-body">Depende del complejo deportivo. Algunos permiten adelantos y saldo pendiente.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fup2">¿Como se confirma que ya pague?</button></h4><div id="fup2" class="accordion-collapse collapse" data-bs-parent="#faqPagosAccordion"><div class="accordion-body">El estado de tu reserva se actualiza segun el registro del pago realizado por el negocio.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fup3">¿Puedo solicitar comprobante?</button></h4><div id="fup3" class="accordion-collapse collapse" data-bs-parent="#faqPagosAccordion"><div class="accordion-body">Si, cuando el negocio tiene emision activa y tus datos fiscales estan completos.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fup4">¿Que datos necesito para comprobante?</button></h4><div id="fup4" class="accordion-collapse collapse" data-bs-parent="#faqPagosAccordion"><div class="accordion-body">Tipo/numero de documento y datos personales o de empresa segun el tipo de comprobante.</div></div></div>
+                    </div>
+                </article>
+
+                <article id="faq-cupones" class="home-faq-panel" data-faq-panel>
+                    <h3>Cupones y promociones</h3>
+                    <div class="accordion home-faq-accordion" id="faqCuponesAccordion">
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#fucp1">¿Como aplico un cupon en la reserva publica?</button></h4><div id="fucp1" class="accordion-collapse collapse show" data-bs-parent="#faqCuponesAccordion"><div class="accordion-body">Ingresa el codigo del cupon en la reserva y valida antes de confirmar.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fucp2">¿Por que mi cupon no aplica?</button></h4><div id="fucp2" class="accordion-collapse collapse" data-bs-parent="#faqCuponesAccordion"><div class="accordion-body">Puede estar vencido, inactivo, sin cupos o fuera de condiciones de uso.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fucp3">¿Las promociones se ven en la reserva publica?</button></h4><div id="fucp3" class="accordion-collapse collapse" data-bs-parent="#faqCuponesAccordion"><div class="accordion-body">Si. Si hay promocion activa para ese horario/sede/espacio, se refleja en el total.</div></div></div>
+                    </div>
+                </article>
+
+                <article id="faq-desafios" class="home-faq-panel" data-faq-panel>
+                    <h3>Desafios</h3>
+                    <div class="accordion home-faq-accordion" id="faqDesafiosAccordion">
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#fud1">¿Como activo mi perfil para desafios?</button></h4><div id="fud1" class="accordion-collapse collapse show" data-bs-parent="#faqDesafiosAccordion"><div class="accordion-body">En Mi perfil activa Buscar desafios y completa deporte, nivel, equipo y ubicacion.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fud2">¿Que necesito para crear un desafio?</button></h4><div id="fud2" class="accordion-collapse collapse" data-bs-parent="#faqDesafiosAccordion"><div class="accordion-body">Tener perfil configurado y definir datos del reto (deporte, fecha, hora, sede/condiciones).</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fud3">¿Puedo editar o cancelar un desafio?</button></h4><div id="fud3" class="accordion-collapse collapse" data-bs-parent="#faqDesafiosAccordion"><div class="accordion-body">Si, segun estado del desafio y reglas del flujo definido por la plataforma.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fud4">¿Para que sirve la observacion del desafio?</button></h4><div id="fud4" class="accordion-collapse collapse" data-bs-parent="#faqDesafiosAccordion"><div class="accordion-body">Ayuda a explicar condiciones del reto (nivel, modalidad, disponibilidad, contacto).</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fud5">¿Como me encuentran otros equipos en desafios?</button></h4><div id="fud5" class="accordion-collapse collapse" data-bs-parent="#faqDesafiosAccordion"><div class="accordion-body">Por la configuracion de tu perfil: deporte, nivel, ubicacion y disponibilidad para desafios.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fud6">¿Que pasa si no completo deporte o nivel?</button></h4><div id="fud6" class="accordion-collapse collapse" data-bs-parent="#faqDesafiosAccordion"><div class="accordion-body">Tu perfil de desafios queda incompleto y puede no aparecer correctamente en las busquedas.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fud7">¿Puedo recibir desafios de cualquier distrito?</button></h4><div id="fud7" class="accordion-collapse collapse" data-bs-parent="#faqDesafiosAccordion"><div class="accordion-body">Depende de los filtros activos; mientras más precisa tu ubicacion, mejores coincidencias recibiras.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fud8">¿Como mejorar la probabilidad de que acepten mi desafio?</button></h4><div id="fud8" class="accordion-collapse collapse" data-bs-parent="#faqDesafiosAccordion"><div class="accordion-body">Define bien horario, sede, nivel y una observacion clara con condiciones del partido.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fud9">¿Si desactivo Buscar desafios, que sucede?</button></h4><div id="fud9" class="accordion-collapse collapse" data-bs-parent="#faqDesafiosAccordion"><div class="accordion-body">Tu equipo deja de mostrarse para nuevos retos, pero se conserva tu informacion para activarla luego.</div></div></div>
+                    </div>
+                </article>
+
+                <article id="faq-soporte" class="home-faq-panel" data-faq-panel>
+                    <h3>Cambios y soporte</h3>
+                    <div class="accordion home-faq-accordion" id="faqSoporteAccordion">
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#fus1">¿Como contacto al complejo deportivo de mi reserva?</button></h4><div id="fus1" class="accordion-collapse collapse show" data-bs-parent="#faqSoporteAccordion"><div class="accordion-body">En Mis reservas veras telefonos, WhatsApp y redes de la sede para contacto directo.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fus2">¿Puedo cancelar o reprogramar una reserva?</button></h4><div id="fus2" class="accordion-collapse collapse" data-bs-parent="#faqSoporteAccordion"><div class="accordion-body">Depende de la politica del complejo deportivo y del estado de tu reserva.</div></div></div>
+                        <div class="accordion-item home-faq-item"><h4 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fus3">¿Que hago si no encuentro disponibilidad?</button></h4><div id="fus3" class="accordion-collapse collapse" data-bs-parent="#faqSoporteAccordion"><div class="accordion-body">Prueba otro horario/sede/deporte o contacta al complejo para opciones adicionales.</div></div></div>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="text-center py-3">
+    <a asp-controller="PerfilPublico" asp-action="Index" class="btn home-faq-cta-btn fw-semibold py-3 px-5 fs-5">
+        Volver a mi perfil
+    </a>
+</section>
+
+@section Scripts {
+<script>
+(() => {
+    const root = document.querySelector('[data-faq-home-root]');
+    if (!root) return;
+
+    const tabs = Array.from(root.querySelectorAll('.home-faq-tab'));
+    const panels = Array.from(root.querySelectorAll('[data-faq-panel]'));
+    const search = root.querySelector('[data-faq-search]');
+    const state = root.querySelector('[data-faq-search-state]');
+
+    const limpiarBusqueda = () => {
+        panels.forEach((panel) => {
+            panel.querySelectorAll('.home-faq-item').forEach((item) => {
+                item.classList.remove('is-hidden-by-search');
+            });
+        });
+        if (search) search.value = '';
+        if (state) state.textContent = 'Mostrando todas las preguntas de la seccion.';
+    };
+
+    const activarPanel = (panelId) => {
+        tabs.forEach((tab) => {
+            const active = tab.getAttribute('data-faq-target') === panelId;
+            tab.classList.toggle('is-active', active);
+            tab.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+
+        panels.forEach((panel) => {
+            const active = panel.id === panelId;
+            panel.classList.toggle('is-active', active);
+        });
+
+        limpiarBusqueda();
+    };
+
+    tabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+            const panelId = tab.getAttribute('data-faq-target');
+            if (!panelId) return;
+            activarPanel(panelId);
+        });
+    });
+
+    search?.addEventListener('input', () => {
+        const panelActivo = root.querySelector('[data-faq-panel].is-active');
+        if (!panelActivo) return;
+
+        const term = (search.value || '').toLowerCase().trim();
+        const items = Array.from(panelActivo.querySelectorAll('.home-faq-item'));
+        let visibles = 0;
+
+        items.forEach((item) => {
+            const text = (item.textContent || '').toLowerCase();
+            const match = term.length === 0 || text.includes(term);
+            item.classList.toggle('is-hidden-by-search', !match);
+            if (match) visibles++;
+        });
+
+        if (!state) return;
+        if (term.length === 0) {
+            state.textContent = 'Mostrando todas las preguntas de la seccion.';
+            return;
+        }
+
+        state.textContent = visibles > 0
+            ? `Se encontraron ${visibles} pregunta(s) en esta seccion.`
+            : 'No se encontraron resultados en esta seccion.';
+    });
+
+    activarPanel('faq-cuenta');
+})();
+</script>
+}

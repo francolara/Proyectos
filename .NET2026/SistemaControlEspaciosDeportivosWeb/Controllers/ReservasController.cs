@@ -813,7 +813,9 @@ $"""
             var tramo = (Inicio: minuto, Fin: minuto + 60);
             if (ocupados.Any(o => Cruza(tramo, o))) continue;
             var horaInicio = TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(tramo.Inicio)).ToString("HH\\:mm");
-            var horaFin = TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(tramo.Fin)).ToString("HH\\:mm");
+            var horaFin = tramo.Fin >= finDia
+                ? "23:59"
+                : TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(tramo.Fin)).ToString("HH\\:mm");
             slotsDisponibles.Add(new
             {
                 horaInicio,
@@ -1052,6 +1054,8 @@ $"""
             HoraInicio = horaInicio ?? new TimeOnly(18, 0),
             HoraFin = horaFin ?? (horaInicio?.AddHours(1) ?? new TimeOnly(19, 0))
         };
+        if (vm.HoraFin <= vm.HoraInicio)
+            vm.HoraFin = new TimeOnly(23, 59);
         var sedeFiltro = AplicarSedeAsignada(baseVm, null);
         vm.Espacios = await spService.ReservasComboEspaciosAsync(resolvedNegocioId.Value, sedeFiltro);
         vm.Clientes = await spService.ReservasComboClientesAsync(resolvedNegocioId.Value);

@@ -1314,3 +1314,8 @@
 - Nuevo stored procedure: dbo.Sp_Home_ReferencialesExternos_CrearManualAdmin.
 - Permite crear referenciales externos manuales desde Super Admin con: NombreComplejo, TipoDeporteSuperId, CodigoUbigeo, Direccion, TelefonoContacto, CorreoContacto, LatitudReferencia, LongitudReferencia, GoogleMapsUrl.
 - Convencion de origen: GooglePlaceId = NULL identifica registros manuales.
+### Actualizacion 20/05/2026 (Tarifas feriado)
+- Se agregan tablas `dbo.Feriados` y `dbo.TarifaFeriado` (script: `Basededatos/SportCenter/StoreProcedure/100_Feriados_TarifaFeriado.sql`).
+- `Sp_Espacios_Crear` y `Sp_Espacios_Actualizar` reciben `@TarifasFeriadoJson` y persisten rangos de precio para feriados.
+- `Sp_Espacios_ObtenerPorId` retorna `TarifasFeriadoJson` para editar la seccion "Configurar tarifa por feriado".
+- `Sp_Reservas_Cotizar` prioriza `TarifaFeriado` cuando la fecha existe en `Feriados`; si no hay rango feriado aplica la tarifa normal por dia.

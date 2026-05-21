@@ -163,6 +163,11 @@
                                     <i class="bi bi-stars me-1"></i>Caracteristicas
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Faq">
+                                    <i class="bi bi-patch-question me-1"></i>FAQ
+                                </a>
+                            </li>
                             @if (ViewData["MostrarPromosNav"] is bool mostrarPromosNav && mostrarPromosNav)
                             {
                                 <li class="nav-item">
@@ -246,6 +251,7 @@
                         <a class="@menuClass("Cupones")" href="@menuUrl("Cupones")"><i class="bi bi-ticket-perforated"></i><span>Cupones</span></a>
                         <a class="@menuClass("Reportes")" href="@menuUrl("Reportes")"><i class="bi bi-graph-up-arrow"></i><span>Reportes</span></a>
                         <a class="@menuClass("Configuracion")" href="@menuUrl("Configuracion")"><i class="bi bi-sliders2-vertical"></i><span>Configuracion</span></a>
+                        <a class="@menuClass("Ayuda")" href="@menuUrl("Ayuda")"><i class="bi bi-life-preserver"></i><span>Ayuda</span></a>
                     }
                     <a class="@menuClass("MiSuscripcion")" href="@menuUrl("MiSuscripcion")"><i class="bi bi-credit-card-2-front"></i><span>Mi suscripcion</span></a>
                 </nav>
@@ -268,6 +274,15 @@
             </aside>
 
             <section class="sc-admin-main">
+                @if (hasNegocioId && currentController != "AYUDA")
+                {
+                    <a class="sc-admin-context-help"
+                       href="@Url.Action("Index", "Ayuda", new { negocioId = adminNegocioId, modulo = currentController })"
+                       data-admin-help-link="true"
+                       title="Abrir FAQ operativo de este modulo">
+                        <i class="bi bi-life-preserver"></i><span>Ayuda de este modulo</span>
+                    </a>
+                }
                 <main role="main" class="admin-page-frame">
                     @RenderBody()
                 </main>

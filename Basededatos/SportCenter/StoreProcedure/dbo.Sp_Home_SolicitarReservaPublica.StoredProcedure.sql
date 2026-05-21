@@ -13,6 +13,7 @@ GO
 -- Firma: Codex - 18/04/2026 | Bloquea reservas publicas sobre espacios con AdministracionPrivada activada.
 -- Firma: FRANCO LARA - 03/05/2026 | Incluye codigo de cupon opcional para aplicar descuento en reserva publica.
 -- Firma: FRANCO LARA - 03/05/2026 | Reserva publica restringida a duracion fija de 1 hora (60 minutos).
+-- Firma: FRANCO LARA - 20/05/2026 | Permite cierre especial de reserva publica 23:00-23:59 como excepcion valida de duracion.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Home_SolicitarReservaPublica]
     @EspacioDeportivoId INT,
     @Fecha DATE,
@@ -54,6 +55,7 @@ BEGIN
             RAISERROR('La hora fin debe ser mayor que la hora inicio.', 16, 1);
 
         IF DATEDIFF(MINUTE, @HoraInicio, @HoraFin) <> 60
+           AND NOT (@HoraInicio = '23:00:00' AND @HoraFin = '23:59:00')
             RAISERROR('La reserva publica solo permite bloques de 1 hora.', 16, 1);
 
         SELECT

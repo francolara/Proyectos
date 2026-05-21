@@ -81,11 +81,15 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
         {
             CargarTarifasDesdeJson(model);
             ValidarTarifas(model);
+            CargarTarifasFeriadoDesdeJson(model);
+            ValidarTarifasFeriado(model);
         }
         else
         {
             model.Tarifas = new List<EspacioTarifaRangoViewModel>();
             model.TarifasJson = "[]";
+            model.TarifasFeriado = new List<EspacioTarifaFeriadoRangoViewModel>();
+            model.TarifasFeriadoJson = "[]";
         }
         if (!ModelState.IsValid) return View(model);
 
@@ -130,11 +134,15 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
         {
             CargarTarifasDesdeJson(model);
             ValidarTarifas(model);
+            CargarTarifasFeriadoDesdeJson(model);
+            ValidarTarifasFeriado(model);
         }
         else
         {
             model.Tarifas = new List<EspacioTarifaRangoViewModel>();
             model.TarifasJson = "[]";
+            model.TarifasFeriado = new List<EspacioTarifaFeriadoRangoViewModel>();
+            model.TarifasFeriadoJson = "[]";
         }
         if (!ModelState.IsValid) return View(model);
 
@@ -179,6 +187,8 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
     {
         var tarifasJsonOriginal = model.TarifasJson;
         var tieneTarifasJson = !string.IsNullOrWhiteSpace(tarifasJsonOriginal);
+        var tarifasFeriadoJsonOriginal = model.TarifasFeriadoJson;
+        var tieneTarifasFeriadoJson = !string.IsNullOrWhiteSpace(tarifasFeriadoJsonOriginal);
 
         model.Sedes = await spService.EspaciosComboSedesAsync(model.NegocioId, sedeIdFiltro);
         model.TiposDeporte = await spService.EspaciosComboTiposDeporteAsync(model.NegocioId);
@@ -202,6 +212,8 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
         {
             model.Tarifas = new List<EspacioTarifaRangoViewModel>();
             model.TarifasJson = "[]";
+            model.TarifasFeriado = new List<EspacioTarifaFeriadoRangoViewModel>();
+            model.TarifasFeriadoJson = "[]";
             return;
         }
 
@@ -221,6 +233,9 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
 
         if (!tieneTarifasJson)
             model.TarifasJson = JsonSerializer.Serialize(model.Tarifas, TarifaJsonSerializerOptions);
+
+        if (!tieneTarifasFeriadoJson)
+            model.TarifasFeriadoJson = JsonSerializer.Serialize(model.TarifasFeriado, TarifaJsonSerializerOptions);
     }
 
     private static void InsertarOpcionSeleccione(List<SelectListItem> items, string texto)
@@ -273,6 +288,22 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
         }
     }
 
+    private void CargarTarifasFeriadoDesdeJson(EspacioFormViewModel model)
+    {
+        if (string.IsNullOrWhiteSpace(model.TarifasFeriadoJson))
+            return;
+
+        try
+        {
+            var tarifas = JsonSerializer.Deserialize<List<EspacioTarifaFeriadoRangoViewModel>>(model.TarifasFeriadoJson, TarifaJsonSerializerOptions);
+            model.TarifasFeriado = tarifas ?? new List<EspacioTarifaFeriadoRangoViewModel>();
+        }
+        catch
+        {
+            ModelState.AddModelError(string.Empty, "No se pudo leer el detalle de tarifas por feriado.");
+        }
+    }
+
     private void ValidarTarifas(EspacioFormViewModel model)
     {
         if (model.Tarifas.Count == 0)
@@ -308,5 +339,29 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
         }
 
         model.TarifasJson = JsonSerializer.Serialize(model.Tarifas, TarifaJsonSerializerOptions);
+    }
+
+    private void ValidarTarifasFeriado(EspacioFormViewModel model)
+    {
+        foreach (var tarifa in model.TarifasFeriado)
+        {
+            if (tarifa.HoraFin <= tarifa.HoraInicio)
+                ModelState.AddModelError(string.Empty, "En tarifas por feriado, la hora fin debe ser mayor que la hora inicio.");
+
+            if (tarifa.Precio <= 0)
+                ModelState.AddModelError(string.Empty, "En tarifas por feriado, el precio debe ser mayor que cero.");
+        }
+
+        var ordenado = model.TarifasFeriado.OrderBy(t => t.HoraInicio).ToList();
+        for (var i = 1; i < ordenado.Count; i++)
+        {
+            if (ordenado[i].HoraInicio < ordenado[i - 1].HoraFin)
+            {
+                ModelState.AddModelError(string.Empty, "Existen rangos de tarifas por feriado superpuestos.");
+                break;
+            }
+        }
+
+        model.TarifasFeriadoJson = JsonSerializer.Serialize(model.TarifasFeriado, TarifaJsonSerializerOptions);
     }
 }

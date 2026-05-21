@@ -8,6 +8,7 @@ GO
 
 -- SOURCE: 31_Espacios_Tarifas_Base.sql (linea 29)
 -- Firma: Codex - 18/04/2026 | Devuelve bandera AdministracionPrivada para edicion y control de visibilidad publica.
+-- Firma: FRANCO LARA - 20/05/2026 | Devuelve detalle TarifaFeriado para configuracion de precios en fechas feriadas.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Espacios_ObtenerPorId]
     @NegocioId INT,
     @Id INT
@@ -38,7 +39,18 @@ BEGIN
                 ORDER BY t.DiaSemana, t.HoraInicio
                 FOR JSON PATH
             ) AS TarifasJson,
-            COALESCE(e.AdministracionPrivada, 0) AS AdministracionPrivada
+            COALESCE(e.AdministracionPrivada, 0) AS AdministracionPrivada,
+            (
+                SELECT
+                    CONVERT(NVARCHAR(8), t.HoraInicio, 108) AS HoraInicio,
+                    CONVERT(NVARCHAR(8), t.HoraFin, 108) AS HoraFin,
+                    t.Precio
+                FROM dbo.TarifaFeriado t
+                WHERE t.EspacioDeportivoId = e.Id
+                  AND t.Activa = 1
+                ORDER BY t.HoraInicio
+                FOR JSON PATH
+            ) AS TarifasFeriadoJson
         FROM dbo.EspaciosDeportivos e
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
         WHERE e.Id = @Id
