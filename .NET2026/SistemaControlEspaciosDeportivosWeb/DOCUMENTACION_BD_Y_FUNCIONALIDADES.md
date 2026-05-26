@@ -1319,3 +1319,22 @@
 - `Sp_Espacios_Crear` y `Sp_Espacios_Actualizar` reciben `@TarifasFeriadoJson` y persisten rangos de precio para feriados.
 - `Sp_Espacios_ObtenerPorId` retorna `TarifasFeriadoJson` para editar la seccion "Configurar tarifa por feriado".
 - `Sp_Reservas_Cotizar` prioriza `TarifaFeriado` cuando la fecha existe en `Feriados`; si no hay rango feriado aplica la tarifa normal por dia.
+## Actualizacion 26/05/2026 - Onboarding inicial de negocio (wizard)
+- Se crea tabla `dbo.NegocioOnboardingEstado` para persistir avance del asistente inicial por negocio:
+  - `NegocioId`, `PasoActual`, `Completado`, `FechaUltimaActualizacionUtc`, `UsuarioUltimaActualizacion`, `FechaCompletadoUtc`, `UsuarioCompletado`.
+- Se agrega `Sp_OnboardingEstado_Obtener` para consultar estado actual del onboarding y retornar valores por defecto cuando aun no existe registro.
+- Se agrega `Sp_OnboardingEstado_GuardarAvance` para guardar progreso por paso (`1..5`) sin marcar finalizacion.
+- Se agrega `Sp_OnboardingEstado_MarcarCompletado` para cerrar el onboarding y registrar fecha/usuario de finalizacion.
+- Se agrega `Sp_OnboardingChecklist_Validar` para validar requisitos minimos antes de habilitar operacion normal:
+  - Configuracion minima (`NombreComercial`, `TipoDocumentoFiscal`, `MonedaId`) y reglas condicionales CPE.
+  - Maestros minimos (deporte, suelo, forma de pago, moneda, tipo de documento y serie activa).
+  - Sede minima activa con direccion, ubigeo, horario de atencion y al menos un servicio.
+  - Espacio minimo activo con tarifa valida.
+- Actualizacion 25/05/2026 (checklist onboarding):
+  - Sp_OnboardingChecklist_Validar amplía Configuración inicial obligatoria a: RazonSocial, TipoDocumentoFiscal, NumeroDocumentoFiscal, DireccionFiscal, CodigoDepartamento, CodigoProvincia, CodigoUbigeo, PorcentajeIgv, CancelacionAutomaticaNoConfirmada, PermitirModificarPrecioReserva (además de NombreComercial, MonedaId).
+  - En Maestros, TipoDocumentoComprobante y SerieDocumentoComprobante dejan de ser requisito obligatorio para completar onboarding.
+- Ajuste 25/05/2026 (compatibilidad de esquema): en Sp_OnboardingChecklist_Validar se retira validacion de CodigoDepartamento y CodigoProvincia porque en algunos esquemas de Negocios solo persiste CodigoUbigeo.
+- Ajuste 26/05/2026 (activacion sedes): Sp_OnboardingChecklist_Validar exige en la sede minima NotificacionesActivas = 1, CorreoNotificacion y WhatsappContacto no vacios (ademas de direccion, ubigeo, horario y servicios).
+- Ajuste 26/05/2026 (simplificacion de arquitectura): el flujo de ""Guia de configuracion"" deja de usar persistencia de paso y se apoya solo en Sp_OnboardingChecklist_Validar como fuente unica de verdad.
+  - Se retiran del codigo de aplicacion las llamadas a Sp_OnboardingEstado_Obtener, Sp_OnboardingEstado_GuardarAvance y Sp_OnboardingEstado_MarcarCompletado.
+  - Script de limpieza de objetos legados: Basededatos/SportCenter/Script/20260526_OnboardingEstado_Deprecado.sql.

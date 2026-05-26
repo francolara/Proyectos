@@ -5,6 +5,7 @@ wwwroot\img\logo-lazona-oficial.png
 wwwroot\img\logo-simbolo.png
 wwwroot\img\logo-sportcenter-header.png
 wwwroot\img\logo-sportcenter.png
+wwwroot\img\onboarding-robot.svg
 wwwroot\js\site.js
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css.map
@@ -131,3 +132,4 @@ C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlE
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\lib\jquery\dist\jquery.slim.min.map
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\lib\jquery\LICENSE.txt
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\robots.txt
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\img\onboarding-robot.svg

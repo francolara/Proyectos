@@ -23,6 +23,7 @@ public interface ISportCenterStoredProcedureService
     Task<SolicitudNotificacionEmailViewModel?> HomeObtenerSolicitudParaNotificacionAsync(string codigoSolicitud);
     Task<bool> HomeMarcarSolicitudNotificadaAsync(string codigoSolicitud);
     Task<ConfiguracionClubViewModel?> ConfiguracionClubObtenerAsync(int negocioId);
+    Task<OnboardingChecklistViewModel> OnboardingChecklistValidarAsync(int negocioId);
     Task<bool> ConfiguracionClubActualizarAsync(ConfiguracionClubViewModel model, string usuario);
     Task<List<SelectListItem>> ConfiguracionClubComboMonedasAsync(int negocioId);
     Task<bool> ConfiguracionClubActualizarEmisionAsync(int negocioId, bool emisionComprobantesElectronicos, bool enviarComprobanteAutomatico, bool emisionReciboInterno, string usuario);

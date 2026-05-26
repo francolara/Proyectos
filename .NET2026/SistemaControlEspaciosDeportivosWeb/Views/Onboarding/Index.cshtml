@@ -1,0 +1,144 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.OnboardingDashboardViewModel
+@{
+    ViewData["Title"] = "Guia de configuracion";
+}
+
+<div class="admin-page-frame">
+    <section class="page-header">
+        <div class="d-flex align-items-center gap-3">
+            @if (!string.IsNullOrWhiteSpace(Model.LogoUrl))
+            {
+                <img src="@Url.Action("VerImagen", "Sedes", new { url = Model.LogoUrl })" alt="Logo" style="width:64px;height:64px;object-fit:contain;background:#fff;border:1px solid #dee2e6;border-radius:12px;" />
+            }
+            <div>
+                <h1>Guia de configuracion</h1>
+                <p class="page-subtitle mb-0">@Model.NegocioNombre</p>
+            </div>
+        </div>
+    </section>
+
+    @if (TempData["OnboardingInfo"] is string info && !string.IsNullOrWhiteSpace(info))
+    {
+        <div class="alert alert-warning">@info</div>
+    }
+    @if (TempData["OnboardingOk"] is string ok && !string.IsNullOrWhiteSpace(ok))
+    {
+        <div class="alert alert-success">@ok</div>
+    }
+
+    <section class="sc-form-card">
+        <div class="sc-form-section">
+            <h2 class="sc-form-title sc-activacion-title"><i class="bi bi-list-check"></i> Estado de activacion</h2>
+            <div class="sc-activacion-meta">
+                <div><span>Paso actual</span><strong>@Model.PasoActual / @Model.TotalPasos</strong></div>
+                <div><span>Completados</span><strong>@Model.PasosCompletados / @Model.TotalPasos</strong></div>
+            </div>
+            <div class="progress mb-2">
+                <div class="progress-bar" style="width:@(Model.PasosCompletados * 100 / Model.TotalPasos)%"></div>
+            </div>
+            <p class="text-muted mb-0">La configuracion se realiza en cada modulo. Aqui visualizas avance y accesos directos.</p>
+        </div>
+    </section>
+
+    <section class="sc-form-card mt-3">
+        <div class="sc-form-section">
+            <h2 class="sc-form-title sc-activacion-title"><i class="bi bi-diagram-3"></i> Detalle de pasos</h2>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0 sc-activacion-table">
+                    <thead>
+                        <tr>
+                            <th>Paso</th>
+                            <th>Descripcion</th>
+                            <th class="text-center">Estado</th>
+                            <th class="text-center">Accion</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var paso in Model.Pasos.OrderBy(x => x.Paso))
+                        {
+                            <tr>
+                                <td class="fw-semibold">@paso.Paso. @paso.Titulo</td>
+                                <td>@paso.Descripcion</td>
+                                <td class="text-center">
+                                    @if (paso.Completado)
+                                    {
+                                        <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">Completo</span>
+                                    }
+                                    else if (paso.EsActual)
+                                    {
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">Pendiente actual</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle">Pendiente</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <a class="btn btn-primary btn-grabar btn-sm px-3" href="@paso.UrlAccion">Ir al modulo</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section class="sc-form-card mt-3">
+        <div class="sc-form-section">
+            <h2 class="sc-form-title sc-activacion-title"><i class="bi bi-flag"></i> Cierre de activacion</h2>
+            <p class="mb-3">Finaliza cuando todos los pasos esten completos.</p>
+            <form asp-action="Finalizar" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="negocioId" value="@Model.NegocioId" />
+                <button type="submit" class="btn btn-primary btn-grabar" @(Model.ChecklistCompleto ? null : "disabled")>Finalizar activacion</button>
+            </form>
+        </div>
+    </section>
+</div>
+
+@section Styles {
+    <style>
+        .sc-activacion-title {
+            font-size: 1.02rem;
+            letter-spacing: .2px;
+        }
+
+        .sc-activacion-meta {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: .75rem;
+            margin-bottom: .65rem;
+        }
+
+        .sc-activacion-meta > div {
+            background: #f8fbff;
+            border: 1px solid #dbe7f8;
+            border-radius: .65rem;
+            padding: .55rem .7rem;
+        }
+
+        .sc-activacion-meta span {
+            display: block;
+            color: #5f6f89;
+            font-size: .8rem;
+            margin-bottom: .15rem;
+        }
+
+        .sc-activacion-meta strong {
+            color: #103d82;
+            font-size: .98rem;
+        }
+
+        .sc-activacion-table thead th {
+            font-size: .85rem;
+            color: #1d3357;
+            background: #f8fbff;
+            border-bottom: 1px solid #dbe7f8;
+        }
+
+        .sc-activacion-table tbody td {
+            vertical-align: middle;
+        }
+    </style>
+}

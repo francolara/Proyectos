@@ -98,6 +98,7 @@ builder.Services.AddHttpsRedirection(options =>
 builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
 builder.Services.AddControllersWithViews(options =>
     {
+        options.Filters.AddService<OnboardingGuardFilter>();
         options.ModelBindingMessageProvider.SetValueMustNotBeNullAccessor(_ => "Este campo es obligatorio.");
         options.ModelBindingMessageProvider.SetAttemptedValueIsInvalidAccessor((valor, campo) => $"El valor '{valor}' no es valido para {campo}.");
         options.ModelBindingMessageProvider.SetMissingBindRequiredValueAccessor(campo => $"El campo {campo} es obligatorio.");
@@ -228,6 +229,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddHttpClient<ITurnstileValidationService, TurnstileValidationService>();
 builder.Services.AddScoped<IModuloPermisoService, ModuloPermisoService>();
 builder.Services.AddScoped<ISportCenterStoredProcedureService, SportCenterStoredProcedureService>();
+builder.Services.AddScoped<OnboardingGuardFilter>();
 builder.Services.AddScoped<IComprobanteElectronicoEmisionService, ComprobanteElectronicoEmisionService>();
 builder.Services.AddScoped<IHomeReferencialesExternosSyncService, HomeReferencialesExternosSyncService>();
 builder.Services.AddScoped<ISedeImagenStorageService, R2SedeImagenStorageService>();

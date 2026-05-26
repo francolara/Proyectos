@@ -1,5 +1,6 @@
 ﻿<!DOCTYPE html>
 @using SistemaControlEspaciosDeportivosWeb.Services
+@using SistemaControlEspaciosDeportivosWeb.ViewModels
 @using Microsoft.AspNetCore.Identity
 @using SistemaControlEspaciosDeportivosWeb.Models
 @inject ISportCenterStoredProcedureService spService
@@ -120,6 +121,16 @@
         inicialesNegocio = "SC";
 
     var currentAction = (ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty).ToUpperInvariant();
+    OnboardingChecklistViewModel? onboardingChecklist = null;
+    byte onboardingPasoPendiente = 1;
+    byte onboardingPasoContexto = 0;
+    var onboardingVisible = false;
+    var onboardingAvance = 0;
+    var onboardingSiguientePaso = (byte)1;
+    var onboardingSiguienteUrl = string.Empty;
+    var onboardingResumenPaso = string.Empty;
+    var onboardingTituloPaso = string.Empty;
+    var onboardingDetallePaso = string.Empty;
     string menuClass(string controller) => currentController == controller.ToUpperInvariant() ? "sc-admin-navlink active" : "sc-admin-navlink";
     string menuClassAction(string controller, string action)
         => currentController == controller.ToUpperInvariant() && currentAction == action.ToUpperInvariant()
@@ -130,6 +141,89 @@
         return hasNegocioId
             ? (Url.Action("Index", controller, new { negocioId = adminNegocioId }) ?? "#")
             : (Url.Action("Index", controller) ?? "#");
+    }
+
+    byte resolverPasoPendiente(OnboardingChecklistViewModel checklist)
+    {
+        var pasoConfiguracionOk = checklist.ConfigNombreComercialOk
+                                  && checklist.ConfigTipoDocumentoOk
+                                  && checklist.ConfigMonedaOk
+                                  && checklist.ConfigCpeCondicionesOk;
+        if (!pasoConfiguracionOk) return 1;
+
+        var pasoMaestrosOk = checklist.MaestroTipoDeporteOk
+                              && checklist.MaestroTipoSueloOk
+                              && checklist.MaestroFormaPagoOk
+                              && checklist.MaestroMonedaOk;
+        if (!pasoMaestrosOk) return 2;
+
+        if (!checklist.SedeMinimaOk) return 3;
+        if (!checklist.EspacioMinimoOk) return 4;
+        return 5;
+    }
+
+    if (adminShell && hasNegocioId)
+    {
+        onboardingPasoContexto = currentController switch
+        {
+            "CONFIGURACION" => (byte)1,
+            "MAESTROS" => (byte)2,
+            "SEDES" when currentAction == "CREATE" || currentAction == "EDIT" => (byte)3,
+            "ESPACIOS" when currentAction == "CREATE" || currentAction == "EDIT" => (byte)4,
+            _ => (byte)0
+        };
+
+        if (onboardingPasoContexto > 0)
+        {
+            onboardingChecklist = await spService.OnboardingChecklistValidarAsync(adminNegocioId);
+            var onboardingChecklistVal = onboardingChecklist!;
+            onboardingPasoPendiente = resolverPasoPendiente(onboardingChecklistVal);
+            var completados = 0;
+            if (onboardingChecklistVal.ConfigNombreComercialOk && onboardingChecklistVal.ConfigTipoDocumentoOk && onboardingChecklistVal.ConfigMonedaOk && onboardingChecklistVal.ConfigCpeCondicionesOk) completados++;
+            if (onboardingChecklistVal.MaestroTipoDeporteOk && onboardingChecklistVal.MaestroTipoSueloOk && onboardingChecklistVal.MaestroFormaPagoOk && onboardingChecklistVal.MaestroMonedaOk) completados++;
+            if (onboardingChecklistVal.SedeMinimaOk) completados++;
+            if (onboardingChecklistVal.EspacioMinimoOk) completados++;
+            if (onboardingChecklistVal.ChecklistCompleto) completados++;
+            onboardingAvance = completados * 100 / 5;
+            onboardingVisible = !onboardingChecklistVal.ChecklistCompleto;
+            onboardingSiguientePaso = onboardingPasoPendiente <= onboardingPasoContexto
+                ? (byte)Math.Min(5, onboardingPasoContexto + 1)
+                : onboardingPasoPendiente;
+
+            onboardingSiguienteUrl = onboardingSiguientePaso switch
+            {
+                1 => Url.Action("Index", "Configuracion", new { negocioId = adminNegocioId }) ?? "#",
+                2 => Url.Action("Index", "Maestros", new { negocioId = adminNegocioId }) ?? "#",
+                3 => Url.Action("Create", "Sedes", new { negocioId = adminNegocioId }) ?? "#",
+                4 => Url.Action("Create", "Espacios", new { negocioId = adminNegocioId }) ?? "#",
+                _ => Url.Action("Index", "Onboarding", new { negocioId = adminNegocioId, paso = 5 }) ?? "#"
+            };
+
+            if (onboardingPasoContexto == 1)
+            {
+                onboardingTituloPaso = "Paso 1: Configuracion";
+                onboardingResumenPaso = "Completa razon social, documento, direccion fiscal, ubigeo, IGV y reglas clave de reserva.";
+                onboardingDetallePaso = "Esto asegura validacion fiscal basica y reglas operativas desde el primer dia.";
+            }
+            else if (onboardingPasoContexto == 2)
+            {
+                onboardingTituloPaso = "Paso 2: Maestros";
+                onboardingResumenPaso = "Activa como minimo deporte, suelo, moneda y forma de pago.";
+                onboardingDetallePaso = "Documento y serie quedan disponibles, pero ya no son obligatorios para cerrar onboarding.";
+            }
+            else if (onboardingPasoContexto == 3)
+            {
+                onboardingTituloPaso = "Paso 3: Sede";
+                onboardingResumenPaso = "Registra sede con direccion, ubigeo, horario y servicios.";
+                onboardingDetallePaso = "En activacion tambien se exige notificaciones activas, correo y WhatsApp de contacto.";
+            }
+            else if (onboardingPasoContexto == 4)
+            {
+                onboardingTituloPaso = "Paso 4: Espacio";
+                onboardingResumenPaso = "Crea un espacio activo con codigo, sede, deporte, suelo y tarifa valida.";
+                onboardingDetallePaso = "Con esto ya habilitas la gestion real de reservas desde el modulo operativo.";
+            }
+        }
     }
 }
 <body class="d-flex flex-column min-vh-100">
@@ -236,6 +330,7 @@
 
                 <nav class="sc-admin-nav">
                     <a class="@menuClass("Panel")" href="@menuUrl("Panel")"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
+                    <a class="@menuClass("Onboarding")" href="@menuUrl("Onboarding")"><i class="bi bi-signpost-split"></i><span>Guia de configuracion</span></a>
                     @if (!bloquearModulosPorSuscripcion)
                     {
                         <a class="@menuClass("Maestros")" href="@menuUrl("Maestros")"><i class="bi bi-collection"></i><span>Maestros</span></a>
@@ -285,6 +380,38 @@
                 <main role="main" class="admin-page-frame">
                     @RenderBody()
                 </main>
+                @if (onboardingVisible && onboardingPasoContexto > 0)
+                {
+                    <aside class="sc-onboarding-float" data-onboarding-float data-step="@onboardingPasoContexto">
+                        <div class="sc-onboarding-float-head">
+                            <div class="sc-onboarding-float-avatars">
+                                <img src="https://pub-3afaea6b0b354821989565fa4b8bd250.r2.dev/logos/LaZonaDeportiva/LaZonaDeportiva_Logo.webp" alt="Logo La Zona Deportiva" class="sc-onboarding-float-logo" />
+                                <img src="~/img/onboarding-robot.svg" alt="Robot asistente" class="sc-onboarding-float-robot" />
+                            </div>
+                            <div>
+                                <strong>Guia de configuracion</strong>
+                                <small>@onboardingTituloPaso</small>
+                            </div>
+                        </div>
+                        <div class="sc-onboarding-float-progress">
+                            <div class="d-flex justify-content-between">
+                                <small>Avance de activación</small>
+                                <small>@onboardingAvance%</small>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar" style="width:@onboardingAvance%"></div>
+                            </div>
+                        </div>
+                        <p class="mb-1">@onboardingResumenPaso</p>
+                        <p class="text-muted small mb-2">@onboardingDetallePaso</p>
+                        <div class="d-grid gap-2">
+                            <a class="btn btn-primary btn-sm" href="@onboardingSiguienteUrl">
+                                @(onboardingPasoContexto >= onboardingSiguientePaso ? "Ir al siguiente paso" : "Ir al paso pendiente")
+                            </a>
+                            <a class="btn btn-outline-secondary btn-sm" href="@Url.Action("Index", "Onboarding", new { negocioId = adminNegocioId })">Ver estado completo</a>
+                        </div>
+                    </aside>
+                }
             </section>
         </div>
     }
@@ -527,6 +654,39 @@
                 const pollingMs = 20000;
                 refreshNotifications();
                 setInterval(refreshNotifications, pollingMs);
+            })();
+        </script>
+    }
+    @if (onboardingVisible && onboardingPasoContexto > 0)
+    {
+        <script>
+            (() => {
+                const step = Number(document.querySelector('[data-onboarding-float]')?.getAttribute('data-step') || '0');
+                const selectorsByStep = {
+                    1: ['#NombreComercial', '#RazonSocial', '#TipoDocumento', '#NumeroDocumento', '#DireccionFiscal', '#CodigoDepartamento', '#CodigoProvincia', '#CodigoUbigeo', '#PorcentajeIgv', '#CancelacionAutomaticaNoConfirmada', '#PermitirModificarPrecioReserva', '#PoliticaConfirmacionPago', '#MonedaId'],
+                    2: ['.sc-maestros-nav', '[data-target="tipos-deporte"]', '[data-target="tipos-suelo"]', '[data-target="formas-pago"]', '[data-target="monedas"]'],
+                    3: ['#Nombre', '#Direccion', '#CodigoUbigeo', '#HoraApertura', '#HoraCierre', '#NotificacionesActivas', '#CorreoNotificacion', '#WhatsappNumeroLocal'],
+                    4: ['#SedeId', '#TipoDeporteId', '#TipoSueloId', '#Codigo', '#Nombre', '#tablaTarifasEspacio']
+                };
+
+                const clearHighlight = () => {
+                    document.querySelectorAll('.sc-onboarding-highlight').forEach(x => x.classList.remove('sc-onboarding-highlight'));
+                };
+
+                const highlightNow = () => {
+                    clearHighlight();
+                    const targets = selectorsByStep[step] || [];
+                    let first = null;
+                    targets.forEach((selector) => {
+                        document.querySelectorAll(selector).forEach((el) => {
+                            el.classList.add('sc-onboarding-highlight');
+                            first ||= el;
+                        });
+                    });
+                    if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                };
+
+                setTimeout(highlightNow, 500);
             })();
         </script>
     }
