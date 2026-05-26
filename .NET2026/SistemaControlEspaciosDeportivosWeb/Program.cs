@@ -22,13 +22,14 @@ if (builder.Environment.IsDevelopment())
 }
 
 var dataProtectionKeysPath = (builder.Configuration["DataProtection:KeysPath"] ?? string.Empty).Trim();
-if (!string.IsNullOrWhiteSpace(dataProtectionKeysPath))
+if (string.IsNullOrWhiteSpace(dataProtectionKeysPath))
 {
-    Directory.CreateDirectory(dataProtectionKeysPath);
-    builder.Services.AddDataProtection()
-        .SetApplicationName("SistemaControlEspaciosDeportivosWeb")
-        .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
+    dataProtectionKeysPath = Path.Combine(builder.Environment.ContentRootPath, "App_Data", "DataProtection-Keys");
 }
+Directory.CreateDirectory(dataProtectionKeysPath);
+builder.Services.AddDataProtection()
+    .SetApplicationName("SistemaControlEspaciosDeportivosWeb")
+    .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
 
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -281,6 +282,18 @@ app.UseStaticFiles();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseStatusCodePages(async context =>
+{
+    var http = context.HttpContext;
+    if (http.Response.StatusCode == StatusCodes.Status400BadRequest
+        && http.Request.Path.StartsWithSegments("/Identity/Account/Logout", StringComparison.OrdinalIgnoreCase))
+    {
+        http.Response.Redirect("/Identity/Account/Login?sessionExpired=1");
+        return;
+    }
+
+    await Task.CompletedTask;
+});
 
 app.MapControllerRoute(
     name: "default",

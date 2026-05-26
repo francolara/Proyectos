@@ -61,6 +61,13 @@
 
             <form id="account" method="post">
                 <input type="hidden" asp-for="ReturnUrl" />
+                @* Firma: Franco Lara - 21/05/2026 | Mensaje amigable cuando logout falla por sesion/token expirado y se redirige a login. *@
+                @if (string.Equals(Request.Query["sessionExpired"], "1", StringComparison.Ordinal))
+                {
+                    <div class="alert alert-warning py-2 px-3 mb-3" role="alert">
+                        Tu sesion anterior expiro por inactividad. Inicia sesion nuevamente.
+                    </div>
+                }
                 @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
                 {
                     <div class="alert alert-success py-2 px-3 mb-3" role="alert">
@@ -148,4 +155,3 @@
         })();
     </script>
 }
-

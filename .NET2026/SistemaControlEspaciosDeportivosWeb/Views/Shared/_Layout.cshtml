@@ -10,10 +10,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - La Zona Deportiva</title>
+    <meta name="description" content="Reserva canchas y espacios deportivos en La Zona Deportiva. Consulta disponibilidad, precios y confirma tu reserva en linea de forma rapida y segura." />
     <meta property="og:title" content="@($"{ViewData["Title"]} - La Zona Deportiva")" />
     <meta property="og:site_name" content="La Zona Deportiva" />
     <meta property="og:description" content="Reserva de espacios deportivos en línea de forma rápida y segura." />
-    <meta property="og:image" content="https://lazonadeportiva.com/img/logo-sportcenter.png" />
+    <meta property="og:image" content="https://pub-3afaea6b0b354821989565fa4b8bd250.r2.dev/logos/LaZonaDeportiva/LaZonaDeportiva_Logo.webp" />
     <meta property="og:url" content="https://lazonadeportiva.com/" />
     <meta property="og:type" content="website" />
     <link rel="icon" type="image/x-icon" href="~/favicon.ico" asp-append-version="true" />
@@ -22,11 +23,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.14/index.global.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/SistemaControlEspaciosDeportivosWeb.styles.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/reservas-calendario.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
 </head>
 @{
@@ -140,7 +139,7 @@
             <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm sc-public-navbar">
                 <div class="container">
                     <a class="navbar-brand fw-bold sc-public-brand" asp-area="" asp-controller="Home" asp-action="Index" aria-label="SportCenter">
-                        <img src="~/img/logo-sportcenter-header.png" alt="SportCenter" class="sc-public-logo" />
+                        <img src="https://pub-3afaea6b0b354821989565fa4b8bd250.r2.dev/logos/LaZonaDeportiva/LaZonaDeportiva_Logo.webp" alt="La Zona Deportiva" class="sc-public-logo" />
                     </a>
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav"
                             aria-expanded="false" aria-label="Toggle navigation">
@@ -305,7 +304,7 @@
                     <strong>@saludoNombre</strong>
                 </div>
                 <div class="sc-admin-brand sc-platform-brand-card">
-                    <img src="~/img/logo-sportcenter-header.png" alt="La Zona Deportiva" class="sc-platform-brand-logo" asp-append-version="true" />
+                    <img src="https://pub-3afaea6b0b354821989565fa4b8bd250.r2.dev/logos/LaZonaDeportiva/LaZonaDeportiva_Logo.webp" alt="La Zona Deportiva" class="sc-platform-brand-logo" />
                     <p class="sc-admin-brand-title">Control de plataforma</p>
                 </div>
 

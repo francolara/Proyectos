@@ -4383,6 +4383,58 @@ body {
   padding-top: 1.15rem;
 }
 
+/* Firma: Franco Lara - 21/05/2026 | Se fija footer del modal de reservas y se habilita scroll interno para evitar perdida de controles con zoom/scroll. */
+#reservaModal .modal-dialog {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+#reservaModal .sc-modal-content {
+  max-height: calc(100vh - 2rem);
+  display: flex;
+}
+
+#reservaModal #reservaModalForm {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+#reservaModal .sc-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+#reservaModal .modal-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: #fff;
+  border-top: 1px solid #dee2e6;
+}
+
+/* Firma: Franco Lara - 21/05/2026 | Se agrega realce visual con sombra para checks de cupon y registrar pago en modal de reservas. */
+.sc-check-highlight {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.28rem 0.52rem;
+  border-radius: 0.55rem;
+  transition: box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.sc-check-highlight-cupon {
+  background: rgba(212, 165, 116, 0.12);
+  box-shadow: 0 0 0 1px rgba(176, 128, 58, 0.3), 0 0 10px rgba(212, 165, 116, 0.42);
+}
+
+.sc-check-highlight-pago {
+  background: rgba(34, 197, 94, 0.12);
+  box-shadow: 0 0 0 1px rgba(22, 163, 74, 0.3), 0 0 10px rgba(34, 197, 94, 0.45);
+}
+
 @media (max-width: 1400px) {
   .sc-dash-filter-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
