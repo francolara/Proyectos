@@ -54,12 +54,12 @@ public class OnboardingController(ISportCenterStoredProcedureService spService) 
         var ok = await spService.ConfiguracionClubActualizarAsync(model, User.Identity?.Name ?? "sistema");
         if (ok)
         {
-            TempData["OnboardingOk"] = "Configuracion guardada. ContinÃºa con Maestros.";
+            TempData["OnboardingOk"] = "Configuracion guardada. ContinÃºa con Sedes.";
             return RedirectToAction(nameof(Index), new { negocioId = form.NegocioId, paso = 2 });
         }
 
         TempData["OnboardingInfo"] = "No se pudo guardar la configuracion.";
-        return RedirectToAction(nameof(Index), new { negocioId = form.NegocioId, paso = 1 });
+        return RedirectToAction(nameof(Index), new { negocioId = form.NegocioId, paso = 2 });
     }
 
     [HttpPost]
@@ -163,8 +163,8 @@ public class OnboardingController(ISportCenterStoredProcedureService spService) 
 
         return pasoPendiente switch
         {
-            1 => RedirectToAction("Index", "Configuracion", new { negocioId }),
-            2 => RedirectToAction("Index", "Maestros", new { negocioId }),
+            1 => RedirectToAction("Index", "Maestros", new { negocioId }),
+            2 => RedirectToAction("Index", "Configuracion", new { negocioId }),
             3 => primeraSede is null
                 ? RedirectToAction("Create", "Sedes", new { negocioId })
                 : RedirectToAction("Edit", "Sedes", new { id = primeraSede.Id, negocioId }),
@@ -177,17 +177,17 @@ public class OnboardingController(ISportCenterStoredProcedureService spService) 
 
     private static byte ResolverPasoPendiente(OnboardingChecklistViewModel checklist)
     {
-        var pasoConfiguracionOk = checklist.ConfigNombreComercialOk
-                                  && checklist.ConfigTipoDocumentoOk
-                                  && checklist.ConfigMonedaOk
-                                  && checklist.ConfigCpeCondicionesOk;
-        if (!pasoConfiguracionOk) return 1;
-
         var pasoMaestrosOk = checklist.MaestroTipoDeporteOk
                               && checklist.MaestroTipoSueloOk
                               && checklist.MaestroFormaPagoOk
                               && checklist.MaestroMonedaOk;
-        if (!pasoMaestrosOk) return 2;
+        if (!pasoMaestrosOk) return 1;
+
+        var pasoConfiguracionOk = checklist.ConfigNombreComercialOk
+                                  && checklist.ConfigTipoDocumentoOk
+                                  && checklist.ConfigMonedaOk
+                                  && checklist.ConfigCpeCondicionesOk;
+        if (!pasoConfiguracionOk) return 2;
 
         if (!checklist.SedeMinimaOk) return 3;
         if (!checklist.EspacioMinimoOk) return 4;
@@ -211,17 +211,6 @@ public class OnboardingController(ISportCenterStoredProcedureService spService) 
             new()
             {
                 Paso = 1,
-                Titulo = "Configuracion",
-                Descripcion = "Completa razon social, documento, direccion, ubigeo, IGV y reglas de reserva.",
-                Completado = checklist.ConfigNombreComercialOk
-                             && checklist.ConfigTipoDocumentoOk
-                             && checklist.ConfigMonedaOk
-                             && checklist.ConfigCpeCondicionesOk,
-                UrlAccion = "/Configuracion/Index?negocioId=" + negocioId
-            },
-            new()
-            {
-                Paso = 2,
                 Titulo = "Maestros",
                 Descripcion = "Activa deporte, suelo, moneda y forma de pago.",
                 Completado = checklist.MaestroTipoDeporteOk
@@ -229,6 +218,17 @@ public class OnboardingController(ISportCenterStoredProcedureService spService) 
                              && checklist.MaestroFormaPagoOk
                              && checklist.MaestroMonedaOk,
                 UrlAccion = "/Maestros/Index?negocioId=" + negocioId
+            },
+            new()
+            {
+                Paso = 2,
+                Titulo = "Configuracion",
+                Descripcion = "Completa razon social, documento, direccion, ubigeo, IGV y reglas de reserva.",
+                Completado = checklist.ConfigNombreComercialOk
+                             && checklist.ConfigTipoDocumentoOk
+                             && checklist.ConfigMonedaOk
+                             && checklist.ConfigCpeCondicionesOk,
+                UrlAccion = "/Configuracion/Index?negocioId=" + negocioId
             },
             new()
             {

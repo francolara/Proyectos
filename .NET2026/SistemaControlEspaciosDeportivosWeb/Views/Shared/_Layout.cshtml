@@ -145,17 +145,17 @@
 
     byte resolverPasoPendiente(OnboardingChecklistViewModel checklist)
     {
-        var pasoConfiguracionOk = checklist.ConfigNombreComercialOk
-                                  && checklist.ConfigTipoDocumentoOk
-                                  && checklist.ConfigMonedaOk
-                                  && checklist.ConfigCpeCondicionesOk;
-        if (!pasoConfiguracionOk) return 1;
-
         var pasoMaestrosOk = checklist.MaestroTipoDeporteOk
                               && checklist.MaestroTipoSueloOk
                               && checklist.MaestroFormaPagoOk
                               && checklist.MaestroMonedaOk;
-        if (!pasoMaestrosOk) return 2;
+        if (!pasoMaestrosOk) return 1;
+
+        var pasoConfiguracionOk = checklist.ConfigNombreComercialOk
+                                  && checklist.ConfigTipoDocumentoOk
+                                  && checklist.ConfigMonedaOk
+                                  && checklist.ConfigCpeCondicionesOk;
+        if (!pasoConfiguracionOk) return 2;
 
         if (!checklist.SedeMinimaOk) return 3;
         if (!checklist.EspacioMinimoOk) return 4;
@@ -166,8 +166,8 @@
     {
         onboardingPasoContexto = currentController switch
         {
-            "CONFIGURACION" => (byte)1,
-            "MAESTROS" => (byte)2,
+            "MAESTROS" => (byte)1,
+            "CONFIGURACION" => (byte)2,
             "SEDES" when currentAction == "CREATE" || currentAction == "EDIT" => (byte)3,
             "ESPACIOS" when currentAction == "CREATE" || currentAction == "EDIT" => (byte)4,
             _ => (byte)0
@@ -192,8 +192,8 @@
 
             onboardingSiguienteUrl = onboardingSiguientePaso switch
             {
-                1 => Url.Action("Index", "Configuracion", new { negocioId = adminNegocioId }) ?? "#",
-                2 => Url.Action("Index", "Maestros", new { negocioId = adminNegocioId }) ?? "#",
+                1 => Url.Action("Index", "Maestros", new { negocioId = adminNegocioId }) ?? "#",
+                2 => Url.Action("Index", "Configuracion", new { negocioId = adminNegocioId }) ?? "#",
                 3 => Url.Action("Create", "Sedes", new { negocioId = adminNegocioId }) ?? "#",
                 4 => Url.Action("Create", "Espacios", new { negocioId = adminNegocioId }) ?? "#",
                 _ => Url.Action("Index", "Onboarding", new { negocioId = adminNegocioId, paso = 5 }) ?? "#"
@@ -201,15 +201,15 @@
 
             if (onboardingPasoContexto == 1)
             {
-                onboardingTituloPaso = "Paso 1: Configuracion";
-                onboardingResumenPaso = "Completa razon social, documento, direccion fiscal, ubigeo, IGV y reglas clave de reserva.";
-                onboardingDetallePaso = "Esto asegura validacion fiscal basica y reglas operativas desde el primer dia.";
+                onboardingTituloPaso = "Paso 1: Maestros";
+                onboardingResumenPaso = "Activa como minimo deporte, suelo, moneda y forma de pago.";
+                onboardingDetallePaso = "Documento y serie quedan disponibles, pero ya no son obligatorios para cerrar onboarding.";
             }
             else if (onboardingPasoContexto == 2)
             {
-                onboardingTituloPaso = "Paso 2: Maestros";
-                onboardingResumenPaso = "Activa como minimo deporte, suelo, moneda y forma de pago.";
-                onboardingDetallePaso = "Documento y serie quedan disponibles, pero ya no son obligatorios para cerrar onboarding.";
+                onboardingTituloPaso = "Paso 2: Configuracion";
+                onboardingResumenPaso = "Completa razon social, documento, direccion fiscal, ubigeo, IGV y reglas clave de reserva.";
+                onboardingDetallePaso = "Esto asegura validacion fiscal basica y reglas operativas desde el primer dia.";
             }
             else if (onboardingPasoContexto == 3)
             {
@@ -663,9 +663,9 @@
             (() => {
                 const step = Number(document.querySelector('[data-onboarding-float]')?.getAttribute('data-step') || '0');
                 const selectorsByStep = {
-                    1: ['#NombreComercial', '#RazonSocial', '#TipoDocumento', '#NumeroDocumento', '#DireccionFiscal', '#CodigoDepartamento', '#CodigoProvincia', '#CodigoUbigeo', '#PorcentajeIgv', '#CancelacionAutomaticaNoConfirmada', '#PermitirModificarPrecioReserva', '#PoliticaConfirmacionPago', '#MonedaId'],
-                    2: ['.sc-maestros-nav', '[data-target="tipos-deporte"]', '[data-target="tipos-suelo"]', '[data-target="formas-pago"]', '[data-target="monedas"]'],
-                    3: ['#Nombre', '#Direccion', '#CodigoUbigeo', '#HoraApertura', '#HoraCierre', '#NotificacionesActivas', '#CorreoNotificacion', '#WhatsappNumeroLocal'],
+                    1: ['.sc-maestros-nav', '[data-target="tipos-deporte"]', '[data-target="tipos-suelo"]', '[data-target="formas-pago"]', '[data-target="monedas"]'],
+                    2: ['#NombreComercial', '#RazonSocial', '#TipoDocumento', '#NumeroDocumento', '#DireccionFiscal', '#CodigoDepartamento', '#CodigoProvincia', '#CodigoUbigeo', '#PorcentajeIgv', '#CancelacionAutomaticaNoConfirmada', '#PermitirModificarPrecioReserva', '#PoliticaConfirmacionPago', '#MonedaId'],
+                    3: ['#Nombre', '#Direccion', '#CodigoUbigeo', '#HoraApertura', '#HoraCierre', '#NotificacionesActivas', '#CorreoNotificacion', '#WhatsappNumeroLocal', '#ServiciosComplejoCard'],
                     4: ['#SedeId', '#TipoDeporteId', '#TipoSueloId', '#Codigo', '#Nombre', '#tablaTarifasEspacio']
                 };
 
