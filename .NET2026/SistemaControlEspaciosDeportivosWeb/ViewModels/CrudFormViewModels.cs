@@ -180,6 +180,16 @@ public class EspacioFormViewModel
     public bool TieneIluminacion { get; set; }
     public bool Techada { get; set; }
     public bool AdministracionPrivada { get; set; }
+    public bool ConfigurarHorarioPorEspacio { get; set; }
+    public bool AtiendeLunes { get; set; } = true;
+    public bool AtiendeMartes { get; set; } = true;
+    public bool AtiendeMiercoles { get; set; } = true;
+    public bool AtiendeJueves { get; set; } = true;
+    public bool AtiendeViernes { get; set; } = true;
+    public bool AtiendeSabado { get; set; } = true;
+    public bool AtiendeDomingo { get; set; } = true;
+    public TimeOnly HoraApertura { get; set; } = new(8, 0);
+    public TimeOnly HoraCierre { get; set; } = new(23, 0);
     public EstadoEspacioDeportivo Estado { get; set; } = EstadoEspacioDeportivo.Activo;
     public string? TarifasJson { get; set; }
     public List<EspacioTarifaRangoViewModel> Tarifas { get; set; } = new();

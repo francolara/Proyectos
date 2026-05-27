@@ -7,6 +7,10 @@
     var horasMediaHora = Enumerable.Range(0, 48)
         .Select(i => TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(i * 30)))
         .ToList();
+    var horasCierre = horasMediaHora
+        .Where(h => h >= new TimeOnly(0, 30))
+        .ToList();
+    horasCierre.Add(new TimeOnly(23, 59));
 }
 @* Firma: FRANCO LARA - 20/05/2026 | En tarifas de espacios muestra 24:00 en hora fin y guarda internamente 23:59 para cierre de jornada. *@
 
@@ -53,7 +57,7 @@
                     </div>
                     <div class="col-md-6">
                         <label asp-for="Nombre" class="form-label"></label>
-                        <input asp-for="Nombre" class="form-control" placeholder="Ejemplo: 6x6 Cancha1" />
+                        <input asp-for="Nombre" class="form-control" placeholder="Ejemplo: 6x6 Cancha 1" />
                     </div>
                     <div class="col-md-3">
                         <label asp-for="Capacidad" class="form-label"></label>
@@ -78,6 +82,7 @@
                         </label>
                     </div>
                 </div>
+
             </div>
         </section>
 
@@ -262,6 +267,50 @@
             </div>
         </section>
 
+        <section class="sc-form-card">
+            <div class="sc-form-section">
+                <h2 class="sc-form-title"><i class="bi bi-clock-history"></i> Configurar horario por espacio deportivo</h2>
+                <label class="sc-check-chip mb-3">
+                    <input asp-for="ConfigurarHorarioPorEspacio" class="form-check-input mt-0" id="ConfigurarHorarioPorEspacio" />
+                    <span>Habilitar horario de atencion propio para este espacio</span>
+                </label>
+                <div id="bloqueHorarioEspacio" class="row g-3 d-none">
+                    <div class="col-md-12">
+                        <div class="sc-days-row">
+                            <label class="sc-day-chip"><input asp-for="AtiendeLunes" class="form-check-input mt-0" /> <span>Lunes</span></label>
+                            <label class="sc-day-chip"><input asp-for="AtiendeMartes" class="form-check-input mt-0" /> <span>Martes</span></label>
+                            <label class="sc-day-chip"><input asp-for="AtiendeMiercoles" class="form-check-input mt-0" /> <span>Miercoles</span></label>
+                            <label class="sc-day-chip"><input asp-for="AtiendeJueves" class="form-check-input mt-0" /> <span>Jueves</span></label>
+                            <label class="sc-day-chip"><input asp-for="AtiendeViernes" class="form-check-input mt-0" /> <span>Viernes</span></label>
+                            <label class="sc-day-chip"><input asp-for="AtiendeSabado" class="form-check-input mt-0" /> <span>Sabado</span></label>
+                            <label class="sc-day-chip"><input asp-for="AtiendeDomingo" class="form-check-input mt-0" /> <span>Domingo</span></label>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="HoraApertura" class="form-label">Hora apertura</label>
+                        <select asp-for="HoraApertura" class="form-select">
+                            @foreach (var hora in horasMediaHora)
+                            {
+                                <option value="@hora.ToString("HH\\:mm")">@hora.ToString("HH\\:mm")</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="HoraCierre" class="form-label">Hora cierre</label>
+                        <select asp-for="HoraCierre" class="form-select">
+                            @foreach (var hora in horasCierre)
+                            {
+                                var etiquetaHora = hora == new TimeOnly(23, 59)
+                                    ? "24:00"
+                                    : hora.ToString("HH\\:mm");
+                                <option value="@hora.ToString("HH\\:mm")">@etiquetaHora</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <div class="sc-form-actions">
             <button type="submit" class="btn btn-primary btn-grabar">
                 <i class="bi bi-check2-circle me-1"></i> Guardar espacio
@@ -275,6 +324,17 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         (() => {
+            const chkHorarioEspacio = document.getElementById('ConfigurarHorarioPorEspacio');
+            const bloqueHorarioEspacio = document.getElementById('bloqueHorarioEspacio');
+            function toggleHorarioEspacio() {
+                if (!chkHorarioEspacio || !bloqueHorarioEspacio) return;
+                bloqueHorarioEspacio.classList.toggle('d-none', !chkHorarioEspacio.checked);
+            }
+            if (chkHorarioEspacio) {
+                chkHorarioEspacio.addEventListener('change', toggleHorarioEspacio);
+                toggleHorarioEspacio();
+            }
+
             const tarifasIniciales = @Html.Raw(JsonSerializer.Serialize(Model.Tarifas, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
             const tarifasFeriadoIniciales = @Html.Raw(JsonSerializer.Serialize(Model.TarifasFeriado, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
             const dias = @Html.Raw(JsonSerializer.Serialize(Model.TarifaDiasSemana.Select(d => new { value = d.Value, text = d.Text })));

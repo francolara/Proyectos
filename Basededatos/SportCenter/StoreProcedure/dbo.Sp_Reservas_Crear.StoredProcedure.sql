@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿
 GO
 /****** Object:  StoredProcedure [dbo].[Sp_Reservas_Crear]    Script Date: 3/04/2026 23:18:34 ******/
 SET ANSI_NULLS ON
@@ -11,6 +11,7 @@ GO
 -- Firma: Codex - 14/04/2026 | Agrega CanalOrigen en reservas, genera notificacion para origen CLIENTE_WEB y ajusta concatenacion compatible en mensaje/url.
 -- Firma: Codex - 17/04/2026 | Aisla notificacion en flujo CLIENTE_WEB sin INSERT-EXEC, agrega salida opcional @ReservaId y mantiene SELECT final del Id real creado.
 -- Firma: FRANCO LARA - 03/05/2026 | Permite aplicar cupon por codigo en reserva (admin/web), valida vigencia/limite por sede-espacio y registra uso acumulado. Ajusta validacion de adelanto/estado para evaluar el total final luego del cupon.
+-- Firma: FRANCO LARA - 26/05/2026 | Prioriza horario configurable por espacio deportivo; si no aplica, usa horario de la sede.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Reservas_Crear]
     @NegocioId INT,
     @EspacioDeportivoId INT,
@@ -83,18 +84,19 @@ BEGIN
 
         SELECT
             @SedeId = s.Id,
-            @HoraApertura = COALESCE(sha.HoraApertura, CAST('08:00' AS TIME)),
-            @HoraCierre = COALESCE(sha.HoraCierre, CAST('23:00' AS TIME)),
-            @AtiendeLunes = COALESCE(sha.AtiendeLunes, 1),
-            @AtiendeMartes = COALESCE(sha.AtiendeMartes, 1),
-            @AtiendeMiercoles = COALESCE(sha.AtiendeMiercoles, 1),
-            @AtiendeJueves = COALESCE(sha.AtiendeJueves, 1),
-            @AtiendeViernes = COALESCE(sha.AtiendeViernes, 1),
-            @AtiendeSabado = COALESCE(sha.AtiendeSabado, 1),
-            @AtiendeDomingo = COALESCE(sha.AtiendeDomingo, 1)
+            @HoraApertura = CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.HoraApertura, CAST('08:00' AS TIME)) ELSE COALESCE(sha.HoraApertura, CAST('08:00' AS TIME)) END,
+            @HoraCierre = CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.HoraCierre, CAST('23:00' AS TIME)) ELSE COALESCE(sha.HoraCierre, CAST('23:00' AS TIME)) END,
+            @AtiendeLunes = CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.AtiendeLunes, 1) ELSE COALESCE(sha.AtiendeLunes, 1) END,
+            @AtiendeMartes = CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.AtiendeMartes, 1) ELSE COALESCE(sha.AtiendeMartes, 1) END,
+            @AtiendeMiercoles = CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.AtiendeMiercoles, 1) ELSE COALESCE(sha.AtiendeMiercoles, 1) END,
+            @AtiendeJueves = CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.AtiendeJueves, 1) ELSE COALESCE(sha.AtiendeJueves, 1) END,
+            @AtiendeViernes = CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.AtiendeViernes, 1) ELSE COALESCE(sha.AtiendeViernes, 1) END,
+            @AtiendeSabado = CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.AtiendeSabado, 1) ELSE COALESCE(sha.AtiendeSabado, 1) END,
+            @AtiendeDomingo = CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.AtiendeDomingo, 1) ELSE COALESCE(sha.AtiendeDomingo, 1) END
         FROM dbo.EspaciosDeportivos e
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
         LEFT JOIN dbo.SedeHorarioAtencion sha ON sha.SedeId = s.Id
+        LEFT JOIN dbo.EspacioHorarioAtencion eha ON eha.EspacioDeportivoId = e.Id
         WHERE e.Id = @EspacioDeportivoId
           AND s.NegocioId = @NegocioId
           AND e.Estado = 1;

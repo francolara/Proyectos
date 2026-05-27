@@ -1338,3 +1338,25 @@
 - Ajuste 26/05/2026 (simplificacion de arquitectura): el flujo de ""Guia de configuracion"" deja de usar persistencia de paso y se apoya solo en Sp_OnboardingChecklist_Validar como fuente unica de verdad.
   - Se retiran del codigo de aplicacion las llamadas a Sp_OnboardingEstado_Obtener, Sp_OnboardingEstado_GuardarAvance y Sp_OnboardingEstado_MarcarCompletado.
   - Script de limpieza de objetos legados: Basededatos/SportCenter/Script/20260526_OnboardingEstado_Deprecado.sql.
+
+## 26/05/2026 - Horario configurable por espacio deportivo
+
+### Base de datos
+- Nueva tabla: `dbo.EspacioHorarioAtencion` (PK `EspacioDeportivoId`).
+- Permite definir por espacio: `ConfigurarHorarioPorEspacio`, dias de atencion (`AtiendeLunes..AtiendeDomingo`) y rango (`HoraApertura`, `HoraCierre`).
+- Si `ConfigurarHorarioPorEspacio = 0`, se mantiene comportamiento heredado por sede.
+
+### Stored Procedures actualizados
+- `dbo.Sp_Espacios_Crear`
+- `dbo.Sp_Espacios_Actualizar`
+- `dbo.Sp_Espacios_ObtenerPorId`
+- `dbo.Sp_Reservas_Crear`
+- `dbo.Sp_Reservas_Actualizar`
+- `dbo.Sp_Reservas_Mover`
+- `dbo.Sp_Reservas_ValidarDisponibilidad`
+- `dbo.Sp_Reservas_CalendarioEventos`
+
+### Regla funcional aplicada
+1. Para validaciones de atencion/horario en reservas, primero se evalua `EspacioHorarioAtencion`.
+2. Si el espacio no tiene horario propio habilitado, se usa `SedeHorarioAtencion`.
+3. El calendario de reservas refleja bloqueos de no atencion usando la misma prioridad (espacio > sede).

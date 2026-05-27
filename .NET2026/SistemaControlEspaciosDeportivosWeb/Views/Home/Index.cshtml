@@ -395,7 +395,7 @@
                     .ToList();
 
                 <div class="col-md-6 col-xl-4">
-                    <article class="card h-100 border-0 shadow-sm home-space-card">
+                    <article class="card h-100 border-0 shadow-sm home-space-card @(item.SedeId.HasValue ? null : "home-space-card--external")">
                         <div class="card-body d-flex flex-column">
                             @if (sedeFotos.Count > 0)
                             {
@@ -449,7 +449,6 @@
                                 <div>
                                     <span class="home-item-label">Nombre del espacio</span>
                                     <h3 class="h6 fw-bold mb-1 home-item-title">@item.NombreEspacio</h3>
-                                    <span class="home-space-code">@item.Codigo</span>
                                 </div>
                                 @if (item.SedeId.HasValue)
                                 {
@@ -468,19 +467,31 @@
                                 </div>
                             }
 
-                            <div class="home-sede-head mb-1">
-                                <p class="mb-0 home-item-sede">
-                                    <span class="home-item-label">Nombre de sede</span>
-                                    @item.SedeNombre
-                                </p>
-                                @if (!string.IsNullOrWhiteSpace(mapaUrl))
-                                {
+                            @if (item.SedeId.HasValue)
+                            {
+                                <div class="home-sede-head mb-1">
+                                    <p class="mb-0 home-item-sede">
+                                        <span class="home-item-label">Nombre de sede</span>
+                                        @item.SedeNombre
+                                    </p>
+                                    @if (!string.IsNullOrWhiteSpace(mapaUrl))
+                                    {
+                                        <a class="btn btn-sm auth-nav-mini auth-nav-mini-outline home-map-btn"
+                                           href="@mapaUrl"
+                                           target="_blank"
+                                           rel="noopener noreferrer">Ver en mapa</a>
+                                    }
+                                </div>
+                            }
+                            else if (!string.IsNullOrWhiteSpace(mapaUrl))
+                            {
+                                <div class="d-flex justify-content-end mb-1">
                                     <a class="btn btn-sm auth-nav-mini auth-nav-mini-outline home-map-btn"
                                        href="@mapaUrl"
                                        target="_blank"
                                        rel="noopener noreferrer">Ver en mapa</a>
-                                }
-                            </div>
+                                </div>
+                            }
                             @if (!string.IsNullOrWhiteSpace(item.SedeDireccion))
                             { }
                             <p class="mb-2 text-muted small">
@@ -972,6 +983,7 @@
 (() => {
     const quoteCards = document.querySelectorAll('.js-home-price-quote');
     if (!quoteCards.length) return;
+    const omitirFechaHorario = @((Model.OmitirFechaHorario == true ? "true" : "false"));
 
     async function cotizarCard(card) {
         const negocioId = (card.getAttribute('data-negocio-id') || '').trim();
@@ -979,7 +991,7 @@
         const fecha = (card.getAttribute('data-fecha') || '').trim();
         const horaInicio = (card.getAttribute('data-hora-inicio') || '').trim();
         const horaFin = (card.getAttribute('data-hora-fin') || '').trim();
-        if (!negocioId || !espacioId || !fecha || !horaInicio || !horaFin) return;
+        if (omitirFechaHorario || !negocioId || !espacioId || !fecha || !horaInicio || !horaFin) return;
 
         const priceMain = card.querySelector('.home-price-main');
         const promoWrap = card.querySelector('.home-price-promo');
@@ -1006,7 +1018,7 @@
             const simbolo = c.monedaSimbolo || 'S/';
 
             if (priceMain && Number.isFinite(precioFinal) && precioFinal > 0) {
-                priceMain.innerHTML = `Desde <strong>${simbolo} ${precioFinal.toFixed(2)}</strong>`;
+                priceMain.innerHTML = `Precio para este horario <strong>${simbolo} ${precioFinal.toFixed(2)}</strong>`;
             }
 
             if (descuento > 0 && promoWrap && baseEl && badgeEl) {

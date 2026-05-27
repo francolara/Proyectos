@@ -294,6 +294,16 @@ public partial class SportCenterStoredProcedureService
             TarifasFeriado = dr.FieldCount > 12 && !dr.IsDBNull(12)
                 ? JsonSerializer.Deserialize<List<EspacioTarifaFeriadoRangoViewModel>>(dr.GetString(12), TarifaJsonSerializerOptions) ?? new List<EspacioTarifaFeriadoRangoViewModel>()
                 : new List<EspacioTarifaFeriadoRangoViewModel>(),
+            ConfigurarHorarioPorEspacio = dr.FieldCount > 13 && ReadBool(dr, 13),
+            AtiendeLunes = dr.FieldCount > 14 ? ReadBool(dr, 14) : true,
+            AtiendeMartes = dr.FieldCount > 15 ? ReadBool(dr, 15) : true,
+            AtiendeMiercoles = dr.FieldCount > 16 ? ReadBool(dr, 16) : true,
+            AtiendeJueves = dr.FieldCount > 17 ? ReadBool(dr, 17) : true,
+            AtiendeViernes = dr.FieldCount > 18 ? ReadBool(dr, 18) : true,
+            AtiendeSabado = dr.FieldCount > 19 ? ReadBool(dr, 19) : true,
+            AtiendeDomingo = dr.FieldCount > 20 ? ReadBool(dr, 20) : true,
+            HoraApertura = dr.FieldCount > 21 && !dr.IsDBNull(21) ? TimeOnly.FromTimeSpan(dr.GetTimeSpan(21)) : new TimeOnly(8, 0),
+            HoraCierre = dr.FieldCount > 22 && !dr.IsDBNull(22) ? TimeOnly.FromTimeSpan(dr.GetTimeSpan(22)) : new TimeOnly(23, 0),
             NegocioId = negocioId
         };
     }
@@ -343,6 +353,16 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@TieneIluminacion", model.TieneIluminacion, SqlDbType.Bit);
         AddParam(cmd, "@Techada", model.Techada, SqlDbType.Bit);
         AddParam(cmd, "@AdministracionPrivada", model.AdministracionPrivada, SqlDbType.Bit);
+        AddParam(cmd, "@ConfigurarHorarioPorEspacio", model.ConfigurarHorarioPorEspacio, SqlDbType.Bit);
+        AddParam(cmd, "@AtiendeLunes", model.AtiendeLunes, SqlDbType.Bit);
+        AddParam(cmd, "@AtiendeMartes", model.AtiendeMartes, SqlDbType.Bit);
+        AddParam(cmd, "@AtiendeMiercoles", model.AtiendeMiercoles, SqlDbType.Bit);
+        AddParam(cmd, "@AtiendeJueves", model.AtiendeJueves, SqlDbType.Bit);
+        AddParam(cmd, "@AtiendeViernes", model.AtiendeViernes, SqlDbType.Bit);
+        AddParam(cmd, "@AtiendeSabado", model.AtiendeSabado, SqlDbType.Bit);
+        AddParam(cmd, "@AtiendeDomingo", model.AtiendeDomingo, SqlDbType.Bit);
+        AddParam(cmd, "@HoraApertura", model.HoraApertura, SqlDbType.Time);
+        AddParam(cmd, "@HoraCierre", model.HoraCierre, SqlDbType.Time);
         AddParam(cmd, "@Estado", (int)model.Estado, SqlDbType.Int);
         AddParam(cmd, "@TarifasJson", ObtenerTarifasJson(model), SqlDbType.NVarChar);
         if (incluirTarifasFeriado)
@@ -367,6 +387,16 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@TieneIluminacion", model.TieneIluminacion, SqlDbType.Bit);
         AddParam(cmd, "@Techada", model.Techada, SqlDbType.Bit);
         AddParam(cmd, "@AdministracionPrivada", model.AdministracionPrivada, SqlDbType.Bit);
+        AddParam(cmd, "@ConfigurarHorarioPorEspacio", model.ConfigurarHorarioPorEspacio, SqlDbType.Bit);
+        AddParam(cmd, "@AtiendeLunes", model.AtiendeLunes, SqlDbType.Bit);
+        AddParam(cmd, "@AtiendeMartes", model.AtiendeMartes, SqlDbType.Bit);
+        AddParam(cmd, "@AtiendeMiercoles", model.AtiendeMiercoles, SqlDbType.Bit);
+        AddParam(cmd, "@AtiendeJueves", model.AtiendeJueves, SqlDbType.Bit);
+        AddParam(cmd, "@AtiendeViernes", model.AtiendeViernes, SqlDbType.Bit);
+        AddParam(cmd, "@AtiendeSabado", model.AtiendeSabado, SqlDbType.Bit);
+        AddParam(cmd, "@AtiendeDomingo", model.AtiendeDomingo, SqlDbType.Bit);
+        AddParam(cmd, "@HoraApertura", model.HoraApertura, SqlDbType.Time);
+        AddParam(cmd, "@HoraCierre", model.HoraCierre, SqlDbType.Time);
         AddParam(cmd, "@Estado", (int)model.Estado, SqlDbType.Int);
         AddParam(cmd, "@TarifasJson", ObtenerTarifasJson(model), SqlDbType.NVarChar);
         if (incluirTarifasFeriado)

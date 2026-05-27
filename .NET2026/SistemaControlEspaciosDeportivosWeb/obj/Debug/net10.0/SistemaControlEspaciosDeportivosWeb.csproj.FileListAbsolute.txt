@@ -645,6 +645,6 @@ C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlE
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\SistemaControlEspaciosDeportivosWeb.pdb
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\SistemaControlEspaciosDeportivosWeb.genruntimeconfig.cache
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\ref\SistemaControlEspaciosDeportivosWeb.dll
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\compressed\vnbh1609s7-{0}-vs7fob5bhl-vs7fob5bhl.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\compressed\376ed26qh3-{0}-j6erohxcak-j6erohxcak.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\compressed\vnbh1609s7-{0}-mni81wp1kg-mni81wp1kg.gz

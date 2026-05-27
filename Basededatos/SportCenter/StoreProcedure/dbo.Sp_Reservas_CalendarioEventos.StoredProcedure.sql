@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿
 GO
 /****** Object:  StoredProcedure [dbo].[Sp_Reservas_CalendarioEventos]    Script Date: 3/04/2026 23:18:34 ******/
 SET ANSI_NULLS ON
@@ -10,6 +10,7 @@ GO
 -- Firma: Codex - 05/04/2026 | Estados de reserva: retiro de En uso, Finalizada renombrada a Pagada y No Show a No Asistio (normalizacion de salida de calendario).
 -- Firma: Codex - 08/04/2026 | Agrega TotalReserva en la salida del calendario para pintar precio en tarjetas de reservas sin incluir nombre de espacio.
 -- Firma: Codex - 13/04/2026 | Calendario excluye reservas canceladas por defecto (Estado 5) para liberar horario; si se filtra Estado=5 se siguen consultando canceladas.
+-- Firma: FRANCO LARA - 26/05/2026 | Usa horario de espacio cuando ConfigurarHorarioPorEspacio=1; si no, mantiene horario de sede.
 CREATE  OR ALTER PROCEDURE [dbo].[Sp_Reservas_CalendarioEventos]
     @NegocioId INT,
     @FechaDesde DATE,
@@ -182,18 +183,19 @@ BEGIN
         INNER JOIN dbo.Sedes s ON s.NegocioId = @NegocioId
         INNER JOIN dbo.EspaciosDeportivos e ON e.SedeId = s.Id
         LEFT JOIN dbo.SedeHorarioAtencion sha ON sha.SedeId = s.Id
+        LEFT JOIN dbo.EspacioHorarioAtencion eha ON eha.EspacioDeportivoId = e.Id
         LEFT JOIN dbo.SedeFechasInhabilitadas sfi ON sfi.SedeId = s.Id AND sfi.Activo = 1 AND sfi.Fecha = f.Fecha
         WHERE (@SedeId IS NULL OR s.Id = @SedeId)
           AND (@EspacioDeportivoId IS NULL OR e.Id = @EspacioDeportivoId)
           AND sfi.SedeId IS NULL
           AND CASE ((DATEDIFF(DAY, '19000101', f.Fecha) % 7) + 1)
-                WHEN 1 THEN COALESCE(sha.AtiendeLunes, 1)
-                WHEN 2 THEN COALESCE(sha.AtiendeMartes, 1)
-                WHEN 3 THEN COALESCE(sha.AtiendeMiercoles, 1)
-                WHEN 4 THEN COALESCE(sha.AtiendeJueves, 1)
-                WHEN 5 THEN COALESCE(sha.AtiendeViernes, 1)
-                WHEN 6 THEN COALESCE(sha.AtiendeSabado, 1)
-                WHEN 7 THEN COALESCE(sha.AtiendeDomingo, 1)
+                WHEN 1 THEN CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.AtiendeLunes, 1) ELSE COALESCE(sha.AtiendeLunes, 1) END
+                WHEN 2 THEN CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.AtiendeMartes, 1) ELSE COALESCE(sha.AtiendeMartes, 1) END
+                WHEN 3 THEN CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.AtiendeMiercoles, 1) ELSE COALESCE(sha.AtiendeMiercoles, 1) END
+                WHEN 4 THEN CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.AtiendeJueves, 1) ELSE COALESCE(sha.AtiendeJueves, 1) END
+                WHEN 5 THEN CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.AtiendeViernes, 1) ELSE COALESCE(sha.AtiendeViernes, 1) END
+                WHEN 6 THEN CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.AtiendeSabado, 1) ELSE COALESCE(sha.AtiendeSabado, 1) END
+                WHEN 7 THEN CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.AtiendeDomingo, 1) ELSE COALESCE(sha.AtiendeDomingo, 1) END
               END = 0
 
         UNION ALL
@@ -208,7 +210,7 @@ BEGIN
             CAST(N'Sede sin atencion (fuera de horario)' AS NVARCHAR(200)),
             f.Fecha,
             CAST('00:00' AS TIME),
-            COALESCE(sha.HoraApertura, CAST('08:00' AS TIME)),
+            CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.HoraApertura, CAST('08:00' AS TIME)) ELSE COALESCE(sha.HoraApertura, CAST('08:00' AS TIME)) END,
             NULL,
             CAST(N'#64748b' AS NVARCHAR(20)),
             e.Id,
@@ -222,14 +224,15 @@ BEGIN
         INNER JOIN dbo.Sedes s ON s.NegocioId = @NegocioId
         INNER JOIN dbo.EspaciosDeportivos e ON e.SedeId = s.Id
         LEFT JOIN dbo.SedeHorarioAtencion sha ON sha.SedeId = s.Id
+        LEFT JOIN dbo.EspacioHorarioAtencion eha ON eha.EspacioDeportivoId = e.Id
         LEFT JOIN dbo.SedeFechasInhabilitadas sfi ON sfi.SedeId = s.Id AND sfi.Activo = 1 AND sfi.Fecha = f.Fecha
         WHERE (@SedeId IS NULL OR s.Id = @SedeId)
           AND (@EspacioDeportivoId IS NULL OR e.Id = @EspacioDeportivoId)
           AND sfi.SedeId IS NULL
           AND
           (
-              COALESCE(sha.HoraApertura, CAST('08:00' AS TIME)) > CAST('00:00' AS TIME)
-              OR COALESCE(sha.HoraCierre, CAST('23:00' AS TIME)) < CAST('23:59' AS TIME)
+              CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.HoraApertura, CAST('08:00' AS TIME)) ELSE COALESCE(sha.HoraApertura, CAST('08:00' AS TIME)) END > CAST('00:00' AS TIME)
+              OR CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.HoraCierre, CAST('23:00' AS TIME)) ELSE COALESCE(sha.HoraCierre, CAST('23:00' AS TIME)) END < CAST('23:59' AS TIME)
           )
 
         UNION ALL
@@ -243,7 +246,7 @@ BEGIN
             CAST(N'NO_ATENCION' AS NVARCHAR(20)),
             CAST(N'Sede sin atencion (fuera de horario)' AS NVARCHAR(200)),
             f.Fecha,
-            COALESCE(sha.HoraCierre, CAST('23:00' AS TIME)),
+            CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.HoraCierre, CAST('23:00' AS TIME)) ELSE COALESCE(sha.HoraCierre, CAST('23:00' AS TIME)) END,
             CAST('23:59' AS TIME),
             NULL,
             CAST(N'#64748b' AS NVARCHAR(20)),
@@ -258,14 +261,15 @@ BEGIN
         INNER JOIN dbo.Sedes s ON s.NegocioId = @NegocioId
         INNER JOIN dbo.EspaciosDeportivos e ON e.SedeId = s.Id
         LEFT JOIN dbo.SedeHorarioAtencion sha ON sha.SedeId = s.Id
+        LEFT JOIN dbo.EspacioHorarioAtencion eha ON eha.EspacioDeportivoId = e.Id
         LEFT JOIN dbo.SedeFechasInhabilitadas sfi ON sfi.SedeId = s.Id AND sfi.Activo = 1 AND sfi.Fecha = f.Fecha
         WHERE (@SedeId IS NULL OR s.Id = @SedeId)
           AND (@EspacioDeportivoId IS NULL OR e.Id = @EspacioDeportivoId)
           AND sfi.SedeId IS NULL
           AND
           (
-              COALESCE(sha.HoraApertura, CAST('08:00' AS TIME)) > CAST('00:00' AS TIME)
-              OR COALESCE(sha.HoraCierre, CAST('23:00' AS TIME)) < CAST('23:59' AS TIME)
+              CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.HoraApertura, CAST('08:00' AS TIME)) ELSE COALESCE(sha.HoraApertura, CAST('08:00' AS TIME)) END > CAST('00:00' AS TIME)
+              OR CASE WHEN COALESCE(eha.ConfigurarHorarioPorEspacio, 0) = 1 THEN COALESCE(eha.HoraCierre, CAST('23:00' AS TIME)) ELSE COALESCE(sha.HoraCierre, CAST('23:00' AS TIME)) END < CAST('23:59' AS TIME)
           )
         ORDER BY Fecha, HoraInicio
         OPTION (MAXRECURSION 1000);
@@ -278,3 +282,5 @@ BEGIN
 END
 
 GO
+
+

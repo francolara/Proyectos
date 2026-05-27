@@ -3451,12 +3451,32 @@ body {
     0 0 0 1px rgba(59, 130, 246, 0.08) !important;
 }
 
+.home-space-card--external .card-body {
+  padding: 0.62rem 0.62rem 0.56rem;
+}
+
+.home-space-card--external .mb-2 {
+  margin-bottom: 0.42rem !important;
+}
+
+.home-space-card--external .home-item-title {
+  font-size: 0.98rem;
+  margin-bottom: 0.1rem !important;
+}
+
+.home-space-card--external .home-item-label {
+  margin-bottom: 0.12rem;
+}
+
 .home-negocio-highlight {
-  border: 1px solid #d8e8ff;
+  border: 1px solid #9fc5f8;
   border-radius: 0.8rem;
-  background: linear-gradient(170deg, #f7fbff 0%, #edf5ff 100%);
+  background: linear-gradient(170deg, #f9fcff 0%, #e6f1ff 100%);
   padding: 0.5rem 0.62rem;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  box-shadow:
+    0 10px 20px rgba(30, 58, 138, 0.12),
+    0 0 0 1px rgba(96, 165, 250, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88);
 }
 
 .home-negocio-label {
@@ -3666,13 +3686,16 @@ body {
 }
 
 .home-space-card .home-price-from {
-  border: 1px solid #cfe3fb;
+  border: 1px solid #93c5fd;
   border-radius: 0.72rem;
-  background: linear-gradient(170deg, #f8fcff 0%, #edf6ff 100%);
+  background: linear-gradient(170deg, #fbfdff 0%, #eaf3ff 100%);
   padding: 0.5rem 0.62rem;
-  color: #2e4668;
+  color: #243b62;
   font-size: 0.85rem;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 8px 16px rgba(37, 99, 235, 0.14),
+    0 0 0 1px rgba(147, 197, 253, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
 }
 
 .home-space-card .home-price-main strong {
@@ -5490,6 +5513,42 @@ body {
   padding: 0.9rem;
 }
 
+.sc-onboarding-fab {
+  position: fixed;
+  right: 1.15rem;
+  bottom: 1rem;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 1px solid #c9dbf5;
+  background: #ffffff;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.24);
+  z-index: 1081;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.sc-onboarding-fab-robot {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+}
+
+.sc-onboarding-collapse-btn {
+  margin-left: auto;
+  border: 1px solid #d7e4f8;
+  background: #f8fbff;
+  color: #1d4ed8;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .sc-onboarding-float-head {
   display: flex;
   align-items: center;
@@ -5555,6 +5614,11 @@ body {
     right: 0.65rem;
     left: 0.65rem;
     width: auto;
+    bottom: 0.65rem;
+  }
+
+  .sc-onboarding-fab {
+    right: 0.65rem;
     bottom: 0.65rem;
   }
 }

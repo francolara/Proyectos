@@ -128,6 +128,8 @@
     var onboardingAvance = 0;
     var onboardingSiguientePaso = (byte)1;
     var onboardingSiguienteUrl = string.Empty;
+    var onboardingSedeUrl = string.Empty;
+    var onboardingEspacioUrl = string.Empty;
     var onboardingResumenPaso = string.Empty;
     var onboardingTituloPaso = string.Empty;
     var onboardingDetallePaso = string.Empty;
@@ -176,6 +178,14 @@
         if (onboardingPasoContexto > 0)
         {
             onboardingChecklist = await spService.OnboardingChecklistValidarAsync(adminNegocioId);
+            var sedeExistente = (await spService.SedesListarAsync(adminNegocioId)).FirstOrDefault();
+            var espacioExistente = (await spService.EspaciosListarAsync(adminNegocioId)).FirstOrDefault();
+            onboardingSedeUrl = sedeExistente is null
+                ? (Url.Action("Create", "Sedes", new { negocioId = adminNegocioId }) ?? "#")
+                : (Url.Action("Edit", "Sedes", new { id = sedeExistente.Id, negocioId = adminNegocioId }) ?? "#");
+            onboardingEspacioUrl = espacioExistente is null
+                ? (Url.Action("Create", "Espacios", new { negocioId = adminNegocioId }) ?? "#")
+                : (Url.Action("Edit", "Espacios", new { id = espacioExistente.Id, negocioId = adminNegocioId }) ?? "#");
             var onboardingChecklistVal = onboardingChecklist!;
             onboardingPasoPendiente = resolverPasoPendiente(onboardingChecklistVal);
             var completados = 0;
@@ -194,8 +204,8 @@
             {
                 1 => Url.Action("Index", "Maestros", new { negocioId = adminNegocioId }) ?? "#",
                 2 => Url.Action("Index", "Configuracion", new { negocioId = adminNegocioId }) ?? "#",
-                3 => Url.Action("Create", "Sedes", new { negocioId = adminNegocioId }) ?? "#",
-                4 => Url.Action("Create", "Espacios", new { negocioId = adminNegocioId }) ?? "#",
+                3 => onboardingSedeUrl,
+                4 => onboardingEspacioUrl,
                 _ => Url.Action("Index", "Onboarding", new { negocioId = adminNegocioId, paso = 5 }) ?? "#"
             };
 
@@ -382,35 +392,43 @@
                 </main>
                 @if (onboardingVisible && onboardingPasoContexto > 0)
                 {
-                    <aside class="sc-onboarding-float" data-onboarding-float data-step="@onboardingPasoContexto">
-                        <div class="sc-onboarding-float-head">
-                            <div class="sc-onboarding-float-avatars">
-                                <img src="https://pub-3afaea6b0b354821989565fa4b8bd250.r2.dev/logos/LaZonaDeportiva/LaZonaDeportiva_Logo.webp" alt="Logo La Zona Deportiva" class="sc-onboarding-float-logo" />
-                                <img src="~/img/onboarding-robot.svg" alt="Robot asistente" class="sc-onboarding-float-robot" />
+                    <div class="sc-onboarding-widget" data-onboarding-widget data-negocio-id="@adminNegocioId">
+                        <button type="button" class="sc-onboarding-fab d-none" data-onboarding-expand aria-label="Abrir guia de configuracion" title="Abrir guia de configuracion">
+                            <img src="~/img/onboarding-robot.svg" alt="Robot asistente" class="sc-onboarding-fab-robot" />
+                        </button>
+                        <aside class="sc-onboarding-float" data-onboarding-float data-step="@onboardingPasoContexto">
+                            <div class="sc-onboarding-float-head">
+                                <div class="sc-onboarding-float-avatars">
+                                    <img src="https://pub-3afaea6b0b354821989565fa4b8bd250.r2.dev/logos/LaZonaDeportiva/LaZonaDeportiva_Logo.webp" alt="Logo La Zona Deportiva" class="sc-onboarding-float-logo" />
+                                    <img src="~/img/onboarding-robot.svg" alt="Robot asistente" class="sc-onboarding-float-robot" />
+                                </div>
+                                <div>
+                                    <strong>Guia de configuracion</strong>
+                                    <small>@onboardingTituloPaso</small>
+                                </div>
+                                <button type="button" class="sc-onboarding-collapse-btn" data-onboarding-collapse aria-label="Ocultar guia" title="Ocultar guia">
+                                    <i class="bi bi-chevron-down"></i>
+                                </button>
                             </div>
-                            <div>
-                                <strong>Guia de configuracion</strong>
-                                <small>@onboardingTituloPaso</small>
+                            <div class="sc-onboarding-float-progress">
+                                <div class="d-flex justify-content-between">
+                                    <small>Avance de activación</small>
+                                    <small>@onboardingAvance%</small>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar" style="width:@onboardingAvance%"></div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="sc-onboarding-float-progress">
-                            <div class="d-flex justify-content-between">
-                                <small>Avance de activación</small>
-                                <small>@onboardingAvance%</small>
+                            <p class="mb-1">@onboardingResumenPaso</p>
+                            <p class="text-muted small mb-2">@onboardingDetallePaso</p>
+                            <div class="d-grid gap-2">
+                                <a class="btn btn-primary btn-sm" href="@onboardingSiguienteUrl">
+                                    @(onboardingPasoContexto >= onboardingSiguientePaso ? "Ir al siguiente paso" : "Ir al paso pendiente")
+                                </a>
+                                <a class="btn btn-outline-secondary btn-sm" href="@Url.Action("Index", "Onboarding", new { negocioId = adminNegocioId })">Ver estado completo</a>
                             </div>
-                            <div class="progress">
-                                <div class="progress-bar" style="width:@onboardingAvance%"></div>
-                            </div>
-                        </div>
-                        <p class="mb-1">@onboardingResumenPaso</p>
-                        <p class="text-muted small mb-2">@onboardingDetallePaso</p>
-                        <div class="d-grid gap-2">
-                            <a class="btn btn-primary btn-sm" href="@onboardingSiguienteUrl">
-                                @(onboardingPasoContexto >= onboardingSiguientePaso ? "Ir al siguiente paso" : "Ir al paso pendiente")
-                            </a>
-                            <a class="btn btn-outline-secondary btn-sm" href="@Url.Action("Index", "Onboarding", new { negocioId = adminNegocioId })">Ver estado completo</a>
-                        </div>
-                    </aside>
+                        </aside>
+                    </div>
                 }
             </section>
         </div>
@@ -661,6 +679,43 @@
     {
         <script>
             (() => {
+                const widget = document.querySelector('[data-onboarding-widget]');
+                if (widget) {
+                    const card = widget.querySelector('[data-onboarding-float]');
+                    const fab = widget.querySelector('[data-onboarding-expand]');
+                    const collapseBtn = widget.querySelector('[data-onboarding-collapse]');
+                    const negocioId = widget.getAttribute('data-negocio-id') || '0';
+                    const storageKey = `sc_onboarding_float_collapsed_${negocioId}`;
+                    const isMobile = window.matchMedia('(max-width: 991.98px)').matches;
+
+                    const applyCollapsed = (collapsed) => {
+                        if (!card || !fab) return;
+                        card.classList.toggle('d-none', collapsed);
+                        fab.classList.toggle('d-none', !collapsed);
+                    };
+
+                    let collapsed = false;
+                    try {
+                        const saved = localStorage.getItem(storageKey);
+                        collapsed = saved === null ? isMobile : saved === '1';
+                    } catch {
+                        collapsed = isMobile;
+                    }
+                    applyCollapsed(collapsed);
+
+                    collapseBtn?.addEventListener('click', () => {
+                        collapsed = true;
+                        applyCollapsed(true);
+                        try { localStorage.setItem(storageKey, '1'); } catch {}
+                    });
+
+                    fab?.addEventListener('click', () => {
+                        collapsed = false;
+                        applyCollapsed(false);
+                        try { localStorage.setItem(storageKey, '0'); } catch {}
+                    });
+                }
+
                 const step = Number(document.querySelector('[data-onboarding-float]')?.getAttribute('data-step') || '0');
                 const selectorsByStep = {
                     1: ['.sc-maestros-nav', '[data-target="tipos-deporte"]', '[data-target="tipos-suelo"]', '[data-target="formas-pago"]', '[data-target="monedas"]'],

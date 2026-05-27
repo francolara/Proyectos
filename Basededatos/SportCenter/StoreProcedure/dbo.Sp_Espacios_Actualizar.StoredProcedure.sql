@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿
 GO
 SET ANSI_NULLS ON
 GO
@@ -8,7 +8,7 @@ GO
 -- SOURCE: 31_Espacios_Tarifas_Base.sql (linea 185)
 -- Firma: Codex - 07/04/2026 | Bloquea cambio a mantenimiento/inactivo solo cuando el espacio a modificar tiene reservas activas futuras.
 -- Firma: Codex - 18/04/2026 | Se agrega actualizacion de AdministracionPrivada para controlar visibilidad del espacio en portal publico.
--- Firma: FRANCO LARA - 20/05/2026 | Agrega soporte de TarifaFeriado por rango horario para aplicar precios en fechas feriadas.
+-- Firma: FRANCO LARA - 26/05/2026 | Agrega configuracion opcional de horario propio por espacio deportivo y su persistencia.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Espacios_Actualizar]
     @Id INT,
     @NegocioId INT,
@@ -21,6 +21,16 @@ CREATE OR ALTER PROCEDURE [dbo].[Sp_Espacios_Actualizar]
     @TieneIluminacion BIT,
     @Techada BIT,
     @AdministracionPrivada BIT = 0,
+    @ConfigurarHorarioPorEspacio BIT = 0,
+    @AtiendeLunes BIT = 1,
+    @AtiendeMartes BIT = 1,
+    @AtiendeMiercoles BIT = 1,
+    @AtiendeJueves BIT = 1,
+    @AtiendeViernes BIT = 1,
+    @AtiendeSabado BIT = 1,
+    @AtiendeDomingo BIT = 1,
+    @HoraApertura TIME = '08:00',
+    @HoraCierre TIME = '23:00',
     @Estado INT,
     @TarifasJson NVARCHAR(MAX),
     @TarifasFeriadoJson NVARCHAR(MAX) = N'[]',
@@ -71,6 +81,9 @@ BEGIN
 
         IF ISNULL(LEN(LTRIM(RTRIM(@TarifasJson))), 0) = 0
             RAISERROR('Debes registrar al menos una tarifa.', 16, 1);
+
+        IF @HoraCierre <= @HoraApertura
+            RAISERROR('La hora cierre del espacio debe ser mayor que la hora apertura.', 16, 1);
 
         DECLARE @Tarifas TABLE
         (
@@ -201,6 +214,53 @@ BEGIN
             t.Precio,
             1
         FROM @TarifasFeriado t;
+
+        MERGE dbo.EspacioHorarioAtencion AS target
+        USING (
+            SELECT
+                @Id AS EspacioDeportivoId,
+                @ConfigurarHorarioPorEspacio AS ConfigurarHorarioPorEspacio,
+                @AtiendeLunes AS AtiendeLunes,
+                @AtiendeMartes AS AtiendeMartes,
+                @AtiendeMiercoles AS AtiendeMiercoles,
+                @AtiendeJueves AS AtiendeJueves,
+                @AtiendeViernes AS AtiendeViernes,
+                @AtiendeSabado AS AtiendeSabado,
+                @AtiendeDomingo AS AtiendeDomingo,
+                @HoraApertura AS HoraApertura,
+                @HoraCierre AS HoraCierre,
+                @Usuario AS Usuario
+        ) AS source
+        ON target.EspacioDeportivoId = source.EspacioDeportivoId
+        WHEN MATCHED THEN
+            UPDATE SET
+                target.ConfigurarHorarioPorEspacio = source.ConfigurarHorarioPorEspacio,
+                target.AtiendeLunes = source.AtiendeLunes,
+                target.AtiendeMartes = source.AtiendeMartes,
+                target.AtiendeMiercoles = source.AtiendeMiercoles,
+                target.AtiendeJueves = source.AtiendeJueves,
+                target.AtiendeViernes = source.AtiendeViernes,
+                target.AtiendeSabado = source.AtiendeSabado,
+                target.AtiendeDomingo = source.AtiendeDomingo,
+                target.HoraApertura = source.HoraApertura,
+                target.HoraCierre = source.HoraCierre,
+                target.FechaActualizacion = SYSUTCDATETIME(),
+                target.UsuarioActualizacion = source.Usuario
+        WHEN NOT MATCHED THEN
+            INSERT
+            (
+                EspacioDeportivoId, ConfigurarHorarioPorEspacio,
+                AtiendeLunes, AtiendeMartes, AtiendeMiercoles, AtiendeJueves,
+                AtiendeViernes, AtiendeSabado, AtiendeDomingo,
+                HoraApertura, HoraCierre, FechaCreacion, UsuarioCreacion
+            )
+            VALUES
+            (
+                source.EspacioDeportivoId, source.ConfigurarHorarioPorEspacio,
+                source.AtiendeLunes, source.AtiendeMartes, source.AtiendeMiercoles, source.AtiendeJueves,
+                source.AtiendeViernes, source.AtiendeSabado, source.AtiendeDomingo,
+                source.HoraApertura, source.HoraCierre, SYSUTCDATETIME(), source.Usuario
+            );
 
         DECLARE @EntidadIdAudit NVARCHAR(80);
         SET @EntidadIdAudit = CONVERT(NVARCHAR(80), @Id);
