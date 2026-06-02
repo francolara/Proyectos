@@ -18,6 +18,20 @@
     }
     var popupPromociones = Model.PopupPromociones?.Where(x => !string.IsNullOrWhiteSpace(x.ImagenUrl)).OrderBy(x => x.Orden).ThenByDescending(x => x.IdPopupPromocion).ToList()
         ?? new List<SistemaControlEspaciosDeportivosWeb.ViewModels.PopupPromocionPublicoViewModel>();
+    var heroLcpDesktopUrl = banners.Count > 0
+        ? (SistemaControlEspaciosDeportivosWeb.Services.SedeImagenUrlHelper.NormalizarUrlPublica(
+            banners[0].ImagenUrl,
+            SedeImagenStorageOptions.Value.PublicBaseUrl,
+            SedeImagenStorageOptions.Value.BucketName) ?? string.Empty)
+        : string.Empty;
+    var heroLcpMobileUrl = banners.Count > 0
+        ? (string.IsNullOrWhiteSpace(banners[0].ImagenUrlMobile)
+            ? heroLcpDesktopUrl
+            : (SistemaControlEspaciosDeportivosWeb.Services.SedeImagenUrlHelper.NormalizarUrlPublica(
+                banners[0].ImagenUrlMobile,
+                SedeImagenStorageOptions.Value.PublicBaseUrl,
+                SedeImagenStorageOptions.Value.BucketName) ?? heroLcpDesktopUrl))
+        : string.Empty;
     var esUsuarioAutenticado = User?.Identity?.IsAuthenticated ?? false;
     var mostrarPromosNav = popupPromociones.Count > 0;
     var habilitarPopupAutomatico = !esUsuarioAutenticado && popupPromociones.Count > 0;
@@ -63,6 +77,16 @@
         {
             whatsappAnunciosUrl = $"https://wa.me/{whatsappNumeroConfigurado}?text={Uri.EscapeDataString("Hola, quiero anunciar en SportCenter. �Podr�an brindarme informaci�n sobre planes, alcance y condiciones para publicar mi anuncio?")}";
         }
+    }
+}
+@section Styles {
+    @if (!string.IsNullOrWhiteSpace(heroLcpDesktopUrl))
+    {
+        <link rel="preload" as="image" href="@heroLcpDesktopUrl" fetchpriority="high" />
+    }
+    @if (!string.IsNullOrWhiteSpace(heroLcpMobileUrl) && !string.Equals(heroLcpMobileUrl, heroLcpDesktopUrl, StringComparison.OrdinalIgnoreCase))
+    {
+        <link rel="preload" as="image" href="@heroLcpMobileUrl" media="(max-width: 576px)" fetchpriority="high" />
     }
 }
 <section class="home-hero mb-4">
@@ -126,6 +150,18 @@
                                      data-bg-desktop="@imageUrlDesktop"
                                      data-bg-mobile="@imageUrlMobile"
                                      style="background-image:linear-gradient(120deg,rgba(4,13,32,.42),rgba(10,38,86,.28)), url('@imageUrlDesktop');">
+                                    @if (idx == 0)
+                                    {
+                                        <img src="@imageUrlDesktop"
+                                             alt=""
+                                             aria-hidden="true"
+                                             fetchpriority="high"
+                                             loading="eager"
+                                             decoding="async"
+                                             width="1"
+                                             height="1"
+                                             style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;" />
+                                    }
                                     <div>
                                         @if (!string.IsNullOrWhiteSpace(banner.Subtitulo))
                                         {
@@ -147,11 +183,11 @@
                         }
                     }
         </div>
-        <button class="carousel-control-prev home-hero-control" type="button" data-bs-target="#homeHeroCarousel" data-bs-slide="prev">
-            <span class="carousel-control-prev-icon"></span>
+        <button class="carousel-control-prev home-hero-control" type="button" data-bs-target="#homeHeroCarousel" data-bs-slide="prev" aria-label="Slide anterior del banner principal" title="Slide anterior del banner principal">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
         </button>
-        <button class="carousel-control-next home-hero-control" type="button" data-bs-target="#homeHeroCarousel" data-bs-slide="next">
-            <span class="carousel-control-next-icon"></span>
+        <button class="carousel-control-next home-hero-control" type="button" data-bs-target="#homeHeroCarousel" data-bs-slide="next" aria-label="Slide siguiente del banner principal" title="Slide siguiente del banner principal">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
         </button>
     </div>
 </section>
@@ -174,6 +210,7 @@
                 <div>
                     <span class="home-section-kicker"><i class="bi bi-compass"></i>Busqueda inteligente</span>
                     <h2 class="home-section-title mb-0">Buscar por zona y deporte</h2>
+                    <p class="home-section-subtitle mb-0">Ubica canchas por departamento, provincia, distrito y tipo de deporte en una sola consulta.</p>
                 </div>
                 <div class="home-section-head-actions d-flex align-items-end">
                     <div class="home-head-radio-wrap">
@@ -209,15 +246,14 @@
                     </button>
                 </div>
             </div>
-            <p class="home-section-subtitle mb-0">Ubica canchas por departamento, provincia, distrito y tipo de deporte en una sola consulta.</p>
         </div>
 
-        <form asp-action="Index" method="get" class="row g-3 home-search-form-tight" id="homeSearchForm">
+        <form asp-action="Index" method="get" class="row g-2 home-search-form-tight" id="homeSearchForm">
             <input type="hidden" id="buscarCercaDeMi" name="buscarCercaDeMi" value="@(Model.BuscarCercaDeMi ? "true" : "false")" />
             <input type="hidden" id="latitudUsuario" name="latitudUsuario" value="@(Model.LatitudUsuario?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" />
             <input type="hidden" id="longitudUsuario" name="longitudUsuario" value="@(Model.LongitudUsuario?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" />
             <div class="col-md-3">
-                <label class="form-label">Departamento</label>
+                <label class="form-label" for="codigoDepartamento">Departamento</label>
                 <select class="form-select" id="codigoDepartamento" name="codigoDepartamento">
                     <option value="">Todos</option>
                     @foreach (var dep in Model.DepartamentosUbigeo)
@@ -227,9 +263,9 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <label class="form-label">Provincia</label>
+                <label class="form-label" for="codigoProvincia">Provincia</label>
                 <select class="form-select" id="codigoProvincia" name="codigoProvincia">
-                    <option value="">Todas</option>
+                    <option value="">Todos</option>
                     @foreach (var prov in Model.ProvinciasUbigeo)
                     {
                         <option value="@prov.Value" selected="@(Model.CodigoProvincia == prov.Value)">@prov.Text</option>
@@ -237,7 +273,7 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <label class="form-label">Distrito</label>
+                <label class="form-label" for="codigoUbigeo">Distrito</label>
                 <select class="form-select" id="codigoUbigeo" name="codigoUbigeo">
                     <option value="">Todos</option>
                     @foreach (var dist in Model.DistritosUbigeo)
@@ -247,7 +283,7 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <label class="form-label">Complejo Deportivo</label>
+                <label class="form-label" for="negocioId">Complejo Deportivo</label>
                 <select class="form-select" id="negocioId" name="negocioId">
                     <option value="">Todos</option>
                     @foreach (var negocio in Model.Negocios)
@@ -263,10 +299,10 @@
                     }
                 </select>
             </div>
-            <div class="col-12">
-                <div id="ubicacionActualEstado" class="form-text"></div>
+            <div class="col-12 py-0 my-0">
+                <div id="ubicacionActualEstado" class="form-text home-ubicacion-estado"></div>
             </div>
-            <div class="col-12 mt-1">
+            <div class="col-12">
                 <div class="border rounded-3 p-3 bg-light-subtle">
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
                         <h3 class="home-subsection-title mb-0"><i class="bi bi-calendar-week me-1"></i>Busqueda por dia y horario</h3>
@@ -286,7 +322,7 @@
                             <input class="form-control" type="date" id="fechaFiltro" name="fecha" value="@Model.Fecha.ToString("yyyy-MM-dd")" />
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Hora inicio</label>
+                            <label class="form-label" for="horaInicioFiltro">Hora inicio</label>
                             <select class="form-select" id="horaInicioFiltro" name="horaInicio">
                                 @foreach (var hora in horasMediaHora)
                                 {
@@ -303,7 +339,7 @@
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Hora fin</label>
+                            <label class="form-label" for="horaFinFiltro">Hora fin</label>
                             <select class="form-select" id="horaFinFiltro" name="horaFin">
                                 @foreach (var hora in horasMediaHora)
                                 {
@@ -351,97 +387,55 @@
             {
                 var carouselId = $"sedeFotos-{item.EspacioDeportivoId}";
                 var detalleId = $"detalle-{item.EspacioDeportivoId}";
-                var numeroWhatsappEspacio = string.IsNullOrWhiteSpace(item.WhatsappContacto)
-                    ? string.Empty
-                    : new string(item.WhatsappContacto.Where(char.IsDigit).ToArray());
-                var mensajeWhatsappEspacio = Uri.EscapeDataString($"Hola, quiero reservar {item.NombreEspacio} en la sede {item.SedeNombre} para {Model.Fecha:dd/MM/yyyy} de {Model.HoraInicio:HH\\:mm} a {Model.HoraFin:HH\\:mm}.");
-                var enlaceWhatsappEspacio = string.IsNullOrWhiteSpace(numeroWhatsappEspacio)
-                    ? string.Empty
-                    : $"https://wa.me/{numeroWhatsappEspacio}?text={mensajeWhatsappEspacio}";
-                var sedeRef = item.SedeId.HasValue
-                    ? Model.Sedes.FirstOrDefault(x => x.Id == item.SedeId.Value)
-                    : null;
-                var negocioIdCotizacion = Model.NegocioId ?? sedeRef?.NegocioId;
-                var negocioNombreDestacado = (sedeRef?.NegocioNombre ?? string.Empty).Trim();
-                if (string.IsNullOrWhiteSpace(negocioNombreDestacado) && Model.NegocioId.HasValue)
-                {
-                    negocioNombreDestacado = (Model.Negocios.FirstOrDefault(x => x.Value == Model.NegocioId.Value.ToString())?.Text ?? string.Empty).Trim();
-                }
-                var telefonoContactoTarjeta = (item.TelefonoContacto ?? string.Empty).Trim();
-                if (string.IsNullOrWhiteSpace(telefonoContactoTarjeta))
-                {
-                    telefonoContactoTarjeta = (sedeRef?.Telefono ?? string.Empty).Trim();
-                }
-                var mapaUrl = item.SedeMapaUrl;
-                if (string.IsNullOrWhiteSpace(mapaUrl))
-                {
-                    mapaUrl = sedeRef?.GoogleMapsUrl;
-                }
-                if (string.IsNullOrWhiteSpace(mapaUrl) && sedeRef?.Latitud is decimal lat && sedeRef.Longitud is decimal lng)
-                {
-                    mapaUrl = $"https://www.google.com/maps?q={lat.ToString(CultureInfo.InvariantCulture)},{lng.ToString(CultureInfo.InvariantCulture)}";
-                }
-                var sedeFotos = new List<string>();
-                if (!string.IsNullOrWhiteSpace(item.SedeFotoPrincipalUrl))
-                {
-                    sedeFotos.Add(item.SedeFotoPrincipalUrl);
-                }
-                if (item.SedeFotos is not null && item.SedeFotos.Count > 0)
-                {
-                    sedeFotos.AddRange(item.SedeFotos.Where(x => !string.IsNullOrWhiteSpace(x)));
-                }
-                sedeFotos = sedeFotos
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToList();
+                var sedeFotos = item.SedeFotosConFallback ?? new List<string>();
 
                 <div class="col-md-6 col-xl-4">
                     <article class="card h-100 border-0 shadow-sm home-space-card @(item.SedeId.HasValue ? null : "home-space-card--external")">
                         <div class="card-body d-flex flex-column">
-                            @if (sedeFotos.Count > 0)
+                            @if (sedeFotos.Count == 1)
                             {
                                 <div class="home-space-media mb-3">
-                                    @if (sedeFotos.Count == 1)
-                                    {
-                                        <img src="@(SistemaControlEspaciosDeportivosWeb.Services.SedeImagenUrlHelper.NormalizarUrlPublica(
-                                            sedeFotos[0],
-                                            SedeImagenStorageOptions.Value.PublicBaseUrl,
-                                            SedeImagenStorageOptions.Value.BucketName) ?? sedeFotos[0])"
-                                             alt="Foto de @item.SedeNombre"
-                                             class="home-space-media-img" />
-                                    }
-                                    else
-                                    {
-                                        <div id="@carouselId" class="carousel slide" data-bs-ride="carousel" data-bs-interval="3500">
-                                            <div class="carousel-inner">
-                                                @for (var fotoIdx = 0; fotoIdx < sedeFotos.Count; fotoIdx++)
-                                                {
-                                                    var foto = sedeFotos[fotoIdx];
-                                                    <div class="carousel-item @(fotoIdx == 0 ? "active" : null)">
-                                                        <img src="@(SistemaControlEspaciosDeportivosWeb.Services.SedeImagenUrlHelper.NormalizarUrlPublica(
-                                                            foto,
-                                                            SedeImagenStorageOptions.Value.PublicBaseUrl,
-                                                            SedeImagenStorageOptions.Value.BucketName) ?? foto)"
-                                                             alt="Foto @(fotoIdx + 1) de @item.SedeNombre"
-                                                             class="home-space-media-img" />
-                                                    </div>
-                                                }
-                                            </div>
-                                            <button class="carousel-control-prev" type="button" data-bs-target="#@carouselId" data-bs-slide="prev">
-                                                <span class="carousel-control-prev-icon"></span>
-                                            </button>
-                                            <button class="carousel-control-next" type="button" data-bs-target="#@carouselId" data-bs-slide="next">
-                                                <span class="carousel-control-next-icon"></span>
-                                            </button>
+                                    <img src="@(SistemaControlEspaciosDeportivosWeb.Services.SedeImagenUrlHelper.NormalizarUrlPublica(
+                                        sedeFotos[0],
+                                        SedeImagenStorageOptions.Value.PublicBaseUrl,
+                                        SedeImagenStorageOptions.Value.BucketName) ?? sedeFotos[0])"
+                                         alt="Foto de @item.SedeNombre"
+                                         class="home-space-media-img" />
+                                </div>
+                            }
+                            else if (sedeFotos.Count > 1)
+                            {
+                                <div class="home-space-media mb-3">
+                                    <div id="@carouselId" class="carousel slide" data-bs-ride="carousel" data-bs-interval="3500">
+                                        <div class="carousel-inner">
+                                            @for (var fotoIdx = 0; fotoIdx < sedeFotos.Count; fotoIdx++)
+                                            {
+                                                var foto = sedeFotos[fotoIdx];
+                                                <div class="carousel-item @(fotoIdx == 0 ? "active" : null)">
+                                                    <img src="@(SistemaControlEspaciosDeportivosWeb.Services.SedeImagenUrlHelper.NormalizarUrlPublica(
+                                                        foto,
+                                                        SedeImagenStorageOptions.Value.PublicBaseUrl,
+                                                        SedeImagenStorageOptions.Value.BucketName) ?? foto)"
+                                                         alt="Foto @(fotoIdx + 1) de @item.SedeNombre"
+                                                         class="home-space-media-img" />
+                                                </div>
+                                            }
                                         </div>
-                                    }
+                                        <button class="carousel-control-prev" type="button" data-bs-target="#@carouselId" data-bs-slide="prev" aria-label="Foto anterior de @item.SedeNombre" title="Foto anterior de @item.SedeNombre">
+                                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                        </button>
+                                        <button class="carousel-control-next" type="button" data-bs-target="#@carouselId" data-bs-slide="next" aria-label="Foto siguiente de @item.SedeNombre" title="Foto siguiente de @item.SedeNombre">
+                                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                        </button>
+                                    </div>
                                 </div>
                             }
 
-                            @if (!string.IsNullOrWhiteSpace(negocioNombreDestacado))
+                            @if (!string.IsNullOrWhiteSpace(item.NegocioNombreDestacado))
                             {
                                 <div class="home-negocio-highlight mb-2">
                                     <span class="home-negocio-label"><i class="bi bi-buildings me-1"></i>Complejo Deportivo</span>
-                                    <h3 class="home-negocio-title mb-0">@negocioNombreDestacado</h3>
+                                    <h3 class="home-negocio-title mb-0">@item.NegocioNombreDestacado</h3>
                                 </div>
                             }
 
@@ -474,20 +468,20 @@
                                         <span class="home-item-label">Nombre de sede</span>
                                         @item.SedeNombre
                                     </p>
-                                    @if (!string.IsNullOrWhiteSpace(mapaUrl))
+                                    @if (!string.IsNullOrWhiteSpace(item.SedeMapaUrlResuelto))
                                     {
                                         <a class="btn btn-sm auth-nav-mini auth-nav-mini-outline home-map-btn"
-                                           href="@mapaUrl"
+                                           href="@item.SedeMapaUrlResuelto"
                                            target="_blank"
                                            rel="noopener noreferrer">Ver en mapa</a>
                                     }
                                 </div>
                             }
-                            else if (!string.IsNullOrWhiteSpace(mapaUrl))
+                            else if (!string.IsNullOrWhiteSpace(item.SedeMapaUrlResuelto))
                             {
                                 <div class="d-flex justify-content-end mb-1">
                                     <a class="btn btn-sm auth-nav-mini auth-nav-mini-outline home-map-btn"
-                                       href="@mapaUrl"
+                                       href="@item.SedeMapaUrlResuelto"
                                        target="_blank"
                                        rel="noopener noreferrer">Ver en mapa</a>
                                 </div>
@@ -515,7 +509,7 @@
                             {
                                 <div class="mb-2 home-price-from js-home-price-quote"
                                      data-espacio-id="@item.EspacioDeportivoId"
-                                     data-negocio-id="@(negocioIdCotizacion?.ToString() ?? string.Empty)"
+                                     data-negocio-id="@(item.NegocioIdCotizacion?.ToString() ?? string.Empty)"
                                      data-fecha="@Model.Fecha.ToString("yyyy-MM-dd")"
                                      data-hora-inicio="@Model.HoraInicio.ToString("HH\\:mm")"
                                      data-hora-fin="@Model.HoraFin.ToString("HH\\:mm")">
@@ -544,7 +538,7 @@
                                         <div>@item.SedeDireccion</div>
                                     </div>
                                 }
-                                @if (!string.IsNullOrWhiteSpace(item.CorreoNotificacion) || !string.IsNullOrWhiteSpace(item.WhatsappContacto) || !string.IsNullOrWhiteSpace(telefonoContactoTarjeta))
+                                @if (!string.IsNullOrWhiteSpace(item.CorreoNotificacion) || !string.IsNullOrWhiteSpace(item.WhatsappContacto) || !string.IsNullOrWhiteSpace(item.TelefonoContactoResuelto))
                                 {
                                     <div class="home-contact-box">
                                         <span class="home-item-label">Contacto</span>
@@ -552,9 +546,9 @@
                                         {
                                             <div><strong>Correo:</strong> @item.CorreoNotificacion</div>
                                         }
-                                        @if (!string.IsNullOrWhiteSpace(telefonoContactoTarjeta))
+                                        @if (!string.IsNullOrWhiteSpace(item.TelefonoContactoResuelto))
                                         {
-                                            <div><strong>Telefono:</strong> @telefonoContactoTarjeta</div>
+                                            <div><strong>Telefono:</strong> @item.TelefonoContactoResuelto</div>
                                         }
                                         @if (!string.IsNullOrWhiteSpace(item.WhatsappContacto))
                                         {
@@ -591,10 +585,10 @@
                                     {
                                         <span class="home-ref-cta"><i class="bi bi-pin-map-fill me-1"></i>No afiliado</span>
                                     }
-                                    @if (item.PermiteChatWhatsapp && !string.IsNullOrWhiteSpace(numeroWhatsappEspacio))
+                                    @if (item.PermiteChatWhatsapp && !string.IsNullOrWhiteSpace(item.EnlaceWhatsappEspacio))
                                     {
-                                        <a class="btn btn-success btn-sm"
-                                           href="@enlaceWhatsappEspacio"
+                                        <a class="btn btn-sm auth-nav-mini home-reserve-btn home-whatsapp-btn"
+                                           href="@item.EnlaceWhatsappEspacio"
                                            target="_blank"
                                            rel="noopener noreferrer">
                                             WhatsApp
@@ -602,17 +596,17 @@
                                     }
                                 </div>
                                 <div class="home-sede-social">
-                                    @if (!string.IsNullOrWhiteSpace(sedeRef?.FacebookUrl))
+                                    @if (!string.IsNullOrWhiteSpace(item.SedeFacebookUrl))
                                     {
-                                        <a href="@sedeRef.FacebookUrl" target="_blank" rel="noopener noreferrer" aria-label="Facebook de la sede"><i class="bi bi-facebook"></i></a>
+                                        <a href="@item.SedeFacebookUrl" target="_blank" rel="noopener noreferrer" aria-label="Facebook de la sede"><i class="bi bi-facebook"></i></a>
                                     }
-                                    @if (!string.IsNullOrWhiteSpace(sedeRef?.InstagramUrl))
+                                    @if (!string.IsNullOrWhiteSpace(item.SedeInstagramUrl))
                                     {
-                                        <a href="@sedeRef.InstagramUrl" target="_blank" rel="noopener noreferrer" aria-label="Instagram de la sede"><i class="bi bi-instagram"></i></a>
+                                        <a href="@item.SedeInstagramUrl" target="_blank" rel="noopener noreferrer" aria-label="Instagram de la sede"><i class="bi bi-instagram"></i></a>
                                     }
-                                    @if (!string.IsNullOrWhiteSpace(sedeRef?.TwitterUrl))
+                                    @if (!string.IsNullOrWhiteSpace(item.SedeTwitterUrl))
                                     {
-                                        <a href="@sedeRef.TwitterUrl" target="_blank" rel="noopener noreferrer" aria-label="Twitter de la sede"><i class="bi bi-twitter-x"></i></a>
+                                        <a href="@item.SedeTwitterUrl" target="_blank" rel="noopener noreferrer" aria-label="Twitter de la sede"><i class="bi bi-twitter-x"></i></a>
                                     }
                                 </div>
                             </div>
@@ -781,12 +775,12 @@
                                         @if (!string.IsNullOrWhiteSpace(imagenClickUrl))
                                         {
                                             <a href="@imagenClickUrl" target="@target" rel="@rel" class="home-promos-media-link @(anuncio.EsHorizontal ? "home-promos-media-link-horizontal" : null)">
-                                                <img src="@imagenUrl" alt="@anuncio.Titulo" class="home-promos-image @(anuncio.EsHorizontal ? "home-promos-image-horizontal" : "home-promos-image-vertical")" />
+                                                <img src="@imagenUrl" alt="@anuncio.Titulo" class="home-promos-image @(anuncio.EsHorizontal ? "home-promos-image-horizontal" : "home-promos-image-vertical")" width="@(anuncio.EsHorizontal ? "1280" : "800")" height="@(anuncio.EsHorizontal ? "720" : "1000")" />
                                             </a>
                                         }
                                         else
                                         {
-                                            <img src="@imagenUrl" alt="@anuncio.Titulo" class="home-promos-image @(anuncio.EsHorizontal ? "home-promos-image-horizontal" : "home-promos-image-vertical")" />
+                                            <img src="@imagenUrl" alt="@anuncio.Titulo" class="home-promos-image @(anuncio.EsHorizontal ? "home-promos-image-horizontal" : "home-promos-image-vertical")" width="@(anuncio.EsHorizontal ? "1280" : "800")" height="@(anuncio.EsHorizontal ? "720" : "1000")" />
                                         }
                                         <div class="home-promos-copy">
                                             <span class="home-promos-kicker">Anuncio activo</span>
@@ -812,11 +806,11 @@
                         </div>
                         @if (popupConfig.MostrarFlechas && popupPromociones.Count > 1)
                         {
-                            <button class="carousel-control-prev home-promos-control" type="button" data-bs-target="#popupPromocionesCarousel" data-bs-slide="prev">
-                                <span class="carousel-control-prev-icon"></span>
+                            <button class="carousel-control-prev home-promos-control" type="button" data-bs-target="#popupPromocionesCarousel" data-bs-slide="prev" aria-label="Promocion anterior" title="Promocion anterior">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                             </button>
-                            <button class="carousel-control-next home-promos-control" type="button" data-bs-target="#popupPromocionesCarousel" data-bs-slide="next">
-                                <span class="carousel-control-next-icon"></span>
+                            <button class="carousel-control-next home-promos-control" type="button" data-bs-target="#popupPromocionesCarousel" data-bs-slide="next" aria-label="Promocion siguiente" title="Promocion siguiente">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
                             </button>
                         }
                     </div>
@@ -851,12 +845,12 @@
         <div class="row g-4 align-items-start">
             <div class="col-lg-5">
                 <div class="home-platform-brand-head">
-                    <img src="https://pub-3afaea6b0b354821989565fa4b8bd250.r2.dev/logos/LaZonaDeportiva/LaZonaDeportiva_Logo.webp" alt="La Zona Deportiva" class="home-platform-brand-logo" />
+                    <img src="https://pub-3afaea6b0b354821989565fa4b8bd250.r2.dev/logos/LaZonaDeportiva/LaZonaDeportiva_Logo.webp" alt="La Zona Deportiva" class="home-platform-brand-logo" width="330" height="72" />
                 </div>
                 <p class="home-platform-brand-text mb-0">@Model.PortalConfig.MarcaDescripcion</p>
             </div>
             <div class="col-lg-4">
-                <h4 class="home-platform-subtitle">Contactanos</h4>
+                <h3 class="home-platform-subtitle">Contactanos</h3>
                 @if (!string.IsNullOrWhiteSpace(Model.PortalConfig.ContactoEmail))
                 {
                     <a href="mailto:@Model.PortalConfig.ContactoEmail" class="home-platform-link"><i class="bi bi-envelope"></i>@Model.PortalConfig.ContactoEmail</a>
@@ -867,7 +861,7 @@
                 }
             </div>
             <div class="col-lg-3">
-                <h4 class="home-platform-subtitle">Siguenos</h4>
+                <h3 class="home-platform-subtitle">Siguenos</h3>
                 <div class="home-platform-social">
                     @if (!string.IsNullOrWhiteSpace(Model.PortalConfig.SiguenosFacebookUrl))
                     {
@@ -1175,6 +1169,21 @@
         actualizarEstadoFiltroHorario();
     }
 
+    let primerRefreshNegociosEjecutado = false;
+    const ejecutarPrimerRefreshNegocios = () => {
+        if (primerRefreshNegociosEjecutado) return;
+        primerRefreshNegociosEjecutado = true;
+        void refreshNegocios();
+    };
+
+    const programarRefreshNegociosDiferido = () => {
+        if ('requestIdleCallback' in window) {
+            window.requestIdleCallback(() => ejecutarPrimerRefreshNegocios(), { timeout: 1200 });
+            return;
+        }
+        window.setTimeout(ejecutarPrimerRefreshNegocios, 600);
+    };
+
     async function autoSeleccionarUbigeoPorNombres(departamentoNombre, provinciaNombre, distritoNombre) {
         const depValue = findOptionValueByText(dep, departamentoNombre);
         if (!depValue) {
@@ -1346,6 +1355,12 @@
         refreshNegocios();
     });
     negocio?.addEventListener('change', desactivarFiltroCercania);
+    ['focus', 'pointerdown', 'touchstart', 'keydown'].forEach((evtName) => {
+        dep.addEventListener(evtName, ejecutarPrimerRefreshNegocios, { once: true, passive: true });
+        prov.addEventListener(evtName, ejecutarPrimerRefreshNegocios, { once: true, passive: true });
+        dist.addEventListener(evtName, ejecutarPrimerRefreshNegocios, { once: true, passive: true });
+        negocio?.addEventListener(evtName, ejecutarPrimerRefreshNegocios, { once: true, passive: true });
+    });
     radioKmInput?.addEventListener('change', () => {
         if (buscarCercaDeMiInput?.value === 'true') {
             homeSearchForm?.submit();
@@ -1367,7 +1382,7 @@
     homeSearchForm?.addEventListener('submit', garantizarAnclaResultados);
     actualizarEstadoFiltroHorario();
     garantizarAnclaResultados();
-    refreshNegocios();
+    programarRefreshNegociosDiferido();
 })();
 
 (() => {

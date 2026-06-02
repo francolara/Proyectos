@@ -3,6 +3,7 @@
     ViewData["Title"] = "Usuarios del negocio";
 }
 
+<div class="admin-page-frame">
 <section class="page-header">
     <div class="sc-page-title-wrap">
         <div>
@@ -29,9 +30,9 @@
     <div class="alert alert-danger">@errMsg</div>
 }
 
-<section class="card border-0 shadow-sm mb-3">
+<section class="filter-card mb-3">
     <div class="card-body">
-        <h2 class="h6 mb-3">Asignar usuario por correo</h2>
+        <h2 class="section-title"><i class="bi bi-person-plus me-1"></i>Asignar usuario por correo</h2>
         <form asp-action="Asignar" method="post" class="row g-2 align-items-end">
             @Html.AntiForgeryToken()
             <input type="hidden" name="NegocioId" value="@Model.NegocioId" />
@@ -70,8 +71,10 @@
     </div>
 </section>
 
-<div class="table-responsive">
-    <table class="table table-sm table-striped align-middle sc-list-table">
+<section class="table-card">
+    <h2 class="section-title"><i class="bi bi-people me-1"></i>Listado de usuarios</h2>
+    <div class="table-responsive">
+        <table class="table table-sm table-striped align-middle sc-list-table">
         <thead>
             <tr>
                 <th class="text-center"><span class="sc-col-header"><i class="bi bi-person-vcard"></i><small>Usuario</small></span></th>
@@ -149,7 +152,9 @@
                 </tr>
             }
         </tbody>
-    </table>
+        </table>
+    </div>
+</section>
 </div>
 
 @section Scripts

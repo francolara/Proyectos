@@ -2,7 +2,7 @@
   --sc-primary: #0d3b66;
   --sc-accent: #17a2b8;
   --sc-bg: #f4f7fb;
-  --sc-sidebar-bg: linear-gradient(182deg, #071226 0%, #0a1d3a 56%, #0d2a52 100%);
+  --sc-sidebar-bg: linear-gradient(182deg, #0c2245 0%, #12356b 56%, #1b4f9a 100%);
 }
 
 html {
@@ -108,7 +108,7 @@ body {
 
 .sc-admin-shell {
   display: grid;
-  grid-template-columns: 290px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   min-height: 100vh;
   background:
     var(--sc-sidebar-bg) left top / 290px 100% no-repeat,
@@ -118,17 +118,20 @@ body {
 }
 
 .sc-admin-sidebar {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  width: 290px;
   height: 100vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   padding: 1.55rem 1.05rem;
   background: var(--sc-sidebar-bg);
-  color: #dbeafe;
-  border-right: 1px solid rgba(148, 163, 184, 0.22);
-  box-shadow: 18px 0 42px rgba(2, 6, 23, 0.42);
+  color: #eaf3ff;
+  border-right: 1px solid rgba(147, 197, 253, 0.35);
+  box-shadow: 14px 0 30px rgba(15, 23, 42, 0.28);
+  z-index: 150;
 }
 
 .sc-admin-brand {
@@ -138,16 +141,16 @@ body {
   padding: 0.75rem 0.55rem;
   margin-bottom: 1.35rem;
   border-radius: 1rem;
-  background: rgba(15, 23, 42, 0.4);
-  border: 1px solid rgba(125, 211, 252, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(147, 197, 253, 0.3);
   text-align: center;
 }
 
 .sc-admin-welcome {
   margin-bottom: 0.75rem;
   border-radius: 0.9rem;
-  border: 1px solid rgba(148, 163, 184, 0.28);
-  background: linear-gradient(145deg, rgba(37, 99, 235, 0.24), rgba(14, 165, 233, 0.14));
+  border: 1px solid rgba(147, 197, 253, 0.35);
+  background: linear-gradient(145deg, rgba(96, 165, 250, 0.24), rgba(56, 189, 248, 0.16));
   padding: 0.55rem 0.65rem;
 }
 
@@ -217,17 +220,17 @@ body {
   align-items: center;
   gap: 0.55rem;
   border-radius: 0.82rem;
-  border: 1px solid rgba(148, 163, 184, 0.28);
-  background: rgba(15, 23, 42, 0.62);
-  color: #dbeafe;
+  border: 1px solid rgba(147, 197, 253, 0.35);
+  background: rgba(255, 255, 255, 0.08);
+  color: #eff6ff;
   padding: 0.5rem 0.68rem;
   font-size: 0.83rem;
   font-weight: 700;
 }
 
 .sc-admin-notify-btn:hover {
-  border-color: rgba(125, 211, 252, 0.5);
-  background: rgba(30, 64, 175, 0.42);
+  border-color: rgba(125, 211, 252, 0.7);
+  background: rgba(59, 130, 246, 0.22);
 }
 
 .sc-admin-notify-badge {
@@ -330,13 +333,55 @@ body {
   padding-right: 0.2rem;
 }
 
+/* Firma: FRANCO LARA - 01/06/2026 | Sidebar admin agrupado por secciones para reducir scroll visual sin cambiar navegación ni permisos. */
+.sc-admin-nav-group {
+  border: 1px solid rgba(147, 197, 253, 0.32);
+  border-radius: 0.86rem;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.sc-admin-nav-group-toggle {
+  width: 100%;
+  border: 0;
+  background: rgba(59, 130, 246, 0.22);
+  color: #eef6ff;
+  padding: 0.45rem 0.62rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.035em;
+}
+
+.sc-admin-nav-group-toggle .bi-chevron-down {
+  transition: transform 0.18s ease;
+}
+
+.sc-admin-nav-group-toggle[aria-expanded="true"] .bi-chevron-down {
+  transform: rotate(180deg);
+}
+
+.sc-admin-nav-group-body {
+  padding: 0.3rem;
+  display: grid;
+  gap: 0.18rem;
+}
+
+.sc-admin-nav-group-body .sc-admin-navlink {
+  padding: 0.58rem 0.68rem;
+  border-radius: 0.76rem;
+}
+
 .sc-admin-session-box {
   margin-top: auto;
   margin-bottom: 0.2rem;
   padding: 0.7rem;
   border-radius: 0.9rem;
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  background: rgba(15, 23, 42, 0.62);
+  border: 1px solid rgba(147, 197, 253, 0.36);
+  background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(4px);
 }
 
@@ -451,9 +496,9 @@ body {
   padding: 0.58rem 0.68rem;
   border-radius: 0.9rem;
   text-decoration: none;
-  color: #e2e8f0;
-  border: 1px solid rgba(148, 163, 184, 0.36);
-  background: rgba(15, 23, 42, 0.58);
+  color: #eff6ff;
+  border: 1px solid rgba(147, 197, 253, 0.4);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .sc-admin-homecard i {
@@ -479,8 +524,8 @@ body {
 
 .sc-admin-homecard:hover {
   color: #fff;
-  border-color: rgba(125, 211, 252, 0.62);
-  background: linear-gradient(138deg, rgba(29, 78, 216, 0.66), rgba(14, 165, 233, 0.42));
+  border-color: rgba(125, 211, 252, 0.78);
+  background: linear-gradient(138deg, rgba(59, 130, 246, 0.58), rgba(14, 165, 233, 0.42));
 }
 
 .sc-admin-navlink {
@@ -489,16 +534,16 @@ body {
   gap: 0.7rem;
   padding: 0.75rem 0.85rem;
   border-radius: 0.95rem;
-  color: #c6d9f6;
+  color: #e6f0ff;
   text-decoration: none;
   transition: all 0.24s ease;
-  border: 1px solid rgba(125, 211, 252, 0);
+  border: 1px solid rgba(125, 211, 252, 0.08);
   position: relative;
 }
 
 .sc-admin-navlink i {
   font-size: 1rem;
-  color: #7fb3ff;
+  color: #b9dcff;
   opacity: 0.96;
 }
 
@@ -506,14 +551,14 @@ body {
   font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: 0.012em;
-  color: #d9e7fb;
+  color: #eef5ff;
   text-shadow: 0 1px 0 rgba(2, 6, 23, 0.22);
 }
 
 .sc-admin-navlink:hover {
   color: #fff;
-  border-color: rgba(125, 211, 252, 0.36);
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(14, 165, 233, 0.14));
+  border-color: rgba(125, 211, 252, 0.62);
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.3), rgba(56, 189, 248, 0.2));
   transform: translateX(2px);
 }
 
@@ -527,9 +572,9 @@ body {
 
 .sc-admin-navlink.active {
   color: #fff;
-  border-color: rgba(125, 211, 252, 0.6);
-  background: linear-gradient(138deg, rgba(29, 78, 216, 0.9), rgba(14, 165, 233, 0.76));
-  box-shadow: inset 0 0 0 1px rgba(186, 230, 253, 0.38), 0 12px 24px rgba(14, 165, 233, 0.28);
+  border-color: rgba(125, 211, 252, 0.85);
+  background: linear-gradient(138deg, rgba(37, 99, 235, 0.88), rgba(14, 165, 233, 0.78));
+  box-shadow: inset 0 0 0 1px rgba(186, 230, 253, 0.5), 0 10px 20px rgba(14, 165, 233, 0.26);
 }
 
 .sc-admin-navlink.active::before {
@@ -557,6 +602,7 @@ body {
 .sc-admin-main {
   min-width: 0;
   padding: 1.1rem 1.2rem 1.5rem;
+  margin-left: 290px;
 }
 
 .sc-admin-context-help {
@@ -964,6 +1010,7 @@ body {
   box-shadow: 0 22px 42px rgba(15, 23, 42, 0.16);
 }
 
+
 .page-header-main {
   min-width: 0;
 }
@@ -1181,6 +1228,157 @@ body {
 .empty-state i {
   color: #2563eb;
   font-size: 1.1rem;
+}
+
+/* Firma: Codex - 01/06/2026 | Jerarquia visual unificada para todas las pestañas admin (KPI, filtro y listado). */
+:is(.admin-page-frame, .sc-admin-main) .kpi-grid .kpi-card {
+  border-top: 3px solid #60a5fa;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+}
+
+:is(.admin-page-frame, .sc-admin-main) .filter-card {
+  border-top: 3px solid #22c55e;
+  background:
+    radial-gradient(130% 140% at 0% 0%, rgba(34, 197, 94, 0.08) 0%, rgba(34, 197, 94, 0) 55%),
+    linear-gradient(180deg, #ffffff 0%, #f8fffb 100%);
+}
+
+:is(.admin-page-frame, .sc-admin-main) .filter-card .section-title {
+  color: #14532d;
+}
+
+:is(.admin-page-frame, .sc-admin-main) .table-card {
+  border-top: 3px solid #2563eb;
+  background:
+    radial-gradient(130% 140% at 100% 0%, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0) 55%),
+    linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+:is(.admin-page-frame, .sc-admin-main) .table-card .section-title {
+  color: #1e3a8a;
+}
+
+:is(.admin-page-frame, .sc-admin-main) .content-card {
+  border-top: 3px solid #0ea5e9;
+  background:
+    radial-gradient(130% 140% at 0% 0%, rgba(14, 165, 233, 0.08) 0%, rgba(14, 165, 233, 0) 55%),
+    linear-gradient(180deg, #ffffff 0%, #f7fcff 100%);
+}
+
+:is(.admin-page-frame, .sc-admin-main) .content-card .section-title {
+  color: #0f4c81;
+}
+
+:is(.admin-page-frame, .sc-admin-main) .sc-form-card {
+  border-top: 3px solid #2563eb;
+  background:
+    radial-gradient(130% 140% at 100% 0%, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0) 55%),
+    linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+:is(.admin-page-frame, .sc-admin-main) .sc-form-card .sc-form-title {
+  color: #1e3a8a;
+}
+
+/* Firma: Codex - 01/06/2026 | Modo compacto admin para mostrar mas informacion por pantalla. */
+:is(.admin-page-frame, .sc-admin-main) .kpi-grid {
+  gap: 0.65rem;
+  margin-bottom: 0.8rem;
+}
+
+:is(.admin-page-frame, .sc-admin-main) .kpi-grid .kpi-card {
+  padding: 0.72rem 0.8rem;
+  border-radius: 0.85rem;
+}
+
+:is(.admin-page-frame, .sc-admin-main) .kpi-grid .kpi-card-label {
+  font-size: 0.73rem;
+}
+
+:is(.admin-page-frame, .sc-admin-main) .kpi-grid .kpi-card-value {
+  margin-top: 0.2rem;
+  font-size: 1.32rem;
+}
+
+:is(.admin-page-frame, .sc-admin-main) .filter-card {
+  padding: 0.72rem;
+  border-radius: 0.85rem;
+}
+
+:is(.admin-page-frame, .sc-admin-main) .content-card {
+  padding: 0.72rem;
+  border-radius: 0.85rem;
+}
+
+:is(.admin-page-frame, .sc-admin-main) .table-card {
+  border-radius: 0.85rem;
+}
+
+:is(.admin-page-frame, .sc-admin-main) .sc-form-card {
+  border-radius: 0.85rem;
+  padding: 0.72rem;
+}
+
+:is(.admin-page-frame, .sc-admin-main) .filter-card .section-title,
+:is(.admin-page-frame, .sc-admin-main) .content-card .section-title,
+:is(.admin-page-frame, .sc-admin-main) .table-card .section-title {
+  padding: 0.65rem 0.78rem 0.15rem;
+  font-size: 0.92rem;
+}
+
+:is(.admin-page-frame, .sc-admin-main) .filter-card .row {
+  --bs-gutter-y: 0.45rem;
+}
+
+:is(.admin-page-frame, .sc-admin-main) .filter-card .form-label {
+  margin-bottom: 0.26rem;
+  font-size: 0.75rem;
+}
+
+:is(.admin-page-frame, .sc-admin-main) .filter-card .form-control,
+:is(.admin-page-frame, .sc-admin-main) .filter-card .form-select,
+:is(.admin-page-frame, .sc-admin-main) .table-card .form-control,
+:is(.admin-page-frame, .sc-admin-main) .table-card .form-select {
+  min-height: 2.2rem;
+  padding-top: 0.28rem;
+  padding-bottom: 0.28rem;
+  font-size: 0.88rem;
+}
+
+:is(.admin-page-frame, .sc-admin-main) .table-card .table-responsive {
+  padding: 0.15rem 0.8rem 0.78rem;
+}
+
+:is(.admin-page-frame, .sc-admin-main) .table-card .table > :not(caption) > * > * {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+:is(.admin-page-frame, .sc-admin-main) .sc-form-card .sc-form-section {
+  gap: 0.55rem;
+}
+
+:is(.admin-page-frame, .sc-admin-main) .sc-form-card .form-label {
+  margin-bottom: 0.26rem;
+  font-size: 0.75rem;
+}
+
+:is(.admin-page-frame, .sc-admin-main) .sc-form-card .form-control,
+:is(.admin-page-frame, .sc-admin-main) .sc-form-card .form-select {
+  min-height: 2.2rem;
+  padding-top: 0.28rem;
+  padding-bottom: 0.28rem;
+  font-size: 0.88rem;
+}
+
+:is(.admin-page-frame, .sc-admin-main) .table-card thead th .sc-col-header small {
+  font-size: 0.64rem;
+}
+
+:is(.admin-page-frame, .sc-admin-main) .sc-action-btn {
+  padding: 0.26rem 0.54rem;
+  font-size: 0.74rem;
+  border-radius: 0.58rem;
 }
 
 /* Firma: Codex - 30/03/2026 | Tarjeta premium para listados y panel operativo de reservas (agenda, disponibilidad, pendientes por confirmar, bloqueos y resumen). */
@@ -1628,9 +1826,17 @@ body {
 
   .sc-admin-sidebar {
     position: relative;
+    top: auto;
+    left: auto;
+    width: auto;
     height: auto;
     overflow: visible;
     padding-bottom: 1.55rem;
+    z-index: auto;
+  }
+
+  .sc-admin-main {
+    margin-left: 0;
   }
 
   .sc-admin-nav {
@@ -1653,6 +1859,7 @@ body {
   .sc-admin-switcher {
     min-width: 100%;
   }
+
 }
 
 @media (max-width: 768px) {
@@ -2250,16 +2457,35 @@ body {
   padding: 0.95rem 1rem;
 }
 
+.sc-dash-shell .sc-dash-panel {
+  border-top: 3px solid #2563eb;
+  background:
+    radial-gradient(130% 140% at 100% 0%, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0) 55%),
+    linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  border-radius: 0.85rem;
+  padding: 0.78rem 0.85rem;
+}
+
 .sc-dash-panel-head h3 {
   margin: 0;
   font-size: 1.02rem;
   color: #0f172a;
 }
 
+.sc-dash-shell .sc-dash-panel-head h3 {
+  color: #1e3a8a;
+  font-size: 0.92rem;
+}
+
 .sc-dash-panel-head p {
   margin: 0.24rem 0 0.7rem;
   font-size: 0.78rem;
   color: #64748b;
+}
+
+.sc-dash-shell .sc-dash-panel-head p {
+  margin: 0.2rem 0 0.45rem;
+  font-size: 0.76rem;
 }
 
 .sc-dash-health-list {
@@ -2537,7 +2763,7 @@ body {
 
 .home-section-head {
   display: grid;
-  gap: 0.2rem;
+  gap: 0.05rem;
 }
 
 .home-section-kicker {
@@ -2566,6 +2792,7 @@ body {
 .home-section-subtitle {
   color: #476287;
   font-size: 0.93rem;
+  margin-top: -0.12rem;
 }
 
 .home-subsection-title {
@@ -3571,7 +3798,7 @@ body {
 
 .home-section-head-top {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
   flex-wrap: wrap;
@@ -3579,7 +3806,7 @@ body {
 
 .home-section-head-actions {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.6rem;
   flex-wrap: nowrap;
   padding: 0.4rem 0.55rem;
@@ -3615,7 +3842,7 @@ body {
 }
 
 .home-search-form-tight {
-  row-gap: 0.7rem !important;
+  row-gap: 0.45rem !important;
 }
 
 .home-search-form-tight .form-label {
@@ -3649,6 +3876,16 @@ body {
   margin-top: 0;
 }
 
+.home-ubicacion-estado {
+  margin: 0 !important;
+  min-height: 0;
+  line-height: 1.2;
+}
+
+.home-ubicacion-estado:empty {
+  display: none;
+}
+
 #ubicacionActualEstado:empty {
   display: none;
 }
@@ -3670,6 +3907,27 @@ body {
 
 .home-reserve-btn {
   min-height: 2rem;
+}
+
+.home-whatsapp-btn {
+  color: #fff;
+  border: 1px solid #15803d;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 62%, #15803d 100%);
+  box-shadow: 0 10px 20px rgba(22, 163, 74, 0.28);
+}
+
+.home-whatsapp-btn:hover {
+  color: #fff;
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+  box-shadow: 0 14px 24px rgba(22, 163, 74, 0.34);
+}
+
+.home-whatsapp-btn:focus-visible,
+.home-whatsapp-btn:active {
+  color: #fff;
+  border-color: #166534;
+  box-shadow: 0 0 0 0.2rem rgba(34, 197, 94, 0.22), 0 14px 24px rgba(22, 163, 74, 0.34);
 }
 
 .home-distance-chip {
@@ -3968,6 +4226,33 @@ body {
   font-weight: 700;
   color: #475569;
   margin-bottom: 0.22rem;
+}
+
+/* Firma: Codex - 01/06/2026 | Jerarquia + compacto especifico para Dashboard ejecutivo. */
+.sc-dash-shell .sc-dash-filter-card {
+  border-top: 3px solid #22c55e;
+  background:
+    radial-gradient(130% 140% at 0% 0%, rgba(34, 197, 94, 0.08) 0%, rgba(34, 197, 94, 0) 55%),
+    linear-gradient(180deg, #ffffff 0%, #f8fffb 100%);
+  border-radius: 0.85rem;
+  padding: 0.72rem 0.78rem;
+}
+
+.sc-dash-shell .sc-dash-filter-grid {
+  gap: 0.45rem;
+}
+
+.sc-dash-shell .sc-dash-filter-grid label {
+  margin-bottom: 0.18rem;
+  font-size: 0.74rem;
+}
+
+.sc-dash-shell .sc-dash-filter-grid .form-control,
+.sc-dash-shell .sc-dash-filter-grid .form-select {
+  min-height: 2.2rem;
+  font-size: 0.88rem;
+  padding-top: 0.28rem;
+  padding-bottom: 0.28rem;
 }
 
 .sc-dash-negocio-card {
@@ -4951,6 +5236,17 @@ body {
   display: block;
   position: relative;
   z-index: 1;
+}
+
+/* Firma: Codex - 01/06/2026 | Reservas listado general: ocultar burbuja decorativa KPI y compactar altura. */
+.sc-reservas-list-card .sc-reservas-metric::after {
+  content: none !important;
+  display: none !important;
+}
+
+.sc-reservas-list-card .sc-reservas-metric {
+  padding-right: 0.65rem !important;
+  min-height: auto;
 }
 
 .kpi-tone-blue {

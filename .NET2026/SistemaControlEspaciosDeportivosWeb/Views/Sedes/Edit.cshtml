@@ -263,7 +263,7 @@
                 <h2 class="sc-form-title"><i class="bi bi-images"></i> Fotos de la sede</h2>
                 <div class="row g-3">
                     <div class="col-md-8">
-                        <label asp-for="ImagenesArchivos" class="form-label">Agregar imagenes (maximo 6 en total)</label>
+                        <label asp-for="ImagenesArchivos" class="form-label">Agregar imagenes (maximo 6 en total, de 1 en 1)</label>
                         <input asp-for="ImagenesArchivos" id="imagenesArchivosInput" type="file" class="form-control" multiple accept=".jpg,.jpeg,.png,image/jpeg,image/png" />
                         <span asp-validation-for="ImagenesArchivos" class="text-danger"></span>
                         <div class="form-text">
@@ -872,8 +872,24 @@
         (() => {
             const input = document.getElementById('imagenesArchivosInput');
             const body = document.getElementById('imagenesSeleccionadasBody');
+            const fotoPrincipalInput = document.getElementById('FotoPrincipalUrl');
+            const fotosCsvInput = document.getElementById('FotosUrlsCsv');
             if (!input || !body) return;
+            const MAX_IMAGENES = 6;
             let selectedFiles = [];
+
+            function fileKey(file) {
+                return `${file.name}__${file.size}__${file.lastModified}`;
+            }
+
+            function countActualesNoRemovidas() {
+                const principal = (fotoPrincipalInput?.value || '').trim();
+                const alternativas = (fotosCsvInput?.value || '')
+                    .split(',')
+                    .map(x => x.trim())
+                    .filter(Boolean);
+                return (principal ? 1 : 0) + alternativas.length;
+            }
 
             function formatBytes(bytes) {
                 if (!bytes || bytes <= 0) return '0 KB';
@@ -941,7 +957,37 @@
             });
 
             input.addEventListener('change', () => {
-                selectedFiles = Array.from(input.files || []);
+                const incoming = Array.from(input.files || []);
+                if (incoming.length === 0) return;
+
+                const disponibles = Math.max(0, MAX_IMAGENES - countActualesNoRemovidas() - selectedFiles.length);
+                let agregadas = 0;
+                let duplicadas = 0;
+                let porLimite = 0;
+
+                for (const file of incoming) {
+                    if (selectedFiles.some(x => fileKey(x) === fileKey(file))) {
+                        duplicadas++;
+                        continue;
+                    }
+                    if (agregadas >= disponibles) {
+                        porLimite++;
+                        continue;
+                    }
+                    selectedFiles.push(file);
+                    agregadas++;
+                }
+
+                if (porLimite > 0) {
+                    input.setCustomValidity(`Solo puedes tener ${MAX_IMAGENES} imagenes en total por sede.`);
+                    input.reportValidity();
+                } else if (duplicadas > 0 && agregadas === 0) {
+                    input.setCustomValidity('Ese archivo ya fue agregado.');
+                    input.reportValidity();
+                } else {
+                    input.setCustomValidity('');
+                }
+
                 syncInputFiles();
                 render();
             });

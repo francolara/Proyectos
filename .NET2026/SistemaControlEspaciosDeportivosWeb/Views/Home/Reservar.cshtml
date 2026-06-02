@@ -59,6 +59,98 @@
 
     <div class="card border-0 shadow-sm mb-3 sc-public-section-card">
         <div class="card-body">
+            <div class="row g-2 align-items-stretch">
+                <div class="col-lg-3 col-md-6">
+                    <div class="sc-mini-info">
+                        <span class="sc-mini-kicker"><i class="bi bi-grid-3x3-gap"></i> Nombre del espacio</span>
+                        <strong>@Model.Espacio.NombreEspacio</strong>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="sc-mini-info">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="sc-mini-kicker mb-0"><i class="bi bi-geo-alt"></i> Nombre de sede</span>
+                            @if (!string.IsNullOrWhiteSpace(mapaUrl))
+                            {
+                                <a class="btn btn-outline-primary btn-sm ms-auto btn-public-accion" href="@mapaUrl" target="_blank" rel="noopener noreferrer">Ver en mapa</a>
+                            }
+                        </div>
+                        <strong>@Model.Espacio.SedeNombre</strong>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="sc-mini-info">
+                        <span class="sc-mini-kicker"><i class="bi bi-signpost"></i> Direccion</span>
+                        <strong>@(string.IsNullOrWhiteSpace(Model.Espacio.SedeDireccion) ? "-" : Model.Espacio.SedeDireccion)</strong>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="sc-mini-info">
+                        <span class="sc-mini-kicker"><i class="bi bi-telephone"></i> Contacto</span>
+                        @if (!string.IsNullOrWhiteSpace(telefonoSedeContacto))
+                        {
+                            <strong>Telefono: @telefonoSedeContacto</strong>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(correoSedeContacto))
+                        {
+                            <small class="text-muted">Correo: @correoSedeContacto</small>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(whatsappSedeContacto))
+                        {
+                            <small class="text-muted">WhatsApp: @whatsappSedeContacto</small>
+                        }
+                        @if (string.IsNullOrWhiteSpace(telefonoSedeContacto) && string.IsNullOrWhiteSpace(correoSedeContacto) && string.IsNullOrWhiteSpace(whatsappSedeContacto))
+                        {
+                            <strong>-</strong>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(enlaceWhatsappSede) || !string.IsNullOrWhiteSpace(Model.Sede?.FacebookUrl) || !string.IsNullOrWhiteSpace(Model.Sede?.InstagramUrl) || !string.IsNullOrWhiteSpace(Model.Sede?.TwitterUrl))
+                        {
+                            <div class="sc-contact-actions mt-2">
+                                @if (!string.IsNullOrWhiteSpace(enlaceWhatsappSede))
+                                {
+                                    <a class="btn btn-sm auth-nav-mini home-reserve-btn home-whatsapp-btn" href="@enlaceWhatsappSede" target="_blank" rel="noopener noreferrer">
+                                        <i class="bi bi-whatsapp me-1"></i>WhatsApp
+                                    </a>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(Model.Sede?.FacebookUrl))
+                                {
+                                    <a class="sc-social-btn" href="@Model.Sede.FacebookUrl" target="_blank" rel="noopener noreferrer" aria-label="Facebook de la sede"><i class="bi bi-facebook"></i></a>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(Model.Sede?.InstagramUrl))
+                                {
+                                    <a class="sc-social-btn" href="@Model.Sede.InstagramUrl" target="_blank" rel="noopener noreferrer" aria-label="Instagram de la sede"><i class="bi bi-instagram"></i></a>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(Model.Sede?.TwitterUrl))
+                                {
+                                    <a class="sc-social-btn" href="@Model.Sede.TwitterUrl" target="_blank" rel="noopener noreferrer" aria-label="Twitter de la sede"><i class="bi bi-twitter-x"></i></a>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="col-12 mt-2">
+                    <h2 class="h6 mb-2 sc-public-section-title"><i class="bi bi-stars me-1"></i>Servicios del complejo deportivo</h2>
+                    @if (servicios.Count == 0)
+                    {
+                        <div class="text-muted small">No se registraron servicios para esta sede.</div>
+                    }
+                    else
+                    {
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach (var servicio in servicios)
+                            {
+                                <span class="sc-service-chip"><i class="bi bi-check2-circle"></i>@servicio</span>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-3 sc-public-section-card">
+        <div class="card-body">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
                 <h2 class="h6 mb-0 sc-public-section-title"><i class="bi bi-calendar-week me-1"></i>Calendario del espacio</h2>
                 <div class="d-flex flex-wrap gap-2">
@@ -299,97 +391,6 @@
         </div>
     }
 
-    <div class="card border-0 shadow-sm sc-public-section-card">
-        <div class="card-body">
-            <div class="row g-2 align-items-stretch">
-                <div class="col-lg-3 col-md-6">
-                    <div class="sc-mini-info">
-                        <span class="sc-mini-kicker"><i class="bi bi-grid-3x3-gap"></i> Nombre del espacio</span>
-                        <strong>@Model.Espacio.NombreEspacio</strong>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="sc-mini-info">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="sc-mini-kicker mb-0"><i class="bi bi-geo-alt"></i> Nombre de sede</span>
-                            @if (!string.IsNullOrWhiteSpace(mapaUrl))
-                            {
-                                <a class="btn btn-outline-primary btn-sm ms-auto btn-public-accion" href="@mapaUrl" target="_blank" rel="noopener noreferrer">Ver en mapa</a>
-                            }
-                        </div>
-                        <strong>@Model.Espacio.SedeNombre</strong>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="sc-mini-info">
-                        <span class="sc-mini-kicker"><i class="bi bi-signpost"></i> Direccion</span>
-                        <strong>@(string.IsNullOrWhiteSpace(Model.Espacio.SedeDireccion) ? "-" : Model.Espacio.SedeDireccion)</strong>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="sc-mini-info">
-                        <span class="sc-mini-kicker"><i class="bi bi-telephone"></i> Contacto</span>
-                        @if (!string.IsNullOrWhiteSpace(telefonoSedeContacto))
-                        {
-                            <strong>Telefono: @telefonoSedeContacto</strong>
-                        }
-                        @if (!string.IsNullOrWhiteSpace(correoSedeContacto))
-                        {
-                            <small class="text-muted">Correo: @correoSedeContacto</small>
-                        }
-                        @if (!string.IsNullOrWhiteSpace(whatsappSedeContacto))
-                        {
-                            <small class="text-muted">WhatsApp: @whatsappSedeContacto</small>
-                        }
-                        @if (string.IsNullOrWhiteSpace(telefonoSedeContacto) && string.IsNullOrWhiteSpace(correoSedeContacto) && string.IsNullOrWhiteSpace(whatsappSedeContacto))
-                        {
-                            <strong>-</strong>
-                        }
-                        @if (!string.IsNullOrWhiteSpace(enlaceWhatsappSede) || !string.IsNullOrWhiteSpace(Model.Sede?.FacebookUrl) || !string.IsNullOrWhiteSpace(Model.Sede?.InstagramUrl) || !string.IsNullOrWhiteSpace(Model.Sede?.TwitterUrl))
-                        {
-                            <div class="sc-contact-actions mt-2">
-                                @if (!string.IsNullOrWhiteSpace(enlaceWhatsappSede))
-                                {
-                                    <a class="btn btn-success btn-sm" href="@enlaceWhatsappSede" target="_blank" rel="noopener noreferrer">
-                                        <i class="bi bi-whatsapp me-1"></i>WhatsApp
-                                    </a>
-                                }
-                                @if (!string.IsNullOrWhiteSpace(Model.Sede?.FacebookUrl))
-                                {
-                                    <a class="sc-social-btn" href="@Model.Sede.FacebookUrl" target="_blank" rel="noopener noreferrer" aria-label="Facebook de la sede"><i class="bi bi-facebook"></i></a>
-                                }
-                                @if (!string.IsNullOrWhiteSpace(Model.Sede?.InstagramUrl))
-                                {
-                                    <a class="sc-social-btn" href="@Model.Sede.InstagramUrl" target="_blank" rel="noopener noreferrer" aria-label="Instagram de la sede"><i class="bi bi-instagram"></i></a>
-                                }
-                                @if (!string.IsNullOrWhiteSpace(Model.Sede?.TwitterUrl))
-                                {
-                                    <a class="sc-social-btn" href="@Model.Sede.TwitterUrl" target="_blank" rel="noopener noreferrer" aria-label="Twitter de la sede"><i class="bi bi-twitter-x"></i></a>
-                                }
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-
-            <div class="mt-3">
-                <h2 class="h6 mb-2 sc-public-section-title"><i class="bi bi-stars me-1"></i>Servicios del complejo deportivo</h2>
-                @if (servicios.Count == 0)
-                {
-                    <div class="text-muted small">No se registraron servicios para esta sede.</div>
-                }
-                else
-                {
-                    <div class="d-flex flex-wrap gap-2">
-                        @foreach (var servicio in servicios)
-                        {
-                            <span class="sc-service-chip"><i class="bi bi-check2-circle"></i>@servicio</span>
-                        }
-                    </div>
-                }
-            </div>
-        </div>
-    </div>
 </div>
 
 @section Styles {
@@ -478,6 +479,12 @@
             flex-direction: column;
             justify-content: center;
             gap: .18rem;
+            box-shadow: 0 10px 20px rgba(15, 23, 42, .08), 0 2px 8px rgba(37, 99, 235, .08);
+            transition: transform .16s ease, box-shadow .16s ease;
+        }
+        .home-reservar-page .sc-mini-info:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 24px rgba(15, 23, 42, .11), 0 4px 10px rgba(37, 99, 235, .1);
         }
         .home-reservar-page .sc-mini-kicker {
             display: inline-flex;
@@ -572,6 +579,8 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
+            align-items: center;
+            text-align: center;
             gap: .2rem;
             margin-left: auto;
             min-width: min(300px, 100%);

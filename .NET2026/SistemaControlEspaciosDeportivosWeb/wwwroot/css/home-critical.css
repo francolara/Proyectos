@@ -1,0 +1,60 @@
+/* Firma: Codex - 01/06/2026 | CSS critico Home para reducir bloqueo de render (hero + buscador inicial). */
+html {
+  font-size: 15px;
+}
+
+body {
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  background: linear-gradient(180deg, #ffffff 0%, #f4f7fb 100%);
+  color: #1f2937;
+}
+
+.home-hero {
+  max-width: 1600px;
+  margin: 0 auto 1rem;
+  padding-inline: 12px;
+}
+
+.home-hero-carousel .carousel-inner,
+.home-hero-carousel .carousel-item,
+.home-hero-slide {
+  height: auto;
+  min-height: 0;
+  aspect-ratio: 1920 / 760;
+}
+
+.home-hero-slide {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: #fff;
+  border-radius: 1rem;
+  background-size: cover;
+  background-position: center;
+  padding: 1.45rem 1.4rem;
+}
+
+.home-search-card {
+  border-radius: 1rem;
+}
+
+.home-section-title {
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.home-section-subtitle {
+  color: #475569;
+}
+
+.home-search-form-tight .form-select,
+.home-search-form-tight .form-control {
+  border-radius: 0.62rem;
+}
+
+.home-action-btn,
+.home-head-btn,
+.home-nearby-btn {
+  border-radius: 0.7rem;
+}

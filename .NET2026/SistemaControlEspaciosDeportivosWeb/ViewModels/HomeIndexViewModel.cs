@@ -106,6 +106,15 @@ public class EspacioDisponibleViewModel
     public string? SedeFotoPrincipalUrl { get; set; }
     public List<string> SedeFotos { get; set; } = new();
     public decimal? DistanciaKm { get; set; }
+    public string? NegocioNombreDestacado { get; set; }
+    public string? TelefonoContactoResuelto { get; set; }
+    public string? SedeMapaUrlResuelto { get; set; }
+    public string? EnlaceWhatsappEspacio { get; set; }
+    public List<string> SedeFotosConFallback { get; set; } = new();
+    public int? NegocioIdCotizacion { get; set; }
+    public string? SedeFacebookUrl { get; set; }
+    public string? SedeInstagramUrl { get; set; }
+    public string? SedeTwitterUrl { get; set; }
 }
 
 public class SolicitudReservaPublicaFormViewModel

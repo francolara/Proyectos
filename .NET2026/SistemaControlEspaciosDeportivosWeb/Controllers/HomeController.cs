@@ -857,7 +857,14 @@ public class HomeController(
                 longitudUsuario,
                 radioEfectivo);
         }
-        var espaciosPaginados = espaciosPaginadosResponse.Espacios;
+        var espaciosPaginados = PrepararEspaciosParaVista(
+            espaciosPaginadosResponse.Espacios,
+            sedes,
+            fechaConsulta,
+            horaInicioConsulta,
+            horaFinConsulta,
+            negocioId,
+            "https://pub-3afaea6b0b354821989565fa4b8bd250.r2.dev/sedes/Sededefecto/complejodefault.webp");
         var departamentos = await spService.UbigeoDepartamentosListarAsync();
         var provincias = !string.IsNullOrWhiteSpace(codigoDep) && codigoDep.Length == 2
             ? await spService.UbigeoProvinciasListarAsync(codigoDep)
@@ -935,6 +942,84 @@ public class HomeController(
             .OrderBy(x => x.Key.Nombre)
             .Select(x => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem(x.Key.Nombre, x.Key.Id.ToString()))
             .ToList();
+    }
+
+    private static List<EspacioDisponibleViewModel> PrepararEspaciosParaVista(
+        List<EspacioDisponibleViewModel> espacios,
+        List<SedePublicaViewModel> sedes,
+        DateOnly fecha,
+        TimeOnly horaInicio,
+        TimeOnly horaFin,
+        int? negocioIdSeleccionado,
+        string imagenSedePorDefectoUrl)
+    {
+        foreach (var item in espacios)
+        {
+            var sedeRef = item.SedeId.HasValue
+                ? sedes.FirstOrDefault(x => x.Id == item.SedeId.Value)
+                : null;
+
+            var negocioNombreDestacado = (sedeRef?.NegocioNombre ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(negocioNombreDestacado) && negocioIdSeleccionado.HasValue)
+            {
+                var sedeNegocio = sedes.FirstOrDefault(x => x.NegocioId == negocioIdSeleccionado.Value);
+                negocioNombreDestacado = (sedeNegocio?.NegocioNombre ?? string.Empty).Trim();
+            }
+
+            var telefonoContactoTarjeta = (item.TelefonoContacto ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(telefonoContactoTarjeta))
+            {
+                telefonoContactoTarjeta = (sedeRef?.Telefono ?? string.Empty).Trim();
+            }
+
+            var mapaUrl = item.SedeMapaUrl;
+            if (string.IsNullOrWhiteSpace(mapaUrl))
+            {
+                mapaUrl = sedeRef?.GoogleMapsUrl;
+            }
+            if (string.IsNullOrWhiteSpace(mapaUrl) && sedeRef?.Latitud is decimal lat && sedeRef.Longitud is decimal lng)
+            {
+                mapaUrl = $"https://www.google.com/maps?q={lat.ToString(CultureInfo.InvariantCulture)},{lng.ToString(CultureInfo.InvariantCulture)}";
+            }
+
+            var sedeFotos = new List<string>();
+            if (!string.IsNullOrWhiteSpace(item.SedeFotoPrincipalUrl))
+            {
+                sedeFotos.Add(item.SedeFotoPrincipalUrl);
+            }
+            if (item.SedeFotos is not null && item.SedeFotos.Count > 0)
+            {
+                sedeFotos.AddRange(item.SedeFotos.Where(x => !string.IsNullOrWhiteSpace(x)));
+            }
+            sedeFotos = sedeFotos
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            if (sedeFotos.Count == 0)
+            {
+                sedeFotos.Add(imagenSedePorDefectoUrl);
+            }
+
+            var numeroWhatsappEspacio = string.IsNullOrWhiteSpace(item.WhatsappContacto)
+                ? string.Empty
+                : new string(item.WhatsappContacto.Where(char.IsDigit).ToArray());
+            var mensajeWhatsappEspacio = Uri.EscapeDataString(
+                $"Hola, quiero reservar {item.NombreEspacio} en la sede {item.SedeNombre} para {fecha:dd/MM/yyyy} de {horaInicio:HH\\:mm} a {horaFin:HH\\:mm}.");
+            var enlaceWhatsappEspacio = string.IsNullOrWhiteSpace(numeroWhatsappEspacio)
+                ? string.Empty
+                : $"https://wa.me/{numeroWhatsappEspacio}?text={mensajeWhatsappEspacio}";
+
+            item.NegocioNombreDestacado = negocioNombreDestacado;
+            item.TelefonoContactoResuelto = telefonoContactoTarjeta;
+            item.SedeMapaUrlResuelto = mapaUrl;
+            item.EnlaceWhatsappEspacio = enlaceWhatsappEspacio;
+            item.SedeFotosConFallback = sedeFotos;
+            item.NegocioIdCotizacion = negocioIdSeleccionado ?? sedeRef?.NegocioId;
+            item.SedeFacebookUrl = sedeRef?.FacebookUrl;
+            item.SedeInstagramUrl = sedeRef?.InstagramUrl;
+            item.SedeTwitterUrl = sedeRef?.TwitterUrl;
+        }
+
+        return espacios;
     }
 
     private async Task<PlataformaPortalConfigViewModel> CargarPortalConfigAsync()

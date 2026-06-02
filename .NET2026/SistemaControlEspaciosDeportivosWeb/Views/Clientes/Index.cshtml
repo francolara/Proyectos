@@ -62,7 +62,7 @@
             <input type="hidden" name="negocioId" value="@Model.NegocioId" />
             <input type="hidden" name="pagina" value="1" />
             <div class="row g-2 align-items-end px-3 pb-3">
-                <div class="col-lg-6 col-md-6">
+                <div class="col-lg-5 col-md-5">
                     <label class="form-label">Buscar por nombre, documento, telefono o correo</label>
                     <input type="text" id="filtroClientes" name="buscar" value="@Model.Buscar" class="form-control" placeholder="Ejemplo: BORIS, 12345678, gmail.com..." />
                 </div>
@@ -74,11 +74,11 @@
                         <option value="inactivos" selected="@(Model.EstadoFiltro == "inactivos" ? "selected" : null)">Inactivos</option>
                     </select>
                 </div>
-                <div class="col-lg-3 col-md-3">
+                <div class="col-lg-2 col-md-2">
                     <label class="form-label">Registros visibles</label>
                     <div class="form-control bg-light" id="contadorClientes">@Model.TotalRegistros</div>
                 </div>
-                <div class="col-12 d-flex justify-content-end">
+                <div class="col-lg-2 col-md-2 d-grid">
                     <button type="submit" class="btn btn-outline-primary btn-accion-filtro">
                         <i class="bi bi-search me-1"></i> Buscar
                     </button>
