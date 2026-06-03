@@ -385,7 +385,7 @@
                     </div>
                 }
 
-                <nav class="sc-admin-nav">
+                <nav class="sc-admin-nav" id="scAdminNavAccordion">
                     @{
                         var seccionOperacionAbierta = currentController is "PANEL" or "ONBOARDING" or "MAESTROS" or "SEDES" or "ESPACIOS" or "RESERVAS" or "PAGOS" or "COMPROBANTES";
                         var seccionComercialAbierta = currentController is "CLIENTES" or "PROMOCIONES" or "CUPONES" or "REPORTES";
@@ -397,7 +397,7 @@
                             <span><i class="bi bi-grid-3x3-gap me-1"></i>Operacion</span>
                             <i class="bi bi-chevron-down"></i>
                         </button>
-                        <div class="collapse @(seccionOperacionAbierta ? "show" : null)" id="scNavOperacion">
+                        <div class="collapse @(seccionOperacionAbierta ? "show" : null)" id="scNavOperacion" data-bs-parent="#scAdminNavAccordion">
                             <div class="sc-admin-nav-group-body">
                                 <a class="@menuClass("Panel")" href="@menuUrl("Panel")"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
                                 <a class="@menuClass("Onboarding")" href="@menuUrl("Onboarding")"><i class="bi bi-signpost-split"></i><span>Guia de configuracion</span></a>
@@ -419,7 +419,7 @@
                             <span><i class="bi bi-briefcase me-1"></i>Comercial</span>
                             <i class="bi bi-chevron-down"></i>
                         </button>
-                        <div class="collapse @(seccionComercialAbierta ? "show" : null)" id="scNavComercial">
+                        <div class="collapse @(seccionComercialAbierta ? "show" : null)" id="scNavComercial" data-bs-parent="#scAdminNavAccordion">
                             <div class="sc-admin-nav-group-body">
                                 @if (!bloquearModulosPorSuscripcion)
                                 {
@@ -437,7 +437,7 @@
                             <span><i class="bi bi-gear me-1"></i>Sistema</span>
                             <i class="bi bi-chevron-down"></i>
                         </button>
-                        <div class="collapse @(seccionSistemaAbierta ? "show" : null)" id="scNavSistema">
+                        <div class="collapse @(seccionSistemaAbierta ? "show" : null)" id="scNavSistema" data-bs-parent="#scAdminNavAccordion">
                             <div class="sc-admin-nav-group-body">
                                 @if (!bloquearModulosPorSuscripcion)
                                 {
@@ -606,13 +606,17 @@
                 if (!nav) return;
 
                 const pageKey = `${location.pathname}${location.search}`;
-                const navKey = `sc-admin-nav-scroll:${pageKey}`;
+                const negocioKey = new URLSearchParams(location.search).get('negocioId') || 'global';
+                const navKey = `sc-admin-nav-scroll:${negocioKey}`;
                 const pageScrollKey = `sc-admin-page-scroll:${pageKey}`;
+                const navBodies = Array.from(nav.querySelectorAll('.sc-admin-nav-group-body'));
+                let savedNavScroll = 0;
 
                 try {
-                    const savedNavScroll = sessionStorage.getItem(navKey);
-                    if (savedNavScroll !== null) {
-                        nav.scrollTop = Number(savedNavScroll) || 0;
+                    const savedNavScrollValue = sessionStorage.getItem(navKey);
+                    if (savedNavScrollValue !== null) {
+                        savedNavScroll = Number(savedNavScrollValue) || 0;
+                        nav.scrollTop = savedNavScroll;
                     }
 
                     const savedPageScroll = sessionStorage.getItem(pageScrollKey);
@@ -621,6 +625,44 @@
                     }
                 } catch {
                 }
+
+                const restoreNavScroll = () => {
+                    if (!savedNavScroll) return;
+                    nav.scrollTop = savedNavScroll;
+                };
+
+                const getGroupBodyKey = (body) => {
+                    const sectionId = body.closest('.collapse')?.id || 'default';
+                    return `sc-admin-nav-group-scroll:${negocioKey}:${sectionId}`;
+                };
+
+                const restoreGroupBodyScroll = (body) => {
+                    try {
+                        const savedValue = sessionStorage.getItem(getGroupBodyKey(body));
+                        if (savedValue !== null) {
+                            body.scrollTop = Number(savedValue) || 0;
+                        }
+                    } catch {
+                    }
+                };
+
+                const persistGroupBodyScroll = (body) => {
+                    try {
+                        sessionStorage.setItem(getGroupBodyKey(body), String(body.scrollTop || 0));
+                    } catch {
+                    }
+                };
+
+                requestAnimationFrame(() => {
+                    restoreNavScroll();
+                    navBodies.forEach(restoreGroupBodyScroll);
+                    requestAnimationFrame(restoreNavScroll);
+                    requestAnimationFrame(() => navBodies.forEach(restoreGroupBodyScroll));
+                });
+                window.addEventListener('load', restoreNavScroll, { once: true });
+                window.addEventListener('load', () => navBodies.forEach(restoreGroupBodyScroll), { once: true });
+                setTimeout(restoreNavScroll, 180);
+                setTimeout(() => navBodies.forEach(restoreGroupBodyScroll), 180);
 
                 const persistScrollState = () => {
                     try {
@@ -631,11 +673,26 @@
                 };
 
                 nav.addEventListener('scroll', persistScrollState, { passive: true });
+                navBodies.forEach(body => {
+                    body.addEventListener('scroll', () => persistGroupBodyScroll(body), { passive: true });
+                });
+                nav.querySelectorAll('.collapse').forEach(section => {
+                    section.addEventListener('shown.bs.collapse', () => {
+                        restoreNavScroll();
+                        const body = section.querySelector('.sc-admin-nav-group-body');
+                        if (body) {
+                            restoreGroupBodyScroll(body);
+                        }
+                    });
+                });
                 window.addEventListener('scroll', persistScrollState, { passive: true });
                 window.addEventListener('beforeunload', persistScrollState);
 
                 document.querySelectorAll('.sc-admin-nav a, .sc-admin-homecard').forEach(anchor => {
-                    anchor.addEventListener('click', persistScrollState);
+                    anchor.addEventListener('click', () => {
+                        persistScrollState();
+                        navBodies.forEach(persistGroupBodyScroll);
+                    });
                 });
             })();
         </script>

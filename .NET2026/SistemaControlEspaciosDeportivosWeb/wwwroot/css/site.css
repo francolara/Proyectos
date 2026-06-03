@@ -368,6 +368,29 @@ body {
   padding: 0.3rem;
   display: grid;
   gap: 0.18rem;
+  max-height: min(34vh, 15.5rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(96, 165, 250, 0.75) rgba(255, 255, 255, 0.08);
+}
+
+.sc-admin-nav-group-body::-webkit-scrollbar {
+  width: 0.42rem;
+}
+
+.sc-admin-nav-group-body::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+}
+
+.sc-admin-nav-group-body::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.9) 0%, rgba(34, 197, 94, 0.86) 100%);
+  border-radius: 999px;
+}
+
+.sc-admin-nav-group-body::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(29, 78, 216, 0.96) 0%, rgba(22, 163, 74, 0.92) 100%);
 }
 
 .sc-admin-nav-group-body .sc-admin-navlink {
@@ -3691,16 +3714,16 @@ body {
   align-items: center;
   max-width: 100%;
   padding: 0.22rem 0.5rem;
-  border: 1px solid #b9d5fb;
+  border: 1px solid rgba(79, 171, 127, 0.35);
   border-radius: 0.62rem;
-  background: linear-gradient(180deg, #fbfdff 0%, #edf5ff 100%);
-  color: #0b2d61;
+  background: linear-gradient(135deg, rgba(22, 163, 74, 0.14) 0%, rgba(14, 165, 233, 0.14) 100%);
+  color: #0b2f61;
   font-size: 0.96rem;
   font-weight: 800;
   line-height: 1.2;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.88),
-    0 5px 12px rgba(37, 99, 235, 0.08);
+    0 6px 14px rgba(37, 99, 235, 0.1);
 }
 
 .home-space-card--external .home-item-label {
@@ -3751,22 +3774,82 @@ body {
   align-items: center;
   max-width: 100%;
   padding: 0.24rem 0.56rem;
-  border: 1px solid #9fc5f8;
+  border: 1px solid rgba(59, 130, 246, 0.32);
   border-radius: 0.62rem;
-  background: linear-gradient(180deg, #f8fbff 0%, #eaf3ff 100%);
-  color: #0b2d61;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.18) 0%, rgba(14, 165, 233, 0.18) 100%);
+  color: #07284f;
   font-size: 1.02rem;
   font-weight: 800;
   line-height: 1.2;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.88),
-    0 6px 14px rgba(37, 99, 235, 0.09);
+    0 8px 16px rgba(37, 99, 235, 0.12);
 }
 
 .home-item-sede {
   margin-bottom: 0.1rem;
   font-weight: 700;
   color: #0f172a;
+}
+
+.home-badge-suelo {
+  border-color: #7dd3c7 !important;
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 46%, #dbeafe 100%) !important;
+  color: #0f766e !important;
+  font-weight: 800;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    0 4px 10px rgba(16, 185, 129, 0.12);
+}
+
+.home-badge-deporte {
+  border-color: #93c5fd !important;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important;
+  color: #1d4ed8 !important;
+  font-weight: 800;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 4px 10px rgba(37, 99, 235, 0.1);
+}
+
+.home-badge-cobertura-ok {
+  border-color: #fcd34d !important;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important;
+  color: #b45309 !important;
+  font-weight: 800;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    0 4px 10px rgba(245, 158, 11, 0.11);
+}
+
+.home-badge-cobertura-off {
+  border-color: #fb923c !important;
+  background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%) !important;
+  color: #c2410c !important;
+  font-weight: 800;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.76),
+    0 4px 10px rgba(249, 115, 22, 0.14);
+}
+
+.home-badge-iluminacion-ok {
+  border-color: #c4b5fd !important;
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%) !important;
+  color: #6d28d9 !important;
+  font-weight: 800;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    0 4px 10px rgba(139, 92, 246, 0.1);
+}
+
+.home-badge-iluminacion-off {
+  border-color: #f9a8d4 !important;
+  background: linear-gradient(135deg, #fdf2f8 0%, #fbcfe8 100%) !important;
+  color: #be185d !important;
+  font-weight: 800;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    0 4px 10px rgba(236, 72, 153, 0.12);
 }
 
 .home-sede-head {
@@ -5260,6 +5343,18 @@ body {
   display: block;
   position: relative;
   z-index: 1;
+}
+
+.sc-kpi-item > .kpi-context-icon,
+.sc-reservas-metric > .kpi-context-icon {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  left: auto;
+  bottom: auto;
+  display: inline-flex;
+  margin: 0;
+  z-index: 2;
 }
 
 /* Firma: Codex - 01/06/2026 | Reservas listado general: ocultar burbuja decorativa KPI y compactar altura. */

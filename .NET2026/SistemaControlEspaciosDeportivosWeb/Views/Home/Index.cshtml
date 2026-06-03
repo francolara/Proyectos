@@ -493,15 +493,15 @@
                             </p>
 
                             <div class="d-flex flex-wrap gap-1 mb-2">
-                                <span class="badge text-bg-light border">@item.TipoDeporteNombre</span>
+                                <span class="badge text-bg-light border home-badge-deporte">@item.TipoDeporteNombre</span>
                                 @if (!string.IsNullOrWhiteSpace(item.TipoSueloNombre))
                                 {
-                                    <span class="badge text-bg-light border">@item.TipoSueloNombre</span>
+                                    <span class="badge text-bg-light border home-badge-suelo">@item.TipoSueloNombre</span>
                                 }
                                 @if (item.SedeId.HasValue)
                                 {
-                                    <span class="badge text-bg-light border">@(item.Techada ? "Techada" : "No techada")</span>
-                                    <span class="badge text-bg-light border">@(item.TieneIluminacion ? "Iluminacion" : "Sin iluminacion")</span>
+                                    <span class="badge text-bg-light border @(item.Techada ? "home-badge-cobertura-ok" : "home-badge-cobertura-off")">@(item.Techada ? "Techada" : "No techada")</span>
+                                    <span class="badge text-bg-light border @(item.TieneIluminacion ? "home-badge-iluminacion-ok" : "home-badge-iluminacion-off")">@(item.TieneIluminacion ? "Iluminacion" : "Sin iluminacion")</span>
                                 }
                             </div>
 
