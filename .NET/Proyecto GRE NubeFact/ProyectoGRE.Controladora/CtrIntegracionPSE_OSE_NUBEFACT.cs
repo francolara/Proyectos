@@ -417,18 +417,23 @@ namespace Controladora.IntegracionPSE_OSE_SUNAT
                 _DIC_S_O.Add("cliente_email", "");
                 _DIC_S_O.Add("cliente_email_1", "");
                 _DIC_S_O.Add("cliente_email_2", "");
-                
+
                 _DIC_S_O.Add("fecha_de_emision", _Comprobante.Rows[0]["FecDocEmi"].ToString());
                 _DIC_S_O.Add("observaciones", _Comprobante.Rows[0]["ObsDocVentas"].ToString());
 
-                _DIC_S_O.Add("motivo_de_traslado", _Comprobante.Rows[0]["Motivo_Tras"].ToString()); 
+                _DIC_S_O.Add("motivo_de_traslado", _Comprobante.Rows[0]["Motivo_Tras"].ToString());
                 _DIC_S_O.Add("peso_bruto_total", _Comprobante.Rows[0]["PESOBRUTO"].ToString());
                 _DIC_S_O.Add("peso_bruto_unidad_de_medida", "KGM");
 
                 _DIC_S_O.Add("numero_de_bultos", _Comprobante.Rows[0]["Bultos"].ToString());
                 _DIC_S_O.Add("tipo_de_transporte", _Comprobante.Rows[0]["Tipo_Tras"].ToString());
                 _DIC_S_O.Add("fecha_de_inicio_de_traslado", _Comprobante.Rows[0]["FecIniTraslado"].ToString());
-               
+
+                if (_Comprobante.Rows[0]["Tipo_Tras"].ToString() == "01")
+                {
+                    _DIC_S_O.Add("fecha_de_entrega_al_transportista", _Comprobante.Rows[0]["FecIniTraslado"].ToString());
+                }
+
                 _DIC_S_O.Add("transportista_documento_tipo", _Comprobante.Rows[0]["TIPODOCTRAN"].ToString());
                 _DIC_S_O.Add("transportista_documento_numero", _Comprobante.Rows[0]["DNIRUCTRA"].ToString());
                 _DIC_S_O.Add("transportista_denominacion", _Comprobante.Rows[0]["TRANOM"].ToString());

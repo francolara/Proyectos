@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ServicioSUNAT")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+200f83c0ad26fea3f23e8b892d0b835a43328884")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
 [assembly: System.Reflection.AssemblyProductAttribute("ServicioSUNAT")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ServicioSUNAT")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

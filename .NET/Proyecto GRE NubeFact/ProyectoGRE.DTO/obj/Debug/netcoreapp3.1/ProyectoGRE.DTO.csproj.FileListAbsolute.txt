@@ -60,6 +60,7 @@ D:\Sistema Vb6\Sistema vb6\Sql\Facturacion Electronica\NubeFact\Proyecto GRE Nub
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.DTO\bin\Debug\netcoreapp3.1\ProyectoGRE.DTO.deps.json
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.DTO\bin\Debug\netcoreapp3.1\ProyectoGRE.DTO.dll
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.DTO\bin\Debug\netcoreapp3.1\ProyectoGRE.DTO.pdb
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.DTO\obj\Debug\netcoreapp3.1\ProyectoGRE.DTO.csproj.AssemblyReference.cache
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.DTO\obj\Debug\netcoreapp3.1\ProyectoGRE.DTO.AssemblyInfoInputs.cache
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.DTO\obj\Debug\netcoreapp3.1\ProyectoGRE.DTO.AssemblyInfo.cs
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET\Proyecto GRE NubeFact\ProyectoGRE.DTO\obj\Debug\netcoreapp3.1\ProyectoGRE.DTO.csproj.CoreCompileInputs.cache
