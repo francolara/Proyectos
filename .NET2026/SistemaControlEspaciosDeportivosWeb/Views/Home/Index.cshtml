@@ -448,10 +448,6 @@
                                 {
                                     <span class="badge text-bg-success">Disponible</span>
                                 }
-                                else
-                                {
-                                    <span class="home-ref-cta"><i class="bi bi-geo-alt-fill me-1"></i>Referencia externa</span>
-                                }
                             </div>
                             @if (item.DistanciaKm.HasValue)
                             {
@@ -468,22 +464,6 @@
                                         <span class="home-item-label">Nombre de sede</span>
                                         @item.SedeNombre
                                     </p>
-                                    @if (!string.IsNullOrWhiteSpace(item.SedeMapaUrlResuelto))
-                                    {
-                                        <a class="btn btn-sm auth-nav-mini auth-nav-mini-outline home-map-btn"
-                                           href="@item.SedeMapaUrlResuelto"
-                                           target="_blank"
-                                           rel="noopener noreferrer">Ver en mapa</a>
-                                    }
-                                </div>
-                            }
-                            else if (!string.IsNullOrWhiteSpace(item.SedeMapaUrlResuelto))
-                            {
-                                <div class="d-flex justify-content-end mb-1">
-                                    <a class="btn btn-sm auth-nav-mini auth-nav-mini-outline home-map-btn"
-                                       href="@item.SedeMapaUrlResuelto"
-                                       target="_blank"
-                                       rel="noopener noreferrer">Ver en mapa</a>
                                 </div>
                             }
                             @if (!string.IsNullOrWhiteSpace(item.SedeDireccion))
@@ -578,12 +558,19 @@
                                            asp-route-longitudUsuario="@Model.LongitudUsuario?.ToString(CultureInfo.InvariantCulture)"
                                            asp-route-radioKm="@Model.RadioKm?.ToString(CultureInfo.InvariantCulture)"
                                            asp-route-omitirFechaHorario="@Model.OmitirFechaHorario">
-                                            Reservar ahora
+                                            Reservar
                                         </a>
                                     }
                                     else
                                     {
                                         <span class="home-ref-cta"><i class="bi bi-pin-map-fill me-1"></i>No afiliado</span>
+                                        @if (!string.IsNullOrWhiteSpace(item.SedeMapaUrlResuelto))
+                                        {
+                                            <a class="btn btn-sm auth-nav-mini auth-nav-mini-outline home-map-btn"
+                                               href="@item.SedeMapaUrlResuelto"
+                                               target="_blank"
+                                               rel="noopener noreferrer">Como llegar</a>
+                                        }
                                     }
                                     @if (item.PermiteChatWhatsapp && !string.IsNullOrWhiteSpace(item.EnlaceWhatsappEspacio))
                                     {
@@ -591,8 +578,15 @@
                                            href="@item.EnlaceWhatsappEspacio"
                                            target="_blank"
                                            rel="noopener noreferrer">
-                                            WhatsApp
-                                        </a>
+                                             WhatsApp
+                                         </a>
+                                     }
+                                    @if (item.SedeId.HasValue && !string.IsNullOrWhiteSpace(item.SedeMapaUrlResuelto))
+                                    {
+                                        <a class="btn btn-sm auth-nav-mini auth-nav-mini-outline home-map-btn"
+                                           href="@item.SedeMapaUrlResuelto"
+                                           target="_blank"
+                                           rel="noopener noreferrer">Como llegar</a>
                                     }
                                 </div>
                                 <div class="home-sede-social">
