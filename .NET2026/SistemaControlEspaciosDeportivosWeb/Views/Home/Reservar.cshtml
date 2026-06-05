@@ -40,6 +40,10 @@
         ? string.Empty
         : $"https://wa.me/{numeroWhatsappSede}?text={mensajeWhatsappSede}";
     var cotizacionTieneDescuento = (Model.Cotizacion?.DescuentoPct ?? 0m) > 0m;
+    var deporteNombre = (Model.Espacio.TipoDeporteNombre ?? string.Empty).Trim();
+    var sueloNombre = (Model.Espacio.TipoSueloNombre ?? string.Empty).Trim();
+    var coberturaEspacio = Model.Espacio.Techada ? "Techada" : "No techada";
+    var iluminacionEspacio = Model.Espacio.TieneIluminacion ? "Iluminacion" : "Sin iluminacion";
 }
 <div class="container py-4 home-reservar-page">
     <section class="sc-public-reserva-hero mb-3">
@@ -61,21 +65,33 @@
         <div class="card-body">
             <div class="row g-2 align-items-stretch">
                 <div class="col-lg-3 col-md-6">
-                    <div class="sc-mini-info">
+                    <div class="sc-mini-info sc-mini-info-espacio">
                         <span class="sc-mini-kicker"><i class="bi bi-grid-3x3-gap"></i> Nombre del espacio</span>
-                        <strong>@Model.Espacio.NombreEspacio</strong>
+                        <span class="home-item-title sc-public-space-name">@Model.Espacio.NombreEspacio</span>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
-                    <div class="sc-mini-info">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="sc-mini-kicker mb-0"><i class="bi bi-geo-alt"></i> Nombre de sede</span>
-                            @if (!string.IsNullOrWhiteSpace(mapaUrl))
+                    <div class="sc-mini-info sc-mini-info-espacio">
+                        <span class="sc-mini-kicker"><i class="bi bi-stars"></i> Atributos del espacio</span>
+                        <div class="d-flex flex-wrap gap-1 mt-1 sc-public-space-badges">
+                            @if (!string.IsNullOrWhiteSpace(deporteNombre))
                             {
-                                <a class="btn btn-outline-primary btn-sm ms-auto btn-public-accion" href="@mapaUrl" target="_blank" rel="noopener noreferrer">Ver en mapa</a>
+                                <span class="badge text-bg-light border home-badge-deporte">@deporteNombre</span>
                             }
+                            @if (!string.IsNullOrWhiteSpace(sueloNombre))
+                            {
+                                <span class="badge text-bg-light border home-badge-suelo">@sueloNombre</span>
+                            }
+                            <span class="badge text-bg-light border @(Model.Espacio.Techada ? "home-badge-cobertura-ok" : "home-badge-cobertura-off")">@coberturaEspacio</span>
+                            <span class="badge text-bg-light border @(Model.Espacio.TieneIluminacion ? "home-badge-iluminacion-ok" : "home-badge-iluminacion-off")">@iluminacionEspacio</span>
                         </div>
-                        <strong>@Model.Espacio.SedeNombre</strong>
+                        @if (!string.IsNullOrWhiteSpace(mapaUrl))
+                        {
+                            <a class="btn btn-sm auth-nav-mini auth-nav-mini-outline home-map-btn sc-public-space-map-btn"
+                               href="@mapaUrl"
+                               target="_blank"
+                               rel="noopener noreferrer">Como llegar</a>
+                        }
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
@@ -482,6 +498,10 @@
             box-shadow: 0 10px 20px rgba(15, 23, 42, .08), 0 2px 8px rgba(37, 99, 235, .08);
             transition: transform .16s ease, box-shadow .16s ease;
         }
+        .home-reservar-page .sc-mini-info-espacio {
+            justify-content: flex-start;
+            gap: .35rem;
+        }
         .home-reservar-page .sc-mini-info:hover {
             transform: translateY(-1px);
             box-shadow: 0 14px 24px rgba(15, 23, 42, .11), 0 4px 10px rgba(37, 99, 235, .1);
@@ -497,6 +517,18 @@
             font-weight: 700;
         }
         .home-reservar-page .sc-mini-info strong { font-size: .98rem; color: #0b1f46; }
+        .home-reservar-page .sc-public-space-name {
+            width: fit-content;
+            max-width: 100%;
+        }
+        .home-reservar-page .sc-public-space-badges .badge {
+            font-size: .71rem;
+            line-height: 1.15;
+        }
+        .home-reservar-page .sc-public-space-map-btn {
+            margin-top: auto;
+            align-self: flex-start;
+        }
         .home-reservar-page .sc-contact-actions {
             display: flex;
             align-items: center;

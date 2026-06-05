@@ -143,8 +143,34 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         (() => {
+            const loginForm = document.getElementById('account');
+            const loginSubmit = document.getElementById('login-submit');
             const passwordInput = document.getElementById('loginPassword');
             const toggleButton = document.getElementById('toggleLoginPassword');
+
+            let isSubmitting = false;
+
+            if (loginForm) {
+                loginForm.addEventListener('submit', (event) => {
+                    if (isSubmitting) {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    isSubmitting = true;
+
+                    const submitButtons = loginForm.querySelectorAll('button[type="submit"]');
+                    submitButtons.forEach((button) => {
+                        button.disabled = true;
+                        button.setAttribute('aria-disabled', 'true');
+                    });
+
+                    if (loginSubmit) {
+                        loginSubmit.textContent = 'Ingresando...';
+                    }
+                });
+            }
+
             if (!passwordInput || !toggleButton) return;
 
             toggleButton.addEventListener('click', () => {

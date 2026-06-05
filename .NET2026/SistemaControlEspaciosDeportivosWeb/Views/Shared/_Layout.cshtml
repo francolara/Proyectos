@@ -609,8 +609,50 @@
                 const negocioKey = new URLSearchParams(location.search).get('negocioId') || 'global';
                 const navKey = `sc-admin-nav-scroll:${negocioKey}`;
                 const pageScrollKey = `sc-admin-page-scroll:${pageKey}`;
+                const mobileModuleAnchorKey = `sc-admin-mobile-module-anchor:${negocioKey}`;
                 const navBodies = Array.from(nav.querySelectorAll('.sc-admin-nav-group-body'));
+                const adminMain = document.querySelector('.sc-admin-main');
+                const mainContent = adminMain?.querySelector('main[role="main"]') ?? null;
                 let savedNavScroll = 0;
+
+                const isMobileAdminViewport = () => window.matchMedia('(max-width: 991.98px)').matches;
+
+                const markMobileModuleRestoreNeeded = () => {
+                    if (!isMobileAdminViewport()) return;
+                    try {
+                        sessionStorage.setItem(mobileModuleAnchorKey, '1');
+                    } catch {
+                    }
+                };
+
+                const resolveMobileModuleAnchor = () => {
+                    const scope = mainContent ?? adminMain ?? document.querySelector('main[role="main"]');
+                    if (!scope) return null;
+                    return scope.querySelector('.sc-page-title-wrap, .sc-dash-shell, .page-header, .page-header-card, .admin-page-frame') ?? scope;
+                };
+
+                const restoreMobileModuleAnchor = () => {
+                    if (!isMobileAdminViewport()) return;
+                    let shouldRestore = false;
+                    try {
+                        shouldRestore = sessionStorage.getItem(mobileModuleAnchorKey) === '1';
+                    } catch {
+                        shouldRestore = false;
+                    }
+                    if (!shouldRestore) return;
+
+                    const target = resolveMobileModuleAnchor();
+                    if (!target) return;
+
+                    target.scrollIntoView({ behavior: 'auto', block: 'start' });
+                    setTimeout(() => target.scrollIntoView({ behavior: 'auto', block: 'start' }), 140);
+                    setTimeout(() => target.scrollIntoView({ behavior: 'auto', block: 'start' }), 360);
+
+                    try {
+                        sessionStorage.removeItem(mobileModuleAnchorKey);
+                    } catch {
+                    }
+                };
 
                 try {
                     const savedNavScrollValue = sessionStorage.getItem(navKey);
@@ -658,11 +700,14 @@
                     navBodies.forEach(restoreGroupBodyScroll);
                     requestAnimationFrame(restoreNavScroll);
                     requestAnimationFrame(() => navBodies.forEach(restoreGroupBodyScroll));
+                    requestAnimationFrame(restoreMobileModuleAnchor);
                 });
                 window.addEventListener('load', restoreNavScroll, { once: true });
                 window.addEventListener('load', () => navBodies.forEach(restoreGroupBodyScroll), { once: true });
+                window.addEventListener('load', restoreMobileModuleAnchor, { once: true });
                 setTimeout(restoreNavScroll, 180);
                 setTimeout(() => navBodies.forEach(restoreGroupBodyScroll), 180);
+                setTimeout(restoreMobileModuleAnchor, 180);
 
                 const persistScrollState = () => {
                     try {
@@ -683,6 +728,7 @@
                         if (body) {
                             restoreGroupBodyScroll(body);
                         }
+                        restoreMobileModuleAnchor();
                     });
                 });
                 window.addEventListener('scroll', persistScrollState, { passive: true });
@@ -690,10 +736,43 @@
 
                 document.querySelectorAll('.sc-admin-nav a, .sc-admin-homecard').forEach(anchor => {
                     anchor.addEventListener('click', () => {
+                        markMobileModuleRestoreNeeded();
                         persistScrollState();
                         navBodies.forEach(persistGroupBodyScroll);
                     });
                 });
+
+                if (adminMain) {
+                    adminMain.querySelectorAll('form').forEach(form => {
+                        const method = (form.getAttribute('method') || 'get').toLowerCase();
+                        if (method !== 'get') return;
+
+                        form.addEventListener('submit', () => {
+                            markMobileModuleRestoreNeeded();
+                        });
+
+                        form.querySelectorAll('select, input, button').forEach(control => {
+                            control.addEventListener('change', () => {
+                                markMobileModuleRestoreNeeded();
+                            });
+                        });
+                    });
+
+                    adminMain.querySelectorAll('a[href]').forEach(anchor => {
+                        anchor.addEventListener('click', () => {
+                            const href = anchor.getAttribute('href');
+                            if (!href || href.startsWith('#')) return;
+
+                            try {
+                                const targetUrl = new URL(href, location.href);
+                                if (targetUrl.origin === location.origin) {
+                                    markMobileModuleRestoreNeeded();
+                                }
+                            } catch {
+                            }
+                        });
+                    });
+                }
             })();
         </script>
     }
