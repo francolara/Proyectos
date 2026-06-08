@@ -466,15 +466,27 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
                         SedeMapaUrl = dr.FieldCount > 21
                             ? (dr.IsDBNull(19) ? null : dr.GetString(19))
                             : (dr.FieldCount > 20 && !dr.IsDBNull(18) ? dr.GetString(18) : null),
-                        SedeFotoPrincipalUrl = dr.FieldCount > 21
+                        EspacioFotoPrincipalUrl = dr.FieldCount > 23
                             ? (dr.IsDBNull(20) ? null : dr.GetString(20))
-                            : (dr.FieldCount > 20
-                                ? (dr.IsDBNull(19) ? null : dr.GetString(19))
-                                : (dr.FieldCount > 18 && !dr.IsDBNull(18) ? dr.GetString(18) : null)),
-                        SedeFotos = dr.FieldCount > 21
+                            : null,
+                        EspacioFotos = dr.FieldCount > 23
                             ? (dr.IsDBNull(21)
                                 ? new List<string>()
                                 : dr.GetString(21)
+                                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                                    .ToList())
+                            : new List<string>(),
+                        SedeFotoPrincipalUrl = dr.FieldCount > 23
+                            ? (dr.IsDBNull(22) ? null : dr.GetString(22))
+                            : (dr.FieldCount > 20
+                                ? (dr.IsDBNull(19) ? null : dr.GetString(19))
+                                : (dr.FieldCount > 18 && !dr.IsDBNull(18) ? dr.GetString(18) : null)),
+                        SedeFotos = dr.FieldCount > 23
+                            ? (dr.IsDBNull(23)
+                                ? new List<string>()
+                                : dr.GetString(23)
                                     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                                     .Where(x => !string.IsNullOrWhiteSpace(x))
                                     .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -486,7 +498,7 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
                                     .Distinct(StringComparer.OrdinalIgnoreCase)
                                     .ToList()
                                 : new List<string>()),
-                        DistanciaKm = dr.FieldCount > 22 && !dr.IsDBNull(22) ? dr.GetDecimal(22) : null
+                        DistanciaKm = dr.FieldCount > 24 && !dr.IsDBNull(24) ? dr.GetDecimal(24) : null
                     });
                 }
             }
@@ -581,15 +593,27 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
                     SedeMapaUrl = dr.FieldCount > 21
                         ? (dr.IsDBNull(19) ? null : dr.GetString(19))
                         : (dr.FieldCount > 20 && !dr.IsDBNull(18) ? dr.GetString(18) : null),
-                    SedeFotoPrincipalUrl = dr.FieldCount > 21
+                    EspacioFotoPrincipalUrl = dr.FieldCount > 23
                         ? (dr.IsDBNull(20) ? null : dr.GetString(20))
-                        : (dr.FieldCount > 20
-                            ? (dr.IsDBNull(19) ? null : dr.GetString(19))
-                            : (dr.FieldCount > 18 && !dr.IsDBNull(18) ? dr.GetString(18) : null)),
-                    SedeFotos = dr.FieldCount > 21
+                        : null,
+                    EspacioFotos = dr.FieldCount > 23
                         ? (dr.IsDBNull(21)
                             ? new List<string>()
                             : dr.GetString(21)
+                                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                                .Where(x => !string.IsNullOrWhiteSpace(x))
+                                .Distinct(StringComparer.OrdinalIgnoreCase)
+                                .ToList())
+                        : new List<string>(),
+                    SedeFotoPrincipalUrl = dr.FieldCount > 23
+                        ? (dr.IsDBNull(22) ? null : dr.GetString(22))
+                        : (dr.FieldCount > 20
+                            ? (dr.IsDBNull(19) ? null : dr.GetString(19))
+                            : (dr.FieldCount > 18 && !dr.IsDBNull(18) ? dr.GetString(18) : null)),
+                    SedeFotos = dr.FieldCount > 23
+                        ? (dr.IsDBNull(23)
+                            ? new List<string>()
+                            : dr.GetString(23)
                                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                                 .Where(x => !string.IsNullOrWhiteSpace(x))
                                 .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -601,7 +625,7 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
                                 .Distinct(StringComparer.OrdinalIgnoreCase)
                                 .ToList()
                             : new List<string>()),
-                    DistanciaKm = dr.FieldCount > 22 && !dr.IsDBNull(22) ? dr.GetDecimal(22) : null
+                    DistanciaKm = dr.FieldCount > 24 && !dr.IsDBNull(24) ? dr.GetDecimal(24) : null
                 });
             }
             else

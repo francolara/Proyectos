@@ -2,6 +2,7 @@
 /* Firma: Codex - 05/04/2026 | Pendiente de confirmar por dia: se alinea paleta visual al estado Pendiente (mensaje y tarjetas). */
 /* Firma: Codex - 07/04/2026 | Pop-up de reservas: campos monetarios alineados a la derecha y sin spinner en total/adelanto; estado No Asistio con color distintivo en listado. */
 /* Firma: Codex - 08/04/2026 | Listado general de reservas: mini tarjetas con icono para cliente/equipo/sede/espacio/fecha/horario/precio/saldo y centrado de horario/montos, mas cabeceras de columnas con icono superior destacado y etiqueta inferior pequena. */
+/* Firma: FRANCO LARA - 06/06/2026 | Calendario diferencia reservas propias de bloqueos por espacios compartidos con una tarjeta azul dedicada. */
 
 .sc-monto-input {
   text-align: right;
@@ -846,6 +847,13 @@
   border-color: #ddd6fe !important;
   border-left-color: #8b5cf6 !important;
   color: #5b21b6 !important;
+}
+
+#calendarioReservas .sc-fc-event.is-compartida {
+  background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%) !important;
+  border-color: #bfdbfe !important;
+  border-left-color: #2563eb !important;
+  color: #1e3a8a !important;
 }
 
 #calendarioReservas .fc-bg-event.sc-reserva-slot-bg {

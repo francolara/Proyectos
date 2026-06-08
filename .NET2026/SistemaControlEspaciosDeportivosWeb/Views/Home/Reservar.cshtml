@@ -173,6 +173,7 @@
                     <span class="sc-legend-chip is-disponible"><i></i>Disponible</span>
                     <span class="sc-legend-chip is-reservada"><i></i>Reservada</span>
                     <span class="sc-legend-chip is-confirmada"><i></i>Confirmada</span>
+                    <span class="sc-legend-chip is-bloqueada"><i></i>Bloqueada</span>
                 </div>
             </div>
             <p class="text-muted small mb-2">Selecciona un bloque disponible o ajusta fecha y horario desde el formulario.</p>
@@ -186,6 +187,7 @@
         <div class="card-body">
 @* Firma: FRANCO LARA - 03/05/2026 | Reserva publica restringida a bloques exactos de 1 hora con aviso visible y validacion cliente. *@
 @* Firma: FRANCO LARA - 20/05/2026 | Se permite el cierre especial 23:00-23:59 desde calendario publico sin bloquear por validacion de 60 minutos y se evita mensaje rojo de 30/60 para ese caso. *@
+@* Firma: FRANCO LARA - 08/06/2026 | El calendario publico muestra los horarios bloqueados por reservas en espacios compartidos con la misma presentacion visual de bloqueos operativos. *@
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                 <h2 class="h6 mb-0 sc-public-section-title"><i class="bi bi-pencil-square me-1"></i>Datos para registrar la reserva</h2>
                 <span class="badge text-bg-info"><i class="bi bi-clock-history me-1"></i>Solo reservas de 1 hora</span>
@@ -686,6 +688,15 @@
         .home-reservar-page .sc-legend-chip.is-confirmada i {
             background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);
             box-shadow: 0 0 0 1px rgba(30, 64, 175, .22);
+        }
+        .home-reservar-page .sc-legend-chip.is-bloqueada {
+            background: linear-gradient(135deg, rgba(51, 65, 85, .14) 0%, rgba(148, 163, 184, .2) 100%);
+            border-color: rgba(51, 65, 85, .32);
+            color: #334155;
+        }
+        .home-reservar-page .sc-legend-chip.is-bloqueada i {
+            background: repeating-linear-gradient(-45deg, #334155, #334155 3px, #94a3b8 3px, #94a3b8 6px);
+            box-shadow: 0 0 0 1px rgba(51, 65, 85, .18);
         }
         .home-reservar-page .sc-price-box {
             border: 1px solid #93c5fd;
@@ -1284,7 +1295,7 @@
                 eventClick: () => alert('Ese bloque ya esta ocupado. Selecciona una franja disponible.'),
                 eventDidMount: function(info) {
                     const tipo = String(info.event.extendedProps?.tipo || '').toUpperCase();
-                    if (tipo !== 'BLOQUEO' && tipo !== 'NO_ATENCION') return;
+                    if (tipo !== 'BLOQUEO' && tipo !== 'NO_ATENCION' && tipo !== 'RESERVA_COMPARTIDA') return;
                     info.el.innerHTML = '';
                     const texto = String(info.event.extendedProps?.motivo || info.event.title || '').trim();
                     if (texto) {

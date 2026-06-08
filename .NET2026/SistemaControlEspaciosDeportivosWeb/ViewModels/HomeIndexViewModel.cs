@@ -103,6 +103,8 @@ public class EspacioDisponibleViewModel
     public string? WhatsappContacto { get; set; }
     public bool PermiteChatWhatsapp { get; set; }
     public string? SedeMapaUrl { get; set; }
+    public string? EspacioFotoPrincipalUrl { get; set; }
+    public List<string> EspacioFotos { get; set; } = new();
     public string? SedeFotoPrincipalUrl { get; set; }
     public List<string> SedeFotos { get; set; } = new();
     public decimal? DistanciaKm { get; set; }
@@ -110,6 +112,7 @@ public class EspacioDisponibleViewModel
     public string? TelefonoContactoResuelto { get; set; }
     public string? SedeMapaUrlResuelto { get; set; }
     public string? EnlaceWhatsappEspacio { get; set; }
+    public List<string> FotosTarjetaConFallback { get; set; } = new();
     public List<string> SedeFotosConFallback { get; set; } = new();
     public int? NegocioIdCotizacion { get; set; }
     public string? SedeFacebookUrl { get; set; }

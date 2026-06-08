@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿
 GO
 /****** Object:  StoredProcedure [dbo].[Sp_Espacios_Listar]    Script Date: 3/04/2026 23:18:34 ******/
 SET ANSI_NULLS ON
@@ -9,6 +9,8 @@ GO
 -- SOURCE: 32_Usuarios_Sede_Restriccion_Filtros.sql (linea 123)
 -- Firma: Codex - 13/04/2026 | Resumen de tarifas en listado de espacios agrupado por dia con rango de precios (min-max), sin detalle por franja horaria; salida incluye TieneIluminacion y Techada para badges en la UI.
 -- Firma: Codex - 18/04/2026 | Incluye bandera AdministracionPrivada para identificar espacios ocultos del portal publico.
+-- Firma: FRANCO LARA - 06/06/2026 | Incluye indicador y cantidad de espacios compartidos activos en el listado de espacios.
+-- Firma: FRANCO LARA - 08/06/2026 | Cuenta relaciones operativas directas y de composicion sin depender solo de pares bidireccionales.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Espacios_Listar]
     @NegocioId INT,
     @SedeId INT = NULL
@@ -91,7 +93,41 @@ BEGIN
                 ),
                 N'Sin tarifa configurada'
             ) AS TarifaResumen,
-            COALESCE(e.AdministracionPrivada, 0) AS AdministracionPrivada
+            COALESCE(e.AdministracionPrivada, 0) AS AdministracionPrivada,
+            CAST(
+                CASE
+                    WHEN EXISTS
+                    (
+                        SELECT 1
+                        FROM dbo.EspaciosDeportivosCompartidos ec
+                        WHERE ec.Activo = 1
+                          AND
+                          (
+                              ec.EspacioDeportivoId = e.Id
+                              OR (ec.TipoRelacion = N'COMPUESTO_COMPONENTE' AND ec.EspacioRelacionadoId = e.Id)
+                          )
+                    ) THEN 1 ELSE 0
+                END
+                AS BIT
+            ) AS TieneEspaciosCompartidos,
+            (
+                SELECT COUNT(DISTINCT RelacionadoId)
+                FROM
+                (
+                    SELECT ec.EspacioRelacionadoId AS RelacionadoId
+                    FROM dbo.EspaciosDeportivosCompartidos ec
+                    WHERE ec.EspacioDeportivoId = e.Id
+                      AND ec.Activo = 1
+
+                    UNION ALL
+
+                    SELECT ec.EspacioDeportivoId AS RelacionadoId
+                    FROM dbo.EspaciosDeportivosCompartidos ec
+                    WHERE ec.TipoRelacion = N'COMPUESTO_COMPONENTE'
+                      AND ec.EspacioRelacionadoId = e.Id
+                      AND ec.Activo = 1
+                ) relaciones
+            ) AS TotalEspaciosCompartidos
         FROM dbo.EspaciosDeportivos e
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
         INNER JOIN dbo.TiposDeporte td ON td.Id = e.TipoDeporteId
@@ -108,7 +144,5 @@ BEGIN
 END
 
 GO
-
-
 
 

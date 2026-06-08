@@ -180,6 +180,9 @@ public class EspacioFormViewModel
     public bool TieneIluminacion { get; set; }
     public bool Techada { get; set; }
     public bool AdministracionPrivada { get; set; }
+    public bool TieneEspaciosCompartidos { get; set; }
+    public List<int> EspaciosBloqueoDirectoIds { get; set; } = new();
+    public List<int> EspaciosComponentesIds { get; set; } = new();
     public bool ConfigurarHorarioPorEspacio { get; set; }
     public bool AtiendeLunes { get; set; } = true;
     public bool AtiendeMartes { get; set; } = true;
@@ -195,6 +198,13 @@ public class EspacioFormViewModel
     public List<EspacioTarifaRangoViewModel> Tarifas { get; set; } = new();
     public string? TarifasFeriadoJson { get; set; }
     public List<EspacioTarifaFeriadoRangoViewModel> TarifasFeriado { get; set; } = new();
+    [StringLength(500, ErrorMessage = "El campo {0} excede la longitud permitida.")]
+    [Url(ErrorMessage = "Ingresa una URL valida.")]
+    public string? FotoPrincipalUrl { get; set; }
+    public string? FotosUrlsCsv { get; set; }
+    public List<string> FotosUrls { get; set; } = new();
+    public List<string> FotosEliminarUrls { get; set; } = new();
+    public List<IFormFile>? ImagenesArchivos { get; set; }
     public int? MonedaIdConfigurada { get; set; }
     public string MonedaEtiqueta { get; set; } = string.Empty;
     public bool PuedeEditarTarifas { get; set; }
@@ -202,6 +212,7 @@ public class EspacioFormViewModel
     public List<SelectListItem> Sedes { get; set; } = new();
     public List<SelectListItem> TiposDeporte { get; set; } = new();
     public List<SelectListItem> TiposSuelo { get; set; } = new();
+    public List<SelectListItem> EspaciosCompartibles { get; set; } = new();
     public List<SelectListItem> TarifaDiasSemana { get; set; } = new();
 }
 

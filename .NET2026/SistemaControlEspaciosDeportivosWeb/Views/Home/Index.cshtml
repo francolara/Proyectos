@@ -387,30 +387,30 @@
             {
                 var carouselId = $"sedeFotos-{item.EspacioDeportivoId}";
                 var detalleId = $"detalle-{item.EspacioDeportivoId}";
-                var sedeFotos = item.SedeFotosConFallback ?? new List<string>();
+                var fotosTarjeta = item.FotosTarjetaConFallback ?? item.SedeFotosConFallback ?? new List<string>();
 
                 <div class="col-md-6 col-xl-4">
                     <article class="card h-100 border-0 shadow-sm home-space-card @(item.SedeId.HasValue ? null : "home-space-card--external")">
                         <div class="card-body d-flex flex-column">
-                            @if (sedeFotos.Count == 1)
+                            @if (fotosTarjeta.Count == 1)
                             {
                                 <div class="home-space-media mb-3">
                                     <img src="@(SistemaControlEspaciosDeportivosWeb.Services.SedeImagenUrlHelper.NormalizarUrlPublica(
-                                        sedeFotos[0],
+                                        fotosTarjeta[0],
                                         SedeImagenStorageOptions.Value.PublicBaseUrl,
-                                        SedeImagenStorageOptions.Value.BucketName) ?? sedeFotos[0])"
+                                        SedeImagenStorageOptions.Value.BucketName) ?? fotosTarjeta[0])"
                                          alt="Foto de @item.SedeNombre"
                                          class="home-space-media-img" />
                                 </div>
                             }
-                            else if (sedeFotos.Count > 1)
+                            else if (fotosTarjeta.Count > 1)
                             {
                                 <div class="home-space-media mb-3">
                                     <div id="@carouselId" class="carousel slide" data-bs-ride="carousel" data-bs-interval="3500">
                                         <div class="carousel-inner">
-                                            @for (var fotoIdx = 0; fotoIdx < sedeFotos.Count; fotoIdx++)
+                                            @for (var fotoIdx = 0; fotoIdx < fotosTarjeta.Count; fotoIdx++)
                                             {
-                                                var foto = sedeFotos[fotoIdx];
+                                                var foto = fotosTarjeta[fotoIdx];
                                                 <div class="carousel-item @(fotoIdx == 0 ? "active" : null)">
                                                     <img src="@(SistemaControlEspaciosDeportivosWeb.Services.SedeImagenUrlHelper.NormalizarUrlPublica(
                                                         foto,

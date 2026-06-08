@@ -1670,6 +1670,30 @@ body {
   background: #eff6ff;
 }
 
+.sc-check-list {
+  padding: 0.35rem !important;
+}
+
+.sc-check-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  width: 100%;
+  margin: 0 0 0.2rem;
+  padding: 0.45rem 0.65rem 0.45rem 0.85rem;
+  border-radius: 0.65rem;
+  cursor: pointer;
+}
+
+.sc-check-list-item:hover {
+  background: #f8fbff;
+}
+
+.sc-check-list-item .form-check-input {
+  flex: 0 0 auto;
+  margin-top: 0.15rem !important;
+}
+
 .sc-form-shell .form-control,
 .sc-form-shell .form-select {
   border-color: #cdd9ea;

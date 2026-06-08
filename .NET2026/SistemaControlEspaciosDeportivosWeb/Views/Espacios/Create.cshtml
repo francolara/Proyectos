@@ -11,8 +11,19 @@
         .Where(h => h >= new TimeOnly(0, 30))
         .ToList();
     horasCierre.Add(new TimeOnly(23, 59));
+    var galeriaEspacio = new List<string>();
+    if (!string.IsNullOrWhiteSpace(Model.FotoPrincipalUrl))
+    {
+        galeriaEspacio.Add(Model.FotoPrincipalUrl);
+    }
+    if (Model.FotosUrls?.Count > 0)
+    {
+        galeriaEspacio.AddRange(Model.FotosUrls.Where(x => !string.IsNullOrWhiteSpace(x)));
+    }
 }
 @* Firma: FRANCO LARA - 20/05/2026 | En tarifas de espacios muestra 24:00 en hora fin y guarda internamente 23:59 para cierre de jornada. *@
+@* Firma: FRANCO LARA - 06/06/2026 | Agrega configuracion visual de espacios compartidos con carga dinamica por sede. *@
+@* Firma: FRANCO LARA - 08/06/2026 | Reemplaza la seleccion multiple por checkboxes, separa relaciones operativas entre bloqueo directo y espacios compuestos, y agrega galeria de fotos para espacios deportivos. *@
 
 <div class="admin-page-frame">
     <section class="page-header">
@@ -27,7 +38,7 @@
         </div>
     </section>
 
-    <form asp-action="Create" method="post" class="sc-form-shell">
+    <form asp-action="Create" method="post" enctype="multipart/form-data" class="sc-form-shell">
         <input type="hidden" asp-for="NegocioId" />
         <div asp-validation-summary="ModelOnly" class="alert alert-danger shadow-sm mb-0"></div>
 
@@ -80,6 +91,48 @@
                             <input asp-for="AdministracionPrivada" class="form-check-input mt-0" />
                             <span>Administracion privada (no mostrar en portal publico)</span>
                         </label>
+                    </div>
+                    <div class="col-12">
+                        <label class="sc-check-chip">
+                            <input asp-for="TieneEspaciosCompartidos" class="form-check-input mt-0" id="TieneEspaciosCompartidos" />
+                            <span>Configurar relaciones operativas de este espacio</span>
+                        </label>
+                    </div>
+                    <div class="col-12 d-none" id="bloqueEspaciosCompartidos">
+                        <div class="row g-3">
+                            <div class="col-lg-6">
+                                <label asp-for="EspaciosBloqueoDirectoIds" class="form-label">Bloqueo directo</label>
+                                <div id="EspaciosBloqueoDirectoIds" class="border rounded-3 bg-white p-2 sc-check-list" style="max-height: 220px; overflow-y: auto;">
+                                    @foreach (var espacio in Model.EspaciosCompartibles)
+                                    {
+                                        var espacioId = int.TryParse(espacio.Value, out var idRelacionado) ? idRelacionado : 0;
+                                        var checkedRelacionado = Model.EspaciosBloqueoDirectoIds.Contains(espacioId);
+                                        <label class="sc-check-list-item">
+                                            <input class="form-check-input m-0" type="checkbox" name="EspaciosBloqueoDirectoIds" value="@espacio.Value" @(checkedRelacionado ? "checked" : null) />
+                                            <span class="small">@espacio.Text</span>
+                                        </label>
+                                    }
+                                </div>
+                                <span asp-validation-for="EspaciosBloqueoDirectoIds" class="text-danger"></span>
+                                <div class="form-text">Si uno se reserva o bloquea, el otro tambien queda bloqueado. Ejemplo: voley sobre una cancha de futbol 6.</div>
+                            </div>
+                            <div class="col-lg-6">
+                                <label asp-for="EspaciosComponentesIds" class="form-label">Este espacio se compone de</label>
+                                <div id="EspaciosComponentesIds" class="border rounded-3 bg-white p-2 sc-check-list" style="max-height: 220px; overflow-y: auto;">
+                                    @foreach (var espacio in Model.EspaciosCompartibles)
+                                    {
+                                        var espacioId = int.TryParse(espacio.Value, out var idRelacionado) ? idRelacionado : 0;
+                                        var checkedRelacionado = Model.EspaciosComponentesIds.Contains(espacioId);
+                                        <label class="sc-check-list-item">
+                                            <input class="form-check-input m-0" type="checkbox" name="EspaciosComponentesIds" value="@espacio.Value" @(checkedRelacionado ? "checked" : null) />
+                                            <span class="small">@espacio.Text</span>
+                                        </label>
+                                    }
+                                </div>
+                                <span asp-validation-for="EspaciosComponentesIds" class="text-danger"></span>
+                                <div class="form-text">Usalo cuando este espacio grande se arma con otros espacios. Ejemplo: Futbol 11 compuesto por dos canchas de futbol 6.</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -311,6 +364,76 @@
             </div>
         </section>
 
+        <section class="sc-form-card">
+            <div class="sc-form-section">
+                <h2 class="sc-form-title"><i class="bi bi-images"></i> Fotos del espacio deportivo</h2>
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label asp-for="ImagenesArchivos" class="form-label">Subir imagenes (maximo 3, de 1 en 1)</label>
+                        <input asp-for="ImagenesArchivos" id="imagenesArchivosInput" type="file" class="form-control" multiple accept=".jpg,.jpeg,.png,image/jpeg,image/png" />
+                        <span asp-validation-for="ImagenesArchivos" class="text-danger"></span>
+                        <div class="form-text">
+                            Se cargaran en Cloudflare R2. La primera imagen quedara como principal.
+                            Formato de entrada permitido: JPG/JPEG/PNG.
+                            Salida automatica estandar: WebP, 1200x900 (4:3), maximo 400KB.
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Resumen actual</label>
+                        <div class="border rounded-3 p-2 bg-light-subtle small text-secondary">
+                            <div><strong>Principal:</strong> @(string.IsNullOrWhiteSpace(Model.FotoPrincipalUrl) ? "Sin definir" : "Disponible")</div>
+                            <div><strong>Alternativas:</strong> @(Model.FotosUrls?.Count ?? 0)</div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <input asp-for="FotoPrincipalUrl" type="hidden" />
+                        <input asp-for="FotosUrlsCsv" type="hidden" />
+                        <span asp-validation-for="FotoPrincipalUrl" class="text-danger d-block"></span>
+                        <span asp-validation-for="FotosUrlsCsv" class="text-danger d-block"></span>
+                    </div>
+                    @if (galeriaEspacio.Count > 0)
+                    {
+                        <div class="col-12">
+                            <div class="row g-2">
+                                @for (var i = 0; i < galeriaEspacio.Count; i++)
+                                {
+                                    var foto = galeriaEspacio[i];
+                                    <div class="col-6 col-md-3">
+                                        <div class="position-relative border rounded-3 overflow-hidden">
+                                            <img src="@foto" alt="Imagen espacio @(i + 1)" class="w-100" style="height:110px; object-fit:cover;" />
+                                            <span class="badge @(i == 0 ? "text-bg-primary" : "text-bg-secondary") position-absolute top-0 start-0 m-1">
+                                                @(i == 0 ? "Principal" : $"Alt. {i}")
+                                            </span>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    <div class="col-12">
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th style="width:70px;">Orden</th>
+                                        <th>Archivo</th>
+                                        <th style="width:160px;">Rol</th>
+                                        <th style="width:140px;">Tamano</th>
+                                        <th style="width:170px;">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="imagenesSeleccionadasBody">
+                                    <tr>
+                                        <td colspan="5" class="text-muted small">Aun no has seleccionado archivos.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <div class="sc-form-actions">
             <button type="submit" class="btn btn-primary btn-grabar">
                 <i class="bi bi-check2-circle me-1"></i> Guardar espacio
@@ -326,14 +449,95 @@
         (() => {
             const chkHorarioEspacio = document.getElementById('ConfigurarHorarioPorEspacio');
             const bloqueHorarioEspacio = document.getElementById('bloqueHorarioEspacio');
+            const chkCompartidos = document.getElementById('TieneEspaciosCompartidos');
+            const bloqueCompartidos = document.getElementById('bloqueEspaciosCompartidos');
+            const listaDirectos = document.getElementById('EspaciosBloqueoDirectoIds');
+            const listaComponentes = document.getElementById('EspaciosComponentesIds');
+            const sedeSelect = document.getElementById('SedeId');
+            const compartidosUrlBase = '@Url.Action("ObtenerEspaciosCompartibles", "Espacios")';
+            const seleccionInicialDirectos = @Html.Raw(JsonSerializer.Serialize(Model.EspaciosBloqueoDirectoIds));
+            const seleccionInicialComponentes = @Html.Raw(JsonSerializer.Serialize(Model.EspaciosComponentesIds));
             function toggleHorarioEspacio() {
                 if (!chkHorarioEspacio || !bloqueHorarioEspacio) return;
                 bloqueHorarioEspacio.classList.toggle('d-none', !chkHorarioEspacio.checked);
+            }
+            function toggleCompartidos() {
+                if (!chkCompartidos || !bloqueCompartidos) return;
+                bloqueCompartidos.classList.toggle('d-none', !chkCompartidos.checked);
+                if (!chkCompartidos.checked) {
+                    [listaDirectos, listaComponentes].forEach(lista => {
+                        lista?.querySelectorAll('input[type="checkbox"]').forEach(chk => chk.checked = false);
+                    });
+                }
+            }
+            function renderChecklist(lista, items, seleccionados, inputName, emptyText) {
+                if (!lista) return;
+                lista.innerHTML = '';
+                if (items.length === 0) {
+                    lista.innerHTML = `<div class="small text-muted px-2 py-1">${emptyText}</div>`;
+                    return;
+                }
+
+                items.forEach(item => {
+                    const label = document.createElement('label');
+                    label.className = 'sc-check-list-item';
+
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.name = inputName;
+                    checkbox.value = item.value;
+                    checkbox.className = 'form-check-input m-0';
+                    checkbox.checked = seleccionados.has(Number(item.value));
+
+                    const texto = document.createElement('span');
+                    texto.className = 'small';
+                    texto.textContent = item.text;
+
+                    label.appendChild(checkbox);
+                    label.appendChild(texto);
+                    lista.appendChild(label);
+                });
+            }
+            async function recargarEspaciosCompartidos(idsDirectos, idsComponentes) {
+                if (!sedeSelect || !listaDirectos || !listaComponentes) return;
+                const sedeId = Number(sedeSelect.value || '0');
+                if (sedeId <= 0) {
+                    const mensaje = '<div class="small text-muted px-2 py-1">Selecciona una sede para ver espacios disponibles.</div>';
+                    listaDirectos.innerHTML = mensaje;
+                    listaComponentes.innerHTML = mensaje;
+                    return;
+                }
+
+                const params = new URLSearchParams();
+                params.append('negocioId', '@Model.NegocioId');
+                params.append('sedeId', String(sedeId));
+                const respuesta = await fetch(`${compartidosUrlBase}?${params.toString()}`, { cache: 'no-store' });
+                const payload = await respuesta.json();
+                if (!respuesta.ok || !payload.ok) {
+                    const mensaje = '<div class="small text-danger px-2 py-1">No se pudo cargar la lista de espacios relacionados.</div>';
+                    listaDirectos.innerHTML = mensaje;
+                    listaComponentes.innerHTML = mensaje;
+                    return;
+                }
+
+                const items = payload.items || [];
+                renderChecklist(listaDirectos, items, new Set((idsDirectos || []).map(x => Number(x))), 'EspaciosBloqueoDirectoIds', 'No hay otros espacios activos disponibles en esta sede.');
+                renderChecklist(listaComponentes, items, new Set((idsComponentes || []).map(x => Number(x))), 'EspaciosComponentesIds', 'No hay otros espacios activos disponibles en esta sede.');
             }
             if (chkHorarioEspacio) {
                 chkHorarioEspacio.addEventListener('change', toggleHorarioEspacio);
                 toggleHorarioEspacio();
             }
+            if (chkCompartidos) {
+                chkCompartidos.addEventListener('change', toggleCompartidos);
+                toggleCompartidos();
+            }
+            if (sedeSelect) {
+                sedeSelect.addEventListener('change', async () => {
+                    await recargarEspaciosCompartidos([], []);
+                });
+            }
+            void recargarEspaciosCompartidos(seleccionInicialDirectos, seleccionInicialComponentes);
 
             const tarifasIniciales = @Html.Raw(JsonSerializer.Serialize(Model.Tarifas, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
             const tarifasFeriadoIniciales = @Html.Raw(JsonSerializer.Serialize(Model.TarifasFeriado, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
@@ -724,6 +928,131 @@
                     limpiarError();
                     limpiarErrorFeriado();
                 }
+            });
+        })();
+    </script>
+    <script>
+        (() => {
+            const input = document.getElementById('imagenesArchivosInput');
+            const body = document.getElementById('imagenesSeleccionadasBody');
+            const fotoPrincipalInput = document.getElementById('FotoPrincipalUrl');
+            const fotosCsvInput = document.getElementById('FotosUrlsCsv');
+            if (!input || !body) return;
+            const MAX_IMAGENES = 3;
+            let selectedFiles = [];
+
+            function fileKey(file) {
+                return `${file.name}__${file.size}__${file.lastModified}`;
+            }
+
+            function countActualesNoRemovidas() {
+                const principal = (fotoPrincipalInput?.value || '').trim();
+                const alternativas = (fotosCsvInput?.value || '')
+                    .split(',')
+                    .map(x => x.trim())
+                    .filter(Boolean);
+                return (principal ? 1 : 0) + alternativas.length;
+            }
+
+            function formatBytes(bytes) {
+                if (!bytes || bytes <= 0) return '0 KB';
+                const kb = bytes / 1024;
+                if (kb < 1024) return `${kb.toFixed(1)} KB`;
+                return `${(kb / 1024).toFixed(2)} MB`;
+            }
+
+            function syncInputFiles() {
+                const dt = new DataTransfer();
+                selectedFiles.forEach(file => dt.items.add(file));
+                input.files = dt.files;
+            }
+
+            function move(index, offset) {
+                const target = index + offset;
+                if (target < 0 || target >= selectedFiles.length) return;
+                const tmp = selectedFiles[index];
+                selectedFiles[index] = selectedFiles[target];
+                selectedFiles[target] = tmp;
+                syncInputFiles();
+                render();
+            }
+
+            function removeAt(index) {
+                selectedFiles.splice(index, 1);
+                syncInputFiles();
+                render();
+            }
+
+            function render() {
+                if (selectedFiles.length === 0) {
+                    body.innerHTML = '<tr><td colspan="5" class="text-muted small">Aun no has seleccionado archivos.</td></tr>';
+                    return;
+                }
+
+                body.innerHTML = '';
+                selectedFiles.forEach((file, index) => {
+                    const rol = index === 0 ? 'Principal' : `Alternativa ${index}`;
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td class="text-truncate" style="max-width:420px;" title="${file.name}">${file.name}</td>
+                        <td><span class="badge ${index === 0 ? 'text-bg-primary' : 'text-bg-secondary'}">${rol}</span></td>
+                        <td>${formatBytes(file.size)}</td>
+                        <td class="d-flex gap-1">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="up" data-index="${index}" ${index === 0 ? 'disabled' : ''}>↑</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="down" data-index="${index}" ${index === selectedFiles.length - 1 ? 'disabled' : ''}>↓</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" data-action="remove" data-index="${index}">Quitar</button>
+                        </td>
+                    `;
+                    body.appendChild(tr);
+                });
+            }
+
+            body.addEventListener('click', (e) => {
+                const btn = e.target.closest('button[data-action]');
+                if (!btn) return;
+                const action = btn.getAttribute('data-action');
+                const index = Number(btn.getAttribute('data-index'));
+                if (!Number.isInteger(index)) return;
+                if (action === 'up') move(index, -1);
+                if (action === 'down') move(index, 1);
+                if (action === 'remove') removeAt(index);
+            });
+
+            input.addEventListener('change', () => {
+                const incoming = Array.from(input.files || []);
+                if (incoming.length === 0) return;
+
+                const disponibles = Math.max(0, MAX_IMAGENES - countActualesNoRemovidas() - selectedFiles.length);
+                let agregadas = 0;
+                let duplicadas = 0;
+                let porLimite = 0;
+
+                for (const file of incoming) {
+                    if (selectedFiles.some(x => fileKey(x) === fileKey(file))) {
+                        duplicadas++;
+                        continue;
+                    }
+                    if (agregadas >= disponibles) {
+                        porLimite++;
+                        continue;
+                    }
+                    selectedFiles.push(file);
+                    agregadas++;
+                }
+
+                if (porLimite > 0) {
+                    input.setCustomValidity(`Solo puedes tener ${MAX_IMAGENES} imagenes en total por espacio deportivo.`);
+                    input.reportValidity();
+                } else if (duplicadas > 0 && agregadas === 0) {
+                    input.setCustomValidity('Ese archivo ya fue agregado.');
+                    input.reportValidity();
+                } else {
+                    input.setCustomValidity('');
+                }
+
+                syncInputFiles();
+                render();
             });
         })();
     </script>

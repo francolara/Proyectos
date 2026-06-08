@@ -5,6 +5,7 @@ namespace SistemaControlEspaciosDeportivosWeb.Services;
 public interface ISedeImagenStorageService
 {
     Task<IReadOnlyList<string>> UploadSedeImagenesAsync(int negocioId, int? sedeId, IEnumerable<IFormFile> archivos, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<string>> UploadEspacioImagenesAsync(int negocioId, int espacioId, IEnumerable<IFormFile> archivos, CancellationToken cancellationToken = default);
     Task<string?> UploadLogoNegocioAsync(int negocioId, IFormFile? archivo, CancellationToken cancellationToken = default);
     Task<string?> UploadBannerPublicoAsync(IFormFile? archivo, CancellationToken cancellationToken = default);
     Task<string?> UploadBannerPublicoFlexibleAsync(IFormFile? archivo, CancellationToken cancellationToken = default);

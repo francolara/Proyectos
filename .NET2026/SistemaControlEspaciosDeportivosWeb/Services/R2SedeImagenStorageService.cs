@@ -1,4 +1,4 @@
-using Amazon;
+﻿using Amazon;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
@@ -82,7 +82,23 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
         return await UploadImagenesAsync(
             negocioId,
             sedeId,
+            null,
             "sedes",
+            archivos,
+            _settings.TargetWidth,
+            _settings.TargetHeight,
+            _settings.MaxOutputBytes,
+            exigirHorizontal: true,
+            cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<string>> UploadEspacioImagenesAsync(int negocioId, int espacioId, IEnumerable<IFormFile> archivos, CancellationToken cancellationToken = default)
+    {
+        return await UploadImagenesAsync(
+            negocioId,
+            null,
+            espacioId,
+            "espacios",
             archivos,
             _settings.TargetWidth,
             _settings.TargetHeight,
@@ -98,6 +114,7 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
 
         var urls = await UploadImagenesAsync(
             negocioId,
+            null,
             null,
             "logos",
             [archivo],
@@ -118,6 +135,7 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
         var urls = await UploadImagenesAsync(
             negocioId: 0,
             sedeId: null,
+            espacioId: null,
             categoria: "banners",
             [archivo],
             BannerTargetWidth,
@@ -137,6 +155,7 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
         var urls = await UploadImagenesAsync(
             negocioId: 0,
             sedeId: null,
+            espacioId: null,
             categoria: "banners",
             [archivo],
             BannerTargetWidth,
@@ -156,6 +175,7 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
         var urls = await UploadImagenesAsync(
             negocioId: 0,
             sedeId: null,
+            espacioId: null,
             categoria: "banners-mobile",
             [archivo],
             BannerMobileTargetWidth,
@@ -176,6 +196,7 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
         var urls = await UploadImagenesAsync(
             negocioId: 0,
             sedeId: null,
+            espacioId: null,
             categoria: esHorizontal ? "banners-anuncios-horizontal" : "banners-anuncios-vertical",
             [archivo],
             esHorizontal ? BannerTargetWidth : BannerMobileTargetWidth,
@@ -190,6 +211,7 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
     private async Task<IReadOnlyList<string>> UploadImagenesAsync(
         int negocioId,
         int? sedeId,
+        int? espacioId,
         string categoria,
         IEnumerable<IFormFile> archivos,
         int targetWidth,
@@ -220,7 +242,7 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
         foreach (var archivo in archivosValidos)
         {
             if (archivo.Length > _settings.MaxImageBytes)
-                throw new InvalidOperationException($"La imagen {archivo.FileName} supera el tamaño permitido de {_settings.MaxImageBytes / 1024 / 1024} MB.");
+                throw new InvalidOperationException($"La imagen {archivo.FileName} supera el tamaÃ±o permitido de {_settings.MaxImageBytes / 1024 / 1024} MB.");
 
             var extension = Path.GetExtension(archivo.FileName ?? string.Empty);
             if (string.IsNullOrWhiteSpace(extension) || !ExtensionesPermitidas.Contains(extension))
@@ -235,7 +257,7 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
             var nombreArchivo = string.IsNullOrWhiteSpace(archivo.FileName) ? "imagen.jpg" : archivo.FileName;
             var imagenProcesada = await ProcesarImagenAsync(streamOrigen, nombreArchivo, targetWidth, targetHeight, maxOutputBytes, exigirHorizontal, cancellationToken);
 
-            var key = BuildObjectKey(categoria, negocioId, sedeId, ".webp");
+            var key = BuildObjectKey(categoria, negocioId, sedeId, espacioId, ".webp");
             imagenProcesada.Position = 0;
 
             var putRequest = new PutObjectRequest
@@ -503,7 +525,7 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
         return new AmazonS3Client(credenciales, config);
     }
 
-    private string BuildObjectKey(string categoria, int negocioId, int? sedeId, string extension)
+    private string BuildObjectKey(string categoria, int negocioId, int? sedeId, int? espacioId, string extension)
     {
         var safeExt = extension.StartsWith('.') ? extension.ToLowerInvariant() : $".{extension.ToLowerInvariant()}";
         if (string.Equals(categoria, "logos", StringComparison.OrdinalIgnoreCase))
@@ -516,6 +538,11 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
             return $"banners/anuncios/horizontal/{DateTime.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}{safeExt}";
         if (string.Equals(categoria, "banners-anuncios-vertical", StringComparison.OrdinalIgnoreCase))
             return $"banners/anuncios/vertical/{DateTime.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}{safeExt}";
+        if (string.Equals(categoria, "espacios", StringComparison.OrdinalIgnoreCase))
+        {
+            var espacioSegmento = espacioId.HasValue ? $"espacio-{espacioId.Value}" : "espacio-nuevo";
+            return $"espacios/negocio-{negocioId}/{espacioSegmento}/{DateTime.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}{safeExt}";
+        }
 
         var sedeSegmento = sedeId.HasValue ? $"sede-{sedeId.Value}" : "sede-nueva";
         return $"sedes/negocio-{negocioId}/{sedeSegmento}/{DateTime.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}{safeExt}";
@@ -630,3 +657,6 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
     }
 
 }
+
+
+

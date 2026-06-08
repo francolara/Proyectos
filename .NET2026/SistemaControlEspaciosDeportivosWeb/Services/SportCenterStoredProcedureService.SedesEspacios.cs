@@ -260,7 +260,9 @@ public partial class SportCenterStoredProcedureService
                 TarifaResumen = dr.IsDBNull(9)
                     ? "Sin tarifa configurada"
                     : dr.GetString(9),
-                AdministracionPrivada = dr.FieldCount > 10 && ReadBool(dr, 10)
+                AdministracionPrivada = dr.FieldCount > 10 && ReadBool(dr, 10),
+                TieneEspaciosCompartidos = dr.FieldCount > 11 && ReadBool(dr, 11),
+                TotalEspaciosCompartidos = dr.FieldCount > 12 && !dr.IsDBNull(12) ? dr.GetInt32(12) : 0
             });
         }
         return list;
@@ -294,16 +296,41 @@ public partial class SportCenterStoredProcedureService
             TarifasFeriado = dr.FieldCount > 12 && !dr.IsDBNull(12)
                 ? JsonSerializer.Deserialize<List<EspacioTarifaFeriadoRangoViewModel>>(dr.GetString(12), TarifaJsonSerializerOptions) ?? new List<EspacioTarifaFeriadoRangoViewModel>()
                 : new List<EspacioTarifaFeriadoRangoViewModel>(),
-            ConfigurarHorarioPorEspacio = dr.FieldCount > 13 && ReadBool(dr, 13),
-            AtiendeLunes = dr.FieldCount > 14 ? ReadBool(dr, 14) : true,
-            AtiendeMartes = dr.FieldCount > 15 ? ReadBool(dr, 15) : true,
-            AtiendeMiercoles = dr.FieldCount > 16 ? ReadBool(dr, 16) : true,
-            AtiendeJueves = dr.FieldCount > 17 ? ReadBool(dr, 17) : true,
-            AtiendeViernes = dr.FieldCount > 18 ? ReadBool(dr, 18) : true,
-            AtiendeSabado = dr.FieldCount > 19 ? ReadBool(dr, 19) : true,
-            AtiendeDomingo = dr.FieldCount > 20 ? ReadBool(dr, 20) : true,
-            HoraApertura = dr.FieldCount > 21 && !dr.IsDBNull(21) ? TimeOnly.FromTimeSpan(dr.GetTimeSpan(21)) : new TimeOnly(8, 0),
-            HoraCierre = dr.FieldCount > 22 && !dr.IsDBNull(22) ? TimeOnly.FromTimeSpan(dr.GetTimeSpan(22)) : new TimeOnly(23, 0),
+            FotoPrincipalUrl = dr.FieldCount > 13 && !dr.IsDBNull(13) ? dr.GetString(13) : null,
+            FotosUrlsCsv = dr.FieldCount > 14 && !dr.IsDBNull(14) ? dr.GetString(14) : null,
+            FotosUrls = dr.FieldCount > 14 && !dr.IsDBNull(14)
+                ? dr.GetString(14)
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList()
+                : new List<string>(),
+            ConfigurarHorarioPorEspacio = dr.FieldCount > 15 && ReadBool(dr, 15),
+            AtiendeLunes = dr.FieldCount > 16 ? ReadBool(dr, 16) : true,
+            AtiendeMartes = dr.FieldCount > 17 ? ReadBool(dr, 17) : true,
+            AtiendeMiercoles = dr.FieldCount > 18 ? ReadBool(dr, 18) : true,
+            AtiendeJueves = dr.FieldCount > 19 ? ReadBool(dr, 19) : true,
+            AtiendeViernes = dr.FieldCount > 20 ? ReadBool(dr, 20) : true,
+            AtiendeSabado = dr.FieldCount > 21 ? ReadBool(dr, 21) : true,
+            AtiendeDomingo = dr.FieldCount > 22 ? ReadBool(dr, 22) : true,
+            HoraApertura = dr.FieldCount > 23 && !dr.IsDBNull(23) ? TimeOnly.FromTimeSpan(dr.GetTimeSpan(23)) : new TimeOnly(8, 0),
+            HoraCierre = dr.FieldCount > 24 && !dr.IsDBNull(24) ? TimeOnly.FromTimeSpan(dr.GetTimeSpan(24)) : new TimeOnly(23, 0),
+            TieneEspaciosCompartidos = dr.FieldCount > 25 && ReadBool(dr, 25),
+            EspaciosBloqueoDirectoIds = dr.FieldCount > 26 && !dr.IsDBNull(26)
+                ? dr.GetString(26)
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Select(x => int.TryParse(x, out var idRelacionado) ? idRelacionado : 0)
+                    .Where(x => x > 0)
+                    .Distinct()
+                    .ToList()
+                : new List<int>(),
+            EspaciosComponentesIds = dr.FieldCount > 27 && !dr.IsDBNull(27)
+                ? dr.GetString(27)
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Select(x => int.TryParse(x, out var idRelacionado) ? idRelacionado : 0)
+                    .Where(x => x > 0)
+                    .Distinct()
+                    .ToList()
+                : new List<int>(),
             NegocioId = negocioId
         };
     }
@@ -353,6 +380,8 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@TieneIluminacion", model.TieneIluminacion, SqlDbType.Bit);
         AddParam(cmd, "@Techada", model.Techada, SqlDbType.Bit);
         AddParam(cmd, "@AdministracionPrivada", model.AdministracionPrivada, SqlDbType.Bit);
+        AddParam(cmd, "@FotoPrincipalUrl", model.FotoPrincipalUrl, SqlDbType.NVarChar);
+        AddParam(cmd, "@FotosUrlsCsv", model.FotosUrlsCsv, SqlDbType.NVarChar);
         AddParam(cmd, "@ConfigurarHorarioPorEspacio", model.ConfigurarHorarioPorEspacio, SqlDbType.Bit);
         AddParam(cmd, "@AtiendeLunes", model.AtiendeLunes, SqlDbType.Bit);
         AddParam(cmd, "@AtiendeMartes", model.AtiendeMartes, SqlDbType.Bit);
@@ -367,6 +396,9 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@TarifasJson", ObtenerTarifasJson(model), SqlDbType.NVarChar);
         if (incluirTarifasFeriado)
             AddParam(cmd, "@TarifasFeriadoJson", ObtenerTarifasFeriadoJson(model), SqlDbType.NVarChar);
+        AddParam(cmd, "@TieneEspaciosCompartidos", model.TieneEspaciosCompartidos, SqlDbType.Bit);
+        AddParam(cmd, "@EspaciosDirectosIdsCsv", model.TieneEspaciosCompartidos ? ToCsv(model.EspaciosBloqueoDirectoIds) : null, SqlDbType.NVarChar);
+        AddParam(cmd, "@EspaciosComponentesIdsCsv", model.TieneEspaciosCompartidos ? ToCsv(model.EspaciosComponentesIds) : null, SqlDbType.NVarChar);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
         return Convert.ToInt32(await cmd.ExecuteScalarAsync());
     }
@@ -387,6 +419,8 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@TieneIluminacion", model.TieneIluminacion, SqlDbType.Bit);
         AddParam(cmd, "@Techada", model.Techada, SqlDbType.Bit);
         AddParam(cmd, "@AdministracionPrivada", model.AdministracionPrivada, SqlDbType.Bit);
+        AddParam(cmd, "@FotoPrincipalUrl", model.FotoPrincipalUrl, SqlDbType.NVarChar);
+        AddParam(cmd, "@FotosUrlsCsv", model.FotosUrlsCsv, SqlDbType.NVarChar);
         AddParam(cmd, "@ConfigurarHorarioPorEspacio", model.ConfigurarHorarioPorEspacio, SqlDbType.Bit);
         AddParam(cmd, "@AtiendeLunes", model.AtiendeLunes, SqlDbType.Bit);
         AddParam(cmd, "@AtiendeMartes", model.AtiendeMartes, SqlDbType.Bit);
@@ -401,6 +435,9 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@TarifasJson", ObtenerTarifasJson(model), SqlDbType.NVarChar);
         if (incluirTarifasFeriado)
             AddParam(cmd, "@TarifasFeriadoJson", ObtenerTarifasFeriadoJson(model), SqlDbType.NVarChar);
+        AddParam(cmd, "@TieneEspaciosCompartidos", model.TieneEspaciosCompartidos, SqlDbType.Bit);
+        AddParam(cmd, "@EspaciosDirectosIdsCsv", model.TieneEspaciosCompartidos ? ToCsv(model.EspaciosBloqueoDirectoIds) : null, SqlDbType.NVarChar);
+        AddParam(cmd, "@EspaciosComponentesIdsCsv", model.TieneEspaciosCompartidos ? ToCsv(model.EspaciosComponentesIds) : null, SqlDbType.NVarChar);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
         await cmd.ExecuteNonQueryAsync();
     }
@@ -428,6 +465,8 @@ public partial class SportCenterStoredProcedureService
     public Task<List<SelectListItem>> SedesComboServiciosAsync() => ComboAsync("Sp_Combos_ServiciosSede");
     public Task<List<SelectListItem>> EspaciosComboTiposDeporteAsync(int negocioId) => ComboAsync("Sp_Combos_TiposDeporte", ("@NegocioId", negocioId, SqlDbType.Int));
     public Task<List<SelectListItem>> EspaciosComboTiposSueloAsync(int negocioId) => ComboAsync("Sp_Combos_TiposSuelo", ("@NegocioId", negocioId, SqlDbType.Int));
+    public Task<List<SelectListItem>> EspaciosComboCompartiblesAsync(int negocioId, int sedeId, int? espacioActualId = null)
+        => ComboAsync("Sp_Combos_EspaciosCompartibles", ("@NegocioId", negocioId, SqlDbType.Int), ("@SedeId", sedeId, SqlDbType.Int), ("@EspacioActualId", espacioActualId, SqlDbType.Int));
 
     public async Task<List<SedeSerieDocumentoConfigItemViewModel>> SedesSeriesDocumentoListarAsync(int negocioId, int sedeId)
     {

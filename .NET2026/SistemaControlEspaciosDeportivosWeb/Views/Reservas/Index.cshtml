@@ -17,6 +17,7 @@
         horasCierre.Add(new TimeOnly(23, 59));
     }
 }
+@* Firma: FRANCO LARA - 06/06/2026 | Bloqueos manuales ahora se reflejan tambien como bloqueos compartidos en calendario y panel operativo. *@
 
 @section Styles {
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.14/index.global.min.css" rel="stylesheet" />
@@ -389,7 +390,7 @@
         <div class="sc-reservas-list-head">
             <div>
                 <h2 class="section-title"><i class="bi bi-shield-lock me-1"></i>Bloquear horario</h2>
-                <p class="mb-0 text-muted small">Registra cortes por mantenimiento, torneo o eventos internos para evitar sobre-reserva.</p>
+                <p class="mb-0 text-muted small">Registra cortes por mantenimiento, torneo o eventos internos. Si el espacio comparte horario, el bloqueo tambien impacta en los espacios relacionados.</p>
             </div>
             <div class="sc-reservas-metrics">
                 <div class="sc-reservas-metric">
@@ -655,7 +656,7 @@ else
         <div class="sc-reservas-list-head">
             <div>
                 <h2 class="section-title"><i class="bi bi-ban me-1"></i>Bloqueos activos</h2>
-                <p class="mb-0 text-muted small">Listado de franjas bloqueadas en el periodo filtrado para la sede y espacio seleccionados.</p>
+                <p class="mb-0 text-muted small">Listado de franjas bloqueadas en el periodo filtrado, incluyendo bloqueos propagados desde espacios compartidos.</p>
             </div>
             <div class="sc-reservas-metrics">
                 <div class="sc-reservas-metric">
@@ -680,6 +681,10 @@ else
                         <div class="sc-bloqueo-item">
                             <div class="small text-muted"><i class="bi bi-calendar-event"></i> @b.Fecha.ToString("dd/MM/yyyy") @b.HoraInicio.ToString("HH\\:mm") - @b.HoraFin.ToString("HH\\:mm")</div>
                             <div class="fw-semibold"><i class="bi bi-geo-alt"></i> @b.Sede - @b.Espacio</div>
+                            @if (b.EsCompartido && !string.IsNullOrWhiteSpace(b.EspacioOrigen))
+                            {
+                                <div class="small text-primary-emphasis"><i class="bi bi-link-45deg"></i> Bloqueo compartido desde @b.EspacioOrigen</div>
+                            }
                             <div class="small">@b.Motivo</div>
                             @if (Model.PuedeEliminar)
                             {
@@ -1193,7 +1198,7 @@ else
 
             function estadoLeyendaDesdeEvento(evento) {
                 const tipoEvento = String(evento?.extendedProps?.tipoEvento || '').trim().toUpperCase();
-                if (tipoEvento === 'BLOQUEO' || tipoEvento === 'NO_ATENCION') return 'bloqueada';
+                if (tipoEvento === 'BLOQUEO' || tipoEvento === 'BLOQUEO_COMPARTIDO' || tipoEvento === 'NO_ATENCION') return 'bloqueada';
                 const codigoRaw = String(evento?.extendedProps?.estadoCodigo ?? '').trim().toUpperCase();
                 switch (codigoRaw) {
                     case '1':
@@ -1236,7 +1241,7 @@ else
                     const idEvento = String(evento.id || '');
                     const tipoEvento = String(evento.extendedProps?.tipoEvento || '').trim().toUpperCase();
                     if (idEvento.startsWith('BG-')) return;
-                    if (evento.display === 'background' && tipoEvento !== 'BLOQUEO' && tipoEvento !== 'NO_ATENCION') return;
+                    if (evento.display === 'background' && tipoEvento !== 'BLOQUEO' && tipoEvento !== 'BLOQUEO_COMPARTIDO' && tipoEvento !== 'NO_ATENCION') return;
 
                     const estadoLeyenda = estadoLeyendaDesdeEvento(evento);
                     if (!estadoLeyenda || !Object.prototype.hasOwnProperty.call(contadores, estadoLeyenda)) return;
@@ -1266,7 +1271,8 @@ else
             }
 
             function classByEstado(estadoCodigo, tipoEvento) {
-                if (tipoEvento === 'BLOQUEO' || tipoEvento === 'NO_ATENCION') return 'is-bloqueada';
+                if (tipoEvento === 'BLOQUEO' || tipoEvento === 'BLOQUEO_COMPARTIDO' || tipoEvento === 'NO_ATENCION') return 'is-bloqueada';
+                if (tipoEvento === 'RESERVA_COMPARTIDA') return 'is-compartida';
                 const codigoRaw = String(estadoCodigo ?? '').trim();
                 const codigo = codigoRaw.toUpperCase();
                 switch (codigo) {
@@ -1313,6 +1319,7 @@ else
                     case 'is-finalizada': return '#0f4e63';
                     case 'is-cancelada': return '#991b1b';
                     case 'is-noshow': return '#5b21b6';
+                    case 'is-compartida': return '#1e3a8a';
                     default: return '#1e3a8a';
                 }
             }
@@ -1836,8 +1843,8 @@ else
                 const eventos = calendar.getEvents();
                 for (const ev of eventos) {
                     const tipo = String(ev.extendedProps.tipoEvento || '').toUpperCase();
-                    if (tipo !== 'NO_ATENCION' && tipo !== 'BLOQUEO') continue;
-                    if (String(ev.extendedProps.espacioDeportivoId ?? '') !== espacioTexto) continue;
+                    if (tipo !== 'NO_ATENCION' && tipo !== 'BLOQUEO' && tipo !== 'BLOQUEO_COMPARTIDO') continue;
+                    if (tipo !== 'BLOQUEO_COMPARTIDO' && String(ev.extendedProps.espacioDeportivoId ?? '') !== espacioTexto) continue;
                     const evInicio = ev.start;
                     const evFin = ev.end ?? ev.start;
                     if (!evInicio || !evFin) continue;
@@ -2275,9 +2282,9 @@ else
                 for (const ev of eventos) {
                     if (!ev || ev.id === draggedEvent.id) continue;
                     const tipo = String(ev.extendedProps?.tipoEvento || '').toUpperCase();
-                    if (tipo !== 'BLOQUEO' && tipo !== 'NO_ATENCION') continue;
+                    if (tipo !== 'BLOQUEO' && tipo !== 'BLOQUEO_COMPARTIDO' && tipo !== 'NO_ATENCION') continue;
                     const espacioBloqueo = String(ev.extendedProps?.espacioDeportivoId || '').trim();
-                    if (!espacioBloqueo || espacioBloqueo !== espacioMovimiento) continue;
+                    if (tipo !== 'BLOQUEO_COMPARTIDO' && (!espacioBloqueo || espacioBloqueo !== espacioMovimiento)) continue;
                     const evInicio = ev.start;
                     const evFin = ev.end ?? ev.start;
                     if (cruzaRangos(start, end, evInicio, evFin)) return true;
@@ -2508,7 +2515,7 @@ else
                     eventDidMount: function(arg) {
                         if (arg.event.display === 'background') {
                             const tipo = String(arg.event.extendedProps.tipoEvento || '').toUpperCase();
-                            if (tipo === 'NO_ATENCION' || tipo === 'BLOQUEO') {
+                            if (tipo === 'NO_ATENCION' || tipo === 'BLOQUEO' || tipo === 'BLOQUEO_COMPARTIDO') {
                                 const colorBloqueo = String(arg.event.backgroundColor || arg.event.borderColor || '#64748b').trim();
                                 arg.el.style.setProperty('--sc-block-bg-a', hexToRgba(colorBloqueo, 0.18));
                                 arg.el.style.setProperty('--sc-block-bg-b', hexToRgba(colorBloqueo, 0.1));
@@ -2588,7 +2595,7 @@ else
                                     if (tipo === 'NO_ATENCION') {
                                         return [{ ...base, display: 'background', classNames: ['sc-no-atencion-bg'], editable: false, overlap: true, backgroundColor: colorEvento, borderColor: colorEvento }];
                                     }
-                                    if (tipo === 'BLOQUEO') {
+                                    if (tipo === 'BLOQUEO' || tipo === 'BLOQUEO_COMPARTIDO') {
                                         return [{ ...base, display: 'background', classNames: ['sc-bloqueo-bg'], editable: false, overlap: true, backgroundColor: colorEvento, borderColor: colorEvento }];
                                     }
                                     base.textColor = colorTextoByEstado(base.estadoCodigo, base.tipoEvento);

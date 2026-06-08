@@ -8,6 +8,8 @@ GO
 
 -- SOURCE: 26_Reservas_Validacion_Horario_Sede.sql (linea 93)
 -- Firma: FRANCO LARA - 26/05/2026 | Prioriza horario configurable por espacio deportivo; si no aplica, usa horario de la sede.
+-- Firma: FRANCO LARA - 06/06/2026 | Valida cruces usando el espacio reservado y sus espacios compartidos activos.
+-- Firma: FRANCO LARA - 08/06/2026 | Distingue bloqueo directo y espacios compuestos para evitar sobrebloqueos por propagacion en cadena.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Reservas_Mover]
     @NegocioId INT,
     @Id INT,
@@ -25,6 +27,7 @@ BEGIN
         DECLARE @EspacioDeportivoId INT, @SedeId INT, @HoraApertura TIME, @HoraCierre TIME;
         DECLARE @AtiendeLunes BIT, @AtiendeMartes BIT, @AtiendeMiercoles BIT, @AtiendeJueves BIT, @AtiendeViernes BIT, @AtiendeSabado BIT, @AtiendeDomingo BIT;
         DECLARE @DiaSemana INT, @DiaHabilitado BIT;
+        DECLARE @EspaciosAfectados TABLE (EspacioDeportivoId INT NOT NULL PRIMARY KEY);
 
         SELECT
             @EspacioDeportivoId = r.EspacioDeportivoId,
@@ -69,9 +72,70 @@ BEGIN
         IF @HoraInicio < @HoraApertura OR @HoraFin > @HoraCierre
             RAISERROR('El horario de reserva esta fuera del horario de atencion de la sede.', 16, 1);
 
-        IF EXISTS (SELECT 1 FROM dbo.Reservas r WHERE r.EspacioDeportivoId = @EspacioDeportivoId AND r.Fecha = @Fecha AND r.Estado NOT IN (5, 6) AND r.Id <> @Id AND @HoraInicio < r.HoraFin AND @HoraFin > r.HoraInicio)
+        INSERT INTO @EspaciosAfectados (EspacioDeportivoId)
+        VALUES (@EspacioDeportivoId);
+
+        INSERT INTO @EspaciosAfectados (EspacioDeportivoId)
+        SELECT DISTINCT ec.EspacioRelacionadoId
+        FROM dbo.EspaciosDeportivosCompartidos ec
+        INNER JOIN dbo.EspaciosDeportivos er ON er.Id = ec.EspacioRelacionadoId
+        WHERE ec.EspacioDeportivoId = @EspacioDeportivoId
+          AND ec.Activo = 1
+          AND ec.TipoRelacion = N'DIRECTO'
+          AND er.Estado = 1
+          AND NOT EXISTS (SELECT 1 FROM @EspaciosAfectados ea WHERE ea.EspacioDeportivoId = ec.EspacioRelacionadoId);
+
+        INSERT INTO @EspaciosAfectados (EspacioDeportivoId)
+        SELECT DISTINCT ec.EspacioRelacionadoId
+        FROM dbo.EspaciosDeportivosCompartidos ec
+        INNER JOIN dbo.EspaciosDeportivos er ON er.Id = ec.EspacioRelacionadoId
+        WHERE ec.EspacioDeportivoId = @EspacioDeportivoId
+          AND ec.Activo = 1
+          AND ec.TipoRelacion = N'COMPUESTO_COMPONENTE'
+          AND er.Estado = 1
+          AND NOT EXISTS (SELECT 1 FROM @EspaciosAfectados ea WHERE ea.EspacioDeportivoId = ec.EspacioRelacionadoId);
+
+        INSERT INTO @EspaciosAfectados (EspacioDeportivoId)
+        SELECT DISTINCT ec.EspacioDeportivoId
+        FROM dbo.EspaciosDeportivosCompartidos ec
+        INNER JOIN dbo.EspaciosDeportivos er ON er.Id = ec.EspacioDeportivoId
+        WHERE ec.EspacioRelacionadoId = @EspacioDeportivoId
+          AND ec.Activo = 1
+          AND ec.TipoRelacion = N'COMPUESTO_COMPONENTE'
+          AND er.Estado = 1
+          AND NOT EXISTS (SELECT 1 FROM @EspaciosAfectados ea WHERE ea.EspacioDeportivoId = ec.EspacioDeportivoId);
+
+        INSERT INTO @EspaciosAfectados (EspacioDeportivoId)
+        SELECT DISTINCT ed.EspacioRelacionadoId
+        FROM dbo.EspaciosDeportivosCompartidos ecComp
+        INNER JOIN dbo.EspaciosDeportivosCompartidos ed
+            ON ed.EspacioDeportivoId = ecComp.EspacioRelacionadoId
+           AND ed.Activo = 1
+           AND ed.TipoRelacion = N'DIRECTO'
+        INNER JOIN dbo.EspaciosDeportivos er ON er.Id = ed.EspacioRelacionadoId
+        WHERE ecComp.EspacioDeportivoId = @EspacioDeportivoId
+          AND ecComp.Activo = 1
+          AND ecComp.TipoRelacion = N'COMPUESTO_COMPONENTE'
+          AND er.Estado = 1
+          AND NOT EXISTS (SELECT 1 FROM @EspaciosAfectados ea WHERE ea.EspacioDeportivoId = ed.EspacioRelacionadoId);
+
+        INSERT INTO @EspaciosAfectados (EspacioDeportivoId)
+        SELECT DISTINCT ep.EspacioDeportivoId
+        FROM dbo.EspaciosDeportivosCompartidos edActual
+        INNER JOIN dbo.EspaciosDeportivosCompartidos ep
+            ON ep.EspacioRelacionadoId = edActual.EspacioRelacionadoId
+           AND ep.Activo = 1
+           AND ep.TipoRelacion = N'COMPUESTO_COMPONENTE'
+        INNER JOIN dbo.EspaciosDeportivos er ON er.Id = ep.EspacioDeportivoId
+        WHERE edActual.EspacioDeportivoId = @EspacioDeportivoId
+          AND edActual.Activo = 1
+          AND edActual.TipoRelacion = N'DIRECTO'
+          AND er.Estado = 1
+          AND NOT EXISTS (SELECT 1 FROM @EspaciosAfectados ea WHERE ea.EspacioDeportivoId = ep.EspacioDeportivoId);
+
+        IF EXISTS (SELECT 1 FROM dbo.Reservas r WHERE r.EspacioDeportivoId IN (SELECT EspacioDeportivoId FROM @EspaciosAfectados) AND r.Fecha = @Fecha AND r.Estado NOT IN (5, 6) AND r.Id <> @Id AND @HoraInicio < r.HoraFin AND @HoraFin > r.HoraInicio)
             RAISERROR('Cruce de horario con otra reserva.', 16, 1);
-        IF EXISTS (SELECT 1 FROM dbo.BloqueosHorario b WHERE b.EspacioDeportivoId = @EspacioDeportivoId AND b.Fecha = @Fecha AND b.Activo = 1 AND @HoraInicio < b.HoraFin AND @HoraFin > b.HoraInicio)
+        IF EXISTS (SELECT 1 FROM dbo.BloqueosHorario b WHERE b.EspacioDeportivoId IN (SELECT EspacioDeportivoId FROM @EspaciosAfectados) AND b.Fecha = @Fecha AND b.Activo = 1 AND @HoraInicio < b.HoraFin AND @HoraFin > b.HoraInicio)
             RAISERROR('El horario esta bloqueado para ese espacio.', 16, 1);
 
         UPDATE dbo.Reservas
@@ -96,6 +160,4 @@ BEGIN
 END
 
 GO
-
-
 

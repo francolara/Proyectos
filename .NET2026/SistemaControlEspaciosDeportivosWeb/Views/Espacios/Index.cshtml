@@ -108,7 +108,7 @@
                     <tbody>
                         @foreach (var item in Model.Espacios)
                         {
-                            <tr data-search="@($"{item.Codigo} {item.Nombre} {item.SedeNombre} {item.TipoDeporteNombre} {item.TipoSueloNombre} {(item.TieneIluminacion ? "iluminacion si" : "iluminacion no")} {(item.Techada ? "techado si" : "techado no")} {item.Estado} {item.TarifaResumen}".ToLowerInvariant())">
+                            <tr data-search="@($"{item.Codigo} {item.Nombre} {item.SedeNombre} {item.TipoDeporteNombre} {item.TipoSueloNombre} {(item.TieneIluminacion ? "iluminacion si" : "iluminacion no")} {(item.Techada ? "techado si" : "techado no")} {(item.TieneEspaciosCompartidos ? "espacio compartido" : "sin espacio compartido")} {item.Estado} {item.TarifaResumen}".ToLowerInvariant())">
                                 <td>
                                     <div class="sc-espacio-main">
                                         <span class="sc-espacio-code">@item.Codigo</span>
@@ -126,6 +126,12 @@
                                         @if (item.AdministracionPrivada)
                                         {
                                             <span class="badge bg-dark-subtle text-dark-emphasis border"><i class="bi bi-shield-lock me-1"></i>Administracion privada</span>
+                                        }
+                                        @if (item.TieneEspaciosCompartidos)
+                                        {
+                                            <span class="badge bg-primary-subtle text-primary-emphasis border">
+                                                <i class="bi bi-link-45deg me-1"></i>Comparte horario con @item.TotalEspaciosCompartidos espacio(s)
+                                            </span>
                                         }
                                     </div>
                                     <div class="small text-muted mt-2">

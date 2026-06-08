@@ -77,6 +77,7 @@ public interface ISportCenterStoredProcedureService
     Task<List<SelectListItem>> EspaciosComboSedesAsync(int negocioId, int? sedeId = null);
     Task<List<SelectListItem>> EspaciosComboTiposDeporteAsync(int negocioId);
     Task<List<SelectListItem>> EspaciosComboTiposSueloAsync(int negocioId);
+    Task<List<SelectListItem>> EspaciosComboCompartiblesAsync(int negocioId, int sedeId, int? espacioActualId = null);
 
     Task<(List<ReservaItemViewModel> Reservas, int TotalRegistros)> ReservasListarAsync(int negocioId, DateOnly? fechaDesde = null, DateOnly? fechaHasta = null, int? sedeId = null, int? espacioDeportivoId = null, int? estado = null, string? estadosCsv = null, int pagina = 1, int tamanoPagina = 20);
     Task<ReservasListadoResumenViewModel> ReservasListadoResumenAsync(int negocioId, DateOnly? fechaDesde = null, DateOnly? fechaHasta = null, int? sedeId = null, int? espacioDeportivoId = null, int? estado = null, string? estadosCsv = null);

@@ -8,6 +8,8 @@ GO
 
 -- SOURCE: 29_Reservas_ValidarDisponibilidad_Modal.sql (linea 8)
 -- Firma: FRANCO LARA - 26/05/2026 | Prioriza horario configurable por espacio deportivo; si no aplica, usa horario de la sede.
+-- Firma: FRANCO LARA - 06/06/2026 | Valida cruces usando el espacio reservado y sus espacios compartidos activos.
+-- Firma: FRANCO LARA - 08/06/2026 | Distingue bloqueo directo y espacios compuestos para evitar sobrebloqueos por propagacion en cadena.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Reservas_ValidarDisponibilidad]
     @NegocioId INT,
     @ReservaId INT = NULL,
@@ -28,6 +30,7 @@ BEGIN
         DECLARE @SedeId INT, @HoraApertura TIME, @HoraCierre TIME;
         DECLARE @AtiendeLunes BIT, @AtiendeMartes BIT, @AtiendeMiercoles BIT, @AtiendeJueves BIT, @AtiendeViernes BIT, @AtiendeSabado BIT, @AtiendeDomingo BIT;
         DECLARE @DiaSemana INT, @DiaHabilitado BIT;
+        DECLARE @EspaciosAfectados TABLE (EspacioDeportivoId INT NOT NULL PRIMARY KEY);
 
         SELECT
             @SedeId = s.Id,
@@ -96,19 +99,82 @@ BEGIN
             RETURN;
         END;
 
-        DECLARE @ReservaCruceId INT = NULL, @ReservaCruceInicio TIME = NULL, @ReservaCruceFin TIME = NULL;
+        INSERT INTO @EspaciosAfectados (EspacioDeportivoId)
+        VALUES (@EspacioDeportivoId);
+
+        INSERT INTO @EspaciosAfectados (EspacioDeportivoId)
+        SELECT DISTINCT ec.EspacioRelacionadoId
+        FROM dbo.EspaciosDeportivosCompartidos ec
+        INNER JOIN dbo.EspaciosDeportivos er ON er.Id = ec.EspacioRelacionadoId
+        WHERE ec.EspacioDeportivoId = @EspacioDeportivoId
+          AND ec.Activo = 1
+          AND ec.TipoRelacion = N'DIRECTO'
+          AND er.Estado = 1
+          AND NOT EXISTS (SELECT 1 FROM @EspaciosAfectados ea WHERE ea.EspacioDeportivoId = ec.EspacioRelacionadoId);
+
+        INSERT INTO @EspaciosAfectados (EspacioDeportivoId)
+        SELECT DISTINCT ec.EspacioRelacionadoId
+        FROM dbo.EspaciosDeportivosCompartidos ec
+        INNER JOIN dbo.EspaciosDeportivos er ON er.Id = ec.EspacioRelacionadoId
+        WHERE ec.EspacioDeportivoId = @EspacioDeportivoId
+          AND ec.Activo = 1
+          AND ec.TipoRelacion = N'COMPUESTO_COMPONENTE'
+          AND er.Estado = 1
+          AND NOT EXISTS (SELECT 1 FROM @EspaciosAfectados ea WHERE ea.EspacioDeportivoId = ec.EspacioRelacionadoId);
+
+        INSERT INTO @EspaciosAfectados (EspacioDeportivoId)
+        SELECT DISTINCT ec.EspacioDeportivoId
+        FROM dbo.EspaciosDeportivosCompartidos ec
+        INNER JOIN dbo.EspaciosDeportivos er ON er.Id = ec.EspacioDeportivoId
+        WHERE ec.EspacioRelacionadoId = @EspacioDeportivoId
+          AND ec.Activo = 1
+          AND ec.TipoRelacion = N'COMPUESTO_COMPONENTE'
+          AND er.Estado = 1
+          AND NOT EXISTS (SELECT 1 FROM @EspaciosAfectados ea WHERE ea.EspacioDeportivoId = ec.EspacioDeportivoId);
+
+        INSERT INTO @EspaciosAfectados (EspacioDeportivoId)
+        SELECT DISTINCT ed.EspacioRelacionadoId
+        FROM dbo.EspaciosDeportivosCompartidos ecComp
+        INNER JOIN dbo.EspaciosDeportivosCompartidos ed
+            ON ed.EspacioDeportivoId = ecComp.EspacioRelacionadoId
+           AND ed.Activo = 1
+           AND ed.TipoRelacion = N'DIRECTO'
+        INNER JOIN dbo.EspaciosDeportivos er ON er.Id = ed.EspacioRelacionadoId
+        WHERE ecComp.EspacioDeportivoId = @EspacioDeportivoId
+          AND ecComp.Activo = 1
+          AND ecComp.TipoRelacion = N'COMPUESTO_COMPONENTE'
+          AND er.Estado = 1
+          AND NOT EXISTS (SELECT 1 FROM @EspaciosAfectados ea WHERE ea.EspacioDeportivoId = ed.EspacioRelacionadoId);
+
+        INSERT INTO @EspaciosAfectados (EspacioDeportivoId)
+        SELECT DISTINCT ep.EspacioDeportivoId
+        FROM dbo.EspaciosDeportivosCompartidos edActual
+        INNER JOIN dbo.EspaciosDeportivosCompartidos ep
+            ON ep.EspacioRelacionadoId = edActual.EspacioRelacionadoId
+           AND ep.Activo = 1
+           AND ep.TipoRelacion = N'COMPUESTO_COMPONENTE'
+        INNER JOIN dbo.EspaciosDeportivos er ON er.Id = ep.EspacioDeportivoId
+        WHERE edActual.EspacioDeportivoId = @EspacioDeportivoId
+          AND edActual.Activo = 1
+          AND edActual.TipoRelacion = N'DIRECTO'
+          AND er.Estado = 1
+          AND NOT EXISTS (SELECT 1 FROM @EspaciosAfectados ea WHERE ea.EspacioDeportivoId = ep.EspacioDeportivoId);
+
+        DECLARE @ReservaCruceId INT = NULL, @ReservaCruceInicio TIME = NULL, @ReservaCruceFin TIME = NULL, @ReservaCruceEspacio NVARCHAR(150) = NULL;
         SELECT TOP 1
             @ReservaCruceId = r.Id,
             @ReservaCruceInicio = r.HoraInicio,
-            @ReservaCruceFin = r.HoraFin
+            @ReservaCruceFin = r.HoraFin,
+            @ReservaCruceEspacio = e.Nombre
         FROM dbo.Reservas r
-        WHERE r.EspacioDeportivoId = @EspacioDeportivoId
+        INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
+        WHERE r.EspacioDeportivoId IN (SELECT EspacioDeportivoId FROM @EspaciosAfectados)
           AND r.Fecha = @Fecha
           AND r.Estado NOT IN (5, 6)
           AND (@ReservaId IS NULL OR r.Id <> @ReservaId)
           AND @HoraInicio < r.HoraFin
           AND @HoraFin > r.HoraInicio
-        ORDER BY r.HoraInicio;
+        ORDER BY CASE WHEN r.EspacioDeportivoId = @EspacioDeportivoId THEN 0 ELSE 1 END, r.HoraInicio;
 
         IF @ReservaCruceId IS NOT NULL
         BEGIN
@@ -116,7 +182,7 @@ BEGIN
                 CAST(0 AS BIT) AS Disponible,
                 CAST(
                     CONCAT(
-                        N'Cruce con reserva #',
+                        CASE WHEN @ReservaCruceEspacio IS NOT NULL AND EXISTS (SELECT 1 FROM @EspaciosAfectados WHERE EspacioDeportivoId <> @EspacioDeportivoId) AND @ReservaCruceEspacio <> N'' THEN N'Cruce con reserva en ' + @ReservaCruceEspacio + N' #' ELSE N'Cruce con reserva #' END,
                         @ReservaCruceId,
                         N' (',
                         CONVERT(NVARCHAR(5), @ReservaCruceInicio, 108),
@@ -131,18 +197,20 @@ BEGIN
             RETURN;
         END;
 
-        DECLARE @BloqueoInicio TIME = NULL, @BloqueoFin TIME = NULL, @BloqueoMotivo NVARCHAR(250) = NULL;
+        DECLARE @BloqueoInicio TIME = NULL, @BloqueoFin TIME = NULL, @BloqueoMotivo NVARCHAR(250) = NULL, @BloqueoEspacio NVARCHAR(150) = NULL;
         SELECT TOP 1
             @BloqueoInicio = b.HoraInicio,
             @BloqueoFin = b.HoraFin,
-            @BloqueoMotivo = b.Motivo
+            @BloqueoMotivo = b.Motivo,
+            @BloqueoEspacio = e.Nombre
         FROM dbo.BloqueosHorario b
-        WHERE b.EspacioDeportivoId = @EspacioDeportivoId
+        INNER JOIN dbo.EspaciosDeportivos e ON e.Id = b.EspacioDeportivoId
+        WHERE b.EspacioDeportivoId IN (SELECT EspacioDeportivoId FROM @EspaciosAfectados)
           AND b.Fecha = @Fecha
           AND b.Activo = 1
           AND @HoraInicio < b.HoraFin
           AND @HoraFin > b.HoraInicio
-        ORDER BY b.HoraInicio;
+        ORDER BY CASE WHEN b.EspacioDeportivoId = @EspacioDeportivoId THEN 0 ELSE 1 END, b.HoraInicio;
 
         IF @BloqueoInicio IS NOT NULL
         BEGIN
@@ -154,7 +222,9 @@ BEGIN
                         CONVERT(NVARCHAR(5), @BloqueoInicio, 108),
                         N' - ',
                         CONVERT(NVARCHAR(5), @BloqueoFin, 108),
-                        N'). Motivo: ',
+                        N') en ',
+                        COALESCE(@BloqueoEspacio, N'espacio relacionado'),
+                        N'. Motivo: ',
                         COALESCE(@BloqueoMotivo, N'Sin detalle')
                     )
                     AS NVARCHAR(300)
@@ -174,6 +244,3 @@ BEGIN
 END
 
 GO
-
-
-

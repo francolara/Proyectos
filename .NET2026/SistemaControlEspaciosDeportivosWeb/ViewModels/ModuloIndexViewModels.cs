@@ -141,6 +141,8 @@ public class EspacioItemViewModel
     public bool TieneIluminacion { get; set; }
     public bool Techada { get; set; }
     public bool AdministracionPrivada { get; set; }
+    public bool TieneEspaciosCompartidos { get; set; }
+    public int TotalEspaciosCompartidos { get; set; }
     public string Estado { get; set; } = string.Empty;
     public string TarifaResumen { get; set; } = string.Empty;
 }
@@ -269,6 +271,8 @@ public class BloqueoHorarioItemViewModel
     public TimeOnly HoraFin { get; set; }
     public string Motivo { get; set; } = string.Empty;
     public bool Activo { get; set; }
+    public bool EsCompartido { get; set; }
+    public string? EspacioOrigen { get; set; }
 }
 
 public class PagosIndexViewModel : ModuloBaseViewModel

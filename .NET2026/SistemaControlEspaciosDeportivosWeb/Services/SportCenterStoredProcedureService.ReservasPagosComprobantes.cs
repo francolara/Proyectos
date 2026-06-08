@@ -455,7 +455,9 @@ public partial class SportCenterStoredProcedureService
                 HoraInicio = TimeOnly.FromTimeSpan(dr.GetTimeSpan(4)),
                 HoraFin = TimeOnly.FromTimeSpan(dr.GetTimeSpan(5)),
                 Motivo = dr.GetString(6),
-                Activo = dr.GetBoolean(7)
+                Activo = dr.GetBoolean(7),
+                EsCompartido = dr.FieldCount > 8 && ReadBool(dr, 8),
+                EspacioOrigen = dr.FieldCount > 9 && !dr.IsDBNull(9) ? dr.GetString(9) : null
             });
         }
         return list;

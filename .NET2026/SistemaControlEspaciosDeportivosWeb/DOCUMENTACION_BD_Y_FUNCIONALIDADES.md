@@ -68,6 +68,7 @@
 ### 03_Sedes_Espacios.sql
 - `Sp_Combos_Sedes`
 - `Sp_Combos_TiposDeporte`
+- `Sp_Combos_EspaciosCompartibles`
 - `Sp_Sedes_Listar`
 - `Sp_Sedes_ObtenerPorId`
 - `Sp_Sedes_Crear`
@@ -78,6 +79,15 @@
 - `Sp_Espacios_Crear`
 - `Sp_Espacios_Actualizar`
 - `Sp_Espacios_Eliminar`
+- Actualizacion 06/06/2026:
+  - Nueva tabla `EspaciosDeportivosCompartidos` para registrar relaciones activas entre espacios de la misma sede con persistencia bidireccional.
+  - `Sp_Combos_EspaciosCompartibles` devuelve espacios activos de la sede actual para el selector multiple de espacios relacionados, excluyendo el propio espacio en edicion.
+  - `Sp_Espacios_Crear` y `Sp_Espacios_Actualizar` reciben `@TieneEspaciosCompartidos`, `@EspaciosDirectosIdsCsv` y `@EspaciosComponentesIdsCsv`, validan que los relacionados pertenezcan a la misma sede y separan bloqueo directo de composicion por componentes.
+  - `Sp_Espacios_ObtenerPorId` devuelve `TieneEspaciosCompartidos`, `EspaciosDirectosIdsCsv` y `EspaciosComponentesIdsCsv` para precargar el formulario de mantenimiento.
+  - `Sp_Espacios_Listar` expone `TieneEspaciosCompartidos` y `TotalEspaciosCompartidos` para mostrar indicadores operativos en la grilla administrativa.
+- Actualizacion 08/06/2026:
+  - `EspaciosDeportivosCompartidos` agrega `TipoRelacion` con valores `DIRECTO` y `COMPUESTO_COMPONENTE`.
+  - Las relaciones `DIRECTO` se persisten en ambos sentidos; las relaciones `COMPUESTO_COMPONENTE` se guardan solo desde el espacio compuesto hacia sus componentes.
 - Actualizacion 13/04/2026:
   - `Sp_Espacios_Listar` compacta `TarifaResumen` por dia de semana con rango de precios (`min-max`) y elimina el detalle por cada franja horaria en el listado de espacios.
   - `Sp_Espacios_Listar` expone `TieneIluminacion` y `Techada` para mostrar badges operativos en la grilla.
@@ -96,6 +106,13 @@
 - `Sp_Reservas_Listar`
 - `Sp_Reservas_ObtenerPorId`
 - `Sp_Reservas_Crear`
+- Actualizacion 06/06/2026:
+  - `Sp_Reservas_ValidarDisponibilidad`, `Sp_Reservas_Crear`, `Sp_Reservas_Actualizar` y `Sp_Reservas_Mover` ahora validan cruces no solo contra el espacio reservado, sino tambien contra sus espacios relacionados activos (`EspaciosDeportivosCompartidos`).
+  - Una reserva sigue perteneciendo a un solo espacio para cobro, tarifa y comprobante; los espacios relacionados solo se usan para bloqueo operativo de horario.
+  - Los mensajes de conflicto identifican cuando el bloqueo proviene de una reserva o bloqueo en un espacio relacionado.
+- Actualizacion 08/06/2026:
+  - La propagacion operativa deja de ser una cadena ciega. Se distingue entre `DIRECTO` y `COMPUESTO_COMPONENTE`.
+  - El sistema bloquea el espacio reservado, sus relaciones `DIRECTO`, sus componentes si es compuesto, los espacios compuestos que dependen de un componente ocupado y los `DIRECTO` de esos componentes cuando se reserva el espacio grande.
 - Actualizacion 14/04/2026:
   - `Reservas` incorpora columna `CanalOrigen` (`ADMIN`/`CLIENTE_WEB`), usada para distinguir reservas creadas desde portal cliente.
   - `Sp_Reservas_Crear` recibe `@CanalOrigen` (default `ADMIN`) y genera notificacion cuando el origen es `CLIENTE_WEB`.
@@ -245,6 +262,12 @@
 - Tabla:
   - `BloqueosHorario`
 - `Sp_Reservas_CalendarioEventos`
+- Actualizacion 06/06/2026:
+  - `Sp_Reservas_CalendarioEventos` incluye reservas de espacios relacionados como eventos `RESERVA_COMPARTIDA` cuando se consulta el calendario de un espacio configurado como compartido.
+  - Los eventos compartidos se devuelven como bloqueantes y no editables en UI, mostrando el espacio origen de la reserva en el titulo del evento.
+- Actualizacion 08/06/2026:
+  - `Sp_Reservas_CalendarioEventos`, `Sp_Bloqueos_Listar` y `Sp_Bloqueos_Crear` aplican la misma regla operativa de `DIRECTO` y `COMPUESTO_COMPONENTE` usada por las reservas.
+  - Un espacio compuesto muestra como bloqueantes las reservas y bloqueos de sus componentes y de los `DIRECTO` de esos componentes, sin propagar el bloqueo hacia componentes no afectados.
 - Actualizacion 13/04/2026:
   - `Sp_Reservas_CalendarioEventos` excluye por defecto reservas `Cancelada` (`Estado = 5`) cuando `@Estado` es `NULL`, liberando el horario en calendario para nuevas reservas.
   - Si la UI filtra explicitamente `@Estado = 5`, el procedimiento mantiene la consulta de canceladas.
@@ -1360,3 +1383,11 @@
 1. Para validaciones de atencion/horario en reservas, primero se evalua `EspacioHorarioAtencion`.
 2. Si el espacio no tiene horario propio habilitado, se usa `SedeHorarioAtencion`.
 3. El calendario de reservas refleja bloqueos de no atencion usando la misma prioridad (espacio > sede).
+
+
+
+## Actualizacion 08/06/2026 - Fotos de espacios deportivos
+- dbo.EspaciosDeportivos agrega FotoPrincipalUrl y FotosUrlsCsv para guardar hasta 3 imagenes por espacio deportivo.
+- Sp_Espacios_Crear y Sp_Espacios_Actualizar reciben @FotoPrincipalUrl y @FotosUrlsCsv, validan galeria maxima de 3 imagenes y exigen foto principal cuando existen alternativas.
+- Sp_Espacios_ObtenerPorId devuelve la galeria del espacio para el mantenimiento administrativo.
+- Sp_Home_BuscarEspaciosDisponibles expone fotos propias del espacio para priorizarlas en la tarjeta publica y completar el carrusel con fotos de la sede cuando haga falta.

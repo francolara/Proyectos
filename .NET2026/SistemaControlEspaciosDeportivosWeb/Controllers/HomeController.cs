@@ -187,6 +187,7 @@ public class HomeController(
         var payload = new List<object>();
         foreach (var e in eventos.Where(e =>
                      string.Equals(e.TipoEvento, "RESERVA", StringComparison.OrdinalIgnoreCase)
+                     || string.Equals(e.TipoEvento, "RESERVA_COMPARTIDA", StringComparison.OrdinalIgnoreCase)
                      || string.Equals(e.TipoEvento, "BLOQUEO", StringComparison.OrdinalIgnoreCase)
                      || string.Equals(e.TipoEvento, "NO_ATENCION", StringComparison.OrdinalIgnoreCase)))
         {
@@ -982,21 +983,29 @@ public class HomeController(
                 mapaUrl = $"https://www.google.com/maps?q={lat.ToString(CultureInfo.InvariantCulture)},{lng.ToString(CultureInfo.InvariantCulture)}";
             }
 
-            var sedeFotos = new List<string>();
+            var fotosTarjeta = new List<string>();
             if (!string.IsNullOrWhiteSpace(item.SedeFotoPrincipalUrl))
             {
-                sedeFotos.Add(item.SedeFotoPrincipalUrl);
+                fotosTarjeta.Add(item.SedeFotoPrincipalUrl);
             }
             if (item.SedeFotos is not null && item.SedeFotos.Count > 0)
             {
-                sedeFotos.AddRange(item.SedeFotos.Where(x => !string.IsNullOrWhiteSpace(x)));
+                fotosTarjeta.AddRange(item.SedeFotos.Where(x => !string.IsNullOrWhiteSpace(x)));
             }
-            sedeFotos = sedeFotos
+            if (!string.IsNullOrWhiteSpace(item.EspacioFotoPrincipalUrl))
+            {
+                fotosTarjeta.Add(item.EspacioFotoPrincipalUrl);
+            }
+            if (item.EspacioFotos is not null && item.EspacioFotos.Count > 0)
+            {
+                fotosTarjeta.AddRange(item.EspacioFotos.Where(x => !string.IsNullOrWhiteSpace(x)));
+            }
+            fotosTarjeta = fotosTarjeta
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
-            if (sedeFotos.Count == 0)
+            if (fotosTarjeta.Count == 0)
             {
-                sedeFotos.Add(imagenSedePorDefectoUrl);
+                fotosTarjeta.Add(imagenSedePorDefectoUrl);
             }
 
             var numeroWhatsappEspacio = string.IsNullOrWhiteSpace(item.WhatsappContacto)
@@ -1012,7 +1021,8 @@ public class HomeController(
             item.TelefonoContactoResuelto = telefonoContactoTarjeta;
             item.SedeMapaUrlResuelto = mapaUrl;
             item.EnlaceWhatsappEspacio = enlaceWhatsappEspacio;
-            item.SedeFotosConFallback = sedeFotos;
+            item.FotosTarjetaConFallback = fotosTarjeta;
+            item.SedeFotosConFallback = fotosTarjeta;
             item.NegocioIdCotizacion = negocioIdSeleccionado ?? sedeRef?.NegocioId;
             item.SedeFacebookUrl = sedeRef?.FacebookUrl;
             item.SedeInstagramUrl = sedeRef?.InstagramUrl;

@@ -602,8 +602,8 @@ public class ReservasController(
         var eventos = items.Select(r => new
         {
             id = $"{r.TipoEvento}-{r.Id}",
-            reservaId = r.TipoEvento == "RESERVA" ? r.Id : (int?)null,
-            bloqueoId = r.TipoEvento == "BLOQUEO" ? r.Id : (int?)null,
+            reservaId = r.TipoEvento == "RESERVA" || r.TipoEvento == "RESERVA_COMPARTIDA" ? r.Id : (int?)null,
+            bloqueoId = r.TipoEvento == "BLOQUEO" || r.TipoEvento == "BLOQUEO_COMPARTIDO" ? r.Id : (int?)null,
             tipoEvento = r.TipoEvento,
             title = r.Titulo,
             start = new DateTime(r.Fecha.Year, r.Fecha.Month, r.Fecha.Day, r.HoraInicio.Hour, r.HoraInicio.Minute, 0),
@@ -786,7 +786,7 @@ $"""
             .Where(e =>
             {
                 var tipo = (e.TipoEvento ?? string.Empty).ToUpperInvariant();
-                return tipo == "NO_ATENCION" || tipo == "BLOQUEO";
+                return tipo == "NO_ATENCION" || tipo == "BLOQUEO" || tipo == "BLOQUEO_COMPARTIDO";
             })
             .Select(e => (Inicio: ToMinutes(e.HoraInicio), Fin: ToMinutes(e.HoraFin)))
             .Where(x => x.Fin > x.Inicio)
@@ -796,8 +796,8 @@ $"""
             .Where(e =>
             {
                 var tipo = (e.TipoEvento ?? string.Empty).ToUpperInvariant();
-                if (tipo == "NO_ATENCION" || tipo == "BLOQUEO") return true;
-                if (tipo != "RESERVA") return false;
+                if (tipo == "NO_ATENCION" || tipo == "BLOQUEO" || tipo == "BLOQUEO_COMPARTIDO") return true;
+                if (tipo != "RESERVA" && tipo != "RESERVA_COMPARTIDA") return false;
                 if (!e.Estado.HasValue) return true;
                 return e.Estado.Value != 5 && e.Estado.Value != 6;
             })
@@ -824,7 +824,10 @@ $"""
         }
 
         var pendientes = eventos
-            .Where(e => string.Equals(e.TipoEvento, "RESERVA", StringComparison.OrdinalIgnoreCase) && e.Estado == 1)
+            .Where(e =>
+                (string.Equals(e.TipoEvento, "RESERVA", StringComparison.OrdinalIgnoreCase)
+                 || string.Equals(e.TipoEvento, "RESERVA_COMPARTIDA", StringComparison.OrdinalIgnoreCase))
+                && e.Estado == 1)
             .OrderBy(e => e.HoraInicio)
             .Select(e => new
             {
@@ -836,10 +839,12 @@ $"""
             .ToList();
 
         var reservasActivas = eventos.Count(e =>
-            string.Equals(e.TipoEvento, "RESERVA", StringComparison.OrdinalIgnoreCase)
+            (string.Equals(e.TipoEvento, "RESERVA", StringComparison.OrdinalIgnoreCase)
+             || string.Equals(e.TipoEvento, "RESERVA_COMPARTIDA", StringComparison.OrdinalIgnoreCase))
             && e.Estado is 1 or 2 or 3 or 4);
         var bloqueosActivos = eventos.Count(e =>
             string.Equals(e.TipoEvento, "BLOQUEO", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(e.TipoEvento, "BLOQUEO_COMPARTIDO", StringComparison.OrdinalIgnoreCase)
             || string.Equals(e.TipoEvento, "NO_ATENCION", StringComparison.OrdinalIgnoreCase));
         var totalSlots = 0;
         for (var minuto = inicioDia; minuto < finDia; minuto += 60)
