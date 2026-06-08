@@ -1,4 +1,4 @@
-﻿
+
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ReservaPublicaPageViewModel
 @using System.Globalization
 @using System.Linq
@@ -44,6 +44,8 @@
     var sueloNombre = (Model.Espacio.TipoSueloNombre ?? string.Empty).Trim();
     var coberturaEspacio = Model.Espacio.Techada ? "Techada" : "No techada";
     var iluminacionEspacio = Model.Espacio.TieneIluminacion ? "Iluminacion" : "Sin iluminacion";
+    var resenasPublicas = Model.Resenas ?? new List<SistemaControlEspaciosDeportivosWeb.ViewModels.UsuarioPublicoResenaItemViewModel>();
+    var totalResenas = resenasPublicas.Count;
 }
 <div class="container py-4 home-reservar-page">
     <section class="sc-public-reserva-hero mb-3">
@@ -187,7 +189,7 @@
         <div class="card-body">
 @* Firma: FRANCO LARA - 03/05/2026 | Reserva publica restringida a bloques exactos de 1 hora con aviso visible y validacion cliente. *@
 @* Firma: FRANCO LARA - 20/05/2026 | Se permite el cierre especial 23:00-23:59 desde calendario publico sin bloquear por validacion de 60 minutos y se evita mensaje rojo de 30/60 para ese caso. *@
-@* Firma: FRANCO LARA - 08/06/2026 | El calendario publico muestra los horarios bloqueados por reservas en espacios compartidos con la misma presentacion visual de bloqueos operativos. *@
+@* Firma: FRANCO LARA - 08/06/2026 | El calendario publico muestra bloqueos por reservas compartidas y agrega al final del flujo un bloque de resenas publicas ordenadas en forma descendente por fecha. *@
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                 <h2 class="h6 mb-0 sc-public-section-title"><i class="bi bi-pencil-square me-1"></i>Datos para registrar la reserva</h2>
                 <span class="badge text-bg-info"><i class="bi bi-clock-history me-1"></i>Solo reservas de 1 hora</span>
@@ -409,6 +411,36 @@
         </div>
     }
 
+    <div class="card border-0 shadow-sm mb-3 sc-public-section-card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                <h2 class="h6 mb-0 sc-public-section-title"><i class="bi bi-chat-quote me-1"></i>Reseñas (@totalResenas)</h2>
+                <span class="sc-public-review-caption">Ordenadas de la mas reciente a la mas antigua</span>
+            </div>
+            @if (totalResenas == 0)
+            {
+                <div class="sc-public-reviews-empty">
+                    Aun no se registraron reseñas para este espacio deportivo.
+                </div>
+            }
+            else
+            {
+                <div class="sc-public-reviews-grid">
+                    @foreach (var resena in resenasPublicas)
+                    {
+                        <article class="sc-public-review-card">
+                            <div class="sc-public-review-head">
+                                <strong>@resena.AliasPublico</strong>
+                                <span>@resena.FechaCreacion.ToString("dd/MM/yyyy")</span>
+                            </div>
+                            <p class="mb-0">@resena.Comentario</p>
+                        </article>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
 </div>
 
 @section Styles {
@@ -441,6 +473,55 @@
         .home-reservar-page .sc-public-section-title i {
             font-size: .72rem;
             line-height: 1;
+        }
+        .home-reservar-page .sc-public-review-caption {
+            color: #5b7298;
+            font-size: .82rem;
+            font-weight: 600;
+        }
+        .home-reservar-page .sc-public-reviews-empty {
+            border: 1px dashed #c9d8f4;
+            border-radius: 14px;
+            background: #f8fbff;
+            color: #597298;
+            padding: 1rem;
+            text-align: center;
+        }
+        .home-reservar-page .sc-public-reviews-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: .9rem;
+        }
+        .home-reservar-page .sc-public-review-card {
+            border: 1px solid #d6e3f9;
+            border-radius: 16px;
+            background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+            padding: 1rem;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, .05);
+            display: flex;
+            flex-direction: column;
+            gap: .6rem;
+        }
+        .home-reservar-page .sc-public-review-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .75rem;
+            flex-wrap: wrap;
+        }
+        .home-reservar-page .sc-public-review-head strong {
+            color: #11386f;
+            font-size: .96rem;
+        }
+        .home-reservar-page .sc-public-review-head span {
+            color: #6a81a3;
+            font-size: .78rem;
+            font-weight: 700;
+        }
+        .home-reservar-page .sc-public-review-card p {
+            color: #435b86;
+            line-height: 1.5;
+            white-space: pre-line;
         }
         .home-reservar-page .btn-public-principal {
             border: none;

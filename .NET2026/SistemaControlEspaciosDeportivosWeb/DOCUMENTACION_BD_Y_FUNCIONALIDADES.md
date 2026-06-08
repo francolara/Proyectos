@@ -1391,3 +1391,31 @@
 - Sp_Espacios_Crear y Sp_Espacios_Actualizar reciben @FotoPrincipalUrl y @FotosUrlsCsv, validan galeria maxima de 3 imagenes y exigen foto principal cuando existen alternativas.
 - Sp_Espacios_ObtenerPorId devuelve la galeria del espacio para el mantenimiento administrativo.
 - Sp_Home_BuscarEspaciosDisponibles expone fotos propias del espacio para priorizarlas en la tarjeta publica y completar el carrusel con fotos de la sede cuando haga falta.
+
+## Actualizacion 08/06/2026 - Resenas de reservas publicas
+- Nueva tabla: `dbo.ReservasUsuariosPublicosResenas`.
+  - Guarda una sola resena por reserva publica autenticada.
+  - Campos principales: `ReservaId`, `UsuarioId`, `AliasPublico`, `Comentario`, `FechaCreacion`, `UsuarioCreacion`.
+  - Restriccion clave: `UQ_ReservasUsuariosPublicosResenas_ReservaId` impide mas de una resena por reserva.
+- Nuevo stored procedure: `dbo.Sp_UsuariosPublicos_ResenaCrear`.
+  - Valida que la reserva pertenezca al usuario autenticado mediante `ReservasUsuariosPublicos`.
+  - Solo permite registrar resena cuando la reserva este en estado `Confirmada (2)`, `Pagada (3)` o `Completada (4)`.
+  - Si el alias llega vacio, guarda `@JugadorAnonimo` como fallback.
+- Nuevo stored procedure: `dbo.Sp_Home_EspacioResenasListar`.
+  - Lista resenas publicas por `EspacioDeportivoId`.
+  - Ordena en forma descendente por `FechaCreacion` y luego por `Id`.
+- Actualizacion de `dbo.Sp_UsuariosPublicos_ReservasListar`.
+  - Ahora informa si la reserva todavia puede resenarse mediante `PuedeRegistrarResena`.
+  - Devuelve tambien la resena ya registrada (`ResenaId`, `ResenaAliasPublico`, `ResenaComentario`, `ResenaFechaCreacion`) para pintarla en `PerfilPublico > Mis reservas`.
+- Comportamiento funcional en la web:
+  - `PerfilPublico/Index` habilita `Agregar resena` solo para reservas publicas del usuario en estados `Confirmada`, `Pagada` o `Completada` y sin resena previa.
+  - El alias sugerido se arma como `@PrimerNombrePrimerApellido`, sin espacios, y puede editarse antes de publicar.
+  - `Home/Reservar` muestra al final el bloque `Resenas (n Resenas)` con alias visible, fecha y comentario en orden descendente.
+
+## Actualizacion 08/06/2026 - Calendario ICS para reservas publicas
+- Nuevo stored procedure: dbo.Sp_UsuariosPublicos_ReservaCalendarioObtener.
+  - Obtiene una reserva publica por ReservaId validando pertenencia mediante ReservasUsuariosPublicos.
+  - Devuelve negocio, sede, espacio, direccion, fecha, hora y estado para exportacion a calendario.
+- Comportamiento funcional en la web:
+  - PerfilPublico/Index agrega el boton Agregar a mi calendario solo para reservas activas del usuario.
+  - La descarga genera el archivo reserva-R-000000.ics con horario Peru convertido a UTC y formato compatible con Google Calendar, Outlook, iPhone y Android.

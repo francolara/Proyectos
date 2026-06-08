@@ -35,11 +35,21 @@ public class PerfilPublicoController(ISportCenterStoredProcedureService spServic
         InicializarTelefonosParaVista(perfil);
         await CargarCombosAsync(perfil);
         var (reservas, totalReservas) = await spService.UsuariosPublicosReservasListarAsync(usuarioId, paginaActualReservas, tamanoPaginaReservas);
+        var aliasSugerido = ConstruirAliasPublicoSugerido(perfil.Nombres, perfil.Apellidos);
+        foreach (var reserva in reservas)
+        {
+            reserva.AliasResenaSugerido = aliasSugerido;
+        }
+
         var totalPaginasReservas = Math.Max(1, (int)Math.Ceiling(totalReservas / (double)tamanoPaginaReservas));
         if (paginaActualReservas > totalPaginasReservas)
         {
             paginaActualReservas = totalPaginasReservas;
             (reservas, totalReservas) = await spService.UsuariosPublicosReservasListarAsync(usuarioId, paginaActualReservas, tamanoPaginaReservas);
+            foreach (var reserva in reservas)
+            {
+                reserva.AliasResenaSugerido = aliasSugerido;
+            }
         }
 
         ViewData["Tab"] = string.IsNullOrWhiteSpace(tab) ? "datos" : tab.Trim().ToLowerInvariant();
@@ -52,6 +62,64 @@ public class PerfilPublicoController(ISportCenterStoredProcedureService spServic
             TotalReservas = totalReservas,
             TotalPaginasReservas = totalPaginasReservas
         });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> GuardarResena(UsuarioPublicoResenaGuardarViewModel model)
+    {
+        ViewData["PublicFullWidth"] = true;
+        var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(usuarioId)) return Challenge();
+
+        model.Pagina = model.Pagina < 1 ? 1 : model.Pagina;
+        model.AliasPublico = (model.AliasPublico ?? string.Empty).Trim();
+        model.Comentario = (model.Comentario ?? string.Empty).Trim();
+
+        var perfil = await spService.UsuariosPublicosObtenerPerfilAsync(usuarioId);
+        var aliasSugerido = ConstruirAliasPublicoSugerido(perfil?.Nombres, perfil?.Apellidos);
+        if (string.IsNullOrWhiteSpace(model.AliasPublico))
+        {
+            model.AliasPublico = aliasSugerido;
+        }
+
+        if (!ModelState.IsValid)
+        {
+            TempData["PerfilPublicoInfo"] = "No se pudo registrar la resena. Revisa el alias visible y el comentario.";
+            return RedirectToAction(nameof(Index), new { tab = "reservas", pagina = model.Pagina });
+        }
+
+        try
+        {
+            await spService.UsuariosPublicosResenaCrearAsync(usuarioId, model, User.Identity?.Name ?? "perfil-publico");
+            TempData["PerfilPublicoOk"] = "Resena registrada correctamente.";
+        }
+        catch (Exception ex)
+        {
+            TempData["PerfilPublicoInfo"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Index), new { tab = "reservas", pagina = model.Pagina });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> DescargarCalendarioReserva(int reservaId)
+    {
+        ViewData["PublicFullWidth"] = true;
+        var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(usuarioId)) return Challenge();
+        if (reservaId <= 0) return NotFound();
+
+        var reserva = await spService.UsuariosPublicosReservaCalendarioObtenerAsync(usuarioId, reservaId);
+        if (reserva is null) return NotFound();
+        if (reserva.EstadoId is 5 or 6)
+        {
+            TempData["PerfilPublicoInfo"] = "Solo puedes agregar al calendario reservas activas.";
+            return RedirectToAction(nameof(Index), new { tab = "reservas", pagina = 1 });
+        }
+
+        var bytes = ReservationCalendarIcsBuilder.Build(reserva, DateTime.UtcNow);
+        return File(bytes, "text/calendar; charset=utf-8", $"reserva-{reserva.CodigoReserva}.ics");
     }
 
     [HttpPost]
@@ -145,5 +213,24 @@ public class PerfilPublicoController(ISportCenterStoredProcedureService spServic
     {
         perfil.Telefono = TelefonoInternacionalHelper.Componer(perfil.TelefonoCodigoPais, perfil.TelefonoNumeroLocal);
         perfil.WhatsappEquipo = TelefonoInternacionalHelper.Componer(perfil.WhatsappCodigoPais, perfil.WhatsappNumeroLocal);
+    }
+
+    private static string ConstruirAliasPublicoSugerido(string? nombres, string? apellidos)
+    {
+        static string ObtenerPrimerToken(string? valor)
+        {
+            if (string.IsNullOrWhiteSpace(valor))
+                return string.Empty;
+
+            return valor
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .FirstOrDefault() ?? string.Empty;
+        }
+
+        var primerNombre = ObtenerPrimerToken(nombres);
+        var primerApellido = ObtenerPrimerToken(apellidos);
+        var aliasBase = string.Concat(primerNombre, primerApellido).Replace(" ", string.Empty).Trim();
+
+        return string.IsNullOrWhiteSpace(aliasBase) ? "@JugadorAnonimo" : $"@{aliasBase}";
     }
 }

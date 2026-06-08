@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿
 GO
 SET ANSI_NULLS ON
 GO
@@ -15,6 +15,7 @@ GO
 -- Description:   Incluye URLs de redes y mapa de la sede para vista en tarjetas del perfil publico.
 -- =============================================
 -- Firma:         Codex - 26/04/2026 | Se implementa paginacion real por pagina/tamano (6 por defecto) desde SQL para Mis Reservas.
+-- Firma:         FRANCO LARA - 08/06/2026 | Se incorpora estado de reseña por reserva para permitir un solo registro en estados Confirmada, Pagada o Completada y mostrar la reseña existente en el perfil publico.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_UsuariosPublicos_ReservasListar]
     @UsuarioId NVARCHAR(450),
     @Pagina INT = 1,
@@ -65,13 +66,22 @@ BEGIN
                     ELSE NULL
                 END
             ) AS SedeMapaUrl,
-            COUNT(1) OVER() AS TotalRegistros
+            COUNT(1) OVER() AS TotalRegistros,
+            CAST(CASE
+                WHEN r.Estado IN (2, 3, 4) AND rr.Id IS NULL THEN 1
+                ELSE 0
+            END AS BIT) AS PuedeRegistrarResena,
+            rr.Id AS ResenaId,
+            rr.AliasPublico AS ResenaAliasPublico,
+            rr.Comentario AS ResenaComentario,
+            rr.FechaCreacion AS ResenaFechaCreacion
         FROM dbo.ReservasUsuariosPublicos rup
         INNER JOIN dbo.Reservas r ON r.Id = rup.ReservaId
         INNER JOIN dbo.EspaciosDeportivos e ON e.Id = r.EspacioDeportivoId
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
         INNER JOIN dbo.Negocios n ON n.Id = s.NegocioId
         LEFT JOIN dbo.SedeConfiguracionNotificacion scn ON scn.SedeId = s.Id
+        LEFT JOIN dbo.ReservasUsuariosPublicosResenas rr ON rr.ReservaId = r.Id
         WHERE rup.UsuarioId = @UsuarioId
         ORDER BY r.Fecha DESC, r.HoraInicio DESC, r.Id DESC
         OFFSET @Offset ROWS FETCH NEXT @TamanoPaginaFinal ROWS ONLY;

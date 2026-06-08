@@ -99,7 +99,7 @@ public partial class SportCenterStoredProcedureService
                 totalRegistros = dr.GetInt32(18);
             }
 
-            list.Add(new UsuarioPublicoReservaItemViewModel
+            var item = new UsuarioPublicoReservaItemViewModel
             {
                 ReservaId = dr.GetInt32(0),
                 Fecha = DateOnly.FromDateTime(dr.GetDateTime(1)),
@@ -118,10 +118,100 @@ public partial class SportCenterStoredProcedureService
                 SedeFacebookUrl = dr.IsDBNull(14) ? null : dr.GetString(14),
                 SedeInstagramUrl = dr.IsDBNull(15) ? null : dr.GetString(15),
                 SedeTwitterUrl = dr.IsDBNull(16) ? null : dr.GetString(16),
-                SedeMapaUrl = dr.IsDBNull(17) ? null : dr.GetString(17)
-            });
+                SedeMapaUrl = dr.IsDBNull(17) ? null : dr.GetString(17),
+                PuedeRegistrarResena = dr.FieldCount > 19 && !dr.IsDBNull(19) && ReadBool(dr, 19)
+            };
+
+            if (dr.FieldCount > 23 && !dr.IsDBNull(20))
+            {
+                item.Resena = new UsuarioPublicoResenaItemViewModel
+                {
+                    ResenaId = dr.GetInt32(20),
+                    ReservaId = item.ReservaId,
+                    AliasPublico = dr.IsDBNull(21) ? string.Empty : dr.GetString(21),
+                    Comentario = dr.IsDBNull(22) ? string.Empty : dr.GetString(22),
+                    FechaCreacion = dr.IsDBNull(23) ? DateTime.MinValue : dr.GetDateTime(23)
+                };
+            }
+
+            list.Add(item);
         }
 
         return (list, totalRegistros);
+    }
+
+    public async Task<UsuarioPublicoReservaCalendarioViewModel?> UsuariosPublicosReservaCalendarioObtenerAsync(string usuarioId, int reservaId)
+    {
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_UsuariosPublicos_ReservaCalendarioObtener", cn)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+        AddParam(cmd, "@UsuarioId", usuarioId, SqlDbType.NVarChar);
+        AddParam(cmd, "@ReservaId", reservaId, SqlDbType.Int);
+
+        await using var dr = await cmd.ExecuteReaderAsync();
+        if (!await dr.ReadAsync()) return null;
+
+        return new UsuarioPublicoReservaCalendarioViewModel
+        {
+            ReservaId = dr.GetInt32(0),
+            EstadoId = dr.GetInt32(1),
+            EstadoTexto = dr.IsDBNull(2) ? string.Empty : dr.GetString(2),
+            NegocioNombre = dr.IsDBNull(3) ? string.Empty : dr.GetString(3),
+            SedeNombre = dr.IsDBNull(4) ? string.Empty : dr.GetString(4),
+            EspacioNombre = dr.IsDBNull(5) ? string.Empty : dr.GetString(5),
+            SedeDireccion = dr.IsDBNull(6) ? null : dr.GetString(6),
+            Fecha = DateOnly.FromDateTime(dr.GetDateTime(7)),
+            HoraInicio = TimeOnly.FromTimeSpan(dr.GetTimeSpan(8)),
+            HoraFin = TimeOnly.FromTimeSpan(dr.GetTimeSpan(9))
+        };
+    }
+
+    public async Task<int> UsuariosPublicosResenaCrearAsync(string usuarioId, UsuarioPublicoResenaGuardarViewModel model, string usuario)
+    {
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_UsuariosPublicos_ResenaCrear", cn)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+        AddParam(cmd, "@UsuarioId", usuarioId, SqlDbType.NVarChar);
+        AddParam(cmd, "@ReservaId", model.ReservaId, SqlDbType.Int);
+        AddParam(cmd, "@AliasPublico", model.AliasPublico, SqlDbType.NVarChar);
+        AddParam(cmd, "@Comentario", model.Comentario, SqlDbType.NVarChar);
+        AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+
+        var result = await cmd.ExecuteScalarAsync();
+        return Convert.ToInt32(result);
+    }
+
+    public async Task<List<UsuarioPublicoResenaItemViewModel>> HomeEspacioResenasListarAsync(int espacioDeportivoId)
+    {
+        var list = new List<UsuarioPublicoResenaItemViewModel>();
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_Home_EspacioResenasListar", cn)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+        AddParam(cmd, "@EspacioDeportivoId", espacioDeportivoId, SqlDbType.Int);
+
+        await using var dr = await cmd.ExecuteReaderAsync();
+        while (await dr.ReadAsync())
+        {
+            list.Add(new UsuarioPublicoResenaItemViewModel
+            {
+                ResenaId = dr.GetInt32(0),
+                ReservaId = dr.GetInt32(1),
+                EspacioDeportivoId = dr.GetInt32(2),
+                AliasPublico = dr.IsDBNull(3) ? string.Empty : dr.GetString(3),
+                Comentario = dr.IsDBNull(4) ? string.Empty : dr.GetString(4),
+                FechaCreacion = dr.GetDateTime(5)
+            });
+        }
+
+        return list;
     }
 }

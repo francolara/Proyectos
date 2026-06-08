@@ -774,13 +774,16 @@ public class HomeController(
             cotizacion = null;
         }
 
+        var resenas = await spService.HomeEspacioResenasListarAsync(espacio.EspacioDeportivoId);
+
         return new ReservaPublicaPageViewModel
         {
             NegocioId = negocioIdResolved.Value,
             Espacio = espacio,
             Sede = sede,
             Formulario = form,
-            Cotizacion = cotizacion
+            Cotizacion = cotizacion,
+            Resenas = resenas
         };
     }
 

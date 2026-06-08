@@ -43,6 +43,9 @@ public interface ISportCenterStoredProcedureService
     Task<UsuarioPublicoPerfilViewModel?> UsuariosPublicosObtenerPerfilAsync(string usuarioId);
     Task<int> UsuariosPublicosGuardarPerfilAsync(UsuarioPublicoPerfilViewModel model, string usuario);
     Task<(List<UsuarioPublicoReservaItemViewModel> Reservas, int TotalRegistros)> UsuariosPublicosReservasListarAsync(string usuarioId, int pagina = 1, int tamanoPagina = 6);
+    Task<UsuarioPublicoReservaCalendarioViewModel?> UsuariosPublicosReservaCalendarioObtenerAsync(string usuarioId, int reservaId);
+    Task<int> UsuariosPublicosResenaCrearAsync(string usuarioId, UsuarioPublicoResenaGuardarViewModel model, string usuario);
+    Task<List<UsuarioPublicoResenaItemViewModel>> HomeEspacioResenasListarAsync(int espacioDeportivoId);
     Task<List<SelectListItem>> DesafiosNivelesListarAsync();
     Task<List<DesafioRivalItemViewModel>> DesafiosBuscarRivalesAsync(string usuarioId, string codigoUbigeo, int? idDeporte, int? idNivel);
     Task<List<DesafioListadoItemViewModel>> DesafiosListarAsync(string usuarioId, string tipoListado);

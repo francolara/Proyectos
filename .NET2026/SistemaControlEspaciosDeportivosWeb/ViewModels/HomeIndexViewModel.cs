@@ -182,6 +182,7 @@ public class ReservaPublicaPageViewModel
     public SedePublicaViewModel? Sede { get; set; }
     public SolicitudReservaPublicaFormViewModel Formulario { get; set; } = new();
     public ReservaCotizacionViewModel? Cotizacion { get; set; }
+    public List<UsuarioPublicoResenaItemViewModel> Resenas { get; set; } = new();
 }
 
 public class SolicitudPublicaDetalleViewModel

@@ -1,4 +1,4 @@
-﻿@model SistemaControlEspaciosDeportivosWeb.ViewModels.PerfilPublicoIndexViewModel
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.PerfilPublicoIndexViewModel
 @{
     ViewData["Title"] = "Perfil";
     var tab = (ViewData["Tab"]?.ToString() ?? "datos").ToLowerInvariant();
@@ -230,6 +230,7 @@
 
     @if (tabReservas)
     {
+@* Firma: FRANCO LARA - 08/06/2026 | Mis reservas permite registrar una sola resena por reserva confirmada, pagada o completada usando alias publico editable, muestra la resena ya registrada dentro de la tarjeta y agrega descarga .ics para reservas activas del usuario. *@
         <section class="table-card profile-reservas-card">
             <span class="section-chip"><i class="bi bi-calendar2-check"></i>Historial de reservas</span>
             @if (Model.TotalReservas > 0)
@@ -260,7 +261,7 @@
                         var waNumero = (item.SedeWhatsapp ?? item.SedeTelefono ?? string.Empty).Replace(" ", string.Empty).Replace("+", string.Empty);
                         var waUrl = string.IsNullOrWhiteSpace(waNumero) ? null : $"https://wa.me/{waNumero}";
 
-                        <article class="profile-reserva-item">
+                        <article class="profile-reserva-item @estadoClase">
                             <header class="profile-reserva-head">
                                 <div>
                                     <p class="profile-kicker mb-1"><i class="bi bi-hash"></i>Reserva</p>
@@ -305,8 +306,61 @@
                                 </div>
                             </div>
 
+                            @if (item.Resena is not null)
+                            {
+                                <section class="profile-review-box is-registered">
+                                    <div class="profile-review-head">
+                                        <span class="profile-kicker"><i class="bi bi-chat-quote"></i>Reseña registrada</span>
+                                        <span class="profile-review-date">@item.Resena.FechaCreacion.ToString("dd/MM/yyyy")</span>
+                                    </div>
+                                    <strong class="profile-review-alias">@item.Resena.AliasPublico</strong>
+                                    <p class="mb-0 profile-review-comment">@item.Resena.Comentario</p>
+                                </section>
+                            }
+                            else if (item.PuedeRegistrarResena)
+                            {
+                                <details class="profile-review-box">
+                                    <summary class="profile-review-summary">
+                                        <span><i class="bi bi-chat-left-text"></i>Agregar reseña</span>
+                                        <small>1 reseña por reserva</small>
+                                    </summary>
+                                    <form asp-action="GuardarResena" method="post" class="profile-review-form">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="ReservaId" value="@item.ReservaId" />
+                                        <input type="hidden" name="Pagina" value="@Model.PaginaReservas" />
+                                        <div>
+                                            <label class="form-label">Usuario visible</label>
+                                            <input name="AliasPublico" class="form-control" maxlength="120" value="@item.AliasResenaSugerido" placeholder="@item.AliasResenaSugerido" />
+                                            <small class="text-muted">Se mostrara como alias publico y puedes modificarlo para proteger tu identidad.</small>
+                                        </div>
+                                        <div>
+                                            <label class="form-label">Comentario</label>
+                                            <textarea name="Comentario" class="form-control" rows="3" maxlength="800" placeholder="Comparte tu experiencia con este espacio deportivo."></textarea>
+                                        </div>
+                                        <div class="d-flex justify-content-end">
+                                            <button type="submit" class="auth-nav-mini auth-nav-mini-solid">
+                                                <i class="bi bi-send me-1"></i>Publicar reseña
+                                            </button>
+                                        </div>
+                                    </form>
+                                </details>
+                            }
+
                             <footer class="profile-reserva-foot">
-                                <span class="profile-kicker"><i class="bi bi-share"></i>Canales de la sede</span>
+                                <div class="d-flex flex-column gap-2">
+                                    <span class="profile-kicker"><i class="bi bi-share"></i>Canales de la sede</span>
+                                    @if (item.PuedeAgregarCalendario)
+                                    {
+                                        <div class="profile-calendar-cta">
+                                            <a class="auth-nav-mini auth-nav-mini-outline"
+                                               asp-action="DescargarCalendarioReserva"
+                                               asp-route-reservaId="@item.ReservaId">
+                                                <i class="bi bi-calendar-plus me-1"></i>Agregar a mi calendario
+                                            </a>
+                                            <small>Compatible con Google Calendar, Outlook, iPhone y Android.</small>
+                                        </div>
+                                    }
+                                </div>
                                 <div class="profile-icon-links">
                                     @if (!string.IsNullOrWhiteSpace(item.SedeMapaUrl))
                                     {
@@ -803,11 +857,81 @@
             color: #5c6e91;
             line-height: 1.25;
         }
+        .profile-review-box {
+            border: 1px solid #d7e5fb;
+            border-radius: 12px;
+            background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+            padding: .7rem .8rem;
+            display: flex;
+            flex-direction: column;
+            gap: .65rem;
+        }
+        .profile-review-box.is-registered {
+            border-color: #b8d4ff;
+            background: linear-gradient(180deg, #f4f9ff 0%, #ffffff 100%);
+        }
+        .profile-review-summary {
+            list-style: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .75rem;
+            cursor: pointer;
+            font-weight: 700;
+            color: #12366f;
+        }
+        .profile-review-summary::-webkit-details-marker {
+            display: none;
+        }
+        .profile-review-summary span {
+            display: inline-flex;
+            align-items: center;
+            gap: .45rem;
+        }
+        .profile-review-summary small,
+        .profile-review-date {
+            color: #61779d;
+            font-size: .78rem;
+            font-weight: 600;
+        }
+        .profile-review-form {
+            display: flex;
+            flex-direction: column;
+            gap: .7rem;
+        }
+        .profile-review-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .75rem;
+            flex-wrap: wrap;
+        }
+        .profile-review-alias {
+            color: #0f2f64;
+            font-size: .96rem;
+        }
+        .profile-review-comment {
+            color: #435b86;
+            line-height: 1.45;
+            white-space: pre-line;
+        }
+        .profile-calendar-cta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: .35rem;
+        }
+        .profile-calendar-cta small {
+            color: #6b7f9e;
+            font-size: .76rem;
+            line-height: 1.4;
+            max-width: 320px;
+        }
         .profile-reserva-foot {
             border-top: 1px dashed #cbdaef;
             padding-top: .55rem;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: space-between;
             gap: .6rem;
         }

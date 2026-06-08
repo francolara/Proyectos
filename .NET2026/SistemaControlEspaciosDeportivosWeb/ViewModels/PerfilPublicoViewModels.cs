@@ -95,6 +95,7 @@ public class UsuarioPublicoPerfilViewModel
 public class UsuarioPublicoReservaItemViewModel
 {
     public int ReservaId { get; set; }
+    public string CodigoReserva => $"R-{ReservaId:D6}";
     public DateOnly Fecha { get; set; }
     public TimeOnly HoraInicio { get; set; }
     public TimeOnly HoraFin { get; set; }
@@ -112,6 +113,51 @@ public class UsuarioPublicoReservaItemViewModel
     public string? SedeInstagramUrl { get; set; }
     public string? SedeTwitterUrl { get; set; }
     public string? SedeMapaUrl { get; set; }
+    public bool PuedeRegistrarResena { get; set; }
+    public bool PuedeAgregarCalendario => EstadoTexto is not "Cancelada" and not "No Show";
+    public string AliasResenaSugerido { get; set; } = string.Empty;
+    public UsuarioPublicoResenaItemViewModel? Resena { get; set; }
+}
+
+public class UsuarioPublicoReservaCalendarioViewModel
+{
+    public int ReservaId { get; set; }
+    public string CodigoReserva => $"R-{ReservaId:D6}";
+    public int EstadoId { get; set; }
+    public string EstadoTexto { get; set; } = string.Empty;
+    public string NegocioNombre { get; set; } = string.Empty;
+    public string SedeNombre { get; set; } = string.Empty;
+    public string EspacioNombre { get; set; } = string.Empty;
+    public string? SedeDireccion { get; set; }
+    public DateOnly Fecha { get; set; }
+    public TimeOnly HoraInicio { get; set; }
+    public TimeOnly HoraFin { get; set; }
+}
+
+public class UsuarioPublicoResenaItemViewModel
+{
+    public int ResenaId { get; set; }
+    public int ReservaId { get; set; }
+    public int EspacioDeportivoId { get; set; }
+    public string AliasPublico { get; set; } = string.Empty;
+    public string Comentario { get; set; } = string.Empty;
+    public DateTime FechaCreacion { get; set; }
+}
+
+public class UsuarioPublicoResenaGuardarViewModel
+{
+    [Required(ErrorMessage = "La reserva es obligatoria.")]
+    public int ReservaId { get; set; }
+
+    public int Pagina { get; set; } = 1;
+
+    [Required(ErrorMessage = "El alias visible es obligatorio.")]
+    [StringLength(120, ErrorMessage = "El alias visible no puede exceder 120 caracteres.")]
+    public string AliasPublico { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "El comentario de la resena es obligatorio.")]
+    [StringLength(800, ErrorMessage = "El comentario no puede exceder 800 caracteres.")]
+    public string Comentario { get; set; } = string.Empty;
 }
 
 public class PerfilPublicoIndexViewModel
