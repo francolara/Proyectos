@@ -38,7 +38,8 @@ public partial class SportCenterStoredProcedureService
             CancelacionAutomaticaNoConfirmada = dr.FieldCount > 16 && !dr.IsDBNull(16) && Convert.ToBoolean(dr.GetValue(16)),
             MinutosCancelacionNoConfirmada = dr.FieldCount > 17 && !dr.IsDBNull(17) ? Convert.ToInt32(dr.GetValue(17)) : null,
             SedesPermitidas = dr.FieldCount > 18 && !dr.IsDBNull(18) ? Convert.ToInt32(dr.GetValue(18)) : 2,
-            EspaciosPermitidos = dr.FieldCount > 19 && !dr.IsDBNull(19) ? Convert.ToInt32(dr.GetValue(19)) : 6
+            EspaciosPermitidos = dr.FieldCount > 19 && !dr.IsDBNull(19) ? Convert.ToInt32(dr.GetValue(19)) : 6,
+            HorasMaximasReservaCliente = dr.FieldCount > 20 && !dr.IsDBNull(20) ? Convert.ToInt32(dr.GetValue(20)) : 1
         };
     }
 
@@ -67,6 +68,7 @@ public partial class SportCenterStoredProcedureService
             AddParam(cmd, "@PermitirModificarPrecioReserva", model.PermitirModificarPrecioReserva, SqlDbType.Bit);
             AddParam(cmd, "@CancelacionAutomaticaNoConfirmada", model.CancelacionAutomaticaNoConfirmada, SqlDbType.Bit);
             AddParam(cmd, "@MinutosCancelacionNoConfirmada", model.MinutosCancelacionNoConfirmada, SqlDbType.Int);
+            AddParam(cmd, "@HorasMaximasReservaCliente", model.HorasMaximasReservaCliente, SqlDbType.Int);
             AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
             await cmd.ExecuteNonQueryAsync();
             return true;

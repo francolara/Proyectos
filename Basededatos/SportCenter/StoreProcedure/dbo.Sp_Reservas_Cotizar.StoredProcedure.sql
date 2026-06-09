@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿
 GO
 SET ANSI_NULLS ON
 GO
@@ -9,6 +9,7 @@ GO
 -- Firma: Codex - 13/04/2026 | Corrige mapeo de dia de semana para cotizacion: domingo ahora usa DiaSemana=0 (igual que la configuracion de tarifas del modulo Espacios).
 -- Firma: FRANCO LARA - 20/05/2026 | Acepta duracion especial 23:00-23:59 en cotizacion para cierre de jornada y la factura como hora completa.
 -- Firma: FRANCO LARA - 20/05/2026 | Prioriza TarifaFeriado cuando la fecha es feriado; si no existe rango feriado aplica tarifa normal por dia.
+-- Firma: FRANCO LARA - 09/06/2026 | La cotizacion permite bloques exactos de 1 hora hasta HorasMaximasReservaCliente del negocio y mantiene compatibilidad con cotizaciones internas de 30 minutos.
 CREATE OR ALTER PROCEDURE dbo.Sp_Reservas_Cotizar
     @NegocioId INT,
     @EspacioDeportivoId INT,
@@ -24,9 +25,7 @@ BEGIN
             RAISERROR('La hora fin debe ser mayor que la hora inicio.', 16, 1);
 
         DECLARE @DuracionMinutos INT = DATEDIFF(MINUTE, @HoraInicio, @HoraFin);
-        IF @DuracionMinutos NOT IN (30, 60)
-           AND NOT (@HoraInicio = '23:00:00' AND @HoraFin = '23:59:00')
-            RAISERROR('Solo se permite reservas de 30 o 60 minutos.', 16, 1);
+        DECLARE @HorasMaximasReservaCliente INT = 1;
         DECLARE @DuracionFacturableMinutos INT =
             CASE
                 WHEN @HoraInicio = '23:00:00' AND @HoraFin = '23:59:00' THEN 60
@@ -48,6 +47,23 @@ BEGIN
 
         IF @SedeId IS NULL
             RAISERROR('El espacio deportivo no esta disponible para este negocio.', 16, 1);
+
+        SELECT
+            @HorasMaximasReservaCliente = CAST(COALESCE(n.HorasMaximasReservaCliente, 1) AS INT)
+        FROM dbo.Negocios n
+        WHERE n.Id = @NegocioId;
+
+        IF @HorasMaximasReservaCliente < 1
+            SET @HorasMaximasReservaCliente = 1;
+
+        IF @DuracionMinutos <> 30
+           AND NOT (@HoraInicio = '23:00:00' AND @HoraFin = '23:59:00')
+           AND NOT (
+                @DuracionMinutos >= 60
+                AND @DuracionMinutos <= (@HorasMaximasReservaCliente * 60)
+                AND @DuracionMinutos % 60 = 0
+           )
+            RAISERROR('Solo se permite reservas en bloques de 1 hora segun la configuracion del negocio.', 16, 1);
 
         IF EXISTS (SELECT 1 FROM dbo.Feriados f WHERE f.Fecha = @Fecha)
             SET @EsFeriado = 1;

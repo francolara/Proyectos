@@ -569,7 +569,7 @@
                                             <a class="btn btn-sm auth-nav-mini auth-nav-mini-outline home-map-btn"
                                                href="@item.SedeMapaUrlResuelto"
                                                target="_blank"
-                                               rel="noopener noreferrer">Como llegar</a>
+                                               rel="noopener noreferrer">📍 Cómo llegar</a>
                                         }
                                     }
                                     @if (item.PermiteChatWhatsapp && !string.IsNullOrWhiteSpace(item.EnlaceWhatsappEspacio))
@@ -586,7 +586,7 @@
                                         <a class="btn btn-sm auth-nav-mini auth-nav-mini-outline home-map-btn"
                                            href="@item.SedeMapaUrlResuelto"
                                            target="_blank"
-                                           rel="noopener noreferrer">Como llegar</a>
+                                           rel="noopener noreferrer">📍 Cómo llegar</a>
                                     }
                                 </div>
                                 <div class="home-sede-social">
@@ -1186,7 +1186,7 @@
         }
 
         dep.value = depValue;
-        renderOptions(prov, [], 'Todas');
+        renderOptions(prov, [], 'Todos');
         renderOptions(dist, [], 'Todos');
 
         const responseProv = await fetch(`${urlProv}?codigoDepartamento=${encodeURIComponent(depValue)}`, { cache: 'no-store' });
@@ -1195,7 +1195,7 @@
             return;
         }
         const dataProv = await responseProv.json();
-        renderOptions(prov, dataProv, 'Todas');
+        renderOptions(prov, dataProv, 'Todos');
 
         const provinciaValue = findOptionValueByText(prov, provinciaNombre);
 
@@ -1320,7 +1320,7 @@
     dep.addEventListener('change', async () => {
         desactivarFiltroCercania();
         const value = (dep.value || '').trim();
-        renderOptions(prov, [], 'Todas');
+        renderOptions(prov, [], 'Todos');
         renderOptions(dist, [], 'Todos');
         await refreshNegocios();
         if (value.length !== 2) return;
@@ -1328,7 +1328,7 @@
         const response = await fetch(`${urlProv}?codigoDepartamento=${encodeURIComponent(value)}`, { cache: 'no-store' });
         if (!response.ok) return;
         const data = await response.json();
-        renderOptions(prov, data, 'Todas');
+        renderOptions(prov, data, 'Todos');
     });
 
     prov.addEventListener('change', async () => {

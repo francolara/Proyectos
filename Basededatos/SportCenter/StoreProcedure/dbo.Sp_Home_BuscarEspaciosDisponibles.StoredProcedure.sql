@@ -18,6 +18,7 @@ GO
 -- Firma: Codex - 27/04/2026 | Cambia filtros de ubigeo en Home para usar CodigoUbigeo de Sede (no Negocio), alinea deporte con TipoDeporteSuperId, agrega union con referenciales externos, expone GoogleMapsUrl/Telefono por fila y agrega busqueda "cerca de mi" por lat/long (sedes + externos) con radio en km.
 -- Firma: Codex - 29/04/2026 | Agrega paginacion SQL real para Home con @Pagina/@TamanoPagina y salida @TotalRegistros para evitar paginacion en memoria; en referenciales externos retorna Codigo vacio para no exponer identificadores tecnicos en tarjetas publicas.
 -- Firma: FRANCO LARA - 08/06/2026 | Expone fotos propias del espacio deportivo para priorizarlas en las tarjetas del Home, completa con fotos de la sede cuando existan y propaga las nuevas columnas en la tabla temporal de paginacion.
+-- Firma: FRANCO LARA - 09/06/2026 | Limita el home publico a espacios de negocios con suscripcion publica habilitada (EstadoSuscripcion = 1 o 2), ocultando pendientes, vencidos y suspendidos en tarjetas y resultados directos.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Home_BuscarEspaciosDisponibles]
     @Fecha DATE,
     @HoraInicio TIME,
@@ -82,6 +83,7 @@ BEGIN
             FROM dbo.EspaciosDeportivos e
             INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
             INNER JOIN dbo.Negocios n ON n.Id = s.NegocioId
+            LEFT JOIN dbo.NegociosSuscripcion ns ON ns.NegocioId = n.Id
             INNER JOIN dbo.TiposDeporte td ON td.Id = e.TipoDeporteId
             LEFT JOIN dbo.TiposSuelo ts ON ts.Id = e.TipoSueloId
             LEFT JOIN dbo.UbigeoDistritos dist ON dist.CodigoUbigeo = s.CodigoUbigeo
@@ -99,6 +101,7 @@ BEGIN
               AND COALESCE(e.AdministracionPrivada, 0) = 0
               AND s.Activo = 1
               AND n.Activo = 1
+              AND COALESCE(ns.EstadoSuscripcion, 0) IN (1, 2)
               AND (
                     @TipoDeporteId IS NULL
                     OR td.TipoDeporteSuperId = @TipoDeporteId

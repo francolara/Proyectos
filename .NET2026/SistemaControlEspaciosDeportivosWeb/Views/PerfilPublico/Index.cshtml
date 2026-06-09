@@ -231,6 +231,7 @@
     @if (tabReservas)
     {
 @* Firma: FRANCO LARA - 08/06/2026 | Mis reservas permite registrar una sola resena por reserva confirmada, pagada o completada usando alias publico editable, muestra la resena ya registrada dentro de la tarjeta y agrega descarga .ics para reservas activas del usuario. *@
+@* Firma: FRANCO LARA - 09/06/2026 | El acceso rapido a WhatsApp desde Mis reservas ahora precarga nombre, equipo, horario y espacio deportivo para contactar al complejo sobre una reserva especifica. *@
         <section class="table-card profile-reservas-card">
             <span class="section-chip"><i class="bi bi-calendar2-check"></i>Historial de reservas</span>
             @if (Model.TotalReservas > 0)
@@ -259,7 +260,22 @@
                             _ => "is-default"
                         };
                         var waNumero = (item.SedeWhatsapp ?? item.SedeTelefono ?? string.Empty).Replace(" ", string.Empty).Replace("+", string.Empty);
-                        var waUrl = string.IsNullOrWhiteSpace(waNumero) ? null : $"https://wa.me/{waNumero}";
+                        var nombreReserva = string.Join(" ", new[] { Model.Perfil.Nombres, Model.Perfil.Apellidos }
+                            .Where(x => !string.IsNullOrWhiteSpace(x))
+                            .Select(x => x!.Trim()));
+                        if (string.IsNullOrWhiteSpace(nombreReserva))
+                        {
+                            nombreReserva = "Cliente";
+                        }
+                        var equipoReserva = string.IsNullOrWhiteSpace(Model.Perfil.NombreEquipo) ? "Sin equipo registrado" : Model.Perfil.NombreEquipo.Trim();
+                        var mensajeWhatsappReserva = Uri.EscapeDataString(
+                            $"Hola, hice una reserva.{Environment.NewLine}" +
+                            $"Nombre: {nombreReserva}{Environment.NewLine}" +
+                            $"Equipo: {equipoReserva}{Environment.NewLine}" +
+                            $"Horario: {item.Fecha:dd/MM/yyyy} {item.HoraInicio:HH\\:mm} - {item.HoraFin:HH\\:mm}{Environment.NewLine}" +
+                            $"Espacio deportivo: {item.EspacioNombre}{Environment.NewLine}" +
+                            $"Codigo de reserva: {item.CodigoReserva}");
+                        var waUrl = string.IsNullOrWhiteSpace(waNumero) ? null : $"https://wa.me/{waNumero}?text={mensajeWhatsappReserva}";
 
                         <article class="profile-reserva-item @estadoClase">
                             <header class="profile-reserva-head">

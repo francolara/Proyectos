@@ -16,7 +16,7 @@ html {
 
 body {
   font-family: "Manrope", "Segoe UI", sans-serif;
-  background: linear-gradient(180deg, #ffffff 0%, var(--sc-bg) 100%);
+  background: linear-gradient(180deg, #e7eef8 0%, #d6e6fb 100%);
   color: #1f2937;
   min-height: 100vh;
   height: auto;
@@ -3977,31 +3977,31 @@ body {
   justify-content: center;
   white-space: nowrap;
   border-radius: 0.65rem;
-  min-width: 5.8rem;
+  min-width: 7.5rem;
   min-height: 2rem;
-  padding: 0.28rem 0.72rem;
+  padding: 0.32rem 0.82rem;
   font-size: 0.75rem;
   font-weight: 700;
-  color: #fff;
-  border: 1px solid #5d86d8;
-  background: linear-gradient(135deg, #4285f4 0%, #34a853 52%, #ea4335 100%);
-  box-shadow: 0 8px 16px rgba(66, 133, 244, 0.16);
+  color: #1d4ed8;
+  border: 1px solid #7fb0ff;
+  background: linear-gradient(135deg, #ffffff 0%, #eef6ff 100%);
+  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.12);
 }
 
 .home-map-btn:hover {
-  color: #fff;
-  border-color: #4d79cf;
-  background: linear-gradient(135deg, #3f7de5 0%, #2f9d4d 52%, #dc3c2f 100%);
+  color: #1e40af;
+  border-color: #5f93f0;
+  background: linear-gradient(135deg, #f8fbff 0%, #e0efff 100%);
   transform: translateY(-1px);
-  box-shadow: 0 10px 18px rgba(66, 133, 244, 0.2);
+  box-shadow: 0 10px 18px rgba(37, 99, 235, 0.16);
 }
 
 .home-map-btn:focus-visible,
 .home-map-btn:active {
-  color: #fff;
-  border-color: #4469b5;
-  background: linear-gradient(135deg, #3972d1 0%, #278f45 52%, #ca3428 100%);
-  box-shadow: 0 0 0 0.2rem rgba(66, 133, 244, 0.16), 0 10px 18px rgba(66, 133, 244, 0.18);
+  color: #1e3a8a;
+  border-color: #4f7fd6;
+  background: linear-gradient(135deg, #f4f9ff 0%, #dbeafe 100%);
+  box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.18), 0 10px 18px rgba(37, 99, 235, 0.14);
 }
 
 .home-item-label-consider {

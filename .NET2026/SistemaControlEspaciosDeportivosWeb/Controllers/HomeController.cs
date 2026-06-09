@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 
@@ -16,6 +17,7 @@ public class HomeController(
     UserManager<ApplicationUser> userManager,
     ILogger<HomeController> logger) : Controller
 {
+    private const int HorasMaximasReservaPublicaPorDefecto = 1;
     private const int DuracionReservaPublicaMinutos = 60;
     private static readonly TimeOnly HoraInicioCierreMedianoche = new(23, 0);
     private static readonly TimeOnly HoraFinCierreMedianoche = new(23, 59);
@@ -282,6 +284,8 @@ public class HomeController(
         if (User.Identity?.IsAuthenticated == true)
             model.UsuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+        var horasMaximasReservaCliente = await ObtenerHorasMaximasReservaPublicaAsync(model.NegocioId);
+
         model.TipoDocumento = string.IsNullOrWhiteSpace(model.TipoDocumento) ? "0" : model.TipoDocumento.Trim();
         model.NumeroDocumento = string.IsNullOrWhiteSpace(model.NumeroDocumento) ? null : model.NumeroDocumento.Trim();
         model.Nombres = (model.Nombres ?? string.Empty).Trim();
@@ -291,12 +295,16 @@ public class HomeController(
         model.Correo = string.IsNullOrWhiteSpace(model.Correo) ? null : model.Correo.Trim();
         model.Comentario = string.IsNullOrWhiteSpace(model.Comentario) ? null : model.Comentario.Trim();
         model.CodigoCupon = string.IsNullOrWhiteSpace(model.CodigoCupon) ? null : model.CodigoCupon.Trim().ToUpperInvariant();
-        model.HoraFin = NormalizarHoraFinReservaPublica(model.HoraInicio, model.HoraFin);
+        model.HoraFin = NormalizarHoraFinReservaPublica(model.HoraInicio, model.HoraFin, horasMaximasReservaCliente);
 
         if (model.HoraFin <= model.HoraInicio)
             ModelState.AddModelError(string.Empty, "La hora fin debe ser mayor que la hora inicio.");
-        else if (!EsDuracionReservaPublicaValida(model.HoraInicio, model.HoraFin))
-            ModelState.AddModelError(string.Empty, "La reserva publica solo permite bloques de 1 hora (o de 23:00 a 23:59).");
+        else if (!EsDuracionReservaPublicaValida(model.HoraInicio, model.HoraFin, horasMaximasReservaCliente))
+            ModelState.AddModelError(
+                string.Empty,
+                horasMaximasReservaCliente <= 1
+                    ? "La reserva publica solo permite bloques de 1 hora."
+                    : $"La reserva publica solo permite bloques de 1 hora hasta un maximo de {horasMaximasReservaCliente} hora(s).");
 
         if (!ModelState.IsValid)
         {
@@ -440,12 +448,19 @@ public class HomeController(
             return Json(new { ok = false, mensaje = "Fecha u hora invalidas." });
         }
 
-        horaFinParsed = NormalizarHoraFinReservaPublica(horaInicioParsed, horaFinParsed);
+        var horasMaximasReservaCliente = await ObtenerHorasMaximasReservaPublicaAsync(negocioId);
+        horaFinParsed = NormalizarHoraFinReservaPublica(horaInicioParsed, horaFinParsed, horasMaximasReservaCliente);
 
         if (horaFinParsed <= horaInicioParsed)
             return Json(new { ok = false, mensaje = "La hora fin debe ser mayor que la hora inicio." });
-        if (!EsDuracionReservaPublicaValida(horaInicioParsed, horaFinParsed))
-            return Json(new { ok = false, mensaje = "La reserva publica solo permite bloques de 1 hora (o de 23:00 a 23:59)." });
+        if (!EsDuracionReservaPublicaValida(horaInicioParsed, horaFinParsed, horasMaximasReservaCliente))
+            return Json(new
+            {
+                ok = false,
+                mensaje = horasMaximasReservaCliente <= 1
+                    ? "La reserva publica solo permite bloques de 1 hora."
+                    : $"La reserva publica solo permite bloques de 1 hora hasta un maximo de {horasMaximasReservaCliente} hora(s)."
+            });
 
         try
         {
@@ -631,21 +646,84 @@ public class HomeController(
         return string.IsNullOrWhiteSpace(baseTitulo) ? "Reservada" : baseTitulo;
     }
 
-    private static bool EsDuracionReservaPublicaValida(TimeOnly horaInicio, TimeOnly horaFin)
+    private async Task<int> ObtenerHorasMaximasReservaPublicaAsync(int? negocioId)
     {
-        var duracion = (int)(horaFin.ToTimeSpan() - horaInicio.ToTimeSpan()).TotalMinutes;
-        if (duracion == DuracionReservaPublicaMinutos)
-            return true;
+        if (!negocioId.HasValue || negocioId.Value <= 0)
+            return HorasMaximasReservaPublicaPorDefecto;
 
-        return horaInicio == HoraInicioCierreMedianoche && horaFin == HoraFinCierreMedianoche;
+        var config = await spService.ConfiguracionClubObtenerAsync(negocioId.Value);
+        return NormalizarHorasMaximasReservaPublica(config?.HorasMaximasReservaCliente);
     }
 
-    private static TimeOnly NormalizarHoraFinReservaPublica(TimeOnly horaInicio, TimeOnly horaFin)
+    private static int NormalizarHorasMaximasReservaPublica(int? horasMaximasReservaCliente)
     {
-        if (horaInicio != HoraInicioCierreMedianoche)
+        if (!horasMaximasReservaCliente.HasValue || horasMaximasReservaCliente.Value < 1)
+            return HorasMaximasReservaPublicaPorDefecto;
+
+        return horasMaximasReservaCliente.Value > 12 ? 12 : horasMaximasReservaCliente.Value;
+    }
+
+    private static bool EsDuracionReservaPublicaValida(TimeOnly horaInicio, TimeOnly horaFin, int horasMaximasReservaCliente)
+    {
+        if (horaInicio == HoraInicioCierreMedianoche && horaFin == HoraFinCierreMedianoche)
+            return horasMaximasReservaCliente >= 1;
+
+        var duracion = (int)(horaFin.ToTimeSpan() - horaInicio.ToTimeSpan()).TotalMinutes;
+        return duracion >= DuracionReservaPublicaMinutos
+            && duracion <= (horasMaximasReservaCliente * DuracionReservaPublicaMinutos)
+            && duracion % DuracionReservaPublicaMinutos == 0;
+    }
+
+    private static TimeOnly NormalizarHoraFinReservaPublica(TimeOnly horaInicio, TimeOnly horaFin, int horasMaximasReservaCliente)
+    {
+        var opcionesValidas = ObtenerOpcionesHoraFinReservaPublica(horaInicio, horasMaximasReservaCliente);
+        if (opcionesValidas.Count == 0)
             return horaFin;
 
-        return HoraFinCierreMedianoche;
+        if (opcionesValidas.Contains(horaFin))
+            return horaFin;
+
+        return opcionesValidas[0];
+    }
+
+    private static List<TimeOnly> ObtenerOpcionesHoraFinReservaPublica(TimeOnly horaInicio, int horasMaximasReservaCliente)
+    {
+        var horasMaximasNormalizadas = NormalizarHorasMaximasReservaPublica(horasMaximasReservaCliente);
+        var opciones = new List<TimeOnly>();
+        var inicioMinutos = (int)horaInicio.ToTimeSpan().TotalMinutes;
+
+        if (inicioMinutos > (23 * 60))
+            return opciones;
+
+        if (inicioMinutos == (23 * 60))
+        {
+            opciones.Add(HoraFinCierreMedianoche);
+            return opciones;
+        }
+
+        for (var hora = 1; hora <= horasMaximasNormalizadas; hora++)
+        {
+            var finMinutos = inicioMinutos + (hora * DuracionReservaPublicaMinutos);
+            if (finMinutos >= (24 * 60))
+                break;
+
+            opciones.Add(TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(finMinutos)));
+        }
+
+        return opciones;
+    }
+
+    private static List<SelectListItem> ConstruirOpcionesHoraFinSelect(TimeOnly horaInicio, TimeOnly horaFin, int horasMaximasReservaCliente)
+    {
+        var horaFinNormalizada = NormalizarHoraFinReservaPublica(horaInicio, horaFin, horasMaximasReservaCliente);
+        return ObtenerOpcionesHoraFinReservaPublica(horaInicio, horasMaximasReservaCliente)
+            .Select(item =>
+            {
+                var valor = item.ToString("HH\\:mm");
+                var texto = item == HoraFinCierreMedianoche ? "24:00" : valor;
+                return new SelectListItem(texto, valor, item == horaFinNormalizada);
+            })
+            .ToList();
     }
 
     private async Task<ReservaPublicaPageViewModel?> ConstruirReservaVmAsync(
@@ -690,6 +768,9 @@ public class HomeController(
         var negocioIdResolved = negocioId ?? sede?.NegocioId;
         if (!negocioIdResolved.HasValue)
             return null;
+
+        var horasMaximasReservaCliente = await ObtenerHorasMaximasReservaPublicaAsync(negocioIdResolved.Value);
+        horaFin = NormalizarHoraFinReservaPublica(horaInicio, horaFin, horasMaximasReservaCliente);
 
         var tiposDoc = await spService.CombosTiposDocumentoIdentidadSunatAsync();
         var form = formBase ?? new SolicitudReservaPublicaFormViewModel();
@@ -779,11 +860,13 @@ public class HomeController(
         return new ReservaPublicaPageViewModel
         {
             NegocioId = negocioIdResolved.Value,
+            HorasMaximasReservaCliente = horasMaximasReservaCliente,
             Espacio = espacio,
             Sede = sede,
             Formulario = form,
             Cotizacion = cotizacion,
-            Resenas = resenas
+            Resenas = resenas,
+            HorasFinDisponibles = ConstruirOpcionesHoraFinSelect(horaInicio, horaFin, horasMaximasReservaCliente)
         };
     }
 

@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿
 GO
 /****** Object:  StoredProcedure [dbo].[Sp_Home_SolicitarReservaPublica]    Script Date: 3/04/2026 23:18:34 ******/
 SET ANSI_NULLS ON
@@ -14,6 +14,7 @@ GO
 -- Firma: FRANCO LARA - 03/05/2026 | Incluye codigo de cupon opcional para aplicar descuento en reserva publica.
 -- Firma: FRANCO LARA - 03/05/2026 | Reserva publica restringida a duracion fija de 1 hora (60 minutos).
 -- Firma: FRANCO LARA - 20/05/2026 | Permite cierre especial de reserva publica 23:00-23:59 como excepcion valida de duracion.
+-- Firma: FRANCO LARA - 09/06/2026 | La reserva publica valida la duracion en bloques de 1 hora, respeta el limite HorasMaximasReservaCliente configurado por negocio y reutiliza clientes existentes por documento o, si no encuentra, por correo dentro del negocio.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Home_SolicitarReservaPublica]
     @EspacioDeportivoId INT,
     @Fecha DATE,
@@ -44,6 +45,7 @@ BEGIN
         DECLARE @NombresORazonSocial NVARCHAR(200);
         DECLARE @NumeroDocumentoInsert NVARCHAR(20);
         DECLARE @NegocioId INT;
+        DECLARE @HorasMaximasReservaCliente INT = 1;
         DECLARE @ClienteId INT;
         DECLARE @PrecioFinal DECIMAL(10,2);
         DECLARE @ReservaId INT;
@@ -51,15 +53,9 @@ BEGIN
         IF @NombresNorm IS NULL OR @ApellidosNorm IS NULL
             RAISERROR('Nombres y apellidos son obligatorios.', 16, 1);
 
-        IF @HoraFin <= @HoraInicio
-            RAISERROR('La hora fin debe ser mayor que la hora inicio.', 16, 1);
-
-        IF DATEDIFF(MINUTE, @HoraInicio, @HoraFin) <> 60
-           AND NOT (@HoraInicio = '23:00:00' AND @HoraFin = '23:59:00')
-            RAISERROR('La reserva publica solo permite bloques de 1 hora.', 16, 1);
-
         SELECT
-            @NegocioId = s.NegocioId
+            @NegocioId = s.NegocioId,
+            @HorasMaximasReservaCliente = CAST(COALESCE(n.HorasMaximasReservaCliente, 1) AS INT)
         FROM dbo.EspaciosDeportivos e
         INNER JOIN dbo.Sedes s ON s.Id = e.SedeId
         INNER JOIN dbo.Negocios n ON n.Id = s.NegocioId
@@ -71,6 +67,22 @@ BEGIN
 
         IF @NegocioId IS NULL
             RAISERROR('El espacio deportivo no esta disponible.', 16, 1);
+
+        IF @HoraFin <= @HoraInicio
+            RAISERROR('La hora fin debe ser mayor que la hora inicio.', 16, 1);
+
+        IF @HorasMaximasReservaCliente < 1
+            SET @HorasMaximasReservaCliente = 1;
+
+        IF NOT (
+               (@HoraInicio = '23:00:00' AND @HoraFin = '23:59:00')
+            OR (
+                   DATEDIFF(MINUTE, @HoraInicio, @HoraFin) >= 60
+               AND DATEDIFF(MINUTE, @HoraInicio, @HoraFin) <= (@HorasMaximasReservaCliente * 60)
+               AND DATEDIFF(MINUTE, @HoraInicio, @HoraFin) % 60 = 0
+            )
+        )
+            RAISERROR('La reserva publica solo permite bloques de 1 hora dentro del maximo configurado por negocio.', 16, 1);
 
         IF EXISTS
         (
@@ -93,6 +105,17 @@ BEGIN
               AND c.Activo = 1
               AND NULLIF(LTRIM(RTRIM(c.TipoDocumento)), N'') = @TipoDocumentoNorm
               AND NULLIF(LTRIM(RTRIM(c.NumeroDocumento)), N'') = @NumeroDocumentoNorm
+            ORDER BY c.Id DESC;
+        END
+
+        IF @ClienteId IS NULL AND @CorreoNorm IS NOT NULL
+        BEGIN
+            SELECT TOP 1
+                @ClienteId = c.Id
+            FROM dbo.Clientes c
+            WHERE c.NegocioId = @NegocioId
+              AND c.Activo = 1
+              AND NULLIF(LTRIM(RTRIM(c.Correo)), N'') = @CorreoNorm
             ORDER BY c.Id DESC;
         END
 

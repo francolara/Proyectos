@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿
 GO
 SET ANSI_NULLS ON
 GO
@@ -11,6 +11,7 @@ GO
 -- Firma: Codex - 13/04/2026 | Se agrega LogoUrl para administracion de logo del negocio.
 -- Firma: Codex - 16/04/2026 | Se agregan flags de reserva (precio/cancelacion) y limites operativos de negocio (SedesPermitidas/EspaciosPermitidos).
 -- Firma: Codex - 06/05/2026 | Se agrega EnviarComprobanteAutomatico en salida de configuracion del negocio.
+-- Firma: FRANCO LARA - 09/06/2026 | Se agrega HorasMaximasReservaCliente para controlar la duracion maxima permitida en la reserva publica.
 CREATE OR ALTER PROCEDURE dbo.Sp_ConfiguracionClub_Obtener
     @NegocioId INT
 AS
@@ -38,7 +39,8 @@ BEGIN
             CAST(COALESCE(n.CancelacionAutomaticaNoConfirmada, 0) AS BIT) AS CancelacionAutomaticaNoConfirmada,
             CAST(COALESCE(n.MinutosCancelacionNoConfirmada, 30) AS INT) AS MinutosCancelacionNoConfirmada,
             CAST(COALESCE(n.SedesPermitidas, 2) AS INT) AS SedesPermitidas,
-            CAST(COALESCE(n.EspaciosPermitidos, 6) AS INT) AS EspaciosPermitidos
+            CAST(COALESCE(n.EspaciosPermitidos, 6) AS INT) AS EspaciosPermitidos,
+            CAST(COALESCE(n.HorasMaximasReservaCliente, 1) AS INT) AS HorasMaximasReservaCliente
         FROM dbo.Negocios n
         WHERE n.Id = @NegocioId
           AND n.Activo = 1;

@@ -76,6 +76,7 @@ public class ConfiguracionController(
 
         NormalizarYValidarPoliticaConfirmacionPago(model);
         NormalizarYValidarCancelacionNoConfirmada(model);
+        NormalizarYValidarHorasMaximasReservaCliente(model);
         NormalizarYValidarIgv(model);
         await NormalizarYValidarUbigeoAsync(model);
         ValidarEmisionComprobantes(model);
@@ -350,6 +351,22 @@ public class ConfiguracionController(
         {
             ModelState.AddModelError(nameof(model.MinutosCancelacionNoConfirmada),
                 "El tiempo de cancelacion automatica debe ser mayor a 0 minutos.");
+        }
+    }
+
+    private void NormalizarYValidarHorasMaximasReservaCliente(ConfiguracionClubViewModel model)
+    {
+        if (!model.HorasMaximasReservaCliente.HasValue)
+        {
+            ModelState.AddModelError(nameof(model.HorasMaximasReservaCliente),
+                "Ingresa la hora(s) maxima de reserva por cliente.");
+            return;
+        }
+
+        if (model.HorasMaximasReservaCliente.Value < 1 || model.HorasMaximasReservaCliente.Value > 12)
+        {
+            ModelState.AddModelError(nameof(model.HorasMaximasReservaCliente),
+                "La hora(s) maxima de reserva por cliente debe estar entre 1 y 12.");
         }
     }
 

@@ -63,6 +63,9 @@
 - Actualizacion 27/04/2026:
   - `Sp_Home_BuscarEspaciosDisponibles` agrega filtro opcional por cercania con `@BuscarCercaDeMi`, `@LatitudUsuario`, `@LongitudUsuario` y `@RadioKm`.
   - Calcula `DistanciaKm` para sedes registradas y referenciales externos (usando lat/long), filtra por radio en km y prioriza orden por menor distancia cuando el modo cercania esta activo.
+- Actualizacion 09/06/2026:
+  - `Sp_Home_ListarSedesPublicas` solo expone sedes de negocios con `EstadoSuscripcion IN (1, 2)`, por lo que los negocios pendientes, vencidos o suspendidos dejan de aparecer en el filtro `Complejo deportivo` del home.
+  - `Sp_Home_BuscarEspaciosDisponibles` aplica el mismo criterio publico para que no se muestren tarjetas ni resultados directos de espacios pertenecientes a negocios pendientes, vencidos o suspendidos.
 - `Sp_Home_ListarBannersPublicos`
 
 ### 03_Sedes_Espacios.sql
@@ -1266,13 +1269,13 @@
 - `Basededatos/SportCenter/Script/20260503_Cupones_Modulo_Seguridad.sql`
 
 ### Cambios funcionales
-- Se agrega módulo `Cupones` en panel de administración de negocio con listado paginado de 20 registros por página.
-- Se permite crear cupones por negocio, con restricción opcional por sede y espacio deportivo.
-- Se define límite máximo de usos por cupón y acumulación de usos en cada aplicación.
+- Se agrega mï¿½dulo `Cupones` en panel de administraciï¿½n de negocio con listado paginado de 20 registros por pï¿½gina.
+- Se permite crear cupones por negocio, con restricciï¿½n opcional por sede y espacio deportivo.
+- Se define lï¿½mite mï¿½ximo de usos por cupï¿½n y acumulaciï¿½n de usos en cada aplicaciï¿½n.
 - `Sp_Reservas_Crear` ahora acepta `@CodigoCupon` opcional y aplica descuento validando vigencia, estado activo y disponibilidad de usos.
-- El uso exitoso de cupón incrementa contador y se registra en `CuponesUso`.
-- `Sp_Home_SolicitarReservaPublica` ahora recibe y reenvía `@CodigoCupon` al crear la reserva pública.
-- La tabla `Reservas` incorpora trazabilidad de cupón aplicado y descuento (`CodigoCuponAplicado`, `DescuentoCupon`).
+- El uso exitoso de cupï¿½n incrementa contador y se registra en `CuponesUso`.
+- `Sp_Home_SolicitarReservaPublica` ahora recibe y reenvï¿½a `@CodigoCupon` al crear la reserva pï¿½blica.
+- La tabla `Reservas` incorpora trazabilidad de cupï¿½n aplicado y descuento (`CodigoCuponAplicado`, `DescuentoCupon`).
 
 ## Actualizacion 05/05/2026 - Integracion multi proveedor de facturacion electronica
 
@@ -1354,7 +1357,7 @@
   - Sede minima activa con direccion, ubigeo, horario de atencion y al menos un servicio.
   - Espacio minimo activo con tarifa valida.
 - Actualizacion 25/05/2026 (checklist onboarding):
-  - Sp_OnboardingChecklist_Validar amplía Configuración inicial obligatoria a: RazonSocial, TipoDocumentoFiscal, NumeroDocumentoFiscal, DireccionFiscal, CodigoDepartamento, CodigoProvincia, CodigoUbigeo, PorcentajeIgv, CancelacionAutomaticaNoConfirmada, PermitirModificarPrecioReserva (además de NombreComercial, MonedaId).
+  - Sp_OnboardingChecklist_Validar amplï¿½a Configuraciï¿½n inicial obligatoria a: RazonSocial, TipoDocumentoFiscal, NumeroDocumentoFiscal, DireccionFiscal, CodigoDepartamento, CodigoProvincia, CodigoUbigeo, PorcentajeIgv, CancelacionAutomaticaNoConfirmada, PermitirModificarPrecioReserva (ademï¿½s de NombreComercial, MonedaId).
   - En Maestros, TipoDocumentoComprobante y SerieDocumentoComprobante dejan de ser requisito obligatorio para completar onboarding.
 - Ajuste 25/05/2026 (compatibilidad de esquema): en Sp_OnboardingChecklist_Validar se retira validacion de CodigoDepartamento y CodigoProvincia porque en algunos esquemas de Negocios solo persiste CodigoUbigeo.
 - Ajuste 26/05/2026 (activacion sedes): Sp_OnboardingChecklist_Validar exige en la sede minima NotificacionesActivas = 1, CorreoNotificacion y WhatsappContacto no vacios (ademas de direccion, ubigeo, horario y servicios).
@@ -1419,3 +1422,21 @@
 - Comportamiento funcional en la web:
   - PerfilPublico/Index agrega el boton Agregar a mi calendario solo para reservas activas del usuario.
   - La descarga genera el archivo reserva-R-000000.ics con horario Peru convertido a UTC y formato compatible con Google Calendar, Outlook, iPhone y Android.
+
+## Actualizacion 09/06/2026 - Hora maxima de reserva publica por cliente
+- Nueva columna: `dbo.Negocios.HorasMaximasReservaCliente`.
+  - Entero obligatorio con valor por defecto `1`.
+  - Rango permitido: de `1` a `12`.
+- Actualizacion de `dbo.Sp_ConfiguracionClub_Obtener`.
+  - Devuelve `HorasMaximasReservaCliente` dentro de la configuracion del negocio.
+- Actualizacion de `dbo.Sp_ConfiguracionClub_Actualizar`.
+  - Persiste `HorasMaximasReservaCliente` y valida que el valor este dentro del rango permitido.
+- Actualizacion de `dbo.Sp_Home_SolicitarReservaPublica`.
+  - La reserva publica ya no asume siempre una sola hora fija.
+  - Valida bloques exactos de `1 hora` y respeta el maximo configurado por negocio.
+  - Mantiene el caso de cierre `23:00 - 23:59` como ultima franja especial del dia.
+  - Reutiliza clientes existentes del negocio buscando primero por `TipoDocumento + NumeroDocumento` y, si no encuentra coincidencia, por `Correo`.
+- Comportamiento funcional en la web:
+  - `Configuracion/Index` agrega el atributo `Hora(s) maxima de reserva por cliente`.
+  - Si el negocio configura `1`, `Home/Reservar` mantiene `Hora fin` bloqueada y autoajustada.
+  - Si configura un valor mayor, `Home/Reservar` habilita `Hora fin` y solo muestra opciones en saltos exactos de `1 hora` desde la hora de inicio, hasta el tope permitido.

@@ -2,6 +2,7 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ReservaPublicaPageViewModel
 @using System.Globalization
 @using System.Linq
+@using Microsoft.AspNetCore.Mvc.Rendering
 
 @{
     ViewData["Title"] = "Registrar reserva";
@@ -16,6 +17,12 @@
         .ToList();
     var duracionMinutos = (int)(horaFin.ToTimeSpan() - horaInicio.ToTimeSpan()).TotalMinutes;
     if (duracionMinutos <= 0) { duracionMinutos = 60; }
+    var horasMaximasReservaCliente = Model.HorasMaximasReservaCliente < 1 ? 1 : Model.HorasMaximasReservaCliente;
+    var horasFinDisponibles = Model.HorasFinDisponibles ?? new List<SelectListItem>();
+    var permiteSeleccionarHoraFin = horasMaximasReservaCliente > 1 && horasFinDisponibles.Count > 1;
+    var horaFinTextoActual = Model.Formulario.HoraInicio == new TimeOnly(23, 0) && Model.Formulario.HoraFin == new TimeOnly(23, 59)
+        ? "24:00"
+        : Model.Formulario.HoraFin.ToString("HH\\:mm");
 
     var mapaUrl = Model.Sede?.GoogleMapsUrl;
     if (string.IsNullOrWhiteSpace(mapaUrl) && Model.Sede?.Latitud is decimal lat && Model.Sede.Longitud is decimal lng)
@@ -46,6 +53,7 @@
     var iluminacionEspacio = Model.Espacio.TieneIluminacion ? "Iluminacion" : "Sin iluminacion";
     var resenasPublicas = Model.Resenas ?? new List<SistemaControlEspaciosDeportivosWeb.ViewModels.UsuarioPublicoResenaItemViewModel>();
     var totalResenas = resenasPublicas.Count;
+    var usuarioAutenticado = User.Identity?.IsAuthenticated == true;
 }
 <div class="container py-4 home-reservar-page">
     <section class="sc-public-reserva-hero mb-3">
@@ -92,7 +100,7 @@
                             <a class="btn btn-sm auth-nav-mini auth-nav-mini-outline home-map-btn sc-public-space-map-btn"
                                href="@mapaUrl"
                                target="_blank"
-                               rel="noopener noreferrer">Como llegar</a>
+                               rel="noopener noreferrer">📍 Cómo llegar</a>
                         }
                     </div>
                 </div>
@@ -190,9 +198,13 @@
 @* Firma: FRANCO LARA - 03/05/2026 | Reserva publica restringida a bloques exactos de 1 hora con aviso visible y validacion cliente. *@
 @* Firma: FRANCO LARA - 20/05/2026 | Se permite el cierre especial 23:00-23:59 desde calendario publico sin bloquear por validacion de 60 minutos y se evita mensaje rojo de 30/60 para ese caso. *@
 @* Firma: FRANCO LARA - 08/06/2026 | El calendario publico muestra bloqueos por reservas compartidas y agrega al final del flujo un bloque de resenas publicas ordenadas en forma descendente por fecha. *@
+@* Firma: FRANCO LARA - 09/06/2026 | La reserva publica habilita Hora fin segun la configuracion de hora(s) maxima de reserva por cliente y solo ofrece saltos exactos de 1 hora. *@
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                 <h2 class="h6 mb-0 sc-public-section-title"><i class="bi bi-pencil-square me-1"></i>Datos para registrar la reserva</h2>
-                <span class="badge text-bg-info"><i class="bi bi-clock-history me-1"></i>Solo reservas de 1 hora</span>
+                <span class="badge text-bg-info">
+                    <i class="bi bi-clock-history me-1"></i>
+                    @(horasMaximasReservaCliente <= 1 ? "Solo reservas de 1 hora" : $"Hasta {horasMaximasReservaCliente} hora(s) por reserva")
+                </span>
             </div>
 
             @if (!ViewData.ModelState.IsValid)
@@ -240,12 +252,24 @@
                 <div class="col-md-3">
                     <label class="form-label">Hora fin</label>
                     <input id="formHoraFin" name="HoraFin" type="hidden" value="@Model.Formulario.HoraFin.ToString("HH\\:mm")" />
-                    <input id="formHoraFinDisplay"
-                           type="text"
-                           class="form-control"
-                           value="@(Model.Formulario.HoraInicio == new TimeOnly(23, 0) && Model.Formulario.HoraFin == new TimeOnly(23, 59) ? "24:00" : Model.Formulario.HoraFin.ToString("HH\\:mm"))"
-                           readonly />
-                    <small class="text-muted">La hora fin se ajusta automaticamente a +1 hora.</small>
+                    <select id="formHoraFinDisplay" class="form-select" @(permiteSeleccionarHoraFin ? null : "disabled")>
+                        @foreach (var item in horasFinDisponibles)
+                        {
+                            if (string.Equals(item.Value, Model.Formulario.HoraFin.ToString("HH\\:mm"), StringComparison.OrdinalIgnoreCase))
+                            {
+                                <option value="@item.Value" selected="selected">@item.Text</option>
+                            }
+                            else
+                            {
+                                <option value="@item.Value">@item.Text</option>
+                            }
+                        }
+                    </select>
+                    <small class="text-muted">
+                        @(horasMaximasReservaCliente <= 1
+                            ? "La hora fin se ajusta automaticamente a +1 hora."
+                            : $"Puedes elegir la hora fin en bloques de 1 hora hasta un maximo de {horasMaximasReservaCliente} hora(s).")
+                    </small>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Precio del espacio</label>
@@ -294,7 +318,7 @@
                         <i class="bi bi-calendar2-check"></i>
                         <span id="slotFechaTexto">@Model.Formulario.Fecha.ToString("dd/MM/yyyy")</span>
                         <span class="dot"></span>
-                        <span id="slotHorarioTexto">@Model.Formulario.HoraInicio.ToString("HH\\:mm") - @(Model.Formulario.HoraInicio == new TimeOnly(23, 0) && Model.Formulario.HoraFin == new TimeOnly(23, 59) ? "24:00" : Model.Formulario.HoraFin.ToString("HH\\:mm"))</span>
+                        <span id="slotHorarioTexto">@Model.Formulario.HoraInicio.ToString("HH\\:mm") - @horaFinTextoActual</span>
                     </div>
                     <small id="cotizacionMensaje" class="text-muted">
                         @(Model.Cotizacion?.Mensaje ?? "El costo se actualiza automaticamente cuando cambias fecha u horario.")
@@ -380,6 +404,34 @@
                     </div>
                     <small id="cuponMensajePublico" class="text-muted"></small>
                 </div>
+                @if (!usuarioAutenticado)
+                {
+                    <div class="col-md-8">
+                        <div class="sc-public-register-callout">
+                            <div>
+                                <span class="sc-public-register-kicker">Perfil publico</span>
+                                <strong>Registrate para aprovechar mejor tus reservas.</strong>
+                                <p class="mb-0">
+                                    Guarda tu historial, publica reseñas, participa en desafios y agenda tus reservas en tu calendario desde tu perfil.
+                                </p>
+                            </div>
+                            <div class="sc-public-register-actions">
+                                <a class="btn btn-primary btn-public-principal"
+                                   asp-area="Identity"
+                                   asp-page="/Account/Register"
+                                   asp-route-returnUrl="@($"{Context.Request.Path}{Context.Request.QueryString}")">
+                                    Registrarme
+                                </a>
+                                <a class="btn btn-outline-primary btn-public-accion"
+                                   asp-area="Identity"
+                                   asp-page="/Account/Login"
+                                   asp-route-returnUrl="@($"{Context.Request.Path}{Context.Request.QueryString}")">
+                                    Iniciar sesion
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
 
                 <div class="col-12 d-flex gap-2">
                     <button type="submit" class="btn btn-primary btn-public-principal">Guardar reserva</button>
@@ -493,9 +545,11 @@
             gap: .9rem;
         }
         .home-reservar-page .sc-public-review-card {
-            border: 1px solid #d6e3f9;
+            border: 1px solid transparent;
             border-radius: 16px;
-            background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+            background:
+                linear-gradient(180deg, #ffffff 0%, #f7fbff 100%) padding-box,
+                linear-gradient(135deg, #22c55e 0%, #86efac 52%, #16a34a 100%) border-box;
             padding: 1rem;
             box-shadow: 0 10px 24px rgba(15, 23, 42, .05);
             display: flex;
@@ -1037,6 +1091,51 @@
             margin-bottom: .7rem;
             align-items: center;
         }
+        .home-reservar-page .sc-public-register-callout {
+            height: 100%;
+            border: 1px solid rgba(37, 99, 235, .16);
+            border-radius: 16px;
+            background: linear-gradient(135deg, rgba(239, 246, 255, .98) 0%, rgba(219, 234, 254, .96) 100%);
+            padding: 1rem 1.1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+        .home-reservar-page .sc-public-register-kicker {
+            display: inline-flex;
+            align-items: center;
+            padding: .2rem .55rem;
+            border-radius: 999px;
+            background: rgba(37, 99, 235, .12);
+            color: #1d4ed8;
+            font-size: .72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .02em;
+            margin-bottom: .55rem;
+        }
+        .home-reservar-page .sc-public-register-callout strong {
+            display: block;
+            color: #0f172a;
+            font-size: .98rem;
+            margin-bottom: .3rem;
+        }
+        .home-reservar-page .sc-public-register-callout p {
+            color: #334155;
+            font-size: .91rem;
+            line-height: 1.45;
+        }
+        .home-reservar-page .sc-public-register-actions {
+            display: flex;
+            flex-direction: column;
+            gap: .65rem;
+            justify-content: flex-end;
+            min-width: 140px;
+        }
+        .home-reservar-page .sc-public-register-actions .btn {
+            width: 100%;
+        }
         @@media (max-width: 991.98px) {
             .home-reservar-page .sc-public-reserva-hero {
                 flex-direction: column;
@@ -1051,6 +1150,14 @@
             .home-reservar-page .sc-public-cal-scroll > #calendarioPublicoReserva,
             #calendarioPublicoReserva .fc {
                 min-width: 1080px;
+            }
+            .home-reservar-page .sc-public-register-callout {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .home-reservar-page .sc-public-register-actions {
+                width: 100%;
+                justify-content: flex-start;
             }
         }
     </style>
@@ -1071,6 +1178,7 @@
             const inputInicio = document.getElementById('formHoraInicio');
             const inputFin = document.getElementById('formHoraFin');
             const inputFinDisplay = document.getElementById('formHoraFinDisplay');
+            const horasMaximasReservaCliente = @horasMaximasReservaCliente;
             const inputCodigoCupon = document.getElementById('formCodigoCupon');
             const btnValidarCuponPublico = document.getElementById('btnValidarCuponPublico');
             const cuponMensajePublico = document.getElementById('cuponMensajePublico');
@@ -1104,10 +1212,13 @@
                 const valor = String(horaFin || '').trim();
                 inputFin.value = valor;
                 if (inputFinDisplay) {
-                    inputFinDisplay.value = (inputInicio?.value === '23:00' && valor === '23:59')
-                        ? '24:00'
-                        : valor;
+                    inputFinDisplay.value = valor;
                 }
+            }
+            function getHoraFinDisplayText(valor) {
+                return (inputInicio?.value === '23:00' && valor === '23:59')
+                    ? '24:00'
+                    : valor;
             }
             function titleCaseEs(texto) {
                 if (!texto) return '';
@@ -1160,11 +1271,11 @@
                 if (partes.length === 3) {
                     slotFechaTexto.textContent = `${partes[2]}/${partes[1]}/${partes[0]}`;
                 }
-                const finTexto = inputInicio.value === '23:00' && inputFin.value === '23:59'
-                    ? '24:00'
-                    : inputFin.value;
+                const finTexto = getHoraFinDisplayText(inputFin.value);
                 slotHorarioTexto.textContent = `${inputInicio.value} - ${finTexto}`;
-                if (inputFinDisplay) inputFinDisplay.value = finTexto;
+                if (inputFinDisplay && inputFinDisplay.value !== inputFin.value) {
+                    inputFinDisplay.value = inputFin.value;
+                }
             }
             function actualizarEstadoNumeroDocumento() {
                 if (!inputTipoDocumento || !inputNumeroDocumento) return;
@@ -1264,23 +1375,43 @@
                 const m = totalMinutes % 60;
                 return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
             }
-            function forzarDuracionUnaHora() {
-                if (!inputInicio || !inputFin) return;
+            function reconstruirOpcionesHoraFin() {
+                if (!inputInicio || !inputFin || !inputFinDisplay) return;
                 const ini = parseTimeToMinutes(inputInicio.value);
                 if (ini === null) return;
-                const maxInicio = (23 * 60);
-                if (ini > maxInicio) {
+                if (ini > (23 * 60)) {
                     inputInicio.value = '23:00';
                 }
                 const iniAjustado = parseTimeToMinutes(inputInicio.value);
                 if (iniAjustado === null) return;
+                const opciones = [];
                 if (iniAjustado === (23 * 60)) {
-                    setHoraFin('23:59');
-                    return;
+                    opciones.push({ value: '23:59', text: '24:00' });
+                } else {
+                    for (let hora = 1; hora <= horasMaximasReservaCliente; hora += 1) {
+                        const finEsperado = iniAjustado + (hora * 60);
+                        if (finEsperado >= (24 * 60)) break;
+                        const valor = formatMinutesToHm(finEsperado);
+                        opciones.push({ value: valor, text: valor });
+                    }
                 }
-                const finEsperado = iniAjustado + 60;
-                if (finEsperado > (23 * 60 + 59)) return;
-                setHoraFin(formatMinutesToHm(finEsperado));
+                inputFinDisplay.innerHTML = '';
+                for (const opcion of opciones) {
+                    const option = document.createElement('option');
+                    option.value = opcion.value;
+                    option.textContent = opcion.text;
+                    inputFinDisplay.appendChild(option);
+                }
+                inputFinDisplay.disabled = horasMaximasReservaCliente <= 1 || opciones.length <= 1;
+
+                const valorActual = opciones.some(x => x.value === inputFin.value)
+                    ? inputFin.value
+                    : (opciones[0]?.value || '');
+
+                if (valorActual) {
+                    setHoraFin(valorActual);
+                    inputFinDisplay.value = valorActual;
+                }
             }
             function cotizarDebounced() {
                 clearTimeout(debounceCotizar);
@@ -1294,23 +1425,25 @@
                 cotizarDebounced();
             }
             function aplicarSeleccion(start, endSeleccionado) {
-                let end = (endSeleccionado && endSeleccionado > start)
-                    ? new Date(endSeleccionado)
-                    : new Date(start.getTime() + 60 * 60000);
-
                 if (start < new Date()) {
                     alert('Ese horario ya paso. Selecciona una hora futura.');
                     return;
                 }
                 const inicioMinutos = (start.getHours() * 60) + start.getMinutes();
                 if (inicioMinutos === (23 * 60)) {
-                    end = new Date(start);
-                    end.setHours(23, 59, 0, 0);
+                    const endEspecial = new Date(start);
+                    endEspecial.setHours(23, 59, 0, 0);
+                    if (hayCruceBloqueado(start, endEspecial)) {
+                        alert('Ese horario no esta disponible. Elige otro bloque libre.');
+                        return;
+                    }
                 }
-
-                if (hayCruceBloqueado(start, end)) {
-                    alert('Ese horario no esta disponible. Elige otro bloque libre.');
-                    return;
+                else {
+                    const end = new Date(start.getTime() + 60 * 60000);
+                    if (hayCruceBloqueado(start, end)) {
+                        alert('Ese horario no esta disponible. Elige otro bloque libre.');
+                        return;
+                    }
                 }
 
                 if (inicioMinutos > (23 * 60)) {
@@ -1320,8 +1453,7 @@
 
                 inputFecha.value = toIsoDateLocal(start);
                 inputInicio.value = toHm(start);
-                setHoraFin(toHm(end));
-                forzarDuracionUnaHora();
+                reconstruirOpcionesHoraFin();
                 actualizarResumenSlot();
                 cotizarDebounced();
                 if (formContainer) formContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1396,7 +1528,7 @@
 
             calendar.render();
             aplicarHeaderHorarios();
-            forzarDuracionUnaHora();
+            reconstruirOpcionesHoraFin();
             actualizarResumenSlot();
             actualizarEstadoNumeroDocumento();
             cotizarDebounced();
@@ -1406,11 +1538,11 @@
             btnValidarCuponPublico?.addEventListener('click', cotizarDebounced);
             inputFecha?.addEventListener('change', () => sincronizarCalendarioConFormulario(calendar));
             inputInicio?.addEventListener('change', () => {
-                forzarDuracionUnaHora();
+                reconstruirOpcionesHoraFin();
                 sincronizarCalendarioConFormulario(calendar);
             });
-            inputFin?.addEventListener('change', () => {
-                forzarDuracionUnaHora();
+            inputFinDisplay?.addEventListener('change', () => {
+                setHoraFin(inputFinDisplay.value);
                 sincronizarCalendarioConFormulario(calendar);
             });
             formReserva?.addEventListener('submit', (e) => {
@@ -1422,9 +1554,11 @@
                     alert('La hora fin debe ser mayor que la hora inicio.');
                     return;
                 }
-                if ((fin - ini) !== 60 && !esCierreMedianocheEspecial) {
+                if (((fin - ini) % 60 !== 0 || (fin - ini) > (horasMaximasReservaCliente * 60)) && !esCierreMedianocheEspecial) {
                     e.preventDefault();
-                    alert('La reserva publica solo permite bloques de 1 hora.');
+                    alert(horasMaximasReservaCliente <= 1
+                        ? 'La reserva publica solo permite bloques de 1 hora.'
+                        : `La reserva publica solo permite bloques de 1 hora hasta un maximo de ${horasMaximasReservaCliente} hora(s).`);
                 }
             });
         })();

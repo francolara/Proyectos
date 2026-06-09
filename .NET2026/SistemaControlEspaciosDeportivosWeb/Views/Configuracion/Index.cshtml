@@ -144,6 +144,7 @@
             </div>
         </div>
         <div class="sc-form-section mt-3">
+@* Firma: FRANCO LARA - 09/06/2026 | Configuracion del negocio agrega el limite de hora(s) maxima de reserva por cliente para controlar la hora fin en la reserva publica. *@
             <h2 class="sc-form-title"><i class="bi bi-sliders"></i> Configuracion de Atributos</h2>
             <div class="row g-3">
                 <div class="col-md-6">
@@ -169,11 +170,23 @@
                     <select asp-for="MonedaId" asp-items="Model.Monedas" class="form-select"></select>
                 </div>
                 <div class="col-md-6">
+                    <label asp-for="HorasMaximasReservaCliente" class="form-label">Hora(s) maxima de reserva por cliente</label>
+                    <input asp-for="HorasMaximasReservaCliente"
+                           class="form-control text-end"
+                           type="text"
+                           inputmode="numeric"
+                           pattern="[0-9]*"
+                           maxlength="2"
+                           autocomplete="off" />
+                    <span asp-validation-for="HorasMaximasReservaCliente" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
                     <label asp-for="PorcentajeIgv" class="form-label">IGV (%)</label>
                     <input asp-for="PorcentajeIgv" class="form-control text-center" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" id="PorcentajeIgv" />
                     <span asp-validation-for="PorcentajeIgv" class="text-danger"></span>
                 </div>
                 <div class="col-md-6">
+                    <label class="form-label d-block">&nbsp;</label>
                     <label class="sc-check-chip">
                         <input asp-for="PermitirModificarPrecioReserva" class="form-check-input mt-0" />
                         <span>Permitir modificar un precio en el registro de reserva</span>

@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿
 GO
 SET ANSI_NULLS ON
 GO
@@ -12,6 +12,7 @@ GO
 -- Firma: Codex - 16/04/2026 | Se agregan flags de reserva: permitir modificar precio y cancelacion automatica por no confirmacion.
 -- Firma: Codex - 06/05/2026 | Se agrega persistencia de EnviarComprobanteAutomatico desde configuracion del negocio.
 -- Firma: Codex - 08/05/2026 | Se retira validacion de documentos en Maestros para emision; la gestion se controla desde la opcion Maestros.
+-- Firma: FRANCO LARA - 09/06/2026 | Se agrega persistencia de HorasMaximasReservaCliente para controlar la duracion maxima en la reserva publica.
 CREATE OR ALTER PROCEDURE dbo.Sp_ConfiguracionClub_Actualizar
     @NegocioId INT,
     @NombreComercial NVARCHAR(200),
@@ -31,6 +32,7 @@ CREATE OR ALTER PROCEDURE dbo.Sp_ConfiguracionClub_Actualizar
     @PermitirModificarPrecioReserva BIT = 0,
     @CancelacionAutomaticaNoConfirmada BIT = 0,
     @MinutosCancelacionNoConfirmada INT = NULL,
+    @HorasMaximasReservaCliente INT = 1,
     @Usuario NVARCHAR(200)
 AS
 BEGIN
@@ -96,6 +98,9 @@ BEGIN
             SET @MinutosCancelacionNoConfirmada = NULL;
         END
 
+        IF @HorasMaximasReservaCliente IS NULL OR @HorasMaximasReservaCliente < 1 OR @HorasMaximasReservaCliente > 12
+            RAISERROR('La hora(s) maxima de reserva por cliente debe estar entre 1 y 12.', 16, 1);
+
         UPDATE n
         SET
             n.NombreComercial = @NombreComercial,
@@ -115,7 +120,8 @@ BEGIN
             n.LogoUrl = @LogoUrlNormalizado,
             n.PermitirModificarPrecioReserva = @PermitirModificarPrecioReserva,
             n.CancelacionAutomaticaNoConfirmada = @CancelacionAutomaticaNoConfirmada,
-            n.MinutosCancelacionNoConfirmada = @MinutosCancelacionNoConfirmada
+            n.MinutosCancelacionNoConfirmada = @MinutosCancelacionNoConfirmada,
+            n.HorasMaximasReservaCliente = @HorasMaximasReservaCliente
         FROM dbo.Negocios n
         WHERE n.Id = @NegocioId
           AND n.Activo = 1;

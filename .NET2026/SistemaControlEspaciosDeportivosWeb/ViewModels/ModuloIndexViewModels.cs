@@ -60,6 +60,9 @@ public class ConfiguracionClubViewModel : ModuloBaseViewModel
     public bool CancelacionAutomaticaNoConfirmada { get; set; }
 
     public int? MinutosCancelacionNoConfirmada { get; set; }
+    [Required(ErrorMessage = "Las hora(s) maxima de reserva por cliente es obligatoria.")]
+    [Range(1, 12, ErrorMessage = "La hora(s) maxima de reserva por cliente debe estar entre 1 y 12.")]
+    public int? HorasMaximasReservaCliente { get; set; } = 1;
     [Range(1, 999, ErrorMessage = "Sedes permitidas debe ser mayor a 0.")]
     public int SedesPermitidas { get; set; } = 2;
     [Range(1, 9999, ErrorMessage = "Espacios permitidos debe ser mayor a 0.")]

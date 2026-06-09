@@ -178,11 +178,13 @@ public class SolicitudReservaPublicaFormViewModel
 public class ReservaPublicaPageViewModel
 {
     public int NegocioId { get; set; }
+    public int HorasMaximasReservaCliente { get; set; } = 1;
     public EspacioDisponibleViewModel Espacio { get; set; } = new();
     public SedePublicaViewModel? Sede { get; set; }
     public SolicitudReservaPublicaFormViewModel Formulario { get; set; } = new();
     public ReservaCotizacionViewModel? Cotizacion { get; set; }
     public List<UsuarioPublicoResenaItemViewModel> Resenas { get; set; } = new();
+    public List<SelectListItem> HorasFinDisponibles { get; set; } = new();
 }
 
 public class SolicitudPublicaDetalleViewModel
