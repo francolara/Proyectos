@@ -7,6 +7,7 @@ GO
 
 -- Firma: Codex - 14/04/2026 | Inserta/actualiza banners web (Home/Login/Registro) y retorna Id generado/actualizado.
 -- Firma: Codex - 02/05/2026 | Corrige validacion por tipo: Home exige imagen horizontal; Login/Registro exigen imagen vertical y permiten fallback de ImagenUrl desde ImagenUrlMobile.
+-- Firma: Codex - 10/06/2026 | Permite guardar banners sin titulo visible y delega la visualizacion condicional a las vistas publicas.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_WebBanners_Guardar]
     @Id INT = NULL,
     @Titulo NVARCHAR(120),
@@ -36,9 +37,6 @@ BEGIN
         SET @ImagenUrlMobile = NULLIF(LTRIM(RTRIM(COALESCE(@ImagenUrlMobile, N''))), N'');
         SET @TipoBanner = CASE WHEN @TipoBanner IN (1, 2, 3) THEN @TipoBanner ELSE 1 END;
         SET @Orden = CASE WHEN @Orden IS NULL OR @Orden < 1 THEN 1 ELSE @Orden END;
-
-        IF @Titulo = N''
-            RAISERROR(N'El titulo del banner es obligatorio.', 16, 1);
 
         IF @TipoBanner = 1 AND @ImagenUrl = N''
             RAISERROR(N'La imagen del banner es obligatoria para Home.', 16, 1);

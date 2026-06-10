@@ -167,7 +167,11 @@
                                         {
                                             <span class="home-hero-kicker">@banner.Subtitulo</span>
                                         }
-                                        <h1>@banner.Titulo</h1>
+                                        @* Firma: Codex - 10/06/2026 | Oculta el titulo del banner publico cuando viene vacio para evitar textos tecnicos visibles. *@
+                                        @if (!string.IsNullOrWhiteSpace(banner.Titulo))
+                                        {
+                                            <h1>@banner.Titulo</h1>
+                                        }
                                         @if (!string.IsNullOrWhiteSpace(banner.Descripcion))
                                         {
                                             <p>@banner.Descripcion</p>

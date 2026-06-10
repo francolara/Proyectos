@@ -41,9 +41,8 @@ public class BannerAdminFormViewModel
 {
     public int? Id { get; set; }
 
-    [Required(ErrorMessage = "Ingresa un titulo.")]
     [StringLength(120)]
-    public string Titulo { get; set; } = string.Empty;
+    public string? Titulo { get; set; }
 
     [StringLength(220)]
     public string? Subtitulo { get; set; }

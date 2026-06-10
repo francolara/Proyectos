@@ -37,8 +37,9 @@
         <input type="hidden" asp-for="Form.ImagenUrlMobile" />
 
         <div class="col-md-6">
-            <label asp-for="Form.Titulo" class="form-label"></label>
-            <input asp-for="Form.Titulo" class="form-control" />
+            @* Firma: Codex - 10/06/2026 | Permite administrar banners sin titulo visible cuando solo se desea mostrar imagen y CTA. *@
+            <label asp-for="Form.Titulo" class="form-label">Titulo (opcional)</label>
+            <input asp-for="Form.Titulo" class="form-control" placeholder="Opcional" />
             <span asp-validation-for="Form.Titulo" class="text-danger"></span>
         </div>
         <div class="col-md-6">
@@ -201,7 +202,7 @@
                                 <span class="badge text-bg-light border">@item.TipoBannerNombre</span>
                             </td>
                             <td>
-                                <strong>@item.Titulo</strong>
+                                <strong>@(string.IsNullOrWhiteSpace(item.Titulo) ? "(Sin titulo)" : item.Titulo)</strong>
                                 @if (!string.IsNullOrWhiteSpace(item.Subtitulo))
                                 {
                                     <div class="small text-muted">@item.Subtitulo</div>

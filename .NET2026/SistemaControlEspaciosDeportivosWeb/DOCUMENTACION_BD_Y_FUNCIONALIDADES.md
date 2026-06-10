@@ -315,6 +315,10 @@
   - En Home, si existe imagen movil se usa en pantallas pequenas; si no existe, cae a la imagen desktop.
   - Home publico consume banners configurados de `TipoBanner=Home` (sin filtro por vigencia por fecha).
   - Se personaliza `Login` y nuevo `Register` con layout split (banner lateral + formulario), usando paleta visual corporativa del sistema.
+- Actualizacion 10/06/2026:
+  - `Sp_WebBanners_Guardar` permite registrar banners con `Titulo` vacio, manteniendo la tabla sin cambios estructurales.
+  - Home publico renderiza el encabezado del banner solo cuando `Titulo` contiene texto real, evitando que aparezcan valores tecnicos o de relleno.
+  - El panel administrativo muestra `Titulo (opcional)` y usa `(Sin titulo)` como referencia interna en el listado cuando el valor se guarda vacio.
 
 ### 39_Popup_Promociones_Publicas.sql
 - Tabla:
