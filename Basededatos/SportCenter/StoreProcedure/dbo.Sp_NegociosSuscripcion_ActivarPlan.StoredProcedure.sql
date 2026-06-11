@@ -2,6 +2,7 @@
 -- Author:        FRANCO LARA
 -- Create date:   16/04/2026
 -- Firma:         Activacion de contrato con tipo de cobro, vigencia y periodo de gracia.
+-- Firma:         10/06/2026 | Registra movimiento comercial de activacion o reactivacion para trazabilidad del contrato.
 -- =============================================
 CREATE OR ALTER PROCEDURE dbo.Sp_NegociosSuscripcion_ActivarPlan
     @NegocioId INT,
@@ -14,6 +15,10 @@ AS
 BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
+        DECLARE @SuscripcionId INT;
+        DECLARE @EstadoAnterior INT;
+        DECLARE @EsPruebaAnterior BIT;
+        DECLARE @TipoCobroAnterior NVARCHAR(20);
         DECLARE @TipoCobroNorm NVARCHAR(20) = UPPER(LTRIM(RTRIM(COALESCE(@TipoCobro, N''))));
 
         IF @TipoCobroNorm NOT IN (N'MENSUAL', N'TRIMESTRAL', N'SEMESTRAL', N'ANUAL')
@@ -31,6 +36,14 @@ BEGIN
         IF OBJECT_ID(N'dbo.NegociosSuscripcion', N'U') IS NULL
             RAISERROR('No existe la tabla NegociosSuscripcion.', 16, 1);
 
+        SELECT
+            @SuscripcionId = ns.Id,
+            @EstadoAnterior = ns.EstadoSuscripcion,
+            @EsPruebaAnterior = ns.EsPrueba,
+            @TipoCobroAnterior = UPPER(LTRIM(RTRIM(COALESCE(ns.TipoCobro, N''))))
+        FROM dbo.NegociosSuscripcion ns
+        WHERE ns.NegocioId = @NegocioId;
+
         IF EXISTS (SELECT 1 FROM dbo.NegociosSuscripcion WHERE NegocioId = @NegocioId)
         BEGIN
             UPDATE dbo.NegociosSuscripcion
@@ -46,6 +59,10 @@ BEGIN
                 FechaActualizacion = SYSUTCDATETIME(),
                 UsuarioActualizacion = COALESCE(@Usuario, N'sistema')
             WHERE NegocioId = @NegocioId;
+
+            SELECT @SuscripcionId = ns.Id
+            FROM dbo.NegociosSuscripcion ns
+            WHERE ns.NegocioId = @NegocioId;
         END
         ELSE
         BEGIN
@@ -63,6 +80,32 @@ BEGIN
                 NULL, NULL,
                 @FechaInicioPlan, @FechaFinPlan,
                 @TipoCobroNorm, @DiasGracia, DATEADD(DAY, @DiasGracia, @FechaFinPlan),
+                SYSUTCDATETIME(), COALESCE(@Usuario, N'sistema')
+            );
+
+            SET @SuscripcionId = CAST(SCOPE_IDENTITY() AS INT);
+        END;
+
+        IF OBJECT_ID(N'dbo.NegociosSuscripcionMovimiento', N'U') IS NOT NULL
+        BEGIN
+            INSERT INTO dbo.NegociosSuscripcionMovimiento
+            (
+                NegocioId, NegocioSuscripcionId, TipoMovimiento,
+                EstadoSuscripcionAnterior, EstadoSuscripcionNuevo,
+                EsPruebaAnterior, EsPruebaNuevo,
+                TipoCobroAnterior, TipoCobroNuevo,
+                FechaInicioReferencia, FechaFinReferencia,
+                DiasGracia, DiasExtra, Observacion,
+                FechaCreacion, UsuarioCreacion
+            )
+            VALUES
+            (
+                @NegocioId, @SuscripcionId, N'ACTIVACION_CONTRATO',
+                @EstadoAnterior, 2,
+                @EsPruebaAnterior, 0,
+                NULLIF(@TipoCobroAnterior, N''), @TipoCobroNorm,
+                @FechaInicioPlan, @FechaFinPlan,
+                @DiasGracia, NULL, N'Inicio o reactivacion manual de contrato desde superadmin.',
                 SYSUTCDATETIME(), COALESCE(@Usuario, N'sistema')
             );
         END;

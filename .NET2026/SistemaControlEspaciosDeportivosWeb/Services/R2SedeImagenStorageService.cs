@@ -22,6 +22,9 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
     private const int BannerMobileTargetWidth = 1080;
     private const int BannerMobileTargetHeight = 1350;
     private const int BannerMobileMaxOutputBytes = 520 * 1024;
+    private const int BoletinTargetWidth = 1200;
+    private const int BoletinTargetHeight = 1600;
+    private const int BoletinMaxOutputBytes = 700 * 1024;
 
     private static readonly HashSet<string> ExtensionesPermitidas = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -203,6 +206,26 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
             esHorizontal ? BannerTargetHeight : BannerMobileTargetHeight,
             esHorizontal ? BannerMaxOutputBytes : BannerMobileMaxOutputBytes,
             exigirHorizontal: esHorizontal,
+            cancellationToken);
+
+        return urls.FirstOrDefault();
+    }
+
+    public async Task<string?> UploadBoletinDeportivoAsync(IFormFile? archivo, CancellationToken cancellationToken = default)
+    {
+        if (archivo is null || archivo.Length <= 0)
+            return null;
+
+        var urls = await UploadImagenesAsync(
+            negocioId: 0,
+            sedeId: null,
+            espacioId: null,
+            categoria: "boletines",
+            [archivo],
+            BoletinTargetWidth,
+            BoletinTargetHeight,
+            BoletinMaxOutputBytes,
+            exigirHorizontal: false,
             cancellationToken);
 
         return urls.FirstOrDefault();
@@ -538,6 +561,8 @@ public class R2SedeImagenStorageService(IOptions<SedeImagenStorageSettings> opti
             return $"banners/anuncios/horizontal/{DateTime.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}{safeExt}";
         if (string.Equals(categoria, "banners-anuncios-vertical", StringComparison.OrdinalIgnoreCase))
             return $"banners/anuncios/vertical/{DateTime.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}{safeExt}";
+        if (string.Equals(categoria, "boletines", StringComparison.OrdinalIgnoreCase))
+            return $"boletines/eventos/{DateTime.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}{safeExt}";
         if (string.Equals(categoria, "espacios", StringComparison.OrdinalIgnoreCase))
         {
             var espacioSegmento = espacioId.HasValue ? $"espacio-{espacioId.Value}" : "espacio-nuevo";

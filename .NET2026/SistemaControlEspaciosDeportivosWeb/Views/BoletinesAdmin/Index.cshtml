@@ -1,0 +1,512 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.BoletinesDeportivosAdminIndexViewModel
+@{
+    ViewData["Title"] = "Boletines deportivos";
+    var esEdicion = Model.Form.IdBoletin.HasValue;
+}
+
+<div class="page-header-card mb-3">
+    <div class="page-header-main">
+        <h1 class="page-title">Boletines deportivos</h1>
+        <p class="page-subtitle">Administra flyers de campeonatos, relampagos y eventos publicados por usuarios y por plataforma.</p>
+    </div>
+</div>
+
+<section class="boletines-admin-summary mb-3">
+    <article class="boletines-admin-summary-card is-blue">
+        <span class="boletines-admin-summary-label">Total</span>
+        <strong>@Model.TotalBoletines</strong>
+        <small>Flyers registrados</small>
+    </article>
+    <article class="boletines-admin-summary-card is-green">
+        <span class="boletines-admin-summary-label">Activos</span>
+        <strong>@Model.TotalActivos</strong>
+        <small>Visibles en el portal</small>
+    </article>
+    <article class="boletines-admin-summary-card is-slate">
+        <span class="boletines-admin-summary-label">Inactivos</span>
+        <strong>@Model.TotalInactivos</strong>
+        <small>Ocultos temporalmente</small>
+    </article>
+    <article class="boletines-admin-summary-card is-cyan">
+        <span class="boletines-admin-summary-label">Usuarios</span>
+        <strong>@Model.TotalUsuarios</strong>
+        <small>Cargas desde perfil publico</small>
+    </article>
+    <article class="boletines-admin-summary-card is-purple">
+        <span class="boletines-admin-summary-label">Plataforma</span>
+        <strong>@Model.TotalPlataforma</strong>
+        <small>Cargas directas del super admin</small>
+    </article>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(Model.MensajeUi))
+{
+    <div class="alert alert-success">@Model.MensajeUi</div>
+}
+@if (!string.IsNullOrWhiteSpace(Model.Error))
+{
+    <div class="alert alert-danger">@Model.Error</div>
+}
+@if (!ViewData.ModelState.IsValid)
+{
+    <div asp-validation-summary="All" class="alert alert-danger"></div>
+}
+
+<section class="table-card sc-reservas-list-card mb-3">
+    <div class="table-card-header">
+        <h2 class="table-card-title platform-card-title">
+            <span class="platform-card-icon"><i class="bi bi-funnel"></i></span>
+            <span class="platform-card-title-text">Filtros del listado</span>
+        </h2>
+    </div>
+    <form method="get" class="row g-3 px-3 pb-3">
+        <div class="col-md-3">
+            <label class="form-label">Estado</label>
+            <select class="form-select" name="soloActivos">
+                <option value="" selected="@(Model.SoloActivos is null)">Todos</option>
+                <option value="true" selected="@(Model.SoloActivos == true)">Activos</option>
+                <option value="false" selected="@(Model.SoloActivos == false)">Inactivos</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Origen</label>
+            <select class="form-select" name="tipoRegistro">
+                <option value="" selected="@(string.IsNullOrWhiteSpace(Model.TipoRegistro))">Todos</option>
+                <option value="U" selected="@(Model.TipoRegistro == "U")">Usuario</option>
+                <option value="A" selected="@(Model.TipoRegistro == "A")">Plataforma</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Departamento</label>
+            <select class="form-select" name="codigoDepartamento" id="FiltroCodigoDepartamento">
+                <option value="">Todos</option>
+                @foreach (var item in Model.Departamentos)
+                {
+                    <option value="@item.Value" selected="@(item.Value == Model.CodigoDepartamento)">@item.Text</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Provincia</label>
+            <select class="form-select" name="codigoProvincia" id="FiltroCodigoProvincia">
+                <option value="">Todas</option>
+                @foreach (var item in Model.Provincias)
+                {
+                    <option value="@item.Value" selected="@(item.Value == Model.CodigoProvincia)">@item.Text</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Distrito</label>
+            <select class="form-select" name="codigoUbigeo" id="FiltroCodigoUbigeo">
+                <option value="">Todos</option>
+                @foreach (var item in Model.Distritos)
+                {
+                    <option value="@item.Value" selected="@(item.Value == Model.CodigoUbigeo)">@item.Text</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Zona</label>
+            <select class="form-select" name="zona">
+                <option value="">Todas</option>
+                @foreach (var item in Model.Zonas)
+                {
+                    <option value="@item.Value" selected="@(item.Value == Model.Zona)">@item.Text</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Anio</label>
+            <select class="form-select" name="anio">
+                <option value="">Todos</option>
+                @foreach (var item in Model.Anios)
+                {
+                    <option value="@item.Value" selected="@item.Selected">@item.Text</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Mes</label>
+            <select class="form-select" name="mes">
+                <option value="">Todos</option>
+                @foreach (var item in Model.Meses)
+                {
+                    <option value="@item.Value" selected="@item.Selected">@item.Text</option>
+                }
+            </select>
+        </div>
+        <div class="col-12 d-flex gap-2">
+            <button type="submit" class="btn btn-primary btn-grabar">
+                <i class="bi bi-search me-1"></i>Filtrar boletines
+            </button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Limpiar</a>
+        </div>
+    </form>
+</section>
+
+<section class="table-card sc-reservas-list-card mb-3">
+    <div class="table-card-header">
+        <h2 class="table-card-title platform-card-title">
+            <span class="platform-card-icon"><i class="bi bi-megaphone"></i></span>
+            <span class="platform-card-title-text">@(esEdicion ? "Editar boletin" : "Nuevo boletin")</span>
+        </h2>
+    </div>
+
+    <form asp-action="Guardar" method="post" enctype="multipart/form-data" class="row g-3 px-3 pb-3">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="SoloActivos" />
+        <input type="hidden" asp-for="TipoRegistro" />
+        <input type="hidden" asp-for="CodigoDepartamento" />
+        <input type="hidden" asp-for="CodigoProvincia" />
+        <input type="hidden" asp-for="CodigoUbigeo" />
+        <input type="hidden" asp-for="Zona" />
+        <input type="hidden" asp-for="Anio" />
+        <input type="hidden" asp-for="Mes" />
+        <input type="hidden" asp-for="Form.IdBoletin" />
+        <input type="hidden" asp-for="Form.UsuarioId" />
+        <input type="hidden" asp-for="Form.TipoRegistro" />
+        <input type="hidden" asp-for="Form.EsAdministradorCarga" />
+        <input type="hidden" asp-for="Form.ImagenUrl" />
+
+        <div class="col-md-6">
+            <label asp-for="Form.Titulo" class="form-label">Titulo (opcional)</label>
+            <input asp-for="Form.Titulo" class="form-control" maxlength="160" />
+            <span asp-validation-for="Form.Titulo" class="text-danger small"></span>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Form.FechaEvento" class="form-label"></label>
+            <input asp-for="Form.FechaEvento" type="date" class="form-control" />
+            <span asp-validation-for="Form.FechaEvento" class="text-danger small"></span>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+            <div class="form-check">
+                <input asp-for="Form.Activo" class="form-check-input" />
+                <label asp-for="Form.Activo" class="form-check-label"></label>
+            </div>
+        </div>
+        <div class="col-md-12">
+            <label asp-for="Form.Descripcion" class="form-label">Descripcion</label>
+            <textarea asp-for="Form.Descripcion" rows="3" class="form-control" maxlength="500"></textarea>
+            <span asp-validation-for="Form.Descripcion" class="text-danger small"></span>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Departamento</label>
+            <select asp-for="Form.CodigoDepartamento" class="form-select" id="FormCodigoDepartamento">
+                <option value="">Selecciona</option>
+                @foreach (var item in Model.Form.Departamentos)
+                {
+                    <option value="@item.Value" selected="@(item.Value == Model.Form.CodigoDepartamento)">@item.Text</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Provincia</label>
+            <select asp-for="Form.CodigoProvincia" class="form-select" id="FormCodigoProvincia">
+                <option value="">Selecciona</option>
+                @foreach (var item in Model.Form.Provincias)
+                {
+                    <option value="@item.Value" selected="@(item.Value == Model.Form.CodigoProvincia)">@item.Text</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Form.CodigoUbigeo" class="form-label">Distrito</label>
+            <select asp-for="Form.CodigoUbigeo" class="form-select" id="FormCodigoUbigeo">
+                <option value="">Selecciona</option>
+                @foreach (var item in Model.Form.Distritos)
+                {
+                    <option value="@item.Value" selected="@(item.Value == Model.Form.CodigoUbigeo)">@item.Text</option>
+                }
+            </select>
+            <span asp-validation-for="Form.CodigoUbigeo" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Form.ImagenArchivo" class="form-label">Flyer (JPG/PNG)</label>
+            <input asp-for="Form.ImagenArchivo" type="file" class="form-control" accept=".jpg,.jpeg,.png" />
+            <small class="text-muted">Se optimiza a WebP 1200x1600 para el bucket del portal.</small>
+            <span asp-validation-for="Form.ImagenArchivo" class="text-danger small d-block"></span>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Origen del registro</label>
+            <input class="form-control" value="Plataforma" readonly />
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Form.ImagenUrl))
+        {
+            <div class="col-md-12">
+                <div class="border rounded p-2">
+                    <small class="text-muted d-block mb-2">Vista previa del flyer</small>
+                    <img src="@Model.Form.ImagenUrl" alt="Flyer actual" class="boletin-admin-preview" />
+                </div>
+            </div>
+        }
+
+        <div class="col-12 d-flex gap-2">
+            <button type="submit" class="btn btn-primary btn-grabar">
+                <i class="bi bi-check2-circle me-1"></i>@(esEdicion ? "Guardar cambios" : "Publicar boletin")
+            </button>
+            @if (esEdicion)
+            {
+                <a asp-action="Index"
+                   asp-route-soloActivos="@Model.SoloActivos"
+                   asp-route-tipoRegistro="@Model.TipoRegistro"
+                   asp-route-codigoDepartamento="@Model.CodigoDepartamento"
+                   asp-route-codigoProvincia="@Model.CodigoProvincia"
+                   asp-route-codigoUbigeo="@Model.CodigoUbigeo"
+                   asp-route-zona="@Model.Zona"
+                   asp-route-anio="@Model.Anio"
+                   asp-route-mes="@Model.Mes"
+                   class="btn btn-outline-secondary">
+                    Cancelar edicion
+                </a>
+            }
+        </div>
+    </form>
+</section>
+
+<section class="table-card sc-reservas-list-card">
+    <div class="table-card-header d-flex justify-content-between align-items-center gap-2">
+        <h2 class="table-card-title platform-card-title">
+            <span class="platform-card-icon"><i class="bi bi-collection"></i></span>
+            <span class="platform-card-title-text">Boletines registrados</span>
+        </h2>
+        <span class="badge text-bg-light border">@Model.Boletines.Count registro(s)</span>
+    </div>
+
+    <div class="boletines-admin-grid p-3">
+        @if (Model.Boletines.Count == 0)
+        {
+            <div class="text-center text-muted py-4">No hay boletines con los filtros seleccionados.</div>
+        }
+        else
+        {
+            @foreach (var item in Model.Boletines)
+            {
+                <article class="boletin-admin-card">
+                    <a asp-controller="Boletines" asp-action="Detalle" asp-route-id="@item.IdBoletin" class="boletin-admin-card-media">
+                        <img src="@item.ImagenUrl" alt="Flyer @(item.Titulo ?? item.Distrito)" loading="lazy" />
+                    </a>
+                    <div class="boletin-admin-card-body">
+                        <div class="boletin-admin-card-badges">
+                            <span class="badge @(item.Activo ? "text-bg-success" : "text-bg-secondary")">@(item.Activo ? "Activo" : "Inactivo")</span>
+                            <span class="badge text-bg-light border">@(item.TipoRegistro == "A" ? "Plataforma" : "Usuario")</span>
+                            @if (!string.IsNullOrWhiteSpace(item.Zona))
+                            {
+                                <span class="badge text-bg-light border">@item.Zona</span>
+                            }
+                        </div>
+
+                        <h3>@(string.IsNullOrWhiteSpace(item.Titulo) ? "Evento deportivo" : item.Titulo)</h3>
+                        <div class="small text-muted">@item.FechaEvento.ToString("dd/MM/yyyy")</div>
+                        <div class="fw-semibold text-primary-emphasis">@item.Departamento / @item.Provincia / @item.Distrito</div>
+                        <div class="small text-muted">Autor: @item.NombreAutor</div>
+                        @if (!string.IsNullOrWhiteSpace(item.CorreoAutor))
+                        {
+                            <div class="small text-muted">@item.CorreoAutor</div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(item.Descripcion))
+                        {
+                            <p class="mb-0 small">@item.Descripcion</p>
+                        }
+
+                        <div class="sc-row-actions">
+                            <a class="btn btn-outline-primary btn-sm sc-row-action-btn"
+                               asp-action="Index"
+                               asp-route-soloActivos="@Model.SoloActivos"
+                               asp-route-tipoRegistro="@Model.TipoRegistro"
+                               asp-route-codigoDepartamento="@Model.CodigoDepartamento"
+                               asp-route-codigoProvincia="@Model.CodigoProvincia"
+                               asp-route-codigoUbigeo="@Model.CodigoUbigeo"
+                               asp-route-zona="@Model.Zona"
+                               asp-route-anio="@Model.Anio"
+                               asp-route-mes="@Model.Mes"
+                               asp-route-editarId="@item.IdBoletin">
+                                <i class="bi bi-pencil-square me-1"></i>Editar
+                            </a>
+                            <a class="btn btn-outline-secondary btn-sm sc-row-action-btn"
+                               asp-controller="Boletines"
+                               asp-action="Detalle"
+                               asp-route-id="@item.IdBoletin"
+                               target="_blank"
+                               rel="noopener noreferrer">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>Ver flyer
+                            </a>
+                            <form asp-action="CambiarEstado" method="post" class="sc-row-action-form">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="idBoletin" value="@item.IdBoletin" />
+                                <input type="hidden" name="activo" value="@(!item.Activo)" />
+                                <input type="hidden" name="soloActivos" value="@Model.SoloActivos" />
+                                <input type="hidden" name="tipoRegistro" value="@Model.TipoRegistro" />
+                                <input type="hidden" name="codigoDepartamento" value="@Model.CodigoDepartamento" />
+                                <input type="hidden" name="codigoProvincia" value="@Model.CodigoProvincia" />
+                                <input type="hidden" name="codigoUbigeo" value="@Model.CodigoUbigeo" />
+                                <input type="hidden" name="zona" value="@Model.Zona" />
+                                <input type="hidden" name="anio" value="@Model.Anio" />
+                                <input type="hidden" name="mes" value="@Model.Mes" />
+                                <button type="submit" class="btn btn-outline-@(item.Activo ? "danger" : "success") btn-sm sc-row-action-btn">
+                                    <i class="bi @(item.Activo ? "bi-pause-circle" : "bi-play-circle") me-1"></i>@(item.Activo ? "Desactivar" : "Activar")
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </article>
+            }
+        }
+    </div>
+</section>
+
+@section Styles{
+    <style>
+        .boletines-admin-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+        }
+        .boletines-admin-summary-card {
+            border-radius: 1rem;
+            padding: 1rem 1.1rem;
+            border: 1px solid #d8e6fb;
+            background: linear-gradient(135deg, #fff, #f8fbff);
+            box-shadow: 0 14px 30px rgba(15, 47, 100, .08);
+            display: flex;
+            flex-direction: column;
+            gap: .2rem;
+        }
+        .boletines-admin-summary-card strong {
+            font-size: 1.8rem;
+            line-height: 1;
+            color: #0f2f64;
+        }
+        .boletines-admin-summary-card small {
+            color: #55708f;
+            font-weight: 600;
+        }
+        .boletines-admin-summary-label {
+            font-size: .78rem;
+            font-weight: 800;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+        }
+        .boletines-admin-summary-card.is-blue { border-top: 4px solid #2563eb; }
+        .boletines-admin-summary-card.is-green { border-top: 4px solid #16a34a; }
+        .boletines-admin-summary-card.is-slate { border-top: 4px solid #64748b; }
+        .boletines-admin-summary-card.is-cyan { border-top: 4px solid #0891b2; }
+        .boletines-admin-summary-card.is-purple { border-top: 4px solid #7c3aed; }
+        .boletin-admin-preview {
+            max-width: 260px;
+            width: 100%;
+            height: auto;
+            border-radius: .8rem;
+            box-shadow: 0 18px 34px rgba(15, 47, 100, .12);
+        }
+        .boletines-admin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: .85rem;
+        }
+        .boletin-admin-card {
+            border: 1px solid #d8e6fb;
+            border-radius: .9rem;
+            overflow: hidden;
+            background: #fff;
+            box-shadow: 0 10px 22px rgba(15, 47, 100, .07);
+            display: flex;
+            flex-direction: column;
+        }
+        .boletin-admin-card-media {
+            display: block;
+            aspect-ratio: 4 / 4.7;
+            background: linear-gradient(180deg, #eff6ff, #dbeafe);
+        }
+        .boletin-admin-card-media img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .boletin-admin-card-body {
+            display: flex;
+            flex-direction: column;
+            gap: .5rem;
+            padding: .8rem .85rem;
+        }
+        .boletin-admin-card-badges {
+            display: flex;
+            gap: .4rem;
+            flex-wrap: wrap;
+        }
+        .boletin-admin-card h3 {
+            margin: 0;
+            color: #0f2f64;
+            font-size: .95rem;
+            font-weight: 800;
+        }
+        .boletin-admin-card .small,
+        .boletin-admin-card .mb-0.small {
+            font-size: .77rem;
+            line-height: 1.35;
+        }
+        .boletin-admin-card .fw-semibold.text-primary-emphasis {
+            font-size: .8rem;
+        }
+        .boletin-admin-card .sc-row-actions {
+            gap: .35rem;
+        }
+        .boletin-admin-card .sc-row-action-btn {
+            padding: .35rem .55rem;
+            font-size: .72rem;
+        }
+    </style>
+}
+
+@section Scripts{
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            function renderOptions(select, rows, emptyText) {
+                if (!select) return;
+                select.innerHTML = '';
+                const first = document.createElement('option');
+                first.value = '';
+                first.textContent = emptyText;
+                select.appendChild(first);
+                (rows || []).forEach(x => {
+                    const opt = document.createElement('option');
+                    opt.value = x.value || '';
+                    opt.textContent = x.text || '';
+                    select.appendChild(opt);
+                });
+            }
+
+            function bindCascade(depId, provId, distId, emptyProv, emptyDist) {
+                const dep = document.getElementById(depId);
+                const prov = document.getElementById(provId);
+                const dist = document.getElementById(distId);
+                if (!dep || !prov || !dist) return;
+
+                dep.addEventListener('change', async () => {
+                    const codigo = (dep.value || '').trim();
+                    renderOptions(prov, [], emptyProv);
+                    renderOptions(dist, [], emptyDist);
+                    if (codigo.length !== 2) return;
+                    const resp = await fetch(`@Url.Action("UbigeoProvincias", "Home")?codigoDepartamento=${encodeURIComponent(codigo)}`, { cache: 'no-store' });
+                    if (!resp.ok) return;
+                    renderOptions(prov, await resp.json(), emptyProv);
+                });
+
+                prov.addEventListener('change', async () => {
+                    const codigo = (prov.value || '').trim();
+                    renderOptions(dist, [], emptyDist);
+                    if (codigo.length !== 4) return;
+                    const resp = await fetch(`@Url.Action("UbigeoDistritos", "Home")?codigoProvincia=${encodeURIComponent(codigo)}`, { cache: 'no-store' });
+                    if (!resp.ok) return;
+                    renderOptions(dist, await resp.json(), emptyDist);
+                });
+            }
+
+            bindCascade('FiltroCodigoDepartamento', 'FiltroCodigoProvincia', 'FiltroCodigoUbigeo', 'Todas', 'Todos');
+            bindCascade('FormCodigoDepartamento', 'FormCodigoProvincia', 'FormCodigoUbigeo', 'Selecciona', 'Selecciona');
+        })();
+    </script>
+}

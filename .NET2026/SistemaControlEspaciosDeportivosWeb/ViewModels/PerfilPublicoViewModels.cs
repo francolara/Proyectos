@@ -164,6 +164,8 @@ public class PerfilPublicoIndexViewModel
 {
     public UsuarioPublicoPerfilViewModel Perfil { get; set; } = new();
     public List<UsuarioPublicoReservaItemViewModel> Reservas { get; set; } = new();
+    public BoletinDeportivoGuardarViewModel BoletinForm { get; set; } = new();
+    public List<BoletinDeportivoUsuarioItemViewModel> Boletines { get; set; } = new();
     public int PaginaReservas { get; set; } = 1;
     public int TamanoPaginaReservas { get; set; } = 6;
     public int TotalReservas { get; set; }

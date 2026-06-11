@@ -95,6 +95,59 @@ public class PlataformaNegocioLimiteItemViewModel
     public DateTime? FechaFinGracia { get; set; }
     public string? CorreoContacto { get; set; }
     public string? TelefonoContacto { get; set; }
+    public List<PlataformaNegocioSuscripcionMovimientoViewModel> HistorialComercial { get; set; } = new();
+    public List<PlataformaNegocioSuscripcionPagoViewModel> HistorialCobros { get; set; } = new();
+    public int CantidadCobrosRegistrados { get; set; }
+    public decimal MontoTotalCobrado { get; set; }
+    public DateTime? UltimoCobroFecha { get; set; }
+    public decimal? UltimoCobroMonto { get; set; }
+    public string? UltimoCobroTipoPago { get; set; }
+}
+
+public class PlataformaNegocioSuscripcionMovimientoViewModel
+{
+    public int Id { get; set; }
+    public string TipoMovimiento { get; set; } = string.Empty;
+    public int EstadoSuscripcionAnterior { get; set; }
+    public int EstadoSuscripcionNuevo { get; set; }
+    public bool EsPruebaAnterior { get; set; }
+    public bool EsPruebaNuevo { get; set; }
+    public string? TipoCobroAnterior { get; set; }
+    public string? TipoCobroNuevo { get; set; }
+    public DateTime? FechaInicioReferencia { get; set; }
+    public DateTime? FechaFinReferencia { get; set; }
+    public int DiasGracia { get; set; }
+    public int DiasExtra { get; set; }
+    public string? Observacion { get; set; }
+    public DateTime FechaCreacion { get; set; }
+    public string? UsuarioCreacion { get; set; }
+    public string TipoMovimientoNombre { get; set; } = string.Empty;
+}
+
+public class PlataformaNegocioSuscripcionPagoViewModel
+{
+    public int Id { get; set; }
+    public string TipoPago { get; set; } = string.Empty;
+    public string EstadoPago { get; set; } = string.Empty;
+    public decimal Monto { get; set; }
+    public string Moneda { get; set; } = "PEN";
+    public DateTime FechaPago { get; set; }
+    public DateTime? FechaVencimiento { get; set; }
+    public string? OperacionNumero { get; set; }
+    public string? EntidadFinanciera { get; set; }
+    public string? ReferenciaExterna { get; set; }
+    public string? Observacion { get; set; }
+    public DateTime FechaCreacion { get; set; }
+    public string? UsuarioCreacion { get; set; }
+    public string? TipoMovimientoRelacionado { get; set; }
+    public string? AccionAplicacion { get; set; }
+    public bool AplicarAlConfirmar { get; set; }
+    public bool AplicadoSuscripcion { get; set; }
+    public DateTime? FechaAplicacion { get; set; }
+    public string? UsuarioAplicacion { get; set; }
+    public string? TipoCobroObjetivo { get; set; }
+    public DateTime? FechaInicioPlanObjetivo { get; set; }
+    public int? DiasGraciaObjetivo { get; set; }
 }
 
 public class PlataformaAltasClubesAdminViewModel
@@ -109,6 +162,33 @@ public class PlataformaAltasClubesAdminViewModel
     public int TotalAprobados { get; set; }
     public int TotalRechazados { get; set; }
     public List<AltaClubItemViewModel> Solicitudes { get; set; } = new();
+}
+
+public class BoletinesDeportivosAdminIndexViewModel : ModuloBaseViewModel
+{
+    public int TotalBoletines { get; set; }
+    public int TotalActivos { get; set; }
+    public int TotalInactivos { get; set; }
+    public int TotalUsuarios { get; set; }
+    public int TotalPlataforma { get; set; }
+    public bool? SoloActivos { get; set; }
+    public string? TipoRegistro { get; set; }
+    public string? CodigoDepartamento { get; set; }
+    public string? CodigoProvincia { get; set; }
+    public string? CodigoUbigeo { get; set; }
+    public string? Zona { get; set; }
+    public int? Anio { get; set; }
+    public int? Mes { get; set; }
+    public List<SelectListItem> Departamentos { get; set; } = new();
+    public List<SelectListItem> Provincias { get; set; } = new();
+    public List<SelectListItem> Distritos { get; set; } = new();
+    public List<SelectListItem> Zonas { get; set; } = new();
+    public List<SelectListItem> Anios { get; set; } = new();
+    public List<SelectListItem> Meses { get; set; } = new();
+    public BoletinDeportivoGuardarViewModel Form { get; set; } = new();
+    public List<BoletinDeportivoAdminItemViewModel> Boletines { get; set; } = new();
+    public string? MensajeUi { get; set; }
+    public string? Error { get; set; }
 }
 
 public class MiSuscripcionNegocioViewModel

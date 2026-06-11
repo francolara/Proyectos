@@ -8,7 +8,7 @@ using SistemaControlEspaciosDeportivosWeb.ViewModels;
 namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 
 [Authorize]
-public class PerfilPublicoController(ISportCenterStoredProcedureService spService) : Controller
+public class PerfilPublicoController(ISportCenterStoredProcedureService spService, ISedeImagenStorageService sedeImagenStorageService) : Controller
 {
     [HttpGet]
     public IActionResult FaqUsuario()
@@ -52,11 +52,26 @@ public class PerfilPublicoController(ISportCenterStoredProcedureService spServic
             }
         }
 
-        ViewData["Tab"] = string.IsNullOrWhiteSpace(tab) ? "datos" : tab.Trim().ToLowerInvariant();
+        var tabActual = string.IsNullOrWhiteSpace(tab) ? "datos" : tab.Trim().ToLowerInvariant();
+        var boletinForm = new BoletinDeportivoGuardarViewModel
+        {
+            UsuarioId = usuarioId,
+            TipoRegistro = "U",
+            Activo = true,
+            FechaEvento = DateOnly.FromDateTime(DateTime.Today)
+        };
+        await CargarCombosBoletinAsync(boletinForm);
+        var boletines = tabActual == "boletines"
+            ? await spService.BoletinesDeportivosListarPorUsuarioAsync(usuarioId)
+            : new List<BoletinDeportivoUsuarioItemViewModel>();
+
+        ViewData["Tab"] = tabActual;
         return View(new PerfilPublicoIndexViewModel
         {
             Perfil = perfil,
             Reservas = reservas,
+            BoletinForm = boletinForm,
+            Boletines = boletines,
             PaginaReservas = paginaActualReservas,
             TamanoPaginaReservas = tamanoPaginaReservas,
             TotalReservas = totalReservas,
@@ -171,6 +186,80 @@ public class PerfilPublicoController(ISportCenterStoredProcedureService spServic
         return RedirectToAction(nameof(Index), new { tab = "datos" });
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> GuardarBoletin([Bind(Prefix = "BoletinForm")] BoletinDeportivoGuardarViewModel model)
+    {
+        ViewData["PublicFullWidth"] = true;
+        const string modelPrefix = "BoletinForm";
+        var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(usuarioId)) return Challenge();
+
+        model.UsuarioId = usuarioId;
+        model.TipoRegistro = "U";
+        model.EsAdministradorCarga = false;
+        model.Titulo = string.IsNullOrWhiteSpace(model.Titulo) ? null : model.Titulo.Trim();
+        model.Descripcion = string.IsNullOrWhiteSpace(model.Descripcion) ? null : model.Descripcion.Trim();
+        model.CodigoUbigeo = string.IsNullOrWhiteSpace(model.CodigoUbigeo) ? string.Empty : model.CodigoUbigeo.Trim();
+
+        string? imagenNueva = null;
+        if (model.ImagenArchivo is not null && model.ImagenArchivo.Length > 0)
+        {
+            try
+            {
+                imagenNueva = await sedeImagenStorageService.UploadBoletinDeportivoAsync(model.ImagenArchivo, HttpContext.RequestAborted);
+                model.ImagenUrl = imagenNueva ?? string.Empty;
+                ModelState.Remove("ImagenUrl");
+                ModelState.Remove($"{modelPrefix}.ImagenUrl");
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError($"{modelPrefix}.ImagenArchivo", $"No se pudo subir el flyer: {ex.Message}");
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(model.ImagenUrl))
+            ModelState.AddModelError($"{modelPrefix}.ImagenArchivo", "Debes cargar la imagen del flyer.");
+
+        if (!ModelState.IsValid)
+        {
+            if (!string.IsNullOrWhiteSpace(imagenNueva))
+                await sedeImagenStorageService.DeleteSedeImagenesAsync([imagenNueva], HttpContext.RequestAborted);
+
+            var vm = new PerfilPublicoIndexViewModel();
+            var perfil = await spService.UsuariosPublicosObtenerPerfilAsync(usuarioId) ?? new UsuarioPublicoPerfilViewModel { UsuarioId = usuarioId, TipoDocumento = "0" };
+            InicializarTelefonosParaVista(perfil);
+            await CargarCombosAsync(perfil);
+            await CargarCombosBoletinAsync(model);
+            vm.Perfil = perfil;
+            vm.BoletinForm = model;
+            vm.Boletines = await spService.BoletinesDeportivosListarPorUsuarioAsync(usuarioId);
+            var (reservas, totalReservas) = await spService.UsuariosPublicosReservasListarAsync(usuarioId, 1, 6);
+            vm.Reservas = reservas;
+            vm.PaginaReservas = 1;
+            vm.TamanoPaginaReservas = 6;
+            vm.TotalReservas = totalReservas;
+            vm.TotalPaginasReservas = Math.Max(1, (int)Math.Ceiling(totalReservas / 6d));
+            ViewData["Tab"] = "boletines";
+            return View("Index", vm);
+        }
+
+        try
+        {
+            await spService.BoletinesDeportivosGuardarAsync(model, User.Identity?.Name ?? "perfil-publico");
+            TempData["PerfilPublicoOk"] = "Boletin deportivo publicado correctamente.";
+            return RedirectToAction(nameof(Index), new { tab = "boletines" });
+        }
+        catch (Exception ex)
+        {
+            if (!string.IsNullOrWhiteSpace(imagenNueva))
+                await sedeImagenStorageService.DeleteSedeImagenesAsync([imagenNueva], HttpContext.RequestAborted);
+
+            TempData["PerfilPublicoInfo"] = ex.Message;
+            return RedirectToAction(nameof(Index), new { tab = "boletines" });
+        }
+    }
+
     private async Task CargarCombosAsync(UsuarioPublicoPerfilViewModel perfil)
     {
         perfil.TiposDocumento = await spService.CombosTiposDocumentoIdentidadSunatAsync();
@@ -196,6 +285,18 @@ public class PerfilPublicoController(ISportCenterStoredProcedureService spServic
             .Select(x => new SelectListItem(x.Nombre, x.Id.ToString()))
             .ToList();
         perfil.NivelesDesafio = await spService.DesafiosNivelesListarAsync();
+    }
+
+    private async Task CargarCombosBoletinAsync(BoletinDeportivoGuardarViewModel boletin)
+    {
+        boletin.Departamentos = await spService.UbigeoDepartamentosListarAsync();
+        boletin.Provincias = !string.IsNullOrWhiteSpace(boletin.CodigoDepartamento) && boletin.CodigoDepartamento.Length == 2
+            ? await spService.UbigeoProvinciasListarAsync(boletin.CodigoDepartamento)
+            : new List<SelectListItem>();
+        boletin.Distritos = !string.IsNullOrWhiteSpace(boletin.CodigoProvincia) && boletin.CodigoProvincia.Length == 4
+            ? await spService.UbigeoDistritosListarAsync(boletin.CodigoProvincia)
+            : new List<SelectListItem>();
+        boletin.Zonas = await spService.UbigeoZonasListarAsync(boletin.CodigoDepartamento, boletin.CodigoProvincia);
     }
 
     private static void InicializarTelefonosParaVista(UsuarioPublicoPerfilViewModel perfil)

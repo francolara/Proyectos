@@ -39,7 +39,14 @@ public interface ISportCenterStoredProcedureService
     Task<List<SelectListItem>> UbigeoDepartamentosListarAsync();
     Task<List<SelectListItem>> UbigeoProvinciasListarAsync(string codigoDepartamento);
     Task<List<SelectListItem>> UbigeoDistritosListarAsync(string codigoProvincia);
+    Task<List<SelectListItem>> UbigeoZonasListarAsync(string? codigoDepartamento = null, string? codigoProvincia = null);
     Task<UbigeoLookupViewModel?> UbigeoObtenerPorCodigoAsync(string codigoUbigeo);
+    Task<int> BoletinesDeportivosGuardarAsync(BoletinDeportivoGuardarViewModel model, string usuario);
+    Task<List<BoletinDeportivoPublicoItemViewModel>> BoletinesDeportivosListarPublicoAsync(string? codigoDepartamento = null, string? codigoProvincia = null, string? codigoUbigeo = null, string? zona = null, int? anio = null, int? mes = null);
+    Task<List<BoletinDeportivoUsuarioItemViewModel>> BoletinesDeportivosListarPorUsuarioAsync(string usuarioId);
+    Task<BoletinDeportivoDetalleViewModel?> BoletinesDeportivosObtenerPorIdAsync(int idBoletin);
+    Task<List<BoletinDeportivoAdminItemViewModel>> BoletinesDeportivosAdminListarAsync(bool? activo = null, string? tipoRegistro = null, string? codigoDepartamento = null, string? codigoProvincia = null, string? codigoUbigeo = null, string? zona = null, int? anio = null, int? mes = null);
+    Task<bool> BoletinesDeportivosCambiarEstadoAsync(int idBoletin, bool activo, string usuario);
     Task<UsuarioPublicoPerfilViewModel?> UsuariosPublicosObtenerPerfilAsync(string usuarioId);
     Task<int> UsuariosPublicosGuardarPerfilAsync(UsuarioPublicoPerfilViewModel model, string usuario);
     Task<(List<UsuarioPublicoReservaItemViewModel> Reservas, int TotalRegistros)> UsuariosPublicosReservasListarAsync(string usuarioId, int pagina = 1, int tamanoPagina = 6);
@@ -209,6 +216,13 @@ public interface ISportCenterStoredProcedureService
     Task<bool> PlataformaNegocioActivarContratoAsync(int negocioId, string tipoCobro, DateOnly fechaDesde, DateOnly fechaHasta, int diasGracia, string usuario);
     Task<bool> PlataformaNegocioRenovarContratoAsync(int negocioId, string usuario);
     Task<bool> PlataformaNegocioFinalizarContratoAsync(int negocioId, string usuario);
+    Task<bool> PlataformaNegocioExtenderPruebaAsync(int negocioId, int diasExtra, string? observacion, string usuario);
+    Task<bool> PlataformaNegocioAplicarGraciaManualAsync(int negocioId, int diasExtra, string? observacion, string usuario);
+    Task<bool> PlataformaNegocioCambiarPlanAsync(int negocioId, string tipoCobro, DateOnly fechaDesde, DateOnly fechaHasta, int diasGracia, string? observacion, string usuario);
+    Task<List<PlataformaNegocioSuscripcionMovimientoViewModel>> PlataformaNegocioHistorialComercialAsync(int negocioId, int top = 8);
+    Task<bool> PlataformaNegocioRegistrarPagoSuscripcionAsync(int negocioId, string tipoPago, string estadoPago, decimal monto, string moneda, DateTime fechaPago, DateOnly? fechaVencimiento, string? operacionNumero, string? entidadFinanciera, string? referenciaExterna, string? observacion, string? accionAplicacion, bool aplicarAlConfirmar, string? tipoCobroObjetivo, DateOnly? fechaInicioPlanObjetivo, int? diasGraciaObjetivo, string usuario);
+    Task<(List<PlataformaNegocioSuscripcionPagoViewModel> Pagos, int CantidadPagos, decimal MontoTotalPagado, DateTime? UltimaFechaPago, decimal? UltimoMonto, string? UltimoTipoPago)> PlataformaNegocioPagosSuscripcionAsync(int negocioId, int top = 8);
+    Task<bool> PlataformaNegocioConfirmarPagoSuscripcionAsync(int negocioId, int pagoId, string usuario);
     Task<MiSuscripcionNegocioViewModel?> MiSuscripcionObtenerAsync(int negocioId);
 
     Task<List<ReservaRecordatorioPendienteViewModel>> ReservasRecordatoriosPendientesAsync(DateTime fechaHoraActual);

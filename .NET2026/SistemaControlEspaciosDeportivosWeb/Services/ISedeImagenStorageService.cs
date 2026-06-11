@@ -11,6 +11,7 @@ public interface ISedeImagenStorageService
     Task<string?> UploadBannerPublicoFlexibleAsync(IFormFile? archivo, CancellationToken cancellationToken = default);
     Task<string?> UploadBannerPublicoMobileAsync(IFormFile? archivo, CancellationToken cancellationToken = default);
     Task<string?> UploadBannerAnuncioAsync(IFormFile? archivo, bool esHorizontal, CancellationToken cancellationToken = default);
+    Task<string?> UploadBoletinDeportivoAsync(IFormFile? archivo, CancellationToken cancellationToken = default);
     Task<(bool Ok, string Mensaje)> ProbarConexionAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyList<string>> DeleteSedeImagenesAsync(IEnumerable<string> urls, CancellationToken cancellationToken = default);
     Task<(byte[] Contenido, string ContentType)?> ObtenerImagenVisualizacionAsync(string? url, CancellationToken cancellationToken = default);

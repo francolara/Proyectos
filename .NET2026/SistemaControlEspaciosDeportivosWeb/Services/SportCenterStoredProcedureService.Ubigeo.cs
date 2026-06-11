@@ -51,6 +51,14 @@ public partial class SportCenterStoredProcedureService
         return list;
     }
 
+    public async Task<List<SelectListItem>> UbigeoZonasListarAsync(string? codigoDepartamento = null, string? codigoProvincia = null)
+    {
+        return await ComboAsync(
+            "Sp_Ubigeo_Zonas_Listar",
+            ("@CodigoDepartamento", string.IsNullOrWhiteSpace(codigoDepartamento) ? null : codigoDepartamento.Trim(), SqlDbType.Char),
+            ("@CodigoProvincia", string.IsNullOrWhiteSpace(codigoProvincia) ? null : codigoProvincia.Trim(), SqlDbType.Char));
+    }
+
     public async Task<UbigeoLookupViewModel?> UbigeoObtenerPorCodigoAsync(string codigoUbigeo)
     {
         await using var cn = CreateConnection();
@@ -67,7 +75,8 @@ public partial class SportCenterStoredProcedureService
             CodigoProvincia = dr.GetString(2),
             Departamento = dr.GetString(3),
             Provincia = dr.GetString(4),
-            Distrito = dr.GetString(5)
+            Distrito = dr.GetString(5),
+            Zona = dr.FieldCount > 6 && !dr.IsDBNull(6) ? dr.GetString(6) : null
         };
     }
 }

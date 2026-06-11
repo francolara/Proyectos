@@ -472,6 +472,240 @@ END";
         }
     }
 
+    public async Task<bool> PlataformaNegocioExtenderPruebaAsync(int negocioId, int diasExtra, string? observacion, string usuario)
+    {
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_NegociosSuscripcion_ExtenderPrueba", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+            AddParam(cmd, "@DiasExtra", diasExtra, SqlDbType.Int);
+            AddParam(cmd, "@Observacion", string.IsNullOrWhiteSpace(observacion) ? null : observacion.Trim(), SqlDbType.NVarChar);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async Task<bool> PlataformaNegocioAplicarGraciaManualAsync(int negocioId, int diasExtra, string? observacion, string usuario)
+    {
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_NegociosSuscripcion_AplicarGraciaManual", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+            AddParam(cmd, "@DiasExtra", diasExtra, SqlDbType.Int);
+            AddParam(cmd, "@Observacion", string.IsNullOrWhiteSpace(observacion) ? null : observacion.Trim(), SqlDbType.NVarChar);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async Task<bool> PlataformaNegocioCambiarPlanAsync(int negocioId, string tipoCobro, DateOnly fechaDesde, DateOnly fechaHasta, int diasGracia, string? observacion, string usuario)
+    {
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_NegociosSuscripcion_CambiarPlan", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+            AddParam(cmd, "@TipoCobro", string.IsNullOrWhiteSpace(tipoCobro) ? "MENSUAL" : tipoCobro.Trim().ToUpperInvariant(), SqlDbType.NVarChar);
+            AddParam(cmd, "@FechaInicioPlan", fechaDesde.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
+            AddParam(cmd, "@FechaFinPlan", fechaHasta.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
+            AddParam(cmd, "@DiasGracia", diasGracia <= 0 ? 5 : diasGracia, SqlDbType.Int);
+            AddParam(cmd, "@Observacion", string.IsNullOrWhiteSpace(observacion) ? null : observacion.Trim(), SqlDbType.NVarChar);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async Task<List<PlataformaNegocioSuscripcionMovimientoViewModel>> PlataformaNegocioHistorialComercialAsync(int negocioId, int top = 8)
+    {
+        var list = new List<PlataformaNegocioSuscripcionMovimientoViewModel>();
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_NegociosSuscripcionMovimiento_ListarPorNegocio", cn) { CommandType = CommandType.StoredProcedure };
+        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+        AddParam(cmd, "@Top", top <= 0 ? 8 : top, SqlDbType.Int);
+        await using var dr = await cmd.ExecuteReaderAsync();
+        while (await dr.ReadAsync())
+        {
+            var item = new PlataformaNegocioSuscripcionMovimientoViewModel
+            {
+                Id = dr.IsDBNull(0) ? 0 : Convert.ToInt32(dr.GetValue(0)),
+                TipoMovimiento = dr.IsDBNull(1) ? string.Empty : dr.GetString(1),
+                EstadoSuscripcionAnterior = dr.IsDBNull(2) ? 0 : Convert.ToInt32(dr.GetValue(2)),
+                EstadoSuscripcionNuevo = dr.IsDBNull(3) ? 0 : Convert.ToInt32(dr.GetValue(3)),
+                EsPruebaAnterior = !dr.IsDBNull(4) && Convert.ToBoolean(dr.GetValue(4)),
+                EsPruebaNuevo = !dr.IsDBNull(5) && Convert.ToBoolean(dr.GetValue(5)),
+                TipoCobroAnterior = dr.IsDBNull(6) ? null : dr.GetString(6),
+                TipoCobroNuevo = dr.IsDBNull(7) ? null : dr.GetString(7),
+                FechaInicioReferencia = dr.IsDBNull(8) ? null : dr.GetDateTime(8),
+                FechaFinReferencia = dr.IsDBNull(9) ? null : dr.GetDateTime(9),
+                DiasGracia = dr.IsDBNull(10) ? 0 : Convert.ToInt32(dr.GetValue(10)),
+                DiasExtra = dr.IsDBNull(11) ? 0 : Convert.ToInt32(dr.GetValue(11)),
+                Observacion = dr.IsDBNull(12) ? null : dr.GetString(12),
+                FechaCreacion = dr.IsDBNull(13) ? DateTime.MinValue : dr.GetDateTime(13),
+                UsuarioCreacion = dr.IsDBNull(14) ? null : dr.GetString(14)
+            };
+
+            item.TipoMovimientoNombre = item.TipoMovimiento switch
+            {
+                "ALTA_PRUEBA" => "Alta de prueba",
+                "EXTENSION_PRUEBA" => "Extension de prueba",
+                "ACTIVACION_CONTRATO" => "Activacion de contrato",
+                "RENOVACION" => "Renovacion",
+                "CAMBIO_PLAN" => "Cambio de plan",
+                "GRACIA_MANUAL" => "Gracia manual",
+                "FINALIZACION" => "Finalizacion",
+                _ => item.TipoMovimiento
+            };
+
+            list.Add(item);
+        }
+
+        return list;
+    }
+
+    public async Task<bool> PlataformaNegocioRegistrarPagoSuscripcionAsync(int negocioId, string tipoPago, string estadoPago, decimal monto, string moneda, DateTime fechaPago, DateOnly? fechaVencimiento, string? operacionNumero, string? entidadFinanciera, string? referenciaExterna, string? observacion, string? accionAplicacion, bool aplicarAlConfirmar, string? tipoCobroObjetivo, DateOnly? fechaInicioPlanObjetivo, int? diasGraciaObjetivo, string usuario)
+    {
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_NegociosSuscripcionPago_Registrar", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+            AddParam(cmd, "@TipoPago", string.IsNullOrWhiteSpace(tipoPago) ? "TRANSFERENCIA" : tipoPago.Trim().ToUpperInvariant(), SqlDbType.NVarChar);
+            AddParam(cmd, "@EstadoPago", string.IsNullOrWhiteSpace(estadoPago) ? "PAGADO" : estadoPago.Trim().ToUpperInvariant(), SqlDbType.NVarChar);
+            AddParam(cmd, "@Monto", monto, SqlDbType.Decimal);
+            cmd.Parameters["@Monto"].Precision = 12;
+            cmd.Parameters["@Monto"].Scale = 2;
+            AddParam(cmd, "@Moneda", string.IsNullOrWhiteSpace(moneda) ? "PEN" : moneda.Trim().ToUpperInvariant(), SqlDbType.NVarChar);
+            AddParam(cmd, "@FechaPago", fechaPago, SqlDbType.DateTime2);
+            AddParam(cmd, "@FechaVencimiento", fechaVencimiento?.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
+            AddParam(cmd, "@OperacionNumero", string.IsNullOrWhiteSpace(operacionNumero) ? null : operacionNumero.Trim(), SqlDbType.NVarChar);
+            AddParam(cmd, "@EntidadFinanciera", string.IsNullOrWhiteSpace(entidadFinanciera) ? null : entidadFinanciera.Trim(), SqlDbType.NVarChar);
+            AddParam(cmd, "@ReferenciaExterna", string.IsNullOrWhiteSpace(referenciaExterna) ? null : referenciaExterna.Trim(), SqlDbType.NVarChar);
+            AddParam(cmd, "@Observacion", string.IsNullOrWhiteSpace(observacion) ? null : observacion.Trim(), SqlDbType.NVarChar);
+            AddParam(cmd, "@AccionAplicacion", string.IsNullOrWhiteSpace(accionAplicacion) ? null : accionAplicacion.Trim().ToUpperInvariant(), SqlDbType.NVarChar);
+            AddParam(cmd, "@AplicarAlConfirmar", aplicarAlConfirmar, SqlDbType.Bit);
+            AddParam(cmd, "@TipoCobroObjetivo", string.IsNullOrWhiteSpace(tipoCobroObjetivo) ? null : tipoCobroObjetivo.Trim().ToUpperInvariant(), SqlDbType.NVarChar);
+            AddParam(cmd, "@FechaInicioPlanObjetivo", fechaInicioPlanObjetivo?.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
+            AddParam(cmd, "@DiasGraciaObjetivo", diasGraciaObjetivo, SqlDbType.Int);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async Task<(List<PlataformaNegocioSuscripcionPagoViewModel> Pagos, int CantidadPagos, decimal MontoTotalPagado, DateTime? UltimaFechaPago, decimal? UltimoMonto, string? UltimoTipoPago)> PlataformaNegocioPagosSuscripcionAsync(int negocioId, int top = 8)
+    {
+        var list = new List<PlataformaNegocioSuscripcionPagoViewModel>();
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_NegociosSuscripcionPago_ListarPorNegocio", cn) { CommandType = CommandType.StoredProcedure };
+        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+        AddParam(cmd, "@Top", top <= 0 ? 8 : top, SqlDbType.Int);
+
+        var cantidadParam = cmd.Parameters.Add("@CantidadPagos", SqlDbType.Int);
+        cantidadParam.Direction = ParameterDirection.Output;
+
+        var totalParam = cmd.Parameters.Add("@MontoTotalPagado", SqlDbType.Decimal);
+        totalParam.Direction = ParameterDirection.Output;
+        totalParam.Precision = 12;
+        totalParam.Scale = 2;
+
+        var ultimaFechaParam = cmd.Parameters.Add("@UltimaFechaPago", SqlDbType.DateTime2);
+        ultimaFechaParam.Direction = ParameterDirection.Output;
+
+        var ultimoMontoParam = cmd.Parameters.Add("@UltimoMonto", SqlDbType.Decimal);
+        ultimoMontoParam.Direction = ParameterDirection.Output;
+        ultimoMontoParam.Precision = 12;
+        ultimoMontoParam.Scale = 2;
+
+        var ultimoTipoParam = cmd.Parameters.Add("@UltimoTipoPago", SqlDbType.NVarChar, 30);
+        ultimoTipoParam.Direction = ParameterDirection.Output;
+
+        await using var dr = await cmd.ExecuteReaderAsync();
+        while (await dr.ReadAsync())
+        {
+            list.Add(new PlataformaNegocioSuscripcionPagoViewModel
+            {
+                Id = dr.IsDBNull(0) ? 0 : Convert.ToInt32(dr.GetValue(0)),
+                TipoPago = dr.IsDBNull(1) ? string.Empty : dr.GetString(1),
+                EstadoPago = dr.IsDBNull(2) ? string.Empty : dr.GetString(2),
+                Monto = dr.IsDBNull(3) ? 0 : dr.GetDecimal(3),
+                Moneda = dr.IsDBNull(4) ? "PEN" : dr.GetString(4),
+                FechaPago = dr.IsDBNull(5) ? DateTime.MinValue : dr.GetDateTime(5),
+                FechaVencimiento = dr.IsDBNull(6) ? null : dr.GetDateTime(6),
+                OperacionNumero = dr.IsDBNull(7) ? null : dr.GetString(7),
+                EntidadFinanciera = dr.IsDBNull(8) ? null : dr.GetString(8),
+                ReferenciaExterna = dr.IsDBNull(9) ? null : dr.GetString(9),
+                Observacion = dr.IsDBNull(10) ? null : dr.GetString(10),
+                FechaCreacion = dr.IsDBNull(11) ? DateTime.MinValue : dr.GetDateTime(11),
+                UsuarioCreacion = dr.IsDBNull(12) ? null : dr.GetString(12),
+                TipoMovimientoRelacionado = dr.IsDBNull(13) ? null : dr.GetString(13),
+                AccionAplicacion = dr.IsDBNull(14) ? null : dr.GetString(14),
+                AplicarAlConfirmar = !dr.IsDBNull(15) && Convert.ToBoolean(dr.GetValue(15)),
+                AplicadoSuscripcion = !dr.IsDBNull(16) && Convert.ToBoolean(dr.GetValue(16)),
+                FechaAplicacion = dr.IsDBNull(17) ? null : dr.GetDateTime(17),
+                UsuarioAplicacion = dr.IsDBNull(18) ? null : dr.GetString(18),
+                TipoCobroObjetivo = dr.IsDBNull(19) ? null : dr.GetString(19),
+                FechaInicioPlanObjetivo = dr.IsDBNull(20) ? null : dr.GetDateTime(20),
+                DiasGraciaObjetivo = dr.IsDBNull(21) ? null : Convert.ToInt32(dr.GetValue(21))
+            });
+        }
+        await dr.CloseAsync();
+
+        return (
+            list,
+            cantidadParam.Value is int cantidad ? cantidad : 0,
+            totalParam.Value == DBNull.Value ? 0 : Convert.ToDecimal(totalParam.Value),
+            ultimaFechaParam.Value == DBNull.Value ? null : Convert.ToDateTime(ultimaFechaParam.Value),
+            ultimoMontoParam.Value == DBNull.Value ? null : Convert.ToDecimal(ultimoMontoParam.Value),
+            ultimoTipoParam.Value == DBNull.Value ? null : Convert.ToString(ultimoTipoParam.Value)
+        );
+    }
+
+    public async Task<bool> PlataformaNegocioConfirmarPagoSuscripcionAsync(int negocioId, int pagoId, string usuario)
+    {
+        try
+        {
+            await using var cn = CreateConnection();
+            await cn.OpenAsync();
+            await using var cmd = new SqlCommand("Sp_NegociosSuscripcionPago_ConfirmarAplicar", cn) { CommandType = CommandType.StoredProcedure };
+            AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+            AddParam(cmd, "@PagoId", pagoId, SqlDbType.Int);
+            AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
+            await cmd.ExecuteNonQueryAsync();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public async Task<MiSuscripcionNegocioViewModel?> MiSuscripcionObtenerAsync(int negocioId)
     {
         await using var cn = CreateConnection();

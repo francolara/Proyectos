@@ -6,6 +6,13 @@
 - Acceso a datos de negocio: **ADO.NET + Stored Procedures**.
 - Identity (autenticacion base): ASP.NET Identity.
 
+## Actualizacion 10/06/2026
+- Se inicia el modulo **Boletines deportivos** para publicar flyers de campeonatos, relampagos y eventos desde usuarios registrados y desde super admin.
+- `UbigeoDistritos` incorpora columna opcional `Zona` (`Sur`, `Este`, `Oeste`, `Centro`, `Norte`) para soportar filtros publicos por zona geografica sin alterar la logica actual de departamento/provincia/distrito.
+- Se agrega la tabla `BoletinesDeportivos` como repositorio central de flyers con relacion al usuario que publica, perfil publico, ubigeo del evento, fecha del evento y origen de carga (`U` usuario publico / `A` admin).
+- `Sp_BoletinesDeportivos_Guardar` limita la publicacion de usuarios publicos a **una carga semanal** y deja bypass administrativo para el panel super admin.
+- Se dejan listos los SP de consulta publica, detalle, listado por usuario, listado admin y cambio de estado para continuar con las siguientes fases de UI.
+
 ## Capa ADO.NET implementada
 - Interfaz: `Services/ISportCenterStoredProcedureService.cs`
 - Implementacion parcial:
@@ -20,6 +27,7 @@
 - `Services/SportCenterStoredProcedureService.Maestros.cs`
 - `Services/SportCenterStoredProcedureService.Banners.cs`
 - `Services/SportCenterStoredProcedureService.PopupPromociones.cs`
+- `Services/SportCenterStoredProcedureService.Boletines.cs`
 - `Services/SportCenterStoredProcedureService.ReservasPagosComprobantes.cs` (incluye calendario y bloqueos sprint 5)
 - `Services/SportCenterStoredProcedureService.Automatizacion.cs`
 - Seguridad por modulo via SP:
@@ -67,6 +75,25 @@
   - `Sp_Home_ListarSedesPublicas` solo expone sedes de negocios con `EstadoSuscripcion IN (1, 2)`, por lo que los negocios pendientes, vencidos o suspendidos dejan de aparecer en el filtro `Complejo deportivo` del home.
   - `Sp_Home_BuscarEspaciosDisponibles` aplica el mismo criterio publico para que no se muestren tarjetas ni resultados directos de espacios pertenecientes a negocios pendientes, vencidos o suspendidos.
 - `Sp_Home_ListarBannersPublicos`
+
+### 02A_Ubigeo_Boletines.sql
+- Tabla:
+  - `UbigeoDistritos` agrega columna `Zona` (nullable) para clasificar distritos con enfoque publico.
+- `Sp_Ubigeo_Zonas_Listar`
+- `Sp_Ubigeo_ObtenerPorCodigo` ahora devuelve `Zona` adicionalmente.
+- Tabla:
+  - `BoletinesDeportivos`
+- `Sp_BoletinesDeportivos_Guardar`
+- `Sp_BoletinesDeportivos_ListarPublico`
+- `Sp_BoletinesDeportivos_ListarPorUsuario`
+- `Sp_BoletinesDeportivos_ObtenerPorId`
+- `Sp_BoletinesDeportivos_AdminListar`
+- `Sp_BoletinesDeportivos_CambiarEstado`
+- Reglas funcionales base:
+  - Usuarios publicos registrados pueden crear boletines deportivos con un limite de **una carga por semana**.
+  - Super admin puede registrar boletines sin restriccion semanal.
+  - Todo boletin se asocia a un distrito (`CodigoUbigeo`) y la zona se resuelve desde `UbigeoDistritos.Zona`.
+  - El filtro temporal se apoya en `FechaEvento` para exponer por anio y mes en el home publico.
 
 ### 03_Sedes_Espacios.sql
 - `Sp_Combos_Sedes`
@@ -452,6 +479,24 @@
   - `Sp_Panel_ListarModulosPermitidos`
 - SP nuevo:
   - `Sp_NegociosSuscripcion_ActivarPlan` (reactiva acceso y define vigencia en dias)
+- Actualizacion 10/06/2026:
+  - Se crea `NegociosSuscripcionMovimiento` como historial comercial de la suscripcion por negocio.
+  - Los movimientos iniciales de fase 1 contemplan: `ACTIVACION_CONTRATO`, `RENOVACION`, `CAMBIO_PLAN`, `EXTENSION_PRUEBA`, `GRACIA_MANUAL` y `FINALIZACION`.
+  - `NegociosSuscripcion` se mantiene como resumen vigente operativo; el historial comercial ya no depende de sobrescribir solo el estado actual.
+  - Nuevos SP:
+    - `Sp_NegociosSuscripcionMovimiento_ListarPorNegocio`
+    - `Sp_NegociosSuscripcion_ExtenderPrueba`
+    - `Sp_NegociosSuscripcion_AplicarGraciaManual`
+    - `Sp_NegociosSuscripcion_CambiarPlan`
+  - `Sp_NegociosSuscripcion_ActivarPlan`, `Sp_NegociosSuscripcion_RenovarPlan` y `Sp_NegociosSuscripcion_FinalizarPlan` ahora registran movimiento historico adicional.
+- Actualizacion 10/06/2026 (fase 2):
+  - Se crea `NegociosSuscripcionPago` para registrar cobros manuales y futuros pagos conciliables por negocio.
+  - El cobro guarda `TipoPago`, `EstadoPago`, `Monto`, `Moneda`, `FechaPago`, `FechaVencimiento`, `OperacionNumero`, `EntidadFinanciera`, `ReferenciaExterna` y observacion.
+  - Nuevos SP:
+    - `Sp_NegociosSuscripcionPago_Registrar`
+    - `Sp_NegociosSuscripcionPago_ListarPorNegocio`
+  - Los tipos iniciales soportados son: `EFECTIVO`, `TRANSFERENCIA`, `YAPE`, `PLIN`, `LINK_PAGO` y `PASARELA`.
+  - Los estados iniciales soportados son: `PENDIENTE`, `PAGADO`, `OBSERVADO` y `ANULADO`.
 
 ### 24_Sedes_Horario_NoLaborable.sql
 - Tablas:
@@ -1195,6 +1240,18 @@
   - Para contrato vencido aplica gracia y bloquea modulos cuando vence `FechaFinGracia`.
 - Tabla `NegociosSuscripcion`:
   - Nuevas columnas: `TipoCobro`, `DiasGracia`, `FechaFinGracia`.
+- Actualizacion 10/06/2026:
+  - `Plataforma > Negocios` se reorganiza por acciones comerciales:
+    - `Extender prueba`
+    - `Cambiar plan`
+    - `Dar gracia manual`
+    - `Renovar suscripcion`
+    - `Dar fin al contrato`
+  - Cada complejo deportivo muestra `Historial comercial` con los ultimos movimientos y su vigencia asociada.
+- Actualizacion 10/06/2026 (fase 2):
+  - `Plataforma > Negocios` incorpora `Registrar cobro` dentro de la gestion comercial de contratos.
+  - El superadmin puede registrar abonos manuales indicando monto, tipo de pago, estado confirmado/pendiente, fecha, entidad, operacion y referencia externa.
+  - Cada complejo deportivo muestra resumen acumulado de cobros e `Historial de cobros` por suscripcion.
 
 ## Actualizacion 26/04/2026
 - `Sp_UsuariosPublicos_ReservasListar` ahora pagina directamente en SQL con `@Pagina` y `@TamanoPagina` (default 6), y devuelve `TotalRegistros` por ventana para construir el paginador de `PerfilPublico` en backend sin traer todo el historial.
@@ -1444,3 +1501,39 @@
   - `Configuracion/Index` agrega el atributo `Hora(s) maxima de reserva por cliente`.
   - Si el negocio configura `1`, `Home/Reservar` mantiene `Hora fin` bloqueada y autoajustada.
   - Si configura un valor mayor, `Home/Reservar` habilita `Hora fin` y solo muestra opciones en saltos exactos de `1 hora` desde la hora de inicio, hasta el tope permitido.
+
+## Actualizacion 10/06/2026 - Fase 3 comercial de suscripciones (cobros conciliables)
+- La tabla `dbo.NegociosSuscripcionPago` agrega soporte para conciliacion comercial y aplicacion diferida:
+  - `AccionAplicacion`
+  - `AplicarAlConfirmar`
+  - `AplicadoSuscripcion`
+  - `FechaAplicacion`
+  - `UsuarioAplicacion`
+  - `TipoCobroObjetivo`
+  - `FechaInicioPlanObjetivo`
+  - `DiasGraciaObjetivo`
+- Script incremental: `Basededatos/SportCenter/Script/20260610_NegociosSuscripcionPago_Conciliacion.sql`.
+- `dbo.Sp_NegociosSuscripcionPago_Registrar` ahora permite registrar cobros:
+  - solo como trazabilidad financiera,
+  - asociados a `RENOVACION`,
+  - asociados a `CAMBIO_PLAN`,
+  - o asociados a `ACTIVACION_CONTRATO`.
+- Si el cobro ya entra como `PAGADO` y viene marcado para aplicar, el procedimiento ejecuta automaticamente la accion comercial correspondiente reutilizando:
+  - `dbo.Sp_NegociosSuscripcion_ActivarPlan`
+  - `dbo.Sp_NegociosSuscripcion_RenovarPlan`
+  - `dbo.Sp_NegociosSuscripcion_CambiarPlan`
+- Nuevo stored procedure: `dbo.Sp_NegociosSuscripcionPago_ConfirmarAplicar`.
+  - Confirma un cobro `PENDIENTE`.
+  - Cambia su estado a `PAGADO`.
+  - Ejecuta la accion comercial diferida si corresponde.
+  - Marca el pago como aplicado en la propia tabla de pagos.
+- `dbo.Sp_NegociosSuscripcionPago_ListarPorNegocio` ahora devuelve tambien el estado de conciliacion para que el superadmin vea:
+  - accion comercial pendiente,
+  - si ya fue aplicada,
+  - plan objetivo,
+  - fecha de aplicacion.
+- Comportamiento funcional en la web:
+  - `Plataforma/Negocios` permite registrar cobros pendientes o confirmados con accion comercial asociada.
+  - En negocios sin contrato se puede registrar un cobro orientado a `ACTIVACION_CONTRATO`.
+  - En negocios con contrato se puede registrar un cobro orientado a `RENOVACION` o `CAMBIO_PLAN`.
+  - El historial de cobros muestra el estado de aplicacion y habilita `Confirmar y aplicar` para pagos pendientes conciliables.

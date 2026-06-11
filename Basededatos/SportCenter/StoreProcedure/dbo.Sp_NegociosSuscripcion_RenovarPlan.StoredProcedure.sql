@@ -2,6 +2,7 @@
 -- Author:        FRANCO LARA
 -- Create date:   19/04/2026
 -- Firma:         Renovacion automatica de suscripcion segun el tipo de cobro vigente del negocio.
+-- Firma:         10/06/2026 | Registra movimiento comercial de renovacion para conservar historial de vigencias.
 -- =============================================
 CREATE OR ALTER PROCEDURE dbo.Sp_NegociosSuscripcion_RenovarPlan
     @NegocioId INT,
@@ -16,13 +17,21 @@ BEGIN
         DECLARE @DiasGracia INT;
         DECLARE @BaseFechaFin DATE;
         DECLARE @NuevaFechaFin DATE;
+        DECLARE @SuscripcionId INT;
+        DECLARE @EstadoAnterior INT;
+        DECLARE @EsPruebaAnterior BIT;
+        DECLARE @FechaInicioPlan DATE;
         DECLARE @Hoy DATE = CAST(GETDATE() AS DATE);
 
         IF NOT EXISTS (SELECT 1 FROM dbo.Negocios WHERE Id = @NegocioId)
             RAISERROR('Negocio no encontrado.', 16, 1);
 
         SELECT
+            @SuscripcionId = ns.Id,
+            @EstadoAnterior = ns.EstadoSuscripcion,
+            @EsPruebaAnterior = ns.EsPrueba,
             @TipoCobro = UPPER(LTRIM(RTRIM(COALESCE(ns.TipoCobro, N'')))),
+            @FechaInicioPlan = ns.FechaInicioPlan,
             @FechaFinPlanActual = ns.FechaFinPlan,
             @DiasGracia = COALESCE(ns.DiasGracia, 5)
         FROM dbo.NegociosSuscripcion ns
@@ -56,6 +65,30 @@ BEGIN
 
         IF @@ROWCOUNT = 0
             RAISERROR('No se encontro una suscripcion para renovar.', 16, 1);
+
+        IF OBJECT_ID(N'dbo.NegociosSuscripcionMovimiento', N'U') IS NOT NULL
+        BEGIN
+            INSERT INTO dbo.NegociosSuscripcionMovimiento
+            (
+                NegocioId, NegocioSuscripcionId, TipoMovimiento,
+                EstadoSuscripcionAnterior, EstadoSuscripcionNuevo,
+                EsPruebaAnterior, EsPruebaNuevo,
+                TipoCobroAnterior, TipoCobroNuevo,
+                FechaInicioReferencia, FechaFinReferencia,
+                DiasGracia, DiasExtra, Observacion,
+                FechaCreacion, UsuarioCreacion
+            )
+            VALUES
+            (
+                @NegocioId, @SuscripcionId, N'RENOVACION',
+                @EstadoAnterior, 2,
+                @EsPruebaAnterior, 0,
+                @TipoCobro, @TipoCobro,
+                COALESCE(@FechaInicioPlan, @Hoy), @NuevaFechaFin,
+                COALESCE(@DiasGracia, 5), NULL, N'Renovacion desde superadmin segun el tipo de cobro vigente.',
+                SYSUTCDATETIME(), COALESCE(@Usuario, N'sistema')
+            );
+        END;
     END TRY
 
     BEGIN CATCH

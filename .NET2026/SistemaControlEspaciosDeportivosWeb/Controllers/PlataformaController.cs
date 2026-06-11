@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Globalization;
 using System.Net;
+using ClosedXML.Excel;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
 
@@ -281,11 +282,13 @@ public class PlataformaController(
             TotalPaginas = totalPaginas,
             Negocios = resultado.Negocios
         };
+        await EnriquecerHistorialComercialNegociosAsync(vm.Negocios);
+        await EnriquecerCobrosSuscripcionNegociosAsync(vm.Negocios);
         return View(vm);
     }
 
     [HttpGet]
-    public async Task<IActionResult> ClubesPendientes(int? estado = 1, int pagina = 1)
+    public async Task<IActionResult> ClubesPendientes(int? estado = null, int pagina = 1)
     {
         ViewData["PlatformShell"] = true;
         const int tamanoPagina = 20;
@@ -680,7 +683,237 @@ public class PlataformaController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> AprobarClub(int id, int diasPrueba = 30, string? comentarioGestion = null, int? estado = 1, int pagina = 1)
+    public async Task<IActionResult> ExtenderPruebaNegocio(int negocioId, int diasExtra, string? observacion = null, string? buscar = null, string? estadoContrato = null, int pagina = 1)
+    {
+        ViewData["PlatformShell"] = true;
+        var ok = await spService.PlataformaNegocioExtenderPruebaAsync(
+            negocioId,
+            diasExtra <= 0 ? 1 : diasExtra,
+            observacion,
+            User.Identity?.Name ?? "owner-platform");
+
+        TempData[ok ? "PortalWebOk" : "PortalWebError"] = ok
+            ? "Prueba extendida correctamente."
+            : "No se pudo extender la prueba del negocio.";
+
+        return RedirectToAction(nameof(Negocios), new { buscar, estadoContrato, pagina });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AplicarGraciaNegocio(int negocioId, int diasExtra, string? observacion = null, string? buscar = null, string? estadoContrato = null, int pagina = 1)
+    {
+        ViewData["PlatformShell"] = true;
+        var ok = await spService.PlataformaNegocioAplicarGraciaManualAsync(
+            negocioId,
+            diasExtra <= 0 ? 1 : diasExtra,
+            observacion,
+            User.Identity?.Name ?? "owner-platform");
+
+        TempData[ok ? "PortalWebOk" : "PortalWebError"] = ok
+            ? "Dias de gracia aplicados correctamente."
+            : "No se pudo aplicar la gracia manual al negocio.";
+
+        return RedirectToAction(nameof(Negocios), new { buscar, estadoContrato, pagina });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CambiarPlanNegocio(int negocioId, string tipoCobro, DateOnly fechaDesde, DateOnly fechaHasta, int diasGracia = 5, string? observacion = null, string? buscar = null, string? estadoContrato = null, int pagina = 1)
+    {
+        ViewData["PlatformShell"] = true;
+        fechaHasta = CalcularFechaFinContrato(tipoCobro, fechaDesde);
+        if (fechaHasta < fechaDesde)
+        {
+            TempData["PortalWebError"] = "La fecha fin no puede ser menor a la fecha inicio.";
+            return RedirectToAction(nameof(Negocios), new { buscar, estadoContrato, pagina });
+        }
+
+        var ok = await spService.PlataformaNegocioCambiarPlanAsync(
+            negocioId,
+            tipoCobro,
+            fechaDesde,
+            fechaHasta,
+            diasGracia <= 0 ? 5 : diasGracia,
+            observacion,
+            User.Identity?.Name ?? "owner-platform");
+
+        TempData[ok ? "PortalWebOk" : "PortalWebError"] = ok
+            ? "Plan actualizado correctamente."
+            : "No se pudo cambiar el plan del negocio.";
+
+        return RedirectToAction(nameof(Negocios), new { buscar, estadoContrato, pagina });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RegistrarPagoSuscripcionNegocio(int negocioId, decimal monto, string tipoPago, bool cobroConfirmado = true, DateTime? fechaPago = null, DateOnly? fechaVencimiento = null, string? operacionNumero = null, string? entidadFinanciera = null, string? referenciaExterna = null, string? observacion = null, string? accionAplicacion = null, bool aplicarAlConfirmar = false, string? tipoCobroObjetivo = null, DateOnly? fechaInicioPlanObjetivo = null, int? diasGraciaObjetivo = null, string? buscar = null, string? estadoContrato = null, int pagina = 1)
+    {
+        ViewData["PlatformShell"] = true;
+        var accionAplicacionNormalizada = NormalizarAccionAplicacionCobro(accionAplicacion);
+        var requiereAplicacion = aplicarAlConfirmar || !string.IsNullOrWhiteSpace(accionAplicacionNormalizada);
+        var ok = await spService.PlataformaNegocioRegistrarPagoSuscripcionAsync(
+            negocioId,
+            tipoPago,
+            cobroConfirmado ? "PAGADO" : "PENDIENTE",
+            monto,
+            "PEN",
+            fechaPago ?? DateTime.Now,
+            fechaVencimiento,
+            operacionNumero,
+            entidadFinanciera,
+            referenciaExterna,
+            observacion,
+            accionAplicacionNormalizada,
+            requiereAplicacion,
+            tipoCobroObjetivo,
+            fechaInicioPlanObjetivo,
+            diasGraciaObjetivo,
+            User.Identity?.Name ?? "owner-platform");
+
+        TempData[ok ? "PortalWebOk" : "PortalWebError"] = ok
+            ? "Cobro de suscripcion registrado correctamente."
+            : "No se pudo registrar el cobro de suscripcion.";
+
+        return RedirectToAction(nameof(Negocios), new { buscar, estadoContrato, pagina });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ConfirmarPagoSuscripcionNegocio(int negocioId, int pagoId, string? buscar = null, string? estadoContrato = null, int pagina = 1)
+    {
+        ViewData["PlatformShell"] = true;
+        var ok = await spService.PlataformaNegocioConfirmarPagoSuscripcionAsync(
+            negocioId,
+            pagoId,
+            User.Identity?.Name ?? "owner-platform");
+
+        TempData[ok ? "PortalWebOk" : "PortalWebError"] = ok
+            ? "Cobro confirmado y aplicado correctamente."
+            : "No se pudo confirmar/aplicar el cobro de suscripcion.";
+
+        return RedirectToAction(nameof(Negocios), new { buscar, estadoContrato, pagina });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ExportExcelGestionComercialNegocio(int negocioId)
+    {
+        ViewData["PlatformShell"] = true;
+        var negocio = (await spService.PlataformaNegociosListarAsync(null, "todos", 1, 5000)).Negocios
+            .FirstOrDefault(x => x.NegocioId == negocioId);
+
+        if (negocio is null)
+            return NotFound();
+
+        negocio.HistorialComercial = await spService.PlataformaNegocioHistorialComercialAsync(negocioId, 200);
+        var resumenCobros = await spService.PlataformaNegocioPagosSuscripcionAsync(negocioId, 200);
+        negocio.HistorialCobros = resumenCobros.Pagos;
+
+        using var wb = new XLWorkbook();
+        var headerBg = XLColor.FromHtml("#E8F0FE");
+        var headerFg = XLColor.FromHtml("#123A74");
+
+        var wsResumen = wb.Worksheets.Add("Resumen");
+        wsResumen.Cell(1, 1).Value = "Complejo deportivo";
+        wsResumen.Cell(1, 2).Value = negocio.NombreComercial;
+        wsResumen.Cell(2, 1).Value = "Estado suscripcion";
+        wsResumen.Cell(2, 2).Value = negocio.EstadoSuscripcionNombre;
+        wsResumen.Cell(3, 1).Value = "Plan actual";
+        wsResumen.Cell(3, 2).Value = negocio.TipoCobro ?? "-";
+        wsResumen.Cell(4, 1).Value = "Vigencia";
+        wsResumen.Cell(4, 2).Value = negocio.FechaInicioPlan.HasValue || negocio.FechaFinPlan.HasValue
+            ? $"{negocio.FechaInicioPlan:dd/MM/yyyy} - {negocio.FechaFinPlan:dd/MM/yyyy}"
+            : (negocio.FechaFinPrueba.HasValue ? $"Prueba hasta {negocio.FechaFinPrueba:dd/MM/yyyy}" : "-");
+        wsResumen.Cell(5, 1).Value = "Cobrado acumulado";
+        wsResumen.Cell(5, 2).Value = resumenCobros.MontoTotalPagado;
+        wsResumen.Cell(6, 1).Value = "Total cobros";
+        wsResumen.Cell(6, 2).Value = resumenCobros.CantidadPagos;
+        wsResumen.Cell(7, 1).Value = "Ultimo cobro";
+        wsResumen.Cell(7, 2).Value = resumenCobros.UltimaFechaPago?.ToString("dd/MM/yyyy HH:mm") ?? "-";
+        wsResumen.Cell(8, 1).Value = "Exportado por";
+        wsResumen.Cell(8, 2).Value = User.Identity?.Name ?? "owner-platform";
+        wsResumen.Cell(9, 1).Value = "Fecha exportacion";
+        wsResumen.Cell(9, 2).Value = DateTime.Now;
+        wsResumen.Range(1, 1, 9, 1).Style.Font.Bold = true;
+        wsResumen.Cell(5, 2).Style.NumberFormat.Format = "#,##0.00";
+        wsResumen.Cell(9, 2).Style.DateFormat.Format = "dd/MM/yyyy HH:mm";
+        wsResumen.Columns().AdjustToContents();
+
+        var wsMov = wb.Worksheets.Add("HistorialComercial");
+        var movHeaders = new[] { "Fecha", "Movimiento", "EstadoAnterior", "EstadoNuevo", "PlanAnterior", "PlanNuevo", "Vigencia", "DiasGracia", "DiasExtra", "Observacion", "Usuario" };
+        for (var i = 0; i < movHeaders.Length; i++)
+            wsMov.Cell(1, i + 1).Value = movHeaders[i];
+        FormatearHeaderHoja(wsMov.Range(1, 1, 1, movHeaders.Length), headerBg, headerFg);
+
+        var movRow = 2;
+        foreach (var mov in negocio.HistorialComercial.OrderByDescending(x => x.FechaCreacion))
+        {
+            wsMov.Cell(movRow, 1).Value = mov.FechaCreacion;
+            wsMov.Cell(movRow, 2).Value = mov.TipoMovimientoNombre;
+            wsMov.Cell(movRow, 3).Value = mov.EstadoSuscripcionAnterior;
+            wsMov.Cell(movRow, 4).Value = mov.EstadoSuscripcionNuevo;
+            wsMov.Cell(movRow, 5).Value = mov.TipoCobroAnterior ?? "-";
+            wsMov.Cell(movRow, 6).Value = mov.TipoCobroNuevo ?? "-";
+            wsMov.Cell(movRow, 7).Value = mov.FechaInicioReferencia.HasValue || mov.FechaFinReferencia.HasValue
+                ? $"{mov.FechaInicioReferencia:dd/MM/yyyy} - {mov.FechaFinReferencia:dd/MM/yyyy}"
+                : "-";
+            wsMov.Cell(movRow, 8).Value = mov.DiasGracia;
+            wsMov.Cell(movRow, 9).Value = mov.DiasExtra;
+            wsMov.Cell(movRow, 10).Value = mov.Observacion ?? string.Empty;
+            wsMov.Cell(movRow, 11).Value = mov.UsuarioCreacion ?? string.Empty;
+            movRow++;
+        }
+        if (movRow > 2)
+            wsMov.Column(1).Style.DateFormat.Format = "dd/MM/yyyy HH:mm";
+        wsMov.Columns().AdjustToContents();
+
+        var wsCobros = wb.Worksheets.Add("HistorialCobros");
+        var cobHeaders = new[] { "FechaPago", "TipoPago", "EstadoPago", "Monto", "Moneda", "Operacion", "Entidad", "Referencia", "AccionAplicacion", "AplicarAlConfirmar", "Aplicado", "PlanObjetivo", "InicioObjetivo", "DiasGraciaObjetivo", "FechaAplicacion", "Observacion", "Usuario" };
+        for (var i = 0; i < cobHeaders.Length; i++)
+            wsCobros.Cell(1, i + 1).Value = cobHeaders[i];
+        FormatearHeaderHoja(wsCobros.Range(1, 1, 1, cobHeaders.Length), headerBg, headerFg);
+
+        var cobRow = 2;
+        foreach (var pago in negocio.HistorialCobros.OrderByDescending(x => x.FechaPago))
+        {
+            wsCobros.Cell(cobRow, 1).Value = pago.FechaPago;
+            wsCobros.Cell(cobRow, 2).Value = pago.TipoPago;
+            wsCobros.Cell(cobRow, 3).Value = pago.EstadoPago;
+            wsCobros.Cell(cobRow, 4).Value = pago.Monto;
+            wsCobros.Cell(cobRow, 5).Value = pago.Moneda;
+            wsCobros.Cell(cobRow, 6).Value = pago.OperacionNumero ?? string.Empty;
+            wsCobros.Cell(cobRow, 7).Value = pago.EntidadFinanciera ?? string.Empty;
+            wsCobros.Cell(cobRow, 8).Value = pago.ReferenciaExterna ?? string.Empty;
+            wsCobros.Cell(cobRow, 9).Value = pago.AccionAplicacion ?? string.Empty;
+            wsCobros.Cell(cobRow, 10).Value = pago.AplicarAlConfirmar ? "SI" : "NO";
+            wsCobros.Cell(cobRow, 11).Value = pago.AplicadoSuscripcion ? "SI" : "NO";
+            wsCobros.Cell(cobRow, 12).Value = pago.TipoCobroObjetivo ?? string.Empty;
+            wsCobros.Cell(cobRow, 13).Value = pago.FechaInicioPlanObjetivo;
+            wsCobros.Cell(cobRow, 14).Value = pago.DiasGraciaObjetivo;
+            wsCobros.Cell(cobRow, 15).Value = pago.FechaAplicacion;
+            wsCobros.Cell(cobRow, 16).Value = pago.Observacion ?? string.Empty;
+            wsCobros.Cell(cobRow, 17).Value = pago.UsuarioCreacion ?? string.Empty;
+            cobRow++;
+        }
+        if (cobRow > 2)
+        {
+            wsCobros.Column(1).Style.DateFormat.Format = "dd/MM/yyyy HH:mm";
+            wsCobros.Column(4).Style.NumberFormat.Format = "#,##0.00";
+            wsCobros.Column(13).Style.DateFormat.Format = "dd/MM/yyyy";
+            wsCobros.Column(15).Style.DateFormat.Format = "dd/MM/yyyy HH:mm";
+        }
+        wsCobros.Columns().AdjustToContents();
+
+        await using var ms = new MemoryStream();
+        wb.SaveAs(ms);
+        ms.Position = 0;
+        var nombreSeguro = (negocio.NombreComercial ?? $"negocio-{negocioId}").Replace(" ", "_");
+        return File(ms.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"gestion-comercial-{negocioId}-{nombreSeguro}.xlsx");
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AprobarClub(int id, int diasPrueba = 30, string? comentarioGestion = null, int? estado = null, int pagina = 1)
     {
         ViewData["PlatformShell"] = true;
         var diasPruebaNormalizado = diasPrueba <= 0 ? 30 : diasPrueba;
@@ -710,7 +943,7 @@ public class PlataformaController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> RechazarClub(int id, string? comentarioGestion = null, int? estado = 1, int pagina = 1)
+    public async Task<IActionResult> RechazarClub(int id, string? comentarioGestion = null, int? estado = null, int pagina = 1)
     {
         ViewData["PlatformShell"] = true;
         var ok = await spService.AltasClubesRechazarAsync(
@@ -817,6 +1050,26 @@ public class PlataformaController(
             "ANUAL" => fechaDesde.AddYears(1),
             _ => fechaDesde.AddMonths(1)
         };
+    }
+
+    private static string? NormalizarAccionAplicacionCobro(string? accionAplicacion)
+    {
+        var valor = (accionAplicacion ?? string.Empty).Trim().ToUpperInvariant();
+        return valor switch
+        {
+            "ACTIVACION_CONTRATO" => "ACTIVACION_CONTRATO",
+            "RENOVACION" => "RENOVACION",
+            "CAMBIO_PLAN" => "CAMBIO_PLAN",
+            _ => null
+        };
+    }
+
+    private static void FormatearHeaderHoja(IXLRange range, XLColor bg, XLColor fg)
+    {
+        range.Style.Font.Bold = true;
+        range.Style.Fill.BackgroundColor = bg;
+        range.Style.Font.FontColor = fg;
+        range.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
     }
 
     private static bool TryParseCoordinate(string? raw, out decimal? value)
@@ -929,6 +1182,38 @@ public class PlataformaController(
             var contacto = await spService.PlataformaNegocioObtenerContactoCorreoAsync(n.NegocioId);
             n.CorreoContacto = contacto.Correo;
             n.TelefonoContacto = contacto.Telefono;
+        });
+        await Task.WhenAll(tasks);
+    }
+
+    private async Task EnriquecerHistorialComercialNegociosAsync(IEnumerable<PlataformaNegocioLimiteItemViewModel> negocios)
+    {
+        var lista = negocios?.ToList() ?? [];
+        if (lista.Count == 0)
+            return;
+
+        var tasks = lista.Select(async n =>
+        {
+            n.HistorialComercial = await spService.PlataformaNegocioHistorialComercialAsync(n.NegocioId, 20);
+        });
+        await Task.WhenAll(tasks);
+    }
+
+    private async Task EnriquecerCobrosSuscripcionNegociosAsync(IEnumerable<PlataformaNegocioLimiteItemViewModel> negocios)
+    {
+        var lista = negocios?.ToList() ?? [];
+        if (lista.Count == 0)
+            return;
+
+        var tasks = lista.Select(async n =>
+        {
+            var resumen = await spService.PlataformaNegocioPagosSuscripcionAsync(n.NegocioId, 20);
+            n.HistorialCobros = resumen.Pagos;
+            n.CantidadCobrosRegistrados = resumen.CantidadPagos;
+            n.MontoTotalCobrado = resumen.MontoTotalPagado;
+            n.UltimoCobroFecha = resumen.UltimaFechaPago;
+            n.UltimoCobroMonto = resumen.UltimoMonto;
+            n.UltimoCobroTipoPago = resumen.UltimoTipoPago;
         });
         await Task.WhenAll(tasks);
     }

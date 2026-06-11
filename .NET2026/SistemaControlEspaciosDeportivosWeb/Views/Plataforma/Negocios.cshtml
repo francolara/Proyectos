@@ -3,6 +3,7 @@
     ViewData["Title"] = "Complejo deportivo";
 }
 @* Firma: FRANCO LARA - 09/05/2026 | Ajuste de etiquetas en Super Admin para reemplazar Club/Negocio por Complejo deportivo. *@
+@* Firma: FRANCO LARA - 10/06/2026 | Agrega conciliacion de cobros comerciales con acciones diferidas y reorganiza la gestion comercial del super admin con resumen por negocio y modales por accion. *@
 <div class="page-header-card mb-3">
     <div class="page-header-main">
         <h1 class="page-title">Complejos deportivos registrados</h1>
@@ -18,6 +19,39 @@
 {
     <div class="alert alert-danger">@err</div>
 }
+
+<style>
+    .platform-negocio-action-btn {
+        min-width: 140px;
+    }
+
+    .platform-negocio-summary-badges {
+        row-gap: .5rem;
+    }
+
+    .platform-negocio-modal .modal-dialog {
+        --bs-modal-width: 980px;
+    }
+
+    .platform-negocio-modal .modal-footer,
+    .platform-negocio-form-actions {
+        position: sticky;
+        bottom: 0;
+        z-index: 3;
+        padding-top: .85rem;
+        padding-bottom: .2rem;
+        margin-top: 1rem;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, #ffffff 28%);
+        border-top: 1px solid rgba(148, 163, 184, 0.22);
+        backdrop-filter: blur(10px);
+    }
+
+    .platform-negocio-form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: .75rem;
+    }
+</style>
 
 <section class="table-card sc-reservas-list-card p-3 mb-3">
     <form asp-action="Negocios" method="get" class="row g-2 align-items-end">
@@ -95,6 +129,10 @@
                 {
                     foreach (var item in Model.Negocios)
                     {
+                        var modalLimitesId = $"limitesNegocioModal{item.NegocioId}";
+                        var modalContratoId = $"contratoNegocioModal{item.NegocioId}";
+                        var modalCobroId = $"cobroNegocioModal{item.NegocioId}";
+                        var modalGestionId = $"gestionComercialModal{item.NegocioId}";
                         var tieneContratoActivo = !item.EsPrueba
                             && !string.IsNullOrWhiteSpace(item.TipoCobro)
                             && item.FechaFinPlan.HasValue;
@@ -103,10 +141,17 @@
                             && item.FechaFinGracia.HasValue
                             && item.FechaFinPlan.Value.Date < DateTime.Today.Date
                             && item.FechaFinGracia.Value.Date >= DateTime.Today.Date;
+                        var fechaInicioObjetivoDefault = item.FechaFinPlan.HasValue && item.FechaFinPlan.Value.Date >= DateTime.Today.Date
+                            ? DateOnly.FromDateTime(item.FechaFinPlan.Value.Date)
+                            : DateOnly.FromDateTime(DateTime.Today);
                         var pruebaPorVencer = item.EsPrueba
                             && item.FechaFinPrueba.HasValue
                             && item.FechaFinPrueba.Value.Date >= DateTime.Today.Date
                             && item.FechaFinPrueba.Value.Date <= DateTime.Today.AddDays(7).Date;
+                        var totalPagosPagados = item.HistorialCobros.Count(p => p.EstadoPago == "PAGADO");
+                        var totalPagosPendientes = item.HistorialCobros.Count(p => p.EstadoPago == "PENDIENTE");
+                        var totalPagosAplicados = item.HistorialCobros.Count(p => p.AplicadoSuscripcion);
+                        var totalPagosNoAplicados = item.HistorialCobros.Count(p => p.AplicarAlConfirmar && !p.AplicadoSuscripcion);
                         <tr>
                             <td>
                                 <strong>@item.NombreComercial</strong>
@@ -123,120 +168,724 @@
                                 }
                             </td>
                             <td>
-                                <form asp-action="GuardarLimitesNegocio" method="post" class="d-flex align-items-center justify-content-center flex-wrap gap-2">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="negocioId" value="@item.NegocioId" />
-                                    <input type="hidden" name="buscar" value="@Model.Buscar" />
-                                    <input type="hidden" name="estadoContrato" value="@Model.EstadoContrato" />
-                                    <input type="hidden" name="pagina" value="@Model.Pagina" />
-                                    <label class="small text-muted mb-0">Sedes</label>
-                                    <input type="number" min="1" max="999" name="sedesPermitidas" value="@item.SedesPermitidas" class="form-control form-control-sm" style="max-width:90px;" />
-                                    <label class="small text-muted mb-0">Espacios</label>
-                                    <input type="number" min="1" max="9999" name="espaciosPermitidos" value="@item.EspaciosPermitidos" class="form-control form-control-sm" style="max-width:110px;" />
-                                    <label class="small text-muted mb-0">Usuarios</label>
-                                    <input type="number" min="1" max="999" name="usuariosPermitidos" value="@item.UsuariosPermitidos" class="form-control form-control-sm" style="max-width:95px;" />
-                                    <div class="ms-2">
-                                        <button type="submit" class="btn btn-sm btn-primary btn-grabar"><i class="bi bi-save me-1"></i>Guardar</button>
-                                    </div>
-                                </form>
+                                <div class="d-flex flex-wrap justify-content-center gap-2">
+                                    <span class="badge text-bg-light border">Sedes: @item.SedesPermitidas</span>
+                                    <span class="badge text-bg-light border">Espacios: @item.EspaciosPermitidos</span>
+                                    <span class="badge text-bg-light border">Usuarios: @item.UsuariosPermitidos</span>
+                                </div>
                             </td>
                             <td>
-                                <div class="small">
+                                <div class="d-flex flex-wrap gap-1 mb-2">
                                     <span class="badge text-bg-@(item.EstadoSuscripcion is 1 or 2 ? "success" : item.EstadoSuscripcion == 3 ? "danger" : "secondary")">@item.EstadoSuscripcionNombre</span>
                                     @if (pruebaPorVencer)
                                     {
-                                        <span class="badge text-bg-warning text-dark ms-1">Prueba por vencer</span>
+                                        <span class="badge text-bg-warning text-dark">Prueba por vencer</span>
+                                    }
+                                    @if (contratoEnGracia)
+                                    {
+                                        <span class="badge text-bg-warning text-dark">En gracia</span>
+                                    }
+                                    else if (tieneContratoActivo)
+                                    {
+                                        <span class="badge text-bg-info">Contrato activo</span>
                                     }
                                 </div>
+
                                 @if (item.EsPrueba && item.FechaFinPrueba.HasValue)
                                 {
                                     <div class="small text-muted">Prueba hasta: @item.FechaFinPrueba.Value.ToString("dd/MM/yyyy")</div>
                                 }
-                                @if (!item.EsPrueba && item.FechaFinPlan.HasValue)
+                                else if (!item.EsPrueba && item.FechaFinPlan.HasValue)
                                 {
                                     <div class="small text-muted">Plan: @item.TipoCobro | @item.FechaInicioPlan?.ToString("dd/MM/yyyy") - @item.FechaFinPlan?.ToString("dd/MM/yyyy")</div>
-                                    <div class="small text-muted">Gracia: @item.DiasGracia dias (hasta @item.FechaFinGracia?.ToString("dd/MM/yyyy"))</div>
-                                }
-                                @if (tieneContratoActivo)
-                                {
-                                    <div class="small mt-1">
-                                        @if (contratoEnGracia)
-                                        {
-                                            <span class="badge text-bg-warning text-dark">En gracia hasta @item.FechaFinGracia?.ToString("dd/MM/yyyy")</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge text-bg-info">Contrato activo hasta @item.FechaFinPlan?.ToString("dd/MM/yyyy")</span>
-                                        }
-                                    </div>
+                                    <div class="small text-muted">Gracia: @item.DiasGracia dias | hasta @item.FechaFinGracia?.ToString("dd/MM/yyyy")</div>
                                 }
                                 else if (!item.EsPrueba)
                                 {
-                                    <div class="small mt-1">
-                                        <span class="badge text-bg-secondary">Sin contrato activo</span>
-                                    </div>
+                                    <div class="small text-muted">Sin contrato activo.</div>
                                 }
-                                @if (tieneContratoActivo)
-                                {
-                                    <div class="row g-1 mt-2">
-                                        <div class="col-12 d-grid">
-                                            <form asp-action="RenovarContratoNegocio" method="post">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="negocioId" value="@item.NegocioId" />
-                                                <input type="hidden" name="buscar" value="@Model.Buscar" />
-                                                <input type="hidden" name="estadoContrato" value="@Model.EstadoContrato" />
-                                                <input type="hidden" name="pagina" value="@Model.Pagina" />
-                                                <button type="submit" class="btn btn-sm btn-outline-primary w-100">Renovar suscripcion</button>
-                                            </form>
-                                        </div>
-                                        <div class="col-12 d-grid">
-                                            <form asp-action="FinalizarContratoNegocio" method="post" onsubmit="return confirm('Se dara fin al contrato actual del complejo deportivo. Deseas continuar?');">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="negocioId" value="@item.NegocioId" />
-                                                <input type="hidden" name="buscar" value="@Model.Buscar" />
-                                                <input type="hidden" name="estadoContrato" value="@Model.EstadoContrato" />
-                                                <input type="hidden" name="pagina" value="@Model.Pagina" />
-                                                <button type="submit" class="btn btn-sm btn-outline-danger w-100">Dar fin al contrato</button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                }
-                                else
-                                {
-                                    <form asp-action="ActivarContratoNegocio" method="post" class="row g-1 mt-2 js-contrato-form">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="negocioId" value="@item.NegocioId" />
-                                        <input type="hidden" name="buscar" value="@Model.Buscar" />
-                                        <input type="hidden" name="estadoContrato" value="@Model.EstadoContrato" />
-                                        <input type="hidden" name="pagina" value="@Model.Pagina" />
-                                        <div class="col-12">
-                                            <select name="tipoCobro" class="form-select form-select-sm js-tipo-cobro">
-                                                <option value="MENSUAL">Mensual</option>
-                                                <option value="TRIMESTRAL">Trimestral</option>
-                                                <option value="SEMESTRAL">Semestral</option>
-                                                <option value="ANUAL">Anual</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-6">
-                                            <input type="date" name="fechaDesde" class="form-control form-control-sm js-fecha-desde" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
-                                        </div>
-                                        <div class="col-6">
-                                            <input type="date" name="fechaHasta" class="form-control form-control-sm js-fecha-hasta" value="@DateTime.Today.AddMonths(1).ToString("yyyy-MM-dd")" readonly />
-                                        </div>
-                                        <div class="col-12">
-                                            <small class="text-muted">La fecha fin se calcula automaticamente segun el tipo de cobro y la fecha de inicio.</small>
-                                        </div>
-                                        <div class="col-6">
-                                            <input type="number" min="1" max="30" name="diasGracia" value="@item.DiasGracia" class="form-control form-control-sm" />
-                                        </div>
-                                        <div class="col-6 d-grid">
-                                            <button type="submit" class="btn btn-sm btn-outline-primary">Dar inicio a contrato</button>
-                                        </div>
-                                    </form>
-                                }
+
+                                <div class="d-flex flex-wrap gap-2 mt-2">
+                                    <span class="badge text-bg-light border">Cobrado: S/ @item.MontoTotalCobrado.ToString("0.00")</span>
+                                    <span class="badge text-bg-light border">Cobros: @item.CantidadCobrosRegistrados</span>
+                                    <span class="badge text-bg-light border">Mov.: @item.HistorialComercial.Count</span>
+                                </div>
                             </td>
                             <td class="text-end">
-                                <span class="text-muted small">ID @item.NegocioId</span>
+                                <div class="d-flex flex-column align-items-end gap-2">
+                                    <button type="button" class="btn btn-sm btn-primary btn-grabar platform-negocio-action-btn" data-bs-toggle="modal" data-bs-target="#@modalLimitesId">
+                                        <i class="bi bi-sliders2 me-1"></i>Limites
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-primary btn-grabar platform-negocio-action-btn" data-bs-toggle="modal" data-bs-target="#@modalContratoId">
+                                        <i class="bi bi-journal-check me-1"></i>Contrato
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-primary btn-grabar platform-negocio-action-btn" data-bs-toggle="modal" data-bs-target="#@modalCobroId">
+                                        <i class="bi bi-cash-coin me-1"></i>Cobros
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-primary btn-grabar platform-negocio-action-btn" data-bs-toggle="modal" data-bs-target="#@modalGestionId">
+                                        <i class="bi bi-collection me-1"></i>Historial
+                                    </button>
+                                    <span class="text-muted small">ID @item.NegocioId</span>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="d-none">
+                            <td colspan="5">
+                        <div class="modal fade platform-negocio-modal" id="@modalLimitesId" tabindex="-1" aria-labelledby="@(modalLimitesId)Label" aria-hidden="true">
+                            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                                <div class="modal-content sc-modal-content">
+                                    <div class="modal-header sc-modal-header">
+                                        <div class="sc-modal-title-wrap">
+                                            <h5 class="modal-title sc-modal-title" id="@(modalLimitesId)Label">Limites operativos</h5>
+                                            <p class="sc-modal-subtitle">Actualiza sedes, espacios y usuarios permitidos de @item.NombreComercial.</p>
+                                        </div>
+                                        <button type="button" class="btn-close sc-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                    </div>
+                                    <div class="modal-body sc-modal-body">
+                                        <form asp-action="GuardarLimitesNegocio" method="post" class="row g-3">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="negocioId" value="@item.NegocioId" />
+                                            <input type="hidden" name="buscar" value="@Model.Buscar" />
+                                            <input type="hidden" name="estadoContrato" value="@Model.EstadoContrato" />
+                                            <input type="hidden" name="pagina" value="@Model.Pagina" />
+                                            <div class="col-md-4">
+                                                <label class="form-label">Sedes permitidas</label>
+                                                <input type="number" min="1" max="999" name="sedesPermitidas" value="@item.SedesPermitidas" class="form-control" />
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Espacios permitidos</label>
+                                                <input type="number" min="1" max="9999" name="espaciosPermitidos" value="@item.EspaciosPermitidos" class="form-control" />
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Usuarios permitidos</label>
+                                                <input type="number" min="1" max="999" name="usuariosPermitidos" value="@item.UsuariosPermitidos" class="form-control" />
+                                            </div>
+                                            <div class="col-12 platform-negocio-form-actions">
+                                                <button type="button" class="btn btn-outline-secondary btn-cancelar" data-bs-dismiss="modal">Cancelar</button>
+                                                <button type="submit" class="btn btn-primary btn-grabar"><i class="bi bi-save me-1"></i>Guardar limites</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal fade platform-negocio-modal" id="@modalContratoId" tabindex="-1" aria-labelledby="@(modalContratoId)Label" aria-hidden="true">
+                            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                                <div class="modal-content sc-modal-content">
+                                    <div class="modal-header sc-modal-header">
+                                        <div class="sc-modal-title-wrap">
+                                            <h5 class="modal-title sc-modal-title" id="@(modalContratoId)Label">Gestion de contrato</h5>
+                                            <p class="sc-modal-subtitle">Administra prueba, activacion, renovacion, cambio de plan y dias de gracia de @item.NombreComercial.</p>
+                                        </div>
+                                        <button type="button" class="btn-close sc-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                    </div>
+                                    <div class="modal-body sc-modal-body">
+                                        @* Firma: FRANCO LARA - 10/06/2026 | Reorganiza la administracion comercial del superadmin en modales por accion. *@
+                                        @if (item.EsPrueba)
+                                        {
+                                            <form asp-action="ExtenderPruebaNegocio" method="post" class="row g-2 border rounded-3 p-3 bg-light-subtle">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="negocioId" value="@item.NegocioId" />
+                                                <input type="hidden" name="buscar" value="@Model.Buscar" />
+                                                <input type="hidden" name="estadoContrato" value="@Model.EstadoContrato" />
+                                                <input type="hidden" name="pagina" value="@Model.Pagina" />
+                                                <div class="col-12">
+                                                    <div class="fw-semibold text-primary">Gestion de prueba</div>
+                                                    <div class="small text-muted">Prueba actual hasta @item.FechaFinPrueba?.ToString("dd/MM/yyyy")</div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Dias extra</label>
+                                                    <input type="number" min="1" max="60" name="diasExtra" value="7" class="form-control" />
+                                                </div>
+                                                <div class="col-md-8">
+                                                    <label class="form-label">Observacion</label>
+                                                    <input type="text" name="observacion" class="form-control" placeholder="Motivo de extension (opcional)" />
+                                                </div>
+                                                <div class="col-12 platform-negocio-form-actions">
+                                                    <button type="button" class="btn btn-outline-secondary btn-cancelar" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-primary btn-grabar">Extender prueba</button>
+                                                </div>
+                                            </form>
+                                        }
+                                        else if (tieneContratoActivo)
+                                        {
+                                            <div class="row g-3">
+                                                <div class="col-lg-4">
+                                                    <div class="border rounded-3 p-3 bg-light-subtle h-100">
+                                                        <div class="fw-semibold text-primary mb-2">Acciones rapidas</div>
+                                                        <div class="small text-muted mb-3">Plan actual: @item.TipoCobro</div>
+                                                        <div class="d-grid gap-2">
+                                                            <form asp-action="RenovarContratoNegocio" method="post">
+                                                                @Html.AntiForgeryToken()
+                                                                <input type="hidden" name="negocioId" value="@item.NegocioId" />
+                                                                <input type="hidden" name="buscar" value="@Model.Buscar" />
+                                                                <input type="hidden" name="estadoContrato" value="@Model.EstadoContrato" />
+                                                                <input type="hidden" name="pagina" value="@Model.Pagina" />
+                                                                <button type="submit" class="btn btn-primary btn-grabar w-100">Renovar suscripcion</button>
+                                                            </form>
+                                                            <form asp-action="FinalizarContratoNegocio" method="post" onsubmit="return confirm('Se dara fin al contrato actual del complejo deportivo. Deseas continuar?');">
+                                                                @Html.AntiForgeryToken()
+                                                                <input type="hidden" name="negocioId" value="@item.NegocioId" />
+                                                                <input type="hidden" name="buscar" value="@Model.Buscar" />
+                                                                <input type="hidden" name="estadoContrato" value="@Model.EstadoContrato" />
+                                                                <input type="hidden" name="pagina" value="@Model.Pagina" />
+                                                                <button type="submit" class="btn btn-outline-secondary btn-cancelar w-100">Dar fin al contrato</button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-8">
+                                                    <form asp-action="CambiarPlanNegocio" method="post" class="row g-2 border rounded-3 p-3 js-contrato-form bg-light-subtle h-100">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="negocioId" value="@item.NegocioId" />
+                                                        <input type="hidden" name="buscar" value="@Model.Buscar" />
+                                                        <input type="hidden" name="estadoContrato" value="@Model.EstadoContrato" />
+                                                        <input type="hidden" name="pagina" value="@Model.Pagina" />
+                                                        <div class="col-12">
+                                                            <div class="fw-semibold text-primary">Cambiar plan</div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label">Tipo de plan</label>
+                                                            <select name="tipoCobro" class="form-select js-tipo-cobro">
+                                                                <option value="MENSUAL" selected="@(item.TipoCobro == "MENSUAL" ? "selected" : null)">Mensual</option>
+                                                                <option value="TRIMESTRAL" selected="@(item.TipoCobro == "TRIMESTRAL" ? "selected" : null)">Trimestral</option>
+                                                                <option value="SEMESTRAL" selected="@(item.TipoCobro == "SEMESTRAL" ? "selected" : null)">Semestral</option>
+                                                                <option value="ANUAL" selected="@(item.TipoCobro == "ANUAL" ? "selected" : null)">Anual</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-3">
+                                                            <label class="form-label">Fecha desde</label>
+                                                            <input type="date" name="fechaDesde" class="form-control js-fecha-desde" value="@(item.FechaInicioPlan?.ToString("yyyy-MM-dd") ?? DateTime.Today.ToString("yyyy-MM-dd"))" />
+                                                        </div>
+                                                        <div class="col-md-3">
+                                                            <label class="form-label">Fecha hasta</label>
+                                                            <input type="date" name="fechaHasta" class="form-control js-fecha-hasta" value="@(item.FechaFinPlan?.ToString("yyyy-MM-dd") ?? DateTime.Today.AddMonths(1).ToString("yyyy-MM-dd"))" readonly />
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <small class="text-muted">La fecha fin se calcula automaticamente segun el tipo de cobro y la fecha de inicio.</small>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label class="form-label">Dias de gracia</label>
+                                                            <input type="number" min="0" max="30" name="diasGracia" value="@item.DiasGracia" class="form-control" />
+                                                        </div>
+                                                        <div class="col-md-8">
+                                                            <label class="form-label">Observacion</label>
+                                                            <input type="text" name="observacion" class="form-control" placeholder="Motivo del cambio (opcional)" />
+                                                        </div>
+                                                        <div class="col-12 platform-negocio-form-actions">
+                                                            <button type="button" class="btn btn-outline-secondary btn-cancelar" data-bs-dismiss="modal">Cancelar</button>
+                                                            <button type="submit" class="btn btn-primary btn-grabar">Guardar cambio de plan</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                                <div class="col-12">
+                                                    <form asp-action="AplicarGraciaNegocio" method="post" class="row g-2 border rounded-3 p-3 bg-light-subtle">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="negocioId" value="@item.NegocioId" />
+                                                        <input type="hidden" name="buscar" value="@Model.Buscar" />
+                                                        <input type="hidden" name="estadoContrato" value="@Model.EstadoContrato" />
+                                                        <input type="hidden" name="pagina" value="@Model.Pagina" />
+                                                        <div class="col-12">
+                                                            <div class="fw-semibold text-primary">Dar gracia manual</div>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label class="form-label">Dias extra</label>
+                                                            <input type="number" min="1" max="60" name="diasExtra" value="5" class="form-control" />
+                                                        </div>
+                                                        <div class="col-md-8">
+                                                            <label class="form-label">Observacion</label>
+                                                            <input type="text" name="observacion" class="form-control" placeholder="Motivo de gracia (opcional)" />
+                                                        </div>
+                                                        <div class="col-12 platform-negocio-form-actions">
+                                                            <button type="button" class="btn btn-outline-secondary btn-cancelar" data-bs-dismiss="modal">Cancelar</button>
+                                                            <button type="submit" class="btn btn-primary btn-grabar">Aplicar gracia manual</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <form asp-action="ActivarContratoNegocio" method="post" class="row g-2 js-contrato-form border rounded-3 p-3 bg-light-subtle">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="negocioId" value="@item.NegocioId" />
+                                                <input type="hidden" name="buscar" value="@Model.Buscar" />
+                                                <input type="hidden" name="estadoContrato" value="@Model.EstadoContrato" />
+                                                <input type="hidden" name="pagina" value="@Model.Pagina" />
+                                                <div class="col-12">
+                                                    <div class="fw-semibold text-primary">Activar contrato</div>
+                                                    <div class="small text-muted">Usa este formulario si el complejo ya no esta en prueba y no tiene contrato activo.</div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Tipo de plan</label>
+                                                    <select name="tipoCobro" class="form-select js-tipo-cobro">
+                                                        <option value="MENSUAL">Mensual</option>
+                                                        <option value="TRIMESTRAL">Trimestral</option>
+                                                        <option value="SEMESTRAL">Semestral</option>
+                                                        <option value="ANUAL">Anual</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Fecha desde</label>
+                                                    <input type="date" name="fechaDesde" class="form-control js-fecha-desde" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Fecha hasta</label>
+                                                    <input type="date" name="fechaHasta" class="form-control js-fecha-hasta" value="@DateTime.Today.AddMonths(1).ToString("yyyy-MM-dd")" readonly />
+                                                </div>
+                                                <div class="col-12">
+                                                    <small class="text-muted">La fecha fin se calcula automaticamente segun el tipo de cobro y la fecha de inicio.</small>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Dias de gracia</label>
+                                                    <input type="number" min="0" max="30" name="diasGracia" value="@item.DiasGracia" class="form-control" />
+                                                </div>
+                                                <div class="col-md-8 d-flex justify-content-end align-items-end gap-2 platform-negocio-form-actions">
+                                                    <button type="button" class="btn btn-outline-secondary btn-cancelar mt-md-4" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-primary btn-grabar mt-md-4">Dar inicio a contrato</button>
+                                                </div>
+                                            </form>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal fade platform-negocio-modal" id="@modalCobroId" tabindex="-1" aria-labelledby="@(modalCobroId)Label" aria-hidden="true">
+                            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                                <div class="modal-content sc-modal-content">
+                                    <div class="modal-header sc-modal-header">
+                                        <div class="sc-modal-title-wrap">
+                                            <h5 class="modal-title sc-modal-title" id="@(modalCobroId)Label">Cobros comerciales</h5>
+                                            <p class="sc-modal-subtitle">Registra pagos y define si deben aplicarse al contrato de @item.NombreComercial.</p>
+                                        </div>
+                                        <button type="button" class="btn-close sc-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                    </div>
+                                    <div class="modal-body sc-modal-body">
+                                        @if (tieneContratoActivo)
+                                        {
+                                            <form asp-action="RegistrarPagoSuscripcionNegocio" method="post" class="row g-2 border rounded-3 p-3 bg-light-subtle js-cobro-suscripcion-form">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="negocioId" value="@item.NegocioId" />
+                                                <input type="hidden" name="buscar" value="@Model.Buscar" />
+                                                <input type="hidden" name="estadoContrato" value="@Model.EstadoContrato" />
+                                                <input type="hidden" name="pagina" value="@Model.Pagina" />
+                                                <div class="col-12">
+                                                    <div class="fw-semibold text-primary">Registrar cobro</div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Monto</label>
+                                                    <input type="number" min="0.01" step="0.01" name="monto" value="0.00" class="form-control" />
+                                                </div>
+                                                <div class="col-md-8">
+                                                    <label class="form-label">Tipo de pago</label>
+                                                    <select name="tipoPago" class="form-select">
+                                                        <option value="TRANSFERENCIA">Transferencia</option>
+                                                        <option value="EFECTIVO">Efectivo</option>
+                                                        <option value="YAPE">Yape</option>
+                                                        <option value="PLIN">Plin</option>
+                                                        <option value="LINK_PAGO">Link de pago</option>
+                                                        <option value="PASARELA">Pasarela</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Fecha de pago</label>
+                                                    <input type="datetime-local" name="fechaPago" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Fecha de vencimiento</label>
+                                                    <input type="date" name="fechaVencimiento" class="form-control" value="@item.FechaFinPlan?.ToString("yyyy-MM-dd")" />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Operacion / voucher</label>
+                                                    <input type="text" name="operacionNumero" class="form-control" />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Entidad financiera</label>
+                                                    <input type="text" name="entidadFinanciera" class="form-control" />
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label">Referencia externa / pasarela</label>
+                                                    <input type="text" name="referenciaExterna" class="form-control" />
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label">Observacion</label>
+                                                    <input type="text" name="observacion" class="form-control" placeholder="Observacion del cobro (opcional)" />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Accion comercial al confirmar</label>
+                                                    <select name="accionAplicacion" class="form-select js-accion-aplicacion">
+                                                        <option value="">Solo registrar cobro</option>
+                                                        <option value="RENOVACION">Renovar suscripcion</option>
+                                                        <option value="CAMBIO_PLAN">Cambiar plan</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4 js-accion-plan">
+                                                    <label class="form-label">Plan objetivo</label>
+                                                    <select name="tipoCobroObjetivo" class="form-select">
+                                                        <option value="MENSUAL" selected="@(item.TipoCobro == "MENSUAL" ? "selected" : null)">Mensual</option>
+                                                        <option value="TRIMESTRAL" selected="@(item.TipoCobro == "TRIMESTRAL" ? "selected" : null)">Trimestral</option>
+                                                        <option value="SEMESTRAL" selected="@(item.TipoCobro == "SEMESTRAL" ? "selected" : null)">Semestral</option>
+                                                        <option value="ANUAL" selected="@(item.TipoCobro == "ANUAL" ? "selected" : null)">Anual</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-2 js-accion-plan">
+                                                    <label class="form-label">Inicio objetivo</label>
+                                                    <input type="date" name="fechaInicioPlanObjetivo" class="form-control" value="@fechaInicioObjetivoDefault.ToString("yyyy-MM-dd")" />
+                                                </div>
+                                                <div class="col-md-2 js-accion-plan">
+                                                    <label class="form-label">Dias de gracia</label>
+                                                    <input type="number" min="0" max="30" name="diasGraciaObjetivo" value="@item.DiasGracia" class="form-control" />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-check form-switch small mt-md-4">
+                                                        <input class="form-check-input" type="checkbox" name="cobroConfirmado" value="true" checked />
+                                                        <label class="form-check-label">Cobro confirmado</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-check form-switch small mt-md-4">
+                                                        <input class="form-check-input" type="checkbox" name="aplicarAlConfirmar" value="true" />
+                                                        <label class="form-check-label">Aplicar accion al confirmar el cobro</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12 platform-negocio-form-actions">
+                                                    <button type="button" class="btn btn-outline-secondary btn-cancelar" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-primary btn-grabar">Guardar cobro</button>
+                                                </div>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <form asp-action="RegistrarPagoSuscripcionNegocio" method="post" class="row g-2 border rounded-3 p-3 bg-light-subtle js-cobro-suscripcion-form">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="negocioId" value="@item.NegocioId" />
+                                                <input type="hidden" name="buscar" value="@Model.Buscar" />
+                                                <input type="hidden" name="estadoContrato" value="@Model.EstadoContrato" />
+                                                <input type="hidden" name="pagina" value="@Model.Pagina" />
+                                                <input type="hidden" name="accionAplicacion" value="ACTIVACION_CONTRATO" />
+                                                <div class="col-12">
+                                                    <div class="fw-semibold text-primary">Registrar cobro para activar contrato</div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Monto</label>
+                                                    <input type="number" min="0.01" step="0.01" name="monto" value="0.00" class="form-control" />
+                                                </div>
+                                                <div class="col-md-8">
+                                                    <label class="form-label">Tipo de pago</label>
+                                                    <select name="tipoPago" class="form-select">
+                                                        <option value="TRANSFERENCIA">Transferencia</option>
+                                                        <option value="EFECTIVO">Efectivo</option>
+                                                        <option value="YAPE">Yape</option>
+                                                        <option value="PLIN">Plin</option>
+                                                        <option value="LINK_PAGO">Link de pago</option>
+                                                        <option value="PASARELA">Pasarela</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Fecha de pago</label>
+                                                    <input type="datetime-local" name="fechaPago" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Fecha de vencimiento</label>
+                                                    <input type="date" name="fechaVencimiento" class="form-control" value="@DateTime.Today.AddMonths(1).ToString("yyyy-MM-dd")" />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Plan objetivo</label>
+                                                    <select name="tipoCobroObjetivo" class="form-select">
+                                                        <option value="MENSUAL">Mensual</option>
+                                                        <option value="TRIMESTRAL">Trimestral</option>
+                                                        <option value="SEMESTRAL">Semestral</option>
+                                                        <option value="ANUAL">Anual</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Inicio objetivo</label>
+                                                    <input type="date" name="fechaInicioPlanObjetivo" class="form-control" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Dias de gracia</label>
+                                                    <input type="number" min="0" max="30" name="diasGraciaObjetivo" value="@item.DiasGracia" class="form-control" />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Operacion / voucher</label>
+                                                    <input type="text" name="operacionNumero" class="form-control" />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Entidad financiera</label>
+                                                    <input type="text" name="entidadFinanciera" class="form-control" />
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label">Referencia externa / pasarela</label>
+                                                    <input type="text" name="referenciaExterna" class="form-control" />
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label">Observacion</label>
+                                                    <input type="text" name="observacion" class="form-control" placeholder="Observacion del cobro (opcional)" />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-check form-switch small mt-md-4">
+                                                        <input class="form-check-input" type="checkbox" name="cobroConfirmado" value="true" checked />
+                                                        <label class="form-check-label">Cobro confirmado</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-check form-switch small mt-md-4">
+                                                        <input class="form-check-input" type="checkbox" name="aplicarAlConfirmar" value="true" checked />
+                                                        <label class="form-check-label">Aplicar activacion al confirmar el cobro</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12 platform-negocio-form-actions">
+                                                    <button type="button" class="btn btn-outline-secondary btn-cancelar" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-primary btn-grabar">Guardar cobro comercial</button>
+                                                </div>
+                                            </form>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                                <div class="modal fade platform-negocio-modal" id="@modalGestionId" tabindex="-1" aria-labelledby="@(modalGestionId)Label" aria-hidden="true">
+                                    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                                        <div class="modal-content sc-modal-content">
+                                            <div class="modal-header sc-modal-header">
+                                                <div class="sc-modal-title-wrap">
+                                                    <h5 class="modal-title sc-modal-title" id="@(modalGestionId)Label">Historial comercial</h5>
+                                                    <p class="sc-modal-subtitle">Revisa movimientos, cobros y conciliacion aplicada de @item.NombreComercial.</p>
+                                                </div>
+                                                <button type="button" class="btn-close sc-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                            </div>
+                                            <div class="modal-body sc-modal-body">
+                                                <div class="row g-2 mb-3">
+                                                    <div class="col-6 col-lg-3">
+                                                        <div class="border rounded-3 p-2 bg-light-subtle h-100">
+                                                            <div class="small text-muted">Movimientos</div>
+                                                            <div class="fw-bold fs-5">@item.HistorialComercial.Count</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-6 col-lg-3">
+                                                        <div class="border rounded-3 p-2 bg-light-subtle h-100">
+                                                            <div class="small text-muted">Cobros pagados</div>
+                                                            <div class="fw-bold fs-5 text-success">@totalPagosPagados</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-6 col-lg-3">
+                                                        <div class="border rounded-3 p-2 bg-light-subtle h-100">
+                                                            <div class="small text-muted">Cobros pendientes</div>
+                                                            <div class="fw-bold fs-5 text-warning">@totalPagosPendientes</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-6 col-lg-3">
+                                                        <div class="border rounded-3 p-2 bg-light-subtle h-100">
+                                                            <div class="small text-muted">No aplicados</div>
+                                                            <div class="fw-bold fs-5 text-primary">@totalPagosNoAplicados</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="row g-2 mb-3">
+                                                    <div class="col-lg-8">
+                                                        <label class="form-label small mb-1">Buscar en movimientos y cobros</label>
+                                                        <input type="text" class="form-control form-control-sm js-gestion-search" placeholder="Operacion, referencia, tipo de pago, nota, movimiento..." />
+                                                    </div>
+                                                    <div class="col-lg-4 d-grid">
+                                                        <label class="form-label small mb-1">&nbsp;</label>
+                                                        <a asp-action="ExportExcelGestionComercialNegocio" asp-route-negocioId="@item.NegocioId" class="btn btn-sm btn-outline-success">
+                                                            <i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel
+                                                        </a>
+                                                    </div>
+                                                </div>
+
+                                                <div class="row g-3">
+                                                    <div class="col-lg-5">
+                                                        <div class="border rounded-3 p-3 h-100">
+                                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                                <h6 class="mb-0 text-primary">Historial comercial</h6>
+                                                                <span class="badge text-bg-light border js-mov-filter-count">@item.HistorialComercial.Count registro(s)</span>
+                                                            </div>
+                                                            @if (item.HistorialComercial.Count == 0)
+                                                            {
+                                                                <div class="small text-muted">Aun no existen movimientos comerciales registrados.</div>
+                                                            }
+                                                            else
+                                                            {
+                                                                <div class="d-flex flex-column gap-2">
+                                                                    @foreach (var mov in item.HistorialComercial)
+                                                                    {
+                                                                        var movSearch = string.Join(" ",
+                                                                            mov.TipoMovimientoNombre ?? string.Empty,
+                                                                            mov.TipoCobroAnterior ?? string.Empty,
+                                                                            mov.TipoCobroNuevo ?? string.Empty,
+                                                                            mov.Observacion ?? string.Empty,
+                                                                            mov.UsuarioCreacion ?? string.Empty,
+                                                                            mov.FechaCreacion.ToString("dd/MM/yyyy HH:mm"));
+                                                                        <div class="border rounded-3 p-2 bg-white js-mov-item" data-search="@movSearch.ToLowerInvariant()">
+                                                                            <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
+                                                                                <span class="badge text-bg-light border">@mov.TipoMovimientoNombre</span>
+                                                                                <small class="text-muted">@mov.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</small>
+                                                                            </div>
+                                                                            <div class="small mt-1">
+                                                                                @if (mov.FechaInicioReferencia.HasValue || mov.FechaFinReferencia.HasValue)
+                                                                                {
+                                                                                    <div>Vigencia: @(mov.FechaInicioReferencia?.ToString("dd/MM/yyyy") ?? "-") - @(mov.FechaFinReferencia?.ToString("dd/MM/yyyy") ?? "-")</div>
+                                                                                }
+                                                                                @if (!string.IsNullOrWhiteSpace(mov.TipoCobroNuevo))
+                                                                                {
+                                                                                    <div>Plan: @(string.IsNullOrWhiteSpace(mov.TipoCobroAnterior) ? "-" : mov.TipoCobroAnterior) -> @mov.TipoCobroNuevo</div>
+                                                                                }
+                                                                                @if (mov.DiasExtra > 0)
+                                                                                {
+                                                                                    <div>Dias extra: @mov.DiasExtra</div>
+                                                                                }
+                                                                                @if (mov.DiasGracia > 0)
+                                                                                {
+                                                                                    <div>Dias de gracia acumulados: @mov.DiasGracia</div>
+                                                                                }
+                                                                                @if (!string.IsNullOrWhiteSpace(mov.Observacion))
+                                                                                {
+                                                                                    <div>Nota: @mov.Observacion</div>
+                                                                                }
+                                                                            </div>
+                                                                        </div>
+                                                                    }
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-7">
+                                                        <div class="border rounded-3 p-3 h-100">
+                                                            <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-2">
+                                                                <div>
+                                                                    <h6 class="mb-0 text-success">Historial de cobros</h6>
+                                                                    <div class="small text-muted">Filtros rapidos por estado del cobro y conciliacion.</div>
+                                                                </div>
+                                                                <span class="badge text-bg-light border js-cobro-filter-count">@item.HistorialCobros.Count registro(s)</span>
+                                                            </div>
+
+                                                            <div class="d-flex flex-wrap gap-2 mb-3">
+                                                                <button type="button" class="btn btn-sm btn-primary js-cobro-filter active" data-filter="all">Todos</button>
+                                                                <button type="button" class="btn btn-sm btn-outline-success js-cobro-filter" data-filter="paid">Pagados</button>
+                                                                <button type="button" class="btn btn-sm btn-outline-warning js-cobro-filter" data-filter="pending">Pendientes</button>
+                                                                <button type="button" class="btn btn-sm btn-outline-info js-cobro-filter" data-filter="applied">Aplicados</button>
+                                                                <button type="button" class="btn btn-sm btn-outline-secondary js-cobro-filter" data-filter="unapplied">No aplicados</button>
+                                                            </div>
+
+                                                            @if (item.HistorialCobros.Count == 0)
+                                                            {
+                                                                <div class="small text-muted">Aun no existen cobros registrados para este complejo deportivo.</div>
+                                                            }
+                                                            else
+                                                            {
+                                                                <div class="d-flex flex-column gap-2">
+                                                                    @foreach (var pago in item.HistorialCobros)
+                                                                    {
+                                                                        var estadoPagoCss = pago.EstadoPago == "PAGADO" ? "success" : pago.EstadoPago == "PENDIENTE" ? "warning" : pago.EstadoPago == "OBSERVADO" ? "secondary" : "danger";
+                                                                        var estadoAplicacion = pago.AplicadoSuscripcion ? "applied" : (pago.AplicarAlConfirmar ? "unapplied" : "none");
+                                                                        var pagoSearch = string.Join(" ",
+                                                                            pago.TipoPago ?? string.Empty,
+                                                                            pago.EstadoPago ?? string.Empty,
+                                                                            pago.OperacionNumero ?? string.Empty,
+                                                                            pago.EntidadFinanciera ?? string.Empty,
+                                                                            pago.ReferenciaExterna ?? string.Empty,
+                                                                            pago.AccionAplicacion ?? string.Empty,
+                                                                            pago.TipoCobroObjetivo ?? string.Empty,
+                                                                            pago.Observacion ?? string.Empty,
+                                                                            pago.UsuarioCreacion ?? string.Empty,
+                                                                            pago.FechaPago.ToString("dd/MM/yyyy HH:mm"));
+                                                                        <div class="border rounded-3 p-2 bg-white js-cobro-item"
+                                                                             data-estado="@((pago.EstadoPago ?? string.Empty).ToLowerInvariant())"
+                                                                             data-aplicacion="@estadoAplicacion"
+                                                                             data-search="@pagoSearch.ToLowerInvariant()">
+                                                                            <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
+                                                                                <div class="d-flex flex-wrap gap-2">
+                                                                                    <span class="badge text-bg-light border">@pago.TipoPago</span>
+                                                                                    <span class="badge text-bg-@estadoPagoCss">@pago.EstadoPago</span>
+                                                                                    @if (pago.AplicadoSuscripcion)
+                                                                                    {
+                                                                                        <span class="badge text-bg-info">Aplicado</span>
+                                                                                    }
+                                                                                    else if (pago.AplicarAlConfirmar)
+                                                                                    {
+                                                                                        <span class="badge text-bg-secondary">No aplicado</span>
+                                                                                    }
+                                                                                </div>
+                                                                                <small class="text-muted">@pago.FechaPago.ToString("dd/MM/yyyy HH:mm")</small>
+                                                                            </div>
+                                                                            <div class="small mt-2">
+                                                                                <div>Monto: @(pago.Moneda == "PEN" ? "S/" : pago.Moneda) @pago.Monto.ToString("0.00")</div>
+                                                                                @if (pago.FechaVencimiento.HasValue)
+                                                                                {
+                                                                                    <div>Vencimiento: @pago.FechaVencimiento.Value.ToString("dd/MM/yyyy")</div>
+                                                                                }
+                                                                                @if (!string.IsNullOrWhiteSpace(pago.OperacionNumero))
+                                                                                {
+                                                                                    <div>Operacion: @pago.OperacionNumero</div>
+                                                                                }
+                                                                                @if (!string.IsNullOrWhiteSpace(pago.EntidadFinanciera))
+                                                                                {
+                                                                                    <div>Entidad: @pago.EntidadFinanciera</div>
+                                                                                }
+                                                                                @if (!string.IsNullOrWhiteSpace(pago.ReferenciaExterna))
+                                                                                {
+                                                                                    <div>Referencia: @pago.ReferenciaExterna</div>
+                                                                                }
+                                                                                @if (!string.IsNullOrWhiteSpace(pago.TipoMovimientoRelacionado))
+                                                                                {
+                                                                                    <div>Relacionado a: @pago.TipoMovimientoRelacionado</div>
+                                                                                }
+                                                                                @if (!string.IsNullOrWhiteSpace(pago.AccionAplicacion))
+                                                                                {
+                                                                                    <div>Accion al confirmar: @pago.AccionAplicacion</div>
+                                                                                }
+                                                                                @if (!string.IsNullOrWhiteSpace(pago.TipoCobroObjetivo))
+                                                                                {
+                                                                                    <div>Plan objetivo: @pago.TipoCobroObjetivo</div>
+                                                                                }
+                                                                                @if (pago.FechaInicioPlanObjetivo.HasValue)
+                                                                                {
+                                                                                    <div>Inicio objetivo: @pago.FechaInicioPlanObjetivo.Value.ToString("dd/MM/yyyy")</div>
+                                                                                }
+                                                                                @if (pago.DiasGraciaObjetivo.HasValue)
+                                                                                {
+                                                                                    <div>Gracia objetivo: @pago.DiasGraciaObjetivo.Value dia(s)</div>
+                                                                                }
+                                                                                @if (pago.FechaAplicacion.HasValue)
+                                                                                {
+                                                                                    <div>Aplicado el: @pago.FechaAplicacion.Value.ToString("dd/MM/yyyy HH:mm")</div>
+                                                                                }
+                                                                                @if (!string.IsNullOrWhiteSpace(pago.Observacion))
+                                                                                {
+                                                                                    <div>Nota: @pago.Observacion</div>
+                                                                                }
+                                                                            </div>
+                                                                            @if (pago.EstadoPago == "PENDIENTE" && pago.AplicarAlConfirmar && !pago.AplicadoSuscripcion)
+                                                                            {
+                                                                                <form asp-action="ConfirmarPagoSuscripcionNegocio" method="post" class="mt-2">
+                                                                                    @Html.AntiForgeryToken()
+                                                                                    <input type="hidden" name="negocioId" value="@item.NegocioId" />
+                                                                                    <input type="hidden" name="pagoId" value="@pago.Id" />
+                                                                                    <input type="hidden" name="buscar" value="@Model.Buscar" />
+                                                                                    <input type="hidden" name="estadoContrato" value="@Model.EstadoContrato" />
+                                                                                    <input type="hidden" name="pagina" value="@Model.Pagina" />
+                                                                                    <button type="submit" class="btn btn-sm btn-primary btn-grabar">Confirmar y aplicar</button>
+                                                                                </form>
+                                                                            }
+                                                                        </div>
+                                                                    }
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-outline-secondary btn-cancelar" data-bs-dismiss="modal">Cerrar</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                     }
@@ -327,6 +976,106 @@
                 actualizarFechaFin();
                 tipoCobro.addEventListener('change', actualizarFechaFin);
                 fechaDesde.addEventListener('change', actualizarFechaFin);
+            });
+
+            document.querySelectorAll('.js-cobro-suscripcion-form').forEach(function (form) {
+                const accionSelect = form.querySelector('.js-accion-aplicacion');
+                const planFields = form.querySelectorAll('.js-accion-plan');
+                if (!accionSelect || !planFields.length) return;
+
+                function togglePlanFields() {
+                    const requierePlan = accionSelect.value === 'CAMBIO_PLAN';
+                    planFields.forEach(function (field) {
+                        field.style.display = requierePlan ? '' : 'none';
+                    });
+                }
+
+                togglePlanFields();
+                accionSelect.addEventListener('change', togglePlanFields);
+            });
+
+            document.querySelectorAll('.platform-negocio-modal').forEach(function (modal) {
+                if (modal.parentElement !== document.body) {
+                    document.body.appendChild(modal);
+                }
+            });
+
+            document.querySelectorAll('.modal').forEach(function (modal) {
+                const buttons = modal.querySelectorAll('.js-cobro-filter');
+                const items = modal.querySelectorAll('.js-cobro-item');
+                const movItems = modal.querySelectorAll('.js-mov-item');
+                const counter = modal.querySelector('.js-cobro-filter-count');
+                const movCounter = modal.querySelector('.js-mov-filter-count');
+                const searchInput = modal.querySelector('.js-gestion-search');
+                if ((!buttons.length && !movItems.length) || !counter) return;
+
+                function textoCoincide(item, query) {
+                    if (!query) return true;
+                    return (item.dataset.search || '').indexOf(query) >= 0;
+                }
+
+                function aplicarFiltroMovimientos(query) {
+                    if (!movItems.length || !movCounter) return;
+                    let visibles = 0;
+                    movItems.forEach(function (item) {
+                        const mostrar = textoCoincide(item, query);
+                        item.classList.toggle('d-none', !mostrar);
+                        if (mostrar) visibles++;
+                    });
+                    movCounter.textContent = `${visibles} registro(s)`;
+                }
+
+                function aplicarFiltro(filter) {
+                    const query = ((searchInput && searchInput.value) || '').trim().toLowerCase();
+                    let visibles = 0;
+                    items.forEach(function (item) {
+                        const estado = (item.dataset.estado || '').toLowerCase();
+                        const aplicacion = (item.dataset.aplicacion || '').toLowerCase();
+                        const mostrar =
+                            textoCoincide(item, query)
+                            && (
+                                filter === 'all'
+                                || (filter === 'paid' && estado === 'pagado')
+                                || (filter === 'pending' && estado === 'pendiente')
+                                || (filter === 'applied' && aplicacion === 'applied')
+                                || (filter === 'unapplied' && aplicacion === 'unapplied')
+                            );
+
+                        item.classList.toggle('d-none', !mostrar);
+                        if (mostrar) visibles++;
+                    });
+
+                    counter.textContent = `${visibles} registro(s)`;
+                    aplicarFiltroMovimientos(query);
+                }
+
+                buttons.forEach(function (button) {
+                    button.addEventListener('click', function () {
+                        buttons.forEach(function (btn) {
+                            btn.classList.remove('active', 'btn-primary');
+                            if (btn.dataset.filter === 'all') {
+                                btn.classList.add('btn-outline-primary');
+                            }
+                        });
+
+                        button.classList.add('active');
+                        if (button.classList.contains('btn-outline-primary')) {
+                            button.classList.remove('btn-outline-primary');
+                            button.classList.add('btn-primary');
+                        }
+
+                        aplicarFiltro(button.dataset.filter || 'all');
+                    });
+                });
+
+                if (searchInput) {
+                    searchInput.addEventListener('input', function () {
+                        const activeButton = modal.querySelector('.js-cobro-filter.active');
+                        aplicarFiltro((activeButton && activeButton.dataset.filter) || 'all');
+                    });
+                }
+
+                aplicarFiltro('all');
             });
         })();
     </script>

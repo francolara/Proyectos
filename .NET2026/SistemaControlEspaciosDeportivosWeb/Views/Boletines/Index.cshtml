@@ -1,0 +1,535 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.BoletinesPublicosIndexViewModel
+@{
+    ViewData["Title"] = "Boletines deportivos";
+}
+
+<div class="container py-4">
+    <section class="content-card p-4 mb-4 boletines-hero">
+        <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+            <div>
+                <span class="section-chip"><i class="bi bi-megaphone"></i>Comunidad deportiva</span>
+                <h1 class="page-title mb-2">Boletines de campeonatos y eventos</h1>
+                <p class="page-subtitle mb-0">Explora flyers publicados por la comunidad para encontrar relampagos, campeonatos, fechas abiertas y eventos deportivos por zona.</p>
+            </div>
+            <div class="boletines-hero-note">
+                <strong>Publica desde tu perfil</strong>
+                <span>Los usuarios registrados pueden subir un flyer por semana.</span>
+            </div>
+        </div>
+    </section>
+
+    <form method="get" class="content-card p-3 mb-4">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Departamento</label>
+                <select class="form-select" name="codigoDepartamento" id="boletinDepartamento">
+                    <option value="">Todos</option>
+                    @foreach (var item in Model.Departamentos)
+                    {
+                        <option value="@item.Value" selected="@(item.Value == Model.CodigoDepartamento)">@item.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Provincia</label>
+                <select class="form-select" name="codigoProvincia" id="boletinProvincia">
+                    <option value="">Todas</option>
+                    @foreach (var item in Model.Provincias)
+                    {
+                        <option value="@item.Value" selected="@(item.Value == Model.CodigoProvincia)">@item.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Distrito</label>
+                <select class="form-select" name="codigoUbigeo" id="boletinDistrito">
+                    <option value="">Todos</option>
+                    @foreach (var item in Model.Distritos)
+                    {
+                        <option value="@item.Value" selected="@(item.Value == Model.CodigoUbigeo)">@item.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Zona</label>
+                <select class="form-select" name="zona">
+                    <option value="">Todas</option>
+                    @foreach (var item in Model.Zonas)
+                    {
+                        <option value="@item.Value" selected="@(item.Value == Model.Zona)">@item.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Año</label>
+                <select class="form-select" name="anio">
+                    @foreach (var item in Model.Anios)
+                    {
+                        <option value="@item.Value" selected="@item.Selected">@item.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Mes</label>
+                <select class="form-select" name="mes">
+                    @foreach (var item in Model.Meses)
+                    {
+                        <option value="@item.Value" selected="@item.Selected">@item.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6 d-flex align-items-end gap-2">
+                <button type="submit" class="auth-nav-mini auth-nav-mini-solid">
+                    <i class="bi bi-search me-1"></i>Filtrar boletines
+                </button>
+                <button type="button" id="btnBoletinUbicacionActual" class="auth-nav-mini auth-nav-mini-outline">
+                    <i class="bi bi-crosshair me-1"></i>Usar mi ubicacion
+                </button>
+                <a asp-action="Index" class="auth-nav-mini auth-nav-mini-outline">Limpiar</a>
+            </div>
+            <div class="col-12">
+                <div id="boletinUbicacionEstado" class="form-text"></div>
+            </div>
+        </div>
+    </form>
+
+    <section class="boletines-viewer-wrap">
+        @if (Model.Boletines.Count == 0)
+        {
+            <div class="content-card p-4 text-center text-muted">No hay boletines para el periodo y filtros seleccionados.</div>
+        }
+        else
+        {
+            <div class="content-card boletines-viewer-card">
+                <div class="boletines-viewer-toolbar">
+                    <div>
+                        <span class="section-chip"><i class="bi bi-calendar3"></i>Flyers disponibles</span>
+                        <p class="boletines-viewer-copy mb-0">Navega uno por uno y cambia manualmente por fecha del evento.</p>
+                    </div>
+                    <div class="boletines-viewer-nav">
+                        <button type="button" class="auth-nav-mini auth-nav-mini-outline" id="boletinPrevBtn">
+                            <i class="bi bi-chevron-left me-1"></i>Anterior
+                        </button>
+                        <button type="button" class="auth-nav-mini auth-nav-mini-outline" id="boletinNextBtn">
+                            Siguiente<i class="bi bi-chevron-right ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="boletines-date-strip" id="boletinesDateStrip">
+                    @for (var i = 0; i < Model.Boletines.Count; i++)
+                    {
+                        var item = Model.Boletines[i];
+                        <button type="button"
+                                class="boletin-date-pill @(i == 0 ? "is-active" : null)"
+                                data-boletin-index="@i"
+                                aria-label="Ver boletin del @item.FechaEvento.ToString("dd/MM/yyyy")">
+                            <strong>@item.FechaEvento.ToString("dd/MM")</strong>
+                            <span>@(string.IsNullOrWhiteSpace(item.Titulo) ? item.Distrito : item.Titulo)</span>
+                        </button>
+                    }
+                </div>
+
+                <div class="boletines-stage">
+                    @for (var i = 0; i < Model.Boletines.Count; i++)
+                    {
+                        var item = Model.Boletines[i];
+                        <article class="boletines-stage-item @(i == 0 ? "is-active" : null)" data-boletin-slide="@i">
+                            <div class="boletines-stage-media">
+                                <img src="@item.ImagenUrl" alt="Flyer del evento @(item.Titulo ?? item.Distrito)" loading="lazy" />
+                            </div>
+                            <div class="boletines-stage-body">
+                                <div class="boletin-card-meta">
+                                    <span class="section-chip section-chip-soft"><i class="bi bi-calendar-event"></i>@item.FechaEvento.ToString("dd/MM/yyyy")</span>
+                                    @if (!string.IsNullOrWhiteSpace(item.Zona))
+                                    {
+                                        <span class="section-chip section-chip-soft is-green"><i class="bi bi-geo-alt"></i>@item.Zona</span>
+                                    }
+                                </div>
+                                <h2>@(string.IsNullOrWhiteSpace(item.Titulo) ? "Evento deportivo" : item.Titulo)</h2>
+                                <p class="boletin-card-location">@item.Departamento / @item.Provincia / @item.Distrito</p>
+                                @if (!string.IsNullOrWhiteSpace(item.Descripcion))
+                                {
+                                    <p class="boletin-card-desc">@item.Descripcion</p>
+                                }
+                                <div class="boletines-stage-actions">
+                                    <span class="boletines-stage-counter">@(i + 1) / @Model.Boletines.Count</span>
+                                    <a asp-action="Detalle" asp-route-id="@item.IdBoletin" class="auth-nav-mini auth-nav-mini-solid">
+                                        <i class="bi bi-arrows-fullscreen me-1"></i>Ver flyer completo
+                                    </a>
+                                </div>
+                            </div>
+                        </article>
+                    }
+                </div>
+            </div>
+        }
+    </section>
+</div>
+
+@section Styles{
+    <style>
+        .boletines-hero {
+            background: linear-gradient(135deg, rgba(14, 57, 116, .98), rgba(12, 98, 180, .92));
+            color: #fff;
+        }
+        .boletines-hero .page-title,
+        .boletines-hero .page-subtitle { color: #fff; }
+        .boletines-hero-note {
+            min-width: 240px;
+            padding: 1rem 1.1rem;
+            border-radius: 18px;
+            background: rgba(255,255,255,.1);
+            border: 1px solid rgba(191, 219, 254, .35);
+            display: flex;
+            flex-direction: column;
+            gap: .25rem;
+        }
+        .boletines-viewer-card {
+            padding: 1.2rem;
+            border: 1px solid #d6e5fb;
+            overflow: hidden;
+        }
+        .boletines-viewer-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .boletines-viewer-copy {
+            color: #5b7292;
+        }
+        .boletines-viewer-nav {
+            display: flex;
+            gap: .6rem;
+            flex-wrap: wrap;
+        }
+        .boletines-date-strip {
+            display: flex;
+            gap: .7rem;
+            overflow-x: auto;
+            padding-bottom: .5rem;
+            margin-bottom: 1rem;
+            scrollbar-width: thin;
+        }
+        .boletin-date-pill {
+            min-width: 150px;
+            border: 1px solid #cfe0fb;
+            background: linear-gradient(180deg, #ffffff, #f3f8ff);
+            border-radius: 16px;
+            padding: .8rem .95rem;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            gap: .15rem;
+            color: #24456f;
+            transition: .2s ease;
+        }
+        .boletin-date-pill strong {
+            font-size: .92rem;
+        }
+        .boletin-date-pill span {
+            font-size: .8rem;
+            opacity: .82;
+            line-height: 1.3;
+        }
+        .boletin-date-pill.is-active {
+            border-color: #2563eb;
+            background: linear-gradient(135deg, #2563eb, #1d8be7);
+            color: #fff;
+            box-shadow: 0 14px 26px rgba(37, 99, 235, .2);
+        }
+        .boletines-stage {
+            position: relative;
+        }
+        .boletines-stage-item {
+            display: none;
+            grid-template-columns: minmax(300px, 520px) minmax(260px, 1fr);
+            gap: 1.2rem;
+            align-items: start;
+        }
+        .boletines-stage-item.is-active {
+            display: grid;
+        }
+        .boletines-stage-media {
+            border-radius: 24px;
+            overflow: hidden;
+            background: linear-gradient(180deg, #eef5ff, #dbeafe);
+            border: 1px solid #d6e5fb;
+            box-shadow: 0 18px 40px rgba(15, 47, 100, .12);
+        }
+        .boletines-stage-media img {
+            width: 100%;
+            display: block;
+            aspect-ratio: 4 / 5;
+            object-fit: cover;
+        }
+        .boletines-stage-body {
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: .85rem;
+            padding: .5rem 0;
+        }
+        .boletin-card-meta {
+            display: flex;
+            gap: .45rem;
+            flex-wrap: wrap;
+        }
+        .section-chip-soft.is-green {
+            background: #ebfbf0;
+            color: #177245;
+            border-color: #a7f3d0;
+        }
+        .boletines-stage-body h2 {
+            margin: 0;
+            color: #0f2f64;
+            font-size: clamp(1.2rem, 2vw, 1.7rem);
+            font-weight: 800;
+        }
+        .boletin-card-location {
+            margin: 0;
+            color: #33537f;
+            font-weight: 700;
+            font-size: .9rem;
+        }
+        .boletin-card-desc {
+            margin: 0;
+            color: #506784;
+            line-height: 1.5;
+        }
+        .boletines-stage-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: .8rem;
+            margin-top: auto;
+            flex-wrap: wrap;
+        }
+        .boletines-stage-counter {
+            color: #5b7292;
+            font-weight: 700;
+        }
+        @@media (max-width: 991.98px) {
+            .boletines-stage-item.is-active {
+                grid-template-columns: 1fr;
+            }
+            .boletines-viewer-toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .boletines-viewer-nav {
+                justify-content: stretch;
+            }
+            .boletines-viewer-nav > * {
+                flex: 1 1 0;
+            }
+        }
+    </style>
+}
+
+@section Scripts{
+    <script>
+        (() => {
+            const dep = document.getElementById('boletinDepartamento');
+            const prov = document.getElementById('boletinProvincia');
+            const dist = document.getElementById('boletinDistrito');
+            const btnUbicacionActual = document.getElementById('btnBoletinUbicacionActual');
+            const ubicacionEstado = document.getElementById('boletinUbicacionEstado');
+
+            function renderOptions(select, rows, emptyText) {
+                if (!select) return;
+                select.innerHTML = '';
+                const first = document.createElement('option');
+                first.value = '';
+                first.textContent = emptyText;
+                select.appendChild(first);
+                (rows || []).forEach(x => {
+                    const opt = document.createElement('option');
+                    opt.value = x.value || '';
+                    opt.textContent = x.text || '';
+                    select.appendChild(opt);
+                });
+            }
+
+            function normalizeText(value) {
+                return (value || '')
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .replace(/\b(PROVINCIA|PROV|DISTRITO|DIST)\b\.?/gi, '')
+                    .replace(/\b(PROVINCE|DISTRICT|MUNICIPALITY|MUNICIPIO)\b\.?/gi, '')
+                    .replace(/\b(DEL|DE|LA|EL|METROPOLITANA)\b/gi, '')
+                    .replace(/\s+/g, ' ')
+                    .trim()
+                    .toUpperCase();
+            }
+
+            function findOptionValueByText(select, targetText) {
+                const targetNorm = normalizeText(targetText);
+                if (!select || !targetNorm) return '';
+                for (const option of Array.from(select.options)) {
+                    if (normalizeText(option.textContent || '') === targetNorm) {
+                        return option.value || '';
+                    }
+                }
+                return '';
+            }
+
+            function setUbicacionEstado(text, type = 'muted') {
+                if (!ubicacionEstado) return;
+                ubicacionEstado.className = type === 'error' ? 'form-text text-danger' : 'form-text';
+                ubicacionEstado.textContent = text || '';
+            }
+
+            async function autoSeleccionarUbigeoPorNombres(departamentoNombre, provinciaNombre, distritoNombre) {
+                const depValue = findOptionValueByText(dep, departamentoNombre);
+                if (!depValue) {
+                    setUbicacionEstado('No se pudo mapear el departamento detectado. Ajusta el ubigeo manualmente.', 'error');
+                    return;
+                }
+
+                dep.value = depValue;
+                renderOptions(prov, [], 'Todas');
+                renderOptions(dist, [], 'Todos');
+
+                const responseProv = await fetch(`@Url.Action("UbigeoProvincias", "Home")?codigoDepartamento=${encodeURIComponent(depValue)}`, { cache: 'no-store' });
+                if (!responseProv.ok) {
+                    setUbicacionEstado('No se pudieron cargar provincias para tu ubicacion.', 'error');
+                    return;
+                }
+
+                const dataProv = await responseProv.json();
+                renderOptions(prov, dataProv, 'Todas');
+                const provinciaValue = findOptionValueByText(prov, provinciaNombre);
+
+                const tryDistritoEnProvincia = async (provinciaCodigo) => {
+                    const responseDist = await fetch(`@Url.Action("UbigeoDistritos", "Home")?codigoProvincia=${encodeURIComponent(provinciaCodigo)}`, { cache: 'no-store' });
+                    if (!responseDist.ok) return false;
+                    const dataDist = await responseDist.json();
+                    renderOptions(dist, dataDist, 'Todos');
+                    const distritoValue = findOptionValueByText(dist, distritoNombre);
+                    if (!distritoValue) return false;
+                    prov.value = provinciaCodigo;
+                    dist.value = distritoValue;
+                    return true;
+                };
+
+                if (provinciaValue) {
+                    const ok = await tryDistritoEnProvincia(provinciaValue);
+                    if (ok) {
+                        setUbicacionEstado('Ubicacion detectada. Ya puedes filtrar los boletines.');
+                        return;
+                    }
+                }
+
+                for (const item of (dataProv || [])) {
+                    const codigo = item.value || '';
+                    if (!codigo || codigo === provinciaValue) continue;
+                    const ok = await tryDistritoEnProvincia(codigo);
+                    if (ok) {
+                        setUbicacionEstado('Ubicacion detectada. Ya puedes filtrar los boletines.');
+                        return;
+                    }
+                }
+
+                setUbicacionEstado('Ubicacion detectada parcialmente. Completa provincia o distrito manualmente.', 'error');
+            }
+
+            async function usarUbicacionActual() {
+                if (!btnUbicacionActual) return;
+                if (!navigator.geolocation) {
+                    setUbicacionEstado('Tu navegador no soporta geolocalizacion.', 'error');
+                    return;
+                }
+
+                btnUbicacionActual.disabled = true;
+                setUbicacionEstado('Detectando ubicacion...');
+
+                navigator.geolocation.getCurrentPosition(async (position) => {
+                    try {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&accept-language=es`;
+                        const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                        if (!response.ok) {
+                            setUbicacionEstado('No se pudo resolver tu direccion automaticamente.', 'error');
+                            return;
+                        }
+
+                        const data = await response.json();
+                        const address = data?.address || {};
+                        const departamento = address.state || address.region || '';
+                        const provincia = address.county || address.state_district || '';
+                        const distrito = address.city_district || address.suburb || address.city || address.town || address.village || '';
+
+                        if (!departamento) {
+                            setUbicacionEstado('No se pudo detectar departamento desde tu ubicacion.', 'error');
+                            return;
+                        }
+
+                        await autoSeleccionarUbigeoPorNombres(departamento, provincia, distrito);
+                    } catch {
+                        setUbicacionEstado('No se pudo completar la deteccion de ubicacion.', 'error');
+                    } finally {
+                        btnUbicacionActual.disabled = false;
+                    }
+                }, () => {
+                    btnUbicacionActual.disabled = false;
+                    setUbicacionEstado('No se obtuvo permiso para usar tu ubicacion.', 'error');
+                }, {
+                    enableHighAccuracy: false,
+                    timeout: 12000,
+                    maximumAge: 600000
+                });
+            }
+
+            dep?.addEventListener('change', async () => {
+                const codigo = (dep.value || '').trim();
+                renderOptions(prov, [], 'Todas');
+                renderOptions(dist, [], 'Todos');
+                if (codigo.length !== 2) return;
+                const resp = await fetch(`@Url.Action("UbigeoProvincias", "Home")?codigoDepartamento=${encodeURIComponent(codigo)}`, { cache: 'no-store' });
+                if (!resp.ok) return;
+                renderOptions(prov, await resp.json(), 'Todas');
+            });
+
+            prov?.addEventListener('change', async () => {
+                const codigo = (prov.value || '').trim();
+                renderOptions(dist, [], 'Todos');
+                if (codigo.length !== 4) return;
+                const resp = await fetch(`@Url.Action("UbigeoDistritos", "Home")?codigoProvincia=${encodeURIComponent(codigo)}`, { cache: 'no-store' });
+                if (!resp.ok) return;
+                renderOptions(dist, await resp.json(), 'Todos');
+            });
+
+            btnUbicacionActual?.addEventListener('click', () => {
+                void usarUbicacionActual();
+            });
+
+            const slides = Array.from(document.querySelectorAll('[data-boletin-slide]'));
+            const pills = Array.from(document.querySelectorAll('[data-boletin-index]'));
+            const prevBtn = document.getElementById('boletinPrevBtn');
+            const nextBtn = document.getElementById('boletinNextBtn');
+            let currentIndex = 0;
+
+            function showSlide(index) {
+                if (slides.length === 0) return;
+                currentIndex = (index + slides.length) % slides.length;
+                slides.forEach((slide, idx) => slide.classList.toggle('is-active', idx === currentIndex));
+                pills.forEach((pill, idx) => pill.classList.toggle('is-active', idx === currentIndex));
+                pills[currentIndex]?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }
+
+            pills.forEach((pill) => {
+                pill.addEventListener('click', () => {
+                    const idx = Number(pill.getAttribute('data-boletin-index') || '0');
+                    showSlide(idx);
+                });
+            });
+
+            prevBtn?.addEventListener('click', () => showSlide(currentIndex - 1));
+            nextBtn?.addEventListener('click', () => showSlide(currentIndex + 1));
+        })();
+    </script>
+}
