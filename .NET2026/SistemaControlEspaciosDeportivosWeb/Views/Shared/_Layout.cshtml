@@ -319,18 +319,17 @@
                                 </a>
                             </li>
                             <li class="nav-item">
+                                @* Firma: FRANCO LARA - 12/06/2026 | La pestaña Promociones solo abre el popup si existen promociones activas en la vista actual; sin items no redirige ni ejecuta accion. *@
+                                <a class="nav-link js-nav-open-promociones"
+                                   href="#">
+                                    <i class="bi bi-ticket-perforated me-1"></i>Promociones
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Faq">
                                     <i class="bi bi-patch-question me-1"></i>FAQ
                                 </a>
                             </li>
-                            @if (ViewData["MostrarPromosNav"] is bool mostrarPromosNav && mostrarPromosNav)
-                            {
-                                <li class="nav-item">
-                                    <button type="button" class="nav-link btn btn-link" data-popup-promociones-open>
-                                        <i class="bi bi-megaphone-fill me-1"></i>Anuncios y promociones
-                                    </button>
-                                </li>
-                            }
                         </ul>
                         <partial name="_LoginPartial" />
                     </div>
@@ -977,6 +976,28 @@
             })();
         </script>
     }
+    @if (!adminShell && !platformShell)
+    {
+        @* Firma: FRANCO LARA - 11/06/2026 | El popup de promociones se carga una sola vez desde el layout publico para abrirse en Home, Reserva, Boletines, Login y Registro sin redireccionar al inicio. *@
+        @await Component.InvokeAsync("PopupPromocionesPublicas")
+    }
+    <script>
+        (() => {
+            const links = document.querySelectorAll('.js-nav-open-promociones');
+            if (!links.length) return;
+
+            links.forEach((link) => {
+                link.addEventListener('click', function (ev) {
+                    ev.preventDefault();
+
+                    const modalEl = document.getElementById('popupPromocionesModal');
+                    if (modalEl && window.bootstrap) {
+                        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+                    }
+                });
+            });
+        })();
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

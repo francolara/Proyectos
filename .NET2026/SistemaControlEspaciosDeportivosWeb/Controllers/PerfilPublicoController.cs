@@ -18,13 +18,15 @@ public class PerfilPublicoController(ISportCenterStoredProcedureService spServic
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index(string? tab = null, int pagina = 1)
+    public async Task<IActionResult> Index(string? tab = null, int pagina = 1, int paginaBoletines = 1)
     {
         ViewData["PublicFullWidth"] = true;
         var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(usuarioId)) return Challenge();
         const int tamanoPaginaReservas = 6;
+        const int tamanoPaginaBoletines = 5;
         var paginaActualReservas = pagina < 1 ? 1 : pagina;
+        var paginaActualBoletines = paginaBoletines < 1 ? 1 : paginaBoletines;
 
         var perfil = await spService.UsuariosPublicosObtenerPerfilAsync(usuarioId) ?? new UsuarioPublicoPerfilViewModel
         {
@@ -61,9 +63,23 @@ public class PerfilPublicoController(ISportCenterStoredProcedureService spServic
             FechaEvento = DateOnly.FromDateTime(DateTime.Today)
         };
         await CargarCombosBoletinAsync(boletinForm);
-        var boletines = tabActual == "boletines"
-            ? await spService.BoletinesDeportivosListarPorUsuarioAsync(usuarioId)
-            : new List<BoletinDeportivoUsuarioItemViewModel>();
+        var boletines = new List<BoletinDeportivoUsuarioItemViewModel>();
+        var totalBoletines = 0;
+        var totalPaginasBoletines = 1;
+        if (tabActual == "boletines")
+        {
+            var listadoBoletines = await spService.BoletinesDeportivosListarPorUsuarioAsync(usuarioId, paginaActualBoletines, tamanoPaginaBoletines);
+            boletines = listadoBoletines.Boletines;
+            totalBoletines = listadoBoletines.TotalRegistros;
+            totalPaginasBoletines = Math.Max(1, (int)Math.Ceiling(totalBoletines / (double)tamanoPaginaBoletines));
+            if (paginaActualBoletines > totalPaginasBoletines)
+            {
+                paginaActualBoletines = totalPaginasBoletines;
+                listadoBoletines = await spService.BoletinesDeportivosListarPorUsuarioAsync(usuarioId, paginaActualBoletines, tamanoPaginaBoletines);
+                boletines = listadoBoletines.Boletines;
+                totalBoletines = listadoBoletines.TotalRegistros;
+            }
+        }
 
         ViewData["Tab"] = tabActual;
         return View(new PerfilPublicoIndexViewModel
@@ -75,7 +91,11 @@ public class PerfilPublicoController(ISportCenterStoredProcedureService spServic
             PaginaReservas = paginaActualReservas,
             TamanoPaginaReservas = tamanoPaginaReservas,
             TotalReservas = totalReservas,
-            TotalPaginasReservas = totalPaginasReservas
+            TotalPaginasReservas = totalPaginasReservas,
+            PaginaBoletines = paginaActualBoletines,
+            TamanoPaginaBoletines = tamanoPaginaBoletines,
+            TotalBoletines = totalBoletines,
+            TotalPaginasBoletines = totalPaginasBoletines
         });
     }
 
@@ -145,6 +165,8 @@ public class PerfilPublicoController(ISportCenterStoredProcedureService spServic
         var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(usuarioId)) return Challenge();
 
+        RemoverModelStatePorPrefijo(ModelState, nameof(PerfilPublicoIndexViewModel.BoletinForm));
+
         vm.Perfil.UsuarioId = usuarioId;
         vm.Perfil.TipoDocumento = string.IsNullOrWhiteSpace(vm.Perfil.TipoDocumento) ? "0" : vm.Perfil.TipoDocumento.Trim();
         vm.Perfil.NumeroDocumento = string.IsNullOrWhiteSpace(vm.Perfil.NumeroDocumento) ? null : vm.Perfil.NumeroDocumento.Trim();
@@ -188,10 +210,11 @@ public class PerfilPublicoController(ISportCenterStoredProcedureService spServic
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> GuardarBoletin([Bind(Prefix = "BoletinForm")] BoletinDeportivoGuardarViewModel model)
+    public async Task<IActionResult> GuardarBoletin([Bind(Prefix = "BoletinForm")] BoletinDeportivoGuardarViewModel model, int paginaBoletines = 1)
     {
         ViewData["PublicFullWidth"] = true;
         const string modelPrefix = "BoletinForm";
+        const int tamanoPaginaBoletines = 5;
         var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(usuarioId)) return Challenge();
 
@@ -214,12 +237,12 @@ public class PerfilPublicoController(ISportCenterStoredProcedureService spServic
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError($"{modelPrefix}.ImagenArchivo", $"No se pudo subir el flyer: {ex.Message}");
+                ModelState.AddModelError($"{modelPrefix}.ImagenArchivo", $"No se pudo subir el boletin: {ex.Message}");
             }
         }
 
         if (string.IsNullOrWhiteSpace(model.ImagenUrl))
-            ModelState.AddModelError($"{modelPrefix}.ImagenArchivo", "Debes cargar la imagen del flyer.");
+            ModelState.AddModelError($"{modelPrefix}.ImagenArchivo", "Debes cargar la imagen del boletin.");
 
         if (!ModelState.IsValid)
         {
@@ -233,7 +256,12 @@ public class PerfilPublicoController(ISportCenterStoredProcedureService spServic
             await CargarCombosBoletinAsync(model);
             vm.Perfil = perfil;
             vm.BoletinForm = model;
-            vm.Boletines = await spService.BoletinesDeportivosListarPorUsuarioAsync(usuarioId);
+            vm.PaginaBoletines = paginaBoletines < 1 ? 1 : paginaBoletines;
+            vm.TamanoPaginaBoletines = tamanoPaginaBoletines;
+            var listadoBoletines = await spService.BoletinesDeportivosListarPorUsuarioAsync(usuarioId, vm.PaginaBoletines, vm.TamanoPaginaBoletines);
+            vm.Boletines = listadoBoletines.Boletines;
+            vm.TotalBoletines = listadoBoletines.TotalRegistros;
+            vm.TotalPaginasBoletines = Math.Max(1, (int)Math.Ceiling(vm.TotalBoletines / (double)vm.TamanoPaginaBoletines));
             var (reservas, totalReservas) = await spService.UsuariosPublicosReservasListarAsync(usuarioId, 1, 6);
             vm.Reservas = reservas;
             vm.PaginaReservas = 1;
@@ -248,7 +276,7 @@ public class PerfilPublicoController(ISportCenterStoredProcedureService spServic
         {
             await spService.BoletinesDeportivosGuardarAsync(model, User.Identity?.Name ?? "perfil-publico");
             TempData["PerfilPublicoOk"] = "Boletin deportivo publicado correctamente.";
-            return RedirectToAction(nameof(Index), new { tab = "boletines" });
+            return RedirectToAction(nameof(Index), new { tab = "boletines", paginaBoletines = 1 });
         }
         catch (Exception ex)
         {
@@ -256,7 +284,19 @@ public class PerfilPublicoController(ISportCenterStoredProcedureService spServic
                 await sedeImagenStorageService.DeleteSedeImagenesAsync([imagenNueva], HttpContext.RequestAborted);
 
             TempData["PerfilPublicoInfo"] = ex.Message;
-            return RedirectToAction(nameof(Index), new { tab = "boletines" });
+            return RedirectToAction(nameof(Index), new { tab = "boletines", paginaBoletines });
+        }
+    }
+
+    private static void RemoverModelStatePorPrefijo(Microsoft.AspNetCore.Mvc.ModelBinding.ModelStateDictionary modelState, string prefijo)
+    {
+        var keys = modelState.Keys
+            .Where(x => x.Equals(prefijo, StringComparison.OrdinalIgnoreCase) || x.StartsWith(prefijo + ".", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        foreach (var key in keys)
+        {
+            modelState.Remove(key);
         }
     }
 

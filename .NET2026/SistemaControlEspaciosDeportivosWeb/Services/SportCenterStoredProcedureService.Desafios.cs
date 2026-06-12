@@ -11,7 +11,7 @@ public partial class SportCenterStoredProcedureService
     public Task<List<SelectListItem>> DesafiosNivelesListarAsync()
         => ComboAsync("Sp_Desafios_Niveles_Listar");
 
-    public async Task<List<DesafioRivalItemViewModel>> DesafiosBuscarRivalesAsync(string usuarioId, string codigoUbigeo, int? idDeporte, int? idNivel)
+    public async Task<List<DesafioRivalItemViewModel>> DesafiosBuscarRivalesAsync(string usuarioId, string? codigoUbigeo, string? zona, int? idDeporte, int? idNivel)
     {
         var list = new List<DesafioRivalItemViewModel>();
         await using var cn = CreateConnection();
@@ -22,7 +22,8 @@ public partial class SportCenterStoredProcedureService
         };
 
         AddParam(cmd, "@UsuarioId", usuarioId, SqlDbType.NVarChar);
-        AddParam(cmd, "@CodigoUbigeo", codigoUbigeo, SqlDbType.Char);
+        AddParam(cmd, "@CodigoUbigeo", string.IsNullOrWhiteSpace(codigoUbigeo) ? null : codigoUbigeo.Trim(), SqlDbType.Char);
+        AddParam(cmd, "@Zona", string.IsNullOrWhiteSpace(zona) ? null : zona.Trim(), SqlDbType.NVarChar);
         AddParam(cmd, "@IdDeporte", idDeporte, SqlDbType.Int);
         AddParam(cmd, "@IdNivel", idNivel, SqlDbType.Int);
 

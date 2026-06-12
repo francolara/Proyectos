@@ -16,6 +16,8 @@
     }
 }
 
+@* Firma: FRANCO LARA - 11/06/2026 | El listado de espacios agrega acceso a la gestion de resenas para responderlas u ocultarlas desde el panel del negocio. *@
+
 <div class="admin-page-frame">
     @if (TempData["EspaciosError"] is string espaciosError && !string.IsNullOrWhiteSpace(espaciosError))
     {
@@ -144,6 +146,9 @@
                                 <td class="text-end">
                                     @if (Model.PuedeEditar)
                                     {
+                                        <a class="btn btn-sm sc-action-btn btn-outline-secondary" asp-action="Resenas" asp-route-negocioId="@Model.NegocioId" asp-route-id="@item.Id">
+                                            <i class="bi bi-chat-left-text"></i> Reseñas
+                                        </a>
                                         <a class="btn btn-sm sc-action-btn sc-action-edit" asp-action="Edit" asp-route-negocioId="@Model.NegocioId" asp-route-id="@item.Id">
                                             <i class="bi bi-pencil-square"></i> Editar
                                         </a>

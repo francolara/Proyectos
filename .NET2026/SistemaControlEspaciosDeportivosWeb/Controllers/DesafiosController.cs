@@ -30,7 +30,7 @@ public class DesafiosController(
         var vm = await ConstruirViewModelAsync(usuarioId, new DesafiosIndexViewModel
         {
             PerfilActual = perfil
-        }, incluirBusqueda: false, paginaHistorial: hpage);
+        }, incluirBusqueda: false, validarBusqueda: false, paginaHistorial: hpage);
         return View(vm);
     }
 
@@ -43,7 +43,7 @@ public class DesafiosController(
 
         ViewData["PublicFullWidth"] = true;
         LimpiarErroresNuevoDesafio();
-        vm = await ConstruirViewModelAsync(usuarioId, vm, incluirBusqueda: true, paginaHistorial: vm.PaginaHistorial);
+        vm = await ConstruirViewModelAsync(usuarioId, vm, incluirBusqueda: true, validarBusqueda: true, paginaHistorial: vm.PaginaHistorial);
         return View("Index", vm);
     }
 
@@ -61,7 +61,7 @@ public class DesafiosController(
         {
             Filtros = filtros,
             NuevoDesafio = nuevoDesafio
-        }, incluirBusqueda: true, paginaHistorial: 1);
+        }, incluirBusqueda: true, validarBusqueda: false, paginaHistorial: 1);
         ViewData["AbrirModalDesafio"] = true;
 
         ValidarNuevoDesafio(vm);
@@ -163,7 +163,7 @@ public class DesafiosController(
         return RedirectToAction(nameof(Index));
     }
 
-    private async Task<DesafiosIndexViewModel> ConstruirViewModelAsync(string usuarioId, DesafiosIndexViewModel vm, bool incluirBusqueda, int paginaHistorial = 1)
+    private async Task<DesafiosIndexViewModel> ConstruirViewModelAsync(string usuarioId, DesafiosIndexViewModel vm, bool incluirBusqueda, bool validarBusqueda, int paginaHistorial = 1)
     {
         const int tamanoPaginaHistorial = 4;
         var paginaActualHistorial = paginaHistorial < 1 ? 1 : paginaHistorial;
@@ -200,15 +200,18 @@ public class DesafiosController(
         vm.BusquedaEjecutada = true;
 
         vm.Filtros.CodigoUbigeo = string.IsNullOrWhiteSpace(vm.Filtros.CodigoUbigeo) ? null : vm.Filtros.CodigoUbigeo.Trim();
-        if (string.IsNullOrWhiteSpace(vm.Filtros.CodigoUbigeo))
+        vm.Filtros.Zona = string.IsNullOrWhiteSpace(vm.Filtros.Zona) ? null : vm.Filtros.Zona.Trim();
+        if (string.IsNullOrWhiteSpace(vm.Filtros.CodigoUbigeo) && string.IsNullOrWhiteSpace(vm.Filtros.Zona))
         {
-            ModelState.AddModelError("Filtros.CodigoUbigeo", "Debes seleccionar departamento, provincia y distrito antes de buscar.");
+            if (validarBusqueda)
+                ModelState.AddModelError("Filtros.CodigoUbigeo", "Debes seleccionar una zona o un distrito antes de buscar.");
             return vm;
         }
 
         vm.ResultadosBusqueda = await spService.DesafiosBuscarRivalesAsync(
             usuarioId,
             vm.Filtros.CodigoUbigeo,
+            vm.Filtros.Zona,
             vm.Filtros.IdDeporte,
             vm.Filtros.IdNivel);
 
@@ -221,8 +224,9 @@ public class DesafiosController(
         vm.Filtros.Provincias = !string.IsNullOrWhiteSpace(vm.Filtros.CodigoDepartamento) && vm.Filtros.CodigoDepartamento.Length == 2
             ? await spService.UbigeoProvinciasListarAsync(vm.Filtros.CodigoDepartamento)
             : new();
+        vm.Filtros.Zonas = await spService.UbigeoZonasListarAsync(vm.Filtros.CodigoDepartamento, vm.Filtros.CodigoProvincia);
         vm.Filtros.Distritos = !string.IsNullOrWhiteSpace(vm.Filtros.CodigoProvincia) && vm.Filtros.CodigoProvincia.Length == 4
-            ? await spService.UbigeoDistritosListarAsync(vm.Filtros.CodigoProvincia)
+            ? await spService.UbigeoDistritosListarAsync(vm.Filtros.CodigoProvincia, vm.Filtros.Zona)
             : new();
 
         var deportes = (await spService.HomeListarTiposDeporteAsync())

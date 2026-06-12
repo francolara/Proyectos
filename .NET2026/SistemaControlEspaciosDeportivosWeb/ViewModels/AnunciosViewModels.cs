@@ -113,6 +113,13 @@ public class PopupPromocionConfigViewModel
     public bool MostrarIndicadores { get; set; } = true;
 }
 
+public class PopupPromocionesPublicasPartialViewModel
+{
+    public List<PopupPromocionPublicoViewModel> PopupPromociones { get; set; } = new();
+    public PopupPromocionConfigViewModel Config { get; set; } = new();
+    public PlataformaPortalConfigViewModel PortalConfig { get; set; } = new();
+}
+
 public class PopupPromocionesAdminIndexViewModel : ModuloBaseViewModel
 {
     public List<PopupPromocionAdminItemViewModel> Anuncios { get; set; } = new();

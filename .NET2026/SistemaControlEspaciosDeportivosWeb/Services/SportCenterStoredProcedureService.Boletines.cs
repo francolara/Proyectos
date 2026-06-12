@@ -63,9 +63,10 @@ public partial class SportCenterStoredProcedureService
         return list;
     }
 
-    public async Task<List<BoletinDeportivoUsuarioItemViewModel>> BoletinesDeportivosListarPorUsuarioAsync(string usuarioId)
+    public async Task<(List<BoletinDeportivoUsuarioItemViewModel> Boletines, int TotalRegistros)> BoletinesDeportivosListarPorUsuarioAsync(string usuarioId, int pagina = 1, int tamanoPagina = 5)
     {
         var list = new List<BoletinDeportivoUsuarioItemViewModel>();
+        var totalRegistros = 0;
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_BoletinesDeportivos_ListarPorUsuario", cn)
@@ -74,6 +75,8 @@ public partial class SportCenterStoredProcedureService
         };
 
         AddParam(cmd, "@UsuarioId", usuarioId, SqlDbType.NVarChar);
+        AddParam(cmd, "@Pagina", pagina, SqlDbType.Int);
+        AddParam(cmd, "@TamanoPagina", tamanoPagina, SqlDbType.Int);
 
         await using var dr = await cmd.ExecuteReaderAsync();
         while (await dr.ReadAsync())
@@ -82,10 +85,11 @@ public partial class SportCenterStoredProcedureService
             MapBoletinPublicoBase(dr, item);
             item.Activo = !dr.IsDBNull(11) && ReadBool(dr, 11);
             item.FechaCreacion = dr.IsDBNull(12) ? DateTime.MinValue : dr.GetDateTime(12);
+            totalRegistros = dr.IsDBNull(13) ? totalRegistros : dr.GetInt32(13);
             list.Add(item);
         }
 
-        return list;
+        return (list, totalRegistros);
     }
 
     public async Task<BoletinDeportivoDetalleViewModel?> BoletinesDeportivosObtenerPorIdAsync(int idBoletin)
@@ -128,7 +132,30 @@ public partial class SportCenterStoredProcedureService
         };
     }
 
-    public async Task<List<BoletinDeportivoAdminItemViewModel>> BoletinesDeportivosAdminListarAsync(
+    public async Task<BoletinesDeportivosAdminResumenViewModel> BoletinesDeportivosAdminResumenAsync()
+    {
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_BoletinesDeportivos_AdminResumen", cn)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        await using var dr = await cmd.ExecuteReaderAsync();
+        if (!await dr.ReadAsync())
+            return new BoletinesDeportivosAdminResumenViewModel();
+
+        return new BoletinesDeportivosAdminResumenViewModel
+        {
+            TotalBoletines = dr.IsDBNull(0) ? 0 : dr.GetInt32(0),
+            TotalActivos = dr.IsDBNull(1) ? 0 : dr.GetInt32(1),
+            TotalInactivos = dr.IsDBNull(2) ? 0 : dr.GetInt32(2),
+            TotalUsuarios = dr.IsDBNull(3) ? 0 : dr.GetInt32(3),
+            TotalPlataforma = dr.IsDBNull(4) ? 0 : dr.GetInt32(4)
+        };
+    }
+
+    public async Task<(List<BoletinDeportivoAdminItemViewModel> Boletines, int TotalRegistros)> BoletinesDeportivosAdminListarAsync(
         bool? activo = null,
         string? tipoRegistro = null,
         string? codigoDepartamento = null,
@@ -136,9 +163,12 @@ public partial class SportCenterStoredProcedureService
         string? codigoUbigeo = null,
         string? zona = null,
         int? anio = null,
-        int? mes = null)
+        int? mes = null,
+        int pagina = 1,
+        int tamanoPagina = 5)
     {
         var list = new List<BoletinDeportivoAdminItemViewModel>();
+        var totalRegistros = 0;
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_BoletinesDeportivos_AdminListar", cn)
@@ -154,6 +184,8 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@Zona", string.IsNullOrWhiteSpace(zona) ? null : zona.Trim(), SqlDbType.NVarChar);
         AddParam(cmd, "@Anio", anio, SqlDbType.Int);
         AddParam(cmd, "@Mes", mes, SqlDbType.Int);
+        AddParam(cmd, "@Pagina", pagina, SqlDbType.Int);
+        AddParam(cmd, "@TamanoPagina", tamanoPagina, SqlDbType.Int);
 
         await using var dr = await cmd.ExecuteReaderAsync();
         while (await dr.ReadAsync())
@@ -177,10 +209,11 @@ public partial class SportCenterStoredProcedureService
             item.TipoRegistro = dr.IsDBNull(13) ? "U" : dr.GetString(13);
             item.Activo = !dr.IsDBNull(14) && ReadBool(dr, 14);
             item.FechaCreacion = dr.IsDBNull(15) ? DateTime.MinValue : dr.GetDateTime(15);
+            totalRegistros = dr.IsDBNull(16) ? totalRegistros : dr.GetInt32(16);
             list.Add(item);
         }
 
-        return list;
+        return (list, totalRegistros);
     }
 
     public async Task<bool> BoletinesDeportivosCambiarEstadoAsync(int idBoletin, bool activo, string usuario)
@@ -195,8 +228,8 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@IdBoletin", idBoletin, SqlDbType.Int);
         AddParam(cmd, "@Activo", activo, SqlDbType.Bit);
         AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
-        await cmd.ExecuteNonQueryAsync();
-        return true;
+        var result = await cmd.ExecuteScalarAsync();
+        return result is not null && result != DBNull.Value && Convert.ToBoolean(result);
     }
 
     private static BoletinDeportivoPublicoItemViewModel MapBoletinPublico(SqlDataReader dr)

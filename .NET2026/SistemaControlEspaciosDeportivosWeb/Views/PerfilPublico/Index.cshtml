@@ -43,7 +43,7 @@
             <i class="bi bi-calendar2-check"></i>
             <span>Mis reservas</span>
         </a>
-        <a class="profile-tab-item @(tabBoletines ? "is-active" : null)" asp-action="Index" asp-route-tab="boletines">
+        <a class="profile-tab-item @(tabBoletines ? "is-active" : null)" asp-action="Index" asp-route-tab="boletines" asp-route-paginaBoletines="1">
             <i class="bi bi-megaphone"></i>
             <span>Mis boletines</span>
         </a>
@@ -61,7 +61,10 @@
     {
         <form asp-action="GuardarDatos" method="post" class="content-card p-3">
             @Html.AntiForgeryToken()
-            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+            @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ErrorCount > 0)
+            {
+                <div asp-validation-summary="All" class="alert alert-danger"></div>
+            }
             <input type="hidden" asp-for="Perfil.Id" />
             <input type="hidden" asp-for="Perfil.UsuarioId" />
 
@@ -235,10 +238,11 @@
 
     @if (tabBoletines)
     {
+@* Firma: FRANCO LARA - 11/06/2026 | Mis boletines ahora pagina de 5 en 5 desde SQL Server, mantiene su pagina independiente y muestra navegacion separada sin afectar las reservas del perfil. Ademas, el formulario de datos personales muestra el resumen completo de validaciones solo cuando existen errores reales para evitar el cuadro rojo vacio al ingresar. *@
         <section class="content-card p-3">
             <div class="section-heading mb-3">
                 <span class="section-chip"><i class="bi bi-megaphone"></i>Boletines deportivos</span>
-                <p>Sube un flyer de campeonato, relampago o evento deportivo. Los usuarios publicos tienen un limite de una publicacion por semana.</p>
+                <p>Sube un boletin de campeonato, relampago o evento deportivo. Los usuarios publicos tienen un limite de una publicacion por semana.</p>
             </div>
 
             <form asp-action="GuardarBoletin" method="post" enctype="multipart/form-data" class="profile-form-section">
@@ -246,6 +250,7 @@
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
                 <input type="hidden" asp-for="BoletinForm.UsuarioId" />
                 <input type="hidden" asp-for="BoletinForm.TipoRegistro" />
+                <input type="hidden" name="paginaBoletines" value="@Model.PaginaBoletines" />
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label">Titulo (opcional)</label>
@@ -258,7 +263,7 @@
                         <span asp-validation-for="BoletinForm.FechaEvento" class="text-danger"></span>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Flyer (JPG/PNG)</label>
+                        <label class="form-label">Boletin (JPG/PNG)</label>
                         <input asp-for="BoletinForm.ImagenArchivo" type="file" class="form-control" accept=".jpg,.jpeg,.png" />
                         <span asp-validation-for="BoletinForm.ImagenArchivo" class="text-danger"></span>
                     </div>
@@ -313,11 +318,15 @@
                 }
                 else
                 {
+                    var inicioBoletines = ((Model.PaginaBoletines - 1) * Model.TamanoPaginaBoletines) + 1;
+                    var finBoletines = Math.Min(Model.PaginaBoletines * Model.TamanoPaginaBoletines, Model.TotalBoletines);
+                    <p class="profile-reservas-summary">Mostrando <strong>@inicioBoletines</strong> - <strong>@finBoletines</strong> de <strong>@Model.TotalBoletines</strong> boletines.</p>
+
                     @foreach (var item in Model.Boletines)
                     {
                         <article class="profile-boletin-card">
                             <a asp-controller="Boletines" asp-action="Detalle" asp-route-id="@item.IdBoletin" class="profile-boletin-thumb">
-                                <img src="@item.ImagenUrl" alt="Flyer de @item.Distrito" loading="lazy" />
+                                <img src="@item.ImagenUrl" alt="Boletin de @item.Distrito" loading="lazy" />
                             </a>
                             <div class="profile-boletin-body">
                                 <div class="profile-boletin-head">
@@ -348,11 +357,36 @@
                                 }
                                 <div class="d-flex justify-content-end">
                                     <a asp-controller="Boletines" asp-action="Detalle" asp-route-id="@item.IdBoletin" class="auth-nav-mini auth-nav-mini-outline">
-                                        <i class="bi bi-arrows-fullscreen me-1"></i>Ver flyer completo
+                                        <i class="bi bi-arrows-fullscreen me-1"></i>Ver boletin completo
                                     </a>
                                 </div>
                             </div>
                         </article>
+                    }
+
+                    @if (Model.TotalPaginasBoletines > 1)
+                    {
+                        var paginaAnteriorBoletines = Model.PaginaBoletines > 1 ? Model.PaginaBoletines - 1 : 1;
+                        var paginaSiguienteBoletines = Model.PaginaBoletines < Model.TotalPaginasBoletines ? Model.PaginaBoletines + 1 : Model.TotalPaginasBoletines;
+                        <nav class="profile-pagination" aria-label="Paginacion de boletines">
+                            <a class="profile-page-link @(Model.PaginaBoletines <= 1 ? "is-disabled" : null)"
+                               asp-action="Index"
+                               asp-route-tab="boletines"
+                               asp-route-paginaBoletines="@paginaAnteriorBoletines">Anterior</a>
+
+                            @for (var p = 1; p <= Model.TotalPaginasBoletines; p++)
+                            {
+                                <a class="profile-page-link @(p == Model.PaginaBoletines ? "is-active" : null)"
+                                   asp-action="Index"
+                                   asp-route-tab="boletines"
+                                   asp-route-paginaBoletines="@p">@p</a>
+                            }
+
+                            <a class="profile-page-link @(Model.PaginaBoletines >= Model.TotalPaginasBoletines ? "is-disabled" : null)"
+                               asp-action="Index"
+                               asp-route-tab="boletines"
+                               asp-route-paginaBoletines="@paginaSiguienteBoletines">Siguiente</a>
+                        </nav>
                     }
                 }
             </div>
@@ -362,6 +396,7 @@
     @if (tabReservas)
     {
 @* Firma: FRANCO LARA - 08/06/2026 | Mis reservas permite registrar una sola resena por reserva confirmada, pagada o completada usando alias publico editable, muestra la resena ya registrada dentro de la tarjeta y agrega descarga .ics para reservas activas del usuario. *@
+@* Firma: FRANCO LARA - 11/06/2026 | Mis reservas muestra si una reseña fue ocultada del portal publico y la respuesta administrativa cuando el negocio la registra. *@
 @* Firma: FRANCO LARA - 09/06/2026 | El acceso rapido a WhatsApp desde Mis reservas ahora precarga nombre, equipo, horario y espacio deportivo para contactar al complejo sobre una reserva especifica. *@
         <section class="table-card profile-reservas-card">
             <span class="section-chip"><i class="bi bi-calendar2-check"></i>Historial de reservas</span>
@@ -462,6 +497,17 @@
                                     </div>
                                     <strong class="profile-review-alias">@item.Resena.AliasPublico</strong>
                                     <p class="mb-0 profile-review-comment">@item.Resena.Comentario</p>
+                                    @if (!item.Resena.Activo)
+                                    {
+                                        <div class="small text-muted mt-2"><i class="bi bi-eye-slash me-1"></i>Esta reseña esta oculta de la vista publica.</div>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(item.Resena.Respuesta))
+                                    {
+                                        <div class="small mt-2 pt-2 border-top">
+                                            <strong class="d-block mb-1">Respuesta del negocio</strong>
+                                            <span>@item.Resena.Respuesta</span>
+                                        </div>
+                                    }
                                 </section>
                             }
                             else if (item.PuedeRegistrarResena)

@@ -97,7 +97,6 @@ public class HomeController(
             radioKm,
             omitirFechaHorario,
             pagina);
-        ViewData["MostrarPromosNav"] = vm.PopupPromociones.Count > 0;
         vm.MensajeSolicitud = TempData["MensajeSolicitud"]?.ToString();
         return View(vm);
     }
@@ -517,12 +516,21 @@ public class HomeController(
     }
 
     [HttpGet]
-    public async Task<IActionResult> UbigeoDistritos(string? codigoProvincia)
+    public async Task<IActionResult> UbigeoDistritos(string? codigoProvincia, string? zona = null)
     {
         var codigoProv = (codigoProvincia ?? string.Empty).Trim();
         if (codigoProv.Length != 4) return Json(Array.Empty<object>());
 
-        var data = await spService.UbigeoDistritosListarAsync(codigoProv);
+        var data = await spService.UbigeoDistritosListarAsync(codigoProv, zona);
+        return Json(data.Select(x => new { value = x.Value, text = x.Text }));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> UbigeoZonas(string? codigoDepartamento, string? codigoProvincia)
+    {
+        var codigoDep = string.IsNullOrWhiteSpace(codigoDepartamento) ? null : codigoDepartamento.Trim();
+        var codigoProv = string.IsNullOrWhiteSpace(codigoProvincia) ? null : codigoProvincia.Trim();
+        var data = await spService.UbigeoZonasListarAsync(codigoDep, codigoProv);
         return Json(data.Select(x => new { value = x.Value, text = x.Text }));
     }
 

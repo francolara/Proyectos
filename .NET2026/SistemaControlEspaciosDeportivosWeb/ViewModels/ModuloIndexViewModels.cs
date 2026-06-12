@@ -134,6 +134,21 @@ public class EspaciosIndexViewModel : ModuloBaseViewModel
     public List<EspacioItemViewModel> Espacios { get; set; } = new();
 }
 
+public class EspaciosResenasIndexViewModel : ModuloBaseViewModel
+{
+    public int EspacioDeportivoId { get; set; }
+    public string EspacioNombre { get; set; } = string.Empty;
+    public string SedeNombre { get; set; } = string.Empty;
+    public int Pagina { get; set; } = 1;
+    public int TamanoPagina { get; set; } = 4;
+    public int TotalRegistros { get; set; }
+    public int TotalPaginas { get; set; } = 1;
+    public int TotalVisibles { get; set; }
+    public int TotalOcultas { get; set; }
+    public int TotalRespondidas { get; set; }
+    public List<EspacioResenaAdminItemViewModel> Resenas { get; set; } = new();
+}
+
 public class EspacioItemViewModel
 {
     public int Id { get; set; }
@@ -149,6 +164,43 @@ public class EspacioItemViewModel
     public int TotalEspaciosCompartidos { get; set; }
     public string Estado { get; set; } = string.Empty;
     public string TarifaResumen { get; set; } = string.Empty;
+}
+
+public class EspacioResenaAdminItemViewModel
+{
+    public int ResenaId { get; set; }
+    public int ReservaId { get; set; }
+    public int EspacioDeportivoId { get; set; }
+    public int SedeId { get; set; }
+    public string EspacioNombre { get; set; } = string.Empty;
+    public string SedeNombre { get; set; } = string.Empty;
+    public string AliasPublico { get; set; } = string.Empty;
+    public string Comentario { get; set; } = string.Empty;
+    public string? Respuesta { get; set; }
+    public bool Activo { get; set; }
+    public DateOnly ReservaFecha { get; set; }
+    public TimeOnly HoraInicio { get; set; }
+    public TimeOnly HoraFin { get; set; }
+    public DateTime FechaCreacion { get; set; }
+}
+
+public class EspacioResenaGestionViewModel
+{
+    [Range(1, int.MaxValue, ErrorMessage = "El negocio es obligatorio.")]
+    public int NegocioId { get; set; }
+
+    [Range(1, int.MaxValue, ErrorMessage = "El espacio es obligatorio.")]
+    public int EspacioDeportivoId { get; set; }
+
+    [Range(1, int.MaxValue, ErrorMessage = "La resena es obligatoria.")]
+    public int ResenaId { get; set; }
+
+    public int Pagina { get; set; } = 1;
+
+    public bool Activo { get; set; } = true;
+
+    [StringLength(800, ErrorMessage = "La respuesta no puede exceder 800 caracteres.")]
+    public string? Respuesta { get; set; }
 }
 
 public class ReservasIndexViewModel : ModuloBaseViewModel

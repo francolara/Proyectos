@@ -16,8 +16,6 @@
     {
         ctaClubUrl = "/Identity/Account/Register?TipoRegistro=club";
     }
-    var popupPromociones = Model.PopupPromociones?.Where(x => !string.IsNullOrWhiteSpace(x.ImagenUrl)).OrderBy(x => x.Orden).ThenByDescending(x => x.IdPopupPromocion).ToList()
-        ?? new List<SistemaControlEspaciosDeportivosWeb.ViewModels.PopupPromocionPublicoViewModel>();
     var heroLcpDesktopUrl = banners.Count > 0
         ? (SistemaControlEspaciosDeportivosWeb.Services.SedeImagenUrlHelper.NormalizarUrlPublica(
             banners[0].ImagenUrl,
@@ -32,52 +30,6 @@
                 SedeImagenStorageOptions.Value.PublicBaseUrl,
                 SedeImagenStorageOptions.Value.BucketName) ?? heroLcpDesktopUrl))
         : string.Empty;
-    var esUsuarioAutenticado = User?.Identity?.IsAuthenticated ?? false;
-    var mostrarPromosNav = popupPromociones.Count > 0;
-    var habilitarPopupAutomatico = !esUsuarioAutenticado && popupPromociones.Count > 0;
-    var popupConfig = Model.PopupPromocionesConfig ?? new SistemaControlEspaciosDeportivosWeb.ViewModels.PopupPromocionConfigViewModel();
-    var popupPromocionesVersion = popupPromociones.Count == 0
-        ? string.Empty
-        : string.Join("|", popupPromociones.Select(x => $"{x.IdPopupPromocion}:{x.Orden}:{x.Orientacion}:{(x.ImagenUrl ?? string.Empty)}"));
-    var whatsappAnunciosMensaje = Uri.EscapeDataString("Hola, quiero anunciar en SportCenter. �Podrian brindarme informacion sobre planes, alcance y condiciones para publicar mi anuncio?");
-    var whatsappHomeConfigurado = (Model.PortalConfig.SiguenosWhatsappUrl ?? string.Empty).Trim();
-    var whatsappAnunciosUrl = whatsappHomeConfigurado;
-    if (!string.IsNullOrWhiteSpace(whatsappHomeConfigurado))
-    {
-        var whatsappNumero = new string(whatsappHomeConfigurado.Where(char.IsDigit).ToArray());
-        if (!string.IsNullOrWhiteSpace(whatsappNumero))
-        {
-            whatsappAnunciosUrl = $"https://wa.me/{whatsappNumero}?text={whatsappAnunciosMensaje}";
-        }
-    }
-    if (Uri.TryCreate(whatsappHomeConfigurado, UriKind.Absolute, out var whatsappUriRobusta))
-    {
-        string? whatsappNumeroConfigurado = null;
-        var queryWhatsapp = whatsappUriRobusta.Query?.TrimStart('?') ?? string.Empty;
-        foreach (var part in queryWhatsapp.Split('&', StringSplitOptions.RemoveEmptyEntries))
-        {
-            var kv = part.Split('=', 2);
-            if (kv.Length == 2 && string.Equals(kv[0], "phone", StringComparison.OrdinalIgnoreCase))
-            {
-                whatsappNumeroConfigurado = new string(Uri.UnescapeDataString(kv[1]).Where(char.IsDigit).ToArray());
-                break;
-            }
-        }
-
-        if (string.IsNullOrWhiteSpace(whatsappNumeroConfigurado))
-        {
-            var pathNumeroWhatsapp = whatsappUriRobusta.AbsolutePath.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
-            if (!string.IsNullOrWhiteSpace(pathNumeroWhatsapp))
-            {
-                whatsappNumeroConfigurado = new string(pathNumeroWhatsapp.Where(char.IsDigit).ToArray());
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(whatsappNumeroConfigurado))
-        {
-            whatsappAnunciosUrl = $"https://wa.me/{whatsappNumeroConfigurado}?text={Uri.EscapeDataString("Hola, quiero anunciar en SportCenter. �Podr�an brindarme informaci�n sobre planes, alcance y condiciones para publicar mi anuncio?")}";
-        }
-    }
 }
 @section Styles {
     @if (!string.IsNullOrWhiteSpace(heroLcpDesktopUrl))
@@ -717,106 +669,6 @@
     </div>
 </section>
 
-@if (mostrarPromosNav)
-{
-    <div class="modal fade home-promos-modal" id="popupPromocionesModal" tabindex="-1" aria-labelledby="popupPromocionesLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content sc-modal-content home-promos-modal-content">
-                <div class="sc-modal-header home-promos-modal-header">
-                    <div class="sc-modal-title-wrap">
-                        <h2 class="sc-modal-title" id="popupPromocionesLabel">Anuncios y Promociones</h2>
-                        <p class="sc-modal-subtitle">Ofertas y campanas activas</p>
-                    </div>
-                    @if (!string.IsNullOrWhiteSpace(whatsappAnunciosUrl))
-                    {
-                        <a href="@whatsappAnunciosUrl"
-                           target="_blank"
-                           rel="noopener noreferrer"
-                           class="btn btn-success home-promos-header-cta">
-                            <i class="bi bi-whatsapp me-1"></i>Quiero anunciar
-                        </a>
-                    }
-                    <button type="button" class="btn-close sc-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body sc-modal-body px-0 pt-0">
-                    <div id="popupPromocionesCarousel" class="carousel slide" data-bs-touch="true">
-                        @if (popupConfig.MostrarIndicadores && popupPromociones.Count > 1)
-                        {
-                            <div class="carousel-indicators home-promos-indicators">
-                                @for (var idx = 0; idx < popupPromociones.Count; idx++)
-                                {
-                                    <button type="button"
-                                            data-bs-target="#popupPromocionesCarousel"
-                                            data-bs-slide-to="@idx"
-                                            class="@(idx == 0 ? "active" : null)"
-                                            aria-current="@(idx == 0 ? "true" : null)"
-                                            aria-label="Promocion @(idx + 1)"></button>
-                                }
-                            </div>
-                        }
-                        <div class="carousel-inner">
-                            @for (var idx = 0; idx < popupPromociones.Count; idx++)
-                            {
-                                var anuncio = popupPromociones[idx];
-                                // Antes: URL proxy por backend (mas latencia).
-                                // var imagenUrl = Url.Action("VerImagen", "Sedes", new { url = anuncio.ImagenUrl }) ?? string.Empty;
-                                var imagenUrl = SistemaControlEspaciosDeportivosWeb.Services.SedeImagenUrlHelper.NormalizarUrlPublica(
-                                    anuncio.ImagenUrl,
-                                    SedeImagenStorageOptions.Value.PublicBaseUrl,
-                                    SedeImagenStorageOptions.Value.BucketName) ?? string.Empty;
-                                var botonUrl = string.IsNullOrWhiteSpace(anuncio.UrlBoton) ? null : anuncio.UrlBoton;
-                                var imagenClickUrl = string.IsNullOrWhiteSpace(anuncio.UrlImagen) ? null : anuncio.UrlImagen;
-                                var target = anuncio.AbrirNuevaPestana ? "_blank" : "_self";
-                                var rel = anuncio.AbrirNuevaPestana ? "noopener noreferrer" : null;
-                                <div class="carousel-item @(idx == 0 ? "active" : null)">
-                                    <article class="home-promos-slide @(anuncio.EsHorizontal ? "home-promos-slide-horizontal" : "home-promos-slide-vertical")">
-                                        @if (!string.IsNullOrWhiteSpace(imagenClickUrl))
-                                        {
-                                            <a href="@imagenClickUrl" target="@target" rel="@rel" class="home-promos-media-link @(anuncio.EsHorizontal ? "home-promos-media-link-horizontal" : null)">
-                                                <img src="@imagenUrl" alt="@anuncio.Titulo" class="home-promos-image @(anuncio.EsHorizontal ? "home-promos-image-horizontal" : "home-promos-image-vertical")" width="@(anuncio.EsHorizontal ? "1280" : "800")" height="@(anuncio.EsHorizontal ? "720" : "1000")" />
-                                            </a>
-                                        }
-                                        else
-                                        {
-                                            <img src="@imagenUrl" alt="@anuncio.Titulo" class="home-promos-image @(anuncio.EsHorizontal ? "home-promos-image-horizontal" : "home-promos-image-vertical")" width="@(anuncio.EsHorizontal ? "1280" : "800")" height="@(anuncio.EsHorizontal ? "720" : "1000")" />
-                                        }
-                                        <div class="home-promos-copy">
-                                            <span class="home-promos-kicker">Anuncio activo</span>
-                                            @if (!string.IsNullOrWhiteSpace(anuncio.Subtitulo))
-                                            {
-                                                <div class="home-promos-subtitle">@anuncio.Subtitulo</div>
-                                            }
-                                            <h3>@anuncio.Titulo</h3>
-                                            @if (!string.IsNullOrWhiteSpace(anuncio.Descripcion))
-                                            {
-                                                <p>@anuncio.Descripcion</p>
-                                            }
-                                            @if (!string.IsNullOrWhiteSpace(botonUrl) && !string.IsNullOrWhiteSpace(anuncio.TextoBoton))
-                                            {
-                                                <a href="@botonUrl" target="@target" rel="@rel" class="btn btn-primary">
-                                                    @anuncio.TextoBoton
-                                                </a>
-                                            }
-                                        </div>
-                                    </article>
-                                </div>
-                            }
-                        </div>
-                        @if (popupConfig.MostrarFlechas && popupPromociones.Count > 1)
-                        {
-                            <button class="carousel-control-prev home-promos-control" type="button" data-bs-target="#popupPromocionesCarousel" data-bs-slide="prev" aria-label="Promocion anterior" title="Promocion anterior">
-                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                            </button>
-                            <button class="carousel-control-next home-promos-control" type="button" data-bs-target="#popupPromocionesCarousel" data-bs-slide="next" aria-label="Promocion siguiente" title="Promocion siguiente">
-                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                            </button>
-                        }
-                    </div>
-                </div>
-            </div>
-        </div>
-</div>
-}
 </div>
 
 <section class="home-platform-brand-strip">
@@ -894,83 +746,6 @@
 }
 
 @section Scripts {
-<script>
-(() => {
-    const popupPromocionesState = {
-        hasItems: @popupPromociones.Count,
-        isAuthenticated: @(esUsuarioAutenticado ? "true" : "false"),
-        autoOpen: @(habilitarPopupAutomatico && popupConfig.ActivarPopupAutomatico ? "true" : "false"),
-        delayMs: @(popupConfig.SegundosEsperaAntesDeMostrar * 1000),
-        autoplay: @(popupConfig.ActivarAutoplaySlider ? "true" : "false"),
-        autoplayMs: @popupConfig.VelocidadAutoplayMs,
-        version: '@popupPromocionesVersion'
-    };
-
-    if (!popupPromocionesState.hasItems) return;
-
-    const modalEl = document.getElementById('popupPromocionesModal');
-    const carouselEl = document.getElementById('popupPromocionesCarousel');
-    const openButtons = document.querySelectorAll('[data-popup-promociones-open]');
-    if (!modalEl || !carouselEl || !window.bootstrap) return;
-
-    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-    let carouselInstance = null;
-
-    function getCarousel() {
-        if (carouselInstance) return carouselInstance;
-        carouselInstance = bootstrap.Carousel.getOrCreateInstance(carouselEl, {
-            interval: popupPromocionesState.autoplay ? popupPromocionesState.autoplayMs : false,
-            ride: popupPromocionesState.autoplay ? 'carousel' : false,
-            pause: false,
-            wrap: true,
-            touch: true
-        });
-        if (!popupPromocionesState.autoplay) {
-            carouselInstance.pause();
-        } else {
-            carouselInstance.cycle();
-        }
-        return carouselInstance;
-    }
-
-    function openPopupPromociones() {
-        const carousel = getCarousel();
-        if (popupPromocionesState.autoplay) {
-            carousel.cycle();
-        }
-        modal.show();
-    }
-
-    openButtons.forEach(button => {
-        button.addEventListener('click', function () {
-            openPopupPromociones();
-        });
-    });
-
-    modalEl.addEventListener('hidden.bs.modal', function () {
-        if (carouselInstance) {
-            carouselInstance.pause();
-        }
-        if (popupPromocionesState.version) {
-            sessionStorage.setItem('popupPromocionesVisto', popupPromocionesState.version);
-        }
-    });
-
-    modalEl.addEventListener('shown.bs.modal', function () {
-        if (!carouselInstance) return;
-        if (popupPromocionesState.autoplay) {
-            carouselInstance.cycle();
-        } else {
-            carouselInstance.pause();
-        }
-    });
-
-    const popupPromocionesVistas = sessionStorage.getItem('popupPromocionesVisto') || '';
-    if (popupPromocionesState.autoOpen && popupPromocionesVistas !== popupPromocionesState.version) {
-        window.setTimeout(openPopupPromociones, popupPromocionesState.delayMs);
-    }
-})();
-</script>
 <script>
 (() => {
     const quoteCards = document.querySelectorAll('.js-home-price-quote');

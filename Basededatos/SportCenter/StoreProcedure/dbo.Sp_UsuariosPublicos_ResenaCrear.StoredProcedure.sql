@@ -1,4 +1,4 @@
-﻿
+
 GO
 SET ANSI_NULLS ON
 GO
@@ -10,6 +10,7 @@ GO
 -- Description:   Registra una sola resena por reserva publica cuando la reserva ya fue confirmada, pagada o completada.
 -- =============================================
 -- Firma:         FRANCO LARA - 08/06/2026 | Valida pertenencia de la reserva al usuario publico autenticado, asegura una sola reseña por reserva y guarda alias publico editable sin revelar el nombre real.
+-- Firma:         FRANCO LARA - 11/06/2026 | Toda nueva reseña nace activa y sin respuesta para permitir gestion posterior desde el panel del negocio.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_UsuariosPublicos_ResenaCrear]
     @UsuarioId NVARCHAR(450),
     @ReservaId INT,
@@ -63,6 +64,8 @@ BEGIN
             UsuarioId,
             AliasPublico,
             Comentario,
+            Activo,
+            Respuesta,
             FechaCreacion,
             UsuarioCreacion
         )
@@ -72,6 +75,8 @@ BEGIN
             @UsuarioId,
             COALESCE(@AliasPublicoNorm, N'@JugadorAnonimo'),
             @ComentarioNorm,
+            1,
+            NULL,
             SYSDATETIME(),
             @Usuario
         );

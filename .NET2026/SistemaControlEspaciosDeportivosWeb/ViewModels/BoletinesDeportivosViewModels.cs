@@ -43,6 +43,15 @@ public class BoletinDeportivoAdminItemViewModel : BoletinDeportivoUsuarioItemVie
     public string NombreAutor { get; set; } = string.Empty;
 }
 
+public class BoletinesDeportivosAdminResumenViewModel
+{
+    public int TotalBoletines { get; set; }
+    public int TotalActivos { get; set; }
+    public int TotalInactivos { get; set; }
+    public int TotalUsuarios { get; set; }
+    public int TotalPlataforma { get; set; }
+}
+
 public class BoletinDeportivoGuardarViewModel
 {
     public int? IdBoletin { get; set; }

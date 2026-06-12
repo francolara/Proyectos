@@ -171,6 +171,10 @@ public class BoletinesDeportivosAdminIndexViewModel : ModuloBaseViewModel
     public int TotalInactivos { get; set; }
     public int TotalUsuarios { get; set; }
     public int TotalPlataforma { get; set; }
+    public int Pagina { get; set; } = 1;
+    public int TamanoPagina { get; set; } = 5;
+    public int TotalRegistros { get; set; }
+    public int TotalPaginas { get; set; } = 1;
     public bool? SoloActivos { get; set; }
     public string? TipoRegistro { get; set; }
     public string? CodigoDepartamento { get; set; }

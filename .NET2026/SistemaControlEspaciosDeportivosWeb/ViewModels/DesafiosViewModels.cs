@@ -27,7 +27,9 @@ public class DesafioBusquedaViewModel
     [StringLength(4)]
     public string? CodigoProvincia { get; set; }
 
-    [Required(ErrorMessage = "Debes seleccionar un distrito para buscar rivales.")]
+    [StringLength(30)]
+    public string? Zona { get; set; }
+
     [StringLength(6)]
     public string? CodigoUbigeo { get; set; }
 
@@ -37,6 +39,7 @@ public class DesafioBusquedaViewModel
 
     public List<SelectListItem> Departamentos { get; set; } = new();
     public List<SelectListItem> Provincias { get; set; } = new();
+    public List<SelectListItem> Zonas { get; set; } = new();
     public List<SelectListItem> Distritos { get; set; } = new();
     public List<SelectListItem> Deportes { get; set; } = new();
     public List<SelectListItem> Niveles { get; set; } = new();

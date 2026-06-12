@@ -141,6 +141,8 @@ public class UsuarioPublicoResenaItemViewModel
     public int EspacioDeportivoId { get; set; }
     public string AliasPublico { get; set; } = string.Empty;
     public string Comentario { get; set; } = string.Empty;
+    public bool Activo { get; set; } = true;
+    public string? Respuesta { get; set; }
     public DateTime FechaCreacion { get; set; }
 }
 
@@ -170,4 +172,8 @@ public class PerfilPublicoIndexViewModel
     public int TamanoPaginaReservas { get; set; } = 6;
     public int TotalReservas { get; set; }
     public int TotalPaginasReservas { get; set; } = 1;
+    public int PaginaBoletines { get; set; } = 1;
+    public int TamanoPaginaBoletines { get; set; } = 5;
+    public int TotalBoletines { get; set; }
+    public int TotalPaginasBoletines { get; set; } = 1;
 }

@@ -22,6 +22,7 @@ public class BoletinesAdminController(
         string? zona = null,
         int? anio = null,
         int? mes = null,
+        int pagina = 1,
         int? editarId = null)
     {
         ViewData["PlatformShell"] = true;
@@ -34,6 +35,7 @@ public class BoletinesAdminController(
             zona,
             anio,
             mes,
+            pagina,
             editarId);
         return View(vm);
     }
@@ -73,12 +75,12 @@ public class BoletinesAdminController(
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError("Form.ImagenArchivo", $"No se pudo subir el flyer: {ex.Message}");
+                ModelState.AddModelError("Form.ImagenArchivo", $"No se pudo subir el boletin: {ex.Message}");
             }
         }
 
         if (string.IsNullOrWhiteSpace(vm.Form.ImagenUrl))
-            ModelState.AddModelError("Form.ImagenArchivo", "Debes cargar la imagen del flyer.");
+            ModelState.AddModelError("Form.ImagenArchivo", "Debes cargar la imagen del boletin.");
 
         if (!ModelState.IsValid)
         {
@@ -87,7 +89,7 @@ public class BoletinesAdminController(
 
             await CargarCombosFiltrosAsync(vm);
             await CargarCombosFormAsync(vm.Form);
-            vm.Boletines = await spService.BoletinesDeportivosAdminListarAsync(
+            var listado = await spService.BoletinesDeportivosAdminListarAsync(
                 vm.SoloActivos,
                 vm.TipoRegistro,
                 vm.CodigoDepartamento,
@@ -95,7 +97,14 @@ public class BoletinesAdminController(
                 vm.CodigoUbigeo,
                 vm.Zona,
                 vm.Anio,
-                vm.Mes);
+                vm.Mes,
+                vm.Pagina,
+                vm.TamanoPagina);
+            vm.Boletines = listado.Boletines;
+            vm.TotalRegistros = listado.TotalRegistros;
+            vm.TotalPaginas = vm.TotalRegistros > 0
+                ? (int)Math.Ceiling(vm.TotalRegistros / (double)vm.TamanoPagina)
+                : 1;
             vm.Error = "No se pudo guardar el boletin. Revisa los campos.";
             CompletarContexto(vm);
             return View(nameof(Index), vm);
@@ -116,7 +125,8 @@ public class BoletinesAdminController(
                 codigoUbigeo = vm.CodigoUbigeo,
                 zona = vm.Zona,
                 anio = vm.Anio,
-                mes = vm.Mes
+                mes = vm.Mes,
+                pagina = vm.Pagina
             });
         }
         catch (Exception ex)
@@ -126,7 +136,7 @@ public class BoletinesAdminController(
 
             await CargarCombosFiltrosAsync(vm);
             await CargarCombosFormAsync(vm.Form);
-            vm.Boletines = await spService.BoletinesDeportivosAdminListarAsync(
+            var listado = await spService.BoletinesDeportivosAdminListarAsync(
                 vm.SoloActivos,
                 vm.TipoRegistro,
                 vm.CodigoDepartamento,
@@ -134,7 +144,14 @@ public class BoletinesAdminController(
                 vm.CodigoUbigeo,
                 vm.Zona,
                 vm.Anio,
-                vm.Mes);
+                vm.Mes,
+                vm.Pagina,
+                vm.TamanoPagina);
+            vm.Boletines = listado.Boletines;
+            vm.TotalRegistros = listado.TotalRegistros;
+            vm.TotalPaginas = vm.TotalRegistros > 0
+                ? (int)Math.Ceiling(vm.TotalRegistros / (double)vm.TamanoPagina)
+                : 1;
             vm.Error = ex.Message;
             CompletarContexto(vm);
             return View(nameof(Index), vm);
@@ -145,7 +162,7 @@ public class BoletinesAdminController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CambiarEstado(
         int idBoletin,
-        bool activo,
+        int activo,
         bool? soloActivos = null,
         string? tipoRegistro = null,
         string? codigoDepartamento = null,
@@ -153,14 +170,16 @@ public class BoletinesAdminController(
         string? codigoUbigeo = null,
         string? zona = null,
         int? anio = null,
-        int? mes = null)
+        int? mes = null,
+        int pagina = 1)
     {
         ViewData["PlatformShell"] = true;
+        var activar = activo == 1;
 
         try
         {
-            await spService.BoletinesDeportivosCambiarEstadoAsync(idBoletin, activo, User.Identity?.Name ?? "owner-platform");
-            TempData["BoletinesAdminOk"] = activo
+            var estadoActual = await spService.BoletinesDeportivosCambiarEstadoAsync(idBoletin, activar, User.Identity?.Name ?? "owner-platform");
+            TempData["BoletinesAdminOk"] = estadoActual
                 ? "Boletin activado correctamente."
                 : "Boletin desactivado correctamente.";
         }
@@ -178,7 +197,8 @@ public class BoletinesAdminController(
             codigoUbigeo = NormalizarCodigo(codigoUbigeo),
             zona = NormalizarTexto(zona),
             anio,
-            mes
+            mes,
+            pagina
         });
     }
 
@@ -191,16 +211,18 @@ public class BoletinesAdminController(
         string? zona,
         int? anio,
         int? mes,
+        int pagina,
         int? editarId)
     {
-        var boletinesResumen = await spService.BoletinesDeportivosAdminListarAsync();
+        var resumen = await spService.BoletinesDeportivosAdminResumenAsync();
         var vm = new BoletinesDeportivosAdminIndexViewModel
         {
-            TotalBoletines = boletinesResumen.Count,
-            TotalActivos = boletinesResumen.Count(x => x.Activo),
-            TotalInactivos = boletinesResumen.Count(x => !x.Activo),
-            TotalUsuarios = boletinesResumen.Count(x => string.Equals(x.TipoRegistro, "U", StringComparison.OrdinalIgnoreCase)),
-            TotalPlataforma = boletinesResumen.Count(x => string.Equals(x.TipoRegistro, "A", StringComparison.OrdinalIgnoreCase)),
+            TotalBoletines = resumen.TotalBoletines,
+            TotalActivos = resumen.TotalActivos,
+            TotalInactivos = resumen.TotalInactivos,
+            TotalUsuarios = resumen.TotalUsuarios,
+            TotalPlataforma = resumen.TotalPlataforma,
+            Pagina = pagina < 1 ? 1 : pagina,
             SoloActivos = soloActivos,
             TipoRegistro = NormalizarTipoRegistro(tipoRegistro),
             CodigoDepartamento = NormalizarCodigo(codigoDepartamento),
@@ -213,7 +235,7 @@ public class BoletinesAdminController(
             Error = TempData["BoletinesAdminError"]?.ToString()
         };
 
-        vm.Boletines = await spService.BoletinesDeportivosAdminListarAsync(
+        var listado = await spService.BoletinesDeportivosAdminListarAsync(
             vm.SoloActivos,
             vm.TipoRegistro,
             vm.CodigoDepartamento,
@@ -221,7 +243,30 @@ public class BoletinesAdminController(
             vm.CodigoUbigeo,
             vm.Zona,
             vm.Anio,
-            vm.Mes);
+            vm.Mes,
+            vm.Pagina,
+            vm.TamanoPagina);
+        vm.Boletines = listado.Boletines;
+        vm.TotalRegistros = listado.TotalRegistros;
+        vm.TotalPaginas = vm.TotalRegistros > 0
+            ? (int)Math.Ceiling(vm.TotalRegistros / (double)vm.TamanoPagina)
+            : 1;
+        if (vm.Pagina > vm.TotalPaginas)
+        {
+            vm.Pagina = vm.TotalPaginas;
+            listado = await spService.BoletinesDeportivosAdminListarAsync(
+                vm.SoloActivos,
+                vm.TipoRegistro,
+                vm.CodigoDepartamento,
+                vm.CodigoProvincia,
+                vm.CodigoUbigeo,
+                vm.Zona,
+                vm.Anio,
+                vm.Mes,
+                vm.Pagina,
+                vm.TamanoPagina);
+            vm.Boletines = listado.Boletines;
+        }
 
         var form = new BoletinDeportivoGuardarViewModel
         {

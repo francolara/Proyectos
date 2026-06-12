@@ -122,7 +122,7 @@ public partial class SportCenterStoredProcedureService
                 PuedeRegistrarResena = dr.FieldCount > 19 && !dr.IsDBNull(19) && ReadBool(dr, 19)
             };
 
-            if (dr.FieldCount > 23 && !dr.IsDBNull(20))
+            if (dr.FieldCount > 25 && !dr.IsDBNull(20))
             {
                 item.Resena = new UsuarioPublicoResenaItemViewModel
                 {
@@ -130,7 +130,9 @@ public partial class SportCenterStoredProcedureService
                     ReservaId = item.ReservaId,
                     AliasPublico = dr.IsDBNull(21) ? string.Empty : dr.GetString(21),
                     Comentario = dr.IsDBNull(22) ? string.Empty : dr.GetString(22),
-                    FechaCreacion = dr.IsDBNull(23) ? DateTime.MinValue : dr.GetDateTime(23)
+                    FechaCreacion = dr.IsDBNull(23) ? DateTime.MinValue : dr.GetDateTime(23),
+                    Activo = dr.FieldCount > 24 && !dr.IsDBNull(24) && ReadBool(dr, 24),
+                    Respuesta = dr.FieldCount > 25 && !dr.IsDBNull(25) ? dr.GetString(25) : null
                 };
             }
 
@@ -208,7 +210,9 @@ public partial class SportCenterStoredProcedureService
                 EspacioDeportivoId = dr.GetInt32(2),
                 AliasPublico = dr.IsDBNull(3) ? string.Empty : dr.GetString(3),
                 Comentario = dr.IsDBNull(4) ? string.Empty : dr.GetString(4),
-                FechaCreacion = dr.GetDateTime(5)
+                Respuesta = dr.FieldCount > 6 && !dr.IsDBNull(6) ? dr.GetString(6) : null,
+                FechaCreacion = dr.GetDateTime(5),
+                Activo = true
             });
         }
 

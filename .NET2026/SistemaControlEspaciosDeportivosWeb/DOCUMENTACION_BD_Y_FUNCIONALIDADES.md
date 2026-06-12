@@ -13,6 +13,16 @@
 - `Sp_BoletinesDeportivos_Guardar` limita la publicacion de usuarios publicos a **una carga semanal** y deja bypass administrativo para el panel super admin.
 - Se dejan listos los SP de consulta publica, detalle, listado por usuario, listado admin y cambio de estado para continuar con las siguientes fases de UI.
 
+## Actualizacion 11/06/2026
+- `Sp_Ubigeo_Distritos_Listar` ahora admite `@Zona` opcional para filtrar distritos dentro de una provincia sin afectar los llamados actuales que solo envian provincia.
+- `Sp_Desafios_BuscarRivales` ahora permite buscar rivales por `Distrito` o por `Zona`, manteniendo deporte y nivel como filtros complementarios.
+- El modulo `Desafios` agrega filtro `Zona` en `Buscar rival` y deja de obligar `Distrito` cuando ya se selecciono una zona valida.
+- `Perfil publico > Datos personales` solo muestra el resumen rojo de validaciones cuando realmente existe algun error del formulario.
+- `ReservasUsuariosPublicosResenas` agrega `Activo` y `Respuesta` para moderacion administrativa sin eliminar el historial de comentarios.
+- `Espacios` agrega la pantalla `Reseñas` por espacio para responder comentarios y ocultarlos de la vista publica cuando corresponda.
+- `Sp_Home_EspacioResenasListar` solo devuelve reseñas activas y ahora expone la respuesta del negocio para la reserva publica.
+- Nuevos SP `Sp_Espacios_ResenasListar` y `Sp_Espacios_ResenaGestionar` centralizan la gestion administrativa de reseñas desde el panel del negocio.
+
 ## Capa ADO.NET implementada
 - Interfaz: `Services/ISportCenterStoredProcedureService.cs`
 - Implementacion parcial:
@@ -74,6 +84,8 @@
 - Actualizacion 09/06/2026:
   - `Sp_Home_ListarSedesPublicas` solo expone sedes de negocios con `EstadoSuscripcion IN (1, 2)`, por lo que los negocios pendientes, vencidos o suspendidos dejan de aparecer en el filtro `Complejo deportivo` del home.
   - `Sp_Home_BuscarEspaciosDisponibles` aplica el mismo criterio publico para que no se muestren tarjetas ni resultados directos de espacios pertenecientes a negocios pendientes, vencidos o suspendidos.
+- Actualizacion 11/06/2026:
+  - `Sp_Home_EspacioResenasListar` filtra `Activo = 1` en `ReservasUsuariosPublicosResenas` y retorna `Respuesta` para mostrar la replica del negocio junto a la reseña publica.
 - `Sp_Home_ListarBannersPublicos`
 
 ### 02A_Ubigeo_Boletines.sql
@@ -88,12 +100,16 @@
 - `Sp_BoletinesDeportivos_ListarPorUsuario`
 - `Sp_BoletinesDeportivos_ObtenerPorId`
 - `Sp_BoletinesDeportivos_AdminListar`
+- `Sp_BoletinesDeportivos_AdminResumen`
 - `Sp_BoletinesDeportivos_CambiarEstado`
 - Reglas funcionales base:
   - Usuarios publicos registrados pueden crear boletines deportivos con un limite de **una carga por semana**.
   - Super admin puede registrar boletines sin restriccion semanal.
   - Todo boletin se asocia a un distrito (`CodigoUbigeo`) y la zona se resuelve desde `UbigeoDistritos.Zona`.
   - El filtro temporal se apoya en `FechaEvento` para exponer por anio y mes en el home publico.
+  - El listado del super admin pagina desde SQL Server en bloques de 5 registros, devolviendo total filtrado para la navegacion sin cargar todo el universo en memoria.
+  - El listado `Mis boletines` del perfil publico tambien pagina desde SQL Server en bloques de 5 registros por usuario autenticado.
+  - El detalle publico solo bloquea boletines inactivos para visitantes; el super admin y el autor del boletin pueden abrirlos como vista interna de revision.
 
 ### 03_Sedes_Espacios.sql
 - `Sp_Combos_Sedes`
@@ -109,6 +125,10 @@
 - `Sp_Espacios_Crear`
 - `Sp_Espacios_Actualizar`
 - `Sp_Espacios_Eliminar`
+- `Sp_Espacios_ResenasListar`
+- `Sp_Espacios_ResenaGestionar`
+- Actualizacion 11/06/2026:
+  - `Sp_Espacios_ResenasListar` ahora pagina desde SQL Server con `@Pagina/@TamanoPagina` y devuelve `@TotalRegistros`, `@TotalVisibles`, `@TotalOcultas` y `@TotalRespondidas` para mantener los KPI del modulo.
 - Actualizacion 06/06/2026:
   - Nueva tabla `EspaciosDeportivosCompartidos` para registrar relaciones activas entre espacios de la misma sede con persistencia bidireccional.
   - `Sp_Combos_EspaciosCompartibles` devuelve espacios activos de la sede actual para el selector multiple de espacios relacionados, excluyendo el propio espacio en edicion.
@@ -149,6 +169,10 @@
 - Actualizacion 03/05/2026:
   - `Sp_Reservas_Crear` aplica primero descuento de cupon sobre el total base y luego evalua `@Adelanto`/estado automatico con el total final.
   - Con esto, si el adelanto cubre el 100% del total ya descontado por cupon, la reserva pasa a `Pagada` (estado `4`).
+- Actualizacion 11/06/2026:
+  - Tabla `ReservasUsuariosPublicosResenas` agrega `Activo` y `Respuesta` para moderacion y respuesta del negocio.
+  - `Sp_UsuariosPublicos_ReservasListar` devuelve `ResenaActivo` y `ResenaRespuesta` para que el perfil publico muestre el estado visible y la respuesta administrativa.
+  - `Sp_UsuariosPublicos_ResenaCrear` registra toda nueva reseña como activa (`Activo = 1`) y sin respuesta inicial.
 - `Sp_Reservas_Actualizar`
 - `Sp_Reservas_Eliminar`
 - `Sp_Reservas_Eliminar` valida `@NegocioId` por join con `Sedes` y devuelve error si no encuentra la reserva.
@@ -346,6 +370,9 @@
   - `Sp_WebBanners_Guardar` permite registrar banners con `Titulo` vacio, manteniendo la tabla sin cambios estructurales.
   - Home publico renderiza el encabezado del banner solo cuando `Titulo` contiene texto real, evitando que aparezcan valores tecnicos o de relleno.
   - El panel administrativo muestra `Titulo (opcional)` y usa `(Sin titulo)` como referencia interna en el listado cuando el valor se guarda vacio.
+- Actualizacion 11/06/2026:
+  - `Sp_Home_ListarBannersPublicos` ahora solo devuelve banners de `TipoBanner=Home publico` cuando estan `Activos` y la fecha actual cae dentro de `FechaInicio`/`FechaFin`.
+  - Con esto el carrusel del home respeta la vigencia configurada en el registro del banner, sin depender de filtros adicionales en la vista.
 
 ### 39_Popup_Promociones_Publicas.sql
 - Tabla:

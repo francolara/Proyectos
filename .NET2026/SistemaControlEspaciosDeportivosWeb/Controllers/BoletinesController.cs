@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
+using System.Security.Claims;
 
 namespace SistemaControlEspaciosDeportivosWeb.Controllers;
 
@@ -49,7 +50,15 @@ public class BoletinesController(ISportCenterStoredProcedureService spService) :
     {
         ViewData["PublicFullWidth"] = true;
         var boletin = await spService.BoletinesDeportivosObtenerPorIdAsync(id);
-        if (boletin is null || !boletin.Activo)
+        if (boletin is null)
+            return NotFound();
+
+        var usuarioActualId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var puedeVerInactivo = User.IsInRole("OwnerPlataforma")
+                               || (!string.IsNullOrWhiteSpace(usuarioActualId)
+                                   && string.Equals(usuarioActualId, boletin.UsuarioId, StringComparison.OrdinalIgnoreCase));
+
+        if (!boletin.Activo && !puedeVerInactivo)
             return NotFound();
 
         return View(boletin);

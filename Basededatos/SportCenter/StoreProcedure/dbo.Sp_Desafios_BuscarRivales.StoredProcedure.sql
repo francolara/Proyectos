@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿
 GO
 SET ANSI_NULLS ON
 GO
@@ -24,9 +24,11 @@ GO
 -- Create date:   11/05/2026
 -- Description:   Usa TiposDeporteSuperMaestro como fuente de deporte publico para evitar dependencias con catalogo por negocio.
 -- =============================================
+-- Firma: FRANCO LARA - 11/06/2026 | La busqueda de desafios ahora permite filtrar por distrito o por zona desde el perfil publico, manteniendo deporte y nivel como filtros complementarios.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Desafios_BuscarRivales]
     @UsuarioId NVARCHAR(450),
-    @CodigoUbigeo CHAR(6),
+    @CodigoUbigeo CHAR(6) = NULL,
+    @Zona NVARCHAR(30) = NULL,
     @IdDeporte INT = NULL,
     @IdNivel INT = NULL
 AS
@@ -35,9 +37,10 @@ BEGIN
 
     BEGIN TRY
         DECLARE @CodigoUbigeoNorm CHAR(6) = NULLIF(LTRIM(RTRIM(@CodigoUbigeo)), '');
+        DECLARE @ZonaNorm NVARCHAR(30) = NULLIF(LTRIM(RTRIM(@Zona)), N'');
 
-        IF @CodigoUbigeoNorm IS NULL
-            RAISERROR('Debes seleccionar un distrito para buscar rivales.', 16, 1);
+        IF @CodigoUbigeoNorm IS NULL AND @ZonaNorm IS NULL
+            RAISERROR('Debes seleccionar una zona o un distrito para buscar rivales.', 16, 1);
 
         SELECT
             p.Id,
@@ -66,7 +69,10 @@ BEGIN
             ON nd.IdNivel = p.IdNivelDesafio
         WHERE p.BuscarDesafios = 1
           AND p.UsuarioId <> @UsuarioId
-          AND p.CodigoUbigeoEquipo = @CodigoUbigeoNorm
+          AND (
+                (@CodigoUbigeoNorm IS NOT NULL AND p.CodigoUbigeoEquipo = @CodigoUbigeoNorm)
+                OR (@CodigoUbigeoNorm IS NULL AND @ZonaNorm IS NOT NULL AND ISNULL(ud.Zona, N'') = @ZonaNorm)
+              )
           AND (@IdDeporte IS NULL OR p.IdDeporteDesafio = @IdDeporte)
           AND (@IdNivel IS NULL OR p.IdNivelDesafio = @IdNivel)
         ORDER BY NombreEquipo, tsm.Nombre, nd.Orden;

@@ -135,6 +135,54 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
         return View(vm);
     }
 
+    public async Task<IActionResult> Resenas(int id, int? negocioId, int pagina = 1)
+    {
+        var resolvedNegocioId = await ResolverNegocioIdAsync(negocioId, spService);
+        if (!resolvedNegocioId.HasValue) return Forbid();
+
+        var baseVm = await ObtenerBaseAsync(resolvedNegocioId.Value, "ESPACIOS");
+        if (baseVm is null || !baseVm.PuedeEditar) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
+
+        var espacio = await spService.EspaciosObtenerAsync(resolvedNegocioId.Value, id);
+        if (espacio is null) return NotFound();
+        if (!SedePermitida(baseVm, espacio.SedeId))
+            return Forbid();
+
+        const int tamanoPagina = 4;
+        var (resenas, totalRegistros, totalVisibles, totalOcultas, totalRespondidas) =
+            await spService.EspaciosResenasListarAsync(resolvedNegocioId.Value, id, pagina, tamanoPagina);
+        var paginaActual = pagina <= 0 ? 1 : pagina;
+        var totalPaginas = Math.Max(1, (int)Math.Ceiling(totalRegistros / (double)tamanoPagina));
+        if (paginaActual > totalPaginas)
+            paginaActual = totalPaginas;
+
+        var vm = new EspaciosResenasIndexViewModel
+        {
+            NegocioId = baseVm.NegocioId,
+            NegocioNombre = baseVm.NegocioNombre,
+            RolActual = baseVm.RolActual,
+            SedeIdAsignada = baseVm.SedeIdAsignada,
+            EsAdministrador = baseVm.EsAdministrador,
+            ModuloCodigo = baseVm.ModuloCodigo,
+            ModuloNombre = baseVm.ModuloNombre,
+            PuedeCrear = baseVm.PuedeCrear,
+            PuedeEditar = baseVm.PuedeEditar,
+            PuedeEliminar = baseVm.PuedeEliminar,
+            EspacioDeportivoId = espacio.Id,
+            EspacioNombre = espacio.Nombre,
+            SedeNombre = resenas.FirstOrDefault()?.SedeNombre ?? string.Empty,
+            Pagina = paginaActual,
+            TamanoPagina = tamanoPagina,
+            TotalRegistros = totalRegistros,
+            TotalPaginas = totalPaginas,
+            TotalVisibles = totalVisibles,
+            TotalOcultas = totalOcultas,
+            TotalRespondidas = totalRespondidas,
+            Resenas = resenas
+        };
+        return View(vm);
+    }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(EspacioFormViewModel model)
@@ -187,6 +235,39 @@ public class EspaciosController(IModuloPermisoService moduloPermisoService, ISpo
             await sedeImagenStorageService.DeleteSedeImagenesAsync(urlsEliminar, HttpContext.RequestAborted);
 
         return RedirectToAction(nameof(Index), new { negocioId = model.NegocioId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResenaGuardar(EspacioResenaGestionViewModel model)
+    {
+        var baseVm = await ObtenerBaseAsync(model.NegocioId, "ESPACIOS");
+        if (baseVm is null || !baseVm.PuedeEditar) return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "No autorizado." });
+
+        var espacio = await spService.EspaciosObtenerAsync(model.NegocioId, model.EspacioDeportivoId);
+        if (espacio is null) return NotFound();
+        if (!SedePermitida(baseVm, espacio.SedeId))
+            return Forbid();
+
+        if (!ModelState.IsValid)
+        {
+            TempData["EspaciosError"] = ObtenerPrimerErrorModelState() ?? "No se pudo actualizar la resena.";
+            return RedirectToAction(nameof(Resenas), new { id = model.EspacioDeportivoId, negocioId = model.NegocioId, pagina = model.Pagina });
+        }
+
+        try
+        {
+            await spService.EspaciosResenaGestionarAsync(model, User.Identity?.Name ?? "sistema");
+            TempData["EspaciosOk"] = model.Activo
+                ? "Resena actualizada correctamente."
+                : "Resena oculta de la vista publica correctamente.";
+        }
+        catch (SqlException ex)
+        {
+            TempData["EspaciosError"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Resenas), new { id = model.EspacioDeportivoId, negocioId = model.NegocioId, pagina = model.Pagina });
     }
 
     [HttpPost]

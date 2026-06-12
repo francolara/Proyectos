@@ -37,9 +37,17 @@
             <i class="bi bi-calendar2-check"></i>
             <span>Mis reservas</span>
         </a>
+        <a class="profile-tab-item" asp-controller="PerfilPublico" asp-action="Index" asp-route-tab="boletines" asp-route-paginaBoletines="1">
+            <i class="bi bi-megaphone"></i>
+            <span>Mis boletines</span>
+        </a>
         <a class="profile-tab-item is-active" asp-action="Index">
             <i class="bi bi-trophy"></i>
             <span>Desafios</span>
+        </a>
+        <a class="profile-tab-item" asp-controller="PerfilPublico" asp-action="FaqUsuario">
+            <i class="bi bi-patch-question"></i>
+            <span>FAQ usuario</span>
         </a>
     </nav>
 
@@ -64,10 +72,11 @@
         <div class="section-title-row">
             <div>
                 <span class="section-chip section-chip-lg"><i class="bi bi-search-heart"></i>Buscar rival</span>
-                <p class="text-muted mb-0">La busqueda siempre exige distrito. No se muestran equipos sin filtro geografico.</p>
+                <p class="text-muted mb-0">La busqueda exige zona o distrito. No se muestran equipos sin filtro geografico.</p>
             </div>
         </div>
 
+@* Firma: FRANCO LARA - 11/06/2026 | Se restablecen todas las pestanas del perfil dentro del modulo Desafios, se agrega filtro de Zona en Buscar rival para permitir busqueda por zona o distrito, se preserva la zona al abrir el modal y el footer del popup queda fijo para no perder las acciones finales. *@
         <form asp-action="BuscarRivales" method="post">
             @Html.AntiForgeryToken()
             <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
@@ -85,19 +94,25 @@
                     </select>
                 </div>
                 <div class="col-md-4">
+                    <label class="form-label">Zona</label>
+                    <select asp-for="Filtros.Zona" asp-items="Model.Filtros.Zonas" class="form-select" id="BusquedaZona">
+                        <option value="">Todas</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
                     <label class="form-label">Distrito</label>
                     <select asp-for="Filtros.CodigoUbigeo" asp-items="Model.Filtros.Distritos" class="form-select" id="BusquedaCodigoUbigeo">
                         <option value="">Selecciona</option>
                     </select>
                     <span asp-validation-for="Filtros.CodigoUbigeo" class="text-danger"></span>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label class="form-label">Deporte</label>
                     <select asp-for="Filtros.IdDeporte" asp-items="Model.Filtros.Deportes" class="form-select">
                         <option value="">Todos</option>
                     </select>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label class="form-label">Nivel</label>
                     <select asp-for="Filtros.IdNivel" asp-items="Model.Filtros.Niveles" class="form-select">
                         <option value="">Todos</option>
@@ -737,6 +752,7 @@
                 @Html.AntiForgeryToken()
                 <input type="hidden" asp-for="Filtros.CodigoDepartamento" />
                 <input type="hidden" asp-for="Filtros.CodigoProvincia" />
+                <input type="hidden" asp-for="Filtros.Zona" />
                 <input type="hidden" asp-for="Filtros.CodigoUbigeo" />
                 <input type="hidden" asp-for="Filtros.IdDeporte" />
                 <input type="hidden" asp-for="Filtros.IdNivel" />
@@ -826,9 +842,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
-                    <button type="submit" class="btn btn-primary">Enviar desafio</button>
+                <div class="modal-footer sc-modal-footer">
+                    <button type="button" class="auth-nav-mini auth-nav-mini-outline" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="submit" class="auth-nav-mini auth-nav-mini-solid">Enviar desafio</button>
                 </div>
             </form>
         </div>
@@ -1592,6 +1608,31 @@
         .desafio-modal-rival small {
             color: #60779d;
         }
+        .sc-modal-content {
+            max-height: min(90vh, 920px);
+            overflow: hidden;
+        }
+        .sc-modal-body {
+            overflow-y: auto;
+            max-height: calc(min(90vh, 920px) - 148px);
+            padding-bottom: 1rem;
+        }
+        .sc-modal-footer {
+            position: sticky;
+            bottom: 0;
+            z-index: 2;
+            display: flex;
+            justify-content: flex-end;
+            gap: .75rem;
+            padding: .9rem 1.25rem 1.1rem;
+            border-top: 1px solid #d7e4fa;
+            background: linear-gradient(180deg, rgba(248, 251, 255, .94) 0%, #ffffff 100%);
+            box-shadow: 0 -10px 24px rgba(15, 41, 82, .08);
+        }
+        .sc-modal-footer .auth-nav-mini {
+            min-width: 132px;
+            justify-content: center;
+        }
         .section-chip {
             display: inline-flex;
             align-items: center;
@@ -1752,10 +1793,36 @@
                 ordenarHistorial();
             }
 
+            const zona = document.getElementById('BusquedaZona');
+
+            async function cargarZonasBusqueda(codigoDepartamento, codigoProvincia, selectedZona) {
+                if (!zona) return;
+                renderOptions(zona, [], 'Todas');
+                if (!codigoDepartamento && !codigoProvincia) return;
+                const params = new URLSearchParams();
+                if (codigoDepartamento) params.set('codigoDepartamento', codigoDepartamento);
+                if (codigoProvincia) params.set('codigoProvincia', codigoProvincia);
+                const resp = await fetch(`@Url.Action("UbigeoZonas", "Home")?${params.toString()}`, { cache: 'no-store' });
+                if (!resp.ok) return;
+                renderOptions(zona, await resp.json(), 'Todas');
+                if (selectedZona) zona.value = selectedZona;
+            }
+
+            async function cargarDistritosBusqueda(codigoProvincia, zonaSeleccionada) {
+                renderOptions(dist, [], 'Selecciona');
+                if (!codigoProvincia || codigoProvincia.length !== 4) return;
+                const params = new URLSearchParams({ codigoProvincia });
+                if (zonaSeleccionada) params.set('zona', zonaSeleccionada);
+                const resp = await fetch(`@Url.Action("UbigeoDistritos", "Home")?${params.toString()}`, { cache: 'no-store' });
+                if (!resp.ok) return;
+                renderOptions(dist, await resp.json(), 'Selecciona');
+            }
+
             if (dep && prov && dist) {
                 dep.addEventListener('change', async () => {
                     const codigo = (dep.value || '').trim();
                     renderOptions(prov, [], 'Selecciona');
+                    if (zona) renderOptions(zona, [], 'Todas');
                     renderOptions(dist, [], 'Selecciona');
                     if (codigo.length !== 2) return;
                     const resp = await fetch(`@Url.Action("UbigeoProvincias", "Home")?codigoDepartamento=${encodeURIComponent(codigo)}`, { cache: 'no-store' });
@@ -1765,12 +1832,24 @@
 
                 prov.addEventListener('change', async () => {
                     const codigo = (prov.value || '').trim();
-                    renderOptions(dist, [], 'Selecciona');
-                    if (codigo.length !== 4) return;
-                    const resp = await fetch(`@Url.Action("UbigeoDistritos", "Home")?codigoProvincia=${encodeURIComponent(codigo)}`, { cache: 'no-store' });
-                    if (!resp.ok) return;
-                    renderOptions(dist, await resp.json(), 'Selecciona');
+                    await cargarZonasBusqueda((dep.value || '').trim(), codigo, null);
+                    await cargarDistritosBusqueda(codigo, null);
                 });
+
+                if (zona) {
+                    zona.addEventListener('change', async () => {
+                        await cargarDistritosBusqueda((prov.value || '').trim(), (zona.value || '').trim());
+                    });
+                }
+
+                if ((prov.value || '').trim()) {
+                    cargarZonasBusqueda((dep.value || '').trim(), (prov.value || '').trim(), '@(Model.Filtros.Zona ?? string.Empty)')
+                        .then(() => cargarDistritosBusqueda((prov.value || '').trim(), '@(Model.Filtros.Zona ?? string.Empty)'))
+                        .then(() => {
+                            const selected = '@(Model.Filtros.CodigoUbigeo ?? string.Empty)';
+                            if (selected) dist.value = selected;
+                        });
+                }
             }
 
             const modalEl = document.getElementById('crearDesafioModal');

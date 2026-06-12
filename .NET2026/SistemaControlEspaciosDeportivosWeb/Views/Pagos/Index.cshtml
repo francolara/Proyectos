@@ -143,14 +143,15 @@
                         </tr>
                     </thead>
                     <tbody>
+                        @* Firma Codex 11/06/2026: se retiran iconos por fila en el listado de pagos para mejorar legibilidad. *@
                         @foreach (var item in Model.Pagos)
                         {
                             <tr>
                                 <td class="text-center"><span class="sc-id-chip">@item.ReservaCodigo</span></td>
-                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center"><i class="bi bi-geo-alt"></i><span>@item.Sede</span></span></td>
-                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center"><i class="bi bi-grid-3x3-gap"></i><span>@item.Espacio</span></span></td>
-                                <td><span class="sc-list-mini-card"><i class="bi bi-person"></i><span>@item.Cliente</span></span></td>
-                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center"><i class="bi bi-calendar-event"></i><span>@item.Fecha.ToString("dd/MM/yyyy")</span></span></td>
+                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center"><span>@item.Sede</span></span></td>
+                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center"><span>@item.Espacio</span></span></td>
+                                <td><span class="sc-list-mini-card"><span>@item.Cliente</span></span></td>
+                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center"><span>@item.Fecha.ToString("dd/MM/yyyy")</span></span></td>
                                 <td class="text-start">
                                     @if (string.IsNullOrWhiteSpace(item.Referencia))
                                     {
@@ -158,13 +159,13 @@
                                     }
                                     else
                                     {
-                                        <span class="sc-list-mini-card"><i class="bi bi-link-45deg"></i><span>@item.Referencia</span></span>
+                                        <span class="sc-list-mini-card"><span>@item.Referencia</span></span>
                                     }
                                 </td>
-                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center sc-list-mini-card-amount"><i class="bi bi-cash-stack"></i><span>@item.MontoTotal.ToString("N2")</span></span></td>
-                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center sc-list-mini-card-amount"><i class="bi bi-credit-card"></i><span>@(Math.Max(0m, item.MontoTotal - item.SaldoPendiente).ToString("N2"))</span></span></td>
-                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center sc-list-mini-card-amount"><i class="bi bi-cash-coin"></i><span>@item.SaldoPendiente.ToString("N2")</span></span></td>
-                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center"><i class="bi bi-wallet2"></i><span>@item.FormaPagoResumen</span></span></td>
+                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center sc-list-mini-card-amount"><span>@item.MontoTotal.ToString("N2")</span></span></td>
+                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center sc-list-mini-card-amount"><span>@(Math.Max(0m, item.MontoTotal - item.SaldoPendiente).ToString("N2"))</span></span></td>
+                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center sc-list-mini-card-amount"><span>@item.SaldoPendiente.ToString("N2")</span></span></td>
+                                <td class="text-center"><span class="sc-list-mini-card sc-list-mini-card-center"><span>@item.FormaPagoResumen</span></span></td>
                                 <td class="text-end">
                                     @if (Model.EmisionComprobantesElectronicos && item.PagadaCompleta && !item.TieneComprobanteActivo)
                                     {

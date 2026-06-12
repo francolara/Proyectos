@@ -36,13 +36,14 @@ public partial class SportCenterStoredProcedureService
         return list;
     }
 
-    public async Task<List<SelectListItem>> UbigeoDistritosListarAsync(string codigoProvincia)
+    public async Task<List<SelectListItem>> UbigeoDistritosListarAsync(string codigoProvincia, string? zona = null)
     {
         var list = new List<SelectListItem>();
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_Ubigeo_Distritos_Listar", cn) { CommandType = CommandType.StoredProcedure };
         AddParam(cmd, "@CodigoProvincia", codigoProvincia, SqlDbType.Char);
+        AddParam(cmd, "@Zona", string.IsNullOrWhiteSpace(zona) ? null : zona.Trim(), SqlDbType.NVarChar);
         await using var dr = await cmd.ExecuteReaderAsync();
         while (await dr.ReadAsync())
         {
