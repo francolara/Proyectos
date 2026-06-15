@@ -275,6 +275,19 @@ else
 }
 
 app.UseHttpsRedirection();
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path.Value ?? string.Empty;
+    if (path.Equals("/Home", StringComparison.OrdinalIgnoreCase)
+        || path.Equals("/Home/Index", StringComparison.OrdinalIgnoreCase))
+    {
+        var destino = "/" + context.Request.QueryString;
+        context.Response.Redirect(destino, permanent: true);
+        return;
+    }
+
+    await next();
+});
 app.UseRequestLocalization(localizationOptions);
 app.UseRouting();
 app.UseCookiePolicy();

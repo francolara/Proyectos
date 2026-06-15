@@ -685,34 +685,6 @@ public partial class SportCenterStoredProcedureService(IConfiguration configurat
         return Convert.ToInt32(result);
     }
 
-    public async Task<SolicitudPublicaDetalleViewModel?> HomeConsultarSolicitudAsync(string codigoSolicitud, string telefono)
-    {
-        await using var cn = CreateConnection();
-        await cn.OpenAsync();
-        await using var cmd = new SqlCommand("Sp_Home_ConsultarSolicitudPublica", cn) { CommandType = CommandType.StoredProcedure };
-        AddParam(cmd, "@CodigoSolicitud", codigoSolicitud, SqlDbType.NVarChar);
-        AddParam(cmd, "@Telefono", telefono, SqlDbType.NVarChar);
-        await using var dr = await cmd.ExecuteReaderAsync();
-        if (!await dr.ReadAsync()) return null;
-
-        return new SolicitudPublicaDetalleViewModel
-        {
-            CodigoSolicitud = dr.GetString(0),
-            Sede = dr.GetString(1),
-            Espacio = dr.GetString(2),
-            Fecha = DateOnly.FromDateTime(dr.GetDateTime(3)),
-            HoraInicio = TimeOnly.FromTimeSpan(dr.GetTimeSpan(4)),
-            HoraFin = TimeOnly.FromTimeSpan(dr.GetTimeSpan(5)),
-            NombreSolicitante = dr.GetString(6),
-            Telefono = dr.GetString(7),
-            Correo = dr.IsDBNull(8) ? null : dr.GetString(8),
-            Estado = dr.GetInt32(9),
-            EstadoTexto = dr.GetString(10),
-            ReservaId = dr.IsDBNull(11) ? null : dr.GetInt32(11),
-            FechaRegistro = dr.GetDateTime(12)
-        };
-    }
-
     public async Task<SolicitudNotificacionEmailViewModel?> HomeObtenerSolicitudParaNotificacionAsync(string codigoSolicitud)
     {
         await using var cn = CreateConnection();

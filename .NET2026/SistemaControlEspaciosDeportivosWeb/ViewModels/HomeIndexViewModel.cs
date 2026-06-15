@@ -187,37 +187,6 @@ public class ReservaPublicaPageViewModel
     public List<SelectListItem> HorasFinDisponibles { get; set; } = new();
 }
 
-public class SolicitudPublicaDetalleViewModel
-{
-    public string CodigoSolicitud { get; set; } = string.Empty;
-    public string Sede { get; set; } = string.Empty;
-    public string Espacio { get; set; } = string.Empty;
-    public DateOnly Fecha { get; set; }
-    public TimeOnly HoraInicio { get; set; }
-    public TimeOnly HoraFin { get; set; }
-    public string NombreSolicitante { get; set; } = string.Empty;
-    public string Telefono { get; set; } = string.Empty;
-    public string? Correo { get; set; }
-    public int Estado { get; set; }
-    public string EstadoTexto { get; set; } = string.Empty;
-    public int? ReservaId { get; set; }
-    public DateTime FechaRegistro { get; set; }
-}
-
-public class SolicitudPublicaSeguimientoViewModel
-{
-    [Required(ErrorMessage = "Este campo es obligatorio.")]
-    [StringLength(20, ErrorMessage = "El campo {0} excede la longitud permitida.")]
-    public string CodigoSolicitud { get; set; } = string.Empty;
-
-    [Required(ErrorMessage = "Este campo es obligatorio.")]
-    [StringLength(30, ErrorMessage = "El campo {0} excede la longitud permitida.")]
-    public string Telefono { get; set; } = string.Empty;
-
-    public SolicitudPublicaDetalleViewModel? Resultado { get; set; }
-    public string? Mensaje { get; set; }
-}
-
 public class SolicitudNotificacionEmailViewModel
 {
     public string CodigoSolicitud { get; set; } = string.Empty;

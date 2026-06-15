@@ -18,4 +18,4 @@ Disallow: /Anuncios
 Disallow: /Banners
 Disallow: /MiSuscripcion
 
-Sitemap: https://lazonadeportiva.com/sitemap.xml
+Sitemap: https://www.lazonadeportiva.com/sitemap.xml

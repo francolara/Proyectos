@@ -2768,6 +2768,10 @@ body {
   z-index: 2;
 }
 
+.home-hero-carousel.carousel-fade .carousel-item {
+  transition: opacity 0.9s ease-in-out;
+}
+
 .home-hero-carousel .carousel-control-prev.home-hero-control {
   justify-content: flex-start;
   left: 6px;

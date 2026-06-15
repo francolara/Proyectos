@@ -11,6 +11,7 @@ public class ComplejosController(ISportCenterStoredProcedureService spService) :
     [HttpGet("")]
     public async Task<IActionResult> Index()
     {
+        ViewData["CanonicalUrl"] = "https://www.lazonadeportiva.com/complejos";
         var sedes = await spService.HomeListarSedesAsync();
         var complejos = ConstruirComplejos(sedes);
         var vm = new ComplejosIndexViewModel { Complejos = complejos };
@@ -28,6 +29,8 @@ public class ComplejosController(ISportCenterStoredProcedureService spService) :
 
         if (!string.Equals(slug, complejo.Slug, StringComparison.OrdinalIgnoreCase))
             return RedirectToActionPermanent(nameof(Detalle), new { slug = complejo.Slug, negocioId });
+
+        ViewData["CanonicalUrl"] = $"https://www.lazonadeportiva.com/complejos/{complejo.Slug}-{negocioId}";
 
         var sedesComplejo = sedes
             .Where(x => x.NegocioId == negocioId)

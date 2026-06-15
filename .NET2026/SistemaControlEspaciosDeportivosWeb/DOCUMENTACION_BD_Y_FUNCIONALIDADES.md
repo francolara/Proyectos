@@ -284,7 +284,6 @@
 - `Sp_SolicitudesPublicas_ActualizarEstado` devuelve error si la solicitud no existe o no pertenece al negocio.
 
 ### 12_Home_Notificaciones_Seguimiento.sql
-- `Sp_Home_ConsultarSolicitudPublica`
 - `Sp_Home_ObtenerSolicitudParaNotificacion`
 - `Sp_Home_MarcarSolicitudNotificada`
 

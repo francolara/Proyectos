@@ -99,8 +99,6 @@ public static class DesafioEmailTemplateBuilder
             ("Codigo de desafio", $"#{desafio.DesafioId:D6}"),
             ("Equipo desafiante", SanitizeValue(desafio.EquipoRetador)),
             ("Contacto desafiante", SanitizeValue(desafio.ContactoRetador)),
-            ("Usuario desafiante", SanitizeValue(desafio.UsuarioRetador)),
-            ("Telefono desafiante", SanitizeValue(desafio.TelefonoRetador)),
             ("Deporte", SanitizeValue(desafio.Deporte)),
             ("Nivel", SanitizeValue(desafio.Nivel)),
             ("Distrito", SanitizeValue(desafio.Distrito)),

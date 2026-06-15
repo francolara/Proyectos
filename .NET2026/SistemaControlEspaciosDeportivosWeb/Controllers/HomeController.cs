@@ -82,6 +82,7 @@ public class HomeController(
     {
         ViewData["PublicFullWidth"] = true;
         ViewData["HideDefaultFooter"] = true;
+        ViewData["CanonicalUrl"] = "https://www.lazonadeportiva.com/";
         var vm = await ConstruirHomeVmAsync(
             fecha,
             horaInicio,
@@ -105,6 +106,7 @@ public class HomeController(
     public IActionResult Faq()
     {
         ViewData["PublicFullWidth"] = true;
+        ViewData["CanonicalUrl"] = "https://www.lazonadeportiva.com/Home/Faq";
         return View();
     }
 
@@ -122,6 +124,7 @@ public class HomeController(
         bool omitirFechaHorario = false)
     {
         ViewData["PublicFullWidth"] = true;
+        ViewData["Robots"] = "noindex,follow";
 
         var fechaConsulta = fecha ?? DateOnly.FromDateTime(DateTime.Today);
         var horaInicioConsulta = horaInicio ?? new TimeOnly(18, 0);
@@ -544,34 +547,6 @@ public class HomeController(
         var sedes = await spService.HomeListarSedesAsync();
         var negocios = ConstruirNegociosFiltradosPorUbigeo(sedes, codigoDep, codigoProv, codigoDist);
         return Json(negocios.Select(x => new { value = x.Value, text = x.Text }));
-    }
-
-    [HttpGet]
-    public IActionResult ConsultarSolicitud()
-    {
-        return View(new SolicitudPublicaSeguimientoViewModel());
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ConsultarSolicitud(SolicitudPublicaSeguimientoViewModel model)
-    {
-        if (!ModelState.IsValid) return View(model);
-
-        var resultado = await spService.HomeConsultarSolicitudAsync(model.CodigoSolicitud.Trim(), model.Telefono.Trim());
-        if (resultado is null)
-        {
-            model.Mensaje = "No se encontro una solicitud con ese codigo y telefono.";
-            return View(model);
-        }
-
-        model.Resultado = resultado;
-        return View(model);
-    }
-
-    public IActionResult Privacy()
-    {
-        return View();
     }
 
     [HttpGet]
@@ -1078,14 +1053,6 @@ public class HomeController(
             }
 
             var fotosTarjeta = new List<string>();
-            if (!string.IsNullOrWhiteSpace(item.SedeFotoPrincipalUrl))
-            {
-                fotosTarjeta.Add(item.SedeFotoPrincipalUrl);
-            }
-            if (item.SedeFotos is not null && item.SedeFotos.Count > 0)
-            {
-                fotosTarjeta.AddRange(item.SedeFotos.Where(x => !string.IsNullOrWhiteSpace(x)));
-            }
             if (!string.IsNullOrWhiteSpace(item.EspacioFotoPrincipalUrl))
             {
                 fotosTarjeta.Add(item.EspacioFotoPrincipalUrl);
@@ -1093,6 +1060,14 @@ public class HomeController(
             if (item.EspacioFotos is not null && item.EspacioFotos.Count > 0)
             {
                 fotosTarjeta.AddRange(item.EspacioFotos.Where(x => !string.IsNullOrWhiteSpace(x)));
+            }
+            if (!string.IsNullOrWhiteSpace(item.SedeFotoPrincipalUrl))
+            {
+                fotosTarjeta.Add(item.SedeFotoPrincipalUrl);
+            }
+            if (item.SedeFotos is not null && item.SedeFotos.Count > 0)
+            {
+                fotosTarjeta.AddRange(item.SedeFotos.Where(x => !string.IsNullOrWhiteSpace(x)));
             }
             fotosTarjeta = fotosTarjeta
                 .Distinct(StringComparer.OrdinalIgnoreCase)

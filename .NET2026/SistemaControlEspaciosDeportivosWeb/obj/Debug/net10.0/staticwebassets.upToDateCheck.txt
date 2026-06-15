@@ -1,6 +1,6 @@
-wwwroot\css\home-critical.css
-wwwroot\css\reservas-calendario.css
 wwwroot\css\site.css
+wwwroot\css\reservas-calendario.css
+wwwroot\css\home-critical.css
 wwwroot\favicon.ico
 wwwroot\img\complejo-default.png
 wwwroot\img\complejo-default.webp

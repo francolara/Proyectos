@@ -19,7 +19,6 @@ public interface ISportCenterStoredProcedureService
     Task<List<EspacioDisponibleViewModel>> HomeBuscarEspaciosDisponiblesAsync(DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin, string? codigoDepartamento, string? codigoProvincia, string? codigoUbigeo, int? tipoDeporteId, int? negocioId, bool omitirFechaHorario = false, bool buscarCercaDeMi = false, decimal? latitudUsuario = null, decimal? longitudUsuario = null, decimal? radioKm = null);
     Task<(List<EspacioDisponibleViewModel> Espacios, int TotalRegistros)> HomeBuscarEspaciosDisponiblesPaginadoAsync(DateOnly fecha, TimeOnly horaInicio, TimeOnly horaFin, string? codigoDepartamento, string? codigoProvincia, string? codigoUbigeo, int? tipoDeporteId, int? negocioId, int pagina = 1, int tamanoPagina = 9, bool omitirFechaHorario = false, bool buscarCercaDeMi = false, decimal? latitudUsuario = null, decimal? longitudUsuario = null, decimal? radioKm = null);
     Task<int> HomeSolicitarReservaPublicaAsync(SolicitudReservaPublicaFormViewModel model);
-    Task<SolicitudPublicaDetalleViewModel?> HomeConsultarSolicitudAsync(string codigoSolicitud, string telefono);
     Task<SolicitudNotificacionEmailViewModel?> HomeObtenerSolicitudParaNotificacionAsync(string codigoSolicitud);
     Task<bool> HomeMarcarSolicitudNotificadaAsync(string codigoSolicitud);
     Task<ConfiguracionClubViewModel?> ConfiguracionClubObtenerAsync(int negocioId);

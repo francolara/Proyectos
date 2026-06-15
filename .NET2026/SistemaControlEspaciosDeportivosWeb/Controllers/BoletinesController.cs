@@ -14,6 +14,7 @@ public class BoletinesController(ISportCenterStoredProcedureService spService) :
     public async Task<IActionResult> Index(string? codigoDepartamento = null, string? codigoProvincia = null, string? codigoUbigeo = null, string? zona = null, int? anio = null, int? mes = null)
     {
         ViewData["PublicFullWidth"] = true;
+        ViewData["CanonicalUrl"] = "https://www.lazonadeportiva.com/Boletines";
 
         var hoy = DateTime.Today;
         var vm = new BoletinesPublicosIndexViewModel
@@ -49,6 +50,7 @@ public class BoletinesController(ISportCenterStoredProcedureService spService) :
     public async Task<IActionResult> Detalle(int id)
     {
         ViewData["PublicFullWidth"] = true;
+        ViewData["CanonicalUrl"] = $"https://www.lazonadeportiva.com/Boletines/Detalle/{id}";
         var boletin = await spService.BoletinesDeportivosObtenerPorIdAsync(id);
         if (boletin is null)
             return NotFound();

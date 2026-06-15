@@ -42,7 +42,7 @@
     }
 }
 <section class="home-hero mb-4">
-    <div id="homeHeroCarousel" class="carousel slide home-hero-carousel h-100" data-bs-ride="carousel" data-bs-interval="5500" data-bs-touch="false">
+    <div id="homeHeroCarousel" class="carousel slide carousel-fade home-hero-carousel h-100" data-bs-ride="carousel" data-bs-interval="5500" data-bs-touch="false">
         <div class="carousel-inner rounded-4 h-100">
                     @if (banners.Count == 0)
                     {
@@ -362,7 +362,7 @@
                             else if (fotosTarjeta.Count > 1)
                             {
                                 <div class="home-space-media mb-3">
-                                    <div id="@carouselId" class="carousel slide" data-bs-ride="carousel" data-bs-interval="3500">
+                                    <div id="@carouselId" class="carousel slide" data-bs-touch="true" data-bs-interval="false">
                                         <div class="carousel-inner">
                                             @for (var fotoIdx = 0; fotoIdx < fotosTarjeta.Count; fotoIdx++)
                                             {

@@ -8,15 +8,30 @@
 @inject UserManager<ApplicationUser> userManager
 <html lang="es">
 <head>
+@{
+    var canonicalUrl = ViewData["CanonicalUrl"]?.ToString();
+    var robotsContent = ViewData["Robots"]?.ToString();
+    var ogUrl = string.IsNullOrWhiteSpace(canonicalUrl)
+        ? "https://www.lazonadeportiva.com/"
+        : canonicalUrl;
+}
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - La Zona Deportiva</title>
     <meta name="description" content="Reserva canchas y espacios deportivos en La Zona Deportiva. Consulta disponibilidad, precios y confirma tu reserva en linea de forma rapida y segura." />
+    @if (!string.IsNullOrWhiteSpace(robotsContent))
+    {
+        <meta name="robots" content="@robotsContent" />
+    }
+    @if (!string.IsNullOrWhiteSpace(canonicalUrl))
+    {
+        <link rel="canonical" href="@canonicalUrl" />
+    }
     <meta property="og:title" content="@($"{ViewData["Title"]} - La Zona Deportiva")" />
     <meta property="og:site_name" content="La Zona Deportiva" />
     <meta property="og:description" content="Reserva de espacios deportivos en línea de forma rápida y segura." />
     <meta property="og:image" content="https://pub-3afaea6b0b354821989565fa4b8bd250.r2.dev/logos/LaZonaDeportiva/LaZonaDeportiva_Logo.webp" />
-    <meta property="og:url" content="https://lazonadeportiva.com/" />
+    <meta property="og:url" content="@ogUrl" />
     <meta property="og:type" content="website" />
     <link rel="icon" type="image/x-icon" href="~/favicon.ico" asp-append-version="true" />
     <script type="importmap"></script>
