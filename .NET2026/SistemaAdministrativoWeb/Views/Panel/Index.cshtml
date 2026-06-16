@@ -1,0 +1,57 @@
+@model SistemaAdministrativoWeb.ViewModels.Panel.PanelIndexViewModel
+@{
+    ViewData["Title"] = "Panel administrativo";
+    ViewData["AdminShell"] = true;
+}
+
+<section class="dashboard-shell">
+    <div class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">Empresa #@Model.IdEmpresa</span>
+            <h1>@Model.NombreEmpresa</h1>
+            <p>Panel operativo inicial del sistema administrativo contable.</p>
+        </div>
+        <div class="dashboard-status-card">
+            <strong>@Model.EstadoPanel</strong>
+            <span>@Model.ResumenVigencia</span>
+            @if (!string.IsNullOrWhiteSpace(Model.Ruc))
+            {
+                <small>RUC: @Model.Ruc</small>
+            }
+        </div>
+    </div>
+
+    <section class="dashboard-metrics">
+        <article class="dashboard-metric-card">
+            <span>Modulo prioritario</span>
+            <strong>Asientos contables</strong>
+            <small>Primer flujo operativo recomendado para este proyecto.</small>
+        </article>
+        <article class="dashboard-metric-card">
+            <span>Contexto activo</span>
+            <strong>Multiempresa</strong>
+            <small>La sesion actual opera sobre la empresa seleccionada.</small>
+        </article>
+        <article class="dashboard-metric-card">
+            <span>Base tecnica</span>
+            <strong>ADO.NET + SP</strong>
+            <small>Reglas de negocio y seguridad alineadas a SQL Server.</small>
+        </article>
+    </section>
+
+    <section class="dashboard-module-grid">
+        @foreach (var modulo in Model.Modulos)
+        {
+            <article class="dashboard-module-card @(modulo.Habilitado ? string.Empty : "is-disabled")">
+                <div class="dashboard-module-icon">
+                    <i class="bi @modulo.Icono"></i>
+                </div>
+                <h2>@modulo.Titulo</h2>
+                <p>@modulo.Descripcion</p>
+                <a class="btn @(modulo.Habilitado ? "btn-primary" : "btn-outline-secondary disabled")" href="@modulo.Url">
+                    @(modulo.Habilitado ? "Abrir modulo" : "En construccion")
+                </a>
+            </article>
+        }
+    </section>
+</section>

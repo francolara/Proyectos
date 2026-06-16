@@ -1,0 +1,15 @@
+# Build
+bin/
+obj/
+
+# IDE
+.vs/
+
+# Secretos y overrides locales
+appsettings.Local.json
+appsettings.*.local.json
+appsettings.Secrets.json
+appsettings.Private.json
+
+# Claves locales de proteccion de datos
+App_Data/

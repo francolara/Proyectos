@@ -1,8 +1,32 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@{
+    ViewData["Title"] = "Acceso";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<section class="hero-auth-landing">
+    <div class="hero-auth-copy">
+        <span class="hero-kicker">Sistema administrativo contable</span>
+        <h1>Accede a tu empresa y centraliza contabilidad, compras y ventas en una sola plataforma.</h1>
+        <p>
+            SisAdm toma la base multiempresa del proyecto nuevo y la combina con un acceso web
+            orientado a negocio, operación contable y control comercial.
+        </p>
+        <div class="hero-auth-actions">
+            <a class="btn btn-primary btn-lg" asp-area="Identity" asp-page="/Account/Login">Iniciar sesion</a>
+            <a class="btn btn-outline-primary btn-lg" asp-area="Identity" asp-page="/Account/Register">Registrar negocio</a>
+        </div>
+    </div>
+    <div class="hero-auth-card">
+        <div class="hero-auth-stat">
+            <strong>Multiempresa</strong>
+            <span>Un usuario puede administrar una o varias empresas desde una sola cuenta.</span>
+        </div>
+        <div class="hero-auth-stat">
+            <strong>SQL Server central</strong>
+            <span>Una sola base `Dbsisadm` para seguridad, comercial y contabilidad.</span>
+        </div>
+        <div class="hero-auth-stat">
+            <strong>Arquitectura estable</strong>
+            <span>ASP.NET Core MVC, Identity, ADO.NET y Stored Procedures.</span>
+        </div>
+    </div>
+</section>

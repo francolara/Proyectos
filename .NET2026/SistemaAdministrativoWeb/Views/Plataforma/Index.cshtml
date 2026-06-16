@@ -1,0 +1,173 @@
+@model SistemaAdministrativoWeb.ViewModels.Plataforma.PlataformaIndexViewModel
+@{
+    ViewData["Title"] = "Panel SuperAdmin";
+    ViewData["PlatformShell"] = true;
+}
+<!-- Author: FRANCO LARA | Create date: 15/06/2026 | Firma: Superadmin orientado a cuentas administradoras con control de suscripcion, limites y empresa principal. -->
+
+<section class="dashboard-shell">
+    <div class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">Superadministracion</span>
+            <h1>Control de suscriptores</h1>
+            <p>Alta, baja, contrato y vigencias de cuentas administradoras que gestionan multiples empresas.</p>
+        </div>
+    </div>
+
+    @if (TempData["SuperAdminOk"] is string ok)
+    {
+        <div class="alert alert-success">@ok</div>
+    }
+    @if (TempData["SuperAdminError"] is string error)
+    {
+        <div class="alert alert-danger">@error</div>
+    }
+
+    <section class="dashboard-metrics">
+        <article class="dashboard-metric-card">
+            <span>Total cuentas</span>
+            <strong>@Model.TotalCuentas</strong>
+            <small>Universo de suscriptores administrativos.</small>
+        </article>
+        <article class="dashboard-metric-card">
+            <span>Activas</span>
+            <strong>@Model.CuentasActivas</strong>
+            <small>Con contrato vigente y cuenta habilitada.</small>
+        </article>
+        <article class="dashboard-metric-card">
+            <span>En prueba</span>
+            <strong>@Model.CuentasEnPrueba</strong>
+            <small>Periodos trial pendientes de conversion.</small>
+        </article>
+        <article class="dashboard-metric-card">
+            <span>Suspendidas o de baja</span>
+            <strong>@Model.CuentasSuspendidasOBaja</strong>
+            <small>Casos a revisar comercialmente.</small>
+        </article>
+    </section>
+
+    <section class="table-panel">
+        <div class="table-panel-head">
+            <h2>Suscriptores</h2>
+            <p>Actualiza plan, vigencia, limites y estado operativo por cuenta administradora.</p>
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle table-hover app-table">
+                <thead>
+                    <tr>
+                        <th>Cuenta</th>
+                        <th>Contacto</th>
+                        <th>Estado</th>
+                        <th>Vigencia</th>
+                        <th>Gestion</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var cuenta in Model.Cuentas)
+                {
+                    <tr>
+                        <td>
+                            <strong>@cuenta.NombreCuenta</strong>
+                            <div class="small text-muted">@cuenta.CodigoCuenta | @cuenta.CorreoPrincipal</div>
+                            <div class="small text-muted">Empresas: @cuenta.CantidadEmpresas</div>
+                            <div class="small text-muted">
+                                Principal: @(cuenta.NombreComercialEmpresaPrincipal ?? cuenta.RazonSocialEmpresaPrincipal ?? "Sin empresa")
+                                @if (!string.IsNullOrWhiteSpace(cuenta.RucEmpresaPrincipal))
+                                {
+                                    <span>| RUC @cuenta.RucEmpresaPrincipal</span>
+                                }
+                            </div>
+                        </td>
+                        <td>
+                            <div>@(cuenta.NombreCompleto ?? "Sin contacto")</div>
+                            <div class="small text-muted">@cuenta.Email</div>
+                            <div class="small text-muted">@cuenta.Telefono</div>
+                            <div class="small text-muted">@cuenta.TelefonoPrincipal</div>
+                        </td>
+                        <td>
+                            <span class="badge text-bg-light border">@cuenta.EstadoSuscripcion</span>
+                            <div class="small text-muted">
+                                Cuenta: @(cuenta.EstadoCuenta ? "Activa" : "Inactiva")
+                                | Servicio: @(cuenta.Activo ? "Habilitado" : "Detenido")
+                            </div>
+                        </td>
+                        <td class="small">
+                            @if (cuenta.EsPrueba)
+                            {
+                                <div>Prueba: @(cuenta.FechaInicioPrueba?.ToString("dd/MM/yyyy") ?? "-") al @(cuenta.FechaFinPrueba?.ToString("dd/MM/yyyy") ?? "-")</div>
+                            }
+                            else
+                            {
+                                <div>Plan: @(cuenta.FechaInicioPlan?.ToString("dd/MM/yyyy") ?? "-") al @(cuenta.FechaFinPlan?.ToString("dd/MM/yyyy") ?? "-")</div>
+                            }
+                            <div>Empresas permitidas: @(cuenta.EmpresasPermitidas?.ToString() ?? "Ilimitado")</div>
+                            <div>Usuarios permitidos: @(cuenta.UsuariosPermitidos?.ToString() ?? "Ilimitado")</div>
+                        </td>
+                        <td>
+                            <form asp-action="ActualizarSuscripcion" method="post" class="superadmin-form-grid">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="IdCuentaAdministradora" value="@cuenta.IdCuentaAdministradora" />
+                                <div>
+                                    <label class="form-label">Plan</label>
+                                    <select name="TipoPlan" class="form-select form-select-sm">
+                                        <option value="TRIAL" selected="@(cuenta.TipoPlan == "TRIAL")">TRIAL</option>
+                                        <option value="BASICO" selected="@(cuenta.TipoPlan == "BASICO")">BASICO</option>
+                                        <option value="PRO" selected="@(cuenta.TipoPlan == "PRO")">PRO</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="form-label">Estado</label>
+                                    <select name="EstadoSuscripcion" class="form-select form-select-sm">
+                                        <option value="TRIAL" selected="@(cuenta.EstadoSuscripcion == "TRIAL")">TRIAL</option>
+                                        <option value="ACTIVO" selected="@(cuenta.EstadoSuscripcion == "ACTIVO")">ACTIVO</option>
+                                        <option value="SUSPENDIDO" selected="@(cuenta.EstadoSuscripcion == "SUSPENDIDO")">SUSPENDIDO</option>
+                                        <option value="BAJA" selected="@(cuenta.EstadoSuscripcion == "BAJA")">BAJA</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="form-label">Fin prueba</label>
+                                    <input type="date" name="FechaFinPrueba" class="form-control form-control-sm" value="@(cuenta.FechaFinPrueba?.ToString("yyyy-MM-dd"))" />
+                                </div>
+                                <div>
+                                    <label class="form-label">Fin plan</label>
+                                    <input type="date" name="FechaFinPlan" class="form-control form-control-sm" value="@(cuenta.FechaFinPlan?.ToString("yyyy-MM-dd"))" />
+                                </div>
+                                <div>
+                                    <label class="form-label">Empresas</label>
+                                    <input type="number" min="1" name="EmpresasPermitidas" class="form-control form-control-sm" value="@cuenta.EmpresasPermitidas" />
+                                </div>
+                                <div>
+                                    <label class="form-label">Usuarios</label>
+                                    <input type="number" min="1" name="UsuariosPermitidos" class="form-control form-control-sm" value="@cuenta.UsuariosPermitidos" />
+                                </div>
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" name="EsPrueba" value="true" checked="@cuenta.EsPrueba" />
+                                    <input type="hidden" name="EsPrueba" value="false" />
+                                    <label class="form-check-label">En prueba</label>
+                                </div>
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" name="Activo" value="true" checked="@cuenta.Activo" />
+                                    <input type="hidden" name="Activo" value="false" />
+                                    <label class="form-check-label">Servicio activo</label>
+                                </div>
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" name="EstadoCuenta" value="true" checked="@cuenta.EstadoCuenta" />
+                                    <input type="hidden" name="EstadoCuenta" value="false" />
+                                    <label class="form-check-label">Cuenta activa</label>
+                                </div>
+                                <div class="superadmin-form-observacion">
+                                    <label class="form-label">Observacion</label>
+                                    <input type="text" name="Observacion" class="form-control form-control-sm" value="@cuenta.Observacion" />
+                                </div>
+                                <div class="superadmin-form-actions">
+                                    <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</section>

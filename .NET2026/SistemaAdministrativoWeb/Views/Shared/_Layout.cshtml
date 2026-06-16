@@ -1,48 +1,137 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+@using SistemaAdministrativoWeb.Infrastructure.Empresas
+@inject ICurrentCompanyAccessor CurrentCompanyAccessor
+<!DOCTYPE html>
+@{
+    var adminShell = ViewData["AdminShell"] as bool? ?? false;
+    var platformShell = ViewData["PlatformShell"] as bool? ?? false;
+    var pageTitle = ViewData["Title"]?.ToString() ?? "Sistema Administrativo";
+}
+<html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - SistemaAdministrativoWeb</title>
+    <title>@pageTitle - SisAdm</title>
     <script type="importmap"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/SistemaAdministrativoWeb.styles.css" asp-append-version="true" />
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">SistemaAdministrativoWeb</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                    <partial name="_LoginPartial" />
+<body class="app-body @(adminShell || platformShell ? "app-shell-body" : "app-public-body")">
+    @if (!adminShell && !platformShell)
+    {
+        <header class="app-public-header">
+            <nav class="navbar navbar-expand-lg navbar-light">
+                <div class="container">
+                    <a class="navbar-brand app-brand" asp-area="" asp-controller="Home" asp-action="Index">
+                        <span class="app-brand-mark"><i class="bi bi-journal-text"></i></span>
+                        <span>
+                            <strong>SisAdm</strong>
+                            <small>Gestion contable multiempresa</small>
+                        </span>
+                    </a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div id="mainNav" class="collapse navbar-collapse">
+                        <ul class="navbar-nav me-auto">
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Inicio</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="Identity" asp-page="/Account/Register">Registro de negocio</a>
+                            </li>
+                        </ul>
+                        <partial name="_LoginPartial" />
+                    </div>
                 </div>
+            </nav>
+        </header>
+    }
+
+    @if (adminShell)
+    {
+        <div class="app-shell">
+            <aside class="app-sidebar">
+                <a class="app-sidebar-brand" asp-controller="Panel" asp-action="Index">
+                    <span class="app-brand-mark"><i class="bi bi-building"></i></span>
+                    <div>
+                        <strong>Panel</strong>
+                        <small>@(CurrentCompanyAccessor.EmpresaNombre ?? "Empresa activa")</small>
+                    </div>
+                </a>
+                <nav class="app-sidebar-nav">
+                    <a class="app-sidebar-link" asp-controller="Panel" asp-action="Index"><i class="bi bi-speedometer2"></i>Dashboard</a>
+                    <a class="app-sidebar-link" asp-controller="EmpresaContexto" asp-action="Index"><i class="bi bi-buildings"></i>Empresas</a>
+                    <a class="app-sidebar-link disabled" href="#"><i class="bi bi-diagram-3"></i>Plan de cuentas</a>
+                    <a class="app-sidebar-link disabled" href="#"><i class="bi bi-receipt"></i>Asientos</a>
+                    <a class="app-sidebar-link disabled" href="#"><i class="bi bi-cart-check"></i>Compras</a>
+                    <a class="app-sidebar-link disabled" href="#"><i class="bi bi-cash-stack"></i>Ventas</a>
+                </nav>
+            </aside>
+            <div class="app-shell-main">
+                <header class="app-shell-topbar">
+                    <div>
+                        <div class="app-shell-title">@pageTitle</div>
+                        @if (CurrentCompanyAccessor.TieneEmpresaActiva)
+                        {
+                            <div class="app-shell-subtitle">Empresa activa: @CurrentCompanyAccessor.EmpresaNombre</div>
+                        }
+                    </div>
+                    <partial name="_LoginPartial" />
+                </header>
+                <main role="main" class="app-shell-content">
+                    @RenderBody()
+                </main>
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
+        </div>
+    }
+    else if (platformShell)
+    {
+        <div class="app-shell">
+            <aside class="app-sidebar app-sidebar-platform">
+                <a class="app-sidebar-brand" asp-controller="Plataforma" asp-action="Index">
+                    <span class="app-brand-mark"><i class="bi bi-shield-check"></i></span>
+                    <div>
+                        <strong>SuperAdmin</strong>
+                        <small>Control de suscriptores</small>
+                    </div>
+                </a>
+                <nav class="app-sidebar-nav">
+                    <a class="app-sidebar-link" asp-controller="Plataforma" asp-action="Index"><i class="bi bi-grid-1x2"></i>Resumen</a>
+                    <a class="app-sidebar-link" asp-controller="EmpresaContexto" asp-action="Index"><i class="bi bi-buildings"></i>Empresas</a>
+                    <a class="app-sidebar-link disabled" href="#"><i class="bi bi-person-badge"></i>Contratos</a>
+                </nav>
+            </aside>
+            <div class="app-shell-main">
+                <header class="app-shell-topbar">
+                    <div>
+                        <div class="app-shell-title">@pageTitle</div>
+                        <div class="app-shell-subtitle">Panel global de control comercial</div>
+                    </div>
+                    <partial name="_LoginPartial" />
+                </header>
+                <main role="main" class="app-shell-content">
+                    @RenderBody()
+                </main>
+            </div>
+        </div>
+    }
+    else
+    {
+        <main role="main" class="container app-public-main">
             @RenderBody()
         </main>
-    </div>
+        <footer class="app-public-footer">
+            <div class="container">
+                &copy; 2026 - SisAdm
+            </div>
+        </footer>
+    }
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - SistemaAdministrativoWeb - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

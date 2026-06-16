@@ -1,0 +1,78 @@
+@model SistemaAdministrativoWeb.ViewModels.Empresas.SeleccionEmpresaViewModel
+
+@{
+    ViewData["Title"] = "Seleccion de empresa";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h1 class="h4 mb-3">Seleccion de empresa</h1>
+                <p class="text-muted">
+                    El usuario autenticado puede operar en una o varias empresas. Seleccione la empresa activa para continuar.
+                </p>
+
+                <form asp-action="Seleccionar" method="post">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    @if (Model.Empresas.Count == 0)
+                    {
+                        <div class="alert alert-warning mb-0">
+                            El usuario no tiene empresas asignadas. Debe registrar la relacion en <code>SEG_UsuarioEmpresa</code>.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="mb-3">
+                            <label asp-for="IdEmpresaSeleccionada" class="form-label">Empresa</label>
+                            <select asp-for="IdEmpresaSeleccionada" class="form-select">
+                                <option value="">Seleccione</option>
+                                @foreach (var empresa in Model.Empresas)
+                                {
+                                    <option value="@empresa.IdEmpresa">
+                                        @empresa.CodigoEmpresa - @empresa.RazonSocial
+                                    </option>
+                                }
+                            </select>
+                            <span asp-validation-for="IdEmpresaSeleccionada" class="text-danger"></span>
+                        </div>
+
+                        <div class="table-responsive mb-3">
+                            <table class="table table-sm align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Codigo</th>
+                                        <th>Razon social</th>
+                                        <th>Nombre comercial</th>
+                                        <th>RUC</th>
+                                        <th>Predeterminada</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var empresa in Model.Empresas)
+                                    {
+                                        <tr>
+                                            <td>@empresa.CodigoEmpresa</td>
+                                            <td>@empresa.RazonSocial</td>
+                                            <td>@empresa.NombreComercial</td>
+                                            <td>@empresa.Ruc</td>
+                                            <td>@(empresa.EsEmpresaPredeterminada ? "Si" : "No")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Continuar</button>
+                    }
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

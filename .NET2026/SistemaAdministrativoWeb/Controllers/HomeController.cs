@@ -1,25 +1,40 @@
 using Microsoft.AspNetCore.Mvc;
+using SistemaAdministrativoWeb.Infrastructure.Empresas;
 using SistemaAdministrativoWeb.Models;
 using System.Diagnostics;
 
-namespace SistemaAdministrativoWeb.Controllers
+namespace SistemaAdministrativoWeb.Controllers;
+
+public class HomeController(ICurrentCompanyAccessor currentCompanyAccessor) : Controller
 {
-    public class HomeController : Controller
+    public IActionResult Index()
     {
-        public IActionResult Index()
+        if (User.Identity?.IsAuthenticated != true)
         {
-            return View();
+            return Redirect("/Identity/Account/Login");
         }
 
-        public IActionResult Privacy()
+        if (User.IsInRole("SuperAdmin"))
         {
-            return View();
+            return RedirectToAction("Index", "Plataforma");
         }
 
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
+        if (!currentCompanyAccessor.TieneEmpresaActiva)
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            return RedirectToAction("Index", "EmpresaContexto");
         }
+
+        return RedirectToAction("Index", "Panel");
+    }
+
+    public IActionResult Privacy()
+    {
+        return View();
+    }
+
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public IActionResult Error()
+    {
+        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 }
