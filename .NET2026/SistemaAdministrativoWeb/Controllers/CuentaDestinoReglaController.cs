@@ -1,0 +1,302 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using SistemaAdministrativoWeb.Infrastructure.Contabilidad;
+using SistemaAdministrativoWeb.Infrastructure.Empresas;
+using SistemaAdministrativoWeb.ViewModels.Contabilidad;
+
+namespace SistemaAdministrativoWeb.Controllers;
+
+[Authorize]
+public class CuentaDestinoReglaController(
+    ICurrentCompanyAccessor currentCompanyAccessor,
+    IPlanCuentaRepository planCuentaRepository,
+    ICuentaDestinoReglaRepository cuentaDestinoReglaRepository) : Controller
+{
+    private const int TamanoPagina = 20;
+
+    [HttpGet]
+    public async Task<IActionResult> Index(short? ejercicio = null, string? textoBusqueda = null, int pagina = 1, CancellationToken cancellationToken = default)
+    {
+        if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
+        {
+            return RedirectToAction("Index", "EmpresaContexto");
+        }
+
+        ViewData["AdminShell"] = true;
+
+        var ejercicioTrabajo = ejercicio ?? (short)DateTime.Today.Year;
+        var cuentasMovimiento = await planCuentaRepository.ListarPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, true, cancellationToken);
+        var reglas = await cuentaDestinoReglaRepository.ListarPaginadoPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, ejercicioTrabajo, textoBusqueda, pagina, TamanoPagina, cancellationToken);
+        var model = ConstruirViewModel(
+            currentCompanyAccessor.EmpresaId.Value,
+            currentCompanyAccessor.EmpresaNombre ?? "Empresa activa",
+            ejercicioTrabajo,
+            cuentasMovimiento,
+            reglas.Items,
+            null);
+        model.TextoBusqueda = textoBusqueda?.Trim() ?? string.Empty;
+        model.TotalReglas = reglas.TotalRecords;
+        model.Paginacion = new PaginacionViewModel
+        {
+            PaginaActual = pagina,
+            TamanoPagina = TamanoPagina,
+            TotalRegistros = reglas.TotalRecords
+        };
+
+        return View(model);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Registrar(short? ejercicio = null, CancellationToken cancellationToken = default)
+    {
+        return await CargarFormularioAsync(ejercicio, null, cancellationToken);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Editar(int idCuentaDestinoRegla, short? ejercicio = null, CancellationToken cancellationToken = default)
+    {
+        return await CargarFormularioAsync(ejercicio, idCuentaDestinoRegla, cancellationToken);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Guardar(CuentaDestinoReglaFormViewModel formulario, CancellationToken cancellationToken)
+    {
+        if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
+        {
+            return RedirectToAction("Index", "EmpresaContexto");
+        }
+
+        ViewData["AdminShell"] = true;
+
+        NormalizarFormulario(formulario);
+        ValidarFormulario(formulario);
+
+        if (!ModelState.IsValid)
+        {
+            var cuentasConError = await planCuentaRepository.ListarPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, true, cancellationToken);
+            var reglasConError = await cuentaDestinoReglaRepository.ListarPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, formulario.Ejercicio, cancellationToken);
+            var modelConError = ConstruirViewModel(
+                currentCompanyAccessor.EmpresaId.Value,
+                currentCompanyAccessor.EmpresaNombre ?? "Empresa activa",
+                formulario.Ejercicio,
+                cuentasConError,
+                reglasConError,
+                null);
+            modelConError.Formulario = formulario;
+            return View("Formulario", modelConError);
+        }
+
+        try
+        {
+            await cuentaDestinoReglaRepository.GuardarAsync(new GuardarCuentaDestinoReglaRequest
+            {
+                IdEmpresa = currentCompanyAccessor.EmpresaId.Value,
+                Ejercicio = formulario.Ejercicio,
+                IdPlanCuentaOrigen = formulario.IdPlanCuentaOrigen!.Value,
+                Activo = formulario.Activo,
+                Observacion = string.IsNullOrWhiteSpace(formulario.Observacion) ? null : formulario.Observacion.Trim(),
+                UsuarioRegistro = User.Identity?.Name,
+                Detalles = formulario.Detalles
+                    .Select(x => new GuardarCuentaDestinoReglaDetalleRequest
+                    {
+                        Orden = x.Orden,
+                        IdPlanCuentaDestinoCargo = x.IdPlanCuentaDestinoCargo!.Value,
+                        IdPlanCuentaDestinoAbono = x.IdPlanCuentaDestinoAbono!.Value,
+                        Porcentaje = decimal.Round(x.Porcentaje, 4),
+                        Activo = x.Activo
+                    })
+                    .ToList()
+            }, cancellationToken);
+
+            TempData["CuentaDestinoOk"] = "Regla de cuenta destino guardada correctamente.";
+            return RedirectToAction(nameof(Index), new { ejercicio = formulario.Ejercicio });
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            var cuentasConError = await planCuentaRepository.ListarPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, true, cancellationToken);
+            var reglasConError = await cuentaDestinoReglaRepository.ListarPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, formulario.Ejercicio, cancellationToken);
+            var modelConError = ConstruirViewModel(
+                currentCompanyAccessor.EmpresaId.Value,
+                currentCompanyAccessor.EmpresaNombre ?? "Empresa activa",
+                formulario.Ejercicio,
+                cuentasConError,
+                reglasConError,
+                null);
+            modelConError.Formulario = formulario;
+            return View("Formulario", modelConError);
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Eliminar(int idCuentaDestinoRegla, short ejercicio, CancellationToken cancellationToken)
+    {
+        if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
+        {
+            return RedirectToAction("Index", "EmpresaContexto");
+        }
+
+        await cuentaDestinoReglaRepository.EliminarAsync(idCuentaDestinoRegla, cancellationToken);
+        TempData["CuentaDestinoOk"] = "Regla eliminada correctamente.";
+        return RedirectToAction(nameof(Index), new { ejercicio });
+    }
+
+    private async Task<IActionResult> CargarFormularioAsync(short? ejercicio, int? idCuentaDestinoRegla, CancellationToken cancellationToken)
+    {
+        if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
+        {
+            return RedirectToAction("Index", "EmpresaContexto");
+        }
+
+        ViewData["AdminShell"] = true;
+
+        var ejercicioTrabajo = ejercicio ?? (short)DateTime.Today.Year;
+        var empresaId = currentCompanyAccessor.EmpresaId.Value;
+        var cuentasMovimiento = await planCuentaRepository.ListarPorEmpresaAsync(empresaId, true, cancellationToken);
+        var reglas = await cuentaDestinoReglaRepository.ListarPorEmpresaAsync(empresaId, ejercicioTrabajo, cancellationToken);
+        var reglaEditar = idCuentaDestinoRegla.HasValue
+            ? await cuentaDestinoReglaRepository.ObtenerAsync(idCuentaDestinoRegla.Value, cancellationToken)
+            : null;
+
+        if (reglaEditar is not null && reglaEditar.IdEmpresa != empresaId)
+        {
+            reglaEditar = null;
+        }
+
+        var model = ConstruirViewModel(
+            empresaId,
+            currentCompanyAccessor.EmpresaNombre ?? "Empresa activa",
+            ejercicioTrabajo,
+            cuentasMovimiento,
+            reglas,
+            reglaEditar);
+
+        return View("Formulario", model);
+    }
+
+    private static void NormalizarFormulario(CuentaDestinoReglaFormViewModel formulario)
+    {
+        formulario.Detalles = formulario.Detalles
+            .Where(x => x.IdPlanCuentaDestinoCargo.HasValue
+                     || x.IdPlanCuentaDestinoAbono.HasValue
+                     || x.Porcentaje > 0
+                     || x.Activo)
+            .Select((x, index) =>
+            {
+                x.Orden = (short)(index + 1);
+                return x;
+            })
+            .ToList();
+    }
+
+    private void ValidarFormulario(CuentaDestinoReglaFormViewModel formulario)
+    {
+        if (formulario.Detalles.Count == 0)
+        {
+            ModelState.AddModelError(string.Empty, "Debe registrar al menos un tramo.");
+            return;
+        }
+
+        decimal porcentajeTotal = 0;
+
+        for (var i = 0; i < formulario.Detalles.Count; i++)
+        {
+            var detalle = formulario.Detalles[i];
+            var prefijo = $"Detalles[{i}]";
+
+            if (!detalle.IdPlanCuentaDestinoCargo.HasValue)
+            {
+                ModelState.AddModelError($"{prefijo}.IdPlanCuentaDestinoCargo", "Seleccione la cuenta cargo.");
+            }
+
+            if (!detalle.IdPlanCuentaDestinoAbono.HasValue)
+            {
+                ModelState.AddModelError($"{prefijo}.IdPlanCuentaDestinoAbono", "Seleccione la cuenta abono.");
+            }
+
+            if (detalle.IdPlanCuentaDestinoCargo.HasValue
+                && detalle.IdPlanCuentaDestinoAbono.HasValue
+                && detalle.IdPlanCuentaDestinoCargo.Value == detalle.IdPlanCuentaDestinoAbono.Value)
+            {
+                ModelState.AddModelError($"{prefijo}.IdPlanCuentaDestinoAbono", "Cargo y abono no pueden ser la misma cuenta.");
+            }
+
+            if (detalle.Activo)
+            {
+                porcentajeTotal += detalle.Porcentaje;
+            }
+        }
+
+        if (decimal.Round(porcentajeTotal, 4) != 100)
+        {
+            ModelState.AddModelError(string.Empty, "La suma de porcentajes activos debe ser 100.");
+        }
+    }
+
+    private static CuentaDestinoReglaIndexViewModel ConstruirViewModel(
+        int idEmpresa,
+        string empresaNombre,
+        short ejercicio,
+        IReadOnlyCollection<PlanCuentaDto> cuentasMovimiento,
+        IReadOnlyCollection<CuentaDestinoReglaResumenDto> reglas,
+        CuentaDestinoReglaDto? reglaEditar)
+    {
+        var reglasItems = reglas
+            .Select(x => new CuentaDestinoReglaResumenItemViewModel
+            {
+                IdCuentaDestinoRegla = x.IdCuentaDestinoRegla,
+                Ejercicio = x.Ejercicio,
+                IdPlanCuentaOrigen = x.IdPlanCuentaOrigen,
+                CodigoCuentaOrigen = x.CodigoCuentaOrigen,
+                NombreCuentaOrigen = x.NombreCuentaOrigen,
+                Activo = x.Activo,
+                Observacion = x.Observacion,
+                CantidadTramos = x.CantidadTramos,
+                PorcentajeTotal = x.PorcentajeTotal
+            })
+            .OrderBy(x => x.CodigoCuentaOrigen)
+            .ToList();
+
+        return new CuentaDestinoReglaIndexViewModel
+        {
+            IdEmpresa = idEmpresa,
+            EmpresaNombre = empresaNombre,
+            EjercicioActual = ejercicio,
+            TotalReglas = reglasItems.Count,
+            TotalActivas = reglasItems.Count(x => x.Activo),
+            TotalTramos = reglasItems.Sum(x => x.CantidadTramos),
+            PorcentajeConfigurado = reglasItems.Sum(x => x.PorcentajeTotal),
+            CuentasMovimiento = cuentasMovimiento
+                .Where(x => x.Estado)
+                .OrderBy(x => x.CodigoCuenta)
+                .ToList(),
+            Reglas = reglasItems,
+            Formulario = reglaEditar is null
+                ? new CuentaDestinoReglaFormViewModel
+                {
+                    Ejercicio = ejercicio
+                }
+                : new CuentaDestinoReglaFormViewModel
+                {
+                    Ejercicio = reglaEditar.Ejercicio,
+                    IdPlanCuentaOrigen = reglaEditar.IdPlanCuentaOrigen,
+                    Observacion = reglaEditar.Observacion,
+                    Activo = reglaEditar.Activo,
+                    Detalles = reglaEditar.Detalles
+                        .OrderBy(x => x.Orden)
+                        .Select(x => new CuentaDestinoReglaDetalleFormViewModel
+                        {
+                            IdCuentaDestinoReglaDetalle = x.IdCuentaDestinoReglaDetalle,
+                            Orden = x.Orden,
+                            IdPlanCuentaDestinoCargo = x.IdPlanCuentaDestinoCargo,
+                            IdPlanCuentaDestinoAbono = x.IdPlanCuentaDestinoAbono,
+                            Porcentaje = x.Porcentaje,
+                            Activo = x.Activo
+                        })
+                        .ToList()
+                }
+        };
+    }
+}

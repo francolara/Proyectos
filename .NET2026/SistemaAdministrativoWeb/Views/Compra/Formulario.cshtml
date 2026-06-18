@@ -1,0 +1,952 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.CompraIndexViewModel
+
+@{
+    ViewData["Title"] = Model.Formulario.IdCompra.HasValue ? "Editar compra" : "Registrar compra";
+    ViewData["AdminShell"] = true;
+}
+
+<section class="dashboard-shell">
+    <div class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">Registro contable</span>
+            <h1>@ViewData["Title"]</h1>
+            <p>Completa el comprobante, importes y detalle. El sistema genera el asiento segun la configuracion elegida.</p>
+        </div>
+        <div class="dashboard-status-card">
+            <strong>@Model.EmpresaNombre</strong>
+            <span>Contexto activo para compras provisionadas y asiento automatico.</span>
+            <small>Periodo @Model.PeriodoConsulta</small>
+        </div>
+    </div>
+
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Provision</span>
+                <h1>@ViewData["Title"]</h1>
+                <p>Registra el comprobante de compra y su detalle referencial para la contabilizacion automatica.</p>
+            </div>
+            <div class="workspace-window-badge">
+                <strong>COM</strong>
+                <span>origen automatico</span>
+            </div>
+        </div>
+        <div class="workspace-window-body">
+            @if (Model.ConfiguracionesCompra.Count == 0)
+            {
+                <div class="alert alert-warning">No existe configuracion contable activa para compras. Primero configure compras/ventas.</div>
+            }
+            else
+            {
+                <form asp-action="Guardar" method="post" id="compra-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Formulario.IdCompra" />
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    @if (Model.Proveedores.Count == 0)
+                    {
+                        <div class="alert alert-info mb-3">Aun no existen proveedores en la empresa. Puede registrarlos desde el boton <strong>Nuevo proveedor</strong>.</div>
+                    }
+
+                    <div class="workspace-form-grid">
+                        <div class="workspace-field workspace-field-span-2">
+                            <label class="form-label" for="compraProveedorBuscar">Proveedor</label>
+                            <input asp-for="Formulario.IdProveedor" type="hidden" id="compraProveedorId" />
+                            <div class="input-group">
+                                <input type="text"
+                                       id="compraProveedorBuscar"
+                                       class="form-control"
+                                       value="@Model.ProveedorSeleccionadoTexto"
+                                       placeholder="Escribe proveedor, documento o codigo y presiona Enter..." />
+                                <button type="button" class="btn btn-outline-primary" id="btnNuevoProveedor" title="Nuevo proveedor">+</button>
+                            </div>
+                            <span asp-validation-for="Formulario.IdProveedor" class="text-danger"></span>
+                            <div class="workspace-lookup-results d-none" id="compraProveedorResultadosWrap">
+                                <select class="form-select" id="compraProveedorResultados" size="6">
+                                    <option value="">Escribe y presiona Enter para buscar...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="workspace-field">
+                            <label class="form-label">Tipo documento</label>
+                            <input type="text" id="compraProveedorTipoDocumento" class="form-control" value="@Model.ProveedorSeleccionadoTipoDocumento" readonly />
+                        </div>
+                        <div class="workspace-field">
+                            <label class="form-label">Numero documento</label>
+                            <input type="text" id="compraProveedorNumeroDocumento" class="form-control" value="@Model.ProveedorSeleccionadoNumeroDocumento" readonly />
+                        </div>
+                        <div class="workspace-field workspace-field-span-2">
+                            <label class="form-label">Razon social / nombre</label>
+                            <input type="text" id="compraProveedorNombreLegal" class="form-control" value="@Model.ProveedorSeleccionadoNombreLegal" readonly />
+                        </div>
+                        <div class="workspace-field">
+                            <label class="form-label">Contacto proveedor</label>
+                            <input type="text" id="compraProveedorContacto" class="form-control" value="@Model.ProveedorSeleccionadoContacto" readonly />
+                        </div>
+                        <div class="workspace-field">
+                            <label class="form-label">Correo proveedor</label>
+                            <input type="text" id="compraProveedorCorreo" class="form-control" value="@Model.ProveedorSeleccionadoCorreo" readonly />
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.IdConfiguracionContabilizacion" class="form-label">Configuracion contable</label>
+                            <select asp-for="Formulario.IdConfiguracionContabilizacion" class="form-select">
+                                <option value="">Seleccione</option>
+                                @foreach (var configuracion in Model.ConfiguracionesCompra)
+                                {
+                                    <option value="@configuracion.IdConfiguracionContabilizacion">[@configuracion.EscenarioOperacion] @configuracion.Descripcion</option>
+                                }
+                            </select>
+                            <span asp-validation-for="Formulario.IdConfiguracionContabilizacion" class="text-danger"></span>
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.FechaEmision" class="form-label">Fecha emision</label>
+                            <input asp-for="Formulario.FechaEmision" class="form-control" />
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.FechaContabilizacion" class="form-label">Fecha contabilizacion</label>
+                            <input asp-for="Formulario.FechaContabilizacion" class="form-control" />
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.TipoComprobante" class="form-label">Tipo comprobante</label>
+                            <select asp-for="Formulario.TipoComprobante" class="form-select">
+                                <option value="">Seleccione</option>
+                                @foreach (var tipo in Model.TiposComprobante)
+                                {
+                                    <option value="@tipo.CodigoTipoComprobante">@tipo.CodigoTipoComprobante - @tipo.Descripcion</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.Serie" class="form-label">Serie</label>
+                            <input asp-for="Formulario.Serie" class="form-control" />
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.Numero" class="form-label">Numero</label>
+                            <input asp-for="Formulario.Numero" class="form-control" />
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.IdMoneda" class="form-label">Moneda</label>
+                            <select asp-for="Formulario.IdMoneda" class="form-select">
+                                <option value="">Seleccione</option>
+                                @foreach (var moneda in Model.Monedas)
+                                {
+                                    <option value="@moneda.IdMoneda">@moneda.CodigoMoneda - @moneda.NombreMoneda</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.TipoCambio" class="form-label">Tipo cambio</label>
+                            <input asp-for="Formulario.TipoCambio" class="form-control" />
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.BaseImponible" class="form-label">Base imponible</label>
+                            <input asp-for="Formulario.BaseImponible" class="form-control js-total-part" />
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.Igv" class="form-label">IGV</label>
+                            <input asp-for="Formulario.Igv" class="form-control js-total-part" />
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.Isc" class="form-label">ISC</label>
+                            <input asp-for="Formulario.Isc" class="form-control js-total-part" />
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.OtrosTributos" class="form-label">Otros tributos</label>
+                            <input asp-for="Formulario.OtrosTributos" class="form-control js-total-part" />
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.Redondeo" class="form-label">Redondeo</label>
+                            <input asp-for="Formulario.Redondeo" class="form-control js-total-part" />
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.ImporteTotal" class="form-label">Importe total</label>
+                            <input asp-for="Formulario.ImporteTotal" class="form-control" />
+                        </div>
+                        <div class="workspace-field workspace-field-span-3">
+                            <label asp-for="Formulario.Observacion" class="form-label">Observacion</label>
+                            <input asp-for="Formulario.Observacion" class="form-control" />
+                        </div>
+                    </div>
+
+                    <div class="workspace-section">
+                        <div class="workspace-section-head">
+                            <div>
+                                <h2>Detalle de compra</h2>
+                                <p>La suma del detalle debe coincidir con la base imponible.</p>
+                            </div>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="agregar-detalle">Agregar linea</button>
+                        </div>
+
+                        <div class="table-responsive workspace-table-wrap">
+                            <table class="table align-middle app-table workspace-table" id="detalle-table">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Descripcion</th>
+                                        <th>Cantidad</th>
+                                        <th>Valor unitario</th>
+                                        <th>Importe bruto</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (var i = 0; i < Model.Formulario.Detalles.Count; i++)
+                                    {
+                                        <tr>
+                                            <td class="detalle-orden-cell">
+                                                <input asp-for="Formulario.Detalles[i].Item" class="form-control" readonly />
+                                            </td>
+                                            <td>
+                                                <input asp-for="Formulario.Detalles[i].Descripcion" class="form-control" />
+                                                <span asp-validation-for="Formulario.Detalles[i].Descripcion" class="text-danger"></span>
+                                            </td>
+                                            <td class="detalle-porcentaje-cell">
+                                                <input asp-for="Formulario.Detalles[i].Cantidad" class="form-control js-cantidad" />
+                                            </td>
+                                            <td class="detalle-porcentaje-cell">
+                                                <input asp-for="Formulario.Detalles[i].ValorUnitario" class="form-control js-unitario" />
+                                            </td>
+                                            <td class="detalle-porcentaje-cell">
+                                                <input asp-for="Formulario.Detalles[i].ImporteBruto" class="form-control js-bruto" />
+                                            </td>
+                                            <td class="text-end">
+                                                <button type="button" class="btn btn-outline-secondary btn-sm js-remove-row">Quitar</button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="workspace-inline-note">
+                            <strong>Total detalle:</strong> <span id="total-detalle">0.00</span>
+                        </div>
+                    </div>
+
+                    <div class="workspace-section" id="preview-asiento-compra">
+                        <div class="workspace-section-head">
+                            <div>
+                                <h2>Previsualizacion del asiento</h2>
+                                <p>Consulta el asiento que se generara con la configuracion y montos actuales antes de guardar.</p>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="compra-preview-button">Previsualizar asiento</button>
+                        </div>
+                        <div class="workspace-inline-note" id="compra-preview-mensaje">Aun no se ha generado una previsualizacion.</div>
+                        <div class="workspace-form-grid mt-3">
+                            <div class="workspace-field">
+                                <label class="form-label">Origen</label>
+                                <input type="text" id="compraPreviewOrigen" class="form-control" value="-" readonly />
+                            </div>
+                            <div class="workspace-field workspace-field-span-2">
+                                <label class="form-label">Glosa del asiento</label>
+                                <input type="text" id="compraPreviewGlosa" class="form-control" value="-" readonly />
+                            </div>
+                            <div class="workspace-field">
+                                <label class="form-label">Total Debe</label>
+                                <input type="text" id="compraPreviewDebe" class="form-control" value="0.00" readonly />
+                            </div>
+                            <div class="workspace-field">
+                                <label class="form-label">Total Haber</label>
+                                <input type="text" id="compraPreviewHaber" class="form-control" value="0.00" readonly />
+                            </div>
+                        </div>
+                        <div class="table-responsive workspace-table-wrap mt-3">
+                            <table class="table align-middle app-table workspace-table">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Componente</th>
+                                        <th>Cuenta</th>
+                                        <th>Naturaleza</th>
+                                        <th>Debe</th>
+                                        <th>Haber</th>
+                                        <th>Glosa detalle</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="compra-preview-body">
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted">Sin previsualizacion.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="workspace-actions">
+                        <button type="button" class="btn btn-outline-primary" id="compra-preview-action">Previsualizar asiento</button>
+                        <button type="submit" class="btn btn-primary">Guardar compra</button>
+                        <a asp-action="Index" asp-route-periodo="@Model.PeriodoConsulta" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            }
+        </div>
+    </section>
+</section>
+
+<template id="detalle-row-template">
+    <tr>
+        <td class="detalle-orden-cell">
+            <input name="Formulario.Detalles[__index__].Item" class="form-control" readonly value="0" />
+        </td>
+        <td>
+            <input name="Formulario.Detalles[__index__].Descripcion" class="form-control" />
+        </td>
+        <td class="detalle-porcentaje-cell">
+            <input name="Formulario.Detalles[__index__].Cantidad" class="form-control js-cantidad" value="1" />
+        </td>
+        <td class="detalle-porcentaje-cell">
+            <input name="Formulario.Detalles[__index__].ValorUnitario" class="form-control js-unitario" value="0" />
+        </td>
+        <td class="detalle-porcentaje-cell">
+            <input name="Formulario.Detalles[__index__].ImporteBruto" class="form-control js-bruto" value="0" />
+        </td>
+        <td class="text-end">
+            <button type="button" class="btn btn-outline-secondary btn-sm js-remove-row">Quitar</button>
+        </td>
+    </tr>
+</template>
+
+<div class="modal fade" id="proveedorRapidoModal" tabindex="-1" aria-labelledby="proveedorRapidoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title" id="proveedorRapidoModalLabel">Nuevo proveedor rapido</h5>
+                    <small class="text-muted">Se registrara en personas y se activara como proveedor de la empresa actual.</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form id="proveedorRapidoForm">
+                <div class="modal-body">
+                    <div class="alert alert-danger d-none" id="proveedorRapidoError"></div>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label" for="proveedorRapidoTipoDocumento">Tipo documento</label>
+                            <select class="form-select" id="proveedorRapidoTipoDocumento" required>
+                                <option value="">Seleccione</option>
+                                @foreach (var tipoDocumento in Model.TiposDocumentoIdentidad)
+                                {
+                                    <option value="@tipoDocumento.Valor">@tipoDocumento.Texto</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="proveedorRapidoNumeroDocumento">Numero documento</label>
+                            <input type="text" class="form-control" id="proveedorRapidoNumeroDocumento" maxlength="20" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="proveedorRapidoTelefono">Telefono</label>
+                            <input type="text" class="form-control" id="proveedorRapidoTelefono" maxlength="50" />
+                        </div>
+                        <div class="col-md-6" id="proveedorRapidoRazonSocialWrap">
+                            <label class="form-label" for="proveedorRapidoRazonSocial">Razon social</label>
+                            <input type="text" class="form-control" id="proveedorRapidoRazonSocial" maxlength="200" />
+                        </div>
+                        <div class="col-md-3 d-none" id="proveedorRapidoNombresWrap">
+                            <label class="form-label" for="proveedorRapidoNombres">Nombres</label>
+                            <input type="text" class="form-control" id="proveedorRapidoNombres" maxlength="150" />
+                        </div>
+                        <div class="col-md-3 d-none" id="proveedorRapidoApellidosWrap">
+                            <label class="form-label" for="proveedorRapidoApellidos">Apellidos</label>
+                            <input type="text" class="form-control" id="proveedorRapidoApellidos" maxlength="100" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="proveedorRapidoCorreo">Correo</label>
+                            <input type="email" class="form-control" id="proveedorRapidoCorreo" maxlength="200" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="proveedorRapidoGuardar">Guardar proveedor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const codigoDocumentoRuc = "6";
+            const proveedorBuscarEl = document.getElementById("compraProveedorBuscar");
+            const proveedorIdEl = document.getElementById("compraProveedorId");
+            const proveedorResultadosEl = document.getElementById("compraProveedorResultados");
+            const proveedorResultadosWrapEl = document.getElementById("compraProveedorResultadosWrap");
+            const proveedorTipoDocumentoEl = document.getElementById("compraProveedorTipoDocumento");
+            const proveedorNumeroDocumentoEl = document.getElementById("compraProveedorNumeroDocumento");
+            const proveedorNombreLegalEl = document.getElementById("compraProveedorNombreLegal");
+            const proveedorContactoEl = document.getElementById("compraProveedorContacto");
+            const proveedorCorreoEl = document.getElementById("compraProveedorCorreo");
+            const btnNuevoProveedorEl = document.getElementById("btnNuevoProveedor");
+            const proveedorRapidoModalEl = document.getElementById("proveedorRapidoModal");
+            const proveedorRapidoFormEl = document.getElementById("proveedorRapidoForm");
+            const proveedorRapidoErrorEl = document.getElementById("proveedorRapidoError");
+            const proveedorRapidoTipoDocumentoEl = document.getElementById("proveedorRapidoTipoDocumento");
+            const proveedorRapidoNumeroDocumentoEl = document.getElementById("proveedorRapidoNumeroDocumento");
+            const proveedorRapidoTelefonoEl = document.getElementById("proveedorRapidoTelefono");
+            const proveedorRapidoCorreoEl = document.getElementById("proveedorRapidoCorreo");
+            const proveedorRapidoRazonSocialEl = document.getElementById("proveedorRapidoRazonSocial");
+            const proveedorRapidoNombresEl = document.getElementById("proveedorRapidoNombres");
+            const proveedorRapidoApellidosEl = document.getElementById("proveedorRapidoApellidos");
+            const proveedorRapidoRazonSocialWrapEl = document.getElementById("proveedorRapidoRazonSocialWrap");
+            const proveedorRapidoNombresWrapEl = document.getElementById("proveedorRapidoNombresWrap");
+            const proveedorRapidoApellidosWrapEl = document.getElementById("proveedorRapidoApellidosWrap");
+            const proveedorRapidoGuardarEl = document.getElementById("proveedorRapidoGuardar");
+            const crearProveedorRapidoUrl = '@Url.Action("CrearProveedorRapido", "Compra")';
+            const previewUrl = '@Url.Action("PrevisualizarAsiento", "Compra")';
+            const proveedoresUrl = '@Url.Action("BuscarProveedores", "Compra")';
+            const proveedoresDetalleMap = new Map();
+            const formEl = document.getElementById("compra-form");
+            const tableBody = document.querySelector("#detalle-table tbody");
+            const template = document.getElementById("detalle-row-template");
+            const addButton = document.getElementById("agregar-detalle");
+            const totalDetalleLabel = document.getElementById("total-detalle");
+            const previewButtonEl = document.getElementById("compra-preview-button");
+            const previewActionEl = document.getElementById("compra-preview-action");
+            const previewMensajeEl = document.getElementById("compra-preview-mensaje");
+            const previewOrigenEl = document.getElementById("compraPreviewOrigen");
+            const previewGlosaEl = document.getElementById("compraPreviewGlosa");
+            const previewDebeEl = document.getElementById("compraPreviewDebe");
+            const previewHaberEl = document.getElementById("compraPreviewHaber");
+            const previewBodyEl = document.getElementById("compra-preview-body");
+            const proveedorRapidoModal = proveedorRapidoModalEl && window.bootstrap
+                ? new bootstrap.Modal(proveedorRapidoModalEl)
+                : null;
+
+            if (!tableBody || !template || !addButton || !totalDetalleLabel) {
+                return;
+            }
+
+            const parseAmount = (value) => {
+                const parsed = parseFloat((value ?? "0").replace(",", "."));
+                return Number.isNaN(parsed) ? 0 : parsed;
+            };
+
+            const formatMoney = (value) => Number(value || 0).toFixed(2);
+
+            const escapeHtml = (value) => String(value ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+
+            const componentLabels = {
+                BRUTO: "Bruto",
+                IGV: "IGV",
+                ISC: "ISC",
+                OTROS: "Otros",
+                REDONDEO: "Redondeo",
+                TOTAL: "Total"
+            };
+
+            const renderComponentBadge = (component) => {
+                const key = String(component || "").toUpperCase();
+                const label = componentLabels[key] || key || "-";
+                return `<span class="workspace-component-badge is-${escapeHtml(key.toLowerCase())}">${escapeHtml(label)}</span>`;
+            };
+
+            const renderPreviewVacio = (mensaje) => {
+                if (previewMensajeEl) {
+                    previewMensajeEl.textContent = mensaje || "Aun no se ha generado una previsualizacion.";
+                    previewMensajeEl.className = "workspace-inline-note workspace-preview-message";
+                }
+                if (previewOrigenEl) {
+                    previewOrigenEl.value = "-";
+                }
+                if (previewGlosaEl) {
+                    previewGlosaEl.value = "-";
+                }
+                if (previewDebeEl) {
+                    previewDebeEl.value = "0.00";
+                }
+                if (previewHaberEl) {
+                    previewHaberEl.value = "0.00";
+                }
+                if (previewBodyEl) {
+                    previewBodyEl.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Sin previsualizacion.</td></tr>';
+                }
+            };
+
+            const renderPreview = (preview) => {
+                if (previewMensajeEl) {
+                    previewMensajeEl.textContent = preview?.mensajeValidacion || "Previsualizacion generada.";
+                    previewMensajeEl.className = `workspace-inline-note workspace-preview-message ${preview?.cuadrado ? "is-ok" : "is-error"}`;
+                }
+                if (previewOrigenEl) {
+                    const origen = `${preview?.codigoOrigen || ""} - ${preview?.nombreOrigen || ""}`.trim();
+                    previewOrigenEl.value = origen === "-" || origen === "" ? "-" : origen;
+                }
+                if (previewGlosaEl) {
+                    previewGlosaEl.value = preview?.glosaAsiento || "-";
+                }
+                if (previewDebeEl) {
+                    previewDebeEl.value = formatMoney(preview?.totalDebe);
+                }
+                if (previewHaberEl) {
+                    previewHaberEl.value = formatMoney(preview?.totalHaber);
+                }
+                if (previewBodyEl) {
+                    const lineas = Array.isArray(preview?.lineas) ? preview.lineas : [];
+                    if (lineas.length === 0) {
+                        previewBodyEl.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Sin lineas contables.</td></tr>';
+                        return;
+                    }
+
+                    previewBodyEl.innerHTML = lineas.map(linea => `
+                        <tr>
+                            <td>${escapeHtml(linea.item ?? "")}</td>
+                            <td>${renderComponentBadge(linea.componenteContable)}</td>
+                            <td><span class="workspace-account-code">${escapeHtml(linea.codigoCuenta ?? "")}</span> ${escapeHtml(linea.nombreCuenta ?? "")}</td>
+                            <td><span class="workspace-nature-badge ${linea.naturalezaMovimiento === "D" ? "is-debe" : "is-haber"}">${linea.naturalezaMovimiento === "D" ? "Debe" : "Haber"}</span></td>
+                            <td class="workspace-money-cell">${formatMoney(linea.debe)}</td>
+                            <td class="workspace-money-cell">${formatMoney(linea.haber)}</td>
+                            <td>${escapeHtml(linea.glosaDetalle ?? "")}</td>
+                        </tr>`).join("");
+                }
+            };
+
+            const collectPreviewPayload = () => {
+                const readValue = (selector) => formEl?.querySelector(selector)?.value || "";
+                const detalles = Array.from(tableBody?.querySelectorAll("tr") || []).map(row => ({
+                    item: Number(row.querySelector('input[name$=".Item"]')?.value || 0),
+                    descripcion: String(row.querySelector('input[name$=".Descripcion"]')?.value || ""),
+                    cantidad: parseAmount(row.querySelector('input[name$=".Cantidad"]')?.value || "0"),
+                    valorUnitario: parseAmount(row.querySelector('input[name$=".ValorUnitario"]')?.value || "0"),
+                    importeBruto: parseAmount(row.querySelector('input[name$=".ImporteBruto"]')?.value || "0")
+                }));
+
+                return {
+                    idConfiguracionContabilizacion: Number(readValue('[name="Formulario.IdConfiguracionContabilizacion"]') || 0),
+                    fechaContabilizacion: readValue('[name="Formulario.FechaContabilizacion"]'),
+                    tipoComprobante: readValue('[name="Formulario.TipoComprobante"]'),
+                    serie: readValue('[name="Formulario.Serie"]'),
+                    numero: readValue('[name="Formulario.Numero"]'),
+                    baseImponible: parseAmount(readValue('[name="Formulario.BaseImponible"]')),
+                    igv: parseAmount(readValue('[name="Formulario.Igv"]')),
+                    isc: parseAmount(readValue('[name="Formulario.Isc"]')),
+                    otrosTributos: parseAmount(readValue('[name="Formulario.OtrosTributos"]')),
+                    redondeo: parseAmount(readValue('[name="Formulario.Redondeo"]')),
+                    importeTotal: parseAmount(readValue('[name="Formulario.ImporteTotal"]')),
+                    detalles
+                };
+            };
+
+            const ejecutarPreview = async () => {
+                if (!formEl) {
+                    return;
+                }
+
+                const token = formEl.querySelector('input[name="__RequestVerificationToken"]')?.value || "";
+                const payload = collectPreviewPayload();
+                const botones = [previewButtonEl, previewActionEl].filter(x => x);
+
+                botones.forEach(x => x.disabled = true);
+                try {
+                    const response = await fetch(previewUrl, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "RequestVerificationToken": token
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await response.json();
+                    if (!response.ok || !data.ok) {
+                        throw new Error(data.mensaje || "No se pudo generar la previsualizacion.");
+                    }
+
+                    renderPreview(data.preview);
+                } catch (error) {
+                    renderPreviewVacio(error?.message || "No se pudo generar la previsualizacion.");
+                } finally {
+                    botones.forEach(x => x.disabled = false);
+                }
+            };
+
+            const mostrarResultadosProveedor = (visible) => {
+                if (!proveedorResultadosWrapEl) {
+                    return;
+                }
+
+                proveedorResultadosWrapEl.classList.toggle("d-none", !visible);
+            };
+
+            const actualizarDatosProveedor = (detalle = null) => {
+                if (proveedorTipoDocumentoEl) {
+                    proveedorTipoDocumentoEl.value = detalle?.tipoDocumento || "-";
+                }
+                if (proveedorNumeroDocumentoEl) {
+                    proveedorNumeroDocumentoEl.value = detalle?.numeroDocumento || "-";
+                }
+                if (proveedorNombreLegalEl) {
+                    proveedorNombreLegalEl.value = detalle?.nombre || "-";
+                }
+                if (proveedorContactoEl) {
+                    proveedorContactoEl.value = detalle?.numero || "-";
+                }
+                if (proveedorCorreoEl) {
+                    proveedorCorreoEl.value = detalle?.correo || "-";
+                }
+            };
+
+            const seleccionarProveedor = (proveedorId, textoProveedor, detalle = null) => {
+                if (!proveedorIdEl || !proveedorBuscarEl) {
+                    return;
+                }
+
+                proveedorIdEl.value = proveedorId ? String(proveedorId) : "";
+                proveedorBuscarEl.value = proveedorId ? String(textoProveedor || "") : "";
+                const info = detalle || proveedoresDetalleMap.get(String(proveedorId)) || null;
+                actualizarDatosProveedor(info);
+                mostrarResultadosProveedor(false);
+            };
+
+            const limpiarProveedorRapidoError = () => {
+                if (!proveedorRapidoErrorEl) {
+                    return;
+                }
+
+                proveedorRapidoErrorEl.textContent = "";
+                proveedorRapidoErrorEl.classList.add("d-none");
+            };
+
+            const mostrarProveedorRapidoError = (mensaje) => {
+                if (!proveedorRapidoErrorEl) {
+                    return;
+                }
+
+                proveedorRapidoErrorEl.textContent = mensaje || "No se pudo registrar el proveedor.";
+                proveedorRapidoErrorEl.classList.remove("d-none");
+            };
+
+            const actualizarFormularioProveedorRapido = () => {
+                const esJuridica = String(proveedorRapidoTipoDocumentoEl?.value || "") === codigoDocumentoRuc;
+
+                proveedorRapidoRazonSocialWrapEl?.classList.toggle("d-none", !esJuridica);
+                proveedorRapidoNombresWrapEl?.classList.toggle("d-none", esJuridica);
+                proveedorRapidoApellidosWrapEl?.classList.toggle("d-none", esJuridica);
+
+                if (proveedorRapidoRazonSocialEl) {
+                    proveedorRapidoRazonSocialEl.required = esJuridica;
+                }
+                if (proveedorRapidoNombresEl) {
+                    proveedorRapidoNombresEl.required = !esJuridica;
+                }
+                if (proveedorRapidoApellidosEl) {
+                    proveedorRapidoApellidosEl.required = !esJuridica;
+                }
+            };
+
+            const limpiarOpcionesProveedor = (mensaje = "Escribe y presiona Enter para buscar...") => {
+                if (proveedorIdEl) {
+                    proveedorIdEl.value = "";
+                }
+                if (!proveedorResultadosEl) {
+                    return;
+                }
+
+                proveedorResultadosEl.innerHTML = "";
+                proveedoresDetalleMap.clear();
+                const option = document.createElement("option");
+                option.value = "";
+                option.textContent = mensaje;
+                proveedorResultadosEl.appendChild(option);
+                actualizarDatosProveedor(null);
+                mostrarResultadosProveedor(false);
+            };
+
+            const recargarProveedores = async (buscar = "", proveedorIdPreferido = "") => {
+                if (!proveedorResultadosEl) {
+                    return [];
+                }
+
+                const params = new URLSearchParams();
+                if (buscar) {
+                    params.append("buscar", buscar);
+                }
+                if (proveedorIdPreferido) {
+                    params.append("proveedorId", proveedorIdPreferido);
+                }
+
+                const response = await fetch(`${proveedoresUrl}?${params.toString()}`, { cache: "no-store" });
+                const payload = await response.json();
+                if (!response.ok || !payload.ok) {
+                    throw new Error(payload.mensaje || "No se pudo buscar proveedores.");
+                }
+
+                const items = (payload.items || []).map(item => ({
+                    value: String(item.value ?? ""),
+                    text: String(item.text ?? ""),
+                    tipoDocumento: String(item.tipoDocumento ?? ""),
+                    numeroDocumento: String(item.numeroDocumento ?? ""),
+                    nombre: String(item.nombre ?? ""),
+                    numero: String(item.numero ?? ""),
+                    correo: String(item.correo ?? "")
+                }));
+
+                proveedoresDetalleMap.clear();
+                proveedorResultadosEl.innerHTML = "";
+
+                if (items.length === 0) {
+                    const option = document.createElement("option");
+                    option.value = "";
+                    option.textContent = "Sin resultados";
+                    proveedorResultadosEl.appendChild(option);
+                    mostrarResultadosProveedor(true);
+                    if (!proveedorIdPreferido && proveedorIdEl) {
+                        proveedorIdEl.value = "";
+                        actualizarDatosProveedor(null);
+                    }
+                    return items;
+                }
+
+                let encontradoPreferido = false;
+                items.forEach(item => {
+                    const option = document.createElement("option");
+                    option.value = item.value;
+                    option.textContent = item.text;
+                    option.setAttribute("data-tipo-documento", item.tipoDocumento || "");
+                    option.setAttribute("data-numero-documento", item.numeroDocumento || "");
+                    option.setAttribute("data-nombre", item.nombre || "");
+                    option.setAttribute("data-numero", item.numero || "");
+                    option.setAttribute("data-correo", item.correo || "");
+                    proveedorResultadosEl.appendChild(option);
+                    proveedoresDetalleMap.set(item.value, {
+                        tipoDocumento: item.tipoDocumento || "",
+                        numeroDocumento: item.numeroDocumento || "",
+                        nombre: item.nombre || "",
+                        numero: item.numero || "",
+                        correo: item.correo || ""
+                    });
+                    if (proveedorIdPreferido && item.value === String(proveedorIdPreferido)) {
+                        encontradoPreferido = true;
+                    }
+                });
+
+                if (proveedorIdPreferido && encontradoPreferido) {
+                    const selected = Array.from(proveedorResultadosEl.options).find(x => x.value === String(proveedorIdPreferido));
+                    if (selected) {
+                        seleccionarProveedor(selected.value, selected.text || "", {
+                            tipoDocumento: selected.getAttribute("data-tipo-documento") || "",
+                            numeroDocumento: selected.getAttribute("data-numero-documento") || "",
+                            nombre: selected.getAttribute("data-nombre") || "",
+                            numero: selected.getAttribute("data-numero") || "",
+                            correo: selected.getAttribute("data-correo") || ""
+                        });
+                    }
+                } else {
+                    mostrarResultadosProveedor(true);
+                    if (proveedorIdEl) {
+                        proveedorIdEl.value = "";
+                    }
+                    actualizarDatosProveedor(null);
+                }
+
+                return items;
+            };
+
+            const bindRowActions = (row) => {
+                row.querySelector(".js-remove-row")?.addEventListener("click", () => {
+                    if (tableBody.querySelectorAll("tr").length === 1) {
+                        return;
+                    }
+
+                    row.remove();
+                    refreshRows();
+                });
+            };
+
+            const refreshRows = () => {
+                const rows = Array.from(tableBody.querySelectorAll("tr"));
+                let total = 0;
+
+                rows.forEach((row, index) => {
+                    row.querySelectorAll("input, select, textarea, span").forEach((element) => {
+                        ["name", "id", "for"].forEach((attribute) => {
+                            const currentValue = element.getAttribute(attribute);
+                            if (!currentValue) {
+                                return;
+                            }
+
+                            const updatedValue = currentValue
+                                .replaceAll("__index__", index)
+                                .replace(/Formulario\.Detalles\[\d+\]/g, `Formulario.Detalles[${index}]`)
+                                .replace(/Formulario_Detalles_\d+__/g, `Formulario_Detalles_${index}__`);
+
+                            if (updatedValue !== currentValue) {
+                                element.setAttribute(attribute, updatedValue);
+                            }
+                        });
+                    });
+
+                    const itemInput = row.querySelector('input[name$=".Item"]');
+                    if (itemInput) {
+                        itemInput.value = (index + 1).toString();
+                    }
+
+                    total += parseAmount(row.querySelector(".js-bruto")?.value);
+                });
+
+                totalDetalleLabel.textContent = total.toFixed(2);
+            };
+
+            addButton.addEventListener("click", () => {
+                const index = tableBody.querySelectorAll("tr").length;
+                const html = template.innerHTML.replaceAll("__index__", index);
+                tableBody.insertAdjacentHTML("beforeend", html);
+                const row = tableBody.lastElementChild;
+                if (row) {
+                    bindRowActions(row);
+                }
+                refreshRows();
+            });
+
+            tableBody.querySelectorAll("tr").forEach(bindRowActions);
+            tableBody.addEventListener("input", refreshRows);
+            refreshRows();
+
+            if (proveedorBuscarEl && proveedorIdEl && proveedorResultadosEl) {
+                proveedorBuscarEl.addEventListener("input", () => {
+                    if (proveedorIdEl.value) {
+                        proveedorIdEl.value = "";
+                        actualizarDatosProveedor(null);
+                    }
+                });
+
+                proveedorBuscarEl.addEventListener("keydown", async (event) => {
+                    if (event.key !== "Enter") {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    const filtro = String(proveedorBuscarEl.value || "").trim();
+                    if (filtro.length < 2) {
+                        limpiarOpcionesProveedor("Escribe al menos 2 caracteres y presiona Enter.");
+                        mostrarResultadosProveedor(true);
+                        return;
+                    }
+
+                    try {
+                        const items = await recargarProveedores(filtro);
+                        if (items.length === 1) {
+                            seleccionarProveedor(items[0].value, items[0].text, {
+                                tipoDocumento: items[0].tipoDocumento || "",
+                                numeroDocumento: items[0].numeroDocumento || "",
+                                nombre: items[0].nombre || "",
+                                numero: items[0].numero || "",
+                                correo: items[0].correo || ""
+                            });
+                        } else {
+                            mostrarResultadosProveedor(true);
+                            proveedorResultadosEl.focus();
+                        }
+                    } catch (error) {
+                        console.warn(error);
+                        limpiarOpcionesProveedor("No se pudo cargar proveedores");
+                        mostrarResultadosProveedor(true);
+                    }
+                });
+
+                const sincronizarProveedorDesdeSelect = () => {
+                    const option = proveedorResultadosEl.selectedOptions?.[0];
+                    if (!option || !option.value) {
+                        return;
+                    }
+
+                    seleccionarProveedor(option.value, option.text || "", {
+                        tipoDocumento: option.getAttribute("data-tipo-documento") || "",
+                        numeroDocumento: option.getAttribute("data-numero-documento") || "",
+                        nombre: option.getAttribute("data-nombre") || "",
+                        numero: option.getAttribute("data-numero") || "",
+                        correo: option.getAttribute("data-correo") || ""
+                    });
+                };
+
+                proveedorResultadosEl.addEventListener("change", sincronizarProveedorDesdeSelect);
+                proveedorResultadosEl.addEventListener("dblclick", sincronizarProveedorDesdeSelect);
+                proveedorResultadosEl.addEventListener("keydown", (event) => {
+                    if (event.key !== "Enter") {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    sincronizarProveedorDesdeSelect();
+                });
+            }
+
+            if (btnNuevoProveedorEl && proveedorRapidoModal) {
+                btnNuevoProveedorEl.addEventListener("click", () => {
+                    limpiarProveedorRapidoError();
+                    proveedorRapidoFormEl?.reset();
+                    if (proveedorRapidoTipoDocumentoEl) {
+                        proveedorRapidoTipoDocumentoEl.value = "";
+                    }
+                    actualizarFormularioProveedorRapido();
+                    proveedorRapidoModal.show();
+                });
+            }
+
+            proveedorRapidoTipoDocumentoEl?.addEventListener("change", actualizarFormularioProveedorRapido);
+            actualizarFormularioProveedorRapido();
+
+            proveedorRapidoFormEl?.addEventListener("submit", async (event) => {
+                event.preventDefault();
+                limpiarProveedorRapidoError();
+
+                const payload = {
+                    tipoDocumento: String(proveedorRapidoTipoDocumentoEl?.value || ""),
+                    numeroDocumento: String(proveedorRapidoNumeroDocumentoEl?.value || ""),
+                    razonSocial: String(proveedorRapidoRazonSocialEl?.value || ""),
+                    nombres: String(proveedorRapidoNombresEl?.value || ""),
+                    apellidos: String(proveedorRapidoApellidosEl?.value || ""),
+                    telefono: String(proveedorRapidoTelefonoEl?.value || ""),
+                    correo: String(proveedorRapidoCorreoEl?.value || "")
+                };
+
+                if (proveedorRapidoGuardarEl) {
+                    proveedorRapidoGuardarEl.disabled = true;
+                }
+
+                try {
+                    const response = await fetch(crearProveedorRapidoUrl, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await response.json();
+
+                    if (!response.ok || !data.ok) {
+                        throw new Error(data.mensaje || "No se pudo registrar el proveedor.");
+                    }
+
+                    await recargarProveedores("", String(data.proveedorId || ""));
+                    if (data.proveedorId) {
+                        seleccionarProveedor(String(data.proveedorId), String(data.proveedorTexto || ""), {
+                            tipoDocumento: String(data.tipoDocumento || ""),
+                            numeroDocumento: String(data.numeroDocumento || ""),
+                            nombre: String(data.nombre || ""),
+                            numero: String(data.numero || ""),
+                            correo: String(data.correo || "")
+                        });
+                    }
+                    proveedorRapidoModal.hide();
+                } catch (error) {
+                    mostrarProveedorRapidoError(error?.message || "No se pudo registrar el proveedor.");
+                } finally {
+                    if (proveedorRapidoGuardarEl) {
+                        proveedorRapidoGuardarEl.disabled = false;
+                    }
+                }
+            });
+
+            previewButtonEl?.addEventListener("click", ejecutarPreview);
+            previewActionEl?.addEventListener("click", ejecutarPreview);
+            renderPreviewVacio("Aun no se ha generado una previsualizacion.");
+        })();
+    </script>
+}

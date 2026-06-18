@@ -9,10 +9,10 @@
     <aside class="auth-visual">
         <div class="auth-visual-content">
             <p class="auth-visual-tag">Onboarding</p>
-            <h2>Registra un usuario o activa el alta inicial de un negocio en la misma plataforma.</h2>
+            <h2>Registra tu usuario y deja lista la cuenta para vincular una o varias empresas.</h2>
             <ul class="auth-visual-list">
-                <li>Cuenta personal para operación interna.</li>
-                <li>Cuenta de negocio con empresa y prueba inicial.</li>
+                <li>Acceso personal para contadores y administradores.</li>
+                <li>La empresa se vinculara despues desde el flujo administrativo.</li>
                 <li>Base lista para que superadmin gestione contrato y vigencia.</li>
             </ul>
         </div>
@@ -21,126 +21,63 @@
     <section class="auth-panel">
         <div class="auth-card">
             <h1>Crear una cuenta</h1>
-            <p class="auth-subtitle">Elige si vas a registrar solo un usuario o un negocio completo.</p>
-
-            <div class="auth-mini-switch mb-3" role="group" aria-label="Tipo registro">
-                <input type="radio" class="btn-check" name="TipoRegistro" id="regUsuario" value="usuario" checked="@(Model.TipoRegistro == "empresa" ? null : "checked")" />
-                <label class="btn" for="regUsuario">Usuario</label>
-
-                <input type="radio" class="btn-check" name="TipoRegistro" id="regEmpresa" value="empresa" checked="@(Model.TipoRegistro == "empresa" ? "checked" : null)" />
-                <label class="btn" for="regEmpresa">Negocio</label>
-            </div>
+            <p class="auth-subtitle">Registra un usuario para ingresar a la plataforma y luego vincular sus empresas.</p>
 
             <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
             <form method="post" id="registerForm">
                 <input type="hidden" asp-for="ReturnUrl" />
 
-                <div id="registroUsuarioFields">
-                    <div class="mb-3">
-                        <label asp-for="Usuario.NombreCompleto" class="form-label">Nombre completo</label>
-                        <input asp-for="Usuario.NombreCompleto" class="form-control" />
-                        <span asp-validation-for="Usuario.NombreCompleto" class="text-danger"></span>
-                    </div>
-                    <div class="mb-3">
-                        <label asp-for="Usuario.Telefono" class="form-label">Telefono</label>
-                        <input asp-for="Usuario.Telefono" class="form-control" />
-                        <span asp-validation-for="Usuario.Telefono" class="text-danger"></span>
-                    </div>
-                    <div class="mb-3">
-                        <label asp-for="Usuario.Email" class="form-label">Correo electronico</label>
-                        <input asp-for="Usuario.Email" class="form-control" />
-                        <span asp-validation-for="Usuario.Email" class="text-danger"></span>
-                    </div>
-                    <div class="mb-3">
-                        <label asp-for="Usuario.Password" class="form-label">Contrasena</label>
-                        <input asp-for="Usuario.Password" class="form-control" />
-                        <span asp-validation-for="Usuario.Password" class="text-danger"></span>
-                    </div>
-                    <div class="mb-3">
-                        <label asp-for="Usuario.ConfirmPassword" class="form-label">Confirmar contrasena</label>
-                        <input asp-for="Usuario.ConfirmPassword" class="form-control" />
-                        <span asp-validation-for="Usuario.ConfirmPassword" class="text-danger"></span>
-                    </div>
-                    <div class="mb-3">
-                        <div class="cf-turnstile" data-sitekey="@Model.TurnstileSiteKey"></div>
-                    </div>
-                    <button type="submit" asp-page-handler="Usuario" class="w-100 btn btn-primary auth-cta">Registrar usuario</button>
+                <div class="mb-3">
+                    <label asp-for="Usuario.NombreCompleto" class="form-label">Nombre completo</label>
+                    <input asp-for="Usuario.NombreCompleto" class="form-control" />
+                    <span asp-validation-for="Usuario.NombreCompleto" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Usuario.Telefono" class="form-label">Telefono</label>
+                    <input asp-for="Usuario.Telefono" class="form-control" />
+                    <span asp-validation-for="Usuario.Telefono" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Usuario.Email" class="form-label">Correo electronico</label>
+                    <input asp-for="Usuario.Email" class="form-control" />
+                    <span asp-validation-for="Usuario.Email" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Usuario.Password" class="form-label">Contrasena</label>
+                    <input asp-for="Usuario.Password" class="form-control" />
+                    <div class="form-text">Debe tener minimo 6 caracteres e incluir mayuscula, minuscula, numero y caracter especial.</div>
+                    <span asp-validation-for="Usuario.Password" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Usuario.ConfirmPassword" class="form-label">Confirmar contrasena</label>
+                    <input asp-for="Usuario.ConfirmPassword" class="form-control" />
+                    <span asp-validation-for="Usuario.ConfirmPassword" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <div class="cf-turnstile" data-sitekey="@Model.TurnstileSiteKey"></div>
+                </div>
 
-                    @if (Model.ExternalLogins.Count > 0)
+                <button type="submit" asp-page-handler="Usuario" class="w-100 btn btn-primary auth-cta">Registrar usuario</button>
+
+                @if (Model.ExternalLogins.Count > 0)
+                {
+                    @foreach (var provider in Model.ExternalLogins)
                     {
-                        @foreach (var provider in Model.ExternalLogins)
-                        {
-                            <button type="submit"
-                                    class="w-100 btn btn-outline-dark auth-cta mt-2"
-                                    asp-page-handler="ExternalLogin"
-                                    asp-route-provider="@provider.Name"
-                                    asp-route-returnUrl="@Model.ReturnUrl"
-                                    asp-route-flow="register"
-                                    formnovalidate>
-                                <span class="d-inline-flex align-items-center justify-content-center gap-2">
-                                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" width="18" height="18" />
-                                    <span>Registrarse con @provider.DisplayName</span>
-                                </span>
-                            </button>
-                        }
+                        <button type="submit"
+                                class="w-100 btn btn-outline-dark auth-cta mt-2"
+                                asp-page-handler="ExternalLogin"
+                                asp-route-provider="@provider.Name"
+                                asp-route-returnUrl="@Model.ReturnUrl"
+                                asp-route-flow="register"
+                                formnovalidate>
+                            <span class="d-inline-flex align-items-center justify-content-center gap-2">
+                                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" width="18" height="18" />
+                                <span>Registrarse con @provider.DisplayName</span>
+                            </span>
+                        </button>
                     }
-                </div>
-
-                <div id="registroEmpresaFields" class="d-none">
-                    <div class="auth-club-box mb-3">
-                        <strong>Registro de negocio</strong>
-                        <p class="mb-0">Se creará la cuenta principal, la empresa y una suscripción inicial en modo prueba.</p>
-                    </div>
-
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label asp-for="Empresa.NombreContacto" class="form-label">Contacto principal</label>
-                            <input asp-for="Empresa.NombreContacto" class="form-control" />
-                            <span asp-validation-for="Empresa.NombreContacto" class="text-danger"></span>
-                        </div>
-                        <div class="col-md-6">
-                            <label asp-for="Empresa.Telefono" class="form-label">Telefono</label>
-                            <input asp-for="Empresa.Telefono" class="form-control" />
-                            <span asp-validation-for="Empresa.Telefono" class="text-danger"></span>
-                        </div>
-                        <div class="col-md-6">
-                            <label asp-for="Empresa.Correo" class="form-label">Correo</label>
-                            <input asp-for="Empresa.Correo" class="form-control" />
-                            <span asp-validation-for="Empresa.Correo" class="text-danger"></span>
-                        </div>
-                        <div class="col-md-6">
-                            <label asp-for="Empresa.Ruc" class="form-label">RUC</label>
-                            <input asp-for="Empresa.Ruc" class="form-control" maxlength="11" />
-                            <span asp-validation-for="Empresa.Ruc" class="text-danger"></span>
-                        </div>
-                        <div class="col-md-6">
-                            <label asp-for="Empresa.RazonSocial" class="form-label">Razon social</label>
-                            <input asp-for="Empresa.RazonSocial" class="form-control" />
-                            <span asp-validation-for="Empresa.RazonSocial" class="text-danger"></span>
-                        </div>
-                        <div class="col-md-6">
-                            <label asp-for="Empresa.NombreComercial" class="form-label">Nombre comercial</label>
-                            <input asp-for="Empresa.NombreComercial" class="form-control" />
-                            <span asp-validation-for="Empresa.NombreComercial" class="text-danger"></span>
-                        </div>
-                        <div class="col-md-6">
-                            <label asp-for="Empresa.Password" class="form-label">Contrasena</label>
-                            <input asp-for="Empresa.Password" class="form-control" />
-                            <span asp-validation-for="Empresa.Password" class="text-danger"></span>
-                        </div>
-                        <div class="col-md-6">
-                            <label asp-for="Empresa.ConfirmPassword" class="form-label">Confirmar contrasena</label>
-                            <input asp-for="Empresa.ConfirmPassword" class="form-control" />
-                            <span asp-validation-for="Empresa.ConfirmPassword" class="text-danger"></span>
-                        </div>
-                    </div>
-
-                    <div class="mb-3 mt-3">
-                        <div class="cf-turnstile" data-sitekey="@Model.TurnstileSiteKey"></div>
-                    </div>
-                    <button type="submit" asp-page-handler="Empresa" class="w-100 btn btn-primary auth-cta mt-3">Registrar negocio</button>
-                </div>
+                }
 
                 <div class="auth-foot-links auth-foot-links-pro">
                     <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl">Ya tengo cuenta</a>
@@ -154,23 +91,4 @@
 @section Scripts {
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        (() => {
-            const usuario = document.getElementById('regUsuario');
-            const empresa = document.getElementById('regEmpresa');
-            const boxUsuario = document.getElementById('registroUsuarioFields');
-            const boxEmpresa = document.getElementById('registroEmpresaFields');
-            if (!usuario || !empresa || !boxUsuario || !boxEmpresa) return;
-
-            function sync() {
-                const isEmpresa = empresa.checked;
-                boxUsuario.classList.toggle('d-none', isEmpresa);
-                boxEmpresa.classList.toggle('d-none', !isEmpresa);
-            }
-
-            usuario.addEventListener('change', sync);
-            empresa.addEventListener('change', sync);
-            sync();
-        })();
-    </script>
 }

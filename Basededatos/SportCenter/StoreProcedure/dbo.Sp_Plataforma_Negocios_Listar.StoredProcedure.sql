@@ -3,6 +3,7 @@
 -- Create date:   19/04/2026
 -- Firma:         Listado de negocios para panel superadmin con limites operativos y estado comercial.
 -- Firma:         20/04/2026 | Agrega filtro comercial y paginacion backend con total de registros para panel superadmin.
+-- Firma:         FRANCO LARA - 18/06/2026 | Expone TipoPlan para administrar capacidad comercial Basico/Full desde plataforma.
 -- =============================================
 CREATE OR ALTER PROCEDURE dbo.Sp_Plataforma_Negocios_Listar
     @Buscar NVARCHAR(200) = NULL,
@@ -38,6 +39,7 @@ BEGIN
             n.Id,
             n.NombreComercial,
             n.Activo,
+            CAST(COALESCE(n.TipoPlan, N'Basico') AS NVARCHAR(20)) AS TipoPlan,
             CAST(COALESCE(n.SedesPermitidas, 2) AS INT) AS SedesPermitidas,
             CAST(COALESCE(n.EspaciosPermitidos, 6) AS INT) AS EspaciosPermitidos,
             CAST(COALESCE(n.UsuariosPermitidos, 3) AS INT) AS UsuariosPermitidos,

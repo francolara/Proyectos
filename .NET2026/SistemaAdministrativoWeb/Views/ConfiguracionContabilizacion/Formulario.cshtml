@@ -1,0 +1,277 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.ConfiguracionContabilizacionIndexViewModel
+
+@{
+    ViewData["Title"] = Model.Formulario.IdConfiguracionContabilizacion.HasValue ? "Editar configuracion contable" : "Registrar configuracion contable";
+    ViewData["AdminShell"] = true;
+}
+
+<section class="dashboard-shell">
+    <div class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">Mantenimiento contable</span>
+            <h1>@ViewData["Title"]</h1>
+            <p>Asocia origen, escenario y componentes contables como bruto, IGV, total o redondeo.</p>
+        </div>
+        <div class="dashboard-status-card">
+            <strong>@Model.EmpresaNombre</strong>
+            <span>Configuracion base para compras y ventas automaticas.</span>
+            <small>Empresa #@Model.IdEmpresa</small>
+        </div>
+    </div>
+
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Plantilla contable</span>
+                <h1>@ViewData["Title"]</h1>
+                <p>Configura modulo, escenario y componentes que participaran en el asiento automatico.</p>
+            </div>
+            <div class="workspace-window-badge">
+                <strong>@Model.Formulario.ModuloOperacion</strong>
+                <span>modulo en edicion</span>
+            </div>
+        </div>
+        <div class="workspace-window-body">
+            <form asp-action="Guardar" method="post" id="configuracion-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Formulario.IdConfiguracionContabilizacion" />
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="workspace-form-grid">
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.ModuloOperacion" class="form-label">Modulo</label>
+                        <select asp-for="Formulario.ModuloOperacion" class="form-select">
+                            <option value="COM">Compras</option>
+                            <option value="VEN">Ventas</option>
+                        </select>
+                        <span asp-validation-for="Formulario.ModuloOperacion" class="text-danger"></span>
+                    </div>
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.EscenarioOperacion" class="form-label">Escenario</label>
+                        <select asp-for="Formulario.EscenarioOperacion" class="form-select">
+                            <option value="MERCADERIA">Mercaderia</option>
+                            <option value="GASTO">Gasto</option>
+                            <option value="SERVICIO">Servicio</option>
+                        </select>
+                        <span asp-validation-for="Formulario.EscenarioOperacion" class="text-danger"></span>
+                    </div>
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.IdOrigen" class="form-label">Origen contable</label>
+                        <select asp-for="Formulario.IdOrigen" class="form-select">
+                            <option value="">Seleccione</option>
+                            @foreach (var origen in Model.Origenes)
+                            {
+                                <option value="@origen.IdOrigen">@origen.CodigoOrigen - @origen.NombreOrigen</option>
+                            }
+                        </select>
+                        <span asp-validation-for="Formulario.IdOrigen" class="text-danger"></span>
+                    </div>
+                    <div class="workspace-field workspace-field-span-2">
+                        <label asp-for="Formulario.Descripcion" class="form-label">Descripcion</label>
+                        <input asp-for="Formulario.Descripcion" class="form-control" />
+                        <span asp-validation-for="Formulario.Descripcion" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="workspace-check-grid">
+                    <label class="workspace-check">
+                        <input asp-for="Formulario.GeneraAsientoAutomatico" class="form-check-input" />
+                        <span>Genera asiento automatico</span>
+                    </label>
+                    <label class="workspace-check">
+                        <input asp-for="Formulario.UsaTipoCambio" class="form-check-input" />
+                        <span>Usa tipo de cambio</span>
+                    </label>
+                    <label class="workspace-check">
+                        <input asp-for="Formulario.Activo" class="form-check-input" />
+                        <span>Configuracion activa</span>
+                    </label>
+                </div>
+
+                <div class="workspace-section">
+                    <div class="workspace-section-head">
+                        <div>
+                            <h2>Componentes del asiento</h2>
+                            <p>Configura las cuentas para bruto, IGV, total, redondeo u otros componentes contables.</p>
+                        </div>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="agregar-componente">Agregar componente</button>
+                    </div>
+
+                    <div class="table-responsive workspace-table-wrap">
+                        <table class="table align-middle app-table workspace-table" id="detalle-table">
+                            <thead>
+                                <tr>
+                                    <th>Orden</th>
+                                    <th>Componente</th>
+                                    <th>Cuenta</th>
+                                    <th>Naturaleza</th>
+                                    <th>Activo</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (var i = 0; i < Model.Formulario.Detalles.Count; i++)
+                                {
+                                    <tr>
+                                        <td class="detalle-orden-cell">
+                                            <input asp-for="Formulario.Detalles[i].Orden" class="form-control" readonly />
+                                            <span asp-validation-for="Formulario.Detalles[i].Orden" class="text-danger"></span>
+                                        </td>
+                                        <td>
+                                            <select asp-for="Formulario.Detalles[i].ComponenteContable" class="form-select">
+                                                <option value="BRUTO">Bruto</option>
+                                                <option value="IGV">IGV</option>
+                                                <option value="TOTAL">Total</option>
+                                                <option value="REDONDEO">Redondeo</option>
+                                                <option value="ISC">ISC</option>
+                                                <option value="OTROS">Otros</option>
+                                            </select>
+                                            <span asp-validation-for="Formulario.Detalles[i].ComponenteContable" class="text-danger"></span>
+                                        </td>
+                                        <td>
+                                            <select asp-for="Formulario.Detalles[i].IdPlanCuenta" class="form-select">
+                                                <option value="">Seleccione</option>
+                                                @foreach (var cuenta in Model.CuentasMovimiento)
+                                                {
+                                                    <option value="@cuenta.IdPlanCuenta">@cuenta.CodigoCuenta - @cuenta.NombreCuenta</option>
+                                                }
+                                            </select>
+                                            <span asp-validation-for="Formulario.Detalles[i].IdPlanCuenta" class="text-danger"></span>
+                                        </td>
+                                        <td>
+                                            <select asp-for="Formulario.Detalles[i].NaturalezaMovimiento" class="form-select">
+                                                <option value="D">Debe</option>
+                                                <option value="H">Haber</option>
+                                            </select>
+                                            <span asp-validation-for="Formulario.Detalles[i].NaturalezaMovimiento" class="text-danger"></span>
+                                        </td>
+                                        <td class="text-center">
+                                            <input asp-for="Formulario.Detalles[i].Activo" class="form-check-input" />
+                                        </td>
+                                        <td class="text-end">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm js-remove-row">Quitar</button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="workspace-actions">
+                    <button type="submit" class="btn btn-primary">Guardar configuracion</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </section>
+</section>
+
+<template id="detalle-row-template">
+    <tr>
+        <td class="detalle-orden-cell">
+            <input name="Formulario.Detalles[__index__].Orden" class="form-control" readonly value="0" />
+        </td>
+        <td>
+            <select name="Formulario.Detalles[__index__].ComponenteContable" class="form-select">
+                <option value="BRUTO">Bruto</option>
+                <option value="IGV">IGV</option>
+                <option value="TOTAL">Total</option>
+                <option value="REDONDEO">Redondeo</option>
+                <option value="ISC">ISC</option>
+                <option value="OTROS">Otros</option>
+            </select>
+        </td>
+        <td>
+            <select name="Formulario.Detalles[__index__].IdPlanCuenta" class="form-select">
+                <option value="">Seleccione</option>
+                @foreach (var cuenta in Model.CuentasMovimiento)
+                {
+                    <option value="@cuenta.IdPlanCuenta">@cuenta.CodigoCuenta - @cuenta.NombreCuenta</option>
+                }
+            </select>
+        </td>
+        <td>
+            <select name="Formulario.Detalles[__index__].NaturalezaMovimiento" class="form-select">
+                <option value="D">Debe</option>
+                <option value="H">Haber</option>
+            </select>
+        </td>
+        <td class="text-center">
+            <input name="Formulario.Detalles[__index__].Activo" class="form-check-input" type="checkbox" value="true" checked />
+            <input name="Formulario.Detalles[__index__].Activo" type="hidden" value="false" />
+        </td>
+        <td class="text-end">
+            <button type="button" class="btn btn-outline-secondary btn-sm js-remove-row">Quitar</button>
+        </td>
+    </tr>
+</template>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const tableBody = document.querySelector("#detalle-table tbody");
+            const template = document.getElementById("detalle-row-template");
+            const addButton = document.getElementById("agregar-componente");
+
+            if (!tableBody || !template || !addButton) {
+                return;
+            }
+
+            const bindRowActions = (row) => {
+                row.querySelector(".js-remove-row")?.addEventListener("click", () => {
+                    if (tableBody.querySelectorAll("tr").length === 1) {
+                        return;
+                    }
+
+                    row.remove();
+                    refreshRows();
+                });
+            };
+
+            const refreshRows = () => {
+                const rows = Array.from(tableBody.querySelectorAll("tr"));
+
+                rows.forEach((row, index) => {
+                    row.querySelectorAll("input, select, textarea, span").forEach((element) => {
+                        ["name", "id", "for"].forEach((attribute) => {
+                            const currentValue = element.getAttribute(attribute);
+                            if (!currentValue) {
+                                return;
+                            }
+
+                            const updatedValue = currentValue
+                                .replaceAll("__index__", index)
+                                .replace(/Formulario\.Detalles\[\d+\]/g, `Formulario.Detalles[${index}]`)
+                                .replace(/Formulario_Detalles_\d+__/g, `Formulario_Detalles_${index}__`);
+
+                            if (updatedValue !== currentValue) {
+                                element.setAttribute(attribute, updatedValue);
+                            }
+                        });
+                    });
+
+                    const orderInput = row.querySelector('input[name$=".Orden"]');
+                    if (orderInput) {
+                        orderInput.value = (index + 1).toString();
+                    }
+                });
+            };
+
+            addButton.addEventListener("click", () => {
+                const index = tableBody.querySelectorAll("tr").length;
+                const html = template.innerHTML.replaceAll("__index__", index);
+                tableBody.insertAdjacentHTML("beforeend", html);
+                const row = tableBody.lastElementChild;
+                if (row) {
+                    bindRowActions(row);
+                }
+                refreshRows();
+            });
+
+            tableBody.querySelectorAll("tr").forEach(bindRowActions);
+            refreshRows();
+        })();
+    </script>
+}

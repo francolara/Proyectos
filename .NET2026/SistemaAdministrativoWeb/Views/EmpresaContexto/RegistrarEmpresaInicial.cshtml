@@ -1,0 +1,80 @@
+@model SistemaAdministrativoWeb.ViewModels.Empresas.RegistroEmpresaInicialViewModel
+
+@{
+    ViewData["Title"] = Model.EsEmpresaInicial ? "Registrar empresa" : "Registrar nueva empresa";
+}
+
+<section class="workspace-window">
+    <div class="workspace-window-head workspace-window-head-emerald">
+        <div>
+            <span class="workspace-window-kicker">@(Model.EsEmpresaInicial ? "Alta inicial" : "Nueva empresa")</span>
+            <h1>@(Model.EsEmpresaInicial ? "Registrar empresa" : "Registrar nueva empresa")</h1>
+            <p>
+                @(Model.EsEmpresaInicial
+                    ? "Completa la informacion principal para habilitar la primera empresa de trabajo dentro de la cuenta."
+                    : "Completa la informacion principal para agregar una empresa adicional a la cuenta administradora actual.")
+            </p>
+        </div>
+        <div class="workspace-window-badge">
+            <strong>@(Model.EsEmpresaInicial ? "Inicial" : "Adicional")</strong>
+            <span>@(Model.EsEmpresaInicial ? "configuracion base" : "empresa vinculada")</span>
+        </div>
+    </div>
+
+    <div class="workspace-window-body">
+        <form asp-action="RegistrarEmpresaInicial" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="EsEmpresaInicial" />
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="workspace-form-grid">
+                <div class="workspace-field">
+                    <label asp-for="NombreContacto" class="form-label">Contacto principal</label>
+                    <input asp-for="NombreContacto" class="form-control" />
+                    <span asp-validation-for="NombreContacto" class="text-danger"></span>
+                </div>
+                <div class="workspace-field">
+                    <label asp-for="Telefono" class="form-label">Telefono</label>
+                    <input asp-for="Telefono" class="form-control" />
+                    <span asp-validation-for="Telefono" class="text-danger"></span>
+                </div>
+                <div class="workspace-field">
+                    <label asp-for="Correo" class="form-label">Correo principal</label>
+                    <input asp-for="Correo" class="form-control" readonly />
+                    <span asp-validation-for="Correo" class="text-danger"></span>
+                </div>
+                <div class="workspace-field">
+                    <label asp-for="Ruc" class="form-label">RUC</label>
+                    <input asp-for="Ruc" class="form-control" maxlength="11" />
+                    <span asp-validation-for="Ruc" class="text-danger"></span>
+                </div>
+                <div class="workspace-field">
+                    <label asp-for="RazonSocial" class="form-label">Razon social</label>
+                    <input asp-for="RazonSocial" class="form-control" />
+                    <span asp-validation-for="RazonSocial" class="text-danger"></span>
+                </div>
+                <div class="workspace-field">
+                    <label asp-for="NombreComercial" class="form-label">Nombre comercial</label>
+                    <input asp-for="NombreComercial" class="form-control" />
+                    <span asp-validation-for="NombreComercial" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="workspace-actions">
+                <button type="submit" class="btn btn-primary">Registrar empresa</button>
+                @if (Model.EsEmpresaInicial)
+                {
+                    <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+                }
+                else
+                {
+                    <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+                }
+            </div>
+        </form>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

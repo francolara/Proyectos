@@ -1,0 +1,164 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.CuentaDestinoReglaIndexViewModel
+
+@{
+    ViewData["Title"] = "Reglas de cuentas destino";
+    ViewData["AdminShell"] = true;
+    var paginaInicio = Math.Max(1, Model.Paginacion.PaginaActual - 2);
+    var paginaFin = Math.Min(Model.Paginacion.TotalPaginas, Model.Paginacion.PaginaActual + 2);
+}
+
+<section class="dashboard-shell">
+    <div class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">Mantenimiento contable</span>
+            <h1>Reglas de cuentas destino</h1>
+            <p>Configura distribuciones por ejercicio para automatizar equivalencias segun la empresa activa.</p>
+        </div>
+        <div class="dashboard-status-card">
+            <strong>@Model.EmpresaNombre</strong>
+            <span>Empresa activa para reglas de distribucion contable.</span>
+            <small>Total filtrado: @Model.Paginacion.TotalRegistros</small>
+        </div>
+    </div>
+
+    <section class="dashboard-metrics">
+        <article class="dashboard-metric-card">
+            <span>Total reglas</span>
+            <strong>@Model.TotalReglas</strong>
+            <small>Configuraciones filtradas para el ejercicio consultado.</small>
+        </article>
+        <article class="dashboard-metric-card">
+            <span>Reglas activas</span>
+            <strong>@Model.TotalActivas</strong>
+            <small>Equivalencias activas visibles en la pagina.</small>
+        </article>
+        <article class="dashboard-metric-card">
+            <span>Total tramos</span>
+            <strong>@Model.TotalTramos</strong>
+            <small>Detalle de cargos y abonos de la pagina actual.</small>
+        </article>
+    </section>
+
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Resumen</span>
+                <h1>Reglas registradas</h1>
+                <p>Consulta las configuraciones por cuenta origen y abre la edicion desde la misma lista.</p>
+            </div>
+            <div class="workspace-row-actions">
+                <a asp-action="Registrar" asp-route-ejercicio="@Model.EjercicioActual" class="btn btn-light btn-sm">Registrar regla</a>
+            </div>
+        </div>
+        <div class="workspace-window-body">
+            @if (TempData["CuentaDestinoOk"] is string ok)
+            {
+                <div class="alert alert-success">@ok</div>
+            }
+
+            <form asp-action="Index" method="get" class="workspace-filter-card">
+                <div class="workspace-filter-grid">
+                    <div class="workspace-field">
+                        <label class="form-label" for="ejercicio">Año</label>
+                        <input id="ejercicio" name="ejercicio" value="@Model.EjercicioActual" class="form-control" />
+                    </div>
+                    <div class="workspace-field workspace-field-span-2">
+                        <label class="form-label" for="textoBusqueda">Buscar regla</label>
+                        <input id="textoBusqueda" name="textoBusqueda" value="@Model.TextoBusqueda" class="form-control" placeholder="Cuenta origen u observacion" />
+                    </div>
+                </div>
+                <div class="workspace-actions">
+                    <button type="submit" class="btn btn-primary">Consultar</button>
+                </div>
+            </form>
+
+            <div class="table-responsive workspace-table-wrap">
+                <table class="table align-middle app-table workspace-table">
+                    <thead>
+                        <tr>
+                            <th>Cuenta origen</th>
+                            <th>Tramos</th>
+                            <th>% total</th>
+                            <th>Estado</th>
+                            <th>Observacion</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Reglas.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="6">
+                                    <div class="app-empty-state app-empty-state-inline">
+                                        <i class="bi bi-sliders2"></i>
+                                        <div>
+                                            <strong>No hay reglas para la consulta actual</strong>
+                                            <p>Ajusta el ejercicio o registra la primera distribucion automatica.</p>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var regla in Model.Reglas)
+                            {
+                                <tr class="workspace-clickable-row" data-edit-url="@Url.Action("Editar", new { ejercicio = regla.Ejercicio, idCuentaDestinoRegla = regla.IdCuentaDestinoRegla })">
+                                    <td>
+                                        <strong>@regla.CodigoCuentaOrigen</strong><br />
+                                        <span class="text-muted">@regla.NombreCuentaOrigen</span>
+                                    </td>
+                                    <td>@regla.CantidadTramos</td>
+                                    <td>@regla.PorcentajeTotal.ToString("0.####")</td>
+                                    <td>
+                                        <span class="workspace-status-badge @(regla.Activo ? "is-active" : "is-inactive")">
+                                            @(regla.Activo ? "Activa" : "Inactiva")
+                                        </span>
+                                    </td>
+                                    <td>@(string.IsNullOrWhiteSpace(regla.Observacion) ? "-" : regla.Observacion)</td>
+                                    <td class="text-end">
+                                        <div class="workspace-row-actions justify-content-end">
+                                            <a asp-action="Editar" asp-route-ejercicio="@regla.Ejercicio" asp-route-idCuentaDestinoRegla="@regla.IdCuentaDestinoRegla" class="workspace-row-link">Editar</a>
+                                            <form asp-action="Eliminar" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="idCuentaDestinoRegla" value="@regla.IdCuentaDestinoRegla" />
+                                                <input type="hidden" name="ejercicio" value="@regla.Ejercicio" />
+                                                <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Se eliminara la regla seleccionada. Desea continuar?');">Eliminar</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.Paginacion.TotalPaginas > 1)
+            {
+                <nav class="workspace-pagination" aria-label="Paginacion reglas de cuentas destino">
+                    <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaAnterior ? string.Empty : "disabled")"
+                       asp-action="Index"
+                       asp-route-ejercicio="@Model.EjercicioActual"
+                       asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-pagina="@(Model.Paginacion.PaginaActual - 1)">Anterior</a>
+
+                    @for (var pagina = paginaInicio; pagina <= paginaFin; pagina++)
+                    {
+                        <a class="btn @(pagina == Model.Paginacion.PaginaActual ? "btn-primary" : "btn-outline-secondary")"
+                           asp-action="Index"
+                           asp-route-ejercicio="@Model.EjercicioActual"
+                           asp-route-textoBusqueda="@Model.TextoBusqueda"
+                           asp-route-pagina="@pagina">@pagina</a>
+                    }
+
+                    <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaSiguiente ? string.Empty : "disabled")"
+                       asp-action="Index"
+                       asp-route-ejercicio="@Model.EjercicioActual"
+                       asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-pagina="@(Model.Paginacion.PaginaActual + 1)">Siguiente</a>
+                </nav>
+            }
+        </div>
+    </section>
+</section>

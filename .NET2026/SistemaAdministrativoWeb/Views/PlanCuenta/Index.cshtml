@@ -1,0 +1,155 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.PlanCuentaIndexViewModel
+
+@{
+    ViewData["Title"] = "Plan de cuentas";
+    ViewData["AdminShell"] = true;
+    var paginaInicio = Math.Max(1, Model.Paginacion.PaginaActual - 2);
+    var paginaFin = Math.Min(Model.Paginacion.TotalPaginas, Model.Paginacion.PaginaActual + 2);
+}
+
+<section class="dashboard-shell">
+    <div class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">Mantenimiento contable</span>
+            <h1>Plan de cuentas</h1>
+            <p>Administra la estructura contable de la empresa activa y consulta las cuentas con filtro y paginacion.</p>
+        </div>
+        <div class="dashboard-status-card">
+            <strong>@Model.EmpresaNombre</strong>
+            <span>Empresa activa para el mantenimiento del catalogo contable.</span>
+            <small>Total filtrado: @Model.Paginacion.TotalRegistros</small>
+        </div>
+    </div>
+
+    <section class="dashboard-metrics">
+        <article class="dashboard-metric-card">
+            <span>Total cuentas</span>
+            <strong>@Model.TotalCuentas</strong>
+            <small>Registros filtrados segun la consulta actual.</small>
+        </article>
+        <article class="dashboard-metric-card">
+            <span>Cuentas movimiento</span>
+            <strong>@Model.TotalMovimiento</strong>
+            <small>Registros visibles en la pagina actual.</small>
+        </article>
+        <article class="dashboard-metric-card">
+            <span>Cuentas activas</span>
+            <strong>@Model.TotalActivas</strong>
+            <small>Items activos dentro de la pagina consultada.</small>
+        </article>
+    </section>
+
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Catalogo</span>
+                <h1>Cuentas registradas</h1>
+                <p>Consulta, filtra y abre el registro en modo edicion desde la misma grilla.</p>
+            </div>
+            <div class="workspace-row-actions">
+                <a asp-action="Registrar" class="btn btn-light btn-sm">Registrar cuenta</a>
+            </div>
+        </div>
+        <div class="workspace-window-body">
+            @if (TempData["PlanCuentaOk"] is string ok)
+            {
+                <div class="alert alert-success">@ok</div>
+            }
+
+            <form asp-action="Index" method="get" class="workspace-filter-card">
+                <div class="workspace-filter-grid">
+                    <div class="workspace-field workspace-field-span-2">
+                        <label class="form-label" for="textoBusqueda">Buscar cuenta</label>
+                        <input id="textoBusqueda" name="textoBusqueda" value="@Model.TextoBusqueda" class="form-control" placeholder="Codigo o nombre de cuenta" />
+                    </div>
+                </div>
+                <div class="workspace-actions">
+                    <button type="submit" class="btn btn-primary">Consultar</button>
+                </div>
+            </form>
+
+            <div class="table-responsive workspace-table-wrap">
+                <table class="table align-middle app-table workspace-table">
+                    <thead>
+                        <tr>
+                            <th>Codigo</th>
+                            <th>Nombre</th>
+                            <th>Nivel</th>
+                            <th>Naturaleza</th>
+                            <th>Movimiento</th>
+                            <th>Centro costo</th>
+                            <th>Estado</th>
+                            <th class="text-end">Accion</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Cuentas.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="8">
+                                    <div class="app-empty-state app-empty-state-inline">
+                                        <i class="bi bi-diagram-3"></i>
+                                        <div>
+                                            <strong>No hay cuentas para la consulta actual</strong>
+                                            <p>Ajusta los filtros o registra la primera cuenta contable.</p>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var cuenta in Model.Cuentas)
+                            {
+                                <tr class="workspace-clickable-row" data-edit-url="@Url.Action("Editar", new { idPlanCuenta = cuenta.IdPlanCuenta })">
+                                    <td class="workspace-tree-code">@cuenta.CodigoCuenta</td>
+                                    <td>
+                                        <div class="workspace-tree-label" style="--tree-level:@cuenta.NivelCuenta">
+                                            <span class="workspace-tree-indent"></span>
+                                            <span>@cuenta.NombreCuenta</span>
+                                        </div>
+                                    </td>
+                                    <td>@cuenta.NivelCuenta</td>
+                                    <td>@(cuenta.NaturalezaSaldo == "D" ? "Debe" : "Haber")</td>
+                                    <td>@(cuenta.AceptaMovimiento ? "Si" : "No")</td>
+                                    <td>@(cuenta.RequiereCentroCosto ? "Si" : "No")</td>
+                                    <td>
+                                        <span class="workspace-status-badge @(cuenta.Estado ? "is-active" : "is-inactive")">
+                                            @(cuenta.Estado ? "Activa" : "Inactiva")
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <a asp-action="Editar" asp-route-idPlanCuenta="@cuenta.IdPlanCuenta" class="workspace-row-link">Editar</a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.Paginacion.TotalPaginas > 1)
+            {
+                <nav class="workspace-pagination" aria-label="Paginacion plan de cuentas">
+                    <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaAnterior ? string.Empty : "disabled")"
+                       asp-action="Index"
+                       asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-pagina="@(Model.Paginacion.PaginaActual - 1)">Anterior</a>
+
+                    @for (var pagina = paginaInicio; pagina <= paginaFin; pagina++)
+                    {
+                        <a class="btn @(pagina == Model.Paginacion.PaginaActual ? "btn-primary" : "btn-outline-secondary")"
+                           asp-action="Index"
+                           asp-route-textoBusqueda="@Model.TextoBusqueda"
+                           asp-route-pagina="@pagina">@pagina</a>
+                    }
+
+                    <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaSiguiente ? string.Empty : "disabled")"
+                       asp-action="Index"
+                       asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-pagina="@(Model.Paginacion.PaginaActual + 1)">Siguiente</a>
+                </nav>
+            }
+        </div>
+    </section>
+</section>

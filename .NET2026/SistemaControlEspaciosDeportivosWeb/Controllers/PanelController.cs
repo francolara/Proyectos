@@ -80,6 +80,10 @@ public class PanelController(ISportCenterStoredProcedureService spService, IModu
 
         var ingresosPeriodo = await spService.ReportesIngresosPorDiaAsync(negocioSeleccionadoId, desde, hasta, sedeAplicada);
         var ingresosPeriodoAnterior = await spService.ReportesIngresosPorDiaAsync(negocioSeleccionadoId, desdeAnterior, hastaAnterior, sedeAplicada);
+        var reservasPeriodo = await spService.ReportesReservasPorDiaAsync(negocioSeleccionadoId, desde, hasta, sedeAplicada);
+        var reservasPeriodoAnterior = await spService.ReportesReservasPorDiaAsync(negocioSeleccionadoId, desdeAnterior, hastaAnterior, sedeAplicada);
+        var cobranzaPeriodo = await spService.ReportesResumenCobranzaAsync(negocioSeleccionadoId, desde, hasta, sedeAplicada);
+        var cobranzaPeriodoAnterior = await spService.ReportesResumenCobranzaAsync(negocioSeleccionadoId, desdeAnterior, hastaAnterior, sedeAplicada);
         var ocupacionPeriodo = await spService.ReportesOcupacionPorEspacioAsync(negocioSeleccionadoId, desde, hasta, sedeAplicada);
 
         var reservasPendientes = await spService.ReservasListarAsync(
@@ -105,14 +109,18 @@ public class PanelController(ISportCenterStoredProcedureService spService, IModu
             200);
 
         var permisosRol = await spService.PanelListarModulosPermitidosAsync(usuarioId, negocioSeleccionadoId);
-        var ingresosActualTotal = ingresosPeriodo.Sum(x => x.Ingresos);
-        var ingresosAnteriorTotal = ingresosPeriodoAnterior.Sum(x => x.Ingresos);
-        var reservasActualTotal = ingresosPeriodo.Sum(x => x.CantidadReservas);
-        var reservasAnteriorTotal = ingresosPeriodoAnterior.Sum(x => x.CantidadReservas);
+        var suscripcionNegocio = await spService.MiSuscripcionObtenerAsync(negocioSeleccionadoId);
+        var ingresosActualTotal = cobranzaPeriodo.MontoCobrado;
+        var ingresosAnteriorTotal = cobranzaPeriodoAnterior.MontoCobrado;
+        var reservasActualTotal = reservasPeriodo.Sum(x => x.CantidadReservas);
+        var reservasAnteriorTotal = reservasPeriodoAnterior.Sum(x => x.CantidadReservas);
+        var montoReservadoActual = reservasPeriodo.Sum(x => x.MontoReservado);
+        var montoReservadoAnterior = reservasPeriodoAnterior.Sum(x => x.MontoReservado);
 
         var vm = new PanelDashboardViewModel
         {
             NegocioSeleccionadoId = negocioSeleccionadoId,
+            TipoPlan = suscripcionNegocio?.TipoPlan ?? "Basico",
             Negocios = membresias,
             RolActual = rolActual,
             SedeId = sedeAplicada,
@@ -134,22 +142,26 @@ public class PanelController(ISportCenterStoredProcedureService spService, IModu
             IngresosPeriodoAnterior = ingresosAnteriorTotal,
             ReservasPeriodo = reservasActualTotal,
             ReservasPeriodoAnterior = reservasAnteriorTotal,
-            TicketPromedioPeriodo = reservasActualTotal > 0 ? ingresosActualTotal / reservasActualTotal : 0m,
-            TicketPromedioPeriodoAnterior = reservasAnteriorTotal > 0 ? ingresosAnteriorTotal / reservasAnteriorTotal : 0m,
+            MontoReservadoPeriodo = montoReservadoActual,
+            MontoReservadoPeriodoAnterior = montoReservadoAnterior,
+            PagosPeriodo = cobranzaPeriodo.CantidadPagos,
+            ReservasCobradasPeriodo = cobranzaPeriodo.ReservasCobradas,
+            TicketPromedioPeriodo = cobranzaPeriodo.ReservasCobradas > 0 ? ingresosActualTotal / cobranzaPeriodo.ReservasCobradas : 0m,
+            TicketPromedioPeriodoAnterior = cobranzaPeriodoAnterior.ReservasCobradas > 0 ? ingresosAnteriorTotal / cobranzaPeriodoAnterior.ReservasCobradas : 0m,
 
             SerieIngresosPorDia = ingresosPeriodo
                 .OrderBy(x => x.Fecha)
                 .Select(x => new DashboardSerieItemViewModel { Fecha = x.Fecha, Valor = x.Ingresos })
                 .ToList(),
 
-            SerieReservasPorDia = ingresosPeriodo
+            SerieReservasPorDia = reservasPeriodo
                 .OrderBy(x => x.Fecha)
                 .Select(x => new DashboardSerieItemViewModel { Fecha = x.Fecha, Valor = x.CantidadReservas })
                 .ToList(),
 
             TopEspacios = ocupacionPeriodo
-                .OrderByDescending(x => x.MontoCobrado)
-                .ThenByDescending(x => x.CantidadReservas)
+                .OrderByDescending(x => x.CantidadReservas)
+                .ThenByDescending(x => x.HorasReservadas)
                 .Take(6)
                 .Select(x => new DashboardTopEspacioViewModel
                 {
@@ -157,6 +169,7 @@ public class PanelController(ISportCenterStoredProcedureService spService, IModu
                     Espacio = x.Espacio,
                     Reservas = x.CantidadReservas,
                     Horas = x.HorasReservadas,
+                    Reservado = x.MontoReservado,
                     Cobrado = x.MontoCobrado
                 })
                 .ToList(),
@@ -248,7 +261,31 @@ public class PanelController(ISportCenterStoredProcedureService spService, IModu
             HoraFin = item.HoraFin,
             MontoTotal = item.Total,
             SaldoPendiente = item.SaldoPendiente,
-            Estado = item.Estado
+            Estado = ObtenerTextoEstado(item.Estado)
+        };
+    }
+
+    private static string ObtenerTextoEstado(string? estado)
+    {
+        if (string.IsNullOrWhiteSpace(estado))
+        {
+            return string.Empty;
+        }
+
+        if (!int.TryParse(estado, out var estadoCodigo))
+        {
+            return estado;
+        }
+
+        return estadoCodigo switch
+        {
+            (int)EstadoReserva.Pendiente => "Pendiente",
+            (int)EstadoReserva.Confirmada => "Confirmada",
+            3 => "En uso",
+            (int)EstadoReserva.Pagada => "Pagada",
+            (int)EstadoReserva.Cancelada => "Cancelada",
+            (int)EstadoReserva.NoAsistio => "No asistio",
+            _ => estado
         };
     }
 }

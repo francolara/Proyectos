@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+﻿
 GO
 SET ANSI_NULLS ON
 GO
@@ -10,6 +10,7 @@ GO
 -- Firma: Codex - 12/04/2026 | Agrega columna Referencia en listado de pagos con el ultimo comprobante principal activo por reserva (boleta/factura/recibo interno), tomando el ultimo generado por Id; oculta referencia cuando el comprobante principal esta anulado o cuando boleta/factura tiene NC/ND activas.
 -- Firma: Codex - 12/04/2026 | Usa abreviatura del documento (TiposDocumentoComprobanteSuperMaestro.Abreviatura) en columna Referencia.
 -- Firma: Codex - 13/04/2026 | Agrega filtro opcional por rango de fecha de reserva (Desde/Hasta) para listado de pagos.
+-- Firma: Codex - 18/06/2026 | Cambia el filtro del listado de pagos para usar FechaPago real y expone la ultima fecha de pago por reserva en la grilla.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Pagos_Listar]
     @NegocioId INT,
     @SedeId INT = NULL,
@@ -55,7 +56,7 @@ BEGIN
                 s.Nombre AS Sede,
                 e.Nombre AS Espacio,
                 c.NombresORazonSocial AS Cliente,
-                r.Fecha,
+                MAX(CAST(p.FechaPago AS DATE)) AS Fecha,
                 CAST(r.Total AS DECIMAL(10,2)) AS MontoTotal,
                 CAST(r.Total - SUM(p.Monto) AS DECIMAL(10,2)) AS SaldoPendiente,
                 CAST(CASE WHEN r.Estado = 4 AND (r.Total - SUM(p.Monto)) <= 0 THEN 1 ELSE 0 END AS BIT) AS PagadaCompleta,
@@ -73,9 +74,9 @@ BEGIN
             INNER JOIN dbo.Clientes c ON c.Id = r.ClienteId
             WHERE s.NegocioId = @NegocioId
               AND (@SedeId IS NULL OR s.Id = @SedeId)
-              AND (@FechaDesde IS NULL OR r.Fecha >= @FechaDesde)
-              AND (@FechaHasta IS NULL OR r.Fecha <= @FechaHasta)
-            GROUP BY r.Id, s.Nombre, e.Nombre, c.NombresORazonSocial, r.Fecha, r.Total, r.Estado, ms.Simbolo
+              AND (@FechaDesde IS NULL OR CAST(p.FechaPago AS DATE) >= @FechaDesde)
+              AND (@FechaHasta IS NULL OR CAST(p.FechaPago AS DATE) <= @FechaHasta)
+            GROUP BY r.Id, s.Nombre, e.Nombre, c.NombresORazonSocial, r.Total, r.Estado, ms.Simbolo
         ),
         ComprobantesPrincipales AS
         (

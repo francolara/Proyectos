@@ -15,7 +15,7 @@
 
     var maxIngreso = Model.SerieIngresosPorDia.Any() ? Math.Max(1m, Model.SerieIngresosPorDia.Max(x => x.Valor)) : 1m;
     var maxReserva = Model.SerieReservasPorDia.Any() ? Math.Max(1m, Model.SerieReservasPorDia.Max(x => x.Valor)) : 1m;
-    var topMax = Model.TopEspacios.Any() ? Math.Max(1m, Model.TopEspacios.Max(x => x.Cobrado)) : 1m;
+    var topMax = Model.TopEspacios.Any() ? Math.Max(1m, Model.TopEspacios.Max(x => x.Reservado)) : 1m;
     var negocioActual = Model.Negocios.FirstOrDefault(x => x.NegocioId == Model.NegocioSeleccionadoId);
     var negocioActualTexto = negocioActual is null
         ? $"Negocio #{Model.NegocioSeleccionadoId}"
@@ -26,7 +26,9 @@
     {
         ("Nueva reserva", "bi-calendar-plus", Url.Action("Index", "Reservas", new { negocioId = Model.NegocioSeleccionadoId, abrirModal = "nueva" }) ?? "#"),
         ("Registrar pago", "bi-cash-coin", Url.Action("Create", "Pagos", new { negocioId = Model.NegocioSeleccionadoId }) ?? "#"),
-        ("Emitir comprobante", "bi-receipt", Url.Action("Create", "Comprobantes", new { negocioId = Model.NegocioSeleccionadoId }) ?? "#"),
+        ("Emitir comprobante", "bi-receipt", Model.EsPlanBasico
+            ? Url.Action("Index", "MiSuscripcion", new { negocioId = Model.NegocioSeleccionadoId }) ?? "#"
+            : Url.Action("Create", "Comprobantes", new { negocioId = Model.NegocioSeleccionadoId }) ?? "#"),
         ("Ver reportes", "bi-bar-chart", Url.Action("Index", "Reportes", new { negocioId = Model.NegocioSeleccionadoId }) ?? "#")
     };
 
@@ -51,7 +53,7 @@
 
     var varIngresos = Variacion(Model.IngresosPeriodo, Model.IngresosPeriodoAnterior);
     var varReservas = Variacion(Model.ReservasPeriodo, Model.ReservasPeriodoAnterior);
-    var varTicket = Variacion(Model.TicketPromedioPeriodo, Model.TicketPromedioPeriodoAnterior);
+    var varReservado = Variacion(Model.MontoReservadoPeriodo, Model.MontoReservadoPeriodoAnterior);
     var varOcupacion = Variacion(Model.OcupacionHoyPct, Model.OcupacionDiaAnteriorPct);
     var horasMediaHora = Enumerable.Range(0, 48)
         .Select(i => TimeOnly.MinValue.AddMinutes(i * 30))
@@ -64,7 +66,7 @@
             <div class="sc-dash-title-wrap">
                 <div>
                     <h1>Dashboard ejecutivo</h1>
-                    <p>Control operativo y comercial con filtros globales en tiempo real.</p>
+                    <p>Lectura separada de operacion y cobranza con filtros globales en tiempo real.</p>
                 </div>
                 <div class="sc-dash-negocio-card sc-dash-negocio-card-inline sc-dash-negocio-card--focus" aria-readonly="true">
                     <div class="sc-dash-negocio-card-focus-avatar" aria-hidden="true">
@@ -131,10 +133,11 @@
             }
         </section>
 
+        <h2 class="section-title mb-2"><i class="bi bi-cash-coin me-1 text-primary"></i>Vista comercial</h2>
         <section class="sc-dash-kpis">
             <article class="sc-dash-kpi-card">
                 <div class="sc-dash-kpi-head">
-                    <div class="sc-dash-kpi-label">Ingresos del periodo</div>
+                    <div class="sc-dash-kpi-label">Cobrado del periodo</div>
                     <span class="sc-dash-var @varIngresos.Css">@varIngresos.Texto</span>
                 </div>
                 <div class="sc-dash-kpi-value">@Model.MonedaSimbolo @Model.IngresosPeriodo.ToString("N2")</div>
@@ -150,11 +153,18 @@
             </article>
             <article class="sc-dash-kpi-card">
                 <div class="sc-dash-kpi-head">
-                    <div class="sc-dash-kpi-label">Ticket promedio periodo</div>
-                    <span class="sc-dash-var @varTicket.Css">@varTicket.Texto</span>
+                    <div class="sc-dash-kpi-label">Reservado del periodo</div>
+                    <span class="sc-dash-var @varReservado.Css">@varReservado.Texto</span>
+                </div>
+                <div class="sc-dash-kpi-value">@Model.MonedaSimbolo @Model.MontoReservadoPeriodo.ToString("N2")</div>
+                <div class="sc-dash-kpi-foot">Previo: @Model.MonedaSimbolo @Model.MontoReservadoPeriodoAnterior.ToString("N2")</div>
+            </article>
+            <article class="sc-dash-kpi-card">
+                <div class="sc-dash-kpi-head">
+                    <div class="sc-dash-kpi-label">Ticket de cobranza</div>
                 </div>
                 <div class="sc-dash-kpi-value">@Model.MonedaSimbolo @Model.TicketPromedioPeriodo.ToString("N2")</div>
-                <div class="sc-dash-kpi-foot">Previo: @Model.MonedaSimbolo @Model.TicketPromedioPeriodoAnterior.ToString("N2")</div>
+                <div class="sc-dash-kpi-foot">Pagos: @Model.PagosPeriodo | Reservas cobradas: @Model.ReservasCobradasPeriodo</div>
             </article>
             <article class="sc-dash-kpi-card">
                 <div class="sc-dash-kpi-head">
@@ -168,11 +178,12 @@
             </article>
         </section>
 
+        <h2 class="section-title mb-2 mt-3"><i class="bi bi-clipboard2-pulse me-1 text-primary"></i>Lectura operativa</h2>
         <section class="sc-dash-grid">
             <article class="sc-dash-panel">
                 <div class="sc-dash-panel-head">
-                    <h3><i class="bi bi-graph-up-arrow me-1"></i>Ingresos por dia</h3>
-                    <p>Cada barra representa monto cobrado (S/) por fecha del rango.</p>
+                    <h3><i class="bi bi-graph-up-arrow me-1"></i>Cobros por fecha de pago</h3>
+                    <p>Cada barra representa monto cobrado por fecha real de pago.</p>
                 </div>
                 @if (Model.SerieIngresosPorDia.Any())
                 {
@@ -197,8 +208,8 @@
 
             <article class="sc-dash-panel">
                 <div class="sc-dash-panel-head">
-                    <h3><i class="bi bi-calendar-check me-1"></i>Reservas por dia</h3>
-                    <p>Conteo diario para evaluar ritmo operativo.</p>
+                    <h3><i class="bi bi-calendar-check me-1"></i>Reservas por fecha de juego</h3>
+                    <p>Conteo diario de reservas para evaluar demanda operativa.</p>
                 </div>
                 @if (Model.SerieReservasPorDia.Any())
                 {
@@ -226,8 +237,8 @@
         <section class="sc-dash-grid">
             <article class="sc-dash-panel">
                 <div class="sc-dash-panel-head">
-                    <h3><i class="bi bi-trophy me-1"></i>Top espacios por cobro</h3>
-                    <p>Tabla accionable por sede y espacio.</p>
+                    <h3><i class="bi bi-trophy me-1"></i>Top espacios por demanda</h3>
+                    <p>Ranking operativo con referencia de reservado y cobrado asociado.</p>
                 </div>
                 @if (Model.TopEspacios.Any())
                 {
@@ -239,13 +250,14 @@
                                 <th>Espacio</th>
                                 <th class="text-end">Reservas</th>
                                 <th class="text-end">Horas</th>
-                                <th class="text-end">Cobrado</th>
+                                <th class="text-end">Reservado</th>
+                                <th class="text-end">Cobrado asociado</th>
                             </tr>
                             </thead>
                             <tbody>
                             @foreach (var item in Model.TopEspacios)
                             {
-                                var width = Math.Max(5m, Math.Round((item.Cobrado / topMax) * 100m, 2));
+                                var width = Math.Max(5m, Math.Round((item.Reservado / topMax) * 100m, 2));
                                 <tr>
                                     <td>@item.Sede</td>
                                     <td>
@@ -254,6 +266,7 @@
                                     </td>
                                     <td class="text-end">@item.Reservas</td>
                                     <td class="text-end">@item.Horas.ToString("N2")</td>
+                                    <td class="text-end">@Model.MonedaSimbolo @item.Reservado.ToString("N2")</td>
                                     <td class="text-end">@Model.MonedaSimbolo @item.Cobrado.ToString("N2")</td>
                                 </tr>
                             }
@@ -263,7 +276,7 @@
                 }
                 else
                 {
-                    <div class="text-muted">No hay espacios con facturacion en el rango.</div>
+                    <div class="text-muted">No hay espacios con actividad en el rango.</div>
                 }
             </article>
 

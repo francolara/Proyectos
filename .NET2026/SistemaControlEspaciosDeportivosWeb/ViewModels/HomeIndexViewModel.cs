@@ -152,6 +152,7 @@ public class SolicitudReservaPublicaFormViewModel
     [StringLength(20, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string? NumeroDocumento { get; set; }
 
+    [Required(ErrorMessage = "El telefono es obligatorio.")]
     [StringLength(30, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string? Telefono { get; set; }
 

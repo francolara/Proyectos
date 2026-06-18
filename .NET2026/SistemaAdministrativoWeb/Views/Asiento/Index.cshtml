@@ -1,0 +1,175 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.AsientoIndexViewModel
+
+@{
+    ViewData["Title"] = "Asientos contables";
+    ViewData["AdminShell"] = true;
+    var paginaInicio = Math.Max(1, Model.Paginacion.PaginaActual - 2);
+    var paginaFin = Math.Min(Model.Paginacion.TotalPaginas, Model.Paginacion.PaginaActual + 2);
+    var textInfo = System.Globalization.CultureInfo.CurrentCulture.TextInfo;
+}
+
+<section class="dashboard-shell">
+    <div class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">Registro contable</span>
+            <h1>Asiento manual</h1>
+            <p>Consulta asientos por empresa, origen y periodo con validacion de cuadre entre Debe y Haber.</p>
+        </div>
+        <div class="dashboard-status-card">
+            <strong>@Model.EmpresaNombre</strong>
+            <span>Contexto activo para el libro diario manual.</span>
+            <small>Total filtrado: @Model.Paginacion.TotalRegistros</small>
+        </div>
+    </div>
+
+    <section class="dashboard-metrics">
+        <article class="dashboard-metric-card">
+            <span>Total asientos</span>
+            <strong>@Model.TotalAsientos</strong>
+            <small>Asientos visibles para la consulta actual.</small>
+        </article>
+        <article class="dashboard-metric-card">
+            <span>Total Debe</span>
+            <strong>@Model.TotalDebePeriodo.ToString("0.00")</strong>
+            <small>Acumulado de la pagina consultada.</small>
+        </article>
+        <article class="dashboard-metric-card">
+            <span>Total Haber</span>
+            <strong>@Model.TotalHaberPeriodo.ToString("0.00")</strong>
+            <small>Debe coincidir con el total deudor visible.</small>
+        </article>
+    </section>
+
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Libro diario</span>
+                <h1>Asientos del periodo</h1>
+                <p>Consulta, filtra y abre un asiento manual del periodo para continuar su edicion.</p>
+            </div>
+            <div class="workspace-row-actions">
+                <a asp-action="Registrar" asp-route-periodo="@Model.PeriodoConsulta" class="btn btn-light btn-sm">Registrar asiento</a>
+            </div>
+        </div>
+        <div class="workspace-window-body">
+            @if (TempData["AsientoOk"] is string ok)
+            {
+                <div class="alert alert-success">@ok</div>
+            }
+
+            <form asp-action="Index" method="get" class="workspace-filter-card">
+                <div class="workspace-filter-grid">
+                    <div class="workspace-field">
+                        <label class="form-label" for="anio">Año</label>
+                        <select id="anio" name="anio" class="form-select">
+                            @foreach (var anio in Model.AniosDisponibles)
+                            {
+                                <option value="@anio" selected="@(anio == Model.AnioSeleccionado)">@anio</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="mes">Mes</label>
+                        <select id="mes" name="mes" class="form-select">
+                            @foreach (var mes in Model.MesesDisponibles)
+                            {
+                                <option value="@mes.Valor" selected="@(mes.Valor == Model.MesSeleccionado)">@textInfo.ToTitleCase(mes.Nombre)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field workspace-field-span-2">
+                        <label class="form-label" for="textoBusqueda">Buscar asiento</label>
+                        <input id="textoBusqueda" name="textoBusqueda" value="@Model.TextoBusqueda" class="form-control" placeholder="Numero, glosa, origen o referencia" />
+                    </div>
+                </div>
+                <div class="workspace-actions">
+                    <button type="submit" class="btn btn-primary">Consultar</button>
+                </div>
+            </form>
+
+            <div class="table-responsive workspace-table-wrap">
+                <table class="table align-middle app-table workspace-table">
+                    <thead>
+                        <tr>
+                            <th>Nro</th>
+                            <th>Fecha</th>
+                            <th>Origen</th>
+                            <th>Glosa</th>
+                            <th>Moneda</th>
+                            <th>Debe</th>
+                            <th>Haber</th>
+                            <th>Estado</th>
+                            <th class="text-end">Accion</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Asientos.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="9">
+                                    <div class="app-empty-state app-empty-state-inline">
+                                        <i class="bi bi-journal-check"></i>
+                                        <div>
+                                            <strong>No hay asientos para la consulta actual</strong>
+                                            <p>Ajusta el periodo o registra el primer asiento manual de la empresa activa.</p>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var asiento in Model.Asientos)
+                            {
+                                <tr class="workspace-clickable-row" data-edit-url="@Url.Action("Editar", new { periodo = Model.PeriodoConsulta, idAsiento = asiento.IdAsiento })">
+                                    <td>@asiento.Periodo-@asiento.NumeroAsiento</td>
+                                    <td>@asiento.FechaAsiento.ToString("dd/MM/yyyy")</td>
+                                    <td>@asiento.CodigoOrigen</td>
+                                    <td>@asiento.Glosa</td>
+                                    <td>@asiento.CodigoMoneda</td>
+                                    <td>@asiento.TotalDebe.ToString("0.00")</td>
+                                    <td>@asiento.TotalHaber.ToString("0.00")</td>
+                                    <td>
+                                        <span class="workspace-status-badge is-active">@asiento.Estado</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <a asp-action="Editar" asp-route-periodo="@Model.PeriodoConsulta" asp-route-idAsiento="@asiento.IdAsiento" class="workspace-row-link">Editar</a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.Paginacion.TotalPaginas > 1)
+            {
+                <nav class="workspace-pagination" aria-label="Paginacion asientos">
+                    <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaAnterior ? string.Empty : "disabled")"
+                       asp-action="Index"
+                       asp-route-anio="@Model.AnioSeleccionado"
+                       asp-route-mes="@Model.MesSeleccionado"
+                       asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-pagina="@(Model.Paginacion.PaginaActual - 1)">Anterior</a>
+
+                    @for (var pagina = paginaInicio; pagina <= paginaFin; pagina++)
+                    {
+                        <a class="btn @(pagina == Model.Paginacion.PaginaActual ? "btn-primary" : "btn-outline-secondary")"
+                           asp-action="Index"
+                           asp-route-anio="@Model.AnioSeleccionado"
+                           asp-route-mes="@Model.MesSeleccionado"
+                           asp-route-textoBusqueda="@Model.TextoBusqueda"
+                           asp-route-pagina="@pagina">@pagina</a>
+                    }
+
+                    <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaSiguiente ? string.Empty : "disabled")"
+                       asp-action="Index"
+                       asp-route-anio="@Model.AnioSeleccionado"
+                       asp-route-mes="@Model.MesSeleccionado"
+                       asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-pagina="@(Model.Paginacion.PaginaActual + 1)">Siguiente</a>
+                </nav>
+            }
+        </div>
+    </section>
+</section>

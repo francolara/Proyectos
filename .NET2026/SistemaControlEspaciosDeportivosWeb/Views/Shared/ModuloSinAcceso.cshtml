@@ -4,10 +4,85 @@
     ViewData["Title"] = "Sin acceso";
 }
 
-<div class="alert alert-danger">
-    <h1 class="h5 mb-2">Acceso denegado</h1>
-    <p class="mb-0">@(Model.Mensaje ?? "No cuentas con permiso para este modulo.")</p>
-</div>
+<section class="content-card sc-noaccess-card">
+    <div class="sc-noaccess-head">
+        <span class="sc-noaccess-icon"><i class="bi bi-shield-lock"></i></span>
+        <div>
+            <h1 class="sc-noaccess-title">Acceso denegado</h1>
+            <p class="sc-noaccess-copy mb-0">@(Model.Mensaje ?? "No cuentas con permiso para este modulo.")</p>
+        </div>
+    </div>
 
-<a class="btn btn-outline-primary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">Volver al panel</a>
+    <div class="sc-noaccess-actions">
+        <a class="btn btn-cancelar sc-noaccess-btn" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">
+            <i class="bi bi-arrow-left-circle me-1"></i>Volver al panel
+        </a>
+        @if (Model.BloqueadoPorPlanBasico)
+        {
+            <a class="btn btn-grabar sc-noaccess-btn" asp-controller="MiSuscripcion" asp-action="Index" asp-route-negocioId="@Model.NegocioId">
+                <i class="bi bi-rocket-takeoff me-1"></i>Migrar plan
+            </a>
+        }
+    </div>
+</section>
 
+<style>
+    .sc-noaccess-card {
+        max-width: 760px;
+        margin: 1.25rem auto 0;
+        padding: 1.5rem;
+        border: 1px solid rgba(220, 53, 69, 0.18);
+        background:
+            linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(247, 251, 255, 0.96)),
+            radial-gradient(circle at top left, rgba(220, 53, 69, 0.08), transparent 42%);
+        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+    }
+
+    .sc-noaccess-head {
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+
+    .sc-noaccess-icon {
+        width: 3.25rem;
+        height: 3.25rem;
+        border-radius: 1rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #fee2e2, #fecaca);
+        color: #b91c1c;
+        font-size: 1.35rem;
+        flex-shrink: 0;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+    }
+
+    .sc-noaccess-title {
+        margin: 0 0 .45rem;
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: #0f172a;
+    }
+
+    .sc-noaccess-copy {
+        color: #475569;
+        line-height: 1.6;
+        max-width: 58ch;
+    }
+
+    .sc-noaccess-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .75rem;
+        margin-top: 1.35rem;
+    }
+
+    .sc-noaccess-btn {
+        min-width: 180px;
+        justify-content: center;
+        display: inline-flex;
+        align-items: center;
+        border-radius: .95rem;
+    }
+</style>

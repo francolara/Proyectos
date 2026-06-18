@@ -111,6 +111,7 @@
     var esOwnerPlataforma = User.IsInRole("OwnerPlataforma");
     var usuarioId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
     var bloquearModulosPorSuscripcion = false;
+    var adminEsPlanBasico = false;
 
     if (!string.IsNullOrWhiteSpace(usuarioId))
     {
@@ -132,6 +133,7 @@
             }
             else
             {
+                adminEsPlanBasico = string.Equals(suscripcionNegocio.TipoPlan, "Basico", StringComparison.OrdinalIgnoreCase);
                 var estadoSuscripcion = suscripcionNegocio.EstadoSuscripcion;
                 var esPruebaVencida = suscripcionNegocio.EstadoSuscripcion == 1
                                       && suscripcionNegocio.EsPrueba

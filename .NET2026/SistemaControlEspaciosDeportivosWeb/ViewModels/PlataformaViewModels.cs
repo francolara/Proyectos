@@ -80,6 +80,7 @@ public class PlataformaNegocioLimiteItemViewModel
     public int NegocioId { get; set; }
     public string NombreComercial { get; set; } = string.Empty;
     public bool Activo { get; set; }
+    public string TipoPlan { get; set; } = "Basico";
     public int SedesPermitidas { get; set; } = 2;
     public int EspaciosPermitidos { get; set; } = 6;
     public int UsuariosPermitidos { get; set; } = 3;
@@ -198,6 +199,7 @@ public class BoletinesDeportivosAdminIndexViewModel : ModuloBaseViewModel
 public class MiSuscripcionNegocioViewModel
 {
     public int NegocioId { get; set; }
+    public string TipoPlan { get; set; } = "Basico";
     public int EstadoSuscripcion { get; set; }
     public string EstadoSuscripcionNombre { get; set; } = "Pendiente de activacion";
     public bool EsPrueba { get; set; }
@@ -213,6 +215,7 @@ public class MiSuscripcionNegocioViewModel
 public class MiSuscripcionIndexViewModel : ModuloBaseViewModel
 {
     public MiSuscripcionNegocioViewModel? Suscripcion { get; set; }
+    public string TipoPlan { get; set; } = "Basico";
     public string ContactoPlataformaEmail { get; set; } = string.Empty;
     public string ContactoPlataformaTelefono { get; set; } = string.Empty;
     public DateTime? FechaVencimiento { get; set; }
@@ -221,6 +224,7 @@ public class MiSuscripcionIndexViewModel : ModuloBaseViewModel
     public int SedesPermitidas { get; set; } = 2;
     public int EspaciosPermitidos { get; set; } = 6;
     public int UsuariosPermitidos { get; set; } = 3;
+    public bool EsPlanBasico => string.Equals(TipoPlan, "Basico", StringComparison.OrdinalIgnoreCase);
 }
 
 public class PlataformaReferencialesExternosViewModel

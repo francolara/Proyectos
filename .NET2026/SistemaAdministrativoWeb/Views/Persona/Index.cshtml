@@ -1,0 +1,203 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.PersonaIndexViewModel
+
+@{
+    ViewData["Title"] = "Personas";
+    ViewData["AdminShell"] = true;
+    var paginaInicio = Math.Max(1, Model.Paginacion.PaginaActual - 2);
+    var paginaFin = Math.Min(Model.Paginacion.TotalPaginas, Model.Paginacion.PaginaActual + 2);
+}
+
+<section class="dashboard-shell">
+    <div class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">Mantenimiento administrativo</span>
+            <h1>Personas</h1>
+            <p>Centraliza clientes, proveedores y terceros por empresa con documento SUNAT y ubigeo detallado.</p>
+        </div>
+        <div class="dashboard-status-card">
+            <strong>@Model.EmpresaNombre</strong>
+            <span>Catalogo aislado por empresa para compras, ventas y maestros auxiliares.</span>
+            <small>Total filtrado: @Model.Paginacion.TotalRegistros</small>
+        </div>
+    </div>
+
+    <section class="dashboard-metrics">
+        <article class="dashboard-metric-card">
+            <span>Total personas</span>
+            <strong>@Model.TotalPersonas</strong>
+            <small>Registros que cumplen el filtro actual.</small>
+        </article>
+        <article class="dashboard-metric-card">
+            <span>Clientes visibles</span>
+            <strong>@Model.TotalClientes</strong>
+            <small>Marcados como cliente dentro de la pagina consultada.</small>
+        </article>
+        <article class="dashboard-metric-card">
+            <span>Proveedores visibles</span>
+            <strong>@Model.TotalProveedores</strong>
+            <small>Marcados como proveedor dentro de la pagina consultada.</small>
+        </article>
+    </section>
+
+    <section class="workspace-window">
+        <div class="workspace-window-head workspace-window-head-emerald">
+            <div>
+                <span class="workspace-window-kicker">Auxiliares</span>
+                <h1>Personas registradas</h1>
+                <p>Busca por nombre o documento y abre el registro en modo edicion desde la grilla.</p>
+            </div>
+            <div class="workspace-row-actions">
+                <a asp-action="Registrar" class="btn btn-light btn-sm">Registrar persona</a>
+            </div>
+        </div>
+        <div class="workspace-window-body">
+            @if (TempData["PersonaOk"] is string ok)
+            {
+                <div class="alert alert-success">@ok</div>
+            }
+
+            <form asp-action="Index" method="get" class="workspace-filter-card">
+                <div class="workspace-filter-grid">
+                    <div class="workspace-field workspace-field-span-2">
+                        <label class="form-label" for="textoBusqueda">Buscar persona</label>
+                        <input id="textoBusqueda" name="textoBusqueda" value="@Model.TextoBusqueda" class="form-control" placeholder="Documento, nombre, correo o telefono" />
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="tipoPersona">Tipo</label>
+                        <select id="tipoPersona" name="tipoPersona" class="form-select">
+                            <option value="">Todos</option>
+                            @foreach (var item in Model.TiposPersona)
+                            {
+                                if (item.Valor == Model.TipoPersonaFiltro)
+                                {
+                                    <option value="@item.Valor" selected>@item.Texto</option>
+                                }
+                                else
+                                {
+                                    <option value="@item.Valor">@item.Texto</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="soloClientes">Relacion</label>
+                        <div class="workspace-check-grid workspace-check-grid-compact">
+                            <label class="workspace-check">
+                                <input id="soloClientes" name="soloClientes" type="checkbox" value="true" class="form-check-input" checked="@Model.SoloClientes" />
+                                <span>Cliente</span>
+                            </label>
+                            <label class="workspace-check">
+                                <input id="soloProveedores" name="soloProveedores" type="checkbox" value="true" class="form-check-input" checked="@Model.SoloProveedores" />
+                                <span>Proveedor</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="workspace-actions">
+                    <button type="submit" class="btn btn-primary">Consultar</button>
+                </div>
+            </form>
+
+            <div class="table-responsive workspace-table-wrap">
+                <table class="table align-middle app-table workspace-table">
+                    <thead>
+                        <tr>
+                            <th>Documento</th>
+                            <th>Nombre</th>
+                            <th>Tipo</th>
+                            <th>Relacion</th>
+                            <th>Ubigeo</th>
+                            <th>Contacto</th>
+                            <th>Estado</th>
+                            <th class="text-end">Accion</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Personas.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="8">
+                                    <div class="app-empty-state app-empty-state-inline">
+                                        <i class="bi bi-people"></i>
+                                        <div>
+                                            <strong>No hay personas para la consulta actual</strong>
+                                            <p>Ajusta los filtros o registra el primer auxiliar de la empresa.</p>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var persona in Model.Personas)
+                            {
+                                var relacion = persona.EsCliente && persona.EsProveedor
+                                    ? "Cliente / Proveedor"
+                                    : persona.EsCliente
+                                        ? "Cliente"
+                                        : persona.EsProveedor
+                                            ? "Proveedor"
+                                            : "Solo persona";
+                                var ubigeo = string.Join(" / ", new[] { persona.Departamento, persona.Provincia, persona.Distrito }.Where(x => !string.IsNullOrWhiteSpace(x)));
+                                <tr class="workspace-clickable-row" data-edit-url="@Url.Action("Editar", new { idPersona = persona.IdPersona })">
+                                    <td>
+                                        <strong>@persona.TipoDocumento</strong><br />
+                                        <span class="text-muted">@persona.NumeroDocumento</span>
+                                    </td>
+                                    <td>@persona.NombreCompleto</td>
+                                    <td>@(persona.TipoPersona == "N" ? "Natural" : "Juridica")</td>
+                                    <td>@relacion</td>
+                                    <td>@(string.IsNullOrWhiteSpace(ubigeo) ? "-" : ubigeo)</td>
+                                    <td>
+                                        <div>@(string.IsNullOrWhiteSpace(persona.CorreoElectronico) ? "-" : persona.CorreoElectronico)</div>
+                                        <div class="text-muted">@(string.IsNullOrWhiteSpace(persona.Telefono) ? "-" : persona.Telefono)</div>
+                                    </td>
+                                    <td>
+                                        <span class="workspace-status-badge @(persona.Estado ? "is-active" : "is-inactive")">
+                                            @(persona.Estado ? "Activa" : "Inactiva")
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <a asp-action="Editar" asp-route-idPersona="@persona.IdPersona" class="workspace-row-link">Editar</a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.Paginacion.TotalPaginas > 1)
+            {
+                <nav class="workspace-pagination" aria-label="Paginacion personas">
+                    <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaAnterior ? string.Empty : "disabled")"
+                       asp-action="Index"
+                       asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-tipoPersona="@Model.TipoPersonaFiltro"
+                       asp-route-soloClientes="@Model.SoloClientes"
+                       asp-route-soloProveedores="@Model.SoloProveedores"
+                       asp-route-pagina="@(Model.Paginacion.PaginaActual - 1)">Anterior</a>
+
+                    @for (var pagina = paginaInicio; pagina <= paginaFin; pagina++)
+                    {
+                        <a class="btn @(pagina == Model.Paginacion.PaginaActual ? "btn-primary" : "btn-outline-secondary")"
+                           asp-action="Index"
+                           asp-route-textoBusqueda="@Model.TextoBusqueda"
+                           asp-route-tipoPersona="@Model.TipoPersonaFiltro"
+                           asp-route-soloClientes="@Model.SoloClientes"
+                           asp-route-soloProveedores="@Model.SoloProveedores"
+                           asp-route-pagina="@pagina">@pagina</a>
+                    }
+
+                    <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaSiguiente ? string.Empty : "disabled")"
+                       asp-action="Index"
+                       asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-tipoPersona="@Model.TipoPersonaFiltro"
+                       asp-route-soloClientes="@Model.SoloClientes"
+                       asp-route-soloProveedores="@Model.SoloProveedores"
+                       asp-route-pagina="@(Model.Paginacion.PaginaActual + 1)">Siguiente</a>
+                </nav>
+            }
+        </div>
+    </section>
+</section>

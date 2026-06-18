@@ -29,12 +29,16 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
 
         var ocupacionTask = spService.ReportesOcupacionPorEspacioAsync(negocioId, desde, hasta, sedeFiltro);
         var ingresosTask = spService.ReportesIngresosPorDiaAsync(negocioId, desde, hasta, sedeFiltro);
+        var reservasTask = spService.ReportesReservasPorDiaAsync(negocioId, desde, hasta, sedeFiltro);
         var resumenActualTask = spService.ReportesResumenOperativoAsync(negocioId, desde, hasta, sedeFiltro);
+        var cobranzaActualTask = spService.ReportesResumenCobranzaAsync(negocioId, desde, hasta, sedeFiltro);
 
         var ingresosAnteriorTask = spService.ReportesIngresosPorDiaAsync(negocioId, desdeAnterior, hastaAnterior, sedeFiltro);
+        var reservasAnteriorTask = spService.ReportesReservasPorDiaAsync(negocioId, desdeAnterior, hastaAnterior, sedeFiltro);
         var resumenAnteriorTask = spService.ReportesResumenOperativoAsync(negocioId, desdeAnterior, hastaAnterior, sedeFiltro);
+        var cobranzaAnteriorTask = spService.ReportesResumenCobranzaAsync(negocioId, desdeAnterior, hastaAnterior, sedeFiltro);
 
-        await Task.WhenAll(ocupacionTask, ingresosTask, resumenActualTask, ingresosAnteriorTask, resumenAnteriorTask);
+        await Task.WhenAll(ocupacionTask, ingresosTask, reservasTask, resumenActualTask, cobranzaActualTask, ingresosAnteriorTask, reservasAnteriorTask, resumenAnteriorTask, cobranzaAnteriorTask);
 
         var vm = new ReportesIndexViewModel
         {
@@ -57,10 +61,14 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
             SedeId = sedeFiltro,
             SedesFiltro = PrepararSedesFiltro(sedes, baseVm.EsAdministrador, sedeFiltro),
             Ocupacion = ocupacionTask.Result,
+            ReservasPorDia = reservasTask.Result,
+            ReservasPeriodoAnterior = reservasAnteriorTask.Result,
             Ingresos = ingresosTask.Result,
             IngresosPeriodoAnterior = ingresosAnteriorTask.Result,
             ResumenActual = resumenActualTask.Result,
-            ResumenAnterior = resumenAnteriorTask.Result
+            ResumenAnterior = resumenAnteriorTask.Result,
+            CobranzaActual = cobranzaActualTask.Result,
+            CobranzaAnterior = cobranzaAnteriorTask.Result
         };
 
         return View(vm);
@@ -83,8 +91,10 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
             bloqueNormalizado = "todo";
 
         var resumen = await spService.ReportesResumenOperativoAsync(negocioId, desde, hasta, sedeFiltro);
+        var cobranza = await spService.ReportesResumenCobranzaAsync(negocioId, desde, hasta, sedeFiltro);
         var ocupacion = await spService.ReportesOcupacionPorEspacioAsync(negocioId, desde, hasta, sedeFiltro);
         var ingresos = await spService.ReportesIngresosPorDiaAsync(negocioId, desde, hasta, sedeFiltro);
+        var reservas = await spService.ReportesReservasPorDiaAsync(negocioId, desde, hasta, sedeFiltro);
 
         var sb = new StringBuilder();
         const string sep = ";";
@@ -93,13 +103,13 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
 
         if (bloqueNormalizado is "todo" or "resumen")
         {
-            var ticketPromedio = resumen.TotalReservas > 0 ? resumen.MontoCobrado / resumen.TotalReservas : 0m;
-            var cobranzaPct = resumen.MontoReservado > 0 ? (resumen.MontoCobrado / resumen.MontoReservado) * 100m : 0m;
-            sb.AppendLine("[RESUMEN]");
+            var ticketPromedioCobranza = cobranza.ReservasCobradas > 0 ? cobranza.MontoCobrado / cobranza.ReservasCobradas : 0m;
+            var cobranzaPct = resumen.MontoReservado > 0 ? (cobranza.MontoCobrado / resumen.MontoReservado) * 100m : 0m;
+            sb.AppendLine("[RESUMEN_OPERATIVO]");
             sb.AppendLine(string.Join(sep, new[]
             {
                 "NegocioId","SedeId","FechaDesde","FechaHasta","Dias","TotalReservas","Pendientes","Confirmadas","Pagadas","Canceladas","NoShow",
-                "MontoReservado","MontoCobrado","SaldoPendiente","TicketPromedio","CobranzaPct"
+                "MontoReservado","SaldoPendiente"
             }));
             sb.AppendLine(string.Join(sep, new[]
             {
@@ -115,9 +125,25 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
                 resumen.TotalCanceladas.ToString(),
                 resumen.TotalNoShow.ToString(),
                 FormatoNumero(resumen.MontoReservado, cultura),
-                FormatoNumero(resumen.MontoCobrado, cultura),
-                FormatoNumero(resumen.SaldoPendiente, cultura),
-                FormatoNumero(ticketPromedio, cultura),
+                FormatoNumero(resumen.SaldoPendiente, cultura)
+            }));
+            sb.AppendLine();
+            sb.AppendLine("[RESUMEN_COBRANZA]");
+            sb.AppendLine(string.Join(sep, new[]
+            {
+                "NegocioId","SedeId","FechaDesde","FechaHasta","Dias","CantidadPagos","ReservasCobradas","MontoCobrado","TicketPromedioCobranza","CobranzaPctSobreReservado"
+            }));
+            sb.AppendLine(string.Join(sep, new[]
+            {
+                negocioId.ToString(),
+                sedeFiltro?.ToString() ?? string.Empty,
+                desde.ToString("yyyy-MM-dd"),
+                hasta.ToString("yyyy-MM-dd"),
+                diasPeriodo.ToString(),
+                cobranza.CantidadPagos.ToString(),
+                cobranza.ReservasCobradas.ToString(),
+                FormatoNumero(cobranza.MontoCobrado, cultura),
+                FormatoNumero(ticketPromedioCobranza, cultura),
                 FormatoNumero(cobranzaPct, cultura)
             }));
             sb.AppendLine();
@@ -133,7 +159,7 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
             foreach (var o in ocupacion)
             {
                 var ticket = o.CantidadReservas > 0 ? o.MontoCobrado / o.CantidadReservas : 0m;
-                var cobranza = o.MontoReservado > 0 ? (o.MontoCobrado / o.MontoReservado) * 100m : 0m;
+                var cobranzaOcupacion = o.MontoReservado > 0 ? (o.MontoCobrado / o.MontoReservado) * 100m : 0m;
                 sb.AppendLine(string.Join(sep, new[]
                 {
                     o.SedeId.ToString(),
@@ -145,7 +171,7 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
                     FormatoNumero(o.MontoReservado, cultura),
                     FormatoNumero(o.MontoCobrado, cultura),
                     FormatoNumero(ticket, cultura),
-                    FormatoNumero(cobranza, cultura)
+                    FormatoNumero(cobranzaOcupacion, cultura)
                 }));
             }
             var totalReservasOcup = ocupacion.Sum(x => x.CantidadReservas);
@@ -169,7 +195,7 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
         if (bloqueNormalizado is "todo" or "ingresos")
         {
             sb.AppendLine("[INGRESOS]");
-            sb.AppendLine(string.Join(sep, new[] { "Fecha", "CantidadReservas", "Ingresos", "TicketPromedioDia" }));
+            sb.AppendLine(string.Join(sep, new[] { "FechaPago", "ReservasCobradas", "Ingresos", "TicketPromedioDia" }));
             foreach (var i in ingresos)
             {
                 var ticketDia = i.CantidadReservas > 0 ? i.Ingresos / i.CantidadReservas : 0m;
@@ -191,6 +217,22 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
                 FormatoNumero(totalIngresos, cultura),
                 FormatoNumero(ticketPromedioIngreso, cultura)
             }));
+        }
+
+        if (bloqueNormalizado is "todo" or "ingresos")
+        {
+            sb.AppendLine();
+            sb.AppendLine("[RESERVAS_POR_DIA]");
+            sb.AppendLine(string.Join(sep, new[] { "FechaReserva", "CantidadReservas", "MontoReservado" }));
+            foreach (var r in reservas)
+            {
+                sb.AppendLine(string.Join(sep, new[]
+                {
+                    r.Fecha.ToString("yyyy-MM-dd"),
+                    r.CantidadReservas.ToString(),
+                    FormatoNumero(r.MontoReservado, cultura)
+                }));
+            }
         }
 
         var bytes = Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(sb.ToString())).ToArray();
@@ -216,8 +258,10 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
             bloqueNormalizado = "todo";
 
         var resumen = await spService.ReportesResumenOperativoAsync(negocioId, desde, hasta, sedeFiltro);
+        var cobranza = await spService.ReportesResumenCobranzaAsync(negocioId, desde, hasta, sedeFiltro);
         var ocupacion = await spService.ReportesOcupacionPorEspacioAsync(negocioId, desde, hasta, sedeFiltro);
         var ingresos = await spService.ReportesIngresosPorDiaAsync(negocioId, desde, hasta, sedeFiltro);
+        var reservas = await spService.ReportesReservasPorDiaAsync(negocioId, desde, hasta, sedeFiltro);
 
         using var wb = new XLWorkbook();
         var headerBg = XLColor.FromHtml("#E8F0FE");
@@ -235,13 +279,13 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
 
             var headers = new[]
             {
-                "TotalReservas","Pendientes","Confirmadas","Pagadas","Canceladas","NoShow","MontoReservado","MontoCobrado","SaldoPendiente","TicketPromedio","CobranzaPct"
+                "TotalReservas","Pendientes","Confirmadas","Pagadas","Canceladas","NoShow","MontoReservado","SaldoPendiente","CantidadPagos","ReservasCobradas","MontoCobrado","TicketPromedioCobranza","CobranzaPct"
             };
             for (var i = 0; i < headers.Length; i++)
                 ws.Cell(5, i + 1).Value = headers[i];
 
-            var ticketPromedio = resumen.TotalReservas > 0 ? resumen.MontoCobrado / resumen.TotalReservas : 0m;
-            var cobranzaPct = resumen.MontoReservado > 0 ? (resumen.MontoCobrado / resumen.MontoReservado) * 100m : 0m;
+            var ticketPromedio = cobranza.ReservasCobradas > 0 ? cobranza.MontoCobrado / cobranza.ReservasCobradas : 0m;
+            var cobranzaPct = resumen.MontoReservado > 0 ? (cobranza.MontoCobrado / resumen.MontoReservado) * 100m : 0m;
             ws.Cell(6, 1).Value = resumen.TotalReservas;
             ws.Cell(6, 2).Value = resumen.TotalPendientes;
             ws.Cell(6, 3).Value = resumen.TotalConfirmadas;
@@ -249,14 +293,16 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
             ws.Cell(6, 5).Value = resumen.TotalCanceladas;
             ws.Cell(6, 6).Value = resumen.TotalNoShow;
             ws.Cell(6, 7).Value = resumen.MontoReservado;
-            ws.Cell(6, 8).Value = resumen.MontoCobrado;
-            ws.Cell(6, 9).Value = resumen.SaldoPendiente;
-            ws.Cell(6, 10).Value = ticketPromedio;
-            ws.Cell(6, 11).Value = cobranzaPct / 100m;
+            ws.Cell(6, 8).Value = resumen.SaldoPendiente;
+            ws.Cell(6, 9).Value = cobranza.CantidadPagos;
+            ws.Cell(6, 10).Value = cobranza.ReservasCobradas;
+            ws.Cell(6, 11).Value = cobranza.MontoCobrado;
+            ws.Cell(6, 12).Value = ticketPromedio;
+            ws.Cell(6, 13).Value = cobranzaPct / 100m;
 
             FormatearHeader(ws.Range(5, 1, 5, headers.Length), headerBg, headerFg);
-            ws.Range(6, 7, 6, 10).Style.NumberFormat.Format = "#,##0.00";
-            ws.Cell(6, 11).Style.NumberFormat.Format = "0.00%";
+            ws.Range(6, 7, 6, 12).Style.NumberFormat.Format = "#,##0.00";
+            ws.Cell(6, 13).Style.NumberFormat.Format = "0.00%";
             ws.Columns().AdjustToContents();
         }
 
@@ -275,7 +321,7 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
             foreach (var o in ocupacion)
             {
                 var ticket = o.CantidadReservas > 0 ? o.MontoCobrado / o.CantidadReservas : 0m;
-                var cobranza = o.MontoReservado > 0 ? (o.MontoCobrado / o.MontoReservado) * 100m : 0m;
+                var cobranzaOcupacion = o.MontoReservado > 0 ? (o.MontoCobrado / o.MontoReservado) * 100m : 0m;
                 ws.Cell(row, 1).Value = o.SedeId;
                 ws.Cell(row, 2).Value = o.EspacioDeportivoId;
                 ws.Cell(row, 3).Value = o.Sede;
@@ -285,7 +331,7 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
                 ws.Cell(row, 7).Value = o.MontoReservado;
                 ws.Cell(row, 8).Value = o.MontoCobrado;
                 ws.Cell(row, 9).Value = ticket;
-                ws.Cell(row, 10).Value = cobranza / 100m;
+                ws.Cell(row, 10).Value = cobranzaOcupacion / 100m;
                 row++;
             }
 
@@ -338,6 +384,33 @@ public class ReportesController(IModuloPermisoService moduloPermisoService, ISpo
             ws.Column(1).Style.DateFormat.Format = "dd/MM/yyyy";
             ws.Range(2, 3, Math.Max(2, row), 4).Style.NumberFormat.Format = "#,##0.00";
             ws.Columns().AdjustToContents();
+
+            var wsReservas = wb.Worksheets.Add("Reservas");
+            var headersReservas = new[] { "FechaReserva", "CantidadReservas", "MontoReservado" };
+            for (var i = 0; i < headersReservas.Length; i++)
+                wsReservas.Cell(1, i + 1).Value = headersReservas[i];
+            FormatearHeader(wsReservas.Range(1, 1, 1, headersReservas.Length), headerBg, headerFg);
+
+            var rowReserva = 2;
+            foreach (var r in reservas)
+            {
+                wsReservas.Cell(rowReserva, 1).Value = r.Fecha.ToDateTime(TimeOnly.MinValue);
+                wsReservas.Cell(rowReserva, 2).Value = r.CantidadReservas;
+                wsReservas.Cell(rowReserva, 3).Value = r.MontoReservado;
+                rowReserva++;
+            }
+
+            if (reservas.Count > 0)
+            {
+                wsReservas.Cell(rowReserva, 1).Value = "TOTAL";
+                wsReservas.Cell(rowReserva, 2).Value = reservas.Sum(x => x.CantidadReservas);
+                wsReservas.Cell(rowReserva, 3).Value = reservas.Sum(x => x.MontoReservado);
+                wsReservas.Range(rowReserva, 1, rowReserva, headersReservas.Length).Style.Font.Bold = true;
+            }
+
+            wsReservas.Column(1).Style.DateFormat.Format = "dd/MM/yyyy";
+            wsReservas.Range(2, 3, Math.Max(2, rowReserva), 3).Style.NumberFormat.Format = "#,##0.00";
+            wsReservas.Columns().AdjustToContents();
         }
 
         await using var ms = new MemoryStream();

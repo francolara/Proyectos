@@ -1,7 +1,8 @@
-﻿-- =============================================
+-- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   16/04/2026
 -- Firma:         Ajuste de aprobacion de altas con dias de prueba configurables y creacion de suscripcion inicial.
+-- Firma:         FRANCO LARA - 18/06/2026 | Registra TipoPlan Basico por defecto al crear nuevos negocios desde altas.
 -- =============================================
 CREATE OR ALTER PROCEDURE dbo.Sp_AltasClubes_Aprobar
     @Id INT,
@@ -37,8 +38,8 @@ BEGIN
 
         BEGIN TRANSACTION;
 
-        INSERT INTO dbo.Negocios (NombreComercial, RazonSocial, DocumentoFiscal, Activo, FechaRegistro, MonedaId)
-        VALUES (@NombreClub, NULL, NULL, 1, SYSUTCDATETIME(), NULL);
+        INSERT INTO dbo.Negocios (NombreComercial, RazonSocial, DocumentoFiscal, Activo, FechaRegistro, MonedaId, TipoPlan)
+        VALUES (@NombreClub, NULL, NULL, 1, SYSUTCDATETIME(), NULL, N'Basico');
         SET @NegocioId = SCOPE_IDENTITY();
 
         INSERT INTO dbo.Sedes (NegocioId, Nombre, Direccion, Telefono, Activo, FechaCreacion, UsuarioCreacion)

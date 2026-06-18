@@ -1,0 +1,146 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.OrigenIndexViewModel
+
+@{
+    ViewData["Title"] = "Origenes contables";
+    ViewData["AdminShell"] = true;
+    var paginaInicio = Math.Max(1, Model.Paginacion.PaginaActual - 2);
+    var paginaFin = Math.Min(Model.Paginacion.TotalPaginas, Model.Paginacion.PaginaActual + 2);
+}
+
+<section class="dashboard-shell">
+    <div class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">Mantenimiento contable</span>
+            <h1>Origenes contables</h1>
+            <p>Configura los subdiarios y clasificaciones que controlaran la entrada de asientos manuales y automaticos.</p>
+        </div>
+        <div class="dashboard-status-card">
+            <strong>@Model.EmpresaNombre</strong>
+            <span>Empresa activa para organizar los origenes del circuito contable.</span>
+            <small>Total filtrado: @Model.Paginacion.TotalRegistros</small>
+        </div>
+    </div>
+
+    <section class="dashboard-metrics">
+        <article class="dashboard-metric-card">
+            <span>Total origenes</span>
+            <strong>@Model.TotalOrigenes</strong>
+            <small>Catalogo filtrado para la consulta actual.</small>
+        </article>
+        <article class="dashboard-metric-card">
+            <span>Origenes activos</span>
+            <strong>@Model.TotalActivos</strong>
+            <small>Registros activos visibles en la pagina.</small>
+        </article>
+        <article class="dashboard-metric-card">
+            <span>Manual</span>
+            <strong>@Model.TotalManual</strong>
+            <small>Origenes que permiten ingreso manual.</small>
+        </article>
+    </section>
+
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Catalogo</span>
+                <h1>Origenes registrados</h1>
+                <p>Consulta, filtra y abre la edicion del subdiario directamente desde la grilla.</p>
+            </div>
+            <div class="workspace-row-actions">
+                <a asp-action="Registrar" class="btn btn-light btn-sm">Registrar origen</a>
+            </div>
+        </div>
+        <div class="workspace-window-body">
+            @if (TempData["OrigenOk"] is string ok)
+            {
+                <div class="alert alert-success">@ok</div>
+            }
+
+            <form asp-action="Index" method="get" class="workspace-filter-card">
+                <div class="workspace-filter-grid">
+                    <div class="workspace-field workspace-field-span-2">
+                        <label class="form-label" for="textoBusqueda">Buscar origen</label>
+                        <input id="textoBusqueda" name="textoBusqueda" value="@Model.TextoBusqueda" class="form-control" placeholder="Codigo, nombre o modulo" />
+                    </div>
+                </div>
+                <div class="workspace-actions">
+                    <button type="submit" class="btn btn-primary">Consultar</button>
+                </div>
+            </form>
+
+            <div class="table-responsive workspace-table-wrap">
+                <table class="table align-middle app-table workspace-table">
+                    <thead>
+                        <tr>
+                            <th>Codigo</th>
+                            <th>Nombre</th>
+                            <th>Modulo</th>
+                            <th>Manual</th>
+                            <th>Estado</th>
+                            <th class="text-end">Accion</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Origenes.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="6">
+                                    <div class="app-empty-state app-empty-state-inline">
+                                        <i class="bi bi-journal-richtext"></i>
+                                        <div>
+                                            <strong>No hay origenes para la consulta actual</strong>
+                                            <p>Ajusta los filtros o registra el primer origen contable.</p>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var origen in Model.Origenes)
+                            {
+                                <tr class="workspace-clickable-row" data-edit-url="@Url.Action("Editar", new { idOrigen = origen.IdOrigen })">
+                                    <td class="workspace-tree-code">@origen.CodigoOrigen</td>
+                                    <td>@origen.NombreOrigen</td>
+                                    <td>@origen.ModuloOrigen</td>
+                                    <td>@(origen.PermiteRegistroManual ? "Si" : "No")</td>
+                                    <td>
+                                        <span class="workspace-status-badge @(origen.Estado ? "is-active" : "is-inactive")">
+                                            @(origen.Estado ? "Activo" : "Inactivo")
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <a asp-action="Editar" asp-route-idOrigen="@origen.IdOrigen" class="workspace-row-link">Editar</a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.Paginacion.TotalPaginas > 1)
+            {
+                <nav class="workspace-pagination" aria-label="Paginacion origenes">
+                    <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaAnterior ? string.Empty : "disabled")"
+                       asp-action="Index"
+                       asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-pagina="@(Model.Paginacion.PaginaActual - 1)">Anterior</a>
+
+                    @for (var pagina = paginaInicio; pagina <= paginaFin; pagina++)
+                    {
+                        <a class="btn @(pagina == Model.Paginacion.PaginaActual ? "btn-primary" : "btn-outline-secondary")"
+                           asp-action="Index"
+                           asp-route-textoBusqueda="@Model.TextoBusqueda"
+                           asp-route-pagina="@pagina">@pagina</a>
+                    }
+
+                    <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaSiguiente ? string.Empty : "disabled")"
+                       asp-action="Index"
+                       asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-pagina="@(Model.Paginacion.PaginaActual + 1)">Siguiente</a>
+                </nav>
+            }
+        </div>
+    </section>
+</section>

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.EventLog;
 using SistemaAdministrativoWeb.Configuration;
+using SistemaAdministrativoWeb.Infrastructure.Contabilidad;
 using SistemaAdministrativoWeb.Data;
 using SistemaAdministrativoWeb.Infrastructure.Data;
 using SistemaAdministrativoWeb.Infrastructure.Empresas;
@@ -9,7 +10,10 @@ using SistemaAdministrativoWeb.Infrastructure.Security;
 using SistemaAdministrativoWeb.Infrastructure.Suscripciones;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Logging.AddFilter<EventLogLoggerProvider>(level => level >= LogLevel.None);
+if (OperatingSystem.IsWindows())
+{
+    builder.Logging.AddFilter<EventLogLoggerProvider>(level => level >= LogLevel.None);
+}
 
 var secretsRootPath = Path.Combine(
     Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -36,10 +40,20 @@ builder.Services.Configure<IdentitySeedOptions>(
     builder.Configuration.GetSection(IdentitySeedOptions.SectionName));
 builder.Services.Configure<CloudflareTurnstileSettings>(
     builder.Configuration.GetSection(CloudflareTurnstileSettings.SectionName));
+var identityBehaviorSettings = builder.Configuration
+    .GetSection(IdentityBehaviorSettings.SectionName)
+    .Get<IdentityBehaviorSettings>() ?? new IdentityBehaviorSettings();
+builder.Services.Configure<IdentityBehaviorSettings>(
+    builder.Configuration.GetSection(IdentityBehaviorSettings.SectionName));
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
     {
-        options.SignIn.RequireConfirmedAccount = false;
+        options.SignIn.RequireConfirmedAccount = identityBehaviorSettings.RequireConfirmedAccount;
+        options.Password.RequiredLength = 6;
+        options.Password.RequireDigit = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireUppercase = true;
+        options.Password.RequireNonAlphanumeric = true;
     })
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
@@ -67,6 +81,19 @@ builder.Services.AddSession(options =>
 });
 
 builder.Services.AddScoped<IDbConnectionFactory, SqlConnectionFactory>();
+builder.Services.AddScoped<IPlanCuentaRepository, PlanCuentaRepository>();
+builder.Services.AddScoped<IOrigenRepository, OrigenRepository>();
+builder.Services.AddScoped<ICuentaDestinoReglaRepository, CuentaDestinoReglaRepository>();
+builder.Services.AddScoped<IConfiguracionContabilizacionRepository, ConfiguracionContabilizacionRepository>();
+builder.Services.AddScoped<IAsientoPreviewService, AsientoPreviewService>();
+builder.Services.AddScoped<IMonedaRepository, MonedaRepository>();
+builder.Services.AddScoped<IAsientoRepository, AsientoRepository>();
+builder.Services.AddScoped<IProveedorRepository, ProveedorRepository>();
+builder.Services.AddScoped<ICompraRepository, CompraRepository>();
+builder.Services.AddScoped<ITipoComprobanteRepository, TipoComprobanteRepository>();
+builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
+builder.Services.AddScoped<IPersonaRepository, PersonaRepository>();
+builder.Services.AddScoped<IVentaRepository, VentaRepository>();
 builder.Services.AddScoped<IEmpresaRepository, EmpresaRepository>();
 builder.Services.AddScoped<ICurrentCompanyAccessor, SessionCurrentCompanyAccessor>();
 builder.Services.AddScoped<ICuentaAdministradoraRepository, CuentaAdministradoraRepository>();

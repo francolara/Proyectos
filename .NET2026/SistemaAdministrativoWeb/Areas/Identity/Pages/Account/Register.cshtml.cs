@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -19,16 +18,11 @@ public class RegisterModel(
     ICuentaAdministradoraRepository cuentaAdministradoraRepository,
     ITurnstileValidationService turnstileValidationService,
     IOptions<CloudflareTurnstileSettings> turnstileOptions,
+    IOptions<IdentityBehaviorSettings> identityBehaviorOptions,
     ILogger<RegisterModel> logger) : PageModel
 {
     [BindProperty]
-    public string TipoRegistro { get; set; } = "usuario";
-
-    [BindProperty]
     public UsuarioRegistroInput Usuario { get; set; } = new();
-
-    [BindProperty]
-    public EmpresaRegistroInput Empresa { get; set; } = new();
 
     public string ReturnUrl { get; set; } = string.Empty;
     public IList<AuthenticationScheme> ExternalLogins { get; set; } = new List<AuthenticationScheme>();
@@ -44,70 +38,29 @@ public class RegisterModel(
         public string? Telefono { get; set; }
 
         [Required(ErrorMessage = "Ingrese su correo.")]
-        [EmailAddress]
+        [EmailAddress(ErrorMessage = "Ingrese un correo electronico valido.")]
         public string Email { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Ingrese su contrasena.")]
-        [StringLength(100, MinimumLength = 6)]
+        [StringLength(100, MinimumLength = 6, ErrorMessage = "La contrasena debe tener entre 6 y 100 caracteres.")]
         [DataType(DataType.Password)]
         public string Password { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "Confirme su contrasena.")]
         [DataType(DataType.Password)]
         [Compare(nameof(Password), ErrorMessage = "Las contrasenas no coinciden.")]
         public string ConfirmPassword { get; set; } = string.Empty;
     }
 
-    public sealed class EmpresaRegistroInput
-    {
-        [Required(ErrorMessage = "Ingrese el nombre del contacto.")]
-        [StringLength(180)]
-        public string NombreContacto { get; set; } = string.Empty;
-
-        [StringLength(30)]
-        public string? Telefono { get; set; }
-
-        [Required(ErrorMessage = "Ingrese el correo del negocio.")]
-        [EmailAddress]
-        public string Correo { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Ingrese la razon social.")]
-        [StringLength(200)]
-        public string RazonSocial { get; set; } = string.Empty;
-
-        [StringLength(200)]
-        public string? NombreComercial { get; set; }
-
-        [Required(ErrorMessage = "Ingrese el RUC.")]
-        [StringLength(11, MinimumLength = 11, ErrorMessage = "El RUC debe tener 11 digitos.")]
-        public string Ruc { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Ingrese la contrasena.")]
-        [StringLength(100, MinimumLength = 6)]
-        [DataType(DataType.Password)]
-        public string Password { get; set; } = string.Empty;
-
-        [DataType(DataType.Password)]
-        [Compare(nameof(Password), ErrorMessage = "Las contrasenas no coinciden.")]
-        public string ConfirmPassword { get; set; } = string.Empty;
-    }
-
-    public async Task OnGetAsync(string? returnUrl = null, string? tipoRegistro = null)
+    public async Task OnGetAsync(string? returnUrl = null)
     {
         ReturnUrl = returnUrl ?? Url.Content("~/");
         ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
         TurnstileSiteKey = turnstileOptions.Value.SiteKey;
-        if (!string.IsNullOrWhiteSpace(tipoRegistro))
-        {
-            TipoRegistro = tipoRegistro.Trim().Equals("empresa", StringComparison.OrdinalIgnoreCase)
-                || tipoRegistro.Trim().Equals("club", StringComparison.OrdinalIgnoreCase)
-                ? "empresa"
-                : "usuario";
-        }
     }
 
     public async Task<IActionResult> OnPostUsuarioAsync(string? returnUrl = null)
     {
-        TipoRegistro = "usuario";
         ReturnUrl = returnUrl ?? Url.Content("~/");
         ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
         TurnstileSiteKey = turnstileOptions.Value.SiteKey;
@@ -122,11 +75,12 @@ public class RegisterModel(
             return Page();
         }
 
+        var email = Usuario.Email.Trim();
         var user = new IdentityUser
         {
-            UserName = Usuario.Email.Trim(),
-            Email = Usuario.Email.Trim(),
-            EmailConfirmed = true
+            UserName = email,
+            Email = email,
+            EmailConfirmed = identityBehaviorOptions.Value.AutoConfirmEmail
         };
 
         var result = await userManager.CreateAsync(user, Usuario.Password);
@@ -150,61 +104,6 @@ public class RegisterModel(
         return LocalRedirect(ReturnUrl);
     }
 
-    public async Task<IActionResult> OnPostEmpresaAsync(string? returnUrl = null)
-    {
-        TipoRegistro = "empresa";
-        ReturnUrl = returnUrl ?? Url.Content("~/");
-        ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
-        TurnstileSiteKey = turnstileOptions.Value.SiteKey;
-
-        if (!TryValidateModel(Empresa, nameof(Empresa)))
-        {
-            return Page();
-        }
-
-        if (!await ValidarTurnstileAsync())
-        {
-            return Page();
-        }
-
-        var email = Empresa.Correo.Trim();
-        var user = new IdentityUser
-        {
-            UserName = email,
-            Email = email,
-            EmailConfirmed = true
-        };
-
-        var result = await userManager.CreateAsync(user, Empresa.Password);
-        if (!result.Succeeded)
-        {
-            AgregarErrores(result);
-            return Page();
-        }
-
-        await userManager.AddToRoleAsync(user, "AdministradorEmpresa");
-
-        await cuentaAdministradoraRepository.RegistrarCuentaConEmpresaAsync(new RegistroCuentaAdministradoraConEmpresaRequest
-        {
-            AspNetUserId = user.Id,
-            NombreCompleto = Empresa.NombreContacto.Trim(),
-            Telefono = LimpiarTelefono(Empresa.Telefono),
-            CorreoReferencia = email,
-            CodigoCuenta = GenerarCodigoCuenta(Empresa.RazonSocial, email),
-            NombreCuenta = Empresa.RazonSocial.Trim(),
-            CodigoEmpresa = GenerarCodigoEmpresa(Empresa.RazonSocial, Empresa.Ruc),
-            RazonSocial = Empresa.RazonSocial.Trim(),
-            NombreComercial = string.IsNullOrWhiteSpace(Empresa.NombreComercial) ? Empresa.RazonSocial.Trim() : Empresa.NombreComercial.Trim(),
-            Ruc = Empresa.Ruc.Trim(),
-            DiasPrueba = 30,
-            UsuarioRegistro = email
-        });
-
-        logger.LogInformation("Cuenta administradora registrada con empresa principal.");
-        await signInManager.SignInAsync(user, isPersistent: false);
-        return LocalRedirect(ReturnUrl);
-    }
-
     public IActionResult OnPostExternalLogin(string provider, string? returnUrl = null, string? flow = null)
     {
         returnUrl ??= Url.Content("~/");
@@ -218,8 +117,24 @@ public class RegisterModel(
     {
         foreach (var error in result.Errors)
         {
-            ModelState.AddModelError(string.Empty, error.Description);
+            ModelState.AddModelError(string.Empty, TraducirErrorIdentity(error));
         }
+    }
+
+    private static string TraducirErrorIdentity(IdentityError error)
+    {
+        return error.Code switch
+        {
+            "DuplicateUserName" => "Ya existe una cuenta registrada con este correo.",
+            "DuplicateEmail" => "Ya existe una cuenta registrada con este correo.",
+            "InvalidEmail" => "Ingrese un correo electronico valido.",
+            "PasswordTooShort" => "La contrasena debe tener al menos 6 caracteres.",
+            "PasswordRequiresNonAlphanumeric" => "La contrasena debe incluir al menos un caracter especial.",
+            "PasswordRequiresDigit" => "La contrasena debe incluir al menos un numero.",
+            "PasswordRequiresLower" => "La contrasena debe incluir al menos una letra minuscula.",
+            "PasswordRequiresUpper" => "La contrasena debe incluir al menos una letra mayuscula.",
+            _ => error.Description
+        };
     }
 
     private static string? LimpiarTelefono(string? telefono)
@@ -230,37 +145,6 @@ public class RegisterModel(
         }
 
         return new string(telefono.Where(x => char.IsDigit(x) || x == '+').ToArray());
-    }
-
-    private static string GenerarCodigoEmpresa(string razonSocial, string ruc)
-    {
-        var baseCodigo = string.IsNullOrWhiteSpace(ruc)
-            ? new string(razonSocial.Where(char.IsLetterOrDigit).Take(8).ToArray()).ToUpperInvariant()
-            : ruc.Trim();
-
-        if (string.IsNullOrWhiteSpace(baseCodigo))
-        {
-            baseCodigo = $"EMP{DateTime.UtcNow:HHmmss}";
-        }
-
-        return baseCodigo.Length > 20 ? baseCodigo[..20] : baseCodigo;
-    }
-
-    private static string GenerarCodigoCuenta(string nombreCuenta, string correo)
-    {
-        var baseCodigo = new string(nombreCuenta.Where(char.IsLetterOrDigit).Take(12).ToArray()).ToUpperInvariant();
-
-        if (string.IsNullOrWhiteSpace(baseCodigo))
-        {
-            baseCodigo = new string(correo.Where(char.IsLetterOrDigit).Take(12).ToArray()).ToUpperInvariant();
-        }
-
-        if (string.IsNullOrWhiteSpace(baseCodigo))
-        {
-            baseCodigo = $"CTA{DateTime.UtcNow:HHmmss}";
-        }
-
-        return baseCodigo.Length > 20 ? baseCodigo[..20] : baseCodigo;
     }
 
     private async Task<bool> ValidarTurnstileAsync()

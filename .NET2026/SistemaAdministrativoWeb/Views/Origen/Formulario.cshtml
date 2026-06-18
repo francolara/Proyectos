@@ -1,0 +1,81 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.OrigenIndexViewModel
+
+@{
+    ViewData["Title"] = Model.Formulario.IdOrigen.HasValue ? "Editar origen contable" : "Registrar origen contable";
+    ViewData["AdminShell"] = true;
+}
+
+<section class="dashboard-shell">
+    <div class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">Mantenimiento contable</span>
+            <h1>@ViewData["Title"]</h1>
+            <p>Define codigo, nombre, modulo y si el origen acepta registros manuales.</p>
+        </div>
+        <div class="dashboard-status-card">
+            <strong>@Model.EmpresaNombre</strong>
+            <span>Contexto activo para mantenimiento de origenes.</span>
+            <small>Empresa #@Model.IdEmpresa</small>
+        </div>
+    </div>
+
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Formulario</span>
+                <h1>@ViewData["Title"]</h1>
+                <p>Configura el subdiario, su modulo y el comportamiento operativo para registros manuales.</p>
+            </div>
+            <div class="workspace-window-badge">
+                <strong>@(Model.Formulario.IdOrigen.HasValue ? "Edicion" : "Nuevo")</strong>
+                <span>@(Model.Formulario.IdOrigen.HasValue ? "actualizacion directa" : "alta en catalogo")</span>
+            </div>
+        </div>
+
+        <div class="workspace-window-body">
+            <form asp-action="Guardar" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Formulario.IdOrigen" />
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="workspace-form-grid">
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.CodigoOrigen" class="form-label">Codigo origen</label>
+                        <input asp-for="Formulario.CodigoOrigen" class="form-control" />
+                        <span asp-validation-for="Formulario.CodigoOrigen" class="text-danger"></span>
+                    </div>
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.ModuloOrigen" class="form-label">Modulo origen</label>
+                        <input asp-for="Formulario.ModuloOrigen" class="form-control" />
+                        <span asp-validation-for="Formulario.ModuloOrigen" class="text-danger"></span>
+                    </div>
+                    <div class="workspace-field workspace-field-span-2">
+                        <label asp-for="Formulario.NombreOrigen" class="form-label">Nombre origen</label>
+                        <input asp-for="Formulario.NombreOrigen" class="form-control" />
+                        <span asp-validation-for="Formulario.NombreOrigen" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="workspace-check-grid">
+                    <label class="workspace-check">
+                        <input asp-for="Formulario.PermiteRegistroManual" class="form-check-input" />
+                        <span>Permite registro manual</span>
+                    </label>
+                    <label class="workspace-check">
+                        <input asp-for="Formulario.Estado" class="form-check-input" />
+                        <span>Origen activo</span>
+                    </label>
+                </div>
+
+                <div class="workspace-actions">
+                    <button type="submit" class="btn btn-primary">Guardar origen</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </section>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

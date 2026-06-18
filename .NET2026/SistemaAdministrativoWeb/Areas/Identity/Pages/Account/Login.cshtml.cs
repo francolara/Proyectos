@@ -19,6 +19,7 @@ public class LoginModel(
     ICuentaAdministradoraRepository cuentaAdministradoraRepository,
     ITurnstileValidationService turnstileValidationService,
     IOptions<CloudflareTurnstileSettings> turnstileOptions,
+    IOptions<IdentityBehaviorSettings> identityBehaviorOptions,
     ILogger<LoginModel> logger) : PageModel
 {
     private const string LoginFailuresSessionKey = "Auth:LoginFailures";
@@ -148,7 +149,7 @@ public class LoginModel(
             {
                 UserName = email,
                 Email = email,
-                EmailConfirmed = true
+                EmailConfirmed = identityBehaviorOptions.Value.AutoConfirmEmail
             };
 
             var createResult = await userManager.CreateAsync(user);

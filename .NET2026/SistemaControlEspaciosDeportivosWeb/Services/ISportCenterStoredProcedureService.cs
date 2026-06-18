@@ -140,7 +140,9 @@ public interface ISportCenterStoredProcedureService
 
     Task<List<ReporteOcupacionItemViewModel>> ReportesOcupacionPorEspacioAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null);
     Task<List<ReporteIngresoDiaItemViewModel>> ReportesIngresosPorDiaAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null);
+    Task<List<ReporteReservaDiaItemViewModel>> ReportesReservasPorDiaAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null);
     Task<ReporteResumenOperativoViewModel> ReportesResumenOperativoAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null);
+    Task<ReporteResumenCobranzaViewModel> ReportesResumenCobranzaAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null);
     Task<int> NotificacionesContarNoLeidasAsync(int negocioId);
     Task<List<NotificacionNegocioItemViewModel>> NotificacionesListarAsync(int negocioId, int top = 15);
     Task<bool> NotificacionesMarcarLeidaAsync(int negocioId, int notificacionId, string? userId);
@@ -213,8 +215,8 @@ public interface ISportCenterStoredProcedureService
     Task<bool> PopupPromocionesAdminCambiarEstadoAsync(int idPopupPromocion, bool activo, string usuario);
     Task<(List<PlataformaNegocioLimiteItemViewModel> Negocios, int TotalRegistros)> PlataformaNegociosListarAsync(string? buscar = null, string? estadoContrato = null, int pagina = 1, int tamanoPagina = 20);
     Task<(string? Correo, string? NombreDestino, string? Telefono)> PlataformaNegocioObtenerContactoCorreoAsync(int negocioId);
-    Task<bool> PlataformaNegocioActualizarLimitesAsync(int negocioId, int sedesPermitidas, int espaciosPermitidos, int usuariosPermitidos, string usuario);
-    Task<(int SedesPermitidas, int EspaciosPermitidos, int UsuariosPermitidos)> NegocioObtenerLimitesOperativosAsync(int negocioId);
+    Task<bool> PlataformaNegocioActualizarLimitesAsync(int negocioId, string tipoPlan, int sedesPermitidas, int espaciosPermitidos, int usuariosPermitidos, string usuario);
+    Task<(string TipoPlan, int SedesPermitidas, int EspaciosPermitidos, int UsuariosPermitidos)> NegocioObtenerLimitesOperativosAsync(int negocioId);
     Task<bool> PlataformaNegocioActivarContratoAsync(int negocioId, string tipoCobro, DateOnly fechaDesde, DateOnly fechaHasta, int diasGracia, string usuario);
     Task<bool> PlataformaNegocioRenovarContratoAsync(int negocioId, string usuario);
     Task<bool> PlataformaNegocioFinalizarContratoAsync(int negocioId, string usuario);

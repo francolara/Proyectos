@@ -6,6 +6,7 @@ public class PanelDashboardViewModel
 {
     public string? Mensaje { get; set; }
     public int NegocioSeleccionadoId { get; set; }
+    public string TipoPlan { get; set; } = "Basico";
     public string RolActual { get; set; } = string.Empty;
     public int TotalSedes { get; set; }
     public int TotalEspacios { get; set; }
@@ -22,11 +23,15 @@ public class PanelDashboardViewModel
 
     public decimal IngresosPeriodo { get; set; }
     public int ReservasPeriodo { get; set; }
+    public decimal MontoReservadoPeriodo { get; set; }
     public decimal TicketPromedioPeriodo { get; set; }
     public decimal IngresosPeriodoAnterior { get; set; }
     public int ReservasPeriodoAnterior { get; set; }
+    public decimal MontoReservadoPeriodoAnterior { get; set; }
     public decimal TicketPromedioPeriodoAnterior { get; set; }
     public decimal OcupacionDiaAnteriorPct { get; set; }
+    public int PagosPeriodo { get; set; }
+    public int ReservasCobradasPeriodo { get; set; }
 
     public List<DashboardSerieItemViewModel> SerieIngresosPorDia { get; set; } = new();
     public List<DashboardSerieItemViewModel> SerieReservasPorDia { get; set; } = new();
@@ -35,6 +40,8 @@ public class PanelDashboardViewModel
     public List<DashboardReservaAccionViewModel> ReservasConSaldoPendiente { get; set; } = new();
     public List<NegocioAccesoViewModel> Negocios { get; set; } = new();
     public List<PermisoModuloViewModel> Modulos { get; set; } = new();
+
+    public bool EsPlanBasico => string.Equals(TipoPlan, "Basico", StringComparison.OrdinalIgnoreCase);
 }
 
 public class DashboardSerieItemViewModel
@@ -49,6 +56,7 @@ public class DashboardTopEspacioViewModel
     public string Espacio { get; set; } = string.Empty;
     public int Reservas { get; set; }
     public decimal Horas { get; set; }
+    public decimal Reservado { get; set; }
     public decimal Cobrado { get; set; }
 }
 

@@ -1,0 +1,302 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.AsientoIndexViewModel
+
+@{
+    ViewData["Title"] = Model.Formulario.IdAsiento.HasValue ? "Editar asiento manual" : "Registrar asiento manual";
+    ViewData["AdminShell"] = true;
+}
+
+<section class="dashboard-shell">
+    <div class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">Registro contable</span>
+            <h1>@ViewData["Title"]</h1>
+            <p>Completa la cabecera y el detalle contable. El sistema valida el cuadre antes de grabar.</p>
+        </div>
+        <div class="dashboard-status-card">
+            <strong>@Model.EmpresaNombre</strong>
+            <span>Contexto activo para el libro diario manual.</span>
+            <small>Periodo @Model.PeriodoConsulta</small>
+        </div>
+    </div>
+
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Formulario</span>
+                <h1>@ViewData["Title"]</h1>
+                <p>Registra origen, moneda y detalle del asiento con control de cuadre entre Debe y Haber.</p>
+            </div>
+            <div class="workspace-window-badge">
+                <strong>@Model.PeriodoConsulta</strong>
+                <span>control mensual activo</span>
+            </div>
+        </div>
+        <div class="workspace-window-body">
+            @if (Model.OrigenesManual.Count == 0)
+            {
+                <div class="alert alert-warning">No existen origenes manuales activos para esta empresa. Revise el mantenimiento de origenes.</div>
+            }
+            else if (Model.Monedas.Count == 0)
+            {
+                <div class="alert alert-warning">No existen monedas activas disponibles. Ejecute los seeds o registre el maestro de monedas.</div>
+            }
+            else
+            {
+                <form asp-action="Guardar" method="post" id="asiento-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Formulario.IdAsiento" />
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <div class="workspace-form-grid">
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.IdOrigen" class="form-label">Origen</label>
+                            <select asp-for="Formulario.IdOrigen" class="form-select">
+                                <option value="">Seleccione</option>
+                                @foreach (var origen in Model.OrigenesManual)
+                                {
+                                    <option value="@origen.IdOrigen">@origen.CodigoOrigen - @origen.NombreOrigen</option>
+                                }
+                            </select>
+                            <span asp-validation-for="Formulario.IdOrigen" class="text-danger"></span>
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.FechaAsiento" class="form-label">Fecha</label>
+                            <input asp-for="Formulario.FechaAsiento" class="form-control" />
+                            <span asp-validation-for="Formulario.FechaAsiento" class="text-danger"></span>
+                        </div>
+                        <div class="workspace-field workspace-field-span-2">
+                            <label asp-for="Formulario.Glosa" class="form-label">Glosa</label>
+                            <input asp-for="Formulario.Glosa" class="form-control" />
+                            <span asp-validation-for="Formulario.Glosa" class="text-danger"></span>
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.IdMoneda" class="form-label">Moneda</label>
+                            <select asp-for="Formulario.IdMoneda" class="form-select">
+                                <option value="">Seleccione</option>
+                                @foreach (var moneda in Model.Monedas)
+                                {
+                                    <option value="@moneda.IdMoneda">@moneda.CodigoMoneda - @moneda.NombreMoneda</option>
+                                }
+                            </select>
+                            <span asp-validation-for="Formulario.IdMoneda" class="text-danger"></span>
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.TipoCambio" class="form-label">Tipo de cambio</label>
+                            <input asp-for="Formulario.TipoCambio" class="form-control" />
+                            <span asp-validation-for="Formulario.TipoCambio" class="text-danger"></span>
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.ReferenciaExterna" class="form-label">Referencia externa</label>
+                            <input asp-for="Formulario.ReferenciaExterna" class="form-control" />
+                            <span asp-validation-for="Formulario.ReferenciaExterna" class="text-danger"></span>
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.Observacion" class="form-label">Observacion</label>
+                            <input asp-for="Formulario.Observacion" class="form-control" />
+                            <span asp-validation-for="Formulario.Observacion" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="workspace-section">
+                        <div class="workspace-section-head">
+                            <div>
+                                <h2>Detalle contable</h2>
+                                <p>Agrega las lineas del asiento. Cada linea debe tener monto solo en Debe o solo en Haber.</p>
+                            </div>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="agregar-linea">Agregar linea</button>
+                        </div>
+
+                        <div class="table-responsive workspace-table-wrap">
+                            <table class="table align-middle app-table workspace-table" id="detalle-table">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Cuenta</th>
+                                        <th>Glosa detalle</th>
+                                        <th>Debe</th>
+                                        <th>Haber</th>
+                                        <th>Referencia</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (var i = 0; i < Model.Formulario.Detalles.Count; i++)
+                                    {
+                                        <tr>
+                                            <td class="detalle-orden-cell">
+                                                <input asp-for="Formulario.Detalles[i].Item" class="form-control" readonly />
+                                                <span asp-validation-for="Formulario.Detalles[i].Item" class="text-danger"></span>
+                                            </td>
+                                            <td>
+                                                <select asp-for="Formulario.Detalles[i].IdPlanCuenta" class="form-select">
+                                                    <option value="">Seleccione</option>
+                                                    @foreach (var cuenta in Model.CuentasMovimiento)
+                                                    {
+                                                        <option value="@cuenta.IdPlanCuenta">@cuenta.CodigoCuenta - @cuenta.NombreCuenta</option>
+                                                    }
+                                                </select>
+                                                <span asp-validation-for="Formulario.Detalles[i].IdPlanCuenta" class="text-danger"></span>
+                                            </td>
+                                            <td>
+                                                <input asp-for="Formulario.Detalles[i].GlosaDetalle" class="form-control" />
+                                                <span asp-validation-for="Formulario.Detalles[i].GlosaDetalle" class="text-danger"></span>
+                                            </td>
+                                            <td class="detalle-porcentaje-cell">
+                                                <input asp-for="Formulario.Detalles[i].Debe" class="form-control js-debe" />
+                                                <span asp-validation-for="Formulario.Detalles[i].Debe" class="text-danger"></span>
+                                            </td>
+                                            <td class="detalle-porcentaje-cell">
+                                                <input asp-for="Formulario.Detalles[i].Haber" class="form-control js-haber" />
+                                                <span asp-validation-for="Formulario.Detalles[i].Haber" class="text-danger"></span>
+                                            </td>
+                                            <td>
+                                                <input asp-for="Formulario.Detalles[i].ReferenciaLinea" class="form-control" />
+                                                <span asp-validation-for="Formulario.Detalles[i].ReferenciaLinea" class="text-danger"></span>
+                                            </td>
+                                            <td class="text-end">
+                                                <button type="button" class="btn btn-outline-secondary btn-sm js-remove-row">Quitar</button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="workspace-inline-note">
+                            <strong>Total Debe:</strong> <span id="total-debe">0.00</span>
+                            <span class="workspace-inline-separator">|</span>
+                            <strong>Total Haber:</strong> <span id="total-haber">0.00</span>
+                            <span class="workspace-inline-separator">|</span>
+                            <strong>Diferencia:</strong> <span id="total-diferencia">0.00</span>
+                        </div>
+                    </div>
+
+                    <div class="workspace-actions">
+                        <button type="submit" class="btn btn-primary">Guardar asiento</button>
+                        <a asp-action="Index" asp-route-periodo="@Model.PeriodoConsulta" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            }
+        </div>
+    </section>
+</section>
+
+<template id="detalle-row-template">
+    <tr>
+        <td class="detalle-orden-cell">
+            <input name="Formulario.Detalles[__index__].Item" class="form-control" readonly value="0" />
+        </td>
+        <td>
+            <select name="Formulario.Detalles[__index__].IdPlanCuenta" class="form-select">
+                <option value="">Seleccione</option>
+                @foreach (var cuenta in Model.CuentasMovimiento)
+                {
+                    <option value="@cuenta.IdPlanCuenta">@cuenta.CodigoCuenta - @cuenta.NombreCuenta</option>
+                }
+            </select>
+        </td>
+        <td>
+            <input name="Formulario.Detalles[__index__].GlosaDetalle" class="form-control" />
+        </td>
+        <td class="detalle-porcentaje-cell">
+            <input name="Formulario.Detalles[__index__].Debe" class="form-control js-debe" value="0" />
+        </td>
+        <td class="detalle-porcentaje-cell">
+            <input name="Formulario.Detalles[__index__].Haber" class="form-control js-haber" value="0" />
+        </td>
+        <td>
+            <input name="Formulario.Detalles[__index__].ReferenciaLinea" class="form-control" />
+        </td>
+        <td class="text-end">
+            <button type="button" class="btn btn-outline-secondary btn-sm js-remove-row">Quitar</button>
+        </td>
+    </tr>
+</template>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const tableBody = document.querySelector("#detalle-table tbody");
+            const template = document.getElementById("detalle-row-template");
+            const addButton = document.getElementById("agregar-linea");
+            const totalDebeLabel = document.getElementById("total-debe");
+            const totalHaberLabel = document.getElementById("total-haber");
+            const diferenciaLabel = document.getElementById("total-diferencia");
+
+            if (!tableBody || !template || !addButton || !totalDebeLabel || !totalHaberLabel || !diferenciaLabel) {
+                return;
+            }
+
+            const parseAmount = (value) => {
+                const parsed = parseFloat((value ?? "0").replace(",", "."));
+                return Number.isNaN(parsed) ? 0 : parsed;
+            };
+
+            const bindRowActions = (row) => {
+                row.querySelector(".js-remove-row")?.addEventListener("click", () => {
+                    if (tableBody.querySelectorAll("tr").length <= 2) {
+                        return;
+                    }
+
+                    row.remove();
+                    refreshRows();
+                });
+            };
+
+            const refreshRows = () => {
+                const rows = Array.from(tableBody.querySelectorAll("tr"));
+                let totalDebe = 0;
+                let totalHaber = 0;
+
+                rows.forEach((row, index) => {
+                    row.querySelectorAll("input, select, textarea, span").forEach((element) => {
+                        ["name", "id", "for"].forEach((attribute) => {
+                            const currentValue = element.getAttribute(attribute);
+                            if (!currentValue) {
+                                return;
+                            }
+
+                            const updatedValue = currentValue
+                                .replaceAll("__index__", index)
+                                .replace(/Formulario\.Detalles\[\d+\]/g, `Formulario.Detalles[${index}]`)
+                                .replace(/Formulario_Detalles_\d+__/g, `Formulario_Detalles_${index}__`);
+
+                            if (updatedValue !== currentValue) {
+                                element.setAttribute(attribute, updatedValue);
+                            }
+                        });
+                    });
+
+                    const itemInput = row.querySelector('input[name$=".Item"]');
+                    if (itemInput) {
+                        itemInput.value = (index + 1).toString();
+                    }
+
+                    totalDebe += parseAmount(row.querySelector(".js-debe")?.value);
+                    totalHaber += parseAmount(row.querySelector(".js-haber")?.value);
+                });
+
+                totalDebeLabel.textContent = totalDebe.toFixed(2);
+                totalHaberLabel.textContent = totalHaber.toFixed(2);
+                diferenciaLabel.textContent = (totalDebe - totalHaber).toFixed(2);
+            };
+
+            addButton.addEventListener("click", () => {
+                const index = tableBody.querySelectorAll("tr").length;
+                const html = template.innerHTML.replaceAll("__index__", index);
+                tableBody.insertAdjacentHTML("beforeend", html);
+                const row = tableBody.lastElementChild;
+                if (row) {
+                    bindRowActions(row);
+                }
+                refreshRows();
+            });
+
+            tableBody.querySelectorAll("tr").forEach(bindRowActions);
+            tableBody.addEventListener("input", refreshRows);
+            tableBody.addEventListener("change", refreshRows);
+            refreshRows();
+        })();
+    </script>
+}

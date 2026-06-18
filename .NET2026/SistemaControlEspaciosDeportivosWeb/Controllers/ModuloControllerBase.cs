@@ -21,7 +21,8 @@ public abstract class ModuloControllerBase(IModuloPermisoService moduloPermisoSe
             {
                 NegocioId = negocioId,
                 ModuloCodigo = moduloCodigo,
-                Mensaje = contexto.Mensaje
+                Mensaje = contexto.Mensaje,
+                BloqueadoPorPlanBasico = contexto.BloqueadoPorPlanBasico
             };
         }
 

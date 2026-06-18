@@ -1,0 +1,98 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.PlanCuentaIndexViewModel
+
+@{
+    ViewData["Title"] = Model.Formulario.IdPlanCuenta.HasValue ? "Editar cuenta contable" : "Registrar cuenta contable";
+    ViewData["AdminShell"] = true;
+}
+
+<section class="dashboard-shell">
+    <div class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">Mantenimiento contable</span>
+            <h1>@ViewData["Title"]</h1>
+            <p>Define codigo, nombre, naturaleza y comportamiento operativo de la cuenta contable.</p>
+        </div>
+        <div class="dashboard-status-card">
+            <strong>@Model.EmpresaNombre</strong>
+            <span>Contexto activo para mantenimiento del plan de cuentas.</span>
+            <small>Empresa #@Model.IdEmpresa</small>
+        </div>
+    </div>
+
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Formulario</span>
+                <h1>@ViewData["Title"]</h1>
+                <p>Completa los datos base de la cuenta y su comportamiento dentro del circuito contable.</p>
+            </div>
+            <div class="workspace-window-badge">
+                <strong>@(Model.Formulario.IdPlanCuenta.HasValue ? "Edicion" : "Nueva")</strong>
+                <span>@(Model.Formulario.IdPlanCuenta.HasValue ? "actualizacion directa" : "alta en catalogo")</span>
+            </div>
+        </div>
+
+        <div class="workspace-window-body">
+            <form asp-action="Guardar" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Formulario.IdPlanCuenta" />
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="workspace-form-grid">
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.IdPlanCuentaPadre" class="form-label">Cuenta padre</label>
+                        <select asp-for="Formulario.IdPlanCuentaPadre" class="form-select">
+                            <option value="">Sin padre</option>
+                            @foreach (var cuenta in Model.CuentasPadre)
+                            {
+                                <option value="@cuenta.IdPlanCuenta">@cuenta.CodigoCuenta - @cuenta.NombreCuenta</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.CodigoCuenta" class="form-label">Codigo cuenta</label>
+                        <input asp-for="Formulario.CodigoCuenta" class="form-control" />
+                        <span asp-validation-for="Formulario.CodigoCuenta" class="text-danger"></span>
+                    </div>
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.NombreCuenta" class="form-label">Nombre cuenta</label>
+                        <input asp-for="Formulario.NombreCuenta" class="form-control" />
+                        <span asp-validation-for="Formulario.NombreCuenta" class="text-danger"></span>
+                    </div>
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.NaturalezaSaldo" class="form-label">Naturaleza</label>
+                        <select asp-for="Formulario.NaturalezaSaldo" class="form-select">
+                            <option value="D">Debe</option>
+                            <option value="H">Haber</option>
+                        </select>
+                        <span asp-validation-for="Formulario.NaturalezaSaldo" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="workspace-check-grid">
+                    <label class="workspace-check">
+                        <input asp-for="Formulario.AceptaMovimiento" class="form-check-input" />
+                        <span>Acepta movimiento</span>
+                    </label>
+                    <label class="workspace-check">
+                        <input asp-for="Formulario.RequiereCentroCosto" class="form-check-input" />
+                        <span>Requiere centro de costo</span>
+                    </label>
+                    <label class="workspace-check">
+                        <input asp-for="Formulario.Estado" class="form-check-input" />
+                        <span>Cuenta activa</span>
+                    </label>
+                </div>
+
+                <div class="workspace-actions">
+                    <button type="submit" class="btn btn-primary">Guardar cuenta</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </section>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

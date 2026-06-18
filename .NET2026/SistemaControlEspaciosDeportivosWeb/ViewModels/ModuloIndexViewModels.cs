@@ -17,6 +17,7 @@ public class ModuloBaseViewModel
     public bool PuedeEditar { get; set; }
     public bool PuedeEliminar { get; set; }
     public string? Mensaje { get; set; }
+    public bool BloqueadoPorPlanBasico { get; set; }
 }
 
 public class ConfiguracionClubViewModel : ModuloBaseViewModel

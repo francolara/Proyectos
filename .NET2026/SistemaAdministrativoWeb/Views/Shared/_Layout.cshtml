@@ -1,10 +1,31 @@
+@using Microsoft.AspNetCore.Identity
 @using SistemaAdministrativoWeb.Infrastructure.Empresas
 @inject ICurrentCompanyAccessor CurrentCompanyAccessor
+@inject UserManager<IdentityUser> UserManager
 <!DOCTYPE html>
 @{
     var adminShell = ViewData["AdminShell"] as bool? ?? false;
     var platformShell = ViewData["PlatformShell"] as bool? ?? false;
     var pageTitle = ViewData["Title"]?.ToString() ?? "Sistema Administrativo";
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+    var userEmail = User.Identity?.Name ?? "usuario@sisadm.local";
+    var userDisplayName = userEmail;
+    if (User.Identity?.IsAuthenticated == true)
+    {
+        var currentUser = await UserManager.GetUserAsync(User);
+        if (!string.IsNullOrWhiteSpace(currentUser?.Email))
+        {
+            userEmail = currentUser.Email!.Trim();
+        }
+    }
+
+    bool IsActiveController(params string[] controllers) =>
+        controllers.Any(x => string.Equals(x, currentController, StringComparison.OrdinalIgnoreCase));
+
+    var generalOpen = IsActiveController("Panel", "EmpresaContexto");
+    var mantenimientoOpen = IsActiveController("PlanCuenta", "Origen", "CuentaDestinoRegla", "ConfiguracionContabilizacion", "Persona");
+    var registroOpen = IsActiveController("Asiento", "Compra", "Venta");
+    var reportesOpen = IsActiveController("Reporte");
 }
 <html lang="es">
 <head>
@@ -42,7 +63,7 @@
                                 <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Inicio</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" asp-area="Identity" asp-page="/Account/Register">Registro de negocio</a>
+                                <a class="nav-link" asp-area="Identity" asp-page="/Account/Register">Registro de usuario</a>
                             </li>
                         </ul>
                         <partial name="_LoginPartial" />
@@ -60,29 +81,80 @@
                     <span class="app-brand-mark"><i class="bi bi-building"></i></span>
                     <div>
                         <strong>Panel</strong>
-                        <small>@(CurrentCompanyAccessor.EmpresaNombre ?? "Empresa activa")</small>
+                        <small>@(CurrentCompanyAccessor.EmpresaNombre ?? "Sin empresa activa")</small>
                     </div>
                 </a>
-                <nav class="app-sidebar-nav">
-                    <a class="app-sidebar-link" asp-controller="Panel" asp-action="Index"><i class="bi bi-speedometer2"></i>Dashboard</a>
-                    <a class="app-sidebar-link" asp-controller="EmpresaContexto" asp-action="Index"><i class="bi bi-buildings"></i>Empresas</a>
-                    <a class="app-sidebar-link disabled" href="#"><i class="bi bi-diagram-3"></i>Plan de cuentas</a>
-                    <a class="app-sidebar-link disabled" href="#"><i class="bi bi-receipt"></i>Asientos</a>
-                    <a class="app-sidebar-link disabled" href="#"><i class="bi bi-cart-check"></i>Compras</a>
-                    <a class="app-sidebar-link disabled" href="#"><i class="bi bi-cash-stack"></i>Ventas</a>
+                <div class="app-sidebar-company-chip">
+                    <span>Empresa activa</span>
+                    <strong>@(CurrentCompanyAccessor.EmpresaNombre ?? "Seleccione empresa")</strong>
+                </div>
+                <nav class="app-sidebar-nav app-sidebar-nav-accordion">
+                    <section class="app-sidebar-group app-sidebar-group-accordion">
+                        <button class="app-sidebar-group-toggle @(generalOpen ? string.Empty : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-general" aria-expanded="@(generalOpen.ToString().ToLowerInvariant())" aria-controls="sidebar-general">
+                            <span>General</span>
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                        <div id="sidebar-general" class="collapse @(generalOpen ? "show" : string.Empty)">
+                            <div class="app-sidebar-group-body">
+                                <a class="app-sidebar-link @(IsActiveController("Panel") ? "active" : string.Empty)" asp-controller="Panel" asp-action="Index"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("EmpresaContexto") ? "active" : string.Empty)" asp-controller="EmpresaContexto" asp-action="Index"><i class="bi bi-buildings"></i><span>Empresas</span></a>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="app-sidebar-group app-sidebar-group-accordion">
+                        <button class="app-sidebar-group-toggle @(mantenimientoOpen ? string.Empty : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-mantenimiento" aria-expanded="@(mantenimientoOpen.ToString().ToLowerInvariant())" aria-controls="sidebar-mantenimiento">
+                            <span>Mantenimiento</span>
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                        <div id="sidebar-mantenimiento" class="collapse @(mantenimientoOpen ? "show" : string.Empty)">
+                            <div class="app-sidebar-group-body">
+                                <a class="app-sidebar-link @(IsActiveController("PlanCuenta") ? "active" : string.Empty)" asp-controller="PlanCuenta" asp-action="Index"><i class="bi bi-diagram-3"></i><span>Plan de cuentas</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("Persona") ? "active" : string.Empty)" asp-controller="Persona" asp-action="Index"><i class="bi bi-people"></i><span>Personas</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("Origen") ? "active" : string.Empty)" asp-controller="Origen" asp-action="Index"><i class="bi bi-journal-richtext"></i><span>Origenes</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("CuentaDestinoRegla") ? "active" : string.Empty)" asp-controller="CuentaDestinoRegla" asp-action="Index"><i class="bi bi-sliders2"></i><span>Reglas destino</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("ConfiguracionContabilizacion") ? "active" : string.Empty)" asp-controller="ConfiguracionContabilizacion" asp-action="Index"><i class="bi bi-gear-wide-connected"></i><span>Config. compras/ventas</span></a>
+                                <a class="app-sidebar-link disabled" href="#"><i class="bi bi-sliders2"></i><span>Parametros</span></a>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="app-sidebar-group app-sidebar-group-accordion">
+                        <button class="app-sidebar-group-toggle @(registroOpen ? string.Empty : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-registro" aria-expanded="@(registroOpen.ToString().ToLowerInvariant())" aria-controls="sidebar-registro">
+                            <span>Registro</span>
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                        <div id="sidebar-registro" class="collapse @(registroOpen ? "show" : string.Empty)">
+                            <div class="app-sidebar-group-body">
+                                <a class="app-sidebar-link @(IsActiveController("Asiento") ? "active" : string.Empty)" asp-controller="Asiento" asp-action="Index"><i class="bi bi-receipt"></i><span>Asientos</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("Compra") ? "active" : string.Empty)" asp-controller="Compra" asp-action="Index"><i class="bi bi-cart-check"></i><span>Compras</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("Venta") ? "active" : string.Empty)" asp-controller="Venta" asp-action="Index"><i class="bi bi-cash-stack"></i><span>Ventas</span></a>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="app-sidebar-group app-sidebar-group-accordion">
+                        <button class="app-sidebar-group-toggle @(reportesOpen ? string.Empty : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-reportes" aria-expanded="@(reportesOpen.ToString().ToLowerInvariant())" aria-controls="sidebar-reportes">
+                            <span>Reportes</span>
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                        <div id="sidebar-reportes" class="collapse @(reportesOpen ? "show" : string.Empty)">
+                            <div class="app-sidebar-group-body">
+                                <a class="app-sidebar-link disabled" href="#"><i class="bi bi-journal-richtext"></i><span>Libros</span></a>
+                                <a class="app-sidebar-link disabled" href="#"><i class="bi bi-bar-chart"></i><span>Analisis</span></a>
+                            </div>
+                        </div>
+                    </section>
                 </nav>
+                <div class="app-sidebar-session">
+                    <div class="app-sidebar-session-user">
+                        <small>Usuario actual</small>
+                        <strong>@userDisplayName</strong>
+                        <span>@userEmail</span>
+                    </div>
+                    <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+                        <button type="submit" class="btn btn-outline-secondary app-sidebar-logout">Cerrar sesion</button>
+                    </form>
+                </div>
             </aside>
             <div class="app-shell-main">
-                <header class="app-shell-topbar">
-                    <div>
-                        <div class="app-shell-title">@pageTitle</div>
-                        @if (CurrentCompanyAccessor.TieneEmpresaActiva)
-                        {
-                            <div class="app-shell-subtitle">Empresa activa: @CurrentCompanyAccessor.EmpresaNombre</div>
-                        }
-                    </div>
-                    <partial name="_LoginPartial" />
-                </header>
                 <main role="main" class="app-shell-content">
                     @RenderBody()
                 </main>
@@ -105,15 +177,18 @@
                     <a class="app-sidebar-link" asp-controller="EmpresaContexto" asp-action="Index"><i class="bi bi-buildings"></i>Empresas</a>
                     <a class="app-sidebar-link disabled" href="#"><i class="bi bi-person-badge"></i>Contratos</a>
                 </nav>
+                <div class="app-sidebar-session">
+                    <div class="app-sidebar-session-user">
+                        <small>Usuario actual</small>
+                        <strong>@userDisplayName</strong>
+                        <span>@userEmail</span>
+                    </div>
+                    <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+                        <button type="submit" class="btn btn-outline-secondary app-sidebar-logout">Cerrar sesion</button>
+                    </form>
+                </div>
             </aside>
             <div class="app-shell-main">
-                <header class="app-shell-topbar">
-                    <div>
-                        <div class="app-shell-title">@pageTitle</div>
-                        <div class="app-shell-subtitle">Panel global de control comercial</div>
-                    </div>
-                    <partial name="_LoginPartial" />
-                </header>
                 <main role="main" class="app-shell-content">
                     @RenderBody()
                 </main>

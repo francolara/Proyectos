@@ -257,18 +257,19 @@ public partial class SportCenterStoredProcedureService
                 NegocioId = dr.GetInt32(0),
                 NombreComercial = dr.IsDBNull(1) ? string.Empty : dr.GetString(1),
                 Activo = !dr.IsDBNull(2) && Convert.ToBoolean(dr.GetValue(2)),
-                SedesPermitidas = dr.IsDBNull(3) ? 2 : Convert.ToInt32(dr.GetValue(3)),
-                EspaciosPermitidos = dr.IsDBNull(4) ? 6 : Convert.ToInt32(dr.GetValue(4)),
-                UsuariosPermitidos = dr.IsDBNull(5) ? 3 : Convert.ToInt32(dr.GetValue(5)),
-                EstadoSuscripcion = dr.IsDBNull(6) ? 0 : Convert.ToInt32(dr.GetValue(6)),
-                EsPrueba = !dr.IsDBNull(7) && Convert.ToBoolean(dr.GetValue(7)),
-                FechaInicioPrueba = dr.IsDBNull(8) ? null : dr.GetDateTime(8),
-                FechaFinPrueba = dr.IsDBNull(9) ? null : dr.GetDateTime(9),
-                TipoCobro = dr.IsDBNull(10) ? null : dr.GetString(10),
-                FechaInicioPlan = dr.IsDBNull(11) ? null : dr.GetDateTime(11),
-                FechaFinPlan = dr.IsDBNull(12) ? null : dr.GetDateTime(12),
-                DiasGracia = dr.IsDBNull(13) ? 5 : Convert.ToInt32(dr.GetValue(13)),
-                FechaFinGracia = dr.IsDBNull(14) ? null : dr.GetDateTime(14)
+                TipoPlan = dr.IsDBNull(3) ? "Basico" : dr.GetString(3),
+                SedesPermitidas = dr.IsDBNull(4) ? 2 : Convert.ToInt32(dr.GetValue(4)),
+                EspaciosPermitidos = dr.IsDBNull(5) ? 6 : Convert.ToInt32(dr.GetValue(5)),
+                UsuariosPermitidos = dr.IsDBNull(6) ? 3 : Convert.ToInt32(dr.GetValue(6)),
+                EstadoSuscripcion = dr.IsDBNull(7) ? 0 : Convert.ToInt32(dr.GetValue(7)),
+                EsPrueba = !dr.IsDBNull(8) && Convert.ToBoolean(dr.GetValue(8)),
+                FechaInicioPrueba = dr.IsDBNull(9) ? null : dr.GetDateTime(9),
+                FechaFinPrueba = dr.IsDBNull(10) ? null : dr.GetDateTime(10),
+                TipoCobro = dr.IsDBNull(11) ? null : dr.GetString(11),
+                FechaInicioPlan = dr.IsDBNull(12) ? null : dr.GetDateTime(12),
+                FechaFinPlan = dr.IsDBNull(13) ? null : dr.GetDateTime(13),
+                DiasGracia = dr.IsDBNull(14) ? 5 : Convert.ToInt32(dr.GetValue(14)),
+                FechaFinGracia = dr.IsDBNull(15) ? null : dr.GetDateTime(15)
             });
             list[^1].EstadoSuscripcionNombre = list[^1].EstadoSuscripcion switch
             {
@@ -369,7 +370,7 @@ END";
         string.IsNullOrWhiteSpace(telefono) ? null : telefono);
 }
 
-    public async Task<bool> PlataformaNegocioActualizarLimitesAsync(int negocioId, int sedesPermitidas, int espaciosPermitidos, int usuariosPermitidos, string usuario)
+    public async Task<bool> PlataformaNegocioActualizarLimitesAsync(int negocioId, string tipoPlan, int sedesPermitidas, int espaciosPermitidos, int usuariosPermitidos, string usuario)
     {
         try
         {
@@ -377,6 +378,7 @@ END";
             await cn.OpenAsync();
             await using var cmd = new SqlCommand("Sp_Plataforma_Negocios_ActualizarLimites", cn) { CommandType = CommandType.StoredProcedure };
             AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+            AddParam(cmd, "@TipoPlan", string.IsNullOrWhiteSpace(tipoPlan) ? "Basico" : tipoPlan.Trim(), SqlDbType.NVarChar);
             AddParam(cmd, "@SedesPermitidas", sedesPermitidas, SqlDbType.Int);
             AddParam(cmd, "@EspaciosPermitidos", espaciosPermitidos, SqlDbType.Int);
             AddParam(cmd, "@UsuariosPermitidos", usuariosPermitidos, SqlDbType.Int);
@@ -390,12 +392,13 @@ END";
         }
     }
 
-    public async Task<(int SedesPermitidas, int EspaciosPermitidos, int UsuariosPermitidos)> NegocioObtenerLimitesOperativosAsync(int negocioId)
+    public async Task<(string TipoPlan, int SedesPermitidas, int EspaciosPermitidos, int UsuariosPermitidos)> NegocioObtenerLimitesOperativosAsync(int negocioId)
     {
         await using var cn = CreateConnection();
         await cn.OpenAsync();
         await using var cmd = new SqlCommand(
             @"SELECT
+                  CAST(COALESCE(TipoPlan, N'Basico') AS NVARCHAR(20)) AS TipoPlan,
                   CAST(COALESCE(SedesPermitidas, 2) AS INT) AS SedesPermitidas,
                   CAST(COALESCE(EspaciosPermitidos, 6) AS INT) AS EspaciosPermitidos,
                   CAST(COALESCE(UsuariosPermitidos, 3) AS INT) AS UsuariosPermitidos
@@ -405,12 +408,13 @@ END";
 
         await using var dr = await cmd.ExecuteReaderAsync();
         if (!await dr.ReadAsync())
-            return (2, 6, 3);
+            return ("Basico", 2, 6, 3);
 
         return (
-            dr.IsDBNull(0) ? 2 : Convert.ToInt32(dr.GetValue(0)),
-            dr.IsDBNull(1) ? 6 : Convert.ToInt32(dr.GetValue(1)),
-            dr.IsDBNull(2) ? 3 : Convert.ToInt32(dr.GetValue(2))
+            dr.IsDBNull(0) ? "Basico" : dr.GetString(0),
+            dr.IsDBNull(1) ? 2 : Convert.ToInt32(dr.GetValue(1)),
+            dr.IsDBNull(2) ? 6 : Convert.ToInt32(dr.GetValue(2)),
+            dr.IsDBNull(3) ? 3 : Convert.ToInt32(dr.GetValue(3))
         );
     }
 
@@ -713,6 +717,7 @@ END";
         await using var cmd = new SqlCommand(
             @"SELECT TOP 1
                      ns.NegocioId,
+                     CAST(COALESCE(n.TipoPlan, N'Basico') AS NVARCHAR(20)) AS TipoPlan,
                      CAST(COALESCE(ns.EstadoSuscripcion, 0) AS INT) AS EstadoSuscripcion,
                      CAST(COALESCE(ns.EsPrueba, 0) AS BIT) AS EsPrueba,
                      ns.FechaInicioPrueba,
@@ -723,6 +728,7 @@ END";
                      CAST(COALESCE(ns.DiasGracia, 5) AS INT) AS DiasGracia,
                      ns.FechaFinGracia
               FROM dbo.NegociosSuscripcion ns
+              INNER JOIN dbo.Negocios n ON n.Id = ns.NegocioId
               WHERE ns.NegocioId = @NegocioId;", cn);
         AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
 
@@ -732,15 +738,16 @@ END";
         var model = new MiSuscripcionNegocioViewModel
         {
             NegocioId = dr.GetInt32(0),
-            EstadoSuscripcion = dr.IsDBNull(1) ? 0 : Convert.ToInt32(dr.GetValue(1)),
-            EsPrueba = !dr.IsDBNull(2) && Convert.ToBoolean(dr.GetValue(2)),
-            FechaInicioPrueba = dr.IsDBNull(3) ? null : dr.GetDateTime(3),
-            FechaFinPrueba = dr.IsDBNull(4) ? null : dr.GetDateTime(4),
-            TipoCobro = dr.IsDBNull(5) ? null : dr.GetString(5),
-            FechaInicioPlan = dr.IsDBNull(6) ? null : dr.GetDateTime(6),
-            FechaFinPlan = dr.IsDBNull(7) ? null : dr.GetDateTime(7),
-            DiasGracia = dr.IsDBNull(8) ? 5 : Convert.ToInt32(dr.GetValue(8)),
-            FechaFinGracia = dr.IsDBNull(9) ? null : dr.GetDateTime(9)
+            TipoPlan = dr.IsDBNull(1) ? "Basico" : dr.GetString(1),
+            EstadoSuscripcion = dr.IsDBNull(2) ? 0 : Convert.ToInt32(dr.GetValue(2)),
+            EsPrueba = !dr.IsDBNull(3) && Convert.ToBoolean(dr.GetValue(3)),
+            FechaInicioPrueba = dr.IsDBNull(4) ? null : dr.GetDateTime(4),
+            FechaFinPrueba = dr.IsDBNull(5) ? null : dr.GetDateTime(5),
+            TipoCobro = dr.IsDBNull(6) ? null : dr.GetString(6),
+            FechaInicioPlan = dr.IsDBNull(7) ? null : dr.GetDateTime(7),
+            FechaFinPlan = dr.IsDBNull(8) ? null : dr.GetDateTime(8),
+            DiasGracia = dr.IsDBNull(9) ? 5 : Convert.ToInt32(dr.GetValue(9)),
+            FechaFinGracia = dr.IsDBNull(10) ? null : dr.GetDateTime(10)
         };
 
         model.EstadoSuscripcionNombre = model.EstadoSuscripcion switch

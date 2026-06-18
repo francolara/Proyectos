@@ -1,0 +1,948 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.VentaIndexViewModel
+
+@{
+    ViewData["Title"] = Model.Formulario.IdVenta.HasValue ? "Editar venta" : "Registrar venta";
+    ViewData["AdminShell"] = true;
+}
+
+<section class="dashboard-shell">
+    <div class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">Registro contable</span>
+            <h1>@ViewData["Title"]</h1>
+            <p>Completa el comprobante, importes y detalle. El sistema genera el asiento segun la configuracion elegida.</p>
+        </div>
+        <div class="dashboard-status-card">
+            <strong>@Model.EmpresaNombre</strong>
+            <span>Contexto activo para ventas y asiento automatico.</span>
+            <small>Periodo @Model.PeriodoConsulta</small>
+        </div>
+    </div>
+
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Comprobante</span>
+                <h1>@ViewData["Title"]</h1>
+                <p>Registra el comprobante de venta y su detalle referencial para la contabilizacion automatica.</p>
+            </div>
+            <div class="workspace-window-badge">
+                <strong>VEN</strong>
+                <span>origen automatico</span>
+            </div>
+        </div>
+        <div class="workspace-window-body">
+            @if (Model.ConfiguracionesVenta.Count == 0)
+            {
+                <div class="alert alert-warning">No existe configuracion contable activa para ventas. Primero configure compras/ventas.</div>
+            }
+            else
+            {
+                <form asp-action="Guardar" method="post" id="venta-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Formulario.IdVenta" />
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    @if (Model.Clientes.Count == 0)
+                    {
+                        <div class="alert alert-info mb-3">Aun no existen clientes en la empresa. Puede registrarlos desde el boton <strong>Nuevo cliente</strong>.</div>
+                    }
+
+                    <div class="workspace-form-grid">
+                        <div class="workspace-field workspace-field-span-2">
+                            <label class="form-label" for="ventaClienteBuscar">Cliente</label>
+                            <input asp-for="Formulario.IdCliente" type="hidden" id="ventaClienteId" />
+                            <div class="input-group">
+                                <input type="text"
+                                       id="ventaClienteBuscar"
+                                       class="form-control"
+                                       value="@Model.ClienteSeleccionadoTexto"
+                                       placeholder="Escribe cliente, documento o codigo y presiona Enter..." />
+                                <button type="button" class="btn btn-outline-primary" id="btnNuevoCliente" title="Nuevo cliente">+</button>
+                            </div>
+                            <span asp-validation-for="Formulario.IdCliente" class="text-danger"></span>
+                            <div class="workspace-lookup-results d-none" id="ventaClienteResultadosWrap">
+                                <select class="form-select" id="ventaClienteResultados" size="6">
+                                    <option value="">Escribe y presiona Enter para buscar...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="workspace-field">
+                            <label class="form-label">Tipo documento</label>
+                            <input type="text" id="ventaClienteTipoDocumento" class="form-control" value="@Model.ClienteSeleccionadoTipoDocumento" readonly />
+                        </div>
+                        <div class="workspace-field">
+                            <label class="form-label">Numero documento</label>
+                            <input type="text" id="ventaClienteNumeroDocumento" class="form-control" value="@Model.ClienteSeleccionadoNumeroDocumento" readonly />
+                        </div>
+                        <div class="workspace-field workspace-field-span-2">
+                            <label class="form-label">Razon social / nombre</label>
+                            <input type="text" id="ventaClienteNombreLegal" class="form-control" value="@Model.ClienteSeleccionadoNombreLegal" readonly />
+                        </div>
+                        <div class="workspace-field">
+                            <label class="form-label">Telefono cliente</label>
+                            <input type="text" id="ventaClienteTelefono" class="form-control" value="@Model.ClienteSeleccionadoTelefono" readonly />
+                        </div>
+                        <div class="workspace-field">
+                            <label class="form-label">Correo cliente</label>
+                            <input type="text" id="ventaClienteCorreo" class="form-control" value="@Model.ClienteSeleccionadoCorreo" readonly />
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.IdConfiguracionContabilizacion" class="form-label">Configuracion contable</label>
+                            <select asp-for="Formulario.IdConfiguracionContabilizacion" class="form-select">
+                                <option value="">Seleccione</option>
+                                @foreach (var configuracion in Model.ConfiguracionesVenta)
+                                {
+                                    <option value="@configuracion.IdConfiguracionContabilizacion">[@configuracion.EscenarioOperacion] @configuracion.Descripcion</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.FechaEmision" class="form-label">Fecha emision</label>
+                            <input asp-for="Formulario.FechaEmision" class="form-control" />
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.FechaContabilizacion" class="form-label">Fecha contabilizacion</label>
+                            <input asp-for="Formulario.FechaContabilizacion" class="form-control" />
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.TipoComprobante" class="form-label">Tipo comprobante</label>
+                            <select asp-for="Formulario.TipoComprobante" class="form-select">
+                                <option value="">Seleccione</option>
+                                @foreach (var tipo in Model.TiposComprobante)
+                                {
+                                    <option value="@tipo.CodigoTipoComprobante">@tipo.CodigoTipoComprobante - @tipo.Descripcion</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.Serie" class="form-label">Serie</label>
+                            <input asp-for="Formulario.Serie" class="form-control" />
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.Numero" class="form-label">Numero</label>
+                            <input asp-for="Formulario.Numero" class="form-control" />
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.IdMoneda" class="form-label">Moneda</label>
+                            <select asp-for="Formulario.IdMoneda" class="form-select">
+                                <option value="">Seleccione</option>
+                                @foreach (var moneda in Model.Monedas)
+                                {
+                                    <option value="@moneda.IdMoneda">@moneda.CodigoMoneda - @moneda.NombreMoneda</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.TipoCambio" class="form-label">Tipo cambio</label>
+                            <input asp-for="Formulario.TipoCambio" class="form-control" />
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.BaseImponible" class="form-label">Base imponible</label>
+                            <input asp-for="Formulario.BaseImponible" class="form-control" />
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.Igv" class="form-label">IGV</label>
+                            <input asp-for="Formulario.Igv" class="form-control" />
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.Isc" class="form-label">ISC</label>
+                            <input asp-for="Formulario.Isc" class="form-control" />
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.OtrosTributos" class="form-label">Otros tributos</label>
+                            <input asp-for="Formulario.OtrosTributos" class="form-control" />
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.Redondeo" class="form-label">Redondeo</label>
+                            <input asp-for="Formulario.Redondeo" class="form-control" />
+                        </div>
+                        <div class="workspace-field">
+                            <label asp-for="Formulario.ImporteTotal" class="form-label">Importe total</label>
+                            <input asp-for="Formulario.ImporteTotal" class="form-control" />
+                        </div>
+                        <div class="workspace-field workspace-field-span-3">
+                            <label asp-for="Formulario.Observacion" class="form-label">Observacion</label>
+                            <input asp-for="Formulario.Observacion" class="form-control" />
+                        </div>
+                    </div>
+
+                    <div class="workspace-section">
+                        <div class="workspace-section-head">
+                            <div>
+                                <h2>Detalle de venta</h2>
+                                <p>La suma del detalle debe coincidir con la base imponible.</p>
+                            </div>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="agregar-detalle">Agregar linea</button>
+                        </div>
+                        <div class="table-responsive workspace-table-wrap">
+                            <table class="table align-middle app-table workspace-table" id="detalle-table">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Descripcion</th>
+                                        <th>Cantidad</th>
+                                        <th>Valor unitario</th>
+                                        <th>Importe bruto</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (var i = 0; i < Model.Formulario.Detalles.Count; i++)
+                                    {
+                                        <tr>
+                                            <td class="detalle-orden-cell">
+                                                <input asp-for="Formulario.Detalles[i].Item" class="form-control" readonly />
+                                            </td>
+                                            <td>
+                                                <input asp-for="Formulario.Detalles[i].Descripcion" class="form-control" />
+                                            </td>
+                                            <td class="detalle-porcentaje-cell">
+                                                <input asp-for="Formulario.Detalles[i].Cantidad" class="form-control js-cantidad" />
+                                            </td>
+                                            <td class="detalle-porcentaje-cell">
+                                                <input asp-for="Formulario.Detalles[i].ValorUnitario" class="form-control js-unitario" />
+                                            </td>
+                                            <td class="detalle-porcentaje-cell">
+                                                <input asp-for="Formulario.Detalles[i].ImporteBruto" class="form-control js-bruto" />
+                                            </td>
+                                            <td class="text-end">
+                                                <button type="button" class="btn btn-outline-secondary btn-sm js-remove-row">Quitar</button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="workspace-inline-note">
+                            <strong>Total detalle:</strong> <span id="total-detalle">0.00</span>
+                        </div>
+                    </div>
+
+                    <div class="workspace-section" id="preview-asiento-venta">
+                        <div class="workspace-section-head">
+                            <div>
+                                <h2>Previsualizacion del asiento</h2>
+                                <p>Consulta el asiento que se generara con la configuracion y montos actuales antes de guardar.</p>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="venta-preview-button">Previsualizar asiento</button>
+                        </div>
+                        <div class="workspace-inline-note" id="venta-preview-mensaje">Aun no se ha generado una previsualizacion.</div>
+                        <div class="workspace-form-grid mt-3">
+                            <div class="workspace-field">
+                                <label class="form-label">Origen</label>
+                                <input type="text" id="ventaPreviewOrigen" class="form-control" value="-" readonly />
+                            </div>
+                            <div class="workspace-field workspace-field-span-2">
+                                <label class="form-label">Glosa del asiento</label>
+                                <input type="text" id="ventaPreviewGlosa" class="form-control" value="-" readonly />
+                            </div>
+                            <div class="workspace-field">
+                                <label class="form-label">Total Debe</label>
+                                <input type="text" id="ventaPreviewDebe" class="form-control" value="0.00" readonly />
+                            </div>
+                            <div class="workspace-field">
+                                <label class="form-label">Total Haber</label>
+                                <input type="text" id="ventaPreviewHaber" class="form-control" value="0.00" readonly />
+                            </div>
+                        </div>
+                        <div class="table-responsive workspace-table-wrap mt-3">
+                            <table class="table align-middle app-table workspace-table">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Componente</th>
+                                        <th>Cuenta</th>
+                                        <th>Naturaleza</th>
+                                        <th>Debe</th>
+                                        <th>Haber</th>
+                                        <th>Glosa detalle</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="venta-preview-body">
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted">Sin previsualizacion.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="workspace-actions">
+                        <button type="button" class="btn btn-outline-primary" id="venta-preview-action">Previsualizar asiento</button>
+                        <button type="submit" class="btn btn-primary">Guardar venta</button>
+                        <a asp-action="Index" asp-route-periodo="@Model.PeriodoConsulta" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            }
+        </div>
+    </section>
+</section>
+
+<template id="detalle-row-template">
+    <tr>
+        <td class="detalle-orden-cell">
+            <input name="Formulario.Detalles[__index__].Item" class="form-control" readonly value="0" />
+        </td>
+        <td>
+            <input name="Formulario.Detalles[__index__].Descripcion" class="form-control" />
+        </td>
+        <td class="detalle-porcentaje-cell">
+            <input name="Formulario.Detalles[__index__].Cantidad" class="form-control js-cantidad" value="1" />
+        </td>
+        <td class="detalle-porcentaje-cell">
+            <input name="Formulario.Detalles[__index__].ValorUnitario" class="form-control js-unitario" value="0" />
+        </td>
+        <td class="detalle-porcentaje-cell">
+            <input name="Formulario.Detalles[__index__].ImporteBruto" class="form-control js-bruto" value="0" />
+        </td>
+        <td class="text-end">
+            <button type="button" class="btn btn-outline-secondary btn-sm js-remove-row">Quitar</button>
+        </td>
+    </tr>
+</template>
+
+<div class="modal fade" id="clienteRapidoModal" tabindex="-1" aria-labelledby="clienteRapidoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title" id="clienteRapidoModalLabel">Nuevo cliente rapido</h5>
+                    <small class="text-muted">Se registrara en personas y se activara como cliente de la empresa actual.</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form id="clienteRapidoForm">
+                <div class="modal-body">
+                    <div class="alert alert-danger d-none" id="clienteRapidoError"></div>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label" for="clienteRapidoTipoDocumento">Tipo documento</label>
+                            <select class="form-select" id="clienteRapidoTipoDocumento" required>
+                                <option value="">Seleccione</option>
+                                @foreach (var tipoDocumento in Model.TiposDocumentoIdentidad)
+                                {
+                                    <option value="@tipoDocumento.Valor">@tipoDocumento.Texto</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="clienteRapidoNumeroDocumento">Numero documento</label>
+                            <input type="text" class="form-control" id="clienteRapidoNumeroDocumento" maxlength="20" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="clienteRapidoTelefono">Telefono</label>
+                            <input type="text" class="form-control" id="clienteRapidoTelefono" maxlength="50" />
+                        </div>
+                        <div class="col-md-6" id="clienteRapidoRazonSocialWrap">
+                            <label class="form-label" for="clienteRapidoRazonSocial">Razon social</label>
+                            <input type="text" class="form-control" id="clienteRapidoRazonSocial" maxlength="200" />
+                        </div>
+                        <div class="col-md-3 d-none" id="clienteRapidoNombresWrap">
+                            <label class="form-label" for="clienteRapidoNombres">Nombres</label>
+                            <input type="text" class="form-control" id="clienteRapidoNombres" maxlength="150" />
+                        </div>
+                        <div class="col-md-3 d-none" id="clienteRapidoApellidosWrap">
+                            <label class="form-label" for="clienteRapidoApellidos">Apellidos</label>
+                            <input type="text" class="form-control" id="clienteRapidoApellidos" maxlength="100" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="clienteRapidoCorreo">Correo</label>
+                            <input type="email" class="form-control" id="clienteRapidoCorreo" maxlength="200" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="clienteRapidoGuardar">Guardar cliente</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const codigoDocumentoRuc = "6";
+            const clienteBuscarEl = document.getElementById("ventaClienteBuscar");
+            const clienteIdEl = document.getElementById("ventaClienteId");
+            const clienteResultadosEl = document.getElementById("ventaClienteResultados");
+            const clienteResultadosWrapEl = document.getElementById("ventaClienteResultadosWrap");
+            const clienteTipoDocumentoEl = document.getElementById("ventaClienteTipoDocumento");
+            const clienteNumeroDocumentoEl = document.getElementById("ventaClienteNumeroDocumento");
+            const clienteNombreLegalEl = document.getElementById("ventaClienteNombreLegal");
+            const clienteTelefonoEl = document.getElementById("ventaClienteTelefono");
+            const clienteCorreoEl = document.getElementById("ventaClienteCorreo");
+            const btnNuevoClienteEl = document.getElementById("btnNuevoCliente");
+            const clienteRapidoModalEl = document.getElementById("clienteRapidoModal");
+            const clienteRapidoFormEl = document.getElementById("clienteRapidoForm");
+            const clienteRapidoErrorEl = document.getElementById("clienteRapidoError");
+            const clienteRapidoTipoDocumentoEl = document.getElementById("clienteRapidoTipoDocumento");
+            const clienteRapidoNumeroDocumentoEl = document.getElementById("clienteRapidoNumeroDocumento");
+            const clienteRapidoTelefonoEl = document.getElementById("clienteRapidoTelefono");
+            const clienteRapidoCorreoEl = document.getElementById("clienteRapidoCorreo");
+            const clienteRapidoRazonSocialEl = document.getElementById("clienteRapidoRazonSocial");
+            const clienteRapidoNombresEl = document.getElementById("clienteRapidoNombres");
+            const clienteRapidoApellidosEl = document.getElementById("clienteRapidoApellidos");
+            const clienteRapidoRazonSocialWrapEl = document.getElementById("clienteRapidoRazonSocialWrap");
+            const clienteRapidoNombresWrapEl = document.getElementById("clienteRapidoNombresWrap");
+            const clienteRapidoApellidosWrapEl = document.getElementById("clienteRapidoApellidosWrap");
+            const clienteRapidoGuardarEl = document.getElementById("clienteRapidoGuardar");
+            const crearClienteRapidoUrl = '@Url.Action("CrearClienteRapido", "Venta")';
+            const previewUrl = '@Url.Action("PrevisualizarAsiento", "Venta")';
+            const clientesUrl = '@Url.Action("BuscarClientes", "Venta")';
+            const clientesDetalleMap = new Map();
+            const formEl = document.getElementById("venta-form");
+            const tableBody = document.querySelector("#detalle-table tbody");
+            const template = document.getElementById("detalle-row-template");
+            const addButton = document.getElementById("agregar-detalle");
+            const totalDetalleLabel = document.getElementById("total-detalle");
+            const previewButtonEl = document.getElementById("venta-preview-button");
+            const previewActionEl = document.getElementById("venta-preview-action");
+            const previewMensajeEl = document.getElementById("venta-preview-mensaje");
+            const previewOrigenEl = document.getElementById("ventaPreviewOrigen");
+            const previewGlosaEl = document.getElementById("ventaPreviewGlosa");
+            const previewDebeEl = document.getElementById("ventaPreviewDebe");
+            const previewHaberEl = document.getElementById("ventaPreviewHaber");
+            const previewBodyEl = document.getElementById("venta-preview-body");
+            const clienteRapidoModal = clienteRapidoModalEl && window.bootstrap
+                ? new bootstrap.Modal(clienteRapidoModalEl)
+                : null;
+
+            if (!tableBody || !template || !addButton || !totalDetalleLabel) {
+                return;
+            }
+
+            const parseAmount = (value) => {
+                const parsed = parseFloat((value ?? "0").replace(",", "."));
+                return Number.isNaN(parsed) ? 0 : parsed;
+            };
+
+            const formatMoney = (value) => Number(value || 0).toFixed(2);
+
+            const escapeHtml = (value) => String(value ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+
+            const componentLabels = {
+                BRUTO: "Bruto",
+                IGV: "IGV",
+                ISC: "ISC",
+                OTROS: "Otros",
+                REDONDEO: "Redondeo",
+                TOTAL: "Total"
+            };
+
+            const renderComponentBadge = (component) => {
+                const key = String(component || "").toUpperCase();
+                const label = componentLabels[key] || key || "-";
+                return `<span class="workspace-component-badge is-${escapeHtml(key.toLowerCase())}">${escapeHtml(label)}</span>`;
+            };
+
+            const renderPreviewVacio = (mensaje) => {
+                if (previewMensajeEl) {
+                    previewMensajeEl.textContent = mensaje || "Aun no se ha generado una previsualizacion.";
+                    previewMensajeEl.className = "workspace-inline-note workspace-preview-message";
+                }
+                if (previewOrigenEl) {
+                    previewOrigenEl.value = "-";
+                }
+                if (previewGlosaEl) {
+                    previewGlosaEl.value = "-";
+                }
+                if (previewDebeEl) {
+                    previewDebeEl.value = "0.00";
+                }
+                if (previewHaberEl) {
+                    previewHaberEl.value = "0.00";
+                }
+                if (previewBodyEl) {
+                    previewBodyEl.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Sin previsualizacion.</td></tr>';
+                }
+            };
+
+            const renderPreview = (preview) => {
+                if (previewMensajeEl) {
+                    previewMensajeEl.textContent = preview?.mensajeValidacion || "Previsualizacion generada.";
+                    previewMensajeEl.className = `workspace-inline-note workspace-preview-message ${preview?.cuadrado ? "is-ok" : "is-error"}`;
+                }
+                if (previewOrigenEl) {
+                    const origen = `${preview?.codigoOrigen || ""} - ${preview?.nombreOrigen || ""}`.trim();
+                    previewOrigenEl.value = origen === "-" || origen === "" ? "-" : origen;
+                }
+                if (previewGlosaEl) {
+                    previewGlosaEl.value = preview?.glosaAsiento || "-";
+                }
+                if (previewDebeEl) {
+                    previewDebeEl.value = formatMoney(preview?.totalDebe);
+                }
+                if (previewHaberEl) {
+                    previewHaberEl.value = formatMoney(preview?.totalHaber);
+                }
+                if (previewBodyEl) {
+                    const lineas = Array.isArray(preview?.lineas) ? preview.lineas : [];
+                    if (lineas.length === 0) {
+                        previewBodyEl.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Sin lineas contables.</td></tr>';
+                        return;
+                    }
+
+                    previewBodyEl.innerHTML = lineas.map(linea => `
+                        <tr>
+                            <td>${escapeHtml(linea.item ?? "")}</td>
+                            <td>${renderComponentBadge(linea.componenteContable)}</td>
+                            <td><span class="workspace-account-code">${escapeHtml(linea.codigoCuenta ?? "")}</span> ${escapeHtml(linea.nombreCuenta ?? "")}</td>
+                            <td><span class="workspace-nature-badge ${linea.naturalezaMovimiento === "D" ? "is-debe" : "is-haber"}">${linea.naturalezaMovimiento === "D" ? "Debe" : "Haber"}</span></td>
+                            <td class="workspace-money-cell">${formatMoney(linea.debe)}</td>
+                            <td class="workspace-money-cell">${formatMoney(linea.haber)}</td>
+                            <td>${escapeHtml(linea.glosaDetalle ?? "")}</td>
+                        </tr>`).join("");
+                }
+            };
+
+            const collectPreviewPayload = () => {
+                const readValue = (selector) => formEl?.querySelector(selector)?.value || "";
+                const detalles = Array.from(tableBody?.querySelectorAll("tr") || []).map(row => ({
+                    item: Number(row.querySelector('input[name$=".Item"]')?.value || 0),
+                    descripcion: String(row.querySelector('input[name$=".Descripcion"]')?.value || ""),
+                    cantidad: parseAmount(row.querySelector('input[name$=".Cantidad"]')?.value || "0"),
+                    valorUnitario: parseAmount(row.querySelector('input[name$=".ValorUnitario"]')?.value || "0"),
+                    importeBruto: parseAmount(row.querySelector('input[name$=".ImporteBruto"]')?.value || "0")
+                }));
+
+                return {
+                    idConfiguracionContabilizacion: Number(readValue('[name="Formulario.IdConfiguracionContabilizacion"]') || 0),
+                    fechaContabilizacion: readValue('[name="Formulario.FechaContabilizacion"]'),
+                    tipoComprobante: readValue('[name="Formulario.TipoComprobante"]'),
+                    serie: readValue('[name="Formulario.Serie"]'),
+                    numero: readValue('[name="Formulario.Numero"]'),
+                    baseImponible: parseAmount(readValue('[name="Formulario.BaseImponible"]')),
+                    igv: parseAmount(readValue('[name="Formulario.Igv"]')),
+                    isc: parseAmount(readValue('[name="Formulario.Isc"]')),
+                    otrosTributos: parseAmount(readValue('[name="Formulario.OtrosTributos"]')),
+                    redondeo: parseAmount(readValue('[name="Formulario.Redondeo"]')),
+                    importeTotal: parseAmount(readValue('[name="Formulario.ImporteTotal"]')),
+                    detalles
+                };
+            };
+
+            const ejecutarPreview = async () => {
+                if (!formEl) {
+                    return;
+                }
+
+                const token = formEl.querySelector('input[name="__RequestVerificationToken"]')?.value || "";
+                const payload = collectPreviewPayload();
+                const botones = [previewButtonEl, previewActionEl].filter(x => x);
+
+                botones.forEach(x => x.disabled = true);
+                try {
+                    const response = await fetch(previewUrl, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "RequestVerificationToken": token
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await response.json();
+                    if (!response.ok || !data.ok) {
+                        throw new Error(data.mensaje || "No se pudo generar la previsualizacion.");
+                    }
+
+                    renderPreview(data.preview);
+                } catch (error) {
+                    renderPreviewVacio(error?.message || "No se pudo generar la previsualizacion.");
+                } finally {
+                    botones.forEach(x => x.disabled = false);
+                }
+            };
+
+            const mostrarResultadosCliente = (visible) => {
+                if (!clienteResultadosWrapEl) {
+                    return;
+                }
+
+                clienteResultadosWrapEl.classList.toggle("d-none", !visible);
+            };
+
+            const actualizarDatosCliente = (detalle = null) => {
+                if (clienteTipoDocumentoEl) {
+                    clienteTipoDocumentoEl.value = detalle?.tipoDocumento || "-";
+                }
+                if (clienteNumeroDocumentoEl) {
+                    clienteNumeroDocumentoEl.value = detalle?.numeroDocumento || "-";
+                }
+                if (clienteNombreLegalEl) {
+                    clienteNombreLegalEl.value = detalle?.nombre || "-";
+                }
+                if (clienteTelefonoEl) {
+                    clienteTelefonoEl.value = detalle?.numero || "-";
+                }
+                if (clienteCorreoEl) {
+                    clienteCorreoEl.value = detalle?.correo || "-";
+                }
+            };
+
+            const seleccionarCliente = (clienteId, textoCliente, detalle = null) => {
+                if (!clienteIdEl || !clienteBuscarEl) {
+                    return;
+                }
+
+                clienteIdEl.value = clienteId ? String(clienteId) : "";
+                clienteBuscarEl.value = clienteId ? String(textoCliente || "") : "";
+                const info = detalle || clientesDetalleMap.get(String(clienteId)) || null;
+                actualizarDatosCliente(info);
+                mostrarResultadosCliente(false);
+            };
+
+            const limpiarClienteRapidoError = () => {
+                if (!clienteRapidoErrorEl) {
+                    return;
+                }
+
+                clienteRapidoErrorEl.textContent = "";
+                clienteRapidoErrorEl.classList.add("d-none");
+            };
+
+            const mostrarClienteRapidoError = (mensaje) => {
+                if (!clienteRapidoErrorEl) {
+                    return;
+                }
+
+                clienteRapidoErrorEl.textContent = mensaje || "No se pudo registrar el cliente.";
+                clienteRapidoErrorEl.classList.remove("d-none");
+            };
+
+            const actualizarFormularioClienteRapido = () => {
+                const esJuridica = String(clienteRapidoTipoDocumentoEl?.value || "") === codigoDocumentoRuc;
+
+                clienteRapidoRazonSocialWrapEl?.classList.toggle("d-none", !esJuridica);
+                clienteRapidoNombresWrapEl?.classList.toggle("d-none", esJuridica);
+                clienteRapidoApellidosWrapEl?.classList.toggle("d-none", esJuridica);
+
+                if (clienteRapidoRazonSocialEl) {
+                    clienteRapidoRazonSocialEl.required = esJuridica;
+                }
+                if (clienteRapidoNombresEl) {
+                    clienteRapidoNombresEl.required = !esJuridica;
+                }
+                if (clienteRapidoApellidosEl) {
+                    clienteRapidoApellidosEl.required = !esJuridica;
+                }
+            };
+
+            const limpiarOpcionesCliente = (mensaje = "Escribe y presiona Enter para buscar...") => {
+                if (clienteIdEl) {
+                    clienteIdEl.value = "";
+                }
+                if (!clienteResultadosEl) {
+                    return;
+                }
+
+                clienteResultadosEl.innerHTML = "";
+                clientesDetalleMap.clear();
+                const option = document.createElement("option");
+                option.value = "";
+                option.textContent = mensaje;
+                clienteResultadosEl.appendChild(option);
+                actualizarDatosCliente(null);
+                mostrarResultadosCliente(false);
+            };
+
+            const recargarClientes = async (buscar = "", clienteIdPreferido = "") => {
+                if (!clienteResultadosEl) {
+                    return [];
+                }
+
+                const params = new URLSearchParams();
+                if (buscar) {
+                    params.append("buscar", buscar);
+                }
+                if (clienteIdPreferido) {
+                    params.append("clienteId", clienteIdPreferido);
+                }
+
+                const response = await fetch(`${clientesUrl}?${params.toString()}`, { cache: "no-store" });
+                const payload = await response.json();
+                if (!response.ok || !payload.ok) {
+                    throw new Error(payload.mensaje || "No se pudo buscar clientes.");
+                }
+
+                const items = (payload.items || []).map(item => ({
+                    value: String(item.value ?? ""),
+                    text: String(item.text ?? ""),
+                    tipoDocumento: String(item.tipoDocumento ?? ""),
+                    numeroDocumento: String(item.numeroDocumento ?? ""),
+                    nombre: String(item.nombre ?? ""),
+                    numero: String(item.numero ?? ""),
+                    correo: String(item.correo ?? "")
+                }));
+
+                clientesDetalleMap.clear();
+                clienteResultadosEl.innerHTML = "";
+
+                if (items.length === 0) {
+                    const option = document.createElement("option");
+                    option.value = "";
+                    option.textContent = "Sin resultados";
+                    clienteResultadosEl.appendChild(option);
+                    mostrarResultadosCliente(true);
+                    if (!clienteIdPreferido && clienteIdEl) {
+                        clienteIdEl.value = "";
+                        actualizarDatosCliente(null);
+                    }
+                    return items;
+                }
+
+                let encontradoPreferido = false;
+                items.forEach(item => {
+                    const option = document.createElement("option");
+                    option.value = item.value;
+                    option.textContent = item.text;
+                    option.setAttribute("data-tipo-documento", item.tipoDocumento || "");
+                    option.setAttribute("data-numero-documento", item.numeroDocumento || "");
+                    option.setAttribute("data-nombre", item.nombre || "");
+                    option.setAttribute("data-numero", item.numero || "");
+                    option.setAttribute("data-correo", item.correo || "");
+                    clienteResultadosEl.appendChild(option);
+                    clientesDetalleMap.set(item.value, {
+                        tipoDocumento: item.tipoDocumento || "",
+                        numeroDocumento: item.numeroDocumento || "",
+                        nombre: item.nombre || "",
+                        numero: item.numero || "",
+                        correo: item.correo || ""
+                    });
+                    if (clienteIdPreferido && item.value === String(clienteIdPreferido)) {
+                        encontradoPreferido = true;
+                    }
+                });
+
+                if (clienteIdPreferido && encontradoPreferido) {
+                    const selected = Array.from(clienteResultadosEl.options).find(x => x.value === String(clienteIdPreferido));
+                    if (selected) {
+                        seleccionarCliente(selected.value, selected.text || "", {
+                            tipoDocumento: selected.getAttribute("data-tipo-documento") || "",
+                            numeroDocumento: selected.getAttribute("data-numero-documento") || "",
+                            nombre: selected.getAttribute("data-nombre") || "",
+                            numero: selected.getAttribute("data-numero") || "",
+                            correo: selected.getAttribute("data-correo") || ""
+                        });
+                    }
+                } else {
+                    mostrarResultadosCliente(true);
+                    if (clienteIdEl) {
+                        clienteIdEl.value = "";
+                    }
+                    actualizarDatosCliente(null);
+                }
+
+                return items;
+            };
+
+            const bindRowActions = (row) => {
+                row.querySelector(".js-remove-row")?.addEventListener("click", () => {
+                    if (tableBody.querySelectorAll("tr").length === 1) {
+                        return;
+                    }
+
+                    row.remove();
+                    refreshRows();
+                });
+            };
+
+            const refreshRows = () => {
+                const rows = Array.from(tableBody.querySelectorAll("tr"));
+                let total = 0;
+
+                rows.forEach((row, index) => {
+                    row.querySelectorAll("input, select, textarea, span").forEach((element) => {
+                        ["name", "id", "for"].forEach((attribute) => {
+                            const currentValue = element.getAttribute(attribute);
+                            if (!currentValue) {
+                                return;
+                            }
+
+                            const updatedValue = currentValue
+                                .replaceAll("__index__", index)
+                                .replace(/Formulario\.Detalles\[\d+\]/g, `Formulario.Detalles[${index}]`)
+                                .replace(/Formulario_Detalles_\d+__/g, `Formulario_Detalles_${index}__`);
+
+                            if (updatedValue !== currentValue) {
+                                element.setAttribute(attribute, updatedValue);
+                            }
+                        });
+                    });
+
+                    const itemInput = row.querySelector('input[name$=".Item"]');
+                    if (itemInput) {
+                        itemInput.value = (index + 1).toString();
+                    }
+
+                    total += parseAmount(row.querySelector(".js-bruto")?.value);
+                });
+
+                totalDetalleLabel.textContent = total.toFixed(2);
+            };
+
+            addButton.addEventListener("click", () => {
+                const index = tableBody.querySelectorAll("tr").length;
+                const html = template.innerHTML.replaceAll("__index__", index);
+                tableBody.insertAdjacentHTML("beforeend", html);
+                const row = tableBody.lastElementChild;
+                if (row) {
+                    bindRowActions(row);
+                }
+                refreshRows();
+            });
+
+            tableBody.querySelectorAll("tr").forEach(bindRowActions);
+            tableBody.addEventListener("input", refreshRows);
+            refreshRows();
+
+            if (clienteBuscarEl && clienteIdEl && clienteResultadosEl) {
+                clienteBuscarEl.addEventListener("input", () => {
+                    if (clienteIdEl.value) {
+                        clienteIdEl.value = "";
+                        actualizarDatosCliente(null);
+                    }
+                });
+
+                clienteBuscarEl.addEventListener("keydown", async (event) => {
+                    if (event.key !== "Enter") {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    const filtro = String(clienteBuscarEl.value || "").trim();
+                    if (filtro.length < 2) {
+                        limpiarOpcionesCliente("Escribe al menos 2 caracteres y presiona Enter.");
+                        mostrarResultadosCliente(true);
+                        return;
+                    }
+
+                    try {
+                        const items = await recargarClientes(filtro);
+                        if (items.length === 1) {
+                            seleccionarCliente(items[0].value, items[0].text, {
+                                tipoDocumento: items[0].tipoDocumento || "",
+                                numeroDocumento: items[0].numeroDocumento || "",
+                                nombre: items[0].nombre || "",
+                                numero: items[0].numero || "",
+                                correo: items[0].correo || ""
+                            });
+                        } else {
+                            mostrarResultadosCliente(true);
+                            clienteResultadosEl.focus();
+                        }
+                    } catch (error) {
+                        console.warn(error);
+                        limpiarOpcionesCliente("No se pudo cargar clientes");
+                        mostrarResultadosCliente(true);
+                    }
+                });
+
+                const sincronizarClienteDesdeSelect = () => {
+                    const option = clienteResultadosEl.selectedOptions?.[0];
+                    if (!option || !option.value) {
+                        return;
+                    }
+
+                    seleccionarCliente(option.value, option.text || "", {
+                        tipoDocumento: option.getAttribute("data-tipo-documento") || "",
+                        numeroDocumento: option.getAttribute("data-numero-documento") || "",
+                        nombre: option.getAttribute("data-nombre") || "",
+                        numero: option.getAttribute("data-numero") || "",
+                        correo: option.getAttribute("data-correo") || ""
+                    });
+                };
+
+                clienteResultadosEl.addEventListener("change", sincronizarClienteDesdeSelect);
+                clienteResultadosEl.addEventListener("dblclick", sincronizarClienteDesdeSelect);
+                clienteResultadosEl.addEventListener("keydown", (event) => {
+                    if (event.key !== "Enter") {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    sincronizarClienteDesdeSelect();
+                });
+            }
+
+            if (btnNuevoClienteEl && clienteRapidoModal) {
+                btnNuevoClienteEl.addEventListener("click", () => {
+                    limpiarClienteRapidoError();
+                    clienteRapidoFormEl?.reset();
+                    if (clienteRapidoTipoDocumentoEl) {
+                        clienteRapidoTipoDocumentoEl.value = "";
+                    }
+                    actualizarFormularioClienteRapido();
+                    clienteRapidoModal.show();
+                });
+            }
+
+            clienteRapidoTipoDocumentoEl?.addEventListener("change", actualizarFormularioClienteRapido);
+            actualizarFormularioClienteRapido();
+
+            clienteRapidoFormEl?.addEventListener("submit", async (event) => {
+                event.preventDefault();
+                limpiarClienteRapidoError();
+
+                const payload = {
+                    tipoDocumento: String(clienteRapidoTipoDocumentoEl?.value || ""),
+                    numeroDocumento: String(clienteRapidoNumeroDocumentoEl?.value || ""),
+                    razonSocial: String(clienteRapidoRazonSocialEl?.value || ""),
+                    nombres: String(clienteRapidoNombresEl?.value || ""),
+                    apellidos: String(clienteRapidoApellidosEl?.value || ""),
+                    telefono: String(clienteRapidoTelefonoEl?.value || ""),
+                    correo: String(clienteRapidoCorreoEl?.value || "")
+                };
+
+                if (clienteRapidoGuardarEl) {
+                    clienteRapidoGuardarEl.disabled = true;
+                }
+
+                try {
+                    const response = await fetch(crearClienteRapidoUrl, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await response.json();
+
+                    if (!response.ok || !data.ok) {
+                        throw new Error(data.mensaje || "No se pudo registrar el cliente.");
+                    }
+
+                    await recargarClientes("", String(data.clienteId || ""));
+                    if (data.clienteId) {
+                        seleccionarCliente(String(data.clienteId), String(data.clienteTexto || ""), {
+                            tipoDocumento: String(data.tipoDocumento || ""),
+                            numeroDocumento: String(data.numeroDocumento || ""),
+                            nombre: String(data.nombre || ""),
+                            numero: String(data.numero || ""),
+                            correo: String(data.correo || "")
+                        });
+                    }
+                    clienteRapidoModal.hide();
+                } catch (error) {
+                    mostrarClienteRapidoError(error?.message || "No se pudo registrar el cliente.");
+                } finally {
+                    if (clienteRapidoGuardarEl) {
+                        clienteRapidoGuardarEl.disabled = false;
+                    }
+                }
+            });
+
+            previewButtonEl?.addEventListener("click", ejecutarPreview);
+            previewActionEl?.addEventListener("click", ejecutarPreview);
+            renderPreviewVacio("Aun no se ha generado una previsualizacion.");
+        })();
+    </script>
+}

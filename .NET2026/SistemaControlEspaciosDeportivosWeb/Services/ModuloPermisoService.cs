@@ -29,6 +29,11 @@ public class ModuloPermisoService(IConfiguration configuration) : IModuloPermiso
             return ModuloPermisoContexto.SinAcceso("Tu suscripcion no esta activa. Solo puedes acceder a Dashboard y Mi suscripcion.");
         }
 
+        if (await DebeBloquearPorPlanBasicoAsync(negocioId, moduloNormalizado))
+        {
+            return ModuloPermisoContexto.SinAccesoPorPlanBasico("Esta funcionalidad esta disponible en el plan Full. Para usar esta opcion debes migrar de plan.");
+        }
+
         await using var cn = new SqlConnection(_connectionString);
         await cn.OpenAsync();
         await using var cmd = new SqlCommand("Sp_Seguridad_ObtenerContextoModulo", cn)
@@ -104,6 +109,23 @@ public class ModuloPermisoService(IConfiguration configuration) : IModuloPermiso
 
         return false;
     }
+
+    private async Task<bool> DebeBloquearPorPlanBasicoAsync(int negocioId, string moduloCodigo)
+    {
+        if (moduloCodigo is not ("PROMOCIONES" or "CUPONES" or "COMPROBANTES"))
+            return false;
+
+        await using var cn = new SqlConnection(_connectionString);
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand(
+            @"SELECT TOP 1 CAST(COALESCE(n.TipoPlan, N'Basico') AS NVARCHAR(20))
+              FROM dbo.Negocios n
+              WHERE n.Id = @NegocioId;", cn);
+        cmd.Parameters.Add("@NegocioId", SqlDbType.Int).Value = negocioId;
+
+        var tipoPlan = (await cmd.ExecuteScalarAsync() as string)?.Trim();
+        return string.Equals(tipoPlan, "Basico", StringComparison.OrdinalIgnoreCase);
+    }
 }
 
 public class ModuloPermisoContexto
@@ -121,10 +143,18 @@ public class ModuloPermisoContexto
     public bool PuedeCrear { get; set; }
     public bool PuedeEditar { get; set; }
     public bool PuedeEliminar { get; set; }
+    public bool BloqueadoPorPlanBasico { get; set; }
 
     public static ModuloPermisoContexto SinAcceso(string mensaje) => new()
     {
         Autorizado = false,
         Mensaje = mensaje
+    };
+
+    public static ModuloPermisoContexto SinAccesoPorPlanBasico(string mensaje) => new()
+    {
+        Autorizado = false,
+        Mensaje = mensaje,
+        BloqueadoPorPlanBasico = true
     };
 }

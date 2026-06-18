@@ -215,7 +215,6 @@ C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdminist
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\v0zgfp0y55-{0}-87fc7y1x7t-87fc7y1x7t.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\yfc7ypekbg-{0}-mlv21k5csn-mlv21k5csn.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\cyctyxk1xe-{0}-61n19gt1b8-61n19gt1b8.gz
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\9mixv7inkl-{0}-xtxxf3hu2r-xtxxf3hu2r.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\afk6hlaw1y-{0}-bqjiyaj88i-bqjiyaj88i.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\2dfw0zjjr7-{0}-c2jlpeoesf-c2jlpeoesf.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\2koda0lzme-{0}-erw9l3u2r3-erw9l3u2r3.gz
@@ -290,6 +289,17 @@ C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdminist
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\ref\SistemaAdministrativoWeb.dll
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\Debug\net10.0\appsettings.Secrets.example.json
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\Debug\net10.0\Microsoft.AspNetCore.Authentication.Google.dll
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\rnf1c4oivs-{0}-kxvs4pl77c-kxvs4pl77c.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\Debug\net10.0\appsettings.Secrets.json
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\tmp\sisadm-build-check\appsettings.Development.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\tmp\sisadm-build-check\appsettings.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\tmp\sisadm-build-check\appsettings.Secrets.example.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\tmp\sisadm-build-check\appsettings.Secrets.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\tmp\sisadm-build-check\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\tmp\sisadm-build-check\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\tmp\sisadm-build-check\SistemaAdministrativoWeb.exe
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\tmp\sisadm-build-check\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\tmp\sisadm-build-check\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\tmp\sisadm-build-check\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\tmp\sisadm-build-check\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\9mixv7inkl-{0}-0ndtsm2l2s-0ndtsm2l2s.gz
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\rnf1c4oivs-{0}-sru97iwm8h-sru97iwm8h.gz

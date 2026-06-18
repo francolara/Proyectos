@@ -11387,4 +11387,4 @@ C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\artifacts\boletines-acti
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\artifacts\boletines-activar-fix-build-check\SistemaControlEspaciosDeportivosWeb.pdb
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\compressed\lmsxrkt941-{0}-rtzofh0cs2-rtzofh0cs2.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\compressed\vnbh1609s7-{0}-brofoeercx-brofoeercx.gz
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\compressed\vnbh1609s7-{0}-zbpstp8dye-zbpstp8dye.gz

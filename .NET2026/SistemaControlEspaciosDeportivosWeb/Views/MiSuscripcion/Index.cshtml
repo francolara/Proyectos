@@ -50,7 +50,7 @@ else
             </article>
             <article class="kpi-card">
                 <p class="kpi-card-label">Plan</p>
-                <h2 class="kpi-card-value">@(Model.EsModoGratuito ? "Modo gratuito" : (string.IsNullOrWhiteSpace(sus.TipoCobro) ? "Contrato" : sus.TipoCobro))</h2>
+                <h2 class="kpi-card-value">@Model.TipoPlan</h2>
             </article>
             <article class="kpi-card">
                 <p class="kpi-card-label">Vence</p>
@@ -68,6 +68,36 @@ else
                         <span>-</span>
                     }
                 </h2>
+            </article>
+        </div>
+    </section>
+
+    <section class="content-card mb-3">
+        <h2 class="section-title mb-3"><i class="bi bi-stars me-1"></i>Tu plan actual</h2>
+        <div class="sc-suscripcion-limites-grid">
+            <article class="sc-suscripcion-info-card">
+                <span class="sc-suscripcion-info-icon"><i class="bi bi-award"></i></span>
+                <div class="sc-suscripcion-info-copy">
+                    <small>Plan contratado</small>
+                    <strong>@Model.TipoPlan</strong>
+                    <span>@(Model.EsPlanBasico ? "Plan ideal para operar reservas, pagos y administracion esencial." : "Plan completo con herramientas comerciales y comprobantes habilitados.")</span>
+                </div>
+            </article>
+            <article class="sc-suscripcion-info-card">
+                <span class="sc-suscripcion-info-icon"><i class="bi bi-check2-square"></i></span>
+                <div class="sc-suscripcion-info-copy">
+                    <small>Basico</small>
+                    <strong>Operacion esencial</strong>
+                    <span>Incluye reservas, pagos, clientes, sedes, espacios, usuarios y reportes.</span>
+                </div>
+            </article>
+            <article class="sc-suscripcion-info-card">
+                <span class="sc-suscripcion-info-icon"><i class="bi bi-rocket-takeoff"></i></span>
+                <div class="sc-suscripcion-info-copy">
+                    <small>Full</small>
+                    <strong>Comercial avanzado</strong>
+                    <span>Habilita promociones, cupones y comprobantes para escalar tus ventas.</span>
+                </div>
             </article>
         </div>
     </section>

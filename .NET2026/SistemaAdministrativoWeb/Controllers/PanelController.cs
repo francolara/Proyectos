@@ -43,7 +43,7 @@ public class PanelController(
                     Titulo = "Asientos contables",
                     Descripcion = "Registro manual y control del libro diario.",
                     Icono = "bi-journal-check",
-                    Url = "#",
+                    Url = "/Asiento",
                     Habilitado = true
                 },
                 new PanelModuloViewModel
@@ -51,24 +51,56 @@ public class PanelController(
                     Titulo = "Plan de cuentas",
                     Descripcion = "Mantenimiento del catalogo contable por empresa.",
                     Icono = "bi-diagram-3",
-                    Url = "#",
-                    Habilitado = false
+                    Url = "/PlanCuenta",
+                    Habilitado = true
+                },
+                new PanelModuloViewModel
+                {
+                    Titulo = "Personas",
+                    Descripcion = "Mantenimiento de clientes, proveedores y terceros por empresa.",
+                    Icono = "bi-people",
+                    Url = "/Persona",
+                    Habilitado = true
+                },
+                new PanelModuloViewModel
+                {
+                    Titulo = "Origenes contables",
+                    Descripcion = "Configuracion de subdiarios y circuitos de registro por empresa.",
+                    Icono = "bi-journal-richtext",
+                    Url = "/Origen",
+                    Habilitado = true
+                },
+                new PanelModuloViewModel
+                {
+                    Titulo = "Reglas destino",
+                    Descripcion = "Equivalencias contables por ejercicio para distribuciones automaticas.",
+                    Icono = "bi-sliders2",
+                    Url = "/CuentaDestinoRegla",
+                    Habilitado = true
+                },
+                new PanelModuloViewModel
+                {
+                    Titulo = "Config. compras/ventas",
+                    Descripcion = "Parametros contables por escenario para asiento automatico de compras y ventas.",
+                    Icono = "bi-gear-wide-connected",
+                    Url = "/ConfiguracionContabilizacion",
+                    Habilitado = true
                 },
                 new PanelModuloViewModel
                 {
                     Titulo = "Compras",
                     Descripcion = "Provisiones, proveedores y contabilizacion de compras.",
                     Icono = "bi-cart-check",
-                    Url = "#",
-                    Habilitado = false
+                    Url = "/Compra",
+                    Habilitado = true
                 },
                 new PanelModuloViewModel
                 {
                     Titulo = "Ventas",
                     Descripcion = "Clientes, comprobantes y asiento automatico de ventas.",
                     Icono = "bi-cash-stack",
-                    Url = "#",
-                    Habilitado = false
+                    Url = "/Venta",
+                    Habilitado = true
                 }
             ]
         };

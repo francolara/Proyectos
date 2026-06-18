@@ -9,7 +9,7 @@
         <div>
             <span class="dashboard-kicker">Empresa #@Model.IdEmpresa</span>
             <h1>@Model.NombreEmpresa</h1>
-            <p>Panel operativo inicial del sistema administrativo contable.</p>
+            <p>Espacio central de trabajo para organizar mantenimiento, registro y reportes contables sobre la empresa activa.</p>
         </div>
         <div class="dashboard-status-card">
             <strong>@Model.EstadoPanel</strong>
@@ -39,19 +39,89 @@
         </article>
     </section>
 
-    <section class="dashboard-module-grid">
-        @foreach (var modulo in Model.Modulos)
-        {
-            <article class="dashboard-module-card @(modulo.Habilitado ? string.Empty : "is-disabled")">
-                <div class="dashboard-module-icon">
-                    <i class="bi @modulo.Icono"></i>
+    <section class="workspace-section">
+        <div class="workspace-section-head">
+            <span class="workspace-section-kicker">Niveles del panel</span>
+            <h2>Mapa operativo</h2>
+            <p>La navegacion queda agrupada por el tipo de trabajo que hara el usuario dentro del sistema.</p>
+        </div>
+
+        <div class="dashboard-level-grid">
+            <article class="dashboard-level-card">
+                <div class="dashboard-level-head">
+                    <div class="dashboard-module-icon"><i class="bi bi-sliders2"></i></div>
+                    <div>
+                        <h3>Mantenimiento</h3>
+                        <span>Catalogos y configuracion</span>
+                    </div>
                 </div>
-                <h2>@modulo.Titulo</h2>
-                <p>@modulo.Descripcion</p>
-                <a class="btn @(modulo.Habilitado ? "btn-primary" : "btn-outline-secondary disabled")" href="@modulo.Url">
-                    @(modulo.Habilitado ? "Abrir modulo" : "En construccion")
-                </a>
+                <ul class="dashboard-level-list">
+                    <li>Plan de cuentas</li>
+                    <li>Personas</li>
+                    <li>Empresas</li>
+                    <li>Parametros contables</li>
+                    <li>Auxiliares y reglas</li>
+                </ul>
+                <a class="btn btn-outline-secondary disabled" href="#">Disponible en siguientes iteraciones</a>
             </article>
-        }
+
+            <article class="dashboard-level-card dashboard-level-card-accent">
+                <div class="dashboard-level-head">
+                    <div class="dashboard-module-icon"><i class="bi bi-journal-check"></i></div>
+                    <div>
+                        <h3>Registro</h3>
+                        <span>Operacion diaria</span>
+                    </div>
+                </div>
+                <ul class="dashboard-level-list">
+                    <li>Asientos contables</li>
+                    <li>Compras</li>
+                    <li>Ventas</li>
+                    <li>Provisiones</li>
+                </ul>
+                <a class="btn btn-primary" href="#">Prioridad del desarrollo</a>
+            </article>
+
+            <article class="dashboard-level-card">
+                <div class="dashboard-level-head">
+                    <div class="dashboard-module-icon"><i class="bi bi-bar-chart"></i></div>
+                    <div>
+                        <h3>Reportes</h3>
+                        <span>Consulta y control</span>
+                    </div>
+                </div>
+                <ul class="dashboard-level-list">
+                    <li>Libros contables</li>
+                    <li>Analisis por cuenta</li>
+                    <li>Resumen por periodo</li>
+                    <li>Estados de control</li>
+                </ul>
+                <a class="btn btn-outline-secondary disabled" href="#">Pendiente de implementacion</a>
+            </article>
+        </div>
+    </section>
+
+    <section class="workspace-section">
+        <div class="workspace-section-head">
+            <span class="workspace-section-kicker">Acceso rapido</span>
+            <h2>Modulos iniciales</h2>
+            <p>Bloques operativos que iran quedando listos dentro de la primera version del sistema.</p>
+        </div>
+
+        <div class="dashboard-module-grid">
+            @foreach (var modulo in Model.Modulos)
+            {
+                <article class="dashboard-module-card @(modulo.Habilitado ? string.Empty : "is-disabled")">
+                    <div class="dashboard-module-icon">
+                        <i class="bi @modulo.Icono"></i>
+                    </div>
+                    <h2>@modulo.Titulo</h2>
+                    <p>@modulo.Descripcion</p>
+                    <a class="btn @(modulo.Habilitado ? "btn-primary" : "btn-outline-secondary disabled")" href="@modulo.Url">
+                        @(modulo.Habilitado ? "Abrir modulo" : "En construccion")
+                    </a>
+                </article>
+            }
+        </div>
     </section>
 </section>

@@ -602,14 +602,16 @@ public class PlataformaController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> GuardarLimitesNegocio(int negocioId, int sedesPermitidas, int espaciosPermitidos, int usuariosPermitidos, string? buscar = null, string? estadoContrato = null, int pagina = 1)
+    public async Task<IActionResult> GuardarLimitesNegocio(int negocioId, string tipoPlan, int sedesPermitidas, int espaciosPermitidos, int usuariosPermitidos, string? buscar = null, string? estadoContrato = null, int pagina = 1)
     {
         ViewData["PlatformShell"] = true;
+        tipoPlan = string.Equals(tipoPlan, "Full", StringComparison.OrdinalIgnoreCase) ? "Full" : "Basico";
         sedesPermitidas = Math.Max(1, sedesPermitidas);
         espaciosPermitidos = Math.Max(1, espaciosPermitidos);
         usuariosPermitidos = Math.Max(1, usuariosPermitidos);
         var ok = await spService.PlataformaNegocioActualizarLimitesAsync(
             negocioId,
+            tipoPlan,
             sedesPermitidas,
             espaciosPermitidos,
             usuariosPermitidos,

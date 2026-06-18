@@ -69,6 +69,7 @@ public class MiSuscripcionController(
             PuedeEditar = baseVm.PuedeEditar,
             PuedeEliminar = baseVm.PuedeEliminar,
             Suscripcion = suscripcion,
+            TipoPlan = limites.TipoPlan,
             ContactoPlataformaEmail = contactoEmail,
             ContactoPlataformaTelefono = contactoTelefono,
             FechaVencimiento = fechaVencimiento,

@@ -66,6 +66,37 @@ public sealed class CuentaAdministradoraRepository(IDbConnectionFactory connecti
         };
     }
 
+    public async Task<RegistroEmpresaCuentaAdministradoraResult> RegistrarEmpresaCuentaAsync(RegistroEmpresaCuentaAdministradoraRequest request, CancellationToken cancellationToken = default)
+    {
+        await using var connection = connectionFactory.CreateConnection();
+        await using var command = new SqlCommand("dbo.usp_SEG_RegistrarEmpresaCuentaAdministradora", connection)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        command.Parameters.AddWithValue("@IdCuentaAdministradora", request.IdCuentaAdministradora);
+        command.Parameters.AddWithValue("@AspNetUserId", request.AspNetUserId);
+        command.Parameters.AddWithValue("@CodigoEmpresa", request.CodigoEmpresa);
+        command.Parameters.AddWithValue("@RazonSocial", request.RazonSocial);
+        command.Parameters.AddWithValue("@NombreComercial", (object?)request.NombreComercial ?? DBNull.Value);
+        command.Parameters.AddWithValue("@Ruc", request.Ruc);
+        command.Parameters.AddWithValue("@EsEmpresaPredeterminada", request.EsEmpresaPredeterminada);
+        command.Parameters.AddWithValue("@UsuarioRegistro", (object?)request.UsuarioRegistro ?? DBNull.Value);
+
+        await connection.OpenAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            throw new InvalidOperationException("No se pudo obtener la empresa registrada.");
+        }
+
+        return new RegistroEmpresaCuentaAdministradoraResult
+        {
+            IdEmpresa = reader.GetInt32(reader.GetOrdinal("IdEmpresa"))
+        };
+    }
+
     public async Task<IReadOnlyCollection<CuentaSuscripcionResumenDto>> ListarCuentasSuscripcionAsync(CancellationToken cancellationToken = default)
     {
         var result = new List<CuentaSuscripcionResumenDto>();

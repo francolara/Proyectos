@@ -7,6 +7,7 @@ GO
 -- Firma: Codex - 13/04/2026 | Agrega LogoUrl para imagen del logo del negocio.
 -- Firma: Codex - 16/04/2026 | Agrega limites operativos (Sedes/Espacios) y flags de reserva (edicion de precio/cancelacion automatica por no confirmacion).
 -- Firma: Codex - 19/04/2026 | Agrega UsuariosPermitidos como limite operativo adicional para gestion de usuarios por negocio.
+-- Firma: FRANCO LARA - 18/06/2026 | Agrega TipoPlan en Negocios para distinguir capacidades Basico y Full.
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -32,6 +33,7 @@ CREATE TABLE [dbo].[Negocios](
     [PermitirModificarPrecioReserva] [bit] NOT NULL,
     [CancelacionAutomaticaNoConfirmada] [bit] NOT NULL,
     [MinutosCancelacionNoConfirmada] [int] NULL,
+    [TipoPlan] [nvarchar](20) NOT NULL,
     [SedesPermitidas] [int] NOT NULL,
     [EspaciosPermitidos] [int] NOT NULL,
     [UsuariosPermitidos] [int] NOT NULL,
@@ -54,6 +56,8 @@ GO
 ALTER TABLE [dbo].[Negocios] ADD  CONSTRAINT [DF_Negocios_PermitirModificarPrecioReserva]  DEFAULT ((0)) FOR [PermitirModificarPrecioReserva]
 GO
 ALTER TABLE [dbo].[Negocios] ADD  CONSTRAINT [DF_Negocios_CancelacionAutomaticaNoConfirmada]  DEFAULT ((0)) FOR [CancelacionAutomaticaNoConfirmada]
+GO
+ALTER TABLE [dbo].[Negocios] ADD  CONSTRAINT [DF_Negocios_TipoPlan]  DEFAULT (N'Basico') FOR [TipoPlan]
 GO
 ALTER TABLE [dbo].[Negocios] ADD  CONSTRAINT [DF_Negocios_SedesPermitidas]  DEFAULT ((2)) FOR [SedesPermitidas]
 GO

@@ -1,0 +1,157 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.ConfiguracionContabilizacionIndexViewModel
+
+@{
+    ViewData["Title"] = "Configuracion contable";
+    ViewData["AdminShell"] = true;
+    var paginaInicio = Math.Max(1, Model.Paginacion.PaginaActual - 2);
+    var paginaFin = Math.Min(Model.Paginacion.TotalPaginas, Model.Paginacion.PaginaActual + 2);
+}
+
+<section class="dashboard-shell">
+    <div class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">Mantenimiento contable</span>
+            <h1>Configuracion de compras y ventas</h1>
+            <p>Define la estructura del asiento automatico segun modulo y escenario, por ejemplo mercaderia, gasto o servicio.</p>
+        </div>
+        <div class="dashboard-status-card">
+            <strong>@Model.EmpresaNombre</strong>
+            <span>Base parametrica para compras y ventas automaticas.</span>
+            <small>Total filtrado: @Model.Paginacion.TotalRegistros</small>
+        </div>
+    </div>
+
+    <section class="dashboard-metrics">
+        <article class="dashboard-metric-card">
+            <span>Total configuraciones</span>
+            <strong>@Model.TotalConfiguraciones</strong>
+            <small>Estructuras filtradas para la consulta actual.</small>
+        </article>
+        <article class="dashboard-metric-card">
+            <span>Configuraciones activas</span>
+            <strong>@Model.TotalActivas</strong>
+            <small>Registros activos visibles en la pagina.</small>
+        </article>
+        <article class="dashboard-metric-card">
+            <span>Automaticas</span>
+            <strong>@Model.TotalAutomaticas</strong>
+            <small>Escenarios listos para generar asiento directo.</small>
+        </article>
+    </section>
+
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Resumen</span>
+                <h1>Configuraciones registradas</h1>
+                <p>Consulta los escenarios contables y abre la edicion desde la misma grilla.</p>
+            </div>
+            <div class="workspace-row-actions">
+                <a asp-action="Registrar" class="btn btn-light btn-sm">Registrar configuracion</a>
+            </div>
+        </div>
+        <div class="workspace-window-body">
+            @if (TempData["ConfiguracionContabilizacionOk"] is string ok)
+            {
+                <div class="alert alert-success">@ok</div>
+            }
+
+            <form asp-action="Index" method="get" class="workspace-filter-card">
+                <div class="workspace-filter-grid">
+                    <div class="workspace-field workspace-field-span-2">
+                        <label class="form-label" for="textoBusqueda">Buscar configuracion</label>
+                        <input id="textoBusqueda" name="textoBusqueda" value="@Model.TextoBusqueda" class="form-control" placeholder="Modulo, escenario, origen o descripcion" />
+                    </div>
+                </div>
+                <div class="workspace-actions">
+                    <button type="submit" class="btn btn-primary">Consultar</button>
+                </div>
+            </form>
+
+            <div class="table-responsive workspace-table-wrap">
+                <table class="table align-middle app-table workspace-table">
+                    <thead>
+                        <tr>
+                            <th>Modulo</th>
+                            <th>Escenario</th>
+                            <th>Origen</th>
+                            <th>Descripcion</th>
+                            <th>Componentes</th>
+                            <th>Automatico</th>
+                            <th>Estado</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Configuraciones.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="8">
+                                    <div class="app-empty-state app-empty-state-inline">
+                                        <i class="bi bi-sliders2"></i>
+                                        <div>
+                                            <strong>No hay configuraciones para la consulta actual</strong>
+                                            <p>Ajusta los filtros o registra la primera estructura de contabilizacion automatica.</p>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var configuracion in Model.Configuraciones)
+                            {
+                                <tr class="workspace-clickable-row" data-edit-url="@Url.Action("Editar", new { idConfiguracionContabilizacion = configuracion.IdConfiguracionContabilizacion })">
+                                    <td>@(configuracion.ModuloOperacion == "COM" ? "Compras" : "Ventas")</td>
+                                    <td>@configuracion.EscenarioOperacion</td>
+                                    <td>@configuracion.CodigoOrigen - @configuracion.NombreOrigen</td>
+                                    <td>@configuracion.Descripcion</td>
+                                    <td>@configuracion.CantidadComponentes</td>
+                                    <td>@(configuracion.GeneraAsientoAutomatico ? "Si" : "No")</td>
+                                    <td>
+                                        <span class="workspace-status-badge @(configuracion.Activo ? "is-active" : "is-inactive")">
+                                            @(configuracion.Activo ? "Activa" : "Inactiva")
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="workspace-row-actions justify-content-end">
+                                            <a asp-action="Editar" asp-route-idConfiguracionContabilizacion="@configuracion.IdConfiguracionContabilizacion" class="workspace-row-link">Editar</a>
+                                            <form asp-action="Eliminar" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="idConfiguracionContabilizacion" value="@configuracion.IdConfiguracionContabilizacion" />
+                                                <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Se eliminara la configuracion seleccionada. Desea continuar?');">Eliminar</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.Paginacion.TotalPaginas > 1)
+            {
+                <nav class="workspace-pagination" aria-label="Paginacion configuracion contable">
+                    <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaAnterior ? string.Empty : "disabled")"
+                       asp-action="Index"
+                       asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-pagina="@(Model.Paginacion.PaginaActual - 1)">Anterior</a>
+
+                    @for (var pagina = paginaInicio; pagina <= paginaFin; pagina++)
+                    {
+                        <a class="btn @(pagina == Model.Paginacion.PaginaActual ? "btn-primary" : "btn-outline-secondary")"
+                           asp-action="Index"
+                           asp-route-textoBusqueda="@Model.TextoBusqueda"
+                           asp-route-pagina="@pagina">@pagina</a>
+                    }
+
+                    <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaSiguiente ? string.Empty : "disabled")"
+                       asp-action="Index"
+                       asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-pagina="@(Model.Paginacion.PaginaActual + 1)">Siguiente</a>
+                </nav>
+            }
+        </div>
+    </section>
+</section>

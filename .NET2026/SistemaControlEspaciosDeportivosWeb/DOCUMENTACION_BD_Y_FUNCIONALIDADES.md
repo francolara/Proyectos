@@ -187,7 +187,10 @@
 - `Sp_Pagos_Eliminar`
 - `Sp_Pagos_Actualizar` y `Sp_Pagos_Eliminar` devuelven error si no existe el pago para el negocio (evita falso positivo en C#).
 - Actualizacion 13/04/2026:
-  - `Sp_Pagos_Listar` agrega rango opcional `@FechaDesde/@FechaHasta` (fecha de reserva) para filtros rapidos en UI.
+  - `Sp_Pagos_Listar` agrega rango opcional `@FechaDesde/@FechaHasta` para filtros rapidos en UI.
+- Actualizacion 18/06/2026:
+  - `Sp_Pagos_Listar` cambia el rango `@FechaDesde/@FechaHasta` para filtrar por `Pagos.FechaPago` en lugar de `Reservas.Fecha`.
+  - El listado de `Pagos` muestra la ultima fecha de pago registrada por reserva dentro del resumen agrupado.
 - `Sp_Comprobantes_Listar`
 - `Sp_Comprobantes_Listar` incluye filtro opcional por `CodigoDocumento` (tipo de documento SUNAT del comprobante) para listar por negocio segun tipos configurados en maestros.
 - Actualizacion 13/04/2026:
@@ -255,12 +258,19 @@
 - `Sp_Seguridad_SeedModulosPermisosBase` (agrega modulo `REPORTES`)
 - `Sp_Reportes_OcupacionPorEspacio`
 - `Sp_Reportes_IngresosPorDia`
+- `Sp_Reportes_ReservasPorDia`
 - `Sp_Reportes_ResumenOperativo`
+- `Sp_Reportes_ResumenCobranza`
 - Actualizacion 13/04/2026:
   - `Sp_Reportes_OcupacionPorEspacio` expone `SedeId` y `EspacioDeportivoId` para drill-down desde UI de reportes.
   - `Sp_Reportes_ResumenOperativo` resume estados de reserva, monto reservado/cobrado y saldo pendiente por rango/sede.
   - KPI de reportes excluye reservas canceladas (`Estado = 5`) en `TotalReservas`, `MontoReservado`, `MontoCobrado`, `SaldoPendiente` y en `Sp_Reportes_IngresosPorDia` (conteo/ingresos por dia).
   - UI de reportes agrega `Exportar Excel (.xlsx)` con hojas separadas `Resumen`, `Ocupacion` e `Ingresos` y columnas de analitica (ticket/cobranza).
+- Actualizacion 18/06/2026:
+  - `Sp_Reportes_IngresosPorDia` pasa a agrupar por `Pagos.FechaPago`, por lo que los cobros adelantados o parciales ahora impactan el dia real de cobranza.
+  - Se crea `Sp_Reportes_ReservasPorDia` para mantener la lectura operativa por `Reservas.Fecha` sin mezclarla con caja.
+  - Se crea `Sp_Reportes_ResumenCobranza` para calcular `CantidadPagos`, `ReservasCobradas` y `MontoCobrado` por rango de pago.
+  - La vista `Reportes` y el `Dashboard` separan visualmente `Cobranza` y `Operacion`; los accesos del bloque de cobros redirigen a `Pagos`, mientras que los operativos siguen redirigiendo a `Reservas`.
 
 ### 10_Home_Solicitudes_Publicas.sql
 - Tabla:
@@ -275,6 +285,8 @@
   - `Sp_Reservas_Crear` incorpora `@ReservaId OUTPUT` y mantiene el `SELECT @Id` para compatibilidad con flujos existentes.
   - `Sp_Notificaciones_Crear` incorpora `@DevolverResultado` (default `1`) para permitir ejecucion sin resultset en flujos internos.
   - Con esto se elimina el error `Cannot use the ROLLBACK statement within an INSERT-EXEC statement` y `ReservasUsuariosPublicos.ReservaId` mantiene el Id real de `Reservas`.
+- Actualizacion 18/06/2026:
+  - La reserva publica exige `Telefono` obligatorio antes de confirmar el registro desde `Home/Reservar`.
 
 ### 11_Solicitudes_Gestion.sql
 - `Sp_Seguridad_SeedModulosPermisosBase` (agrega modulo `SOLICITUDES`)
@@ -483,6 +495,8 @@
   - crea `Negocio`
   - crea primera `Sede`
   - intenta vincular usuario existente por correo como `RolNegocio = 1`
+- Actualizacion 18/06/2026:
+  - `Sp_AltasClubes_Aprobar` crea el negocio con `TipoPlan = Basico` por defecto.
 
 ### 22_Registro_Club_Prueba.sql
 - Tabla:
@@ -523,6 +537,10 @@
     - `Sp_NegociosSuscripcionPago_ListarPorNegocio`
   - Los tipos iniciales soportados son: `EFECTIVO`, `TRANSFERENCIA`, `YAPE`, `PLIN`, `LINK_PAGO` y `PASARELA`.
   - Los estados iniciales soportados son: `PENDIENTE`, `PAGADO`, `OBSERVADO` y `ANULADO`.
+- Actualizacion 18/06/2026:
+  - `Negocios` incorpora `TipoPlan` con valores `Basico` y `Full`.
+  - `Sp_Plataforma_Negocios_Listar` y `Sp_Plataforma_Negocios_ActualizarLimites` exponen y permiten mantener `TipoPlan` junto a los limites operativos.
+  - En plan `Basico` se restringen `Promociones`, `Cupones` y `Comprobantes`; la ruta dirige al negocio a migrar desde `Mi suscripcion`.
 
 ### 24_Sedes_Horario_NoLaborable.sql
 - Tablas:
@@ -610,7 +628,9 @@
   - `Sp_Comprobantes_Listar`
   - `Sp_Reportes_OcupacionPorEspacio`
   - `Sp_Reportes_IngresosPorDia`
+  - `Sp_Reportes_ReservasPorDia`
   - `Sp_Reportes_ResumenOperativo`
+  - `Sp_Reportes_ResumenCobranza`
   - `Sp_Panel_ObtenerMetricas`
   - `Sp_Promociones_Listar`
 - Regla funcional:
@@ -898,6 +918,7 @@
 33. Ejecutar `33_Reservas_Historial_Recordatorio.sql`.
 34. Ejecutar `34_Clientes_NombreEquipo_Reservas.sql`.
 35. Ejecutar `35_Maestros_FormasPago.sql`.
+36. Ejecutar `20260618_Negocios_TipoPlan.sql`.
 36. Ejecutar `36_Maestros_PorNegocio_MonedasSuper.sql`.
 37. Ejecutar `37_Sedes_Ubicacion_Fotos.sql`.
 38. Ejecutar `EXEC dbo.Sp_Seguridad_SeedModulosPermisosBase;` una vez.

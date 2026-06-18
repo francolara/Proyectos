@@ -14,7 +14,11 @@ public class ReportesIndexViewModel : ModuloBaseViewModel
     public List<SelectListItem> SedesFiltro { get; set; } = new();
     public ReporteResumenOperativoViewModel ResumenActual { get; set; } = new();
     public ReporteResumenOperativoViewModel ResumenAnterior { get; set; } = new();
+    public ReporteResumenCobranzaViewModel CobranzaActual { get; set; } = new();
+    public ReporteResumenCobranzaViewModel CobranzaAnterior { get; set; } = new();
     public List<ReporteOcupacionItemViewModel> Ocupacion { get; set; } = new();
+    public List<ReporteReservaDiaItemViewModel> ReservasPorDia { get; set; } = new();
+    public List<ReporteReservaDiaItemViewModel> ReservasPeriodoAnterior { get; set; } = new();
     public List<ReporteIngresoDiaItemViewModel> Ingresos { get; set; } = new();
     public List<ReporteIngresoDiaItemViewModel> IngresosPeriodoAnterior { get; set; } = new();
 }
@@ -38,6 +42,13 @@ public class ReporteIngresoDiaItemViewModel
     public decimal Ingresos { get; set; }
 }
 
+public class ReporteReservaDiaItemViewModel
+{
+    public DateOnly Fecha { get; set; }
+    public int CantidadReservas { get; set; }
+    public decimal MontoReservado { get; set; }
+}
+
 public class ReporteResumenOperativoViewModel
 {
     public int TotalReservas { get; set; }
@@ -49,4 +60,11 @@ public class ReporteResumenOperativoViewModel
     public decimal MontoReservado { get; set; }
     public decimal MontoCobrado { get; set; }
     public decimal SaldoPendiente { get; set; }
+}
+
+public class ReporteResumenCobranzaViewModel
+{
+    public int CantidadPagos { get; set; }
+    public int ReservasCobradas { get; set; }
+    public decimal MontoCobrado { get; set; }
 }

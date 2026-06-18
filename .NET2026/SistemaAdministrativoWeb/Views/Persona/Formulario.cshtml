@@ -1,0 +1,177 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.PersonaIndexViewModel
+
+@{
+    ViewData["Title"] = Model.Formulario.IdPersona.HasValue ? "Editar persona" : "Registrar persona";
+    ViewData["AdminShell"] = true;
+}
+
+<section class="dashboard-shell">
+    <div class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">Mantenimiento administrativo</span>
+            <h1>@ViewData["Title"]</h1>
+            <p>Define el auxiliar por empresa, su tipo documental SUNAT, ubicacion y relacion operativa con compras o ventas.</p>
+        </div>
+        <div class="dashboard-status-card">
+            <strong>@Model.EmpresaNombre</strong>
+            <span>Contexto activo para el registro aislado de personas.</span>
+            <small>Empresa #@Model.IdEmpresa</small>
+        </div>
+    </div>
+
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Formulario</span>
+                <h1>@ViewData["Title"]</h1>
+                <p>Si marcas cliente o proveedor, el sistema generara o reactivara automaticamente su maestro operativo.</p>
+            </div>
+            <div class="workspace-window-badge">
+                <strong>@(Model.Formulario.IdPersona.HasValue ? "Edicion" : "Nuevo")</strong>
+                <span>@(Model.Formulario.IdPersona.HasValue ? "actualizacion del auxiliar" : "alta de tercero")</span>
+            </div>
+        </div>
+
+        <div class="workspace-window-body">
+            <form asp-action="Guardar"
+                  method="post"
+                  data-persona-form="true"
+                  data-provincias-url="@Url.Action("Provincias")"
+                  data-distritos-url="@Url.Action("Distritos")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Formulario.IdPersona" />
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="workspace-form-grid">
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.TipoPersona" class="form-label">Tipo de persona</label>
+                        <select asp-for="Formulario.TipoPersona" class="form-select" data-persona-tipo>
+                            @foreach (var item in Model.TiposPersona)
+                            {
+                                <option value="@item.Valor">@item.Texto</option>
+                            }
+                        </select>
+                        <span asp-validation-for="Formulario.TipoPersona" class="text-danger"></span>
+                    </div>
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.TipoDocumento" class="form-label">Tipo de documento</label>
+                        <select asp-for="Formulario.TipoDocumento" class="form-select">
+                            <option value="">Seleccione</option>
+                            @foreach (var item in Model.TiposDocumento)
+                            {
+                                <option value="@item.Valor">@item.Texto</option>
+                            }
+                        </select>
+                        <span asp-validation-for="Formulario.TipoDocumento" class="text-danger"></span>
+                    </div>
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.NumeroDocumento" class="form-label">Numero de documento</label>
+                        <input asp-for="Formulario.NumeroDocumento" class="form-control" />
+                        <span asp-validation-for="Formulario.NumeroDocumento" class="text-danger"></span>
+                    </div>
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.CorreoElectronico" class="form-label">Correo electronico</label>
+                        <input asp-for="Formulario.CorreoElectronico" class="form-control" />
+                        <span asp-validation-for="Formulario.CorreoElectronico" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="workspace-form-grid persona-type-grid" data-persona-natural-section>
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.ApellidoPaterno" class="form-label">Apellido paterno</label>
+                        <input asp-for="Formulario.ApellidoPaterno" class="form-control" />
+                        <span asp-validation-for="Formulario.ApellidoPaterno" class="text-danger"></span>
+                    </div>
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.ApellidoMaterno" class="form-label">Apellido materno</label>
+                        <input asp-for="Formulario.ApellidoMaterno" class="form-control" />
+                        <span asp-validation-for="Formulario.ApellidoMaterno" class="text-danger"></span>
+                    </div>
+                    <div class="workspace-field workspace-field-span-2">
+                        <label asp-for="Formulario.Nombres" class="form-label">Nombres</label>
+                        <input asp-for="Formulario.Nombres" class="form-control" />
+                        <span asp-validation-for="Formulario.Nombres" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="workspace-form-grid persona-type-grid" data-persona-juridica-section>
+                    <div class="workspace-field workspace-field-span-2">
+                        <label asp-for="Formulario.RazonSocial" class="form-label">Razon social</label>
+                        <input asp-for="Formulario.RazonSocial" class="form-control" />
+                        <span asp-validation-for="Formulario.RazonSocial" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="workspace-form-grid">
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.Telefono" class="form-label">Telefono</label>
+                        <input asp-for="Formulario.Telefono" class="form-control" />
+                        <span asp-validation-for="Formulario.Telefono" class="text-danger"></span>
+                    </div>
+                    <div class="workspace-field workspace-field-span-2">
+                        <label asp-for="Formulario.Direccion" class="form-label">Direccion</label>
+                        <input asp-for="Formulario.Direccion" class="form-control" />
+                        <span asp-validation-for="Formulario.Direccion" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="workspace-form-grid">
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.CodigoDepartamento" class="form-label">Departamento</label>
+                        <select asp-for="Formulario.CodigoDepartamento" class="form-select" data-ubigeo-departamento>
+                            <option value="">Seleccione</option>
+                            @foreach (var item in Model.Departamentos)
+                            {
+                                <option value="@item.Valor">@item.Texto</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.CodigoProvincia" class="form-label">Provincia</label>
+                        <select asp-for="Formulario.CodigoProvincia" class="form-select" data-ubigeo-provincia>
+                            <option value="">Seleccione</option>
+                            @foreach (var item in Model.Provincias)
+                            {
+                                <option value="@item.Valor">@item.Texto</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.CodigoUbigeo" class="form-label">Distrito</label>
+                        <select asp-for="Formulario.CodigoUbigeo" class="form-select" data-ubigeo-distrito>
+                            <option value="">Seleccione</option>
+                            @foreach (var item in Model.Distritos)
+                            {
+                                <option value="@item.Valor">@item.Texto</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="workspace-check-grid">
+                    <label class="workspace-check">
+                        <input asp-for="Formulario.EsCliente" class="form-check-input" />
+                        <span>Cliente</span>
+                    </label>
+                    <label class="workspace-check">
+                        <input asp-for="Formulario.EsProveedor" class="form-check-input" />
+                        <span>Proveedor</span>
+                    </label>
+                    <label class="workspace-check">
+                        <input asp-for="Formulario.Estado" class="form-check-input" />
+                        <span>Persona activa</span>
+                    </label>
+                </div>
+
+                <div class="workspace-actions">
+                    <button type="submit" class="btn btn-primary">Guardar persona</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </section>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
