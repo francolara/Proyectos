@@ -8,31 +8,18 @@
 }
 
 <section class="dashboard-shell">
-    <div class="dashboard-hero">
-        <div>
-            <span class="dashboard-kicker">Mantenimiento administrativo</span>
-            <h1>Personas</h1>
-            <p>Centraliza clientes, proveedores y terceros por empresa con documento SUNAT y ubigeo detallado.</p>
-        </div>
-        <div class="dashboard-status-card">
-            <strong>@Model.EmpresaNombre</strong>
-            <span>Catalogo aislado por empresa para compras, ventas y maestros auxiliares.</span>
-            <small>Total filtrado: @Model.Paginacion.TotalRegistros</small>
-        </div>
-    </div>
-
     <section class="dashboard-metrics">
-        <article class="dashboard-metric-card">
+        <article class="dashboard-metric-card dashboard-metric-card-count">
             <span>Total personas</span>
             <strong>@Model.TotalPersonas</strong>
             <small>Registros que cumplen el filtro actual.</small>
         </article>
-        <article class="dashboard-metric-card">
+        <article class="dashboard-metric-card dashboard-metric-card-count">
             <span>Clientes visibles</span>
             <strong>@Model.TotalClientes</strong>
             <small>Marcados como cliente dentro de la pagina consultada.</small>
         </article>
-        <article class="dashboard-metric-card">
+        <article class="dashboard-metric-card dashboard-metric-card-count">
             <span>Proveedores visibles</span>
             <strong>@Model.TotalProveedores</strong>
             <small>Marcados como proveedor dentro de la pagina consultada.</small>

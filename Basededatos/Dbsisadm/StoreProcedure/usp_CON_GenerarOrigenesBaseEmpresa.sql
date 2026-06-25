@@ -41,6 +41,7 @@ BEGIN
                     ('COM', N'Compras', N'COMPRAS', 0),
                     ('VEN', N'Ventas', N'VENTAS', 0),
                     ('BAN', N'Bancos', N'TESORERIA', 0),
+                    ('47', N'Aplicaciones N/C', N'CONTABILIDAD', 1),
                     ('CIE', N'Cierre contable', N'CONTABILIDAD', 0)
             ) AS origenBase (CodigoOrigen, NombreOrigen, ModuloOrigen, PermiteRegistroManual)
         ) AS fuente

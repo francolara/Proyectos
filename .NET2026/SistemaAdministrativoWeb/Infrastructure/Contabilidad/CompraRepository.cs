@@ -41,19 +41,26 @@ public sealed class CompraRepository(IDbConnectionFactory connectionFactory) : I
                 FechaContabilizacion = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("FechaContabilizacion"))),
                 Periodo = reader.GetString(reader.GetOrdinal("Periodo")),
                 TipoComprobante = reader.GetString(reader.GetOrdinal("TipoComprobante")),
+                DescripcionTipoComprobante = reader.GetString(reader.GetOrdinal("DescripcionTipoComprobante")),
                 Serie = reader.GetString(reader.GetOrdinal("Serie")),
                 Numero = reader.GetString(reader.GetOrdinal("Numero")),
+                NumeroDocumentoPersona = reader.GetString(reader.GetOrdinal("NumeroDocumentoPersona")),
                 IdMoneda = reader.GetInt32(reader.GetOrdinal("IdMoneda")),
                 CodigoMoneda = reader.GetString(reader.GetOrdinal("CodigoMoneda")),
                 TipoCambio = reader.GetDecimal(reader.GetOrdinal("TipoCambio")),
                 BaseImponible = reader.GetDecimal(reader.GetOrdinal("BaseImponible")),
+                TotalExonerado = reader.GetDecimal(reader.GetOrdinal("TotalExonerado")),
+                TotalInafecto = reader.GetDecimal(reader.GetOrdinal("TotalInafecto")),
+                Icbper = reader.GetDecimal(reader.GetOrdinal("Icbper")),
                 Igv = reader.GetDecimal(reader.GetOrdinal("Igv")),
                 Isc = reader.GetDecimal(reader.GetOrdinal("Isc")),
                 OtrosTributos = reader.GetDecimal(reader.GetOrdinal("OtrosTributos")),
                 Redondeo = reader.GetDecimal(reader.GetOrdinal("Redondeo")),
                 ImporteTotal = reader.GetDecimal(reader.GetOrdinal("ImporteTotal")),
+                Saldo = reader.GetDecimal(reader.GetOrdinal("Saldo")),
                 Observacion = reader.IsDBNull(reader.GetOrdinal("Observacion")) ? null : reader.GetString(reader.GetOrdinal("Observacion")),
-                Estado = reader.GetString(reader.GetOrdinal("Estado"))
+                Estado = reader.GetString(reader.GetOrdinal("Estado")),
+                Situacion = reader.GetString(reader.GetOrdinal("Situacion"))
             });
         }
 
@@ -130,17 +137,23 @@ public sealed class CompraRepository(IDbConnectionFactory connectionFactory) : I
                 FechaEmision = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("FechaEmision"))),
                 FechaContabilizacion = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("FechaContabilizacion"))),
                 TipoComprobante = reader.GetString(reader.GetOrdinal("TipoComprobante")),
+                DescripcionTipoComprobante = reader.GetString(reader.GetOrdinal("DescripcionTipoComprobante")),
                 Serie = reader.GetString(reader.GetOrdinal("Serie")),
                 Numero = reader.GetString(reader.GetOrdinal("Numero")),
+                NumeroDocumentoPersona = reader.GetString(reader.GetOrdinal("NumeroDocumentoPersona")),
                 IdMoneda = reader.GetInt32(reader.GetOrdinal("IdMoneda")),
                 CodigoMoneda = reader.GetString(reader.GetOrdinal("CodigoMoneda")),
                 TipoCambio = reader.GetDecimal(reader.GetOrdinal("TipoCambio")),
                 BaseImponible = reader.GetDecimal(reader.GetOrdinal("BaseImponible")),
+                TotalExonerado = reader.GetDecimal(reader.GetOrdinal("TotalExonerado")),
+                TotalInafecto = reader.GetDecimal(reader.GetOrdinal("TotalInafecto")),
+                Icbper = reader.GetDecimal(reader.GetOrdinal("Icbper")),
                 Igv = reader.GetDecimal(reader.GetOrdinal("Igv")),
                 Isc = reader.GetDecimal(reader.GetOrdinal("Isc")),
                 OtrosTributos = reader.GetDecimal(reader.GetOrdinal("OtrosTributos")),
                 Redondeo = reader.GetDecimal(reader.GetOrdinal("Redondeo")),
                 ImporteTotal = reader.GetDecimal(reader.GetOrdinal("ImporteTotal")),
+                Saldo = reader.GetDecimal(reader.GetOrdinal("Saldo")),
                 Observacion = reader.IsDBNull(reader.GetOrdinal("Observacion")) ? null : reader.GetString(reader.GetOrdinal("Observacion")),
                 Estado = reader.GetString(reader.GetOrdinal("Estado"))
             };
@@ -160,6 +173,12 @@ public sealed class CompraRepository(IDbConnectionFactory connectionFactory) : I
                     IdCompraDetalle = reader.GetInt32(reader.GetOrdinal("IdCompraDetalle")),
                     IdCompra = reader.GetInt32(reader.GetOrdinal("IdCompra")),
                     Item = reader.GetInt16(reader.GetOrdinal("Item")),
+                    IdPlanCuenta = reader.GetInt32(reader.GetOrdinal("IdPlanCuenta")),
+                    CodigoCuenta = reader.GetString(reader.GetOrdinal("CodigoCuenta")),
+                    NombreCuenta = reader.GetString(reader.GetOrdinal("NombreCuenta")),
+                    IdTipoAfectacionIGV = reader.GetInt32(reader.GetOrdinal("IdTipoAfectacionIGV")),
+                    CodigoAfectacionIGV = reader.GetString(reader.GetOrdinal("CodigoAfectacionIGV")),
+                    NombreAfectacionIGV = reader.GetString(reader.GetOrdinal("NombreAfectacionIGV")),
                     Descripcion = reader.GetString(reader.GetOrdinal("Descripcion")),
                     Cantidad = reader.GetDecimal(reader.GetOrdinal("Cantidad")),
                     ValorUnitario = reader.GetDecimal(reader.GetOrdinal("ValorUnitario")),
@@ -191,6 +210,9 @@ public sealed class CompraRepository(IDbConnectionFactory connectionFactory) : I
         command.Parameters.AddWithValue("@IdMoneda", request.IdMoneda);
         command.Parameters.AddWithValue("@TipoCambio", request.TipoCambio);
         command.Parameters.AddWithValue("@BaseImponible", request.BaseImponible);
+        command.Parameters.AddWithValue("@TotalExonerado", request.TotalExonerado);
+        command.Parameters.AddWithValue("@TotalInafecto", request.TotalInafecto);
+        command.Parameters.AddWithValue("@Icbper", request.Icbper);
         command.Parameters.AddWithValue("@Igv", request.Igv);
         command.Parameters.AddWithValue("@Isc", request.Isc);
         command.Parameters.AddWithValue("@OtrosTributos", request.OtrosTributos);
@@ -217,6 +239,21 @@ public sealed class CompraRepository(IDbConnectionFactory connectionFactory) : I
         };
     }
 
+    public async Task EliminarAsync(int idCompra, int idEmpresa, CancellationToken cancellationToken = default)
+    {
+        await using var connection = connectionFactory.CreateConnection();
+        await using var command = new SqlCommand("dbo.usp_COM_EliminarCompra", connection)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        command.Parameters.AddWithValue("@IdCompra", idCompra);
+        command.Parameters.AddWithValue("@IdEmpresa", idEmpresa);
+
+        await connection.OpenAsync(cancellationToken);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
     private static CompraResumenDto MapearResumen(SqlDataReader reader)
     {
         return new CompraResumenDto
@@ -234,19 +271,26 @@ public sealed class CompraRepository(IDbConnectionFactory connectionFactory) : I
             FechaContabilizacion = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("FechaContabilizacion"))),
             Periodo = reader.GetString(reader.GetOrdinal("Periodo")),
             TipoComprobante = reader.GetString(reader.GetOrdinal("TipoComprobante")),
+            DescripcionTipoComprobante = reader.GetString(reader.GetOrdinal("DescripcionTipoComprobante")),
             Serie = reader.GetString(reader.GetOrdinal("Serie")),
             Numero = reader.GetString(reader.GetOrdinal("Numero")),
+            NumeroDocumentoPersona = reader.GetString(reader.GetOrdinal("NumeroDocumentoPersona")),
             IdMoneda = reader.GetInt32(reader.GetOrdinal("IdMoneda")),
             CodigoMoneda = reader.GetString(reader.GetOrdinal("CodigoMoneda")),
             TipoCambio = reader.GetDecimal(reader.GetOrdinal("TipoCambio")),
             BaseImponible = reader.GetDecimal(reader.GetOrdinal("BaseImponible")),
+            TotalExonerado = reader.GetDecimal(reader.GetOrdinal("TotalExonerado")),
+            TotalInafecto = reader.GetDecimal(reader.GetOrdinal("TotalInafecto")),
+            Icbper = reader.GetDecimal(reader.GetOrdinal("Icbper")),
             Igv = reader.GetDecimal(reader.GetOrdinal("Igv")),
             Isc = reader.GetDecimal(reader.GetOrdinal("Isc")),
             OtrosTributos = reader.GetDecimal(reader.GetOrdinal("OtrosTributos")),
             Redondeo = reader.GetDecimal(reader.GetOrdinal("Redondeo")),
             ImporteTotal = reader.GetDecimal(reader.GetOrdinal("ImporteTotal")),
+            Saldo = reader.GetDecimal(reader.GetOrdinal("Saldo")),
             Observacion = reader.IsDBNull(reader.GetOrdinal("Observacion")) ? null : reader.GetString(reader.GetOrdinal("Observacion")),
-            Estado = reader.GetString(reader.GetOrdinal("Estado"))
+            Estado = reader.GetString(reader.GetOrdinal("Estado")),
+            Situacion = reader.GetString(reader.GetOrdinal("Situacion"))
         };
     }
 
@@ -255,6 +299,8 @@ public sealed class CompraRepository(IDbConnectionFactory connectionFactory) : I
         var xml = new XElement("Detalles",
             detalles.Select(x => new XElement("Detalle",
                 new XAttribute("Item", x.Item),
+                new XAttribute("IdPlanCuenta", x.IdPlanCuenta),
+                new XAttribute("IdTipoAfectacionIGV", x.IdTipoAfectacionIGV),
                 new XAttribute("Descripcion", x.Descripcion),
                 new XAttribute("Cantidad", x.Cantidad.ToString("0.####", CultureInfo.InvariantCulture)),
                 new XAttribute("ValorUnitario", x.ValorUnitario.ToString("0.######", CultureInfo.InvariantCulture)),

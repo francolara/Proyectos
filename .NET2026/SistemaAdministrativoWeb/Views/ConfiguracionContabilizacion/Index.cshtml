@@ -1,53 +1,42 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.ConfiguracionContabilizacionIndexViewModel
+@using SistemaAdministrativoWeb.ViewModels.Contabilidad
+
+@* =============================================
+   Author:        FRANCO LARA
+   Create date:   18/06/2026
+   Description:   Redisena configuracion contable como vista directa por tabs tipo tarjeta, ayudas modal y subtabs de documentos.
+   ============================================= *@
+
+@* =============================================
+   Author:        FRANCO LARA
+   Create date:   20/06/2026
+   Description:   Mejora subtabs de documentos y unifica configuracion de impuestos en una sola pestaña.
+   ============================================= *@
+
+@* =============================================
+   Author:        FRANCO LARA
+   Create date:   23/06/2026
+   Description:   Ajusta la ayuda de plan de cuentas para configuracion contable, habilita busqueda remota sobre el plan completo, permite ubicar cuentas como 421 que no estan en la carga inicial, unifica los botones de ayuda con iconos de lupa y brocha y consolida la configuracion de provision en una sola tarjeta con operaciones de compras, ventas, egresos, ingresos y aplicaciones NC.
+   ============================================= *@
+@* Firma: FRANCO LARA - 24/06/2026 | Restringe la ayuda popup de cuentas en la vista directa de configuracion contable a cuentas del ultimo nivel y muestra mensaje si se intenta elegir una cuenta intermedia. *@
 
 @{
     ViewData["Title"] = "Configuracion contable";
     ViewData["AdminShell"] = true;
-    var paginaInicio = Math.Max(1, Model.Paginacion.PaginaActual - 2);
-    var paginaFin = Math.Min(Model.Paginacion.TotalPaginas, Model.Paginacion.PaginaActual + 2);
+    var provisiones = Model.Provisiones ?? new List<ConfiguracionProvisionOperacionViewModel>();
 }
 
 <section class="dashboard-shell">
-    <div class="dashboard-hero">
-        <div>
-            <span class="dashboard-kicker">Mantenimiento contable</span>
-            <h1>Configuracion de compras y ventas</h1>
-            <p>Define la estructura del asiento automatico segun modulo y escenario, por ejemplo mercaderia, gasto o servicio.</p>
-        </div>
-        <div class="dashboard-status-card">
-            <strong>@Model.EmpresaNombre</strong>
-            <span>Base parametrica para compras y ventas automaticas.</span>
-            <small>Total filtrado: @Model.Paginacion.TotalRegistros</small>
-        </div>
-    </div>
-
-    <section class="dashboard-metrics">
-        <article class="dashboard-metric-card">
-            <span>Total configuraciones</span>
-            <strong>@Model.TotalConfiguraciones</strong>
-            <small>Estructuras filtradas para la consulta actual.</small>
-        </article>
-        <article class="dashboard-metric-card">
-            <span>Configuraciones activas</span>
-            <strong>@Model.TotalActivas</strong>
-            <small>Registros activos visibles en la pagina.</small>
-        </article>
-        <article class="dashboard-metric-card">
-            <span>Automaticas</span>
-            <strong>@Model.TotalAutomaticas</strong>
-            <small>Escenarios listos para generar asiento directo.</small>
-        </article>
-    </section>
-
     <section class="workspace-window">
         <div class="workspace-window-head">
             <div>
-                <span class="workspace-window-kicker">Resumen</span>
-                <h1>Configuraciones registradas</h1>
-                <p>Consulta los escenarios contables y abre la edicion desde la misma grilla.</p>
+                <span class="workspace-window-kicker">Parametros contables</span>
+                <h1>Reglas base por operacion</h1>
+                <p>Define origenes, cuentas por documento y cuentas por impuesto usando ayudas de cuenta contable.</p>
             </div>
-            <div class="workspace-row-actions">
-                <a asp-action="Registrar" class="btn btn-light btn-sm">Registrar configuracion</a>
+            <div class="workspace-window-badge">
+                <strong>@Model.Documentos.Count</strong>
+                <span>documentos SUNAT</span>
             </div>
         </div>
         <div class="workspace-window-body">
@@ -55,103 +44,644 @@
             {
                 <div class="alert alert-success">@ok</div>
             }
+            @if (TempData["ConfiguracionContabilizacionError"] is string error)
+            {
+                <div class="alert alert-danger">@error</div>
+            }
 
-            <form asp-action="Index" method="get" class="workspace-filter-card">
-                <div class="workspace-filter-grid">
-                    <div class="workspace-field workspace-field-span-2">
-                        <label class="form-label" for="textoBusqueda">Buscar configuracion</label>
-                        <input id="textoBusqueda" name="textoBusqueda" value="@Model.TextoBusqueda" class="form-control" placeholder="Modulo, escenario, origen o descripcion" />
+            <ul class="nav workspace-tabs workspace-card-tabs" id="configuracionContableTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link workspace-tab-card active" id="tab-provision" data-bs-toggle="tab" data-bs-target="#panel-provision" type="button" role="tab">
+                        <span class="workspace-tab-icon"><i class="bi bi-diagram-3"></i></span>
+                        <span class="workspace-tab-copy">
+                            <strong>Provision</strong>
+                            <small>Origenes por tipo de operacion</small>
+                        </span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link workspace-tab-card" id="tab-documento" data-bs-toggle="tab" data-bs-target="#panel-documento" type="button" role="tab">
+                        <span class="workspace-tab-icon"><i class="bi bi-file-earmark-text"></i></span>
+                        <span class="workspace-tab-copy">
+                            <strong>Documento</strong>
+                            <small>Cuentas por comprobante</small>
+                        </span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link workspace-tab-card" id="tab-impuesto" data-bs-toggle="tab" data-bs-target="#panel-impuesto" type="button" role="tab">
+                        <span class="workspace-tab-icon"><i class="bi bi-percent"></i></span>
+                        <span class="workspace-tab-copy">
+                            <strong>Impuesto</strong>
+                            <small>Cuenta tributaria unica</small>
+                        </span>
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content workspace-tab-content">
+                <div class="tab-pane fade show active" id="panel-provision" role="tabpanel" aria-labelledby="tab-provision">
+                    <div class="workspace-section">
+                        <div class="workspace-section-head">
+                            <div>
+                                <span class="workspace-section-kicker">Provision</span>
+                                <h2>Configuracion de origen por provision</h2>
+                                <p>Define el origen contable y estado por tipo de operacion para las provisiones actuales y futuras.</p>
+                            </div>
+                        </div>
+                        <ul class="nav workspace-operation-tabs mt-3" id="provisionOperacionTabs" role="tablist">
+                            @for (var i = 0; i < provisiones.Count; i++)
+                            {
+                                var provision = provisiones[i];
+                                var activeClass = i == 0 ? "active" : string.Empty;
+                                var expanded = i == 0 ? "true" : "false";
+                                var tabId = $"tab-provision-{provision.SufijoHtml}";
+                                var panelId = $"panel-provision-{provision.SufijoHtml}";
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link workspace-operation-tab @activeClass" id="@tabId" data-bs-toggle="tab" data-bs-target="#@panelId" type="button" role="tab" aria-selected="@expanded">
+                                        <span class="workspace-operation-icon"><i class="bi @provision.Icono"></i></span>
+                                        <span class="workspace-operation-copy">
+                                            <strong>@provision.Titulo</strong>
+                                            <small>@provision.Resumen</small>
+                                        </span>
+                                    </button>
+                                </li>
+                            }
+                        </ul>
+                        <div class="tab-content">
+                            @for (var i = 0; i < provisiones.Count; i++)
+                            {
+                                var provision = provisiones[i];
+                                var panelClass = i == 0 ? "tab-pane fade show active" : "tab-pane fade";
+                                var panelId = $"panel-provision-{provision.SufijoHtml}";
+                                var tabId = $"tab-provision-{provision.SufijoHtml}";
+                                var origenInputId = $"provisionOrigen-{provision.SufijoHtml}";
+                                <div class="@panelClass" id="@panelId" role="tabpanel" aria-labelledby="@tabId">
+                                    <form asp-action="GuardarProvision" method="post" class="workspace-window-body">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="ModuloOperacion" value="@provision.Formulario.ModuloOperacion" />
+                                        <div class="workspace-form-grid">
+                                            <div class="workspace-field">
+                                                <label class="form-label" for="@origenInputId">Origen contable</label>
+                                                <input id="@origenInputId" type="hidden" name="IdOrigen" value="@provision.Formulario.IdOrigen" class="js-origen-id" />
+                                                <div class="workspace-lookup-control">
+                                                    <input class="form-control js-origen-texto" value="@provision.Formulario.OrigenTexto" readonly />
+                                                    <button type="button" class="btn btn-outline-secondary workspace-icon-button js-open-origen-modal" title="Buscar origen" aria-label="Buscar origen"><i class="bi bi-search"></i></button>
+                                                    <button type="button" class="btn btn-outline-secondary workspace-icon-button js-clear-origen" title="Limpiar origen" aria-label="Limpiar origen"><i class="bi bi-brush"></i></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="workspace-check-grid">
+                                            <label class="workspace-check">
+                                                <input type="checkbox" name="GeneraAsientoAutomatico" value="true" class="form-check-input" checked="@provision.Formulario.GeneraAsientoAutomatico" />
+                                                <input type="hidden" name="GeneraAsientoAutomatico" value="false" />
+                                                <span>Genera asiento automatico</span>
+                                            </label>
+                                            <label class="workspace-check">
+                                                <input type="checkbox" name="Activo" value="true" class="form-check-input" checked="@provision.Formulario.Activo" />
+                                                <input type="hidden" name="Activo" value="false" />
+                                                <span>Configuracion activa</span>
+                                            </label>
+                                        </div>
+                                        <div class="workspace-actions">
+                                            <button type="submit" class="btn btn-primary">Guardar provision @provision.Titulo.ToLowerInvariant()</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            }
+                        </div>
                     </div>
                 </div>
-                <div class="workspace-actions">
-                    <button type="submit" class="btn btn-primary">Consultar</button>
+                <div class="tab-pane fade" id="panel-documento" role="tabpanel" aria-labelledby="tab-documento">
+                    <div class="workspace-section">
+                        <div class="workspace-section-head">
+                            <div>
+                                <span class="workspace-section-kicker">Documentos</span>
+                                <h2>Configuracion por tipo de comprobante</h2>
+                                <p>Asigna cuentas por comprobante separando la configuracion de ventas y compras.</p>
+                            </div>
+                        </div>
+                        <ul class="nav workspace-operation-tabs mt-3" id="documentoOperacionTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link workspace-operation-tab active" id="tab-documento-ventas" data-bs-toggle="tab" data-bs-target="#panel-documento-ventas" type="button" role="tab">
+                                    <span class="workspace-operation-icon"><i class="bi bi-receipt-cutoff"></i></span>
+                                    <span class="workspace-operation-copy">
+                                        <strong>Ventas</strong>
+                                        <small>Cuentas para comprobantes emitidos</small>
+                                    </span>
+                                    <span class="workspace-operation-count">@Model.Documentos.Count(x => x.UsoVentas)</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link workspace-operation-tab" id="tab-documento-compras" data-bs-toggle="tab" data-bs-target="#panel-documento-compras" type="button" role="tab">
+                                    <span class="workspace-operation-icon"><i class="bi bi-bag-check"></i></span>
+                                    <span class="workspace-operation-copy">
+                                        <strong>Compras</strong>
+                                        <small>Cuentas para comprobantes recibidos</small>
+                                    </span>
+                                    <span class="workspace-operation-count">@Model.Documentos.Count(x => x.UsoCompras)</span>
+                                </button>
+                            </li>
+                        </ul>
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="panel-documento-ventas" role="tabpanel" aria-labelledby="tab-documento-ventas">
+                        <div class="table-responsive workspace-table-wrap">
+                            <table class="table align-middle app-table workspace-table">
+                                <thead>
+                                    <tr>
+                                        <th>Codigo</th>
+                                        <th>Documento</th>
+                                        <th>Cuenta venta soles</th>
+                                        <th>Cuenta venta dolares</th>
+                                        <th>Activo</th>
+                                        <th class="text-end">Accion</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.Documentos.Where(x => x.UsoVentas))
+                                    {
+                                        var documentoFormId = $"documento-venta-form-{item.IdTipoComprobante}";
+                                        <tr>
+                                            <td class="workspace-tree-code">
+                                                <form id="@documentoFormId" asp-action="GuardarDocumento" method="post">
+                                                    @Html.AntiForgeryToken()
+                                                </form>
+                                                <input form="@documentoFormId" type="hidden" name="idTipoComprobante" value="@item.IdTipoComprobante" />
+                                                <input form="@documentoFormId" type="hidden" name="idCuentaCompraSoles" value="@item.IdCuentaCompraSoles" />
+                                                <input form="@documentoFormId" type="hidden" name="idCuentaCompraDolares" value="@item.IdCuentaCompraDolares" />
+                                                @item.CodigoTipoComprobante
+                                            </td>
+                                            <td>@item.Descripcion</td>
+                                                <td>
+                                                    <input form="@documentoFormId" type="hidden" name="idCuentaVentaSoles" value="@item.IdCuentaVentaSoles" class="js-cuenta-id" />
+                                                    <div class="workspace-lookup-control workspace-lookup-control-compact">
+                                                        <input class="form-control js-cuenta-texto" value="@(string.IsNullOrWhiteSpace(item.CuentaVentaSolesTexto) ? "Seleccione cuenta" : item.CuentaVentaSolesTexto)" readonly />
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm workspace-icon-button js-open-cuenta-modal" title="Buscar cuenta" aria-label="Buscar cuenta"><i class="bi bi-search"></i></button>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <input form="@documentoFormId" type="hidden" name="idCuentaVentaDolares" value="@item.IdCuentaVentaDolares" class="js-cuenta-id" />
+                                                    <div class="workspace-lookup-control workspace-lookup-control-compact">
+                                                        <input class="form-control js-cuenta-texto" value="@(string.IsNullOrWhiteSpace(item.CuentaVentaDolaresTexto) ? "Seleccione cuenta" : item.CuentaVentaDolaresTexto)" readonly />
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm workspace-icon-button js-open-cuenta-modal" title="Buscar cuenta" aria-label="Buscar cuenta"><i class="bi bi-search"></i></button>
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <input form="@documentoFormId" type="checkbox" name="activo" value="true" class="form-check-input" checked="@item.Activo" />
+                                                    <input form="@documentoFormId" type="hidden" name="activo" value="false" />
+                                                </td>
+                                                <td class="text-end">
+                                                    <button form="@documentoFormId" type="submit" class="btn btn-primary btn-sm">Guardar</button>
+                                                </td>
+                                        </tr>
+                                    }
+                                    @if (!Model.Documentos.Any(x => x.UsoVentas))
+                                    {
+                                        <tr>
+                                            <td colspan="6">
+                                                <div class="app-empty-state app-empty-state-inline">
+                                                    <i class="bi bi-receipt"></i>
+                                                    <div>
+                                                        <strong>No hay documentos marcados para ventas</strong>
+                                                        <p>Revise el maestro de tipos de comprobante SUNAT.</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                            </div>
+                            <div class="tab-pane fade" id="panel-documento-compras" role="tabpanel" aria-labelledby="tab-documento-compras">
+                        <div class="table-responsive workspace-table-wrap">
+                            <table class="table align-middle app-table workspace-table">
+                                <thead>
+                                    <tr>
+                                        <th>Codigo</th>
+                                        <th>Documento</th>
+                                        <th>Cuenta compra soles</th>
+                                        <th>Cuenta compra dolares</th>
+                                        <th>Activo</th>
+                                        <th class="text-end">Accion</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.Documentos.Where(x => x.UsoCompras))
+                                    {
+                                        var documentoFormId = $"documento-compra-form-{item.IdTipoComprobante}";
+                                        <tr>
+                                            <td class="workspace-tree-code">
+                                                <form id="@documentoFormId" asp-action="GuardarDocumento" method="post">
+                                                    @Html.AntiForgeryToken()
+                                                </form>
+                                                <input form="@documentoFormId" type="hidden" name="idTipoComprobante" value="@item.IdTipoComprobante" />
+                                                <input form="@documentoFormId" type="hidden" name="idCuentaVentaSoles" value="@item.IdCuentaVentaSoles" />
+                                                <input form="@documentoFormId" type="hidden" name="idCuentaVentaDolares" value="@item.IdCuentaVentaDolares" />
+                                                @item.CodigoTipoComprobante
+                                            </td>
+                                            <td>@item.Descripcion</td>
+                                                <td>
+                                                    <input form="@documentoFormId" type="hidden" name="idCuentaCompraSoles" value="@item.IdCuentaCompraSoles" class="js-cuenta-id" />
+                                                    <div class="workspace-lookup-control workspace-lookup-control-compact">
+                                                        <input class="form-control js-cuenta-texto" value="@(string.IsNullOrWhiteSpace(item.CuentaCompraSolesTexto) ? "Seleccione cuenta" : item.CuentaCompraSolesTexto)" readonly />
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm workspace-icon-button js-open-cuenta-modal" title="Buscar cuenta" aria-label="Buscar cuenta"><i class="bi bi-search"></i></button>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <input form="@documentoFormId" type="hidden" name="idCuentaCompraDolares" value="@item.IdCuentaCompraDolares" class="js-cuenta-id" />
+                                                    <div class="workspace-lookup-control workspace-lookup-control-compact">
+                                                        <input class="form-control js-cuenta-texto" value="@(string.IsNullOrWhiteSpace(item.CuentaCompraDolaresTexto) ? "Seleccione cuenta" : item.CuentaCompraDolaresTexto)" readonly />
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm workspace-icon-button js-open-cuenta-modal" title="Buscar cuenta" aria-label="Buscar cuenta"><i class="bi bi-search"></i></button>
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <input form="@documentoFormId" type="checkbox" name="activo" value="true" class="form-check-input" checked="@item.Activo" />
+                                                    <input form="@documentoFormId" type="hidden" name="activo" value="false" />
+                                                </td>
+                                                <td class="text-end">
+                                                    <button form="@documentoFormId" type="submit" class="btn btn-primary btn-sm">Guardar</button>
+                                                </td>
+                                        </tr>
+                                    }
+                                    @if (!Model.Documentos.Any(x => x.UsoCompras))
+                                    {
+                                        <tr>
+                                            <td colspan="6">
+                                                <div class="app-empty-state app-empty-state-inline">
+                                                    <i class="bi bi-receipt"></i>
+                                                    <div>
+                                                        <strong>No hay documentos marcados para compras</strong>
+                                                        <p>Revise el maestro de tipos de comprobante SUNAT.</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </form>
+                <div class="tab-pane fade" id="panel-impuesto" role="tabpanel" aria-labelledby="tab-impuesto">
+                    @await Html.PartialAsync("_ImpuestoContableTab", new ConfiguracionImpuestoTabViewModel { Titulo = "Impuesto", Items = Model.Impuestos })
+                </div>
+            </div>
+        </div>
+    </section>
+</section>
 
-            <div class="table-responsive workspace-table-wrap">
-                <table class="table align-middle app-table workspace-table">
-                    <thead>
-                        <tr>
-                            <th>Modulo</th>
-                            <th>Escenario</th>
-                            <th>Origen</th>
-                            <th>Descripcion</th>
-                            <th>Componentes</th>
-                            <th>Automatico</th>
-                            <th>Estado</th>
-                            <th class="text-end">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (Model.Configuraciones.Count == 0)
-                        {
+<div class="modal fade workspace-modal" id="configOrigenModal" tabindex="-1" aria-labelledby="configOrigenModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content workspace-modal-content">
+            <div class="modal-header workspace-modal-header">
+                <div>
+                    <span class="workspace-window-kicker">Ayuda contable</span>
+                    <h2 class="workspace-modal-title" id="configOrigenModalLabel">Seleccionar origen</h2>
+                    <p class="workspace-modal-subtitle">El origen define el subdiario para la provision automatica de compras o ventas.</p>
+                </div>
+                <button type="button" class="btn-close workspace-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body workspace-modal-body">
+                <div class="workspace-filter-card mt-0">
+                    <div class="workspace-field">
+                        <label class="form-label" for="configOrigenFiltro">Filtro</label>
+                        <input id="configOrigenFiltro" class="form-control" placeholder="Codigo, nombre o modulo de origen" autocomplete="off" />
+                    </div>
+                </div>
+                <div class="table-responsive workspace-table-wrap">
+                    <table class="table align-middle app-table workspace-table workspace-lookup-table">
+                        <thead>
                             <tr>
-                                <td colspan="8">
+                                <th class="workspace-lookup-select-cell">Sel.</th>
+                                <th>Codigo</th>
+                                <th>Origen</th>
+                                <th>Modulo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr data-config-origen-empty-row="true" class="d-none">
+                                <td colspan="4">
                                     <div class="app-empty-state app-empty-state-inline">
-                                        <i class="bi bi-sliders2"></i>
+                                        <i class="bi bi-search"></i>
                                         <div>
-                                            <strong>No hay configuraciones para la consulta actual</strong>
-                                            <p>Ajusta los filtros o registra la primera estructura de contabilizacion automatica.</p>
+                                            <strong>No hay origenes con ese filtro</strong>
+                                            <p>Ajusta el texto para ubicar el origen contable.</p>
                                         </div>
                                     </div>
                                 </td>
                             </tr>
-                        }
-                        else
-                        {
-                            @foreach (var configuracion in Model.Configuraciones)
+                            @foreach (var origen in Model.Origenes)
                             {
-                                <tr class="workspace-clickable-row" data-edit-url="@Url.Action("Editar", new { idConfiguracionContabilizacion = configuracion.IdConfiguracionContabilizacion })">
-                                    <td>@(configuracion.ModuloOperacion == "COM" ? "Compras" : "Ventas")</td>
-                                    <td>@configuracion.EscenarioOperacion</td>
-                                    <td>@configuracion.CodigoOrigen - @configuracion.NombreOrigen</td>
-                                    <td>@configuracion.Descripcion</td>
-                                    <td>@configuracion.CantidadComponentes</td>
-                                    <td>@(configuracion.GeneraAsientoAutomatico ? "Si" : "No")</td>
-                                    <td>
-                                        <span class="workspace-status-badge @(configuracion.Activo ? "is-active" : "is-inactive")">
-                                            @(configuracion.Activo ? "Activa" : "Inactiva")
-                                        </span>
+                                <tr class="workspace-lookup-row"
+                                    data-config-origen-row="true"
+                                    data-id="@origen.IdOrigen"
+                                    data-codigo="@origen.CodigoOrigen"
+                                    data-nombre="@origen.NombreOrigen"
+                                    data-modulo="@origen.ModuloOrigen">
+                                    <td class="workspace-lookup-select-cell">
+                                        <input class="form-check-input" type="radio" name="configOrigenSeleccion" value="@origen.IdOrigen" />
                                     </td>
-                                    <td class="text-end">
-                                        <div class="workspace-row-actions justify-content-end">
-                                            <a asp-action="Editar" asp-route-idConfiguracionContabilizacion="@configuracion.IdConfiguracionContabilizacion" class="workspace-row-link">Editar</a>
-                                            <form asp-action="Eliminar" method="post" class="d-inline">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="idConfiguracionContabilizacion" value="@configuracion.IdConfiguracionContabilizacion" />
-                                                <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Se eliminara la configuracion seleccionada. Desea continuar?');">Eliminar</button>
-                                            </form>
-                                        </div>
-                                    </td>
+                                    <td class="workspace-tree-code">@origen.CodigoOrigen</td>
+                                    <td>@origen.NombreOrigen</td>
+                                    <td>@origen.ModuloOrigen</td>
                                 </tr>
                             }
-                        }
-                    </tbody>
-                </table>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-
-            @if (Model.Paginacion.TotalPaginas > 1)
-            {
-                <nav class="workspace-pagination" aria-label="Paginacion configuracion contable">
-                    <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaAnterior ? string.Empty : "disabled")"
-                       asp-action="Index"
-                       asp-route-textoBusqueda="@Model.TextoBusqueda"
-                       asp-route-pagina="@(Model.Paginacion.PaginaActual - 1)">Anterior</a>
-
-                    @for (var pagina = paginaInicio; pagina <= paginaFin; pagina++)
-                    {
-                        <a class="btn @(pagina == Model.Paginacion.PaginaActual ? "btn-primary" : "btn-outline-secondary")"
-                           asp-action="Index"
-                           asp-route-textoBusqueda="@Model.TextoBusqueda"
-                           asp-route-pagina="@pagina">@pagina</a>
-                    }
-
-                    <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaSiguiente ? string.Empty : "disabled")"
-                       asp-action="Index"
-                       asp-route-textoBusqueda="@Model.TextoBusqueda"
-                       asp-route-pagina="@(Model.Paginacion.PaginaActual + 1)">Siguiente</a>
-                </nav>
-            }
+            <div class="modal-footer workspace-modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="aceptarConfigOrigen">Aceptar</button>
+            </div>
         </div>
-    </section>
-</section>
+    </div>
+</div>
+
+<div class="modal fade workspace-modal" id="configCuentaModal" tabindex="-1" aria-labelledby="configCuentaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content workspace-modal-content">
+            <div class="modal-header workspace-modal-header">
+                <div>
+                    <span class="workspace-window-kicker">Ayuda contable</span>
+                    <h2 class="workspace-modal-title" id="configCuentaModalLabel">Seleccionar cuenta contable</h2>
+                    <p class="workspace-modal-subtitle">Filtra por codigo, nombre o nivel y confirma la cuenta para el campo activo.</p>
+                </div>
+                <button type="button" class="btn-close workspace-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body workspace-modal-body">
+                <div class="workspace-filter-card mt-0">
+                    <div class="workspace-filter-grid">
+                        <div class="workspace-field workspace-field-span-2">
+                            <label class="form-label" for="configCuentaFiltro">Filtro</label>
+                            <input id="configCuentaFiltro" class="form-control" placeholder="Codigo o nombre de cuenta" autocomplete="off" />
+                        </div>
+                        <div class="workspace-field">
+                            <label class="form-label" for="configCuentaNivelFiltro">Nivel</label>
+                            <select id="configCuentaNivelFiltro" class="form-select">
+                                <option value="">Todos</option>
+                                @for (var nivel = 1; nivel <= 5; nivel++)
+                                {
+                                    <option value="@nivel">@nivel</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-responsive workspace-table-wrap">
+                    <table class="table align-middle app-table workspace-table workspace-lookup-table">
+                        <thead>
+                            <tr>
+                                <th class="workspace-lookup-select-cell">Sel.</th>
+                                <th>Codigo</th>
+                                <th>Cuenta</th>
+                                <th>Nivel</th>
+                            </tr>
+                        </thead>
+                        <tbody id="configCuentaResultados">
+                            <tr data-config-cuenta-empty-row="true" class="d-none">
+                                <td colspan="4">
+                                    <div class="app-empty-state app-empty-state-inline">
+                                        <i class="bi bi-search"></i>
+                                        <div>
+                                            <strong>No hay cuentas con ese filtro</strong>
+                                            <p>Ajusta el texto o nivel para ubicar la cuenta contable.</p>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer workspace-modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="aceptarConfigCuenta">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const cuentaModalEl = document.getElementById("configCuentaModal");
+            const cuentaModal = cuentaModalEl && window.bootstrap ? bootstrap.Modal.getOrCreateInstance(cuentaModalEl) : null;
+            const origenModalEl = document.getElementById("configOrigenModal");
+            const origenModal = origenModalEl && window.bootstrap ? bootstrap.Modal.getOrCreateInstance(origenModalEl) : null;
+            const cuentaResultadosBodyEl = document.getElementById("configCuentaResultados");
+            const origenRows = Array.from(document.querySelectorAll("[data-config-origen-row='true']"));
+            const filtro = document.getElementById("configCuentaFiltro");
+            const nivelFiltro = document.getElementById("configCuentaNivelFiltro");
+            const origenFiltro = document.getElementById("configOrigenFiltro");
+            const buscarCuentasUrl = '@Url.Action("BuscarAyuda", "PlanCuenta")';
+            let activeContainer = null;
+            let activeOrigenContainer = null;
+            let selectedRow = null;
+            let selectedOrigenRow = null;
+            let cuentaBusquedaProgramada = null;
+
+            const markSelected = (row) => {
+                const rows = Array.from(cuentaResultadosBodyEl?.querySelectorAll("[data-config-cuenta-row='true']") || []);
+                rows.forEach((item) => {
+                    item.classList.toggle("is-selected", item === row);
+                    const radio = item.querySelector("input[type='radio']");
+                    if (radio) {
+                        radio.checked = item === row;
+                    }
+                });
+                selectedRow = row;
+            };
+
+            const renderCuentaResultados = (items) => {
+                if (!cuentaResultadosBodyEl) {
+                    return;
+                }
+
+                const emptyRow = cuentaResultadosBodyEl.querySelector("[data-config-cuenta-empty-row='true']");
+                cuentaResultadosBodyEl.querySelectorAll("[data-config-cuenta-row='true']").forEach((row) => row.remove());
+                emptyRow?.classList.toggle("d-none", items.length > 0);
+
+                items.forEach((item) => {
+                    const row = document.createElement("tr");
+                    row.className = "workspace-lookup-row";
+                    row.dataset.configCuentaRow = "true";
+                    row.dataset.id = String(item.idPlanCuenta || "");
+                    row.dataset.codigo = String(item.codigoCuenta || "");
+                    row.dataset.nombre = String(item.nombreCuenta || "");
+                    row.dataset.nivel = String(item.nivelCuenta || "");
+                    row.dataset.esUltimoNivel = String(item.esUltimoNivel !== false);
+                    row.innerHTML = `
+                        <td class="workspace-lookup-select-cell">
+                            <input class="form-check-input" type="radio" name="configCuentaSeleccion" value="${String(item.idPlanCuenta || "")}" />
+                        </td>
+                        <td class="workspace-tree-code">${String(item.codigoCuenta || "")}</td>
+                        <td>${String(item.nombreCuenta || "")}</td>
+                        <td>${String(item.nivelCuenta || "")}</td>`;
+                    row.addEventListener("click", () => markSelected(row));
+                    cuentaResultadosBodyEl.appendChild(row);
+                });
+            };
+
+            const cargarCuentasAyuda = async () => {
+                const params = new URLSearchParams({ tamanoPagina: "100", soloMovimiento: "false" });
+                const texto = String(filtro?.value || "").trim();
+                const nivel = String(nivelFiltro?.value || "").trim();
+                if (texto.length >= 2) {
+                    params.append("textoBusqueda", texto);
+                }
+                if (nivel) {
+                    params.append("nivelCuenta", nivel);
+                }
+
+                const response = await fetch(`${buscarCuentasUrl}?${params.toString()}`, { cache: "no-store" });
+                const payload = await response.json();
+                if (!response.ok || !payload.ok) {
+                    throw new Error(payload.mensaje || "No se pudo cargar el plan de cuentas.");
+                }
+
+                renderCuentaResultados(payload.items || []);
+
+                if (activeContainer) {
+                    const currentId = activeContainer.parentElement?.querySelector(".js-cuenta-id")?.value || "";
+                    const currentRow = Array.from(cuentaResultadosBodyEl?.querySelectorAll("[data-config-cuenta-row='true']") || [])
+                        .find((row) => String(row.dataset.id || "") === currentId) || null;
+                    markSelected(currentRow);
+                }
+            };
+
+            const programarBusquedaCuenta = () => {
+                if (cuentaBusquedaProgramada) {
+                    window.clearTimeout(cuentaBusquedaProgramada);
+                }
+
+                cuentaBusquedaProgramada = window.setTimeout(async () => {
+                    try {
+                        await cargarCuentasAyuda();
+                    } catch (error) {
+                        console.warn(error);
+                        renderCuentaResultados([]);
+                        markSelected(null);
+                    }
+                }, 250);
+            };
+
+            const markOrigenSelected = (row) => {
+                origenRows.forEach((item) => {
+                    item.classList.toggle("is-selected", item === row);
+                    const radio = item.querySelector("input[type='radio']");
+                    if (radio) {
+                        radio.checked = item === row;
+                    }
+                });
+                selectedOrigenRow = row;
+            };
+
+            const applyOrigenFilter = () => {
+                const text = String(origenFiltro?.value || "").trim().toLowerCase();
+                const emptyRow = document.querySelector("[data-config-origen-empty-row='true']");
+                let visibleCount = 0;
+
+                origenRows.forEach((row) => {
+                    const search = `${row.dataset.codigo || ""} ${row.dataset.nombre || ""} ${row.dataset.modulo || ""}`.toLowerCase();
+                    const visible = !text || search.includes(text);
+                    row.classList.toggle("d-none", !visible);
+                    if (visible) {
+                        visibleCount += 1;
+                    }
+                });
+
+                emptyRow?.classList.toggle("d-none", visibleCount > 0);
+            };
+
+            document.addEventListener("click", async (event) => {
+                const origenButton = event.target.closest(".js-open-origen-modal");
+                if (origenButton) {
+                    activeOrigenContainer = origenButton.closest(".workspace-lookup-control");
+                    const currentId = activeOrigenContainer?.parentElement?.querySelector(".js-origen-id")?.value || "";
+                    const currentRow = origenRows.find((row) => String(row.dataset.id || "") === currentId) || null;
+                    markOrigenSelected(currentRow);
+                    applyOrigenFilter();
+                    origenModal?.show();
+                    return;
+                }
+
+                const clearOrigenButton = event.target.closest(".js-clear-origen");
+                if (clearOrigenButton) {
+                    const container = clearOrigenButton.closest(".workspace-lookup-control");
+                    const hidden = container?.parentElement?.querySelector(".js-origen-id");
+                    const text = container?.querySelector(".js-origen-texto");
+                    if (hidden) {
+                        hidden.value = "";
+                    }
+                    if (text) {
+                        text.value = "Seleccione origen";
+                    }
+                    markOrigenSelected(null);
+                    return;
+                }
+
+                const button = event.target.closest(".js-open-cuenta-modal");
+                if (!button) {
+                    return;
+                }
+
+                activeContainer = button.closest(".workspace-lookup-control");
+                try {
+                    await cargarCuentasAyuda();
+                } catch (error) {
+                    console.warn(error);
+                    renderCuentaResultados([]);
+                    markSelected(null);
+                }
+                cuentaModal?.show();
+            });
+
+            origenRows.forEach((row) => {
+                row.addEventListener("click", () => markOrigenSelected(row));
+            });
+
+            document.getElementById("aceptarConfigOrigen")?.addEventListener("click", () => {
+                if (activeOrigenContainer && selectedOrigenRow) {
+                    const hidden = activeOrigenContainer.parentElement?.querySelector(".js-origen-id");
+                    const text = activeOrigenContainer.querySelector(".js-origen-texto");
+                    if (hidden) {
+                        hidden.value = selectedOrigenRow.dataset.id || "";
+                    }
+                    if (text) {
+                        text.value = `${selectedOrigenRow.dataset.codigo || ""} - ${selectedOrigenRow.dataset.nombre || ""}`;
+                    }
+                }
+
+                origenModal?.hide();
+            });
+
+            document.getElementById("aceptarConfigCuenta")?.addEventListener("click", () => {
+                if (selectedRow && selectedRow.dataset.nivel !== "5") {
+                    window.alert("Seleccione una cuenta contable de nivel 5.");
+                    return;
+                }
+
+                if (activeContainer && selectedRow) {
+                    const hidden = activeContainer.parentElement?.querySelector(".js-cuenta-id");
+                    const text = activeContainer.querySelector(".js-cuenta-texto");
+                    if (hidden) {
+                        hidden.value = selectedRow.dataset.id || "";
+                    }
+                    if (text) {
+                        text.value = `${selectedRow.dataset.codigo || ""} - ${selectedRow.dataset.nombre || ""}`;
+                    }
+                }
+
+                cuentaModal?.hide();
+            });
+
+            origenFiltro?.addEventListener("input", applyOrigenFilter);
+            filtro?.addEventListener("input", programarBusquedaCuenta);
+            nivelFiltro?.addEventListener("change", programarBusquedaCuenta);
+        })();
+    </script>
+}

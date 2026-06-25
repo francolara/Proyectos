@@ -197,6 +197,128 @@ public sealed class ConfiguracionContabilizacionRepository(IDbConnectionFactory 
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
+    public async Task<ConfiguracionContableEmpresaDto> ObtenerConfiguracionContableEmpresaAsync(int idEmpresa, CancellationToken cancellationToken = default)
+    {
+        var result = new ConfiguracionContableEmpresaDto();
+
+        await using var connection = connectionFactory.CreateConnection();
+        await using var command = new SqlCommand("dbo.usp_CON_ObtenerConfiguracionContableEmpresa", connection)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        command.Parameters.AddWithValue("@IdEmpresa", idEmpresa);
+
+        await connection.OpenAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            result.Provisiones.Add(new ConfiguracionContableProvisionDto
+            {
+                IdConfiguracionContabilizacion = reader.IsDBNull(reader.GetOrdinal("IdConfiguracionContabilizacion")) ? null : reader.GetInt32(reader.GetOrdinal("IdConfiguracionContabilizacion")),
+                ModuloOperacion = reader.GetString(reader.GetOrdinal("ModuloOperacion")),
+                IdOrigen = reader.IsDBNull(reader.GetOrdinal("IdOrigen")) ? null : reader.GetInt32(reader.GetOrdinal("IdOrigen")),
+                CodigoOrigen = reader.GetString(reader.GetOrdinal("CodigoOrigen")),
+                NombreOrigen = reader.GetString(reader.GetOrdinal("NombreOrigen")),
+                GeneraAsientoAutomatico = reader.GetBoolean(reader.GetOrdinal("GeneraAsientoAutomatico")),
+                Activo = reader.GetBoolean(reader.GetOrdinal("Activo"))
+            });
+        }
+
+        if (await reader.NextResultAsync(cancellationToken))
+        {
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                result.Documentos.Add(new ConfiguracionDocumentoEmpresaDto
+                {
+                    IdTipoComprobante = reader.GetInt32(reader.GetOrdinal("IdTipoComprobante")),
+                    CodigoTipoComprobante = reader.GetString(reader.GetOrdinal("CodigoTipoComprobante")),
+                    Descripcion = reader.GetString(reader.GetOrdinal("Descripcion")),
+                    UsoCompras = reader.GetBoolean(reader.GetOrdinal("UsoCompras")),
+                    UsoVentas = reader.GetBoolean(reader.GetOrdinal("UsoVentas")),
+                    IdCuentaVentaSoles = reader.IsDBNull(reader.GetOrdinal("IdCuentaVentaSoles")) ? null : reader.GetInt32(reader.GetOrdinal("IdCuentaVentaSoles")),
+                    CuentaVentaSolesTexto = ConstruirCuentaTexto(reader, "CodigoCuentaVentaSoles", "NombreCuentaVentaSoles"),
+                    IdCuentaVentaDolares = reader.IsDBNull(reader.GetOrdinal("IdCuentaVentaDolares")) ? null : reader.GetInt32(reader.GetOrdinal("IdCuentaVentaDolares")),
+                    CuentaVentaDolaresTexto = ConstruirCuentaTexto(reader, "CodigoCuentaVentaDolares", "NombreCuentaVentaDolares"),
+                    IdCuentaCompraSoles = reader.IsDBNull(reader.GetOrdinal("IdCuentaCompraSoles")) ? null : reader.GetInt32(reader.GetOrdinal("IdCuentaCompraSoles")),
+                    CuentaCompraSolesTexto = ConstruirCuentaTexto(reader, "CodigoCuentaCompraSoles", "NombreCuentaCompraSoles"),
+                    IdCuentaCompraDolares = reader.IsDBNull(reader.GetOrdinal("IdCuentaCompraDolares")) ? null : reader.GetInt32(reader.GetOrdinal("IdCuentaCompraDolares")),
+                    CuentaCompraDolaresTexto = ConstruirCuentaTexto(reader, "CodigoCuentaCompraDolares", "NombreCuentaCompraDolares"),
+                    Activo = reader.GetBoolean(reader.GetOrdinal("Activo"))
+                });
+            }
+        }
+
+        if (await reader.NextResultAsync(cancellationToken))
+        {
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                result.Impuestos.Add(MapearImpuesto(reader));
+            }
+        }
+
+        return result;
+    }
+
+    public async Task GuardarProvisionAsync(int idEmpresa, string moduloOperacion, int idOrigen, bool generaAsientoAutomatico, bool activo, string? usuarioRegistro, CancellationToken cancellationToken = default)
+    {
+        await using var connection = connectionFactory.CreateConnection();
+        await using var command = new SqlCommand("dbo.usp_CON_GuardarProvisionContableEmpresa", connection)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        command.Parameters.AddWithValue("@IdEmpresa", idEmpresa);
+        command.Parameters.AddWithValue("@ModuloOperacion", moduloOperacion);
+        command.Parameters.AddWithValue("@IdOrigen", idOrigen);
+        command.Parameters.AddWithValue("@GeneraAsientoAutomatico", generaAsientoAutomatico);
+        command.Parameters.AddWithValue("@Activo", activo);
+        command.Parameters.AddWithValue("@UsuarioRegistro", (object?)usuarioRegistro ?? DBNull.Value);
+
+        await connection.OpenAsync(cancellationToken);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    public async Task GuardarDocumentoAsync(int idEmpresa, int idTipoComprobante, int? idCuentaVentaSoles, int? idCuentaVentaDolares, int? idCuentaCompraSoles, int? idCuentaCompraDolares, bool activo, string? usuarioRegistro, CancellationToken cancellationToken = default)
+    {
+        await using var connection = connectionFactory.CreateConnection();
+        await using var command = new SqlCommand("dbo.usp_CON_GuardarDocumentoConfiguracionEmpresa", connection)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        command.Parameters.AddWithValue("@IdEmpresa", idEmpresa);
+        command.Parameters.AddWithValue("@IdTipoComprobante", idTipoComprobante);
+        command.Parameters.AddWithValue("@IdCuentaVentaSoles", (object?)idCuentaVentaSoles ?? DBNull.Value);
+        command.Parameters.AddWithValue("@IdCuentaVentaDolares", (object?)idCuentaVentaDolares ?? DBNull.Value);
+        command.Parameters.AddWithValue("@IdCuentaCompraSoles", (object?)idCuentaCompraSoles ?? DBNull.Value);
+        command.Parameters.AddWithValue("@IdCuentaCompraDolares", (object?)idCuentaCompraDolares ?? DBNull.Value);
+        command.Parameters.AddWithValue("@Activo", activo);
+        command.Parameters.AddWithValue("@UsuarioRegistro", (object?)usuarioRegistro ?? DBNull.Value);
+
+        await connection.OpenAsync(cancellationToken);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    public async Task GuardarImpuestoAsync(int idEmpresa, int idTipoImpuesto, int? idPlanCuenta, bool activo, string? usuarioRegistro, CancellationToken cancellationToken = default)
+    {
+        await using var connection = connectionFactory.CreateConnection();
+        await using var command = new SqlCommand("dbo.usp_CON_GuardarImpuestoConfiguracionEmpresa", connection)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        command.Parameters.AddWithValue("@IdEmpresa", idEmpresa);
+        command.Parameters.AddWithValue("@IdTipoImpuesto", idTipoImpuesto);
+        command.Parameters.AddWithValue("@IdPlanCuenta", (object?)idPlanCuenta ?? DBNull.Value);
+        command.Parameters.AddWithValue("@Activo", activo);
+        command.Parameters.AddWithValue("@UsuarioRegistro", (object?)usuarioRegistro ?? DBNull.Value);
+
+        await connection.OpenAsync(cancellationToken);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
     private static string ConstruirDetalleXml(IReadOnlyCollection<GuardarConfiguracionContabilizacionDetalleRequest> detalles)
     {
         var xml = new XElement("Detalles",
@@ -208,5 +330,31 @@ public sealed class ConfiguracionContabilizacionRepository(IDbConnectionFactory 
                 new XAttribute("Activo", x.Activo ? 1 : 0))));
 
         return xml.ToString(SaveOptions.DisableFormatting);
+    }
+
+    private static ConfiguracionImpuestoEmpresaDto MapearImpuesto(SqlDataReader reader)
+    {
+        return new ConfiguracionImpuestoEmpresaDto
+        {
+            IdTipoImpuesto = reader.GetInt32(reader.GetOrdinal("IdTipoImpuesto")),
+            CodigoSunat = reader.GetString(reader.GetOrdinal("CodigoSunat")),
+            NombreImpuesto = reader.GetString(reader.GetOrdinal("NombreImpuesto")),
+            IdPlanCuenta = reader.IsDBNull(reader.GetOrdinal("IdPlanCuenta")) ? null : reader.GetInt32(reader.GetOrdinal("IdPlanCuenta")),
+            CuentaTexto = ConstruirCuentaTexto(reader, "CodigoCuenta", "NombreCuenta"),
+            Activo = reader.GetBoolean(reader.GetOrdinal("Activo"))
+        };
+    }
+
+    private static string ConstruirCuentaTexto(SqlDataReader reader, string codigoColumn, string nombreColumn)
+    {
+        var codigoOrdinal = reader.GetOrdinal(codigoColumn);
+        var nombreOrdinal = reader.GetOrdinal(nombreColumn);
+
+        if (reader.IsDBNull(codigoOrdinal) || reader.IsDBNull(nombreOrdinal))
+        {
+            return string.Empty;
+        }
+
+        return $"{reader.GetString(codigoOrdinal)} - {reader.GetString(nombreOrdinal)}";
     }
 }

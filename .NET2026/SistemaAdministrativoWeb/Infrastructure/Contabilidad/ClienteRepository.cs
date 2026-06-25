@@ -20,6 +20,8 @@ public sealed class ClienteRepository(IDbConnectionFactory connectionFactory) : 
 
         await connection.OpenAsync(cancellationToken);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        var correoOrdinal = GetOrdinalOrNull(reader, "CorreoElectronico");
+        var telefonoOrdinal = GetOrdinalOrNull(reader, "Telefono");
 
         while (await reader.ReadAsync(cancellationToken))
         {
@@ -32,8 +34,8 @@ public sealed class ClienteRepository(IDbConnectionFactory connectionFactory) : 
                 TipoDocumento = reader.GetString(reader.GetOrdinal("TipoDocumento")),
                 NumeroDocumento = reader.GetString(reader.GetOrdinal("NumeroDocumento")),
                 NombreCompleto = reader.GetString(reader.GetOrdinal("NombreCompleto")),
-                CorreoElectronico = reader.IsDBNull(reader.GetOrdinal("CorreoElectronico")) ? null : reader.GetString(reader.GetOrdinal("CorreoElectronico")),
-                Telefono = reader.IsDBNull(reader.GetOrdinal("Telefono")) ? null : reader.GetString(reader.GetOrdinal("Telefono")),
+                CorreoElectronico = correoOrdinal.HasValue && !reader.IsDBNull(correoOrdinal.Value) ? reader.GetString(correoOrdinal.Value) : null,
+                Telefono = telefonoOrdinal.HasValue && !reader.IsDBNull(telefonoOrdinal.Value) ? reader.GetString(telefonoOrdinal.Value) : null,
                 LimiteCredito = reader.GetDecimal(reader.GetOrdinal("LimiteCredito")),
                 DiasCredito = reader.GetInt32(reader.GetOrdinal("DiasCredito")),
                 Observacion = reader.IsDBNull(reader.GetOrdinal("Observacion")) ? null : reader.GetString(reader.GetOrdinal("Observacion")),
@@ -42,5 +44,18 @@ public sealed class ClienteRepository(IDbConnectionFactory connectionFactory) : 
         }
 
         return result;
+    }
+
+    private static int? GetOrdinalOrNull(SqlDataReader reader, string columnName)
+    {
+        for (var i = 0; i < reader.FieldCount; i++)
+        {
+            if (string.Equals(reader.GetName(i), columnName, StringComparison.OrdinalIgnoreCase))
+            {
+                return i;
+            }
+        }
+
+        return null;
     }
 }

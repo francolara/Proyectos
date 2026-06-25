@@ -7,7 +7,9 @@ public sealed class GuardarPlanCuentaRequest
     public int? IdPlanCuentaPadre { get; init; }
     public string CodigoCuenta { get; init; } = string.Empty;
     public string NombreCuenta { get; init; } = string.Empty;
-    public string NaturalezaSaldo { get; init; } = "D";
+    public string ColBalance { get; init; } = string.Empty;
+    public string IdMoneda { get; init; } = string.Empty;
+    public string TipoCambio { get; init; } = string.Empty;
     public bool AceptaMovimiento { get; init; }
     public bool RequiereCentroCosto { get; init; }
     public bool Estado { get; init; } = true;

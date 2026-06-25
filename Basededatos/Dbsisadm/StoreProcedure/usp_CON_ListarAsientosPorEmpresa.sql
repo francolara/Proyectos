@@ -3,6 +3,11 @@
 -- Create date:   16/06/2026
 -- Description:   Lista los asientos contables por empresa con filtro por periodo, busqueda y paginacion server-side.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   22/06/2026
+-- Description:   Ajusta el manejo del periodo yyyyMM para evitar comparaciones con relleno fijo e incluye fecha de emision para formularios/listados del asiento.
+-- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_ListarAsientosPorEmpresa
     @IdEmpresa INT,
@@ -20,7 +25,7 @@ BEGIN
 
     BEGIN TRY
 
-        DECLARE @PeriodoTrabajo CHAR(6) =
+        DECLARE @PeriodoTrabajo VARCHAR(6) =
             CASE
                 WHEN @Periodo IS NOT NULL THEN @Periodo
                 WHEN @Ejercicio IS NOT NULL AND @Mes IS NOT NULL THEN CONVERT(CHAR(4), @Ejercicio) + RIGHT('0' + CONVERT(VARCHAR(2), @Mes), 2)
@@ -43,6 +48,7 @@ BEGIN
                 a.Mes,
                 a.Periodo,
                 a.NumeroAsiento,
+                a.FechaEmision,
                 a.FechaAsiento,
                 a.Glosa,
                 a.IdMoneda,
@@ -83,6 +89,7 @@ BEGIN
             b.Mes,
             b.Periodo,
             b.NumeroAsiento,
+            b.FechaEmision,
             b.FechaAsiento,
             b.Glosa,
             b.IdMoneda,

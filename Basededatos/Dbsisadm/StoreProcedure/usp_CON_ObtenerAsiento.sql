@@ -3,6 +3,16 @@
 -- Create date:   16/06/2026
 -- Description:   Obtiene la cabecera y detalle de un asiento contable.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   18/06/2026
+-- Description:   Devuelve datos documentarios opcionales del detalle del asiento.
+-- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   22/06/2026
+-- Description:   Incluye fecha de emision en la cabecera para asientos manuales y automaticos.
+-- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_ObtenerAsiento
     @IdAsiento INT
@@ -24,6 +34,7 @@ BEGIN
             a.Mes,
             a.Periodo,
             a.NumeroAsiento,
+            a.FechaEmision,
             a.FechaAsiento,
             a.Glosa,
             a.IdMoneda,
@@ -51,6 +62,11 @@ BEGIN
             p.CodigoCuenta,
             p.NombreCuenta,
             d.GlosaDetalle,
+            d.CodigoCentroCosto,
+            d.TipoDocumento,
+            d.NumeroDocumento,
+            d.Serie,
+            d.TipoCambioLinea,
             d.Debe,
             d.Haber,
             d.ReferenciaLinea

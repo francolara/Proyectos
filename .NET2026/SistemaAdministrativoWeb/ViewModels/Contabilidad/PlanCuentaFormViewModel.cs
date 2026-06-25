@@ -9,6 +9,8 @@ public sealed class PlanCuentaFormViewModel
     [Display(Name = "Cuenta padre")]
     public int? IdPlanCuentaPadre { get; set; }
 
+    public string CuentaPadreTexto { get; set; } = string.Empty;
+
     [Required(ErrorMessage = "Ingrese el codigo de cuenta.")]
     [StringLength(20)]
     public string CodigoCuenta { get; set; } = string.Empty;
@@ -17,9 +19,18 @@ public sealed class PlanCuentaFormViewModel
     [StringLength(200)]
     public string NombreCuenta { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Seleccione la naturaleza.")]
+    [Required(ErrorMessage = "Ingrese la columna de balance.")]
     [StringLength(1)]
-    public string NaturalezaSaldo { get; set; } = "D";
+    [RegularExpression("^(S|I|N|F|R)$", ErrorMessage = "Seleccione una columna de balance valida.")]
+    public string ColBalance { get; set; } = string.Empty;
+
+    [StringLength(3)]
+    [RegularExpression("^(|PEN|USD)$", ErrorMessage = "Seleccione una moneda valida.")]
+    public string? IdMoneda { get; set; }
+
+    [StringLength(1)]
+    [RegularExpression("^(|V|C)$", ErrorMessage = "Seleccione un tipo de cambio valido.")]
+    public string? TipoCambio { get; set; }
 
     public bool AceptaMovimiento { get; set; }
     public bool RequiereCentroCosto { get; set; }

@@ -17,4 +17,15 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.5" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="temp_codex_build\**" />
+    <Compile Remove="tmp\**" />
+    <Content Remove="temp_codex_build\**" />
+    <Content Remove="tmp\**" />
+    <EmbeddedResource Remove="temp_codex_build\**" />
+    <EmbeddedResource Remove="tmp\**" />
+    <None Remove="temp_codex_build\**" />
+    <None Remove="tmp\**" />
+  </ItemGroup>
+
 </Project>

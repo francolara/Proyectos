@@ -8,4 +8,5 @@ public interface IAsientoRepository
     Task<PagedResult<AsientoResumenDto>> ListarPaginadoPorEmpresaAsync(int idEmpresa, short ejercicio, byte mes, string? textoBusqueda, int numeroPagina, int tamanoPagina, bool soloManual = false, CancellationToken cancellationToken = default);
     Task<AsientoDto?> ObtenerAsync(int idAsiento, CancellationToken cancellationToken = default);
     Task<GuardarAsientoManualResultDto> GuardarManualAsync(GuardarAsientoManualRequest request, CancellationToken cancellationToken = default);
+    Task EliminarAsync(int idAsiento, int idEmpresa, CancellationToken cancellationToken = default);
 }

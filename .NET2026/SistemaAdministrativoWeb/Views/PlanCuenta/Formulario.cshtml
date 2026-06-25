@@ -1,24 +1,32 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.PlanCuentaIndexViewModel
 
+@* =============================================
+   Author:        FRANCO LARA
+   Create date:   18/06/2026
+   Description:   Reemplaza combo de cuenta padre por ayuda modal reutilizable.
+   ============================================= *@
+
+@* =============================================
+   Author:        FRANCO LARA
+   Create date:   22/06/2026
+   Description:   Cambia la ayuda de cuenta padre a carga inicial Top 100 con filtro remoto.
+   ============================================= *@
+
+@* =============================================
+   Author:        FRANCO LARA
+   Create date:   23/06/2026
+   Description:   Reemplaza los botones de ayuda de cuenta padre por iconos de lupa y brocha.
+   ============================================= *@
+
 @{
     ViewData["Title"] = Model.Formulario.IdPlanCuenta.HasValue ? "Editar cuenta contable" : "Registrar cuenta contable";
     ViewData["AdminShell"] = true;
+    var cuentaPadreTexto = string.IsNullOrWhiteSpace(Model.Formulario.CuentaPadreTexto)
+        ? "Sin padre"
+        : Model.Formulario.CuentaPadreTexto;
 }
 
 <section class="dashboard-shell">
-    <div class="dashboard-hero">
-        <div>
-            <span class="dashboard-kicker">Mantenimiento contable</span>
-            <h1>@ViewData["Title"]</h1>
-            <p>Define codigo, nombre, naturaleza y comportamiento operativo de la cuenta contable.</p>
-        </div>
-        <div class="dashboard-status-card">
-            <strong>@Model.EmpresaNombre</strong>
-            <span>Contexto activo para mantenimiento del plan de cuentas.</span>
-            <small>Empresa #@Model.IdEmpresa</small>
-        </div>
-    </div>
-
     <section class="workspace-window">
         <div class="workspace-window-head">
             <div>
@@ -41,13 +49,13 @@
                 <div class="workspace-form-grid">
                     <div class="workspace-field">
                         <label asp-for="Formulario.IdPlanCuentaPadre" class="form-label">Cuenta padre</label>
-                        <select asp-for="Formulario.IdPlanCuentaPadre" class="form-select">
-                            <option value="">Sin padre</option>
-                            @foreach (var cuenta in Model.CuentasPadre)
-                            {
-                                <option value="@cuenta.IdPlanCuenta">@cuenta.CodigoCuenta - @cuenta.NombreCuenta</option>
-                            }
-                        </select>
+                        <input type="hidden" asp-for="Formulario.IdPlanCuentaPadre" id="cuentaPadreId" />
+                        <div class="workspace-lookup-control">
+                            <input id="cuentaPadreTexto" class="form-control" value="@cuentaPadreTexto" readonly />
+                            <button type="button" class="btn btn-outline-secondary workspace-icon-button" data-bs-toggle="modal" data-bs-target="#cuentaPadreModal" title="Buscar cuenta padre" aria-label="Buscar cuenta padre"><i class="bi bi-search"></i></button>
+                            <button type="button" class="btn btn-outline-secondary workspace-icon-button" id="limpiarCuentaPadre" title="Limpiar cuenta padre" aria-label="Limpiar cuenta padre"><i class="bi bi-brush"></i></button>
+                        </div>
+                        <div class="form-text">El nivel se calcula segun la cuenta padre y la longitud se valida con parametros contables.</div>
                     </div>
                     <div class="workspace-field">
                         <label asp-for="Formulario.CodigoCuenta" class="form-label">Codigo cuenta</label>
@@ -60,12 +68,36 @@
                         <span asp-validation-for="Formulario.NombreCuenta" class="text-danger"></span>
                     </div>
                     <div class="workspace-field">
-                        <label asp-for="Formulario.NaturalezaSaldo" class="form-label">Naturaleza</label>
-                        <select asp-for="Formulario.NaturalezaSaldo" class="form-select">
-                            <option value="D">Debe</option>
-                            <option value="H">Haber</option>
+                        <label asp-for="Formulario.ColBalance" class="form-label">Columna balance</label>
+                        <select asp-for="Formulario.ColBalance" class="form-select">
+                            <option value="">Seleccione</option>
+                            <option value="S">S - Saldo</option>
+                            <option value="I">I - Inventario</option>
+                            <option value="N">N - Naturaleza</option>
+                            <option value="F">F - Funcion</option>
+                            <option value="R">R - Resultado</option>
                         </select>
-                        <span asp-validation-for="Formulario.NaturalezaSaldo" class="text-danger"></span>
+                        <span asp-validation-for="Formulario.ColBalance" class="text-danger"></span>
+                    </div>
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.IdMoneda" class="form-label">Moneda cuenta</label>
+                        <select asp-for="Formulario.IdMoneda" class="form-select">
+                            <option value="">Sin moneda fija</option>
+                            @foreach (var moneda in Model.Monedas)
+                            {
+                                <option value="@moneda.Valor">@moneda.Texto</option>
+                            }
+                        </select>
+                        <span asp-validation-for="Formulario.IdMoneda" class="text-danger"></span>
+                    </div>
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.TipoCambio" class="form-label">Tipo cambio</label>
+                        <select asp-for="Formulario.TipoCambio" class="form-select">
+                            <option value="">Sin tipo de cambio</option>
+                            <option value="V">Venta</option>
+                            <option value="C">Compra</option>
+                        </select>
+                        <span asp-validation-for="Formulario.TipoCambio" class="text-danger"></span>
                     </div>
                 </div>
 
@@ -93,6 +125,206 @@
     </section>
 </section>
 
+<div class="modal fade workspace-modal" id="cuentaPadreModal" tabindex="-1" aria-labelledby="cuentaPadreModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content workspace-modal-content">
+            <div class="modal-header workspace-modal-header">
+                <div>
+                    <span class="workspace-window-kicker">Ayuda contable</span>
+                    <h2 class="workspace-modal-title" id="cuentaPadreModalLabel">Seleccionar cuenta padre</h2>
+                    <p class="workspace-modal-subtitle">Busca por codigo, nombre o nivel. La cuenta elegida define el nivel de la nueva cuenta.</p>
+                </div>
+                <button type="button" class="btn-close workspace-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body workspace-modal-body">
+                <div class="workspace-filter-card mt-0">
+                    <div class="workspace-filter-grid">
+                        <div class="workspace-field workspace-field-span-2">
+                            <label class="form-label" for="cuentaPadreFiltro">Filtro</label>
+                            <input id="cuentaPadreFiltro" class="form-control" placeholder="Codigo o nombre de cuenta" autocomplete="off" />
+                        </div>
+                        <div class="workspace-field">
+                            <label class="form-label" for="cuentaPadreNivelFiltro">Nivel</label>
+                            <select id="cuentaPadreNivelFiltro" class="form-select">
+                                <option value="">Todos</option>
+                                @for (var nivel = 1; nivel <= 5; nivel++)
+                                {
+                                    <option value="@nivel">@nivel</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive workspace-table-wrap">
+                    <table class="table align-middle app-table workspace-table workspace-lookup-table">
+                        <thead>
+                            <tr>
+                                <th class="workspace-lookup-select-cell">Sel.</th>
+                                <th>Codigo</th>
+                                <th>Nombre</th>
+                                <th>Nivel</th>
+                                <th>Movimiento</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuentaPadreResultados">
+                            <tr data-empty-row="true" class="d-none">
+                                <td colspan="5">
+                                    <div class="app-empty-state app-empty-state-inline">
+                                        <i class="bi bi-search"></i>
+                                        <div>
+                                            <strong>No hay cuentas con ese filtro</strong>
+                                            <p>Ajusta el texto o el nivel para ubicar la cuenta padre.</p>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="workspace-inline-note">
+                    <strong>Ayuda:</strong> se cargan hasta 100 cuentas. Si necesita una cuenta especifica, filtre por codigo o nombre.
+                </div>
+            </div>
+            <div class="modal-footer workspace-modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="aceptarCuentaPadre">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const cuentaPadreId = document.getElementById("cuentaPadreId");
+            const cuentaPadreTexto = document.getElementById("cuentaPadreTexto");
+            const limpiarCuentaPadre = document.getElementById("limpiarCuentaPadre");
+            const aceptarCuentaPadre = document.getElementById("aceptarCuentaPadre");
+            const filtro = document.getElementById("cuentaPadreFiltro");
+            const nivelFiltro = document.getElementById("cuentaPadreNivelFiltro");
+            const modalEl = document.getElementById("cuentaPadreModal");
+            const resultadosEl = document.getElementById("cuentaPadreResultados");
+            const filaVacia = resultadosEl?.querySelector("[data-empty-row='true']");
+            const buscarCuentasUrl = '@Url.Action("BuscarAyuda", "PlanCuenta")';
+            let seleccion = cuentaPadreId?.value ? { idPlanCuenta: cuentaPadreId.value } : null;
+            let busquedaProgramada = null;
+
+            function marcarFila() {
+                const filas = Array.from(resultadosEl?.querySelectorAll("[data-cuenta-row='true']") || []);
+                filas.forEach(function (item) {
+                    const seleccionado = seleccion && item.dataset.id === String(seleccion.idPlanCuenta);
+                    item.classList.toggle("is-selected", seleccionado);
+                    const radio = item.querySelector("input[type='radio']");
+                    if (radio) {
+                        radio.checked = Boolean(seleccionado);
+                    }
+                });
+            }
+
+            function renderResultados(items) {
+                if (!resultadosEl) {
+                    return;
+                }
+
+                resultadosEl.querySelectorAll("[data-cuenta-row='true']").forEach((fila) => fila.remove());
+                if (filaVacia) {
+                    filaVacia.classList.toggle("d-none", items.length > 0);
+                }
+
+                items.forEach(function (item) {
+                    const fila = document.createElement("tr");
+                    fila.className = "workspace-lookup-row";
+                    fila.dataset.cuentaRow = "true";
+                    fila.dataset.id = String(item.idPlanCuenta || "");
+                    fila.dataset.codigo = String(item.codigoCuenta || "");
+                    fila.dataset.nombre = String(item.nombreCuenta || "");
+                    fila.dataset.nivel = String(item.nivelCuenta || "");
+                    fila.innerHTML = `
+                        <td class="workspace-lookup-select-cell"><input class="form-check-input" type="radio" name="cuentaPadreSeleccion" value="${String(item.idPlanCuenta || "")}" /></td>
+                        <td class="workspace-tree-code">${String(item.codigoCuenta || "")}</td>
+                        <td>${String(item.nombreCuenta || "")}</td>
+                        <td>${String(item.nivelCuenta || "")}</td>
+                        <td>${item.aceptaMovimiento ? "Si" : "No"}</td>`;
+                    fila.addEventListener("click", function () {
+                        seleccion = item;
+                        marcarFila();
+                    });
+                    resultadosEl.appendChild(fila);
+                });
+
+                marcarFila();
+            }
+
+            async function cargarResultados() {
+                const params = new URLSearchParams({ tamanoPagina: "100" });
+                const texto = String(filtro?.value || "").trim();
+                const nivel = String(nivelFiltro?.value || "").trim();
+                if (texto.length >= 2) {
+                    params.append("textoBusqueda", texto);
+                }
+                if (nivel) {
+                    params.append("nivelCuenta", nivel);
+                }
+
+                const response = await fetch(`${buscarCuentasUrl}?${params.toString()}`, { cache: "no-store" });
+                const payload = await response.json();
+                if (!response.ok || !payload.ok) {
+                    throw new Error(payload.mensaje || "No se pudo cargar el plan de cuentas.");
+                }
+
+                renderResultados(payload.items || []);
+            }
+
+            function programarBusqueda() {
+                if (busquedaProgramada) {
+                    window.clearTimeout(busquedaProgramada);
+                }
+
+                busquedaProgramada = window.setTimeout(async function () {
+                    try {
+                        await cargarResultados();
+                    } catch (error) {
+                        console.warn(error);
+                        renderResultados([]);
+                    }
+                }, 250);
+            }
+
+            modalEl?.addEventListener("show.bs.modal", async function () {
+                try {
+                    await cargarResultados();
+                } catch (error) {
+                    console.warn(error);
+                    renderResultados([]);
+                }
+            });
+
+            filtro?.addEventListener("input", programarBusqueda);
+            nivelFiltro?.addEventListener("change", programarBusqueda);
+
+            aceptarCuentaPadre?.addEventListener("click", function () {
+                if (seleccion && cuentaPadreId && cuentaPadreTexto) {
+                    cuentaPadreId.value = seleccion.dataset.id || "";
+                    cuentaPadreTexto.value = `${seleccion.dataset.codigo || ""} - ${seleccion.dataset.nombre || ""}`;
+                }
+
+                if (modalEl && window.bootstrap) {
+                    bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+                }
+            });
+
+            limpiarCuentaPadre?.addEventListener("click", function () {
+                if (cuentaPadreId) {
+                    cuentaPadreId.value = "";
+                }
+                if (cuentaPadreTexto) {
+                    cuentaPadreTexto.value = "Sin padre";
+                }
+                seleccion = null;
+                marcarFila();
+            });
+        });
+    </script>
 }

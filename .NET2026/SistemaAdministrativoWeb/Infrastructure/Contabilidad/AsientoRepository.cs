@@ -100,6 +100,7 @@ public sealed class AsientoRepository(IDbConnectionFactory connectionFactory) : 
                 Mes = resumen.Mes,
                 Periodo = resumen.Periodo,
                 NumeroAsiento = resumen.NumeroAsiento,
+                FechaEmision = resumen.FechaEmision,
                 FechaAsiento = resumen.FechaAsiento,
                 Glosa = resumen.Glosa,
                 IdMoneda = resumen.IdMoneda,
@@ -133,6 +134,11 @@ public sealed class AsientoRepository(IDbConnectionFactory connectionFactory) : 
                     CodigoCuenta = reader.GetString(reader.GetOrdinal("CodigoCuenta")),
                     NombreCuenta = reader.GetString(reader.GetOrdinal("NombreCuenta")),
                     GlosaDetalle = reader.IsDBNull(reader.GetOrdinal("GlosaDetalle")) ? null : reader.GetString(reader.GetOrdinal("GlosaDetalle")),
+                    CodigoCentroCosto = reader.IsDBNull(reader.GetOrdinal("CodigoCentroCosto")) ? null : reader.GetString(reader.GetOrdinal("CodigoCentroCosto")),
+                    TipoDocumento = reader.IsDBNull(reader.GetOrdinal("TipoDocumento")) ? null : reader.GetString(reader.GetOrdinal("TipoDocumento")),
+                    NumeroDocumento = reader.IsDBNull(reader.GetOrdinal("NumeroDocumento")) ? null : reader.GetString(reader.GetOrdinal("NumeroDocumento")),
+                    Serie = reader.IsDBNull(reader.GetOrdinal("Serie")) ? null : reader.GetString(reader.GetOrdinal("Serie")),
+                    TipoCambioLinea = reader.IsDBNull(reader.GetOrdinal("TipoCambioLinea")) ? null : reader.GetDecimal(reader.GetOrdinal("TipoCambioLinea")),
                     Debe = reader.GetDecimal(reader.GetOrdinal("Debe")),
                     Haber = reader.GetDecimal(reader.GetOrdinal("Haber")),
                     ReferenciaLinea = reader.IsDBNull(reader.GetOrdinal("ReferenciaLinea")) ? null : reader.GetString(reader.GetOrdinal("ReferenciaLinea"))
@@ -154,6 +160,7 @@ public sealed class AsientoRepository(IDbConnectionFactory connectionFactory) : 
         command.Parameters.AddWithValue("@IdAsiento", (object?)request.IdAsiento ?? DBNull.Value);
         command.Parameters.AddWithValue("@IdEmpresa", request.IdEmpresa);
         command.Parameters.AddWithValue("@IdOrigen", request.IdOrigen);
+        command.Parameters.AddWithValue("@FechaEmision", request.FechaEmision.ToDateTime(TimeOnly.MinValue));
         command.Parameters.AddWithValue("@FechaAsiento", request.FechaAsiento.ToDateTime(TimeOnly.MinValue));
         command.Parameters.AddWithValue("@Glosa", request.Glosa);
         command.Parameters.AddWithValue("@IdMoneda", request.IdMoneda);
@@ -182,6 +189,21 @@ public sealed class AsientoRepository(IDbConnectionFactory connectionFactory) : 
         };
     }
 
+    public async Task EliminarAsync(int idAsiento, int idEmpresa, CancellationToken cancellationToken = default)
+    {
+        await using var connection = connectionFactory.CreateConnection();
+        await using var command = new SqlCommand("dbo.usp_CON_EliminarAsiento", connection)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        command.Parameters.AddWithValue("@IdAsiento", idAsiento);
+        command.Parameters.AddWithValue("@IdEmpresa", idEmpresa);
+
+        await connection.OpenAsync(cancellationToken);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
     private static AsientoResumenDto MapearResumen(SqlDataReader reader)
     {
         return new AsientoResumenDto
@@ -196,6 +218,7 @@ public sealed class AsientoRepository(IDbConnectionFactory connectionFactory) : 
             Mes = reader.GetByte(reader.GetOrdinal("Mes")),
             Periodo = reader.GetString(reader.GetOrdinal("Periodo")),
             NumeroAsiento = reader.GetInt32(reader.GetOrdinal("NumeroAsiento")),
+            FechaEmision = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("FechaEmision"))),
             FechaAsiento = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("FechaAsiento"))),
             Glosa = reader.GetString(reader.GetOrdinal("Glosa")),
             IdMoneda = reader.GetInt32(reader.GetOrdinal("IdMoneda")),
@@ -218,6 +241,11 @@ public sealed class AsientoRepository(IDbConnectionFactory connectionFactory) : 
                 new XAttribute("Item", x.Item),
                 new XAttribute("IdPlanCuenta", x.IdPlanCuenta),
                 new XAttribute("GlosaDetalle", x.GlosaDetalle ?? string.Empty),
+                new XAttribute("CodigoCentroCosto", x.CodigoCentroCosto ?? string.Empty),
+                new XAttribute("TipoDocumento", x.TipoDocumento ?? string.Empty),
+                new XAttribute("NumeroDocumento", x.NumeroDocumento ?? string.Empty),
+                new XAttribute("Serie", x.Serie ?? string.Empty),
+                new XAttribute("TipoCambioLinea", (x.TipoCambioLinea ?? 0m).ToString("0.000000", CultureInfo.InvariantCulture)),
                 new XAttribute("Debe", x.Debe.ToString("0.00", CultureInfo.InvariantCulture)),
                 new XAttribute("Haber", x.Haber.ToString("0.00", CultureInfo.InvariantCulture)),
                 new XAttribute("ReferenciaLinea", x.ReferenciaLinea ?? string.Empty))));

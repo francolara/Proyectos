@@ -1,0 +1,262 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.CajaBancoIndexViewModel
+
+@* =============================================
+   Author:        FRANCO LARA
+   Create date:   23/06/2026
+   Description:   Agrega el listado base del modulo Caja y Bancos con KPIs, filtros por cuenta corriente y accesos para registrar, editar o eliminar movimientos bancarios.
+   ============================================= *@
+@* Firma: FRANCO LARA - 24/06/2026 | Agrega numero de asiento al listado de Caja y Bancos, quita la columna banco y exige seleccionar una cuenta corriente antes de consultar movimientos. *@
+
+@{
+    ViewData["Title"] = "Caja y Bancos";
+    ViewData["AdminShell"] = true;
+    var paginaInicio = Math.Max(1, Model.Paginacion.PaginaActual - 2);
+    var paginaFin = Math.Min(Model.Paginacion.TotalPaginas, Model.Paginacion.PaginaActual + 2);
+    var textInfo = System.Globalization.CultureInfo.CurrentCulture.TextInfo;
+    var periodoTexto = new DateTime(Model.AnioSeleccionado, Model.MesSeleccionado, 1).ToString("MMMM 'de' yyyy");
+}
+
+<section class="dashboard-shell">
+    <section class="dashboard-metrics">
+        <article class="dashboard-metric-card dashboard-metric-card-count">
+            <span>Total movimientos</span>
+            <strong>@Model.TotalMovimientos</strong>
+            <small>Registros visibles para la consulta actual.</small>
+        </article>
+        <article class="dashboard-metric-card dashboard-metric-card-amount">
+            <span>Saldos</span>
+            <div class="dashboard-metric-amounts">
+                <div class="dashboard-metric-amount-line">
+                    <label>Saldo inicial</label>
+                    <strong>@Model.SaldoInicial.ToString("0.00")</strong>
+                </div>
+                <div class="dashboard-metric-amount-line">
+                    <label>Saldo final</label>
+                    <strong>@Model.SaldoFinal.ToString("0.00")</strong>
+                </div>
+            </div>
+            <small>Acumulado del periodo filtrado.</small>
+        </article>
+        <article class="dashboard-metric-card dashboard-metric-card-amount">
+            <span>Flujo del mes</span>
+            <div class="dashboard-metric-amounts">
+                <div class="dashboard-metric-amount-line">
+                    <label>Ingresos</label>
+                    <strong>@Model.IngresosMes.ToString("0.00")</strong>
+                </div>
+                <div class="dashboard-metric-amount-line">
+                    <label>Egresos</label>
+                    <strong>@Model.EgresosMes.ToString("0.00")</strong>
+                </div>
+            </div>
+            <small>Movimientos del mes seleccionado.</small>
+        </article>
+    </section>
+
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Registro</span>
+                <h1>Caja y Bancos</h1>
+                <p>Consulta los movimientos de cuentas corrientes y abre el registro para ajustar o revisar el detalle.</p>
+            </div>
+            <div class="workspace-row-actions">
+                <a asp-action="Registrar"
+                   asp-route-idBancoConfiguracionEmpresa="@Model.IdBancoConfiguracionEmpresaSeleccionada"
+                   asp-route-anio="@Model.AnioSeleccionado"
+                   asp-route-mes="@Model.MesSeleccionado"
+                   class="btn btn-light btn-sm">Registrar movimiento</a>
+            </div>
+        </div>
+        <div class="workspace-window-body">
+            @if (TempData["CajaBancoOk"] is string ok)
+            {
+                <div class="alert alert-success">@ok</div>
+            }
+            @if (TempData["CajaBancoError"] is string error)
+            {
+                <div class="alert alert-danger">@error</div>
+            }
+            @if (Model.CuentasCorrientesDisponibles.Count == 0)
+            {
+                <div class="alert alert-warning">No existen cuentas corrientes activas para la empresa. Registre una desde mantenimiento antes de usar Caja y Bancos.</div>
+            }
+
+            <form asp-action="Index" method="get" class="workspace-filter-card">
+                <div class="workspace-filter-grid">
+                    <div class="workspace-field">
+                        <label class="form-label" for="idBancoConfiguracionEmpresa">Cuenta corriente</label>
+                        <select id="idBancoConfiguracionEmpresa" name="idBancoConfiguracionEmpresa" class="form-select">
+                            <option value="">Seleccione una cuenta corriente</option>
+                            @foreach (var cuenta in Model.CuentasCorrientesDisponibles)
+                            {
+                                <option value="@cuenta.IdBancoConfiguracionEmpresa" selected="@(cuenta.IdBancoConfiguracionEmpresa == Model.IdBancoConfiguracionEmpresaSeleccionada)">
+                                    @($"{cuenta.NroCuentaCorriente} | {cuenta.NombreBanco} | {cuenta.CodigoMoneda}")
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="anio">Año</label>
+                        <select id="anio" name="anio" class="form-select">
+                            @foreach (var anio in Model.AniosDisponibles)
+                            {
+                                <option value="@anio" selected="@(anio == Model.AnioSeleccionado)">@anio</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="mes">Mes</label>
+                        <select id="mes" name="mes" class="form-select">
+                            @foreach (var mes in Model.MesesDisponibles)
+                            {
+                                <option value="@mes.Valor" selected="@(mes.Valor == Model.MesSeleccionado)">@textInfo.ToTitleCase(mes.Nombre)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="textoBusqueda">Buscar movimiento</label>
+                        <input id="textoBusqueda" name="textoBusqueda" value="@Model.TextoBusqueda" class="form-control" placeholder="Persona, documento, glosa u operacion" />
+                    </div>
+                </div>
+                <div class="workspace-actions">
+                    <button type="submit" class="btn btn-primary">Consultar</button>
+                </div>
+            </form>
+
+            <div class="workspace-inline-note">
+                Periodo activo: <strong>@textInfo.ToTitleCase(periodoTexto)</strong>
+            </div>
+
+            <div class="table-responsive workspace-table-wrap">
+                <table class="table align-middle app-table workspace-table">
+                    <thead>
+                        <tr>
+                            <th>Nro</th>
+                            <th>Asiento</th>
+                            <th>Fecha</th>
+                            <th>Cuenta corriente</th>
+                            <th>Moneda</th>
+                            <th>Tipo</th>
+                            <th>Operacion</th>
+                            <th>Persona</th>
+                            <th>Documento</th>
+                            <th>Glosa</th>
+                            <th>Ingreso</th>
+                            <th>Egreso</th>
+                            <th class="text-end">Accion</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Movimientos.Count == 0)
+                        {
+                            <tr>
+                                    <td colspan="13">
+                                    <div class="app-empty-state app-empty-state-inline">
+                                        <i class="bi bi-cash-coin"></i>
+                                        <div>
+                                            <strong>@(Model.IdBancoConfiguracionEmpresaSeleccionada.HasValue ? "No hay movimientos para la consulta actual" : "Seleccione una cuenta corriente para consultar")</strong>
+                                            <p>@(Model.IdBancoConfiguracionEmpresaSeleccionada.HasValue ? "Ajusta los filtros o registra el primer movimiento para la cuenta corriente seleccionada." : "El listado y los saldos se cargan solo cuando eliges una cuenta corriente.")</p>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.Movimientos)
+                            {
+                                var tipoTexto = string.Equals(item.TipoMovimiento, "I", StringComparison.OrdinalIgnoreCase) ? "Ingreso" : "Egreso";
+                                <tr class="workspace-clickable-row" data-edit-url="@Url.Action("Editar", new { idMovimientoBanco = item.IdMovimientoBanco, idBancoConfiguracionEmpresa = Model.IdBancoConfiguracionEmpresaSeleccionada, anio = Model.AnioSeleccionado, mes = Model.MesSeleccionado })">
+                                    <td>@item.NumeroMovimiento</td>
+                                    <td>@(item.NumeroAsiento?.ToString() ?? "-")</td>
+                                    <td>@item.FechaEmision.ToString("dd/MM/yyyy")</td>
+                                    <td>@item.NroCuentaCorriente</td>
+                                    <td>@item.CodigoMoneda</td>
+                                    <td>@tipoTexto</td>
+                                    <td>@item.TipoOperacion</td>
+                                    <td>@(string.IsNullOrWhiteSpace(item.NombrePersona) ? "-" : item.NombrePersona)</td>
+                                    <td>@(string.IsNullOrWhiteSpace(item.NumeroDocumento) ? "-" : item.NumeroDocumento)</td>
+                                    <td>@item.Glosa</td>
+                                    <td class="workspace-money-cell">@item.Ingreso.ToString("0.00")</td>
+                                    <td class="workspace-money-cell">@item.Egreso.ToString("0.00")</td>
+                                    <td class="text-end">
+                                        <div class="workspace-row-actions-compact">
+                                            <a asp-action="Editar"
+                                               asp-route-idMovimientoBanco="@item.IdMovimientoBanco"
+                                               asp-route-idBancoConfiguracionEmpresa="@Model.IdBancoConfiguracionEmpresaSeleccionada"
+                                               asp-route-anio="@Model.AnioSeleccionado"
+                                               asp-route-mes="@Model.MesSeleccionado"
+                                               class="workspace-row-btn workspace-row-btn-primary">Editar</a>
+                                            <form asp-action="Eliminar" method="post" onsubmit="return confirm('Se eliminara el movimiento bancario seleccionado. ¿Desea continuar?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="idMovimientoBanco" value="@item.IdMovimientoBanco" />
+                                                <input type="hidden" name="idBancoConfiguracionEmpresa" value="@Model.IdBancoConfiguracionEmpresaSeleccionada" />
+                                                <input type="hidden" name="anio" value="@Model.AnioSeleccionado" />
+                                                <input type="hidden" name="mes" value="@Model.MesSeleccionado" />
+                                                <input type="hidden" name="textoBusqueda" value="@Model.TextoBusqueda" />
+                                                <input type="hidden" name="pagina" value="@Model.Paginacion.PaginaActual" />
+                                                <button type="submit" class="workspace-row-btn workspace-row-btn-danger">Eliminar</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.Paginacion.TotalPaginas > 1)
+            {
+                <nav class="workspace-pagination" aria-label="Paginacion caja bancos">
+                    <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaAnterior ? string.Empty : "disabled")"
+                       asp-action="Index"
+                       asp-route-idBancoConfiguracionEmpresa="@Model.IdBancoConfiguracionEmpresaSeleccionada"
+                       asp-route-anio="@Model.AnioSeleccionado"
+                       asp-route-mes="@Model.MesSeleccionado"
+                       asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-pagina="@(Model.Paginacion.PaginaActual - 1)">Anterior</a>
+
+                    @for (var pagina = paginaInicio; pagina <= paginaFin; pagina++)
+                    {
+                        <a class="btn @(pagina == Model.Paginacion.PaginaActual ? "btn-primary" : "btn-outline-secondary")"
+                           asp-action="Index"
+                           asp-route-idBancoConfiguracionEmpresa="@Model.IdBancoConfiguracionEmpresaSeleccionada"
+                           asp-route-anio="@Model.AnioSeleccionado"
+                           asp-route-mes="@Model.MesSeleccionado"
+                           asp-route-textoBusqueda="@Model.TextoBusqueda"
+                           asp-route-pagina="@pagina">@pagina</a>
+                    }
+
+                    <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaSiguiente ? string.Empty : "disabled")"
+                       asp-action="Index"
+                       asp-route-idBancoConfiguracionEmpresa="@Model.IdBancoConfiguracionEmpresaSeleccionada"
+                       asp-route-anio="@Model.AnioSeleccionado"
+                       asp-route-mes="@Model.MesSeleccionado"
+                       asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-pagina="@(Model.Paginacion.PaginaActual + 1)">Siguiente</a>
+                </nav>
+            }
+        </div>
+    </section>
+</section>
+
+@section Scripts {
+    <script>
+        (() => {
+            document.querySelectorAll(".workspace-clickable-row[data-edit-url]").forEach((row) => {
+                row.addEventListener("click", (event) => {
+                    if (event.target.closest("a, button, form, input, select, textarea, label")) {
+                        return;
+                    }
+
+                    const url = row.dataset.editUrl;
+                    if (url) {
+                        window.location.href = url;
+                    }
+                });
+            });
+        })();
+    </script>
+}

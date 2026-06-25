@@ -12,6 +12,8 @@ public sealed class VentaIndexViewModel
     public string TextoBusqueda { get; set; } = string.Empty;
     public int TotalVentas { get; set; }
     public decimal TotalImportePeriodo { get; set; }
+    public decimal TotalImporteSolesPeriodo { get; set; }
+    public decimal TotalImporteDolaresPeriodo { get; set; }
     public PaginacionViewModel Paginacion { get; set; } = new();
     public VentaFormViewModel Formulario { get; set; } = new();
     public List<int> AniosDisponibles { get; set; } = [];
@@ -20,6 +22,8 @@ public sealed class VentaIndexViewModel
     public List<ConfiguracionContabilizacionResumenDto> ConfiguracionesVenta { get; set; } = [];
     public List<MonedaDto> Monedas { get; set; } = [];
     public List<TipoComprobanteDto> TiposComprobante { get; set; } = [];
+    public List<PlanCuentaDto> CuentasMovimiento { get; set; } = [];
+    public List<TipoAfectacionIgvDto> TiposAfectacionIgv { get; set; } = [];
     public List<OpcionCatalogoViewModel> TiposDocumentoIdentidad { get; set; } = [];
     public List<VentaResumenItemViewModel> Ventas { get; set; } = [];
     public string ClienteSeleccionadoTipoDocumento { get; set; } = string.Empty;

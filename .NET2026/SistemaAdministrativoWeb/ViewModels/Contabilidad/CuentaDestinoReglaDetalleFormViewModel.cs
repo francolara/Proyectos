@@ -12,8 +12,12 @@ public sealed class CuentaDestinoReglaDetalleFormViewModel
     [Range(1, int.MaxValue, ErrorMessage = "Seleccione la cuenta destino cargo.")]
     public int? IdPlanCuentaDestinoCargo { get; set; }
 
+    public string CuentaDestinoCargoTexto { get; set; } = string.Empty;
+
     [Range(1, int.MaxValue, ErrorMessage = "Seleccione la cuenta destino abono.")]
     public int? IdPlanCuentaDestinoAbono { get; set; }
+
+    public string CuentaDestinoAbonoTexto { get; set; } = string.Empty;
 
     [Range(typeof(decimal), "0.0001", "100", ErrorMessage = "El porcentaje debe estar entre 0 y 100.")]
     public decimal Porcentaje { get; set; }

@@ -13,6 +13,7 @@ public class CuentaDestinoReglaController(
     ICuentaDestinoReglaRepository cuentaDestinoReglaRepository) : Controller
 {
     private const int TamanoPagina = 20;
+    private const int TamanoAyudaCuenta = 100;
 
     [HttpGet]
     public async Task<IActionResult> Index(short? ejercicio = null, string? textoBusqueda = null, int pagina = 1, CancellationToken cancellationToken = default)
@@ -25,7 +26,7 @@ public class CuentaDestinoReglaController(
         ViewData["AdminShell"] = true;
 
         var ejercicioTrabajo = ejercicio ?? (short)DateTime.Today.Year;
-        var cuentasMovimiento = await planCuentaRepository.ListarPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, true, cancellationToken);
+        var cuentasMovimiento = (await planCuentaRepository.ListarPaginadoPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, null, null, 1, TamanoAyudaCuenta, false, false, cancellationToken)).Items.ToList();
         var reglas = await cuentaDestinoReglaRepository.ListarPaginadoPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, ejercicioTrabajo, textoBusqueda, pagina, TamanoPagina, cancellationToken);
         var model = ConstruirViewModel(
             currentCompanyAccessor.EmpresaId.Value,
@@ -74,7 +75,7 @@ public class CuentaDestinoReglaController(
 
         if (!ModelState.IsValid)
         {
-            var cuentasConError = await planCuentaRepository.ListarPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, true, cancellationToken);
+            var cuentasConError = (await planCuentaRepository.ListarPaginadoPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, null, null, 1, TamanoAyudaCuenta, false, false, cancellationToken)).Items.ToList();
             var reglasConError = await cuentaDestinoReglaRepository.ListarPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, formulario.Ejercicio, cancellationToken);
             var modelConError = ConstruirViewModel(
                 currentCompanyAccessor.EmpresaId.Value,
@@ -115,7 +116,7 @@ public class CuentaDestinoReglaController(
         catch (Exception ex)
         {
             ModelState.AddModelError(string.Empty, ex.Message);
-            var cuentasConError = await planCuentaRepository.ListarPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, true, cancellationToken);
+            var cuentasConError = (await planCuentaRepository.ListarPaginadoPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, null, null, 1, TamanoAyudaCuenta, false, false, cancellationToken)).Items.ToList();
             var reglasConError = await cuentaDestinoReglaRepository.ListarPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, formulario.Ejercicio, cancellationToken);
             var modelConError = ConstruirViewModel(
                 currentCompanyAccessor.EmpresaId.Value,
@@ -154,7 +155,7 @@ public class CuentaDestinoReglaController(
 
         var ejercicioTrabajo = ejercicio ?? (short)DateTime.Today.Year;
         var empresaId = currentCompanyAccessor.EmpresaId.Value;
-        var cuentasMovimiento = await planCuentaRepository.ListarPorEmpresaAsync(empresaId, true, cancellationToken);
+        var cuentasMovimiento = (await planCuentaRepository.ListarPaginadoPorEmpresaAsync(empresaId, null, null, 1, TamanoAyudaCuenta, false, false, cancellationToken)).Items.ToList();
         var reglas = await cuentaDestinoReglaRepository.ListarPorEmpresaAsync(empresaId, ejercicioTrabajo, cancellationToken);
         var reglaEditar = idCuentaDestinoRegla.HasValue
             ? await cuentaDestinoReglaRepository.ObtenerAsync(idCuentaDestinoRegla.Value, cancellationToken)
@@ -282,6 +283,7 @@ public class CuentaDestinoReglaController(
                 {
                     Ejercicio = reglaEditar.Ejercicio,
                     IdPlanCuentaOrigen = reglaEditar.IdPlanCuentaOrigen,
+                    CuentaOrigenTexto = $"{reglaEditar.CodigoCuentaOrigen} - {reglaEditar.NombreCuentaOrigen}",
                     Observacion = reglaEditar.Observacion,
                     Activo = reglaEditar.Activo,
                     Detalles = reglaEditar.Detalles
@@ -291,7 +293,9 @@ public class CuentaDestinoReglaController(
                             IdCuentaDestinoReglaDetalle = x.IdCuentaDestinoReglaDetalle,
                             Orden = x.Orden,
                             IdPlanCuentaDestinoCargo = x.IdPlanCuentaDestinoCargo,
+                            CuentaDestinoCargoTexto = $"{x.CodigoCuentaDestinoCargo} - {x.NombreCuentaDestinoCargo}",
                             IdPlanCuentaDestinoAbono = x.IdPlanCuentaDestinoAbono,
+                            CuentaDestinoAbonoTexto = $"{x.CodigoCuentaDestinoAbono} - {x.NombreCuentaDestinoAbono}",
                             Porcentaje = x.Porcentaje,
                             Activo = x.Activo
                         })

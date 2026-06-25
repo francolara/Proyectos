@@ -8,4 +8,5 @@ public interface IVentaRepository
     Task<PagedResult<VentaResumenDto>> ListarPaginadoPorEmpresaAsync(int idEmpresa, short ejercicio, byte mes, string? textoBusqueda, int numeroPagina, int tamanoPagina, CancellationToken cancellationToken = default);
     Task<VentaDto?> ObtenerAsync(int idVenta, CancellationToken cancellationToken = default);
     Task<GuardarVentaResultDto> GuardarAsync(GuardarVentaRequest request, CancellationToken cancellationToken = default);
+    Task EliminarAsync(int idVenta, int idEmpresa, CancellationToken cancellationToken = default);
 }

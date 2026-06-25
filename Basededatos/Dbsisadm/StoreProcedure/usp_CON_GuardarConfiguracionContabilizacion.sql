@@ -3,6 +3,11 @@
 -- Create date:   16/06/2026
 -- Description:   Registra o actualiza la configuracion contable automatica por empresa, modulo y escenario.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   22/06/2026
+-- Description:   Aclara el mensaje de validacion para exigir cuentas de la empresa, activas y con movimiento.
+-- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_GuardarConfiguracionContabilizacion
     @IdConfiguracionContabilizacion INT = NULL,

@@ -1,24 +1,18 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.ConfiguracionContabilizacionIndexViewModel
 
+@* =============================================
+   Author:        FRANCO LARA
+   Create date:   22/06/2026
+   Description:   Migra la seleccion de cuentas en configuracion contable a ayuda modal con carga Top 100, filtro remoto, permite consultar el plan completo para elegir cuentas como la 42 aunque no acepten movimiento y unifica los botones de ayuda con iconos de lupa.
+   ============================================= *@
+@* Firma: FRANCO LARA - 24/06/2026 | Restringe la ayuda popup de cuentas en configuracion contable a cuentas del ultimo nivel y muestra mensaje si se intenta elegir una cuenta intermedia. *@
+
 @{
     ViewData["Title"] = Model.Formulario.IdConfiguracionContabilizacion.HasValue ? "Editar configuracion contable" : "Registrar configuracion contable";
     ViewData["AdminShell"] = true;
 }
 
 <section class="dashboard-shell">
-    <div class="dashboard-hero">
-        <div>
-            <span class="dashboard-kicker">Mantenimiento contable</span>
-            <h1>@ViewData["Title"]</h1>
-            <p>Asocia origen, escenario y componentes contables como bruto, IGV, total o redondeo.</p>
-        </div>
-        <div class="dashboard-status-card">
-            <strong>@Model.EmpresaNombre</strong>
-            <span>Configuracion base para compras y ventas automaticas.</span>
-            <small>Empresa #@Model.IdEmpresa</small>
-        </div>
-    </div>
-
     <section class="workspace-window">
         <div class="workspace-window-head">
             <div>
@@ -129,13 +123,11 @@
                                             <span asp-validation-for="Formulario.Detalles[i].ComponenteContable" class="text-danger"></span>
                                         </td>
                                         <td>
-                                            <select asp-for="Formulario.Detalles[i].IdPlanCuenta" class="form-select">
-                                                <option value="">Seleccione</option>
-                                                @foreach (var cuenta in Model.CuentasMovimiento)
-                                                {
-                                                    <option value="@cuenta.IdPlanCuenta">@cuenta.CodigoCuenta - @cuenta.NombreCuenta</option>
-                                                }
-                                            </select>
+                                            <input type="hidden" asp-for="Formulario.Detalles[i].IdPlanCuenta" class="js-cuenta-id" />
+                                            <div class="workspace-lookup-control workspace-lookup-control-compact">
+                                                <input class="form-control js-cuenta-texto" value="@(string.IsNullOrWhiteSpace(Model.Formulario.Detalles[i].CuentaTexto) ? "Seleccione cuenta" : Model.Formulario.Detalles[i].CuentaTexto)" readonly />
+                                                <button type="button" class="btn btn-outline-secondary btn-sm workspace-icon-button js-open-cuenta-modal" title="Buscar cuenta" aria-label="Buscar cuenta"><i class="bi bi-search"></i></button>
+                                            </div>
                                             <span asp-validation-for="Formulario.Detalles[i].IdPlanCuenta" class="text-danger"></span>
                                         </td>
                                         <td>
@@ -183,13 +175,11 @@
             </select>
         </td>
         <td>
-            <select name="Formulario.Detalles[__index__].IdPlanCuenta" class="form-select">
-                <option value="">Seleccione</option>
-                @foreach (var cuenta in Model.CuentasMovimiento)
-                {
-                    <option value="@cuenta.IdPlanCuenta">@cuenta.CodigoCuenta - @cuenta.NombreCuenta</option>
-                }
-            </select>
+            <input type="hidden" name="Formulario.Detalles[__index__].IdPlanCuenta" class="js-cuenta-id" />
+            <div class="workspace-lookup-control workspace-lookup-control-compact">
+                <input class="form-control js-cuenta-texto" value="Seleccione cuenta" readonly />
+                <button type="button" class="btn btn-outline-secondary btn-sm workspace-icon-button js-open-cuenta-modal" title="Buscar cuenta" aria-label="Buscar cuenta"><i class="bi bi-search"></i></button>
+            </div>
         </td>
         <td>
             <select name="Formulario.Detalles[__index__].NaturalezaMovimiento" class="form-select">
@@ -207,6 +197,71 @@
     </tr>
 </template>
 
+<div class="modal fade workspace-modal" id="configuracionCuentaModal" tabindex="-1" aria-labelledby="configuracionCuentaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content workspace-modal-content">
+            <div class="modal-header workspace-modal-header">
+                <div>
+                    <span class="workspace-window-kicker">Ayuda contable</span>
+                    <h2 class="workspace-modal-title" id="configuracionCuentaModalLabel">Seleccionar cuenta contable</h2>
+                    <p class="workspace-modal-subtitle">Se cargan hasta 100 cuentas. Si necesita una cuenta especifica, filtre por codigo o nombre.</p>
+                </div>
+                <button type="button" class="btn-close workspace-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body workspace-modal-body">
+                <div class="workspace-filter-card mt-0">
+                    <div class="workspace-filter-grid">
+                        <div class="workspace-field workspace-field-span-2">
+                            <label class="form-label" for="configuracionCuentaFiltro">Filtro</label>
+                            <input id="configuracionCuentaFiltro" class="form-control" placeholder="Codigo o nombre de cuenta" autocomplete="off" />
+                        </div>
+                        <div class="workspace-field">
+                            <label class="form-label" for="configuracionCuentaNivelFiltro">Nivel</label>
+                            <select id="configuracionCuentaNivelFiltro" class="form-select">
+                                <option value="">Todos</option>
+                                @for (var nivel = 1; nivel <= 5; nivel++)
+                                {
+                                    <option value="@nivel">@nivel</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-responsive workspace-table-wrap">
+                    <table class="table align-middle app-table workspace-table workspace-lookup-table">
+                        <thead>
+                            <tr>
+                                <th class="workspace-lookup-select-cell">Sel.</th>
+                                <th>Codigo</th>
+                                <th>Cuenta</th>
+                                <th>Nivel</th>
+                                <th>Centro costo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="configuracionCuentaResultados">
+                            <tr data-cuenta-empty-row="true" class="d-none">
+                                <td colspan="5">
+                                    <div class="app-empty-state app-empty-state-inline">
+                                        <i class="bi bi-search"></i>
+                                        <div>
+                                            <strong>No hay cuentas con ese filtro</strong>
+                                            <p>Ajusta el texto o nivel para ubicar la cuenta contable.</p>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer workspace-modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="aceptarCuentaConfiguracion">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
@@ -214,10 +269,98 @@
             const tableBody = document.querySelector("#detalle-table tbody");
             const template = document.getElementById("detalle-row-template");
             const addButton = document.getElementById("agregar-componente");
+            const cuentaModalEl = document.getElementById("configuracionCuentaModal");
+            const cuentaModal = cuentaModalEl && window.bootstrap ? bootstrap.Modal.getOrCreateInstance(cuentaModalEl) : null;
+            const cuentaResultadosBodyEl = document.getElementById("configuracionCuentaResultados");
+            const cuentaFiltro = document.getElementById("configuracionCuentaFiltro");
+            const cuentaNivelFiltro = document.getElementById("configuracionCuentaNivelFiltro");
+            const buscarCuentasUrl = '@Url.Action("BuscarAyuda", "PlanCuenta")';
+            let cuentaSeleccion = null;
+            let cuentaRowActiva = null;
+            let cuentaBusquedaProgramada = null;
 
             if (!tableBody || !template || !addButton) {
                 return;
             }
+
+            const marcarSeleccionCuenta = () => {
+                const rows = Array.from(cuentaResultadosBodyEl?.querySelectorAll("[data-cuenta-row='true']") || []);
+                rows.forEach((row) => {
+                    const seleccionado = cuentaSeleccion && row.dataset.id === String(cuentaSeleccion.idPlanCuenta);
+                    row.classList.toggle("is-selected", seleccionado);
+                    const radio = row.querySelector("input[type='radio']");
+                    if (radio) {
+                        radio.checked = Boolean(seleccionado);
+                    }
+                });
+            };
+
+            const renderCuentaResultados = (items) => {
+                if (!cuentaResultadosBodyEl) {
+                    return;
+                }
+
+                const emptyRow = cuentaResultadosBodyEl.querySelector("[data-cuenta-empty-row='true']");
+                cuentaResultadosBodyEl.querySelectorAll("[data-cuenta-row='true']").forEach((row) => row.remove());
+                emptyRow?.classList.toggle("d-none", items.length > 0);
+
+                items.forEach((item) => {
+                    const row = document.createElement("tr");
+                    row.className = "workspace-lookup-row";
+                    row.dataset.cuentaRow = "true";
+                    row.dataset.id = String(item.idPlanCuenta || "");
+                    row.dataset.codigo = String(item.codigoCuenta || "");
+                    row.dataset.nombre = String(item.nombreCuenta || "");
+                    row.innerHTML = `
+                        <td class="workspace-lookup-select-cell"><input class="form-check-input" type="radio" name="cuentaConfiguracionSeleccion" value="${String(item.idPlanCuenta || "")}" /></td>
+                        <td class="workspace-tree-code">${String(item.codigoCuenta || "")}</td>
+                        <td>${String(item.nombreCuenta || "")}</td>
+                        <td>${String(item.nivelCuenta || "")}</td>
+                        <td>${item.requiereCentroCosto ? "Si" : "No"}</td>`;
+                    row.addEventListener("click", () => {
+                        cuentaSeleccion = item;
+                        marcarSeleccionCuenta();
+                    });
+                    cuentaResultadosBodyEl.appendChild(row);
+                });
+
+                marcarSeleccionCuenta();
+            };
+
+            const cargarCuentasAyuda = async () => {
+                const params = new URLSearchParams({ tamanoPagina: "100", soloMovimiento: "false" });
+                const filtro = String(cuentaFiltro?.value || "").trim();
+                const nivel = String(cuentaNivelFiltro?.value || "").trim();
+                if (filtro.length >= 2) {
+                    params.append("textoBusqueda", filtro);
+                }
+                if (nivel) {
+                    params.append("nivelCuenta", nivel);
+                }
+
+                const response = await fetch(`${buscarCuentasUrl}?${params.toString()}`, { cache: "no-store" });
+                const payload = await response.json();
+                if (!response.ok || !payload.ok) {
+                    throw new Error(payload.mensaje || "No se pudo cargar el plan de cuentas.");
+                }
+
+                renderCuentaResultados(payload.items || []);
+            };
+
+            const programarBusquedaCuenta = () => {
+                if (cuentaBusquedaProgramada) {
+                    window.clearTimeout(cuentaBusquedaProgramada);
+                }
+
+                cuentaBusquedaProgramada = window.setTimeout(async () => {
+                    try {
+                        await cargarCuentasAyuda();
+                    } catch (error) {
+                        console.warn(error);
+                        renderCuentaResultados([]);
+                    }
+                }, 250);
+            };
 
             const bindRowActions = (row) => {
                 row.querySelector(".js-remove-row")?.addEventListener("click", () => {
@@ -227,6 +370,19 @@
 
                     row.remove();
                     refreshRows();
+                });
+
+                row.querySelector(".js-open-cuenta-modal")?.addEventListener("click", async () => {
+                    cuentaRowActiva = row;
+                    const cuentaIdActual = row.querySelector(".js-cuenta-id")?.value || "";
+                    cuentaSeleccion = cuentaIdActual ? { idPlanCuenta: cuentaIdActual } : null;
+                    try {
+                        await cargarCuentasAyuda();
+                    } catch (error) {
+                        console.warn(error);
+                        renderCuentaResultados([]);
+                    }
+                    cuentaModal?.show();
                 });
             };
 
@@ -271,6 +427,26 @@
             });
 
             tableBody.querySelectorAll("tr").forEach(bindRowActions);
+            cuentaFiltro?.addEventListener("input", programarBusquedaCuenta);
+            cuentaNivelFiltro?.addEventListener("change", programarBusquedaCuenta);
+            document.getElementById("aceptarCuentaConfiguracion")?.addEventListener("click", () => {
+                if (String(cuentaSeleccion?.nivelCuenta || "") !== "5") {
+                    window.alert("Seleccione una cuenta contable de nivel 5.");
+                    return;
+                }
+
+                if (cuentaSeleccion && cuentaRowActiva) {
+                    const cuentaIdInput = cuentaRowActiva.querySelector(".js-cuenta-id");
+                    const cuentaTextoInput = cuentaRowActiva.querySelector(".js-cuenta-texto");
+                    if (cuentaIdInput) {
+                        cuentaIdInput.value = String(cuentaSeleccion.idPlanCuenta || "");
+                    }
+                    if (cuentaTextoInput) {
+                        cuentaTextoInput.value = `${String(cuentaSeleccion.codigoCuenta || "")} - ${String(cuentaSeleccion.nombreCuenta || "")}`;
+                    }
+                }
+                cuentaModal?.hide();
+            });
             refreshRows();
         })();
     </script>

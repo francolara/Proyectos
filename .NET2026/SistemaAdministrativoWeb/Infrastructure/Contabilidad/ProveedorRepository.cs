@@ -20,6 +20,10 @@ public sealed class ProveedorRepository(IDbConnectionFactory connectionFactory) 
 
         await connection.OpenAsync(cancellationToken);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        var correoOrdinal = GetOrdinalOrNull(reader, "CorreoElectronico");
+        var telefonoOrdinal = GetOrdinalOrNull(reader, "Telefono");
+        var contactoOrdinal = GetOrdinalOrNull(reader, "Contacto");
+        var cuentaDetraccionOrdinal = GetOrdinalOrNull(reader, "CuentaDetraccion");
 
         while (await reader.ReadAsync(cancellationToken))
         {
@@ -32,15 +36,28 @@ public sealed class ProveedorRepository(IDbConnectionFactory connectionFactory) 
                 TipoDocumento = reader.GetString(reader.GetOrdinal("TipoDocumento")),
                 NumeroDocumento = reader.GetString(reader.GetOrdinal("NumeroDocumento")),
                 NombreCompleto = reader.GetString(reader.GetOrdinal("NombreCompleto")),
-                CorreoElectronico = reader.IsDBNull(reader.GetOrdinal("CorreoElectronico")) ? null : reader.GetString(reader.GetOrdinal("CorreoElectronico")),
-                Telefono = reader.IsDBNull(reader.GetOrdinal("Telefono")) ? null : reader.GetString(reader.GetOrdinal("Telefono")),
-                Contacto = reader.IsDBNull(reader.GetOrdinal("Contacto")) ? null : reader.GetString(reader.GetOrdinal("Contacto")),
-                CuentaDetraccion = reader.IsDBNull(reader.GetOrdinal("CuentaDetraccion")) ? null : reader.GetString(reader.GetOrdinal("CuentaDetraccion")),
+                CorreoElectronico = correoOrdinal.HasValue && !reader.IsDBNull(correoOrdinal.Value) ? reader.GetString(correoOrdinal.Value) : null,
+                Telefono = telefonoOrdinal.HasValue && !reader.IsDBNull(telefonoOrdinal.Value) ? reader.GetString(telefonoOrdinal.Value) : null,
+                Contacto = contactoOrdinal.HasValue && !reader.IsDBNull(contactoOrdinal.Value) ? reader.GetString(contactoOrdinal.Value) : null,
+                CuentaDetraccion = cuentaDetraccionOrdinal.HasValue && !reader.IsDBNull(cuentaDetraccionOrdinal.Value) ? reader.GetString(cuentaDetraccionOrdinal.Value) : null,
                 Observacion = reader.IsDBNull(reader.GetOrdinal("Observacion")) ? null : reader.GetString(reader.GetOrdinal("Observacion")),
                 Estado = reader.GetBoolean(reader.GetOrdinal("Estado"))
             });
         }
 
         return result;
+    }
+
+    private static int? GetOrdinalOrNull(SqlDataReader reader, string columnName)
+    {
+        for (var i = 0; i < reader.FieldCount; i++)
+        {
+            if (string.Equals(reader.GetName(i), columnName, StringComparison.OrdinalIgnoreCase))
+            {
+                return i;
+            }
+        }
+
+        return null;
     }
 }

@@ -8,6 +8,7 @@
     var platformShell = ViewData["PlatformShell"] as bool? ?? false;
     var pageTitle = ViewData["Title"]?.ToString() ?? "Sistema Administrativo";
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+    var currentPath = Context.Request.Path.Value ?? string.Empty;
     var userEmail = User.Identity?.Name ?? "usuario@sisadm.local";
     var userDisplayName = userEmail;
     if (User.Identity?.IsAuthenticated == true)
@@ -22,10 +23,15 @@
     bool IsActiveController(params string[] controllers) =>
         controllers.Any(x => string.Equals(x, currentController, StringComparison.OrdinalIgnoreCase));
 
+    bool IsActivePath(params string[] segments) =>
+        segments.Any(x => currentPath.StartsWith($"/{x}", StringComparison.OrdinalIgnoreCase));
+
     var generalOpen = IsActiveController("Panel", "EmpresaContexto");
-    var mantenimientoOpen = IsActiveController("PlanCuenta", "Origen", "CuentaDestinoRegla", "ConfiguracionContabilizacion", "Persona");
-    var registroOpen = IsActiveController("Asiento", "Compra", "Venta");
-    var reportesOpen = IsActiveController("Reporte");
+    var mantenimientoOpen = IsActiveController("PlanCuenta", "CentroCosto", "CuentaCorriente", "Origen", "CuentaDestinoRegla", "ConfiguracionContabilizacion", "Persona")
+        || IsActivePath("PlanCuenta", "CentroCosto", "CuentaCorriente", "Origen", "CuentaDestinoRegla", "ConfiguracionContabilizacion", "Persona");
+    var registroOpen = IsActiveController("Asiento", "Compra", "Venta", "CajaBanco", "TransferenciaCuenta", "Aplicacion")
+        || IsActivePath("Asiento", "Compra", "Venta", "CajaBanco", "TransferenciaCuenta", "Aplicacion");
+    var reportesOpen = IsActiveController("Reporte") || IsActivePath("Reporte");
 }
 <html lang="es">
 <head>
@@ -109,11 +115,12 @@
                         <div id="sidebar-mantenimiento" class="collapse @(mantenimientoOpen ? "show" : string.Empty)">
                             <div class="app-sidebar-group-body">
                                 <a class="app-sidebar-link @(IsActiveController("PlanCuenta") ? "active" : string.Empty)" asp-controller="PlanCuenta" asp-action="Index"><i class="bi bi-diagram-3"></i><span>Plan de cuentas</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("CentroCosto") ? "active" : string.Empty)" asp-controller="CentroCosto" asp-action="Index"><i class="bi bi-diagram-2"></i><span>Centros de costo</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("CuentaCorriente") ? "active" : string.Empty)" asp-controller="CuentaCorriente" asp-action="Index"><i class="bi bi-bank"></i><span>Cuentas corrientes</span></a>
                                 <a class="app-sidebar-link @(IsActiveController("Persona") ? "active" : string.Empty)" asp-controller="Persona" asp-action="Index"><i class="bi bi-people"></i><span>Personas</span></a>
                                 <a class="app-sidebar-link @(IsActiveController("Origen") ? "active" : string.Empty)" asp-controller="Origen" asp-action="Index"><i class="bi bi-journal-richtext"></i><span>Origenes</span></a>
                                 <a class="app-sidebar-link @(IsActiveController("CuentaDestinoRegla") ? "active" : string.Empty)" asp-controller="CuentaDestinoRegla" asp-action="Index"><i class="bi bi-sliders2"></i><span>Reglas destino</span></a>
-                                <a class="app-sidebar-link @(IsActiveController("ConfiguracionContabilizacion") ? "active" : string.Empty)" asp-controller="ConfiguracionContabilizacion" asp-action="Index"><i class="bi bi-gear-wide-connected"></i><span>Config. compras/ventas</span></a>
-                                <a class="app-sidebar-link disabled" href="#"><i class="bi bi-sliders2"></i><span>Parametros</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("ConfiguracionContabilizacion") ? "active" : string.Empty)" asp-controller="ConfiguracionContabilizacion" asp-action="Index"><i class="bi bi-gear-wide-connected"></i><span>Configuracion contable</span></a>
                             </div>
                         </div>
                     </section>
@@ -127,6 +134,9 @@
                                 <a class="app-sidebar-link @(IsActiveController("Asiento") ? "active" : string.Empty)" asp-controller="Asiento" asp-action="Index"><i class="bi bi-receipt"></i><span>Asientos</span></a>
                                 <a class="app-sidebar-link @(IsActiveController("Compra") ? "active" : string.Empty)" asp-controller="Compra" asp-action="Index"><i class="bi bi-cart-check"></i><span>Compras</span></a>
                                 <a class="app-sidebar-link @(IsActiveController("Venta") ? "active" : string.Empty)" asp-controller="Venta" asp-action="Index"><i class="bi bi-cash-stack"></i><span>Ventas</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("CajaBanco") ? "active" : string.Empty)" asp-controller="CajaBanco" asp-action="Index"><i class="bi bi-cash-coin"></i><span>Caja y Bancos</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("TransferenciaCuenta") ? "active" : string.Empty)" asp-controller="TransferenciaCuenta" asp-action="Index"><i class="bi bi-arrow-left-right"></i><span>Transferencias</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("Aplicacion") ? "active" : string.Empty)" asp-controller="Aplicacion" asp-action="Index"><i class="bi bi-link-45deg"></i><span>Aplicaciones</span></a>
                             </div>
                         </div>
                     </section>

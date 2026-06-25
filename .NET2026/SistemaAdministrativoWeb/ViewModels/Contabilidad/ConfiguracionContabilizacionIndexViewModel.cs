@@ -14,5 +14,8 @@ public sealed class ConfiguracionContabilizacionIndexViewModel
     public ConfiguracionContabilizacionFormViewModel Formulario { get; set; } = new();
     public List<OrigenDto> Origenes { get; set; } = [];
     public List<PlanCuentaDto> CuentasMovimiento { get; set; } = [];
+    public List<ConfiguracionProvisionOperacionViewModel> Provisiones { get; set; } = [];
+    public List<ConfiguracionDocumentoFormViewModel> Documentos { get; set; } = [];
+    public List<ConfiguracionImpuestoFormViewModel> Impuestos { get; set; } = [];
     public List<ConfiguracionContabilizacionResumenItemViewModel> Configuraciones { get; set; } = [];
 }

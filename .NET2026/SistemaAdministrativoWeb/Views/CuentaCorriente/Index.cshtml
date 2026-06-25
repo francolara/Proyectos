@@ -1,0 +1,162 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.CuentaCorrienteIndexViewModel
+
+@{
+    ViewData["Title"] = "Cuentas corrientes";
+    ViewData["AdminShell"] = true;
+    var paginaInicio = Math.Max(1, Model.Paginacion.PaginaActual - 2);
+    var paginaFin = Math.Min(Model.Paginacion.TotalPaginas, Model.Paginacion.PaginaActual + 2);
+}
+
+<section class="dashboard-shell">
+    <section class="dashboard-metrics">
+        <article class="dashboard-metric-card dashboard-metric-card-count">
+            <span>Total cuentas</span>
+            <strong>@Model.TotalCuentasCorrientes</strong>
+            <small>Registros visibles para la consulta actual.</small>
+        </article>
+        <article class="dashboard-metric-card dashboard-metric-card-count">
+            <span>Activas</span>
+            <strong>@Model.TotalActivas</strong>
+            <small>Cuentas corrientes activas visibles en la pagina.</small>
+        </article>
+        <article class="dashboard-metric-card dashboard-metric-card-count">
+            <span>Bancos vinculados</span>
+            <strong>@Model.TotalBancos</strong>
+            <small>Bancos distintos usados en la consulta actual.</small>
+        </article>
+    </section>
+
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Catalogo</span>
+                <h1>Cuentas corrientes registradas</h1>
+                <p>Consulta, filtra y abre la edicion de las cuentas corrientes bancarias de la empresa activa.</p>
+            </div>
+            <div class="workspace-row-actions">
+                <a asp-action="Registrar" class="btn btn-light btn-sm">Registrar cuenta corriente</a>
+            </div>
+        </div>
+        <div class="workspace-window-body">
+            @if (TempData["CuentaCorrienteOk"] is string ok)
+            {
+                <div class="alert alert-success">@ok</div>
+            }
+
+            <form asp-action="Index" method="get" class="workspace-filter-card">
+                <div class="workspace-filter-grid">
+                    <div class="workspace-field workspace-field-span-2">
+                        <label class="form-label" for="textoBusqueda">Buscar cuenta corriente</label>
+                        <input id="textoBusqueda" name="textoBusqueda" value="@Model.TextoBusqueda" class="form-control" placeholder="Banco, numero de cuenta o cuenta contable" />
+                    </div>
+                </div>
+                <div class="workspace-actions">
+                    <button type="submit" class="btn btn-primary">Consultar</button>
+                </div>
+            </form>
+
+            <div class="table-responsive workspace-table-wrap">
+                <table class="table align-middle app-table workspace-table">
+                    <thead>
+                        <tr>
+                            <th>Banco</th>
+                            <th>Nro cuenta corriente</th>
+                            <th>Titular</th>
+                            <th>Moneda</th>
+                            <th>Cuenta contable</th>
+                            <th>Estado</th>
+                            <th>Fecha registro</th>
+                            <th class="text-end">Accion</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.CuentasCorrientes.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="8">
+                                    <div class="app-empty-state app-empty-state-inline">
+                                        <i class="bi bi-bank"></i>
+                                        <div>
+                                            <strong>No hay cuentas corrientes para la consulta actual</strong>
+                                            <p>Ajusta los filtros o registra la primera cuenta corriente bancaria.</p>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.CuentasCorrientes)
+                            {
+                                <tr class="workspace-clickable-row" data-edit-url="@Url.Action("Editar", new { idBancoConfiguracionEmpresa = item.IdBancoConfiguracionEmpresa })">
+                                    <td>
+                                        <div class="fw-semibold">@item.NombreBanco</div>
+                                        <div class="text-muted small">@item.CodigoBanco</div>
+                                    </td>
+                                    <td class="workspace-tree-code">@item.NroCuentaCorriente</td>
+                                    <td>@item.Titular</td>
+                                    <td>@(string.IsNullOrWhiteSpace(item.MonedaTexto) ? "-" : item.MonedaTexto)</td>
+                                    <td>
+                                        <div class="fw-semibold">@item.CodigoCuenta</div>
+                                        <div class="text-muted small">@item.NombreCuenta</div>
+                                    </td>
+                                    <td>
+                                        <span class="workspace-status-badge @(item.Activo ? "is-active" : "is-inactive")">
+                                            @(item.Activo ? "Activo" : "Inactivo")
+                                        </span>
+                                    </td>
+                                    <td>@item.FechaRegistro.ToString("dd/MM/yyyy")</td>
+                                    <td class="text-end">
+                                        <a asp-action="Editar" asp-route-idBancoConfiguracionEmpresa="@item.IdBancoConfiguracionEmpresa" class="workspace-row-link">Editar</a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.Paginacion.TotalPaginas > 1)
+            {
+                <nav class="workspace-pagination" aria-label="Paginacion cuentas corrientes">
+                    <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaAnterior ? string.Empty : "disabled")"
+                       asp-action="Index"
+                       asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-pagina="@(Model.Paginacion.PaginaActual - 1)">Anterior</a>
+
+                    @for (var pagina = paginaInicio; pagina <= paginaFin; pagina++)
+                    {
+                        <a class="btn @(pagina == Model.Paginacion.PaginaActual ? "btn-primary" : "btn-outline-secondary")"
+                           asp-action="Index"
+                           asp-route-textoBusqueda="@Model.TextoBusqueda"
+                           asp-route-pagina="@pagina">@pagina</a>
+                    }
+
+                    <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaSiguiente ? string.Empty : "disabled")"
+                       asp-action="Index"
+                       asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-pagina="@(Model.Paginacion.PaginaActual + 1)">Siguiente</a>
+                </nav>
+            }
+        </div>
+    </section>
+</section>
+
+@section Scripts {
+    <script>
+        (() => {
+            document.querySelectorAll(".workspace-clickable-row[data-edit-url]").forEach((row) => {
+                row.addEventListener("click", (event) => {
+                    if (event.target.closest("a, button, form, input, select, textarea, label")) {
+                        return;
+                    }
+
+                    const url = row.dataset.editUrl;
+                    if (url) {
+                        window.location.href = url;
+                    }
+                });
+            });
+        })();
+    </script>
+}

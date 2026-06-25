@@ -1,0 +1,192 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.AplicacionNotaCreditoIndexViewModel
+
+@* =============================================
+   Author:        FRANCO LARA
+   Create date:   24/06/2026
+   Description:   Agrega el listado operativo del modulo Aplicaciones para consultar aplicaciones de notas de credito por periodo, persona y asiento generado.
+   ============================================= *@
+@* Firma: FRANCO LARA - 24/06/2026 | Crea el listado del nuevo modulo Aplicaciones con filtros mensuales, monto aplicado, referencia de comprobante y nota de credito, y eliminacion de la aplicacion. *@
+
+@{
+    ViewData["Title"] = "Aplicaciones";
+    ViewData["AdminShell"] = true;
+    var paginaInicio = Math.Max(1, Model.Paginacion.PaginaActual - 2);
+    var paginaFin = Math.Min(Model.Paginacion.TotalPaginas, Model.Paginacion.PaginaActual + 2);
+    var textInfo = System.Globalization.CultureInfo.CurrentCulture.TextInfo;
+    var periodoTexto = new DateTime(Model.AnioSeleccionado, Model.MesSeleccionado, 1).ToString("MMMM 'de' yyyy");
+}
+
+<section class="dashboard-shell">
+    <section class="dashboard-metrics">
+        <article class="dashboard-metric-card dashboard-metric-card-count">
+            <span>Total aplicaciones</span>
+            <strong>@Model.TotalAplicaciones</strong>
+            <small>Aplicaciones visibles para el periodo consultado.</small>
+        </article>
+        <article class="dashboard-metric-card dashboard-metric-card-amount">
+            <span>Total aplicado</span>
+            <strong>@Model.TotalImporteAplicado.ToString("0.00")</strong>
+            <small>Importe aplicado con notas de credito en la consulta actual.</small>
+        </article>
+        <article class="dashboard-metric-card dashboard-metric-card-text">
+            <span>Proceso</span>
+            <strong>Cliente / Proveedor</strong>
+            <small>Soporta aplicaciones parciales manteniendo saldo pendiente en comprobante o NC.</small>
+        </article>
+    </section>
+
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Registro</span>
+                <h1>Aplicaciones de notas de credito</h1>
+                <p>Relaciona comprobantes pendientes con notas de credito del mismo cliente o proveedor y genera el asiento configurado en APNC.</p>
+            </div>
+            <div class="workspace-row-actions">
+                <a asp-action="Registrar"
+                   asp-route-anio="@Model.AnioSeleccionado"
+                   asp-route-mes="@Model.MesSeleccionado"
+                   class="btn btn-light btn-sm">Registrar aplicacion</a>
+            </div>
+        </div>
+        <div class="workspace-window-body">
+            @if (TempData["AplicacionOk"] is string ok)
+            {
+                <div class="alert alert-success">@ok</div>
+            }
+            @if (TempData["AplicacionError"] is string error)
+            {
+                <div class="alert alert-danger">@error</div>
+            }
+
+            <form asp-action="Index" method="get" class="workspace-filter-card">
+                <div class="workspace-filter-grid workspace-filter-grid-compact">
+                    <div class="workspace-field">
+                        <label class="form-label" for="anio">Año</label>
+                        <select id="anio" name="anio" class="form-select">
+                            @foreach (var anio in Model.AniosDisponibles)
+                            {
+                                <option value="@anio" selected="@(anio == Model.AnioSeleccionado)">@anio</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="mes">Mes</label>
+                        <select id="mes" name="mes" class="form-select">
+                            @foreach (var mes in Model.MesesDisponibles)
+                            {
+                                <option value="@mes.Valor" selected="@(mes.Valor == Model.MesSeleccionado)">@textInfo.ToTitleCase(mes.Nombre)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field workspace-field-span-2">
+                        <label class="form-label" for="textoBusqueda">Buscar aplicacion</label>
+                        <input id="textoBusqueda" name="textoBusqueda" value="@Model.TextoBusqueda" class="form-control" placeholder="Persona, glosa, serie o numero" />
+                    </div>
+                </div>
+                <div class="workspace-actions">
+                    <button type="submit" class="btn btn-primary">Consultar</button>
+                </div>
+            </form>
+
+            <div class="workspace-inline-note">
+                Periodo activo: <strong>@textInfo.ToTitleCase(periodoTexto)</strong>
+            </div>
+
+            <div class="table-responsive workspace-table-wrap">
+                <table class="table align-middle app-table workspace-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Tipo</th>
+                            <th>Persona</th>
+                            <th>Comprobante</th>
+                            <th>Nota credito</th>
+                            <th>Moneda</th>
+                            <th>Monto aplicado</th>
+                            <th>Asiento</th>
+                            <th>Glosa</th>
+                            <th class="text-end">Accion</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Aplicaciones.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="10">
+                                    <div class="app-empty-state app-empty-state-inline">
+                                        <i class="bi bi-link-45deg"></i>
+                                        <div>
+                                            <strong>No hay aplicaciones registradas para la consulta actual</strong>
+                                            <p>Registra la primera aplicacion o ajusta el periodo de busqueda.</p>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.Aplicaciones)
+                            {
+                                <tr>
+                                    <td>@item.FechaAplicacion.ToString("dd/MM/yyyy")</td>
+                                    <td>@item.TipoPersonaTexto</td>
+                                    <td>
+                                        <strong>@item.NombrePersona</strong>
+                                        <div class="workspace-inline-note">@item.NumeroDocumentoPersona</div>
+                                    </td>
+                                    <td>@item.DocumentoAplicadoTexto</td>
+                                    <td>@item.DocumentoNcTexto</td>
+                                    <td>@item.CodigoMoneda</td>
+                                    <td class="workspace-money-cell">@item.ImporteAplicado.ToString("0.00")</td>
+                                    <td>@(item.NumeroAsiento?.ToString() ?? "-")</td>
+                                    <td>@item.Glosa</td>
+                                    <td class="text-end">
+                                        <form asp-action="Eliminar" method="post" onsubmit="return confirm('Se eliminara la aplicacion y se restauraran los saldos del comprobante y la NC. ¿Desea continuar?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="idAplicacionNotaCredito" value="@item.IdAplicacionNotaCredito" />
+                                            <input type="hidden" name="anio" value="@Model.AnioSeleccionado" />
+                                            <input type="hidden" name="mes" value="@Model.MesSeleccionado" />
+                                            <input type="hidden" name="textoBusqueda" value="@Model.TextoBusqueda" />
+                                            <input type="hidden" name="pagina" value="@Model.Paginacion.PaginaActual" />
+                                            <button type="submit" class="workspace-row-btn workspace-row-btn-danger">Eliminar</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.Paginacion.TotalPaginas > 1)
+            {
+                <nav class="workspace-pagination" aria-label="Paginacion aplicaciones">
+                    <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaAnterior ? string.Empty : "disabled")"
+                       asp-action="Index"
+                       asp-route-anio="@Model.AnioSeleccionado"
+                       asp-route-mes="@Model.MesSeleccionado"
+                       asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-pagina="@(Model.Paginacion.PaginaActual - 1)">Anterior</a>
+
+                    @for (var pagina = paginaInicio; pagina <= paginaFin; pagina++)
+                    {
+                        <a class="btn @(pagina == Model.Paginacion.PaginaActual ? "btn-primary" : "btn-outline-secondary")"
+                           asp-action="Index"
+                           asp-route-anio="@Model.AnioSeleccionado"
+                           asp-route-mes="@Model.MesSeleccionado"
+                           asp-route-textoBusqueda="@Model.TextoBusqueda"
+                           asp-route-pagina="@pagina">@pagina</a>
+                    }
+
+                    <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaSiguiente ? string.Empty : "disabled")"
+                       asp-action="Index"
+                       asp-route-anio="@Model.AnioSeleccionado"
+                       asp-route-mes="@Model.MesSeleccionado"
+                       asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-pagina="@(Model.Paginacion.PaginaActual + 1)">Siguiente</a>
+                </nav>
+            }
+        </div>
+    </section>
+</section>

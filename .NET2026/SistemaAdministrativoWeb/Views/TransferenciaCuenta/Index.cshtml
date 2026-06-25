@@ -1,0 +1,201 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.TransferenciaCuentaIndexViewModel
+
+@* =============================================
+   Author:        FRANCO LARA
+   Create date:   24/06/2026
+   Description:   Agrega el listado operativo del nuevo modulo de transferencias entre cuentas mostrando la pareja emisor/receptor registrada desde BAN_MovimientoBanco.
+   ============================================= *@
+@* Firma: FRANCO LARA - 24/06/2026 | Crea el listado del modulo Transferencias entre cuentas con filtros por periodo, resumen operativo y eliminacion de la transferencia completa. *@
+
+@{
+    ViewData["Title"] = "Transferencias entre cuentas";
+    ViewData["AdminShell"] = true;
+    var paginaInicio = Math.Max(1, Model.Paginacion.PaginaActual - 2);
+    var paginaFin = Math.Min(Model.Paginacion.TotalPaginas, Model.Paginacion.PaginaActual + 2);
+    var textInfo = System.Globalization.CultureInfo.CurrentCulture.TextInfo;
+    var periodoTexto = new DateTime(Model.AnioSeleccionado, Model.MesSeleccionado, 1).ToString("MMMM 'de' yyyy");
+}
+
+<section class="dashboard-shell">
+    <section class="dashboard-metrics">
+        <article class="dashboard-metric-card dashboard-metric-card-count">
+            <span>Total transferencias</span>
+            <strong>@Model.TotalTransferencias</strong>
+            <small>Transferencias visibles para el periodo consultado.</small>
+        </article>
+        <article class="dashboard-metric-card dashboard-metric-card-amount">
+            <span>Total emisor</span>
+            <strong>@Model.TotalImporteEmisor.ToString("0.00")</strong>
+            <small>Monto egresado desde las cuentas emisoras.</small>
+        </article>
+        <article class="dashboard-metric-card dashboard-metric-card-amount">
+            <span>Total receptor</span>
+            <strong>@Model.TotalImporteReceptor.ToString("0.00")</strong>
+            <small>Monto ingresado a las cuentas receptoras.</small>
+        </article>
+    </section>
+
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Registro</span>
+                <h1>Transferencias entre cuentas</h1>
+                <p>Registra movimientos internos entre cuentas corrientes reutilizando Caja y Bancos y sus asientos contables.</p>
+            </div>
+            <div class="workspace-row-actions">
+                <a asp-action="Registrar"
+                   asp-route-anio="@Model.AnioSeleccionado"
+                   asp-route-mes="@Model.MesSeleccionado"
+                   class="btn btn-light btn-sm">Registrar transferencia</a>
+            </div>
+        </div>
+        <div class="workspace-window-body">
+            @if (TempData["TransferenciaCuentaOk"] is string ok)
+            {
+                <div class="alert alert-success">@ok</div>
+            }
+            @if (TempData["TransferenciaCuentaError"] is string error)
+            {
+                <div class="alert alert-danger">@error</div>
+            }
+
+            <form asp-action="Index" method="get" class="workspace-filter-card">
+                <div class="workspace-filter-grid workspace-filter-grid-compact">
+                    <div class="workspace-field">
+                        <label class="form-label" for="anio">Año</label>
+                        <select id="anio" name="anio" class="form-select">
+                            @foreach (var anio in Model.AniosDisponibles)
+                            {
+                                <option value="@anio" selected="@(anio == Model.AnioSeleccionado)">@anio</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="mes">Mes</label>
+                        <select id="mes" name="mes" class="form-select">
+                            @foreach (var mes in Model.MesesDisponibles)
+                            {
+                                <option value="@mes.Valor" selected="@(mes.Valor == Model.MesSeleccionado)">@textInfo.ToTitleCase(mes.Nombre)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field workspace-field-span-2">
+                        <label class="form-label" for="textoBusqueda">Buscar transferencia</label>
+                        <input id="textoBusqueda" name="textoBusqueda" value="@Model.TextoBusqueda" class="form-control" placeholder="Cuenta, operacion, glosa o nro operacion" />
+                    </div>
+                </div>
+                <div class="workspace-actions">
+                    <button type="submit" class="btn btn-primary">Consultar</button>
+                </div>
+            </form>
+
+            <div class="workspace-inline-note">
+                Periodo activo: <strong>@textInfo.ToTitleCase(periodoTexto)</strong>
+            </div>
+
+            <div class="table-responsive workspace-table-wrap">
+                <table class="table align-middle app-table workspace-table">
+                    <thead>
+                        <tr>
+                            <th>Mov. emisor</th>
+                            <th>Asiento emisor</th>
+                            <th>Cuenta emisor</th>
+                            <th>Moneda</th>
+                            <th>Monto emisor</th>
+                            <th>Mov. receptor</th>
+                            <th>Asiento receptor</th>
+                            <th>Cuenta receptor</th>
+                            <th>Moneda</th>
+                            <th>Monto receptor</th>
+                            <th>Nro operacion</th>
+                            <th>Glosa</th>
+                            <th class="text-end">Accion</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Transferencias.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="13">
+                                    <div class="app-empty-state app-empty-state-inline">
+                                        <i class="bi bi-arrow-left-right"></i>
+                                        <div>
+                                            <strong>No hay transferencias para la consulta actual</strong>
+                                            <p>Registra la primera transferencia o ajusta el periodo de busqueda.</p>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.Transferencias)
+                            {
+                                <tr>
+                                    <td>@item.NumeroMovimientoEmisor</td>
+                                    <td>@(item.NumeroAsientoEmisor?.ToString() ?? "-")</td>
+                                    <td>
+                                        <strong>@item.CuentaCorrienteEmisor</strong>
+                                        <div class="workspace-inline-note">@item.OperacionEmisor</div>
+                                    </td>
+                                    <td>@item.MonedaEmisor</td>
+                                    <td class="workspace-money-cell">@item.ImporteEmisor.ToString("0.00")</td>
+                                    <td>@item.NumeroMovimientoReceptor</td>
+                                    <td>@(item.NumeroAsientoReceptor?.ToString() ?? "-")</td>
+                                    <td>
+                                        <strong>@item.CuentaCorrienteReceptor</strong>
+                                        <div class="workspace-inline-note">@item.OperacionReceptor</div>
+                                    </td>
+                                    <td>@item.MonedaReceptor</td>
+                                    <td class="workspace-money-cell">@item.ImporteReceptor.ToString("0.00")</td>
+                                    <td>@(string.IsNullOrWhiteSpace(item.NumeroOperacionEmisor) ? "-" : item.NumeroOperacionEmisor)</td>
+                                    <td>@item.GlosaEmisor</td>
+                                    <td class="text-end">
+                                        <form asp-action="Eliminar" method="post" onsubmit="return confirm('Se eliminara la transferencia completa entre cuentas. ¿Desea continuar?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="idMovimientoBancoEmisor" value="@item.IdMovimientoBancoEmisor" />
+                                            <input type="hidden" name="anio" value="@Model.AnioSeleccionado" />
+                                            <input type="hidden" name="mes" value="@Model.MesSeleccionado" />
+                                            <input type="hidden" name="textoBusqueda" value="@Model.TextoBusqueda" />
+                                            <input type="hidden" name="pagina" value="@Model.Paginacion.PaginaActual" />
+                                            <button type="submit" class="workspace-row-btn workspace-row-btn-danger">Eliminar</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.Paginacion.TotalPaginas > 1)
+            {
+                <nav class="workspace-pagination" aria-label="Paginacion transferencias">
+                    <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaAnterior ? string.Empty : "disabled")"
+                       asp-action="Index"
+                       asp-route-anio="@Model.AnioSeleccionado"
+                       asp-route-mes="@Model.MesSeleccionado"
+                       asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-pagina="@(Model.Paginacion.PaginaActual - 1)">Anterior</a>
+
+                    @for (var pagina = paginaInicio; pagina <= paginaFin; pagina++)
+                    {
+                        <a class="btn @(pagina == Model.Paginacion.PaginaActual ? "btn-primary" : "btn-outline-secondary")"
+                           asp-action="Index"
+                           asp-route-anio="@Model.AnioSeleccionado"
+                           asp-route-mes="@Model.MesSeleccionado"
+                           asp-route-textoBusqueda="@Model.TextoBusqueda"
+                           asp-route-pagina="@pagina">@pagina</a>
+                    }
+
+                    <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaSiguiente ? string.Empty : "disabled")"
+                       asp-action="Index"
+                       asp-route-anio="@Model.AnioSeleccionado"
+                       asp-route-mes="@Model.MesSeleccionado"
+                       asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-pagina="@(Model.Paginacion.PaginaActual + 1)">Siguiente</a>
+                </nav>
+            }
+        </div>
+    </section>
+</section>

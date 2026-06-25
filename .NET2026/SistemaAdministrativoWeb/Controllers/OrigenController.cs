@@ -24,9 +24,13 @@ public class OrigenController(
         ViewData["AdminShell"] = true;
 
         var origenes = await origenRepository.ListarPaginadoPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, textoBusqueda, pagina, TamanoPagina, false, cancellationToken);
+        var totalEmpresa = string.IsNullOrWhiteSpace(textoBusqueda)
+            ? origenes.TotalRecords
+            : (await origenRepository.ListarPaginadoPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, null, 1, 1, false, cancellationToken)).TotalRecords;
         var model = ConstruirViewModel(origenes.Items, null);
         model.TextoBusqueda = textoBusqueda?.Trim() ?? string.Empty;
         model.TotalOrigenes = origenes.TotalRecords;
+        model.PuedeCargarDefault = totalEmpresa == 0;
         model.Paginacion = new PaginacionViewModel
         {
             PaginaActual = pagina,
@@ -46,6 +50,21 @@ public class OrigenController(
     public async Task<IActionResult> Editar(int idOrigen, CancellationToken cancellationToken = default)
     {
         return await CargarFormularioAsync(idOrigen, cancellationToken);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CargarDefault(CancellationToken cancellationToken)
+    {
+        if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
+        {
+            return RedirectToAction("Index", "EmpresaContexto");
+        }
+
+        await origenRepository.CargarDefaultAsync(currentCompanyAccessor.EmpresaId.Value, User.Identity?.Name, cancellationToken);
+        TempData["OrigenOk"] = "Origenes base cargados correctamente.";
+
+        return RedirectToAction(nameof(Index));
     }
 
     [HttpPost]

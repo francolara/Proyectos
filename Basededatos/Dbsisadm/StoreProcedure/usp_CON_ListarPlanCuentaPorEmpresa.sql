@@ -1,4 +1,4 @@
--- =============================================
+﻿-- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   15/06/2026
 -- Description:   Lista el plan de cuentas de una empresa con filtro opcional para cuentas de movimiento.
@@ -8,11 +8,23 @@
 -- Create date:   16/06/2026
 -- Description:   Ajusta la salida para incluir estado, busqueda y paginacion server-side en el mantenimiento web.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   18/06/2026
+-- Description:   Reemplaza NaturalezaSaldo por ColBalance, agrega IdMoneda/TipoCambio y filtro por nivel.
+-- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   24/06/2026
+-- Description:   Agrega indicador de ultimo nivel y permite filtrar ayudas para seleccionar solo cuentas hoja.
+-- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_ListarPlanCuentaPorEmpresa
     @IdEmpresa INT,
     @SoloMovimiento BIT = 0,
+    @SoloUltimoNivel BIT = 0,
     @TextoBusqueda NVARCHAR(150) = NULL,
+    @NivelCuenta TINYINT = NULL,
     @NumeroPagina INT = NULL,
     @TamanoPagina INT = NULL
 AS
@@ -34,14 +46,40 @@ BEGIN
                 pc.CodigoCuenta,
                 pc.NombreCuenta,
                 pc.NivelCuenta,
-                pc.NaturalezaSaldo,
+                pc.ColBalance,
+                pc.IdMoneda,
+                pc.TipoCambio,
                 pc.AceptaMovimiento,
+                CAST(CASE
+                    WHEN EXISTS
+                    (
+                        SELECT 1
+                        FROM dbo.CON_PlanCuenta AS h
+                        WHERE h.IdEmpresa = pc.IdEmpresa
+                          AND h.IdPlanCuentaPadre = pc.IdPlanCuenta
+                          AND h.Estado = 1
+                    )
+                        THEN 0
+                    ELSE 1
+                END AS BIT) AS EsUltimoNivel,
                 pc.RequiereCentroCosto,
                 pc.Estado
             FROM dbo.CON_PlanCuenta AS pc
             WHERE pc.IdEmpresa = @IdEmpresa
               AND pc.Estado = 1
-              AND (@SoloMovimiento = 0 OR pc.AceptaMovimiento = 1)
+              AND (@SoloMovimiento = 0 )
+              AND (@NivelCuenta IS NULL OR pc.NivelCuenta = @NivelCuenta)
+              AND (
+                    @SoloUltimoNivel = 0
+                    OR NOT EXISTS
+                    (
+                        SELECT 1
+                        FROM dbo.CON_PlanCuenta AS h
+                        WHERE h.IdEmpresa = pc.IdEmpresa
+                          AND h.IdPlanCuentaPadre = pc.IdPlanCuenta
+                          AND h.Estado = 1
+                    )
+                  )
               AND (
                     @TextoBusquedaTrabajo IS NULL
                     OR pc.CodigoCuenta LIKE '%' + @TextoBusquedaTrabajo + '%'
@@ -54,8 +92,11 @@ BEGIN
             b.CodigoCuenta,
             b.NombreCuenta,
             b.NivelCuenta,
-            b.NaturalezaSaldo,
+            b.ColBalance,
+            b.IdMoneda,
+            b.TipoCambio,
             b.AceptaMovimiento,
+            b.EsUltimoNivel,
             b.RequiereCentroCosto,
             b.Estado,
             COUNT(1) OVER() AS TotalRegistros

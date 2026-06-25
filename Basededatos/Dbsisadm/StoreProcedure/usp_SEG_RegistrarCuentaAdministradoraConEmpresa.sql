@@ -3,6 +3,11 @@
 -- Create date:   15/06/2026
 -- Description:   Registra la cuenta administradora principal, su empresa inicial y la suscripcion base.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   18/06/2026
+-- Description:   Agrega carga automatica de parametros base desde maestro interno al crear empresa inicial.
+-- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.usp_SEG_RegistrarCuentaAdministradoraConEmpresa
     @AspNetUserId NVARCHAR(450),
@@ -164,6 +169,10 @@ BEGIN
             1,
             @UsuarioRegistro
         );
+
+        EXEC dbo.usp_ADM_CargarParametrosDefaultEmpresa
+            @IdEmpresa = @IdEmpresa,
+            @UsuarioRegistro = @UsuarioRegistro;
 
         INSERT INTO dbo.SEG_CuentaAdministradoraSuscripcion
         (

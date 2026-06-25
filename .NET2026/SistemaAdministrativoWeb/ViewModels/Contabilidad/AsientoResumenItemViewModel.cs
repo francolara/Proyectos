@@ -7,6 +7,7 @@ public sealed class AsientoResumenItemViewModel
     public string NombreOrigen { get; init; } = string.Empty;
     public string Periodo { get; init; } = string.Empty;
     public int NumeroAsiento { get; init; }
+    public DateOnly FechaEmision { get; init; }
     public DateOnly FechaAsiento { get; init; }
     public string Glosa { get; init; } = string.Empty;
     public string CodigoMoneda { get; init; } = string.Empty;
@@ -14,4 +15,5 @@ public sealed class AsientoResumenItemViewModel
     public decimal TotalDebe { get; init; }
     public decimal TotalHaber { get; init; }
     public string Estado { get; init; } = string.Empty;
+    public bool PermiteRegistroManual { get; init; }
 }

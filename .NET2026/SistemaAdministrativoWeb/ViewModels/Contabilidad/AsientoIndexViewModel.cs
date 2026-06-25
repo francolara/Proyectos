@@ -12,7 +12,11 @@ public sealed class AsientoIndexViewModel
     public string TextoBusqueda { get; set; } = string.Empty;
     public int TotalAsientos { get; set; }
     public decimal TotalDebePeriodo { get; set; }
+    public decimal TotalDebeSolesPeriodo { get; set; }
+    public decimal TotalDebeDolaresPeriodo { get; set; }
     public decimal TotalHaberPeriodo { get; set; }
+    public decimal TotalHaberSolesPeriodo { get; set; }
+    public decimal TotalHaberDolaresPeriodo { get; set; }
     public PaginacionViewModel Paginacion { get; set; } = new();
     public AsientoFormViewModel Formulario { get; set; } = new();
     public List<int> AniosDisponibles { get; set; } = [];
@@ -20,5 +24,6 @@ public sealed class AsientoIndexViewModel
     public List<OrigenDto> OrigenesManual { get; set; } = [];
     public List<MonedaDto> Monedas { get; set; } = [];
     public List<PlanCuentaDto> CuentasMovimiento { get; set; } = [];
+    public List<OpcionCatalogoViewModel> TiposDocumentoIdentidad { get; set; } = [];
     public List<AsientoResumenItemViewModel> Asientos { get; set; } = [];
 }

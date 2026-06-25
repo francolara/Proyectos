@@ -101,6 +101,14 @@ public class PanelController(
                     Icono = "bi-cash-stack",
                     Url = "/Venta",
                     Habilitado = true
+                },
+                new PanelModuloViewModel
+                {
+                    Titulo = "Aplicaciones",
+                    Descripcion = "Compensacion parcial o total de comprobantes con notas de credito y asiento APNC.",
+                    Icono = "bi-link-45deg",
+                    Url = "/Aplicacion",
+                    Habilitado = true
                 }
             ]
         };

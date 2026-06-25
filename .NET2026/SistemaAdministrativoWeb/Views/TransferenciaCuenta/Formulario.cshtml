@@ -1,0 +1,445 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.TransferenciaCuentaIndexViewModel
+
+@* =============================================
+   Author:        FRANCO LARA
+   Create date:   24/06/2026
+   Description:   Crea el formulario del modulo Transferencias entre cuentas con bloques emisor y receptor, conversion automatica por moneda, tipo de cambio receptor bloqueado y replica editable de glosa y observaciones.
+   ============================================= *@
+@* Firma: FRANCO LARA - 24/06/2026 | Agrega el formulario de transferencias entre cuentas con operacion bancaria por destino, conversion automatica del importe receptor, tipo de cambio receptor bloqueado, replica editable de glosa/observaciones y calendario en las fechas de emisor/receptor antes de registrar en BAN_MovimientoBanco. *@
+
+@{
+    ViewData["Title"] = "Registrar transferencia entre cuentas";
+    ViewData["AdminShell"] = true;
+    var periodoTexto = new DateTime(Model.AnioSeleccionado, Model.MesSeleccionado, 1).ToString("MMMM 'de' yyyy");
+    var textInfo = System.Globalization.CultureInfo.CurrentCulture.TextInfo;
+}
+
+<style>
+    .workspace-transfer-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .workspace-transfer-card {
+        border: 1px solid rgba(76, 108, 168, 0.16);
+        border-radius: 1.25rem;
+        background: #fff;
+        box-shadow: 0 20px 45px rgba(20, 38, 73, 0.05);
+        overflow: hidden;
+    }
+
+    .workspace-transfer-card-head {
+        padding: 1.1rem 1.25rem;
+        color: #fff;
+        background: linear-gradient(135deg, #163867, #2d7bf0);
+    }
+
+    .workspace-transfer-card-head h2 {
+        margin: 0;
+        font-size: 1.35rem;
+    }
+
+    .workspace-transfer-card-head p {
+        margin: 0.35rem 0 0;
+        opacity: 0.86;
+    }
+
+    .workspace-transfer-card-body {
+        padding: 1.15rem 1.2rem 1.3rem;
+    }
+
+    .workspace-transfer-highlight {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.85rem;
+        margin-top: 1rem;
+    }
+
+    .workspace-transfer-stat {
+        border: 1px solid rgba(71, 101, 158, 0.14);
+        border-radius: 1rem;
+        padding: 0.9rem 1rem;
+        background: rgba(241, 246, 255, 0.78);
+    }
+
+    .workspace-transfer-stat span,
+    .workspace-transfer-stat strong,
+    .workspace-transfer-stat small {
+        display: block;
+    }
+
+    .workspace-transfer-stat span {
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #5272a0;
+    }
+
+    .workspace-transfer-stat strong {
+        margin-top: 0.3rem;
+        font-size: 1.45rem;
+        color: #173863;
+    }
+
+    .workspace-transfer-stat small {
+        margin-top: 0.18rem;
+        color: #627493;
+    }
+
+    @@media (max-width: 991.98px) {
+        .workspace-transfer-grid,
+        .workspace-transfer-highlight {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<section class="dashboard-shell">
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Formulario</span>
+                <h1>Registrar transferencia entre cuentas</h1>
+                <p>Genera el egreso de la cuenta emisora y el ingreso de la cuenta receptora reutilizando los movimientos bancarios y sus asientos.</p>
+            </div>
+            <div class="workspace-window-badge">
+                <strong>@textInfo.ToTitleCase(periodoTexto)</strong>
+                <span>Periodo contable</span>
+                <small>@Model.PeriodoConsulta</small>
+            </div>
+        </div>
+        <div class="workspace-window-body">
+            <form asp-action="Guardar" method="post" id="transferencia-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="anio" value="@Model.AnioSeleccionado" />
+                <input type="hidden" name="mes" value="@Model.MesSeleccionado" />
+
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="workspace-transfer-grid">
+                    <section class="workspace-transfer-card">
+                        <div class="workspace-transfer-card-head">
+                            <h2>Emisor</h2>
+                            <p>Registra el egreso desde la cuenta que entrega los fondos.</p>
+                        </div>
+                        <div class="workspace-transfer-card-body">
+                            <div class="workspace-form-grid">
+                                <div class="workspace-field">
+                                    <label asp-for="Formulario.Emisor.IdOpeBancaria" class="form-label">Operacion bancaria</label>
+                                    <select asp-for="Formulario.Emisor.IdOpeBancaria" class="form-select js-operacion-select" data-target-text="emisorOperacionTexto">
+                                        <option value="">Seleccione</option>
+                                        @foreach (var operacion in Model.OperacionesEmisor)
+                                        {
+                                            <option value="@operacion.IdOpeBancaria" data-texto="@operacion.TipoOperacion">@($"{operacion.IdOpeBancaria} - {operacion.TipoOperacion}")</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="Formulario.Emisor.IdOpeBancaria" class="text-danger"></span>
+                                </div>
+                                <div class="workspace-field">
+                                    <label asp-for="Formulario.Emisor.IdBancoConfiguracionEmpresa" class="form-label">Cuenta corriente</label>
+                                    <select asp-for="Formulario.Emisor.IdBancoConfiguracionEmpresa" class="form-select js-cuenta-select" data-prefix="emisor">
+                                        <option value="">Seleccione</option>
+                                        @foreach (var cuenta in Model.CuentasCorrientesDisponibles)
+                                        {
+                                            <option value="@cuenta.IdBancoConfiguracionEmpresa"
+                                                    data-moneda="@cuenta.CodigoMoneda"
+                                                    data-moneda-texto="@($"{cuenta.CodigoMoneda} - {cuenta.NombreMoneda}")"
+                                                    data-cuenta="@cuenta.NroCuentaCorriente">@($"{cuenta.NroCuentaCorriente} | {cuenta.NombreBanco} | {cuenta.CodigoMoneda}")</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="Formulario.Emisor.IdBancoConfiguracionEmpresa" class="text-danger"></span>
+                                </div>
+                                <div class="workspace-field">
+                                    <label class="form-label">Moneda</label>
+                                    <input asp-for="Formulario.Emisor.MonedaTexto" class="form-control" id="emisorMonedaTexto" readonly />
+                                </div>
+                                <div class="workspace-field">
+                                    <label asp-for="Formulario.Emisor.FechaEmision" class="form-label">Fecha</label>
+                                    <input asp-for="Formulario.Emisor.FechaEmision" type="date" class="form-control js-sync-fecha" />
+                                    <span asp-validation-for="Formulario.Emisor.FechaEmision" class="text-danger"></span>
+                                </div>
+                                <div class="workspace-field">
+                                    <label asp-for="Formulario.Emisor.TipoCambio" class="form-label">Tipo de cambio</label>
+                                    <input asp-for="Formulario.Emisor.TipoCambio" class="form-control js-tipo-cambio" />
+                                    <span asp-validation-for="Formulario.Emisor.TipoCambio" class="text-danger"></span>
+                                </div>
+                                <div class="workspace-field">
+                                    <label asp-for="Formulario.Emisor.NumeroOperacion" class="form-label">Nro operacion</label>
+                                    <input asp-for="Formulario.Emisor.NumeroOperacion" class="form-control js-sync-operacion" />
+                                    <span asp-validation-for="Formulario.Emisor.NumeroOperacion" class="text-danger"></span>
+                                </div>
+                                <div class="workspace-field">
+                                    <label asp-for="Formulario.Emisor.Importe" class="form-label">Monto</label>
+                                    <input asp-for="Formulario.Emisor.Importe" class="form-control js-importe-emisor" />
+                                    <span asp-validation-for="Formulario.Emisor.Importe" class="text-danger"></span>
+                                </div>
+                                <div class="workspace-field workspace-field-span-2">
+                                    <label asp-for="Formulario.Emisor.Glosa" class="form-label">Glosa</label>
+                                    <input asp-for="Formulario.Emisor.Glosa" class="form-control js-sync-glosa" />
+                                    <span asp-validation-for="Formulario.Emisor.Glosa" class="text-danger"></span>
+                                </div>
+                                <div class="workspace-field workspace-field-span-2">
+                                    <label asp-for="Formulario.Emisor.Observacion" class="form-label">Observaciones</label>
+                                    <textarea asp-for="Formulario.Emisor.Observacion" class="form-control js-sync-observacion" rows="3"></textarea>
+                                    <span asp-validation-for="Formulario.Emisor.Observacion" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="workspace-transfer-card">
+                        <div class="workspace-transfer-card-head">
+                            <h2>Receptor</h2>
+                            <p>Registra el ingreso en la cuenta destino y calcula su importe segun la moneda.</p>
+                        </div>
+                        <div class="workspace-transfer-card-body">
+                            <div class="workspace-form-grid">
+                                <div class="workspace-field">
+                                    <label asp-for="Formulario.Receptor.IdOpeBancaria" class="form-label">Operacion bancaria</label>
+                                    <select asp-for="Formulario.Receptor.IdOpeBancaria" class="form-select js-operacion-select" data-target-text="receptorOperacionTexto">
+                                        <option value="">Seleccione</option>
+                                        @foreach (var operacion in Model.OperacionesReceptor)
+                                        {
+                                            <option value="@operacion.IdOpeBancaria" data-texto="@operacion.TipoOperacion">@($"{operacion.IdOpeBancaria} - {operacion.TipoOperacion}")</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="Formulario.Receptor.IdOpeBancaria" class="text-danger"></span>
+                                </div>
+                                <div class="workspace-field">
+                                    <label asp-for="Formulario.Receptor.IdBancoConfiguracionEmpresa" class="form-label">Cuenta corriente</label>
+                                    <select asp-for="Formulario.Receptor.IdBancoConfiguracionEmpresa" class="form-select js-cuenta-select" data-prefix="receptor">
+                                        <option value="">Seleccione</option>
+                                        @foreach (var cuenta in Model.CuentasCorrientesDisponibles)
+                                        {
+                                            <option value="@cuenta.IdBancoConfiguracionEmpresa"
+                                                    data-moneda="@cuenta.CodigoMoneda"
+                                                    data-moneda-texto="@($"{cuenta.CodigoMoneda} - {cuenta.NombreMoneda}")"
+                                                    data-cuenta="@cuenta.NroCuentaCorriente">@($"{cuenta.NroCuentaCorriente} | {cuenta.NombreBanco} | {cuenta.CodigoMoneda}")</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="Formulario.Receptor.IdBancoConfiguracionEmpresa" class="text-danger"></span>
+                                </div>
+                                <div class="workspace-field">
+                                    <label class="form-label">Moneda</label>
+                                    <input asp-for="Formulario.Receptor.MonedaTexto" class="form-control" id="receptorMonedaTexto" readonly />
+                                </div>
+                                <div class="workspace-field">
+                                    <label asp-for="Formulario.Receptor.FechaEmision" class="form-label">Fecha</label>
+                                    <input asp-for="Formulario.Receptor.FechaEmision" type="date" class="form-control js-fecha-receptor" />
+                                    <span asp-validation-for="Formulario.Receptor.FechaEmision" class="text-danger"></span>
+                                </div>
+                                <div class="workspace-field">
+                                    <label asp-for="Formulario.Receptor.TipoCambio" class="form-label">Tipo de cambio</label>
+                                    <input asp-for="Formulario.Receptor.TipoCambio" class="form-control js-tipo-cambio-receptor" readonly />
+                                    <span asp-validation-for="Formulario.Receptor.TipoCambio" class="text-danger"></span>
+                                </div>
+                                <div class="workspace-field">
+                                    <label asp-for="Formulario.Receptor.NumeroOperacion" class="form-label">Nro operacion</label>
+                                    <input asp-for="Formulario.Receptor.NumeroOperacion" class="form-control js-numero-receptor" />
+                                    <span asp-validation-for="Formulario.Receptor.NumeroOperacion" class="text-danger"></span>
+                                </div>
+                                <div class="workspace-field">
+                                    <label asp-for="Formulario.Receptor.Importe" class="form-label">Monto receptor</label>
+                                    <input asp-for="Formulario.Receptor.Importe" class="form-control js-importe-receptor" readonly />
+                                    <span asp-validation-for="Formulario.Receptor.Importe" class="text-danger"></span>
+                                </div>
+                                <div class="workspace-field workspace-field-span-2">
+                                    <label asp-for="Formulario.Receptor.Glosa" class="form-label">Glosa</label>
+                                    <input asp-for="Formulario.Receptor.Glosa" class="form-control js-glosa-receptor" />
+                                    <span asp-validation-for="Formulario.Receptor.Glosa" class="text-danger"></span>
+                                </div>
+                                <div class="workspace-field workspace-field-span-2">
+                                    <label asp-for="Formulario.Receptor.Observacion" class="form-label">Observaciones</label>
+                                    <textarea asp-for="Formulario.Receptor.Observacion" class="form-control js-observacion-receptor" rows="3"></textarea>
+                                    <span asp-validation-for="Formulario.Receptor.Observacion" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="workspace-transfer-highlight">
+                    <article class="workspace-transfer-stat">
+                        <span>Operacion emisor</span>
+                        <strong id="emisorOperacionTexto">@(string.IsNullOrWhiteSpace(Model.Formulario.Emisor.TipoOperacionTexto) ? "-" : Model.Formulario.Emisor.TipoOperacionTexto)</strong>
+                        <small>Egreso configurado para la transferencia.</small>
+                    </article>
+                    <article class="workspace-transfer-stat">
+                        <span>Operacion receptor</span>
+                        <strong id="receptorOperacionTexto">@(string.IsNullOrWhiteSpace(Model.Formulario.Receptor.TipoOperacionTexto) ? "-" : Model.Formulario.Receptor.TipoOperacionTexto)</strong>
+                        <small>Ingreso configurado para la transferencia.</small>
+                    </article>
+                    <article class="workspace-transfer-stat">
+                        <span>Conversion</span>
+                        <strong id="conversionTexto">@(Model.Formulario.Receptor.Importe > 0 ? Model.Formulario.Receptor.Importe.ToString("0.00") : "0.00")</strong>
+                        <small>Importe calculado automaticamente para la cuenta receptora.</small>
+                    </article>
+                </div>
+
+                <div class="workspace-actions mt-4">
+                    <button type="submit" class="btn btn-primary">Guardar transferencia</button>
+                    <a asp-action="Index" asp-route-anio="@Model.AnioSeleccionado" asp-route-mes="@Model.MesSeleccionado" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </section>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const form = document.getElementById("transferencia-form");
+            if (!form) {
+                return;
+            }
+
+            const emisorCuenta = form.querySelector('[name="Formulario.Emisor.IdBancoConfiguracionEmpresa"]');
+            const receptorCuenta = form.querySelector('[name="Formulario.Receptor.IdBancoConfiguracionEmpresa"]');
+            const emisorMonedaTexto = document.getElementById("emisorMonedaTexto");
+            const receptorMonedaTexto = document.getElementById("receptorMonedaTexto");
+            const emisorImporte = form.querySelector(".js-importe-emisor");
+            const receptorImporte = form.querySelector(".js-importe-receptor");
+            const tipoCambioEmisor = form.querySelector(".js-tipo-cambio");
+            const tipoCambioReceptor = form.querySelector(".js-tipo-cambio-receptor");
+            const fechaEmisor = form.querySelector(".js-sync-fecha");
+            const fechaReceptor = form.querySelector(".js-fecha-receptor");
+            const numeroEmisor = form.querySelector(".js-sync-operacion");
+            const numeroReceptor = form.querySelector(".js-numero-receptor");
+            const glosaEmisor = form.querySelector(".js-sync-glosa");
+            const glosaReceptor = form.querySelector(".js-glosa-receptor");
+            const observacionEmisor = form.querySelector(".js-sync-observacion");
+            const observacionReceptor = form.querySelector(".js-observacion-receptor");
+            const conversionTexto = document.getElementById("conversionTexto");
+            let glosaReceptorEditada = false;
+            let observacionReceptorEditada = false;
+
+            const parseDecimal = (value) => {
+                const normalized = String(value || "").replace(",", ".");
+                const parsed = Number.parseFloat(normalized);
+                return Number.isFinite(parsed) ? parsed : 0;
+            };
+
+            const obtenerMoneda = (select) => {
+                const option = select?.selectedOptions?.[0];
+                return option?.dataset?.moneda || "";
+            };
+
+            const actualizarMoneda = (select, target) => {
+                const option = select?.selectedOptions?.[0];
+                if (target) {
+                    target.value = option?.dataset?.monedaTexto || "";
+                }
+            };
+
+            const calcularImporteReceptor = () => {
+                const monto = parseDecimal(emisorImporte?.value);
+                const tipoCambio = parseDecimal(tipoCambioEmisor?.value);
+                const monedaEmisor = obtenerMoneda(emisorCuenta).toUpperCase();
+                const monedaReceptor = obtenerMoneda(receptorCuenta).toUpperCase();
+                let resultado = monto;
+
+                if (monedaEmisor && monedaReceptor && monedaEmisor !== monedaReceptor) {
+                    if (monedaEmisor === "USD" && monedaReceptor === "PEN") {
+                        resultado = monto * tipoCambio;
+                    } else if (monedaEmisor === "PEN" && monedaReceptor === "USD") {
+                        resultado = tipoCambio > 0 ? monto / tipoCambio : 0;
+                    }
+                }
+
+                resultado = Math.round((resultado + Number.EPSILON) * 100) / 100;
+                if (receptorImporte) {
+                    receptorImporte.value = resultado.toFixed(2);
+                }
+                if (conversionTexto) {
+                    conversionTexto.textContent = resultado.toFixed(2);
+                }
+            };
+
+            const sincronizarCabecera = () => {
+                if (fechaEmisor && fechaReceptor) {
+                    fechaReceptor.value = fechaEmisor.value;
+                }
+                if (tipoCambioEmisor && tipoCambioReceptor) {
+                    tipoCambioReceptor.value = tipoCambioEmisor.value;
+                }
+                if (numeroEmisor && numeroReceptor) {
+                    numeroReceptor.value = numeroEmisor.value;
+                }
+                if (glosaEmisor && glosaReceptor && !glosaReceptorEditada) {
+                    glosaReceptor.value = glosaEmisor.value;
+                }
+                if (observacionEmisor && observacionReceptor && !observacionReceptorEditada) {
+                    observacionReceptor.value = observacionEmisor.value;
+                }
+                calcularImporteReceptor();
+            };
+
+            form.querySelectorAll(".js-operacion-select").forEach((select) => {
+                select.addEventListener("change", () => {
+                    const targetId = select.dataset.targetText;
+                    const target = document.getElementById(targetId);
+                    if (target) {
+                        target.textContent = select.selectedOptions[0]?.dataset?.texto || "-";
+                    }
+                });
+            });
+
+            emisorCuenta?.addEventListener("change", () => {
+                actualizarMoneda(emisorCuenta, emisorMonedaTexto);
+                calcularImporteReceptor();
+            });
+
+            receptorCuenta?.addEventListener("change", () => {
+                actualizarMoneda(receptorCuenta, receptorMonedaTexto);
+                calcularImporteReceptor();
+            });
+
+            emisorImporte?.addEventListener("input", calcularImporteReceptor);
+            tipoCambioEmisor?.addEventListener("input", () => {
+                if (tipoCambioReceptor) {
+                    tipoCambioReceptor.value = tipoCambioEmisor.value;
+                }
+                calcularImporteReceptor();
+            });
+
+            fechaEmisor?.addEventListener("change", () => {
+                if (fechaReceptor) {
+                    fechaReceptor.value = fechaEmisor.value;
+                }
+            });
+
+            numeroEmisor?.addEventListener("input", () => {
+                if (numeroReceptor) {
+                    numeroReceptor.value = numeroEmisor.value;
+                }
+            });
+
+            glosaEmisor?.addEventListener("input", () => {
+                if (glosaReceptor && !glosaReceptorEditada) {
+                    glosaReceptor.value = glosaEmisor.value;
+                }
+            });
+
+            observacionEmisor?.addEventListener("input", () => {
+                if (observacionReceptor && !observacionReceptorEditada) {
+                    observacionReceptor.value = observacionEmisor.value;
+                }
+            });
+
+            glosaReceptor?.addEventListener("input", () => {
+                glosaReceptorEditada = glosaReceptor.value !== glosaEmisor?.value;
+            });
+
+            observacionReceptor?.addEventListener("input", () => {
+                observacionReceptorEditada = observacionReceptor.value !== observacionEmisor?.value;
+            });
+
+            actualizarMoneda(emisorCuenta, emisorMonedaTexto);
+            actualizarMoneda(receptorCuenta, receptorMonedaTexto);
+            sincronizarCabecera();
+        })();
+    </script>
+}

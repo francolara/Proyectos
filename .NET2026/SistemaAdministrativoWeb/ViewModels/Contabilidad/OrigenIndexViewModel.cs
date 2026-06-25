@@ -8,6 +8,7 @@ public sealed class OrigenIndexViewModel
     public int TotalOrigenes { get; set; }
     public int TotalActivos { get; set; }
     public int TotalManual { get; set; }
+    public bool PuedeCargarDefault { get; set; }
     public PaginacionViewModel Paginacion { get; set; } = new();
     public OrigenFormViewModel Formulario { get; set; } = new();
     public List<OrigenItemViewModel> Origenes { get; set; } = [];

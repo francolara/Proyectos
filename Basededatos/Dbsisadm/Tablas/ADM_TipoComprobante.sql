@@ -4,6 +4,12 @@
 -- Description:   Maestro de tipos de comprobante segun catalogo SUNAT para compras y ventas.
 -- =============================================
 
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   20/06/2026
+-- Description:   Agrega cuentas contables base separadas para compras y ventas.
+-- =============================================
+
 IF OBJECT_ID(N'dbo.ADM_TipoComprobante', N'U') IS NULL
 BEGIN
     CREATE TABLE dbo.ADM_TipoComprobante
@@ -13,6 +19,10 @@ BEGIN
         Descripcion NVARCHAR(150) NOT NULL,
         UsoCompras BIT NOT NULL CONSTRAINT DF_ADM_TipoComprobante_UsoCompras DEFAULT (0),
         UsoVentas BIT NOT NULL CONSTRAINT DF_ADM_TipoComprobante_UsoVentas DEFAULT (0),
+        IdCuentaVentaSoles INT NULL,
+        IdCuentaVentaDolares INT NULL,
+        IdCuentaCompraSoles INT NULL,
+        IdCuentaCompraDolares INT NULL,
         Estado BIT NOT NULL CONSTRAINT DF_ADM_TipoComprobante_Estado DEFAULT (1),
         FechaRegistro DATETIME2(0) NOT NULL CONSTRAINT DF_ADM_TipoComprobante_FechaRegistro DEFAULT (SYSDATETIME()),
         UsuarioRegistro NVARCHAR(450) NULL

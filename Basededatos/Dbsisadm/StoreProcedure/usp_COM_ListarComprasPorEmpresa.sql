@@ -4,6 +4,27 @@
 -- Description:   Lista las provisiones de compra por empresa con filtro por periodo, busqueda y paginacion server-side.
 -- =============================================
 
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   21/06/2026
+-- Description:   Incluye subtotal, totales exonerado/inafecto e IGV en el listado de provisiones de compra.
+-- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   22/06/2026
+-- Description:   Corrige el armado del periodo yyyyMM para evitar espacios y permitir el filtro correcto por mes.
+-- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   23/06/2026
+-- Description:   Devuelve saldo, descripcion del comprobante y numero de documento de la persona para ayudas y control de comprobantes.
+-- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   24/06/2026
+-- Description:   Agrega la situacion del comprobante de compra segun el saldo pendiente.
+-- =============================================
+
 CREATE OR ALTER PROCEDURE dbo.usp_COM_ListarComprasPorEmpresa
     @IdEmpresa INT,
     @Periodo CHAR(6) = NULL,
@@ -19,7 +40,7 @@ BEGIN
 
     BEGIN TRY
 
-        DECLARE @PeriodoTrabajo CHAR(6) =
+        DECLARE @PeriodoTrabajo VARCHAR(6) =
             CASE
                 WHEN @Periodo IS NOT NULL THEN @Periodo
                 WHEN @Ejercicio IS NOT NULL AND @Mes IS NOT NULL THEN CONVERT(CHAR(4), @Ejercicio) + RIGHT('0' + CONVERT(VARCHAR(2), @Mes), 2)
@@ -43,21 +64,32 @@ BEGIN
                 c.IdAsiento,
                 c.FechaEmision,
                 c.FechaContabilizacion,
-                CONVERT(CHAR(6), YEAR(c.FechaContabilizacion)) + RIGHT('0' + CONVERT(VARCHAR(2), MONTH(c.FechaContabilizacion)), 2) AS Periodo,
+                CONVERT(CHAR(4), YEAR(c.FechaContabilizacion)) + RIGHT('0' + CONVERT(VARCHAR(2), MONTH(c.FechaContabilizacion)), 2) AS Periodo,
                 c.TipoComprobante,
+                tc.Descripcion AS DescripcionTipoComprobante,
                 c.Serie,
                 c.Numero,
+                pe.NumeroDocumento AS NumeroDocumentoPersona,
                 c.IdMoneda,
                 m.CodigoMoneda,
                 c.TipoCambio,
                 c.BaseImponible,
+                c.TotalExonerado,
+                c.TotalInafecto,
+                c.Icbper,
                 c.Igv,
                 c.Isc,
                 c.OtrosTributos,
                 c.Redondeo,
                 c.ImporteTotal,
+                c.Saldo,
                 c.Observacion,
-                c.Estado
+                c.Estado,
+                CASE
+                    WHEN c.Saldo <= 0 THEN N'Pagada'
+                    WHEN c.Saldo < c.ImporteTotal THEN N'Pagada Parcial'
+                    ELSE N'Pendiente'
+                END AS Situacion
             FROM dbo.COM_Compra AS c
             INNER JOIN dbo.ADM_Proveedor AS p
                 ON p.IdProveedor = c.IdProveedor
@@ -67,10 +99,12 @@ BEGIN
                 ON cfg.IdConfiguracionContabilizacion = c.IdConfiguracionContabilizacion
             INNER JOIN dbo.ADM_Moneda AS m
                 ON m.IdMoneda = c.IdMoneda
+            INNER JOIN dbo.ADM_TipoComprobante AS tc
+                ON tc.CodigoTipoComprobante = c.TipoComprobante
             WHERE c.IdEmpresa = @IdEmpresa
               AND (
                     @PeriodoTrabajo IS NULL
-                    OR CONVERT(CHAR(6), YEAR(c.FechaContabilizacion)) + RIGHT('0' + CONVERT(VARCHAR(2), MONTH(c.FechaContabilizacion)), 2) = @PeriodoTrabajo
+                    OR CONVERT(CHAR(4), YEAR(c.FechaContabilizacion)) + RIGHT('0' + CONVERT(VARCHAR(2), MONTH(c.FechaContabilizacion)), 2) = @PeriodoTrabajo
                   )
               AND (
                     @TextoBusquedaTrabajo IS NULL
@@ -97,19 +131,26 @@ BEGIN
             b.FechaContabilizacion,
             b.Periodo,
             b.TipoComprobante,
+            b.DescripcionTipoComprobante,
             b.Serie,
             b.Numero,
+            b.NumeroDocumentoPersona,
             b.IdMoneda,
             b.CodigoMoneda,
             b.TipoCambio,
             b.BaseImponible,
+            b.TotalExonerado,
+            b.TotalInafecto,
+            b.Icbper,
             b.Igv,
             b.Isc,
             b.OtrosTributos,
             b.Redondeo,
             b.ImporteTotal,
+            b.Saldo,
             b.Observacion,
             b.Estado,
+            b.Situacion,
             COUNT(1) OVER() AS TotalRegistros
         FROM Base AS b
         ORDER BY

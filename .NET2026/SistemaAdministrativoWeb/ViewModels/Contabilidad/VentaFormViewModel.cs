@@ -23,11 +23,13 @@ public sealed class VentaFormViewModel
     public string TipoComprobante { get; set; } = "01";
 
     [Required]
-    [StringLength(10)]
+    [StringLength(4, MinimumLength = 4, ErrorMessage = "La serie debe tener 4 caracteres.")]
+    [RegularExpression(@"^[FB]\d{3}$", ErrorMessage = "La serie debe empezar con F o B y completar 3 digitos, por ejemplo F004 o B123.")]
     public string Serie { get; set; } = string.Empty;
 
     [Required]
-    [StringLength(20)]
+    [StringLength(10, ErrorMessage = "El numero debe tener como maximo 10 digitos.")]
+    [RegularExpression(@"^\d{1,10}$", ErrorMessage = "El numero debe contener solo digitos enteros, con un maximo de 10 posiciones.")]
     public string Numero { get; set; } = string.Empty;
 
     [Range(1, int.MaxValue, ErrorMessage = "Seleccione la moneda.")]
@@ -38,6 +40,15 @@ public sealed class VentaFormViewModel
 
     [Range(typeof(decimal), "0", "999999999999")]
     public decimal BaseImponible { get; set; }
+
+    [Range(typeof(decimal), "0", "999999999999")]
+    public decimal TotalExonerado { get; set; }
+
+    [Range(typeof(decimal), "0", "999999999999")]
+    public decimal TotalInafecto { get; set; }
+
+    [Range(typeof(decimal), "0", "999999999999")]
+    public decimal Icbper { get; set; }
 
     [Range(typeof(decimal), "0", "999999999999")]
     public decimal Igv { get; set; }

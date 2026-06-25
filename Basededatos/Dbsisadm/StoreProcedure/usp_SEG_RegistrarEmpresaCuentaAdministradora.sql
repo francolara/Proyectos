@@ -3,6 +3,11 @@
 -- Create date:   16/06/2026
 -- Description:   Registra una nueva empresa dentro de una cuenta administradora existente y asigna el usuario administrador.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   18/06/2026
+-- Description:   Agrega carga automatica de parametros base desde maestro interno al crear empresa.
+-- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.usp_SEG_RegistrarEmpresaCuentaAdministradora
     @IdCuentaAdministradora INT,
@@ -71,6 +76,10 @@ BEGIN
             @AspNetUserId = @AspNetUserId,
             @IdEmpresa = @IdEmpresa,
             @EsEmpresaPredeterminada = @EsEmpresaPredeterminada,
+            @UsuarioRegistro = @UsuarioRegistro;
+
+        EXEC dbo.usp_ADM_CargarParametrosDefaultEmpresa
+            @IdEmpresa = @IdEmpresa,
             @UsuarioRegistro = @UsuarioRegistro;
 
         SELECT

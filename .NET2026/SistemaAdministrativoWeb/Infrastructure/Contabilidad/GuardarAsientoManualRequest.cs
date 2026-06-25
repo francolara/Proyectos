@@ -5,6 +5,7 @@ public sealed class GuardarAsientoManualRequest
     public int? IdAsiento { get; init; }
     public int IdEmpresa { get; init; }
     public int IdOrigen { get; init; }
+    public DateOnly FechaEmision { get; init; }
     public DateOnly FechaAsiento { get; init; }
     public string Glosa { get; init; } = string.Empty;
     public int IdMoneda { get; init; }

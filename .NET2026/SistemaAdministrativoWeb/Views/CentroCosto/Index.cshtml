@@ -1,0 +1,129 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.CentroCostoIndexViewModel
+
+@{
+    ViewData["Title"] = "Centros de costo";
+    ViewData["AdminShell"] = true;
+    var paginaInicio = Math.Max(1, Model.Paginacion.PaginaActual - 2);
+    var paginaFin = Math.Min(Model.Paginacion.TotalPaginas, Model.Paginacion.PaginaActual + 2);
+}
+
+<section class="dashboard-shell">
+    <section class="dashboard-metrics">
+        <article class="dashboard-metric-card dashboard-metric-card-count">
+            <span>Total centros</span>
+            <strong>@Model.TotalCentrosCosto</strong>
+            <small>Catalogo filtrado para la consulta actual.</small>
+        </article>
+        <article class="dashboard-metric-card dashboard-metric-card-count">
+            <span>Activos</span>
+            <strong>@Model.TotalActivos</strong>
+            <small>Centros de costo activos visibles en la pagina.</small>
+        </article>
+        <article class="dashboard-metric-card dashboard-metric-card-count">
+            <span>Inactivos</span>
+            <strong>@Model.TotalInactivos</strong>
+            <small>Registros no operativos para la empresa activa.</small>
+        </article>
+    </section>
+
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Catalogo</span>
+                <h1>Centros de costo registrados</h1>
+                <p>Consulta, filtra y abre la edicion de los centros de costo de la empresa activa.</p>
+            </div>
+            <div class="workspace-row-actions">
+                <a asp-action="Registrar" class="btn btn-light btn-sm">Registrar centro de costo</a>
+            </div>
+        </div>
+        <div class="workspace-window-body">
+            @if (TempData["CentroCostoOk"] is string ok)
+            {
+                <div class="alert alert-success">@ok</div>
+            }
+
+            <form asp-action="Index" method="get" class="workspace-filter-card">
+                <div class="workspace-filter-grid">
+                    <div class="workspace-field workspace-field-span-2">
+                        <label class="form-label" for="textoBusqueda">Buscar centro de costo</label>
+                        <input id="textoBusqueda" name="textoBusqueda" value="@Model.TextoBusqueda" class="form-control" placeholder="Codigo o nombre" />
+                    </div>
+                </div>
+                <div class="workspace-actions">
+                    <button type="submit" class="btn btn-primary">Consultar</button>
+                </div>
+            </form>
+
+            <div class="table-responsive workspace-table-wrap">
+                <table class="table align-middle app-table workspace-table">
+                    <thead>
+                        <tr>
+                            <th>Codigo</th>
+                            <th>Nombre</th>
+                            <th>Estado</th>
+                            <th class="text-end">Accion</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.CentrosCosto.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="4">
+                                    <div class="app-empty-state app-empty-state-inline">
+                                        <i class="bi bi-diagram-2"></i>
+                                        <div>
+                                            <strong>No hay centros de costo para la consulta actual</strong>
+                                            <p>Ajusta los filtros o registra el primer centro de costo.</p>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var centro in Model.CentrosCosto)
+                            {
+                                <tr class="workspace-clickable-row" data-edit-url="@Url.Action("Editar", new { idCentroCosto = centro.IdCentroCosto })">
+                                    <td class="workspace-tree-code">@centro.CodigoCentroCosto</td>
+                                    <td>@centro.NombreCentroCosto</td>
+                                    <td>
+                                        <span class="workspace-status-badge @(centro.Estado ? "is-active" : "is-inactive")">
+                                            @(centro.Estado ? "Activo" : "Inactivo")
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <a asp-action="Editar" asp-route-idCentroCosto="@centro.IdCentroCosto" class="workspace-row-link">Editar</a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.Paginacion.TotalPaginas > 1)
+            {
+                <nav class="workspace-pagination" aria-label="Paginacion centros de costo">
+                    <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaAnterior ? string.Empty : "disabled")"
+                       asp-action="Index"
+                       asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-pagina="@(Model.Paginacion.PaginaActual - 1)">Anterior</a>
+
+                    @for (var pagina = paginaInicio; pagina <= paginaFin; pagina++)
+                    {
+                        <a class="btn @(pagina == Model.Paginacion.PaginaActual ? "btn-primary" : "btn-outline-secondary")"
+                           asp-action="Index"
+                           asp-route-textoBusqueda="@Model.TextoBusqueda"
+                           asp-route-pagina="@pagina">@pagina</a>
+                    }
+
+                    <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaSiguiente ? string.Empty : "disabled")"
+                       asp-action="Index"
+                       asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-pagina="@(Model.Paginacion.PaginaActual + 1)">Siguiente</a>
+                </nav>
+            }
+        </div>
+    </section>
+</section>

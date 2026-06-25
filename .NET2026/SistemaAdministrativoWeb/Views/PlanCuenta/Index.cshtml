@@ -1,38 +1,48 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.PlanCuentaIndexViewModel
 
+@* =============================================
+   Author:        FRANCO LARA
+   Create date:   18/06/2026
+   Description:   Agrega filtro de nivel en el listado de plan de cuentas.
+   ============================================= *@
+
 @{
     ViewData["Title"] = "Plan de cuentas";
     ViewData["AdminShell"] = true;
     var paginaInicio = Math.Max(1, Model.Paginacion.PaginaActual - 2);
     var paginaFin = Math.Min(Model.Paginacion.TotalPaginas, Model.Paginacion.PaginaActual + 2);
+
+    static string ObtenerColBalance(string colBalance) => colBalance switch
+    {
+        "S" => "S - Saldo",
+        "I" => "I - Inventario",
+        "N" => "N - Naturaleza",
+        "F" => "F - Funcion",
+        "R" => "R - Resultado",
+        _ => "-"
+    };
+
+    static string ObtenerTipoCambio(string tipoCambio) => tipoCambio switch
+    {
+        "V" => "Venta",
+        "C" => "Compra",
+        _ => "-"
+    };
 }
 
 <section class="dashboard-shell">
-    <div class="dashboard-hero">
-        <div>
-            <span class="dashboard-kicker">Mantenimiento contable</span>
-            <h1>Plan de cuentas</h1>
-            <p>Administra la estructura contable de la empresa activa y consulta las cuentas con filtro y paginacion.</p>
-        </div>
-        <div class="dashboard-status-card">
-            <strong>@Model.EmpresaNombre</strong>
-            <span>Empresa activa para el mantenimiento del catalogo contable.</span>
-            <small>Total filtrado: @Model.Paginacion.TotalRegistros</small>
-        </div>
-    </div>
-
     <section class="dashboard-metrics">
-        <article class="dashboard-metric-card">
+        <article class="dashboard-metric-card dashboard-metric-card-count">
             <span>Total cuentas</span>
             <strong>@Model.TotalCuentas</strong>
             <small>Registros filtrados segun la consulta actual.</small>
         </article>
-        <article class="dashboard-metric-card">
+        <article class="dashboard-metric-card dashboard-metric-card-count">
             <span>Cuentas movimiento</span>
             <strong>@Model.TotalMovimiento</strong>
             <small>Registros visibles en la pagina actual.</small>
         </article>
-        <article class="dashboard-metric-card">
+        <article class="dashboard-metric-card dashboard-metric-card-count">
             <span>Cuentas activas</span>
             <strong>@Model.TotalActivas</strong>
             <small>Items activos dentro de la pagina consultada.</small>
@@ -62,11 +72,45 @@
                         <label class="form-label" for="textoBusqueda">Buscar cuenta</label>
                         <input id="textoBusqueda" name="textoBusqueda" value="@Model.TextoBusqueda" class="form-control" placeholder="Codigo o nombre de cuenta" />
                     </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="nivelCuenta">Nivel</label>
+                        <select id="nivelCuenta" name="nivelCuenta" class="form-select">
+                            <option value="">Todos</option>
+                            @for (byte nivel = 1; nivel <= 5; nivel++)
+                            {
+                                if (Model.NivelCuentaFiltro == nivel)
+                                {
+                                    <option value="@nivel" selected>@nivel</option>
+                                }
+                                else
+                                {
+                                    <option value="@nivel">@nivel</option>
+                                }
+                            }
+                        </select>
+                    </div>
                 </div>
                 <div class="workspace-actions">
                     <button type="submit" class="btn btn-primary">Consultar</button>
                 </div>
             </form>
+
+            @if (Model.PuedeCargarDefault)
+            {
+                <form asp-action="CargarDefault" method="post" class="workspace-filter-card">
+                    @Html.AntiForgeryToken()
+                    <div class="app-empty-state app-empty-state-inline">
+                        <i class="bi bi-diagram-3"></i>
+                        <div>
+                            <strong>La empresa no tiene plan de cuentas</strong>
+                            <p>Carga el plan base desde la tabla maestra interna para iniciar la configuracion contable.</p>
+                        </div>
+                    </div>
+                    <div class="workspace-actions">
+                        <button type="submit" class="btn btn-primary">Cargar plan de cuentas por defecto</button>
+                    </div>
+                </form>
+            }
 
             <div class="table-responsive workspace-table-wrap">
                 <table class="table align-middle app-table workspace-table">
@@ -75,7 +119,9 @@
                             <th>Codigo</th>
                             <th>Nombre</th>
                             <th>Nivel</th>
-                            <th>Naturaleza</th>
+                            <th>Col. balance</th>
+                            <th>Moneda</th>
+                            <th>TC</th>
                             <th>Movimiento</th>
                             <th>Centro costo</th>
                             <th>Estado</th>
@@ -86,7 +132,7 @@
                         @if (Model.Cuentas.Count == 0)
                         {
                             <tr>
-                                <td colspan="8">
+                                <td colspan="10">
                                     <div class="app-empty-state app-empty-state-inline">
                                         <i class="bi bi-diagram-3"></i>
                                         <div>
@@ -110,7 +156,9 @@
                                         </div>
                                     </td>
                                     <td>@cuenta.NivelCuenta</td>
-                                    <td>@(cuenta.NaturalezaSaldo == "D" ? "Debe" : "Haber")</td>
+                                    <td>@ObtenerColBalance(cuenta.ColBalance)</td>
+                                    <td>@(string.IsNullOrWhiteSpace(cuenta.IdMoneda) ? "-" : cuenta.IdMoneda)</td>
+                                    <td>@ObtenerTipoCambio(cuenta.TipoCambio)</td>
                                     <td>@(cuenta.AceptaMovimiento ? "Si" : "No")</td>
                                     <td>@(cuenta.RequiereCentroCosto ? "Si" : "No")</td>
                                     <td>
@@ -134,6 +182,7 @@
                     <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaAnterior ? string.Empty : "disabled")"
                        asp-action="Index"
                        asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-nivelCuenta="@Model.NivelCuentaFiltro"
                        asp-route-pagina="@(Model.Paginacion.PaginaActual - 1)">Anterior</a>
 
                     @for (var pagina = paginaInicio; pagina <= paginaFin; pagina++)
@@ -141,12 +190,14 @@
                         <a class="btn @(pagina == Model.Paginacion.PaginaActual ? "btn-primary" : "btn-outline-secondary")"
                            asp-action="Index"
                            asp-route-textoBusqueda="@Model.TextoBusqueda"
+                           asp-route-nivelCuenta="@Model.NivelCuentaFiltro"
                            asp-route-pagina="@pagina">@pagina</a>
                     }
 
                     <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaSiguiente ? string.Empty : "disabled")"
                        asp-action="Index"
                        asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-nivelCuenta="@Model.NivelCuentaFiltro"
                        asp-route-pagina="@(Model.Paginacion.PaginaActual + 1)">Siguiente</a>
                 </nav>
             }

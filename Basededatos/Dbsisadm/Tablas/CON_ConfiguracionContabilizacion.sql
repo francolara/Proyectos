@@ -3,6 +3,16 @@
 -- Create date:   16/06/2026
 -- Description:   Cabecera de configuracion contable automatica por empresa, modulo y escenario operativo.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   18/06/2026
+-- Description:   Agrega escenario PROVISION para configuracion contable directa.
+-- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   23/06/2026
+-- Description:   Amplia los modulos permitidos para provisiones futuras de egresos, ingresos y aplicaciones NC.
+-- =============================================
 
 IF OBJECT_ID(N'dbo.CON_ConfiguracionContabilizacion', N'U') IS NULL
 BEGIN
@@ -31,11 +41,11 @@ BEGIN
 
     ALTER TABLE dbo.CON_ConfiguracionContabilizacion
         ADD CONSTRAINT CK_CON_ConfiguracionContabilizacion_ModuloOperacion
-            CHECK (ModuloOperacion IN ('COM', 'VEN'));
+            CHECK (ModuloOperacion IN ('COM', 'VEN', 'EGR', 'ING', 'APNC'));
 
     ALTER TABLE dbo.CON_ConfiguracionContabilizacion
         ADD CONSTRAINT CK_CON_ConfiguracionContabilizacion_EscenarioOperacion
-            CHECK (EscenarioOperacion IN ('MERCADERIA', 'GASTO', 'SERVICIO'));
+            CHECK (EscenarioOperacion IN ('MERCADERIA', 'GASTO', 'SERVICIO', 'PROVISION'));
 
     ALTER TABLE dbo.CON_ConfiguracionContabilizacion
         ADD CONSTRAINT UQ_CON_ConfiguracionContabilizacion

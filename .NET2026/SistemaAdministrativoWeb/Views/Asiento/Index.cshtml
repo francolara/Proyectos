@@ -9,34 +9,39 @@
 }
 
 <section class="dashboard-shell">
-    <div class="dashboard-hero">
-        <div>
-            <span class="dashboard-kicker">Registro contable</span>
-            <h1>Asiento manual</h1>
-            <p>Consulta asientos por empresa, origen y periodo con validacion de cuadre entre Debe y Haber.</p>
-        </div>
-        <div class="dashboard-status-card">
-            <strong>@Model.EmpresaNombre</strong>
-            <span>Contexto activo para el libro diario manual.</span>
-            <small>Total filtrado: @Model.Paginacion.TotalRegistros</small>
-        </div>
-    </div>
-
     <section class="dashboard-metrics">
-        <article class="dashboard-metric-card">
+        <article class="dashboard-metric-card dashboard-metric-card-count">
             <span>Total asientos</span>
             <strong>@Model.TotalAsientos</strong>
             <small>Asientos visibles para la consulta actual.</small>
         </article>
-        <article class="dashboard-metric-card">
+        <article class="dashboard-metric-card dashboard-metric-card-amount">
             <span>Total Debe</span>
-            <strong>@Model.TotalDebePeriodo.ToString("0.00")</strong>
-            <small>Acumulado de la pagina consultada.</small>
+            <div class="dashboard-metric-amounts">
+                <div class="dashboard-metric-amount-line">
+                    <label>Total soles</label>
+                    <strong>@Model.TotalDebeSolesPeriodo.ToString("0.00")</strong>
+                </div>
+                <div class="dashboard-metric-amount-line">
+                    <label>Total dolares</label>
+                    <strong>@Model.TotalDebeDolaresPeriodo.ToString("0.00")</strong>
+                </div>
+            </div>
+            <small>Debe visible separado por moneda.</small>
         </article>
-        <article class="dashboard-metric-card">
+        <article class="dashboard-metric-card dashboard-metric-card-amount">
             <span>Total Haber</span>
-            <strong>@Model.TotalHaberPeriodo.ToString("0.00")</strong>
-            <small>Debe coincidir con el total deudor visible.</small>
+            <div class="dashboard-metric-amounts">
+                <div class="dashboard-metric-amount-line">
+                    <label>Total soles</label>
+                    <strong>@Model.TotalHaberSolesPeriodo.ToString("0.00")</strong>
+                </div>
+                <div class="dashboard-metric-amount-line">
+                    <label>Total dolares</label>
+                    <strong>@Model.TotalHaberDolaresPeriodo.ToString("0.00")</strong>
+                </div>
+            </div>
+            <small>Haber visible separado por moneda.</small>
         </article>
     </section>
 
@@ -45,7 +50,7 @@
             <div>
                 <span class="workspace-window-kicker">Libro diario</span>
                 <h1>Asientos del periodo</h1>
-                <p>Consulta, filtra y abre un asiento manual del periodo para continuar su edicion.</p>
+                <p>Consulta y filtra los asientos manuales y automaticos del periodo.</p>
             </div>
             <div class="workspace-row-actions">
                 <a asp-action="Registrar" asp-route-periodo="@Model.PeriodoConsulta" class="btn btn-light btn-sm">Registrar asiento</a>
@@ -55,6 +60,10 @@
             @if (TempData["AsientoOk"] is string ok)
             {
                 <div class="alert alert-success">@ok</div>
+            }
+            @if (TempData["AsientoError"] is string error)
+            {
+                <div class="alert alert-danger">@error</div>
             }
 
             <form asp-action="Index" method="get" class="workspace-filter-card">
@@ -111,7 +120,7 @@
                                         <i class="bi bi-journal-check"></i>
                                         <div>
                                             <strong>No hay asientos para la consulta actual</strong>
-                                            <p>Ajusta el periodo o registra el primer asiento manual de la empresa activa.</p>
+                                            <p>Ajusta el periodo o registra el primer asiento de la empresa activa.</p>
                                         </div>
                                     </div>
                                 </td>
@@ -123,8 +132,8 @@
                             {
                                 <tr class="workspace-clickable-row" data-edit-url="@Url.Action("Editar", new { periodo = Model.PeriodoConsulta, idAsiento = asiento.IdAsiento })">
                                     <td>@asiento.Periodo-@asiento.NumeroAsiento</td>
-                                    <td>@asiento.FechaAsiento.ToString("dd/MM/yyyy")</td>
-                                    <td>@asiento.CodigoOrigen</td>
+                                    <td>@asiento.FechaEmision.ToString("dd/MM/yyyy")</td>
+                                    <td>@asiento.NombreOrigen</td>
                                     <td>@asiento.Glosa</td>
                                     <td>@asiento.CodigoMoneda</td>
                                     <td>@asiento.TotalDebe.ToString("0.00")</td>
@@ -133,7 +142,18 @@
                                         <span class="workspace-status-badge is-active">@asiento.Estado</span>
                                     </td>
                                     <td class="text-end">
-                                        <a asp-action="Editar" asp-route-periodo="@Model.PeriodoConsulta" asp-route-idAsiento="@asiento.IdAsiento" class="workspace-row-link">Editar</a>
+                                        <div class="workspace-row-actions-compact">
+                                            <a asp-action="Editar" asp-route-periodo="@Model.PeriodoConsulta" asp-route-idAsiento="@asiento.IdAsiento" class="workspace-row-btn workspace-row-btn-primary">Editar</a>
+                                            <form asp-action="Eliminar" method="post" onsubmit="return confirm('Se eliminara el asiento seleccionado. ¿Desea continuar?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="idAsiento" value="@asiento.IdAsiento" />
+                                                <input type="hidden" name="anio" value="@Model.AnioSeleccionado" />
+                                                <input type="hidden" name="mes" value="@Model.MesSeleccionado" />
+                                                <input type="hidden" name="textoBusqueda" value="@Model.TextoBusqueda" />
+                                                <input type="hidden" name="pagina" value="@Model.Paginacion.PaginaActual" />
+                                                <button type="submit" class="workspace-row-btn workspace-row-btn-danger">Eliminar</button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                             }

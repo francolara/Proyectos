@@ -1,3 +1,5 @@
+@* Firma: FRANCO LARA - 24/06/2026 | Unifica Estado como Provisionado en provisiones de venta y agrega la columna Situacion segun saldo pendiente. *@
+
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.VentaIndexViewModel
 
 @{
@@ -9,31 +11,27 @@
 }
 
 <section class="dashboard-shell">
-    <div class="dashboard-hero">
-        <div>
-            <span class="dashboard-kicker">Registro contable</span>
-            <h1>Ventas</h1>
-            <p>Consulta comprobantes de venta por cliente y controla el asiento automatico generado con la configuracion VEN.</p>
-        </div>
-        <div class="dashboard-status-card">
-            <strong>@Model.EmpresaNombre</strong>
-            <span>Contexto activo para ventas y asiento automatico.</span>
-            <small>Total filtrado: @Model.Paginacion.TotalRegistros</small>
-        </div>
-    </div>
-
     <section class="dashboard-metrics">
-        <article class="dashboard-metric-card">
+        <article class="dashboard-metric-card dashboard-metric-card-count">
             <span>Total ventas</span>
             <strong>@Model.TotalVentas</strong>
             <small>Registros visibles para la consulta actual.</small>
         </article>
-        <article class="dashboard-metric-card">
+        <article class="dashboard-metric-card dashboard-metric-card-amount">
             <span>Total vendido</span>
-            <strong>@Model.TotalImportePeriodo.ToString("0.00")</strong>
-            <small>Suma de ventas visibles en la pagina.</small>
+            <div class="dashboard-metric-amounts">
+                <div class="dashboard-metric-amount-line">
+                    <label>Total soles</label>
+                    <strong>@Model.TotalImporteSolesPeriodo.ToString("0.00")</strong>
+                </div>
+                <div class="dashboard-metric-amount-line">
+                    <label>Total dolares</label>
+                    <strong>@Model.TotalImporteDolaresPeriodo.ToString("0.00")</strong>
+                </div>
+            </div>
+            <small>Totales visibles separados por moneda.</small>
         </article>
-        <article class="dashboard-metric-card">
+        <article class="dashboard-metric-card dashboard-metric-card-count">
             <span>Configuraciones VEN</span>
             <strong>@Model.ConfiguracionesVenta.Count</strong>
             <small>Escenarios disponibles para asiento automatico.</small>
@@ -55,6 +53,10 @@
             @if (TempData["VentaOk"] is string ok)
             {
                 <div class="alert alert-success">@ok</div>
+            }
+            @if (TempData["VentaError"] is string error)
+            {
+                <div class="alert alert-danger">@error</div>
             }
 
             <form asp-action="Index" method="get" class="workspace-filter-card">
@@ -97,8 +99,10 @@
                             <th>Escenario</th>
                             <th>Moneda</th>
                             <th>Total</th>
+                            <th>Saldo</th>
                             <th>Asiento</th>
                             <th>Estado</th>
+                            <th>Situacion</th>
                             <th class="text-end">Accion</th>
                         </tr>
                     </thead>
@@ -106,7 +110,7 @@
                         @if (Model.Ventas.Count == 0)
                         {
                             <tr>
-                                <td colspan="9">
+                                <td colspan="11">
                                     <div class="app-empty-state app-empty-state-inline">
                                         <i class="bi bi-cash-stack"></i>
                                         <div>
@@ -122,16 +126,29 @@
                             @foreach (var venta in Model.Ventas)
                             {
                                 <tr class="workspace-clickable-row" data-edit-url="@Url.Action("Editar", new { periodo = Model.PeriodoConsulta, idVenta = venta.IdVenta })">
-                                    <td>@venta.FechaContabilizacion.ToString("dd/MM/yyyy")</td>
+                                    <td>@venta.FechaEmision.ToString("dd/MM/yyyy")</td>
                                     <td>@venta.NombreCliente</td>
                                     <td>@venta.Documento</td>
                                     <td>@venta.EscenarioOperacion</td>
                                     <td>@venta.CodigoMoneda</td>
                                     <td>@venta.ImporteTotal.ToString("0.00")</td>
+                                    <td>@venta.Saldo.ToString("0.00")</td>
                                     <td>@(venta.IdAsiento?.ToString() ?? "-")</td>
                                     <td><span class="workspace-status-badge is-active">@venta.Estado</span></td>
+                                    <td><span class="workspace-status-badge">@venta.Situacion</span></td>
                                     <td class="text-end">
-                                        <a asp-action="Editar" asp-route-periodo="@Model.PeriodoConsulta" asp-route-idVenta="@venta.IdVenta" class="workspace-row-link">Editar</a>
+                                        <div class="workspace-row-actions-compact">
+                                            <a asp-action="Editar" asp-route-periodo="@Model.PeriodoConsulta" asp-route-idVenta="@venta.IdVenta" class="workspace-row-btn workspace-row-btn-primary">Editar</a>
+                                            <form asp-action="Eliminar" method="post" onsubmit="return confirm('Se eliminara la venta seleccionada. ¿Desea continuar?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="idVenta" value="@venta.IdVenta" />
+                                                <input type="hidden" name="anio" value="@Model.AnioSeleccionado" />
+                                                <input type="hidden" name="mes" value="@Model.MesSeleccionado" />
+                                                <input type="hidden" name="textoBusqueda" value="@Model.TextoBusqueda" />
+                                                <input type="hidden" name="pagina" value="@Model.Paginacion.PaginaActual" />
+                                                <button type="submit" class="workspace-row-btn workspace-row-btn-danger">Eliminar</button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                             }

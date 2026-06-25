@@ -1,7 +1,17 @@
--- =============================================
+﻿-- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   15/06/2026
 -- Description:   Detalle de cuentas y montos por asiento contable.
+-- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   18/06/2026
+-- Description:   Agrega datos documentarios opcionales por linea para el registro manual.
+-- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   22/06/2026
+-- Description:   Amplia TipoDocumento para guardar descripciones de comprobante en asientos automaticos de compras y ventas.
 -- =============================================
 
 IF OBJECT_ID(N'dbo.CON_AsientoDetalle', N'U') IS NULL
@@ -13,6 +23,11 @@ BEGIN
         Item SMALLINT NOT NULL,
         IdPlanCuenta INT NOT NULL,
         GlosaDetalle NVARCHAR(300) NULL,
+        CodigoCentroCosto NVARCHAR(50) NULL,
+        TipoDocumento NVARCHAR(150) NULL,
+        NumeroDocumento VARCHAR(20) NULL,
+        Serie VARCHAR(10) NULL,
+        TipoCambioLinea DECIMAL(18,6) NULL,
         IdCliente INT NULL,
         IdProveedor INT NULL,
         Debe DECIMAL(18,2) NOT NULL CONSTRAINT DF_CON_AsientoDetalle_Debe DEFAULT (0),

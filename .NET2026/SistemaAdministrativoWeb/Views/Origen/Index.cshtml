@@ -8,31 +8,18 @@
 }
 
 <section class="dashboard-shell">
-    <div class="dashboard-hero">
-        <div>
-            <span class="dashboard-kicker">Mantenimiento contable</span>
-            <h1>Origenes contables</h1>
-            <p>Configura los subdiarios y clasificaciones que controlaran la entrada de asientos manuales y automaticos.</p>
-        </div>
-        <div class="dashboard-status-card">
-            <strong>@Model.EmpresaNombre</strong>
-            <span>Empresa activa para organizar los origenes del circuito contable.</span>
-            <small>Total filtrado: @Model.Paginacion.TotalRegistros</small>
-        </div>
-    </div>
-
     <section class="dashboard-metrics">
-        <article class="dashboard-metric-card">
+        <article class="dashboard-metric-card dashboard-metric-card-count">
             <span>Total origenes</span>
             <strong>@Model.TotalOrigenes</strong>
             <small>Catalogo filtrado para la consulta actual.</small>
         </article>
-        <article class="dashboard-metric-card">
+        <article class="dashboard-metric-card dashboard-metric-card-count">
             <span>Origenes activos</span>
             <strong>@Model.TotalActivos</strong>
             <small>Registros activos visibles en la pagina.</small>
         </article>
-        <article class="dashboard-metric-card">
+        <article class="dashboard-metric-card dashboard-metric-card-count">
             <span>Manual</span>
             <strong>@Model.TotalManual</strong>
             <small>Origenes que permiten ingreso manual.</small>
@@ -67,6 +54,23 @@
                     <button type="submit" class="btn btn-primary">Consultar</button>
                 </div>
             </form>
+
+            @if (Model.PuedeCargarDefault)
+            {
+                <form asp-action="CargarDefault" method="post" class="workspace-filter-card">
+                    @Html.AntiForgeryToken()
+                    <div class="app-empty-state app-empty-state-inline">
+                        <i class="bi bi-journal-richtext"></i>
+                        <div>
+                            <strong>La empresa no tiene origenes contables</strong>
+                            <p>Carga los subdiarios base desde la tabla maestra interna para iniciar el registro contable.</p>
+                        </div>
+                    </div>
+                    <div class="workspace-actions">
+                        <button type="submit" class="btn btn-primary">Cargar origenes por defecto</button>
+                    </div>
+                </form>
+            }
 
             <div class="table-responsive workspace-table-wrap">
                 <table class="table align-middle app-table workspace-table">

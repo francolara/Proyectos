@@ -2,6 +2,7 @@ namespace SistemaAdministrativoWeb.ViewModels.Contabilidad;
 
 public sealed class RegistroRapidoPersonaRequestViewModel
 {
+    public string? TipoPersona { get; set; }
     public string? TipoDocumento { get; set; }
     public string? NumeroDocumento { get; set; }
     public string? RazonSocial { get; set; }

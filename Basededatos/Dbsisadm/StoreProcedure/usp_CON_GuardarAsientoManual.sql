@@ -3,11 +3,27 @@
 -- Create date:   16/06/2026
 -- Description:   Registra o actualiza un asiento manual por empresa validando cuadre, periodo y correlativo mensual.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   18/06/2026
+-- Description:   Incluye centro de costo, documento, serie y TC opcional en el detalle del asiento.
+-- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   22/06/2026
+-- Description:   Aclara la validacion de cuentas, amplia TipoDocumento para soportar descripciones de comprobante en asientos editados y agrega fecha de emision permitiendo asientos descuadrados.
+-- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   23/06/2026
+-- Description:   Valida centros de costo activos por empresa y exige su registro cuando la cuenta contable lo requiere.
+-- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_GuardarAsientoManual
     @IdAsiento INT = NULL,
     @IdEmpresa INT,
     @IdOrigen INT,
+    @FechaEmision DATE,
     @FechaAsiento DATE,
     @Glosa NVARCHAR(500),
     @IdMoneda INT,
@@ -43,6 +59,11 @@ BEGIN
             Item SMALLINT NOT NULL,
             IdPlanCuenta INT NOT NULL,
             GlosaDetalle NVARCHAR(300) NULL,
+            CodigoCentroCosto NVARCHAR(50) NULL,
+            TipoDocumento NVARCHAR(150) NULL,
+            NumeroDocumento VARCHAR(20) NULL,
+            Serie VARCHAR(10) NULL,
+            TipoCambioLinea DECIMAL(18,6) NULL,
             Debe DECIMAL(18,2) NOT NULL,
             Haber DECIMAL(18,2) NOT NULL,
             ReferenciaLinea NVARCHAR(100) NULL
@@ -53,6 +74,11 @@ BEGIN
             Item,
             IdPlanCuenta,
             GlosaDetalle,
+            CodigoCentroCosto,
+            TipoDocumento,
+            NumeroDocumento,
+            Serie,
+            TipoCambioLinea,
             Debe,
             Haber,
             ReferenciaLinea
@@ -61,6 +87,11 @@ BEGIN
             T.N.value('@Item', 'smallint'),
             T.N.value('@IdPlanCuenta', 'int'),
             NULLIF(T.N.value('@GlosaDetalle', 'nvarchar(300)'), N''),
+            NULLIF(LTRIM(RTRIM(T.N.value('@CodigoCentroCosto', 'nvarchar(50)'))), N''),
+            NULLIF(T.N.value('@TipoDocumento', 'nvarchar(150)'), N''),
+            NULLIF(T.N.value('@NumeroDocumento', 'varchar(20)'), ''),
+            NULLIF(T.N.value('@Serie', 'varchar(10)'), ''),
+            NULLIF(T.N.value('@TipoCambioLinea', 'decimal(18,6)'), 0),
             T.N.value('@Debe', 'decimal(18,2)'),
             T.N.value('@Haber', 'decimal(18,2)'),
             NULLIF(T.N.value('@ReferenciaLinea', 'nvarchar(100)'), N'')
@@ -112,7 +143,36 @@ BEGIN
             WHERE p.IdPlanCuenta IS NULL
         )
         BEGIN
-            RAISERROR(N'Todas las cuentas del detalle deben existir, pertenecer a la empresa y aceptar movimiento.', 16, 1);
+            RAISERROR(N'Todas las cuentas del detalle deben pertenecer a la empresa, estar activas y aceptar movimiento.', 16, 1);
+        END;
+
+        IF EXISTS
+        (
+            SELECT 1
+            FROM @Detalle AS d
+            INNER JOIN dbo.CON_PlanCuenta AS p
+                ON p.IdPlanCuenta = d.IdPlanCuenta
+               AND p.IdEmpresa = @IdEmpresa
+            WHERE p.RequiereCentroCosto = 1
+              AND NULLIF(LTRIM(RTRIM(d.CodigoCentroCosto)), N'') IS NULL
+        )
+        BEGIN
+            RAISERROR(N'Las cuentas configuradas con centro de costo obligatorio deben registrar un centro de costo.', 16, 1);
+        END;
+
+        IF EXISTS
+        (
+            SELECT 1
+            FROM @Detalle AS d
+            LEFT JOIN dbo.CON_CentroCostoConfiguracionEmpresa AS c
+                ON c.IdEmpresa = @IdEmpresa
+               AND c.Codigo = d.CodigoCentroCosto
+               AND c.Estado = 1
+            WHERE NULLIF(LTRIM(RTRIM(d.CodigoCentroCosto)), N'') IS NOT NULL
+              AND c.IdCentroCostoConfiguracionEmpresa IS NULL
+        )
+        BEGIN
+            RAISERROR(N'Todo centro de costo informado debe existir y estar activo para la empresa.', 16, 1);
         END;
 
         SELECT
@@ -120,14 +180,9 @@ BEGIN
             @TotalHaber = SUM(d.Haber)
         FROM @Detalle AS d;
 
-        IF ISNULL(@TotalDebe, 0) <= 0 OR ISNULL(@TotalHaber, 0) <= 0
+        IF ISNULL(@TotalDebe, 0) <= 0 AND ISNULL(@TotalHaber, 0) <= 0
         BEGIN
-            RAISERROR(N'El asiento debe tener importes positivos tanto en Debe como en Haber.', 16, 1);
-        END;
-
-        IF @TotalDebe <> @TotalHaber
-        BEGIN
-            RAISERROR(N'El asiento no esta cuadrado. Debe y Haber deben ser iguales.', 16, 1);
+            RAISERROR(N'El asiento debe tener al menos un importe positivo en el detalle.', 16, 1);
         END;
 
         IF NOT EXISTS
@@ -216,6 +271,7 @@ BEGIN
                 Mes,
                 Periodo,
                 NumeroAsiento,
+                FechaEmision,
                 FechaAsiento,
                 Glosa,
                 IdMoneda,
@@ -235,6 +291,7 @@ BEGIN
                 @Mes,
                 @Periodo,
                 @NumeroAsiento,
+                @FechaEmision,
                 @FechaAsiento,
                 @Glosa,
                 @IdMoneda,
@@ -279,7 +336,8 @@ BEGIN
             WHERE IdAsiento = @IdAsientoTrabajo;
 
             UPDATE dbo.CON_Asiento
-            SET FechaAsiento = @FechaAsiento,
+            SET FechaEmision = @FechaEmision,
+                FechaAsiento = @FechaAsiento,
                 Glosa = @Glosa,
                 IdMoneda = @IdMoneda,
                 TipoCambio = @TipoCambio,
@@ -297,6 +355,11 @@ BEGIN
             Item,
             IdPlanCuenta,
             GlosaDetalle,
+            CodigoCentroCosto,
+            TipoDocumento,
+            NumeroDocumento,
+            Serie,
+            TipoCambioLinea,
             Debe,
             Haber,
             ReferenciaLinea,
@@ -307,6 +370,11 @@ BEGIN
             d.Item,
             d.IdPlanCuenta,
             d.GlosaDetalle,
+            d.CodigoCentroCosto,
+            d.TipoDocumento,
+            d.NumeroDocumento,
+            d.Serie,
+            d.TipoCambioLinea,
             d.Debe,
             d.Haber,
             d.ReferenciaLinea,

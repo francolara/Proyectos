@@ -15,6 +15,7 @@ BEGIN
         Mes TINYINT NOT NULL,
         Periodo CHAR(6) NOT NULL,
         NumeroAsiento INT NOT NULL,
+        FechaEmision DATE NOT NULL,
         FechaAsiento DATE NOT NULL,
         Glosa NVARCHAR(500) NOT NULL,
         IdMoneda INT NOT NULL,
@@ -57,4 +58,17 @@ BEGIN
     ALTER TABLE dbo.CON_Asiento
         ADD CONSTRAINT UQ_CON_Asiento_Numero
             UNIQUE (IdEmpresa, IdOrigen, Periodo, NumeroAsiento);
+END;
+
+IF COL_LENGTH(N'dbo.CON_Asiento', N'FechaEmision') IS NULL
+BEGIN
+    ALTER TABLE dbo.CON_Asiento
+        ADD FechaEmision DATE NULL;
+
+    UPDATE dbo.CON_Asiento
+    SET FechaEmision = FechaAsiento
+    WHERE FechaEmision IS NULL;
+
+    ALTER TABLE dbo.CON_Asiento
+        ALTER COLUMN FechaEmision DATE NOT NULL;
 END;

@@ -7,7 +7,9 @@ public sealed class PlanCuentaItemViewModel
     public string CodigoCuenta { get; init; } = string.Empty;
     public string NombreCuenta { get; init; } = string.Empty;
     public int NivelCuenta { get; init; }
-    public string NaturalezaSaldo { get; init; } = "D";
+    public string ColBalance { get; init; } = string.Empty;
+    public string IdMoneda { get; init; } = string.Empty;
+    public string TipoCambio { get; init; } = string.Empty;
     public bool AceptaMovimiento { get; init; }
     public bool RequiereCentroCosto { get; init; }
     public bool Estado { get; init; }

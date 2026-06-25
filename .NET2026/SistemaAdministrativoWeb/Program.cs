@@ -82,6 +82,10 @@ builder.Services.AddSession(options =>
 
 builder.Services.AddScoped<IDbConnectionFactory, SqlConnectionFactory>();
 builder.Services.AddScoped<IPlanCuentaRepository, PlanCuentaRepository>();
+builder.Services.AddScoped<IBancoRepository, BancoRepository>();
+builder.Services.AddScoped<ICentroCostoRepository, CentroCostoRepository>();
+builder.Services.AddScoped<ICuentaCorrienteRepository, CuentaCorrienteRepository>();
+builder.Services.AddScoped<ICajaBancoRepository, CajaBancoRepository>();
 builder.Services.AddScoped<IOrigenRepository, OrigenRepository>();
 builder.Services.AddScoped<ICuentaDestinoReglaRepository, CuentaDestinoReglaRepository>();
 builder.Services.AddScoped<IConfiguracionContabilizacionRepository, ConfiguracionContabilizacionRepository>();
@@ -90,7 +94,9 @@ builder.Services.AddScoped<IMonedaRepository, MonedaRepository>();
 builder.Services.AddScoped<IAsientoRepository, AsientoRepository>();
 builder.Services.AddScoped<IProveedorRepository, ProveedorRepository>();
 builder.Services.AddScoped<ICompraRepository, CompraRepository>();
+builder.Services.AddScoped<IAplicacionNotaCreditoRepository, AplicacionNotaCreditoRepository>();
 builder.Services.AddScoped<ITipoComprobanteRepository, TipoComprobanteRepository>();
+builder.Services.AddScoped<ITipoAfectacionIgvRepository, TipoAfectacionIgvRepository>();
 builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
 builder.Services.AddScoped<IPersonaRepository, PersonaRepository>();
 builder.Services.AddScoped<IVentaRepository, VentaRepository>();

@@ -708,6 +708,265 @@ body {
   padding: 1.55rem 1.7rem 1.7rem;
 }
 
+/* Firma: FRANCO LARA - 21/06/2026 | Estilos para periodo contable destacado y totales globales en provision de compras. */
+.workspace-period-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
+  gap: 1.25rem;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  padding: 1.2rem 1.35rem;
+  border: 1px solid rgba(43, 121, 236, 0.26);
+  border-radius: 1.2rem;
+  background:
+    radial-gradient(circle at top right, rgba(43, 121, 236, 0.14), transparent 28%),
+    linear-gradient(135deg, rgba(239, 246, 255, 0.96) 0%, rgba(255, 255, 255, 0.98) 100%);
+  box-shadow: 0 1.1rem 2.2rem rgba(15, 46, 89, 0.08);
+}
+
+.workspace-period-card h2 {
+  margin: 0.35rem 0 0.35rem;
+  color: var(--app-ink);
+  font-size: 1.35rem;
+  font-weight: 850;
+}
+
+.workspace-period-card p {
+  margin: 0;
+  color: var(--app-muted);
+  line-height: 1.55;
+}
+
+.workspace-period-control {
+  padding: 1rem;
+  border: 1px solid rgba(145, 164, 189, 0.22);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.workspace-period-control .form-control {
+  min-height: 3rem;
+  border-radius: 0.9rem;
+  font-weight: 800;
+}
+
+.workspace-totals-section {
+  margin-top: 1.2rem;
+  box-shadow: 0 1.1rem 2.4rem rgba(15, 46, 89, 0.07);
+}
+
+.workspace-totals-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.workspace-total-input {
+  color: var(--app-navy);
+  font-weight: 850;
+  background: linear-gradient(180deg, #ffffff 0%, #eef6ff 100%) !important;
+}
+
+.workspace-card-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin: 0 0 1.25rem;
+}
+
+.workspace-card-tabs .nav-item {
+  min-width: 0;
+}
+
+.workspace-tab-card {
+  width: 100%;
+  min-height: 4.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(43, 121, 236, 0.34);
+  border-radius: 1rem;
+  color: var(--app-navy);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(246, 250, 255, 0.92) 100%);
+  box-shadow: 0 12px 24px rgba(16, 48, 94, 0.05);
+  text-align: left;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.workspace-tab-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(43, 121, 236, 0.62);
+  box-shadow: 0 16px 28px rgba(16, 48, 94, 0.09);
+}
+
+.workspace-tab-card.active {
+  color: #fff;
+  border-color: transparent;
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.18), transparent 28%),
+    linear-gradient(135deg, #1b58c5 0%, #2f7df1 100%);
+  box-shadow: 0 18px 34px rgba(43, 121, 236, 0.28);
+}
+
+.workspace-tab-icon {
+  width: 2.35rem;
+  height: 2.35rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border-radius: 0.75rem;
+  color: var(--app-blue);
+  background: rgba(43, 121, 236, 0.12);
+}
+
+.workspace-tab-card.active .workspace-tab-icon {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.workspace-tab-copy {
+  min-width: 0;
+  display: grid;
+  gap: 0.15rem;
+  line-height: 1.15;
+}
+
+.workspace-tab-copy strong,
+.workspace-tab-copy small {
+  display: block;
+}
+
+.workspace-tab-copy strong {
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.workspace-tab-copy small {
+  color: var(--app-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.workspace-tab-card.active .workspace-tab-copy small {
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.workspace-tab-content {
+  margin-top: 0.2rem;
+}
+
+.workspace-operation-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+  padding: 0.35rem;
+  border: 1px solid rgba(145, 164, 189, 0.18);
+  border-radius: 1.25rem;
+  background:
+    linear-gradient(180deg, rgba(248, 251, 255, 0.98) 0%, rgba(239, 246, 255, 0.88) 100%);
+}
+
+.workspace-operation-tabs .nav-item {
+  min-width: 0;
+}
+
+.workspace-operation-tab {
+  width: 100%;
+  min-height: 4.6rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid transparent;
+  border-radius: 1rem;
+  color: var(--app-navy);
+  background: rgba(255, 255, 255, 0.72);
+  text-align: left;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+}
+
+.workspace-operation-tab:hover {
+  transform: translateY(-1px);
+  border-color: rgba(43, 121, 236, 0.25);
+  background: #fff;
+  box-shadow: 0 14px 28px rgba(16, 48, 94, 0.08);
+}
+
+.workspace-operation-tab.active {
+  color: #fff;
+  border-color: transparent;
+  background:
+    radial-gradient(circle at 92% 12%, rgba(255, 255, 255, 0.25), transparent 30%),
+    linear-gradient(135deg, #12376f 0%, #1b5fd7 54%, #2b80ff 100%);
+  box-shadow: 0 18px 34px rgba(43, 121, 236, 0.24);
+}
+
+.workspace-operation-icon {
+  width: 2.65rem;
+  height: 2.65rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.9rem;
+  color: var(--app-blue);
+  background: rgba(43, 121, 236, 0.12);
+}
+
+.workspace-operation-tab.active .workspace-operation-icon {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+}
+
+.workspace-operation-copy {
+  min-width: 0;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.workspace-operation-copy strong,
+.workspace-operation-copy small {
+  display: block;
+}
+
+.workspace-operation-copy strong {
+  font-size: 0.98rem;
+  font-weight: 850;
+  line-height: 1.1;
+}
+
+.workspace-operation-copy small {
+  color: var(--app-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.workspace-operation-tab.active .workspace-operation-copy small {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.workspace-operation-count {
+  min-width: 2.25rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: var(--app-navy-2);
+  background: rgba(219, 232, 255, 0.9);
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.workspace-operation-tab.active .workspace-operation-count {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.18);
+}
+
 .workspace-form-grid {
   display: grid;
   gap: 1rem;
@@ -726,6 +985,56 @@ body {
   display: grid;
   gap: 1rem;
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+/* Firma: FRANCO LARA - 23/06/2026 | Agrega el layout y los estilos base del nuevo modulo Caja y Bancos para formulario lateral, arbol de operaciones y estados visuales. */
+.workspace-caja-banco-layout {
+  display: grid;
+  grid-template-columns: minmax(18rem, 22rem) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.workspace-caja-banco-sidebar,
+.workspace-caja-banco-main {
+  min-width: 0;
+}
+
+.workspace-caja-banco-tree {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.workspace-tree-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid rgba(145, 164, 189, 0.24);
+  border-radius: 0.95rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(245, 249, 255, 0.92) 100%);
+  color: var(--app-ink);
+  text-align: left;
+  font-weight: 700;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+}
+
+.workspace-tree-option:hover {
+  transform: translateY(-1px);
+  border-color: rgba(43, 121, 236, 0.35);
+  box-shadow: 0 14px 28px rgba(15, 46, 89, 0.08);
+}
+
+.workspace-tree-option.active {
+  color: #fff;
+  border-color: transparent;
+  background: linear-gradient(135deg, #12376f 0%, #1b5fd7 54%, #2b80ff 100%);
+  box-shadow: 0 18px 34px rgba(43, 121, 236, 0.22);
+}
+
+.workspace-tree-option.active .workspace-tree-code {
+  color: #fff;
 }
 
 .workspace-form-row {
@@ -751,6 +1060,155 @@ body {
   padding-block: 0.5rem;
   border-radius: 0.95rem;
   background: #fff;
+}
+
+/* Firma: FRANCO LARA - 18/06/2026 | Estilos reutilizables para ayudas modal con filtro, seleccion y footer fijo. */
+.workspace-lookup-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.workspace-lookup-control-compact {
+  grid-template-columns: minmax(12rem, 1fr) auto;
+}
+
+.workspace-lookup-control-inline-tools {
+  grid-template-columns: minmax(10rem, 1fr) auto auto;
+  gap: 0.45rem;
+}
+
+.workspace-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border-radius: 0.8rem;
+}
+
+.workspace-icon-button i {
+  font-size: 0.95rem;
+}
+
+.asiento-detail-table {
+  min-width: 1820px;
+}
+
+.workspace-form-select-compact {
+  min-height: 2.35rem;
+  height: 2.35rem;
+  padding-top: 0.3rem;
+  padding-bottom: 0.3rem;
+  padding-right: 2rem;
+  font-size: 0.86rem;
+}
+
+.detalle-centro-costo-cell {
+  width: 13rem;
+}
+
+.detalle-persona-cell {
+  width: 15rem;
+}
+
+.detalle-tipodoc-cell {
+  width: 14rem;
+}
+
+.detalle-serie-cell {
+  width: 4rem;
+}
+
+.detalle-referencia-cell {
+  width: 4rem;
+}
+
+.detalle-tc-cell {
+  width: 3.5rem;
+}
+
+.workspace-modal .modal-dialog {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.workspace-modal-content {
+  max-height: calc(100vh - 2rem);
+  display: flex;
+  border: 0;
+  border-radius: 1.35rem;
+  overflow: hidden;
+  box-shadow: 0 28px 58px rgba(15, 35, 66, 0.2);
+}
+
+.workspace-modal-header {
+  align-items: flex-start;
+  gap: 1rem;
+  border-bottom: 0;
+  padding: 1.25rem 1.35rem;
+  color: #fff;
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.16), transparent 26%),
+    linear-gradient(135deg, var(--app-navy) 0%, var(--app-navy-2) 52%, var(--app-accent) 100%);
+}
+
+.workspace-modal-title {
+  margin: 0.65rem 0 0.35rem;
+  color: #fff;
+  font-size: clamp(1.65rem, 2.4vw, 2.25rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.workspace-modal-subtitle {
+  margin: 0;
+  color: rgba(243, 248, 255, 0.88);
+  line-height: 1.6;
+}
+
+.workspace-modal-close {
+  flex: 0 0 auto;
+  filter: invert(1) grayscale(1) brightness(200%);
+  opacity: 0.9;
+}
+
+.workspace-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.25rem 1.35rem;
+}
+
+.workspace-modal-form-row {
+  margin-left: 0.2rem;
+  margin-right: 0.2rem;
+}
+
+.workspace-modal-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  border-top: 1px solid rgba(145, 164, 189, 0.22);
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(10px);
+}
+
+.workspace-lookup-table tbody tr {
+  cursor: pointer;
+}
+
+.workspace-lookup-table tbody tr.is-selected > td {
+  background: rgba(13, 110, 253, 0.08);
+  box-shadow: inset 4px 0 0 var(--app-accent);
+}
+
+.workspace-lookup-select-cell {
+  width: 4.5rem;
+  text-align: center;
 }
 
 .workspace-field-span-2 {
@@ -798,6 +1256,127 @@ body {
 
 .workspace-row-link:hover {
   text-decoration: underline;
+}
+
+.workspace-row-actions-compact {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.workspace-row-actions-compact form {
+  margin: 0;
+}
+
+.workspace-row-btn {
+  min-height: 2.2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.85rem;
+  border-radius: 0.78rem;
+  border: 1px solid transparent;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-decoration: none;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.workspace-row-btn:hover {
+  transform: translateY(-1px);
+}
+
+.workspace-row-btn-primary {
+  color: var(--app-navy);
+  background: linear-gradient(180deg, #ffffff 0%, #eef5ff 100%);
+  border-color: rgba(27, 58, 105, 0.18);
+  box-shadow: 0 10px 20px rgba(15, 46, 89, 0.08);
+}
+
+.workspace-row-btn-primary:hover,
+.workspace-row-btn-primary:focus {
+  color: #0b2141;
+  border-color: rgba(13, 110, 253, 0.22);
+  background: #fff;
+}
+
+.workspace-row-btn-danger {
+  color: #9a2230;
+  background: linear-gradient(180deg, #fff5f6 0%, #ffebee 100%);
+  border-color: rgba(195, 58, 77, 0.2);
+  box-shadow: 0 10px 20px rgba(167, 42, 59, 0.08);
+}
+
+.workspace-row-btn-danger:hover,
+.workspace-row-btn-danger:focus {
+  color: #7f1521;
+  border-color: rgba(195, 58, 77, 0.34);
+  background: #fff1f3;
+}
+
+.workspace-balance-summary {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 1rem;
+}
+
+.workspace-balance-card {
+  padding: 1rem 1.1rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(145, 164, 189, 0.22);
+  background: linear-gradient(180deg, rgba(250, 252, 255, 0.96) 0%, rgba(241, 246, 255, 0.9) 100%);
+  box-shadow: 0 12px 26px rgba(15, 46, 89, 0.06);
+}
+
+.workspace-balance-card span,
+.workspace-balance-card strong,
+.workspace-balance-card small {
+  display: block;
+}
+
+.workspace-balance-card span {
+  color: var(--app-muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 800;
+}
+
+.workspace-balance-card strong {
+  margin-top: 0.45rem;
+  color: var(--app-ink);
+  font-size: 1.55rem;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.workspace-balance-card small {
+  margin-top: 0.35rem;
+  color: var(--app-muted);
+  font-weight: 700;
+}
+
+.workspace-balance-card-diff.is-balanced {
+  border-color: rgba(20, 86, 70, 0.24);
+  background: linear-gradient(180deg, #eefaf5 0%, #e3f5ed 100%);
+}
+
+.workspace-balance-card-diff.is-balanced strong,
+.workspace-balance-card-diff.is-balanced small {
+  color: #0e6a47;
+}
+
+.workspace-balance-card-diff.is-unbalanced {
+  border-color: rgba(195, 58, 77, 0.24);
+  background: linear-gradient(180deg, #fff4f6 0%, #ffe8ec 100%);
+}
+
+.workspace-balance-card-diff.is-unbalanced strong,
+.workspace-balance-card-diff.is-unbalanced small {
+  color: #9a2230;
 }
 
 .detalle-orden-cell {
@@ -1045,27 +1624,117 @@ body {
 
 .dashboard-metrics {
   display: grid;
-  gap: 1rem;
+  gap: 1.1rem;
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .dashboard-metric-card {
-  border-radius: 1.2rem;
-  padding: 1.25rem;
+  position: relative;
+  overflow: hidden;
+  min-height: 7.4rem;
+  border-radius: 1.05rem;
+  padding: 0.9rem 0.95rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  justify-content: space-between;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(244, 248, 255, 0.96) 100%);
+  border: 1px solid rgba(150, 171, 199, 0.24);
+  box-shadow: 0 18px 40px rgba(14, 40, 86, 0.08);
+}
+
+.dashboard-metric-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: 0.18rem;
+  background: linear-gradient(90deg, rgba(10, 63, 155, 0.95) 0%, rgba(49, 124, 255, 0.9) 100%);
 }
 
 .dashboard-metric-card span {
   display: block;
-  color: #607089;
-  font-size: 0.86rem;
-  margin-bottom: 0.45rem;
-  font-weight: 700;
+  color: #6a7a93;
+  font-size: 0.68rem;
+  margin-bottom: 0;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.08em;
 }
 
 .dashboard-metric-card strong {
+  display: block;
+  margin: 0;
+  color: #0f2343;
+  font-size: 1.42rem;
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+.dashboard-metric-card small {
+  display: block;
+  margin: 0;
+  color: #607089;
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
+.dashboard-metric-card-count {
+  align-items: center;
+  text-align: center;
+}
+
+.dashboard-metric-card-count strong {
   font-size: 1.8rem;
+  letter-spacing: -0.04em;
+}
+
+.dashboard-metric-card-amount {
+  text-align: left;
+}
+
+.dashboard-metric-amounts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.dashboard-metric-amount-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.65rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid rgba(154, 174, 199, 0.2);
+}
+
+.dashboard-metric-amount-line:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.dashboard-metric-amount-line label {
+  color: #6a7a93;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dashboard-metric-card-amount .dashboard-metric-amount-line strong {
+  text-align: right;
+  font-size: 1.18rem;
+  letter-spacing: -0.03em;
+}
+
+.dashboard-metric-card-text {
+  justify-content: flex-start;
+}
+
+.dashboard-metric-card-text strong {
+  font-size: 1.16rem;
+  letter-spacing: -0.03em;
 }
 
 .dashboard-module-grid {
@@ -1234,7 +1903,12 @@ body {
   }
 
   .dashboard-level-grid,
+  .workspace-card-tabs,
+  .workspace-operation-tabs,
+  .workspace-period-card,
   .workspace-form-grid,
+  .workspace-balance-summary,
+  .workspace-totals-grid,
   .workspace-filter-grid {
     grid-template-columns: 1fr;
   }

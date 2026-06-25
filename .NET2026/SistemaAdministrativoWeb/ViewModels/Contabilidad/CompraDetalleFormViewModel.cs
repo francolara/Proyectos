@@ -7,6 +7,14 @@ public sealed class CompraDetalleFormViewModel
     [Range(1, short.MaxValue, ErrorMessage = "El item debe ser mayor a cero.")]
     public short Item { get; set; }
 
+    [Range(1, int.MaxValue, ErrorMessage = "Seleccione la cuenta contable.")]
+    public int? IdPlanCuenta { get; set; }
+
+    public string CuentaTexto { get; set; } = string.Empty;
+
+    [Range(1, int.MaxValue, ErrorMessage = "Seleccione el tipo de afectacion IGV.")]
+    public int? IdTipoAfectacionIGV { get; set; } = 1;
+
     [Required(ErrorMessage = "Ingrese la descripcion del concepto.")]
     [StringLength(250)]
     public string Descripcion { get; set; } = string.Empty;

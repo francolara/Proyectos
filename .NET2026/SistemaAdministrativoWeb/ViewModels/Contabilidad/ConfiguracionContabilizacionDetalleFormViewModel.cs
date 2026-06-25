@@ -14,6 +14,8 @@ public sealed class ConfiguracionContabilizacionDetalleFormViewModel
     [Range(1, int.MaxValue, ErrorMessage = "Seleccione una cuenta.")]
     public int? IdPlanCuenta { get; set; }
 
+    public string CuentaTexto { get; set; } = string.Empty;
+
     [Required(ErrorMessage = "Seleccione la naturaleza.")]
     [StringLength(1)]
     public string NaturalezaMovimiento { get; set; } = "D";

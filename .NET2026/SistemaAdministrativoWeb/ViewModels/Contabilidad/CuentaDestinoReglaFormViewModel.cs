@@ -10,6 +10,8 @@ public sealed class CuentaDestinoReglaFormViewModel
     [Range(1, int.MaxValue, ErrorMessage = "Seleccione la cuenta origen.")]
     public int? IdPlanCuentaOrigen { get; set; }
 
+    public string CuentaOrigenTexto { get; set; } = string.Empty;
+
     [StringLength(500)]
     public string? Observacion { get; set; }
 

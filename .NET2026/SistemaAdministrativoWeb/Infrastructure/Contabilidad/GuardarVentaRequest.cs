@@ -14,6 +14,9 @@ public sealed class GuardarVentaRequest
     public int IdMoneda { get; init; }
     public decimal TipoCambio { get; init; }
     public decimal BaseImponible { get; init; }
+    public decimal TotalExonerado { get; init; }
+    public decimal TotalInafecto { get; init; }
+    public decimal Icbper { get; init; }
     public decimal Igv { get; init; }
     public decimal Isc { get; init; }
     public decimal OtrosTributos { get; init; }

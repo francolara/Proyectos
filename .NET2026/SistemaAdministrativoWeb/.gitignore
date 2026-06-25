@@ -1,6 +1,8 @@
 # Build
 bin/
 obj/
+temp_codex_build/
+tmp/
 
 # IDE
 .vs/

@@ -9,6 +9,11 @@ public sealed class AsientoFormViewModel
     [Range(1, int.MaxValue, ErrorMessage = "Seleccione un origen.")]
     public int? IdOrigen { get; set; }
 
+    public string OrigenTexto { get; set; } = string.Empty;
+
+    [DataType(DataType.Date)]
+    public DateOnly FechaEmision { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+
     [DataType(DataType.Date)]
     public DateOnly FechaAsiento { get; set; } = DateOnly.FromDateTime(DateTime.Today);
 

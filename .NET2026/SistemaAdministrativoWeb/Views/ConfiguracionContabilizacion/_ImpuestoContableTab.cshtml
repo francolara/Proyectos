@@ -1,0 +1,86 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.ConfiguracionImpuestoTabViewModel
+
+@* =============================================
+   Author:        FRANCO LARA
+   Create date:   18/06/2026
+   Description:   Tabla reutilizable para configuracion de impuestos de compra y venta.
+   ============================================= *@
+
+@* =============================================
+   Author:        FRANCO LARA
+   Create date:   20/06/2026
+   Description:   Unifica configuracion de impuestos en una cuenta contable unica por empresa.
+   ============================================= *@
+
+@* =============================================
+   Author:        FRANCO LARA
+   Create date:   23/06/2026
+   Description:   Reemplaza los botones de ayuda textual por iconos de lupa en la configuracion de impuestos.
+   ============================================= *@
+
+<div class="workspace-section">
+    <div class="workspace-section-head">
+        <div>
+            <span class="workspace-section-kicker">Impuestos</span>
+            <h2>@Model.Titulo</h2>
+            <p>Asigna una cuenta contable unica por cada impuesto activo.</p>
+        </div>
+    </div>
+    <div class="table-responsive workspace-table-wrap">
+        <table class="table align-middle app-table workspace-table">
+            <thead>
+                <tr>
+                    <th>Codigo</th>
+                    <th>Impuesto</th>
+                    <th>Cuenta contable</th>
+                    <th>Activo</th>
+                    <th class="text-end">Accion</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Items)
+                {
+                    var impuestoFormId = $"impuesto-form-{item.IdTipoImpuesto}";
+                    <tr>
+                        <td class="workspace-tree-code">
+                            <form id="@impuestoFormId" asp-action="GuardarImpuesto" method="post">
+                            @Html.AntiForgeryToken()
+                            </form>
+                            <input form="@impuestoFormId" type="hidden" name="idTipoImpuesto" value="@item.IdTipoImpuesto" />
+                            @item.CodigoSunat
+                        </td>
+                        <td>@item.NombreImpuesto</td>
+                            <td>
+                                <input form="@impuestoFormId" type="hidden" name="idPlanCuenta" value="@item.IdPlanCuenta" class="js-cuenta-id" />
+                                <div class="workspace-lookup-control workspace-lookup-control-compact">
+                                    <input class="form-control js-cuenta-texto" value="@(string.IsNullOrWhiteSpace(item.CuentaTexto) ? "Seleccione cuenta" : item.CuentaTexto)" readonly />
+                                    <button type="button" class="btn btn-outline-secondary btn-sm workspace-icon-button js-open-cuenta-modal" title="Buscar cuenta" aria-label="Buscar cuenta"><i class="bi bi-search"></i></button>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <input form="@impuestoFormId" type="checkbox" name="activo" value="true" class="form-check-input" checked="@item.Activo" />
+                                <input form="@impuestoFormId" type="hidden" name="activo" value="false" />
+                            </td>
+                            <td class="text-end">
+                                <button form="@impuestoFormId" type="submit" class="btn btn-primary btn-sm">Guardar</button>
+                            </td>
+                    </tr>
+                }
+                @if (!Model.Items.Any())
+                {
+                    <tr>
+                        <td colspan="5">
+                            <div class="app-empty-state app-empty-state-inline">
+                                <i class="bi bi-percent"></i>
+                                <div>
+                                    <strong>No hay impuestos activos</strong>
+                                    <p>Revise el maestro de tipos de impuesto.</p>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

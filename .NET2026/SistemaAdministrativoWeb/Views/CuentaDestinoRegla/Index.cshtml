@@ -8,31 +8,18 @@
 }
 
 <section class="dashboard-shell">
-    <div class="dashboard-hero">
-        <div>
-            <span class="dashboard-kicker">Mantenimiento contable</span>
-            <h1>Reglas de cuentas destino</h1>
-            <p>Configura distribuciones por ejercicio para automatizar equivalencias segun la empresa activa.</p>
-        </div>
-        <div class="dashboard-status-card">
-            <strong>@Model.EmpresaNombre</strong>
-            <span>Empresa activa para reglas de distribucion contable.</span>
-            <small>Total filtrado: @Model.Paginacion.TotalRegistros</small>
-        </div>
-    </div>
-
     <section class="dashboard-metrics">
-        <article class="dashboard-metric-card">
+        <article class="dashboard-metric-card dashboard-metric-card-count">
             <span>Total reglas</span>
             <strong>@Model.TotalReglas</strong>
             <small>Configuraciones filtradas para el ejercicio consultado.</small>
         </article>
-        <article class="dashboard-metric-card">
+        <article class="dashboard-metric-card dashboard-metric-card-count">
             <span>Reglas activas</span>
             <strong>@Model.TotalActivas</strong>
             <small>Equivalencias activas visibles en la pagina.</small>
         </article>
-        <article class="dashboard-metric-card">
+        <article class="dashboard-metric-card dashboard-metric-card-count">
             <span>Total tramos</span>
             <strong>@Model.TotalTramos</strong>
             <small>Detalle de cargos y abonos de la pagina actual.</small>

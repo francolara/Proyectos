@@ -1,0 +1,1550 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.CajaBancoIndexViewModel
+
+@* =============================================
+   Author:        FRANCO LARA
+   Create date:   23/06/2026
+   Description:   Agrega el formulario base del modulo Caja y Bancos con seleccion de cuenta corriente, operacion bancaria, persona relacionada y detalle contable con ayudas de cuenta, centro de costo, persona y comprobantes por linea.
+   ============================================= *@
+@* Firma: FRANCO LARA - 24/06/2026 | Reubica el resumen del movimiento junto al importe de cabecera, cambia sus indicadores a Total Operacion/Total Detalle/Diferencia, amplia el detalle para guardar persona por linea, enlaza comprobantes Compra/Venta jalando su saldo pendiente, bloquea el guardado cuando exista diferencia y muestra calendario en Fecha emision. *@
+
+@{
+    ViewData["Title"] = Model.Formulario.IdMovimientoBanco.HasValue ? "Editar movimiento bancario" : "Registrar movimiento bancario";
+    ViewData["AdminShell"] = true;
+    var periodoTexto = new DateTime(Model.AnioSeleccionado, Model.MesSeleccionado, 1).ToString("MMMM 'de' yyyy");
+    var textInfo = System.Globalization.CultureInfo.CurrentCulture.TextInfo;
+    var tipoMovimientoActual = string.Equals(Model.Formulario.TipoMovimiento, "E", StringComparison.OrdinalIgnoreCase) ? "E" : "I";
+    var operacionesActuales = tipoMovimientoActual == "E" ? Model.OperacionesEgreso : Model.OperacionesIngreso;
+    var personaTexto = string.IsNullOrWhiteSpace(Model.Formulario.PersonaTexto) ? "Sin persona vinculada" : Model.Formulario.PersonaTexto;
+}
+
+<style>
+    .workspace-caja-banco-layout {
+        display: grid;
+        grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
+        gap: 1rem;
+        align-items: stretch;
+    }
+
+    .workspace-caja-banco-sidebar,
+    .workspace-caja-banco-main,
+    .workspace-caja-banco-sidebar .workspace-section,
+    .workspace-caja-banco-main .workspace-section {
+        height: 100%;
+    }
+
+    .workspace-caja-banco-sidebar .workspace-window-body,
+    .workspace-caja-banco-main .workspace-window-body {
+        height: calc(100% - 88px);
+    }
+
+    .workspace-operation-tabs {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .workspace-operation-tab {
+        display: grid;
+        grid-template-columns: 1fr;
+        align-items: center;
+        gap: 0.35rem;
+        min-height: 58px;
+        padding: 0.9rem 1rem;
+        border-radius: 18px;
+        justify-items: center;
+        text-align: center;
+    }
+
+    .workspace-operation-copy strong {
+        display: block;
+        font-size: 1rem;
+        line-height: 1.1;
+    }
+
+    .workspace-caja-banco-tree-group + .workspace-caja-banco-tree-group {
+        margin-top: 0.9rem;
+    }
+
+    .workspace-tree-group-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+        padding: 0 0.1rem;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #35507f;
+    }
+
+    .workspace-tree-group-title small {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #6a7a96;
+    }
+
+    .workspace-caja-banco-tree-group {
+        position: relative;
+        padding-left: 0.35rem;
+    }
+
+    .workspace-caja-banco-tree-group::before {
+        content: "";
+        position: absolute;
+        left: 0.6rem;
+        top: 1.95rem;
+        bottom: 0.65rem;
+        width: 1px;
+        background: rgba(64, 99, 160, 0.18);
+    }
+
+    .workspace-tree-option {
+        display: grid;
+        grid-template-columns: 3rem 1fr;
+        align-items: center;
+        justify-items: start;
+        gap: 0.7rem;
+        text-align: left;
+        margin-left: 0.75rem;
+        position: relative;
+    }
+
+    .workspace-tree-option::before {
+        content: "";
+        position: absolute;
+        left: -0.52rem;
+        top: 50%;
+        width: 0.45rem;
+        height: 1px;
+        background: rgba(64, 99, 160, 0.3);
+        transform: translateY(-50%);
+    }
+
+    .workspace-tree-label {
+        display: flex;
+        flex-direction: column;
+        gap: 0.12rem;
+        min-width: 0;
+        width: 100%;
+        align-items: flex-start;
+        text-align: left;
+    }
+
+    .workspace-tree-label strong {
+        font-size: 0.9rem;
+        line-height: 1.2;
+        color: inherit;
+    }
+
+    .workspace-tree-label small {
+        font-size: 0.72rem;
+        line-height: 1.2;
+        color: #6f7f98;
+    }
+
+    .workspace-tree-option.active .workspace-tree-label small {
+        color: rgba(255,255,255,0.82);
+    }
+
+    .workspace-tree-code {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 2rem;
+        padding: 0.3rem 0.45rem;
+        border-radius: 12px;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        background: rgba(42, 106, 220, 0.08);
+        color: #214f9d;
+    }
+
+    .workspace-tree-option.active .workspace-tree-code {
+        background: rgba(255,255,255,0.18);
+        color: #fff;
+    }
+
+    .workspace-section-head-meta {
+        min-width: 13rem;
+        align-self: center;
+        border-radius: 1rem;
+        padding: 0.9rem 1rem;
+        background: rgba(42, 106, 220, 0.06);
+        border: 1px solid rgba(86, 126, 204, 0.18);
+        text-align: right;
+    }
+
+    .workspace-section-head-meta span,
+    .workspace-section-head-meta strong {
+        display: block;
+    }
+
+    .workspace-section-head-meta span {
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #5f7291;
+    }
+
+    .workspace-section-head-meta strong {
+        margin-top: 0.25rem;
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: var(--app-ink);
+    }
+
+    .workspace-balance-summary-cabecera {
+        grid-column: span 2;
+        margin-top: 0.2rem;
+        gap: 0.75rem;
+    }
+
+    .workspace-balance-summary-cabecera .workspace-balance-card {
+        min-height: 92px;
+        padding: 0.85rem 1rem;
+    }
+
+    .workspace-balance-summary-cabecera .workspace-balance-card span {
+        font-size: 0.7rem;
+    }
+
+    .workspace-balance-summary-cabecera .workspace-balance-card strong {
+        font-size: 1.55rem;
+    }
+
+    .workspace-balance-summary-cabecera .workspace-balance-card small {
+        font-size: 0.78rem;
+    }
+
+    .workspace-persona-linea-note {
+        display: block;
+        margin-top: 0.35rem;
+        font-size: 0.72rem;
+        color: #6a7a96;
+        line-height: 1.25;
+    }
+</style>
+
+<section class="dashboard-shell">
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Formulario</span>
+                <h1>@ViewData["Title"]</h1>
+                <p>Registra ingresos y egresos de la cuenta corriente seleccionada con detalle contable y referencia del periodo.</p>
+            </div>
+            <div class="workspace-window-badge">
+                <strong>@textInfo.ToTitleCase(periodoTexto)</strong>
+                <span>Periodo contable</span>
+                <small>@Model.PeriodoConsulta</small>
+            </div>
+        </div>
+        <div class="workspace-window-body">
+            @if (Model.CuentasCorrientesDisponibles.Count == 0)
+            {
+                <div class="alert alert-warning">No existen cuentas corrientes activas para la empresa. Registre una cuenta corriente antes de crear movimientos bancarios.</div>
+            }
+            @if (Model.OperacionesIngreso.Count == 0 && Model.OperacionesEgreso.Count == 0)
+            {
+                <div class="alert alert-warning">No existen operaciones bancarias configuradas para ingresos o egresos.</div>
+            }
+
+            <form asp-action="Guardar" method="post" id="caja-bancos-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Formulario.IdMovimientoBanco" />
+                <input type="hidden" name="anio" value="@Model.AnioSeleccionado" />
+                <input type="hidden" name="mes" value="@Model.MesSeleccionado" />
+                <input type="hidden" asp-for="Formulario.TipoMovimiento" id="tipoMovimientoInput" />
+                <input type="hidden" asp-for="Formulario.IdOpeBancaria" id="idOpeBancariaInput" />
+                <input type="hidden" asp-for="Formulario.TipoOperacionTexto" id="tipoOperacionTextoInput" />
+                <input type="hidden" asp-for="Formulario.IdPersona" id="personaIdInput" />
+
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="workspace-form-grid">
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.IdBancoConfiguracionEmpresa" class="form-label">Cuenta corriente</label>
+                        <select asp-for="Formulario.IdBancoConfiguracionEmpresa" class="form-select" id="cuentaCorrienteSelect">
+                            <option value="">Seleccione cuenta</option>
+                            @foreach (var cuenta in Model.CuentasCorrientesDisponibles)
+                            {
+                                <option value="@cuenta.IdBancoConfiguracionEmpresa"
+                                        data-banco="@($"{cuenta.NombreBanco} ({cuenta.CodigoBanco})")"
+                                        data-moneda="@($"{cuenta.CodigoMoneda} - {cuenta.NombreMoneda}")"
+                                        data-cuenta="@cuenta.NroCuentaCorriente"
+                                        selected="@(cuenta.IdBancoConfiguracionEmpresa == Model.Formulario.IdBancoConfiguracionEmpresa)">
+                                    @($"{cuenta.NroCuentaCorriente} | {cuenta.NombreBanco} | {cuenta.CodigoMoneda}")
+                                </option>
+                            }
+                        </select>
+                        <span asp-validation-for="Formulario.IdBancoConfiguracionEmpresa" class="text-danger"></span>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label">Moneda</label>
+                        <input class="form-control" id="monedaTexto" value="@Model.Formulario.MonedaTexto" readonly />
+                    </div>
+                </div>
+
+                <div class="workspace-caja-banco-layout mt-4">
+                    <aside class="workspace-caja-banco-sidebar">
+                        <div class="workspace-section">
+                            <div class="workspace-section-head">
+                                <div>
+                                    <span class="workspace-section-kicker">Operacion</span>
+                                    <h2>Flujo bancario</h2>
+                                    <p>Elige si registraras un ingreso o egreso y luego selecciona el tipo de operacion bancaria.</p>
+                                </div>
+                            </div>
+                            <div class="workspace-window-body">
+                                <div class="workspace-operation-tabs">
+                                    <button type="button" class="workspace-operation-tab @(tipoMovimientoActual == "I" ? "active" : string.Empty)" data-movimiento="I">
+                                        <span class="workspace-operation-copy">
+                                            <strong>Ingresos</strong>
+                                        </span>
+                                    </button>
+                                    <button type="button" class="workspace-operation-tab @(tipoMovimientoActual == "E" ? "active" : string.Empty)" data-movimiento="E">
+                                        <span class="workspace-operation-copy">
+                                            <strong>Egresos</strong>
+                                        </span>
+                                    </button>
+                                </div>
+
+                                <div class="workspace-caja-banco-tree" id="operacionesTree">
+                                    <div class="workspace-caja-banco-tree-group @(tipoMovimientoActual == "I" ? string.Empty : "is-hidden")" data-tree-group="I">
+                                        <div class="workspace-tree-group-title">
+                                            <span>Ingresos</span>
+                                            <small>Ordenado por codigo</small>
+                                        </div>
+                                        @foreach (var operacion in Model.OperacionesIngreso)
+                                        {
+                                            <button type="button"
+                                                    class="workspace-tree-option @(tipoMovimientoActual == "I" && string.Equals(Model.Formulario.IdOpeBancaria, operacion.IdOpeBancaria, StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
+                                                    data-tree-movimiento="I"
+                                                data-tree-id="@operacion.IdOpeBancaria"
+                                                data-tree-texto="@operacion.TipoOperacion">
+                                                <span class="workspace-tree-code">@operacion.IdOpeBancaria</span>
+                                                <span class="workspace-tree-label">
+                                                    <strong>@operacion.TipoOperacion</strong>
+                                                </span>
+                                            </button>
+                                        }
+                                    </div>
+
+                                    <div class="workspace-caja-banco-tree-group @(tipoMovimientoActual == "E" ? string.Empty : "is-hidden")" data-tree-group="E">
+                                        <div class="workspace-tree-group-title">
+                                            <span>Egresos</span>
+                                            <small>Ordenado por codigo</small>
+                                        </div>
+                                        @foreach (var operacion in Model.OperacionesEgreso)
+                                        {
+                                            <button type="button"
+                                                    class="workspace-tree-option @(tipoMovimientoActual == "E" && string.Equals(Model.Formulario.IdOpeBancaria, operacion.IdOpeBancaria, StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
+                                                    data-tree-movimiento="E"
+                                                data-tree-id="@operacion.IdOpeBancaria"
+                                                data-tree-texto="@operacion.TipoOperacion">
+                                                <span class="workspace-tree-code">@operacion.IdOpeBancaria</span>
+                                                <span class="workspace-tree-label">
+                                                    <strong>@operacion.TipoOperacion</strong>
+                                                </span>
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+
+                                <div class="workspace-preview-message is-ok mt-3" id="operacionSeleccionadaBox">
+                                    <i class="bi bi-journal-check"></i>
+                                    <span id="operacionSeleccionadaTexto">@(string.IsNullOrWhiteSpace(Model.Formulario.TipoOperacionTexto) ? "Seleccione una operacion bancaria" : Model.Formulario.TipoOperacionTexto)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+
+                    <div class="workspace-caja-banco-main">
+                        <div class="workspace-section">
+                            <div class="workspace-section-head">
+                                <div>
+                                    <span class="workspace-section-kicker">Cabecera</span>
+                                    <h2>Datos del movimiento</h2>
+                                    <p>Completa la referencia general del movimiento antes de registrar el detalle.</p>
+                                </div>
+                                <div class="workspace-section-head-meta">
+                                    <span>Nro movimiento</span>
+                                    <strong>@(Model.Formulario.NumeroMovimiento?.ToString() ?? "Se asignara al guardar")</strong>
+                                </div>
+                            </div>
+                            <div class="workspace-window-body">
+                                <div class="workspace-form-grid">
+                                    <div class="workspace-field">
+                                        <label asp-for="Formulario.FechaEmision" class="form-label">Fecha emision</label>
+                                        <input asp-for="Formulario.FechaEmision" type="date" class="form-control" />
+                                        <span asp-validation-for="Formulario.FechaEmision" class="text-danger"></span>
+                                    </div>
+                                    <div class="workspace-field">
+                                        <label asp-for="Formulario.TipoCambio" class="form-label">Tipo de cambio</label>
+                                        <input asp-for="Formulario.TipoCambio" class="form-control" />
+                                        <span asp-validation-for="Formulario.TipoCambio" class="text-danger"></span>
+                                    </div>
+                                    <div class="workspace-field">
+                                        <label asp-for="Formulario.NumeroDocumento" class="form-label">Nro de Operacion</label>
+                                        <input asp-for="Formulario.NumeroDocumento" class="form-control" />
+                                        <span asp-validation-for="Formulario.NumeroDocumento" class="text-danger"></span>
+                                    </div>
+                                    <div class="workspace-field workspace-field-span-2">
+                                        <label class="form-label">Persona vinculada</label>
+                                        <div class="workspace-lookup-control">
+                                            <input class="form-control" id="personaTexto" value="@personaTexto" readonly />
+                                            <button type="button" class="btn btn-outline-secondary workspace-icon-button" id="abrirPersonaModal" title="Buscar persona" aria-label="Buscar persona"><i class="bi bi-person"></i></button>
+                                            <button type="button" class="btn btn-outline-secondary workspace-icon-button" id="limpiarPersona" title="Limpiar persona" aria-label="Limpiar persona"><i class="bi bi-brush"></i></button>
+                                        </div>
+                                        <div class="workspace-inline-note" id="personaDocumentoTexto">
+                                            @(string.IsNullOrWhiteSpace(Model.Formulario.NumeroDocumentoPersona) ? "Sin RUC/DNI relacionado" : $"RUC/DNI: {Model.Formulario.NumeroDocumentoPersona}")
+                                        </div>
+                                    </div>
+                                    <div class="workspace-field workspace-field-span-2">
+                                        <label asp-for="Formulario.Glosa" class="form-label">Glosa</label>
+                                        <input asp-for="Formulario.Glosa" class="form-control" />
+                                        <span asp-validation-for="Formulario.Glosa" class="text-danger"></span>
+                                    </div>
+                                    <div class="workspace-field workspace-field-span-2">
+                                        <label asp-for="Formulario.Observacion" class="form-label">Observaciones</label>
+                                        <textarea asp-for="Formulario.Observacion" class="form-control" rows="2"></textarea>
+                                        <span asp-validation-for="Formulario.Observacion" class="text-danger"></span>
+                                    </div>
+                                    <div class="workspace-field">
+                                        <label asp-for="Formulario.ImporteTotal" class="form-label">Importe total</label>
+                                        <input asp-for="Formulario.ImporteTotal" class="form-control" id="importeTotalInput" />
+                                        <span asp-validation-for="Formulario.ImporteTotal" class="text-danger"></span>
+                                    </div>
+                                    <div class="workspace-balance-summary workspace-balance-summary-cabecera">
+                                        <article class="workspace-balance-card">
+                                            <span>Total Operacion</span>
+                                            <strong id="totalOperacion">0.00</strong>
+                                            <small>Importe de la cabecera</small>
+                                        </article>
+                                        <article class="workspace-balance-card">
+                                            <span>Total Detalle</span>
+                                            <strong id="totalDetalle">0.00</strong>
+                                            <small id="totalDetalleEstado">Resultado neto del detalle</small>
+                                        </article>
+                                        <article class="workspace-balance-card workspace-balance-card-diff" id="diferenciaCard">
+                                            <span>Diferencia</span>
+                                            <strong id="totalDiferencia">0.00</strong>
+                                            <small id="diferenciaEstado">Revision del movimiento</small>
+                                        </article>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="workspace-section mt-4">
+                    <div class="workspace-section-head">
+                        <div>
+                            <h2>Detalle del movimiento</h2>
+                            <p>Registra las lineas del movimiento. Cada linea debe tener importe solo en Debe o solo en Haber.</p>
+                        </div>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="agregar-linea">Agregar linea</button>
+                    </div>
+                    <div class="table-responsive workspace-table-wrap">
+                        <table class="table align-middle app-table workspace-table" id="detalleTable">
+                            <thead>
+                                <tr>
+                                    <th class="detalle-orden-cell">Item</th>
+                                    <th>Cuenta</th>
+                                    <th>Glosa detalle</th>
+                                    <th class="detalle-centro-costo-cell">Centro costo</th>
+                                    <th>Persona</th>
+                                    <th>TipoDoc</th>
+                                    <th>Serie</th>
+                                    <th>Referencia</th>
+                                    <th>TC</th>
+                                    <th class="detalle-porcentaje-cell">Debe</th>
+                                    <th class="detalle-porcentaje-cell">Haber</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (var i = 0; i < Model.Formulario.Detalles.Count; i++)
+                                {
+                                    <tr>
+                                        <td class="detalle-orden-cell">
+                                            <input asp-for="Formulario.Detalles[i].IdMovimientoBancoDetalle" type="hidden" />
+                                            <input asp-for="Formulario.Detalles[i].Item" class="form-control" readonly />
+                                        </td>
+                                        <td>
+                                            <input asp-for="Formulario.Detalles[i].IdPlanCuenta" type="hidden" class="js-cuenta-id" />
+                                            <input asp-for="Formulario.Detalles[i].RequiereCentroCostoCuenta" type="hidden" class="js-requiere-centro-costo" />
+                                            <div class="workspace-lookup-control workspace-lookup-control-compact">
+                                                <input class="form-control js-cuenta-texto" value="@(string.IsNullOrWhiteSpace(Model.Formulario.Detalles[i].CuentaTexto) ? "Seleccione cuenta" : Model.Formulario.Detalles[i].CuentaTexto)" readonly />
+                                                <button type="button" class="btn btn-outline-secondary workspace-icon-button js-abrir-cuenta-modal" title="Buscar cuenta" aria-label="Buscar cuenta"><i class="bi bi-search"></i></button>
+                                            </div>
+                                            <span asp-validation-for="Formulario.Detalles[i].IdPlanCuenta" class="text-danger"></span>
+                                        </td>
+                                        <td>
+                                            <input asp-for="Formulario.Detalles[i].GlosaDetalle" class="form-control" />
+                                            <span asp-validation-for="Formulario.Detalles[i].GlosaDetalle" class="text-danger"></span>
+                                        </td>
+                                        <td class="detalle-centro-costo-cell">
+                                            <input asp-for="Formulario.Detalles[i].CodigoCentroCosto" type="hidden" class="js-centro-costo-codigo" />
+                                            <div class="workspace-lookup-control workspace-lookup-control-inline-tools">
+                                                <input class="form-control js-centro-costo-texto" value="@Model.Formulario.Detalles[i].CodigoCentroCosto" placeholder="Centro de costo opcional" readonly />
+                                                <button type="button" class="btn btn-outline-secondary workspace-icon-button js-abrir-centro-modal" title="Buscar centro de costo" aria-label="Buscar centro de costo"><i class="bi bi-search"></i></button>
+                                                <button type="button" class="btn btn-outline-secondary workspace-icon-button js-limpiar-centro" title="Limpiar centro de costo" aria-label="Limpiar centro de costo"><i class="bi bi-brush"></i></button>
+                                            </div>
+                                            <span asp-validation-for="Formulario.Detalles[i].CodigoCentroCosto" class="text-danger"></span>
+                                        </td>
+                                        <td>
+                                            <input asp-for="Formulario.Detalles[i].IdPersona" type="hidden" class="js-persona-id-linea" />
+                                            <input asp-for="Formulario.Detalles[i].NumeroDocumento" type="hidden" class="js-numero-documento-linea" />
+                                            <input asp-for="Formulario.Detalles[i].ModuloOperacionComprobante" type="hidden" class="js-modulo-comprobante-linea" />
+                                            <input asp-for="Formulario.Detalles[i].IdRegistroComprobante" type="hidden" class="js-id-registro-comprobante-linea" />
+                                            <div class="workspace-lookup-control workspace-lookup-control-inline-tools">
+                                                <input class="form-control js-persona-texto-linea" value="@(string.IsNullOrWhiteSpace(Model.Formulario.Detalles[i].PersonaTexto) ? "Seleccione persona" : Model.Formulario.Detalles[i].PersonaTexto)" readonly />
+                                                <button type="button" class="btn btn-outline-secondary workspace-icon-button js-abrir-persona-linea-modal" title="Buscar persona" aria-label="Buscar persona"><i class="bi bi-person"></i></button>
+                                                <button type="button" class="btn btn-outline-secondary workspace-icon-button js-abrir-comprobante-modal" title="Buscar comprobante" aria-label="Buscar comprobante"><i class="bi bi-receipt"></i></button>
+                                            </div>
+                                            <span asp-validation-for="Formulario.Detalles[i].IdPersona" class="text-danger"></span>
+                                        </td>
+                                        <td>
+                                            <select asp-for="Formulario.Detalles[i].TipoDocumento" class="form-select js-tipo-documento-linea">
+                                                <option value="">Seleccione</option>
+                                                @foreach (var opcion in Model.TiposDocumentoDisponibles)
+                                                {
+                                                    <option value="@opcion.Valor">@opcion.Texto</option>
+                                                }
+                                            </select>
+                                            <span asp-validation-for="Formulario.Detalles[i].TipoDocumento" class="text-danger"></span>
+                                        </td>
+                                        <td>
+                                            <input asp-for="Formulario.Detalles[i].Serie" class="form-control js-serie-linea" />
+                                            <span asp-validation-for="Formulario.Detalles[i].Serie" class="text-danger"></span>
+                                        </td>
+                                        <td>
+                                            <input asp-for="Formulario.Detalles[i].ReferenciaLinea" class="form-control js-referencia-linea" />
+                                            <span asp-validation-for="Formulario.Detalles[i].ReferenciaLinea" class="text-danger"></span>
+                                        </td>
+                                        <td>
+                                            <input asp-for="Formulario.Detalles[i].TipoCambioLinea" class="form-control js-tipo-cambio-linea" />
+                                            <span asp-validation-for="Formulario.Detalles[i].TipoCambioLinea" class="text-danger"></span>
+                                        </td>
+                                        <td class="detalle-porcentaje-cell">
+                                            <input asp-for="Formulario.Detalles[i].Debe" class="form-control js-debe" />
+                                            <span asp-validation-for="Formulario.Detalles[i].Debe" class="text-danger"></span>
+                                        </td>
+                                        <td class="detalle-porcentaje-cell">
+                                            <input asp-for="Formulario.Detalles[i].Haber" class="form-control js-haber" />
+                                            <span asp-validation-for="Formulario.Detalles[i].Haber" class="text-danger"></span>
+                                        </td>
+                                        <td class="text-end">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm js-quitar-linea">Quitar</button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+
+                <div class="workspace-actions">
+                    <button type="submit" class="btn btn-primary">Guardar movimiento</button>
+                    <a asp-action="Index"
+                       asp-route-idBancoConfiguracionEmpresa="@Model.Formulario.IdBancoConfiguracionEmpresa"
+                       asp-route-anio="@Model.AnioSeleccionado"
+                       asp-route-mes="@Model.MesSeleccionado"
+                       class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </section>
+</section>
+
+<div class="modal fade workspace-modal" id="comprobanteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content workspace-modal-content">
+            <div class="modal-header workspace-modal-header">
+                <div>
+                    <span class="workspace-window-kicker">Comprobantes</span>
+                    <h2 class="workspace-modal-title">Seleccionar comprobante</h2>
+                    <p class="workspace-modal-subtitle">Busca comprobantes con saldo de la persona relacionada y completa la referencia de la linea.</p>
+                </div>
+                <button type="button" class="btn-close workspace-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body workspace-modal-body">
+                <div class="workspace-form-grid workspace-modal-form-row">
+                    <div class="workspace-field workspace-field-span-2">
+                        <label class="form-label" for="comprobanteFiltro">Filtro</label>
+                        <input id="comprobanteFiltro" class="form-control" placeholder="Tipo de comprobante, serie, numero o persona" />
+                    </div>
+                </div>
+
+                <div class="table-responsive workspace-table-wrap">
+                    <table class="table align-middle app-table workspace-table workspace-lookup-table">
+                        <thead>
+                            <tr>
+                                <th class="workspace-lookup-select-cell">Sel.</th>
+                                <th>Modulo</th>
+                                <th>Fecha</th>
+                                <th>Persona</th>
+                                <th>TipoDoc</th>
+                                <th>Serie</th>
+                                <th>Numero</th>
+                                <th>Moneda</th>
+                                <th>Total</th>
+                                <th>Saldo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comprobanteResultados"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer workspace-modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="aceptarComprobante">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade workspace-modal" id="personaModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content workspace-modal-content">
+            <div class="modal-header workspace-modal-header">
+                <div>
+                    <span class="workspace-window-kicker">Auxiliar</span>
+                    <h2 class="workspace-modal-title">Seleccionar persona</h2>
+                    <p class="workspace-modal-subtitle">Busca por documento o nombre y vincula la persona al movimiento bancario.</p>
+                </div>
+                <button type="button" class="btn-close workspace-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body workspace-modal-body">
+                <div class="workspace-form-grid workspace-modal-form-row">
+                    <div class="workspace-field workspace-field-span-2">
+                        <label class="form-label" for="personaFiltro">Filtro</label>
+                        <input id="personaFiltro" class="form-control" placeholder="Documento o nombre" />
+                    </div>
+                </div>
+
+                <div class="table-responsive workspace-table-wrap">
+                    <table class="table align-middle app-table workspace-table workspace-lookup-table">
+                        <thead>
+                            <tr>
+                                <th class="workspace-lookup-select-cell">Sel.</th>
+                                <th>Documento</th>
+                                <th>Nombre</th>
+                                <th>Tipo</th>
+                                <th>Tipo doc.</th>
+                            </tr>
+                        </thead>
+                        <tbody id="personaResultados"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer workspace-modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="aceptarPersona">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade workspace-modal" id="cuentaModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content workspace-modal-content">
+            <div class="modal-header workspace-modal-header">
+                <div>
+                    <span class="workspace-window-kicker">Ayuda contable</span>
+                    <h2 class="workspace-modal-title">Seleccionar cuenta</h2>
+                    <p class="workspace-modal-subtitle">Busca cuentas activas de movimiento y selecciona la que corresponda para la linea del detalle.</p>
+                </div>
+                <button type="button" class="btn-close workspace-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body workspace-modal-body">
+                <div class="workspace-form-grid workspace-modal-form-row">
+                    <div class="workspace-field">
+                        <label class="form-label" for="cuentaFiltro">Filtro</label>
+                        <input id="cuentaFiltro" class="form-control" placeholder="Codigo o nombre" />
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="nivelCuentaFiltro">Nivel</label>
+                        <select id="nivelCuentaFiltro" class="form-select">
+                            <option value="">Todos</option>
+                            <option value="1">Nivel 1</option>
+                            <option value="2">Nivel 2</option>
+                            <option value="3">Nivel 3</option>
+                            <option value="4">Nivel 4</option>
+                            <option value="5">Nivel 5</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-responsive workspace-table-wrap">
+                    <table class="table align-middle app-table workspace-table workspace-lookup-table">
+                        <thead>
+                            <tr>
+                                <th class="workspace-lookup-select-cell">Sel.</th>
+                                <th>Codigo</th>
+                                <th>Cuenta</th>
+                                <th>Nivel</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuentaResultados"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer workspace-modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="aceptarCuenta">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade workspace-modal" id="centroModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content workspace-modal-content">
+            <div class="modal-header workspace-modal-header">
+                <div>
+                    <span class="workspace-window-kicker">Centro de costo</span>
+                    <h2 class="workspace-modal-title">Seleccionar centro de costo</h2>
+                    <p class="workspace-modal-subtitle">Busca el centro de costo activo y vincúlalo a la linea del detalle.</p>
+                </div>
+                <button type="button" class="btn-close workspace-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body workspace-modal-body">
+                <div class="workspace-form-grid workspace-modal-form-row">
+                    <div class="workspace-field workspace-field-span-2">
+                        <label class="form-label" for="centroFiltro">Filtro</label>
+                        <input id="centroFiltro" class="form-control" placeholder="Codigo o nombre" />
+                    </div>
+                </div>
+                <div class="table-responsive workspace-table-wrap">
+                    <table class="table align-middle app-table workspace-table workspace-lookup-table">
+                        <thead>
+                            <tr>
+                                <th class="workspace-lookup-select-cell">Sel.</th>
+                                <th>Codigo</th>
+                                <th>Nombre</th>
+                            </tr>
+                        </thead>
+                        <tbody id="centroResultados"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer workspace-modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="aceptarCentro">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<template id="detalleRowTemplate">
+    <tr>
+        <td class="detalle-orden-cell">
+            <input name="Formulario.Detalles[__index__].IdMovimientoBancoDetalle" type="hidden" />
+            <input name="Formulario.Detalles[__index__].Item" class="form-control" readonly value="__item__" />
+        </td>
+        <td>
+            <input name="Formulario.Detalles[__index__].IdPlanCuenta" type="hidden" class="js-cuenta-id" />
+            <input name="Formulario.Detalles[__index__].RequiereCentroCostoCuenta" type="hidden" class="js-requiere-centro-costo" value="false" />
+            <div class="workspace-lookup-control workspace-lookup-control-compact">
+                <input class="form-control js-cuenta-texto" value="Seleccione cuenta" readonly />
+                <button type="button" class="btn btn-outline-secondary workspace-icon-button js-abrir-cuenta-modal" title="Buscar cuenta" aria-label="Buscar cuenta"><i class="bi bi-search"></i></button>
+            </div>
+        </td>
+        <td>
+            <input name="Formulario.Detalles[__index__].GlosaDetalle" class="form-control" />
+        </td>
+        <td class="detalle-centro-costo-cell">
+            <input name="Formulario.Detalles[__index__].CodigoCentroCosto" type="hidden" class="js-centro-costo-codigo" />
+            <div class="workspace-lookup-control workspace-lookup-control-inline-tools">
+                <input class="form-control js-centro-costo-texto" placeholder="Centro de costo opcional" readonly />
+                <button type="button" class="btn btn-outline-secondary workspace-icon-button js-abrir-centro-modal" title="Buscar centro de costo" aria-label="Buscar centro de costo"><i class="bi bi-search"></i></button>
+                <button type="button" class="btn btn-outline-secondary workspace-icon-button js-limpiar-centro" title="Limpiar centro de costo" aria-label="Limpiar centro de costo"><i class="bi bi-brush"></i></button>
+            </div>
+        </td>
+        <td>
+            <input name="Formulario.Detalles[__index__].IdPersona" type="hidden" class="js-persona-id-linea" />
+            <input name="Formulario.Detalles[__index__].NumeroDocumento" type="hidden" class="js-numero-documento-linea" />
+            <input name="Formulario.Detalles[__index__].ModuloOperacionComprobante" type="hidden" class="js-modulo-comprobante-linea" />
+            <input name="Formulario.Detalles[__index__].IdRegistroComprobante" type="hidden" class="js-id-registro-comprobante-linea" />
+            <div class="workspace-lookup-control workspace-lookup-control-inline-tools">
+                <input class="form-control js-persona-texto-linea" value="Seleccione persona" readonly />
+                <button type="button" class="btn btn-outline-secondary workspace-icon-button js-abrir-persona-linea-modal" title="Buscar persona" aria-label="Buscar persona"><i class="bi bi-person"></i></button>
+                <button type="button" class="btn btn-outline-secondary workspace-icon-button js-abrir-comprobante-modal" title="Buscar comprobante" aria-label="Buscar comprobante"><i class="bi bi-receipt"></i></button>
+            </div>
+        </td>
+        <td>
+            <select name="Formulario.Detalles[__index__].TipoDocumento" class="form-select js-tipo-documento-linea">
+                <option value="">Seleccione</option>
+                @foreach (var opcion in Model.TiposDocumentoDisponibles)
+                {
+                    <option value="@opcion.Valor">@opcion.Texto</option>
+                }
+            </select>
+        </td>
+        <td>
+            <input name="Formulario.Detalles[__index__].Serie" class="form-control js-serie-linea" />
+        </td>
+        <td>
+            <input name="Formulario.Detalles[__index__].ReferenciaLinea" class="form-control js-referencia-linea" />
+        </td>
+        <td>
+            <input name="Formulario.Detalles[__index__].TipoCambioLinea" class="form-control js-tipo-cambio-linea" value="0" />
+        </td>
+        <td class="detalle-porcentaje-cell">
+            <input name="Formulario.Detalles[__index__].Debe" class="form-control js-debe" value="0" />
+        </td>
+        <td class="detalle-porcentaje-cell">
+            <input name="Formulario.Detalles[__index__].Haber" class="form-control js-haber" value="0" />
+        </td>
+        <td class="text-end">
+            <button type="button" class="btn btn-outline-secondary btn-sm js-quitar-linea">Quitar</button>
+        </td>
+    </tr>
+</template>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const form = document.getElementById("caja-bancos-form");
+            if (!form) {
+                return;
+            }
+
+            const tipoMovimientoInput = document.getElementById("tipoMovimientoInput");
+            const idOpeBancariaInput = document.getElementById("idOpeBancariaInput");
+            const tipoOperacionTextoInput = document.getElementById("tipoOperacionTextoInput");
+            const operacionTextoBox = document.getElementById("operacionSeleccionadaTexto");
+            const operacionTabs = Array.from(document.querySelectorAll(".workspace-operation-tab"));
+            const operacionButtons = Array.from(document.querySelectorAll(".workspace-tree-option"));
+            const operacionGroups = Array.from(document.querySelectorAll("[data-tree-group]"));
+            const cuentaCorrienteSelect = document.getElementById("cuentaCorrienteSelect");
+            const cuentaCorrienteTexto = document.getElementById("cuentaCorrienteTexto");
+            const bancoTexto = document.getElementById("bancoTexto");
+            const monedaTexto = document.getElementById("monedaTexto");
+            const detalleTable = document.getElementById("detalleTable");
+            const detalleBody = detalleTable?.querySelector("tbody");
+            const detalleTemplate = document.getElementById("detalleRowTemplate");
+            const agregarLineaButton = document.getElementById("agregar-linea");
+            const importeTotalInput = document.getElementById("importeTotalInput");
+            const totalOperacionLabel = document.getElementById("totalOperacion");
+            const totalDetalleLabel = document.getElementById("totalDetalle");
+            const totalDiferenciaLabel = document.getElementById("totalDiferencia");
+            const diferenciaCard = document.getElementById("diferenciaCard");
+            const diferenciaEstado = document.getElementById("diferenciaEstado");
+            const totalDetalleEstado = document.getElementById("totalDetalleEstado");
+            const personaTexto = document.getElementById("personaTexto");
+            const personaDocumentoTexto = document.getElementById("personaDocumentoTexto");
+            const personaIdInput = document.getElementById("personaIdInput");
+            const abrirPersonaModal = document.getElementById("abrirPersonaModal");
+            const limpiarPersonaButton = document.getElementById("limpiarPersona");
+            const personaFiltro = document.getElementById("personaFiltro");
+            const personaResultados = document.getElementById("personaResultados");
+            const personaModal = window.bootstrap ? new bootstrap.Modal(document.getElementById("personaModal")) : null;
+            const comprobanteFiltro = document.getElementById("comprobanteFiltro");
+            const comprobanteResultados = document.getElementById("comprobanteResultados");
+            const comprobanteModal = window.bootstrap ? new bootstrap.Modal(document.getElementById("comprobanteModal")) : null;
+            const cuentaFiltro = document.getElementById("cuentaFiltro");
+            const nivelCuentaFiltro = document.getElementById("nivelCuentaFiltro");
+            const cuentaResultados = document.getElementById("cuentaResultados");
+            const cuentaModal = window.bootstrap ? new bootstrap.Modal(document.getElementById("cuentaModal")) : null;
+            const centroFiltro = document.getElementById("centroFiltro");
+            const centroResultados = document.getElementById("centroResultados");
+            const centroModal = window.bootstrap ? new bootstrap.Modal(document.getElementById("centroModal")) : null;
+
+            const buscarPersonasUrl = "@Url.Action("BuscarPersonasAyuda", "CajaBanco")";
+            const buscarComprobantesDetalleUrl = "@Url.Action("BuscarComprobantesDetalleAyuda", "CajaBanco")";
+            const buscarCuentasUrl = "@Url.Action("BuscarAyuda", "PlanCuenta")";
+            const buscarCentrosUrl = "@Url.Action("BuscarAyuda", "CentroCosto")";
+
+            let personaSeleccion = null;
+            let comprobanteSeleccion = null;
+            let cuentaSeleccion = null;
+            let centroSeleccion = null;
+            let rowPersonaActiva = null;
+            let rowComprobanteActiva = null;
+            let rowCuentaActiva = null;
+            let rowCentroActiva = null;
+            let personaBusquedaProgramada = null;
+            let comprobanteBusquedaProgramada = null;
+            let cuentaBusquedaProgramada = null;
+            let centroBusquedaProgramada = null;
+
+            const parseDecimal = (value) => {
+                const normalized = String(value || "0").replace(",", ".");
+                const number = Number.parseFloat(normalized);
+                return Number.isFinite(number) ? number : 0;
+            };
+
+            const obtenerPersonaCabecera = () => {
+                const idPersona = Number.parseInt(String(personaIdInput?.value || ""), 10);
+                const documentoTexto = personaDocumentoTexto?.textContent || "";
+                const numeroDocumento = documentoTexto.replace("RUC/DNI:", "").trim();
+
+                return {
+                    idPersona: Number.isFinite(idPersona) && idPersona > 0 ? idPersona : null,
+                    nombre: String(personaTexto?.value || "").trim(),
+                    numeroDocumento: numeroDocumento && !numeroDocumento.startsWith("Sin ") ? numeroDocumento : ""
+                };
+            };
+
+            const obtenerPersonaLinea = (row) => {
+                const idInput = row?.querySelector(".js-persona-id-linea");
+                const documentoInput = row?.querySelector(".js-numero-documento-linea");
+                const textoInput = row?.querySelector(".js-persona-texto-linea");
+                const idPersona = Number.parseInt(String(idInput?.value || ""), 10);
+
+                return {
+                    idPersona: Number.isFinite(idPersona) && idPersona > 0 ? idPersona : null,
+                    numeroDocumento: String(documentoInput?.value || "").trim(),
+                    nombre: String(textoInput?.value || "").trim()
+                };
+            };
+
+            const asignarPersonaLinea = (row, persona) => {
+                const personaActual = obtenerPersonaLinea(row);
+                const idInput = row?.querySelector(".js-persona-id-linea");
+                const documentoInput = row?.querySelector(".js-numero-documento-linea");
+                const textoInput = row?.querySelector(".js-persona-texto-linea");
+
+                if (idInput) {
+                    idInput.value = persona?.idPersona || "";
+                }
+                if (documentoInput) {
+                    documentoInput.value = persona?.numeroDocumento || "";
+                }
+                if (textoInput) {
+                    textoInput.value = persona?.nombreCompleto || persona?.nombre || "Seleccione persona";
+                }
+
+                if (personaActual.idPersona !== (persona?.idPersona || null)) {
+                    limpiarComprobanteLinea(row);
+                }
+            };
+
+            const construirGlosaDetalleDesdeComprobante = (comprobante) => {
+                const tipo = comprobante?.descripcionTipoComprobante || "Comprobante";
+                const serie = comprobante?.serie || "";
+                const numero = comprobante?.numero || "";
+                return `${tipo} ${serie}-${numero}`.trim();
+            };
+
+            const limpiarComprobanteLinea = (row, limpiarMontos = false) => {
+                const moduloInput = row?.querySelector(".js-modulo-comprobante-linea");
+                const idRegistroInput = row?.querySelector(".js-id-registro-comprobante-linea");
+                const tipoDocumentoInput = row?.querySelector(".js-tipo-documento-linea");
+                const serieInput = row?.querySelector(".js-serie-linea");
+                const referenciaInput = row?.querySelector(".js-referencia-linea");
+                const debeInput = row?.querySelector(".js-debe");
+                const haberInput = row?.querySelector(".js-haber");
+
+                if (moduloInput) {
+                    moduloInput.value = "";
+                }
+                if (idRegistroInput) {
+                    idRegistroInput.value = "";
+                }
+                if (tipoDocumentoInput) {
+                    tipoDocumentoInput.value = "";
+                }
+                if (serieInput) {
+                    serieInput.value = "";
+                }
+                if (referenciaInput) {
+                    referenciaInput.value = "";
+                }
+                if (limpiarMontos) {
+                    if (debeInput) {
+                        debeInput.value = "0.00";
+                    }
+                    if (haberInput) {
+                        haberInput.value = "0.00";
+                    }
+                }
+            };
+
+            const aplicarSaldoPendienteComprobante = (row, saldoPendiente) => {
+                const debeInput = row?.querySelector(".js-debe");
+                const haberInput = row?.querySelector(".js-haber");
+                const importe = Number(saldoPendiente || 0).toFixed(2);
+                const moduloComprobante = String(row?.querySelector(".js-modulo-comprobante-linea")?.value || "").toUpperCase();
+
+                if (moduloComprobante === "VEN") {
+                    if (debeInput) {
+                        debeInput.value = "0.00";
+                    }
+                    if (haberInput) {
+                        haberInput.value = importe;
+                    }
+                    return;
+                }
+
+                if (moduloComprobante === "COM") {
+                    if (debeInput) {
+                        debeInput.value = importe;
+                    }
+                    if (haberInput) {
+                        haberInput.value = "0.00";
+                    }
+                }
+            };
+
+            const actualizarCuentaCorrientePreview = () => {
+                const selected = cuentaCorrienteSelect?.selectedOptions?.[0];
+                if (!selected) {
+                    return;
+                }
+
+                if (cuentaCorrienteTexto) {
+                    cuentaCorrienteTexto.value = selected.dataset.cuenta || "";
+                }
+                if (bancoTexto) {
+                    bancoTexto.value = selected.dataset.banco || "";
+                }
+                if (monedaTexto) {
+                    monedaTexto.value = selected.dataset.moneda || "";
+                }
+            };
+
+            const renderOperaciones = () => {
+                const movimiento = String(tipoMovimientoInput?.value || "I").toUpperCase();
+                operacionTabs.forEach((button) => {
+                    button.classList.toggle("active", button.dataset.movimiento === movimiento);
+                });
+
+                operacionGroups.forEach((group) => {
+                    group.classList.toggle("is-hidden", group.dataset.treeGroup !== movimiento);
+                });
+
+                let operacionActivaTexto = "Seleccione una operacion bancaria";
+                operacionButtons.forEach((button) => {
+                    const visible = button.dataset.treeMovimiento === movimiento;
+                    button.classList.toggle("is-hidden", !visible);
+                    const isActive = visible && button.dataset.treeId === idOpeBancariaInput?.value;
+                    button.classList.toggle("active", isActive);
+                    if (isActive) {
+                        operacionActivaTexto = button.dataset.treeTexto || operacionActivaTexto;
+                    }
+                });
+
+                if (!idOpeBancariaInput?.value) {
+                    const primerVisible = operacionButtons.find((button) => !button.classList.contains("is-hidden"));
+                    if (primerVisible) {
+                        idOpeBancariaInput.value = primerVisible.dataset.treeId || "";
+                        tipoOperacionTextoInput.value = primerVisible.dataset.treeTexto || "";
+                        primerVisible.classList.add("active");
+                        operacionActivaTexto = primerVisible.dataset.treeTexto || operacionActivaTexto;
+                    }
+                }
+
+                operacionTextoBox.textContent = tipoOperacionTextoInput?.value || operacionActivaTexto;
+            };
+
+            const refreshRows = () => {
+                const rows = Array.from(detalleBody?.querySelectorAll("tr") || []);
+                let totalDebe = 0;
+                let totalHaber = 0;
+
+                rows.forEach((row, index) => {
+                    row.querySelectorAll("input, select, textarea, span").forEach((element) => {
+                        ["name", "id", "for", "data-valmsg-for"].forEach((attribute) => {
+                            const currentValue = element.getAttribute(attribute);
+                            if (!currentValue) {
+                                return;
+                            }
+
+                            const updatedValue = currentValue
+                                .replaceAll("__index__", index)
+                                .replace(/Formulario\.Detalles\[\d+\]/g, `Formulario.Detalles[${index}]`)
+                                .replace(/Formulario_Detalles_\d+__/g, `Formulario_Detalles_${index}__`);
+
+                            if (updatedValue !== currentValue) {
+                                element.setAttribute(attribute, updatedValue);
+                            }
+                        });
+                    });
+
+                    const itemInput = row.querySelector('input[name$=".Item"]');
+                    if (itemInput) {
+                        itemInput.value = (index + 1).toString();
+                    }
+
+                    totalDebe += parseDecimal(row.querySelector(".js-debe")?.value);
+                    totalHaber += parseDecimal(row.querySelector(".js-haber")?.value);
+                });
+
+                const totalOperacion = parseDecimal(importeTotalInput?.value);
+                const tipoMovimiento = String(tipoMovimientoInput?.value || "I").toUpperCase();
+                const totalDetalleBase = tipoMovimiento === "E"
+                    ? totalDebe - totalHaber
+                    : totalHaber - totalDebe;
+                const totalDetalle = Math.abs(totalDetalleBase);
+                const diferencia = totalOperacion - totalDetalle;
+
+                if (totalOperacionLabel) {
+                    totalOperacionLabel.textContent = totalOperacion.toFixed(2);
+                }
+                if (totalDetalleLabel) {
+                    totalDetalleLabel.textContent = totalDetalle.toFixed(2);
+                }
+                if (totalDiferenciaLabel) {
+                    totalDiferenciaLabel.textContent = diferencia.toFixed(2);
+                }
+
+                const cuadrado = Math.abs(diferencia) < 0.005;
+                diferenciaCard?.classList.toggle("is-balanced", cuadrado);
+                diferenciaCard?.classList.toggle("is-unbalanced", !cuadrado);
+                if (totalDetalleEstado) {
+                    totalDetalleEstado.textContent = tipoMovimiento === "E"
+                        ? `Debe - Haber = ${totalDebe.toFixed(2)} - ${totalHaber.toFixed(2)}`
+                        : `Haber - Debe = ${totalHaber.toFixed(2)} - ${totalDebe.toFixed(2)}`;
+                }
+                if (diferenciaEstado) {
+                    diferenciaEstado.textContent = cuadrado ? "Movimiento equilibrado" : "Revisar diferencia del movimiento";
+                }
+            };
+
+            const bindRow = (row) => {
+                row.querySelector(".js-quitar-linea")?.addEventListener("click", () => {
+                    if ((detalleBody?.querySelectorAll("tr").length || 0) <= 1) {
+                        return;
+                    }
+
+                    row.remove();
+                    refreshRows();
+                });
+
+                row.querySelector(".js-abrir-cuenta-modal")?.addEventListener("click", () => {
+                    rowCuentaActiva = row;
+                    cuentaSeleccion = null;
+                    cargarCuentas();
+                    cuentaModal?.show();
+                });
+
+                row.querySelector(".js-abrir-centro-modal")?.addEventListener("click", () => {
+                    rowCentroActiva = row;
+                    centroSeleccion = null;
+                    cargarCentros();
+                    centroModal?.show();
+                });
+
+                row.querySelector(".js-abrir-persona-linea-modal")?.addEventListener("click", async () => {
+                    rowPersonaActiva = row;
+                    personaSeleccion = null;
+                    await cargarPersonas();
+                    personaModal?.show();
+                });
+
+                row.querySelector(".js-abrir-comprobante-modal")?.addEventListener("click", async () => {
+                    const personaLinea = obtenerPersonaLinea(row);
+                    if (!personaLinea.idPersona) {
+                        window.alert("Seleccione una persona en la linea antes de buscar comprobantes.");
+                        return;
+                    }
+
+                    rowComprobanteActiva = row;
+                    comprobanteSeleccion = null;
+                    await cargarComprobantes(personaLinea.idPersona);
+                    comprobanteModal?.show();
+                });
+
+                row.querySelector(".js-limpiar-centro")?.addEventListener("click", () => {
+                    const codigo = row.querySelector(".js-centro-costo-codigo");
+                    const texto = row.querySelector(".js-centro-costo-texto");
+                    if (codigo) {
+                        codigo.value = "";
+                    }
+                    if (texto) {
+                        texto.value = "";
+                    }
+                });
+            };
+
+            const marcarFilaSeleccion = (tbody, selectedRow) => {
+                Array.from(tbody.querySelectorAll("tr")).forEach((row) => {
+                    row.classList.toggle("is-selected", row === selectedRow);
+                });
+            };
+
+            const renderPersonas = (items) => {
+                personaResultados.innerHTML = "";
+                if (!items.length) {
+                    personaResultados.innerHTML = `<tr><td colspan="5"><div class="app-empty-state app-empty-state-inline"><i class="bi bi-person"></i><div><strong>No hay personas con ese filtro</strong><p>Ajusta la busqueda para continuar.</p></div></div></td></tr>`;
+                    return;
+                }
+
+                items.forEach((item) => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td class="workspace-lookup-select-cell"><input type="radio" name="personaSeleccion" /></td>
+                        <td>${item.numeroDocumento || ""}</td>
+                        <td>${item.nombreCompleto || ""}</td>
+                        <td>${item.tipoPersona || ""}</td>
+                        <td>${item.nombreTipoDocumento || ""}</td>`;
+                    row.addEventListener("click", () => {
+                        personaSeleccion = item;
+                        marcarFilaSeleccion(personaResultados, row);
+                        row.querySelector("input").checked = true;
+                    });
+                    personaResultados.appendChild(row);
+                });
+            };
+
+            const renderComprobantes = (items) => {
+                comprobanteResultados.innerHTML = "";
+                if (!items.length) {
+                    comprobanteResultados.innerHTML = `<tr><td colspan="10"><div class="app-empty-state app-empty-state-inline"><i class="bi bi-receipt"></i><div><strong>No hay comprobantes disponibles</strong><p>Selecciona una persona con saldo pendiente o ajusta el filtro.</p></div></div></td></tr>`;
+                    return;
+                }
+
+                items.forEach((item) => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td class="workspace-lookup-select-cell"><input type="radio" name="comprobanteSeleccion" /></td>
+                        <td>${item.moduloOperacionTexto || item.moduloOperacion || ""}</td>
+                        <td>${item.fechaEmision || ""}</td>
+                        <td>${item.nombrePersona || ""}</td>
+                        <td>${item.descripcionTipoComprobante || ""}</td>
+                        <td>${item.serie || ""}</td>
+                        <td>${item.numero || ""}</td>
+                        <td>${item.codigoMoneda || ""}</td>
+                        <td>${Number(item.importeTotal || 0).toFixed(2)}</td>
+                        <td>${Number(item.saldo || 0).toFixed(2)}</td>`;
+                    row.addEventListener("click", () => {
+                        comprobanteSeleccion = item;
+                        marcarFilaSeleccion(comprobanteResultados, row);
+                        row.querySelector("input").checked = true;
+                    });
+                    comprobanteResultados.appendChild(row);
+                });
+            };
+
+            const renderCuentas = (items) => {
+                cuentaResultados.innerHTML = "";
+                if (!items.length) {
+                    cuentaResultados.innerHTML = `<tr><td colspan="4"><div class="app-empty-state app-empty-state-inline"><i class="bi bi-search"></i><div><strong>No hay cuentas con ese filtro</strong><p>Refina el codigo, nombre o nivel.</p></div></div></td></tr>`;
+                    return;
+                }
+
+                items.forEach((item) => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td class="workspace-lookup-select-cell"><input type="radio" name="cuentaSeleccion" /></td>
+                        <td>${item.codigoCuenta || ""}</td>
+                        <td>${item.nombreCuenta || ""}</td>
+                        <td>${item.nivelCuenta || ""}</td>`;
+                    row.addEventListener("click", () => {
+                        cuentaSeleccion = item;
+                        marcarFilaSeleccion(cuentaResultados, row);
+                        row.querySelector("input").checked = true;
+                    });
+                    cuentaResultados.appendChild(row);
+                });
+            };
+
+            const renderCentros = (items) => {
+                centroResultados.innerHTML = "";
+                if (!items.length) {
+                    centroResultados.innerHTML = `<tr><td colspan="3"><div class="app-empty-state app-empty-state-inline"><i class="bi bi-diagram-2"></i><div><strong>No hay centros con ese filtro</strong><p>Refina la busqueda para continuar.</p></div></div></td></tr>`;
+                    return;
+                }
+
+                items.forEach((item) => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td class="workspace-lookup-select-cell"><input type="radio" name="centroSeleccion" /></td>
+                        <td>${item.codigoCentroCosto || ""}</td>
+                        <td>${item.nombreCentroCosto || ""}</td>`;
+                    row.addEventListener("click", () => {
+                        centroSeleccion = item;
+                        marcarFilaSeleccion(centroResultados, row);
+                        row.querySelector("input").checked = true;
+                    });
+                    centroResultados.appendChild(row);
+                });
+            };
+
+            const cargarPersonas = async () => {
+                const params = new URLSearchParams();
+                const filtro = String(personaFiltro?.value || "").trim();
+                if (filtro.length >= 2) {
+                    params.append("textoBusqueda", filtro);
+                }
+
+                const response = await fetch(`${buscarPersonasUrl}?${params.toString()}`, { cache: "no-store" });
+                const payload = await response.json();
+                renderPersonas(payload.items || []);
+            };
+
+            const cargarComprobantes = async (idPersonaBase = null) => {
+                const idPersona = Number.parseInt(String(idPersonaBase || ""), 10);
+                if (!Number.isFinite(idPersona) || idPersona <= 0) {
+                    renderComprobantes([]);
+                    return;
+                }
+
+                const params = new URLSearchParams({ idPersona: idPersona.toString() });
+                const filtro = String(comprobanteFiltro?.value || "").trim();
+                if (filtro.length >= 2) {
+                    params.append("textoBusqueda", filtro);
+                }
+
+                const response = await fetch(`${buscarComprobantesDetalleUrl}?${params.toString()}`, { cache: "no-store" });
+                const payload = await response.json();
+                renderComprobantes(payload.ok === false ? [] : payload.items || []);
+            };
+
+            const cargarCuentas = async () => {
+                const params = new URLSearchParams({ soloMovimiento: "true", tamanoPagina: "100" });
+                const filtro = String(cuentaFiltro?.value || "").trim();
+                const nivel = String(nivelCuentaFiltro?.value || "").trim();
+                if (filtro.length >= 2) {
+                    params.append("textoBusqueda", filtro);
+                }
+                if (nivel) {
+                    params.append("nivelCuenta", nivel);
+                }
+
+                const response = await fetch(`${buscarCuentasUrl}?${params.toString()}`, { cache: "no-store" });
+                const payload = await response.json();
+                renderCuentas(payload.items || []);
+            };
+
+            const cargarCentros = async () => {
+                const params = new URLSearchParams({ tamanoPagina: "100" });
+                const filtro = String(centroFiltro?.value || "").trim();
+                if (filtro.length >= 2) {
+                    params.append("textoBusqueda", filtro);
+                }
+
+                const response = await fetch(`${buscarCentrosUrl}?${params.toString()}`, { cache: "no-store" });
+                const payload = await response.json();
+                renderCentros(payload.items || []);
+            };
+
+            operacionTabs.forEach((button) => {
+                button.addEventListener("click", () => {
+                    if (tipoMovimientoInput) {
+                        tipoMovimientoInput.value = button.dataset.movimiento || "I";
+                    }
+                    if (idOpeBancariaInput) {
+                        idOpeBancariaInput.value = "";
+                    }
+                    if (tipoOperacionTextoInput) {
+                        tipoOperacionTextoInput.value = "";
+                    }
+                    renderOperaciones();
+                });
+            });
+
+            operacionButtons.forEach((button) => {
+                button.addEventListener("click", () => {
+                    if (button.classList.contains("is-hidden")) {
+                        return;
+                    }
+
+                    idOpeBancariaInput.value = button.dataset.treeId || "";
+                    tipoOperacionTextoInput.value = button.dataset.treeTexto || "";
+                    renderOperaciones();
+                });
+            });
+
+            cuentaCorrienteSelect?.addEventListener("change", actualizarCuentaCorrientePreview);
+            importeTotalInput?.addEventListener("input", refreshRows);
+
+            agregarLineaButton?.addEventListener("click", () => {
+                const index = detalleBody?.querySelectorAll("tr").length || 0;
+                const html = detalleTemplate.innerHTML
+                    .replaceAll("__index__", index)
+                    .replaceAll("__item__", (index + 1).toString());
+                detalleBody?.insertAdjacentHTML("beforeend", html);
+                const row = detalleBody?.lastElementChild;
+                if (row) {
+                    const personaCabecera = obtenerPersonaCabecera();
+                    if (personaCabecera.idPersona) {
+                        asignarPersonaLinea(row, {
+                            idPersona: personaCabecera.idPersona,
+                            nombreCompleto: personaCabecera.nombre,
+                            numeroDocumento: personaCabecera.numeroDocumento
+                        });
+                    }
+                    bindRow(row);
+                }
+                refreshRows();
+            });
+
+            abrirPersonaModal?.addEventListener("click", async () => {
+                personaSeleccion = null;
+                await cargarPersonas();
+                personaModal?.show();
+            });
+
+            limpiarPersonaButton?.addEventListener("click", () => {
+                personaIdInput.value = "";
+                personaTexto.value = "Sin persona vinculada";
+                personaDocumentoTexto.textContent = "Sin RUC/DNI relacionado";
+            });
+
+            personaFiltro?.addEventListener("input", () => {
+                if (personaBusquedaProgramada) {
+                    window.clearTimeout(personaBusquedaProgramada);
+                }
+                personaBusquedaProgramada = window.setTimeout(cargarPersonas, 250);
+            });
+
+            cuentaFiltro?.addEventListener("input", () => {
+                if (cuentaBusquedaProgramada) {
+                    window.clearTimeout(cuentaBusquedaProgramada);
+                }
+                cuentaBusquedaProgramada = window.setTimeout(cargarCuentas, 250);
+            });
+
+            nivelCuentaFiltro?.addEventListener("change", cargarCuentas);
+
+            centroFiltro?.addEventListener("input", () => {
+                if (centroBusquedaProgramada) {
+                    window.clearTimeout(centroBusquedaProgramada);
+                }
+                centroBusquedaProgramada = window.setTimeout(cargarCentros, 250);
+            });
+
+            form.addEventListener("submit", (event) => {
+                refreshRows();
+
+                const totalOperacion = parseDecimal(importeTotalInput?.value);
+                const totalDetalle = parseDecimal(totalDetalleLabel?.textContent);
+                const diferencia = Math.abs(totalOperacion - totalDetalle);
+
+                if (diferencia >= 0.005) {
+                    event.preventDefault();
+                    window.alert("No puede guardar mientras exista diferencia entre Total Operacion y Total Detalle.");
+                }
+            });
+
+            document.getElementById("aceptarPersona")?.addEventListener("click", () => {
+                if (personaSeleccion) {
+                    if (rowPersonaActiva) {
+                        asignarPersonaLinea(rowPersonaActiva, personaSeleccion);
+                        rowPersonaActiva = null;
+                    }
+                    else
+                    {
+                        personaIdInput.value = personaSeleccion.idPersona || "";
+                        personaTexto.value = personaSeleccion.nombreCompleto || "";
+                        personaDocumentoTexto.textContent = `RUC/DNI: ${personaSeleccion.numeroDocumento || ""}`;
+                    }
+                }
+                personaModal?.hide();
+            });
+
+            comprobanteFiltro?.addEventListener("input", () => {
+                if (comprobanteBusquedaProgramada) {
+                    window.clearTimeout(comprobanteBusquedaProgramada);
+                }
+                comprobanteBusquedaProgramada = window.setTimeout(() => {
+                    const personaLinea = rowComprobanteActiva ? obtenerPersonaLinea(rowComprobanteActiva) : null;
+                    cargarComprobantes(personaLinea?.idPersona ?? null);
+                }, 250);
+            });
+
+            document.getElementById("aceptarCuenta")?.addEventListener("click", () => {
+                if (String(cuentaSeleccion?.nivelCuenta || "") !== "5") {
+                    window.alert("Seleccione una cuenta contable de nivel 5.");
+                    return;
+                }
+
+                if (cuentaSeleccion && rowCuentaActiva) {
+                    const idInput = rowCuentaActiva.querySelector(".js-cuenta-id");
+                    const textoInput = rowCuentaActiva.querySelector(".js-cuenta-texto");
+                    const requiereInput = rowCuentaActiva.querySelector(".js-requiere-centro-costo");
+                    const centroTexto = rowCuentaActiva.querySelector(".js-centro-costo-texto");
+                    if (idInput) {
+                        idInput.value = cuentaSeleccion.idPlanCuenta || "";
+                    }
+                    if (textoInput) {
+                        textoInput.value = `${cuentaSeleccion.codigoCuenta || ""} - ${cuentaSeleccion.nombreCuenta || ""}`;
+                    }
+                    if (requiereInput) {
+                        requiereInput.value = cuentaSeleccion.requiereCentroCosto ? "true" : "false";
+                    }
+                    if (centroTexto && cuentaSeleccion.requiereCentroCosto) {
+                        centroTexto.placeholder = "Seleccione centro de costo obligatorio";
+                    }
+                }
+                cuentaModal?.hide();
+            });
+
+            document.getElementById("aceptarCentro")?.addEventListener("click", () => {
+                if (centroSeleccion && rowCentroActiva) {
+                    const codigoInput = rowCentroActiva.querySelector(".js-centro-costo-codigo");
+                    const textoInput = rowCentroActiva.querySelector(".js-centro-costo-texto");
+                    if (codigoInput) {
+                        codigoInput.value = centroSeleccion.codigoCentroCosto || "";
+                    }
+                    if (textoInput) {
+                        textoInput.value = `${centroSeleccion.codigoCentroCosto || ""} - ${centroSeleccion.nombreCentroCosto || ""}`;
+                    }
+                }
+                centroModal?.hide();
+            });
+
+            document.getElementById("aceptarComprobante")?.addEventListener("click", () => {
+                if (comprobanteSeleccion && rowComprobanteActiva) {
+                    const cuentaIdInput = rowComprobanteActiva.querySelector(".js-cuenta-id");
+                    const cuentaTextoInput = rowComprobanteActiva.querySelector(".js-cuenta-texto");
+                    const moduloInput = rowComprobanteActiva.querySelector(".js-modulo-comprobante-linea");
+                    const idRegistroInput = rowComprobanteActiva.querySelector(".js-id-registro-comprobante-linea");
+                    const tipoDocumentoInput = rowComprobanteActiva.querySelector(".js-tipo-documento-linea");
+                    const serieInput = rowComprobanteActiva.querySelector(".js-serie-linea");
+                    const referenciaInput = rowComprobanteActiva.querySelector(".js-referencia-linea");
+                    const tipoCambioInput = rowComprobanteActiva.querySelector(".js-tipo-cambio-linea");
+                    const glosaDetalleInput = rowComprobanteActiva.querySelector('input[name$=".GlosaDetalle"]');
+                    if (moduloInput) {
+                        moduloInput.value = comprobanteSeleccion.moduloOperacion || "";
+                    }
+                    if (idRegistroInput) {
+                        idRegistroInput.value = comprobanteSeleccion.idRegistro || "";
+                    }
+                    if (cuentaIdInput && comprobanteSeleccion.cuentaContable?.idPlanCuenta) {
+                        cuentaIdInput.value = comprobanteSeleccion.cuentaContable.idPlanCuenta;
+                    }
+                    if (cuentaTextoInput && comprobanteSeleccion.cuentaContable?.cuentaTexto) {
+                        cuentaTextoInput.value = comprobanteSeleccion.cuentaContable.cuentaTexto;
+                    }
+                    if (tipoDocumentoInput) {
+                        tipoDocumentoInput.value = comprobanteSeleccion.descripcionTipoComprobante || "";
+                    }
+                    if (serieInput) {
+                        serieInput.value = comprobanteSeleccion.serie || "";
+                    }
+                    if (referenciaInput) {
+                        referenciaInput.value = comprobanteSeleccion.numero || "";
+                    }
+                    if (tipoCambioInput && !tipoCambioInput.value) {
+                        tipoCambioInput.value = "1.00";
+                    }
+                    if (glosaDetalleInput && !glosaDetalleInput.value) {
+                        glosaDetalleInput.value = construirGlosaDetalleDesdeComprobante(comprobanteSeleccion);
+                    }
+                    aplicarSaldoPendienteComprobante(rowComprobanteActiva, comprobanteSeleccion.saldo || 0);
+                    refreshRows();
+                }
+                comprobanteModal?.hide();
+            });
+
+            detalleBody?.querySelectorAll("tr").forEach(bindRow);
+            detalleBody?.addEventListener("input", refreshRows);
+            detalleBody?.addEventListener("change", refreshRows);
+
+            actualizarCuentaCorrientePreview();
+            renderOperaciones();
+            refreshRows();
+        })();
+    </script>
+}

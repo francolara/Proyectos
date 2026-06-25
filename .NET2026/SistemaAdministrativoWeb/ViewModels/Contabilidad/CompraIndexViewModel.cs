@@ -12,6 +12,8 @@ public sealed class CompraIndexViewModel
     public string TextoBusqueda { get; set; } = string.Empty;
     public int TotalCompras { get; set; }
     public decimal TotalImportePeriodo { get; set; }
+    public decimal TotalImporteSolesPeriodo { get; set; }
+    public decimal TotalImporteDolaresPeriodo { get; set; }
     public PaginacionViewModel Paginacion { get; set; } = new();
     public CompraFormViewModel Formulario { get; set; } = new();
     public List<int> AniosDisponibles { get; set; } = [];
@@ -20,6 +22,8 @@ public sealed class CompraIndexViewModel
     public List<ConfiguracionContabilizacionResumenDto> ConfiguracionesCompra { get; set; } = [];
     public List<MonedaDto> Monedas { get; set; } = [];
     public List<TipoComprobanteDto> TiposComprobante { get; set; } = [];
+    public List<PlanCuentaDto> CuentasMovimiento { get; set; } = [];
+    public List<TipoAfectacionIgvDto> TiposAfectacionIgv { get; set; } = [];
     public List<OpcionCatalogoViewModel> TiposDocumentoIdentidad { get; set; } = [];
     public List<CompraResumenItemViewModel> Compras { get; set; } = [];
     public string ProveedorSeleccionadoTipoDocumento { get; set; } = string.Empty;

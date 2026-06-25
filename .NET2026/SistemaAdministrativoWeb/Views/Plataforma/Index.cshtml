@@ -6,14 +6,6 @@
 <!-- Author: FRANCO LARA | Create date: 15/06/2026 | Firma: Superadmin orientado a cuentas administradoras con control de suscripcion, limites y empresa principal. -->
 
 <section class="dashboard-shell">
-    <div class="dashboard-hero">
-        <div>
-            <span class="dashboard-kicker">Superadministracion</span>
-            <h1>Control de suscriptores</h1>
-            <p>Alta, baja, contrato y vigencias de cuentas administradoras que gestionan multiples empresas.</p>
-        </div>
-    </div>
-
     @if (TempData["SuperAdminOk"] is string ok)
     {
         <div class="alert alert-success">@ok</div>
@@ -24,22 +16,22 @@
     }
 
     <section class="dashboard-metrics">
-        <article class="dashboard-metric-card">
+        <article class="dashboard-metric-card dashboard-metric-card-count">
             <span>Total cuentas</span>
             <strong>@Model.TotalCuentas</strong>
             <small>Universo de suscriptores administrativos.</small>
         </article>
-        <article class="dashboard-metric-card">
+        <article class="dashboard-metric-card dashboard-metric-card-count">
             <span>Activas</span>
             <strong>@Model.CuentasActivas</strong>
             <small>Con contrato vigente y cuenta habilitada.</small>
         </article>
-        <article class="dashboard-metric-card">
+        <article class="dashboard-metric-card dashboard-metric-card-count">
             <span>En prueba</span>
             <strong>@Model.CuentasEnPrueba</strong>
             <small>Periodos trial pendientes de conversion.</small>
         </article>
-        <article class="dashboard-metric-card">
+        <article class="dashboard-metric-card dashboard-metric-card-count">
             <span>Suspendidas o de baja</span>
             <strong>@Model.CuentasSuspendidasOBaja</strong>
             <small>Casos a revisar comercialmente.</small>

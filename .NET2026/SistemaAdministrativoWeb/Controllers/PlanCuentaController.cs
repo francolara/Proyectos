@@ -9,12 +9,14 @@ namespace SistemaAdministrativoWeb.Controllers;
 [Authorize]
 public class PlanCuentaController(
     ICurrentCompanyAccessor currentCompanyAccessor,
-    IPlanCuentaRepository planCuentaRepository) : Controller
+    IPlanCuentaRepository planCuentaRepository,
+    IMonedaRepository monedaRepository) : Controller
 {
     private const int TamanoPagina = 20;
+    private const int TamanoAyudaCuenta = 100;
 
     [HttpGet]
-    public async Task<IActionResult> Index(string? textoBusqueda = null, int pagina = 1, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Index(string? textoBusqueda = null, byte? nivelCuenta = null, int pagina = 1, CancellationToken cancellationToken = default)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
         {
@@ -23,10 +25,16 @@ public class PlanCuentaController(
 
         ViewData["AdminShell"] = true;
 
-        var cuentas = await planCuentaRepository.ListarPaginadoPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, textoBusqueda, pagina, TamanoPagina, false, cancellationToken);
+        var nivelCuentaTrabajo = nivelCuenta is >= 1 and <= 5 ? nivelCuenta : null;
+        var cuentas = await planCuentaRepository.ListarPaginadoPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, textoBusqueda, nivelCuentaTrabajo, pagina, TamanoPagina, false, false, cancellationToken);
+        var totalEmpresa = string.IsNullOrWhiteSpace(textoBusqueda) && !nivelCuentaTrabajo.HasValue
+            ? cuentas.TotalRecords
+            : (await planCuentaRepository.ListarPaginadoPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, null, null, 1, 1, false, false, cancellationToken)).TotalRecords;
         var model = ConstruirViewModel(cuentas.Items, null);
         model.TextoBusqueda = textoBusqueda?.Trim() ?? string.Empty;
+        model.NivelCuentaFiltro = nivelCuentaTrabajo;
         model.TotalCuentas = cuentas.TotalRecords;
+        model.PuedeCargarDefault = totalEmpresa == 0;
         model.Paginacion = new PaginacionViewModel
         {
             PaginaActual = pagina,
@@ -48,6 +56,64 @@ public class PlanCuentaController(
         return await CargarFormularioAsync(idPlanCuenta, cancellationToken);
     }
 
+    [HttpGet]
+    public async Task<IActionResult> BuscarAyuda(string? textoBusqueda = null, byte? nivelCuenta = null, bool soloMovimiento = false, bool soloUltimoNivel = false, int tamanoPagina = TamanoAyudaCuenta, CancellationToken cancellationToken = default)
+    {
+        if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
+        {
+            return BadRequest(new { ok = false, mensaje = "Debe seleccionar una empresa activa." });
+        }
+
+        var nivelCuentaTrabajo = nivelCuenta is >= 1 and <= 5 ? nivelCuenta : null;
+        var filtro = string.IsNullOrWhiteSpace(textoBusqueda) ? null : textoBusqueda.Trim();
+        if (!string.IsNullOrWhiteSpace(filtro) && filtro.Length < 2 && !nivelCuentaTrabajo.HasValue)
+        {
+            filtro = null;
+        }
+
+        var resultado = await planCuentaRepository.ListarPaginadoPorEmpresaAsync(
+            currentCompanyAccessor.EmpresaId.Value,
+            filtro,
+            nivelCuentaTrabajo,
+            1,
+            Math.Clamp(tamanoPagina, 1, TamanoAyudaCuenta),
+            soloMovimiento,
+            soloUltimoNivel,
+            cancellationToken);
+
+        return Json(new
+        {
+            ok = true,
+            items = resultado.Items.Select(x => new
+            {
+                idPlanCuenta = x.IdPlanCuenta,
+                codigoCuenta = x.CodigoCuenta,
+                nombreCuenta = x.NombreCuenta,
+                nivelCuenta = x.NivelCuenta,
+                requiereCentroCosto = x.RequiereCentroCosto,
+                aceptaMovimiento = x.AceptaMovimiento,
+                esUltimoNivel = x.EsUltimoNivel
+            }),
+            total = resultado.TotalRecords,
+            limitado = resultado.TotalRecords > resultado.Items.Count
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CargarDefault(CancellationToken cancellationToken)
+    {
+        if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
+        {
+            return RedirectToAction("Index", "EmpresaContexto");
+        }
+
+        await planCuentaRepository.CargarDefaultAsync(currentCompanyAccessor.EmpresaId.Value, User.Identity?.Name, cancellationToken);
+        TempData["PlanCuentaOk"] = "Plan de cuentas base cargado correctamente.";
+
+        return RedirectToAction(nameof(Index));
+    }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Guardar(PlanCuentaFormViewModel formulario, CancellationToken cancellationToken)
@@ -64,6 +130,7 @@ public class PlanCuentaController(
             var cuentasConError = await planCuentaRepository.ListarPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, false, cancellationToken);
             var modelConError = ConstruirViewModel(cuentasConError, null);
             modelConError.Formulario = formulario;
+            modelConError.Monedas = await ObtenerMonedasAsync(cancellationToken);
             return View("Formulario", modelConError);
         }
 
@@ -76,7 +143,9 @@ public class PlanCuentaController(
                 IdPlanCuentaPadre = formulario.IdPlanCuentaPadre,
                 CodigoCuenta = formulario.CodigoCuenta.Trim(),
                 NombreCuenta = formulario.NombreCuenta.Trim(),
-                NaturalezaSaldo = formulario.NaturalezaSaldo.Trim().ToUpperInvariant(),
+                ColBalance = formulario.ColBalance.Trim().ToUpperInvariant(),
+                IdMoneda = formulario.IdMoneda?.Trim().ToUpperInvariant() ?? string.Empty,
+                TipoCambio = formulario.TipoCambio?.Trim().ToUpperInvariant() ?? string.Empty,
                 AceptaMovimiento = formulario.AceptaMovimiento,
                 RequiereCentroCosto = formulario.RequiereCentroCosto,
                 Estado = formulario.Estado,
@@ -95,6 +164,7 @@ public class PlanCuentaController(
             var cuentasConError = await planCuentaRepository.ListarPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, false, cancellationToken);
             var modelConError = ConstruirViewModel(cuentasConError, null);
             modelConError.Formulario = formulario;
+            modelConError.Monedas = await ObtenerMonedasAsync(cancellationToken);
             return View("Formulario", modelConError);
         }
     }
@@ -114,7 +184,23 @@ public class PlanCuentaController(
             : null;
 
         var model = ConstruirViewModel(cuentas, cuentaEditar);
+        model.Monedas = await ObtenerMonedasAsync(cancellationToken);
         return View("Formulario", model);
+    }
+
+    private async Task<List<OpcionCatalogoViewModel>> ObtenerMonedasAsync(CancellationToken cancellationToken)
+    {
+        var monedas = await monedaRepository.ListarActivasAsync(cancellationToken);
+
+        return monedas
+            .OrderByDescending(x => x.EsMonedaBase)
+            .ThenBy(x => x.CodigoMoneda)
+            .Select(x => new OpcionCatalogoViewModel
+            {
+                Valor = x.CodigoMoneda,
+                Texto = $"{x.CodigoMoneda} - {x.NombreMoneda}"
+            })
+            .ToList();
     }
 
     private PlanCuentaIndexViewModel ConstruirViewModel(IReadOnlyCollection<PlanCuentaDto> cuentas, PlanCuentaDto? cuentaEditar)
@@ -127,7 +213,9 @@ public class PlanCuentaController(
                 CodigoCuenta = x.CodigoCuenta,
                 NombreCuenta = x.NombreCuenta,
                 NivelCuenta = x.NivelCuenta,
-                NaturalezaSaldo = x.NaturalezaSaldo,
+                ColBalance = x.ColBalance,
+                IdMoneda = x.IdMoneda,
+                TipoCambio = x.TipoCambio,
                 AceptaMovimiento = x.AceptaMovimiento,
                 RequiereCentroCosto = x.RequiereCentroCosto,
                 Estado = x.Estado
@@ -152,9 +240,14 @@ public class PlanCuentaController(
                 {
                     IdPlanCuenta = cuentaEditar.IdPlanCuenta,
                     IdPlanCuentaPadre = cuentaEditar.IdPlanCuentaPadre,
+                    CuentaPadreTexto = cuentaEditar.IdPlanCuentaPadre.HasValue
+                        ? $"{items.FirstOrDefault(x => x.IdPlanCuenta == cuentaEditar.IdPlanCuentaPadre.Value)?.CodigoCuenta ?? string.Empty} - {items.FirstOrDefault(x => x.IdPlanCuenta == cuentaEditar.IdPlanCuentaPadre.Value)?.NombreCuenta ?? string.Empty}".Trim(' ', '-')
+                        : string.Empty,
                     CodigoCuenta = cuentaEditar.CodigoCuenta,
                     NombreCuenta = cuentaEditar.NombreCuenta,
-                    NaturalezaSaldo = cuentaEditar.NaturalezaSaldo,
+                    ColBalance = cuentaEditar.ColBalance,
+                    IdMoneda = cuentaEditar.IdMoneda,
+                    TipoCambio = cuentaEditar.TipoCambio,
                     AceptaMovimiento = cuentaEditar.AceptaMovimiento,
                     RequiereCentroCosto = cuentaEditar.RequiereCentroCosto,
                     Estado = cuentaEditar.Estado

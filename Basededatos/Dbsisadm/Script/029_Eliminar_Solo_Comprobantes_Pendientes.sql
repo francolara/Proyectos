@@ -1,0 +1,15 @@
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   24/06/2026
+-- Description:   Regla funcional: solo pueden eliminarse compras y ventas pendientes sin aplicaciones de Caja y Bancos.
+-- =============================================
+
+-- Validacion aplicada en:
+-- - dbo.usp_COM_EliminarCompra
+-- - dbo.usp_VEN_EliminarVenta
+--
+-- La eliminacion solo se permite cuando:
+--   Saldo = ImporteTotal
+--
+-- Si el saldo es menor al importe total, primero debe eliminarse
+-- el recibo o movimiento bancario que aplico el cobro o pago.

@@ -3,6 +3,11 @@
 -- Create date:   15/06/2026
 -- Description:   Plan de cuentas contable por empresa.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   18/06/2026
+-- Description:   Renombra NaturalezaSaldo a ColBalance y agrega IdMoneda y TipoCambio.
+-- =============================================
 
 IF OBJECT_ID(N'dbo.CON_PlanCuenta', N'U') IS NULL
 BEGIN
@@ -14,7 +19,9 @@ BEGIN
         CodigoCuenta VARCHAR(20) NOT NULL,
         NombreCuenta NVARCHAR(200) NOT NULL,
         NivelCuenta TINYINT NOT NULL,
-        NaturalezaSaldo CHAR(1) NOT NULL,
+        ColBalance CHAR(1) NOT NULL,
+        IdMoneda VARCHAR(3) NOT NULL CONSTRAINT DF_CON_PlanCuenta_IdMoneda DEFAULT (''),
+        TipoCambio CHAR(1) NOT NULL CONSTRAINT DF_CON_PlanCuenta_TipoCambio DEFAULT (''),
         AceptaMovimiento BIT NOT NULL CONSTRAINT DF_CON_PlanCuenta_AceptaMovimiento DEFAULT (0),
         RequiereCentroCosto BIT NOT NULL CONSTRAINT DF_CON_PlanCuenta_RequiereCentroCosto DEFAULT (0),
         Estado BIT NOT NULL CONSTRAINT DF_CON_PlanCuenta_Estado DEFAULT (1),
@@ -29,10 +36,6 @@ BEGIN
     ALTER TABLE dbo.CON_PlanCuenta
         ADD CONSTRAINT FK_CON_PlanCuenta_Padre
             FOREIGN KEY (IdPlanCuentaPadre) REFERENCES dbo.CON_PlanCuenta (IdPlanCuenta);
-
-    ALTER TABLE dbo.CON_PlanCuenta
-        ADD CONSTRAINT CK_CON_PlanCuenta_NaturalezaSaldo
-            CHECK (NaturalezaSaldo IN ('D', 'H'));
 
     ALTER TABLE dbo.CON_PlanCuenta
         ADD CONSTRAINT CK_CON_PlanCuenta_NivelCuenta

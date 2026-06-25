@@ -1,0 +1,65 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.CentroCostoIndexViewModel
+
+@* =============================================
+   Author:        FRANCO LARA
+   Create date:   23/06/2026
+   Description:   Agrega el formulario de mantenimiento de centros de costo por empresa.
+   ============================================= *@
+
+@{
+    ViewData["Title"] = Model.Formulario.IdCentroCosto.HasValue ? "Editar centro de costo" : "Registrar centro de costo";
+    ViewData["AdminShell"] = true;
+}
+
+<section class="dashboard-shell">
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Formulario</span>
+                <h1>@ViewData["Title"]</h1>
+                <p>Define el codigo y nombre operativo del centro de costo para la empresa activa.</p>
+            </div>
+            <div class="workspace-window-badge">
+                <strong>@(Model.Formulario.IdCentroCosto.HasValue ? "Edicion" : "Nuevo")</strong>
+                <span>@(Model.Formulario.IdCentroCosto.HasValue ? "actualizacion directa" : "alta en catalogo")</span>
+            </div>
+        </div>
+
+        <div class="workspace-window-body">
+            <form asp-action="Guardar" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Formulario.IdCentroCosto" />
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="workspace-form-grid">
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.CodigoCentroCosto" class="form-label">Codigo centro de costo</label>
+                        <input asp-for="Formulario.CodigoCentroCosto" class="form-control" />
+                        <span asp-validation-for="Formulario.CodigoCentroCosto" class="text-danger"></span>
+                    </div>
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.NombreCentroCosto" class="form-label">Nombre centro de costo</label>
+                        <input asp-for="Formulario.NombreCentroCosto" class="form-control" />
+                        <span asp-validation-for="Formulario.NombreCentroCosto" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="workspace-check-grid">
+                    <label class="workspace-check">
+                        <input asp-for="Formulario.Estado" class="form-check-input" />
+                        <span>Centro de costo activo</span>
+                    </label>
+                </div>
+
+                <div class="workspace-actions">
+                    <button type="submit" class="btn btn-primary">Guardar centro de costo</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </section>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

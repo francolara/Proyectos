@@ -4,6 +4,12 @@
 -- Description:   Despliega configuracion contable, tipos de comprobante SUNAT y modulo base de ventas.
 -- =============================================
 
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   20/06/2026
+-- Description:   Alinea ADM_TipoComprobante con cuentas contables separadas por compras y ventas.
+-- =============================================
+
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
@@ -105,6 +111,10 @@ BEGIN
         Descripcion NVARCHAR(150) NOT NULL,
         UsoCompras BIT NOT NULL CONSTRAINT DF_ADM_TipoComprobante_UsoCompras DEFAULT (0),
         UsoVentas BIT NOT NULL CONSTRAINT DF_ADM_TipoComprobante_UsoVentas DEFAULT (0),
+        IdCuentaVentaSoles INT NULL,
+        IdCuentaVentaDolares INT NULL,
+        IdCuentaCompraSoles INT NULL,
+        IdCuentaCompraDolares INT NULL,
         Estado BIT NOT NULL CONSTRAINT DF_ADM_TipoComprobante_Estado DEFAULT (1),
         FechaRegistro DATETIME2(0) NOT NULL CONSTRAINT DF_ADM_TipoComprobante_FechaRegistro DEFAULT (SYSDATETIME()),
         UsuarioRegistro NVARCHAR(450) NULL

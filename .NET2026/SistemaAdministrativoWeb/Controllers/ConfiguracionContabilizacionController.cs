@@ -13,10 +13,20 @@ public class ConfiguracionContabilizacionController(
     IOrigenRepository origenRepository,
     IPlanCuentaRepository planCuentaRepository) : Controller
 {
+    private static readonly (string Modulo, string Titulo, string Resumen, string Descripcion, string Icono, string SufijoHtml)[] DefinicionesProvision =
+    [
+        ("COM", "Compras", "Origen y asiento automatico", "Define el origen contable y estado para generar asientos automaticos de compras.", "bi-cart-check", "compras"),
+        ("VEN", "Ventas", "Origen y asiento automatico", "Define el origen contable y estado para generar asientos automaticos de ventas.", "bi-cash-stack", "ventas"),
+        ("EGR", "Egresos", "Origen y asiento automatico", "Define el origen contable base para futuros movimientos operativos de egresos.", "bi-box-arrow-right", "egresos"),
+        ("ING", "Ingresos", "Origen y asiento automatico", "Define el origen contable base para futuros movimientos operativos de ingresos.", "bi-box-arrow-in-left", "ingresos"),
+        ("APNC", "Aplicaciones", "Origen y asiento automatico", "Define el origen contable base para futuras aplicaciones de notas de credito.", "bi-arrow-repeat", "aplicaciones")
+    ];
+
     private const int TamanoPagina = 20;
+    private const int TamanoAyudaCuenta = 100;
 
     [HttpGet]
-    public async Task<IActionResult> Index(string? textoBusqueda = null, int pagina = 1, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Index(CancellationToken cancellationToken = default)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
         {
@@ -25,20 +35,64 @@ public class ConfiguracionContabilizacionController(
 
         ViewData["AdminShell"] = true;
 
-        var empresaId = currentCompanyAccessor.EmpresaId.Value;
-        var configuraciones = await configuracionRepository.ListarPaginadoPorEmpresaAsync(empresaId, textoBusqueda, pagina, TamanoPagina, cancellationToken);
-        var origenes = await origenRepository.ListarPorEmpresaAsync(empresaId, false, cancellationToken);
-        var cuentas = await planCuentaRepository.ListarPorEmpresaAsync(empresaId, true, cancellationToken);
-        var model = ConstruirViewModel(configuraciones.Items, origenes, cuentas, null);
-        model.TextoBusqueda = textoBusqueda?.Trim() ?? string.Empty;
-        model.TotalConfiguraciones = configuraciones.TotalRecords;
-        model.Paginacion = new PaginacionViewModel
-        {
-            PaginaActual = pagina,
-            TamanoPagina = TamanoPagina,
-            TotalRegistros = configuraciones.TotalRecords
-        };
+        var model = await ConstruirPantallaAsync(cancellationToken);
         return View(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> GuardarProvision(ConfiguracionProvisionFormViewModel formulario, CancellationToken cancellationToken)
+    {
+        if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
+        {
+            return RedirectToAction("Index", "EmpresaContexto");
+        }
+
+        if (!ModelState.IsValid || !formulario.IdOrigen.HasValue)
+        {
+            TempData["ConfiguracionContabilizacionError"] = "Seleccione el origen contable para la provision.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        await configuracionRepository.GuardarProvisionAsync(
+            currentCompanyAccessor.EmpresaId.Value,
+            formulario.ModuloOperacion.Trim().ToUpperInvariant(),
+            formulario.IdOrigen.Value,
+            formulario.GeneraAsientoAutomatico,
+            formulario.Activo,
+            User.Identity?.Name,
+            cancellationToken);
+
+        TempData["ConfiguracionContabilizacionOk"] = "Provision contable guardada correctamente.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> GuardarDocumento(int idTipoComprobante, int? idCuentaVentaSoles, int? idCuentaVentaDolares, int? idCuentaCompraSoles, int? idCuentaCompraDolares, bool activo = true, CancellationToken cancellationToken = default)
+    {
+        if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
+        {
+            return RedirectToAction("Index", "EmpresaContexto");
+        }
+
+        await configuracionRepository.GuardarDocumentoAsync(currentCompanyAccessor.EmpresaId.Value, idTipoComprobante, idCuentaVentaSoles, idCuentaVentaDolares, idCuentaCompraSoles, idCuentaCompraDolares, activo, User.Identity?.Name, cancellationToken);
+        TempData["ConfiguracionContabilizacionOk"] = "Documento configurado correctamente.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> GuardarImpuesto(int idTipoImpuesto, int? idPlanCuenta, bool activo = true, CancellationToken cancellationToken = default)
+    {
+        if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
+        {
+            return RedirectToAction("Index", "EmpresaContexto");
+        }
+
+        await configuracionRepository.GuardarImpuestoAsync(currentCompanyAccessor.EmpresaId.Value, idTipoImpuesto, idPlanCuenta, activo, User.Identity?.Name, cancellationToken);
+        TempData["ConfiguracionContabilizacionOk"] = "Impuesto configurado correctamente.";
+        return RedirectToAction(nameof(Index));
     }
 
     [HttpGet]
@@ -72,7 +126,7 @@ public class ConfiguracionContabilizacionController(
             var empresaIdError = currentCompanyAccessor.EmpresaId.Value;
             var configuracionesError = await configuracionRepository.ListarPorEmpresaAsync(empresaIdError, cancellationToken);
             var origenesError = await origenRepository.ListarPorEmpresaAsync(empresaIdError, false, cancellationToken);
-            var cuentasError = await planCuentaRepository.ListarPorEmpresaAsync(empresaIdError, true, cancellationToken);
+            var cuentasError = (await planCuentaRepository.ListarPaginadoPorEmpresaAsync(empresaIdError, null, null, 1, TamanoAyudaCuenta, false, false, cancellationToken)).Items.ToList();
             var modelError = ConstruirViewModel(configuracionesError, origenesError, cuentasError, null);
             modelError.Formulario = formulario;
             return View("Formulario", modelError);
@@ -116,7 +170,7 @@ public class ConfiguracionContabilizacionController(
             var empresaIdError = currentCompanyAccessor.EmpresaId.Value;
             var configuracionesError = await configuracionRepository.ListarPorEmpresaAsync(empresaIdError, cancellationToken);
             var origenesError = await origenRepository.ListarPorEmpresaAsync(empresaIdError, false, cancellationToken);
-            var cuentasError = await planCuentaRepository.ListarPorEmpresaAsync(empresaIdError, true, cancellationToken);
+            var cuentasError = (await planCuentaRepository.ListarPaginadoPorEmpresaAsync(empresaIdError, null, null, 1, TamanoAyudaCuenta, false, false, cancellationToken)).Items.ToList();
             var modelError = ConstruirViewModel(configuracionesError, origenesError, cuentasError, null);
             modelError.Formulario = formulario;
             return View("Formulario", modelError);
@@ -149,7 +203,7 @@ public class ConfiguracionContabilizacionController(
         var empresaId = currentCompanyAccessor.EmpresaId.Value;
         var configuraciones = await configuracionRepository.ListarPorEmpresaAsync(empresaId, cancellationToken);
         var origenes = await origenRepository.ListarPorEmpresaAsync(empresaId, false, cancellationToken);
-        var cuentas = await planCuentaRepository.ListarPorEmpresaAsync(empresaId, true, cancellationToken);
+        var cuentas = (await planCuentaRepository.ListarPaginadoPorEmpresaAsync(empresaId, null, null, 1, TamanoAyudaCuenta, false, false, cancellationToken)).Items.ToList();
         var configuracionEditar = idConfiguracionContabilizacion.HasValue
             ? await configuracionRepository.ObtenerAsync(idConfiguracionContabilizacion.Value, cancellationToken)
             : null;
@@ -160,6 +214,91 @@ public class ConfiguracionContabilizacionController(
         }
 
         return View("Formulario", ConstruirViewModel(configuraciones, origenes, cuentas, configuracionEditar));
+    }
+
+    private async Task<ConfiguracionContabilizacionIndexViewModel> ConstruirPantallaAsync(CancellationToken cancellationToken)
+    {
+        var empresaId = currentCompanyAccessor.EmpresaId!.Value;
+        var origenes = (await origenRepository.ListarPorEmpresaAsync(empresaId, false, cancellationToken))
+            .Where(x => x.Estado)
+            .OrderBy(x => x.CodigoOrigen)
+            .ToList();
+        var cuentas = (await planCuentaRepository.ListarPaginadoPorEmpresaAsync(empresaId, null, null, 1, TamanoAyudaCuenta, false, false, cancellationToken)).Items
+            .Where(x => x.Estado)
+            .OrderBy(x => x.CodigoCuenta)
+            .ToList();
+        var configuracion = await configuracionRepository.ObtenerConfiguracionContableEmpresaAsync(empresaId, cancellationToken);
+
+        return new ConfiguracionContabilizacionIndexViewModel
+        {
+            IdEmpresa = empresaId,
+            EmpresaNombre = currentCompanyAccessor.EmpresaNombre ?? "Empresa activa",
+            Origenes = origenes,
+            CuentasMovimiento = cuentas,
+            Provisiones = DefinicionesProvision
+                .Select(definicion =>
+                {
+                    var provision = configuracion.Provisiones.FirstOrDefault(x => x.ModuloOperacion == definicion.Modulo);
+                    return new ConfiguracionProvisionOperacionViewModel
+                    {
+                        ModuloOperacion = definicion.Modulo,
+                        Titulo = definicion.Titulo,
+                        Resumen = definicion.Resumen,
+                        Descripcion = definicion.Descripcion,
+                        Icono = definicion.Icono,
+                        SufijoHtml = definicion.SufijoHtml,
+                        Formulario = MapearProvision(definicion.Modulo, provision, origenes)
+                    };
+                })
+                .ToList(),
+            Documentos = configuracion.Documentos.Select(x => new ConfiguracionDocumentoFormViewModel
+            {
+                IdTipoComprobante = x.IdTipoComprobante,
+                CodigoTipoComprobante = x.CodigoTipoComprobante,
+                Descripcion = x.Descripcion,
+                UsoCompras = x.UsoCompras,
+                UsoVentas = x.UsoVentas,
+                IdCuentaVentaSoles = x.IdCuentaVentaSoles,
+                CuentaVentaSolesTexto = x.CuentaVentaSolesTexto,
+                IdCuentaVentaDolares = x.IdCuentaVentaDolares,
+                CuentaVentaDolaresTexto = x.CuentaVentaDolaresTexto,
+                IdCuentaCompraSoles = x.IdCuentaCompraSoles,
+                CuentaCompraSolesTexto = x.CuentaCompraSolesTexto,
+                IdCuentaCompraDolares = x.IdCuentaCompraDolares,
+                CuentaCompraDolaresTexto = x.CuentaCompraDolaresTexto,
+                Activo = x.Activo
+            }).ToList(),
+            Impuestos = configuracion.Impuestos.Select(MapearImpuesto).ToList()
+        };
+    }
+
+    private static ConfiguracionProvisionFormViewModel MapearProvision(string moduloOperacion, ConfiguracionContableProvisionDto? provision, IReadOnlyCollection<OrigenDto> origenes)
+    {
+        var origenInicial = provision?.IdOrigen is null
+            ? origenes.FirstOrDefault()
+            : origenes.FirstOrDefault(x => x.IdOrigen == provision.IdOrigen.Value);
+
+        return new ConfiguracionProvisionFormViewModel
+        {
+            ModuloOperacion = moduloOperacion,
+            IdOrigen = provision?.IdOrigen ?? origenInicial?.IdOrigen,
+            OrigenTexto = origenInicial is null ? "Seleccione origen" : $"{origenInicial.CodigoOrigen} - {origenInicial.NombreOrigen}",
+            GeneraAsientoAutomatico = provision?.GeneraAsientoAutomatico ?? true,
+            Activo = provision?.Activo ?? true
+        };
+    }
+
+    private static ConfiguracionImpuestoFormViewModel MapearImpuesto(ConfiguracionImpuestoEmpresaDto impuesto)
+    {
+        return new ConfiguracionImpuestoFormViewModel
+        {
+            IdTipoImpuesto = impuesto.IdTipoImpuesto,
+            CodigoSunat = impuesto.CodigoSunat,
+            NombreImpuesto = impuesto.NombreImpuesto,
+            IdPlanCuenta = impuesto.IdPlanCuenta,
+            CuentaTexto = impuesto.CuentaTexto,
+            Activo = impuesto.Activo
+        };
     }
 
     private static void NormalizarFormulario(ConfiguracionContabilizacionFormViewModel formulario)
@@ -257,6 +396,7 @@ public class ConfiguracionContabilizacionController(
                             Orden = x.Orden,
                             ComponenteContable = x.ComponenteContable,
                             IdPlanCuenta = x.IdPlanCuenta,
+                            CuentaTexto = $"{x.CodigoCuenta} - {x.NombreCuenta}",
                             NaturalezaMovimiento = x.NaturalezaMovimiento,
                             Activo = x.Activo
                         })

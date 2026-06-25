@@ -14,11 +14,16 @@ public class VentaController(
     IPersonaRepository personaRepository,
     IConfiguracionContabilizacionRepository configuracionRepository,
     IAsientoPreviewService asientoPreviewService,
+    IPlanCuentaRepository planCuentaRepository,
+    ITipoAfectacionIgvRepository tipoAfectacionIgvRepository,
     IMonedaRepository monedaRepository,
     ITipoComprobanteRepository tipoComprobanteRepository) : Controller
 {
     private const int TamanoPagina = 20;
+    private const int TamanoAyudaCuenta = 100;
     private const string CodigoDocumentoRucSunat = "6";
+    private const string CodigoAfectacionGravadoOnerosa = "10";
+    private const decimal TasaIgv = 0.18m;
 
     [HttpGet]
     public async Task<IActionResult> Index(short? anio = null, byte? mes = null, string? textoBusqueda = null, int pagina = 1, CancellationToken cancellationToken = default)
@@ -56,6 +61,12 @@ public class VentaController(
         var tiposComprobante = (await tipoComprobanteRepository.ListarActivosAsync(false, true, cancellationToken))
             .OrderBy(x => x.CodigoTipoComprobante)
             .ToList();
+        var cuentasMovimiento = (await planCuentaRepository.ListarPaginadoPorEmpresaAsync(empresaId, null, null, 1, TamanoAyudaCuenta, true, false, cancellationToken)).Items
+            .OrderBy(x => x.CodigoCuenta)
+            .ToList();
+        var tiposAfectacionIgv = (await tipoAfectacionIgvRepository.ListarActivosAsync(cancellationToken))
+            .OrderBy(x => x.CodigoSunat)
+            .ToList();
         var ventas = await ventaRepository.ListarPaginadoPorEmpresaAsync(empresaId, anioTrabajo, mesTrabajo, textoBusqueda, pagina, TamanoPagina, cancellationToken);
 
         var model = ConstruirViewModel(
@@ -70,6 +81,8 @@ public class VentaController(
             tiposDocumentoIdentidad,
             monedas,
             tiposComprobante,
+            cuentasMovimiento,
+            tiposAfectacionIgv,
             ventas.Items,
             null);
         model.TotalVentas = ventas.TotalRecords;
@@ -92,6 +105,30 @@ public class VentaController(
     public async Task<IActionResult> Editar(int idVenta, string? periodo = null, CancellationToken cancellationToken = default)
     {
         return await CargarFormularioAsync(periodo, idVenta, cancellationToken);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Eliminar(int idVenta, short? anio = null, byte? mes = null, string? textoBusqueda = null, int pagina = 1, CancellationToken cancellationToken = default)
+    {
+        if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
+        {
+            return RedirectToAction("Index", "EmpresaContexto");
+        }
+
+        var (anioTrabajo, mesTrabajo) = NormalizarPeriodo(anio, mes);
+
+        try
+        {
+            await ventaRepository.EliminarAsync(idVenta, currentCompanyAccessor.EmpresaId.Value, cancellationToken);
+            TempData["VentaOk"] = "Venta eliminada correctamente.";
+        }
+        catch (Exception ex)
+        {
+            TempData["VentaError"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Index), new { anio = anioTrabajo, mes = mesTrabajo, textoBusqueda, pagina });
     }
 
     [HttpPost]
@@ -132,6 +169,9 @@ public class VentaController(
                 IdMoneda = formulario.IdMoneda!.Value,
                 TipoCambio = formulario.TipoCambio,
                 BaseImponible = formulario.BaseImponible,
+                TotalExonerado = formulario.TotalExonerado,
+                TotalInafecto = formulario.TotalInafecto,
+                Icbper = formulario.Icbper,
                 Igv = formulario.Igv,
                 Isc = formulario.Isc,
                 OtrosTributos = formulario.OtrosTributos,
@@ -143,6 +183,8 @@ public class VentaController(
                     .Select(x => new GuardarVentaDetalleRequest
                     {
                         Item = x.Item,
+                        IdPlanCuenta = x.IdPlanCuenta!.Value,
+                        IdTipoAfectacionIGV = x.IdTipoAfectacionIGV!.Value,
                         Descripcion = x.Descripcion.Trim(),
                         Cantidad = x.Cantidad,
                         ValorUnitario = x.ValorUnitario,
@@ -202,83 +244,97 @@ public class VentaController(
     [HttpPost]
     public async Task<IActionResult> CrearClienteRapido([FromBody] RegistroRapidoPersonaRequestViewModel request, CancellationToken cancellationToken = default)
     {
-        if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
+        try
         {
-            return BadRequest(new { ok = false, mensaje = "Debe seleccionar una empresa activa." });
-        }
-
-        var tipoDocumento = (request.TipoDocumento ?? string.Empty).Trim();
-        var numeroDocumento = (request.NumeroDocumento ?? string.Empty).Trim();
-        var razonSocial = (request.RazonSocial ?? string.Empty).Trim();
-        var nombres = (request.Nombres ?? string.Empty).Trim();
-        var apellidos = (request.Apellidos ?? string.Empty).Trim();
-        var telefono = string.IsNullOrWhiteSpace(request.Telefono) ? null : request.Telefono.Trim();
-        var correo = string.IsNullOrWhiteSpace(request.Correo) ? null : request.Correo.Trim();
-        var esJuridica = string.Equals(tipoDocumento, CodigoDocumentoRucSunat, StringComparison.OrdinalIgnoreCase);
-
-        if (string.IsNullOrWhiteSpace(tipoDocumento))
-        {
-            return BadRequest(new { ok = false, mensaje = "Seleccione el tipo de documento." });
-        }
-
-        if (string.IsNullOrWhiteSpace(numeroDocumento))
-        {
-            return BadRequest(new { ok = false, mensaje = "Ingrese el numero de documento." });
-        }
-
-        if (esJuridica)
-        {
-            if (string.IsNullOrWhiteSpace(razonSocial))
+            if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
             {
-                return BadRequest(new { ok = false, mensaje = "Ingrese la razon social del cliente." });
+                return BadRequest(new { ok = false, mensaje = "Debe seleccionar una empresa activa." });
             }
+
+            var tipoPersona = (request.TipoPersona ?? string.Empty).Trim().ToUpperInvariant();
+            var tipoDocumento = (request.TipoDocumento ?? string.Empty).Trim();
+            var numeroDocumento = (request.NumeroDocumento ?? string.Empty).Trim();
+            var razonSocial = (request.RazonSocial ?? string.Empty).Trim();
+            var nombres = (request.Nombres ?? string.Empty).Trim();
+            var apellidos = (request.Apellidos ?? string.Empty).Trim();
+            var telefono = string.IsNullOrWhiteSpace(request.Telefono) ? null : request.Telefono.Trim();
+            var correo = string.IsNullOrWhiteSpace(request.Correo) ? null : request.Correo.Trim();
+            var esJuridica = string.Equals(tipoPersona, "J", StringComparison.OrdinalIgnoreCase);
+
+            if (!string.Equals(tipoPersona, "N", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(tipoPersona, "J", StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(new { ok = false, mensaje = "Seleccione el tipo de persona." });
+            }
+
+            if (string.IsNullOrWhiteSpace(tipoDocumento))
+            {
+                return BadRequest(new { ok = false, mensaje = "Seleccione el tipo de documento." });
+            }
+
+            if (string.IsNullOrWhiteSpace(numeroDocumento))
+            {
+                return BadRequest(new { ok = false, mensaje = "Ingrese el numero de documento." });
+            }
+
+            if (esJuridica)
+            {
+                if (string.IsNullOrWhiteSpace(razonSocial))
+                {
+                    return BadRequest(new { ok = false, mensaje = "Ingrese la razon social del cliente." });
+                }
+            }
+            else if (string.IsNullOrWhiteSpace(nombres) || string.IsNullOrWhiteSpace(apellidos))
+            {
+                return BadRequest(new { ok = false, mensaje = "Ingrese nombres y apellidos del cliente." });
+            }
+
+            await personaRepository.GuardarAsync(new GuardarPersonaRequest
+            {
+                IdEmpresa = currentCompanyAccessor.EmpresaId.Value,
+                TipoPersona = tipoPersona,
+                TipoDocumento = tipoDocumento,
+                NumeroDocumento = numeroDocumento,
+                ApellidoPaterno = esJuridica ? null : apellidos,
+                ApellidoMaterno = null,
+                Nombres = esJuridica ? null : nombres,
+                RazonSocial = esJuridica ? razonSocial : null,
+                CorreoElectronico = correo,
+                Telefono = telefono,
+                Direccion = null,
+                CodigoUbigeo = null,
+                EsCliente = true,
+                EsProveedor = false,
+                Estado = true,
+                UsuarioRegistro = User.Identity?.Name
+            }, cancellationToken);
+
+            var clientes = await clienteRepository.ListarActivosPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, cancellationToken);
+            var cliente = clientes.FirstOrDefault(x =>
+                string.Equals(x.TipoDocumento, tipoDocumento, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(x.NumeroDocumento, numeroDocumento, StringComparison.OrdinalIgnoreCase));
+
+            if (cliente is null)
+            {
+                return BadRequest(new { ok = false, mensaje = "El cliente fue registrado, pero no pudo recuperarse para la seleccion." });
+            }
+
+            return Json(new
+            {
+                ok = true,
+                clienteId = cliente.IdCliente,
+                clienteTexto = $"{cliente.NombreCompleto} ({cliente.NumeroDocumento})",
+                tipoDocumento = cliente.TipoDocumento,
+                numeroDocumento = cliente.NumeroDocumento,
+                nombre = cliente.NombreCompleto,
+                numero = cliente.Telefono ?? string.Empty,
+                correo = cliente.CorreoElectronico ?? string.Empty
+            });
         }
-        else if (string.IsNullOrWhiteSpace(nombres) || string.IsNullOrWhiteSpace(apellidos))
+        catch (Exception ex)
         {
-            return BadRequest(new { ok = false, mensaje = "Ingrese nombres y apellidos del cliente." });
+            return BadRequest(new { ok = false, mensaje = ex.Message });
         }
-
-        await personaRepository.GuardarAsync(new GuardarPersonaRequest
-        {
-            IdEmpresa = currentCompanyAccessor.EmpresaId.Value,
-            TipoPersona = esJuridica ? "J" : "N",
-            TipoDocumento = tipoDocumento,
-            NumeroDocumento = numeroDocumento,
-            ApellidoPaterno = esJuridica ? null : apellidos,
-            ApellidoMaterno = null,
-            Nombres = esJuridica ? null : nombres,
-            RazonSocial = esJuridica ? razonSocial : null,
-            CorreoElectronico = correo,
-            Telefono = telefono,
-            Direccion = null,
-            CodigoUbigeo = null,
-            EsCliente = true,
-            EsProveedor = false,
-            Estado = true,
-            UsuarioRegistro = User.Identity?.Name
-        }, cancellationToken);
-
-        var clientes = await clienteRepository.ListarActivosPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, cancellationToken);
-        var cliente = clientes.FirstOrDefault(x =>
-            string.Equals(x.TipoDocumento, tipoDocumento, StringComparison.OrdinalIgnoreCase)
-            && string.Equals(x.NumeroDocumento, numeroDocumento, StringComparison.OrdinalIgnoreCase));
-
-        if (cliente is null)
-        {
-            return BadRequest(new { ok = false, mensaje = "El cliente fue registrado, pero no pudo recuperarse para la seleccion." });
-        }
-
-        return Json(new
-        {
-            ok = true,
-            clienteId = cliente.IdCliente,
-            clienteTexto = $"{cliente.NombreCompleto} ({cliente.NumeroDocumento})",
-            tipoDocumento = cliente.TipoDocumento,
-            numeroDocumento = cliente.NumeroDocumento,
-            nombre = cliente.NombreCompleto,
-            numero = cliente.Telefono ?? string.Empty,
-            correo = cliente.CorreoElectronico ?? string.Empty
-        });
     }
 
     [HttpPost]
@@ -365,6 +421,12 @@ public class VentaController(
         var tiposComprobante = (await tipoComprobanteRepository.ListarActivosAsync(false, true, cancellationToken))
             .OrderBy(x => x.CodigoTipoComprobante)
             .ToList();
+        var cuentasMovimiento = (await planCuentaRepository.ListarPaginadoPorEmpresaAsync(empresaId, null, null, 1, TamanoAyudaCuenta, true, false, cancellationToken)).Items
+            .OrderBy(x => x.CodigoCuenta)
+            .ToList();
+        var tiposAfectacionIgv = (await tipoAfectacionIgvRepository.ListarActivosAsync(cancellationToken))
+            .OrderBy(x => x.CodigoSunat)
+            .ToList();
         var ventas = await ventaRepository.ListarPorEmpresaAsync(empresaId, periodoTrabajo, cancellationToken);
         var ventaEditar = idVenta.HasValue
             ? await ventaRepository.ObtenerAsync(idVenta.Value, cancellationToken)
@@ -387,6 +449,8 @@ public class VentaController(
             tiposDocumentoIdentidad,
             monedas,
             tiposComprobante,
+            cuentasMovimiento,
+            tiposAfectacionIgv,
             ventas,
             ventaEditar));
     }
@@ -416,6 +480,12 @@ public class VentaController(
         var tiposComprobante = (await tipoComprobanteRepository.ListarActivosAsync(false, true, cancellationToken))
             .OrderBy(x => x.CodigoTipoComprobante)
             .ToList();
+        var cuentasMovimiento = (await planCuentaRepository.ListarPaginadoPorEmpresaAsync(empresaId, null, null, 1, TamanoAyudaCuenta, true, false, cancellationToken)).Items
+            .OrderBy(x => x.CodigoCuenta)
+            .ToList();
+        var tiposAfectacionIgv = (await tipoAfectacionIgvRepository.ListarActivosAsync(cancellationToken))
+            .OrderBy(x => x.CodigoSunat)
+            .ToList();
         var ventas = await ventaRepository.ListarPorEmpresaAsync(empresaId, periodo, cancellationToken);
 
         var model = ConstruirViewModel(
@@ -430,6 +500,8 @@ public class VentaController(
             tiposDocumentoIdentidad,
             monedas,
             tiposComprobante,
+            cuentasMovimiento,
+            tiposAfectacionIgv,
             ventas,
             null);
 
@@ -439,8 +511,10 @@ public class VentaController(
 
     private static void NormalizarFormulario(VentaFormViewModel formulario)
     {
+        formulario.Serie = NormalizarSerieDocumento(formulario.Serie);
+        formulario.Numero = NormalizarNumeroDocumento(formulario.Numero);
         formulario.Detalles = formulario.Detalles
-            .Where(x => !string.IsNullOrWhiteSpace(x.Descripcion) || x.ImporteBruto > 0 || x.ValorUnitario > 0 || x.Cantidad > 0)
+            .Where(x => !string.IsNullOrWhiteSpace(x.Descripcion) || x.ImporteBruto > 0 || x.ValorUnitario > 0 || x.Cantidad > 0 || x.IdPlanCuenta.HasValue)
             .Select((x, index) =>
             {
                 x.Item = (short)(index + 1);
@@ -451,6 +525,36 @@ public class VentaController(
 
     private void ValidarFormulario(VentaFormViewModel formulario)
     {
+        if (formulario.IdCliente.GetValueOrDefault() <= 0)
+        {
+            ModelState.AddModelError(nameof(formulario.IdCliente), "Seleccione un cliente.");
+        }
+
+        if (formulario.IdConfiguracionContabilizacion.GetValueOrDefault() <= 0)
+        {
+            ModelState.AddModelError(nameof(formulario.IdConfiguracionContabilizacion), "Seleccione una configuracion contable.");
+        }
+
+        if (formulario.IdMoneda.GetValueOrDefault() <= 0)
+        {
+            ModelState.AddModelError(nameof(formulario.IdMoneda), "Seleccione la moneda.");
+        }
+
+        if (string.IsNullOrWhiteSpace(formulario.TipoComprobante))
+        {
+            ModelState.AddModelError(nameof(formulario.TipoComprobante), "Seleccione el tipo de comprobante.");
+        }
+
+        if (string.IsNullOrWhiteSpace(formulario.Serie))
+        {
+            ModelState.AddModelError(nameof(formulario.Serie), "Ingrese la serie del documento.");
+        }
+
+        if (string.IsNullOrWhiteSpace(formulario.Numero))
+        {
+            ModelState.AddModelError(nameof(formulario.Numero), "Ingrese el numero del documento.");
+        }
+
         if (formulario.Detalles.Count == 0)
         {
             ModelState.AddModelError(string.Empty, "Debe registrar al menos un concepto en la venta.");
@@ -468,12 +572,22 @@ public class VentaController(
                 ModelState.AddModelError($"{prefijo}.Descripcion", "Ingrese la descripcion del concepto.");
             }
 
+            if (!detalle.IdPlanCuenta.HasValue || detalle.IdPlanCuenta.Value <= 0)
+            {
+                ModelState.AddModelError($"{prefijo}.IdPlanCuenta", "Seleccione la cuenta contable.");
+            }
+
+            if (!detalle.IdTipoAfectacionIGV.HasValue || detalle.IdTipoAfectacionIGV.Value <= 0)
+            {
+                ModelState.AddModelError($"{prefijo}.IdTipoAfectacionIGV", "Seleccione el tipo de afectacion IGV.");
+            }
+
             totalDetalle += detalle.ImporteBruto;
         }
 
-        if (formulario.ImporteTotal != formulario.BaseImponible + formulario.Igv + formulario.Isc + formulario.OtrosTributos + formulario.Redondeo)
+        if (formulario.ImporteTotal != formulario.BaseImponible + formulario.Igv)
         {
-            ModelState.AddModelError(string.Empty, "El importe total debe ser igual a la suma de base imponible, IGV, ISC, otros tributos y redondeo.");
+            ModelState.AddModelError(string.Empty, "El importe total debe ser igual a la suma del subtotal e IGV.");
         }
 
         if (formulario.BaseImponible > 0 && totalDetalle > 0 && decimal.Round(totalDetalle, 2) != decimal.Round(formulario.BaseImponible, 2))
@@ -515,6 +629,8 @@ public class VentaController(
         IReadOnlyCollection<OpcionCatalogoViewModel> tiposDocumentoIdentidad,
         IReadOnlyCollection<MonedaDto> monedas,
         IReadOnlyCollection<TipoComprobanteDto> tiposComprobante,
+        IReadOnlyCollection<PlanCuentaDto> cuentasMovimiento,
+        IReadOnlyCollection<TipoAfectacionIgvDto> tiposAfectacionIgv,
         IReadOnlyCollection<VentaResumenDto> ventas,
         VentaDto? ventaEditar)
     {
@@ -524,16 +640,26 @@ public class VentaController(
                 IdVenta = x.IdVenta,
                 NombreCliente = x.NombreCliente,
                 EscenarioOperacion = x.EscenarioOperacion,
+                FechaEmision = x.FechaEmision,
                 FechaContabilizacion = x.FechaContabilizacion,
                 Documento = $"{x.TipoComprobante} {x.Serie}-{x.Numero}",
                 CodigoMoneda = x.CodigoMoneda,
                 ImporteTotal = x.ImporteTotal,
+                Saldo = x.Saldo,
                 IdAsiento = x.IdAsiento,
-                Estado = x.Estado
+                Estado = x.Estado,
+                Situacion = x.Situacion
             })
             .ToList();
 
         var clienteSeleccionado = clientes.FirstOrDefault(x => x.IdCliente == (ventaEditar?.IdCliente ?? clientes.FirstOrDefault()?.IdCliente));
+        var totalImportePeriodo = items.Sum(x => x.ImporteTotal);
+        var totalImporteSolesPeriodo = items
+            .Where(x => string.Equals(x.CodigoMoneda, "PEN", StringComparison.OrdinalIgnoreCase))
+            .Sum(x => x.ImporteTotal);
+        var totalImporteDolaresPeriodo = items
+            .Where(x => string.Equals(x.CodigoMoneda, "USD", StringComparison.OrdinalIgnoreCase))
+            .Sum(x => x.ImporteTotal);
 
         return new VentaIndexViewModel
         {
@@ -544,7 +670,9 @@ public class VentaController(
             MesSeleccionado = mesSeleccionado,
             TextoBusqueda = textoBusqueda?.Trim() ?? string.Empty,
             TotalVentas = items.Count,
-            TotalImportePeriodo = items.Sum(x => x.ImporteTotal),
+            TotalImportePeriodo = totalImportePeriodo,
+            TotalImporteSolesPeriodo = totalImporteSolesPeriodo,
+            TotalImporteDolaresPeriodo = totalImporteDolaresPeriodo,
             AniosDisponibles = ConstruirAnios(anioSeleccionado),
             MesesDisponibles = ConstruirMeses(),
             Clientes = clientes.ToList(),
@@ -552,6 +680,8 @@ public class VentaController(
             TiposDocumentoIdentidad = tiposDocumentoIdentidad.ToList(),
             Monedas = monedas.ToList(),
             TiposComprobante = tiposComprobante.ToList(),
+            CuentasMovimiento = cuentasMovimiento.ToList(),
+            TiposAfectacionIgv = tiposAfectacionIgv.ToList(),
             Ventas = items,
             ClienteSeleccionadoTipoDocumento = clienteSeleccionado?.TipoDocumento ?? ventaEditar?.TipoDocumentoCliente ?? string.Empty,
             ClienteSeleccionadoNumeroDocumento = clienteSeleccionado?.NumeroDocumento ?? ventaEditar?.NumeroDocumentoCliente ?? string.Empty,
@@ -567,7 +697,15 @@ public class VentaController(
                     IdMoneda = monedas.OrderByDescending(x => x.EsMonedaBase).FirstOrDefault()?.IdMoneda,
                     IdCliente = clientes.FirstOrDefault()?.IdCliente,
                     IdConfiguracionContabilizacion = configuraciones.FirstOrDefault()?.IdConfiguracionContabilizacion,
-                    TipoComprobante = tiposComprobante.FirstOrDefault()?.CodigoTipoComprobante ?? "01"
+                    TipoComprobante = tiposComprobante.FirstOrDefault()?.CodigoTipoComprobante ?? "01",
+                    Detalles =
+                    [
+                        new()
+                        {
+                            Item = 1,
+                            IdTipoAfectacionIGV = tiposAfectacionIgv.FirstOrDefault(x => x.CodigoSunat == CodigoAfectacionGravadoOnerosa)?.IdTipoAfectacionIGV ?? 1
+                        }
+                    ]
                 }
                 : new VentaFormViewModel
                 {
@@ -582,6 +720,9 @@ public class VentaController(
                     IdMoneda = ventaEditar.IdMoneda,
                     TipoCambio = ventaEditar.TipoCambio,
                     BaseImponible = ventaEditar.BaseImponible,
+                    TotalExonerado = ventaEditar.TotalExonerado,
+                    TotalInafecto = ventaEditar.TotalInafecto,
+                    Icbper = ventaEditar.Icbper,
                     Igv = ventaEditar.Igv,
                     Isc = ventaEditar.Isc,
                     OtrosTributos = ventaEditar.OtrosTributos,
@@ -593,6 +734,9 @@ public class VentaController(
                         .Select(x => new VentaDetalleFormViewModel
                         {
                             Item = x.Item,
+                            IdPlanCuenta = x.IdPlanCuenta,
+                            CuentaTexto = $"{x.CodigoCuenta} - {x.NombreCuenta}",
+                            IdTipoAfectacionIGV = x.IdTipoAfectacionIGV,
                             Descripcion = x.Descripcion,
                             Cantidad = x.Cantidad,
                             ValorUnitario = x.ValorUnitario,
@@ -630,5 +774,40 @@ public class VentaController(
         }
 
         return DateOnly.FromDateTime(DateTime.Today);
+    }
+
+    private static string NormalizarSerieDocumento(string? serie)
+    {
+        var serieNormalizada = new string((serie ?? string.Empty)
+            .Trim()
+            .ToUpperInvariant()
+            .Where(char.IsLetterOrDigit)
+            .ToArray());
+
+        if (string.IsNullOrEmpty(serieNormalizada))
+        {
+            return string.Empty;
+        }
+
+        var prefijo = serieNormalizada[0];
+        if (prefijo is 'F' or 'B')
+        {
+            var digitos = new string(serieNormalizada.Skip(1).Where(char.IsDigit).ToArray());
+            digitos = digitos.Length > 3 ? digitos[..3] : digitos.PadLeft(3, '0');
+            return $"{prefijo}{digitos}";
+        }
+
+        return serieNormalizada.Length > 4 ? serieNormalizada[..4] : serieNormalizada;
+    }
+
+    private static string NormalizarNumeroDocumento(string? numero)
+    {
+        var digitos = new string((numero ?? string.Empty).Where(char.IsDigit).ToArray());
+        if (string.IsNullOrEmpty(digitos))
+        {
+            return string.Empty;
+        }
+
+        return digitos.Length > 10 ? digitos[..10] : digitos;
     }
 }
