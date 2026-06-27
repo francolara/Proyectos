@@ -24,6 +24,11 @@
    Create date:   23/06/2026
    Description:   Reubica el periodo contable en la tarjeta derecha del encabezado del registro de compras, deja la cabecera mas compacta, vuelve a mostrar el campo ICBPER en los totales y reemplaza los botones de ayuda por iconos de lupa.
    ============================================= *@
+@* =============================================
+   Author:        FRANCO LARA
+   Create date:   26/06/2026
+   Description:   Agrega detraccion SUNAT en provisiones de compra con popup de codigos, porcentaje, importe retenido y saldo neto pendiente de pago.
+   ============================================= *@
 
 @{
     ViewData["Title"] = Model.Formulario.IdCompra.HasValue ? "Editar compra" : "Registrar compra";
@@ -67,7 +72,7 @@
                     }
 
                     <div class="workspace-section">
-                        <div class="workspace-section-head">
+                        <div class="workspace-section-head workspace-section-head-compact">
                             <div>
                                 <span class="workspace-section-kicker">Cabecera</span>
                                 <h2>Datos de la Compra</h2>
@@ -150,7 +155,7 @@
                     </div>
 
                     <div class="workspace-section">
-                        <div class="workspace-section-head">
+                        <div class="workspace-section-head workspace-section-head-compact">
                             <div>
                                 <h2>Detalle de compra</h2>
                                 <p>La suma del detalle debe coincidir con la base imponible.</p>
@@ -224,7 +229,7 @@
                     </div>
 
                     <div class="workspace-section workspace-totals-section">
-                        <div class="workspace-section-head">
+                        <div class="workspace-section-head workspace-section-head-compact">
                             <div>
                                 <span class="workspace-section-kicker">Totales</span>
                                 <h2>Totales globales</h2>
@@ -261,6 +266,49 @@
                                 <input asp-for="Formulario.Isc" type="hidden" />
                                 <input asp-for="Formulario.OtrosTributos" type="hidden" />
                                 <input asp-for="Formulario.Redondeo" type="hidden" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="workspace-section">
+                        <div class="workspace-section-head workspace-section-head-compact">
+                            <div>
+                                <span class="workspace-section-kicker">Detraccion</span>
+                                <h2>Sistema SPOT</h2>
+                                <p>Descuenta la detraccion del saldo del comprobante y separa un documento independiente para su pago.</p>
+                            </div>
+                        </div>
+
+                        <div class="workspace-form-grid">
+                            <div class="workspace-field">
+                                <label class="form-label d-block">Aplicar detraccion</label>
+                                <div class="form-check form-switch mt-2">
+                                    <input asp-for="Formulario.TieneDetraccion" class="form-check-input" id="compraTieneDetraccion" />
+                                    <label class="form-check-label" for="compraTieneDetraccion">La compra esta afecta a detraccion</label>
+                                </div>
+                            </div>
+                            <div class="workspace-field workspace-field-span-2">
+                                <label class="form-label" for="compraDetraccionTexto">Codigo detraccion SUNAT</label>
+                                <input asp-for="Formulario.IdDetraccionSunat" type="hidden" id="compraDetraccionId" />
+                                <div class="workspace-lookup-control">
+                                    <input asp-for="Formulario.DetraccionTexto" id="compraDetraccionTexto" class="form-control" readonly placeholder="Seleccione un codigo SUNAT" />
+                                    <button type="button" class="btn btn-outline-secondary btn-sm workspace-icon-button" id="btnAbrirDetraccionModal" title="Buscar detraccion" aria-label="Buscar detraccion"><i class="bi bi-search"></i></button>
+                                </div>
+                                <span asp-validation-for="Formulario.IdDetraccionSunat" class="text-danger"></span>
+                            </div>
+                            <div class="workspace-field">
+                                <label asp-for="Formulario.PorcentajeDetraccion" class="form-label">Porcentaje</label>
+                                <input asp-for="Formulario.PorcentajeDetraccion" class="form-control" id="compraPorcentajeDetraccion" readonly />
+                            </div>
+                            <div class="workspace-field">
+                                <label asp-for="Formulario.ImporteDetraccion" class="form-label">Importe detraccion</label>
+                                <input asp-for="Formulario.ImporteDetraccion" class="form-control js-total-global" id="compraImporteDetraccion" readonly />
+                                <span asp-validation-for="Formulario.ImporteDetraccion" class="text-danger"></span>
+                            </div>
+                            <div class="workspace-field">
+                                <label asp-for="Formulario.SaldoPago" class="form-label">Saldo por pagar</label>
+                                <input asp-for="Formulario.SaldoPago" class="form-control js-total-global" id="compraSaldoPago" readonly />
+                                <small class="workspace-field-help">Saldo pendiente del comprobante principal luego de descontar la detraccion.</small>
                             </div>
                         </div>
                     </div>
@@ -441,6 +489,92 @@
     </div>
 </div>
 
+<div class="modal fade workspace-modal" id="compraDetraccionModal" tabindex="-1" aria-labelledby="compraDetraccionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content workspace-modal-content">
+            <div class="modal-header workspace-modal-header">
+                <div>
+                    <span class="workspace-window-kicker">SUNAT</span>
+                    <h2 class="workspace-modal-title" id="compraDetraccionModalLabel">Seleccionar codigo de detraccion</h2>
+                    <p class="workspace-modal-subtitle">Elige el codigo SPOT que corresponde al bien o servicio.</p>
+                </div>
+                <button type="button" class="btn-close workspace-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body workspace-modal-body">
+                <div class="workspace-filter-card mt-0">
+                    <div class="workspace-filter-grid">
+                        <div class="workspace-field workspace-field-span-3">
+                            <label class="form-label" for="compraDetraccionFiltro">Filtro</label>
+                            <input id="compraDetraccionFiltro" class="form-control" placeholder="Codigo o descripcion de detraccion" autocomplete="off" />
+                        </div>
+                    </div>
+                </div>
+                <div class="table-responsive workspace-table-wrap">
+                    <table class="table align-middle app-table workspace-table workspace-lookup-table">
+                        <thead>
+                            <tr>
+                                <th class="workspace-lookup-select-cell">Sel.</th>
+                                <th>Codigo</th>
+                                <th>Descripcion</th>
+                                <th>%</th>
+                            </tr>
+                        </thead>
+                        <tbody id="compraDetraccionResultados">
+                            @if (Model.DetraccionesSunat.Count == 0)
+                            {
+                                <tr data-detraccion-empty-row="true">
+                                    <td colspan="4">
+                                        <div class="app-empty-state app-empty-state-inline">
+                                            <i class="bi bi-search"></i>
+                                            <div>
+                                                <strong>No hay codigos de detraccion cargados</strong>
+                                                <p>Registre primero el maestro general de detracciones SUNAT.</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                foreach (var detraccion in Model.DetraccionesSunat)
+                                {
+                                    <tr data-detraccion-row="true"
+                                        data-id="@detraccion.IdDetraccionSunat"
+                                        data-codigo="@detraccion.CodigoSunat"
+                                        data-descripcion="@detraccion.Descripcion"
+                                        data-porcentaje="@detraccion.Porcentaje.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture)">
+                                        <td class="workspace-lookup-select-cell">
+                                            <input type="radio" name="compraDetraccionSeleccion" value="@detraccion.IdDetraccionSunat" />
+                                        </td>
+                                        <td>@detraccion.CodigoSunat</td>
+                                        <td>@detraccion.Descripcion</td>
+                                        <td>@detraccion.Porcentaje.ToString("0.##")</td>
+                                    </tr>
+                                }
+                                <tr data-detraccion-empty-row="true" class="d-none">
+                                    <td colspan="4">
+                                        <div class="app-empty-state app-empty-state-inline">
+                                            <i class="bi bi-search"></i>
+                                            <div>
+                                                <strong>No hay codigos con ese filtro</strong>
+                                                <p>Ajusta el codigo o la descripcion para ubicar la detraccion SUNAT.</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer workspace-modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="aceptarDetraccionCompra">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
@@ -485,9 +619,21 @@
             const cuentaFiltro = document.getElementById("compraCuentaFiltro");
             const cuentaNivelFiltro = document.getElementById("compraCuentaNivelFiltro");
             const buscarCuentasUrl = '@Url.Action("BuscarAyuda", "PlanCuenta")';
+            const tieneDetraccionEl = document.getElementById("compraTieneDetraccion");
+            const detraccionIdEl = document.getElementById("compraDetraccionId");
+            const detraccionTextoEl = document.getElementById("compraDetraccionTexto");
+            const porcentajeDetraccionEl = document.getElementById("compraPorcentajeDetraccion");
+            const importeDetraccionEl = document.getElementById("compraImporteDetraccion");
+            const saldoPagoEl = document.getElementById("compraSaldoPago");
+            const btnAbrirDetraccionModalEl = document.getElementById("btnAbrirDetraccionModal");
+            const detraccionModalEl = document.getElementById("compraDetraccionModal");
+            const detraccionModal = detraccionModalEl && window.bootstrap ? bootstrap.Modal.getOrCreateInstance(detraccionModalEl) : null;
+            const detraccionFiltroEl = document.getElementById("compraDetraccionFiltro");
+            const detraccionResultadosEl = document.getElementById("compraDetraccionResultados");
             let cuentaSeleccion = null;
             let cuentaRowActiva = null;
             let cuentaBusquedaProgramada = null;
+            let detraccionSeleccion = null;
             const proveedorRapidoModal = proveedorRapidoModalEl && window.bootstrap
                 ? new bootstrap.Modal(proveedorRapidoModalEl)
                 : null;
@@ -536,6 +682,112 @@
                 const input = formEl?.querySelector(`[name="${name}"]`);
                 if (input) {
                     input.value = formatMoney(value);
+                }
+            };
+
+            const setDetraccionValue = (input, value, decimals = 2) => {
+                if (!input) {
+                    return;
+                }
+
+                const numericValue = Number(value || 0);
+                input.value = numericValue.toFixed(decimals);
+            };
+
+            const marcarSeleccionDetraccion = () => {
+                const rows = Array.from(detraccionResultadosEl?.querySelectorAll("[data-detraccion-row='true']") || []);
+                rows.forEach((row) => {
+                    const seleccionado = detraccionSeleccion && row.dataset.id === String(detraccionSeleccion.idDetraccionSunat);
+                    row.classList.toggle("is-selected", seleccionado);
+                    const radio = row.querySelector("input[type='radio']");
+                    if (radio) {
+                        radio.checked = Boolean(seleccionado);
+                    }
+                });
+            };
+
+            const calcularTotalesDetraccion = () => {
+                const importeTotal = parseAmount(formEl?.querySelector('[name="Formulario.ImporteTotal"]')?.value);
+                const aplicaDetraccion = Boolean(tieneDetraccionEl?.checked);
+                const porcentaje = aplicaDetraccion ? parseAmount(porcentajeDetraccionEl?.value) : 0;
+                const importeDetraccion = aplicaDetraccion && porcentaje > 0
+                    ? Math.round((importeTotal * (porcentaje / 100)) * 100) / 100
+                    : 0;
+                const saldoPago = Math.max(0, Math.round((importeTotal - importeDetraccion) * 100) / 100);
+
+                setDetraccionValue(importeDetraccionEl, importeDetraccion);
+                setDetraccionValue(saldoPagoEl, saldoPago);
+
+                if (!aplicaDetraccion) {
+                    setDetraccionValue(porcentajeDetraccionEl, 0, 4);
+                }
+            };
+
+            const limpiarDetraccionSeleccion = () => {
+                detraccionSeleccion = null;
+                if (detraccionIdEl) {
+                    detraccionIdEl.value = "";
+                }
+                if (detraccionTextoEl) {
+                    detraccionTextoEl.value = "";
+                }
+                setDetraccionValue(porcentajeDetraccionEl, 0, 4);
+                marcarSeleccionDetraccion();
+                calcularTotalesDetraccion();
+            };
+
+            const aplicarDetraccionSeleccion = (item) => {
+                if (!item) {
+                    limpiarDetraccionSeleccion();
+                    return;
+                }
+
+                detraccionSeleccion = item;
+                if (detraccionIdEl) {
+                    detraccionIdEl.value = String(item.idDetraccionSunat || "");
+                }
+                if (detraccionTextoEl) {
+                    detraccionTextoEl.value = `${String(item.codigoSunat || "")} - ${String(item.descripcion || "")}`;
+                }
+                setDetraccionValue(porcentajeDetraccionEl, Number(item.porcentaje || 0), 4);
+                marcarSeleccionDetraccion();
+                calcularTotalesDetraccion();
+            };
+
+            const alternarDetraccion = () => {
+                const aplicaDetraccion = Boolean(tieneDetraccionEl?.checked);
+                if (btnAbrirDetraccionModalEl) {
+                    btnAbrirDetraccionModalEl.disabled = !aplicaDetraccion;
+                }
+
+                if (!aplicaDetraccion) {
+                    limpiarDetraccionSeleccion();
+                } else {
+                    calcularTotalesDetraccion();
+                }
+            };
+
+            const filtrarDetracciones = () => {
+                if (!detraccionResultadosEl) {
+                    return;
+                }
+
+                const filtro = String(detraccionFiltroEl?.value || "").trim().toLowerCase();
+                const rows = Array.from(detraccionResultadosEl.querySelectorAll("[data-detraccion-row='true']"));
+                let visibles = 0;
+
+                rows.forEach((row) => {
+                    const texto = `${row.dataset.codigo || ""} ${row.dataset.descripcion || ""}`.toLowerCase();
+                    const visible = !filtro || texto.includes(filtro);
+                    row.classList.toggle("d-none", !visible);
+                    if (visible) {
+                        visibles += 1;
+                    }
+                });
+
+                const emptyRow = detraccionResultadosEl.querySelector("[data-detraccion-empty-row='true']");
+                if (emptyRow) {
+                    emptyRow.classList.toggle("d-none", visibles > 0);
                 }
             };
 
@@ -891,6 +1143,7 @@
                 setFormValue("Formulario.OtrosTributos", 0);
                 setFormValue("Formulario.Redondeo", 0);
                 setFormValue("Formulario.ImporteTotal", importeTotal);
+                calcularTotalesDetraccion();
             };
 
             addButton.addEventListener("click", () => {
@@ -908,6 +1161,18 @@
             tableBody.addEventListener("input", refreshRows);
             tableBody.addEventListener("change", refreshRows);
             refreshRows();
+            if (detraccionIdEl?.value) {
+                const filaDetraccionInicial = detraccionResultadosEl?.querySelector(`[data-detraccion-row='true'][data-id='${detraccionIdEl.value}']`);
+                if (filaDetraccionInicial) {
+                    detraccionSeleccion = {
+                        idDetraccionSunat: Number(filaDetraccionInicial.getAttribute("data-id") || "0"),
+                        codigoSunat: String(filaDetraccionInicial.getAttribute("data-codigo") || ""),
+                        descripcion: String(filaDetraccionInicial.getAttribute("data-descripcion") || ""),
+                        porcentaje: Number(filaDetraccionInicial.getAttribute("data-porcentaje") || "0")
+                    };
+                }
+            }
+            alternarDetraccion();
             fechaContabilizacionEl.value = `${@Html.Raw(System.Text.Json.JsonSerializer.Serialize(periodoContableValue))}-01`;
             numeroDocumentoEl?.addEventListener("keydown", (event) => {
                 const teclasPermitidas = ["Backspace", "Delete", "Tab", "ArrowLeft", "ArrowRight", "Home", "End"];
@@ -953,6 +1218,45 @@
 
             cuentaFiltro?.addEventListener("input", programarBusquedaCuenta);
             cuentaNivelFiltro?.addEventListener("change", programarBusquedaCuenta);
+            tieneDetraccionEl?.addEventListener("change", alternarDetraccion);
+            btnAbrirDetraccionModalEl?.addEventListener("click", () => {
+                if (!tieneDetraccionEl?.checked) {
+                    window.alert("Primero marque que la compra tiene detraccion.");
+                    return;
+                }
+
+                marcarSeleccionDetraccion();
+                filtrarDetracciones();
+                detraccionModal?.show();
+            });
+            detraccionFiltroEl?.addEventListener("input", filtrarDetracciones);
+            detraccionResultadosEl?.querySelectorAll("[data-detraccion-row='true']").forEach((row) => {
+                const seleccionarFila = () => {
+                    detraccionSeleccion = {
+                        idDetraccionSunat: Number(row.dataset.id || "0"),
+                        codigoSunat: String(row.dataset.codigo || ""),
+                        descripcion: String(row.dataset.descripcion || ""),
+                        porcentaje: Number(row.dataset.porcentaje || "0")
+                    };
+                    marcarSeleccionDetraccion();
+                };
+
+                row.addEventListener("click", seleccionarFila);
+                row.addEventListener("dblclick", () => {
+                    seleccionarFila();
+                    aplicarDetraccionSeleccion(detraccionSeleccion);
+                    detraccionModal?.hide();
+                });
+            });
+            document.getElementById("aceptarDetraccionCompra")?.addEventListener("click", () => {
+                if (!detraccionSeleccion || !detraccionSeleccion.idDetraccionSunat) {
+                    window.alert("Seleccione un codigo de detraccion SUNAT.");
+                    return;
+                }
+
+                aplicarDetraccionSeleccion(detraccionSeleccion);
+                detraccionModal?.hide();
+            });
 
             if (proveedorBuscarEl && proveedorIdEl && proveedorResultadosEl) {
                 proveedorBuscarEl.addEventListener("input", () => {

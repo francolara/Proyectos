@@ -17,5 +17,6 @@ public sealed class ConfiguracionContabilizacionIndexViewModel
     public List<ConfiguracionProvisionOperacionViewModel> Provisiones { get; set; } = [];
     public List<ConfiguracionDocumentoFormViewModel> Documentos { get; set; } = [];
     public List<ConfiguracionImpuestoFormViewModel> Impuestos { get; set; } = [];
+    public List<ConfiguracionParametroContableFormViewModel> Parametros { get; set; } = [];
     public List<ConfiguracionContabilizacionResumenItemViewModel> Configuraciones { get; set; } = [];
 }

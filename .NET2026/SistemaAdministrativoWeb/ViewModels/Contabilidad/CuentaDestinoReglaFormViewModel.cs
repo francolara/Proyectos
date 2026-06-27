@@ -4,9 +4,6 @@ namespace SistemaAdministrativoWeb.ViewModels.Contabilidad;
 
 public sealed class CuentaDestinoReglaFormViewModel
 {
-    [Range(2000, 9999, ErrorMessage = "Ingrese un ejercicio valido.")]
-    public short Ejercicio { get; set; } = (short)DateTime.Today.Year;
-
     [Range(1, int.MaxValue, ErrorMessage = "Seleccione la cuenta origen.")]
     public int? IdPlanCuentaOrigen { get; set; }
 

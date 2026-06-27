@@ -141,6 +141,8 @@ public sealed class AsientoRepository(IDbConnectionFactory connectionFactory) : 
                     TipoCambioLinea = reader.IsDBNull(reader.GetOrdinal("TipoCambioLinea")) ? null : reader.GetDecimal(reader.GetOrdinal("TipoCambioLinea")),
                     Debe = reader.GetDecimal(reader.GetOrdinal("Debe")),
                     Haber = reader.GetDecimal(reader.GetOrdinal("Haber")),
+                    TotalImporteS = reader.IsDBNull(reader.GetOrdinal("TotalImporteS")) ? 0m : reader.GetDecimal(reader.GetOrdinal("TotalImporteS")),
+                    TotalImporteD = reader.IsDBNull(reader.GetOrdinal("TotalImporteD")) ? 0m : reader.GetDecimal(reader.GetOrdinal("TotalImporteD")),
                     ReferenciaLinea = reader.IsDBNull(reader.GetOrdinal("ReferenciaLinea")) ? null : reader.GetString(reader.GetOrdinal("ReferenciaLinea"))
                 });
             }

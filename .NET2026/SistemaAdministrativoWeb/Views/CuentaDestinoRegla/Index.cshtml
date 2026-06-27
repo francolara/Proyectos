@@ -1,7 +1,7 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.CuentaDestinoReglaIndexViewModel
 
 @{
-    ViewData["Title"] = "Reglas de cuentas destino";
+    ViewData["Title"] = "Cuentas destino";
     ViewData["AdminShell"] = true;
     var paginaInicio = Math.Max(1, Model.Paginacion.PaginaActual - 2);
     var paginaFin = Math.Min(Model.Paginacion.TotalPaginas, Model.Paginacion.PaginaActual + 2);
@@ -10,9 +10,9 @@
 <section class="dashboard-shell">
     <section class="dashboard-metrics">
         <article class="dashboard-metric-card dashboard-metric-card-count">
-            <span>Total reglas</span>
+            <span>Total cuentas destino</span>
             <strong>@Model.TotalReglas</strong>
-            <small>Configuraciones filtradas para el ejercicio consultado.</small>
+            <small>Configuraciones visibles para la empresa activa.</small>
         </article>
         <article class="dashboard-metric-card dashboard-metric-card-count">
             <span>Reglas activas</span>
@@ -30,11 +30,11 @@
         <div class="workspace-window-head">
             <div>
                 <span class="workspace-window-kicker">Resumen</span>
-                <h1>Reglas registradas</h1>
-                <p>Consulta las configuraciones por cuenta origen y abre la edicion desde la misma lista.</p>
+                <h1>Cuentas destino registradas</h1>
+                <p>Consulta las configuraciones por cuenta contable y abre la edicion desde la misma lista.</p>
             </div>
             <div class="workspace-row-actions">
-                <a asp-action="Registrar" asp-route-ejercicio="@Model.EjercicioActual" class="btn btn-light btn-sm">Registrar regla</a>
+                <a asp-action="Registrar" class="btn btn-light btn-sm">Registrar cuenta destino</a>
             </div>
         </div>
         <div class="workspace-window-body">
@@ -45,12 +45,8 @@
 
             <form asp-action="Index" method="get" class="workspace-filter-card">
                 <div class="workspace-filter-grid">
-                    <div class="workspace-field">
-                        <label class="form-label" for="ejercicio">Año</label>
-                        <input id="ejercicio" name="ejercicio" value="@Model.EjercicioActual" class="form-control" />
-                    </div>
-                    <div class="workspace-field workspace-field-span-2">
-                        <label class="form-label" for="textoBusqueda">Buscar regla</label>
+                    <div class="workspace-field workspace-field-span-3">
+                        <label class="form-label" for="textoBusqueda">Buscar cuenta destino</label>
                         <input id="textoBusqueda" name="textoBusqueda" value="@Model.TextoBusqueda" class="form-control" placeholder="Cuenta origen u observacion" />
                     </div>
                 </div>
@@ -79,8 +75,8 @@
                                     <div class="app-empty-state app-empty-state-inline">
                                         <i class="bi bi-sliders2"></i>
                                         <div>
-                                            <strong>No hay reglas para la consulta actual</strong>
-                                            <p>Ajusta el ejercicio o registra la primera distribucion automatica.</p>
+                                            <strong>No hay cuentas destino para la consulta actual</strong>
+                                            <p>Ajusta la busqueda o registra la primera configuracion de destino.</p>
                                         </div>
                                     </div>
                                 </td>
@@ -90,7 +86,7 @@
                         {
                             @foreach (var regla in Model.Reglas)
                             {
-                                <tr class="workspace-clickable-row" data-edit-url="@Url.Action("Editar", new { ejercicio = regla.Ejercicio, idCuentaDestinoRegla = regla.IdCuentaDestinoRegla })">
+                                <tr class="workspace-clickable-row" data-edit-url="@Url.Action("Editar", new { idCuentaDestinoRegla = regla.IdCuentaDestinoRegla })">
                                     <td>
                                         <strong>@regla.CodigoCuentaOrigen</strong><br />
                                         <span class="text-muted">@regla.NombreCuentaOrigen</span>
@@ -105,12 +101,11 @@
                                     <td>@(string.IsNullOrWhiteSpace(regla.Observacion) ? "-" : regla.Observacion)</td>
                                     <td class="text-end">
                                         <div class="workspace-row-actions justify-content-end">
-                                            <a asp-action="Editar" asp-route-ejercicio="@regla.Ejercicio" asp-route-idCuentaDestinoRegla="@regla.IdCuentaDestinoRegla" class="workspace-row-link">Editar</a>
+                                            <a asp-action="Editar" asp-route-idCuentaDestinoRegla="@regla.IdCuentaDestinoRegla" class="workspace-row-link">Editar</a>
                                             <form asp-action="Eliminar" method="post" class="d-inline">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="idCuentaDestinoRegla" value="@regla.IdCuentaDestinoRegla" />
-                                                <input type="hidden" name="ejercicio" value="@regla.Ejercicio" />
-                                                <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Se eliminara la regla seleccionada. Desea continuar?');">Eliminar</button>
+                                                <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Se eliminara la cuenta destino seleccionada. Desea continuar?');">Eliminar</button>
                                             </form>
                                         </div>
                                     </td>
@@ -123,10 +118,9 @@
 
             @if (Model.Paginacion.TotalPaginas > 1)
             {
-                <nav class="workspace-pagination" aria-label="Paginacion reglas de cuentas destino">
+                <nav class="workspace-pagination" aria-label="Paginacion de cuentas destino">
                     <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaAnterior ? string.Empty : "disabled")"
                        asp-action="Index"
-                       asp-route-ejercicio="@Model.EjercicioActual"
                        asp-route-textoBusqueda="@Model.TextoBusqueda"
                        asp-route-pagina="@(Model.Paginacion.PaginaActual - 1)">Anterior</a>
 
@@ -134,14 +128,12 @@
                     {
                         <a class="btn @(pagina == Model.Paginacion.PaginaActual ? "btn-primary" : "btn-outline-secondary")"
                            asp-action="Index"
-                           asp-route-ejercicio="@Model.EjercicioActual"
                            asp-route-textoBusqueda="@Model.TextoBusqueda"
                            asp-route-pagina="@pagina">@pagina</a>
                     }
 
                     <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaSiguiente ? string.Empty : "disabled")"
                        asp-action="Index"
-                       asp-route-ejercicio="@Model.EjercicioActual"
                        asp-route-textoBusqueda="@Model.TextoBusqueda"
                        asp-route-pagina="@(Model.Paginacion.PaginaActual + 1)">Siguiente</a>
                 </nav>

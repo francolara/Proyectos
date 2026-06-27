@@ -19,6 +19,7 @@
    Description:   Ajusta la ayuda de plan de cuentas para configuracion contable, habilita busqueda remota sobre el plan completo, permite ubicar cuentas como 421 que no estan en la carga inicial, unifica los botones de ayuda con iconos de lupa y brocha y consolida la configuracion de provision en una sola tarjeta con operaciones de compras, ventas, egresos, ingresos y aplicaciones NC.
    ============================================= *@
 @* Firma: FRANCO LARA - 24/06/2026 | Restringe la ayuda popup de cuentas en la vista directa de configuracion contable a cuentas del ultimo nivel y muestra mensaje si se intenta elegir una cuenta intermedia. *@
+@* Firma: FRANCO LARA - 26/06/2026 | Agrega la provision Detracciones, incorpora la tarjeta Parametros para editar ADM_ParametroEmpresa con ayuda del plan de cuentas y retira la configuracion visual de Sistema SPOT desde impuestos. *@
 
 @{
     ViewData["Title"] = "Configuracion contable";
@@ -32,7 +33,7 @@
             <div>
                 <span class="workspace-window-kicker">Parametros contables</span>
                 <h1>Reglas base por operacion</h1>
-                <p>Define origenes, cuentas por documento y cuentas por impuesto usando ayudas de cuenta contable.</p>
+                <p>Define origenes, cuentas por documento, impuestos y parametros usando ayudas de cuenta contable.</p>
             </div>
             <div class="workspace-window-badge">
                 <strong>@Model.Documentos.Count</strong>
@@ -73,7 +74,16 @@
                         <span class="workspace-tab-icon"><i class="bi bi-percent"></i></span>
                         <span class="workspace-tab-copy">
                             <strong>Impuesto</strong>
-                            <small>Cuenta tributaria unica</small>
+                            <small>Cuentas tributarias e impuestos especiales</small>
+                        </span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link workspace-tab-card" id="tab-parametro" data-bs-toggle="tab" data-bs-target="#panel-parametro" type="button" role="tab">
+                        <span class="workspace-tab-icon"><i class="bi bi-sliders"></i></span>
+                        <span class="workspace-tab-copy">
+                            <strong>Parametros</strong>
+                            <small>Cuentas contables por parametro</small>
                         </span>
                     </button>
                 </li>
@@ -328,6 +338,9 @@
                 <div class="tab-pane fade" id="panel-impuesto" role="tabpanel" aria-labelledby="tab-impuesto">
                     @await Html.PartialAsync("_ImpuestoContableTab", new ConfiguracionImpuestoTabViewModel { Titulo = "Impuesto", Items = Model.Impuestos })
                 </div>
+                <div class="tab-pane fade" id="panel-parametro" role="tabpanel" aria-labelledby="tab-parametro">
+                    @await Html.PartialAsync("_ParametroContableTab", new ConfiguracionParametroTabViewModel { Titulo = "Parametros contables", Items = Model.Parametros })
+                </div>
             </div>
         </div>
     </section>
@@ -484,6 +497,11 @@
             let selectedOrigenRow = null;
             let cuentaBusquedaProgramada = null;
 
+            const resolveCuentaValueField = (container) => {
+                const hidden = container?.parentElement?.querySelector(".js-cuenta-id");
+                return hidden?.dataset.cuentaValueField === "codigo" ? "codigo" : "id";
+            };
+
             const markSelected = (row) => {
                 const rows = Array.from(cuentaResultadosBodyEl?.querySelectorAll("[data-config-cuenta-row='true']") || []);
                 rows.forEach((item) => {
@@ -546,9 +564,10 @@
                 renderCuentaResultados(payload.items || []);
 
                 if (activeContainer) {
-                    const currentId = activeContainer.parentElement?.querySelector(".js-cuenta-id")?.value || "";
+                    const currentValue = activeContainer.parentElement?.querySelector(".js-cuenta-id")?.value || "";
+                    const valueField = resolveCuentaValueField(activeContainer);
                     const currentRow = Array.from(cuentaResultadosBodyEl?.querySelectorAll("[data-config-cuenta-row='true']") || [])
-                        .find((row) => String(row.dataset.id || "") === currentId) || null;
+                        .find((row) => String(row.dataset[valueField] || "") === currentValue) || null;
                     markSelected(currentRow);
                 }
             };
@@ -668,8 +687,9 @@
                 if (activeContainer && selectedRow) {
                     const hidden = activeContainer.parentElement?.querySelector(".js-cuenta-id");
                     const text = activeContainer.querySelector(".js-cuenta-texto");
+                    const valueField = resolveCuentaValueField(activeContainer);
                     if (hidden) {
-                        hidden.value = selectedRow.dataset.id || "";
+                        hidden.value = selectedRow.dataset[valueField] || "";
                     }
                     if (text) {
                         text.value = `${selectedRow.dataset.codigo || ""} - ${selectedRow.dataset.nombre || ""}`;

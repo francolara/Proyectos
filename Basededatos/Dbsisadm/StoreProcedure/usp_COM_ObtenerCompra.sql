@@ -14,6 +14,11 @@
 -- Create date:   23/06/2026
 -- Description:   Incluye saldo, descripcion del comprobante y numero de documento de la persona para la edicion y ayudas del modulo.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   26/06/2026
+-- Description:   Devuelve la detraccion configurada en la compra y su documento SPOT independiente.
+-- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.usp_COM_ObtenerCompra
     @IdCompra INT
@@ -57,6 +62,14 @@ BEGIN
             c.Redondeo,
             c.ImporteTotal,
             c.Saldo,
+            cd.IdCompraDetraccion,
+            cd.IdAsiento AS IdAsientoDetraccion,
+            c.TieneDetraccion,
+            c.IdDetraccionSunat,
+            ISNULL(d.CodigoSunat, '') AS CodigoDetraccionSunat,
+            ISNULL(d.Descripcion, '') AS DescripcionDetraccionSunat,
+            c.PorcentajeDetraccion,
+            c.ImporteDetraccion,
             c.Observacion,
             c.Estado
         FROM dbo.COM_Compra AS c
@@ -70,6 +83,10 @@ BEGIN
             ON m.IdMoneda = c.IdMoneda
         INNER JOIN dbo.ADM_TipoComprobante AS tc
             ON tc.CodigoTipoComprobante = c.TipoComprobante
+        LEFT JOIN dbo.ADM_DetraccionSunat AS d
+            ON d.IdDetraccionSunat = c.IdDetraccionSunat
+        LEFT JOIN dbo.COM_CompraDetraccion AS cd
+            ON cd.IdCompra = c.IdCompra
         WHERE c.IdCompra = @IdCompra;
 
         SELECT

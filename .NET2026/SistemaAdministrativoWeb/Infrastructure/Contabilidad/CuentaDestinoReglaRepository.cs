@@ -8,7 +8,7 @@ namespace SistemaAdministrativoWeb.Infrastructure.Contabilidad;
 
 public sealed class CuentaDestinoReglaRepository(IDbConnectionFactory connectionFactory) : ICuentaDestinoReglaRepository
 {
-    public async Task<IReadOnlyCollection<CuentaDestinoReglaResumenDto>> ListarPorEmpresaAsync(int idEmpresa, short ejercicio, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyCollection<CuentaDestinoReglaResumenDto>> ListarPorEmpresaAsync(int idEmpresa, CancellationToken cancellationToken = default)
     {
         var result = new List<CuentaDestinoReglaResumenDto>();
 
@@ -19,7 +19,6 @@ public sealed class CuentaDestinoReglaRepository(IDbConnectionFactory connection
         };
 
         command.Parameters.AddWithValue("@IdEmpresa", idEmpresa);
-        command.Parameters.AddWithValue("@Ejercicio", ejercicio);
 
         await connection.OpenAsync(cancellationToken);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -30,7 +29,6 @@ public sealed class CuentaDestinoReglaRepository(IDbConnectionFactory connection
             {
                 IdCuentaDestinoRegla = reader.GetInt32(reader.GetOrdinal("IdCuentaDestinoRegla")),
                 IdEmpresa = reader.GetInt32(reader.GetOrdinal("IdEmpresa")),
-                Ejercicio = reader.GetInt16(reader.GetOrdinal("Ejercicio")),
                 IdPlanCuentaOrigen = reader.GetInt32(reader.GetOrdinal("IdPlanCuentaOrigen")),
                 CodigoCuentaOrigen = reader.GetString(reader.GetOrdinal("CodigoCuentaOrigen")),
                 NombreCuentaOrigen = reader.GetString(reader.GetOrdinal("NombreCuentaOrigen")),
@@ -44,7 +42,7 @@ public sealed class CuentaDestinoReglaRepository(IDbConnectionFactory connection
         return result;
     }
 
-    public async Task<PagedResult<CuentaDestinoReglaResumenDto>> ListarPaginadoPorEmpresaAsync(int idEmpresa, short ejercicio, string? textoBusqueda, int numeroPagina, int tamanoPagina, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<CuentaDestinoReglaResumenDto>> ListarPaginadoPorEmpresaAsync(int idEmpresa, string? textoBusqueda, int numeroPagina, int tamanoPagina, CancellationToken cancellationToken = default)
     {
         var result = new List<CuentaDestinoReglaResumenDto>();
         var totalRegistros = 0;
@@ -56,7 +54,6 @@ public sealed class CuentaDestinoReglaRepository(IDbConnectionFactory connection
         };
 
         command.Parameters.AddWithValue("@IdEmpresa", idEmpresa);
-        command.Parameters.AddWithValue("@Ejercicio", ejercicio);
         command.Parameters.AddWithValue("@TextoBusqueda", string.IsNullOrWhiteSpace(textoBusqueda) ? (object)DBNull.Value : textoBusqueda.Trim());
         command.Parameters.AddWithValue("@NumeroPagina", numeroPagina);
         command.Parameters.AddWithValue("@TamanoPagina", tamanoPagina);
@@ -71,7 +68,6 @@ public sealed class CuentaDestinoReglaRepository(IDbConnectionFactory connection
             {
                 IdCuentaDestinoRegla = reader.GetInt32(reader.GetOrdinal("IdCuentaDestinoRegla")),
                 IdEmpresa = reader.GetInt32(reader.GetOrdinal("IdEmpresa")),
-                Ejercicio = reader.GetInt16(reader.GetOrdinal("Ejercicio")),
                 IdPlanCuentaOrigen = reader.GetInt32(reader.GetOrdinal("IdPlanCuentaOrigen")),
                 CodigoCuentaOrigen = reader.GetString(reader.GetOrdinal("CodigoCuentaOrigen")),
                 NombreCuentaOrigen = reader.GetString(reader.GetOrdinal("NombreCuentaOrigen")),
@@ -112,7 +108,6 @@ public sealed class CuentaDestinoReglaRepository(IDbConnectionFactory connection
             {
                 IdCuentaDestinoRegla = reader.GetInt32(reader.GetOrdinal("IdCuentaDestinoRegla")),
                 IdEmpresa = reader.GetInt32(reader.GetOrdinal("IdEmpresa")),
-                Ejercicio = reader.GetInt16(reader.GetOrdinal("Ejercicio")),
                 IdPlanCuentaOrigen = reader.GetInt32(reader.GetOrdinal("IdPlanCuentaOrigen")),
                 CodigoCuentaOrigen = reader.GetString(reader.GetOrdinal("CodigoCuentaOrigen")),
                 NombreCuentaOrigen = reader.GetString(reader.GetOrdinal("NombreCuentaOrigen")),
@@ -159,7 +154,6 @@ public sealed class CuentaDestinoReglaRepository(IDbConnectionFactory connection
         };
 
         command.Parameters.AddWithValue("@IdEmpresa", request.IdEmpresa);
-        command.Parameters.AddWithValue("@Ejercicio", request.Ejercicio);
         command.Parameters.AddWithValue("@IdPlanCuentaOrigen", request.IdPlanCuentaOrigen);
         command.Parameters.AddWithValue("@Activo", request.Activo);
         command.Parameters.AddWithValue("@Observacion", (object?)request.Observacion ?? DBNull.Value);

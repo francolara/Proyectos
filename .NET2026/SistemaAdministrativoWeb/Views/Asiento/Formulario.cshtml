@@ -12,6 +12,7 @@
    Description:   Cambia la ayuda de plan de cuentas del asiento a carga inicial Top 100 con filtro remoto, la restringe a cuentas validas, agrega fecha de emision, deja el mes contable informativo y mejora el resumen visual de Debe/Haber/Diferencia sin exigir cuadre obligatorio.
    ============================================= *@
 @* Firma: FRANCO LARA - 24/06/2026 | Restringe la ayuda popup de cuenta contable del asiento manual a cuentas del ultimo nivel y muestra mensaje si se intenta elegir una cuenta intermedia. *@
+@* Firma: FRANCO LARA - 26/06/2026 | Ajusta la ayuda de comprobantes para grabar el codigo del tipo de documento y no su descripcion en el detalle del asiento. *@
 
 @* =============================================
    Author:        FRANCO LARA
@@ -116,7 +117,7 @@
                     </div>
 
                     <div class="workspace-section">
-                        <div class="workspace-section-head">
+                        <div class="workspace-section-head workspace-section-head-compact">
                             <div>
                                 <h2>Detalle contable</h2>
                                 <p>Agrega las lineas del asiento. Cada linea debe tener monto solo en Debe o solo en Haber.</p>
@@ -1321,7 +1322,7 @@
                         glosaDetalleInput.value = construirGlosaDetalleDesdeComprobante(comprobantePersonaSeleccion);
                     }
                     if (tipoDocumentoInput) {
-                        tipoDocumentoInput.value = String(comprobantePersonaSeleccion.descripcionTipoComprobante || "");
+                        tipoDocumentoInput.value = String(comprobantePersonaSeleccion.tipoComprobante || "");
                     }
                     if (serieInput) {
                         serieInput.value = String(comprobantePersonaSeleccion.serie || "");

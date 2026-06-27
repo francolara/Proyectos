@@ -8,10 +8,14 @@
 -- Create date:   16/06/2026
 -- Description:   Agrega busqueda y paginacion server-side para el mantenimiento web de reglas por ejercicio.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   25/06/2026
+-- Description:   Elimina el filtro por ejercicio para listar una sola configuracion de cuentas destino por empresa y cuenta origen.
+-- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_ListarCuentasDestinoReglaPorEmpresa
     @IdEmpresa INT,
-    @Ejercicio SMALLINT,
     @TextoBusqueda NVARCHAR(150) = NULL,
     @NumeroPagina INT = NULL,
     @TamanoPagina INT = NULL
@@ -31,7 +35,6 @@ BEGIN
             SELECT
                 r.IdCuentaDestinoRegla,
                 r.IdEmpresa,
-                r.Ejercicio,
                 r.IdPlanCuentaOrigen,
                 po.CodigoCuenta AS CodigoCuentaOrigen,
                 po.NombreCuenta AS NombreCuentaOrigen,
@@ -46,7 +49,6 @@ BEGIN
                 ON d.IdCuentaDestinoRegla = r.IdCuentaDestinoRegla
                AND d.Activo = 1
             WHERE r.IdEmpresa = @IdEmpresa
-              AND r.Ejercicio = @Ejercicio
               AND (
                     @TextoBusquedaTrabajo IS NULL
                     OR po.CodigoCuenta LIKE '%' + @TextoBusquedaTrabajo + '%'
@@ -56,7 +58,6 @@ BEGIN
             GROUP BY
                 r.IdCuentaDestinoRegla,
                 r.IdEmpresa,
-                r.Ejercicio,
                 r.IdPlanCuentaOrigen,
                 po.CodigoCuenta,
                 po.NombreCuenta,
@@ -66,7 +67,6 @@ BEGIN
         SELECT
             b.IdCuentaDestinoRegla,
             b.IdEmpresa,
-            b.Ejercicio,
             b.IdPlanCuentaOrigen,
             b.CodigoCuentaOrigen,
             b.NombreCuentaOrigen,

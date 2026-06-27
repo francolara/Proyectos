@@ -10,7 +10,8 @@ namespace SistemaAdministrativoWeb.Controllers;
 public class PlanCuentaController(
     ICurrentCompanyAccessor currentCompanyAccessor,
     IPlanCuentaRepository planCuentaRepository,
-    IMonedaRepository monedaRepository) : Controller
+    IMonedaRepository monedaRepository,
+    ICuentaDestinoReglaRepository cuentaDestinoReglaRepository) : Controller
 {
     private const int TamanoPagina = 20;
     private const int TamanoAyudaCuenta = 100;
@@ -30,7 +31,7 @@ public class PlanCuentaController(
         var totalEmpresa = string.IsNullOrWhiteSpace(textoBusqueda) && !nivelCuentaTrabajo.HasValue
             ? cuentas.TotalRecords
             : (await planCuentaRepository.ListarPaginadoPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, null, null, 1, 1, false, false, cancellationToken)).TotalRecords;
-        var model = ConstruirViewModel(cuentas.Items, null);
+        var model = ConstruirViewModel(cuentas.Items, null, null);
         model.TextoBusqueda = textoBusqueda?.Trim() ?? string.Empty;
         model.NivelCuentaFiltro = nivelCuentaTrabajo;
         model.TotalCuentas = cuentas.TotalRecords;
@@ -125,18 +126,32 @@ public class PlanCuentaController(
 
         ViewData["AdminShell"] = true;
 
+        NormalizarConfiguracionDestino(formulario.ConfiguracionDestino);
+        var guardarConfiguracionDestino = TieneConfiguracionDestino(formulario.ConfiguracionDestino);
+
+        if (guardarConfiguracionDestino)
+        {
+            if (!formulario.AceptaMovimiento)
+            {
+                ModelState.AddModelError(string.Empty, "La cuenta debe aceptar movimiento para configurar cuentas destino.");
+            }
+
+            ValidarConfiguracionDestino(formulario.ConfiguracionDestino, nameof(formulario.ConfiguracionDestino));
+        }
+
         if (!ModelState.IsValid)
         {
             var cuentasConError = await planCuentaRepository.ListarPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, false, cancellationToken);
-            var modelConError = ConstruirViewModel(cuentasConError, null);
+            var modelConError = ConstruirViewModel(cuentasConError, null, null);
             modelConError.Formulario = formulario;
+            CompletarTextosFormulario(modelConError.Formulario, cuentasConError);
             modelConError.Monedas = await ObtenerMonedasAsync(cancellationToken);
             return View("Formulario", modelConError);
         }
 
         try
         {
-            await planCuentaRepository.GuardarAsync(new GuardarPlanCuentaRequest
+            var cuentaGuardada = await planCuentaRepository.GuardarAsync(new GuardarPlanCuentaRequest
             {
                 IdPlanCuenta = formulario.IdPlanCuenta,
                 IdEmpresa = currentCompanyAccessor.EmpresaId.Value,
@@ -152,9 +167,42 @@ public class PlanCuentaController(
                 UsuarioRegistro = User.Identity?.Name
             }, cancellationToken);
 
+            if (guardarConfiguracionDestino)
+            {
+                if (!cuentaGuardada.EsUltimoNivel)
+                {
+                    throw new InvalidOperationException("Solo las cuentas de ultimo nivel pueden configurar cuentas destino.");
+                }
+
+                await cuentaDestinoReglaRepository.GuardarAsync(new GuardarCuentaDestinoReglaRequest
+                {
+                    IdEmpresa = currentCompanyAccessor.EmpresaId.Value,
+                    IdPlanCuentaOrigen = cuentaGuardada.IdPlanCuenta,
+                    Activo = formulario.ConfiguracionDestino.Activo,
+                    Observacion = string.IsNullOrWhiteSpace(formulario.ConfiguracionDestino.Observacion)
+                        ? null
+                        : formulario.ConfiguracionDestino.Observacion.Trim(),
+                    UsuarioRegistro = User.Identity?.Name,
+                    Detalles = formulario.ConfiguracionDestino.Detalles
+                        .Select(x => new GuardarCuentaDestinoReglaDetalleRequest
+                        {
+                            Orden = x.Orden,
+                            IdPlanCuentaDestinoCargo = x.IdPlanCuentaDestinoCargo!.Value,
+                            IdPlanCuentaDestinoAbono = x.IdPlanCuentaDestinoAbono!.Value,
+                            Porcentaje = decimal.Round(x.Porcentaje, 4),
+                            Activo = x.Activo
+                        })
+                        .ToList()
+                }, cancellationToken);
+            }
+
             TempData["PlanCuentaOk"] = formulario.IdPlanCuenta.HasValue
-                ? "Cuenta actualizada correctamente."
-                : "Cuenta registrada correctamente.";
+                ? guardarConfiguracionDestino
+                    ? "Cuenta y cuentas destino actualizadas correctamente."
+                    : "Cuenta actualizada correctamente."
+                : guardarConfiguracionDestino
+                    ? "Cuenta y cuentas destino registradas correctamente."
+                    : "Cuenta registrada correctamente.";
 
             return RedirectToAction(nameof(Index));
         }
@@ -162,8 +210,9 @@ public class PlanCuentaController(
         {
             ModelState.AddModelError(string.Empty, ex.Message);
             var cuentasConError = await planCuentaRepository.ListarPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, false, cancellationToken);
-            var modelConError = ConstruirViewModel(cuentasConError, null);
+            var modelConError = ConstruirViewModel(cuentasConError, null, null);
             modelConError.Formulario = formulario;
+            CompletarTextosFormulario(modelConError.Formulario, cuentasConError);
             modelConError.Monedas = await ObtenerMonedasAsync(cancellationToken);
             return View("Formulario", modelConError);
         }
@@ -182,8 +231,11 @@ public class PlanCuentaController(
         var cuentaEditar = idPlanCuenta.HasValue
             ? cuentas.FirstOrDefault(x => x.IdPlanCuenta == idPlanCuenta.Value)
             : null;
+        var cuentaDestinoEditar = cuentaEditar is null
+            ? null
+            : await ObtenerReglaPorCuentaOrigenAsync(currentCompanyAccessor.EmpresaId.Value, cuentaEditar.IdPlanCuenta, cancellationToken);
 
-        var model = ConstruirViewModel(cuentas, cuentaEditar);
+        var model = ConstruirViewModel(cuentas, cuentaEditar, cuentaDestinoEditar);
         model.Monedas = await ObtenerMonedasAsync(cancellationToken);
         return View("Formulario", model);
     }
@@ -203,7 +255,145 @@ public class PlanCuentaController(
             .ToList();
     }
 
-    private PlanCuentaIndexViewModel ConstruirViewModel(IReadOnlyCollection<PlanCuentaDto> cuentas, PlanCuentaDto? cuentaEditar)
+    private async Task<CuentaDestinoReglaDto?> ObtenerReglaPorCuentaOrigenAsync(int idEmpresa, int idPlanCuentaOrigen, CancellationToken cancellationToken)
+    {
+        var reglas = await cuentaDestinoReglaRepository.ListarPorEmpresaAsync(idEmpresa, cancellationToken);
+        var resumen = reglas.FirstOrDefault(x => x.IdPlanCuentaOrigen == idPlanCuentaOrigen);
+        return resumen is null
+            ? null
+            : await cuentaDestinoReglaRepository.ObtenerAsync(resumen.IdCuentaDestinoRegla, cancellationToken);
+    }
+
+    private static void NormalizarConfiguracionDestino(PlanCuentaDestinoConfiguracionViewModel configuracion)
+    {
+        configuracion.Observacion = string.IsNullOrWhiteSpace(configuracion.Observacion)
+            ? null
+            : configuracion.Observacion.Trim();
+
+        configuracion.Detalles = configuracion.Detalles
+            .Where(x => x.IdPlanCuentaDestinoCargo.HasValue
+                     || x.IdPlanCuentaDestinoAbono.HasValue
+                     || x.Porcentaje > 0
+                     || x.Activo)
+            .Select((x, index) =>
+            {
+                x.Orden = (short)(index + 1);
+                return x;
+            })
+            .ToList();
+    }
+
+    private static bool TieneConfiguracionDestino(PlanCuentaDestinoConfiguracionViewModel configuracion)
+    {
+        return configuracion.Detalles.Count > 0;
+    }
+
+    private static void CompletarTextosFormulario(PlanCuentaFormViewModel formulario, IReadOnlyCollection<PlanCuentaDto> cuentas)
+    {
+        if (formulario.IdPlanCuentaPadre.HasValue)
+        {
+            var cuentaPadre = cuentas.FirstOrDefault(x => x.IdPlanCuenta == formulario.IdPlanCuentaPadre.Value);
+            formulario.CuentaPadreTexto = cuentaPadre is null
+                ? string.Empty
+                : $"{cuentaPadre.CodigoCuenta} - {cuentaPadre.NombreCuenta}";
+        }
+
+        foreach (var detalle in formulario.ConfiguracionDestino.Detalles)
+        {
+            if (detalle.IdPlanCuentaDestinoCargo.HasValue)
+            {
+                var cuentaCargo = cuentas.FirstOrDefault(x => x.IdPlanCuenta == detalle.IdPlanCuentaDestinoCargo.Value);
+                detalle.CuentaDestinoCargoTexto = cuentaCargo is null
+                    ? detalle.CuentaDestinoCargoTexto
+                    : $"{cuentaCargo.CodigoCuenta} - {cuentaCargo.NombreCuenta}";
+            }
+
+            if (detalle.IdPlanCuentaDestinoAbono.HasValue)
+            {
+                var cuentaAbono = cuentas.FirstOrDefault(x => x.IdPlanCuenta == detalle.IdPlanCuentaDestinoAbono.Value);
+                detalle.CuentaDestinoAbonoTexto = cuentaAbono is null
+                    ? detalle.CuentaDestinoAbonoTexto
+                    : $"{cuentaAbono.CodigoCuenta} - {cuentaAbono.NombreCuenta}";
+            }
+        }
+    }
+
+    private void ValidarConfiguracionDestino(PlanCuentaDestinoConfiguracionViewModel configuracion, string prefijo)
+    {
+        if (configuracion.Detalles.Count == 0)
+        {
+            ModelState.AddModelError($"{prefijo}.Detalles", "Debe registrar al menos un tramo de cuenta destino.");
+            return;
+        }
+
+        decimal porcentajeTotal = 0;
+
+        for (var i = 0; i < configuracion.Detalles.Count; i++)
+        {
+            var detalle = configuracion.Detalles[i];
+            var detallePrefijo = $"{prefijo}.Detalles[{i}]";
+
+            if (!detalle.IdPlanCuentaDestinoCargo.HasValue)
+            {
+                ModelState.AddModelError($"{detallePrefijo}.IdPlanCuentaDestinoCargo", "Seleccione la cuenta destino.");
+            }
+
+            if (!detalle.IdPlanCuentaDestinoAbono.HasValue)
+            {
+                ModelState.AddModelError($"{detallePrefijo}.IdPlanCuentaDestinoAbono", "Seleccione la contrapartida.");
+            }
+
+            if (detalle.IdPlanCuentaDestinoCargo.HasValue
+                && detalle.IdPlanCuentaDestinoAbono.HasValue
+                && detalle.IdPlanCuentaDestinoCargo.Value == detalle.IdPlanCuentaDestinoAbono.Value)
+            {
+                ModelState.AddModelError($"{detallePrefijo}.IdPlanCuentaDestinoAbono", "Destino y contrapartida no pueden ser la misma cuenta.");
+            }
+
+            if (detalle.Activo)
+            {
+                porcentajeTotal += detalle.Porcentaje;
+            }
+        }
+
+        if (decimal.Round(porcentajeTotal, 4) != 100)
+        {
+            ModelState.AddModelError($"{prefijo}.Detalles", "La suma de porcentajes activos debe ser 100.");
+        }
+    }
+
+    private static PlanCuentaDestinoConfiguracionViewModel CrearConfiguracionDestinoViewModel(CuentaDestinoReglaDto? cuentaDestinoEditar)
+    {
+        if (cuentaDestinoEditar is null)
+        {
+            return new PlanCuentaDestinoConfiguracionViewModel();
+        }
+
+        return new PlanCuentaDestinoConfiguracionViewModel
+        {
+            Activo = cuentaDestinoEditar.Activo,
+            Observacion = cuentaDestinoEditar.Observacion,
+            Detalles = cuentaDestinoEditar.Detalles
+                .OrderBy(x => x.Orden)
+                .Select(x => new CuentaDestinoReglaDetalleFormViewModel
+                {
+                    IdCuentaDestinoReglaDetalle = x.IdCuentaDestinoReglaDetalle,
+                    Orden = x.Orden,
+                    IdPlanCuentaDestinoCargo = x.IdPlanCuentaDestinoCargo,
+                    CuentaDestinoCargoTexto = $"{x.CodigoCuentaDestinoCargo} - {x.NombreCuentaDestinoCargo}",
+                    IdPlanCuentaDestinoAbono = x.IdPlanCuentaDestinoAbono,
+                    CuentaDestinoAbonoTexto = $"{x.CodigoCuentaDestinoAbono} - {x.NombreCuentaDestinoAbono}",
+                    Porcentaje = x.Porcentaje,
+                    Activo = x.Activo
+                })
+                .ToList()
+        };
+    }
+
+    private PlanCuentaIndexViewModel ConstruirViewModel(
+        IReadOnlyCollection<PlanCuentaDto> cuentas,
+        PlanCuentaDto? cuentaEditar,
+        CuentaDestinoReglaDto? cuentaDestinoEditar)
     {
         var items = cuentas
             .Select(x => new PlanCuentaItemViewModel
@@ -250,7 +440,9 @@ public class PlanCuentaController(
                     TipoCambio = cuentaEditar.TipoCambio,
                     AceptaMovimiento = cuentaEditar.AceptaMovimiento,
                     RequiereCentroCosto = cuentaEditar.RequiereCentroCosto,
-                    Estado = cuentaEditar.Estado
+                    Estado = cuentaEditar.Estado,
+                    PermiteConfigurarDestinos = cuentaEditar.EsUltimoNivel || cuentaEditar.AceptaMovimiento || cuentaDestinoEditar is not null,
+                    ConfiguracionDestino = CrearConfiguracionDestinoViewModel(cuentaDestinoEditar)
                 }
         };
     }

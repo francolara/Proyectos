@@ -14,6 +14,11 @@
 -- Create date:   23/06/2026
 -- Description:   Incluye todas las provisiones configurables de compras, ventas, egresos, ingresos y aplicaciones NC.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   26/06/2026
+-- Description:   Incluye el origen de provision para detracciones y la cuenta SPOT dentro de impuestos.
+-- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_ObtenerConfiguracionContableEmpresa
     @IdEmpresa INT
@@ -37,7 +42,7 @@ BEGIN
             ON o.IdOrigen = c.IdOrigen
         WHERE c.IdEmpresa = @IdEmpresa
           AND c.EscenarioOperacion = 'PROVISION'
-          AND c.ModuloOperacion IN ('COM', 'VEN', 'EGR', 'ING', 'APNC');
+          AND c.ModuloOperacion IN ('COM', 'VEN', 'EGR', 'ING', 'APNC', 'DET');
 
         SELECT
             t.IdTipoComprobante,

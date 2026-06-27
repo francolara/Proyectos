@@ -16,6 +16,7 @@ public class CompraController(
     IAsientoPreviewService asientoPreviewService,
     IPlanCuentaRepository planCuentaRepository,
     ITipoAfectacionIgvRepository tipoAfectacionIgvRepository,
+    IDetraccionSunatRepository detraccionSunatRepository,
     IMonedaRepository monedaRepository,
     ITipoComprobanteRepository tipoComprobanteRepository) : Controller
 {
@@ -67,6 +68,9 @@ public class CompraController(
         var tiposAfectacionIgv = (await tipoAfectacionIgvRepository.ListarActivosAsync(cancellationToken))
             .OrderBy(x => x.CodigoSunat)
             .ToList();
+        var detraccionesSunat = (await detraccionSunatRepository.ListarActivasAsync(cancellationToken))
+            .OrderBy(x => x.CodigoSunat)
+            .ToList();
         var compras = await compraRepository.ListarPaginadoPorEmpresaAsync(empresaId, anioTrabajo, mesTrabajo, textoBusqueda, pagina, TamanoPagina, cancellationToken);
 
         var model = ConstruirViewModel(
@@ -83,6 +87,7 @@ public class CompraController(
             tiposComprobante,
             cuentasMovimiento,
             tiposAfectacionIgv,
+            detraccionesSunat,
             compras.Items,
             null);
         model.TotalCompras = compras.TotalRecords;
@@ -181,6 +186,9 @@ public class CompraController(
                 OtrosTributos = formulario.OtrosTributos,
                 Redondeo = formulario.Redondeo,
                 ImporteTotal = formulario.ImporteTotal,
+                TieneDetraccion = formulario.TieneDetraccion,
+                IdDetraccionSunat = formulario.TieneDetraccion ? formulario.IdDetraccionSunat : null,
+                ImporteDetraccion = formulario.TieneDetraccion ? formulario.ImporteDetraccion : 0m,
                 Observacion = string.IsNullOrWhiteSpace(formulario.Observacion) ? null : formulario.Observacion.Trim(),
                 UsuarioRegistro = User.Identity?.Name,
                 Detalles = formulario.Detalles
@@ -197,7 +205,9 @@ public class CompraController(
                     .ToList()
             }, cancellationToken);
 
-            TempData["CompraOk"] = $"Compra provisionada correctamente. Asiento vinculado: {(result.IdAsiento.HasValue ? result.IdAsiento.Value.ToString() : "sin asiento")}.";
+            TempData["CompraOk"] = formulario.TieneDetraccion && result.IdAsientoDetraccion.HasValue
+                ? $"Compra provisionada correctamente. Asiento compra: {(result.IdAsiento.HasValue ? result.IdAsiento.Value.ToString() : "sin asiento")} | Asiento detracción: {result.IdAsientoDetraccion.Value}."
+                : $"Compra provisionada correctamente. Asiento vinculado: {(result.IdAsiento.HasValue ? result.IdAsiento.Value.ToString() : "sin asiento")}.";
             return RedirectToAction(nameof(Index), new { anio = formulario.FechaContabilizacion.Year, mes = formulario.FechaContabilizacion.Month });
         }
         catch (Exception ex)
@@ -430,6 +440,9 @@ public class CompraController(
         var tiposAfectacionIgv = (await tipoAfectacionIgvRepository.ListarActivosAsync(cancellationToken))
             .OrderBy(x => x.CodigoSunat)
             .ToList();
+        var detraccionesSunat = (await detraccionSunatRepository.ListarActivasAsync(cancellationToken))
+            .OrderBy(x => x.CodigoSunat)
+            .ToList();
         var compras = await compraRepository.ListarPorEmpresaAsync(empresaId, periodoTrabajo, cancellationToken);
         var compraEditar = idCompra.HasValue
             ? await compraRepository.ObtenerAsync(idCompra.Value, cancellationToken)
@@ -454,6 +467,7 @@ public class CompraController(
             tiposComprobante,
             cuentasMovimiento,
             tiposAfectacionIgv,
+            detraccionesSunat,
             compras,
             compraEditar));
     }
@@ -489,6 +503,9 @@ public class CompraController(
         var tiposAfectacionIgv = (await tipoAfectacionIgvRepository.ListarActivosAsync(cancellationToken))
             .OrderBy(x => x.CodigoSunat)
             .ToList();
+        var detraccionesSunat = (await detraccionSunatRepository.ListarActivasAsync(cancellationToken))
+            .OrderBy(x => x.CodigoSunat)
+            .ToList();
         var compras = await compraRepository.ListarPorEmpresaAsync(empresaId, periodo, cancellationToken);
 
         var model = ConstruirViewModel(
@@ -505,6 +522,7 @@ public class CompraController(
             tiposComprobante,
             cuentasMovimiento,
             tiposAfectacionIgv,
+            detraccionesSunat,
             compras,
             null);
 
@@ -562,6 +580,10 @@ public class CompraController(
         formulario.OtrosTributos = 0m;
         formulario.Redondeo = 0m;
         formulario.ImporteTotal = formulario.BaseImponible + formulario.Igv;
+        formulario.ImporteDetraccion = formulario.TieneDetraccion
+            ? decimal.Round(formulario.ImporteTotal * (formulario.PorcentajeDetraccion / 100m), 2)
+            : 0m;
+        formulario.SaldoPago = decimal.Round(formulario.ImporteTotal - formulario.ImporteDetraccion, 2);
     }
 
     private void ValidarFormulario(CompraFormViewModel formulario)
@@ -631,6 +653,29 @@ public class CompraController(
             ModelState.AddModelError(string.Empty, "El importe total debe ser igual a la suma del subtotal e IGV.");
         }
 
+        if (formulario.TieneDetraccion)
+        {
+            if (!formulario.IdDetraccionSunat.HasValue || formulario.IdDetraccionSunat.Value <= 0)
+            {
+                ModelState.AddModelError(nameof(formulario.IdDetraccionSunat), "Seleccione el codigo de detraccion.");
+            }
+
+            if (formulario.PorcentajeDetraccion <= 0)
+            {
+                ModelState.AddModelError(nameof(formulario.PorcentajeDetraccion), "La detraccion seleccionada no tiene un porcentaje valido.");
+            }
+
+            if (formulario.ImporteDetraccion <= 0)
+            {
+                ModelState.AddModelError(nameof(formulario.ImporteDetraccion), "El importe de detraccion debe ser mayor a cero.");
+            }
+
+            if (formulario.ImporteDetraccion >= formulario.ImporteTotal && formulario.ImporteTotal > 0)
+            {
+                ModelState.AddModelError(nameof(formulario.ImporteDetraccion), "La detraccion debe ser menor al importe total de la compra.");
+            }
+        }
+
         if (formulario.BaseImponible > 0 && totalDetalle > 0 && decimal.Round(totalDetalle, 2) != decimal.Round(formulario.BaseImponible, 2))
         {
             ModelState.AddModelError(string.Empty, "La suma del detalle debe coincidir con la base imponible.");
@@ -672,6 +717,7 @@ public class CompraController(
         IReadOnlyCollection<TipoComprobanteDto> tiposComprobante,
         IReadOnlyCollection<PlanCuentaDto> cuentasMovimiento,
         IReadOnlyCollection<TipoAfectacionIgvDto> tiposAfectacionIgv,
+        IReadOnlyCollection<DetraccionSunatDto> detraccionesSunat,
         IReadOnlyCollection<CompraResumenDto> compras,
         CompraDto? compraEditar)
     {
@@ -723,6 +769,7 @@ public class CompraController(
             TiposComprobante = tiposComprobante.ToList(),
             CuentasMovimiento = cuentasMovimiento.ToList(),
             TiposAfectacionIgv = tiposAfectacionIgv.ToList(),
+            DetraccionesSunat = detraccionesSunat.ToList(),
             Compras = items,
             ProveedorSeleccionadoTipoDocumento = proveedorSeleccionado?.TipoDocumento ?? compraEditar?.TipoDocumentoProveedor ?? string.Empty,
             ProveedorSeleccionadoNumeroDocumento = proveedorSeleccionado?.NumeroDocumento ?? compraEditar?.NumeroDocumentoProveedor ?? string.Empty,
@@ -739,6 +786,10 @@ public class CompraController(
                     IdProveedor = proveedores.FirstOrDefault()?.IdProveedor,
                     IdConfiguracionContabilizacion = configuraciones.FirstOrDefault()?.IdConfiguracionContabilizacion,
                     TipoComprobante = tiposComprobante.FirstOrDefault()?.CodigoTipoComprobante ?? "01",
+                    TieneDetraccion = false,
+                    PorcentajeDetraccion = 0,
+                    ImporteDetraccion = 0,
+                    SaldoPago = 0,
                     Detalles =
                     [
                         new()
@@ -769,6 +820,14 @@ public class CompraController(
                     OtrosTributos = compraEditar.OtrosTributos,
                     Redondeo = compraEditar.Redondeo,
                     ImporteTotal = compraEditar.ImporteTotal,
+                    TieneDetraccion = compraEditar.TieneDetraccion,
+                    IdDetraccionSunat = compraEditar.IdDetraccionSunat,
+                    DetraccionTexto = string.IsNullOrWhiteSpace(compraEditar.CodigoDetraccionSunat)
+                        ? string.Empty
+                        : $"{compraEditar.CodigoDetraccionSunat} - {compraEditar.DescripcionDetraccionSunat}",
+                    PorcentajeDetraccion = compraEditar.PorcentajeDetraccion,
+                    ImporteDetraccion = compraEditar.ImporteDetraccion,
+                    SaldoPago = compraEditar.Saldo,
                     Observacion = compraEditar.Observacion,
                     Detalles = compraEditar.Detalles
                         .OrderBy(x => x.Item)

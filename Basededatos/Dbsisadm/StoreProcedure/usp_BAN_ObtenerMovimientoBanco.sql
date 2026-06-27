@@ -8,6 +8,7 @@
 -- Create date:   24/06/2026
 -- Description:   Amplia la obtencion de Caja y Bancos devolviendo TipoCambio y Observacion de la cabecera, mas persona por linea y origen/aplicacion de comprobantes en el detalle.
 -- =============================================
+-- Firma: FRANCO LARA - 26/06/2026 | Expone TotalImporteS y TotalImporteD del detalle para mantener consistencia con el nuevo modelo por moneda.
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   24/06/2026
@@ -95,7 +96,9 @@ BEGIN
             d.ReferenciaLinea,
             d.TipoCambioLinea,
             d.Debe,
-            d.Haber
+            d.Haber,
+            d.TotalImporteS,
+            d.TotalImporteD
         FROM dbo.BAN_MovimientoBancoDetalle AS d
         INNER JOIN dbo.BAN_MovimientoBanco AS m
             ON m.IdMovimientoBanco = d.IdMovimientoBanco

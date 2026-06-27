@@ -13,6 +13,11 @@
 -- Create date:   23/06/2026
 -- Description:   Amplia los modulos permitidos para provisiones futuras de egresos, ingresos y aplicaciones NC.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   26/06/2026
+-- Description:   Incorpora el modulo DET para la provision automatica de detracciones en compras.
+-- =============================================
 
 IF OBJECT_ID(N'dbo.CON_ConfiguracionContabilizacion', N'U') IS NULL
 BEGIN
@@ -41,7 +46,7 @@ BEGIN
 
     ALTER TABLE dbo.CON_ConfiguracionContabilizacion
         ADD CONSTRAINT CK_CON_ConfiguracionContabilizacion_ModuloOperacion
-            CHECK (ModuloOperacion IN ('COM', 'VEN', 'EGR', 'ING', 'APNC'));
+            CHECK (ModuloOperacion IN ('COM', 'VEN', 'EGR', 'ING', 'APNC', 'DET'));
 
     ALTER TABLE dbo.CON_ConfiguracionContabilizacion
         ADD CONSTRAINT CK_CON_ConfiguracionContabilizacion_EscenarioOperacion

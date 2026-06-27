@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SistemaAdministrativoWeb.Infrastructure.Contabilidad;
 using SistemaAdministrativoWeb.Infrastructure.Data;
 using SistemaAdministrativoWeb.Infrastructure.Empresas;
+using SistemaAdministrativoWeb.Infrastructure.Parametros;
 using SistemaAdministrativoWeb.ViewModels.Contabilidad;
 
 namespace SistemaAdministrativoWeb.Controllers;
@@ -18,7 +19,8 @@ public class CajaBancoController(
     IPersonaRepository personaRepository,
     ITipoComprobanteRepository tipoComprobanteRepository,
     ICompraRepository compraRepository,
-    IVentaRepository ventaRepository) : Controller
+    IVentaRepository ventaRepository,
+    IParametroEmpresaRepository parametroEmpresaRepository) : Controller
 {
     private const int TamanoPagina = 20;
 
@@ -137,9 +139,11 @@ public class CajaBancoController(
         var filtroTrabajo = string.IsNullOrWhiteSpace(textoBusqueda) ? null : textoBusqueda.Trim();
         var empresaId = currentCompanyAccessor.EmpresaId.Value;
         var compras = await compraRepository.ListarPorEmpresaAsync(empresaId, null, cancellationToken);
+        var detracciones = await compraRepository.ListarDetraccionesPendientesPorEmpresaAsync(empresaId, null, cancellationToken);
         var ventas = await ventaRepository.ListarPorEmpresaAsync(empresaId, null, cancellationToken);
         var configuracionContable = await configuracionContabilizacionRepository.ObtenerConfiguracionContableEmpresaAsync(empresaId, cancellationToken);
         var tiposComprobante = await tipoComprobanteRepository.ListarActivosAsync(false, false, cancellationToken);
+        var cuentaDetraccion = await ObtenerCuentaDetraccionAsync(empresaId, cancellationToken);
         var tipoComprobantePorCodigo = tiposComprobante
             .GroupBy(x => x.CodigoTipoComprobante, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(x => x.Key, x => x.First(), StringComparer.OrdinalIgnoreCase);
@@ -164,6 +168,23 @@ public class CajaBancoController(
                 ImporteTotal = x.ImporteTotal,
                 Saldo = x.Saldo
             })
+            .Concat(detracciones
+                .Where(x => string.Equals(x.NumeroDocumentoPersona, numeroDocumentoTrabajo, StringComparison.OrdinalIgnoreCase) && x.Saldo > 0)
+                .Select(x => new ComprobanteSaldoAyudaDto
+                {
+                    ModuloOperacion = "DET",
+                    IdRegistro = x.IdCompraDetraccion,
+                    FechaEmision = x.FechaEmision,
+                    NombrePersona = x.NombreProveedor,
+                    NumeroDocumentoPersona = x.NumeroDocumentoPersona,
+                    TipoComprobante = "00",
+                    DescripcionTipoComprobante = "Otros",
+                    Serie = x.Serie,
+                    Numero = x.Numero,
+                    CodigoMoneda = x.CodigoMoneda,
+                    ImporteTotal = x.ImporteDetraccion,
+                    Saldo = x.Saldo
+                }))
             .Concat(ventas
                 .Where(x => string.Equals(x.NumeroDocumentoPersona, numeroDocumentoTrabajo, StringComparison.OrdinalIgnoreCase) && x.Saldo > 0)
                 .Select(x => new ComprobanteSaldoAyudaDto
@@ -196,9 +217,13 @@ public class CajaBancoController(
             ok = true,
             items = items.Select(x => new
             {
-                cuentaContable = ResolverCuentaContableComprobante(x, tipoComprobantePorCodigo, configuracionDocumentoPorId),
+                cuentaContable = ResolverCuentaContableComprobante(x, tipoComprobantePorCodigo, configuracionDocumentoPorId, cuentaDetraccion),
                 moduloOperacion = x.ModuloOperacion,
-                moduloOperacionTexto = string.Equals(x.ModuloOperacion, "COM", StringComparison.OrdinalIgnoreCase) ? "Compra" : "Venta",
+                moduloOperacionTexto = string.Equals(x.ModuloOperacion, "COM", StringComparison.OrdinalIgnoreCase)
+                    ? "Compra"
+                    : string.Equals(x.ModuloOperacion, "DET", StringComparison.OrdinalIgnoreCase)
+                        ? "Detraccion"
+                        : "Venta",
                 idRegistro = x.IdRegistro,
                 fechaEmision = x.FechaEmision.ToString("dd/MM/yyyy"),
                 nombrePersona = x.NombrePersona,
@@ -780,7 +805,7 @@ public class CajaBancoController(
                 ModelState.AddModelError($"{prefijo}.Debe", "La linea debe tener monto solo en Debe o solo en Haber.");
             }
 
-            var comprobanteValido = detalle.ModuloOperacionComprobante is "COM" or "VEN"
+            var comprobanteValido = detalle.ModuloOperacionComprobante is "COM" or "VEN" or "DET"
                 && detalle.IdRegistroComprobante.HasValue
                 && detalle.IdRegistroComprobante.Value > 0;
 
@@ -819,7 +844,7 @@ public class CajaBancoController(
             .OrderBy(x => x.CodigoTipoComprobante)
             .Select(x => new OpcionCatalogoViewModel
             {
-                Valor = x.Descripcion,
+                Valor = x.CodigoTipoComprobante,
                 Texto = $"{x.CodigoTipoComprobante} - {x.Descripcion}"
             })
             .ToList();
@@ -863,8 +888,23 @@ public class CajaBancoController(
     private static object? ResolverCuentaContableComprobante(
         ComprobanteSaldoAyudaDto comprobante,
         IReadOnlyDictionary<string, TipoComprobanteDto> tipoComprobantePorCodigo,
-        IReadOnlyDictionary<int, ConfiguracionDocumentoEmpresaDto> configuracionDocumentoPorId)
+        IReadOnlyDictionary<int, ConfiguracionDocumentoEmpresaDto> configuracionDocumentoPorId,
+        (int idPlanCuenta, string cuentaTexto)? cuentaDetraccion)
     {
+        if (string.Equals(comprobante.ModuloOperacion, "DET", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!cuentaDetraccion.HasValue)
+            {
+                return null;
+            }
+
+            return new
+            {
+                idPlanCuenta = cuentaDetraccion.Value.idPlanCuenta,
+                cuentaTexto = cuentaDetraccion.Value.cuentaTexto
+            };
+        }
+
         if (!tipoComprobantePorCodigo.TryGetValue(comprobante.TipoComprobante, out var tipoComprobante))
         {
             return null;
@@ -896,5 +936,38 @@ public class CajaBancoController(
             idPlanCuenta = idPlanCuenta.Value,
             cuentaTexto
         };
+    }
+
+    private async Task<(int idPlanCuenta, string cuentaTexto)?> ObtenerCuentaDetraccionAsync(int idEmpresa, CancellationToken cancellationToken)
+    {
+        var parametros = await parametroEmpresaRepository.ListarPaginadoPorEmpresaAsync(idEmpresa, null, "CTADETRACCION", 1, 20, cancellationToken);
+        var parametro = parametros.Items.FirstOrDefault(x =>
+            x.Activo &&
+            string.Equals(x.CodigoParametro, "CTADETRACCION", StringComparison.OrdinalIgnoreCase));
+
+        if (parametro is null || string.IsNullOrWhiteSpace(parametro.ValorParametro))
+        {
+            return null;
+        }
+
+        var valorParametro = parametro.ValorParametro.Trim();
+        var cuentas = await planCuentaRepository.ListarPorEmpresaAsync(idEmpresa, true, cancellationToken);
+
+        var cuenta = cuentas.FirstOrDefault(x =>
+            string.Equals(x.CodigoCuenta, valorParametro, StringComparison.OrdinalIgnoreCase)
+            && x.Estado
+            && x.AceptaMovimiento);
+
+        if (cuenta is null && int.TryParse(valorParametro, out var idPlanCuenta) && idPlanCuenta > 0)
+        {
+            cuenta = cuentas.FirstOrDefault(x => x.IdPlanCuenta == idPlanCuenta && x.Estado && x.AceptaMovimiento);
+        }
+
+        if (cuenta is null)
+        {
+            return null;
+        }
+
+        return (cuenta.IdPlanCuenta, $"{cuenta.CodigoCuenta} - {cuenta.NombreCuenta}");
     }
 }

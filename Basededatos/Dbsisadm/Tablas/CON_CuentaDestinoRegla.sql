@@ -1,7 +1,11 @@
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   15/06/2026
--- Description:   Cabecera de reglas de cuentas de destino por empresa, ejercicio y cuenta contable origen.
+-- Description:   Cabecera de cuentas destino por empresa y cuenta contable origen.
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   25/06/2026
+-- Description:   Actualiza la clave unica para mantener una sola configuracion por empresa y cuenta origen.
 -- =============================================
 
 IF OBJECT_ID(N'dbo.CON_CuentaDestinoRegla', N'U') IS NULL
@@ -28,5 +32,5 @@ BEGIN
 
     ALTER TABLE dbo.CON_CuentaDestinoRegla
         ADD CONSTRAINT UQ_CON_CuentaDestinoRegla
-            UNIQUE (IdEmpresa, Ejercicio, IdPlanCuentaOrigen);
+            UNIQUE (IdEmpresa, IdPlanCuentaOrigen);
 END;

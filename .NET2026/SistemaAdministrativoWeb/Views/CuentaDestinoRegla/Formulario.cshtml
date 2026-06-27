@@ -6,9 +6,10 @@
    Description:   Migra la seleccion de cuentas en regla de cuenta destino a ayuda modal con carga Top 100 y filtro remoto, unificando los botones de ayuda con iconos de lupa y brocha.
    ============================================= *@
 @* Firma: FRANCO LARA - 24/06/2026 | Restringe la ayuda popup de cuentas en regla de cuenta destino a cuentas del ultimo nivel y muestra mensaje si se intenta elegir una cuenta intermedia. *@
+@* Firma: FRANCO LARA - 25/06/2026 | Renombra el mantenimiento a cuentas destino, elimina el ejercicio del formulario y conserva la configuracion unificada por cuenta origen. *@
 
 @{
-    ViewData["Title"] = "Registrar regla de cuenta destino";
+    ViewData["Title"] = "Registrar cuenta destino";
     ViewData["AdminShell"] = true;
 }
 
@@ -17,12 +18,8 @@
         <div class="workspace-window-head">
             <div>
                 <span class="workspace-window-kicker">Formulario</span>
-                <h1>@(Model.Formulario.IdPlanCuentaOrigen.HasValue ? "Editar regla" : "Registrar regla")</h1>
-                <p>Configura la cuenta origen y sus tramos de distribucion contable para el ejercicio activo.</p>
-            </div>
-            <div class="workspace-window-badge">
-                <strong>@Model.EjercicioActual</strong>
-                <span>ejercicio en edicion</span>
+                <h1>@(Model.Formulario.IdPlanCuentaOrigen.HasValue ? "Editar cuenta destino" : "Registrar cuenta destino")</h1>
+                <p>Configura la cuenta origen y sus tramos de distribucion contable para la empresa activa.</p>
             </div>
         </div>
         <div class="workspace-window-body">
@@ -31,12 +28,7 @@
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
                 <div class="workspace-form-grid">
-                    <div class="workspace-field">
-                        <label asp-for="Formulario.Ejercicio" class="form-label">Ejercicio</label>
-                        <input asp-for="Formulario.Ejercicio" class="form-control" />
-                        <span asp-validation-for="Formulario.Ejercicio" class="text-danger"></span>
-                    </div>
-                    <div class="workspace-field workspace-field-span-2">
+                    <div class="workspace-field workspace-field-span-3">
                         <label asp-for="Formulario.IdPlanCuentaOrigen" class="form-label">Cuenta origen</label>
                         <input type="hidden" asp-for="Formulario.IdPlanCuentaOrigen" id="reglaCuentaOrigenId" />
                         <div class="workspace-lookup-control">
@@ -74,8 +66,8 @@
                             <thead>
                                 <tr>
                                     <th>Orden</th>
-                                    <th>Cuenta cargo</th>
-                                    <th>Cuenta abono</th>
+                                    <th>Cuenta destino</th>
+                                    <th>Contrapartida</th>
                                     <th>%</th>
                                     <th>Activo</th>
                                     <th></th>
@@ -93,7 +85,7 @@
                                             <input type="hidden" asp-for="Formulario.Detalles[i].IdPlanCuentaDestinoCargo" class="js-cuenta-cargo-id" />
                                             <div class="workspace-lookup-control workspace-lookup-control-compact">
                                                 <input class="form-control js-cuenta-cargo-texto" value="@(string.IsNullOrWhiteSpace(Model.Formulario.Detalles[i].CuentaDestinoCargoTexto) ? "Seleccione cuenta" : Model.Formulario.Detalles[i].CuentaDestinoCargoTexto)" readonly />
-                                                <button type="button" class="btn btn-outline-secondary btn-sm workspace-icon-button js-open-cuenta-cargo-modal" title="Buscar cuenta cargo" aria-label="Buscar cuenta cargo"><i class="bi bi-search"></i></button>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm workspace-icon-button js-open-cuenta-cargo-modal" title="Buscar cuenta destino" aria-label="Buscar cuenta destino"><i class="bi bi-search"></i></button>
                                             </div>
                                             <span asp-validation-for="Formulario.Detalles[i].IdPlanCuentaDestinoCargo" class="text-danger"></span>
                                         </td>
@@ -101,7 +93,7 @@
                                             <input type="hidden" asp-for="Formulario.Detalles[i].IdPlanCuentaDestinoAbono" class="js-cuenta-abono-id" />
                                             <div class="workspace-lookup-control workspace-lookup-control-compact">
                                                 <input class="form-control js-cuenta-abono-texto" value="@(string.IsNullOrWhiteSpace(Model.Formulario.Detalles[i].CuentaDestinoAbonoTexto) ? "Seleccione cuenta" : Model.Formulario.Detalles[i].CuentaDestinoAbonoTexto)" readonly />
-                                                <button type="button" class="btn btn-outline-secondary btn-sm workspace-icon-button js-open-cuenta-abono-modal" title="Buscar cuenta abono" aria-label="Buscar cuenta abono"><i class="bi bi-search"></i></button>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm workspace-icon-button js-open-cuenta-abono-modal" title="Buscar contrapartida" aria-label="Buscar contrapartida"><i class="bi bi-search"></i></button>
                                             </div>
                                             <span asp-validation-for="Formulario.Detalles[i].IdPlanCuentaDestinoAbono" class="text-danger"></span>
                                         </td>
@@ -127,8 +119,8 @@
                 </div>
 
                 <div class="workspace-actions">
-                    <button type="submit" class="btn btn-primary">Guardar regla</button>
-                    <a asp-action="Index" asp-route-ejercicio="@Model.EjercicioActual" class="btn btn-outline-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Guardar cuenta destino</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
                 </div>
             </form>
         </div>
@@ -144,14 +136,14 @@
             <input type="hidden" name="Formulario.Detalles[__index__].IdPlanCuentaDestinoCargo" class="js-cuenta-cargo-id" />
             <div class="workspace-lookup-control workspace-lookup-control-compact">
                 <input class="form-control js-cuenta-cargo-texto" value="Seleccione cuenta" readonly />
-                <button type="button" class="btn btn-outline-secondary btn-sm workspace-icon-button js-open-cuenta-cargo-modal" title="Buscar cuenta cargo" aria-label="Buscar cuenta cargo"><i class="bi bi-search"></i></button>
+                <button type="button" class="btn btn-outline-secondary btn-sm workspace-icon-button js-open-cuenta-cargo-modal" title="Buscar cuenta destino" aria-label="Buscar cuenta destino"><i class="bi bi-search"></i></button>
             </div>
         </td>
         <td>
             <input type="hidden" name="Formulario.Detalles[__index__].IdPlanCuentaDestinoAbono" class="js-cuenta-abono-id" />
             <div class="workspace-lookup-control workspace-lookup-control-compact">
                 <input class="form-control js-cuenta-abono-texto" value="Seleccione cuenta" readonly />
-                <button type="button" class="btn btn-outline-secondary btn-sm workspace-icon-button js-open-cuenta-abono-modal" title="Buscar cuenta abono" aria-label="Buscar cuenta abono"><i class="bi bi-search"></i></button>
+                <button type="button" class="btn btn-outline-secondary btn-sm workspace-icon-button js-open-cuenta-abono-modal" title="Buscar contrapartida" aria-label="Buscar contrapartida"><i class="bi bi-search"></i></button>
             </div>
         </td>
         <td class="detalle-porcentaje-cell">

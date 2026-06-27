@@ -8,6 +8,12 @@
 -- Create date:   24/06/2026
 -- Description:   Amplia el detalle de Caja y Bancos para guardar la persona por linea, el origen del comprobante y el importe aplicado al saldo.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   26/06/2026
+-- Description:   Agrega importes por moneda al detalle para conservar total en soles y dolares por linea del movimiento bancario.
+-- =============================================
+-- Firma: FRANCO LARA - 26/06/2026 | Incorpora TotalImporteS y TotalImporteD para conservar equivalencias por moneda en cada linea bancaria.
 
 IF OBJECT_ID(N'dbo.BAN_MovimientoBancoDetalle', N'U') IS NULL
 BEGIN
@@ -29,7 +35,9 @@ BEGIN
         ReferenciaLinea NVARCHAR(100) NULL,
         TipoCambioLinea DECIMAL(18, 6) NULL,
         Debe DECIMAL(18, 2) NOT NULL CONSTRAINT DF_BAN_MovimientoBancoDetalle_Debe DEFAULT (0),
-        Haber DECIMAL(18, 2) NOT NULL CONSTRAINT DF_BAN_MovimientoBancoDetalle_Haber DEFAULT (0)
+        Haber DECIMAL(18, 2) NOT NULL CONSTRAINT DF_BAN_MovimientoBancoDetalle_Haber DEFAULT (0),
+        TotalImporteS DECIMAL(18, 2) NOT NULL CONSTRAINT DF_BAN_MovimientoBancoDetalle_TotalImporteS DEFAULT (0),
+        TotalImporteD DECIMAL(18, 2) NOT NULL CONSTRAINT DF_BAN_MovimientoBancoDetalle_TotalImporteD DEFAULT (0)
     );
 
     ALTER TABLE dbo.BAN_MovimientoBancoDetalle
@@ -73,4 +81,16 @@ IF COL_LENGTH(N'dbo.BAN_MovimientoBancoDetalle', N'ImporteAplicado') IS NULL
 BEGIN
     ALTER TABLE dbo.BAN_MovimientoBancoDetalle
         ADD ImporteAplicado DECIMAL(18,2) NULL;
+END;
+
+IF COL_LENGTH(N'dbo.BAN_MovimientoBancoDetalle', N'TotalImporteS') IS NULL
+BEGIN
+    ALTER TABLE dbo.BAN_MovimientoBancoDetalle
+        ADD TotalImporteS DECIMAL(18,2) NOT NULL CONSTRAINT DF_BAN_MovimientoBancoDetalle_TotalImporteS DEFAULT (0);
+END;
+
+IF COL_LENGTH(N'dbo.BAN_MovimientoBancoDetalle', N'TotalImporteD') IS NULL
+BEGIN
+    ALTER TABLE dbo.BAN_MovimientoBancoDetalle
+        ADD TotalImporteD DECIMAL(18,2) NOT NULL CONSTRAINT DF_BAN_MovimientoBancoDetalle_TotalImporteD DEFAULT (0);
 END;

@@ -6,6 +6,7 @@ using SistemaAdministrativoWeb.Infrastructure.Contabilidad;
 using SistemaAdministrativoWeb.Data;
 using SistemaAdministrativoWeb.Infrastructure.Data;
 using SistemaAdministrativoWeb.Infrastructure.Empresas;
+using SistemaAdministrativoWeb.Infrastructure.Parametros;
 using SistemaAdministrativoWeb.Infrastructure.Security;
 using SistemaAdministrativoWeb.Infrastructure.Suscripciones;
 
@@ -92,6 +93,7 @@ builder.Services.AddScoped<IConfiguracionContabilizacionRepository, Configuracio
 builder.Services.AddScoped<IAsientoPreviewService, AsientoPreviewService>();
 builder.Services.AddScoped<IMonedaRepository, MonedaRepository>();
 builder.Services.AddScoped<IAsientoRepository, AsientoRepository>();
+builder.Services.AddScoped<IDetraccionSunatRepository, DetraccionSunatRepository>();
 builder.Services.AddScoped<IProveedorRepository, ProveedorRepository>();
 builder.Services.AddScoped<ICompraRepository, CompraRepository>();
 builder.Services.AddScoped<IAplicacionNotaCreditoRepository, AplicacionNotaCreditoRepository>();
@@ -103,6 +105,7 @@ builder.Services.AddScoped<IVentaRepository, VentaRepository>();
 builder.Services.AddScoped<IEmpresaRepository, EmpresaRepository>();
 builder.Services.AddScoped<ICurrentCompanyAccessor, SessionCurrentCompanyAccessor>();
 builder.Services.AddScoped<ICuentaAdministradoraRepository, CuentaAdministradoraRepository>();
+builder.Services.AddScoped<IParametroEmpresaRepository, ParametroEmpresaRepository>();
 builder.Services.AddScoped<IdentityStartupSeeder>();
 builder.Services.AddHttpClient<ITurnstileValidationService, TurnstileValidationService>();
 

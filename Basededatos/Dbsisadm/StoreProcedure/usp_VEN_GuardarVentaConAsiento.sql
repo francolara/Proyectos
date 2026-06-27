@@ -24,6 +24,7 @@
 -- Create date:   24/06/2026
 -- Description:   Unifica el estado de la provision de venta a PROVISIONADO.
 -- =============================================
+-- Firma: FRANCO LARA - 26/06/2026 | Guarda tipo documento por codigo en ventas y calcula equivalencias en soles y dolares por linea del asiento generado.
 
 CREATE OR ALTER PROCEDURE dbo.usp_VEN_GuardarVentaConAsiento
     @IdVenta INT = NULL,
@@ -748,6 +749,8 @@ BEGIN
             IdCliente,
             Debe,
             Haber,
+            TotalImporteS,
+            TotalImporteD,
             ReferenciaLinea,
             UsuarioRegistro
         )
@@ -756,15 +759,32 @@ BEGIN
             d.Item,
             d.IdPlanCuenta,
             d.GlosaDetalle,
-            @DescripcionTipoComprobante,
+            @TipoComprobante,
             @NumeroDocumentoCliente,
             @Serie,
             @IdCliente,
             d.Debe,
             d.Haber,
+            CASE
+                WHEN @CodigoMoneda = 'USD' THEN ROUND(calc.ImporteLinea * calc.TipoCambioAplicado, 2)
+                ELSE calc.ImporteLinea
+            END,
+            CASE
+                WHEN @CodigoMoneda = 'USD' THEN calc.ImporteLinea
+                ELSE ROUND(calc.ImporteLinea / NULLIF(calc.TipoCambioAplicado, 0), 2)
+            END,
             @Numero,
             @UsuarioRegistro
         FROM @AsientoDetalle AS d
+        CROSS APPLY
+        (
+            SELECT
+                CASE
+                    WHEN d.Debe > 0 THEN d.Debe
+                    ELSE d.Haber
+                END AS ImporteLinea,
+                CASE WHEN @TipoCambio > 0 THEN @TipoCambio ELSE 1 END AS TipoCambioAplicado
+        ) AS calc
         ORDER BY
             d.Item ASC;
 

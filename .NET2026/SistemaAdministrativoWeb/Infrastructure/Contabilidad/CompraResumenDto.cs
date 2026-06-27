@@ -32,6 +32,10 @@ public class CompraResumenDto
     public decimal Redondeo { get; init; }
     public decimal ImporteTotal { get; init; }
     public decimal Saldo { get; init; }
+    public bool TieneDetraccion { get; init; }
+    public int? IdDetraccionSunat { get; init; }
+    public decimal PorcentajeDetraccion { get; init; }
+    public decimal ImporteDetraccion { get; init; }
     public string? Observacion { get; init; }
     public string Estado { get; init; } = string.Empty;
     public string Situacion { get; init; } = string.Empty;

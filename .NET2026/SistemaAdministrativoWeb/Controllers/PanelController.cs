@@ -72,7 +72,7 @@ public class PanelController(
                 },
                 new PanelModuloViewModel
                 {
-                    Titulo = "Reglas destino",
+                    Titulo = "Cuentas destino",
                     Descripcion = "Equivalencias contables por ejercicio para distribuciones automaticas.",
                     Icono = "bi-sliders2",
                     Url = "/CuentaDestinoRegla",

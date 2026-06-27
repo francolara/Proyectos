@@ -8,6 +8,11 @@
 -- Create date:   18/06/2026
 -- Description:   Reemplaza NaturalezaSaldo por ColBalance, agrega IdMoneda/TipoCambio y valida longitud por parametros de grado.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   25/06/2026
+-- Description:   Devuelve EsUltimoNivel al grabar para soportar la validacion opcional de cuentas destino sin perder el flujo normal de guardado.
+-- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_GuardarPlanCuentaPorEmpresa
     @IdPlanCuenta INT = NULL,
@@ -221,6 +226,17 @@ BEGIN
             pc.IdMoneda,
             pc.TipoCambio,
             pc.AceptaMovimiento,
+            CAST(CASE
+                     WHEN EXISTS
+                     (
+                         SELECT 1
+                         FROM dbo.CON_PlanCuenta AS h
+                         WHERE h.IdEmpresa = pc.IdEmpresa
+                           AND h.IdPlanCuentaPadre = pc.IdPlanCuenta
+                     )
+                         THEN 0
+                     ELSE 1
+                 END AS BIT) AS EsUltimoNivel,
             pc.RequiereCentroCosto,
             pc.Estado
         FROM dbo.CON_PlanCuenta AS pc

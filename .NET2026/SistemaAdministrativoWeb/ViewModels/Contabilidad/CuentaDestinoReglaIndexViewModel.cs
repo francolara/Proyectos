@@ -6,7 +6,6 @@ public sealed class CuentaDestinoReglaIndexViewModel
 {
     public int IdEmpresa { get; set; }
     public string EmpresaNombre { get; set; } = string.Empty;
-    public short EjercicioActual { get; set; }
     public string TextoBusqueda { get; set; } = string.Empty;
     public int TotalReglas { get; set; }
     public int TotalActivas { get; set; }

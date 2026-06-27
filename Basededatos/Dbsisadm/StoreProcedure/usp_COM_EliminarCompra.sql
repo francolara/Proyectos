@@ -8,6 +8,11 @@
 -- Create date:   24/06/2026
 -- Description:   Impide eliminar compras con pagos aplicados; solo permite eliminar si el comprobante sigue pendiente.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   26/06/2026
+-- Description:   Elimina tambien el documento y asiento de detraccion, validando que ambos saldos sigan pendientes.
+-- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.usp_COM_EliminarCompra
     @IdCompra INT,
@@ -20,16 +25,29 @@ BEGIN
     BEGIN TRY
 
         DECLARE @IdAsiento INT
+        DECLARE @IdAsientoDetraccion INT
+        DECLARE @IdCompraDetraccion INT
         DECLARE @ImporteTotal DECIMAL(18, 2)
         DECLARE @Saldo DECIMAL(18, 2)
+        DECLARE @ImporteDetraccion DECIMAL(18, 2)
+        DECLARE @SaldoDetraccion DECIMAL(18, 2)
 
         SELECT
             @IdAsiento = c.IdAsiento,
             @ImporteTotal = c.ImporteTotal,
-            @Saldo = c.Saldo
+            @Saldo = c.Saldo,
+            @ImporteDetraccion = c.ImporteDetraccion
         FROM dbo.COM_Compra AS c
         WHERE c.IdCompra = @IdCompra
           AND c.IdEmpresa = @IdEmpresa;
+
+        SELECT
+            @IdCompraDetraccion = cd.IdCompraDetraccion,
+            @IdAsientoDetraccion = cd.IdAsiento,
+            @SaldoDetraccion = cd.Saldo
+        FROM dbo.COM_CompraDetraccion AS cd
+        WHERE cd.IdCompra = @IdCompra
+          AND cd.IdEmpresa = @IdEmpresa;
 
         IF @IdAsiento IS NULL AND NOT EXISTS
         (
@@ -47,7 +65,29 @@ BEGIN
             RAISERROR(N'La compra no puede eliminarse porque ya tiene pagos aplicados. Primero elimine el recibo o movimiento bancario relacionado.', 16, 1);
         END;
 
+        IF @IdCompraDetraccion IS NOT NULL
+           AND ISNULL(@SaldoDetraccion, 0) < ISNULL(@ImporteDetraccion, 0)
+        BEGIN
+            RAISERROR(N'La compra no puede eliminarse porque la detraccion ya tiene pagos aplicados. Primero elimine el pago de detraccion relacionado.', 16, 1);
+        END;
+
         BEGIN TRAN;
+
+        IF @IdCompraDetraccion IS NOT NULL
+        BEGIN
+            DELETE FROM dbo.COM_CompraDetraccion
+            WHERE IdCompraDetraccion = @IdCompraDetraccion;
+
+            IF @IdAsientoDetraccion IS NOT NULL
+            BEGIN
+                DELETE FROM dbo.CON_AsientoDetalle
+                WHERE IdAsiento = @IdAsientoDetraccion;
+
+                DELETE FROM dbo.CON_Asiento
+                WHERE IdAsiento = @IdAsientoDetraccion
+                  AND IdEmpresa = @IdEmpresa;
+            END;
+        END;
 
         DELETE FROM dbo.COM_CompraDetalle
         WHERE IdCompra = @IdCompra;

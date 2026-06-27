@@ -18,12 +18,16 @@
    Description:   Reemplaza los botones de ayuda de cuenta padre por iconos de lupa y brocha.
    ============================================= *@
 
+@* Firma: FRANCO LARA - 25/06/2026 | Agrega la configuracion de cuentas destino y contrapartida desde plan de cuentas para cuentas operativas o de ultimo nivel usando la misma ayuda contable del mantenimiento central. *@
+
 @{
     ViewData["Title"] = Model.Formulario.IdPlanCuenta.HasValue ? "Editar cuenta contable" : "Registrar cuenta contable";
     ViewData["AdminShell"] = true;
     var cuentaPadreTexto = string.IsNullOrWhiteSpace(Model.Formulario.CuentaPadreTexto)
         ? "Sin padre"
         : Model.Formulario.CuentaPadreTexto;
+    var mostrarDestinos = Model.Formulario.PermiteConfigurarDestinos || Model.Formulario.AceptaMovimiento;
+    var forzarMostrarDestinos = Model.Formulario.PermiteConfigurarDestinos || Model.Formulario.ConfiguracionDestino.Detalles.Count > 0;
 }
 
 <section class="dashboard-shell">
@@ -41,7 +45,7 @@
         </div>
 
         <div class="workspace-window-body">
-            <form asp-action="Guardar" method="post">
+            <form asp-action="Guardar" method="post" id="planCuentaForm">
                 @Html.AntiForgeryToken()
                 <input type="hidden" asp-for="Formulario.IdPlanCuenta" />
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
@@ -103,7 +107,7 @@
 
                 <div class="workspace-check-grid">
                     <label class="workspace-check">
-                        <input asp-for="Formulario.AceptaMovimiento" class="form-check-input" />
+                        <input asp-for="Formulario.AceptaMovimiento" class="form-check-input" id="aceptaMovimiento" />
                         <span>Acepta movimiento</span>
                     </label>
                     <label class="workspace-check">
@@ -116,6 +120,87 @@
                     </label>
                 </div>
 
+                <section class="workspace-section @(mostrarDestinos ? string.Empty : "d-none")" id="destino-config-section" data-force-visible="@(forzarMostrarDestinos ? "true" : "false")">
+                    <div class="workspace-section-head">
+                        <div>
+                            <h2>Cuentas destino</h2>
+                            <p>Define destino y contrapartida para esta cuenta. Solo aplica a cuentas operativas o de ultimo nivel.</p>
+                        </div>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="agregar-destino">Agregar tramo</button>
+                    </div>
+
+                    <div class="workspace-form-grid mb-3">
+                        <div class="workspace-field workspace-field-span-2">
+                            <label asp-for="Formulario.ConfiguracionDestino.Observacion" class="form-label">Observacion</label>
+                            <textarea asp-for="Formulario.ConfiguracionDestino.Observacion" class="form-control" rows="2"></textarea>
+                            <span asp-validation-for="Formulario.ConfiguracionDestino.Observacion" class="text-danger"></span>
+                        </div>
+                        <div class="workspace-field">
+                            <label class="form-label d-block">Estado</label>
+                            <label class="workspace-check">
+                                <input asp-for="Formulario.ConfiguracionDestino.Activo" class="form-check-input" />
+                                <span>Configuracion activa</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive workspace-table-wrap">
+                        <table class="table align-middle app-table workspace-table" id="destino-table">
+                            <thead>
+                                <tr>
+                                    <th>Orden</th>
+                                    <th>Cuenta destino</th>
+                                    <th>Contrapartida</th>
+                                    <th>%</th>
+                                    <th>Activo</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (var i = 0; i < Model.Formulario.ConfiguracionDestino.Detalles.Count; i++)
+                                {
+                                    <tr>
+                                        <td class="detalle-orden-cell">
+                                            <input asp-for="Formulario.ConfiguracionDestino.Detalles[i].Orden" class="form-control" readonly />
+                                            <span asp-validation-for="Formulario.ConfiguracionDestino.Detalles[i].Orden" class="text-danger"></span>
+                                        </td>
+                                        <td>
+                                            <input type="hidden" asp-for="Formulario.ConfiguracionDestino.Detalles[i].IdPlanCuentaDestinoCargo" class="js-destino-cargo-id" />
+                                            <div class="workspace-lookup-control workspace-lookup-control-compact">
+                                                <input class="form-control js-destino-cargo-texto" value="@(string.IsNullOrWhiteSpace(Model.Formulario.ConfiguracionDestino.Detalles[i].CuentaDestinoCargoTexto) ? "Seleccione cuenta" : Model.Formulario.ConfiguracionDestino.Detalles[i].CuentaDestinoCargoTexto)" readonly />
+                                                <button type="button" class="btn btn-outline-secondary btn-sm workspace-icon-button js-open-destino-cargo-modal" title="Buscar cuenta destino" aria-label="Buscar cuenta destino"><i class="bi bi-search"></i></button>
+                                            </div>
+                                            <span asp-validation-for="Formulario.ConfiguracionDestino.Detalles[i].IdPlanCuentaDestinoCargo" class="text-danger"></span>
+                                        </td>
+                                        <td>
+                                            <input type="hidden" asp-for="Formulario.ConfiguracionDestino.Detalles[i].IdPlanCuentaDestinoAbono" class="js-destino-abono-id" />
+                                            <div class="workspace-lookup-control workspace-lookup-control-compact">
+                                                <input class="form-control js-destino-abono-texto" value="@(string.IsNullOrWhiteSpace(Model.Formulario.ConfiguracionDestino.Detalles[i].CuentaDestinoAbonoTexto) ? "Seleccione cuenta" : Model.Formulario.ConfiguracionDestino.Detalles[i].CuentaDestinoAbonoTexto)" readonly />
+                                                <button type="button" class="btn btn-outline-secondary btn-sm workspace-icon-button js-open-destino-abono-modal" title="Buscar contrapartida" aria-label="Buscar contrapartida"><i class="bi bi-search"></i></button>
+                                            </div>
+                                            <span asp-validation-for="Formulario.ConfiguracionDestino.Detalles[i].IdPlanCuentaDestinoAbono" class="text-danger"></span>
+                                        </td>
+                                        <td class="detalle-porcentaje-cell">
+                                            <input asp-for="Formulario.ConfiguracionDestino.Detalles[i].Porcentaje" class="form-control js-destino-porcentaje" />
+                                            <span asp-validation-for="Formulario.ConfiguracionDestino.Detalles[i].Porcentaje" class="text-danger"></span>
+                                        </td>
+                                        <td class="text-center">
+                                            <input asp-for="Formulario.ConfiguracionDestino.Detalles[i].Activo" class="form-check-input js-destino-activo" />
+                                        </td>
+                                        <td class="text-end">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm js-remove-destino-row">Quitar</button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="workspace-inline-note">
+                        <strong>Total activo:</strong> <span id="destino-porcentaje-total">0.0000</span>
+                    </div>
+                </section>
+
                 <div class="workspace-actions">
                     <button type="submit" class="btn btn-primary">Guardar cuenta</button>
                     <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
@@ -124,6 +209,38 @@
         </div>
     </section>
 </section>
+
+<template id="destino-row-template">
+    <tr>
+        <td class="detalle-orden-cell">
+            <input name="Formulario.ConfiguracionDestino.Detalles[__index__].Orden" class="form-control" readonly value="0" />
+        </td>
+        <td>
+            <input type="hidden" name="Formulario.ConfiguracionDestino.Detalles[__index__].IdPlanCuentaDestinoCargo" class="js-destino-cargo-id" />
+            <div class="workspace-lookup-control workspace-lookup-control-compact">
+                <input class="form-control js-destino-cargo-texto" value="Seleccione cuenta" readonly />
+                <button type="button" class="btn btn-outline-secondary btn-sm workspace-icon-button js-open-destino-cargo-modal" title="Buscar cuenta destino" aria-label="Buscar cuenta destino"><i class="bi bi-search"></i></button>
+            </div>
+        </td>
+        <td>
+            <input type="hidden" name="Formulario.ConfiguracionDestino.Detalles[__index__].IdPlanCuentaDestinoAbono" class="js-destino-abono-id" />
+            <div class="workspace-lookup-control workspace-lookup-control-compact">
+                <input class="form-control js-destino-abono-texto" value="Seleccione cuenta" readonly />
+                <button type="button" class="btn btn-outline-secondary btn-sm workspace-icon-button js-open-destino-abono-modal" title="Buscar contrapartida" aria-label="Buscar contrapartida"><i class="bi bi-search"></i></button>
+            </div>
+        </td>
+        <td class="detalle-porcentaje-cell">
+            <input name="Formulario.ConfiguracionDestino.Detalles[__index__].Porcentaje" class="form-control js-destino-porcentaje" value="0" />
+        </td>
+        <td class="text-center">
+            <input name="Formulario.ConfiguracionDestino.Detalles[__index__].Activo" class="form-check-input js-destino-activo" type="checkbox" value="true" checked />
+            <input name="Formulario.ConfiguracionDestino.Detalles[__index__].Activo" type="hidden" value="false" />
+        </td>
+        <td class="text-end">
+            <button type="button" class="btn btn-outline-secondary btn-sm js-remove-destino-row">Quitar</button>
+        </td>
+    </tr>
+</template>
 
 <div class="modal fade workspace-modal" id="cuentaPadreModal" tabindex="-1" aria-labelledby="cuentaPadreModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
@@ -194,6 +311,71 @@
     </div>
 </div>
 
+<div class="modal fade workspace-modal" id="destinoCuentaModal" tabindex="-1" aria-labelledby="destinoCuentaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content workspace-modal-content">
+            <div class="modal-header workspace-modal-header">
+                <div>
+                    <span class="workspace-window-kicker">Ayuda contable</span>
+                    <h2 class="workspace-modal-title" id="destinoCuentaModalLabel">Seleccionar cuenta contable</h2>
+                    <p class="workspace-modal-subtitle">Solo se permite confirmar cuentas de nivel 5 para destino y contrapartida.</p>
+                </div>
+                <button type="button" class="btn-close workspace-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body workspace-modal-body">
+                <div class="workspace-filter-card mt-0">
+                    <div class="workspace-filter-grid">
+                        <div class="workspace-field workspace-field-span-2">
+                            <label class="form-label" for="destinoCuentaFiltro">Filtro</label>
+                            <input id="destinoCuentaFiltro" class="form-control" placeholder="Codigo o nombre de cuenta" autocomplete="off" />
+                        </div>
+                        <div class="workspace-field">
+                            <label class="form-label" for="destinoCuentaNivelFiltro">Nivel</label>
+                            <select id="destinoCuentaNivelFiltro" class="form-select">
+                                <option value="">Todos</option>
+                                @for (var nivel = 1; nivel <= 5; nivel++)
+                                {
+                                    <option value="@nivel">@nivel</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-responsive workspace-table-wrap">
+                    <table class="table align-middle app-table workspace-table workspace-lookup-table">
+                        <thead>
+                            <tr>
+                                <th class="workspace-lookup-select-cell">Sel.</th>
+                                <th>Codigo</th>
+                                <th>Cuenta</th>
+                                <th>Nivel</th>
+                                <th>Centro costo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="destinoCuentaResultados">
+                            <tr data-destino-empty-row="true" class="d-none">
+                                <td colspan="5">
+                                    <div class="app-empty-state app-empty-state-inline">
+                                        <i class="bi bi-search"></i>
+                                        <div>
+                                            <strong>No hay cuentas con ese filtro</strong>
+                                            <p>Ajusta el texto o el nivel para ubicar la cuenta contable.</p>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer workspace-modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="aceptarDestinoCuenta">Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
@@ -208,8 +390,32 @@
             const resultadosEl = document.getElementById("cuentaPadreResultados");
             const filaVacia = resultadosEl?.querySelector("[data-empty-row='true']");
             const buscarCuentasUrl = '@Url.Action("BuscarAyuda", "PlanCuenta")';
+            const aceptaMovimientoEl = document.getElementById("aceptaMovimiento");
+            const destinoSection = document.getElementById("destino-config-section");
+            const destinoTableBody = document.querySelector("#destino-table tbody");
+            const destinoTemplate = document.getElementById("destino-row-template");
+            const agregarDestinoButton = document.getElementById("agregar-destino");
+            const destinoTotalLabel = document.getElementById("destino-porcentaje-total");
+            const destinoModalEl = document.getElementById("destinoCuentaModal");
+            const destinoModal = destinoModalEl && window.bootstrap ? bootstrap.Modal.getOrCreateInstance(destinoModalEl) : null;
+            const destinoResultadosEl = document.getElementById("destinoCuentaResultados");
+            const destinoFilaVacia = destinoResultadosEl?.querySelector("[data-destino-empty-row='true']");
+            const destinoFiltro = document.getElementById("destinoCuentaFiltro");
+            const destinoNivelFiltro = document.getElementById("destinoCuentaNivelFiltro");
             let seleccion = cuentaPadreId?.value ? { idPlanCuenta: cuentaPadreId.value } : null;
             let busquedaProgramada = null;
+            let destinoSeleccion = null;
+            let destinoTarget = null;
+            let destinoBusquedaProgramada = null;
+
+            function toggleDestinoSection() {
+                if (!destinoSection || !aceptaMovimientoEl) {
+                    return;
+                }
+
+                const forceVisible = destinoSection.dataset.forceVisible === "true";
+                destinoSection.classList.toggle("d-none", !aceptaMovimientoEl.checked && !forceVisible);
+            }
 
             function marcarFila() {
                 const filas = Array.from(resultadosEl?.querySelectorAll("[data-cuenta-row='true']") || []);
@@ -292,6 +498,160 @@
                 }, 250);
             }
 
+            function marcarFilaDestino() {
+                const filas = Array.from(destinoResultadosEl?.querySelectorAll("[data-destino-row='true']") || []);
+                filas.forEach((item) => {
+                    const seleccionado = destinoSeleccion && item.dataset.id === String(destinoSeleccion.idPlanCuenta);
+                    item.classList.toggle("is-selected", seleccionado);
+                    const radio = item.querySelector("input[type='radio']");
+                    if (radio) {
+                        radio.checked = Boolean(seleccionado);
+                    }
+                });
+            }
+
+            function renderDestinoResultados(items) {
+                if (!destinoResultadosEl) {
+                    return;
+                }
+
+                destinoResultadosEl.querySelectorAll("[data-destino-row='true']").forEach((fila) => fila.remove());
+                destinoFilaVacia?.classList.toggle("d-none", items.length > 0);
+
+                items.forEach((item) => {
+                    const fila = document.createElement("tr");
+                    fila.className = "workspace-lookup-row";
+                    fila.dataset.destinoRow = "true";
+                    fila.dataset.id = String(item.idPlanCuenta || "");
+                    fila.dataset.codigo = String(item.codigoCuenta || "");
+                    fila.dataset.nombre = String(item.nombreCuenta || "");
+                    fila.innerHTML = `
+                        <td class="workspace-lookup-select-cell"><input class="form-check-input" type="radio" name="destinoCuentaSeleccion" value="${String(item.idPlanCuenta || "")}" /></td>
+                        <td class="workspace-tree-code">${String(item.codigoCuenta || "")}</td>
+                        <td>${String(item.nombreCuenta || "")}</td>
+                        <td>${String(item.nivelCuenta || "")}</td>
+                        <td>${item.requiereCentroCosto ? "Si" : "No"}</td>`;
+                    fila.addEventListener("click", () => {
+                        destinoSeleccion = item;
+                        marcarFilaDestino();
+                    });
+                    destinoResultadosEl.appendChild(fila);
+                });
+
+                marcarFilaDestino();
+            }
+
+            async function cargarDestinoResultados() {
+                const params = new URLSearchParams({ tamanoPagina: "100", soloUltimoNivel: "true" });
+                const texto = String(destinoFiltro?.value || "").trim();
+                const nivel = String(destinoNivelFiltro?.value || "").trim();
+                if (texto.length >= 2) {
+                    params.append("textoBusqueda", texto);
+                }
+                if (nivel) {
+                    params.append("nivelCuenta", nivel);
+                }
+
+                const response = await fetch(`${buscarCuentasUrl}?${params.toString()}`, { cache: "no-store" });
+                const payload = await response.json();
+                if (!response.ok || !payload.ok) {
+                    throw new Error(payload.mensaje || "No se pudo cargar el plan de cuentas.");
+                }
+
+                renderDestinoResultados(payload.items || []);
+            }
+
+            function programarBusquedaDestino() {
+                if (destinoBusquedaProgramada) {
+                    window.clearTimeout(destinoBusquedaProgramada);
+                }
+
+                destinoBusquedaProgramada = window.setTimeout(async () => {
+                    try {
+                        await cargarDestinoResultados();
+                    } catch (error) {
+                        console.warn(error);
+                        renderDestinoResultados([]);
+                    }
+                }, 250);
+            }
+
+            function bindDestinoRowActions(row) {
+                row.querySelector(".js-remove-destino-row")?.addEventListener("click", () => {
+                    row.remove();
+                    refreshDestinoRows();
+                });
+
+                row.querySelector(".js-open-destino-cargo-modal")?.addEventListener("click", async () => {
+                    destinoTarget = { tipo: "cargo", row };
+                    const cuentaIdActual = row.querySelector(".js-destino-cargo-id")?.value || "";
+                    destinoSeleccion = cuentaIdActual ? { idPlanCuenta: cuentaIdActual } : null;
+                    try {
+                        await cargarDestinoResultados();
+                    } catch (error) {
+                        console.warn(error);
+                        renderDestinoResultados([]);
+                    }
+                    destinoModal?.show();
+                });
+
+                row.querySelector(".js-open-destino-abono-modal")?.addEventListener("click", async () => {
+                    destinoTarget = { tipo: "abono", row };
+                    const cuentaIdActual = row.querySelector(".js-destino-abono-id")?.value || "";
+                    destinoSeleccion = cuentaIdActual ? { idPlanCuenta: cuentaIdActual } : null;
+                    try {
+                        await cargarDestinoResultados();
+                    } catch (error) {
+                        console.warn(error);
+                        renderDestinoResultados([]);
+                    }
+                    destinoModal?.show();
+                });
+            }
+
+            function refreshDestinoRows() {
+                if (!destinoTableBody || !destinoTotalLabel) {
+                    return;
+                }
+
+                const rows = Array.from(destinoTableBody.querySelectorAll("tr"));
+                let total = 0;
+
+                rows.forEach((row, index) => {
+                    row.querySelectorAll("input, select, textarea, span").forEach((element) => {
+                        ["name", "id", "for"].forEach((attribute) => {
+                            const currentValue = element.getAttribute(attribute);
+                            if (!currentValue) {
+                                return;
+                            }
+
+                            const updatedValue = currentValue
+                                .replaceAll("__index__", index)
+                                .replace(/Formulario\.ConfiguracionDestino\.Detalles\[\d+\]/g, `Formulario.ConfiguracionDestino.Detalles[${index}]`)
+                                .replace(/Formulario_ConfiguracionDestino_Detalles_\d+__/g, `Formulario_ConfiguracionDestino_Detalles_${index}__`);
+
+                            if (updatedValue !== currentValue) {
+                                element.setAttribute(attribute, updatedValue);
+                            }
+                        });
+                    });
+
+                    const orderInput = row.querySelector('input[name$=".Orden"]');
+                    if (orderInput) {
+                        orderInput.value = (index + 1).toString();
+                    }
+
+                    const activeInput = row.querySelector(".js-destino-activo");
+                    const percentageInput = row.querySelector(".js-destino-porcentaje");
+                    const percentageValue = parseFloat((percentageInput?.value ?? "0").replace(",", "."));
+                    if (activeInput?.checked && !Number.isNaN(percentageValue)) {
+                        total += percentageValue;
+                    }
+                });
+
+                destinoTotalLabel.textContent = total.toFixed(4);
+            }
+
             modalEl?.addEventListener("show.bs.modal", async function () {
                 try {
                     await cargarResultados();
@@ -303,6 +663,9 @@
 
             filtro?.addEventListener("input", programarBusqueda);
             nivelFiltro?.addEventListener("change", programarBusqueda);
+            destinoFiltro?.addEventListener("input", programarBusquedaDestino);
+            destinoNivelFiltro?.addEventListener("change", programarBusquedaDestino);
+            aceptaMovimientoEl?.addEventListener("change", toggleDestinoSection);
 
             aceptarCuentaPadre?.addEventListener("click", function () {
                 if (seleccion && cuentaPadreId && cuentaPadreTexto) {
@@ -325,6 +688,51 @@
                 seleccion = null;
                 marcarFila();
             });
+
+            agregarDestinoButton?.addEventListener("click", () => {
+                if (!destinoTableBody || !destinoTemplate) {
+                    return;
+                }
+
+                const index = destinoTableBody.querySelectorAll("tr").length;
+                const html = destinoTemplate.innerHTML.replaceAll("__index__", index);
+                destinoTableBody.insertAdjacentHTML("beforeend", html);
+                const row = destinoTableBody.lastElementChild;
+                if (row) {
+                    bindDestinoRowActions(row);
+                }
+                refreshDestinoRows();
+            });
+
+            document.getElementById("aceptarDestinoCuenta")?.addEventListener("click", () => {
+                if (String(destinoSeleccion?.nivelCuenta || "") !== "5") {
+                    window.alert("Seleccione una cuenta contable de nivel 5.");
+                    return;
+                }
+
+                if (destinoSeleccion && destinoTarget?.row) {
+                    const textoCuenta = `${String(destinoSeleccion.codigoCuenta || "")} - ${String(destinoSeleccion.nombreCuenta || "")}`;
+                    const idSelector = destinoTarget.tipo === "cargo" ? ".js-destino-cargo-id" : ".js-destino-abono-id";
+                    const textSelector = destinoTarget.tipo === "cargo" ? ".js-destino-cargo-texto" : ".js-destino-abono-texto";
+                    const idInput = destinoTarget.row.querySelector(idSelector);
+                    const textInput = destinoTarget.row.querySelector(textSelector);
+                    if (idInput) {
+                        idInput.value = String(destinoSeleccion.idPlanCuenta || "");
+                    }
+                    if (textInput) {
+                        textInput.value = textoCuenta;
+                    }
+                }
+
+                destinoModal?.hide();
+            });
+
+            destinoTableBody?.querySelectorAll("tr").forEach(bindDestinoRowActions);
+            destinoTableBody?.addEventListener("input", refreshDestinoRows);
+            destinoTableBody?.addEventListener("change", refreshDestinoRows);
+
+            toggleDestinoSection();
+            refreshDestinoRows();
         });
     </script>
 }

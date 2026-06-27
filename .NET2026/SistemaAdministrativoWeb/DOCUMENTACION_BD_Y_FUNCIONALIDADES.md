@@ -1,6 +1,6 @@
 # DOCUMENTACION BD Y FUNCIONALIDADES - SisAdm
 
-Ultima actualizacion: 24/06/2026  
+Ultima actualizacion: 26/06/2026
 Proyecto: `SistemaAdministrativoWeb`  
 Base de datos: `Dbsisadm`  
 Arquitectura definida: ASP.NET Core MVC + ASP.NET Identity + ADO.NET + Stored Procedures + SQL Server
@@ -154,7 +154,7 @@ Tipos de shell:
 Menu administrador:
 
 - General: Dashboard, Empresas.
-- Mantenimiento: Plan de cuentas, Centros de costo, Cuentas corrientes, Personas, Origenes, Reglas destino, Configuracion contable.
+- Mantenimiento: Plan de cuentas, Centros de costo, Cuentas corrientes, Personas, Origenes, Cuentas destino, Configuracion contable.
 - Registro: Asientos, Compras, Ventas, Caja y Bancos, Transferencias, Aplicaciones.
 - Reportes: Libros, Analisis. Actualmente deshabilitados.
 
@@ -258,6 +258,7 @@ Funciones:
 - Filtro por texto y nivel.
 - Registro y edicion de cuentas.
 - Popup reutilizable para seleccionar cuenta padre.
+- Permite configurar cuentas destino y contrapartida desde el mismo mantenimiento cuando la cuenta es operativa o de ultimo nivel.
 - Carga default desde `CON_PlanCuentaMaestro`.
 - Validacion de jerarquia por niveles usando parametros:
   `GRADO_MAXIMO`, `GRADO1_LONG`, `GRADO2_LONG`, `GRADO3_LONG`, `GRADO4_LONG`, `GRADO5_LONG`.
@@ -353,7 +354,7 @@ Funciones:
 - Ayuda popup de bancos basada en el catalogo maestro `CON_Bancos`.
 - Ayuda popup de plan de cuentas para amarrar la cuenta corriente a una cuenta contable activa de movimiento.
 
-### 9.9 Reglas de destino
+### 9.9 Cuentas destino
 
 Controlador:
 
@@ -366,8 +367,9 @@ Vistas:
 
 Funciones:
 
-- Define reglas de cuentas de destino por empresa y ejercicio.
-- Permite configurar cuentas origen y detalle de destino.
+- Define cuentas destino por empresa y cuenta contable origen.
+- Permite configurar cuenta origen, destino y contrapartida sin filtro por ejercicio.
+- La misma configuracion puede mantenerse tambien desde `PlanCuentaController` para cuentas de ultimo nivel.
 - Hereda reglas base desde tablas maestras cuando corresponda.
 - Base conceptual rescatada del VB6: cuentas que disparan cuentas destino contables.
 
@@ -398,6 +400,7 @@ Tabs:
 - Provision.
 - Documento.
 - Impuesto.
+- Parametros.
 
 Provision:
 
@@ -422,6 +425,15 @@ Impuesto:
 - La tabla maestra tambien puede tener cuenta base.
 - La configuracion por empresa se guarda en `CON_TipoImpuestoConfiguracionEmpresa`.
 - Actualmente se usa un solo campo `IdPlanCuenta`.
+- La cuenta `SPOT` ya no se administra desde esta tarjeta.
+
+Parametros:
+
+- Lee parametros desde `ADM_ParametroEmpresa` para la empresa activa.
+- Solo expone parametros cuyo `TipoParametro <> 'NA'`.
+- Muestra `DescripcionParametro` y permite seleccionar una cuenta contable con la ayuda del plan.
+- Guarda el codigo de cuenta seleccionado en `ValorParametro`.
+- El parametro `CTADETRACCION` define la cuenta contable usada por el asiento adicional de detracciones en compras.
 
 ### 9.11 Asientos contables
 
@@ -448,6 +460,8 @@ Funciones:
 - El centro de costo es obligatorio solo cuando la cuenta seleccionada tiene activado `RequiereCentroCosto`.
 - El resumen de Debe/Haber/Diferencia cambia visualmente segun el asiento este cuadrado o no.
 - El asiento manual puede quedar descuadrado; el sistema ya no obliga el cuadre para guardar.
+- El guardado deja el estado del asiento en `PROVISIONADO`.
+- Si una cuenta del detalle tiene configuracion en `Cuentas destino`, la linea original se conserva y se agregan lineas adicionales de destino y contrapartida.
 - El listado muestra el nombre del origen y agrega accion de eliminar.
 - La eliminacion directa bloquea asientos automaticos y exige eliminarlos desde su modulo de origen.
 - Correlativo por empresa, origen y periodo.
@@ -521,7 +535,7 @@ Funciones:
 - Listado paginado de movimientos bancarios por empresa.
 - Filtro por cuenta corriente, anio, mes y texto.
 - KPIs de saldo inicial, ingresos del mes, egresos del mes y saldo final.
-- Registro y edicion de movimientos bancarios sin generar asiento automatico en esta etapa.
+- Registro y edicion de movimientos bancarios.
 - Seleccion de tipo de flujo `Ingreso` o `Egreso`.
 - Seleccion de operacion bancaria desde la tabla `operacionesbancarias` filtrando `Destino = 'I'` o `Destino = 'E'`.
 - Seleccion de persona relacionada mediante popup.
@@ -531,6 +545,7 @@ Funciones:
 - Cada linea del detalle puede seleccionar una persona distinta para reutilizar la ayuda de comprobantes con saldo.
 - El formulario muestra `Total Operacion`, `Total Detalle` y `Diferencia`, comparando el importe de cabecera contra el neto del detalle segun sea ingreso o egreso.
 - Al guardar el movimiento bancario se genera y mantiene un asiento contable automatico con origen `ING` o `EGR` segun el tipo de flujo configurado en contabilidad.
+- Si una cuenta del detalle tiene configuracion en `Cuentas destino`, el asiento conserva la linea original y agrega sus lineas de destino y contrapartida.
 - La operacion bancaria elegida debe corresponder al destino `Ingreso` o `Egreso` configurado en `operacionesbancarias`.
 - Cada movimiento de Caja y Bancos tiene un correlativo interno mensual independiente del `Nro documento`; reinicia en `1` por empresa y periodo de `FechaEmision`.
 - Para guardar el detalle solo se exige `Cuenta`, `Glosa detalle` y un importe en `Debe` o `Haber`; persona, comprobante y centro de costo quedan opcionales.
@@ -626,7 +641,7 @@ Administracion y catalogos funcionales.
 Movimiento de caja y bancos.
 
 - `BAN_MovimientoBanco`: cabecera del movimiento bancario por empresa y cuenta corriente. Incluye `NumeroMovimiento` como correlativo interno por empresa y periodo, ademas de `TipoCambio`, `Observacion`, `IdTransferenciaCuenta`, `RolTransferencia` e `IdMovimientoBancoRelacionado`.
-- `BAN_MovimientoBancoDetalle`: detalle contable del movimiento bancario, con persona por linea, centro de costo y referencias documentarias (`IdPersona`, `NumeroDocumento`, `TipoDocumento`, `Serie`, `ReferenciaLinea`, `TipoCambioLinea`).
+- `BAN_MovimientoBancoDetalle`: detalle contable del movimiento bancario, con persona por linea, centro de costo, referencias documentarias por codigo SUNAT (`IdPersona`, `NumeroDocumento`, `TipoDocumento`, `Serie`, `ReferenciaLinea`, `TipoCambioLinea`) e importes equivalentes por moneda (`TotalImporteS`, `TotalImporteD`).
 
 ### CON
 
@@ -650,8 +665,8 @@ Contabilidad.
 - `CON_Origen`: origenes por empresa.
 - `CON_CuentaDestinoReglaMaestro`: reglas destino base internas.
 - `CON_CuentaDestinoReglaDetalleMaestro`: detalle de reglas destino base internas.
-- `CON_CuentaDestinoRegla`: reglas destino por empresa.
-- `CON_CuentaDestinoReglaDetalle`: detalle de reglas destino por empresa.
+- `CON_CuentaDestinoRegla`: cuentas destino por empresa y cuenta origen.
+- `CON_CuentaDestinoReglaDetalle`: detalle de cuentas destino por empresa.
 - `CON_ConfiguracionContabilizacion`: configuracion de provision compra/venta por empresa.
 - `CON_ConfiguracionContabilizacionDetalle`: detalle legacy de configuracion contable.
 - `CON_DocumentoConfiguracionEmpresa`: cuentas contables por documento y empresa.
@@ -661,7 +676,7 @@ Contabilidad.
 - `CON_TipoImpuestoConfiguracionEmpresa`: configuracion de cuenta de impuesto por empresa.
 - `CON_TipoAfectacionIGV`: catalogo maestro de afectaciones IGV SUNAT usado por compras y ventas.
 - `CON_Asiento`: cabecera de asiento. Incluye `FechaEmision` y `FechaAsiento` como fechas separadas.
-- `CON_AsientoDetalle`: detalle de asiento.
+- `CON_AsientoDetalle`: detalle de asiento con datos documentarios por codigo SUNAT e importes equivalentes por moneda (`TotalImporteS`, `TotalImporteD`).
 - `CON_CorrelativoAsiento`: correlativo por empresa, origen y periodo.
 
 ### COM
@@ -708,6 +723,7 @@ Seguridad funcional, empresas y suscripciones.
 - `usp_ADM_ListarClientesActivosPorEmpresa`
 - `usp_ADM_ListarMonedasActivas`
 - `usp_ADM_ListarParametrosPorEmpresa`
+- `usp_ADM_ListarDetraccionesSunat`
 - `usp_ADM_ListarPersonasPorEmpresa`
 - `usp_ADM_ListarProveedoresActivosPorEmpresa`
 - `usp_ADM_ListarTiposComprobanteActivos`
@@ -817,7 +833,7 @@ Seguridad funcional, empresas y suscripciones.
 - `013_Unificar_Configuracion_Impuestos.sql`: unificacion de configuracion de impuestos.
 - `014_Compras_Detalle_Afectacion_IGV_ICBPER.sql`: cuenta contable y afectacion IGV por detalle de compra; subtotal, exonerado, inafecto e ICBPER interno en cabecera.
 - `015_Ventas_Detalle_Afectacion_IGV_Totales.sql`: cuenta contable y afectacion IGV por detalle de venta; subtotal, exonerado, inafecto e ICBPER interno en cabecera.
-- `016_AsientoDetalle_TipoDocumento_Comprobante.sql`: amplia `CON_AsientoDetalle.TipoDocumento` para guardar la descripcion del comprobante en asientos automaticos.
+- `016_AsientoDetalle_TipoDocumento_Comprobante.sql`: amplia `CON_AsientoDetalle.TipoDocumento`; desde la actualizacion del 26/06/2026 el sistema guarda el codigo SUNAT del comprobante (`01`, `03`, `07`, `00`, etc.) en lugar de la descripcion.
 - `017_Asiento_FechaEmision_Eliminacion_Registros.sql`: agrega `FechaEmision` en `CON_Asiento` y documenta el despliegue de eliminacion para compras, ventas y asientos.
 - `018_Compras_Ventas_Saldo_Comprobantes.sql`: agrega `Saldo` en `COM_Compra` y `VEN_Venta`, inicializandolo con el importe total actual.
 - `019_Provision_Operaciones_Adicionales.sql`: amplia los modulos permitidos de provision para egresos, ingresos y aplicaciones NC.
@@ -832,7 +848,9 @@ Seguridad funcional, empresas y suscripciones.
 - `028_Provisiones_Estado_Situacion.sql`: unifica el estado de compras y ventas provisionadas a `PROVISIONADO` y normaliza registros existentes.
 - `029_Eliminar_Solo_Comprobantes_Pendientes.sql`: bloquea la eliminacion de compras y ventas cuando ya tienen cobros o pagos aplicados.
 - `030_Transferencia_Entre_Cuentas.sql`: agrega el enlace funcional de transferencias en `BAN_MovimientoBanco` y despliega los procedimientos del nuevo modulo.
+- `034_DetalleContable_ImportesMoneda.sql`: agrega `TotalImporteS` y `TotalImporteD` al detalle bancario y contable para conservar equivalencias por moneda en cada linea.
 - `031_Aplicaciones_NC.sql`: habilita el origen `47 - APLICACIONES N/C` para empresas existentes y prepara la provision APNC.
+- `033_Detracciones_Compras.sql`: agrega maestro general de detracciones SUNAT, documento hijo de detraccion por compra y modulo contable `DET`.
 - `024_Caja_Bancos_TipoCambio_Observacion.sql`: agrega `TipoCambio` y `Observacion` a la cabecera `BAN_MovimientoBanco`.
 - `025_Caja_Bancos_Detalle_Persona.sql`: agrega `IdPersona` al detalle de Caja y Bancos para asociar comprobantes por linea.
 
@@ -868,18 +886,24 @@ Seguridad funcional, empresas y suscripciones.
 - En compras, solo la afectacion IGV SUNAT `10 - Gravado - Operacion Onerosa` calcula IGV de detalle.
 - En compras, el total exonerado se acumula con afectaciones SUNAT `2x` y el total inafecto con afectaciones `3x`.
 - En compras, ICBPER queda preparado solo de forma interna y actualmente se calcula en cero hasta definir cantidad de bolsas por detalle.
-- Al registrar o editar una provision de compra o venta, el saldo inicial del comprobante debe quedar igual al importe total.
+- Al registrar o editar una provision de compra sin detraccion, el saldo inicial del comprobante debe quedar igual al importe total.
+- Si la compra tiene detraccion, el saldo inicial del comprobante principal debe quedar en `ImporteTotal - ImporteDetraccion` y debe generarse un documento hijo `COM_CompraDetraccion` con saldo propio igual al importe de detraccion.
+- La detraccion de compras usa un segundo asiento automatico con origen `DET`, debitando la cuenta 42 del documento y acreditando la cuenta configurada en `ADM_ParametroEmpresa` bajo `CodigoParametro = 'CTADETRACCION'`.
+- En ese asiento adicional, la linea de la cuenta de detraccion debe grabarse con `TipoDocumento = 00` (descripcion visible `Otros`).
+- Caja y Bancos debe listar tambien documentos `COM_CompraDetraccion` con saldo pendiente bajo modulo `Detraccion`, heredando `Serie` y `Numero` del comprobante de compra origen, permitiendo aplicar su saldo y precargar la cuenta `CTADETRACCION`.
+- Todo asiento automatico o manual y todo detalle bancario debe guardar por linea `TotalImporteS` y `TotalImporteD` usando la moneda del comprobante/asiento y el tipo de cambio efectivo de la linea.
 - Las provisiones de compra y venta usan `Estado = PROVISIONADO`; la cobranza o pago se representa en el listado con `Situacion` calculada por saldo (`Pendiente`, `Pagada Parcial`, `Pagada`).
 - Una compra o venta solo puede eliminarse si su `Situacion` sigue en `Pendiente`; si ya esta `Pagada Parcial` o `Pagada`, primero debe eliminarse el recibo o movimiento bancario que aplico el saldo.
 - La configuracion de documentos e impuestos es por empresa.
 - En compras, el asiento automatico usa la cuenta del detalle para el subtotal, la cuenta del documento para la contrapartida y las cuentas de impuesto configuradas por empresa.
+- Si una cuenta del detalle tiene configuracion en `Cuentas destino`, la linea original se conserva y se agregan lineas adicionales de destino y contrapartida segun sus porcentajes activos.
 - En ventas, el asiento automatico usa la cuenta del documento para la cobranza, la cuenta del detalle para el ingreso y las cuentas de impuesto configuradas por empresa.
 - La configuracion de provision ya contempla tipos futuros de operacion para egresos, ingresos y aplicaciones de nota de credito, todos persistidos en `CON_ConfiguracionContabilizacion` con escenario `PROVISION`.
 - Las compras y ventas se eliminan desde su propio modulo y deben borrar tambien el asiento automatico relacionado.
 - Un asiento automatico no debe eliminarse desde el modulo de asientos; debe eliminarse desde el modulo de origen.
 - Las tablas maestras internas no deben depender de empresa.
 - Al crear empresa se deben cargar parametros default desde maestros.
-- Plan de cuentas, origenes y reglas destino pueden cargarse por defecto desde tablas maestras.
+- Plan de cuentas, origenes y cuentas destino pueden cargarse por defecto desde tablas maestras.
 
 ## 15. Reglas de UI actuales
 
@@ -909,6 +933,7 @@ Maestras internas, no por empresa:
 - `CON_CuentaDestinoReglaDetalleMaestro`
 - `CON_TipoImpuesto`
 - `CON_TipoAfectacionIGV`
+- `ADM_DetraccionSunat`
 - Catalogos SUNAT y ubigeo.
 
 Tablas por empresa:
@@ -928,6 +953,7 @@ Tablas por empresa:
 - `CON_AsientoDetalle`
 - `COM_Compra`
 - `COM_CompraDetalle`
+- `COM_CompraDetraccion`
 - `VEN_Venta`
 - `VEN_VentaDetalle`
 
@@ -1007,4 +1033,10 @@ flowchart LR
 -- Author:        FRANCO LARA / Codex  
 -- Create date:   24/06/2026  
 -- Description:   Documenta el modulo de transferencias entre cuentas, el enlace funcional sobre BAN_MovimientoBanco y sus procedimientos operativos.  
+-- =============================================
+
+-- =============================================  
+-- Author:        FRANCO LARA / Codex  
+-- Create date:   26/06/2026  
+-- Description:   Documenta la tarjeta Parametros en configuracion contable y el uso del parametro CTADETRACCION para el asiento adicional de detracciones.  
 -- =============================================

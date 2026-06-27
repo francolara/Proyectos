@@ -58,9 +58,103 @@ public sealed class CompraRepository(IDbConnectionFactory connectionFactory) : I
                 Redondeo = reader.GetDecimal(reader.GetOrdinal("Redondeo")),
                 ImporteTotal = reader.GetDecimal(reader.GetOrdinal("ImporteTotal")),
                 Saldo = reader.GetDecimal(reader.GetOrdinal("Saldo")),
+                TieneDetraccion = reader.GetBoolean(reader.GetOrdinal("TieneDetraccion")),
+                IdDetraccionSunat = reader.IsDBNull(reader.GetOrdinal("IdDetraccionSunat")) ? null : reader.GetInt32(reader.GetOrdinal("IdDetraccionSunat")),
+                PorcentajeDetraccion = reader.GetDecimal(reader.GetOrdinal("PorcentajeDetraccion")),
+                ImporteDetraccion = reader.GetDecimal(reader.GetOrdinal("ImporteDetraccion")),
                 Observacion = reader.IsDBNull(reader.GetOrdinal("Observacion")) ? null : reader.GetString(reader.GetOrdinal("Observacion")),
                 Estado = reader.GetString(reader.GetOrdinal("Estado")),
                 Situacion = reader.GetString(reader.GetOrdinal("Situacion"))
+            });
+        }
+
+        return result;
+    }
+
+    public async Task<IReadOnlyCollection<CompraDetraccionPendienteDto>> ListarDetraccionesPendientesPorEmpresaAsync(int idEmpresa, string? periodo = null, CancellationToken cancellationToken = default)
+    {
+        var result = new List<CompraDetraccionPendienteDto>();
+
+        await using var connection = connectionFactory.CreateConnection();
+        await using var command = connection.CreateCommand();
+        command.CommandType = CommandType.Text;
+        command.CommandText = """
+            SELECT
+                cd.IdCompraDetraccion,
+                cd.IdCompra,
+                cd.IdProveedor,
+                p.CodigoProveedor,
+                per.NombreCompleto AS NombreProveedor,
+                per.NumeroDocumento AS NumeroDocumentoPersona,
+                cd.FechaEmision,
+                cd.FechaContabilizacion,
+                cd.IdMoneda,
+                m.CodigoMoneda,
+                cd.TipoCambio,
+                cd.CodigoDetraccionSunat,
+                cd.DescripcionDetraccion,
+                cd.PorcentajeDetraccion,
+                cd.ImporteDetraccion,
+                cd.Saldo,
+                c.Serie,
+                c.Numero,
+                cd.ReferenciaDocumento,
+                cd.Estado
+            FROM dbo.COM_CompraDetraccion AS cd
+            INNER JOIN dbo.COM_Compra AS c
+                ON c.IdCompra = cd.IdCompra
+               AND c.IdEmpresa = cd.IdEmpresa
+            INNER JOIN dbo.ADM_Proveedor AS p
+                ON p.IdProveedor = cd.IdProveedor
+               AND p.IdEmpresa = cd.IdEmpresa
+            INNER JOIN dbo.ADM_Persona AS per
+                ON per.IdPersona = p.IdPersona
+               AND per.IdEmpresa = cd.IdEmpresa
+            INNER JOIN dbo.ADM_Moneda AS m
+                ON m.IdMoneda = cd.IdMoneda
+            WHERE cd.IdEmpresa = @IdEmpresa
+              AND cd.Saldo > 0
+              AND (@Periodo IS NULL
+                   OR (CONVERT(CHAR(4), YEAR(cd.FechaContabilizacion))
+                       + RIGHT('0' + CONVERT(VARCHAR(2), MONTH(cd.FechaContabilizacion)), 2)) = @Periodo)
+            ORDER BY
+                cd.FechaEmision DESC,
+                cd.IdCompraDetraccion DESC;
+            """;
+
+        command.Parameters.Add(new SqlParameter("@IdEmpresa", SqlDbType.Int) { Value = idEmpresa });
+        command.Parameters.Add(new SqlParameter("@Periodo", SqlDbType.Char, 6)
+        {
+            Value = string.IsNullOrWhiteSpace(periodo) ? DBNull.Value : periodo.Trim()
+        });
+
+        await connection.OpenAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            result.Add(new CompraDetraccionPendienteDto
+            {
+                IdCompraDetraccion = reader.GetInt32(reader.GetOrdinal("IdCompraDetraccion")),
+                IdCompra = reader.GetInt32(reader.GetOrdinal("IdCompra")),
+                IdProveedor = reader.GetInt32(reader.GetOrdinal("IdProveedor")),
+                CodigoProveedor = reader.GetString(reader.GetOrdinal("CodigoProveedor")),
+                NombreProveedor = reader.GetString(reader.GetOrdinal("NombreProveedor")),
+                NumeroDocumentoPersona = reader.GetString(reader.GetOrdinal("NumeroDocumentoPersona")),
+                FechaEmision = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("FechaEmision"))),
+                FechaContabilizacion = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("FechaContabilizacion"))),
+                IdMoneda = reader.GetInt32(reader.GetOrdinal("IdMoneda")),
+                CodigoMoneda = reader.GetString(reader.GetOrdinal("CodigoMoneda")),
+                TipoCambio = reader.GetDecimal(reader.GetOrdinal("TipoCambio")),
+                CodigoDetraccionSunat = reader.GetString(reader.GetOrdinal("CodigoDetraccionSunat")),
+                DescripcionDetraccion = reader.GetString(reader.GetOrdinal("DescripcionDetraccion")),
+                PorcentajeDetraccion = reader.GetDecimal(reader.GetOrdinal("PorcentajeDetraccion")),
+                ImporteDetraccion = reader.GetDecimal(reader.GetOrdinal("ImporteDetraccion")),
+                Saldo = reader.GetDecimal(reader.GetOrdinal("Saldo")),
+                Serie = reader.GetString(reader.GetOrdinal("Serie")),
+                Numero = reader.GetString(reader.GetOrdinal("Numero")),
+                ReferenciaDocumento = reader.GetString(reader.GetOrdinal("ReferenciaDocumento")),
+                Estado = reader.GetString(reader.GetOrdinal("Estado"))
             });
         }
 
@@ -154,6 +248,14 @@ public sealed class CompraRepository(IDbConnectionFactory connectionFactory) : I
                 Redondeo = reader.GetDecimal(reader.GetOrdinal("Redondeo")),
                 ImporteTotal = reader.GetDecimal(reader.GetOrdinal("ImporteTotal")),
                 Saldo = reader.GetDecimal(reader.GetOrdinal("Saldo")),
+                IdCompraDetraccion = reader.IsDBNull(reader.GetOrdinal("IdCompraDetraccion")) ? null : reader.GetInt32(reader.GetOrdinal("IdCompraDetraccion")),
+                IdAsientoDetraccion = reader.IsDBNull(reader.GetOrdinal("IdAsientoDetraccion")) ? null : reader.GetInt32(reader.GetOrdinal("IdAsientoDetraccion")),
+                TieneDetraccion = reader.GetBoolean(reader.GetOrdinal("TieneDetraccion")),
+                IdDetraccionSunat = reader.IsDBNull(reader.GetOrdinal("IdDetraccionSunat")) ? null : reader.GetInt32(reader.GetOrdinal("IdDetraccionSunat")),
+                CodigoDetraccionSunat = reader.IsDBNull(reader.GetOrdinal("CodigoDetraccionSunat")) ? string.Empty : reader.GetString(reader.GetOrdinal("CodigoDetraccionSunat")),
+                DescripcionDetraccionSunat = reader.IsDBNull(reader.GetOrdinal("DescripcionDetraccionSunat")) ? string.Empty : reader.GetString(reader.GetOrdinal("DescripcionDetraccionSunat")),
+                PorcentajeDetraccion = reader.GetDecimal(reader.GetOrdinal("PorcentajeDetraccion")),
+                ImporteDetraccion = reader.GetDecimal(reader.GetOrdinal("ImporteDetraccion")),
                 Observacion = reader.IsDBNull(reader.GetOrdinal("Observacion")) ? null : reader.GetString(reader.GetOrdinal("Observacion")),
                 Estado = reader.GetString(reader.GetOrdinal("Estado"))
             };
@@ -218,6 +320,9 @@ public sealed class CompraRepository(IDbConnectionFactory connectionFactory) : I
         command.Parameters.AddWithValue("@OtrosTributos", request.OtrosTributos);
         command.Parameters.AddWithValue("@Redondeo", request.Redondeo);
         command.Parameters.AddWithValue("@ImporteTotal", request.ImporteTotal);
+        command.Parameters.AddWithValue("@TieneDetraccion", request.TieneDetraccion);
+        command.Parameters.AddWithValue("@IdDetraccionSunat", (object?)request.IdDetraccionSunat ?? DBNull.Value);
+        command.Parameters.AddWithValue("@ImporteDetraccion", request.ImporteDetraccion);
         command.Parameters.AddWithValue("@Observacion", (object?)request.Observacion ?? DBNull.Value);
         command.Parameters.AddWithValue("@DetalleXml", ConstruirDetalleXml(request.Detalles));
         command.Parameters.AddWithValue("@UsuarioRegistro", (object?)request.UsuarioRegistro ?? DBNull.Value);
@@ -234,7 +339,9 @@ public sealed class CompraRepository(IDbConnectionFactory connectionFactory) : I
         {
             IdCompra = reader.GetInt32(reader.GetOrdinal("IdCompra")),
             IdAsiento = reader.IsDBNull(reader.GetOrdinal("IdAsiento")) ? null : reader.GetInt32(reader.GetOrdinal("IdAsiento")),
+            IdAsientoDetraccion = reader.IsDBNull(reader.GetOrdinal("IdAsientoDetraccion")) ? null : reader.GetInt32(reader.GetOrdinal("IdAsientoDetraccion")),
             ImporteTotal = reader.GetDecimal(reader.GetOrdinal("ImporteTotal")),
+            ImporteDetraccion = reader.GetDecimal(reader.GetOrdinal("ImporteDetraccion")),
             Estado = reader.GetString(reader.GetOrdinal("Estado"))
         };
     }
@@ -288,6 +395,10 @@ public sealed class CompraRepository(IDbConnectionFactory connectionFactory) : I
             Redondeo = reader.GetDecimal(reader.GetOrdinal("Redondeo")),
             ImporteTotal = reader.GetDecimal(reader.GetOrdinal("ImporteTotal")),
             Saldo = reader.GetDecimal(reader.GetOrdinal("Saldo")),
+            TieneDetraccion = reader.GetBoolean(reader.GetOrdinal("TieneDetraccion")),
+            IdDetraccionSunat = reader.IsDBNull(reader.GetOrdinal("IdDetraccionSunat")) ? null : reader.GetInt32(reader.GetOrdinal("IdDetraccionSunat")),
+            PorcentajeDetraccion = reader.GetDecimal(reader.GetOrdinal("PorcentajeDetraccion")),
+            ImporteDetraccion = reader.GetDecimal(reader.GetOrdinal("ImporteDetraccion")),
             Observacion = reader.IsDBNull(reader.GetOrdinal("Observacion")) ? null : reader.GetString(reader.GetOrdinal("Observacion")),
             Estado = reader.GetString(reader.GetOrdinal("Estado")),
             Situacion = reader.GetString(reader.GetOrdinal("Situacion"))

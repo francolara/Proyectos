@@ -19,6 +19,17 @@
 -- Create date:   24/06/2026
 -- Description:   Permite enlazar movimientos de transferencia entre cuentas y reutilizar el guardado bancario desde procesos compuestos sin devolver resultados intermedios.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   25/06/2026
+-- Description:   Conserva las lineas originales del detalle y agrega cuentas destino y contrapartida segun la configuracion activa por cuenta contable.
+-- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   26/06/2026
+-- Description:   Permite pagar documentos de detraccion desde Caja y Bancos enlazando el saldo pendiente de COM_CompraDetraccion.
+-- =============================================
+-- Firma: FRANCO LARA - 26/06/2026 | Corrige detracciones para conservar tipo documento por codigo, recalcula importes por moneda en el detalle bancario y en su asiento automatico.
 
 CREATE OR ALTER PROCEDURE dbo.usp_BAN_GuardarMovimientoBanco
     @IdMovimientoBanco INT = NULL,
@@ -72,6 +83,7 @@ BEGIN
         DECLARE @ModuloOperacion CHAR(3) = CASE WHEN @TipoMovimiento = 'I' THEN 'ING' ELSE 'EGR' END;
         DECLARE @IdPlanCuentaBanco INT = NULL;
         DECLARE @IdMoneda INT = NULL;
+        DECLARE @CodigoMonedaCuenta VARCHAR(10) = NULL;
         DECLARE @NroCuentaCorriente VARCHAR(50) = NULL;
         DECLARE @GlosaAsiento NVARCHAR(500) = NULL;
         DECLARE @ReferenciaExterna NVARCHAR(100) = NULL;
@@ -108,6 +120,29 @@ BEGIN
             TipoCambioLinea DECIMAL(18, 6) NULL,
             Debe DECIMAL(18, 2) NOT NULL,
             Haber DECIMAL(18, 2) NOT NULL
+        );
+
+        DECLARE @DetalleDestinoBase TABLE
+        (
+            IdPlanCuentaOrigen INT NOT NULL,
+            GlosaDetalle NVARCHAR(300) NULL,
+            CodigoCentroCosto VARCHAR(20) NULL,
+            NumeroDocumento VARCHAR(20) NULL,
+            TipoDocumento NVARCHAR(150) NULL,
+            Serie VARCHAR(10) NULL,
+            ReferenciaLinea NVARCHAR(100) NULL,
+            TipoCambioLinea DECIMAL(18,6) NULL,
+            ImporteBase DECIMAL(18,2) NOT NULL
+        );
+
+        DECLARE @CuentaDestinoDetalle TABLE
+        (
+            IdPlanCuentaOrigen INT NOT NULL,
+            Orden SMALLINT NOT NULL,
+            IdPlanCuentaDestinoCargo INT NOT NULL,
+            IdPlanCuentaDestinoAbono INT NOT NULL,
+            Porcentaje DECIMAL(7,4) NOT NULL,
+            EsUltimo BIT NOT NULL
         );
 
         INSERT INTO @Detalles
@@ -148,21 +183,21 @@ BEGIN
 
         UPDATE d
         SET ModuloOperacionComprobante = CASE
-                                             WHEN d.ModuloOperacionComprobante IN ('COM', 'VEN')
+                                             WHEN d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET')
                                               AND ISNULL(d.IdRegistroComprobante, 0) > 0
                                               AND ISNULL(d.ImporteAplicado, 0) > 0
                                                  THEN d.ModuloOperacionComprobante
                                              ELSE NULL
                                          END,
             IdRegistroComprobante = CASE
-                                        WHEN d.ModuloOperacionComprobante IN ('COM', 'VEN')
+                                        WHEN d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET')
                                          AND ISNULL(d.IdRegistroComprobante, 0) > 0
                                          AND ISNULL(d.ImporteAplicado, 0) > 0
                                             THEN d.IdRegistroComprobante
                                         ELSE NULL
                                     END,
             ImporteAplicado = CASE
-                                  WHEN d.ModuloOperacionComprobante IN ('COM', 'VEN')
+                                  WHEN d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET')
                                    AND ISNULL(d.IdRegistroComprobante, 0) > 0
                                    AND ISNULL(d.ImporteAplicado, 0) > 0
                                       THEN d.ImporteAplicado
@@ -173,8 +208,11 @@ BEGIN
         SELECT
             @IdPlanCuentaBanco = cc.IdPlanCuenta,
             @IdMoneda = cc.IdMoneda,
+            @CodigoMonedaCuenta = m.CodigoMoneda,
             @NroCuentaCorriente = cc.NroCuentaCorriente
         FROM dbo.CON_BancosConfiguracionEmpresa AS cc
+        INNER JOIN dbo.ADM_Moneda AS m
+            ON m.IdMoneda = cc.IdMoneda
         WHERE cc.IdBancoConfiguracionEmpresa = @IdBancoConfiguracionEmpresa
           AND cc.IdEmpresa = @IdEmpresa;
 
@@ -381,7 +419,7 @@ BEGIN
                     SUM(ISNULL(d.ImporteAplicado, 0)) AS ImporteAplicado
                 FROM dbo.BAN_MovimientoBancoDetalle AS d
                 WHERE d.IdMovimientoBanco = @IdMovimientoBanco
-                  AND d.ModuloOperacionComprobante IN ('COM', 'VEN')
+                  AND d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET')
                   AND d.IdRegistroComprobante IS NOT NULL
                 GROUP BY
                     d.ModuloOperacionComprobante,
@@ -406,7 +444,32 @@ BEGIN
                     SUM(ISNULL(d.ImporteAplicado, 0)) AS ImporteAplicado
                 FROM dbo.BAN_MovimientoBancoDetalle AS d
                 WHERE d.IdMovimientoBanco = @IdMovimientoBanco
-                  AND d.ModuloOperacionComprobante IN ('COM', 'VEN')
+                  AND d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET')
+                  AND d.IdRegistroComprobante IS NOT NULL
+                GROUP BY
+                    d.ModuloOperacionComprobante,
+                    d.IdRegistroComprobante
+            )
+            UPDATE cd
+            SET cd.Saldo = CASE
+                               WHEN cd.Saldo + a.ImporteAplicado > cd.ImporteDetraccion THEN cd.ImporteDetraccion
+                               ELSE cd.Saldo + a.ImporteAplicado
+                           END
+            FROM dbo.COM_CompraDetraccion AS cd
+            INNER JOIN AplicacionesPrevias AS a
+                ON a.ModuloOperacionComprobante = 'DET'
+               AND a.IdRegistroComprobante = cd.IdCompraDetraccion
+            WHERE cd.IdEmpresa = @IdEmpresa;
+
+            ;WITH AplicacionesPrevias AS
+            (
+                SELECT
+                    d.ModuloOperacionComprobante,
+                    d.IdRegistroComprobante,
+                    SUM(ISNULL(d.ImporteAplicado, 0)) AS ImporteAplicado
+                FROM dbo.BAN_MovimientoBancoDetalle AS d
+                WHERE d.IdMovimientoBanco = @IdMovimientoBanco
+                  AND d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET')
                   AND d.IdRegistroComprobante IS NOT NULL
                 GROUP BY
                     d.ModuloOperacionComprobante,
@@ -499,6 +562,231 @@ BEGIN
             FROM @Detalles AS d
             ORDER BY d.Item;
 
+            INSERT INTO @DetalleDestinoBase
+            (
+                IdPlanCuentaOrigen,
+                GlosaDetalle,
+                CodigoCentroCosto,
+                NumeroDocumento,
+                TipoDocumento,
+                Serie,
+                ReferenciaLinea,
+                TipoCambioLinea,
+                ImporteBase
+            )
+            SELECT
+                d.IdPlanCuenta,
+                d.GlosaDetalle,
+                d.CodigoCentroCosto,
+                d.NumeroDocumento,
+                d.TipoDocumento,
+                d.Serie,
+                d.ReferenciaLinea,
+                ISNULL(d.TipoCambioLinea, @TipoCambio),
+                CASE
+                    WHEN d.Debe > 0 THEN d.Debe
+                    ELSE d.Haber
+                END
+            FROM @Detalles AS d
+            WHERE (d.Debe > 0 OR d.Haber > 0);
+
+            INSERT INTO @CuentaDestinoDetalle
+            (
+                IdPlanCuentaOrigen,
+                Orden,
+                IdPlanCuentaDestinoCargo,
+                IdPlanCuentaDestinoAbono,
+                Porcentaje,
+                EsUltimo
+            )
+            SELECT
+                r.IdPlanCuentaOrigen,
+                d.Orden,
+                d.IdPlanCuentaDestinoCargo,
+                d.IdPlanCuentaDestinoAbono,
+                d.Porcentaje,
+                CASE
+                    WHEN ROW_NUMBER() OVER (PARTITION BY r.IdPlanCuentaOrigen ORDER BY d.Orden DESC) = 1 THEN 1
+                    ELSE 0
+                END
+            FROM dbo.CON_CuentaDestinoRegla AS r
+            INNER JOIN dbo.CON_CuentaDestinoReglaDetalle AS d
+                ON d.IdCuentaDestinoRegla = r.IdCuentaDestinoRegla
+               AND d.Activo = 1
+            INNER JOIN
+            (
+                SELECT DISTINCT
+                    b.IdPlanCuentaOrigen
+                FROM @DetalleDestinoBase AS b
+            ) AS base
+                ON base.IdPlanCuentaOrigen = r.IdPlanCuentaOrigen
+            WHERE r.IdEmpresa = @IdEmpresa
+              AND r.Activo = 1;
+
+            IF EXISTS
+            (
+                SELECT 1
+                FROM @CuentaDestinoDetalle AS d
+                LEFT JOIN dbo.CON_PlanCuenta AS cargo
+                    ON cargo.IdPlanCuenta = d.IdPlanCuentaDestinoCargo
+                   AND cargo.IdEmpresa = @IdEmpresa
+                   AND cargo.Estado = 1
+                   AND cargo.AceptaMovimiento = 1
+                LEFT JOIN dbo.CON_PlanCuenta AS abono
+                    ON abono.IdPlanCuenta = d.IdPlanCuentaDestinoAbono
+                   AND abono.IdEmpresa = @IdEmpresa
+                   AND abono.Estado = 1
+                   AND abono.AceptaMovimiento = 1
+                WHERE cargo.IdPlanCuenta IS NULL
+                   OR abono.IdPlanCuenta IS NULL
+            )
+            BEGIN
+                RAISERROR('Existe una configuracion activa de cuentas destino con cuentas cargo o abono invalidas para la empresa.', 16, 1);
+            END;
+
+            DECLARE @IdPlanCuentaOrigenDestino INT;
+            DECLARE @GlosaBaseDestino NVARCHAR(300);
+            DECLARE @CodigoCentroCostoDestino VARCHAR(20);
+            DECLARE @NumeroDocumentoDestino VARCHAR(20);
+            DECLARE @TipoDocumentoDestino NVARCHAR(150);
+            DECLARE @SerieDestino VARCHAR(10);
+            DECLARE @ReferenciaDestino NVARCHAR(100);
+            DECLARE @TipoCambioDestino DECIMAL(18,6);
+            DECLARE @ImporteBaseDestino DECIMAL(18,2);
+            DECLARE @IdCuentaCargoDestino INT;
+            DECLARE @IdCuentaAbonoDestino INT;
+            DECLARE @PorcentajeDestino DECIMAL(7,4);
+            DECLARE @EsUltimoDestino BIT;
+            DECLARE @ImporteDistribuidoDestino DECIMAL(18,2);
+            DECLARE @ImporteTramoDestino DECIMAL(18,2);
+
+            DECLARE cursor_linea_destino CURSOR LOCAL FAST_FORWARD FOR
+            SELECT
+                b.IdPlanCuentaOrigen,
+                b.GlosaDetalle,
+                b.CodigoCentroCosto,
+                b.NumeroDocumento,
+                b.TipoDocumento,
+                b.Serie,
+                b.ReferenciaLinea,
+                b.TipoCambioLinea,
+                b.ImporteBase
+            FROM @DetalleDestinoBase AS b
+            WHERE b.ImporteBase > 0
+              AND EXISTS
+              (
+                  SELECT 1
+                  FROM @CuentaDestinoDetalle AS d
+                  WHERE d.IdPlanCuentaOrigen = b.IdPlanCuentaOrigen
+              );
+
+            OPEN cursor_linea_destino;
+
+            FETCH NEXT FROM cursor_linea_destino
+            INTO @IdPlanCuentaOrigenDestino, @GlosaBaseDestino, @CodigoCentroCostoDestino, @NumeroDocumentoDestino,
+                 @TipoDocumentoDestino, @SerieDestino, @ReferenciaDestino, @TipoCambioDestino, @ImporteBaseDestino;
+
+            WHILE @@FETCH_STATUS = 0
+            BEGIN
+                SET @ImporteDistribuidoDestino = 0;
+
+                DECLARE cursor_tramo_destino CURSOR LOCAL FAST_FORWARD FOR
+                SELECT
+                    d.IdPlanCuentaDestinoCargo,
+                    d.IdPlanCuentaDestinoAbono,
+                    d.Porcentaje,
+                    d.EsUltimo
+                FROM @CuentaDestinoDetalle AS d
+                WHERE d.IdPlanCuentaOrigen = @IdPlanCuentaOrigenDestino
+                ORDER BY
+                    d.Orden ASC;
+
+                OPEN cursor_tramo_destino;
+
+                FETCH NEXT FROM cursor_tramo_destino
+                INTO @IdCuentaCargoDestino, @IdCuentaAbonoDestino, @PorcentajeDestino, @EsUltimoDestino;
+
+                WHILE @@FETCH_STATUS = 0
+                BEGIN
+                    SET @ImporteTramoDestino = CASE
+                                                   WHEN @EsUltimoDestino = 1 THEN @ImporteBaseDestino - @ImporteDistribuidoDestino
+                                                   ELSE ROUND(@ImporteBaseDestino * (@PorcentajeDestino / 100.0), 2)
+                                               END;
+
+                    IF @ImporteTramoDestino <> 0
+                    BEGIN
+                        INSERT INTO @AsientoDetalle
+                        (
+                            IdPlanCuenta,
+                            GlosaDetalle,
+                            CodigoCentroCosto,
+                            NumeroDocumento,
+                            TipoDocumento,
+                            Serie,
+                            ReferenciaLinea,
+                            TipoCambioLinea,
+                            Debe,
+                            Haber
+                        )
+                        VALUES
+                        (
+                            @IdCuentaCargoDestino,
+                            LEFT(CONCAT(ISNULL(NULLIF(LTRIM(RTRIM(@GlosaBaseDestino)), ''), N'Distribucion cuenta destino'), N' / Destino'), 300),
+                            @CodigoCentroCostoDestino,
+                            @NumeroDocumentoDestino,
+                            @TipoDocumentoDestino,
+                            @SerieDestino,
+                            @ReferenciaDestino,
+                            @TipoCambioDestino,
+                            @ImporteTramoDestino,
+                            0
+                        );
+
+                        INSERT INTO @AsientoDetalle
+                        (
+                            IdPlanCuenta,
+                            GlosaDetalle,
+                            CodigoCentroCosto,
+                            NumeroDocumento,
+                            TipoDocumento,
+                            Serie,
+                            ReferenciaLinea,
+                            TipoCambioLinea,
+                            Debe,
+                            Haber
+                        )
+                        VALUES
+                        (
+                            @IdCuentaAbonoDestino,
+                            LEFT(CONCAT(ISNULL(NULLIF(LTRIM(RTRIM(@GlosaBaseDestino)), ''), N'Distribucion cuenta destino'), N' / Contrapartida'), 300),
+                            @CodigoCentroCostoDestino,
+                            @NumeroDocumentoDestino,
+                            @TipoDocumentoDestino,
+                            @SerieDestino,
+                            @ReferenciaDestino,
+                            @TipoCambioDestino,
+                            0,
+                            @ImporteTramoDestino
+                        );
+                    END;
+
+                    SET @ImporteDistribuidoDestino = @ImporteDistribuidoDestino + @ImporteTramoDestino;
+
+                    FETCH NEXT FROM cursor_tramo_destino
+                    INTO @IdCuentaCargoDestino, @IdCuentaAbonoDestino, @PorcentajeDestino, @EsUltimoDestino;
+                END;
+
+                CLOSE cursor_tramo_destino;
+                DEALLOCATE cursor_tramo_destino;
+
+                FETCH NEXT FROM cursor_linea_destino
+                INTO @IdPlanCuentaOrigenDestino, @GlosaBaseDestino, @CodigoCentroCostoDestino, @NumeroDocumentoDestino,
+                     @TipoDocumentoDestino, @SerieDestino, @ReferenciaDestino, @TipoCambioDestino, @ImporteBaseDestino;
+            END;
+
+            CLOSE cursor_linea_destino;
+            DEALLOCATE cursor_linea_destino;
+
             SELECT
                 @TotalDebeAsiento = ISNULL(SUM(d.Debe), 0),
                 @TotalHaberAsiento = ISNULL(SUM(d.Haber), 0)
@@ -544,6 +832,21 @@ BEGIN
         (
             SELECT 1
             FROM @Detalles AS d
+            LEFT JOIN dbo.COM_CompraDetraccion AS cd
+                ON d.ModuloOperacionComprobante = 'DET'
+               AND cd.IdCompraDetraccion = d.IdRegistroComprobante
+               AND cd.IdEmpresa = @IdEmpresa
+            WHERE d.ModuloOperacionComprobante = 'DET'
+              AND cd.IdCompraDetraccion IS NULL
+        )
+        BEGIN
+            RAISERROR('Existe una linea con documento de detraccion que no pertenece a la empresa activa.', 16, 1);
+        END;
+
+        IF EXISTS
+        (
+            SELECT 1
+            FROM @Detalles AS d
             INNER JOIN dbo.COM_Compra AS c
                 ON d.ModuloOperacionComprobante = 'COM'
                AND c.IdCompra = d.IdRegistroComprobante
@@ -566,6 +869,20 @@ BEGIN
         )
         BEGIN
             RAISERROR('El importe aplicado en una linea supera el saldo pendiente del comprobante de venta seleccionado.', 16, 1);
+        END;
+
+        IF EXISTS
+        (
+            SELECT 1
+            FROM @Detalles AS d
+            INNER JOIN dbo.COM_CompraDetraccion AS cd
+                ON d.ModuloOperacionComprobante = 'DET'
+               AND cd.IdCompraDetraccion = d.IdRegistroComprobante
+               AND cd.IdEmpresa = @IdEmpresa
+            WHERE d.ImporteAplicado > cd.Saldo
+        )
+        BEGIN
+            RAISERROR('El importe aplicado en una linea supera el saldo pendiente del documento de detraccion seleccionado.', 16, 1);
         END;
 
         IF @IndTranConta = 'S' AND @IdAsientoTrabajo IS NULL
@@ -811,7 +1128,9 @@ BEGIN
             ReferenciaLinea,
             TipoCambioLinea,
             Debe,
-            Haber
+            Haber,
+            TotalImporteS,
+            TotalImporteD
         )
         SELECT
             @IdMovimientoBanco,
@@ -827,10 +1146,27 @@ BEGIN
             d.TipoDocumento,
             d.Serie,
             d.ReferenciaLinea,
-            d.TipoCambioLinea,
+            calc.TipoCambioAplicado,
             d.Debe,
-            d.Haber
+            d.Haber,
+            CASE
+                WHEN @CodigoMonedaCuenta = 'USD' THEN ROUND(calc.ImporteLinea * calc.TipoCambioAplicado, 2)
+                ELSE calc.ImporteLinea
+            END,
+            CASE
+                WHEN @CodigoMonedaCuenta = 'USD' THEN calc.ImporteLinea
+                ELSE ROUND(calc.ImporteLinea / NULLIF(calc.TipoCambioAplicado, 0), 2)
+            END
         FROM @Detalles AS d
+        CROSS APPLY
+        (
+            SELECT
+                CASE
+                    WHEN d.Debe > 0 THEN d.Debe
+                    ELSE d.Haber
+                END AS ImporteLinea,
+                ISNULL(NULLIF(d.TipoCambioLinea, 0), CASE WHEN @TipoCambio > 0 THEN @TipoCambio ELSE 1 END) AS TipoCambioAplicado
+        ) AS calc
         ORDER BY d.Item;
 
         IF @IndTranConta = 'S'
@@ -848,7 +1184,9 @@ BEGIN
                 ReferenciaLinea,
                 TipoCambioLinea,
                 Debe,
-                Haber
+                Haber,
+                TotalImporteS,
+                TotalImporteD
             )
             SELECT
                 @IdAsientoTrabajo,
@@ -860,10 +1198,27 @@ BEGIN
                 d.NumeroDocumento,
                 d.Serie,
                 d.ReferenciaLinea,
-                ISNULL(d.TipoCambioLinea, @TipoCambio),
+                calc.TipoCambioAplicado,
                 d.Debe,
-                d.Haber
+                d.Haber,
+                CASE
+                    WHEN @CodigoMonedaCuenta = 'USD' THEN ROUND(calc.ImporteLinea * calc.TipoCambioAplicado, 2)
+                    ELSE calc.ImporteLinea
+                END,
+                CASE
+                    WHEN @CodigoMonedaCuenta = 'USD' THEN calc.ImporteLinea
+                    ELSE ROUND(calc.ImporteLinea / NULLIF(calc.TipoCambioAplicado, 0), 2)
+                END
             FROM @AsientoDetalle AS d
+            CROSS APPLY
+            (
+                SELECT
+                    CASE
+                        WHEN d.Debe > 0 THEN d.Debe
+                        ELSE d.Haber
+                    END AS ImporteLinea,
+                    ISNULL(NULLIF(d.TipoCambioLinea, 0), CASE WHEN @TipoCambio > 0 THEN @TipoCambio ELSE 1 END) AS TipoCambioAplicado
+            ) AS calc
             ORDER BY d.Orden;
         END;
 
@@ -874,7 +1229,7 @@ BEGIN
                 d.IdRegistroComprobante,
                 SUM(ISNULL(d.ImporteAplicado, 0)) AS ImporteAplicado
             FROM @Detalles AS d
-            WHERE d.ModuloOperacionComprobante IN ('COM', 'VEN')
+            WHERE d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET')
               AND d.IdRegistroComprobante IS NOT NULL
             GROUP BY
                 d.ModuloOperacionComprobante,
@@ -895,7 +1250,28 @@ BEGIN
                 d.IdRegistroComprobante,
                 SUM(ISNULL(d.ImporteAplicado, 0)) AS ImporteAplicado
             FROM @Detalles AS d
-            WHERE d.ModuloOperacionComprobante IN ('COM', 'VEN')
+            WHERE d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET')
+              AND d.IdRegistroComprobante IS NOT NULL
+            GROUP BY
+                d.ModuloOperacionComprobante,
+                d.IdRegistroComprobante
+        )
+        UPDATE cd
+        SET cd.Saldo = cd.Saldo - a.ImporteAplicado
+        FROM dbo.COM_CompraDetraccion AS cd
+        INNER JOIN AplicacionesActuales AS a
+            ON a.ModuloOperacionComprobante = 'DET'
+           AND a.IdRegistroComprobante = cd.IdCompraDetraccion
+        WHERE cd.IdEmpresa = @IdEmpresa;
+
+        ;WITH AplicacionesActuales AS
+        (
+            SELECT
+                d.ModuloOperacionComprobante,
+                d.IdRegistroComprobante,
+                SUM(ISNULL(d.ImporteAplicado, 0)) AS ImporteAplicado
+            FROM @Detalles AS d
+            WHERE d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET')
               AND d.IdRegistroComprobante IS NOT NULL
             GROUP BY
                 d.ModuloOperacionComprobante,

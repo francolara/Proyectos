@@ -65,6 +65,21 @@ public sealed class CompraFormViewModel
     [Range(typeof(decimal), "0", "999999999999")]
     public decimal ImporteTotal { get; set; }
 
+    public bool TieneDetraccion { get; set; }
+
+    public int? IdDetraccionSunat { get; set; }
+
+    public string DetraccionTexto { get; set; } = string.Empty;
+
+    [Range(typeof(decimal), "0", "100")]
+    public decimal PorcentajeDetraccion { get; set; }
+
+    [Range(typeof(decimal), "0", "999999999999")]
+    public decimal ImporteDetraccion { get; set; }
+
+    [Range(typeof(decimal), "0", "999999999999")]
+    public decimal SaldoPago { get; set; }
+
     [StringLength(500)]
     public string? Observacion { get; set; }
 

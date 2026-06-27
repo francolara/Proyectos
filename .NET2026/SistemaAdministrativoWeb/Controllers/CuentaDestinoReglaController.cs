@@ -16,7 +16,7 @@ public class CuentaDestinoReglaController(
     private const int TamanoAyudaCuenta = 100;
 
     [HttpGet]
-    public async Task<IActionResult> Index(short? ejercicio = null, string? textoBusqueda = null, int pagina = 1, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Index(string? textoBusqueda = null, int pagina = 1, CancellationToken cancellationToken = default)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
         {
@@ -25,13 +25,11 @@ public class CuentaDestinoReglaController(
 
         ViewData["AdminShell"] = true;
 
-        var ejercicioTrabajo = ejercicio ?? (short)DateTime.Today.Year;
         var cuentasMovimiento = (await planCuentaRepository.ListarPaginadoPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, null, null, 1, TamanoAyudaCuenta, false, false, cancellationToken)).Items.ToList();
-        var reglas = await cuentaDestinoReglaRepository.ListarPaginadoPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, ejercicioTrabajo, textoBusqueda, pagina, TamanoPagina, cancellationToken);
+        var reglas = await cuentaDestinoReglaRepository.ListarPaginadoPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, textoBusqueda, pagina, TamanoPagina, cancellationToken);
         var model = ConstruirViewModel(
             currentCompanyAccessor.EmpresaId.Value,
             currentCompanyAccessor.EmpresaNombre ?? "Empresa activa",
-            ejercicioTrabajo,
             cuentasMovimiento,
             reglas.Items,
             null);
@@ -48,15 +46,15 @@ public class CuentaDestinoReglaController(
     }
 
     [HttpGet]
-    public async Task<IActionResult> Registrar(short? ejercicio = null, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Registrar(CancellationToken cancellationToken = default)
     {
-        return await CargarFormularioAsync(ejercicio, null, cancellationToken);
+        return await CargarFormularioAsync(null, cancellationToken);
     }
 
     [HttpGet]
-    public async Task<IActionResult> Editar(int idCuentaDestinoRegla, short? ejercicio = null, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Editar(int idCuentaDestinoRegla, CancellationToken cancellationToken = default)
     {
-        return await CargarFormularioAsync(ejercicio, idCuentaDestinoRegla, cancellationToken);
+        return await CargarFormularioAsync(idCuentaDestinoRegla, cancellationToken);
     }
 
     [HttpPost]
@@ -76,11 +74,10 @@ public class CuentaDestinoReglaController(
         if (!ModelState.IsValid)
         {
             var cuentasConError = (await planCuentaRepository.ListarPaginadoPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, null, null, 1, TamanoAyudaCuenta, false, false, cancellationToken)).Items.ToList();
-            var reglasConError = await cuentaDestinoReglaRepository.ListarPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, formulario.Ejercicio, cancellationToken);
+            var reglasConError = await cuentaDestinoReglaRepository.ListarPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, cancellationToken);
             var modelConError = ConstruirViewModel(
                 currentCompanyAccessor.EmpresaId.Value,
                 currentCompanyAccessor.EmpresaNombre ?? "Empresa activa",
-                formulario.Ejercicio,
                 cuentasConError,
                 reglasConError,
                 null);
@@ -93,7 +90,6 @@ public class CuentaDestinoReglaController(
             await cuentaDestinoReglaRepository.GuardarAsync(new GuardarCuentaDestinoReglaRequest
             {
                 IdEmpresa = currentCompanyAccessor.EmpresaId.Value,
-                Ejercicio = formulario.Ejercicio,
                 IdPlanCuentaOrigen = formulario.IdPlanCuentaOrigen!.Value,
                 Activo = formulario.Activo,
                 Observacion = string.IsNullOrWhiteSpace(formulario.Observacion) ? null : formulario.Observacion.Trim(),
@@ -110,18 +106,17 @@ public class CuentaDestinoReglaController(
                     .ToList()
             }, cancellationToken);
 
-            TempData["CuentaDestinoOk"] = "Regla de cuenta destino guardada correctamente.";
-            return RedirectToAction(nameof(Index), new { ejercicio = formulario.Ejercicio });
+            TempData["CuentaDestinoOk"] = "Cuenta destino guardada correctamente.";
+            return RedirectToAction(nameof(Index));
         }
         catch (Exception ex)
         {
             ModelState.AddModelError(string.Empty, ex.Message);
             var cuentasConError = (await planCuentaRepository.ListarPaginadoPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, null, null, 1, TamanoAyudaCuenta, false, false, cancellationToken)).Items.ToList();
-            var reglasConError = await cuentaDestinoReglaRepository.ListarPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, formulario.Ejercicio, cancellationToken);
+            var reglasConError = await cuentaDestinoReglaRepository.ListarPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, cancellationToken);
             var modelConError = ConstruirViewModel(
                 currentCompanyAccessor.EmpresaId.Value,
                 currentCompanyAccessor.EmpresaNombre ?? "Empresa activa",
-                formulario.Ejercicio,
                 cuentasConError,
                 reglasConError,
                 null);
@@ -132,7 +127,7 @@ public class CuentaDestinoReglaController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Eliminar(int idCuentaDestinoRegla, short ejercicio, CancellationToken cancellationToken)
+    public async Task<IActionResult> Eliminar(int idCuentaDestinoRegla, CancellationToken cancellationToken)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
         {
@@ -140,11 +135,11 @@ public class CuentaDestinoReglaController(
         }
 
         await cuentaDestinoReglaRepository.EliminarAsync(idCuentaDestinoRegla, cancellationToken);
-        TempData["CuentaDestinoOk"] = "Regla eliminada correctamente.";
-        return RedirectToAction(nameof(Index), new { ejercicio });
+        TempData["CuentaDestinoOk"] = "Cuenta destino eliminada correctamente.";
+        return RedirectToAction(nameof(Index));
     }
 
-    private async Task<IActionResult> CargarFormularioAsync(short? ejercicio, int? idCuentaDestinoRegla, CancellationToken cancellationToken)
+    private async Task<IActionResult> CargarFormularioAsync(int? idCuentaDestinoRegla, CancellationToken cancellationToken)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
         {
@@ -153,10 +148,9 @@ public class CuentaDestinoReglaController(
 
         ViewData["AdminShell"] = true;
 
-        var ejercicioTrabajo = ejercicio ?? (short)DateTime.Today.Year;
         var empresaId = currentCompanyAccessor.EmpresaId.Value;
         var cuentasMovimiento = (await planCuentaRepository.ListarPaginadoPorEmpresaAsync(empresaId, null, null, 1, TamanoAyudaCuenta, false, false, cancellationToken)).Items.ToList();
-        var reglas = await cuentaDestinoReglaRepository.ListarPorEmpresaAsync(empresaId, ejercicioTrabajo, cancellationToken);
+        var reglas = await cuentaDestinoReglaRepository.ListarPorEmpresaAsync(empresaId, cancellationToken);
         var reglaEditar = idCuentaDestinoRegla.HasValue
             ? await cuentaDestinoReglaRepository.ObtenerAsync(idCuentaDestinoRegla.Value, cancellationToken)
             : null;
@@ -169,7 +163,6 @@ public class CuentaDestinoReglaController(
         var model = ConstruirViewModel(
             empresaId,
             currentCompanyAccessor.EmpresaNombre ?? "Empresa activa",
-            ejercicioTrabajo,
             cuentasMovimiento,
             reglas,
             reglaEditar);
@@ -239,7 +232,6 @@ public class CuentaDestinoReglaController(
     private static CuentaDestinoReglaIndexViewModel ConstruirViewModel(
         int idEmpresa,
         string empresaNombre,
-        short ejercicio,
         IReadOnlyCollection<PlanCuentaDto> cuentasMovimiento,
         IReadOnlyCollection<CuentaDestinoReglaResumenDto> reglas,
         CuentaDestinoReglaDto? reglaEditar)
@@ -248,7 +240,6 @@ public class CuentaDestinoReglaController(
             .Select(x => new CuentaDestinoReglaResumenItemViewModel
             {
                 IdCuentaDestinoRegla = x.IdCuentaDestinoRegla,
-                Ejercicio = x.Ejercicio,
                 IdPlanCuentaOrigen = x.IdPlanCuentaOrigen,
                 CodigoCuentaOrigen = x.CodigoCuentaOrigen,
                 NombreCuentaOrigen = x.NombreCuentaOrigen,
@@ -264,7 +255,6 @@ public class CuentaDestinoReglaController(
         {
             IdEmpresa = idEmpresa,
             EmpresaNombre = empresaNombre,
-            EjercicioActual = ejercicio,
             TotalReglas = reglasItems.Count,
             TotalActivas = reglasItems.Count(x => x.Activo),
             TotalTramos = reglasItems.Sum(x => x.CantidadTramos),
@@ -275,13 +265,9 @@ public class CuentaDestinoReglaController(
                 .ToList(),
             Reglas = reglasItems,
             Formulario = reglaEditar is null
-                ? new CuentaDestinoReglaFormViewModel
-                {
-                    Ejercicio = ejercicio
-                }
+                ? new CuentaDestinoReglaFormViewModel()
                 : new CuentaDestinoReglaFormViewModel
                 {
-                    Ejercicio = reglaEditar.Ejercicio,
                     IdPlanCuentaOrigen = reglaEditar.IdPlanCuentaOrigen,
                     CuentaOrigenTexto = $"{reglaEditar.CodigoCuentaOrigen} - {reglaEditar.NombreCuentaOrigen}",
                     Observacion = reglaEditar.Observacion,

@@ -18,6 +18,11 @@
 -- Create date:   24/06/2026
 -- Description:   Bloquea la eliminacion individual de movimientos que pertenecen a una transferencia entre cuentas.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   26/06/2026
+-- Description:   Restaura tambien el saldo de documentos de detraccion enlazados al eliminar un movimiento bancario.
+-- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.usp_BAN_EliminarMovimientoBanco
     @IdMovimientoBanco INT,
@@ -57,7 +62,7 @@ BEGIN
                 ON m.IdMovimientoBanco = d.IdMovimientoBanco
             WHERE d.IdMovimientoBanco = @IdMovimientoBanco
               AND m.IdEmpresa = @IdEmpresa
-              AND d.ModuloOperacionComprobante IN ('COM', 'VEN')
+              AND d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET')
               AND d.IdRegistroComprobante IS NOT NULL
             GROUP BY
                 d.ModuloOperacionComprobante,
@@ -85,7 +90,35 @@ BEGIN
                 ON m.IdMovimientoBanco = d.IdMovimientoBanco
             WHERE d.IdMovimientoBanco = @IdMovimientoBanco
               AND m.IdEmpresa = @IdEmpresa
-              AND d.ModuloOperacionComprobante IN ('COM', 'VEN')
+              AND d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET')
+              AND d.IdRegistroComprobante IS NOT NULL
+            GROUP BY
+                d.ModuloOperacionComprobante,
+                d.IdRegistroComprobante
+        )
+        UPDATE cd
+        SET cd.Saldo = CASE
+                           WHEN cd.Saldo + a.ImporteAplicado > cd.ImporteDetraccion THEN cd.ImporteDetraccion
+                           ELSE cd.Saldo + a.ImporteAplicado
+                       END
+        FROM dbo.COM_CompraDetraccion AS cd
+        INNER JOIN AplicacionesPrevias AS a
+            ON a.ModuloOperacionComprobante = 'DET'
+           AND a.IdRegistroComprobante = cd.IdCompraDetraccion
+        WHERE cd.IdEmpresa = @IdEmpresa;
+
+        ;WITH AplicacionesPrevias AS
+        (
+            SELECT
+                d.ModuloOperacionComprobante,
+                d.IdRegistroComprobante,
+                SUM(ISNULL(d.ImporteAplicado, 0)) AS ImporteAplicado
+            FROM dbo.BAN_MovimientoBancoDetalle AS d
+            INNER JOIN dbo.BAN_MovimientoBanco AS m
+                ON m.IdMovimientoBanco = d.IdMovimientoBanco
+            WHERE d.IdMovimientoBanco = @IdMovimientoBanco
+              AND m.IdEmpresa = @IdEmpresa
+              AND d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET')
               AND d.IdRegistroComprobante IS NOT NULL
             GROUP BY
                 d.ModuloOperacionComprobante,

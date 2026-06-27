@@ -8,6 +8,7 @@
 -- Create date:   18/06/2026
 -- Description:   Devuelve datos documentarios opcionales del detalle del asiento.
 -- =============================================
+-- Firma: FRANCO LARA - 26/06/2026 | Expone TotalImporteS y TotalImporteD del detalle para conservar equivalencias por moneda al editar.
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   22/06/2026
@@ -69,6 +70,8 @@ BEGIN
             d.TipoCambioLinea,
             d.Debe,
             d.Haber,
+            d.TotalImporteS,
+            d.TotalImporteD,
             d.ReferenciaLinea
         FROM dbo.CON_AsientoDetalle AS d
         INNER JOIN dbo.CON_PlanCuenta AS p

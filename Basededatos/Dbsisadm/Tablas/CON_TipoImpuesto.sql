@@ -9,6 +9,11 @@
 -- Create date:   20/06/2026
 -- Description:   Agrega cuenta contable maestra unica para impuesto.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   26/06/2026
+-- Description:   Incorpora el tipo de impuesto SPOT para configurar la cuenta contable de detracciones.
+-- =============================================
 
 IF OBJECT_ID(N'dbo.CON_TipoImpuesto', N'U') IS NULL
 BEGIN

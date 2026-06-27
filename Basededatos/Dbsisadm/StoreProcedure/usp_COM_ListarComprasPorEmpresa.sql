@@ -24,6 +24,11 @@
 -- Create date:   24/06/2026
 -- Description:   Agrega la situacion del comprobante de compra segun el saldo pendiente.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   26/06/2026
+-- Description:   Expone detraccion aplicada en la compra para distinguir saldo neto y documento SPOT asociado.
+-- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.usp_COM_ListarComprasPorEmpresa
     @IdEmpresa INT,
@@ -83,6 +88,10 @@ BEGIN
                 c.Redondeo,
                 c.ImporteTotal,
                 c.Saldo,
+                c.TieneDetraccion,
+                c.IdDetraccionSunat,
+                c.PorcentajeDetraccion,
+                c.ImporteDetraccion,
                 c.Observacion,
                 c.Estado,
                 CASE
@@ -148,6 +157,10 @@ BEGIN
             b.Redondeo,
             b.ImporteTotal,
             b.Saldo,
+            b.TieneDetraccion,
+            b.IdDetraccionSunat,
+            b.PorcentajeDetraccion,
+            b.ImporteDetraccion,
             b.Observacion,
             b.Estado,
             b.Situacion,

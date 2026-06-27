@@ -3,6 +3,11 @@
 -- Create date:   15/06/2026
 -- Description:   Obtiene la cabecera y detalle de una regla de cuentas destino.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   25/06/2026
+-- Description:   Simplifica la cabecera de cuentas destino para operar sin dependencia funcional del ejercicio.
+-- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_ObtenerCuentaDestinoRegla
     @IdCuentaDestinoRegla INT
@@ -16,7 +21,6 @@ BEGIN
         SELECT
             r.IdCuentaDestinoRegla,
             r.IdEmpresa,
-            r.Ejercicio,
             r.IdPlanCuentaOrigen,
             po.CodigoCuenta AS CodigoCuentaOrigen,
             po.NombreCuenta AS NombreCuentaOrigen,

@@ -186,7 +186,9 @@ public sealed class CajaBancoRepository(IDbConnectionFactory connectionFactory) 
                     ReferenciaLinea = reader.IsDBNull(reader.GetOrdinal("ReferenciaLinea")) ? null : reader.GetString(reader.GetOrdinal("ReferenciaLinea")),
                     TipoCambioLinea = reader.IsDBNull(reader.GetOrdinal("TipoCambioLinea")) ? null : reader.GetDecimal(reader.GetOrdinal("TipoCambioLinea")),
                     Debe = reader.GetDecimal(reader.GetOrdinal("Debe")),
-                    Haber = reader.GetDecimal(reader.GetOrdinal("Haber"))
+                    Haber = reader.GetDecimal(reader.GetOrdinal("Haber")),
+                    TotalImporteS = reader.IsDBNull(reader.GetOrdinal("TotalImporteS")) ? 0m : reader.GetDecimal(reader.GetOrdinal("TotalImporteS")),
+                    TotalImporteD = reader.IsDBNull(reader.GetOrdinal("TotalImporteD")) ? 0m : reader.GetDecimal(reader.GetOrdinal("TotalImporteD"))
                 });
             }
 
@@ -335,7 +337,9 @@ public sealed class CajaBancoRepository(IDbConnectionFactory connectionFactory) 
                     ReferenciaLinea = reader.IsDBNull(reader.GetOrdinal("ReferenciaLinea")) ? null : reader.GetString(reader.GetOrdinal("ReferenciaLinea")),
                     TipoCambioLinea = reader.IsDBNull(reader.GetOrdinal("TipoCambioLinea")) ? null : reader.GetDecimal(reader.GetOrdinal("TipoCambioLinea")),
                     Debe = reader.GetDecimal(reader.GetOrdinal("Debe")),
-                    Haber = reader.GetDecimal(reader.GetOrdinal("Haber"))
+                    Haber = reader.GetDecimal(reader.GetOrdinal("Haber")),
+                    TotalImporteS = reader.IsDBNull(reader.GetOrdinal("TotalImporteS")) ? 0m : reader.GetDecimal(reader.GetOrdinal("TotalImporteS")),
+                    TotalImporteD = reader.IsDBNull(reader.GetOrdinal("TotalImporteD")) ? 0m : reader.GetDecimal(reader.GetOrdinal("TotalImporteD"))
                 });
             }
 

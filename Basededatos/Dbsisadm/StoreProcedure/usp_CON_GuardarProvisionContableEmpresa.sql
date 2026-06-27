@@ -8,6 +8,11 @@
 -- Create date:   23/06/2026
 -- Description:   Amplia la configuracion de provision para compras, ventas, egresos, ingresos y aplicaciones.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   26/06/2026
+-- Description:   Agrega el modulo de detracciones para definir el origen automatico del segundo asiento en compras.
+-- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_GuardarProvisionContableEmpresa
     @IdEmpresa INT,
@@ -32,6 +37,7 @@ BEGIN
                 WHEN 'EGR' THEN N'Provision Egresos'
                 WHEN 'ING' THEN N'Provision Ingresos'
                 WHEN 'APNC' THEN N'Provision Aplicaciones'
+                WHEN 'DET' THEN N'Provision Detracciones'
                 ELSE NULL
             END;
 

@@ -6,6 +6,7 @@
    Description:   Agrega el formulario base del modulo Caja y Bancos con seleccion de cuenta corriente, operacion bancaria, persona relacionada y detalle contable con ayudas de cuenta, centro de costo, persona y comprobantes por linea.
    ============================================= *@
 @* Firma: FRANCO LARA - 24/06/2026 | Reubica el resumen del movimiento junto al importe de cabecera, cambia sus indicadores a Total Operacion/Total Detalle/Diferencia, amplia el detalle para guardar persona por linea, enlaza comprobantes Compra/Venta jalando su saldo pendiente, bloquea el guardado cuando exista diferencia y muestra calendario en Fecha emision. *@
+@* Firma: FRANCO LARA - 26/06/2026 | Incorpora detracciones en la ayuda de comprobantes pendientes de Caja y Bancos, asigna tipo documento por codigo, hereda serie y numero del comprobante original y precarga la cuenta contable SPOT configurada para su pago. *@
 
 @{
     ViewData["Title"] = Model.Formulario.IdMovimientoBanco.HasValue ? "Editar movimiento bancario" : "Registrar movimiento bancario";
@@ -291,7 +292,7 @@
                 <div class="workspace-caja-banco-layout mt-4">
                     <aside class="workspace-caja-banco-sidebar">
                         <div class="workspace-section">
-                            <div class="workspace-section-head">
+                    <div class="workspace-section-head workspace-section-head-compact">
                                 <div>
                                     <span class="workspace-section-kicker">Operacion</span>
                                     <h2>Flujo bancario</h2>
@@ -364,7 +365,7 @@
 
                     <div class="workspace-caja-banco-main">
                         <div class="workspace-section">
-                            <div class="workspace-section-head">
+                            <div class="workspace-section-head workspace-section-head-compact">
                                 <div>
                                     <span class="workspace-section-kicker">Cabecera</span>
                                     <h2>Datos del movimiento</h2>
@@ -442,7 +443,7 @@
                 </div>
 
                 <div class="workspace-section mt-4">
-                    <div class="workspace-section-head">
+                            <div class="workspace-section-head workspace-section-head-compact">
                         <div>
                             <h2>Detalle del movimiento</h2>
                             <p>Registra las lineas del movimiento. Cada linea debe tener importe solo en Debe o solo en Haber.</p>
@@ -932,7 +933,8 @@
                 const tipo = comprobante?.descripcionTipoComprobante || "Comprobante";
                 const serie = comprobante?.serie || "";
                 const numero = comprobante?.numero || "";
-                return `${tipo} ${serie}-${numero}`.trim();
+                const referencia = [serie, numero].filter(Boolean).join("-");
+                return [tipo, referencia].filter(Boolean).join(" ").trim();
             };
 
             const limpiarComprobanteLinea = (row, limpiarMontos = false) => {
@@ -985,7 +987,7 @@
                     return;
                 }
 
-                if (moduloComprobante === "COM") {
+                if (moduloComprobante === "COM" || moduloComprobante === "DET") {
                     if (debeInput) {
                         debeInput.value = importe;
                     }
@@ -1518,7 +1520,7 @@
                         cuentaTextoInput.value = comprobanteSeleccion.cuentaContable.cuentaTexto;
                     }
                     if (tipoDocumentoInput) {
-                        tipoDocumentoInput.value = comprobanteSeleccion.descripcionTipoComprobante || "";
+                        tipoDocumentoInput.value = comprobanteSeleccion.tipoComprobante || "";
                     }
                     if (serieInput) {
                         serieInput.value = comprobanteSeleccion.serie || "";

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SistemaAdministrativoWeb.Infrastructure.Contabilidad;
 using SistemaAdministrativoWeb.Infrastructure.Empresas;
+using SistemaAdministrativoWeb.Infrastructure.Parametros;
 using SistemaAdministrativoWeb.ViewModels.Contabilidad;
 
 namespace SistemaAdministrativoWeb.Controllers;
@@ -11,7 +12,8 @@ public class ConfiguracionContabilizacionController(
     ICurrentCompanyAccessor currentCompanyAccessor,
     IConfiguracionContabilizacionRepository configuracionRepository,
     IOrigenRepository origenRepository,
-    IPlanCuentaRepository planCuentaRepository) : Controller
+    IPlanCuentaRepository planCuentaRepository,
+    IParametroEmpresaRepository parametroEmpresaRepository) : Controller
 {
     private static readonly (string Modulo, string Titulo, string Resumen, string Descripcion, string Icono, string SufijoHtml)[] DefinicionesProvision =
     [
@@ -19,11 +21,13 @@ public class ConfiguracionContabilizacionController(
         ("VEN", "Ventas", "Origen y asiento automatico", "Define el origen contable y estado para generar asientos automaticos de ventas.", "bi-cash-stack", "ventas"),
         ("EGR", "Egresos", "Origen y asiento automatico", "Define el origen contable base para futuros movimientos operativos de egresos.", "bi-box-arrow-right", "egresos"),
         ("ING", "Ingresos", "Origen y asiento automatico", "Define el origen contable base para futuros movimientos operativos de ingresos.", "bi-box-arrow-in-left", "ingresos"),
-        ("APNC", "Aplicaciones", "Origen y asiento automatico", "Define el origen contable base para futuras aplicaciones de notas de credito.", "bi-arrow-repeat", "aplicaciones")
+        ("APNC", "Aplicaciones", "Origen y asiento automatico", "Define el origen contable base para futuras aplicaciones de notas de credito.", "bi-arrow-repeat", "aplicaciones"),
+        ("DET", "Detracciones", "Origen y asiento automatico", "Define el origen contable del asiento adicional que aplica la 42 contra la cuenta SPOT en compras.", "bi-bank", "detracciones")
     ];
 
     private const int TamanoPagina = 20;
     private const int TamanoAyudaCuenta = 100;
+    private const int TamanoListaParametros = 200;
 
     [HttpGet]
     public async Task<IActionResult> Index(CancellationToken cancellationToken = default)
@@ -92,6 +96,58 @@ public class ConfiguracionContabilizacionController(
 
         await configuracionRepository.GuardarImpuestoAsync(currentCompanyAccessor.EmpresaId.Value, idTipoImpuesto, idPlanCuenta, activo, User.Identity?.Name, cancellationToken);
         TempData["ConfiguracionContabilizacionOk"] = "Impuesto configurado correctamente.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> GuardarParametro(int idParametroEmpresa, string? valorParametro, bool activo = true, CancellationToken cancellationToken = default)
+    {
+        if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
+        {
+            return RedirectToAction("Index", "EmpresaContexto");
+        }
+
+        var idEmpresa = currentCompanyAccessor.EmpresaId.Value;
+        var parametroActual = await parametroEmpresaRepository.ObtenerAsync(idEmpresa, idParametroEmpresa, cancellationToken);
+        if (parametroActual is null || string.Equals(parametroActual.TipoParametro, "NA", StringComparison.OrdinalIgnoreCase))
+        {
+            TempData["ConfiguracionContabilizacionError"] = "El parametro indicado no existe o no esta disponible para configuracion contable.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var valorNormalizado = (valorParametro ?? string.Empty).Trim().ToUpperInvariant();
+        if (!string.IsNullOrWhiteSpace(valorNormalizado))
+        {
+            var cuentas = await planCuentaRepository.ListarPaginadoPorEmpresaAsync(idEmpresa, valorNormalizado, null, 1, 10, false, false, cancellationToken);
+            var cuenta = cuentas.Items.FirstOrDefault(x =>
+                string.Equals(x.CodigoCuenta, valorNormalizado, StringComparison.OrdinalIgnoreCase)
+                && x.Estado
+                && x.AceptaMovimiento
+                && x.NivelCuenta == 5);
+
+            if (cuenta is null)
+            {
+                TempData["ConfiguracionContabilizacionError"] = "Seleccione una cuenta contable activa de nivel 5 para el parametro.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        await parametroEmpresaRepository.GuardarAsync(new GuardarParametroEmpresaRequest
+        {
+            IdParametroEmpresa = parametroActual.IdParametroEmpresa,
+            IdEmpresa = parametroActual.IdEmpresa,
+            TipoParametro = parametroActual.TipoParametro,
+            CodigoParametro = parametroActual.CodigoParametro,
+            ValorParametro = valorNormalizado,
+            DescripcionParametro = parametroActual.DescripcionParametro,
+            FecIni = parametroActual.FecIni,
+            FecFin = parametroActual.FecFin,
+            Activo = activo,
+            UsuarioRegistro = User.Identity?.Name
+        }, cancellationToken);
+
+        TempData["ConfiguracionContabilizacionOk"] = "Parametro contable guardado correctamente.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -219,6 +275,8 @@ public class ConfiguracionContabilizacionController(
     private async Task<ConfiguracionContabilizacionIndexViewModel> ConstruirPantallaAsync(CancellationToken cancellationToken)
     {
         var empresaId = currentCompanyAccessor.EmpresaId!.Value;
+        await parametroEmpresaRepository.CargarDefaultAsync(empresaId, User.Identity?.Name, cancellationToken);
+
         var origenes = (await origenRepository.ListarPorEmpresaAsync(empresaId, false, cancellationToken))
             .Where(x => x.Estado)
             .OrderBy(x => x.CodigoOrigen)
@@ -228,6 +286,11 @@ public class ConfiguracionContabilizacionController(
             .OrderBy(x => x.CodigoCuenta)
             .ToList();
         var configuracion = await configuracionRepository.ObtenerConfiguracionContableEmpresaAsync(empresaId, cancellationToken);
+        var parametros = (await parametroEmpresaRepository.ListarPaginadoPorEmpresaAsync(empresaId, null, null, 1, TamanoListaParametros, cancellationToken)).Items
+            .Where(x => !string.Equals(x.TipoParametro, "NA", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(x => x.TipoParametro)
+            .ThenBy(x => x.CodigoParametro)
+            .ToList();
 
         return new ConfiguracionContabilizacionIndexViewModel
         {
@@ -268,7 +331,11 @@ public class ConfiguracionContabilizacionController(
                 CuentaCompraDolaresTexto = x.CuentaCompraDolaresTexto,
                 Activo = x.Activo
             }).ToList(),
-            Impuestos = configuracion.Impuestos.Select(MapearImpuesto).ToList()
+            Impuestos = configuracion.Impuestos
+                .Where(x => !string.Equals(x.CodigoSunat, "SPOT", StringComparison.OrdinalIgnoreCase))
+                .Select(MapearImpuesto)
+                .ToList(),
+            Parametros = await MapearParametrosAsync(empresaId, parametros, cancellationToken)
         };
     }
 
@@ -299,6 +366,35 @@ public class ConfiguracionContabilizacionController(
             CuentaTexto = impuesto.CuentaTexto,
             Activo = impuesto.Activo
         };
+    }
+
+    private async Task<List<ConfiguracionParametroContableFormViewModel>> MapearParametrosAsync(int idEmpresa, IReadOnlyCollection<ParametroEmpresaDto> parametros, CancellationToken cancellationToken)
+    {
+        var items = new List<ConfiguracionParametroContableFormViewModel>();
+
+        foreach (var parametro in parametros)
+        {
+            var cuentaTexto = string.Empty;
+            if (!string.IsNullOrWhiteSpace(parametro.ValorParametro))
+            {
+                var cuentas = await planCuentaRepository.ListarPaginadoPorEmpresaAsync(idEmpresa, parametro.ValorParametro, null, 1, 10, false, false, cancellationToken);
+                var cuenta = cuentas.Items.FirstOrDefault(x => string.Equals(x.CodigoCuenta, parametro.ValorParametro, StringComparison.OrdinalIgnoreCase));
+                cuentaTexto = cuenta is null ? parametro.ValorParametro : $"{cuenta.CodigoCuenta} - {cuenta.NombreCuenta}";
+            }
+
+            items.Add(new ConfiguracionParametroContableFormViewModel
+            {
+                IdParametroEmpresa = parametro.IdParametroEmpresa,
+                TipoParametro = parametro.TipoParametro,
+                CodigoParametro = parametro.CodigoParametro,
+                DescripcionParametro = parametro.DescripcionParametro,
+                ValorParametro = parametro.ValorParametro,
+                CuentaTexto = cuentaTexto,
+                Activo = parametro.Activo
+            });
+        }
+
+        return items;
     }
 
     private static void NormalizarFormulario(ConfiguracionContabilizacionFormViewModel formulario)

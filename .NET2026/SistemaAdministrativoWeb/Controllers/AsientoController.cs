@@ -436,7 +436,7 @@ public class AsientoController(
             .OrderBy(x => x.CodigoTipoComprobante)
             .Select(x => new OpcionCatalogoViewModel
             {
-                Valor = x.Descripcion,
+                Valor = x.CodigoTipoComprobante,
                 Texto = $"{x.CodigoTipoComprobante} - {x.Descripcion}"
             })
             .ToList();

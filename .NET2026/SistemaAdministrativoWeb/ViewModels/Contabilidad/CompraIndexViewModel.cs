@@ -24,6 +24,7 @@ public sealed class CompraIndexViewModel
     public List<TipoComprobanteDto> TiposComprobante { get; set; } = [];
     public List<PlanCuentaDto> CuentasMovimiento { get; set; } = [];
     public List<TipoAfectacionIgvDto> TiposAfectacionIgv { get; set; } = [];
+    public List<DetraccionSunatDto> DetraccionesSunat { get; set; } = [];
     public List<OpcionCatalogoViewModel> TiposDocumentoIdentidad { get; set; } = [];
     public List<CompraResumenItemViewModel> Compras { get; set; } = [];
     public string ProveedorSeleccionadoTipoDocumento { get; set; } = string.Empty;

@@ -3,6 +3,11 @@
 -- Create date:   18/06/2026
 -- Description:   Copia reglas maestras internas de cuentas destino hacia una empresa.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   25/06/2026
+-- Description:   Evita duplicar cuentas destino por ejercicio al cargar la configuracion base de una empresa.
+-- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_CargarCuentasDestinoDefaultEmpresa
     @IdEmpresa INT,
@@ -40,7 +45,6 @@ BEGIN
               SELECT 1
               FROM dbo.CON_CuentaDestinoRegla AS r
               WHERE r.IdEmpresa = @IdEmpresa
-                AND r.Ejercicio = rm.Ejercicio
                 AND r.IdPlanCuentaOrigen = origen.IdPlanCuenta
           );
 
@@ -70,7 +74,6 @@ BEGIN
            AND origen.CodigoCuenta = rm.CodigoCuentaOrigen
         INNER JOIN dbo.CON_CuentaDestinoRegla AS r
             ON r.IdEmpresa = @IdEmpresa
-           AND r.Ejercicio = rm.Ejercicio
            AND r.IdPlanCuentaOrigen = origen.IdPlanCuenta
         INNER JOIN dbo.CON_PlanCuenta AS cargo
             ON cargo.IdEmpresa = @IdEmpresa

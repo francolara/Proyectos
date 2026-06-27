@@ -3,10 +3,14 @@
 -- Create date:   15/06/2026
 -- Description:   Registra o reemplaza la configuracion de cuentas destino para una cuenta origen, empresa y ejercicio.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   25/06/2026
+-- Description:   Guarda una sola configuracion de cuentas destino por empresa y cuenta origen, manteniendo ejercicio solo como dato historico interno.
+-- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_GuardarCuentaDestinoRegla
     @IdEmpresa INT,
-    @Ejercicio SMALLINT,
     @IdPlanCuentaOrigen INT,
     @Activo BIT,
     @Observacion NVARCHAR(500) = NULL,
@@ -21,6 +25,7 @@ BEGIN
 
         DECLARE @IdCuentaDestinoRegla INT
         DECLARE @PorcentajeTotal DECIMAL(18,4)
+        DECLARE @Ejercicio SMALLINT = YEAR(GETDATE())
 
         IF @DetalleXml IS NULL
         BEGIN
@@ -87,7 +92,6 @@ BEGIN
             @IdCuentaDestinoRegla = r.IdCuentaDestinoRegla
         FROM dbo.CON_CuentaDestinoRegla AS r
         WHERE r.IdEmpresa = @IdEmpresa
-          AND r.Ejercicio = @Ejercicio
           AND r.IdPlanCuentaOrigen = @IdPlanCuentaOrigen;
 
         IF @IdCuentaDestinoRegla IS NULL

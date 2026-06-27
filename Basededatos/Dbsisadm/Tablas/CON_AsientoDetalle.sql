@@ -13,6 +13,12 @@
 -- Create date:   22/06/2026
 -- Description:   Amplia TipoDocumento para guardar descripciones de comprobante en asientos automaticos de compras y ventas.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   26/06/2026
+-- Description:   Agrega importes por moneda al detalle de asiento para conservar conversiones a soles y dolares por linea.
+-- =============================================
+-- Firma: FRANCO LARA - 26/06/2026 | Incorpora TotalImporteS y TotalImporteD para conservar equivalencias por moneda en cada linea del asiento.
 
 IF OBJECT_ID(N'dbo.CON_AsientoDetalle', N'U') IS NULL
 BEGIN
@@ -32,6 +38,8 @@ BEGIN
         IdProveedor INT NULL,
         Debe DECIMAL(18,2) NOT NULL CONSTRAINT DF_CON_AsientoDetalle_Debe DEFAULT (0),
         Haber DECIMAL(18,2) NOT NULL CONSTRAINT DF_CON_AsientoDetalle_Haber DEFAULT (0),
+        TotalImporteS DECIMAL(18,2) NOT NULL CONSTRAINT DF_CON_AsientoDetalle_TotalImporteS DEFAULT (0),
+        TotalImporteD DECIMAL(18,2) NOT NULL CONSTRAINT DF_CON_AsientoDetalle_TotalImporteD DEFAULT (0),
         ReferenciaLinea NVARCHAR(100) NULL,
         FechaRegistro DATETIME2(0) NOT NULL CONSTRAINT DF_CON_AsientoDetalle_FechaRegistro DEFAULT (SYSDATETIME()),
         UsuarioRegistro NVARCHAR(450) NULL
@@ -71,4 +79,16 @@ BEGIN
     ALTER TABLE dbo.CON_AsientoDetalle
         ADD CONSTRAINT UQ_CON_AsientoDetalle_IdAsiento_Item
             UNIQUE (IdAsiento, Item);
+END;
+
+IF COL_LENGTH(N'dbo.CON_AsientoDetalle', N'TotalImporteS') IS NULL
+BEGIN
+    ALTER TABLE dbo.CON_AsientoDetalle
+        ADD TotalImporteS DECIMAL(18,2) NOT NULL CONSTRAINT DF_CON_AsientoDetalle_TotalImporteS DEFAULT (0);
+END;
+
+IF COL_LENGTH(N'dbo.CON_AsientoDetalle', N'TotalImporteD') IS NULL
+BEGIN
+    ALTER TABLE dbo.CON_AsientoDetalle
+        ADD TotalImporteD DECIMAL(18,2) NOT NULL CONSTRAINT DF_CON_AsientoDetalle_TotalImporteD DEFAULT (0);
 END;

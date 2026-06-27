@@ -35,4 +35,6 @@ public sealed class PlanCuentaFormViewModel
     public bool AceptaMovimiento { get; set; }
     public bool RequiereCentroCosto { get; set; }
     public bool Estado { get; set; } = true;
+    public bool PermiteConfigurarDestinos { get; set; }
+    public PlanCuentaDestinoConfiguracionViewModel ConfiguracionDestino { get; set; } = new();
 }

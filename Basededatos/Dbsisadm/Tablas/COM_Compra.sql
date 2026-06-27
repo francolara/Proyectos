@@ -15,6 +15,11 @@
 -- Create date:   23/06/2026
 -- Description:   Agrega la columna Saldo para controlar el importe pendiente del comprobante de compra.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   26/06/2026
+-- Description:   Agrega soporte para detracciones en compras con codigo SUNAT, porcentaje e importe descontado del saldo principal.
+-- =============================================
 
 IF OBJECT_ID(N'dbo.COM_Compra', N'U') IS NULL
 BEGIN
@@ -42,6 +47,10 @@ BEGIN
         Redondeo DECIMAL(18,2) NOT NULL CONSTRAINT DF_COM_Compra_Redondeo DEFAULT (0),
         ImporteTotal DECIMAL(18,2) NOT NULL CONSTRAINT DF_COM_Compra_ImporteTotal DEFAULT (0),
         Saldo DECIMAL(18,2) NOT NULL CONSTRAINT DF_COM_Compra_Saldo DEFAULT (0),
+        TieneDetraccion BIT NOT NULL CONSTRAINT DF_COM_Compra_TieneDetraccion DEFAULT (0),
+        IdDetraccionSunat INT NULL,
+        PorcentajeDetraccion DECIMAL(7,4) NOT NULL CONSTRAINT DF_COM_Compra_PorcentajeDetraccion DEFAULT (0),
+        ImporteDetraccion DECIMAL(18,2) NOT NULL CONSTRAINT DF_COM_Compra_ImporteDetraccion DEFAULT (0),
         Observacion NVARCHAR(500) NULL,
         Estado NVARCHAR(20) NOT NULL CONSTRAINT DF_COM_Compra_Estado DEFAULT (N'PROVISIONADO'),
         FechaRegistro DATETIME2(0) NOT NULL CONSTRAINT DF_COM_Compra_FechaRegistro DEFAULT (SYSDATETIME()),
@@ -67,6 +76,10 @@ BEGIN
     ALTER TABLE dbo.COM_Compra
         ADD CONSTRAINT FK_COM_Compra_ADM_Moneda
             FOREIGN KEY (IdMoneda) REFERENCES dbo.ADM_Moneda (IdMoneda);
+
+    ALTER TABLE dbo.COM_Compra
+        ADD CONSTRAINT FK_COM_Compra_ADM_DetraccionSunat
+            FOREIGN KEY (IdDetraccionSunat) REFERENCES dbo.ADM_DetraccionSunat (IdDetraccionSunat);
 
     ALTER TABLE dbo.COM_Compra
         ADD CONSTRAINT CK_COM_Compra_Montos
@@ -110,4 +123,41 @@ IF COL_LENGTH(N'dbo.COM_Compra', N'Saldo') IS NULL
 BEGIN
     ALTER TABLE dbo.COM_Compra
         ADD Saldo DECIMAL(18,2) NOT NULL CONSTRAINT DF_COM_Compra_Saldo DEFAULT (0);
+END;
+
+IF COL_LENGTH(N'dbo.COM_Compra', N'TieneDetraccion') IS NULL
+BEGIN
+    ALTER TABLE dbo.COM_Compra
+        ADD TieneDetraccion BIT NOT NULL CONSTRAINT DF_COM_Compra_TieneDetraccion DEFAULT (0);
+END;
+
+IF COL_LENGTH(N'dbo.COM_Compra', N'IdDetraccionSunat') IS NULL
+BEGIN
+    ALTER TABLE dbo.COM_Compra
+        ADD IdDetraccionSunat INT NULL;
+END;
+
+IF COL_LENGTH(N'dbo.COM_Compra', N'PorcentajeDetraccion') IS NULL
+BEGIN
+    ALTER TABLE dbo.COM_Compra
+        ADD PorcentajeDetraccion DECIMAL(7,4) NOT NULL CONSTRAINT DF_COM_Compra_PorcentajeDetraccion DEFAULT (0);
+END;
+
+IF COL_LENGTH(N'dbo.COM_Compra', N'ImporteDetraccion') IS NULL
+BEGIN
+    ALTER TABLE dbo.COM_Compra
+        ADD ImporteDetraccion DECIMAL(18,2) NOT NULL CONSTRAINT DF_COM_Compra_ImporteDetraccion DEFAULT (0);
+END;
+
+IF NOT EXISTS
+(
+    SELECT 1
+    FROM sys.foreign_keys
+    WHERE name = N'FK_COM_Compra_ADM_DetraccionSunat'
+)
+AND COL_LENGTH(N'dbo.COM_Compra', N'IdDetraccionSunat') IS NOT NULL
+BEGIN
+    ALTER TABLE dbo.COM_Compra
+        ADD CONSTRAINT FK_COM_Compra_ADM_DetraccionSunat
+            FOREIGN KEY (IdDetraccionSunat) REFERENCES dbo.ADM_DetraccionSunat (IdDetraccionSunat);
 END;

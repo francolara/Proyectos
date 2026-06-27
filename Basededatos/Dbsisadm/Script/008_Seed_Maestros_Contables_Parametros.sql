@@ -4,6 +4,12 @@
 -- Description:   Precarga inicial de maestros internos para parametros, origenes, plan de cuentas y cuentas destino con ColBalance, moneda y tipo de cambio.
 -- =============================================
 
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   26/06/2026
+-- Description:   Agrega el parametro maestro CTADETRACCION para configurar la cuenta contable SPOT desde ADM_ParametroEmpresa.
+-- =============================================
+
 MERGE dbo.ADM_ParametroMaestro AS destino
 USING
 (
@@ -29,6 +35,7 @@ USING
         ('ADMINISTRATIVO', 'CTARETENCION', N'40172000', N'Cuenta de retencion', NULL, NULL, 250),
         ('ADMINISTRATIVO', 'CTA_DEBE_CONSUMO', N'92111001', N'Cuenta debe para consumo', NULL, NULL, 260),
         ('ADMINISTRATIVO', 'CTA_HABER_CONSUMO', N'79111001', N'Cuenta haber para consumo', NULL, NULL, 270),
+        ('ADMINISTRATIVO', 'CTADETRACCION', N'', N'Cuenta contable para el Sistema SPOT (detraccion)', NULL, NULL, 280),
         ('COMPRAS', 'ORIGEN_REGISTRO_COMPRAS', N'44', N'Origen contable para registro de compras', NULL, NULL, 310),
         ('VENTAS', 'ORIGEN_REGISTRO_VENTAS', N'45', N'Origen contable para registro de ventas', NULL, NULL, 320)
 ) AS fuente (TipoParametro, CodigoParametro, ValorParametro, DescripcionParametro, FecIni, FecFin, Orden)

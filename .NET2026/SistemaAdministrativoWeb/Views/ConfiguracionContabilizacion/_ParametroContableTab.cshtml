@@ -1,0 +1,74 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.ConfiguracionParametroTabViewModel
+
+@* =============================================
+   Author:        FRANCO LARA
+   Create date:   26/06/2026
+   Description:   Muestra parametros contables por empresa con ayuda de plan de cuentas y guarda el codigo de cuenta en ValorParametro.
+   ============================================= *@
+
+<div class="workspace-section">
+    <div class="workspace-section-head">
+        <div>
+            <span class="workspace-section-kicker">Parametros</span>
+            <h2>@Model.Titulo</h2>
+            <p>Asigna cuentas contables a los parametros operativos existentes de la empresa usando la ayuda del plan de cuentas.</p>
+        </div>
+    </div>
+    <div class="table-responsive workspace-table-wrap">
+        <table class="table align-middle app-table workspace-table">
+            <thead>
+                <tr>
+                    <th>Codigo</th>
+                    <th>Descripcion</th>
+                    <th>Cuenta contable</th>
+                    <th>Activo</th>
+                    <th class="text-end">Accion</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Items)
+                {
+                    var parametroFormId = $"parametro-form-{item.IdParametroEmpresa}";
+                    <tr>
+                        <td class="workspace-tree-code">
+                            <form id="@parametroFormId" asp-action="GuardarParametro" method="post">
+                                @Html.AntiForgeryToken()
+                            </form>
+                            <input form="@parametroFormId" type="hidden" name="idParametroEmpresa" value="@item.IdParametroEmpresa" />
+                            @item.CodigoParametro
+                        </td>
+                        <td>@item.DescripcionParametro</td>
+                        <td>
+                            <input form="@parametroFormId" type="hidden" name="valorParametro" value="@item.ValorParametro" class="js-cuenta-id" data-cuenta-value-field="codigo" />
+                            <div class="workspace-lookup-control workspace-lookup-control-compact">
+                                <input class="form-control js-cuenta-texto" value="@(string.IsNullOrWhiteSpace(item.CuentaTexto) ? "Seleccione cuenta" : item.CuentaTexto)" readonly />
+                                <button type="button" class="btn btn-outline-secondary btn-sm workspace-icon-button js-open-cuenta-modal" title="Buscar cuenta" aria-label="Buscar cuenta"><i class="bi bi-search"></i></button>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <input form="@parametroFormId" type="checkbox" name="activo" value="true" class="form-check-input" checked="@item.Activo" />
+                            <input form="@parametroFormId" type="hidden" name="activo" value="false" />
+                        </td>
+                        <td class="text-end">
+                            <button form="@parametroFormId" type="submit" class="btn btn-primary btn-sm">Guardar</button>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Items.Any())
+                {
+                    <tr>
+                        <td colspan="5">
+                            <div class="app-empty-state app-empty-state-inline">
+                                <i class="bi bi-sliders"></i>
+                                <div>
+                                    <strong>No hay parametros configurables</strong>
+                                    <p>Revise los parametros copiados desde el maestro general.</p>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

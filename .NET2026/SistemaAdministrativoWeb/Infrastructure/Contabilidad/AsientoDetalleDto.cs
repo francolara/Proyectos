@@ -16,5 +16,7 @@ public sealed class AsientoDetalleDto
     public decimal? TipoCambioLinea { get; init; }
     public decimal Debe { get; init; }
     public decimal Haber { get; init; }
+    public decimal TotalImporteS { get; init; }
+    public decimal TotalImporteD { get; init; }
     public string? ReferenciaLinea { get; init; }
 }
