@@ -1,12 +1,13 @@
 VERSION 5.00
 Object = "{6A24B331-7634-11D3-A5B0-0050044A7E1A}#1.5#0"; "DXDBGrid.dll"
+Object = "{F41D1D30-7878-4923-8CB3-6CCACDC9C9DE}#1.0#0"; "CATControls.ocx"
 Begin VB.Form FrmBusqueda 
    Appearance      =   0  'Flat
    BorderStyle     =   1  'Fixed Single
    Caption         =   "Busqueda"
    ClientHeight    =   6510
-   ClientLeft      =   3765
-   ClientTop       =   2475
+   ClientLeft      =   10860
+   ClientTop       =   4515
    ClientWidth     =   8280
    Icon            =   "FrmBusqueda.frx":0000
    LinkTopic       =   "Form1"
@@ -15,25 +16,617 @@ Begin VB.Form FrmBusqueda
    MinButton       =   0   'False
    ScaleHeight     =   6510
    ScaleWidth      =   8280
+   Begin VB.Frame FraRegVehiculo 
+      Appearance      =   0  'Flat
+      ForeColor       =   &H80000008&
+      Height          =   3120
+      Left            =   60
+      TabIndex        =   27
+      Top             =   1470
+      Visible         =   0   'False
+      Width           =   8145
+      Begin VB.Frame Frame4 
+         Height          =   1905
+         Left            =   1290
+         TabIndex        =   29
+         Top             =   570
+         Width           =   5625
+         Begin VB.ComboBox CbxMarcas 
+            BeginProperty Font 
+               Name            =   "Arial"
+               Size            =   8.25
+               Charset         =   0
+               Weight          =   400
+               Underline       =   0   'False
+               Italic          =   0   'False
+               Strikethrough   =   0   'False
+            EndProperty
+            Height          =   330
+            Left            =   1350
+            Style           =   2  'Dropdown List
+            TabIndex        =   38
+            Top             =   1170
+            Width           =   4080
+         End
+         Begin CATControls.CATTextBox txtGls_Vehiculo 
+            Height          =   315
+            Left            =   1365
+            TabIndex        =   33
+            Tag             =   "TglsVehiculo"
+            Top             =   360
+            Width           =   4050
+            _ExtentX        =   7144
+            _ExtentY        =   556
+            BackColor       =   16777215
+            BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
+               Name            =   "Arial"
+               Size            =   8.25
+               Charset         =   0
+               Weight          =   400
+               Underline       =   0   'False
+               Italic          =   0   'False
+               Strikethrough   =   0   'False
+            EndProperty
+            FontName        =   "Arial"
+            FontSize        =   8.25
+            ForeColor       =   -2147483640
+            MaxLength       =   255
+            Container       =   "FrmBusqueda.frx":000C
+            Estilo          =   1
+            EnterTab        =   -1  'True
+         End
+         Begin CATControls.CATTextBox txtGls_Placa 
+            Height          =   315
+            Left            =   1365
+            TabIndex        =   34
+            Tag             =   "TGlsPlaca"
+            Top             =   750
+            Width           =   1500
+            _ExtentX        =   2646
+            _ExtentY        =   556
+            BackColor       =   16777215
+            BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
+               Name            =   "Arial"
+               Size            =   8.25
+               Charset         =   0
+               Weight          =   400
+               Underline       =   0   'False
+               Italic          =   0   'False
+               Strikethrough   =   0   'False
+            EndProperty
+            FontName        =   "Arial"
+            FontSize        =   8.25
+            ForeColor       =   -2147483640
+            MaxLength       =   16
+            Container       =   "FrmBusqueda.frx":0028
+            Estilo          =   1
+            EnterTab        =   -1  'True
+         End
+         Begin VB.Label Label4 
+            Appearance      =   0  'Flat
+            AutoSize        =   -1  'True
+            Caption         =   "Descripción"
+            BeginProperty Font 
+               Name            =   "Arial"
+               Size            =   8.25
+               Charset         =   0
+               Weight          =   400
+               Underline       =   0   'False
+               Italic          =   0   'False
+               Strikethrough   =   0   'False
+            EndProperty
+            ForeColor       =   &H80000008&
+            Height          =   210
+            Left            =   180
+            TabIndex        =   37
+            Top             =   420
+            Width           =   855
+         End
+         Begin VB.Label Label3 
+            Appearance      =   0  'Flat
+            AutoSize        =   -1  'True
+            Caption         =   "Marca"
+            BeginProperty Font 
+               Name            =   "Arial"
+               Size            =   8.25
+               Charset         =   0
+               Weight          =   400
+               Underline       =   0   'False
+               Italic          =   0   'False
+               Strikethrough   =   0   'False
+            EndProperty
+            ForeColor       =   &H80000008&
+            Height          =   210
+            Left            =   180
+            TabIndex        =   36
+            Top             =   1215
+            Width           =   450
+         End
+         Begin VB.Label Label7 
+            Appearance      =   0  'Flat
+            AutoSize        =   -1  'True
+            Caption         =   "Placa"
+            BeginProperty Font 
+               Name            =   "Arial"
+               Size            =   8.25
+               Charset         =   0
+               Weight          =   400
+               Underline       =   0   'False
+               Italic          =   0   'False
+               Strikethrough   =   0   'False
+            EndProperty
+            ForeColor       =   &H80000008&
+            Height          =   210
+            Left            =   180
+            TabIndex        =   35
+            Top             =   810
+            Width           =   390
+         End
+      End
+      Begin VB.CommandButton cmdGrabarVehiculo 
+         Caption         =   "&Grabar"
+         Height          =   375
+         Left            =   2970
+         TabIndex        =   0
+         Top             =   2610
+         Width           =   1095
+      End
+      Begin VB.CommandButton CmdCancelaVehiculo 
+         Caption         =   "&Cancelar"
+         Height          =   375
+         Left            =   4230
+         TabIndex        =   28
+         Top             =   2610
+         Width           =   1095
+      End
+      Begin CATControls.CATTextBox CATTextBox6 
+         Height          =   315
+         Left            =   1650
+         TabIndex        =   30
+         Top             =   7275
+         Visible         =   0   'False
+         Width           =   1680
+         _ExtentX        =   2963
+         _ExtentY        =   556
+         BackColor       =   16777215
+         BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
+            Name            =   "Arial"
+            Size            =   8.25
+            Charset         =   0
+            Weight          =   400
+            Underline       =   0   'False
+            Italic          =   0   'False
+            Strikethrough   =   0   'False
+         EndProperty
+         FontName        =   "Arial"
+         FontSize        =   8.25
+         ForeColor       =   -2147483640
+         Container       =   "FrmBusqueda.frx":0044
+         Estilo          =   1
+         EnterTab        =   -1  'True
+      End
+      Begin VB.Label Label11 
+         Alignment       =   2  'Center
+         Appearance      =   0  'Flat
+         BackColor       =   &H0080FF80&
+         BorderStyle     =   1  'Fixed Single
+         Caption         =   "REGISTRO RAPIDO DE VEHICULOS"
+         BeginProperty Font 
+            Name            =   "MS Sans Serif"
+            Size            =   12
+            Charset         =   0
+            Weight          =   700
+            Underline       =   0   'False
+            Italic          =   0   'False
+            Strikethrough   =   0   'False
+         EndProperty
+         ForeColor       =   &H80000008&
+         Height          =   375
+         Left            =   30
+         TabIndex        =   32
+         Top             =   120
+         Width           =   8100
+      End
+      Begin VB.Label Label10 
+         Appearance      =   0  'Flat
+         AutoSize        =   -1  'True
+         Caption         =   "Nº Brevete"
+         BeginProperty Font 
+            Name            =   "Arial"
+            Size            =   8.25
+            Charset         =   0
+            Weight          =   400
+            Underline       =   0   'False
+            Italic          =   0   'False
+            Strikethrough   =   0   'False
+         EndProperty
+         ForeColor       =   &H80000008&
+         Height          =   210
+         Left            =   135
+         TabIndex        =   31
+         Top             =   7350
+         Visible         =   0   'False
+         Width           =   795
+      End
+   End
+   Begin VB.CommandButton cmdopera 
+      Caption         =   "&REGISTRO RAPIDO"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      Height          =   375
+      Index           =   2
+      Left            =   3390
+      TabIndex        =   26
+      Top             =   6000
+      Visible         =   0   'False
+      Width           =   2685
+   End
+   Begin VB.Frame FraRegChofer 
+      Appearance      =   0  'Flat
+      ForeColor       =   &H80000008&
+      Height          =   3120
+      Left            =   60
+      TabIndex        =   9
+      Top             =   1470
+      Visible         =   0   'False
+      Width           =   8145
+      Begin VB.CommandButton cmdopera 
+         Caption         =   "&Cancelar"
+         Height          =   375
+         Index           =   1
+         Left            =   4110
+         TabIndex        =   22
+         Top             =   2610
+         Width           =   1095
+      End
+      Begin VB.CommandButton cmdopera 
+         Caption         =   "&Grabar"
+         Height          =   375
+         Index           =   0
+         Left            =   2880
+         TabIndex        =   21
+         Top             =   2610
+         Width           =   1095
+      End
+      Begin VB.Frame Frame2 
+         Height          =   1905
+         Left            =   240
+         TabIndex        =   10
+         Top             =   570
+         Width           =   7665
+         Begin CATControls.CATTextBox txtGls_Paterno 
+            Height          =   315
+            Left            =   1335
+            TabIndex        =   11
+            Tag             =   "TapellidoPaterno"
+            Top             =   300
+            Width           =   6240
+            _ExtentX        =   11007
+            _ExtentY        =   556
+            BackColor       =   16777215
+            BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
+               Name            =   "Arial"
+               Size            =   8.25
+               Charset         =   0
+               Weight          =   400
+               Underline       =   0   'False
+               Italic          =   0   'False
+               Strikethrough   =   0   'False
+            EndProperty
+            FontName        =   "Arial"
+            FontSize        =   8.25
+            ForeColor       =   -2147483640
+            MaxLength       =   80
+            Container       =   "FrmBusqueda.frx":0060
+            Estilo          =   1
+            EnterTab        =   -1  'True
+         End
+         Begin CATControls.CATTextBox txtGls_Materno 
+            Height          =   315
+            Left            =   1335
+            TabIndex        =   12
+            Tag             =   "TapellidoMaterno"
+            Top             =   645
+            Width           =   6240
+            _ExtentX        =   11007
+            _ExtentY        =   556
+            BackColor       =   16777215
+            BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
+               Name            =   "Arial"
+               Size            =   8.25
+               Charset         =   0
+               Weight          =   400
+               Underline       =   0   'False
+               Italic          =   0   'False
+               Strikethrough   =   0   'False
+            EndProperty
+            FontName        =   "Arial"
+            FontSize        =   8.25
+            ForeColor       =   -2147483640
+            MaxLength       =   80
+            Container       =   "FrmBusqueda.frx":007C
+            Estilo          =   1
+            EnterTab        =   -1  'True
+         End
+         Begin CATControls.CATTextBox txtGls_Nombres 
+            Height          =   315
+            Left            =   1335
+            TabIndex        =   13
+            Tag             =   "Tnombres"
+            Top             =   1005
+            Width           =   6240
+            _ExtentX        =   11007
+            _ExtentY        =   556
+            BackColor       =   16777215
+            BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
+               Name            =   "Arial"
+               Size            =   8.25
+               Charset         =   0
+               Weight          =   400
+               Underline       =   0   'False
+               Italic          =   0   'False
+               Strikethrough   =   0   'False
+            EndProperty
+            FontName        =   "Arial"
+            FontSize        =   8.25
+            ForeColor       =   -2147483640
+            MaxLength       =   80
+            Container       =   "FrmBusqueda.frx":0098
+            Estilo          =   1
+            Vacio           =   -1  'True
+            EnterTab        =   -1  'True
+         End
+         Begin CATControls.CATTextBox txt_RUC 
+            Height          =   315
+            Left            =   1335
+            TabIndex        =   14
+            Tag             =   "Truc"
+            Top             =   1380
+            Width           =   2115
+            _ExtentX        =   3731
+            _ExtentY        =   556
+            BackColor       =   16777215
+            BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
+               Name            =   "Arial"
+               Size            =   8.25
+               Charset         =   0
+               Weight          =   400
+               Underline       =   0   'False
+               Italic          =   0   'False
+               Strikethrough   =   0   'False
+            EndProperty
+            FontName        =   "Arial"
+            FontSize        =   8.25
+            ForeColor       =   -2147483640
+            MaxLength       =   8
+            Container       =   "FrmBusqueda.frx":00B4
+            Estilo          =   1
+            EnterTab        =   -1  'True
+         End
+         Begin CATControls.CATTextBox TxtBrevete 
+            Height          =   315
+            Left            =   5475
+            TabIndex        =   15
+            Tag             =   "Truc"
+            Top             =   1380
+            Width           =   2085
+            _ExtentX        =   3678
+            _ExtentY        =   556
+            BackColor       =   16777215
+            BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
+               Name            =   "Arial"
+               Size            =   8.25
+               Charset         =   0
+               Weight          =   400
+               Underline       =   0   'False
+               Italic          =   0   'False
+               Strikethrough   =   0   'False
+            EndProperty
+            FontName        =   "Arial"
+            FontSize        =   8.25
+            ForeColor       =   -2147483640
+            MaxLength       =   20
+            Container       =   "FrmBusqueda.frx":00D0
+            Estilo          =   1
+            EnterTab        =   -1  'True
+         End
+         Begin VB.Label Label14 
+            Appearance      =   0  'Flat
+            AutoSize        =   -1  'True
+            Caption         =   "DNI"
+            BeginProperty Font 
+               Name            =   "Arial"
+               Size            =   8.25
+               Charset         =   0
+               Weight          =   400
+               Underline       =   0   'False
+               Italic          =   0   'False
+               Strikethrough   =   0   'False
+            EndProperty
+            ForeColor       =   &H80000008&
+            Height          =   210
+            Left            =   75
+            TabIndex        =   20
+            Top             =   1440
+            Width           =   240
+         End
+         Begin VB.Label lblApePaterno 
+            Appearance      =   0  'Flat
+            AutoSize        =   -1  'True
+            Caption         =   "Apellido Paterno"
+            BeginProperty Font 
+               Name            =   "Arial"
+               Size            =   8.25
+               Charset         =   0
+               Weight          =   400
+               Underline       =   0   'False
+               Italic          =   0   'False
+               Strikethrough   =   0   'False
+            EndProperty
+            ForeColor       =   &H80000008&
+            Height          =   210
+            Left            =   60
+            TabIndex        =   19
+            Top             =   390
+            Width           =   1170
+         End
+         Begin VB.Label lblApeMaterno 
+            Appearance      =   0  'Flat
+            AutoSize        =   -1  'True
+            Caption         =   "Apellido Materno"
+            BeginProperty Font 
+               Name            =   "Arial"
+               Size            =   8.25
+               Charset         =   0
+               Weight          =   400
+               Underline       =   0   'False
+               Italic          =   0   'False
+               Strikethrough   =   0   'False
+            EndProperty
+            ForeColor       =   &H80000008&
+            Height          =   210
+            Left            =   60
+            TabIndex        =   18
+            Top             =   720
+            Width           =   1200
+         End
+         Begin VB.Label lblNombres 
+            Appearance      =   0  'Flat
+            AutoSize        =   -1  'True
+            Caption         =   "Nombres"
+            BeginProperty Font 
+               Name            =   "Arial"
+               Size            =   8.25
+               Charset         =   0
+               Weight          =   400
+               Underline       =   0   'False
+               Italic          =   0   'False
+               Strikethrough   =   0   'False
+            EndProperty
+            ForeColor       =   &H80000008&
+            Height          =   210
+            Left            =   60
+            TabIndex        =   17
+            Top             =   1050
+            Width           =   645
+         End
+         Begin VB.Label Label6 
+            Appearance      =   0  'Flat
+            AutoSize        =   -1  'True
+            Caption         =   "Brevete"
+            BeginProperty Font 
+               Name            =   "Arial"
+               Size            =   8.25
+               Charset         =   0
+               Weight          =   400
+               Underline       =   0   'False
+               Italic          =   0   'False
+               Strikethrough   =   0   'False
+            EndProperty
+            ForeColor       =   &H80000008&
+            Height          =   210
+            Left            =   4125
+            TabIndex        =   16
+            Top             =   1440
+            Width           =   570
+         End
+      End
+      Begin CATControls.CATTextBox CATTextBox11 
+         Height          =   315
+         Left            =   1650
+         TabIndex        =   23
+         Top             =   7275
+         Visible         =   0   'False
+         Width           =   1680
+         _ExtentX        =   2963
+         _ExtentY        =   556
+         BackColor       =   16777215
+         BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
+            Name            =   "Arial"
+            Size            =   8.25
+            Charset         =   0
+            Weight          =   400
+            Underline       =   0   'False
+            Italic          =   0   'False
+            Strikethrough   =   0   'False
+         EndProperty
+         FontName        =   "Arial"
+         FontSize        =   8.25
+         ForeColor       =   -2147483640
+         Container       =   "FrmBusqueda.frx":00EC
+         Estilo          =   1
+         EnterTab        =   -1  'True
+      End
+      Begin VB.Label Label23 
+         Appearance      =   0  'Flat
+         AutoSize        =   -1  'True
+         Caption         =   "Nº Brevete"
+         BeginProperty Font 
+            Name            =   "Arial"
+            Size            =   8.25
+            Charset         =   0
+            Weight          =   400
+            Underline       =   0   'False
+            Italic          =   0   'False
+            Strikethrough   =   0   'False
+         EndProperty
+         ForeColor       =   &H80000008&
+         Height          =   210
+         Left            =   135
+         TabIndex        =   25
+         Top             =   7350
+         Visible         =   0   'False
+         Width           =   795
+      End
+      Begin VB.Label Label9 
+         Alignment       =   2  'Center
+         Appearance      =   0  'Flat
+         BackColor       =   &H0080FF80&
+         BorderStyle     =   1  'Fixed Single
+         Caption         =   "REGISTRO RAPIDO DE CHOFERES"
+         BeginProperty Font 
+            Name            =   "MS Sans Serif"
+            Size            =   12
+            Charset         =   0
+            Weight          =   700
+            Underline       =   0   'False
+            Italic          =   0   'False
+            Strikethrough   =   0   'False
+         EndProperty
+         ForeColor       =   &H80000008&
+         Height          =   375
+         Left            =   30
+         TabIndex        =   24
+         Top             =   120
+         Width           =   8100
+      End
+   End
    Begin VB.Frame Frame1 
       Appearance      =   0  'Flat
       ForeColor       =   &H80000008&
       Height          =   5400
       Left            =   75
-      TabIndex        =   6
+      TabIndex        =   7
       Top             =   540
       Width           =   8145
       Begin DXDBGRIDLibCtl.dxDBGrid g 
          Height          =   5115
          Left            =   75
-         OleObjectBlob   =   "FrmBusqueda.frx":000C
-         TabIndex        =   1
+         OleObjectBlob   =   "FrmBusqueda.frx":0108
+         TabIndex        =   2
          Top             =   150
          Width           =   8010
       End
    End
    Begin VB.CommandButton Cmdbusq 
-      DownPicture     =   "FrmBusqueda.frx":16F2
+      DownPicture     =   "FrmBusqueda.frx":17EE
       BeginProperty Font 
          Name            =   "MS Sans Serif"
          Size            =   8.25
@@ -45,9 +638,9 @@ Begin VB.Form FrmBusqueda
       EndProperty
       Height          =   360
       Left            =   7650
-      Picture         =   "FrmBusqueda.frx":1A9D
+      Picture         =   "FrmBusqueda.frx":1B99
       Style           =   1  'Graphical
-      TabIndex        =   5
+      TabIndex        =   6
       Top             =   45
       Visible         =   0   'False
       Width           =   405
@@ -66,7 +659,7 @@ Begin VB.Form FrmBusqueda
       Height          =   315
       Left            =   945
       MaxLength       =   255
-      TabIndex        =   0
+      TabIndex        =   1
       Top             =   165
       Width           =   7245
    End
@@ -84,7 +677,7 @@ Begin VB.Form FrmBusqueda
       Height          =   330
       Left            =   3000
       MaxLength       =   255
-      TabIndex        =   7
+      TabIndex        =   8
       Top             =   4575
       Width           =   1455
    End
@@ -103,7 +696,7 @@ Begin VB.Form FrmBusqueda
       ForeColor       =   &H00000000&
       Height          =   465
       Left            =   90
-      TabIndex        =   3
+      TabIndex        =   4
       Top             =   5985
       Width           =   3120
    End
@@ -123,7 +716,7 @@ Begin VB.Form FrmBusqueda
       ForeColor       =   &H00000000&
       Height          =   285
       Left            =   6300
-      TabIndex        =   4
+      TabIndex        =   5
       Top             =   5985
       Width           =   1905
    End
@@ -143,7 +736,7 @@ Begin VB.Form FrmBusqueda
       ForeColor       =   &H00000000&
       Height          =   210
       Left            =   135
-      TabIndex        =   2
+      TabIndex        =   3
       Top             =   225
       Width           =   735
    End
@@ -163,11 +756,127 @@ Private SRptBus(2) As String
 Private strAyuda As String
 Private EsNuevo As Boolean
 
+
 Private Sub CmdBusq_Click()
     
     sqlBus = setSql(strAyuda)
     fill
 
+End Sub
+
+Private Sub CmdCancelaVehiculo_Click()
+    FraRegVehiculo.Visible = False
+End Sub
+
+Private Sub cmdGrabarVehiculo_Click()
+On Error GoTo Err
+Dim strCodigo       As String
+Dim strMsg          As String
+Dim CPrefijo        As String
+Dim StrCodPersona   As String
+Dim StrCadSql       As String
+Dim StrMsgError     As String
+
+        If Trim("" & txtGls_Vehiculo.Text) = "" Then
+            StrMsgError = "Faltan datos del vechiculo, verifique.": GoTo Err
+        End If
+        If Trim("" & txtGls_Placa.Text) = "" Then
+            StrMsgError = "Faltan datos del vechiculo, verifique.": GoTo Err
+        End If
+        If Trim("" & right(CbxMarcas.Text, 8)) = "" Then
+            StrMsgError = "Faltan datos del vechiculo, verifique.": GoTo Err
+        End If
+        
+        validaHomonimia "Vehiculos", "GlsVehiculo", "idVehiculo", txtGls_Vehiculo.Text, "", True, StrMsgError, " or GlsPlaca = '" & txtGls_Placa.Text & "'"
+        If StrMsgError <> "" Then GoTo Err
+    
+        StrCodPersona = GeneraCorrelativoAnoMes("Vehiculos", "idVehiculo")
+        
+        StrCadSql = "EXEC spu_RegVehiculos '" & StrCodPersona & "','" & glsEmpresa & "','" & Trim("" & txtGls_Vehiculo.Text) & "'," & _
+                    "'" & Trim("" & txtGls_Placa.Text) & "','" & Trim("" & right(CbxMarcas.Text, 8)) & "'"
+        Cn.Execute StrCadSql
+        
+        Call fill
+
+        FraRegVehiculo.Visible = False
+    
+Exit Sub
+Err:
+    If StrMsgError = "" Then StrMsgError = Err.Description
+    MsgBox StrMsgError, vbInformation, App.Title
+End Sub
+
+Private Sub cmdopera_Click(Index As Integer)
+On Error GoTo Err
+Dim strCodigo       As String
+Dim strMsg          As String
+Dim CPrefijo        As String
+Dim StrCodPersona   As String
+Dim StrCadSql       As String
+Dim StrMsgError     As String
+Dim RsVarios        As String
+
+    If Index = 2 Then
+        If strAyuda = "CHOFER" Then
+            FraRegChofer.Visible = True
+            txtGls_Paterno.Text = ""
+            txtGls_Materno.Text = ""
+            txtGls_Nombres.Text = ""
+            txt_RUC.Text = ""
+            TxtBrevete.Text = ""
+        End If
+        
+        If strAyuda = "VEHICULO" Then
+            FraRegVehiculo.Visible = True
+            txtGls_Vehiculo.Text = ""
+            txtGls_Placa.Text = ""
+            
+            llenaCombo CbxMarcas, "datos", "GlsDato", False, "idDato", "idTipoDatos = '07'"
+            
+        End If
+        
+        Exit Sub
+    End If
+    
+    If Index = 0 Then
+        
+        If Trim("" & txtGls_Paterno.Text) = "" Then
+            StrMsgError = "Faltan datos del chofer, verifique.": GoTo Err
+        End If
+        If Trim("" & txtGls_Materno.Text) = "" Then
+            StrMsgError = "Faltan datos del chofer, verifique.": GoTo Err
+        End If
+        If Trim("" & txtGls_Nombres.Text) = "" Then
+            StrMsgError = "Faltan datos del chofer, verifique.": GoTo Err
+        End If
+        If Trim("" & txt_RUC.Text) = "" And Len(Trim("" & txt_RUC.Text)) <> 8 Then
+             StrMsgError = "Ingrese un DNI valido, verifique.": GoTo Err
+        End If
+        If Trim("" & TxtBrevete.Text) = "" Then
+            StrMsgError = "Faltan datos del chofer, verifique.": GoTo Err
+        End If
+        
+        If Trim(txt_RUC.Text) <> "" Then
+            validaHomonimia "personas", "ruc", "idPersona", txt_RUC.Text, "", False, StrMsgError
+            If StrMsgError <> "" Then GoTo Err
+        End If
+    
+        CPrefijo = Year(getFechaSistema) & Format(Month(getFechaSistema), "00")
+        StrCodPersona = GeneraCorrelativoAnoMesNuevo("personas", "idPersona", CPrefijo, False)
+        
+        StrCadSql = "EXEC spu_RegChoferes '" & StrCodPersona & "','" & glsEmpresa & "','" & Trim("" & txtGls_Paterno.Text) & "'," & _
+                    "'" & Trim("" & txtGls_Materno.Text) & "','" & Trim("" & txtGls_Nombres.Text) & "','" & Trim("" & txt_RUC.Text) & "','" & Trim("" & TxtBrevete.Text) & "'"
+        Cn.Execute StrCadSql
+        
+        Call fill
+    End If
+    
+    FraRegChofer.Visible = False
+    
+Exit Sub
+Err:
+    If StrMsgError = "" Then StrMsgError = Err.Description
+    MsgBox StrMsgError, vbInformation, App.Title
 End Sub
 
 Private Sub Form_Activate()
@@ -197,7 +906,7 @@ Private Sub Form_Load()
     Me.Caption = "Búsqueda"
     ConfGrid g, False, False, False, False
     EsNuevo = True
-
+    
 End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
@@ -312,6 +1021,10 @@ Dim intI As Integer
     strAyuda = strParAyuda
     sqlBus = setSql(strParAyuda)
     fill
+    
+    If strAyuda = "CHOFER" Or strAyuda = "VEHICULO" Then
+        cmdopera(2).Visible = True
+    End If
     
     Me.Show vbModal
     If SRptBus(0) <> "" Then
@@ -540,3 +1253,9 @@ Dim intI As Integer
     Unload Me
 
 End Sub
+
+Private Sub txtCod_MarcaVehi_Change()
+    txtGls_MarcaVehi.Text = traerCampo("Datos", "GlsDato", "idDato", txtCod_MarcaVehi.Text, False)
+
+End Sub
+

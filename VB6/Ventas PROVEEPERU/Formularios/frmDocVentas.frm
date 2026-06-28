@@ -8,8 +8,8 @@ Begin VB.Form frmDocVentas
    BorderStyle     =   3  'Fixed Dialog
    Caption         =   "Ventas"
    ClientHeight    =   9570
-   ClientLeft      =   4260
-   ClientTop       =   3420
+   ClientLeft      =   1800
+   ClientTop       =   1140
    ClientWidth     =   15465
    BeginProperty Font 
       Name            =   "Arial"
@@ -1740,7 +1740,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   133169153
+         Format          =   127991809
          CurrentDate     =   38955
       End
       Begin VB.CommandButton cmbAyudaMotivoNCD 
@@ -2065,7 +2065,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   133169153
+         Format          =   127991809
          CurrentDate     =   38955
       End
       Begin MSComctlLib.ImageList imgDocVentas 
@@ -3347,7 +3347,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   133169153
+         Format          =   127991809
          CurrentDate     =   38955
       End
       Begin CATControls.CATTextBox txtgls_contacto 
@@ -9941,6 +9941,12 @@ Dim NIvapUnit               As Double
 '            End If
             
         Case gDetalle.Columns.ColumnByFieldName("CostoD").Index
+        
+            If Val(Format(gDetalle.Columns.ColumnByFieldName("CostoD").Value, "0.00")) = 0 Then
+                gDetalle.Dataset.Edit
+                gDetalle.Columns.ColumnByFieldName("CostoD").Value = 0#
+                gDetalle.Dataset.Post
+            End If
             procesaMoneda txtCod_Moneda.Text, txtCod_Moneda.Text, 0, gDetalle.Columns.ColumnByFieldName("VVUnit").Value, gDetalle.Columns.ColumnByFieldName("Afecto").Value, dblVVUnit, dblIGVUnit, dblPVUnit, 0, StrMsgError, Trim("" & gDetalle.Columns.ColumnByFieldName("IdProducto").Value)
             If StrMsgError <> "" Then GoTo Err
             
@@ -9970,6 +9976,13 @@ Dim NIvapUnit               As Double
 ''            End If
             
         Case gDetalle.Columns.ColumnByFieldName("Margen").Index
+        
+            If Val(Format(gDetalle.Columns.ColumnByFieldName("Margen").Value, "0.00")) = 0 Then
+                gDetalle.Dataset.Edit
+                gDetalle.Columns.ColumnByFieldName("Margen").Value = 0#
+                gDetalle.Dataset.Post
+            End If
+            
             procesaMoneda txtCod_Moneda.Text, txtCod_Moneda.Text, 0, gDetalle.Columns.ColumnByFieldName("VVUnit").Value, gDetalle.Columns.ColumnByFieldName("Afecto").Value, dblVVUnit, dblIGVUnit, dblPVUnit, 0, StrMsgError, Trim("" & gDetalle.Columns.ColumnByFieldName("IdProducto").Value)
             If StrMsgError <> "" Then GoTo Err
             
