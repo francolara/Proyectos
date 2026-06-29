@@ -243,6 +243,7 @@ End Sub
 Private Sub TxtBusq_KeyPress(KeyAscii As Integer)
  
     If KeyAscii = 13 Then
+        sqlBus = setSql("PRODUCTOS")
         CmdBusq_Click
         If g.Count > 1 Then g.SetFocus
     End If

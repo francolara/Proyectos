@@ -8,8 +8,8 @@ Begin VB.Form frmDocVentas
    BorderStyle     =   3  'Fixed Dialog
    Caption         =   "Ventas"
    ClientHeight    =   9570
-   ClientLeft      =   1800
-   ClientTop       =   1140
+   ClientLeft      =   3585
+   ClientTop       =   2385
    ClientWidth     =   15465
    BeginProperty Font 
       Name            =   "Arial"
@@ -28,6 +28,539 @@ Begin VB.Form frmDocVentas
    ScaleHeight     =   9570
    ScaleWidth      =   15465
    ShowInTaskbar   =   0   'False
+   Begin VB.Frame fraListado 
+      Appearance      =   0  'Flat
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00C00000&
+      Height          =   8865
+      Left            =   120
+      TabIndex        =   59
+      Top             =   690
+      Width           =   15255
+      Begin VB.Frame FraAtencionPed 
+         Appearance      =   0  'Flat
+         ForeColor       =   &H80000008&
+         Height          =   2970
+         Left            =   3180
+         TabIndex        =   220
+         Top             =   2250
+         Visible         =   0   'False
+         Width           =   6630
+         Begin VB.Frame Frame4 
+            Height          =   1125
+            Left            =   900
+            TabIndex        =   229
+            Top             =   1710
+            Width           =   3195
+            Begin VB.TextBox TxtcantProducto_Atn 
+               Alignment       =   1  'Right Justify
+               BackColor       =   &H00C0FFFF&
+               Height          =   345
+               Left            =   1800
+               TabIndex        =   233
+               Top             =   660
+               Width           =   1275
+            End
+            Begin VB.TextBox TxtcantProducto 
+               Alignment       =   1  'Right Justify
+               Appearance      =   0  'Flat
+               BackColor       =   &H00FFFFC0&
+               Height          =   345
+               Left            =   1800
+               Locked          =   -1  'True
+               TabIndex        =   232
+               Top             =   240
+               Width           =   1275
+            End
+            Begin VB.Label Label11 
+               Caption         =   "Cantidad Atentida"
+               BeginProperty Font 
+                  Name            =   "Arial"
+                  Size            =   9
+                  Charset         =   0
+                  Weight          =   700
+                  Underline       =   0   'False
+                  Italic          =   0   'False
+                  Strikethrough   =   0   'False
+               EndProperty
+               Height          =   195
+               Left            =   120
+               TabIndex        =   231
+               Top             =   720
+               Width           =   1515
+            End
+            Begin VB.Label Label10 
+               Caption         =   "Cantidad Pedido"
+               BeginProperty Font 
+                  Name            =   "Arial"
+                  Size            =   9
+                  Charset         =   0
+                  Weight          =   700
+                  Underline       =   0   'False
+                  Italic          =   0   'False
+                  Strikethrough   =   0   'False
+               EndProperty
+               Height          =   195
+               Left            =   120
+               TabIndex        =   230
+               Top             =   330
+               Width           =   1485
+            End
+         End
+         Begin VB.TextBox TxtDesproducto 
+            Appearance      =   0  'Flat
+            BackColor       =   &H00FFFFC0&
+            Height          =   345
+            Left            =   900
+            Locked          =   -1  'True
+            TabIndex        =   225
+            Top             =   1350
+            Width           =   5595
+         End
+         Begin VB.TextBox TxtCodProducto 
+            Alignment       =   2  'Center
+            Appearance      =   0  'Flat
+            BackColor       =   &H00FFFFC0&
+            Height          =   345
+            Left            =   900
+            Locked          =   -1  'True
+            TabIndex        =   224
+            Top             =   960
+            Width           =   1275
+         End
+         Begin VB.TextBox txtItmProducto 
+            Alignment       =   2  'Center
+            Appearance      =   0  'Flat
+            BackColor       =   &H00FFFFC0&
+            Height          =   345
+            Left            =   900
+            Locked          =   -1  'True
+            TabIndex        =   223
+            Top             =   570
+            Width           =   675
+         End
+         Begin VB.CommandButton CmdCancelarAtn 
+            Caption         =   "Cancelar"
+            Height          =   450
+            Left            =   4260
+            Style           =   1  'Graphical
+            TabIndex        =   222
+            Top             =   2370
+            Width           =   1455
+         End
+         Begin VB.CommandButton CmdAceptarAtn 
+            Caption         =   "&Aceptar"
+            Height          =   450
+            Left            =   4260
+            Style           =   1  'Graphical
+            TabIndex        =   221
+            Top             =   1800
+            Width           =   1455
+         End
+         Begin VB.Label Label12 
+            Alignment       =   2  'Center
+            Appearance      =   0  'Flat
+            BackColor       =   &H8000000D&
+            Caption         =   "REGISTRO DE ATENCIN"
+            BeginProperty Font 
+               Name            =   "Arial"
+               Size            =   9
+               Charset         =   0
+               Weight          =   700
+               Underline       =   0   'False
+               Italic          =   0   'False
+               Strikethrough   =   0   'False
+            EndProperty
+            ForeColor       =   &H80000008&
+            Height          =   285
+            Left            =   0
+            TabIndex        =   234
+            Top             =   120
+            Width           =   6615
+         End
+         Begin VB.Label Label9 
+            Caption         =   "Producto"
+            BeginProperty Font 
+               Name            =   "Arial"
+               Size            =   9
+               Charset         =   0
+               Weight          =   700
+               Underline       =   0   'False
+               Italic          =   0   'False
+               Strikethrough   =   0   'False
+            EndProperty
+            Height          =   195
+            Left            =   60
+            TabIndex        =   228
+            Top             =   1410
+            Width           =   855
+         End
+         Begin VB.Label Label8 
+            Caption         =   "Codigo"
+            BeginProperty Font 
+               Name            =   "Arial"
+               Size            =   9
+               Charset         =   0
+               Weight          =   700
+               Underline       =   0   'False
+               Italic          =   0   'False
+               Strikethrough   =   0   'False
+            EndProperty
+            Height          =   195
+            Left            =   60
+            TabIndex        =   227
+            Top             =   1050
+            Width           =   645
+         End
+         Begin VB.Label Label7 
+            Caption         =   "Item"
+            BeginProperty Font 
+               Name            =   "Arial"
+               Size            =   9
+               Charset         =   0
+               Weight          =   700
+               Underline       =   0   'False
+               Italic          =   0   'False
+               Strikethrough   =   0   'False
+            EndProperty
+            Height          =   195
+            Left            =   90
+            TabIndex        =   226
+            Top             =   660
+            Width           =   645
+         End
+      End
+      Begin VB.Frame FraModificaCC 
+         Appearance      =   0  'Flat
+         ForeColor       =   &H80000008&
+         Height          =   1860
+         Left            =   2430
+         TabIndex        =   185
+         Top             =   2250
+         Visible         =   0   'False
+         Width           =   7980
+         Begin VB.CommandButton CmdCancelarCC 
+            Caption         =   "Cancelar"
+            Height          =   390
+            Left            =   4185
+            Style           =   1  'Graphical
+            TabIndex        =   194
+            Top             =   1260
+            Width           =   1185
+         End
+         Begin VB.CommandButton CmdAceptar 
+            Caption         =   "&Aceptar"
+            Height          =   390
+            Left            =   2925
+            Style           =   1  'Graphical
+            TabIndex        =   193
+            Top             =   1260
+            Width           =   1185
+         End
+         Begin VB.CommandButton CmdAyudaCentroCostoNuevo 
+            BeginProperty Font 
+               Name            =   "MS Sans Serif"
+               Size            =   8.25
+               Charset         =   0
+               Weight          =   400
+               Underline       =   0   'False
+               Italic          =   0   'False
+               Strikethrough   =   0   'False
+            EndProperty
+            Height          =   315
+            Left            =   7305
+            Picture         =   "frmDocVentas.frx":0000
+            Style           =   1  'Graphical
+            TabIndex        =   189
+            Top             =   765
+            Width           =   390
+         End
+         Begin CATControls.CATTextBox TxtGlsCentroCostoAnt 
+            Height          =   315
+            Left            =   2520
+            TabIndex        =   186
+            Top             =   315
+            Width           =   4725
+            _ExtentX        =   8334
+            _ExtentY        =   556
+            BackColor       =   16777152
+            Enabled         =   0   'False
+            BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
+               Name            =   "Arial"
+               Size            =   8.25
+               Charset         =   0
+               Weight          =   400
+               Underline       =   0   'False
+               Italic          =   0   'False
+               Strikethrough   =   0   'False
+            EndProperty
+            FontName        =   "Arial"
+            FontSize        =   8.25
+            ForeColor       =   -2147483640
+            Container       =   "frmDocVentas.frx":038A
+            Vacio           =   -1  'True
+         End
+         Begin CATControls.CATTextBox TxtCodCentroCostoAnt 
+            Height          =   315
+            Left            =   1575
+            TabIndex        =   187
+            Top             =   315
+            Width           =   915
+            _ExtentX        =   1614
+            _ExtentY        =   556
+            BackColor       =   16777215
+            BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
+               Name            =   "Arial"
+               Size            =   8.25
+               Charset         =   0
+               Weight          =   400
+               Underline       =   0   'False
+               Italic          =   0   'False
+               Strikethrough   =   0   'False
+            EndProperty
+            FontName        =   "Arial"
+            FontSize        =   8.25
+            ForeColor       =   -2147483640
+            Locked          =   -1  'True
+            MaxLength       =   8
+            Container       =   "frmDocVentas.frx":03A6
+            Estilo          =   1
+            EnterTab        =   -1  'True
+         End
+         Begin CATControls.CATTextBox TxtGlsCentroCostoNuevo 
+            Height          =   315
+            Left            =   2520
+            TabIndex        =   190
+            Top             =   765
+            Width           =   4725
+            _ExtentX        =   8334
+            _ExtentY        =   556
+            BackColor       =   16777152
+            Enabled         =   0   'False
+            BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
+               Name            =   "Arial"
+               Size            =   8.25
+               Charset         =   0
+               Weight          =   400
+               Underline       =   0   'False
+               Italic          =   0   'False
+               Strikethrough   =   0   'False
+            EndProperty
+            FontName        =   "Arial"
+            FontSize        =   8.25
+            ForeColor       =   -2147483640
+            Container       =   "frmDocVentas.frx":03C2
+            Vacio           =   -1  'True
+         End
+         Begin CATControls.CATTextBox TxtCodCentroCostoNuevo 
+            Height          =   315
+            Left            =   1575
+            TabIndex        =   191
+            Top             =   765
+            Width           =   915
+            _ExtentX        =   1614
+            _ExtentY        =   556
+            BackColor       =   16777215
+            BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
+               Name            =   "Arial"
+               Size            =   8.25
+               Charset         =   0
+               Weight          =   400
+               Underline       =   0   'False
+               Italic          =   0   'False
+               Strikethrough   =   0   'False
+            EndProperty
+            FontName        =   "Arial"
+            FontSize        =   8.25
+            ForeColor       =   -2147483640
+            MaxLength       =   8
+            Container       =   "frmDocVentas.frx":03DE
+            Estilo          =   1
+            EnterTab        =   -1  'True
+         End
+         Begin VB.Label Label5 
+            Appearance      =   0  'Flat
+            AutoSize        =   -1  'True
+            Caption         =   "C.Costo Nuevo"
+            ForeColor       =   &H80000007&
+            Height          =   210
+            Left            =   270
+            TabIndex        =   192
+            Top             =   810
+            Width           =   1080
+         End
+         Begin VB.Label Label4 
+            Appearance      =   0  'Flat
+            AutoSize        =   -1  'True
+            Caption         =   "C.Costo Anterior"
+            ForeColor       =   &H80000007&
+            Height          =   210
+            Left            =   270
+            TabIndex        =   188
+            Top             =   360
+            Width           =   1200
+         End
+      End
+      Begin VB.Frame Frame1 
+         Appearance      =   0  'Flat
+         BeginProperty Font 
+            Name            =   "MS Sans Serif"
+            Size            =   8.25
+            Charset         =   0
+            Weight          =   400
+            Underline       =   0   'False
+            Italic          =   0   'False
+            Strikethrough   =   0   'False
+         EndProperty
+         ForeColor       =   &H80000008&
+         Height          =   735
+         Left            =   120
+         TabIndex        =   60
+         Top             =   240
+         Width           =   14580
+         Begin CATControls.CATTextBox txt_TextoBuscar 
+            Height          =   315
+            Left            =   990
+            TabIndex        =   0
+            Top             =   270
+            Width           =   7035
+            _ExtentX        =   12409
+            _ExtentY        =   556
+            BackColor       =   16777215
+            BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
+               Name            =   "Arial"
+               Size            =   8.25
+               Charset         =   0
+               Weight          =   400
+               Underline       =   0   'False
+               Italic          =   0   'False
+               Strikethrough   =   0   'False
+            EndProperty
+            FontName        =   "Arial"
+            FontSize        =   8.25
+            ForeColor       =   -2147483640
+            Container       =   "frmDocVentas.frx":03FA
+            Estilo          =   1
+            Vacio           =   -1  'True
+            EnterTab        =   -1  'True
+         End
+         Begin VB.ComboBox cbx_Mes 
+            Height          =   330
+            ItemData        =   "frmDocVentas.frx":0416
+            Left            =   10800
+            List            =   "frmDocVentas.frx":0441
+            Style           =   2  'Dropdown List
+            TabIndex        =   1
+            Top             =   270
+            Width           =   2025
+         End
+         Begin CATControls.CATTextBox txt_Ano 
+            Height          =   315
+            Left            =   13560
+            TabIndex        =   2
+            Top             =   270
+            Width           =   870
+            _ExtentX        =   1535
+            _ExtentY        =   556
+            BackColor       =   16777215
+            BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
+               Name            =   "Arial"
+               Size            =   8.25
+               Charset         =   0
+               Weight          =   400
+               Underline       =   0   'False
+               Italic          =   0   'False
+               Strikethrough   =   0   'False
+            EndProperty
+            Alignment       =   1
+            FontName        =   "Arial"
+            FontSize        =   8.25
+            ForeColor       =   -2147483640
+            Container       =   "frmDocVentas.frx":04B1
+            Estilo          =   3
+            Vacio           =   -1  'True
+            EnterTab        =   -1  'True
+         End
+         Begin VB.ComboBox CbxGanadas 
+            Height          =   330
+            ItemData        =   "frmDocVentas.frx":04CD
+            Left            =   8850
+            List            =   "frmDocVentas.frx":04DA
+            Style           =   2  'Dropdown List
+            TabIndex        =   218
+            Top             =   270
+            Width           =   1335
+         End
+         Begin VB.Label Label3 
+            Appearance      =   0  'Flat
+            AutoSize        =   -1  'True
+            Caption         =   "Ao"
+            ForeColor       =   &H80000008&
+            Height          =   210
+            Left            =   13080
+            TabIndex        =   79
+            Top             =   330
+            Width           =   300
+         End
+         Begin VB.Label Label2 
+            Appearance      =   0  'Flat
+            AutoSize        =   -1  'True
+            Caption         =   "Mes"
+            ForeColor       =   &H80000008&
+            Height          =   210
+            Left            =   10410
+            TabIndex        =   78
+            Top             =   330
+            Width           =   300
+         End
+         Begin VB.Label Label1 
+            Appearance      =   0  'Flat
+            AutoSize        =   -1  'True
+            Caption         =   "Bsqueda"
+            ForeColor       =   &H80000008&
+            Height          =   210
+            Left            =   210
+            TabIndex        =   61
+            Top             =   330
+            Width           =   735
+         End
+         Begin VB.Label Label6 
+            Appearance      =   0  'Flat
+            AutoSize        =   -1  'True
+            Caption         =   "Ganadas"
+            ForeColor       =   &H80000008&
+            Height          =   210
+            Left            =   8130
+            TabIndex        =   219
+            Top             =   300
+            Width           =   660
+         End
+      End
+      Begin DXDBGRIDLibCtl.dxDBGrid gListaDetalle 
+         Height          =   3210
+         Left            =   90
+         OleObjectBlob   =   "frmDocVentas.frx":04ED
+         TabIndex        =   4
+         Top             =   5475
+         Width           =   15045
+      End
+      Begin DXDBGRIDLibCtl.dxDBGrid gLista 
+         Height          =   4185
+         Left            =   120
+         OleObjectBlob   =   "frmDocVentas.frx":4129
+         TabIndex        =   3
+         Top             =   1080
+         Width           =   15015
+      End
+   End
    Begin VB.Frame Frame2 
       BeginProperty Font 
          Name            =   "MS Sans Serif"
@@ -40,9 +573,9 @@ Begin VB.Form frmDocVentas
       EndProperty
       Height          =   4125
       Index           =   0
-      Left            =   3300
+      Left            =   3570
       TabIndex        =   151
-      Top             =   2820
+      Top             =   3690
       Visible         =   0   'False
       Width           =   7110
       Begin VB.CommandButton Command2 
@@ -161,7 +694,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":0000
+         Container       =   "frmDocVentas.frx":A04C
          Text            =   "0"
          Estilo          =   4
          Vacio           =   -1  'True
@@ -191,7 +724,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":001C
+         Container       =   "frmDocVentas.frx":A068
          Text            =   "0"
          Estilo          =   4
          Vacio           =   -1  'True
@@ -222,7 +755,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":0038
+         Container       =   "frmDocVentas.frx":A084
          Text            =   "0"
          Estilo          =   4
          Vacio           =   -1  'True
@@ -253,7 +786,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":0054
+         Container       =   "frmDocVentas.frx":A0A0
          Text            =   "0"
          Estilo          =   4
          Vacio           =   -1  'True
@@ -285,7 +818,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":0070
+         Container       =   "frmDocVentas.frx":A0BC
          Text            =   "0"
          Estilo          =   4
          Vacio           =   -1  'True
@@ -316,7 +849,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          Locked          =   -1  'True
-         Container       =   "frmDocVentas.frx":008C
+         Container       =   "frmDocVentas.frx":A0D8
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -346,7 +879,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          Locked          =   -1  'True
-         Container       =   "frmDocVentas.frx":00A8
+         Container       =   "frmDocVentas.frx":A0F4
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -376,7 +909,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          Locked          =   -1  'True
-         Container       =   "frmDocVentas.frx":00C4
+         Container       =   "frmDocVentas.frx":A110
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -406,7 +939,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          Locked          =   -1  'True
-         Container       =   "frmDocVentas.frx":00E0
+         Container       =   "frmDocVentas.frx":A12C
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -436,7 +969,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          Locked          =   -1  'True
-         Container       =   "frmDocVentas.frx":00FC
+         Container       =   "frmDocVentas.frx":A148
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -465,7 +998,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":0118
+         Container       =   "frmDocVentas.frx":A164
          Text            =   "0"
          Estilo          =   4
          Vacio           =   -1  'True
@@ -495,7 +1028,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":0134
+         Container       =   "frmDocVentas.frx":A180
          Text            =   "0"
          Estilo          =   4
          Vacio           =   -1  'True
@@ -527,7 +1060,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":0150
+         Container       =   "frmDocVentas.frx":A19C
          Text            =   "0"
          Estilo          =   4
          Vacio           =   -1  'True
@@ -558,7 +1091,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":016C
+         Container       =   "frmDocVentas.frx":A1B8
          Text            =   "------- "
          Decimales       =   2
          TextoInicio     =   "0"
@@ -735,6 +1268,143 @@ Begin VB.Form frmDocVentas
          Width           =   465
       End
    End
+   Begin MSComctlLib.Toolbar Toolbar1 
+      Height          =   1800
+      Left            =   120
+      TabIndex        =   159
+      Top             =   0
+      Width           =   15270
+      _ExtentX        =   26935
+      _ExtentY        =   3175
+      ButtonWidth     =   3043
+      ButtonHeight    =   1005
+      AllowCustomize  =   0   'False
+      Appearance      =   1
+      ImageList       =   "imgDocVentas"
+      _Version        =   393216
+      BeginProperty Buttons {66833FE8-8583-11D1-B16A-00C0F0283628} 
+         NumButtons      =   24
+         BeginProperty Button1 {66833FEA-8583-11D1-B16A-00C0F0283628} 
+            Caption         =   "        Nuevo        "
+            Object.ToolTipText     =   "Nuevo"
+            ImageIndex      =   1
+         EndProperty
+         BeginProperty Button2 {66833FEA-8583-11D1-B16A-00C0F0283628} 
+            Caption         =   "        Grabar        "
+            Object.ToolTipText     =   "Grabar"
+            ImageIndex      =   4
+         EndProperty
+         BeginProperty Button3 {66833FEA-8583-11D1-B16A-00C0F0283628} 
+            Caption         =   "Modificar"
+            Object.ToolTipText     =   "Modificar"
+            ImageIndex      =   10
+         EndProperty
+         BeginProperty Button4 {66833FEA-8583-11D1-B16A-00C0F0283628} 
+            Caption         =   "Cancelar"
+            Object.ToolTipText     =   "Cancelar"
+            ImageIndex      =   9
+         EndProperty
+         BeginProperty Button5 {66833FEA-8583-11D1-B16A-00C0F0283628} 
+            Caption         =   "Eliminar"
+            Object.ToolTipText     =   "Eliminar"
+            ImageIndex      =   6
+         EndProperty
+         BeginProperty Button6 {66833FEA-8583-11D1-B16A-00C0F0283628} 
+            Caption         =   "Anular"
+            Object.ToolTipText     =   "Anular"
+            ImageIndex      =   6
+         EndProperty
+         BeginProperty Button7 {66833FEA-8583-11D1-B16A-00C0F0283628} 
+            Caption         =   "Imprimir"
+            Object.ToolTipText     =   "Imprimir"
+            ImageIndex      =   11
+         EndProperty
+         BeginProperty Button8 {66833FEA-8583-11D1-B16A-00C0F0283628} 
+            Caption         =   "Guia Abierta"
+            Object.ToolTipText     =   "Imp Guia Abierta"
+            ImageIndex      =   11
+         EndProperty
+         BeginProperty Button9 {66833FEA-8583-11D1-B16A-00C0F0283628} 
+            Caption         =   "Lista"
+            Object.ToolTipText     =   "Lista"
+            ImageIndex      =   12
+         EndProperty
+         BeginProperty Button10 {66833FEA-8583-11D1-B16A-00C0F0283628} 
+            Caption         =   "Excel"
+            Object.ToolTipText     =   "Excel"
+            ImageIndex      =   13
+         EndProperty
+         BeginProperty Button11 {66833FEA-8583-11D1-B16A-00C0F0283628} 
+            Caption         =   "Versiones"
+            Object.ToolTipText     =   "Versiones"
+            ImageIndex      =   14
+         EndProperty
+         BeginProperty Button12 {66833FEA-8583-11D1-B16A-00C0F0283628} 
+            Caption         =   "Letras"
+            Object.ToolTipText     =   "Letras"
+            ImageIndex      =   5
+         EndProperty
+         BeginProperty Button13 {66833FEA-8583-11D1-B16A-00C0F0283628} 
+            Caption         =   "Importar"
+            Object.ToolTipText     =   "Importar"
+            ImageIndex      =   15
+         EndProperty
+         BeginProperty Button14 {66833FEA-8583-11D1-B16A-00C0F0283628} 
+            Object.Visible         =   0   'False
+            Caption         =   "Grabar Contado"
+            Object.ToolTipText     =   "Grabar Contado"
+            ImageIndex      =   16
+         EndProperty
+         BeginProperty Button15 {66833FEA-8583-11D1-B16A-00C0F0283628} 
+            Caption         =   "G. Pedido"
+            Object.ToolTipText     =   "Generar Pedido"
+            ImageIndex      =   8
+         EndProperty
+         BeginProperty Button16 {66833FEA-8583-11D1-B16A-00C0F0283628} 
+            Caption         =   "Aprobacion"
+            ImageIndex      =   16
+         EndProperty
+         BeginProperty Button17 {66833FEA-8583-11D1-B16A-00C0F0283628} 
+            Caption         =   "Quitar Aprob."
+            ImageIndex      =   8
+         EndProperty
+         BeginProperty Button18 {66833FEA-8583-11D1-B16A-00C0F0283628} 
+            Caption         =   "Previo"
+            Key             =   "Previo"
+            ImageIndex      =   11
+         EndProperty
+         BeginProperty Button19 {66833FEA-8583-11D1-B16A-00C0F0283628} 
+            Caption         =   "Importar"
+            Object.ToolTipText     =   "Importar Documentos Entre Empresas"
+            ImageIndex      =   15
+         EndProperty
+         BeginProperty Button20 {66833FEA-8583-11D1-B16A-00C0F0283628} 
+            Caption         =   "Preliminar"
+            Object.ToolTipText     =   "Preliminar"
+            ImageIndex      =   11
+         EndProperty
+         BeginProperty Button21 {66833FEA-8583-11D1-B16A-00C0F0283628} 
+            Caption         =   "Imp. H. Blanco"
+            Object.ToolTipText     =   "Imprimir Hoja Blanco"
+            ImageIndex      =   11
+         EndProperty
+         BeginProperty Button22 {66833FEA-8583-11D1-B16A-00C0F0283628} 
+            Caption         =   "Importar Atenciones"
+            ImageIndex      =   15
+         EndProperty
+         BeginProperty Button23 {66833FEA-8583-11D1-B16A-00C0F0283628} 
+            Caption         =   "Electrnica"
+            Description     =   "Documento Electrnico "
+            ImageIndex      =   14
+         EndProperty
+         BeginProperty Button24 {66833FEA-8583-11D1-B16A-00C0F0283628} 
+            Caption         =   "Salir"
+            Object.ToolTipText     =   "Salir"
+            ImageIndex      =   2
+         EndProperty
+      EndProperty
+      BorderStyle     =   1
+   End
    Begin VB.Frame fraGeneral 
       BeginProperty Font 
          Name            =   "MS Sans Serif"
@@ -772,7 +1442,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5520
-         Picture         =   "frmDocVentas.frx":0188
+         Picture         =   "frmDocVentas.frx":A1D4
          Style           =   1  'Graphical
          TabIndex        =   214
          Top             =   1560
@@ -803,7 +1473,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":0512
+         Container       =   "frmDocVentas.frx":A55E
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -830,7 +1500,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":052E
+         Container       =   "frmDocVentas.frx":A57A
          Vacio           =   -1  'True
       End
       Begin VB.CheckBox ChkfContado 
@@ -864,7 +1534,7 @@ Begin VB.Form frmDocVentas
             EndProperty
             Height          =   315
             Left            =   4710
-            Picture         =   "frmDocVentas.frx":054A
+            Picture         =   "frmDocVentas.frx":A596
             Style           =   1  'Graphical
             TabIndex        =   210
             Top             =   360
@@ -892,7 +1562,7 @@ Begin VB.Form frmDocVentas
             FontSize        =   8.25
             ForeColor       =   -2147483640
             MaxLength       =   8
-            Container       =   "frmDocVentas.frx":08D4
+            Container       =   "frmDocVentas.frx":A920
             Estilo          =   1
             Vacio           =   -1  'True
             EnterTab        =   -1  'True
@@ -919,7 +1589,7 @@ Begin VB.Form frmDocVentas
             FontName        =   "Arial"
             FontSize        =   8.25
             ForeColor       =   -2147483640
-            Container       =   "frmDocVentas.frx":08F0
+            Container       =   "frmDocVentas.frx":A93C
             Vacio           =   -1  'True
          End
       End
@@ -976,7 +1646,7 @@ Begin VB.Form frmDocVentas
             FontSize        =   8.25
             ForeColor       =   -2147483640
             MaxLength       =   8
-            Container       =   "frmDocVentas.frx":090C
+            Container       =   "frmDocVentas.frx":A958
             Text            =   "------- "
             Decimales       =   2
             TextoInicio     =   "0"
@@ -1007,7 +1677,7 @@ Begin VB.Form frmDocVentas
             FontSize        =   8.25
             ForeColor       =   -2147483640
             MaxLength       =   8
-            Container       =   "frmDocVentas.frx":0928
+            Container       =   "frmDocVentas.frx":A974
             Text            =   "------- "
             Decimales       =   2
             TextoInicio     =   "0"
@@ -1038,7 +1708,7 @@ Begin VB.Form frmDocVentas
             FontSize        =   8.25
             ForeColor       =   -2147483640
             MaxLength       =   8
-            Container       =   "frmDocVentas.frx":0944
+            Container       =   "frmDocVentas.frx":A990
             Text            =   "------- "
             Decimales       =   2
             TextoInicio     =   "0"
@@ -1069,7 +1739,7 @@ Begin VB.Form frmDocVentas
             FontSize        =   8.25
             ForeColor       =   -2147483640
             MaxLength       =   8
-            Container       =   "frmDocVentas.frx":0960
+            Container       =   "frmDocVentas.frx":A9AC
             Text            =   "------- "
             Decimales       =   2
             TextoInicio     =   "0"
@@ -1100,7 +1770,7 @@ Begin VB.Form frmDocVentas
             FontSize        =   8.25
             ForeColor       =   -2147483640
             MaxLength       =   8
-            Container       =   "frmDocVentas.frx":097C
+            Container       =   "frmDocVentas.frx":A9C8
             Text            =   "------- "
             Decimales       =   2
             TextoInicio     =   "0"
@@ -1143,7 +1813,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   11370
-         Picture         =   "frmDocVentas.frx":0998
+         Picture         =   "frmDocVentas.frx":A9E4
          Style           =   1  'Graphical
          TabIndex        =   181
          Top             =   1935
@@ -1174,7 +1844,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":0D22
+         Container       =   "frmDocVentas.frx":AD6E
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtCod_AlmacenDestino 
@@ -1201,7 +1871,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":0D3E
+         Container       =   "frmDocVentas.frx":AD8A
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -1229,7 +1899,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":0D5A
+         Container       =   "frmDocVentas.frx":ADA6
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtCod_SucursalDestino 
@@ -1256,14 +1926,14 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":0D76
+         Container       =   "frmDocVentas.frx":ADC2
          Estilo          =   1
          EnterTab        =   -1  'True
       End
       Begin VB.CommandButton cmbAyudaAlmacenDestino 
          Height          =   315
          Left            =   11400
-         Picture         =   "frmDocVentas.frx":0D92
+         Picture         =   "frmDocVentas.frx":ADDE
          Style           =   1  'Graphical
          TabIndex        =   174
          Top             =   4500
@@ -1273,7 +1943,7 @@ Begin VB.Form frmDocVentas
       Begin VB.CommandButton cmbAyudaSucursalDestino 
          Height          =   315
          Left            =   11385
-         Picture         =   "frmDocVentas.frx":111C
+         Picture         =   "frmDocVentas.frx":B168
          Style           =   1  'Graphical
          TabIndex        =   173
          Top             =   4155
@@ -1304,7 +1974,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5520
-         Picture         =   "frmDocVentas.frx":14A6
+         Picture         =   "frmDocVentas.frx":B4F2
          Style           =   1  'Graphical
          TabIndex        =   171
          Top             =   1260
@@ -1356,7 +2026,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":1830
+         Container       =   "frmDocVentas.frx":B87C
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -1383,7 +2053,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":184C
+         Container       =   "frmDocVentas.frx":B898
       End
       Begin VB.CommandButton cmbcontactosclientes 
          BeginProperty Font 
@@ -1397,7 +2067,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5445
-         Picture         =   "frmDocVentas.frx":1868
+         Picture         =   "frmDocVentas.frx":B8B4
          Style           =   1  'Graphical
          TabIndex        =   157
          Top             =   3690
@@ -1407,7 +2077,7 @@ Begin VB.Form frmDocVentas
       Begin VB.CommandButton btnvt 
          Height          =   315
          Left            =   9600
-         Picture         =   "frmDocVentas.frx":1BF2
+         Picture         =   "frmDocVentas.frx":BC3E
          Style           =   1  'Graphical
          TabIndex        =   144
          Top             =   3840
@@ -1437,7 +2107,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5460
-         Picture         =   "frmDocVentas.frx":1F7C
+         Picture         =   "frmDocVentas.frx":BFC8
          Style           =   1  'Graphical
          TabIndex        =   138
          Top             =   600
@@ -1456,7 +2126,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   11385
-         Picture         =   "frmDocVentas.frx":2306
+         Picture         =   "frmDocVentas.frx":C352
          Style           =   1  'Graphical
          TabIndex        =   135
          Top             =   495
@@ -1488,7 +2158,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   11
-         Container       =   "frmDocVentas.frx":2690
+         Container       =   "frmDocVentas.frx":C6DC
          Text            =   "0.00"
          Decimales       =   2
          Estilo          =   4
@@ -1519,7 +2189,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   255
-         Container       =   "frmDocVentas.frx":26AC
+         Container       =   "frmDocVentas.frx":C6F8
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -1548,7 +2218,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   255
-         Container       =   "frmDocVentas.frx":26C8
+         Container       =   "frmDocVentas.frx":C714
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -1565,7 +2235,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5460
-         Picture         =   "frmDocVentas.frx":26E4
+         Picture         =   "frmDocVentas.frx":C730
          Style           =   1  'Graphical
          TabIndex        =   121
          Top             =   4170
@@ -1596,7 +2266,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":2A6E
+         Container       =   "frmDocVentas.frx":CABA
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -1624,7 +2294,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":2A8A
+         Container       =   "frmDocVentas.frx":CAD6
          Vacio           =   -1  'True
       End
       Begin VB.CommandButton cmbAyudaVendedorCampo 
@@ -1639,7 +2309,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5460
-         Picture         =   "frmDocVentas.frx":2AA6
+         Picture         =   "frmDocVentas.frx":CAF2
          Style           =   1  'Graphical
          TabIndex        =   113
          Top             =   4500
@@ -1658,7 +2328,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   11340
-         Picture         =   "frmDocVentas.frx":2E30
+         Picture         =   "frmDocVentas.frx":CE7C
          Style           =   1  'Graphical
          TabIndex        =   109
          Top             =   3840
@@ -1689,7 +2359,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":31BA
+         Container       =   "frmDocVentas.frx":D206
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -1717,7 +2387,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":31D6
+         Container       =   "frmDocVentas.frx":D222
          Vacio           =   -1  'True
       End
       Begin MSComCtl2.DTPicker dtp_IniTraslado 
@@ -1740,7 +2410,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   127991809
+         Format          =   131399681
          CurrentDate     =   38955
       End
       Begin VB.CommandButton cmbAyudaMotivoNCD 
@@ -1755,7 +2425,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   11340
-         Picture         =   "frmDocVentas.frx":31F2
+         Picture         =   "frmDocVentas.frx":D23E
          Style           =   1  'Graphical
          TabIndex        =   91
          Top             =   4320
@@ -1787,7 +2457,7 @@ Begin VB.Form frmDocVentas
          ForeColor       =   -2147483640
          Locked          =   -1  'True
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":357C
+         Container       =   "frmDocVentas.frx":D5C8
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -1815,7 +2485,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":3598
+         Container       =   "frmDocVentas.frx":D5E4
          Vacio           =   -1  'True
       End
       Begin VB.CommandButton cmbAyudaMotivoTraslado 
@@ -1830,7 +2500,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   11325
-         Picture         =   "frmDocVentas.frx":35B4
+         Picture         =   "frmDocVentas.frx":D600
          Style           =   1  'Graphical
          TabIndex        =   86
          Top             =   4425
@@ -1849,7 +2519,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   11325
-         Picture         =   "frmDocVentas.frx":393E
+         Picture         =   "frmDocVentas.frx":D98A
          Style           =   1  'Graphical
          TabIndex        =   74
          Top             =   4050
@@ -1868,7 +2538,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   11400
-         Picture         =   "frmDocVentas.frx":3CC8
+         Picture         =   "frmDocVentas.frx":DD14
          Style           =   1  'Graphical
          TabIndex        =   73
          Top             =   1500
@@ -1887,7 +2557,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   11400
-         Picture         =   "frmDocVentas.frx":4052
+         Picture         =   "frmDocVentas.frx":E09E
          Style           =   1  'Graphical
          TabIndex        =   72
          Top             =   1200
@@ -1906,7 +2576,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   11400
-         Picture         =   "frmDocVentas.frx":43DC
+         Picture         =   "frmDocVentas.frx":E428
          Style           =   1  'Graphical
          TabIndex        =   71
          Top             =   1800
@@ -1937,7 +2607,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":4766
+         Container       =   "frmDocVentas.frx":E7B2
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -1965,7 +2635,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":4782
+         Container       =   "frmDocVentas.frx":E7CE
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
       End
@@ -1981,7 +2651,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5445
-         Picture         =   "frmDocVentas.frx":479E
+         Picture         =   "frmDocVentas.frx":E7EA
          Style           =   1  'Graphical
          TabIndex        =   32
          Top             =   3375
@@ -2000,7 +2670,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5445
-         Picture         =   "frmDocVentas.frx":4B28
+         Picture         =   "frmDocVentas.frx":EB74
          Style           =   1  'Graphical
          TabIndex        =   30
          Top             =   3075
@@ -2019,7 +2689,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5445
-         Picture         =   "frmDocVentas.frx":4EB2
+         Picture         =   "frmDocVentas.frx":EEFE
          Style           =   1  'Graphical
          TabIndex        =   26
          Top             =   2400
@@ -2038,7 +2708,7 @@ Begin VB.Form frmDocVentas
          EndProperty
          Height          =   315
          Left            =   5440
-         Picture         =   "frmDocVentas.frx":523C
+         Picture         =   "frmDocVentas.frx":F288
          Style           =   1  'Graphical
          TabIndex        =   19
          Top             =   870
@@ -2065,7 +2735,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   127991809
+         Format          =   131399681
          CurrentDate     =   38955
       End
       Begin MSComctlLib.ImageList imgDocVentas 
@@ -2081,67 +2751,67 @@ Begin VB.Form frmDocVentas
          BeginProperty Images {2C247F25-8591-11D1-B16A-00C0F0283628} 
             NumListImages   =   16
             BeginProperty ListImage1 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":55C6
+               Picture         =   "frmDocVentas.frx":F612
                Key             =   ""
             EndProperty
             BeginProperty ListImage2 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":5960
+               Picture         =   "frmDocVentas.frx":F9AC
                Key             =   ""
             EndProperty
             BeginProperty ListImage3 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":5DB2
+               Picture         =   "frmDocVentas.frx":FDFE
                Key             =   ""
             EndProperty
             BeginProperty ListImage4 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":614C
+               Picture         =   "frmDocVentas.frx":10198
                Key             =   ""
             EndProperty
             BeginProperty ListImage5 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":64E6
+               Picture         =   "frmDocVentas.frx":10532
                Key             =   ""
             EndProperty
             BeginProperty ListImage6 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":6880
+               Picture         =   "frmDocVentas.frx":108CC
                Key             =   ""
             EndProperty
             BeginProperty ListImage7 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":6C1A
+               Picture         =   "frmDocVentas.frx":10C66
                Key             =   ""
             EndProperty
             BeginProperty ListImage8 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":6FB4
+               Picture         =   "frmDocVentas.frx":11000
                Key             =   ""
             EndProperty
             BeginProperty ListImage9 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":734E
+               Picture         =   "frmDocVentas.frx":1139A
                Key             =   ""
             EndProperty
             BeginProperty ListImage10 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":76E8
+               Picture         =   "frmDocVentas.frx":11734
                Key             =   ""
             EndProperty
             BeginProperty ListImage11 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":7A82
+               Picture         =   "frmDocVentas.frx":11ACE
                Key             =   ""
             EndProperty
             BeginProperty ListImage12 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":8744
+               Picture         =   "frmDocVentas.frx":12790
                Key             =   ""
             EndProperty
             BeginProperty ListImage13 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":8ADE
+               Picture         =   "frmDocVentas.frx":12B2A
                Key             =   ""
             EndProperty
             BeginProperty ListImage14 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":8F30
+               Picture         =   "frmDocVentas.frx":12F7C
                Key             =   ""
             EndProperty
             BeginProperty ListImage15 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":92CA
+               Picture         =   "frmDocVentas.frx":13316
                Key             =   ""
             EndProperty
             BeginProperty ListImage16 {2C247F27-8591-11D1-B16A-00C0F0283628} 
-               Picture         =   "frmDocVentas.frx":9CDC
+               Picture         =   "frmDocVentas.frx":13D28
                Key             =   ""
             EndProperty
          EndProperty
@@ -2170,7 +2840,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   4
-         Container       =   "frmDocVentas.frx":A3AE
+         Container       =   "frmDocVentas.frx":143FA
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -2199,7 +2869,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          Locked          =   -1  'True
-         Container       =   "frmDocVentas.frx":A3CA
+         Container       =   "frmDocVentas.frx":14416
          Estilo          =   1
          Vacio           =   -1  'True
       End
@@ -2227,7 +2897,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":A3E6
+         Container       =   "frmDocVentas.frx":14432
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -2256,7 +2926,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":A402
+         Container       =   "frmDocVentas.frx":1444E
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtCod_EmpTrans 
@@ -2283,7 +2953,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":A41E
+         Container       =   "frmDocVentas.frx":1446A
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -2312,7 +2982,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":A43A
+         Container       =   "frmDocVentas.frx":14486
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtCod_Vehiculo 
@@ -2339,7 +3009,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":A456
+         Container       =   "frmDocVentas.frx":144A2
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -2368,7 +3038,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":A472
+         Container       =   "frmDocVentas.frx":144BE
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtCod_Almacen 
@@ -2395,7 +3065,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":A48E
+         Container       =   "frmDocVentas.frx":144DA
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -2422,7 +3092,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":A4AA
+         Container       =   "frmDocVentas.frx":144F6
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtCod_Vendedor 
@@ -2449,7 +3119,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":A4C6
+         Container       =   "frmDocVentas.frx":14512
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -2477,7 +3147,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":A4E2
+         Container       =   "frmDocVentas.frx":1452E
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtCod_Moneda 
@@ -2504,7 +3174,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":A4FE
+         Container       =   "frmDocVentas.frx":1454A
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -2532,7 +3202,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":A51A
+         Container       =   "frmDocVentas.frx":14566
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txt_RUC 
@@ -2560,7 +3230,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   11
-         Container       =   "frmDocVentas.frx":A536
+         Container       =   "frmDocVentas.frx":14582
          EnterTab        =   -1  'True
       End
       Begin CATControls.CATTextBox txt_Direccion 
@@ -2587,7 +3257,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   255
-         Container       =   "frmDocVentas.frx":A552
+         Container       =   "frmDocVentas.frx":1459E
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -2615,7 +3285,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   255
-         Container       =   "frmDocVentas.frx":A56E
+         Container       =   "frmDocVentas.frx":145BA
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -2643,7 +3313,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   255
-         Container       =   "frmDocVentas.frx":A58A
+         Container       =   "frmDocVentas.frx":145D6
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -2671,7 +3341,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   45
-         Container       =   "frmDocVentas.frx":A5A6
+         Container       =   "frmDocVentas.frx":145F2
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -2700,7 +3370,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   10
-         Container       =   "frmDocVentas.frx":A5C2
+         Container       =   "frmDocVentas.frx":1460E
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -2729,7 +3399,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":A5DE
+         Container       =   "frmDocVentas.frx":1462A
          Estilo          =   3
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -2758,7 +3428,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":A5FA
+         Container       =   "frmDocVentas.frx":14646
          Text            =   "0"
          Estilo          =   4
          EnterTab        =   -1  'True
@@ -2787,7 +3457,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   128
-         Container       =   "frmDocVentas.frx":A616
+         Container       =   "frmDocVentas.frx":14662
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -2816,7 +3486,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   128
-         Container       =   "frmDocVentas.frx":A632
+         Container       =   "frmDocVentas.frx":1467E
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -2844,7 +3514,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   128
-         Container       =   "frmDocVentas.frx":A64E
+         Container       =   "frmDocVentas.frx":1469A
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -2872,7 +3542,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   128
-         Container       =   "frmDocVentas.frx":A66A
+         Container       =   "frmDocVentas.frx":146B6
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -2901,7 +3571,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":A686
+         Container       =   "frmDocVentas.frx":146D2
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -2928,7 +3598,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":A6A2
+         Container       =   "frmDocVentas.frx":146EE
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtCod_MotivoTraslado 
@@ -2956,7 +3626,7 @@ Begin VB.Form frmDocVentas
          ForeColor       =   -2147483640
          Locked          =   -1  'True
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":A6BE
+         Container       =   "frmDocVentas.frx":1470A
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -2983,13 +3653,13 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":A6DA
+         Container       =   "frmDocVentas.frx":14726
          Vacio           =   -1  'True
       End
       Begin DXDBGRIDLibCtl.dxDBGrid gDocReferencia 
          Height          =   1200
          Left            =   5985
-         OleObjectBlob   =   "frmDocVentas.frx":A6F6
+         OleObjectBlob   =   "frmDocVentas.frx":14742
          TabIndex        =   22
          Top             =   2160
          Visible         =   0   'False
@@ -3019,7 +3689,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   11
-         Container       =   "frmDocVentas.frx":DC24
+         Container       =   "frmDocVentas.frx":17C70
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
       End
@@ -3047,7 +3717,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":DC40
+         Container       =   "frmDocVentas.frx":17C8C
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -3076,7 +3746,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":DC5C
+         Container       =   "frmDocVentas.frx":17CA8
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txt_OrdenCompra 
@@ -3103,7 +3773,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   25
-         Container       =   "frmDocVentas.frx":DC78
+         Container       =   "frmDocVentas.frx":17CC4
          Estilo          =   1
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
@@ -3132,7 +3802,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":DC94
+         Container       =   "frmDocVentas.frx":17CE0
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3159,7 +3829,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":DCB0
+         Container       =   "frmDocVentas.frx":17CFC
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtCod_FormaPago 
@@ -3186,7 +3856,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":DCCC
+         Container       =   "frmDocVentas.frx":17D18
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3214,7 +3884,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":DCE8
+         Container       =   "frmDocVentas.frx":17D34
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox txtvtcodigo 
@@ -3241,7 +3911,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":DD04
+         Container       =   "frmDocVentas.frx":17D50
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3268,7 +3938,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":DD20
+         Container       =   "frmDocVentas.frx":17D6C
          Estilo          =   1
          Vacio           =   -1  'True
       End
@@ -3296,7 +3966,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   11
-         Container       =   "frmDocVentas.frx":DD3C
+         Container       =   "frmDocVentas.frx":17D88
          EnterTab        =   -1  'True
       End
       Begin CATControls.CATTextBox txtvtdireccion 
@@ -3323,7 +3993,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   255
-         Container       =   "frmDocVentas.frx":DD58
+         Container       =   "frmDocVentas.frx":17DA4
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3347,7 +4017,7 @@ Begin VB.Form frmDocVentas
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   127991809
+         Format          =   131399681
          CurrentDate     =   38955
       End
       Begin CATControls.CATTextBox txtgls_contacto 
@@ -3373,7 +4043,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":DD74
+         Container       =   "frmDocVentas.frx":17DC0
       End
       Begin CATControls.CATTextBox Txt_ProvCliente 
          Height          =   285
@@ -3399,7 +4069,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   11
-         Container       =   "frmDocVentas.frx":DD90
+         Container       =   "frmDocVentas.frx":17DDC
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
       End
@@ -3426,7 +4096,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":DDAC
+         Container       =   "frmDocVentas.frx":17DF8
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
       End
@@ -3453,7 +4123,7 @@ Begin VB.Form frmDocVentas
          FontName        =   "Arial"
          FontSize        =   8.25
          ForeColor       =   -2147483640
-         Container       =   "frmDocVentas.frx":DDC8
+         Container       =   "frmDocVentas.frx":17E14
          Vacio           =   -1  'True
       End
       Begin CATControls.CATTextBox TxtCodSucursalDestino 
@@ -3480,7 +4150,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   8
-         Container       =   "frmDocVentas.frx":DDE4
+         Container       =   "frmDocVentas.frx":17E30
          Estilo          =   1
          EnterTab        =   -1  'True
       End
@@ -3508,7 +4178,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   11
-         Container       =   "frmDocVentas.frx":DE00
+         Container       =   "frmDocVentas.frx":17E4C
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
       End
@@ -3536,7 +4206,7 @@ Begin VB.Form frmDocVentas
          FontSize        =   8.25
          ForeColor       =   -2147483640
          MaxLength       =   11
-         Container       =   "frmDocVentas.frx":DE1C
+         Container       =   "frmDocVentas.frx":17E68
          Vacio           =   -1  'True
          EnterTab        =   -1  'True
       End
@@ -4146,7 +4816,7 @@ Begin VB.Form frmDocVentas
       Begin DXDBGRIDLibCtl.dxDBGrid gDetalle 
          Height          =   3090
          Left            =   90
-         OleObjectBlob   =   "frmDocVentas.frx":DE38
+         OleObjectBlob   =   "frmDocVentas.frx":17E84
          TabIndex        =   70
          Top             =   210
          Width           =   14985
@@ -4157,676 +4827,6 @@ Begin VB.Form frmDocVentas
          TabIndex        =   133
          Top             =   765
          Width           =   60
-      End
-   End
-   Begin MSComctlLib.Toolbar Toolbar1 
-      Height          =   1800
-      Left            =   120
-      TabIndex        =   159
-      Top             =   30
-      Width           =   15270
-      _ExtentX        =   26935
-      _ExtentY        =   3175
-      ButtonWidth     =   3043
-      ButtonHeight    =   1005
-      AllowCustomize  =   0   'False
-      Appearance      =   1
-      ImageList       =   "imgDocVentas"
-      _Version        =   393216
-      BeginProperty Buttons {66833FE8-8583-11D1-B16A-00C0F0283628} 
-         NumButtons      =   24
-         BeginProperty Button1 {66833FEA-8583-11D1-B16A-00C0F0283628} 
-            Caption         =   "        Nuevo        "
-            Object.ToolTipText     =   "Nuevo"
-            ImageIndex      =   1
-         EndProperty
-         BeginProperty Button2 {66833FEA-8583-11D1-B16A-00C0F0283628} 
-            Caption         =   "        Grabar        "
-            Object.ToolTipText     =   "Grabar"
-            ImageIndex      =   4
-         EndProperty
-         BeginProperty Button3 {66833FEA-8583-11D1-B16A-00C0F0283628} 
-            Caption         =   "Modificar"
-            Object.ToolTipText     =   "Modificar"
-            ImageIndex      =   10
-         EndProperty
-         BeginProperty Button4 {66833FEA-8583-11D1-B16A-00C0F0283628} 
-            Caption         =   "Cancelar"
-            Object.ToolTipText     =   "Cancelar"
-            ImageIndex      =   9
-         EndProperty
-         BeginProperty Button5 {66833FEA-8583-11D1-B16A-00C0F0283628} 
-            Caption         =   "Eliminar"
-            Object.ToolTipText     =   "Eliminar"
-            ImageIndex      =   6
-         EndProperty
-         BeginProperty Button6 {66833FEA-8583-11D1-B16A-00C0F0283628} 
-            Caption         =   "Anular"
-            Object.ToolTipText     =   "Anular"
-            ImageIndex      =   6
-         EndProperty
-         BeginProperty Button7 {66833FEA-8583-11D1-B16A-00C0F0283628} 
-            Caption         =   "Imprimir"
-            Object.ToolTipText     =   "Imprimir"
-            ImageIndex      =   11
-         EndProperty
-         BeginProperty Button8 {66833FEA-8583-11D1-B16A-00C0F0283628} 
-            Caption         =   "Guia Abierta"
-            Object.ToolTipText     =   "Imp Guia Abierta"
-            ImageIndex      =   11
-         EndProperty
-         BeginProperty Button9 {66833FEA-8583-11D1-B16A-00C0F0283628} 
-            Caption         =   "Lista"
-            Object.ToolTipText     =   "Lista"
-            ImageIndex      =   12
-         EndProperty
-         BeginProperty Button10 {66833FEA-8583-11D1-B16A-00C0F0283628} 
-            Caption         =   "Excel"
-            Object.ToolTipText     =   "Excel"
-            ImageIndex      =   13
-         EndProperty
-         BeginProperty Button11 {66833FEA-8583-11D1-B16A-00C0F0283628} 
-            Caption         =   "Versiones"
-            Object.ToolTipText     =   "Versiones"
-            ImageIndex      =   14
-         EndProperty
-         BeginProperty Button12 {66833FEA-8583-11D1-B16A-00C0F0283628} 
-            Caption         =   "Letras"
-            Object.ToolTipText     =   "Letras"
-            ImageIndex      =   5
-         EndProperty
-         BeginProperty Button13 {66833FEA-8583-11D1-B16A-00C0F0283628} 
-            Caption         =   "Importar"
-            Object.ToolTipText     =   "Importar"
-            ImageIndex      =   15
-         EndProperty
-         BeginProperty Button14 {66833FEA-8583-11D1-B16A-00C0F0283628} 
-            Object.Visible         =   0   'False
-            Caption         =   "Grabar Contado"
-            Object.ToolTipText     =   "Grabar Contado"
-            ImageIndex      =   16
-         EndProperty
-         BeginProperty Button15 {66833FEA-8583-11D1-B16A-00C0F0283628} 
-            Caption         =   "G. Pedido"
-            Object.ToolTipText     =   "Generar Pedido"
-            ImageIndex      =   8
-         EndProperty
-         BeginProperty Button16 {66833FEA-8583-11D1-B16A-00C0F0283628} 
-            Caption         =   "Aprobacion"
-            ImageIndex      =   16
-         EndProperty
-         BeginProperty Button17 {66833FEA-8583-11D1-B16A-00C0F0283628} 
-            Caption         =   "Quitar Aprob."
-            ImageIndex      =   8
-         EndProperty
-         BeginProperty Button18 {66833FEA-8583-11D1-B16A-00C0F0283628} 
-            Caption         =   "Previo"
-            Key             =   "Previo"
-            ImageIndex      =   11
-         EndProperty
-         BeginProperty Button19 {66833FEA-8583-11D1-B16A-00C0F0283628} 
-            Caption         =   "Importar"
-            Object.ToolTipText     =   "Importar Documentos Entre Empresas"
-            ImageIndex      =   15
-         EndProperty
-         BeginProperty Button20 {66833FEA-8583-11D1-B16A-00C0F0283628} 
-            Caption         =   "Preliminar"
-            Object.ToolTipText     =   "Preliminar"
-            ImageIndex      =   11
-         EndProperty
-         BeginProperty Button21 {66833FEA-8583-11D1-B16A-00C0F0283628} 
-            Caption         =   "Imp. H. Blanco"
-            Object.ToolTipText     =   "Imprimir Hoja Blanco"
-            ImageIndex      =   11
-         EndProperty
-         BeginProperty Button22 {66833FEA-8583-11D1-B16A-00C0F0283628} 
-            Caption         =   "Importar Atenciones"
-            ImageIndex      =   15
-         EndProperty
-         BeginProperty Button23 {66833FEA-8583-11D1-B16A-00C0F0283628} 
-            Caption         =   "Electrnica"
-            Description     =   "Documento Electrnico "
-            ImageIndex      =   14
-         EndProperty
-         BeginProperty Button24 {66833FEA-8583-11D1-B16A-00C0F0283628} 
-            Caption         =   "Salir"
-            Object.ToolTipText     =   "Salir"
-            ImageIndex      =   2
-         EndProperty
-      EndProperty
-      BorderStyle     =   1
-   End
-   Begin VB.Frame fraListado 
-      Appearance      =   0  'Flat
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   8.25
-         Charset         =   0
-         Weight          =   400
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00C00000&
-      Height          =   8865
-      Left            =   120
-      TabIndex        =   59
-      Top             =   690
-      Width           =   15255
-      Begin VB.Frame FraAtencionPed 
-         Appearance      =   0  'Flat
-         ForeColor       =   &H80000008&
-         Height          =   2970
-         Left            =   3180
-         TabIndex        =   220
-         Top             =   2250
-         Visible         =   0   'False
-         Width           =   6630
-         Begin VB.Frame Frame4 
-            Height          =   1125
-            Left            =   900
-            TabIndex        =   229
-            Top             =   1710
-            Width           =   3195
-            Begin VB.TextBox TxtcantProducto_Atn 
-               Alignment       =   1  'Right Justify
-               BackColor       =   &H00C0FFFF&
-               Height          =   345
-               Left            =   1800
-               TabIndex        =   233
-               Top             =   660
-               Width           =   1275
-            End
-            Begin VB.TextBox TxtcantProducto 
-               Alignment       =   1  'Right Justify
-               Appearance      =   0  'Flat
-               BackColor       =   &H00FFFFC0&
-               Height          =   345
-               Left            =   1800
-               Locked          =   -1  'True
-               TabIndex        =   232
-               Top             =   240
-               Width           =   1275
-            End
-            Begin VB.Label Label11 
-               Caption         =   "Cantidad Atentida"
-               BeginProperty Font 
-                  Name            =   "Arial"
-                  Size            =   9
-                  Charset         =   0
-                  Weight          =   700
-                  Underline       =   0   'False
-                  Italic          =   0   'False
-                  Strikethrough   =   0   'False
-               EndProperty
-               Height          =   195
-               Left            =   120
-               TabIndex        =   231
-               Top             =   720
-               Width           =   1515
-            End
-            Begin VB.Label Label10 
-               Caption         =   "Cantidad Pedido"
-               BeginProperty Font 
-                  Name            =   "Arial"
-                  Size            =   9
-                  Charset         =   0
-                  Weight          =   700
-                  Underline       =   0   'False
-                  Italic          =   0   'False
-                  Strikethrough   =   0   'False
-               EndProperty
-               Height          =   195
-               Left            =   120
-               TabIndex        =   230
-               Top             =   330
-               Width           =   1485
-            End
-         End
-         Begin VB.TextBox TxtDesproducto 
-            Appearance      =   0  'Flat
-            BackColor       =   &H00FFFFC0&
-            Height          =   345
-            Left            =   900
-            Locked          =   -1  'True
-            TabIndex        =   225
-            Top             =   1350
-            Width           =   5595
-         End
-         Begin VB.TextBox TxtCodProducto 
-            Alignment       =   2  'Center
-            Appearance      =   0  'Flat
-            BackColor       =   &H00FFFFC0&
-            Height          =   345
-            Left            =   900
-            Locked          =   -1  'True
-            TabIndex        =   224
-            Top             =   960
-            Width           =   1275
-         End
-         Begin VB.TextBox txtItmProducto 
-            Alignment       =   2  'Center
-            Appearance      =   0  'Flat
-            BackColor       =   &H00FFFFC0&
-            Height          =   345
-            Left            =   900
-            Locked          =   -1  'True
-            TabIndex        =   223
-            Top             =   570
-            Width           =   675
-         End
-         Begin VB.CommandButton CmdCancelarAtn 
-            Caption         =   "Cancelar"
-            Height          =   450
-            Left            =   4260
-            Style           =   1  'Graphical
-            TabIndex        =   222
-            Top             =   2370
-            Width           =   1455
-         End
-         Begin VB.CommandButton CmdAceptarAtn 
-            Caption         =   "&Aceptar"
-            Height          =   450
-            Left            =   4260
-            Style           =   1  'Graphical
-            TabIndex        =   221
-            Top             =   1800
-            Width           =   1455
-         End
-         Begin VB.Label Label12 
-            Alignment       =   2  'Center
-            Appearance      =   0  'Flat
-            BackColor       =   &H8000000D&
-            Caption         =   "REGISTRO DE ATENCIN"
-            BeginProperty Font 
-               Name            =   "Arial"
-               Size            =   9
-               Charset         =   0
-               Weight          =   700
-               Underline       =   0   'False
-               Italic          =   0   'False
-               Strikethrough   =   0   'False
-            EndProperty
-            ForeColor       =   &H80000008&
-            Height          =   285
-            Left            =   0
-            TabIndex        =   234
-            Top             =   120
-            Width           =   6615
-         End
-         Begin VB.Label Label9 
-            Caption         =   "Producto"
-            BeginProperty Font 
-               Name            =   "Arial"
-               Size            =   9
-               Charset         =   0
-               Weight          =   700
-               Underline       =   0   'False
-               Italic          =   0   'False
-               Strikethrough   =   0   'False
-            EndProperty
-            Height          =   195
-            Left            =   60
-            TabIndex        =   228
-            Top             =   1410
-            Width           =   855
-         End
-         Begin VB.Label Label8 
-            Caption         =   "Codigo"
-            BeginProperty Font 
-               Name            =   "Arial"
-               Size            =   9
-               Charset         =   0
-               Weight          =   700
-               Underline       =   0   'False
-               Italic          =   0   'False
-               Strikethrough   =   0   'False
-            EndProperty
-            Height          =   195
-            Left            =   60
-            TabIndex        =   227
-            Top             =   1050
-            Width           =   645
-         End
-         Begin VB.Label Label7 
-            Caption         =   "Item"
-            BeginProperty Font 
-               Name            =   "Arial"
-               Size            =   9
-               Charset         =   0
-               Weight          =   700
-               Underline       =   0   'False
-               Italic          =   0   'False
-               Strikethrough   =   0   'False
-            EndProperty
-            Height          =   195
-            Left            =   90
-            TabIndex        =   226
-            Top             =   660
-            Width           =   645
-         End
-      End
-      Begin VB.Frame FraModificaCC 
-         Appearance      =   0  'Flat
-         ForeColor       =   &H80000008&
-         Height          =   1860
-         Left            =   2430
-         TabIndex        =   185
-         Top             =   2250
-         Visible         =   0   'False
-         Width           =   7980
-         Begin VB.CommandButton CmdCancelarCC 
-            Caption         =   "Cancelar"
-            Height          =   390
-            Left            =   4185
-            Style           =   1  'Graphical
-            TabIndex        =   194
-            Top             =   1260
-            Width           =   1185
-         End
-         Begin VB.CommandButton CmdAceptar 
-            Caption         =   "&Aceptar"
-            Height          =   390
-            Left            =   2925
-            Style           =   1  'Graphical
-            TabIndex        =   193
-            Top             =   1260
-            Width           =   1185
-         End
-         Begin VB.CommandButton CmdAyudaCentroCostoNuevo 
-            BeginProperty Font 
-               Name            =   "MS Sans Serif"
-               Size            =   8.25
-               Charset         =   0
-               Weight          =   400
-               Underline       =   0   'False
-               Italic          =   0   'False
-               Strikethrough   =   0   'False
-            EndProperty
-            Height          =   315
-            Left            =   7305
-            Picture         =   "frmDocVentas.frx":20C28
-            Style           =   1  'Graphical
-            TabIndex        =   189
-            Top             =   765
-            Width           =   390
-         End
-         Begin CATControls.CATTextBox TxtGlsCentroCostoAnt 
-            Height          =   315
-            Left            =   2520
-            TabIndex        =   186
-            Top             =   315
-            Width           =   4725
-            _ExtentX        =   8334
-            _ExtentY        =   556
-            BackColor       =   16777152
-            Enabled         =   0   'False
-            BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
-               Name            =   "Arial"
-               Size            =   8.25
-               Charset         =   0
-               Weight          =   400
-               Underline       =   0   'False
-               Italic          =   0   'False
-               Strikethrough   =   0   'False
-            EndProperty
-            FontName        =   "Arial"
-            FontSize        =   8.25
-            ForeColor       =   -2147483640
-            Container       =   "frmDocVentas.frx":20FB2
-            Vacio           =   -1  'True
-         End
-         Begin CATControls.CATTextBox TxtCodCentroCostoAnt 
-            Height          =   315
-            Left            =   1575
-            TabIndex        =   187
-            Top             =   315
-            Width           =   915
-            _ExtentX        =   1614
-            _ExtentY        =   556
-            BackColor       =   16777215
-            BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
-               Name            =   "Arial"
-               Size            =   8.25
-               Charset         =   0
-               Weight          =   400
-               Underline       =   0   'False
-               Italic          =   0   'False
-               Strikethrough   =   0   'False
-            EndProperty
-            FontName        =   "Arial"
-            FontSize        =   8.25
-            ForeColor       =   -2147483640
-            Locked          =   -1  'True
-            MaxLength       =   8
-            Container       =   "frmDocVentas.frx":20FCE
-            Estilo          =   1
-            EnterTab        =   -1  'True
-         End
-         Begin CATControls.CATTextBox TxtGlsCentroCostoNuevo 
-            Height          =   315
-            Left            =   2520
-            TabIndex        =   190
-            Top             =   765
-            Width           =   4725
-            _ExtentX        =   8334
-            _ExtentY        =   556
-            BackColor       =   16777152
-            Enabled         =   0   'False
-            BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
-               Name            =   "Arial"
-               Size            =   8.25
-               Charset         =   0
-               Weight          =   400
-               Underline       =   0   'False
-               Italic          =   0   'False
-               Strikethrough   =   0   'False
-            EndProperty
-            FontName        =   "Arial"
-            FontSize        =   8.25
-            ForeColor       =   -2147483640
-            Container       =   "frmDocVentas.frx":20FEA
-            Vacio           =   -1  'True
-         End
-         Begin CATControls.CATTextBox TxtCodCentroCostoNuevo 
-            Height          =   315
-            Left            =   1575
-            TabIndex        =   191
-            Top             =   765
-            Width           =   915
-            _ExtentX        =   1614
-            _ExtentY        =   556
-            BackColor       =   16777215
-            BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
-               Name            =   "Arial"
-               Size            =   8.25
-               Charset         =   0
-               Weight          =   400
-               Underline       =   0   'False
-               Italic          =   0   'False
-               Strikethrough   =   0   'False
-            EndProperty
-            FontName        =   "Arial"
-            FontSize        =   8.25
-            ForeColor       =   -2147483640
-            MaxLength       =   8
-            Container       =   "frmDocVentas.frx":21006
-            Estilo          =   1
-            EnterTab        =   -1  'True
-         End
-         Begin VB.Label Label5 
-            Appearance      =   0  'Flat
-            AutoSize        =   -1  'True
-            Caption         =   "C.Costo Nuevo"
-            ForeColor       =   &H80000007&
-            Height          =   210
-            Left            =   270
-            TabIndex        =   192
-            Top             =   810
-            Width           =   1080
-         End
-         Begin VB.Label Label4 
-            Appearance      =   0  'Flat
-            AutoSize        =   -1  'True
-            Caption         =   "C.Costo Anterior"
-            ForeColor       =   &H80000007&
-            Height          =   210
-            Left            =   270
-            TabIndex        =   188
-            Top             =   360
-            Width           =   1200
-         End
-      End
-      Begin VB.Frame Frame1 
-         Appearance      =   0  'Flat
-         BeginProperty Font 
-            Name            =   "MS Sans Serif"
-            Size            =   8.25
-            Charset         =   0
-            Weight          =   400
-            Underline       =   0   'False
-            Italic          =   0   'False
-            Strikethrough   =   0   'False
-         EndProperty
-         ForeColor       =   &H80000008&
-         Height          =   735
-         Left            =   120
-         TabIndex        =   60
-         Top             =   240
-         Width           =   14580
-         Begin CATControls.CATTextBox txt_TextoBuscar 
-            Height          =   315
-            Left            =   990
-            TabIndex        =   0
-            Top             =   270
-            Width           =   7035
-            _ExtentX        =   12409
-            _ExtentY        =   556
-            BackColor       =   16777215
-            BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
-               Name            =   "Arial"
-               Size            =   8.25
-               Charset         =   0
-               Weight          =   400
-               Underline       =   0   'False
-               Italic          =   0   'False
-               Strikethrough   =   0   'False
-            EndProperty
-            FontName        =   "Arial"
-            FontSize        =   8.25
-            ForeColor       =   -2147483640
-            Container       =   "frmDocVentas.frx":21022
-            Estilo          =   1
-            Vacio           =   -1  'True
-            EnterTab        =   -1  'True
-         End
-         Begin VB.ComboBox cbx_Mes 
-            Height          =   330
-            ItemData        =   "frmDocVentas.frx":2103E
-            Left            =   10800
-            List            =   "frmDocVentas.frx":21069
-            Style           =   2  'Dropdown List
-            TabIndex        =   1
-            Top             =   270
-            Width           =   2025
-         End
-         Begin CATControls.CATTextBox txt_Ano 
-            Height          =   315
-            Left            =   13560
-            TabIndex        =   2
-            Top             =   270
-            Width           =   870
-            _ExtentX        =   1535
-            _ExtentY        =   556
-            BackColor       =   16777215
-            BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
-               Name            =   "Arial"
-               Size            =   8.25
-               Charset         =   0
-               Weight          =   400
-               Underline       =   0   'False
-               Italic          =   0   'False
-               Strikethrough   =   0   'False
-            EndProperty
-            Alignment       =   1
-            FontName        =   "Arial"
-            FontSize        =   8.25
-            ForeColor       =   -2147483640
-            Container       =   "frmDocVentas.frx":210D9
-            Estilo          =   3
-            Vacio           =   -1  'True
-            EnterTab        =   -1  'True
-         End
-         Begin VB.ComboBox CbxGanadas 
-            Height          =   330
-            ItemData        =   "frmDocVentas.frx":210F5
-            Left            =   8850
-            List            =   "frmDocVentas.frx":21102
-            Style           =   2  'Dropdown List
-            TabIndex        =   218
-            Top             =   270
-            Width           =   1335
-         End
-         Begin VB.Label Label3 
-            Appearance      =   0  'Flat
-            AutoSize        =   -1  'True
-            Caption         =   "Ao"
-            ForeColor       =   &H80000008&
-            Height          =   210
-            Left            =   13080
-            TabIndex        =   79
-            Top             =   330
-            Width           =   300
-         End
-         Begin VB.Label Label2 
-            Appearance      =   0  'Flat
-            AutoSize        =   -1  'True
-            Caption         =   "Mes"
-            ForeColor       =   &H80000008&
-            Height          =   210
-            Left            =   10410
-            TabIndex        =   78
-            Top             =   330
-            Width           =   300
-         End
-         Begin VB.Label Label1 
-            Appearance      =   0  'Flat
-            AutoSize        =   -1  'True
-            Caption         =   "Bsqueda"
-            ForeColor       =   &H80000008&
-            Height          =   210
-            Left            =   210
-            TabIndex        =   61
-            Top             =   330
-            Width           =   735
-         End
-         Begin VB.Label Label6 
-            Appearance      =   0  'Flat
-            AutoSize        =   -1  'True
-            Caption         =   "Ganadas"
-            ForeColor       =   &H80000008&
-            Height          =   210
-            Left            =   8130
-            TabIndex        =   219
-            Top             =   300
-            Width           =   660
-         End
-      End
-      Begin DXDBGRIDLibCtl.dxDBGrid gListaDetalle 
-         Height          =   3210
-         Left            =   90
-         OleObjectBlob   =   "frmDocVentas.frx":21115
-         TabIndex        =   4
-         Top             =   5475
-         Width           =   15045
-      End
-      Begin DXDBGRIDLibCtl.dxDBGrid gLista 
-         Height          =   4185
-         Left            =   120
-         OleObjectBlob   =   "frmDocVentas.frx":24D51
-         TabIndex        =   3
-         Top             =   1080
-         Width           =   15015
       End
    End
    Begin VB.Label Label15 
@@ -10531,12 +10531,44 @@ Private Sub gLista_OnChangeNode(ByVal OldNode As DXDBGRIDLibCtl.IdxGridNode, ByV
 
 End Sub
 
+
 Private Sub gLista_OnDblClick()
-On Error GoTo Err
 Dim StrMsgError     As String
 Dim rscd            As New ADODB.Recordset
 Dim csql            As String
+Dim X               As New frmDocVentas_Vista
+Dim vDocRef         As String
+Dim vTipoDoc        As String
+On Error GoTo Err
 
+
+    Select Case gLista.Columns.FocusedColumn.Index
+        Case gLista.Columns.ColumnByFieldName("docReferencia").Index
+            If Trim("" & gLista.Columns.ColumnByName("docReferencia").Value) = "" Then Exit Sub
+            
+            vDocRef = UCase$(Trim$("" & gLista.Columns.ColumnByName("docReferencia").Value))
+            
+            Select Case left$(vDocRef, 3)
+                Case "FAC"
+                    vTipoDoc = "01"
+                Case "GRE"
+                    vTipoDoc = "86"
+                Case "PDD"
+                    vTipoDoc = "40"
+                Case Else
+                    vTipoDoc = ""
+            End Select
+            If vTipoDoc = "" Then Exit Sub
+            
+            X.strTipoDoc = vTipoDoc
+            X.strNumdocumento = Trim("" & gLista.Columns.ColumnByName("docReferencia").Value)
+            X.top = 0
+            Load X
+            X.Show
+            
+            Exit Sub
+    End Select
+    
     If strTipoDoc = "92" Then
         lbl_Llegada2.Caption = "Tiempo de Entrega"
         lbl_Llegada.Caption = "Lugar de Entrega"
@@ -10769,6 +10801,8 @@ Dim csql            As String
 Err:
     MsgBox StrMsgError, vbInformation, App.Title
 End Sub
+
+
 
 Private Sub gListaDetalle_OnDblClick()
 On Error GoTo Err
