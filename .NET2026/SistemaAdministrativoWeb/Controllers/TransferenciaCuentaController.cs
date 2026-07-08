@@ -10,6 +10,7 @@ namespace SistemaAdministrativoWeb.Controllers;
 [Authorize]
 public class TransferenciaCuentaController(
     ICurrentCompanyAccessor currentCompanyAccessor,
+    IPeriodoContableService periodoContableService,
     ICajaBancoRepository cajaBancoRepository,
     ICuentaCorrienteRepository cuentaCorrienteRepository) : Controller
 {
@@ -75,6 +76,12 @@ public class TransferenciaCuentaController(
 
         var empresaId = currentCompanyAccessor.EmpresaId.Value;
         var (anioTrabajo, mesTrabajo) = NormalizarPeriodo(anio, mes);
+        if (await periodoContableService.EstaCerradoAsync(empresaId, anioTrabajo, mesTrabajo, cancellationToken))
+        {
+            TempData["TransferenciaCuentaError"] = periodoContableService.ConstruirMensajeBloqueo(anioTrabajo, mesTrabajo);
+            return RedirectToAction(nameof(Index), new { anio = anioTrabajo, mes = mesTrabajo });
+        }
+
         var cuentas = (await cuentaCorrienteRepository.ListarPorEmpresaAsync(empresaId, true, cancellationToken)).ToList();
         var operacionesEmisor = await ObtenerOperacionesAsync("E", cancellationToken);
         var operacionesReceptor = await ObtenerOperacionesAsync("I", cancellationToken);
@@ -127,6 +134,19 @@ public class TransferenciaCuentaController(
         NormalizarFormulario(formulario);
 
         var empresaId = currentCompanyAccessor.EmpresaId.Value;
+        if (await periodoContableService.EstaCerradoAsync(
+                empresaId,
+                (short)formulario.Emisor.FechaEmision.Year,
+                (byte)formulario.Emisor.FechaEmision.Month,
+                cancellationToken))
+        {
+            ModelState.AddModelError(
+                string.Empty,
+                periodoContableService.ConstruirMensajeBloqueo(
+                    (short)formulario.Emisor.FechaEmision.Year,
+                    (byte)formulario.Emisor.FechaEmision.Month));
+        }
+
         var cuentas = (await cuentaCorrienteRepository.ListarPorEmpresaAsync(empresaId, true, cancellationToken)).ToList();
         var cuentasPorId = cuentas.ToDictionary(x => x.IdBancoConfiguracionEmpresa);
         var operacionesEmisor = await ObtenerOperacionesAsync("E", cancellationToken);
@@ -261,6 +281,11 @@ public class TransferenciaCuentaController(
         }
 
         var (anioTrabajo, mesTrabajo) = NormalizarPeriodo(anio, mes);
+        if (await periodoContableService.EstaCerradoAsync(currentCompanyAccessor.EmpresaId.Value, anioTrabajo, mesTrabajo, cancellationToken))
+        {
+            TempData["TransferenciaCuentaError"] = periodoContableService.ConstruirMensajeBloqueo(anioTrabajo, mesTrabajo);
+            return RedirectToAction(nameof(Index), new { anio = anioTrabajo, mes = mesTrabajo, textoBusqueda, pagina });
+        }
 
         try
         {
@@ -325,6 +350,7 @@ public class TransferenciaCuentaController(
             {
                 IdTransferenciaCuenta = x.IdTransferenciaCuenta,
                 IdMovimientoBancoEmisor = x.IdMovimientoBancoEmisor,
+                IdAsientoEmisor = x.IdAsientoEmisor,
                 NumeroMovimientoEmisor = x.NumeroMovimientoEmisor,
                 NumeroAsientoEmisor = x.NumeroAsientoEmisor,
                 CuentaCorrienteEmisor = x.CuentaCorrienteEmisor,
@@ -334,6 +360,7 @@ public class TransferenciaCuentaController(
                 NumeroOperacionEmisor = x.NumeroOperacionEmisor,
                 ImporteEmisor = x.ImporteEmisor,
                 GlosaEmisor = x.GlosaEmisor,
+                IdAsientoReceptor = x.IdAsientoReceptor,
                 NumeroMovimientoReceptor = x.NumeroMovimientoReceptor,
                 NumeroAsientoReceptor = x.NumeroAsientoReceptor,
                 CuentaCorrienteReceptor = x.CuentaCorrienteReceptor,

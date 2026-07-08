@@ -80,6 +80,7 @@ public sealed class CuentaAdministradoraRepository(IDbConnectionFactory connecti
         command.Parameters.AddWithValue("@RazonSocial", request.RazonSocial);
         command.Parameters.AddWithValue("@NombreComercial", (object?)request.NombreComercial ?? DBNull.Value);
         command.Parameters.AddWithValue("@Ruc", request.Ruc);
+        command.Parameters.AddWithValue("@IdEmpresaBase", (object?)request.IdEmpresaBase ?? DBNull.Value);
         command.Parameters.AddWithValue("@EsEmpresaPredeterminada", request.EsEmpresaPredeterminada);
         command.Parameters.AddWithValue("@UsuarioRegistro", (object?)request.UsuarioRegistro ?? DBNull.Value);
 

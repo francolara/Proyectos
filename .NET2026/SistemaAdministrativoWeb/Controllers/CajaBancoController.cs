@@ -11,6 +11,7 @@ namespace SistemaAdministrativoWeb.Controllers;
 [Authorize]
 public class CajaBancoController(
     ICurrentCompanyAccessor currentCompanyAccessor,
+    IPeriodoContableService periodoContableService,
     ICajaBancoRepository cajaBancoRepository,
     IConfiguracionContabilizacionRepository configuracionContabilizacionRepository,
     ICuentaCorrienteRepository cuentaCorrienteRepository,
@@ -140,10 +141,14 @@ public class CajaBancoController(
         var empresaId = currentCompanyAccessor.EmpresaId.Value;
         var compras = await compraRepository.ListarPorEmpresaAsync(empresaId, null, cancellationToken);
         var detracciones = await compraRepository.ListarDetraccionesPendientesPorEmpresaAsync(empresaId, null, cancellationToken);
+        var percepciones = await compraRepository.ListarPercepcionesPendientesPorEmpresaAsync(empresaId, null, cancellationToken);
+        var retenciones = await compraRepository.ListarRetencionesPendientesPorEmpresaAsync(empresaId, null, cancellationToken);
         var ventas = await ventaRepository.ListarPorEmpresaAsync(empresaId, null, cancellationToken);
         var configuracionContable = await configuracionContabilizacionRepository.ObtenerConfiguracionContableEmpresaAsync(empresaId, cancellationToken);
         var tiposComprobante = await tipoComprobanteRepository.ListarActivosAsync(false, false, cancellationToken);
         var cuentaDetraccion = await ObtenerCuentaDetraccionAsync(empresaId, cancellationToken);
+        var cuentaPercepcion = await ObtenerCuentaPercepcionAsync(empresaId, cancellationToken);
+        var cuentaRetencion = ObtenerCuentaRetencion(configuracionContable);
         var tipoComprobantePorCodigo = tiposComprobante
             .GroupBy(x => x.CodigoTipoComprobante, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(x => x.Key, x => x.First(), StringComparer.OrdinalIgnoreCase);
@@ -185,6 +190,40 @@ public class CajaBancoController(
                     ImporteTotal = x.ImporteDetraccion,
                     Saldo = x.Saldo
                 }))
+            .Concat(percepciones
+                .Where(x => string.Equals(x.NumeroDocumentoPersona, numeroDocumentoTrabajo, StringComparison.OrdinalIgnoreCase) && x.Saldo > 0)
+                .Select(x => new ComprobanteSaldoAyudaDto
+                {
+                    ModuloOperacion = "PER",
+                    IdRegistro = x.IdCompraPercepcion,
+                    FechaEmision = x.FechaEmision,
+                    NombrePersona = x.NombreProveedor,
+                    NumeroDocumentoPersona = x.NumeroDocumentoPersona,
+                    TipoComprobante = "00",
+                    DescripcionTipoComprobante = "Otros",
+                    Serie = x.Serie,
+                    Numero = x.Numero,
+                    CodigoMoneda = x.CodigoMoneda,
+                    ImporteTotal = x.ImportePercepcion,
+                    Saldo = x.Saldo
+                }))
+            .Concat(retenciones
+                .Where(x => string.Equals(x.NumeroDocumentoPersona, numeroDocumentoTrabajo, StringComparison.OrdinalIgnoreCase) && x.Saldo > 0)
+                .Select(x => new ComprobanteSaldoAyudaDto
+                {
+                    ModuloOperacion = "R4T",
+                    IdRegistro = x.IdCompraRetencion,
+                    FechaEmision = x.FechaEmision,
+                    NombrePersona = x.NombreProveedor,
+                    NumeroDocumentoPersona = x.NumeroDocumentoPersona,
+                    TipoComprobante = "00",
+                    DescripcionTipoComprobante = "Otros",
+                    Serie = x.Serie,
+                    Numero = x.Numero,
+                    CodigoMoneda = x.CodigoMoneda,
+                    ImporteTotal = x.Retencion,
+                    Saldo = x.Saldo
+                }))
             .Concat(ventas
                 .Where(x => string.Equals(x.NumeroDocumentoPersona, numeroDocumentoTrabajo, StringComparison.OrdinalIgnoreCase) && x.Saldo > 0)
                 .Select(x => new ComprobanteSaldoAyudaDto
@@ -217,13 +256,17 @@ public class CajaBancoController(
             ok = true,
             items = items.Select(x => new
             {
-                cuentaContable = ResolverCuentaContableComprobante(x, tipoComprobantePorCodigo, configuracionDocumentoPorId, cuentaDetraccion),
+                cuentaContable = ResolverCuentaContableComprobante(x, tipoComprobantePorCodigo, configuracionDocumentoPorId, cuentaDetraccion, cuentaPercepcion, cuentaRetencion),
                 moduloOperacion = x.ModuloOperacion,
                 moduloOperacionTexto = string.Equals(x.ModuloOperacion, "COM", StringComparison.OrdinalIgnoreCase)
                     ? "Compra"
                     : string.Equals(x.ModuloOperacion, "DET", StringComparison.OrdinalIgnoreCase)
                         ? "Detraccion"
-                        : "Venta",
+                        : string.Equals(x.ModuloOperacion, "PER", StringComparison.OrdinalIgnoreCase)
+                            ? "Percepciones"
+                            : string.Equals(x.ModuloOperacion, "R4T", StringComparison.OrdinalIgnoreCase)
+                                ? "Renta4ta"
+                                : "Venta",
                 idRegistro = x.IdRegistro,
                 fechaEmision = x.FechaEmision.ToString("dd/MM/yyyy"),
                 nombrePersona = x.NombrePersona,
@@ -276,6 +319,19 @@ public class CajaBancoController(
 
         NormalizarFormulario(formulario);
         var empresaId = currentCompanyAccessor.EmpresaId.Value;
+        if (await periodoContableService.EstaCerradoAsync(
+                empresaId,
+                (short)formulario.FechaEmision.Year,
+                (byte)formulario.FechaEmision.Month,
+                cancellationToken))
+        {
+            ModelState.AddModelError(
+                string.Empty,
+                periodoContableService.ConstruirMensajeBloqueo(
+                    (short)formulario.FechaEmision.Year,
+                    (byte)formulario.FechaEmision.Month));
+        }
+
         var cuentasCorrientesActivas = (await cuentaCorrienteRepository.ListarPorEmpresaAsync(empresaId, true, cancellationToken)).ToList();
         var cuentasCorrientesValidas = cuentasCorrientesActivas
             .ToDictionary(x => x.IdBancoConfiguracionEmpresa);
@@ -364,11 +420,14 @@ public class CajaBancoController(
                     ? "Movimiento de caja y bancos actualizado correctamente."
                     : "Movimiento de caja y bancos registrado correctamente.");
 
+            var anioResultado = (short)formulario.FechaEmision.Year;
+            var mesResultado = (byte)formulario.FechaEmision.Month;
+
             return RedirectToAction(nameof(Index), new
             {
                 idBancoConfiguracionEmpresa = formulario.IdBancoConfiguracionEmpresa,
-                anio = anioTrabajo,
-                mes = mesTrabajo
+                anio = anioResultado,
+                mes = mesResultado
             });
         }
         catch (Exception ex)
@@ -389,6 +448,11 @@ public class CajaBancoController(
         }
 
         var (anioTrabajo, mesTrabajo) = NormalizarPeriodo(anio, mes);
+        if (await periodoContableService.EstaCerradoAsync(currentCompanyAccessor.EmpresaId.Value, anioTrabajo, mesTrabajo, cancellationToken))
+        {
+            TempData["CajaBancoError"] = periodoContableService.ConstruirMensajeBloqueo(anioTrabajo, mesTrabajo);
+            return RedirectToAction(nameof(Index), new { idBancoConfiguracionEmpresa, anio = anioTrabajo, mes = mesTrabajo, textoBusqueda, pagina });
+        }
 
         try
         {
@@ -413,8 +477,14 @@ public class CajaBancoController(
         ViewData["AdminShell"] = true;
 
         var (anioTrabajo, mesTrabajo) = NormalizarPeriodo(anio, mes);
-        var periodoTrabajo = $"{anioTrabajo:0000}{mesTrabajo:00}";
         var empresaId = currentCompanyAccessor.EmpresaId.Value;
+        if (await periodoContableService.EstaCerradoAsync(empresaId, anioTrabajo, mesTrabajo, cancellationToken))
+        {
+            TempData["CajaBancoError"] = periodoContableService.ConstruirMensajeBloqueo(anioTrabajo, mesTrabajo);
+            return RedirectToAction(nameof(Index), new { idBancoConfiguracionEmpresa, anio = anioTrabajo, mes = mesTrabajo });
+        }
+
+        var periodoTrabajo = $"{anioTrabajo:0000}{mesTrabajo:00}";
         var cuentas = (await cuentaCorrienteRepository.ListarPorEmpresaAsync(empresaId, true, cancellationToken)).ToList();
         var resumen = await cajaBancoRepository.ObtenerResumenCuentaAsync(empresaId, idBancoConfiguracionEmpresa, anioTrabajo, mesTrabajo, cancellationToken);
         var tiposDocumento = await ObtenerTiposDocumentoAsync(cancellationToken);
@@ -543,7 +613,7 @@ public class CajaBancoController(
             {
                 IdBancoConfiguracionEmpresa = idBancoConfiguracionEmpresaSeleccionada ?? cuentasCorrientes.FirstOrDefault()?.IdBancoConfiguracionEmpresa,
                 FechaEmision = ParsePeriodo(periodo),
-                TipoCambio = 1m,
+                TipoCambio = 0m,
                 TipoMovimiento = "I",
                 IdOpeBancaria = operacionesIngreso.FirstOrDefault()?.IdOpeBancaria ?? string.Empty,
                 TipoOperacionTexto = operacionesIngreso.FirstOrDefault()?.TipoOperacion ?? string.Empty,
@@ -590,7 +660,7 @@ public class CajaBancoController(
                         TipoDocumento = x.TipoDocumento,
                         Serie = x.Serie,
                         ReferenciaLinea = x.ReferenciaLinea,
-                        TipoCambioLinea = x.TipoCambioLinea,
+                        TipoCambioLinea = x.TipoCambioLinea ?? movimientoEditar.TipoCambio,
                         Debe = x.Debe,
                         Haber = x.Haber
                     })
@@ -689,7 +759,7 @@ public class CajaBancoController(
                      || !string.IsNullOrWhiteSpace(x.TipoDocumento)
                      || !string.IsNullOrWhiteSpace(x.Serie)
                      || !string.IsNullOrWhiteSpace(x.ReferenciaLinea)
-                     || x.TipoCambioLinea.HasValue
+                     || x.TipoCambioLinea > 0
                      || x.Debe > 0
                      || x.Haber > 0)
             .Select((x, index) =>
@@ -797,6 +867,11 @@ public class CajaBancoController(
                 ModelState.AddModelError($"{prefijo}.GlosaDetalle", "Ingrese la glosa del detalle.");
             }
 
+            if (detalle.TipoCambioLinea <= 0)
+            {
+                ModelState.AddModelError($"{prefijo}.TipoCambioLinea", "Ingrese un tipo de cambio mayor a cero en la linea.");
+            }
+
             var tieneDebe = detalle.Debe > 0;
             var tieneHaber = detalle.Haber > 0;
 
@@ -805,7 +880,7 @@ public class CajaBancoController(
                 ModelState.AddModelError($"{prefijo}.Debe", "La linea debe tener monto solo en Debe o solo en Haber.");
             }
 
-            var comprobanteValido = detalle.ModuloOperacionComprobante is "COM" or "VEN" or "DET"
+            var comprobanteValido = detalle.ModuloOperacionComprobante is "COM" or "VEN" or "DET" or "PER" or "R4T"
                 && detalle.IdRegistroComprobante.HasValue
                 && detalle.IdRegistroComprobante.Value > 0;
 
@@ -833,6 +908,16 @@ public class CajaBancoController(
         if (diferencia >= 0.005m)
         {
             ModelState.AddModelError(string.Empty, "No puede guardar mientras exista diferencia entre Total Operacion y Total Detalle.");
+        }
+
+        if (string.Equals(formulario.TipoMovimiento, "I", StringComparison.OrdinalIgnoreCase) && totalHaber <= totalDebe)
+        {
+            ModelState.AddModelError(string.Empty, "En ingresos, el detalle debe tener mayor Haber que Debe para compensar la cuenta bancaria.");
+        }
+
+        if (string.Equals(formulario.TipoMovimiento, "E", StringComparison.OrdinalIgnoreCase) && totalDebe <= totalHaber)
+        {
+            ModelState.AddModelError(string.Empty, "En egresos, el detalle debe tener mayor Debe que Haber para compensar la cuenta bancaria.");
         }
     }
 
@@ -889,7 +974,9 @@ public class CajaBancoController(
         ComprobanteSaldoAyudaDto comprobante,
         IReadOnlyDictionary<string, TipoComprobanteDto> tipoComprobantePorCodigo,
         IReadOnlyDictionary<int, ConfiguracionDocumentoEmpresaDto> configuracionDocumentoPorId,
-        (int idPlanCuenta, string cuentaTexto)? cuentaDetraccion)
+        (int idPlanCuenta, string cuentaTexto)? cuentaDetraccion,
+        (int idPlanCuenta, string cuentaTexto)? cuentaPercepcion,
+        (int idPlanCuenta, string cuentaTexto)? cuentaRetencion)
     {
         if (string.Equals(comprobante.ModuloOperacion, "DET", StringComparison.OrdinalIgnoreCase))
         {
@@ -902,6 +989,34 @@ public class CajaBancoController(
             {
                 idPlanCuenta = cuentaDetraccion.Value.idPlanCuenta,
                 cuentaTexto = cuentaDetraccion.Value.cuentaTexto
+            };
+        }
+
+        if (string.Equals(comprobante.ModuloOperacion, "PER", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!cuentaPercepcion.HasValue)
+            {
+                return null;
+            }
+
+            return new
+            {
+                idPlanCuenta = cuentaPercepcion.Value.idPlanCuenta,
+                cuentaTexto = cuentaPercepcion.Value.cuentaTexto
+            };
+        }
+
+        if (string.Equals(comprobante.ModuloOperacion, "R4T", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!cuentaRetencion.HasValue)
+            {
+                return null;
+            }
+
+            return new
+            {
+                idPlanCuenta = cuentaRetencion.Value.idPlanCuenta,
+                cuentaTexto = cuentaRetencion.Value.cuentaTexto
             };
         }
 
@@ -944,6 +1059,56 @@ public class CajaBancoController(
         var parametro = parametros.Items.FirstOrDefault(x =>
             x.Activo &&
             string.Equals(x.CodigoParametro, "CTADETRACCION", StringComparison.OrdinalIgnoreCase));
+
+        if (parametro is null || string.IsNullOrWhiteSpace(parametro.ValorParametro))
+        {
+            return null;
+        }
+
+        var valorParametro = parametro.ValorParametro.Trim();
+        var cuentas = await planCuentaRepository.ListarPorEmpresaAsync(idEmpresa, true, cancellationToken);
+
+        var cuenta = cuentas.FirstOrDefault(x =>
+            string.Equals(x.CodigoCuenta, valorParametro, StringComparison.OrdinalIgnoreCase)
+            && x.Estado
+            && x.AceptaMovimiento);
+
+        if (cuenta is null && int.TryParse(valorParametro, out var idPlanCuenta) && idPlanCuenta > 0)
+        {
+            cuenta = cuentas.FirstOrDefault(x => x.IdPlanCuenta == idPlanCuenta && x.Estado && x.AceptaMovimiento);
+        }
+
+        if (cuenta is null)
+        {
+            return null;
+        }
+
+        return (cuenta.IdPlanCuenta, $"{cuenta.CodigoCuenta} - {cuenta.NombreCuenta}");
+    }
+
+    private static (int idPlanCuenta, string cuentaTexto)? ObtenerCuentaRetencion(ConfiguracionContableEmpresaDto configuracionContable)
+    {
+        var impuesto = configuracionContable.Impuestos.FirstOrDefault(x =>
+            x.Activo
+            && string.Equals(x.CodigoSunat, "R4TA", StringComparison.OrdinalIgnoreCase)
+            && x.IdPlanCuenta.HasValue
+            && x.IdPlanCuenta.Value > 0
+            && !string.IsNullOrWhiteSpace(x.CuentaTexto));
+
+        if (impuesto is null)
+        {
+            return null;
+        }
+
+        return (impuesto.IdPlanCuenta!.Value, impuesto.CuentaTexto);
+    }
+
+    private async Task<(int idPlanCuenta, string cuentaTexto)?> ObtenerCuentaPercepcionAsync(int idEmpresa, CancellationToken cancellationToken)
+    {
+        var parametros = await parametroEmpresaRepository.ListarPaginadoPorEmpresaAsync(idEmpresa, null, "CTADEPERCEPCION", 1, 20, cancellationToken);
+        var parametro = parametros.Items.FirstOrDefault(x =>
+            x.Activo &&
+            string.Equals(x.CodigoParametro, "CTADEPERCEPCION", StringComparison.OrdinalIgnoreCase));
 
         if (parametro is null || string.IsNullOrWhiteSpace(parametro.ValorParametro))
         {

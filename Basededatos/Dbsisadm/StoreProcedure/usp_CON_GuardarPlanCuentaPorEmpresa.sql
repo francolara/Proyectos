@@ -13,6 +13,7 @@
 -- Create date:   25/06/2026
 -- Description:   Devuelve EsUltimoNivel al grabar para soportar la validacion opcional de cuentas destino sin perder el flujo normal de guardado.
 -- =============================================
+-- Firma: FRANCO LARA - 02/07/2026 | Corrige la lectura de parametros de grado usando TipoParametro NA y normaliza las monedas S/D como alias validos de PEN/USD al guardar cuentas contables.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_GuardarPlanCuentaPorEmpresa
     @IdPlanCuenta INT = NULL,
@@ -24,6 +25,7 @@ CREATE OR ALTER PROCEDURE dbo.usp_CON_GuardarPlanCuentaPorEmpresa
     @IdMoneda VARCHAR(3) = '',
     @TipoCambio CHAR(1) = '',
     @AceptaMovimiento BIT,
+    @GeneraDiferenciaPorAnalisis BIT,
     @RequiereCentroCosto BIT,
     @Estado BIT,
     @UsuarioRegistro NVARCHAR(450) = NULL
@@ -37,6 +39,7 @@ BEGIN
         DECLARE @NivelCuenta TINYINT = 1
         DECLARE @CodigoCuentaTrabajo VARCHAR(20) = LTRIM(RTRIM(@CodigoCuenta))
         DECLARE @CodigoCuentaPadre VARCHAR(20) = NULL
+        DECLARE @IdMonedaTrabajo VARCHAR(3) = UPPER(LTRIM(RTRIM(ISNULL(@IdMoneda, ''))))
         DECLARE @GradoMaximo TINYINT
         DECLARE @LongitudEsperada INT = 0
         DECLARE @NivelIterador TINYINT = 1
@@ -58,7 +61,17 @@ BEGIN
             RAISERROR(N'La empresa indicada no existe.', 16, 1);
         END;
 
-        IF ISNULL(@IdMoneda, '') NOT IN ('', 'PEN', 'USD')
+        IF @IdMonedaTrabajo = 'S'
+        BEGIN
+            SET @IdMonedaTrabajo = 'PEN';
+        END;
+
+        IF @IdMonedaTrabajo = 'D'
+        BEGIN
+            SET @IdMonedaTrabajo = 'USD';
+        END;
+
+        IF @IdMonedaTrabajo NOT IN ('', 'PEN', 'USD')
         BEGIN
             RAISERROR(N'La moneda de la cuenta es invalida.', 16, 1);
         END;
@@ -87,7 +100,7 @@ BEGIN
             @GradoMaximo = TRY_CONVERT(TINYINT, pe.ValorParametro)
         FROM dbo.ADM_ParametroEmpresa AS pe
         WHERE pe.IdEmpresa = @IdEmpresa
-          AND pe.TipoParametro = 'CONTABLE'
+          AND pe.TipoParametro = 'NA'
           AND pe.CodigoParametro = 'GRADO_MAXIMO'
           AND pe.Activo = 1;
 
@@ -110,7 +123,7 @@ BEGIN
                 @LongitudNivel = TRY_CONVERT(INT, pe.ValorParametro)
             FROM dbo.ADM_ParametroEmpresa AS pe
             WHERE pe.IdEmpresa = @IdEmpresa
-              AND pe.TipoParametro = 'CONTABLE'
+              AND pe.TipoParametro = 'NA'
               AND pe.CodigoParametro = @CodigoParametroLongitud
               AND pe.Activo = 1;
 
@@ -159,6 +172,7 @@ BEGIN
                 IdMoneda,
                 TipoCambio,
                 AceptaMovimiento,
+                GeneraDiferenciaPorAnalisis,
                 RequiereCentroCosto,
                 Estado,
                 UsuarioRegistro
@@ -171,9 +185,10 @@ BEGIN
                 @NombreCuenta,
                 @NivelCuenta,
                 @ColBalance,
-                ISNULL(@IdMoneda, ''),
+                @IdMonedaTrabajo,
                 ISNULL(@TipoCambio, ''),
                 @AceptaMovimiento,
+                @GeneraDiferenciaPorAnalisis,
                 @RequiereCentroCosto,
                 @Estado,
                 @UsuarioRegistro
@@ -205,9 +220,10 @@ BEGIN
                 NombreCuenta = @NombreCuenta,
                 NivelCuenta = @NivelCuenta,
                 ColBalance = @ColBalance,
-                IdMoneda = ISNULL(@IdMoneda, ''),
+                IdMoneda = @IdMonedaTrabajo,
                 TipoCambio = ISNULL(@TipoCambio, ''),
                 AceptaMovimiento = @AceptaMovimiento,
+                GeneraDiferenciaPorAnalisis = @GeneraDiferenciaPorAnalisis,
                 RequiereCentroCosto = @RequiereCentroCosto,
                 Estado = @Estado,
                 UsuarioRegistro = @UsuarioRegistro
@@ -226,6 +242,7 @@ BEGIN
             pc.IdMoneda,
             pc.TipoCambio,
             pc.AceptaMovimiento,
+            pc.GeneraDiferenciaPorAnalisis,
             CAST(CASE
                      WHEN EXISTS
                      (

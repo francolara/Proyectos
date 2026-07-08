@@ -1,0 +1,363 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.AnalisisCuentaViewModel
+
+@* Firma: FRANCO LARA - 07/07/2026 | Mantiene el reporte HTML de Analisis de cuentas, adapta su visualizacion al formato compacto tipo hoja A4 usado en los reportes legacy y agrega impresion directa en pantalla. *@
+@* Firma: FRANCO LARA - 08/07/2026 | Reestructura Analisis de cuentas segun las vistas legacy Por auxiliar, Auxiliar y documento y Detallado, segmentando por cuenta y persona, agrupando documentos cuando corresponde y usando solo importes de la moneda seleccionada. *@
+
+@{
+    ViewData["Title"] = "Analisis de cuentas";
+    ViewData["AdminShell"] = true;
+    var textInfo = System.Globalization.CultureInfo.CurrentCulture.TextInfo;
+    var cuentaTexto = string.IsNullOrWhiteSpace(Model.CuentaDesde) && string.IsNullOrWhiteSpace(Model.CuentaHasta)
+        ? "Todas las cuentas"
+        : $"{Model.CuentaDesde} - {Model.CuentaHasta}";
+    var monedaTexto = Model.MonedasDisponibles.FirstOrDefault(x => x.Valor == Model.MonedaSeleccionada)?.Texto ?? Model.MonedaSeleccionada;
+    var vistaTexto = Model.TiposDisponibles.FirstOrDefault(x => x.Valor == Model.TipoSeleccionado)?.Texto ?? "Detallado";
+    var estadoTexto = Model.EstadosDisponibles.FirstOrDefault(x => x.Valor == Model.EstadoSeleccionado)?.Texto ?? "Todos";
+    var esPorAuxiliar = Model.TipoSeleccionado == "2";
+    var esPorDocumento = Model.TipoSeleccionado == "1";
+    var cuentasAgrupadas = Model.Resultados
+        .GroupBy(x => new { x.CodigoCuenta, x.NombreCuenta })
+        .OrderBy(x => x.Key.CodigoCuenta)
+        .ToList();
+
+    static string MostrarValor(string? valor) => string.IsNullOrWhiteSpace(valor) ? "-" : valor;
+    static string ConstruirDocumento(string? tipoDocumento, string? serie, string? referencia)
+    {
+        var tipo = string.IsNullOrWhiteSpace(tipoDocumento) ? "-" : tipoDocumento.Trim();
+        var serieTrabajo = string.IsNullOrWhiteSpace(serie) ? "-" : serie.Trim();
+        var referenciaTrabajo = string.IsNullOrWhiteSpace(referencia) ? "-" : referencia.Trim();
+        return $"{tipo} / {serieTrabajo} / {referenciaTrabajo}";
+    }
+
+}
+
+<section class="dashboard-shell">
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Reporte</span>
+                <h1>Analisis de cuentas</h1>
+                <p>Replica el analisis legacy en HTML, segmentando por cuenta contable, persona y documento segun la vista seleccionada.</p>
+            </div>
+            <div class="workspace-window-badge">
+                <strong>@Model.EmpresaNombre</strong>
+                <span>@Model.PeriodoConsulta</span>
+            </div>
+        </div>
+
+        <div class="workspace-window-body">
+            @if (!string.IsNullOrWhiteSpace(Model.MensajeError))
+            {
+                <div class="alert alert-danger">@Model.MensajeError</div>
+            }
+
+            <form asp-action="AnalisisCuentas" method="get" class="workspace-filter-card">
+                <input type="hidden" name="consultar" value="true" />
+                <div class="workspace-filter-grid">
+                    <div class="workspace-field">
+                        <label class="form-label" for="anio">Anio</label>
+                        <select id="anio" name="anio" class="form-select">
+                            @foreach (var anio in Model.AniosDisponibles)
+                            {
+                                <option value="@anio" selected="@(anio == Model.AnioSeleccionado ? "selected" : null)">@anio</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="mes">Mes</label>
+                        <select id="mes" name="mes" class="form-select">
+                            @foreach (var mes in Model.MesesDisponibles)
+                            {
+                                <option value="@mes.Valor" selected="@(mes.Valor == Model.MesSeleccionado ? "selected" : null)">@textInfo.ToTitleCase(mes.Nombre)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="moneda">Moneda</label>
+                        <select id="moneda" name="moneda" class="form-select">
+                            @foreach (var moneda in Model.MonedasDisponibles)
+                            {
+                                <option value="@moneda.Valor" selected="@(moneda.Valor == Model.MonedaSeleccionada ? "selected" : null)">@moneda.Texto</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="estado">Estado</label>
+                        <select id="estado" name="estado" class="form-select">
+                            @foreach (var estado in Model.EstadosDisponibles)
+                            {
+                                <option value="@estado.Valor" selected="@(estado.Valor == Model.EstadoSeleccionado ? "selected" : null)">@estado.Texto</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="tipo">Vista</label>
+                        <select id="tipo" name="tipo" class="form-select">
+                            @foreach (var tipo in Model.TiposDisponibles)
+                            {
+                                <option value="@tipo.Valor" selected="@(tipo.Valor == Model.TipoSeleccionado ? "selected" : null)">@tipo.Texto</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="cuentaDesde">Cuenta desde</label>
+                        <input id="cuentaDesde" name="cuentaDesde" class="form-control" value="@Model.CuentaDesde" list="analisis-cuentas-lista" />
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="cuentaHasta">Cuenta hasta</label>
+                        <input id="cuentaHasta" name="cuentaHasta" class="form-control" value="@Model.CuentaHasta" list="analisis-cuentas-lista" />
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="auxiliar">Nro documento</label>
+                        <input id="auxiliar" name="auxiliar" class="form-control" value="@Model.Auxiliar" maxlength="20" />
+                    </div>
+                    <div class="workspace-field d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary">Consultar analisis</button>
+                    </div>
+                </div>
+
+                <datalist id="analisis-cuentas-lista">
+                    @foreach (var cuenta in Model.CuentasDisponibles)
+                    {
+                        <option value="@cuenta.Valor">@cuenta.Texto</option>
+                    }
+                </datalist>
+            </form>
+
+            @if (Model.ConsultaEjecutada && Model.Resultados.Count == 0 && string.IsNullOrWhiteSpace(Model.MensajeError))
+            {
+                <div class="alert alert-info mt-4">
+                    No se encontraron movimientos para los filtros seleccionados.
+                </div>
+            }
+
+            @if (Model.Resultados.Count > 0)
+            {
+                <section class="workspace-report-sheet report-ledger-sheet mt-4">
+                    <div class="report-action-bar no-print">
+                        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Imprimir</button>
+                    </div>
+
+                    <header class="report-ledger-header">
+                        <div>
+                            <strong>@Model.EmpresaNombre</strong>
+                            <span>ANALISIS DE CUENTAS</span>
+                        </div>
+                        <div class="report-ledger-meta">
+                            <span>Periodo: @Model.PeriodoConsulta</span>
+                            <span>Moneda: @monedaTexto</span>
+                            <span>Vista: @vistaTexto</span>
+                            <span>Estado: @estadoTexto</span>
+                            <span>Cuentas: @cuentaTexto</span>
+                            <span>Nro documento: @(string.IsNullOrWhiteSpace(Model.Auxiliar) ? "Todos" : Model.Auxiliar)</span>
+                        </div>
+                    </header>
+
+                    @foreach (var cuentaGroup in cuentasAgrupadas)
+                    {
+                        var totalCuentaDebe = cuentaGroup.Sum(x => x.Debe);
+                        var totalCuentaHaber = cuentaGroup.Sum(x => x.Haber);
+                        var totalCuentaSaldo = totalCuentaDebe - totalCuentaHaber;
+                        var personas = cuentaGroup
+                            .GroupBy(x => new { x.Auxiliar, x.NombreAuxiliar })
+                            .OrderBy(x => x.Key.Auxiliar)
+                            .ThenBy(x => x.Key.NombreAuxiliar)
+                            .ToList();
+
+                        <article class="report-ledger-account-block">
+                            <header class="report-ledger-account-header">
+                                <div>
+                                    <strong>@cuentaGroup.Key.CodigoCuenta</strong>
+                                    <span>@cuentaGroup.Key.NombreCuenta</span>
+                                </div>
+                                <div class="report-ledger-account-meta">
+                                    <span>Total Debe: @totalCuentaDebe.ToString("N2")</span>
+                                    <span>Total Haber: @totalCuentaHaber.ToString("N2")</span>
+                                    <span>Saldo: @totalCuentaSaldo.ToString("N2")</span>
+                                </div>
+                            </header>
+
+                            @if (esPorAuxiliar)
+                            {
+                                <div class="report-ledger-table-wrap">
+                                    <table class="table app-table report-ledger-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Nro documento</th>
+                                                <th>Nombre persona</th>
+                                                <th>Debe</th>
+                                                <th>Haber</th>
+                                                <th>Saldo</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var persona in personas)
+                                            {
+                                                var debePersona = persona.Sum(x => x.Debe);
+                                                var haberPersona = persona.Sum(x => x.Haber);
+                                                var saldoPersona = debePersona - haberPersona;
+
+                                                <tr>
+                                                    <td class="report-ledger-strong-cell">
+                                                        <strong>@MostrarValor(persona.Key.Auxiliar)</strong>
+                                                    </td>
+                                                    <td>@MostrarValor(persona.Key.NombreAuxiliar)</td>
+                                                    <td class="workspace-money-cell">@debePersona.ToString("N2")</td>
+                                                    <td class="workspace-money-cell">@haberPersona.ToString("N2")</td>
+                                                    <td class="workspace-money-cell">@saldoPersona.ToString("N2")</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                        <tfoot>
+                                            <tr class="report-ledger-total-row">
+                                                <td colspan="2">Subtotal @cuentaGroup.Key.CodigoCuenta</td>
+                                                <td class="workspace-money-cell">@totalCuentaDebe.ToString("N2")</td>
+                                                <td class="workspace-money-cell">@totalCuentaHaber.ToString("N2")</td>
+                                                <td class="workspace-money-cell">@totalCuentaSaldo.ToString("N2")</td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            }
+                            else
+                            {
+                                @foreach (var persona in personas)
+                                {
+                                    var debePersona = persona.Sum(x => x.Debe);
+                                    var haberPersona = persona.Sum(x => x.Haber);
+                                    var saldoPersona = debePersona - haberPersona;
+                                    var itemsPersona = persona
+                                        .OrderBy(x => x.Periodo)
+                                        .ThenBy(x => x.FechaEmision)
+                                        .ThenBy(x => x.Comprobante)
+                                        .ThenBy(x => x.TipoDocumento)
+                                        .ThenBy(x => x.Serie)
+                                        .ThenBy(x => x.NumeroReferencia)
+                                        .ToList();
+
+                                    <div class="px-3 pt-3 pb-2 border-top">
+                                        <div class="d-flex flex-wrap justify-content-between gap-2">
+                                            <div>
+                                                <strong>@MostrarValor(persona.Key.Auxiliar)</strong>
+                                                <div>@MostrarValor(persona.Key.NombreAuxiliar)</div>
+                                            </div>
+                                            <div class="d-flex flex-wrap gap-3 text-nowrap">
+                                                <span>Total Debe: <strong>@debePersona.ToString("N2")</strong></span>
+                                                <span>Total Haber: <strong>@haberPersona.ToString("N2")</strong></span>
+                                                <span>Saldo: <strong>@saldoPersona.ToString("N2")</strong></span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="report-ledger-table-wrap">
+                                        <table class="table app-table report-ledger-table mb-0">
+                                            <thead>
+                                                <tr>
+                                                    @if (esPorDocumento)
+                                                    {
+                                                        <th>Comprobante</th>
+                                                        <th>Tipo</th>
+                                                        <th>Serie</th>
+                                                        <th>Referencia</th>
+                                                        <th>Debe</th>
+                                                        <th>Haber</th>
+                                                        <th>Saldo</th>
+                                                    }
+                                                    else
+                                                    {
+                                                        <th>Comprobante</th>
+                                                        <th>Periodo</th>
+                                                        <th>Glosa</th>
+                                                        <th>Fecha</th>
+                                                        <th>TC</th>
+                                                        <th>Debe</th>
+                                                        <th>Haber</th>
+                                                        <th>Saldo</th>
+                                                    }
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @if (esPorDocumento)
+                                                {
+                                                    var documentosAgrupados = itemsPersona
+                                                        .GroupBy(x => new
+                                                        {
+                                                            x.Comprobante,
+                                                            x.TipoDocumento,
+                                                            x.Serie,
+                                                            x.NumeroReferencia
+                                                        })
+                                                        .OrderBy(x => x.Key.Comprobante)
+                                                        .ThenBy(x => x.Key.TipoDocumento)
+                                                        .ThenBy(x => x.Key.Serie)
+                                                        .ThenBy(x => x.Key.NumeroReferencia)
+                                                        .ToList();
+
+                                                    @foreach (var documento in documentosAgrupados)
+                                                    {
+                                                        var debeDocumento = documento.Sum(x => x.Debe);
+                                                        var haberDocumento = documento.Sum(x => x.Haber);
+                                                        var saldoDocumento = debeDocumento - haberDocumento;
+
+                                                        <tr>
+                                                            <td class="report-ledger-strong-cell">@MostrarValor(documento.Key.Comprobante)</td>
+                                                            <td>@MostrarValor(documento.Key.TipoDocumento)</td>
+                                                            <td>@MostrarValor(documento.Key.Serie)</td>
+                                                            <td>@MostrarValor(documento.Key.NumeroReferencia)</td>
+                                                            <td class="workspace-money-cell">@debeDocumento.ToString("N2")</td>
+                                                            <td class="workspace-money-cell">@haberDocumento.ToString("N2")</td>
+                                                            <td class="workspace-money-cell">@saldoDocumento.ToString("N2")</td>
+                                                        </tr>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    decimal saldoAcumulado = 0;
+
+                                                    foreach (var item in itemsPersona)
+                                                    {
+                                                        saldoAcumulado += item.Debe - item.Haber;
+
+                                                        <tr>
+                                                            <td>
+                                                                <strong>@MostrarValor(item.Comprobante)</strong>
+                                                                <div>@ConstruirDocumento(item.TipoDocumento, item.Serie, item.NumeroReferencia)</div>
+                                                            </td>
+                                                            <td>@MostrarValor(item.Periodo)</td>
+                                                            <td class="report-ledger-description">@MostrarValor(item.GlosaDetalle)</td>
+                                                            <td>@item.FechaEmision?.ToString("dd/MM/yyyy")</td>
+                                                            <td class="workspace-money-cell">@item.TipoCambio.ToString("N3")</td>
+                                                            <td class="workspace-money-cell">@item.Debe.ToString("N2")</td>
+                                                            <td class="workspace-money-cell">@item.Haber.ToString("N2")</td>
+                                                            <td class="workspace-money-cell">@saldoAcumulado.ToString("N2")</td>
+                                                        </tr>
+                                                    }
+                                                }
+                                            </tbody>
+                                            <tfoot>
+                                                <tr class="report-ledger-total-row">
+                                                    <td colspan="@(esPorDocumento ? 4 : 5)">Subtotal @MostrarValor(persona.Key.Auxiliar)</td>
+                                                    <td class="workspace-money-cell">@debePersona.ToString("N2")</td>
+                                                    <td class="workspace-money-cell">@haberPersona.ToString("N2")</td>
+                                                    <td class="workspace-money-cell">@saldoPersona.ToString("N2")</td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                }
+                            }
+                        </article>
+                    }
+
+                    <div class="mt-3 px-3 py-3 border rounded-4 bg-light">
+                        <div class="d-flex flex-wrap gap-4 justify-content-end">
+                            <span>Total Debe: <strong>@Model.TotalDebe.ToString("N2")</strong></span>
+                            <span>Total Haber: <strong>@Model.TotalHaber.ToString("N2")</strong></span>
+                            <span>Saldo Final: <strong>@(Model.TotalDebe - Model.TotalHaber).ToString("N2")</strong></span>
+                        </div>
+                    </div>
+                </section>
+            }
+        </div>
+    </section>
+</section>

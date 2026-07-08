@@ -14,6 +14,8 @@
 -- Create date:   22/06/2026
 -- Description:   Incluye fecha de emision en la cabecera para asientos manuales y automaticos.
 -- =============================================
+-- Firma: FRANCO LARA - 03/07/2026 | Devuelve DH en el detalle para exponer el sentido contable explicito por linea.
+-- Firma: FRANCO LARA - 06/07/2026 | Expone tambien TotalImporteS y TotalImporteD consolidados en la cabecera del asiento para reutilizar el resumen del listado y formulario.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_ObtenerAsiento
     @IdAsiento INT
@@ -45,6 +47,14 @@ BEGIN
             a.TipoCambio,
             a.TotalDebe,
             a.TotalHaber,
+            CASE
+                WHEN ISNULL(dt.TotalImporteDebeS, 0) >= ISNULL(dt.TotalImporteHaberS, 0) THEN ISNULL(dt.TotalImporteDebeS, 0)
+                ELSE ISNULL(dt.TotalImporteHaberS, 0)
+            END AS TotalImporteS,
+            CASE
+                WHEN ISNULL(dt.TotalImporteDebeD, 0) >= ISNULL(dt.TotalImporteHaberD, 0) THEN ISNULL(dt.TotalImporteDebeD, 0)
+                ELSE ISNULL(dt.TotalImporteHaberD, 0)
+            END AS TotalImporteD,
             a.Estado,
             a.ReferenciaExterna,
             a.Observacion
@@ -53,6 +63,16 @@ BEGIN
             ON o.IdOrigen = a.IdOrigen
         INNER JOIN dbo.ADM_Moneda AS m
             ON m.IdMoneda = a.IdMoneda
+        OUTER APPLY
+        (
+            SELECT
+                TotalImporteDebeS = SUM(CASE WHEN d.DH = 'D' THEN ISNULL(d.TotalImporteS, 0) ELSE 0 END),
+                TotalImporteHaberS = SUM(CASE WHEN d.DH = 'H' THEN ISNULL(d.TotalImporteS, 0) ELSE 0 END),
+                TotalImporteDebeD = SUM(CASE WHEN d.DH = 'D' THEN ISNULL(d.TotalImporteD, 0) ELSE 0 END),
+                TotalImporteHaberD = SUM(CASE WHEN d.DH = 'H' THEN ISNULL(d.TotalImporteD, 0) ELSE 0 END)
+            FROM dbo.CON_AsientoDetalle AS d
+            WHERE d.IdAsiento = a.IdAsiento
+        ) AS dt
         WHERE a.IdAsiento = @IdAsiento;
 
         SELECT
@@ -60,6 +80,7 @@ BEGIN
             d.IdAsiento,
             d.Item,
             d.IdPlanCuenta,
+            d.DH,
             p.CodigoCuenta,
             p.NombreCuenta,
             d.GlosaDetalle,

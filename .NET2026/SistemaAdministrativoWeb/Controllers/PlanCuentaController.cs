@@ -128,6 +128,7 @@ public class PlanCuentaController(
 
         NormalizarConfiguracionDestino(formulario.ConfiguracionDestino);
         var guardarConfiguracionDestino = TieneConfiguracionDestino(formulario.ConfiguracionDestino);
+        const string campoAnalisis = "Formulario.GeneraDiferenciaPorAnalisis";
 
         if (guardarConfiguracionDestino)
         {
@@ -137,6 +138,16 @@ public class PlanCuentaController(
             }
 
             ValidarConfiguracionDestino(formulario.ConfiguracionDestino, nameof(formulario.ConfiguracionDestino));
+        }
+
+        formulario.IdMoneda = NormalizarMonedaPlanCuenta(formulario.IdMoneda);
+
+        if (formulario.GeneraDiferenciaPorAnalisis)
+        {
+            if (!formulario.AceptaMovimiento)
+            {
+                ModelState.AddModelError(campoAnalisis, "La cuenta debe aceptar movimiento para marcarla como analisis.");
+            }
         }
 
         if (!ModelState.IsValid)
@@ -159,9 +170,10 @@ public class PlanCuentaController(
                 CodigoCuenta = formulario.CodigoCuenta.Trim(),
                 NombreCuenta = formulario.NombreCuenta.Trim(),
                 ColBalance = formulario.ColBalance.Trim().ToUpperInvariant(),
-                IdMoneda = formulario.IdMoneda?.Trim().ToUpperInvariant() ?? string.Empty,
+                IdMoneda = NormalizarMonedaPlanCuenta(formulario.IdMoneda),
                 TipoCambio = formulario.TipoCambio?.Trim().ToUpperInvariant() ?? string.Empty,
                 AceptaMovimiento = formulario.AceptaMovimiento,
+                GeneraDiferenciaPorAnalisis = formulario.GeneraDiferenciaPorAnalisis,
                 RequiereCentroCosto = formulario.RequiereCentroCosto,
                 Estado = formulario.Estado,
                 UsuarioRegistro = User.Identity?.Name
@@ -404,9 +416,10 @@ public class PlanCuentaController(
                 NombreCuenta = x.NombreCuenta,
                 NivelCuenta = x.NivelCuenta,
                 ColBalance = x.ColBalance,
-                IdMoneda = x.IdMoneda,
+                IdMoneda = NormalizarMonedaPlanCuenta(x.IdMoneda),
                 TipoCambio = x.TipoCambio,
                 AceptaMovimiento = x.AceptaMovimiento,
+                GeneraDiferenciaPorAnalisis = x.GeneraDiferenciaPorAnalisis,
                 RequiereCentroCosto = x.RequiereCentroCosto,
                 Estado = x.Estado
             })
@@ -436,9 +449,10 @@ public class PlanCuentaController(
                     CodigoCuenta = cuentaEditar.CodigoCuenta,
                     NombreCuenta = cuentaEditar.NombreCuenta,
                     ColBalance = cuentaEditar.ColBalance,
-                    IdMoneda = cuentaEditar.IdMoneda,
+                    IdMoneda = NormalizarMonedaPlanCuenta(cuentaEditar.IdMoneda),
                     TipoCambio = cuentaEditar.TipoCambio,
                     AceptaMovimiento = cuentaEditar.AceptaMovimiento,
+                    GeneraDiferenciaPorAnalisis = cuentaEditar.GeneraDiferenciaPorAnalisis,
                     RequiereCentroCosto = cuentaEditar.RequiereCentroCosto,
                     Estado = cuentaEditar.Estado,
                     PermiteConfigurarDestinos = cuentaEditar.EsUltimoNivel || cuentaEditar.AceptaMovimiento || cuentaDestinoEditar is not null,
@@ -446,4 +460,16 @@ public class PlanCuentaController(
                 }
         };
     }
+
+    private static string NormalizarMonedaPlanCuenta(string? idMoneda)
+    {
+        var valor = (idMoneda ?? string.Empty).Trim().ToUpperInvariant();
+        return valor switch
+        {
+            "S" => "PEN",
+            "D" => "USD",
+            _ => valor
+        };
+    }
+
 }

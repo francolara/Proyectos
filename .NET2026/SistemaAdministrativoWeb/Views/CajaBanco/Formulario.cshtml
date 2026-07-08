@@ -7,6 +7,9 @@
    ============================================= *@
 @* Firma: FRANCO LARA - 24/06/2026 | Reubica el resumen del movimiento junto al importe de cabecera, cambia sus indicadores a Total Operacion/Total Detalle/Diferencia, amplia el detalle para guardar persona por linea, enlaza comprobantes Compra/Venta jalando su saldo pendiente, bloquea el guardado cuando exista diferencia y muestra calendario en Fecha emision. *@
 @* Firma: FRANCO LARA - 26/06/2026 | Incorpora detracciones en la ayuda de comprobantes pendientes de Caja y Bancos, asigna tipo documento por codigo, hereda serie y numero del comprobante original y precarga la cuenta contable SPOT configurada para su pago. *@
+@* Firma: FRANCO LARA - 29/06/2026 | Exige tipo de cambio en cabecera y detalle de Caja y Bancos, consulta siempre USD por fecha al cargar o cambiarla, muestra 3 decimales en ambos niveles, deja el valor por defecto en 0 para validar al grabar e incorpora percepciones como documento pendiente adicional de compras. *@
+@* Firma: FRANCO LARA - 03/07/2026 | Corrige el resumen visual de Caja y Bancos para que valide tambien el sentido contable del detalle segun ingreso o egreso y avise antes de enviar cuando el asiento automatico quedaria invertido. *@
+@* Firma: FRANCO LARA - 04/07/2026 | Bloquea la edicion manual del tipo de cambio en Caja y Bancos y convierte automaticamente el saldo sugerido del comprobante a la moneda de la cuenta corriente usando el TC de cabecera. *@
 
 @{
     ViewData["Title"] = Model.Formulario.IdMovimientoBanco.HasValue ? "Editar movimiento bancario" : "Registrar movimiento bancario";
@@ -275,6 +278,7 @@
                                 <option value="@cuenta.IdBancoConfiguracionEmpresa"
                                         data-banco="@($"{cuenta.NombreBanco} ({cuenta.CodigoBanco})")"
                                         data-moneda="@($"{cuenta.CodigoMoneda} - {cuenta.NombreMoneda}")"
+                                        data-codigo-moneda="@cuenta.CodigoMoneda"
                                         data-cuenta="@cuenta.NroCuentaCorriente"
                                         selected="@(cuenta.IdBancoConfiguracionEmpresa == Model.Formulario.IdBancoConfiguracionEmpresa)">
                                     @($"{cuenta.NroCuentaCorriente} | {cuenta.NombreBanco} | {cuenta.CodigoMoneda}")
@@ -292,11 +296,9 @@
                 <div class="workspace-caja-banco-layout mt-4">
                     <aside class="workspace-caja-banco-sidebar">
                         <div class="workspace-section">
-                    <div class="workspace-section-head workspace-section-head-compact">
+                            <div class="workspace-section-head workspace-section-head-compact">
                                 <div>
-                                    <span class="workspace-section-kicker">Operacion</span>
                                     <h2>Flujo bancario</h2>
-                                    <p>Elige si registraras un ingreso o egreso y luego selecciona el tipo de operacion bancaria.</p>
                                 </div>
                             </div>
                             <div class="workspace-window-body">
@@ -367,9 +369,7 @@
                         <div class="workspace-section">
                             <div class="workspace-section-head workspace-section-head-compact">
                                 <div>
-                                    <span class="workspace-section-kicker">Cabecera</span>
                                     <h2>Datos del movimiento</h2>
-                                    <p>Completa la referencia general del movimiento antes de registrar el detalle.</p>
                                 </div>
                                 <div class="workspace-section-head-meta">
                                     <span>Nro movimiento</span>
@@ -380,12 +380,15 @@
                                 <div class="workspace-form-grid">
                                     <div class="workspace-field">
                                         <label asp-for="Formulario.FechaEmision" class="form-label">Fecha emision</label>
-                                        <input asp-for="Formulario.FechaEmision" type="date" class="form-control" />
+                                        <input asp-for="Formulario.FechaEmision" type="date" class="form-control js-fecha-tipo-cambio" id="cajaBancoFechaEmision" />
                                         <span asp-validation-for="Formulario.FechaEmision" class="text-danger"></span>
                                     </div>
                                     <div class="workspace-field">
                                         <label asp-for="Formulario.TipoCambio" class="form-label">Tipo de cambio</label>
-                                        <input asp-for="Formulario.TipoCambio" class="form-control" />
+                                        <div class="input-group">
+                                            <input asp-for="Formulario.TipoCambio" class="form-control js-tipo-cambio-cabecera" id="cajaBancoTipoCambio" readonly />
+                                            <button type="button" class="btn btn-outline-secondary workspace-icon-button js-actualizar-tipo-cambio" title="Actualizar tipo de cambio" aria-label="Actualizar tipo de cambio"><i class="bi bi-arrow-clockwise"></i></button>
+                                        </div>
                                         <span asp-validation-for="Formulario.TipoCambio" class="text-danger"></span>
                                     </div>
                                     <div class="workspace-field">
@@ -443,10 +446,9 @@
                 </div>
 
                 <div class="workspace-section mt-4">
-                            <div class="workspace-section-head workspace-section-head-compact">
+                    <div class="workspace-section-head workspace-section-head-compact">
                         <div>
                             <h2>Detalle del movimiento</h2>
-                            <p>Registra las lineas del movimiento. Cada linea debe tener importe solo en Debe o solo en Haber.</p>
                         </div>
                         <button type="button" class="btn btn-outline-secondary btn-sm" id="agregar-linea">Agregar linea</button>
                     </div>
@@ -503,6 +505,9 @@
                                             <input asp-for="Formulario.Detalles[i].NumeroDocumento" type="hidden" class="js-numero-documento-linea" />
                                             <input asp-for="Formulario.Detalles[i].ModuloOperacionComprobante" type="hidden" class="js-modulo-comprobante-linea" />
                                             <input asp-for="Formulario.Detalles[i].IdRegistroComprobante" type="hidden" class="js-id-registro-comprobante-linea" />
+                                            <input type="hidden" class="js-comprobante-moneda-linea" />
+                                            <input type="hidden" class="js-comprobante-saldo-original-linea" />
+                                            <input type="hidden" class="js-comprobante-saldo-sugerido-linea" />
                                             <div class="workspace-lookup-control workspace-lookup-control-inline-tools">
                                                 <input class="form-control js-persona-texto-linea" value="@(string.IsNullOrWhiteSpace(Model.Formulario.Detalles[i].PersonaTexto) ? "Seleccione persona" : Model.Formulario.Detalles[i].PersonaTexto)" readonly />
                                                 <button type="button" class="btn btn-outline-secondary workspace-icon-button js-abrir-persona-linea-modal" title="Buscar persona" aria-label="Buscar persona"><i class="bi bi-person"></i></button>
@@ -529,7 +534,10 @@
                                             <span asp-validation-for="Formulario.Detalles[i].ReferenciaLinea" class="text-danger"></span>
                                         </td>
                                         <td>
-                                            <input asp-for="Formulario.Detalles[i].TipoCambioLinea" class="form-control js-tipo-cambio-linea" />
+                                            <div class="input-group input-group-sm">
+                                                <input asp-for="Formulario.Detalles[i].TipoCambioLinea" class="form-control js-tipo-cambio-linea" readonly />
+                                                <button type="button" class="btn btn-outline-secondary js-actualizar-tc-linea" title="Actualizar tipo de cambio" aria-label="Actualizar tipo de cambio"><i class="bi bi-arrow-clockwise"></i></button>
+                                            </div>
                                             <span asp-validation-for="Formulario.Detalles[i].TipoCambioLinea" class="text-danger"></span>
                                         </td>
                                         <td class="detalle-porcentaje-cell">
@@ -773,6 +781,9 @@
             <input name="Formulario.Detalles[__index__].NumeroDocumento" type="hidden" class="js-numero-documento-linea" />
             <input name="Formulario.Detalles[__index__].ModuloOperacionComprobante" type="hidden" class="js-modulo-comprobante-linea" />
             <input name="Formulario.Detalles[__index__].IdRegistroComprobante" type="hidden" class="js-id-registro-comprobante-linea" />
+            <input type="hidden" class="js-comprobante-moneda-linea" />
+            <input type="hidden" class="js-comprobante-saldo-original-linea" />
+            <input type="hidden" class="js-comprobante-saldo-sugerido-linea" />
             <div class="workspace-lookup-control workspace-lookup-control-inline-tools">
                 <input class="form-control js-persona-texto-linea" value="Seleccione persona" readonly />
                 <button type="button" class="btn btn-outline-secondary workspace-icon-button js-abrir-persona-linea-modal" title="Buscar persona" aria-label="Buscar persona"><i class="bi bi-person"></i></button>
@@ -795,7 +806,10 @@
             <input name="Formulario.Detalles[__index__].ReferenciaLinea" class="form-control js-referencia-linea" />
         </td>
         <td>
-            <input name="Formulario.Detalles[__index__].TipoCambioLinea" class="form-control js-tipo-cambio-linea" value="0" />
+            <div class="input-group input-group-sm">
+                <input name="Formulario.Detalles[__index__].TipoCambioLinea" class="form-control js-tipo-cambio-linea" value="0" readonly />
+                <button type="button" class="btn btn-outline-secondary js-actualizar-tc-linea" title="Actualizar tipo de cambio" aria-label="Actualizar tipo de cambio"><i class="bi bi-arrow-clockwise"></i></button>
+            </div>
         </td>
         <td class="detalle-porcentaje-cell">
             <input name="Formulario.Detalles[__index__].Debe" class="form-control js-debe" value="0" />
@@ -829,6 +843,9 @@
             const cuentaCorrienteTexto = document.getElementById("cuentaCorrienteTexto");
             const bancoTexto = document.getElementById("bancoTexto");
             const monedaTexto = document.getElementById("monedaTexto");
+            const fechaEmisionEl = document.getElementById("cajaBancoFechaEmision");
+            const tipoCambioCabeceraEl = document.getElementById("cajaBancoTipoCambio");
+            const actualizarTipoCambioButton = document.querySelector(".js-actualizar-tipo-cambio");
             const detalleTable = document.getElementById("detalleTable");
             const detalleBody = detalleTable?.querySelector("tbody");
             const detalleTemplate = document.getElementById("detalleRowTemplate");
@@ -863,6 +880,7 @@
             const buscarComprobantesDetalleUrl = "@Url.Action("BuscarComprobantesDetalleAyuda", "CajaBanco")";
             const buscarCuentasUrl = "@Url.Action("BuscarAyuda", "PlanCuenta")";
             const buscarCentrosUrl = "@Url.Action("BuscarAyuda", "CentroCosto")";
+            const obtenerTipoCambioUrl = "@Url.Action("ObtenerValorPorFecha", "TipoCambio")";
 
             let personaSeleccion = null;
             let comprobanteSeleccion = null;
@@ -881,6 +899,105 @@
                 const normalized = String(value || "0").replace(",", ".");
                 const number = Number.parseFloat(normalized);
                 return Number.isFinite(number) ? number : 0;
+            };
+
+            const roundTwo = (value) => Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
+
+            const obtenerCodigoMonedaCuenta = () =>
+                String(cuentaCorrienteSelect?.selectedOptions?.[0]?.dataset.codigoMoneda || "")
+                    .trim()
+                    .toUpperCase();
+
+            const convertirImporte = (importe, monedaOrigen, monedaDestino, tipoCambio) => {
+                const importeTrabajo = parseDecimal(importe);
+                const monedaOrigenTrabajo = String(monedaOrigen || "").trim().toUpperCase();
+                const monedaDestinoTrabajo = String(monedaDestino || "").trim().toUpperCase();
+                const tipoCambioTrabajo = parseDecimal(tipoCambio);
+
+                if (importeTrabajo <= 0) {
+                    return 0;
+                }
+
+                if (!monedaOrigenTrabajo || !monedaDestinoTrabajo || monedaOrigenTrabajo === monedaDestinoTrabajo) {
+                    return roundTwo(importeTrabajo);
+                }
+
+                if (tipoCambioTrabajo <= 0) {
+                    return 0;
+                }
+
+                if (monedaOrigenTrabajo === "USD" && monedaDestinoTrabajo === "PEN") {
+                    return roundTwo(importeTrabajo * tipoCambioTrabajo);
+                }
+
+                if (monedaOrigenTrabajo === "PEN" && monedaDestinoTrabajo === "USD") {
+                    return roundTwo(importeTrabajo / tipoCambioTrabajo);
+                }
+
+                return roundTwo(importeTrabajo);
+            };
+
+            const formatTipoCambioInput = (input) => {
+                if (!input) {
+                    return;
+                }
+
+                input.value = parseDecimal(input.value).toFixed(3);
+            };
+
+            const sincronizarTipoCambioDetalle = (row = null) => {
+                const valorCabecera = Number(tipoCambioCabeceraEl?.value || 0);
+                if (!Number.isFinite(valorCabecera) || valorCabecera <= 0) {
+                    return;
+                }
+
+                const aplicar = (targetRow) => {
+                    const input = targetRow?.querySelector(".js-tipo-cambio-linea");
+                    if (input) {
+                        input.value = valorCabecera.toFixed(3);
+                    }
+                };
+
+                if (row) {
+                    aplicar(row);
+                    return;
+                }
+
+                Array.from(detalleBody?.querySelectorAll("tr") || []).forEach(aplicar);
+            };
+
+            const consultarTipoCambioCabecera = async (mostrarMensaje) => {
+                const fecha = String(fechaEmisionEl?.value || "").trim();
+
+                if (!fecha) {
+                    if (mostrarMensaje) {
+                        window.alert("Seleccione fecha antes de actualizar el tipo de cambio.");
+                    }
+                    return false;
+                }
+
+                const response = await fetch(`${obtenerTipoCambioUrl}?${new URLSearchParams({ fecha, idMoneda: "USD" }).toString()}`, { cache: "no-store" });
+                const payload = await response.json();
+                if (!response.ok || !payload.ok) {
+                    if (mostrarMensaje) {
+                        window.alert(payload.mensaje || "No se pudo obtener el tipo de cambio.");
+                    }
+                    return false;
+                }
+
+                if (!payload.encontrado) {
+                    if (mostrarMensaje) {
+                        window.alert(payload.mensaje || "No existe un tipo de cambio registrado para la fecha y moneda seleccionadas.");
+                    }
+                    return false;
+                }
+
+                if (tipoCambioCabeceraEl) {
+                    tipoCambioCabeceraEl.value = Number(payload.tipoCambio || 0).toFixed(3);
+                }
+                sincronizarTipoCambioDetalle();
+                actualizarAplicacionesComprobante(false);
+                return true;
             };
 
             const obtenerPersonaCabecera = () => {
@@ -943,6 +1060,9 @@
                 const tipoDocumentoInput = row?.querySelector(".js-tipo-documento-linea");
                 const serieInput = row?.querySelector(".js-serie-linea");
                 const referenciaInput = row?.querySelector(".js-referencia-linea");
+                const monedaComprobanteInput = row?.querySelector(".js-comprobante-moneda-linea");
+                const saldoOriginalInput = row?.querySelector(".js-comprobante-saldo-original-linea");
+                const saldoSugeridoInput = row?.querySelector(".js-comprobante-saldo-sugerido-linea");
                 const debeInput = row?.querySelector(".js-debe");
                 const haberInput = row?.querySelector(".js-haber");
 
@@ -960,6 +1080,15 @@
                 }
                 if (referenciaInput) {
                     referenciaInput.value = "";
+                }
+                if (monedaComprobanteInput) {
+                    monedaComprobanteInput.value = "";
+                }
+                if (saldoOriginalInput) {
+                    saldoOriginalInput.value = "";
+                }
+                if (saldoSugeridoInput) {
+                    saldoSugeridoInput.value = "";
                 }
                 if (limpiarMontos) {
                     if (debeInput) {
@@ -987,7 +1116,7 @@
                     return;
                 }
 
-                if (moduloComprobante === "COM" || moduloComprobante === "DET") {
+                if (moduloComprobante === "COM" || moduloComprobante === "DET" || moduloComprobante === "PER") {
                     if (debeInput) {
                         debeInput.value = importe;
                     }
@@ -995,6 +1124,47 @@
                         haberInput.value = "0.00";
                     }
                 }
+            };
+
+            const obtenerMontoLinea = (row) => {
+                const debe = parseDecimal(row?.querySelector(".js-debe")?.value);
+                const haber = parseDecimal(row?.querySelector(".js-haber")?.value);
+                return debe > 0 ? debe : haber;
+            };
+
+            const actualizarAplicacionComprobanteFila = (row, forzarReemplazo) => {
+                const monedaComprobanteInput = row?.querySelector(".js-comprobante-moneda-linea");
+                const saldoOriginalInput = row?.querySelector(".js-comprobante-saldo-original-linea");
+                const saldoSugeridoInput = row?.querySelector(".js-comprobante-saldo-sugerido-linea");
+                const monedaComprobante = String(monedaComprobanteInput?.value || "").trim().toUpperCase();
+                const saldoOriginal = parseDecimal(saldoOriginalInput?.value);
+
+                if (!monedaComprobante || saldoOriginal <= 0) {
+                    return;
+                }
+
+                const importeSugeridoAnterior = parseDecimal(saldoSugeridoInput?.value);
+                const importeActual = obtenerMontoLinea(row);
+                const importeConvertido = convertirImporte(
+                    saldoOriginal,
+                    monedaComprobante,
+                    obtenerCodigoMonedaCuenta(),
+                    tipoCambioCabeceraEl?.value);
+
+                if (forzarReemplazo || Math.abs(importeActual - importeSugeridoAnterior) < 0.005 || importeActual <= 0) {
+                    aplicarSaldoPendienteComprobante(row, importeConvertido);
+                }
+
+                if (saldoSugeridoInput) {
+                    saldoSugeridoInput.value = importeConvertido.toFixed(2);
+                }
+            };
+
+            const actualizarAplicacionesComprobante = (forzarReemplazo = false) => {
+                Array.from(detalleBody?.querySelectorAll("tr") || []).forEach((row) => {
+                    actualizarAplicacionComprobanteFila(row, forzarReemplazo);
+                });
+                refreshRows();
             };
 
             const actualizarCuentaCorrientePreview = () => {
@@ -1088,6 +1258,9 @@
                     : totalHaber - totalDebe;
                 const totalDetalle = Math.abs(totalDetalleBase);
                 const diferencia = totalOperacion - totalDetalle;
+                const sentidoCorrecto = tipoMovimiento === "E"
+                    ? totalDebe > totalHaber
+                    : totalHaber > totalDebe;
 
                 if (totalOperacionLabel) {
                     totalOperacionLabel.textContent = totalOperacion.toFixed(2);
@@ -1099,7 +1272,7 @@
                     totalDiferenciaLabel.textContent = diferencia.toFixed(2);
                 }
 
-                const cuadrado = Math.abs(diferencia) < 0.005;
+                const cuadrado = Math.abs(diferencia) < 0.005 && sentidoCorrecto;
                 diferenciaCard?.classList.toggle("is-balanced", cuadrado);
                 diferenciaCard?.classList.toggle("is-unbalanced", !cuadrado);
                 if (totalDetalleEstado) {
@@ -1108,7 +1281,15 @@
                         : `Haber - Debe = ${totalHaber.toFixed(2)} - ${totalDebe.toFixed(2)}`;
                 }
                 if (diferenciaEstado) {
-                    diferenciaEstado.textContent = cuadrado ? "Movimiento equilibrado" : "Revisar diferencia del movimiento";
+                    if (cuadrado) {
+                        diferenciaEstado.textContent = "Movimiento equilibrado";
+                    } else if (Math.abs(diferencia) < 0.005) {
+                        diferenciaEstado.textContent = tipoMovimiento === "E"
+                            ? "Revisar sentido: en egresos el Debe debe superar al Haber."
+                            : "Revisar sentido: en ingresos el Haber debe superar al Debe.";
+                    } else {
+                        diferenciaEstado.textContent = "Revisar diferencia del movimiento";
+                    }
                 }
             };
 
@@ -1164,6 +1345,19 @@
                     }
                     if (texto) {
                         texto.value = "";
+                    }
+                });
+
+                row.querySelector(".js-actualizar-tc-linea")?.addEventListener("click", async () => {
+                    try {
+                        const actualizado = await consultarTipoCambioCabecera(true);
+                        if (!actualizado) {
+                            return;
+                        }
+                        sincronizarTipoCambioDetalle(row);
+                    } catch (error) {
+                        console.warn(error);
+                        window.alert("No se pudo obtener el tipo de cambio.");
                     }
                 });
             };
@@ -1357,7 +1551,46 @@
                 });
             });
 
-            cuentaCorrienteSelect?.addEventListener("change", actualizarCuentaCorrientePreview);
+            cuentaCorrienteSelect?.addEventListener("change", () => {
+                actualizarCuentaCorrientePreview();
+                consultarTipoCambioCabecera(false).catch((error) => console.warn(error));
+                actualizarAplicacionesComprobante(false);
+            });
+            fechaEmisionEl?.addEventListener("input", () => {
+                consultarTipoCambioCabecera(false).catch((error) => console.warn(error));
+            });
+            fechaEmisionEl?.addEventListener("change", () => {
+                consultarTipoCambioCabecera(false).catch((error) => console.warn(error));
+            });
+            formatTipoCambioInput(tipoCambioCabeceraEl);
+            Array.from(detalleBody?.querySelectorAll(".js-tipo-cambio-linea") || []).forEach((input) => formatTipoCambioInput(input));
+            form?.addEventListener("blur", (event) => {
+                const input = event.target;
+                if (input instanceof HTMLInputElement && input.matches(".js-tipo-cambio-cabecera, .js-tipo-cambio-linea")) {
+                    formatTipoCambioInput(input);
+                    if (input.matches(".js-tipo-cambio-cabecera")) {
+                        sincronizarTipoCambioDetalle();
+                    }
+                }
+            }, true);
+            form?.addEventListener("change", (event) => {
+                const input = event.target;
+                if (input instanceof HTMLInputElement && input.matches(".js-tipo-cambio-cabecera, .js-tipo-cambio-linea")) {
+                    formatTipoCambioInput(input);
+                    if (input.matches(".js-tipo-cambio-cabecera")) {
+                        sincronizarTipoCambioDetalle();
+                    }
+                }
+            });
+            actualizarTipoCambioButton?.addEventListener("click", async () => {
+                try {
+                    await consultarTipoCambioCabecera(true);
+                } catch (error) {
+                    console.warn(error);
+                    window.alert("No se pudo obtener el tipo de cambio.");
+                }
+            });
+            consultarTipoCambioCabecera(false).catch((error) => console.warn(error));
             importeTotalInput?.addEventListener("input", refreshRows);
 
             agregarLineaButton?.addEventListener("click", () => {
@@ -1377,6 +1610,7 @@
                         });
                     }
                     bindRow(row);
+                    sincronizarTipoCambioDetalle(row);
                 }
                 refreshRows();
             });
@@ -1422,10 +1656,30 @@
                 const totalOperacion = parseDecimal(importeTotalInput?.value);
                 const totalDetalle = parseDecimal(totalDetalleLabel?.textContent);
                 const diferencia = Math.abs(totalOperacion - totalDetalle);
+                let totalDebe = 0;
+                let totalHaber = 0;
+
+                detalleBody?.querySelectorAll("tr").forEach((row) => {
+                    totalDebe += parseDecimal(row.querySelector(".js-debe")?.value);
+                    totalHaber += parseDecimal(row.querySelector(".js-haber")?.value);
+                });
+
+                const tipoMovimiento = String(tipoMovimientoInput?.value || "I").toUpperCase();
+                const sentidoCorrecto = tipoMovimiento === "E"
+                    ? totalDebe > totalHaber
+                    : totalHaber > totalDebe;
 
                 if (diferencia >= 0.005) {
                     event.preventDefault();
                     window.alert("No puede guardar mientras exista diferencia entre Total Operacion y Total Detalle.");
+                    return;
+                }
+
+                if (!sentidoCorrecto) {
+                    event.preventDefault();
+                    window.alert(tipoMovimiento === "E"
+                        ? "En egresos, el detalle debe tener mayor Debe que Haber para compensar la cuenta bancaria."
+                        : "En ingresos, el detalle debe tener mayor Haber que Debe para compensar la cuenta bancaria.");
                 }
             });
 
@@ -1528,13 +1782,25 @@
                     if (referenciaInput) {
                         referenciaInput.value = comprobanteSeleccion.numero || "";
                     }
-                    if (tipoCambioInput && !tipoCambioInput.value) {
-                        tipoCambioInput.value = "1.00";
+                    if (tipoCambioInput) {
+                        tipoCambioInput.value = Number(parseDecimal(tipoCambioCabeceraEl?.value) || 0).toFixed(3);
                     }
                     if (glosaDetalleInput && !glosaDetalleInput.value) {
                         glosaDetalleInput.value = construirGlosaDetalleDesdeComprobante(comprobanteSeleccion);
                     }
-                    aplicarSaldoPendienteComprobante(rowComprobanteActiva, comprobanteSeleccion.saldo || 0);
+                    const monedaComprobanteInput = rowComprobanteActiva.querySelector(".js-comprobante-moneda-linea");
+                    const saldoOriginalInput = rowComprobanteActiva.querySelector(".js-comprobante-saldo-original-linea");
+                    const saldoSugeridoInput = rowComprobanteActiva.querySelector(".js-comprobante-saldo-sugerido-linea");
+                    if (monedaComprobanteInput) {
+                        monedaComprobanteInput.value = String(comprobanteSeleccion.codigoMoneda || "").trim().toUpperCase();
+                    }
+                    if (saldoOriginalInput) {
+                        saldoOriginalInput.value = Number(comprobanteSeleccion.saldo || 0).toFixed(2);
+                    }
+                    if (saldoSugeridoInput) {
+                        saldoSugeridoInput.value = "0.00";
+                    }
+                    actualizarAplicacionComprobanteFila(rowComprobanteActiva, true);
                     refreshRows();
                 }
                 comprobanteModal?.hide();

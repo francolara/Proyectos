@@ -3,6 +3,11 @@
 -- Create date:   18/06/2026
 -- Description:   Plan de cuentas maestro interno base sin empresa, con ColBalance, moneda y tipo de cambio.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   02/07/2026
+-- Description:   Agrega indicador para diferencia en cambio por analisis y permite heredarlo desde el plan maestro.
+-- =============================================
 
 IF OBJECT_ID(N'dbo.CON_PlanCuentaMaestro', N'U') IS NULL
 BEGIN
@@ -17,6 +22,7 @@ BEGIN
         IdMoneda VARCHAR(3) NOT NULL CONSTRAINT DF_CON_PlanCuentaMaestro_IdMoneda DEFAULT (''),
         TipoCambio CHAR(1) NOT NULL CONSTRAINT DF_CON_PlanCuentaMaestro_TipoCambio DEFAULT (''),
         AceptaMovimiento BIT NOT NULL CONSTRAINT DF_CON_PlanCuentaMaestro_AceptaMovimiento DEFAULT (0),
+        GeneraDiferenciaPorAnalisis BIT NOT NULL CONSTRAINT DF_CON_PlanCuentaMaestro_GeneraDiferenciaPorAnalisis DEFAULT (0),
         RequiereCentroCosto BIT NOT NULL CONSTRAINT DF_CON_PlanCuentaMaestro_RequiereCentroCosto DEFAULT (0),
         Estado BIT NOT NULL CONSTRAINT DF_CON_PlanCuentaMaestro_Estado DEFAULT (1),
         Orden INT NOT NULL CONSTRAINT DF_CON_PlanCuentaMaestro_Orden DEFAULT (0),
@@ -28,4 +34,11 @@ BEGIN
         ADD CONSTRAINT UQ_CON_PlanCuentaMaestro_CodigoCuenta
             UNIQUE (CodigoCuenta);
 
+END;
+
+IF COL_LENGTH('dbo.CON_PlanCuentaMaestro', 'GeneraDiferenciaPorAnalisis') IS NULL
+BEGIN
+    ALTER TABLE dbo.CON_PlanCuentaMaestro
+    ADD GeneraDiferenciaPorAnalisis BIT NOT NULL
+        CONSTRAINT DF_CON_PlanCuentaMaestro_GeneraDiferenciaPorAnalisis DEFAULT (0);
 END;

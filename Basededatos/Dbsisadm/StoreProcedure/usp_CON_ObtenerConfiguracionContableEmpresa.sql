@@ -19,6 +19,7 @@
 -- Create date:   26/06/2026
 -- Description:   Incluye el origen de provision para detracciones y la cuenta SPOT dentro de impuestos.
 -- =============================================
+-- Firma: FRANCO LARA - 02/07/2026 | Expone tambien las configuraciones DIF, AJU, APR y CIE para seleccionar los origenes de diferencia en cambio, ajuste de cuentas, apertura y cierre desde configuracion contable.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_ObtenerConfiguracionContableEmpresa
     @IdEmpresa INT
@@ -42,7 +43,7 @@ BEGIN
             ON o.IdOrigen = c.IdOrigen
         WHERE c.IdEmpresa = @IdEmpresa
           AND c.EscenarioOperacion = 'PROVISION'
-          AND c.ModuloOperacion IN ('COM', 'VEN', 'EGR', 'ING', 'APNC', 'DET');
+          AND c.ModuloOperacion IN ('COM', 'VEN', 'EGR', 'ING', 'APNC', 'DET', 'DIF', 'AJU', 'APR', 'CIE');
 
         SELECT
             t.IdTipoComprobante,

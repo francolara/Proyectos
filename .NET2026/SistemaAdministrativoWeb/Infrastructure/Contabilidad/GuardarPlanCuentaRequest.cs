@@ -11,6 +11,7 @@ public sealed class GuardarPlanCuentaRequest
     public string IdMoneda { get; init; } = string.Empty;
     public string TipoCambio { get; init; } = string.Empty;
     public bool AceptaMovimiento { get; init; }
+    public bool GeneraDiferenciaPorAnalisis { get; init; }
     public bool RequiereCentroCosto { get; init; }
     public bool Estado { get; init; } = true;
     public string? UsuarioRegistro { get; init; }

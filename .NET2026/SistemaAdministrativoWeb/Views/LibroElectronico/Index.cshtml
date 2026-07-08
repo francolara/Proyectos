@@ -1,0 +1,457 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.LibroElectronicoViewModel
+
+@* Firma: FRANCO LARA - 07/07/2026 | Crea el modulo Libros Electronicos con filtros, previsualizacion paginada, validacion, generacion TXT, descarga temporal e historial para PLE 5.1, 5.2 y 6.1. *@
+
+@{
+    ViewData["Title"] = "Libros Electrónicos";
+    ViewData["AdminShell"] = true;
+    var libroNombre = SistemaAdministrativoWeb.Infrastructure.Contabilidad.PleLibroElectronicoCatalogo.ObtenerNombre(Model.LibroElectronicoSeleccionado);
+}
+
+<section class="dashboard-shell">
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">PLE</span>
+                <h1>Libros Electrónicos</h1>
+                <p>Genera, valida, previsualiza y descarga los formatos 5.1, 5.2 y 6.1 usando los asientos contables existentes.</p>
+            </div>
+            <div class="workspace-window-badge">
+                <strong>@Model.EmpresaNombre</strong>
+                <span>@libroNombre</span>
+            </div>
+        </div>
+
+        <div class="workspace-window-body">
+            @if (!string.IsNullOrWhiteSpace(Model.MensajeError))
+            {
+                <div class="alert alert-danger">@Model.MensajeError</div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Model.MensajeExito))
+            {
+                <div class="alert alert-success">@Model.MensajeExito</div>
+            }
+
+            <form asp-action="Index" method="get" class="workspace-filter-card">
+                <div class="workspace-filter-grid">
+                    <div class="workspace-field">
+                        <label class="form-label" for="empresaNombre">Empresa</label>
+                        <input id="empresaNombre" class="form-control" value="@($"{Model.EmpresaNombre} ({Model.EmpresaRuc})")" readonly />
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="anio">Año</label>
+                        <select id="anio" name="anio" class="form-select">
+                            @foreach (var anio in Model.AniosDisponibles)
+                            {
+                                <option value="@anio" selected="@(anio == Model.AnioSeleccionado ? "selected" : null)">@anio</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="mes">Mes</label>
+                        <select id="mes" name="mes" class="form-select">
+                            @foreach (var mes in Model.MesesDisponibles)
+                            {
+                                <option value="@mes.Valor" selected="@(mes.Valor == Model.MesSeleccionado ? "selected" : null)">@System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(mes.Nombre)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="libroElectronico">Libro electrónico</label>
+                        <select id="libroElectronico" name="libroElectronico" class="form-select">
+                            @foreach (var libro in Model.LibrosDisponibles)
+                            {
+                                <option value="@libro.Valor" selected="@(libro.Valor == Model.LibroElectronicoSeleccionado ? "selected" : null)">@libro.Texto</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="moneda">Moneda</label>
+                        <select id="moneda" name="moneda" class="form-select">
+                            @foreach (var moneda in Model.MonedasDisponibles)
+                            {
+                                <option value="@moneda.Valor" selected="@(moneda.Valor == Model.MonedaSeleccionada ? "selected" : null)">@moneda.Texto</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="estado">Estado</label>
+                        <select id="estado" name="estado" class="form-select">
+                            @foreach (var estado in Model.EstadosDisponibles)
+                            {
+                                <option value="@estado.Valor" selected="@(estado.Valor == Model.EstadoSeleccionado ? "selected" : null)">@estado.Texto</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="fechaDesde">Fecha desde</label>
+                        <input id="fechaDesde" name="fechaDesde" type="date" class="form-control" value="@(Model.FechaDesde?.ToString("yyyy-MM-dd"))" />
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="fechaHasta">Fecha hasta</label>
+                        <input id="fechaHasta" name="fechaHasta" type="date" class="form-control" value="@(Model.FechaHasta?.ToString("yyyy-MM-dd"))" />
+                    </div>
+                    <input type="hidden" name="paginaPreview" value="1" />
+                    <input type="hidden" name="paginaHistorial" value="1" />
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    <button type="submit" name="operacion" value="consultar" class="btn btn-primary" @(Model.PuedeConsultar ? null : "disabled")>Consultar</button>
+                    <button type="submit" name="operacion" value="previsualizar" class="btn btn-outline-secondary" @(Model.PuedePrevisualizar ? null : "disabled")>Previsualizar</button>
+                    <button type="submit" name="operacion" value="validar" class="btn btn-outline-secondary" @(Model.PuedeValidar ? null : "disabled")>Validar</button>
+                    <button type="submit" name="operacion" value="observaciones" class="btn btn-outline-secondary" @(Model.PuedeValidar ? null : "disabled")>Ver observaciones</button>
+                    <a class="btn @(Model.PuedeDescargarTxt ? "btn-success" : "btn-outline-secondary disabled")" asp-action="DescargarTxt" asp-route-token="@Model.TokenDescarga">Descargar TXT</a>
+                </div>
+            </form>
+
+            <form asp-action="GenerarTxt" method="post" class="mt-3">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="IdEmpresa" />
+                <input type="hidden" asp-for="AnioSeleccionado" />
+                <input type="hidden" asp-for="MesSeleccionado" />
+                <input type="hidden" asp-for="LibroElectronicoSeleccionado" />
+                <input type="hidden" asp-for="MonedaSeleccionada" />
+                <input type="hidden" asp-for="EstadoSeleccionado" />
+                <input type="hidden" asp-for="FechaDesde" />
+                <input type="hidden" asp-for="FechaHasta" />
+                <input type="hidden" asp-for="PaginaPreview" />
+                <input type="hidden" asp-for="PaginaHistorial" />
+                <button type="submit" class="btn btn-primary" @(Model.PuedeGenerar ? null : "disabled")>Generar TXT</button>
+            </form>
+
+            @if (Model.ConsultaEjecutada)
+            {
+                <section class="workspace-section mt-4">
+                    <div class="workspace-section-head">
+                        <span class="workspace-section-kicker">Resumen de generación</span>
+                        <h2>@Model.Resumen.Libro</h2>
+                        <p>Archivo propuesto: <strong>@Model.Resumen.NombreArchivo</strong></p>
+                    </div>
+
+                    <div class="dashboard-metrics">
+                        <article class="dashboard-metric-card dashboard-metric-card-text">
+                            <span>Periodo</span>
+                            <strong>@Model.Resumen.Periodo</strong>
+                            <small>@Model.Resumen.Empresa</small>
+                        </article>
+                        <article class="dashboard-metric-card dashboard-metric-card-text">
+                            <span>Asientos</span>
+                            <strong>@Model.Resumen.CantidadAsientos</strong>
+                            <small>Movimientos: @Model.Resumen.CantidadMovimientos</small>
+                        </article>
+                        <article class="dashboard-metric-card dashboard-metric-card-text">
+                            <span>Totales</span>
+                            <strong>@Model.Resumen.TotalDebe.ToString("N2") / @Model.Resumen.TotalHaber.ToString("N2")</strong>
+                            <small>Debe / Haber</small>
+                        </article>
+                        <article class="dashboard-metric-card dashboard-metric-card-text">
+                            <span>Validación</span>
+                            <strong>@Model.Validacion.CantidadErrores err. / @Model.Validacion.CantidadAdvertencias adv.</strong>
+                            <small>@Model.Resumen.Ruc</small>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="workspace-section mt-4">
+                    <div class="workspace-section-head">
+                        <span class="workspace-section-kicker">Previsualización</span>
+                        <h2>Detalle exportable</h2>
+                        <p>La tabla se adapta al formato seleccionado y solo carga la página solicitada.</p>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table app-table">
+                            <thead>
+                                @if (Model.LibroElectronicoSeleccionado == SistemaAdministrativoWeb.Infrastructure.Contabilidad.PleLibroElectronicoCatalogo.LibroDiario52)
+                                {
+                                    <tr>
+                                        <th>Fila</th>
+                                        <th>Periodo</th>
+                                        <th>CUO</th>
+                                        <th>Correlativo</th>
+                                        <th>Fecha</th>
+                                        <th>Cuenta</th>
+                                        <th>Moneda</th>
+                                        <th>Glosa</th>
+                                        <th>Debe</th>
+                                        <th>Haber</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                }
+                                else if (Model.LibroElectronicoSeleccionado == SistemaAdministrativoWeb.Infrastructure.Contabilidad.PleLibroElectronicoCatalogo.LibroMayor61)
+                                {
+                                    <tr>
+                                        <th>Fila</th>
+                                        <th>Periodo</th>
+                                        <th>CUO</th>
+                                        <th>Correlativo</th>
+                                        <th>Cuenta</th>
+                                        <th>Fecha</th>
+                                        <th>Moneda</th>
+                                        <th>Glosa</th>
+                                        <th>Debe</th>
+                                        <th>Haber</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <th>Fila</th>
+                                        <th>Periodo</th>
+                                        <th>CUO</th>
+                                        <th>Asiento</th>
+                                        <th>Movimiento</th>
+                                        <th>Cuenta</th>
+                                        <th>Moneda</th>
+                                        <th>Doc Emisor</th>
+                                        <th>Comprobante</th>
+                                        <th>Fecha</th>
+                                        <th>Glosa</th>
+                                        <th>Debe</th>
+                                        <th>Haber</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                }
+                            </thead>
+                            <tbody>
+                                @if (Model.LibroElectronicoSeleccionado == SistemaAdministrativoWeb.Infrastructure.Contabilidad.PleLibroElectronicoCatalogo.LibroDiario52)
+                                {
+                                    var fila = ((Model.PreviewPaginacion.PaginaActual - 1) * Model.PreviewPaginacion.TamanoPagina) + 1;
+                                    foreach (var item in Model.LibroDiario52Items)
+                                    {
+                                        <tr>
+                                            <td>@fila</td>
+                                            <td>@item.PeriodoPle</td>
+                                            <td>@item.Cuo</td>
+                                            <td>@item.CorrelativoAsiento</td>
+                                            <td>@item.FechaOperacion.ToString("dd/MM/yyyy")</td>
+                                            <td>@item.CodigoCuentaContable</td>
+                                            <td>@item.CodigoMoneda</td>
+                                            <td>@item.Glosa</td>
+                                            <td class="workspace-money-cell">@item.Debe.ToString("N2")</td>
+                                            <td class="workspace-money-cell">@item.Haber.ToString("N2")</td>
+                                            <td>@item.EstadoOperacion</td>
+                                        </tr>
+                                        fila++;
+                                    }
+                                }
+                                else if (Model.LibroElectronicoSeleccionado == SistemaAdministrativoWeb.Infrastructure.Contabilidad.PleLibroElectronicoCatalogo.LibroMayor61)
+                                {
+                                    var fila = ((Model.PreviewPaginacion.PaginaActual - 1) * Model.PreviewPaginacion.TamanoPagina) + 1;
+                                    foreach (var item in Model.LibroMayor61Items)
+                                    {
+                                        <tr>
+                                            <td>@fila</td>
+                                            <td>@item.PeriodoPle</td>
+                                            <td>@item.Cuo</td>
+                                            <td>@item.CorrelativoMovimiento</td>
+                                            <td>@item.CodigoCuentaContable</td>
+                                            <td>@item.FechaOperacion.ToString("dd/MM/yyyy")</td>
+                                            <td>@item.CodigoMoneda</td>
+                                            <td>@item.Glosa</td>
+                                            <td class="workspace-money-cell">@item.Debe.ToString("N2")</td>
+                                            <td class="workspace-money-cell">@item.Haber.ToString("N2")</td>
+                                            <td>@item.EstadoOperacion</td>
+                                        </tr>
+                                        fila++;
+                                    }
+                                }
+                                else
+                                {
+                                    var fila = ((Model.PreviewPaginacion.PaginaActual - 1) * Model.PreviewPaginacion.TamanoPagina) + 1;
+                                    foreach (var item in Model.LibroDiario51Items)
+                                    {
+                                        <tr>
+                                            <td>@fila</td>
+                                            <td>@item.PeriodoPle</td>
+                                            <td>@item.Cuo</td>
+                                            <td>@item.CorrelativoAsiento</td>
+                                            <td>@item.CorrelativoMovimiento</td>
+                                            <td>@item.CodigoCuentaContable</td>
+                                            <td>@item.CodigoMoneda</td>
+                                            <td>@item.TipoDocumentoEmisor @item.NumeroDocumentoEmisor</td>
+                                            <td>@item.TipoComprobante @item.SerieComprobante-@item.NumeroComprobante</td>
+                                            <td>@item.FechaOperacion.ToString("dd/MM/yyyy")</td>
+                                            <td>@item.Glosa</td>
+                                            <td class="workspace-money-cell">@item.Debe.ToString("N2")</td>
+                                            <td class="workspace-money-cell">@item.Haber.ToString("N2")</td>
+                                            <td>@item.EstadoOperacion</td>
+                                        </tr>
+                                        fila++;
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @if (Model.PreviewPaginacion.TotalPaginas > 1)
+                    {
+                        <nav class="workspace-pagination" aria-label="Paginacion previsualizacion PLE">
+                            <a class="btn btn-outline-secondary @(Model.PreviewPaginacion.TienePaginaAnterior ? string.Empty : "disabled")"
+                               asp-action="Index"
+                               asp-route-idEmpresa="@Model.IdEmpresa"
+                               asp-route-anio="@Model.AnioSeleccionado"
+                               asp-route-mes="@Model.MesSeleccionado"
+                               asp-route-libroElectronico="@Model.LibroElectronicoSeleccionado"
+                               asp-route-moneda="@Model.MonedaSeleccionada"
+                               asp-route-estado="@Model.EstadoSeleccionado"
+                               asp-route-fechaDesde="@Model.FechaDesde?.ToString("yyyy-MM-dd")"
+                               asp-route-fechaHasta="@Model.FechaHasta?.ToString("yyyy-MM-dd")"
+                               asp-route-operacion="@(Model.ValidacionEjecutada ? "validar" : "consultar")"
+                               asp-route-paginaPreview="@(Model.PreviewPaginacion.PaginaActual - 1)"
+                               asp-route-paginaHistorial="@Model.HistorialPaginacion.PaginaActual"
+                               asp-route-tokenDescarga="@Model.TokenDescarga">Anterior</a>
+                            <span>Pagina @Model.PreviewPaginacion.PaginaActual de @Model.PreviewPaginacion.TotalPaginas</span>
+                            <a class="btn btn-outline-secondary @(Model.PreviewPaginacion.TienePaginaSiguiente ? string.Empty : "disabled")"
+                               asp-action="Index"
+                               asp-route-idEmpresa="@Model.IdEmpresa"
+                               asp-route-anio="@Model.AnioSeleccionado"
+                               asp-route-mes="@Model.MesSeleccionado"
+                               asp-route-libroElectronico="@Model.LibroElectronicoSeleccionado"
+                               asp-route-moneda="@Model.MonedaSeleccionada"
+                               asp-route-estado="@Model.EstadoSeleccionado"
+                               asp-route-fechaDesde="@Model.FechaDesde?.ToString("yyyy-MM-dd")"
+                               asp-route-fechaHasta="@Model.FechaHasta?.ToString("yyyy-MM-dd")"
+                               asp-route-operacion="@(Model.ValidacionEjecutada ? "validar" : "consultar")"
+                               asp-route-paginaPreview="@(Model.PreviewPaginacion.PaginaActual + 1)"
+                               asp-route-paginaHistorial="@Model.HistorialPaginacion.PaginaActual"
+                               asp-route-tokenDescarga="@Model.TokenDescarga">Siguiente</a>
+                        </nav>
+                    }
+                </section>
+
+                @if (Model.ValidacionEjecutada)
+                {
+                    <section class="workspace-section mt-4" id="observaciones">
+                        <div class="workspace-section-head">
+                            <span class="workspace-section-kicker">Validaciones</span>
+                            <h2>Observaciones del PLE</h2>
+                            <p>Errores bloquean la generación. Advertencias e información se muestran para revisión.</p>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table app-table">
+                                <thead>
+                                    <tr>
+                                        <th>Severidad</th>
+                                        <th>Código</th>
+                                        <th>Título</th>
+                                        <th>Detalle</th>
+                                        <th>CUO</th>
+                                        <th>Asiento</th>
+                                        <th>Fecha</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.Validacion.Observaciones)
+                                    {
+                                        <tr>
+                                            <td>@item.Severidad</td>
+                                            <td>@item.Codigo</td>
+                                            <td>@item.Titulo</td>
+                                            <td>@item.Detalle</td>
+                                            <td>@item.Cuo</td>
+                                            <td>@item.NumeroAsiento</td>
+                                            <td>@item.FechaOperacion?.ToString("dd/MM/yyyy")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                }
+
+                @if (Model.PuedeVerHistorial)
+                {
+                    <section class="workspace-section mt-4">
+                        <div class="workspace-section-head">
+                            <span class="workspace-section-kicker">Historial</span>
+                            <h2>Archivos generados</h2>
+                            <p>Metadatos de exportaciones del libro y periodo seleccionado.</p>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table app-table">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Archivo</th>
+                                        <th>Libro</th>
+                                        <th>Registros</th>
+                                        <th>Debe</th>
+                                        <th>Haber</th>
+                                        <th>Estado</th>
+                                        <th>Usuario</th>
+                                        <th>Observaciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.HistorialItems.Count == 0)
+                                    {
+                                        <tr>
+                                            <td colspan="9">No existen exportaciones registradas para el filtro actual.</td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        foreach (var item in Model.HistorialItems)
+                                        {
+                                            <tr>
+                                                <td>@item.FechaGeneracion.ToString("dd/MM/yyyy HH:mm")</td>
+                                                <td>@item.NombreArchivo</td>
+                                                <td>@item.CodigoLibro</td>
+                                                <td>@item.CantidadRegistros</td>
+                                                <td class="workspace-money-cell">@item.TotalDebe.ToString("N2")</td>
+                                                <td class="workspace-money-cell">@item.TotalHaber.ToString("N2")</td>
+                                                <td>@item.Estado</td>
+                                                <td>@item.UsuarioGeneracion</td>
+                                                <td>@item.Observaciones</td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        @if (Model.HistorialPaginacion.TotalPaginas > 1)
+                        {
+                            <nav class="workspace-pagination" aria-label="Paginacion historial PLE">
+                                <a class="btn btn-outline-secondary @(Model.HistorialPaginacion.TienePaginaAnterior ? string.Empty : "disabled")"
+                                   asp-action="Index"
+                                   asp-route-idEmpresa="@Model.IdEmpresa"
+                                   asp-route-anio="@Model.AnioSeleccionado"
+                                   asp-route-mes="@Model.MesSeleccionado"
+                                   asp-route-libroElectronico="@Model.LibroElectronicoSeleccionado"
+                                   asp-route-moneda="@Model.MonedaSeleccionada"
+                                   asp-route-estado="@Model.EstadoSeleccionado"
+                                   asp-route-fechaDesde="@Model.FechaDesde?.ToString("yyyy-MM-dd")"
+                                   asp-route-fechaHasta="@Model.FechaHasta?.ToString("yyyy-MM-dd")"
+                                   asp-route-operacion="@(Model.ValidacionEjecutada ? "validar" : "consultar")"
+                                   asp-route-paginaPreview="@Model.PreviewPaginacion.PaginaActual"
+                                   asp-route-paginaHistorial="@(Model.HistorialPaginacion.PaginaActual - 1)"
+                                   asp-route-tokenDescarga="@Model.TokenDescarga">Anterior</a>
+                                <span>Pagina @Model.HistorialPaginacion.PaginaActual de @Model.HistorialPaginacion.TotalPaginas</span>
+                                <a class="btn btn-outline-secondary @(Model.HistorialPaginacion.TienePaginaSiguiente ? string.Empty : "disabled")"
+                                   asp-action="Index"
+                                   asp-route-idEmpresa="@Model.IdEmpresa"
+                                   asp-route-anio="@Model.AnioSeleccionado"
+                                   asp-route-mes="@Model.MesSeleccionado"
+                                   asp-route-libroElectronico="@Model.LibroElectronicoSeleccionado"
+                                   asp-route-moneda="@Model.MonedaSeleccionada"
+                                   asp-route-estado="@Model.EstadoSeleccionado"
+                                   asp-route-fechaDesde="@Model.FechaDesde?.ToString("yyyy-MM-dd")"
+                                   asp-route-fechaHasta="@Model.FechaHasta?.ToString("yyyy-MM-dd")"
+                                   asp-route-operacion="@(Model.ValidacionEjecutada ? "validar" : "consultar")"
+                                   asp-route-paginaPreview="@Model.PreviewPaginacion.PaginaActual"
+                                   asp-route-paginaHistorial="@(Model.HistorialPaginacion.PaginaActual + 1)"
+                                   asp-route-tokenDescarga="@Model.TokenDescarga">Siguiente</a>
+                            </nav>
+                        }
+                    </section>
+                }
+            }
+        </div>
+    </section>
+</section>

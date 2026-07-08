@@ -8,6 +8,7 @@
 -- Create date:   22/06/2026
 -- Description:   Ajusta el manejo del periodo yyyyMM para evitar comparaciones con relleno fijo e incluye fecha de emision para formularios/listados del asiento.
 -- =============================================
+-- Firma: FRANCO LARA - 06/07/2026 | Expone en el listado de asientos los equivalentes por moneda desde CON_AsientoDetalle para mostrar la columna de Soles o Dolares segun la moneda del asiento.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_ListarAsientosPorEmpresa
     @IdEmpresa INT,
@@ -58,6 +59,14 @@ BEGIN
                 a.TipoCambio,
                 a.TotalDebe,
                 a.TotalHaber,
+                CASE
+                    WHEN ISNULL(dt.TotalImporteDebeS, 0) >= ISNULL(dt.TotalImporteHaberS, 0) THEN ISNULL(dt.TotalImporteDebeS, 0)
+                    ELSE ISNULL(dt.TotalImporteHaberS, 0)
+                END AS TotalImporteS,
+                CASE
+                    WHEN ISNULL(dt.TotalImporteDebeD, 0) >= ISNULL(dt.TotalImporteHaberD, 0) THEN ISNULL(dt.TotalImporteDebeD, 0)
+                    ELSE ISNULL(dt.TotalImporteHaberD, 0)
+                END AS TotalImporteD,
                 a.Estado,
                 a.ReferenciaExterna,
                 a.Observacion
@@ -66,6 +75,16 @@ BEGIN
                 ON o.IdOrigen = a.IdOrigen
             INNER JOIN dbo.ADM_Moneda AS m
                 ON m.IdMoneda = a.IdMoneda
+            OUTER APPLY
+            (
+                SELECT
+                    TotalImporteDebeS = SUM(CASE WHEN d.DH = 'D' THEN ISNULL(d.TotalImporteS, 0) ELSE 0 END),
+                    TotalImporteHaberS = SUM(CASE WHEN d.DH = 'H' THEN ISNULL(d.TotalImporteS, 0) ELSE 0 END),
+                    TotalImporteDebeD = SUM(CASE WHEN d.DH = 'D' THEN ISNULL(d.TotalImporteD, 0) ELSE 0 END),
+                    TotalImporteHaberD = SUM(CASE WHEN d.DH = 'H' THEN ISNULL(d.TotalImporteD, 0) ELSE 0 END)
+                FROM dbo.CON_AsientoDetalle AS d
+                WHERE d.IdAsiento = a.IdAsiento
+            ) AS dt
             WHERE a.IdEmpresa = @IdEmpresa
               AND (@PeriodoTrabajo IS NULL OR a.Periodo = @PeriodoTrabajo)
               AND (@SoloManual = 0 OR o.PermiteRegistroManual = 1)
@@ -99,6 +118,8 @@ BEGIN
             b.TipoCambio,
             b.TotalDebe,
             b.TotalHaber,
+            b.TotalImporteS,
+            b.TotalImporteD,
             b.Estado,
             b.ReferenciaExterna,
             b.Observacion,

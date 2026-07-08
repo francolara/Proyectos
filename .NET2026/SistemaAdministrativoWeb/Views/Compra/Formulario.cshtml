@@ -1,10 +1,12 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.CompraIndexViewModel
+@* Firma: FRANCO LARA - 08/07/2026 | Corrige la tarjeta visual de retencion en recibos por honorarios nuevos para que refleje el calculo inmediato en pantalla, igual que el importe neto total. *@
 
 @* =============================================
    Author:        FRANCO LARA
    Create date:   18/06/2026
    Description:   Retira la previsualizacion visible del asiento en provision de compras.
    ============================================= *@
+@* Firma: FRANCO LARA - 04/07/2026 | Bloquea la edicion manual del tipo de cambio en compras para que la actualizacion se haga desde el boton refrescar. *@
 
 @* =============================================
    Author:        FRANCO LARA
@@ -29,6 +31,9 @@
    Create date:   26/06/2026
    Description:   Agrega detraccion SUNAT en provisiones de compra con popup de codigos, porcentaje, importe retenido y saldo neto pendiente de pago.
    ============================================= *@
+@* Firma: FRANCO LARA - 29/06/2026 | Agrega autocompletado inicial y por fecha del tipo de cambio en compras consultando siempre USD, mostrando 3 decimales en cabecera, dejando el valor por defecto en 0 para validar al grabar e incorporando percepciones expandibles con calculo automatico sobre el total del comprobante, ademas de un activador visual unificado y colapsable para percepciones y Sistema SPOT. *@
+@* Firma: FRANCO LARA - 30/06/2026 | Agrega retencion de renta de 4ta para recibos por honorarios en compras, mostrando exoneracion en cabecera, alternando IGV por Retencion en totales y calculando el neto del comprobante sobre el subtotal; cambia Totales globales, Percepcion y Sistema SPOT a tarjetas resumen y amplia serie/numero para documentos importados desde XML. *@
+@* Firma: FRANCO LARA - 02/07/2026 | Conserva el periodo seleccionado del listado de compras al cancelar o guardar dentro de la misma pestaña, enviando el contexto del periodo en el formulario en vez de recalcularlo al volver. *@
 
 @{
     ViewData["Title"] = Model.Formulario.IdCompra.HasValue ? "Editar compra" : "Registrar compra";
@@ -64,7 +69,28 @@
                     <input type="hidden" asp-for="Formulario.IdCompra" />
                     <input type="hidden" asp-for="Formulario.IdConfiguracionContabilizacion" />
                     <input asp-for="Formulario.FechaContabilizacion" type="hidden" id="compraFechaContabilizacion" />
-                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                    <input type="hidden" name="periodo" value="@Model.PeriodoConsulta" />
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        var erroresFormulario = ViewData.ModelState.Values
+                            .SelectMany(x => x.Errors)
+                            .Select(x => x.ErrorMessage)
+                            .Where(x => !string.IsNullOrWhiteSpace(x))
+                            .Distinct()
+                            .ToList();
+                        <div class="alert alert-danger mb-3">
+                            <strong>No se pudo guardar la compra.</strong>
+                            @if (erroresFormulario.Count > 0)
+                            {
+                                <ul class="mb-0 mt-2">
+                                    @foreach (var error in erroresFormulario)
+                                    {
+                                        <li>@error</li>
+                                    }
+                                </ul>
+                            }
+                        </div>
+                    }
 
                     @if (Model.Proveedores.Count == 0)
                     {
@@ -74,9 +100,7 @@
                     <div class="workspace-section">
                         <div class="workspace-section-head workspace-section-head-compact">
                             <div>
-                                <span class="workspace-section-kicker">Cabecera</span>
                                 <h2>Datos de la Compra</h2>
-                                <p>Completa los datos principales del comprobante antes de registrar el detalle.</p>
                             </div>
                         </div>
 
@@ -113,11 +137,11 @@
                             </div>
                             <div class="workspace-field">
                                 <label asp-for="Formulario.FechaEmision" class="form-label">Fecha emision</label>
-                                <input asp-for="Formulario.FechaEmision" class="form-control" />
+                                <input asp-for="Formulario.FechaEmision" class="form-control js-fecha-tipo-cambio" id="compraFechaEmision" />
                             </div>
                             <div class="workspace-field">
                                 <label asp-for="Formulario.TipoComprobante" class="form-label">Tipo comprobante</label>
-                                <select asp-for="Formulario.TipoComprobante" class="form-select">
+                                <select asp-for="Formulario.TipoComprobante" class="form-select" id="compraTipoComprobante">
                                     <option value="">Seleccione</option>
                                     @foreach (var tipo in Model.TiposComprobante)
                                     {
@@ -125,27 +149,50 @@
                                     }
                                 </select>
                             </div>
+                            <div class="workspace-field workspace-field-span-2 @(string.Equals(Model.Formulario.TipoComprobante, "02", StringComparison.OrdinalIgnoreCase) ? string.Empty : "d-none")" id="compraRetencion4taWrap">
+                                <input asp-for="Formulario.PorcentajeRetencion" type="hidden" id="compraPorcentajeRetencion" />
+                                <div class="workspace-toggle-card-wrap">
+                                    <input asp-for="Formulario.ExoneracionRenta4ta" type="checkbox" class="workspace-toggle-input" id="compraExoneracionRenta4ta" />
+                                    <label class="workspace-toggle-card" for="compraExoneracionRenta4ta">
+                                        <span class="workspace-toggle-card-copy">
+                                            <span class="workspace-toggle-card-title">Exoneracion renta de 4ta</span>
+                                            <span class="workspace-toggle-card-text">Si esta activo, el recibo por honorarios no calculara la retencion sobre el subtotal.</span>
+                                        </span>
+                                        <span class="workspace-toggle-pill" aria-hidden="true">
+                                            <span class="workspace-toggle-pill-track">
+                                                <span class="workspace-toggle-pill-thumb"></span>
+                                            </span>
+                                        </span>
+                                    </label>
+                                </div>
+                                <span asp-validation-for="Formulario.PorcentajeRetencion" class="text-danger"></span>
+                                <span asp-validation-for="Formulario.ExoneracionRenta4ta" class="text-danger"></span>
+                            </div>
                             <div class="workspace-field">
                                 <label asp-for="Formulario.Serie" class="form-label">Serie</label>
-                                <input asp-for="Formulario.Serie" class="form-control js-serie-documento" maxlength="4" inputmode="text" placeholder="F001" />
+                                <input asp-for="Formulario.Serie" class="form-control js-serie-documento" maxlength="10" inputmode="text" placeholder="F001" />
                             </div>
                             <div class="workspace-field">
                                 <label asp-for="Formulario.Numero" class="form-label">Numero</label>
-                                <input asp-for="Formulario.Numero" class="form-control js-numero-documento" maxlength="10" inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
+                                <input asp-for="Formulario.Numero" class="form-control js-numero-documento" maxlength="20" inputmode="text" autocomplete="off" />
                             </div>
                             <div class="workspace-field">
                                 <label asp-for="Formulario.IdMoneda" class="form-label">Moneda</label>
-                                <select asp-for="Formulario.IdMoneda" class="form-select">
+                                <select asp-for="Formulario.IdMoneda" class="form-select js-moneda-tipo-cambio" id="compraMonedaSelect">
                                     <option value="">Seleccione</option>
                                     @foreach (var moneda in Model.Monedas)
                                     {
-                                        <option value="@moneda.IdMoneda">@moneda.CodigoMoneda - @moneda.NombreMoneda</option>
+                                        <option value="@moneda.IdMoneda" data-codigo-moneda="@moneda.CodigoMoneda" data-es-moneda-base="@(moneda.EsMonedaBase.ToString().ToLowerInvariant())">@moneda.CodigoMoneda - @moneda.NombreMoneda</option>
                                     }
                                 </select>
                             </div>
                             <div class="workspace-field">
                                 <label asp-for="Formulario.TipoCambio" class="form-label">Tipo cambio</label>
-                                <input asp-for="Formulario.TipoCambio" class="form-control" />
+                                <div class="input-group">
+                                    <input asp-for="Formulario.TipoCambio" class="form-control js-tipo-cambio-cabecera" id="compraTipoCambio" readonly />
+                                    <button type="button" class="btn btn-outline-secondary workspace-icon-button js-actualizar-tipo-cambio" title="Actualizar tipo de cambio" aria-label="Actualizar tipo de cambio"><i class="bi bi-arrow-clockwise"></i></button>
+                                </div>
+                                <span asp-validation-for="Formulario.TipoCambio" class="text-danger"></span>
                             </div>
                             <div class="workspace-field workspace-field-span-3">
                                 <label asp-for="Formulario.Observacion" class="form-label">Observacion</label>
@@ -158,7 +205,6 @@
                         <div class="workspace-section-head workspace-section-head-compact">
                             <div>
                                 <h2>Detalle de compra</h2>
-                                <p>La suma del detalle debe coincidir con la base imponible.</p>
                             </div>
                             <button type="button" class="btn btn-outline-secondary btn-sm" id="agregar-detalle">Agregar linea</button>
                         </div>
@@ -228,65 +274,151 @@
                         </div>
                     </div>
 
+                    <div class="workspace-section">
+                        <div class="workspace-section-head workspace-section-head-compact">
+                            <div>
+                                <h2>Percepcion aplicable</h2>
+                            </div>
+                        </div>
+
+                        <div class="workspace-form-grid">
+                            <div class="workspace-field workspace-field-span-2">
+                                <div class="workspace-toggle-card-wrap">
+                                    <input asp-for="Formulario.TienePercepcion" type="checkbox" class="workspace-toggle-input" id="compraTienePercepcion" />
+                                    <label class="workspace-toggle-card" for="compraTienePercepcion">
+                                        <span class="workspace-toggle-card-copy">
+                                            <span class="workspace-toggle-card-title">La compra tiene percepcion</span>
+                                            <span class="workspace-toggle-card-text">Activa el calculo y muestra el bloque de configuracion de percepcion.</span>
+                                        </span>
+                                        <span class="workspace-toggle-pill" aria-hidden="true">
+                                            <span class="workspace-toggle-pill-track">
+                                                <span class="workspace-toggle-pill-thumb"></span>
+                                            </span>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="workspace-form-grid @(Model.Formulario.TienePercepcion ? string.Empty : "d-none")" id="compraPercepcionDetalle">
+                            <div class="workspace-field workspace-field-span-2">
+                                <label asp-for="Formulario.IdTipoPercepcion" class="form-label">Tipo de percepcion</label>
+                                <select asp-for="Formulario.IdTipoPercepcion" class="form-select" id="compraTipoPercepcionId">
+                                    <option value="">Seleccione</option>
+                                    @foreach (var tipo in Model.TiposPercepcion)
+                                    {
+                                        <option value="@tipo.IdTipoPercepcion"
+                                                data-codigo="@tipo.Codigo"
+                                                data-descripcion="@tipo.Descripcion"
+                                                data-porcentaje="@tipo.Porcentaje.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture)">
+                                            @tipo.Codigo - @tipo.Descripcion
+                                        </option>
+                                    }
+                                </select>
+                                <span asp-validation-for="Formulario.IdTipoPercepcion" class="text-danger"></span>
+                            </div>
+                            <div class="workspace-field workspace-field-span-2">
+                                <div class="workspace-balance-summary">
+                                    <article class="workspace-balance-card">
+                                        <span>Porcentaje</span>
+                                        <strong class="workspace-balance-value" data-resumen-for="Formulario.PorcentajePercepcion">@Model.Formulario.PorcentajePercepcion.ToString("0.0000")</strong>
+                                    </article>
+                                    <article class="workspace-balance-card">
+                                        <span>Base percepcion</span>
+                                        <strong class="workspace-balance-value" data-resumen-for="Formulario.BasePercepcion">@Model.Formulario.BasePercepcion.ToString("0.00")</strong>
+                                        <small class="workspace-balance-helper">La base siempre es el total del comprobante incluido IGV.</small>
+                                    </article>
+                                    <article class="workspace-balance-card workspace-balance-card-diff is-balanced">
+                                        <span>Importe percepcion</span>
+                                        <strong class="workspace-balance-value" data-resumen-for="Formulario.ImportePercepcion">@Model.Formulario.ImportePercepcion.ToString("0.00")</strong>
+                                    </article>
+                                </div>
+                                <input asp-for="Formulario.PorcentajePercepcion" type="hidden" class="js-total-global" id="compraPorcentajePercepcion" />
+                                <input asp-for="Formulario.BasePercepcion" type="hidden" class="js-total-global" id="compraBasePercepcion" />
+                                <input asp-for="Formulario.ImportePercepcion" type="hidden" class="js-total-global" id="compraImportePercepcion" />
+                                <span asp-validation-for="Formulario.PorcentajePercepcion" class="text-danger"></span>
+                                <span asp-validation-for="Formulario.ImportePercepcion" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="workspace-section workspace-totals-section">
                         <div class="workspace-section-head workspace-section-head-compact">
                             <div>
-                                <span class="workspace-section-kicker">Totales</span>
                                 <h2>Totales globales</h2>
-                                <p>Resume los importes tributarios y el total del comprobante.</p>
                             </div>
                         </div>
                         <div class="workspace-window-body">
-                            <div class="workspace-form-grid workspace-totals-grid">
-                                <div class="workspace-field">
-                                    <label asp-for="Formulario.BaseImponible" class="form-label">Sub total</label>
-                                    <input asp-for="Formulario.BaseImponible" class="form-control js-total-global" readonly />
-                                </div>
-                                <div class="workspace-field">
-                                    <label asp-for="Formulario.TotalExonerado" class="form-label">Total exonerado</label>
-                                    <input asp-for="Formulario.TotalExonerado" class="form-control js-total-global" readonly />
-                                </div>
-                                <div class="workspace-field">
-                                    <label asp-for="Formulario.TotalInafecto" class="form-label">Total inafecto</label>
-                                    <input asp-for="Formulario.TotalInafecto" class="form-control js-total-global" readonly />
-                                </div>
-                                <div class="workspace-field">
-                                    <label asp-for="Formulario.Igv" class="form-label">IGV</label>
-                                    <input asp-for="Formulario.Igv" class="form-control js-total-global" readonly />
-                                    <small class="workspace-field-help">Impuesto General a las Ventas.</small>
-                                </div>
-                                <div class="workspace-field">
-                                    <label asp-for="Formulario.Icbper" class="form-label">ICBPER</label>
-                                    <input asp-for="Formulario.Icbper" class="form-control js-total-global" readonly />
-                                </div>
-                                <div class="workspace-field">
-                                    <label asp-for="Formulario.ImporteTotal" class="form-label">Importe total</label>
-                                    <input asp-for="Formulario.ImporteTotal" class="form-control workspace-total-input js-total-global" readonly />
-                                </div>
-                                <input asp-for="Formulario.Isc" type="hidden" />
-                                <input asp-for="Formulario.OtrosTributos" type="hidden" />
-                                <input asp-for="Formulario.Redondeo" type="hidden" />
+                            <div class="workspace-balance-summary">
+                                <article class="workspace-balance-card">
+                                    <span>Sub total</span>
+                                    <strong class="workspace-balance-value" data-resumen-for="Formulario.BaseImponible">@Model.Formulario.BaseImponible.ToString("0.00")</strong>
+                                </article>
+                                <article class="workspace-balance-card">
+                                    <span>Total exonerado</span>
+                                    <strong class="workspace-balance-value" data-resumen-for="Formulario.TotalExonerado">@Model.Formulario.TotalExonerado.ToString("0.00")</strong>
+                                </article>
+                                <article class="workspace-balance-card">
+                                    <span>Total inafecto</span>
+                                    <strong class="workspace-balance-value" data-resumen-for="Formulario.TotalInafecto">@Model.Formulario.TotalInafecto.ToString("0.00")</strong>
+                                </article>
+                                <article class="workspace-balance-card">
+                                    <span id="compraImpuestoLabel">IGV</span>
+                                    <strong class="workspace-balance-value @(string.Equals(Model.Formulario.TipoComprobante, "02", StringComparison.OrdinalIgnoreCase) ? "d-none" : string.Empty)" id="compraIgvResumen" data-resumen-for="Formulario.Igv">@Model.Formulario.Igv.ToString("0.00")</strong>
+                                    <strong class="workspace-balance-value @(string.Equals(Model.Formulario.TipoComprobante, "02", StringComparison.OrdinalIgnoreCase) ? string.Empty : "d-none")" id="compraRetencionResumen" data-resumen-for="Formulario.Retencion">@Model.Formulario.Retencion.ToString("0.00")</strong>
+                                    <small class="workspace-balance-helper @(string.Equals(Model.Formulario.TipoComprobante, "02", StringComparison.OrdinalIgnoreCase) ? "d-none" : string.Empty)" id="compraIgvHelp">Impuesto General a las Ventas.</small>
+                                    <small class="workspace-balance-helper @(string.Equals(Model.Formulario.TipoComprobante, "02", StringComparison.OrdinalIgnoreCase) ? string.Empty : "d-none")" id="compraRetencionHelp">Retencion calculada sobre el subtotal usando el parametro PORCRETEN4TA.</small>
+                                </article>
+                                <article class="workspace-balance-card">
+                                    <span>ICBPER</span>
+                                    <strong class="workspace-balance-value" data-resumen-for="Formulario.Icbper">@Model.Formulario.Icbper.ToString("0.00")</strong>
+                                </article>
+                                <article class="workspace-balance-card workspace-balance-card-diff is-balanced">
+                                    <span>Importe total</span>
+                                    <strong class="workspace-balance-value" data-resumen-for="Formulario.ImporteTotal">@Model.Formulario.ImporteTotal.ToString("0.00")</strong>
+                                    <small class="workspace-balance-helper">Total neto del comprobante.</small>
+                                </article>
                             </div>
+                            <input asp-for="Formulario.BaseImponible" type="hidden" class="js-total-global" />
+                            <input asp-for="Formulario.TotalExonerado" type="hidden" class="js-total-global" />
+                            <input asp-for="Formulario.TotalInafecto" type="hidden" class="js-total-global" />
+                            <input asp-for="Formulario.Igv" type="hidden" class="js-total-global" id="compraIgv" />
+                            <input asp-for="Formulario.Retencion" type="hidden" class="js-total-global" id="compraRetencion" />
+                            <input asp-for="Formulario.Icbper" type="hidden" class="js-total-global" />
+                            <input asp-for="Formulario.ImporteTotal" type="hidden" class="workspace-total-input js-total-global" />
+                            <input asp-for="Formulario.Isc" type="hidden" />
+                            <input asp-for="Formulario.OtrosTributos" type="hidden" />
+                            <input asp-for="Formulario.Redondeo" type="hidden" />
                         </div>
                     </div>
 
                     <div class="workspace-section">
                         <div class="workspace-section-head workspace-section-head-compact">
                             <div>
-                                <span class="workspace-section-kicker">Detraccion</span>
                                 <h2>Sistema SPOT</h2>
-                                <p>Descuenta la detraccion del saldo del comprobante y separa un documento independiente para su pago.</p>
                             </div>
                         </div>
 
                         <div class="workspace-form-grid">
-                            <div class="workspace-field">
-                                <label class="form-label d-block">Aplicar detraccion</label>
-                                <div class="form-check form-switch mt-2">
-                                    <input asp-for="Formulario.TieneDetraccion" class="form-check-input" id="compraTieneDetraccion" />
-                                    <label class="form-check-label" for="compraTieneDetraccion">La compra esta afecta a detraccion</label>
+                            <div class="workspace-field workspace-field-span-2">
+                                <div class="workspace-toggle-card-wrap">
+                                    <input asp-for="Formulario.TieneDetraccion" type="checkbox" class="workspace-toggle-input" id="compraTieneDetraccion" />
+                                    <label class="workspace-toggle-card" for="compraTieneDetraccion">
+                                        <span class="workspace-toggle-card-copy">
+                                            <span class="workspace-toggle-card-title">La compra esta afecta a detraccion</span>
+                                            <span class="workspace-toggle-card-text">Activa el Sistema SPOT y expande el bloque para elegir codigo, porcentaje e importe.</span>
+                                        </span>
+                                        <span class="workspace-toggle-pill" aria-hidden="true">
+                                            <span class="workspace-toggle-pill-track">
+                                                <span class="workspace-toggle-pill-thumb"></span>
+                                            </span>
+                                        </span>
+                                    </label>
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="workspace-form-grid @(Model.Formulario.TieneDetraccion ? string.Empty : "d-none")" id="compraDetraccionDetalle">
                             <div class="workspace-field workspace-field-span-2">
                                 <label class="form-label" for="compraDetraccionTexto">Codigo detraccion SUNAT</label>
                                 <input asp-for="Formulario.IdDetraccionSunat" type="hidden" id="compraDetraccionId" />
@@ -296,26 +428,33 @@
                                 </div>
                                 <span asp-validation-for="Formulario.IdDetraccionSunat" class="text-danger"></span>
                             </div>
-                            <div class="workspace-field">
-                                <label asp-for="Formulario.PorcentajeDetraccion" class="form-label">Porcentaje</label>
-                                <input asp-for="Formulario.PorcentajeDetraccion" class="form-control" id="compraPorcentajeDetraccion" readonly />
-                            </div>
-                            <div class="workspace-field">
-                                <label asp-for="Formulario.ImporteDetraccion" class="form-label">Importe detraccion</label>
-                                <input asp-for="Formulario.ImporteDetraccion" class="form-control js-total-global" id="compraImporteDetraccion" readonly />
+                            <div class="workspace-field workspace-field-span-2">
+                                <div class="workspace-balance-summary">
+                                    <article class="workspace-balance-card">
+                                        <span>Porcentaje</span>
+                                        <strong class="workspace-balance-value" data-resumen-for="Formulario.PorcentajeDetraccion">@Model.Formulario.PorcentajeDetraccion.ToString("0.0000")</strong>
+                                    </article>
+                                    <article class="workspace-balance-card">
+                                        <span>Importe detraccion</span>
+                                        <strong class="workspace-balance-value" data-resumen-for="Formulario.ImporteDetraccion">@Model.Formulario.ImporteDetraccion.ToString("0.00")</strong>
+                                    </article>
+                                    <article class="workspace-balance-card workspace-balance-card-diff is-balanced">
+                                        <span>Saldo por pagar</span>
+                                        <strong class="workspace-balance-value" data-resumen-for="Formulario.SaldoPago">@Model.Formulario.SaldoPago.ToString("0.00")</strong>
+                                        <small class="workspace-balance-helper">Saldo pendiente del comprobante principal luego de descontar la detraccion.</small>
+                                    </article>
+                                </div>
+                                <input asp-for="Formulario.PorcentajeDetraccion" type="hidden" class="js-total-global" id="compraPorcentajeDetraccion" />
+                                <input asp-for="Formulario.ImporteDetraccion" type="hidden" class="js-total-global" id="compraImporteDetraccion" />
+                                <input asp-for="Formulario.SaldoPago" type="hidden" class="js-total-global" id="compraSaldoPago" />
                                 <span asp-validation-for="Formulario.ImporteDetraccion" class="text-danger"></span>
-                            </div>
-                            <div class="workspace-field">
-                                <label asp-for="Formulario.SaldoPago" class="form-label">Saldo por pagar</label>
-                                <input asp-for="Formulario.SaldoPago" class="form-control js-total-global" id="compraSaldoPago" readonly />
-                                <small class="workspace-field-help">Saldo pendiente del comprobante principal luego de descontar la detraccion.</small>
                             </div>
                         </div>
                     </div>
 
                     <div class="workspace-actions">
                         <button type="submit" class="btn btn-primary">Guardar compra</button>
-                        <a asp-action="Index" asp-route-anio="@Model.Formulario.FechaContabilizacion.Year" asp-route-mes="@Model.Formulario.FechaContabilizacion.Month" class="btn btn-outline-secondary">Cancelar</a>
+                        <a asp-action="Index" asp-route-anio="@Model.AnioSeleccionado" asp-route-mes="@Model.MesSeleccionado" class="btn btn-outline-secondary">Cancelar</a>
                     </div>
                 </form>
             }
@@ -575,6 +714,117 @@
     </div>
 </div>
 
+<style>
+    .workspace-toggle-card-wrap {
+        position: relative;
+        margin-top: 0.35rem;
+    }
+
+    .workspace-toggle-input {
+        position: absolute;
+        inline-size: 1px;
+        block-size: 1px;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    .workspace-toggle-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.95rem 1.15rem;
+        border: 1px solid rgba(31, 80, 67, 0.16);
+        border-radius: 1rem;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(236, 245, 241, 0.96));
+        box-shadow: 0 14px 28px rgba(17, 54, 44, 0.08);
+        cursor: pointer;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, background 0.2s ease;
+    }
+
+    .workspace-toggle-card:hover {
+        border-color: rgba(31, 80, 67, 0.28);
+        box-shadow: 0 18px 34px rgba(17, 54, 44, 0.12);
+        transform: translateY(-1px);
+    }
+
+    .workspace-toggle-input:focus-visible + .workspace-toggle-card {
+        outline: 0;
+        border-color: rgba(15, 105, 79, 0.52);
+        box-shadow: 0 0 0 0.24rem rgba(25, 135, 84, 0.16);
+    }
+
+    .workspace-toggle-card-copy {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        min-width: 0;
+    }
+
+    .workspace-toggle-card-title {
+        font-weight: 700;
+        color: #154b3d;
+        line-height: 1.2;
+    }
+
+    .workspace-toggle-card-text {
+        color: #5b6e68;
+        font-size: 0.9rem;
+        line-height: 1.35;
+    }
+
+    .workspace-toggle-pill {
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .workspace-toggle-pill-track {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        inline-size: 3.4rem;
+        block-size: 1.9rem;
+        padding: 0.18rem;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #d4dde0, #bcc9cd);
+        box-shadow: inset 0 1px 3px rgba(16, 24, 40, 0.16);
+        transition: background 0.2s ease;
+    }
+
+    .workspace-toggle-pill-thumb {
+        inline-size: 1.54rem;
+        block-size: 1.54rem;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #ffffff, #eef3f5);
+        box-shadow: 0 4px 12px rgba(16, 24, 40, 0.18);
+        transition: transform 0.2s ease;
+    }
+
+    .workspace-toggle-input:checked + .workspace-toggle-card {
+        border-color: rgba(15, 105, 79, 0.34);
+        background: linear-gradient(135deg, rgba(236, 250, 245, 0.98), rgba(220, 244, 234, 0.98));
+        box-shadow: 0 18px 34px rgba(15, 105, 79, 0.14);
+    }
+
+    .workspace-toggle-input:checked + .workspace-toggle-card .workspace-toggle-pill-track {
+        background: linear-gradient(135deg, #1d8a67, #44c096);
+    }
+
+    .workspace-toggle-input:checked + .workspace-toggle-card .workspace-toggle-pill-thumb {
+        transform: translateX(1.5rem);
+    }
+
+    @@media (max-width: 767.98px) {
+        .workspace-toggle-card {
+            align-items: flex-start;
+        }
+    }
+</style>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
@@ -609,6 +859,11 @@
             const formEl = document.getElementById("compra-form");
             const serieDocumentoEl = formEl?.querySelector(".js-serie-documento");
             const numeroDocumentoEl = formEl?.querySelector(".js-numero-documento");
+            const fechaEmisionEl = document.getElementById("compraFechaEmision");
+            const monedaSelectEl = document.getElementById("compraMonedaSelect");
+            const tipoComprobanteEl = document.getElementById("compraTipoComprobante");
+            const tipoCambioInputEl = document.getElementById("compraTipoCambio");
+            const actualizarTipoCambioButton = formEl?.querySelector(".js-actualizar-tipo-cambio");
             const tableBody = document.querySelector("#detalle-table tbody");
             const template = document.getElementById("detalle-row-template");
             const addButton = document.getElementById("agregar-detalle");
@@ -619,17 +874,35 @@
             const cuentaFiltro = document.getElementById("compraCuentaFiltro");
             const cuentaNivelFiltro = document.getElementById("compraCuentaNivelFiltro");
             const buscarCuentasUrl = '@Url.Action("BuscarAyuda", "PlanCuenta")';
+            const obtenerTipoCambioUrl = '@Url.Action("ObtenerValorPorFecha", "TipoCambio")';
             const tieneDetraccionEl = document.getElementById("compraTieneDetraccion");
             const detraccionIdEl = document.getElementById("compraDetraccionId");
             const detraccionTextoEl = document.getElementById("compraDetraccionTexto");
             const porcentajeDetraccionEl = document.getElementById("compraPorcentajeDetraccion");
             const importeDetraccionEl = document.getElementById("compraImporteDetraccion");
             const saldoPagoEl = document.getElementById("compraSaldoPago");
+            const tienePercepcionEl = document.getElementById("compraTienePercepcion");
+            const retencion4taWrapEl = document.getElementById("compraRetencion4taWrap");
+            const exoneracionRenta4taEl = document.getElementById("compraExoneracionRenta4ta");
+            const porcentajeRetencionEl = document.getElementById("compraPorcentajeRetencion");
+            const igvInputEl = document.getElementById("compraIgv");
+            const retencionInputEl = document.getElementById("compraRetencion");
+            const impuestoLabelEl = document.getElementById("compraImpuestoLabel");
+            const igvHelpEl = document.getElementById("compraIgvHelp");
+            const retencionHelpEl = document.getElementById("compraRetencionHelp");
+            const percepcionDetalleEl = document.getElementById("compraPercepcionDetalle");
+            const detraccionDetalleEl = document.getElementById("compraDetraccionDetalle");
+            const tipoPercepcionSelectEl = document.getElementById("compraTipoPercepcionId");
+            const porcentajePercepcionEl = document.getElementById("compraPorcentajePercepcion");
+            const basePercepcionEl = document.getElementById("compraBasePercepcion");
+            const importePercepcionEl = document.getElementById("compraImportePercepcion");
             const btnAbrirDetraccionModalEl = document.getElementById("btnAbrirDetraccionModal");
             const detraccionModalEl = document.getElementById("compraDetraccionModal");
             const detraccionModal = detraccionModalEl && window.bootstrap ? bootstrap.Modal.getOrCreateInstance(detraccionModalEl) : null;
             const detraccionFiltroEl = document.getElementById("compraDetraccionFiltro");
             const detraccionResultadosEl = document.getElementById("compraDetraccionResultados");
+            const codigoReciboHonorarios = "02";
+            const porcentajeRetencionRenta4ta = Number(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PorcentajeRetencionRenta4ta)));
             let cuentaSeleccion = null;
             let cuentaRowActiva = null;
             let cuentaBusquedaProgramada = null;
@@ -648,20 +921,16 @@
             };
 
             const formatMoney = (value) => Number(value || 0).toFixed(2);
-            const normalizeDigits = (value, maxLength) => String(value || "").replace(/\D/g, "").slice(0, maxLength);
+            const formatTipoCambioInput = (input) => {
+                if (!input) {
+                    return;
+                }
+
+                input.value = parseAmount(input.value).toFixed(3);
+            };
+            const normalizeAlphaNumeric = (value, maxLength) => String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, maxLength);
             const normalizeSerieDocumento = (value, completar = false) => {
-                const cleaned = String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
-                if (!cleaned) {
-                    return "";
-                }
-
-                const prefijo = cleaned.charAt(0);
-                if (prefijo !== "F" && prefijo !== "B") {
-                    return "";
-                }
-
-                const digitos = cleaned.slice(1).replace(/\D/g, "").slice(0, 3);
-                return completar ? `${prefijo}${digitos.padStart(3, "0")}` : `${prefijo}${digitos}`;
+                return normalizeAlphaNumeric(value, 10);
             };
             const obtenerCategoriaAfectacion = (codigoAfectacion) => {
                 const codigo = String(codigoAfectacion || "").trim();
@@ -677,12 +946,55 @@
 
                 return "otros";
             };
+            const esReciboHonorarios = () => String(tipoComprobanteEl?.value || "").trim().toUpperCase() === codigoReciboHonorarios;
 
             const setFormValue = (name, value) => {
                 const input = formEl?.querySelector(`[name="${name}"]`);
                 if (input) {
                     input.value = formatMoney(value);
                 }
+
+                const resumen = formEl?.querySelector(`[data-resumen-for="${name}"]`);
+                if (resumen) {
+                    resumen.textContent = formatMoney(value);
+                }
+            };
+
+            const obtenerMonedaSeleccionada = () => monedaSelectEl?.selectedOptions?.[0] ?? null;
+
+            const consultarTipoCambioCabecera = async (mostrarMensaje) => {
+                const fecha = String(fechaEmisionEl?.value || "").trim();
+                const moneda = obtenerMonedaSeleccionada();
+                const codigoMoneda = String(moneda?.dataset.codigoMoneda || "").trim().toUpperCase();
+
+                if (!fecha || !codigoMoneda) {
+                    if (mostrarMensaje) {
+                        window.alert("Seleccione fecha y moneda antes de actualizar el tipo de cambio.");
+                    }
+                    return false;
+                }
+
+                const response = await fetch(`${obtenerTipoCambioUrl}?${new URLSearchParams({ fecha, idMoneda: "USD" }).toString()}`, { cache: "no-store" });
+                const payload = await response.json();
+                if (!response.ok || !payload.ok) {
+                    if (mostrarMensaje) {
+                        window.alert(payload.mensaje || "No se pudo obtener el tipo de cambio.");
+                    }
+                    return false;
+                }
+
+                if (!payload.encontrado) {
+                    if (mostrarMensaje) {
+                        window.alert(payload.mensaje || "No existe un tipo de cambio registrado para la fecha y moneda seleccionadas.");
+                    }
+                    return false;
+                }
+
+                if (tipoCambioInputEl) {
+                    tipoCambioInputEl.value = Number(payload.tipoCambio || 0).toFixed(3);
+                }
+
+                return true;
             };
 
             const setDetraccionValue = (input, value, decimals = 2) => {
@@ -692,6 +1004,52 @@
 
                 const numericValue = Number(value || 0);
                 input.value = numericValue.toFixed(decimals);
+                const resumen = formEl?.querySelector(`[data-resumen-for="${input.name}"]`);
+                if (resumen) {
+                    resumen.textContent = numericValue.toFixed(decimals);
+                }
+            };
+
+            const setPercepcionValue = (input, value, decimals = 2) => {
+                if (!input) {
+                    return;
+                }
+
+                const numericValue = Number(value || 0);
+                input.value = numericValue.toFixed(decimals);
+                const resumen = formEl?.querySelector(`[data-resumen-for="${input.name}"]`);
+                if (resumen) {
+                    resumen.textContent = numericValue.toFixed(decimals);
+                }
+            };
+            const setRetencionValue = (input, value, decimals = 2) => {
+                if (!input) {
+                    return;
+                }
+
+                const numericValue = Number(value || 0);
+                input.value = numericValue.toFixed(decimals);
+                const resumen = formEl?.querySelector(`[data-resumen-for="${input.name}"]`);
+                if (resumen) {
+                    resumen.textContent = numericValue.toFixed(decimals);
+                }
+            };
+            const actualizarRetencionVisual = () => {
+                const aplicaRetencion = esReciboHonorarios();
+                retencion4taWrapEl?.classList.toggle("d-none", !aplicaRetencion);
+                if (impuestoLabelEl) {
+                    impuestoLabelEl.textContent = aplicaRetencion ? "Retencion" : "IGV";
+                }
+                document.getElementById("compraIgvResumen")?.classList.toggle("d-none", aplicaRetencion);
+                document.getElementById("compraRetencionResumen")?.classList.toggle("d-none", !aplicaRetencion);
+                igvHelpEl?.classList.toggle("d-none", aplicaRetencion);
+                retencionHelpEl?.classList.toggle("d-none", !aplicaRetencion);
+                if (!aplicaRetencion && exoneracionRenta4taEl) {
+                    exoneracionRenta4taEl.checked = false;
+                }
+                if (porcentajeRetencionEl) {
+                    porcentajeRetencionEl.value = aplicaRetencion ? porcentajeRetencionRenta4ta.toFixed(4) : "0.0000";
+                }
             };
 
             const marcarSeleccionDetraccion = () => {
@@ -720,6 +1078,49 @@
 
                 if (!aplicaDetraccion) {
                     setDetraccionValue(porcentajeDetraccionEl, 0, 4);
+                }
+            };
+
+            const limpiarPercepcionSeleccion = () => {
+                if (tipoPercepcionSelectEl) {
+                    tipoPercepcionSelectEl.value = "";
+                }
+                setPercepcionValue(porcentajePercepcionEl, 0, 4);
+                setPercepcionValue(basePercepcionEl, 0);
+                setPercepcionValue(importePercepcionEl, 0);
+            };
+
+            const calcularTotalesPercepcion = () => {
+                const aplicaPercepcion = Boolean(tienePercepcionEl?.checked);
+                const importeTotal = parseAmount(formEl?.querySelector('[name="Formulario.ImporteTotal"]')?.value);
+                const porcentaje = aplicaPercepcion ? parseAmount(porcentajePercepcionEl?.value) : 0;
+                const basePercepcion = aplicaPercepcion ? importeTotal : 0;
+                const importePercepcion = aplicaPercepcion && porcentaje > 0
+                    ? Math.round((basePercepcion * (porcentaje / 100)) * 100) / 100
+                    : 0;
+
+                setPercepcionValue(basePercepcionEl, basePercepcion);
+                setPercepcionValue(importePercepcionEl, importePercepcion);
+
+                if (!aplicaPercepcion) {
+                    setPercepcionValue(porcentajePercepcionEl, 0, 4);
+                }
+            };
+
+            const actualizarPercepcionSeleccion = () => {
+                const selected = tipoPercepcionSelectEl?.selectedOptions?.[0];
+                const porcentaje = Number(selected?.dataset.porcentaje || "0");
+                setPercepcionValue(porcentajePercepcionEl, porcentaje, 4);
+                calcularTotalesPercepcion();
+            };
+
+            const alternarPercepcion = () => {
+                const aplicaPercepcion = Boolean(tienePercepcionEl?.checked);
+                percepcionDetalleEl?.classList.toggle("d-none", !aplicaPercepcion);
+                if (!aplicaPercepcion) {
+                    limpiarPercepcionSeleccion();
+                } else {
+                    actualizarPercepcionSeleccion();
                 }
             };
 
@@ -756,6 +1157,7 @@
 
             const alternarDetraccion = () => {
                 const aplicaDetraccion = Boolean(tieneDetraccionEl?.checked);
+                detraccionDetalleEl?.classList.toggle("d-none", !aplicaDetraccion);
                 if (btnAbrirDetraccionModalEl) {
                     btnAbrirDetraccionModalEl.disabled = !aplicaDetraccion;
                 }
@@ -1131,19 +1533,28 @@
                     }
                 });
 
-                const igv = Math.round((totalGravado * 0.18) * 100) / 100;
-                const importeTotal = subtotal + igv;
+                const aplicaRetencion = esReciboHonorarios();
+                const igv = aplicaRetencion ? 0 : Math.round((totalGravado * 0.18) * 100) / 100;
+                const retencion = aplicaRetencion && !Boolean(exoneracionRenta4taEl?.checked)
+                    ? Math.round((subtotal * (porcentajeRetencionRenta4ta / 100)) * 100) / 100
+                    : 0;
+                const importeTotal = aplicaRetencion
+                    ? Math.max(0, Math.round((subtotal - retencion) * 100) / 100)
+                    : subtotal + igv;
                 totalDetalleLabel.textContent = subtotal.toFixed(2);
                 setFormValue("Formulario.BaseImponible", subtotal);
                 setFormValue("Formulario.TotalExonerado", totalExonerado);
                 setFormValue("Formulario.TotalInafecto", totalInafecto);
                 setFormValue("Formulario.Icbper", icbper);
                 setFormValue("Formulario.Igv", igv);
+                setRetencionValue(retencionInputEl, retencion);
+                setRetencionValue(porcentajeRetencionEl, aplicaRetencion ? porcentajeRetencionRenta4ta : 0, 4);
                 setFormValue("Formulario.Isc", 0);
                 setFormValue("Formulario.OtrosTributos", 0);
                 setFormValue("Formulario.Redondeo", 0);
                 setFormValue("Formulario.ImporteTotal", importeTotal);
                 calcularTotalesDetraccion();
+                calcularTotalesPercepcion();
             };
 
             addButton.addEventListener("click", () => {
@@ -1160,6 +1571,7 @@
             tableBody.querySelectorAll("tr").forEach(bindRowActions);
             tableBody.addEventListener("input", refreshRows);
             tableBody.addEventListener("change", refreshRows);
+            actualizarRetencionVisual();
             refreshRows();
             if (detraccionIdEl?.value) {
                 const filaDetraccionInicial = detraccionResultadosEl?.querySelector(`[data-detraccion-row='true'][data-id='${detraccionIdEl.value}']`);
@@ -1173,14 +1585,41 @@
                 }
             }
             alternarDetraccion();
+            if (tipoPercepcionSelectEl?.value) {
+                actualizarPercepcionSeleccion();
+            }
+            alternarPercepcion();
             fechaContabilizacionEl.value = `${@Html.Raw(System.Text.Json.JsonSerializer.Serialize(periodoContableValue))}-01`;
+            fechaEmisionEl?.addEventListener("change", () => {
+                consultarTipoCambioCabecera(false).catch((error) => console.warn(error));
+            });
+            monedaSelectEl?.addEventListener("change", () => {
+                consultarTipoCambioCabecera(false).catch((error) => console.warn(error));
+            });
+            formatTipoCambioInput(tipoCambioInputEl);
+            tipoCambioInputEl?.addEventListener("blur", () => formatTipoCambioInput(tipoCambioInputEl));
+            tipoCambioInputEl?.addEventListener("change", () => formatTipoCambioInput(tipoCambioInputEl));
+            tipoComprobanteEl?.addEventListener("change", () => {
+                actualizarRetencionVisual();
+                refreshRows();
+            });
+            exoneracionRenta4taEl?.addEventListener("change", refreshRows);
+            actualizarTipoCambioButton?.addEventListener("click", async () => {
+                try {
+                    await consultarTipoCambioCabecera(true);
+                } catch (error) {
+                    console.warn(error);
+                    window.alert("No se pudo obtener el tipo de cambio.");
+                }
+            });
+            consultarTipoCambioCabecera(false).catch((error) => console.warn(error));
             numeroDocumentoEl?.addEventListener("keydown", (event) => {
                 const teclasPermitidas = ["Backspace", "Delete", "Tab", "ArrowLeft", "ArrowRight", "Home", "End"];
                 if (teclasPermitidas.includes(event.key) || event.ctrlKey || event.metaKey) {
                     return;
                 }
 
-                if (!/^\d$/.test(event.key)) {
+                if (!/^[A-Za-z0-9]$/.test(event.key)) {
                     event.preventDefault();
                 }
             });
@@ -1191,10 +1630,10 @@
                 serieDocumentoEl.value = normalizeSerieDocumento(serieDocumentoEl.value, true);
             });
             numeroDocumentoEl?.addEventListener("input", () => {
-                numeroDocumentoEl.value = normalizeDigits(numeroDocumentoEl.value, 10);
+                numeroDocumentoEl.value = normalizeAlphaNumeric(numeroDocumentoEl.value, 20);
             });
             numeroDocumentoEl?.addEventListener("blur", () => {
-                numeroDocumentoEl.value = normalizeDigits(numeroDocumentoEl.value, 10);
+                numeroDocumentoEl.value = normalizeAlphaNumeric(numeroDocumentoEl.value, 20);
             });
 
             document.getElementById("aceptarCuentaCompra")?.addEventListener("click", () => {
@@ -1219,6 +1658,8 @@
             cuentaFiltro?.addEventListener("input", programarBusquedaCuenta);
             cuentaNivelFiltro?.addEventListener("change", programarBusquedaCuenta);
             tieneDetraccionEl?.addEventListener("change", alternarDetraccion);
+            tienePercepcionEl?.addEventListener("change", alternarPercepcion);
+            tipoPercepcionSelectEl?.addEventListener("change", actualizarPercepcionSeleccion);
             btnAbrirDetraccionModalEl?.addEventListener("click", () => {
                 if (!tieneDetraccionEl?.checked) {
                     window.alert("Primero marque que la compra tiene detraccion.");

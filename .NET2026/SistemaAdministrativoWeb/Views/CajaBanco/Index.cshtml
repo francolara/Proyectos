@@ -6,6 +6,7 @@
    Description:   Agrega el listado base del modulo Caja y Bancos con KPIs, filtros por cuenta corriente y accesos para registrar, editar o eliminar movimientos bancarios.
    ============================================= *@
 @* Firma: FRANCO LARA - 24/06/2026 | Agrega numero de asiento al listado de Caja y Bancos, quita la columna banco y exige seleccionar una cuenta corriente antes de consultar movimientos. *@
+@* Firma: FRANCO LARA - 02/07/2026 | Corrige la seleccion visible de cuenta corriente, anio y mes en caja y bancos para que el periodo mostrado respete el contexto devuelto por la opcion, y convierte el numero de asiento del listado en acceso directo al asiento generado. *@
 
 @{
     ViewData["Title"] = "Caja y Bancos";
@@ -90,7 +91,7 @@
                             <option value="">Seleccione una cuenta corriente</option>
                             @foreach (var cuenta in Model.CuentasCorrientesDisponibles)
                             {
-                                <option value="@cuenta.IdBancoConfiguracionEmpresa" selected="@(cuenta.IdBancoConfiguracionEmpresa == Model.IdBancoConfiguracionEmpresaSeleccionada)">
+                                <option value="@cuenta.IdBancoConfiguracionEmpresa" selected="@(cuenta.IdBancoConfiguracionEmpresa == Model.IdBancoConfiguracionEmpresaSeleccionada ? "selected" : null)">
                                     @($"{cuenta.NroCuentaCorriente} | {cuenta.NombreBanco} | {cuenta.CodigoMoneda}")
                                 </option>
                             }
@@ -101,7 +102,7 @@
                         <select id="anio" name="anio" class="form-select">
                             @foreach (var anio in Model.AniosDisponibles)
                             {
-                                <option value="@anio" selected="@(anio == Model.AnioSeleccionado)">@anio</option>
+                                <option value="@anio" selected="@(anio == Model.AnioSeleccionado ? "selected" : null)">@anio</option>
                             }
                         </select>
                     </div>
@@ -110,7 +111,7 @@
                         <select id="mes" name="mes" class="form-select">
                             @foreach (var mes in Model.MesesDisponibles)
                             {
-                                <option value="@mes.Valor" selected="@(mes.Valor == Model.MesSeleccionado)">@textInfo.ToTitleCase(mes.Nombre)</option>
+                                <option value="@mes.Valor" selected="@(mes.Valor == Model.MesSeleccionado ? "selected" : null)">@textInfo.ToTitleCase(mes.Nombre)</option>
                             }
                         </select>
                     </div>
@@ -169,7 +170,20 @@
                                 var tipoTexto = string.Equals(item.TipoMovimiento, "I", StringComparison.OrdinalIgnoreCase) ? "Ingreso" : "Egreso";
                                 <tr class="workspace-clickable-row" data-edit-url="@Url.Action("Editar", new { idMovimientoBanco = item.IdMovimientoBanco, idBancoConfiguracionEmpresa = Model.IdBancoConfiguracionEmpresaSeleccionada, anio = Model.AnioSeleccionado, mes = Model.MesSeleccionado })">
                                     <td>@item.NumeroMovimiento</td>
-                                    <td>@(item.NumeroAsiento?.ToString() ?? "-")</td>
+                                    <td>
+                                        @if (item.IdAsiento.HasValue)
+                                        {
+                                            <a asp-controller="Asiento"
+                                               asp-action="Editar"
+                                               asp-route-idAsiento="@item.IdAsiento.Value"
+                                               asp-route-periodo="@Model.PeriodoConsulta"
+                                               data-loading-link="true">@(item.NumeroAsiento?.ToString() ?? item.IdAsiento.Value.ToString())</a>
+                                        }
+                                        else
+                                        {
+                                            <span>-</span>
+                                        }
+                                    </td>
                                     <td>@item.FechaEmision.ToString("dd/MM/yyyy")</td>
                                     <td>@item.NroCuentaCorriente</td>
                                     <td>@item.CodigoMoneda</td>

@@ -1,0 +1,75 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.CargaMasivaXmlViewModel
+
+@{
+    ViewData["Title"] = "Carga masiva de compras";
+    ViewData["AdminShell"] = true;
+}
+
+<section class="dashboard-shell">
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Importacion XML</span>
+                <h1>@Model.Titulo</h1>
+                <p>@Model.Subtitulo</p>
+            </div>
+        </div>
+        <div class="workspace-window-body">
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger" asp-validation-summary="All"></div>
+            }
+
+            <form asp-action="CargaMasiva" method="post" enctype="multipart/form-data" class="workspace-filter-card">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="periodo" value="@Model.PeriodoConsulta" />
+                <div class="workspace-filter-grid">
+                    <div class="workspace-field workspace-field-span-3">
+                        <label class="form-label" for="archivos">Archivos XML</label>
+                        <input id="archivos" name="archivos" type="file" class="form-control" accept=".xml,text/xml,application/xml" multiple />
+                        <small class="workspace-field-help">Compras: Factura, Boleta, Nota de credito, Nota de debito y Recibo por honorarios.</small>
+                    </div>
+                </div>
+                <div class="workspace-actions">
+                    <button type="submit" class="btn btn-primary">Importar XML</button>
+                    <a asp-action="Index" asp-route-anio="@Model.AnioSeleccionado" asp-route-mes="@Model.MesSeleccionado" class="btn btn-outline-secondary">Volver al listado</a>
+                </div>
+            </form>
+
+            @if (Model.Resultados.Count > 0)
+            {
+                <div class="table-responsive workspace-table-wrap">
+                    <table class="table align-middle app-table workspace-table">
+                        <thead>
+                            <tr>
+                                <th>Archivo</th>
+                                <th>Documento</th>
+                                <th>Tercero</th>
+                                <th>Total</th>
+                                <th>Resultado</th>
+                                <th>Mensaje</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Resultados)
+                            {
+                                <tr>
+                                    <td>@item.NombreArchivo</td>
+                                    <td>@(string.IsNullOrWhiteSpace(item.TipoComprobante) ? "-" : $"{item.TipoComprobante} {item.Serie}-{item.Numero}")</td>
+                                    <td>@(string.IsNullOrWhiteSpace(item.NombreTercero) ? "-" : item.NombreTercero)</td>
+                                    <td>@item.ImporteTotal.ToString("0.00")</td>
+                                    <td>
+                                        <span class="badge @(item.Importado ? "text-bg-success" : "text-bg-danger")">
+                                            @(item.Importado ? "Importado" : "Observado")
+                                        </span>
+                                    </td>
+                                    <td>@item.Mensaje</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </section>
+</section>

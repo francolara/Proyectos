@@ -9,7 +9,8 @@ namespace SistemaAdministrativoWeb.Controllers;
 [Authorize]
 public class PersonaController(
     ICurrentCompanyAccessor currentCompanyAccessor,
-    IPersonaRepository personaRepository) : Controller
+    IPersonaRepository personaRepository,
+    IMigoPadronApiClient migoPadronApiClient) : Controller
 {
     private const int TamanoPagina = 20;
 
@@ -138,6 +139,76 @@ public class PersonaController(
 
         var distritos = await personaRepository.ListarDistritosAsync(codigoProvincia.Trim(), cancellationToken);
         return Json(distritos.Select(x => new { value = x.CodigoUbigeo, text = x.Nombre }));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ConsultarDocumentoMigo(string? tipoDocumento = null, string? numeroDocumento = null, CancellationToken cancellationToken = default)
+    {
+        var tipoDocumentoTrabajo = (tipoDocumento ?? string.Empty).Trim().ToUpperInvariant();
+        var numeroDocumentoTrabajo = new string((numeroDocumento ?? string.Empty).Where(char.IsDigit).ToArray());
+
+        if (string.IsNullOrWhiteSpace(tipoDocumentoTrabajo) || string.IsNullOrWhiteSpace(numeroDocumentoTrabajo))
+        {
+            return Json(new { ok = false, mensaje = "Seleccione el tipo de documento e ingrese el numero antes de consultar." });
+        }
+
+        try
+        {
+            if (tipoDocumentoTrabajo == "6")
+            {
+                var ruc = await migoPadronApiClient.ConsultarRucAsync(numeroDocumentoTrabajo, cancellationToken);
+                if (ruc is null)
+                {
+                    return Json(new { ok = false, mensaje = "La API no devolvio informacion para el RUC consultado." });
+                }
+
+                return Json(new
+                {
+                    ok = true,
+                    tipoPersona = "J",
+                    tipoDocumento = "6",
+                    numeroDocumento = ruc.Ruc,
+                    razonSocial = ruc.NombreORazonSocial,
+                    direccion = ruc.DireccionSimple ?? ruc.Direccion ?? string.Empty,
+                    codigoUbigeo = ruc.Ubigeo ?? string.Empty,
+                    codigoDepartamento = ObtenerCodigoDepartamento(ruc.Ubigeo),
+                    codigoProvincia = ObtenerCodigoProvincia(ruc.Ubigeo),
+                    distrito = ruc.Distrito ?? string.Empty,
+                    provincia = ruc.Provincia ?? string.Empty,
+                    departamento = ruc.Departamento ?? string.Empty,
+                    estadoContribuyente = ruc.EstadoContribuyente ?? string.Empty,
+                    condicionDomicilio = ruc.CondicionDomicilio ?? string.Empty
+                });
+            }
+
+            if (tipoDocumentoTrabajo == "1")
+            {
+                var dni = await migoPadronApiClient.ConsultarDniAsync(numeroDocumentoTrabajo, cancellationToken);
+                if (dni is null)
+                {
+                    return Json(new { ok = false, mensaje = "La API no devolvio informacion para el DNI consultado." });
+                }
+
+                var nombres = SepararNombreDni(dni.NombreCompleto);
+                return Json(new
+                {
+                    ok = true,
+                    tipoPersona = "N",
+                    tipoDocumento = "1",
+                    numeroDocumento = dni.Dni,
+                    apellidoPaterno = nombres.apellidoPaterno,
+                    apellidoMaterno = nombres.apellidoMaterno,
+                    nombres = nombres.nombres,
+                    nombreCompleto = dni.NombreCompleto
+                });
+            }
+
+            return Json(new { ok = false, mensaje = "Solo se puede consultar RUC o DNI desde la API de Migo." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { ok = false, mensaje = ex.Message });
+        }
     }
 
     private async Task<IActionResult> CargarFormularioAsync(int? idPersona, CancellationToken cancellationToken)
@@ -304,5 +375,42 @@ public class PersonaController(
                 ModelState.AddModelError("Formulario.RazonSocial", "Ingrese la razon social.");
             }
         }
+    }
+
+    private static string? ObtenerCodigoDepartamento(string? codigoUbigeo)
+    {
+        return !string.IsNullOrWhiteSpace(codigoUbigeo) && codigoUbigeo.Length >= 2
+            ? codigoUbigeo[..2]
+            : null;
+    }
+
+    private static string? ObtenerCodigoProvincia(string? codigoUbigeo)
+    {
+        return !string.IsNullOrWhiteSpace(codigoUbigeo) && codigoUbigeo.Length >= 4
+            ? codigoUbigeo[..4]
+            : null;
+    }
+
+    private static (string? apellidoPaterno, string? apellidoMaterno, string? nombres) SepararNombreDni(string nombreCompleto)
+    {
+        var partes = (nombreCompleto ?? string.Empty)
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        if (partes.Length == 0)
+        {
+            return (null, null, null);
+        }
+
+        if (partes.Length == 1)
+        {
+            return (null, null, partes[0]);
+        }
+
+        if (partes.Length == 2)
+        {
+            return (partes[0], null, partes[1]);
+        }
+
+        return (partes[0], partes[1], string.Join(' ', partes.Skip(2)));
     }
 }

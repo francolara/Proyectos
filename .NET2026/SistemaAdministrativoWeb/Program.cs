@@ -10,7 +10,11 @@ using SistemaAdministrativoWeb.Infrastructure.Parametros;
 using SistemaAdministrativoWeb.Infrastructure.Security;
 using SistemaAdministrativoWeb.Infrastructure.Suscripciones;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    ContentRootPath = ResolverContentRoot()
+});
 if (OperatingSystem.IsWindows())
 {
     builder.Logging.AddFilter<EventLogLoggerProvider>(level => level >= LogLevel.None);
@@ -41,6 +45,8 @@ builder.Services.Configure<IdentitySeedOptions>(
     builder.Configuration.GetSection(IdentitySeedOptions.SectionName));
 builder.Services.Configure<CloudflareTurnstileSettings>(
     builder.Configuration.GetSection(CloudflareTurnstileSettings.SectionName));
+builder.Services.Configure<MigoApiSettings>(
+    builder.Configuration.GetSection(MigoApiSettings.SectionName));
 var identityBehaviorSettings = builder.Configuration
     .GetSection(IdentityBehaviorSettings.SectionName)
     .Get<IdentityBehaviorSettings>() ?? new IdentityBehaviorSettings();
@@ -73,6 +79,7 @@ if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(goo
 }
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddMemoryCache();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSession(options =>
 {
@@ -83,6 +90,10 @@ builder.Services.AddSession(options =>
 
 builder.Services.AddScoped<IDbConnectionFactory, SqlConnectionFactory>();
 builder.Services.AddScoped<IPlanCuentaRepository, PlanCuentaRepository>();
+builder.Services.AddScoped<IDiferenciaCambioRepository, DiferenciaCambioRepository>();
+builder.Services.AddScoped<IAjusteCuentaRepository, AjusteCuentaRepository>();
+builder.Services.AddScoped<IAperturaProcesoRepository, AperturaProcesoRepository>();
+builder.Services.AddScoped<ICierreProcesoRepository, CierreProcesoRepository>();
 builder.Services.AddScoped<IBancoRepository, BancoRepository>();
 builder.Services.AddScoped<ICentroCostoRepository, CentroCostoRepository>();
 builder.Services.AddScoped<ICuentaCorrienteRepository, CuentaCorrienteRepository>();
@@ -92,10 +103,47 @@ builder.Services.AddScoped<ICuentaDestinoReglaRepository, CuentaDestinoReglaRepo
 builder.Services.AddScoped<IConfiguracionContabilizacionRepository, ConfiguracionContabilizacionRepository>();
 builder.Services.AddScoped<IAsientoPreviewService, AsientoPreviewService>();
 builder.Services.AddScoped<IMonedaRepository, MonedaRepository>();
+builder.Services.AddScoped<ITipoCambioRepository, TipoCambioRepository>();
+builder.Services.AddScoped<IPeriodoContableRepository, PeriodoContableRepository>();
+builder.Services.AddScoped<IPeriodoContableService, PeriodoContableService>();
+builder.Services.AddScoped<ITipoCambioSyncService, TipoCambioSyncService>();
+builder.Services.AddScoped<IAnalisisCuentaRepository, AnalisisCuentaRepository>();
+builder.Services.AddScoped<IBalanceComprobacionRepository, BalanceComprobacionRepository>();
+builder.Services.AddScoped<IRegistroVentasRepository, RegistroVentasRepository>();
+builder.Services.AddScoped<IRegistroComprasRepository, RegistroComprasRepository>();
+builder.Services.AddScoped<ILibroDiarioRepository, LibroDiarioRepository>();
+builder.Services.AddScoped<ILibroMayorRepository, LibroMayorRepository>();
+builder.Services.AddScoped<ILibroElectronicoRepository, LibroElectronicoRepository>();
+builder.Services.AddScoped<ILibroDiario51Service, LibroDiario51Service>();
+builder.Services.AddScoped<ILibroDiario52Service, LibroDiario52Service>();
+builder.Services.AddScoped<ILibroMayor61Service, LibroMayor61Service>();
+builder.Services.AddScoped<IPleFileNameService, PleFileNameService>();
+builder.Services.AddScoped<IPleValidationService, PleValidationService>();
+builder.Services.AddScoped<IPleTxtGenerator, PleTxtGenerator>();
+builder.Services.AddScoped<IPleDownloadStore, PleDownloadStore>();
+builder.Services.AddScoped<ILibroElectronicoService, LibroElectronicoService>();
+builder.Services.AddHttpClient<IMigoTipoCambioApiClient, MigoTipoCambioApiClient>((serviceProvider, httpClient) =>
+{
+    var settings = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<MigoApiSettings>>().Value;
+    if (!string.IsNullOrWhiteSpace(settings.BaseUrl))
+    {
+        httpClient.BaseAddress = new Uri(settings.BaseUrl, UriKind.Absolute);
+    }
+});
+builder.Services.AddHttpClient<IMigoPadronApiClient, MigoPadronApiClient>((serviceProvider, httpClient) =>
+{
+    var settings = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<MigoApiSettings>>().Value;
+    if (!string.IsNullOrWhiteSpace(settings.BaseUrl))
+    {
+        httpClient.BaseAddress = new Uri(settings.BaseUrl, UriKind.Absolute);
+    }
+});
 builder.Services.AddScoped<IAsientoRepository, AsientoRepository>();
 builder.Services.AddScoped<IDetraccionSunatRepository, DetraccionSunatRepository>();
+builder.Services.AddScoped<ITipoPercepcionRepository, TipoPercepcionRepository>();
 builder.Services.AddScoped<IProveedorRepository, ProveedorRepository>();
 builder.Services.AddScoped<ICompraRepository, CompraRepository>();
+builder.Services.AddScoped<IXmlProvisionImportService, XmlProvisionImportService>();
 builder.Services.AddScoped<IAplicacionNotaCreditoRepository, AplicacionNotaCreditoRepository>();
 builder.Services.AddScoped<ITipoComprobanteRepository, TipoComprobanteRepository>();
 builder.Services.AddScoped<ITipoAfectacionIgvRepository, TipoAfectacionIgvRepository>();
@@ -149,3 +197,31 @@ app.MapRazorPages()
     .WithStaticAssets();
 
 app.Run();
+
+static string ResolverContentRoot()
+{
+    var directorioActual = Directory.GetCurrentDirectory();
+    if (ExisteEstructuraProyecto(directorioActual))
+    {
+        return directorioActual;
+    }
+
+    var candidato = new DirectoryInfo(AppContext.BaseDirectory);
+    while (candidato is not null)
+    {
+        if (ExisteEstructuraProyecto(candidato.FullName))
+        {
+            return candidato.FullName;
+        }
+
+        candidato = candidato.Parent;
+    }
+
+    return directorioActual;
+}
+
+static bool ExisteEstructuraProyecto(string rutaBase)
+{
+    return File.Exists(Path.Combine(rutaBase, "SistemaAdministrativoWeb.csproj"))
+        && Directory.Exists(Path.Combine(rutaBase, "Views"));
+}

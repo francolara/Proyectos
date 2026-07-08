@@ -451,6 +451,14 @@
                 return Number.isFinite(parsed) ? parsed : 0;
             };
 
+            const formatTipoCambioInput = (input) => {
+                if (!input) {
+                    return;
+                }
+
+                input.value = parseDecimal(input.value).toFixed(3);
+            };
+
             const selectedValue = (inputs) => Array.from(inputs).find((input) => input.checked);
 
             const marcarFilaSeleccion = (tbody, selectedRow) => {
@@ -557,7 +565,7 @@
 
                 if (tipoCambioInput && !tipoCambioTocado) {
                     const tcBase = parseDecimal(comprobante?.dataset?.tc || nc?.dataset?.tc || "1");
-                    tipoCambioInput.value = (tcBase > 0 ? tcBase : 1).toFixed(2);
+                    tipoCambioInput.value = (tcBase > 0 ? tcBase : 1).toFixed(3);
                 }
 
                 if (importeAplicado && sugerido > 0) {
@@ -614,6 +622,13 @@
             tipoCambioInput?.addEventListener("input", () => {
                 tipoCambioTocado = true;
             });
+            tipoCambioInput?.addEventListener("blur", () => {
+                formatTipoCambioInput(tipoCambioInput);
+            });
+            tipoCambioInput?.addEventListener("change", () => {
+                formatTipoCambioInput(tipoCambioInput);
+                tipoCambioTocado = true;
+            });
 
             comprobantes.forEach((input) => input.addEventListener("change", actualizarSugerencia));
             notasCredito.forEach((input) => input.addEventListener("change", actualizarSugerencia));
@@ -648,6 +663,7 @@
                 tipoPersonaGuardar.value = tipoPersonaFiltro.value || "C";
             }
 
+            formatTipoCambioInput(tipoCambioInput);
             actualizarSugerencia();
         })();
     </script>

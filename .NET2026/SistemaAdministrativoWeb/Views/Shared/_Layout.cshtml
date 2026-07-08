@@ -2,6 +2,7 @@
 @using SistemaAdministrativoWeb.Infrastructure.Empresas
 @inject ICurrentCompanyAccessor CurrentCompanyAccessor
 @inject UserManager<IdentityUser> UserManager
+@* Firma: FRANCO LARA - 07/07/2026 | Agrega y reordena el bloque Reportes del menu administrativo con Balance de comprobacion, Analisis de cuentas, Libro Diario, Libro Mayor, Registro de ventas, Registro de compras y Libros Electronicos. *@
 <!DOCTYPE html>
 @{
     var adminShell = ViewData["AdminShell"] as bool? ?? false;
@@ -27,11 +28,12 @@
         segments.Any(x => currentPath.StartsWith($"/{x}", StringComparison.OrdinalIgnoreCase));
 
     var generalOpen = IsActiveController("Panel", "EmpresaContexto");
-    var mantenimientoOpen = IsActiveController("PlanCuenta", "CentroCosto", "CuentaCorriente", "Origen", "CuentaDestinoRegla", "ConfiguracionContabilizacion", "Persona")
-        || IsActivePath("PlanCuenta", "CentroCosto", "CuentaCorriente", "Origen", "CuentaDestinoRegla", "ConfiguracionContabilizacion", "Persona");
+    var mantenimientoOpen = IsActiveController("PlanCuenta", "CentroCosto", "CuentaCorriente", "Persona", "TipoCambio", "Origen", "CuentaDestinoRegla", "ConfiguracionContabilizacion")
+        || IsActivePath("PlanCuenta", "CentroCosto", "CuentaCorriente", "Persona", "TipoCambio", "Origen", "CuentaDestinoRegla", "ConfiguracionContabilizacion");
     var registroOpen = IsActiveController("Asiento", "Compra", "Venta", "CajaBanco", "TransferenciaCuenta", "Aplicacion")
         || IsActivePath("Asiento", "Compra", "Venta", "CajaBanco", "TransferenciaCuenta", "Aplicacion");
-    var reportesOpen = IsActiveController("Reporte") || IsActivePath("Reporte");
+    var procesoOpen = IsActiveController("Proceso") || IsActivePath("Proceso");
+    var reportesOpen = IsActiveController("Reporte", "LibroElectronico") || IsActivePath("Reporte", "LibroElectronico");
 }
 <html lang="es">
 <head>
@@ -118,6 +120,7 @@
                                 <a class="app-sidebar-link @(IsActiveController("CentroCosto") ? "active" : string.Empty)" asp-controller="CentroCosto" asp-action="Index"><i class="bi bi-diagram-2"></i><span>Centros de costo</span></a>
                                 <a class="app-sidebar-link @(IsActiveController("CuentaCorriente") ? "active" : string.Empty)" asp-controller="CuentaCorriente" asp-action="Index"><i class="bi bi-bank"></i><span>Cuentas corrientes</span></a>
                                 <a class="app-sidebar-link @(IsActiveController("Persona") ? "active" : string.Empty)" asp-controller="Persona" asp-action="Index"><i class="bi bi-people"></i><span>Personas</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("TipoCambio") ? "active" : string.Empty)" asp-controller="TipoCambio" asp-action="Index"><i class="bi bi-currency-exchange"></i><span>Tipos de cambio</span></a>
                                 <a class="app-sidebar-link @(IsActiveController("Origen") ? "active" : string.Empty)" asp-controller="Origen" asp-action="Index"><i class="bi bi-journal-richtext"></i><span>Origenes</span></a>
                                 <a class="app-sidebar-link @(IsActiveController("CuentaDestinoRegla") ? "active" : string.Empty)" asp-controller="CuentaDestinoRegla" asp-action="Index"><i class="bi bi-sliders2"></i><span>Cuentas destino</span></a>
                                 <a class="app-sidebar-link @(IsActiveController("ConfiguracionContabilizacion") ? "active" : string.Empty)" asp-controller="ConfiguracionContabilizacion" asp-action="Index"><i class="bi bi-gear-wide-connected"></i><span>Configuracion contable</span></a>
@@ -141,14 +144,34 @@
                         </div>
                     </section>
                     <section class="app-sidebar-group app-sidebar-group-accordion">
+                        <button class="app-sidebar-group-toggle @(procesoOpen ? string.Empty : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-proceso" aria-expanded="@(procesoOpen.ToString().ToLowerInvariant())" aria-controls="sidebar-proceso">
+                            <span>Proceso</span>
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                        <div id="sidebar-proceso" class="collapse @(procesoOpen ? "show" : string.Empty)">
+                            <div class="app-sidebar-group-body">
+                                <a class="app-sidebar-link @(IsActiveController("Proceso") && currentPath.StartsWith("/Proceso/DiferenciaCambio", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Proceso" asp-action="DiferenciaCambio"><i class="bi bi-currency-exchange"></i><span>Diferencia en Cambio</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("Proceso") && currentPath.StartsWith("/Proceso/AjusteCuenta", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Proceso" asp-action="AjusteCuenta"><i class="bi bi-sliders"></i><span>Ajuste de Cuentas</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("Proceso") && currentPath.StartsWith("/Proceso/AsientoApertura", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Proceso" asp-action="AsientoApertura"><i class="bi bi-journal-plus"></i><span>Asiento de apertura</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("Proceso") && currentPath.StartsWith("/Proceso/AsientoCierre", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Proceso" asp-action="AsientoCierre"><i class="bi bi-journal-x"></i><span>Asiento de cierre</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("Proceso") && currentPath.StartsWith("/Proceso/CerrarPeriodo", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Proceso" asp-action="CerrarPeriodo"><i class="bi bi-lock"></i><span>Cerrar Periodo</span></a>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="app-sidebar-group app-sidebar-group-accordion">
                         <button class="app-sidebar-group-toggle @(reportesOpen ? string.Empty : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-reportes" aria-expanded="@(reportesOpen.ToString().ToLowerInvariant())" aria-controls="sidebar-reportes">
                             <span>Reportes</span>
                             <i class="bi bi-chevron-down"></i>
                         </button>
                         <div id="sidebar-reportes" class="collapse @(reportesOpen ? "show" : string.Empty)">
                             <div class="app-sidebar-group-body">
-                                <a class="app-sidebar-link disabled" href="#"><i class="bi bi-journal-richtext"></i><span>Libros</span></a>
-                                <a class="app-sidebar-link disabled" href="#"><i class="bi bi-bar-chart"></i><span>Analisis</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("Reporte") && currentPath.StartsWith("/Reporte/AnalisisCuentas", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Reporte" asp-action="AnalisisCuentas"><i class="bi bi-bar-chart"></i><span>Analisis de cuentas</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("Reporte") && currentPath.StartsWith("/Reporte/LibroDiario", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Reporte" asp-action="LibroDiario"><i class="bi bi-journal-richtext"></i><span>Libro Diario</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("Reporte") && currentPath.StartsWith("/Reporte/LibroMayor", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Reporte" asp-action="LibroMayor"><i class="bi bi-journals"></i><span>Libro Mayor</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("Reporte") && currentPath.StartsWith("/Reporte/RegistroVentas", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Reporte" asp-action="RegistroVentas"><i class="bi bi-receipt-cutoff"></i><span>Registro de ventas</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("Reporte") && currentPath.StartsWith("/Reporte/RegistroCompras", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Reporte" asp-action="RegistroCompras"><i class="bi bi-cart3"></i><span>Registro de compras</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("Reporte") && currentPath.StartsWith("/Reporte/BalanceComprobacion", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Reporte" asp-action="BalanceComprobacion"><i class="bi bi-table"></i><span>Balance de comprobacion</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("LibroElectronico") ? "active" : string.Empty)" asp-controller="LibroElectronico" asp-action="Index"><i class="bi bi-filetype-txt"></i><span>Libros Electronicos</span></a>
                             </div>
                         </div>
                     </section>

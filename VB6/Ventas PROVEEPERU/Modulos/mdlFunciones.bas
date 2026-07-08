@@ -518,7 +518,7 @@ On Error GoTo Err
     If Cn.State = 1 Then Cn.Close
     Cn.CursorLocation = adUseClient
     Cn.CommandTimeout = 0
-    Cn.ConnectionString = "driver={ODBC Driver 17 for SQL Server};server=" & gbservidor & ";uid=" & gbusuario & ";pwd=" & gbPassword & ";database=" & gbDatabase
+    Cn.ConnectionString = "driver={SQL Server};server=" & gbservidor & ";uid=" & gbusuario & ";pwd=" & gbPassword & ";database=" & gbDatabase
     Cn.Open
 
 Exit Sub

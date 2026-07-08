@@ -1,0 +1,253 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.BalanceComprobacionViewModel
+
+@* Firma: FRANCO LARA - 07/07/2026 | Crea el reporte HTML Balance de comprobacion replicando FrmBalanceComprobacion del legacy, corrige la presentacion para seguir el formato compacto tipo rptBalanceComprobacionA4, agrega impresion directa y ajusta nombres/columnas para alinearlo mejor al formato A4 legacy. *@
+
+@{
+    ViewData["Title"] = "Balance de comprobación";
+    ViewData["AdminShell"] = true;
+    var textInfo = System.Globalization.CultureInfo.CurrentCulture.TextInfo;
+    var periodoDesdeTexto = Model.PeriodosDisponibles.FirstOrDefault(x => x.Valor == Model.PeriodoDesdeSeleccionado)?.Nombre ?? Model.PeriodoDesdeSeleccionado.ToString("00");
+    var periodoHastaTexto = Model.PeriodosDisponibles.FirstOrDefault(x => x.Valor == Model.PeriodoHastaSeleccionado)?.Nombre ?? Model.PeriodoHastaSeleccionado.ToString("00");
+    var utilidadActivoPasivo = Model.TotalActivo < Model.TotalPasivo ? Model.TotalPasivo - Model.TotalActivo : 0m;
+    var perdidaActivoPasivo = Model.TotalActivo > Model.TotalPasivo ? Model.TotalActivo - Model.TotalPasivo : 0m;
+    var utilidadNaturaleza = Model.TotalPerdidaNaturaleza < Model.TotalGananciaNaturaleza ? Model.TotalGananciaNaturaleza - Model.TotalPerdidaNaturaleza : 0m;
+    var perdidaNaturaleza = Model.TotalPerdidaNaturaleza > Model.TotalGananciaNaturaleza ? Model.TotalPerdidaNaturaleza - Model.TotalGananciaNaturaleza : 0m;
+    var utilidadFuncion = Model.TotalPerdidaFuncion < Model.TotalGananciaFuncion ? Model.TotalGananciaFuncion - Model.TotalPerdidaFuncion : 0m;
+    var perdidaFuncion = Model.TotalPerdidaFuncion > Model.TotalGananciaFuncion ? Model.TotalPerdidaFuncion - Model.TotalGananciaFuncion : 0m;
+    var saldoCuentaTexto = Model.TodasLasCuentas ? "Todas las cuentas" : $"{Model.CuentaDesde} - {Model.CuentaHasta}";
+}
+
+<section class="dashboard-shell">
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Reporte</span>
+                <h1>Balance de comprobación</h1>
+                <p>Replica en HTML el formato legacy <strong>rptBalanceComprobacionA4</strong> usando rango de periodos contables, moneda, grado y agrupación jerárquica de cuentas.</p>
+            </div>
+            <div class="workspace-window-badge">
+                <strong>@Model.EmpresaNombre</strong>
+                <span>@($"{textInfo.ToTitleCase(periodoDesdeTexto)} - {textInfo.ToTitleCase(periodoHastaTexto)} {Model.AnioSeleccionado}")</span>
+            </div>
+        </div>
+
+        <div class="workspace-window-body">
+            @if (!string.IsNullOrWhiteSpace(Model.MensajeError))
+            {
+                <div class="alert alert-danger">@Model.MensajeError</div>
+            }
+
+            <form asp-action="BalanceComprobacion" method="get" class="workspace-filter-card">
+                <input type="hidden" name="consultar" value="true" />
+                <div class="workspace-filter-grid">
+                    <div class="workspace-field">
+                        <label class="form-label" for="anio">Año</label>
+                        <select id="anio" name="anio" class="form-select">
+                            @foreach (var anio in Model.AniosDisponibles)
+                            {
+                                <option value="@anio" selected="@(anio == Model.AnioSeleccionado ? "selected" : null)">@anio</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="periodoDesde">Periodo desde</label>
+                        <select id="periodoDesde" name="periodoDesde" class="form-select">
+                            @foreach (var periodo in Model.PeriodosDisponibles)
+                            {
+                                <option value="@periodo.Valor" selected="@(periodo.Valor == Model.PeriodoDesdeSeleccionado ? "selected" : null)">@textInfo.ToTitleCase(periodo.Nombre)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="periodoHasta">Periodo hasta</label>
+                        <select id="periodoHasta" name="periodoHasta" class="form-select">
+                            @foreach (var periodo in Model.PeriodosDisponibles)
+                            {
+                                <option value="@periodo.Valor" selected="@(periodo.Valor == Model.PeriodoHastaSeleccionado ? "selected" : null)">@textInfo.ToTitleCase(periodo.Nombre)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="moneda">Moneda</label>
+                        <select id="moneda" name="moneda" class="form-select">
+                            @foreach (var moneda in Model.MonedasDisponibles)
+                            {
+                                <option value="@moneda.Valor" selected="@(moneda.Valor == Model.MonedaSeleccionada ? "selected" : null)">@moneda.Texto</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="grado">Grado</label>
+                        <select id="grado" name="grado" class="form-select">
+                            @foreach (var grado in Model.GradosDisponibles)
+                            {
+                                <option value="@grado.Valor" selected="@(grado.Valor == Model.GradoSeleccionado.ToString() ? "selected" : null)">@grado.Texto</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="cuentaDesde">Cuenta desde</label>
+                        <input id="cuentaDesde" name="cuentaDesde" class="form-control js-balance-cuenta" value="@Model.CuentaDesde" list="balance-cuentas-lista" disabled="@(Model.TodasLasCuentas ? "disabled" : null)" />
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="cuentaHasta">Cuenta hasta</label>
+                        <input id="cuentaHasta" name="cuentaHasta" class="form-control js-balance-cuenta" value="@Model.CuentaHasta" list="balance-cuentas-lista" disabled="@(Model.TodasLasCuentas ? "disabled" : null)" />
+                    </div>
+                    <div class="workspace-field workspace-field-span-2">
+                        <div class="workspace-check-grid workspace-check-grid-compact">
+                            <label class="workspace-check">
+                                <input id="todasLasCuentas" name="todasLasCuentas" type="checkbox" value="true" @(Model.TodasLasCuentas ? "checked" : null) />
+                                <span>Todas las cuentas</span>
+                            </label>
+                            <label class="workspace-check">
+                                <input id="filtrarGrado" name="filtrarGrado" type="checkbox" value="true" @(Model.FiltrarGrado ? "checked" : null) />
+                                <span>Filtrar grado exacto</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="workspace-field d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary">Consultar balance</button>
+                    </div>
+                </div>
+
+                <datalist id="balance-cuentas-lista">
+                    @foreach (var cuenta in Model.CuentasDisponibles)
+                    {
+                        <option value="@cuenta.Valor">@cuenta.Texto</option>
+                    }
+                </datalist>
+            </form>
+
+            @if (Model.ConsultaEjecutada && Model.Resultados.Count == 0 && string.IsNullOrWhiteSpace(Model.MensajeError))
+            {
+                <div class="alert alert-info mt-4">No se encontraron saldos para los filtros seleccionados.</div>
+            }
+
+            @if (Model.Resultados.Count > 0)
+            {
+                <section class="workspace-report-sheet balance-a4-sheet mt-4">
+                    <div class="report-action-bar no-print">
+                        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Imprimir</button>
+                    </div>
+
+                    <header class="balance-a4-header">
+                        <div>
+                            <strong>@Model.EmpresaNombre</strong>
+                            <span>BALANCE DE COMPROBACIÓN MENSUAL A @textInfo.ToTitleCase(periodoHastaTexto) @Model.AnioSeleccionado</span>
+                        </div>
+                        <div class="balance-a4-meta">
+                            <span>Moneda: @Model.MonedasDisponibles.FirstOrDefault(x => x.Valor == Model.MonedaSeleccionada)?.Texto</span>
+                            <span>Grado: @Model.GradoSeleccionado</span>
+                            <span>Rango: @Model.PeriodoDesdeSeleccionado:00 - @Model.PeriodoHastaSeleccionado:00</span>
+                            <span>Cuentas: @saldoCuentaTexto</span>
+                        </div>
+                    </header>
+
+                    <div class="table-responsive balance-a4-table-wrap">
+                        <table class="table app-table balance-a4-table">
+                            <thead>
+                                <tr>
+                                    <th rowspan="2">Cuenta</th>
+                                    <th rowspan="2">Descripción</th>
+                                    <th colspan="2">Sumas</th>
+                                    <th colspan="2">Saldos</th>
+                                    <th colspan="2">Inventario</th>
+                                    <th colspan="2">Resultado por Naturaleza</th>
+                                    <th colspan="2">Resultado por Función</th>
+                                </tr>
+                                <tr>
+                                    <th>Debe</th>
+                                    <th>Haber</th>
+                                    <th>Deudor</th>
+                                    <th>Acreedor</th>
+                                    <th>Activo</th>
+                                    <th>Pasivo</th>
+                                    <th>Pérdida</th>
+                                    <th>Ganancia</th>
+                                    <th>Pérdida</th>
+                                    <th>Ganancia</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.Resultados)
+                                {
+                                    <tr>
+                                        <td class="balance-a4-account">@item.CodigoCuenta</td>
+                                        <td class="balance-a4-description">@item.NombreCuenta</td>
+                                        <td class="workspace-money-cell">@item.Debe.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@item.Haber.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@item.ResultadoDebe.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@item.ResultadoHaber.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@item.Activo.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@item.Pasivo.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@item.PerdidaNaturaleza.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@item.GananciaNaturaleza.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@item.PerdidaFuncion.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@item.GananciaFuncion.ToString("N2")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr class="balance-a4-total-row">
+                                    <td colspan="2">Totales</td>
+                                    <td class="workspace-money-cell">@Model.TotalDebe.ToString("N2")</td>
+                                    <td class="workspace-money-cell">@Model.TotalHaber.ToString("N2")</td>
+                                    <td class="workspace-money-cell">@Model.TotalResultadoDebe.ToString("N2")</td>
+                                    <td class="workspace-money-cell">@Model.TotalResultadoHaber.ToString("N2")</td>
+                                    <td class="workspace-money-cell">@Model.TotalActivo.ToString("N2")</td>
+                                    <td class="workspace-money-cell">@Model.TotalPasivo.ToString("N2")</td>
+                                    <td class="workspace-money-cell">@Model.TotalPerdidaNaturaleza.ToString("N2")</td>
+                                    <td class="workspace-money-cell">@Model.TotalGananciaNaturaleza.ToString("N2")</td>
+                                    <td class="workspace-money-cell">@Model.TotalPerdidaFuncion.ToString("N2")</td>
+                                    <td class="workspace-money-cell">@Model.TotalGananciaFuncion.ToString("N2")</td>
+                                </tr>
+                                <tr class="balance-a4-subtotal-row">
+                                    <td colspan="4"></td>
+                                    <td class="workspace-money-cell">Utilidad</td>
+                                    <td class="workspace-money-cell">Pérdida</td>
+                                    <td class="workspace-money-cell">@utilidadActivoPasivo.ToString("N2")</td>
+                                    <td class="workspace-money-cell">@perdidaActivoPasivo.ToString("N2")</td>
+                                    <td class="workspace-money-cell">@perdidaNaturaleza.ToString("N2")</td>
+                                    <td class="workspace-money-cell">@utilidadNaturaleza.ToString("N2")</td>
+                                    <td class="workspace-money-cell">@perdidaFuncion.ToString("N2")</td>
+                                    <td class="workspace-money-cell">@utilidadFuncion.ToString("N2")</td>
+                                </tr>
+                                <tr class="balance-a4-total-row">
+                                    <td colspan="6"></td>
+                                    <td class="workspace-money-cell">@((Model.TotalActivo + utilidadActivoPasivo).ToString("N2"))</td>
+                                    <td class="workspace-money-cell">@((Model.TotalPasivo + perdidaActivoPasivo).ToString("N2"))</td>
+                                    <td class="workspace-money-cell">@((Model.TotalPerdidaNaturaleza + perdidaNaturaleza).ToString("N2"))</td>
+                                    <td class="workspace-money-cell">@((Model.TotalGananciaNaturaleza + utilidadNaturaleza).ToString("N2"))</td>
+                                    <td class="workspace-money-cell">@((Model.TotalPerdidaFuncion + perdidaFuncion).ToString("N2"))</td>
+                                    <td class="workspace-money-cell">@((Model.TotalGananciaFuncion + utilidadFuncion).ToString("N2"))</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </section>
+            }
+        </div>
+    </section>
+</section>
+
+@section Scripts {
+    <script>
+        (() => {
+            const toggle = document.getElementById("todasLasCuentas");
+            const inputs = Array.from(document.querySelectorAll(".js-balance-cuenta"));
+
+            const syncState = () => {
+                const disabled = toggle?.checked ?? false;
+                inputs.forEach((input) => {
+                    input.disabled = disabled;
+                    if (disabled) {
+                        input.value = "";
+                    }
+                });
+            };
+
+            toggle?.addEventListener("change", syncState);
+            syncState();
+        })();
+    </script>
+}

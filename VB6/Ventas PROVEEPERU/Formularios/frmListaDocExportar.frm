@@ -349,7 +349,7 @@ Begin VB.Form frmListaDocExportar
                Italic          =   0   'False
                Strikethrough   =   0   'False
             EndProperty
-            Format          =   140443649
+            Format          =   133496833
             CurrentDate     =   38955
          End
          Begin MSComCtl2.DTPicker dtp_Hasta 
@@ -370,7 +370,7 @@ Begin VB.Form frmListaDocExportar
                Italic          =   0   'False
                Strikethrough   =   0   'False
             EndProperty
-            Format          =   140443649
+            Format          =   133496833
             CurrentDate     =   38955
          End
          Begin VB.Label Label3 
@@ -864,7 +864,7 @@ On Error GoTo Err
                            "Where IdEmpresa = '" & glsEmpresa & "' And IdSucursal = '" & glsSucursal & "' And IdDocumento = '" & txtCod_Documento.Text & "' " & _
                            "And IdDocVentas = '" & strNumDoc & "' And IdSerie = '" & strSerie & "' Order By Item"
                 Else
-                    csql = "Select Item,IdProducto,IdCodFabricante,GlsProducto,IdMarca,GlsMarca,IdUM,GlsUM,Factor,Afecto," & _
+                    csql = "Select Item,IdProducto,IdCodFabricante,CAST(GlsProducto AS VARCHAR(8000)) AS GlsProducto,IdMarca,GlsMarca,IdUM,GlsUM,Factor,Afecto," & _
                            "(Cantidad - CantidadImp) As Cantidad,VVUnit,IGVUnit,PVUnit,TotalVVBruto,TotalPVBruto,PorDcto,DctoVV,DctoPV,TotalVVNeto," & _
                            "TotalIGVNeto,TotalPVNeto,IdTipoProducto,IdMoneda,NumLote,FecVencProd,VVUnitLista,PVUnitLista,VVUnitNeto,PVUnitNeto,Cantidad2," & _
                            "CodigoRapido,IdTallaPeso,ItemPro,IvapUnit,TotalIvapNeto,GlsProveedor,CostoS,CostoD,Margen,CostoSInc " & _
@@ -1115,7 +1115,7 @@ End Sub
 
 Public Sub MostrarForm(ByVal strTipoDocQueImporta As String, ByVal strCodCliente As String, ByRef rscd As ADODB.Recordset, ByRef rsdd As ADODB.Recordset, ByRef strTipoDocImportado As String, ByRef StrMsgError As String)
 On Error GoTo Err
-
+    Sw_ValidaCheck = False
     strTDExportar = strTipoDocQueImporta
     indNuevoDoc = True
     
@@ -1134,7 +1134,7 @@ On Error GoTo Err
     indNuevoDoc = False
    
     frmListaDocExportar.Show 1
-    
+    Sw_ValidaCheck = True
     'Quitamos Filtros existentes
     gLista.Dataset.Filter = ""
     gLista.Dataset.Filtered = True

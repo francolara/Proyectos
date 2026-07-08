@@ -5,6 +5,7 @@
 -- =============================================
 -- Firma: FRANCO LARA - 24/06/2026 | Agrega el guardado del modulo Aplicaciones con soporte de importe parcial, descuento de saldos en compras/ventas, tipo de cambio editable para el asiento y mensaje claro cuando falle la generacion contable.
 -- Firma: FRANCO LARA - 25/06/2026 | Ajusta la generacion del asiento de Aplicaciones para dejar su estado final en PROVISIONADO en lugar de BORRADOR.
+-- Firma: FRANCO LARA - 03/07/2026 | Incluye DH en el XML del asiento automatico de aplicaciones para propagar el sentido contable al guardado centralizado del detalle.
 
 CREATE OR ALTER PROCEDURE dbo.usp_APL_GuardarAplicacionNotaCredito
     @IdEmpresa INT,
@@ -438,6 +439,7 @@ BEGIN
             SELECT
                 d.Item AS [@Item],
                 d.IdPlanCuenta AS [@IdPlanCuenta],
+                CASE WHEN d.Debe > 0 THEN 'D' ELSE 'H' END AS [@DH],
                 d.GlosaDetalle AS [@GlosaDetalle],
                 d.TipoDocumento AS [@TipoDocumento],
                 d.NumeroDocumento AS [@NumeroDocumento],

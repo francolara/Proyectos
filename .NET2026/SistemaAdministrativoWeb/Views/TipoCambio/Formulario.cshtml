@@ -1,0 +1,112 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.TipoCambioIndexViewModel
+
+@* Firma: FRANCO LARA - 29/06/2026 | Agrega el formulario de tipos de cambio y habilita la sincronizacion puntual por fecha desde la API Migo, ocultando la cuenta administradora en la vista. *@
+@* Firma: FRANCO LARA - 08/07/2026 | Ajusta la moneda visible del formulario de tipo de cambio para mostrar solo el codigo de moneda, manteniendo PEN y USD como valores internos. *@
+
+@{
+    ViewData["Title"] = Model.Formulario.IdTipoCambio.HasValue ? "Editar tipo de cambio" : "Registrar tipo de cambio";
+    ViewData["AdminShell"] = true;
+}
+
+<section class="dashboard-shell">
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Formulario</span>
+                <h1>@ViewData["Title"]</h1>
+                <p>Registra manualmente o sincroniza la cotizacion por fecha, moneda y fuente para la cuenta administradora activa.</p>
+            </div>
+            <div class="workspace-row-actions">
+                <button type="submit"
+                        form="tipoCambioForm"
+                        formaction="@Url.Action("SincronizarFechaDesdeApi", "TipoCambio")"
+                        class="btn btn-outline-secondary btn-sm">
+                    Obtener tipos de cambio
+                </button>
+            </div>
+        </div>
+
+        <div class="workspace-window-body">
+            @if (TempData["TipoCambioOk"] is string ok)
+            {
+                <div class="alert alert-success">@ok</div>
+            }
+            @if (TempData["TipoCambioError"] is string error)
+            {
+                <div class="alert alert-warning">@error</div>
+            }
+
+            <form id="tipoCambioForm" asp-action="Guardar" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Formulario.IdTipoCambio" />
+                <input type="hidden" name="periodo" value="@Model.PeriodoConsulta" />
+                <input type="hidden" name="idTipoCambioActual" value="@Model.Formulario.IdTipoCambio" />
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="workspace-form-grid">
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.Fecha" class="form-label">Fecha</label>
+                        <input asp-for="Formulario.Fecha" class="form-control" />
+                        <span asp-validation-for="Formulario.Fecha" class="text-danger"></span>
+                    </div>
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.IdMoneda" class="form-label">Moneda</label>
+                        <select asp-for="Formulario.IdMoneda" class="form-select">
+                            @foreach (var moneda in Model.Monedas)
+                            {
+                                <option value="@moneda.CodigoMoneda">@moneda.CodigoMoneda</option>
+                            }
+                        </select>
+                        <span asp-validation-for="Formulario.IdMoneda" class="text-danger"></span>
+                    </div>
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.Fuente" class="form-label">Fuente</label>
+                        <select asp-for="Formulario.Fuente" class="form-select">
+                            @foreach (var fuente in Model.Fuentes)
+                            {
+                                <option value="@fuente.Valor">@fuente.Texto</option>
+                            }
+                        </select>
+                        <span asp-validation-for="Formulario.Fuente" class="text-danger"></span>
+                    </div>
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.Compra" class="form-label">Compra</label>
+                        <input asp-for="Formulario.Compra" class="form-control" />
+                        <span asp-validation-for="Formulario.Compra" class="text-danger"></span>
+                    </div>
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.Venta" class="form-label">Venta</label>
+                        <input asp-for="Formulario.Venta" class="form-control" />
+                        <span asp-validation-for="Formulario.Venta" class="text-danger"></span>
+                    </div>
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.CompraSbs" class="form-label">Compra SBS</label>
+                        <input asp-for="Formulario.CompraSbs" class="form-control" />
+                        <span asp-validation-for="Formulario.CompraSbs" class="text-danger"></span>
+                    </div>
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.VentaSbs" class="form-label">Venta SBS</label>
+                        <input asp-for="Formulario.VentaSbs" class="form-control" />
+                        <span asp-validation-for="Formulario.VentaSbs" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="workspace-check-grid">
+                    <label class="workspace-check">
+                        <input asp-for="Formulario.Estado" class="form-check-input" />
+                        <span>Tipo de cambio activo</span>
+                    </label>
+                </div>
+
+                <div class="workspace-actions">
+                    <button type="submit" class="btn btn-primary">Guardar tipo de cambio</button>
+                    <a asp-action="Index" asp-route-anio="@Model.AnioSeleccionado" asp-route-mes="@Model.MesSeleccionado" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </section>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

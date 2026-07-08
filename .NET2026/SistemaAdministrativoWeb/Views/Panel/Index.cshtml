@@ -1,4 +1,5 @@
 @model SistemaAdministrativoWeb.ViewModels.Panel.PanelIndexViewModel
+@* Firma: FRANCO LARA - 07/07/2026 | Integra el acceso rapido del panel para el nuevo modulo Libros Electronicos manteniendo la navegacion administrativa existente. *@
 @{
     ViewData["Title"] = "Panel administrativo";
     ViewData["AdminShell"] = true;
@@ -83,7 +84,7 @@
                     <li>Resumen por periodo</li>
                     <li>Estados de control</li>
                 </ul>
-                <a class="btn btn-outline-secondary disabled" href="#">Pendiente de implementacion</a>
+                <a class="btn btn-primary" asp-controller="Reporte" asp-action="AnalisisCuentas">Abrir analisis</a>
             </article>
         </div>
     </section>

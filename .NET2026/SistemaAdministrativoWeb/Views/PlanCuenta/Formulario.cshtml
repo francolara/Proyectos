@@ -19,6 +19,7 @@
    ============================================= *@
 
 @* Firma: FRANCO LARA - 25/06/2026 | Agrega la configuracion de cuentas destino y contrapartida desde plan de cuentas para cuentas operativas o de ultimo nivel usando la misma ayuda contable del mantenimiento central. *@
+@* Firma: FRANCO LARA - 02/07/2026 | Ajusta el texto visible del indicador de analisis en plan de cuentas y muestra su validacion directamente en el formulario cuando la cuenta no cumple las reglas contables. *@
 
 @{
     ViewData["Title"] = Model.Formulario.IdPlanCuenta.HasValue ? "Editar cuenta contable" : "Registrar cuenta contable";
@@ -111,6 +112,10 @@
                         <span>Acepta movimiento</span>
                     </label>
                     <label class="workspace-check">
+                        <input asp-for="Formulario.GeneraDiferenciaPorAnalisis" class="form-check-input" />
+                        <span>Analisis</span>
+                    </label>
+                    <label class="workspace-check">
                         <input asp-for="Formulario.RequiereCentroCosto" class="form-check-input" />
                         <span>Requiere centro de costo</span>
                     </label>
@@ -119,6 +124,8 @@
                         <span>Cuenta activa</span>
                     </label>
                 </div>
+                <span asp-validation-for="Formulario.GeneraDiferenciaPorAnalisis" class="text-danger d-block mb-2"></span>
+                <div class="form-text mb-4">Marca esta opcion en cuentas de movimiento que deban trabajar por analisis, separando documentos o auxiliares en lugar de usar saldo global.</div>
 
                 <section class="workspace-section @(mostrarDestinos ? string.Empty : "d-none")" id="destino-config-section" data-force-visible="@(forzarMostrarDestinos ? "true" : "false")">
                     <div class="workspace-section-head">

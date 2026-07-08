@@ -1,0 +1,181 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.ProcesoAjusteCuentaViewModel
+
+@* Firma: FRANCO LARA - 02/07/2026 | Crea la pantalla Proceso > Ajuste de Cuentas para regenerar el proceso AJU por periodo usando el origen configurado y las cuentas analiticas marcadas en el plan contable. *@
+@* Firma: FRANCO LARA - 02/07/2026 | Muestra la tarjeta del tipo de cambio que usara el proceso, normaliza la presentacion a 3 decimales y agrega la eliminacion exclusiva de la generacion del periodo. *@
+
+@{
+    ViewData["Title"] = "Ajuste de Cuentas";
+    ViewData["AdminShell"] = true;
+    var textInfo = System.Globalization.CultureInfo.CurrentCulture.TextInfo;
+}
+
+<section class="dashboard-shell">
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Proceso</span>
+                <h1>Ajuste de Cuentas</h1>
+                <p>Genera un asiento AJU por cuenta analitica para el periodo seleccionado. Si el periodo ya fue procesado, se elimina la generacion previa y se recrea completa.</p>
+            </div>
+            <div class="workspace-window-badge">
+                <strong>@(Model.ProcesoGenerado ? "Proceso generado" : "Pendiente")</strong>
+                <span>@Model.PeriodoConsulta</span>
+            </div>
+        </div>
+
+        <div class="workspace-window-body">
+            @if (TempData["ProcesoOk"] is string ok)
+            {
+                <div class="alert alert-success">@ok</div>
+            }
+            @if (TempData["ProcesoError"] is string error)
+            {
+                <div class="alert alert-danger">@error</div>
+            }
+
+            <form asp-action="AjusteCuenta" method="get" class="workspace-filter-card">
+                <div class="workspace-filter-grid">
+                    <div class="workspace-field">
+                        <label class="form-label" for="anio">Anio</label>
+                        <select id="anio" name="anio" class="form-select">
+                            @foreach (var anio in Model.AniosDisponibles)
+                            {
+                                <option value="@anio" selected="@(anio == Model.AnioSeleccionado ? "selected" : null)">@anio</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="mes">Mes</label>
+                        <select id="mes" name="mes" class="form-select">
+                            @foreach (var mes in Model.MesesDisponibles)
+                            {
+                                <option value="@mes.Valor" selected="@(mes.Valor == Model.MesSeleccionado ? "selected" : null)">@textInfo.ToTitleCase(mes.Nombre)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary">Consultar periodo</button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="workspace-balance-summary">
+                <article class="workspace-balance-card">
+                    <span>Origen configurado</span>
+                    <strong>@Model.OrigenConfiguradoTexto</strong>
+                    <small>@(Model.PuedeGenerar ? "Tomado desde Configuracion contable > Ajuste de cuentas." : "Debe configurarse antes de ejecutar el proceso.")</small>
+                </article>
+                <article class="workspace-balance-card @(Model.ProcesoGenerado ? "is-balanced" : "workspace-balance-card-diff is-unbalanced")">
+                    <span>Estado</span>
+                    <strong>@(Model.ProcesoGenerado ? "Generado" : "Sin generar")</strong>
+                    <small>@(Model.ProcesoGenerado ? $"Asientos generados: {Model.TotalAsientos}" : "No existe una generacion previa para este periodo.")</small>
+                </article>
+                <article class="workspace-balance-card">
+                    <span>Tipo de cambio usado</span>
+                    <strong>@($"C {Model.TipoCambioCompra:N3} / V {Model.TipoCambioVenta:N3}")</strong>
+                    <small>@(Model.UsaTipoCambioSbs ? "Se usara TC SBS si corresponde a cierre de diciembre." : "Se usara TC regular del cierre del periodo.")</small>
+                </article>
+            </div>
+
+            @if (!Model.PuedeGenerar)
+            {
+                <div class="alert alert-warning mt-4">
+                    Primero configure el origen del proceso en <a asp-controller="ConfiguracionContabilizacion" asp-action="Index">Configuracion contable</a> usando la tarjeta <strong>Ajuste de cuentas</strong>.
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info mt-4">
+                    El proceso trabaja solo con cuentas de analisis del plan contable. Para cada cuenta arma un asiento independiente, usa <strong>CUENTAGANANCIA_AJ</strong> y <strong>CUENTAPERDIDA_AJ</strong>, y si la linea tiene configuracion de cuenta destino tambien genera su contrapartida.
+                </div>
+
+                <div class="workspace-actions">
+                    <form asp-action="GenerarAjusteCuenta" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="anio" value="@Model.AnioSeleccionado" />
+                        <input type="hidden" name="mes" value="@Model.MesSeleccionado" />
+                        <button type="submit" class="btn @(Model.ProcesoGenerado ? "btn-danger" : "btn-primary")">
+                            @(Model.ProcesoGenerado ? "Regenerar ajuste de cuentas" : "Generar ajuste de cuentas")
+                        </button>
+                    </form>
+                    @if (Model.ProcesoGenerado)
+                    {
+                        <form asp-action="EliminarAjusteCuenta" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="anio" value="@Model.AnioSeleccionado" />
+                            <input type="hidden" name="mes" value="@Model.MesSeleccionado" />
+                            <button type="submit" class="btn btn-outline-danger">Eliminar ajuste de cuentas</button>
+                        </form>
+                    }
+                </div>
+            }
+
+            @if (Model.ProcesoGenerado)
+            {
+                <div class="workspace-balance-summary mt-4">
+                    <article class="workspace-balance-card">
+                        <span>Fecha asiento</span>
+                        <strong>@Model.FechaAsiento?.ToString("dd/MM/yyyy")</strong>
+                        <small>Ultimo dia del periodo procesado.</small>
+                    </article>
+                    <article class="workspace-balance-card">
+                        <span>Total Debe</span>
+                        <strong>@Model.TotalDebe.ToString("N2")</strong>
+                        <small>Equivalente total en soles del proceso.</small>
+                    </article>
+                    <article class="workspace-balance-card">
+                        <span>Total Haber</span>
+                        <strong>@Model.TotalHaber.ToString("N2")</strong>
+                        <small>Debe y Haber deben quedar equilibrados.</small>
+                    </article>
+                </div>
+
+                <div class="table-responsive workspace-table-wrap mt-4">
+                    <table class="table align-middle app-table workspace-table">
+                        <thead>
+                            <tr>
+                                <th>Cuenta</th>
+                                <th>Moneda</th>
+                                <th>TC</th>
+                                <th>Analisis</th>
+                                <th>Asiento</th>
+                                <th>Debe</th>
+                                <th>Haber</th>
+                                <th>Estado</th>
+                                <th>Observacion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Detalles)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong class="workspace-tree-code">@item.CodigoCuenta</strong>
+                                        <div>@item.NombreCuenta</div>
+                                    </td>
+                                    <td>@item.CodigoMoneda</td>
+                                    <td>@item.TipoCambioAplicado.ToString("N3")</td>
+                                    <td>@item.TotalAnalisis</td>
+                                    <td>
+                                        @if (item.IdAsiento.HasValue)
+                                        {
+                                            <a asp-controller="Asiento" asp-action="Editar" asp-route-idAsiento="@item.IdAsiento.Value" asp-route-periodo="@Model.PeriodoConsulta">Nro @item.NumeroAsiento</a>
+                                        }
+                                        else
+                                        {
+                                            <span>-</span>
+                                        }
+                                    </td>
+                                    <td>@item.TotalDebe.ToString("N2")</td>
+                                    <td>@item.TotalHaber.ToString("N2")</td>
+                                    <td>@item.Estado</td>
+                                    <td>@(string.IsNullOrWhiteSpace(item.Observacion) ? "-" : item.Observacion)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </section>
+</section>

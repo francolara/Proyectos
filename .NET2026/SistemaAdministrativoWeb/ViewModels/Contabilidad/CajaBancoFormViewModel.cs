@@ -29,7 +29,7 @@ public sealed class CajaBancoFormViewModel
     public DateOnly FechaEmision { get; set; } = DateOnly.FromDateTime(DateTime.Today);
 
     [Range(typeof(decimal), "0.000001", "999999999999", ErrorMessage = "Ingrese un tipo de cambio mayor a cero.")]
-    public decimal TipoCambio { get; set; } = 1m;
+    public decimal TipoCambio { get; set; }
 
     public int? IdPersona { get; set; }
     public string PersonaTexto { get; set; } = string.Empty;

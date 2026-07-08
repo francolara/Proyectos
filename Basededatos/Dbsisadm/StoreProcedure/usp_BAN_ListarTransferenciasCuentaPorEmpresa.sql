@@ -3,6 +3,7 @@
 -- Create date:   24/06/2026
 -- Description:   Lista transferencias entre cuentas uniendo el movimiento emisor y receptor registrado en BAN_MovimientoBanco.
 -- =============================================
+-- Firma: FRANCO LARA - 02/07/2026 | Expone los IdAsiento emisor y receptor junto con sus numeros para permitir la navegacion directa al asiento desde el listado de transferencias.
 
 CREATE OR ALTER PROCEDURE dbo.usp_BAN_ListarTransferenciasCuentaPorEmpresa
     @IdEmpresa INT,
@@ -41,6 +42,7 @@ BEGIN
             SELECT
                 em.IdTransferenciaCuenta,
                 em.IdMovimientoBanco AS IdMovimientoBancoEmisor,
+                em.IdAsiento AS IdAsientoEmisor,
                 em.NumeroMovimiento AS NumeroMovimientoEmisor,
                 aem.NumeroAsiento AS NumeroAsientoEmisor,
                 em.IdBancoConfiguracionEmpresa AS IdBancoConfiguracionEmpresaEmisor,
@@ -53,6 +55,7 @@ BEGIN
                 em.ImporteTotal AS ImporteEmisor,
                 em.Glosa AS GlosaEmisor,
                 rec.IdMovimientoBanco AS IdMovimientoBancoReceptor,
+                rec.IdAsiento AS IdAsientoReceptor,
                 rec.NumeroMovimiento AS NumeroMovimientoReceptor,
                 arec.NumeroAsiento AS NumeroAsientoReceptor,
                 rec.IdBancoConfiguracionEmpresa AS IdBancoConfiguracionEmpresaReceptor,
@@ -109,6 +112,7 @@ BEGIN
         SELECT
             b.IdTransferenciaCuenta,
             b.IdMovimientoBancoEmisor,
+            b.IdAsientoEmisor,
             b.NumeroMovimientoEmisor,
             b.NumeroAsientoEmisor,
             b.IdBancoConfiguracionEmpresaEmisor,
@@ -121,6 +125,7 @@ BEGIN
             b.ImporteEmisor,
             b.GlosaEmisor,
             b.IdMovimientoBancoReceptor,
+            b.IdAsientoReceptor,
             b.NumeroMovimientoReceptor,
             b.NumeroAsientoReceptor,
             b.IdBancoConfiguracionEmpresaReceptor,

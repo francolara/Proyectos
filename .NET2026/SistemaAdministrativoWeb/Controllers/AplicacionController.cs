@@ -10,6 +10,7 @@ namespace SistemaAdministrativoWeb.Controllers;
 [Authorize]
 public class AplicacionController(
     ICurrentCompanyAccessor currentCompanyAccessor,
+    IPeriodoContableService periodoContableService,
     IAplicacionNotaCreditoRepository aplicacionRepository,
     IPersonaRepository personaRepository) : Controller
 {
@@ -58,6 +59,7 @@ public class AplicacionController(
                 FechaAplicacion = x.FechaAplicacion,
                 CodigoMoneda = x.CodigoMoneda,
                 ImporteAplicado = x.ImporteAplicado,
+                IdAsiento = x.IdAsiento,
                 NumeroAsiento = x.NumeroAsiento,
                 Glosa = x.Glosa,
                 TipoComprobanteAplicado = x.TipoComprobanteAplicado,
@@ -91,6 +93,12 @@ public class AplicacionController(
         ViewData["AdminShell"] = true;
 
         var (anioTrabajo, mesTrabajo) = NormalizarPeriodo(anio, mes);
+        if (await periodoContableService.EstaCerradoAsync(currentCompanyAccessor.EmpresaId.Value, anioTrabajo, mesTrabajo, cancellationToken))
+        {
+            TempData["AplicacionError"] = periodoContableService.ConstruirMensajeBloqueo(anioTrabajo, mesTrabajo);
+            return RedirectToAction(nameof(Index), new { anio = anioTrabajo, mes = mesTrabajo });
+        }
+
         var formulario = new AplicacionNotaCreditoFormViewModel
         {
             TipoPersona = NormalizarTipoPersona(tipoPersona),
@@ -150,6 +158,18 @@ public class AplicacionController(
         ViewData["AdminShell"] = true;
 
         NormalizarFormulario(formulario);
+        if (await periodoContableService.EstaCerradoAsync(
+                currentCompanyAccessor.EmpresaId.Value,
+                (short)formulario.FechaAplicacion.Year,
+                (byte)formulario.FechaAplicacion.Month,
+                cancellationToken))
+        {
+            ModelState.AddModelError(
+                string.Empty,
+                periodoContableService.ConstruirMensajeBloqueo(
+                    (short)formulario.FechaAplicacion.Year,
+                    (byte)formulario.FechaAplicacion.Month));
+        }
 
         var (anioTrabajo, mesTrabajo) = NormalizarPeriodo(anio, mes);
         var model = await ConstruirFormularioAsync(formulario, anioTrabajo, mesTrabajo, cancellationToken);
@@ -232,6 +252,11 @@ public class AplicacionController(
         }
 
         var (anioTrabajo, mesTrabajo) = NormalizarPeriodo(anio, mes);
+        if (await periodoContableService.EstaCerradoAsync(currentCompanyAccessor.EmpresaId.Value, anioTrabajo, mesTrabajo, cancellationToken))
+        {
+            TempData["AplicacionError"] = periodoContableService.ConstruirMensajeBloqueo(anioTrabajo, mesTrabajo);
+            return RedirectToAction(nameof(Index), new { anio = anioTrabajo, mes = mesTrabajo, textoBusqueda, pagina });
+        }
 
         try
         {

@@ -10,6 +10,7 @@ public sealed class VentaIndexViewModel
     public short AnioSeleccionado { get; set; }
     public byte MesSeleccionado { get; set; }
     public string TextoBusqueda { get; set; } = string.Empty;
+    public string TipoComprobanteFiltro { get; set; } = string.Empty;
     public int TotalVentas { get; set; }
     public decimal TotalImportePeriodo { get; set; }
     public decimal TotalImporteSolesPeriodo { get; set; }

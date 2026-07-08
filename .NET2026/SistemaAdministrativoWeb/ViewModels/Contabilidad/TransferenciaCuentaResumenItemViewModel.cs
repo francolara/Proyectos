@@ -4,6 +4,7 @@ public sealed class TransferenciaCuentaResumenItemViewModel
 {
     public Guid IdTransferenciaCuenta { get; set; }
     public int IdMovimientoBancoEmisor { get; set; }
+    public int? IdAsientoEmisor { get; set; }
     public int NumeroMovimientoEmisor { get; set; }
     public int? NumeroAsientoEmisor { get; set; }
     public string CuentaCorrienteEmisor { get; set; } = string.Empty;
@@ -14,6 +15,7 @@ public sealed class TransferenciaCuentaResumenItemViewModel
     public decimal ImporteEmisor { get; set; }
     public string GlosaEmisor { get; set; } = string.Empty;
     public int NumeroMovimientoReceptor { get; set; }
+    public int? IdAsientoReceptor { get; set; }
     public int? NumeroAsientoReceptor { get; set; }
     public string CuentaCorrienteReceptor { get; set; } = string.Empty;
     public string MonedaReceptor { get; set; } = string.Empty;

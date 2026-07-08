@@ -9,7 +9,9 @@ namespace SistemaAdministrativoWeb.Controllers;
 [Authorize]
 public class VentaController(
     ICurrentCompanyAccessor currentCompanyAccessor,
+    IPeriodoContableService periodoContableService,
     IVentaRepository ventaRepository,
+    IXmlProvisionImportService xmlProvisionImportService,
     IClienteRepository clienteRepository,
     IPersonaRepository personaRepository,
     IConfiguracionContabilizacionRepository configuracionRepository,
@@ -26,7 +28,7 @@ public class VentaController(
     private const decimal TasaIgv = 0.18m;
 
     [HttpGet]
-    public async Task<IActionResult> Index(short? anio = null, byte? mes = null, string? textoBusqueda = null, int pagina = 1, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Index(short? anio = null, byte? mes = null, string? textoBusqueda = null, string? tipoComprobante = null, int pagina = 1, CancellationToken cancellationToken = default)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
         {
@@ -67,7 +69,8 @@ public class VentaController(
         var tiposAfectacionIgv = (await tipoAfectacionIgvRepository.ListarActivosAsync(cancellationToken))
             .OrderBy(x => x.CodigoSunat)
             .ToList();
-        var ventas = await ventaRepository.ListarPaginadoPorEmpresaAsync(empresaId, anioTrabajo, mesTrabajo, textoBusqueda, pagina, TamanoPagina, cancellationToken);
+        var tipoComprobanteFiltro = string.IsNullOrWhiteSpace(tipoComprobante) ? null : tipoComprobante.Trim().ToUpperInvariant();
+        var ventas = await ventaRepository.ListarPaginadoPorEmpresaAsync(empresaId, anioTrabajo, mesTrabajo, textoBusqueda, tipoComprobanteFiltro, pagina, TamanoPagina, cancellationToken);
 
         var model = ConstruirViewModel(
             empresaId,
@@ -76,6 +79,7 @@ public class VentaController(
             anioTrabajo,
             mesTrabajo,
             textoBusqueda,
+            tipoComprobanteFiltro,
             clientes,
             configuraciones,
             tiposDocumentoIdentidad,
@@ -98,18 +102,152 @@ public class VentaController(
     [HttpGet]
     public async Task<IActionResult> Registrar(string? periodo = null, CancellationToken cancellationToken = default)
     {
+        if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
+        {
+            return RedirectToAction("Index", "EmpresaContexto");
+        }
+
+        var periodoTrabajo = NormalizarPeriodo(periodo);
+        var (anioTrabajo, mesTrabajo) = DescomponerPeriodo(periodoTrabajo);
+        if (await periodoContableService.EstaCerradoAsync(currentCompanyAccessor.EmpresaId.Value, anioTrabajo, mesTrabajo, cancellationToken))
+        {
+            TempData["VentaError"] = periodoContableService.ConstruirMensajeBloqueo(anioTrabajo, mesTrabajo);
+            return RedirectToAction(nameof(Index), new { anio = anioTrabajo, mes = mesTrabajo });
+        }
+
         return await CargarFormularioAsync(periodo, null, cancellationToken);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> CargaMasiva(string? periodo = null, CancellationToken cancellationToken = default)
+    {
+        if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
+        {
+            return RedirectToAction("Index", "EmpresaContexto");
+        }
+
+        var periodoTrabajo = NormalizarPeriodo(periodo);
+        var (anioTrabajo, mesTrabajo) = (short.Parse(periodoTrabajo[..4]), byte.Parse(periodoTrabajo[4..]));
+        if (await periodoContableService.EstaCerradoAsync(currentCompanyAccessor.EmpresaId.Value, anioTrabajo, mesTrabajo, cancellationToken))
+        {
+            TempData["VentaError"] = periodoContableService.ConstruirMensajeBloqueo(anioTrabajo, mesTrabajo);
+            return RedirectToAction(nameof(Index), new { anio = anioTrabajo, mes = mesTrabajo });
+        }
+
+        ViewData["AdminShell"] = true;
+
+        return View(new CargaMasivaXmlViewModel
+        {
+            Titulo = "Carga masiva de ventas",
+            Subtitulo = "Importa XML SUNAT para registrar provisiones en revision y completar luego la cuenta contable.",
+            Modulo = "VEN",
+            PeriodoConsulta = periodoTrabajo,
+            AnioSeleccionado = anioTrabajo,
+            MesSeleccionado = mesTrabajo
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CargaMasiva(string? periodo, List<IFormFile>? archivos, CancellationToken cancellationToken = default)
+    {
+        if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
+        {
+            return RedirectToAction("Index", "EmpresaContexto");
+        }
+
+        var periodoTrabajo = NormalizarPeriodo(periodo);
+        var (anioTrabajo, mesTrabajo) = (short.Parse(periodoTrabajo[..4]), byte.Parse(periodoTrabajo[4..]));
+        if (await periodoContableService.EstaCerradoAsync(currentCompanyAccessor.EmpresaId.Value, anioTrabajo, mesTrabajo, cancellationToken))
+        {
+            TempData["VentaError"] = periodoContableService.ConstruirMensajeBloqueo(anioTrabajo, mesTrabajo);
+            return RedirectToAction(nameof(Index), new { anio = anioTrabajo, mes = mesTrabajo });
+        }
+
+        ViewData["AdminShell"] = true;
+        var model = new CargaMasivaXmlViewModel
+        {
+            Titulo = "Carga masiva de ventas",
+            Subtitulo = "Importa XML SUNAT para registrar provisiones en revision y completar luego la cuenta contable.",
+            Modulo = "VEN",
+            PeriodoConsulta = periodoTrabajo,
+            AnioSeleccionado = anioTrabajo,
+            MesSeleccionado = mesTrabajo
+        };
+
+        if (archivos is null || archivos.Count == 0)
+        {
+            ModelState.AddModelError(string.Empty, "Seleccione al menos un archivo XML.");
+            return View(model);
+        }
+
+        var archivosImportacion = new List<ImportacionXmlArchivoRequest>();
+        foreach (var archivo in archivos.Where(x => x is not null && x.Length > 0))
+        {
+            if (!string.Equals(Path.GetExtension(archivo.FileName), ".xml", StringComparison.OrdinalIgnoreCase))
+            {
+                ModelState.AddModelError(string.Empty, $"El archivo {archivo.FileName} no es XML.");
+                continue;
+            }
+
+            await using var stream = new MemoryStream();
+            await archivo.CopyToAsync(stream, cancellationToken);
+            archivosImportacion.Add(new ImportacionXmlArchivoRequest
+            {
+                NombreArchivo = archivo.FileName,
+                Contenido = stream.ToArray()
+            });
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        try
+        {
+            var resultado = await xmlProvisionImportService.ImportarVentasAsync(
+                currentCompanyAccessor.EmpresaId.Value,
+                archivosImportacion,
+                User.Identity?.Name,
+                cancellationToken);
+
+            model.Resultados = resultado.Items;
+            if (resultado.Items.Any(x => x.Importado))
+            {
+                TempData["VentaOk"] = $"Se importaron {resultado.Items.Count(x => x.Importado)} venta(s) desde XML.";
+            }
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+        }
+
+        return View(model);
     }
 
     [HttpGet]
     public async Task<IActionResult> Editar(int idVenta, string? periodo = null, CancellationToken cancellationToken = default)
     {
+        if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
+        {
+            return RedirectToAction("Index", "EmpresaContexto");
+        }
+
+        var periodoTrabajo = NormalizarPeriodo(periodo);
+        var (anioTrabajo, mesTrabajo) = DescomponerPeriodo(periodoTrabajo);
+        if (await periodoContableService.EstaCerradoAsync(currentCompanyAccessor.EmpresaId.Value, anioTrabajo, mesTrabajo, cancellationToken))
+        {
+            TempData["VentaError"] = periodoContableService.ConstruirMensajeBloqueo(anioTrabajo, mesTrabajo);
+            return RedirectToAction(nameof(Index), new { anio = anioTrabajo, mes = mesTrabajo });
+        }
+
         return await CargarFormularioAsync(periodo, idVenta, cancellationToken);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Eliminar(int idVenta, short? anio = null, byte? mes = null, string? textoBusqueda = null, int pagina = 1, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Eliminar(int idVenta, short? anio = null, byte? mes = null, string? textoBusqueda = null, string? tipoComprobante = null, int pagina = 1, CancellationToken cancellationToken = default)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
         {
@@ -117,6 +255,11 @@ public class VentaController(
         }
 
         var (anioTrabajo, mesTrabajo) = NormalizarPeriodo(anio, mes);
+        if (await periodoContableService.EstaCerradoAsync(currentCompanyAccessor.EmpresaId.Value, anioTrabajo, mesTrabajo, cancellationToken))
+        {
+            TempData["VentaError"] = periodoContableService.ConstruirMensajeBloqueo(anioTrabajo, mesTrabajo);
+            return RedirectToAction(nameof(Index), new { anio = anioTrabajo, mes = mesTrabajo, textoBusqueda, tipoComprobante, pagina });
+        }
 
         try
         {
@@ -128,12 +271,12 @@ public class VentaController(
             TempData["VentaError"] = ex.Message;
         }
 
-        return RedirectToAction(nameof(Index), new { anio = anioTrabajo, mes = mesTrabajo, textoBusqueda, pagina });
+        return RedirectToAction(nameof(Index), new { anio = anioTrabajo, mes = mesTrabajo, textoBusqueda, tipoComprobante, pagina });
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Guardar(VentaFormViewModel formulario, CancellationToken cancellationToken)
+    public async Task<IActionResult> Guardar(VentaFormViewModel formulario, string? periodo = null, CancellationToken cancellationToken = default)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
         {
@@ -145,7 +288,22 @@ public class VentaController(
         NormalizarFormulario(formulario);
         ValidarFormulario(formulario);
 
-        var periodoTrabajo = $"{formulario.FechaContabilizacion.Year:0000}{formulario.FechaContabilizacion.Month:00}";
+        var periodoTrabajo = string.IsNullOrWhiteSpace(periodo)
+            ? $"{formulario.FechaContabilizacion.Year:0000}{formulario.FechaContabilizacion.Month:00}"
+            : NormalizarPeriodo(periodo);
+        var (anioTrabajo, mesTrabajo) = DescomponerPeriodo(periodoTrabajo);
+        if (await periodoContableService.EstaCerradoAsync(
+                currentCompanyAccessor.EmpresaId.Value,
+                (short)formulario.FechaContabilizacion.Year,
+                (byte)formulario.FechaContabilizacion.Month,
+                cancellationToken))
+        {
+            ModelState.AddModelError(
+                string.Empty,
+                periodoContableService.ConstruirMensajeBloqueo(
+                    (short)formulario.FechaContabilizacion.Year,
+                    (byte)formulario.FechaContabilizacion.Month));
+        }
 
         if (!ModelState.IsValid)
         {
@@ -194,7 +352,7 @@ public class VentaController(
             }, cancellationToken);
 
             TempData["VentaOk"] = $"Venta registrada correctamente. Asiento vinculado: {(result.IdAsiento.HasValue ? result.IdAsiento.Value.ToString() : "sin asiento")}.";
-            return RedirectToAction(nameof(Index), new { anio = formulario.FechaContabilizacion.Year, mes = formulario.FechaContabilizacion.Month });
+            return RedirectToAction(nameof(Index), new { anio = anioTrabajo, mes = mesTrabajo });
         }
         catch (Exception ex)
         {
@@ -444,6 +602,7 @@ public class VentaController(
             short.Parse(periodoTrabajo[..4]),
             byte.Parse(periodoTrabajo[4..]),
             null,
+            null,
             clientes,
             configuraciones,
             tiposDocumentoIdentidad,
@@ -487,6 +646,17 @@ public class VentaController(
             .OrderBy(x => x.CodigoSunat)
             .ToList();
         var ventas = await ventaRepository.ListarPorEmpresaAsync(empresaId, periodo, cancellationToken);
+        var cuentasMovimientoLookup = (await planCuentaRepository.ListarPorEmpresaAsync(empresaId, true, cancellationToken))
+            .ToDictionary(x => x.IdPlanCuenta);
+
+        foreach (var detalle in formulario.Detalles.Where(x => x.IdPlanCuenta.HasValue && string.IsNullOrWhiteSpace(x.CuentaTexto)))
+        {
+            if (detalle.IdPlanCuenta.HasValue
+                && cuentasMovimientoLookup.TryGetValue(detalle.IdPlanCuenta.Value, out var cuenta))
+            {
+                detalle.CuentaTexto = $"{cuenta.CodigoCuenta} - {cuenta.NombreCuenta}";
+            }
+        }
 
         var model = ConstruirViewModel(
             empresaId,
@@ -494,6 +664,7 @@ public class VentaController(
             periodo,
             short.Parse(periodo[..4]),
             byte.Parse(periodo[4..]),
+            null,
             null,
             clientes,
             configuraciones,
@@ -624,6 +795,7 @@ public class VentaController(
         short anioSeleccionado,
         byte mesSeleccionado,
         string? textoBusqueda,
+        string? tipoComprobanteFiltro,
         IReadOnlyCollection<ClienteDto> clientes,
         IReadOnlyCollection<ConfiguracionContabilizacionResumenDto> configuraciones,
         IReadOnlyCollection<OpcionCatalogoViewModel> tiposDocumentoIdentidad,
@@ -647,6 +819,7 @@ public class VentaController(
                 ImporteTotal = x.ImporteTotal,
                 Saldo = x.Saldo,
                 IdAsiento = x.IdAsiento,
+                NumeroAsiento = x.NumeroAsiento,
                 Estado = x.Estado,
                 Situacion = x.Situacion
             })
@@ -669,6 +842,7 @@ public class VentaController(
             AnioSeleccionado = anioSeleccionado,
             MesSeleccionado = mesSeleccionado,
             TextoBusqueda = textoBusqueda?.Trim() ?? string.Empty,
+            TipoComprobanteFiltro = tipoComprobanteFiltro ?? string.Empty,
             TotalVentas = items.Count,
             TotalImportePeriodo = totalImportePeriodo,
             TotalImporteSolesPeriodo = totalImporteSolesPeriodo,
@@ -735,7 +909,7 @@ public class VentaController(
                         {
                             Item = x.Item,
                             IdPlanCuenta = x.IdPlanCuenta,
-                            CuentaTexto = $"{x.CodigoCuenta} - {x.NombreCuenta}",
+                            CuentaTexto = string.IsNullOrWhiteSpace(x.CodigoCuenta) ? string.Empty : $"{x.CodigoCuenta} - {x.NombreCuenta}",
                             IdTipoAfectacionIGV = x.IdTipoAfectacionIGV,
                             Descripcion = x.Descripcion,
                             Cantidad = x.Cantidad,
@@ -776,6 +950,11 @@ public class VentaController(
         return DateOnly.FromDateTime(DateTime.Today);
     }
 
+    private static (short anio, byte mes) DescomponerPeriodo(string periodo)
+    {
+        return (short.Parse(periodo[..4]), byte.Parse(periodo[4..]));
+    }
+
     private static string NormalizarSerieDocumento(string? serie)
     {
         var serieNormalizada = new string((serie ?? string.Empty)
@@ -789,25 +968,21 @@ public class VentaController(
             return string.Empty;
         }
 
-        var prefijo = serieNormalizada[0];
-        if (prefijo is 'F' or 'B')
-        {
-            var digitos = new string(serieNormalizada.Skip(1).Where(char.IsDigit).ToArray());
-            digitos = digitos.Length > 3 ? digitos[..3] : digitos.PadLeft(3, '0');
-            return $"{prefijo}{digitos}";
-        }
-
-        return serieNormalizada.Length > 4 ? serieNormalizada[..4] : serieNormalizada;
+        return serieNormalizada.Length > 10 ? serieNormalizada[..10] : serieNormalizada;
     }
 
     private static string NormalizarNumeroDocumento(string? numero)
     {
-        var digitos = new string((numero ?? string.Empty).Where(char.IsDigit).ToArray());
-        if (string.IsNullOrEmpty(digitos))
+        var normalizado = new string((numero ?? string.Empty)
+            .Trim()
+            .ToUpperInvariant()
+            .Where(char.IsLetterOrDigit)
+            .ToArray());
+        if (string.IsNullOrEmpty(normalizado))
         {
             return string.Empty;
         }
 
-        return digitos.Length > 10 ? digitos[..10] : digitos;
+        return normalizado.Length > 20 ? normalizado[..20] : normalizado;
     }
 }

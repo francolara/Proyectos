@@ -24,7 +24,7 @@ public sealed class MonedaRepository(IDbConnectionFactory connectionFactory) : I
             result.Add(new MonedaDto
             {
                 IdMoneda = reader.GetInt32(reader.GetOrdinal("IdMoneda")),
-                CodigoMoneda = reader.GetString(reader.GetOrdinal("CodigoMoneda")),
+                CodigoMoneda = NormalizarCodigoMoneda(reader.GetString(reader.GetOrdinal("CodigoMoneda"))),
                 NombreMoneda = reader.GetString(reader.GetOrdinal("NombreMoneda")),
                 SimboloMoneda = reader.GetString(reader.GetOrdinal("SimboloMoneda")),
                 EsMonedaBase = reader.GetBoolean(reader.GetOrdinal("EsMonedaBase")),
@@ -33,5 +33,27 @@ public sealed class MonedaRepository(IDbConnectionFactory connectionFactory) : I
         }
 
         return result;
+    }
+
+    private static string NormalizarCodigoMoneda(string? codigoMoneda)
+    {
+        var valor = (codigoMoneda ?? string.Empty).Trim().ToUpperInvariant();
+        if (string.IsNullOrWhiteSpace(valor))
+        {
+            return string.Empty;
+        }
+
+        var separadores = new[] { " - ", "-", " " };
+        foreach (var separador in separadores)
+        {
+            var indice = valor.IndexOf(separador, StringComparison.Ordinal);
+            if (indice > 0)
+            {
+                valor = valor[..indice].Trim();
+                break;
+            }
+        }
+
+        return valor.Length > 3 ? valor[..3] : valor;
     }
 }

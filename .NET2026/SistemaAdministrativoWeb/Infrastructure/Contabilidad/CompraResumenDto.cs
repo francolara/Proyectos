@@ -11,6 +11,7 @@ public class CompraResumenDto
     public string ModuloOperacion { get; init; } = string.Empty;
     public string EscenarioOperacion { get; init; } = string.Empty;
     public int? IdAsiento { get; init; }
+    public int? NumeroAsiento { get; init; }
     public DateOnly FechaEmision { get; init; }
     public DateOnly FechaContabilizacion { get; init; }
     public string Periodo { get; init; } = string.Empty;
@@ -32,11 +33,22 @@ public class CompraResumenDto
     public decimal Redondeo { get; init; }
     public decimal ImporteTotal { get; init; }
     public decimal Saldo { get; init; }
+    public bool ExoneracionRenta4ta { get; init; }
+    public decimal PorcentajeRetencion { get; init; }
+    public decimal Retencion { get; init; }
     public bool TieneDetraccion { get; init; }
     public int? IdDetraccionSunat { get; init; }
     public decimal PorcentajeDetraccion { get; init; }
     public decimal ImporteDetraccion { get; init; }
+    public bool TienePercepcion { get; init; }
+    public int? IdTipoPercepcion { get; init; }
+    public decimal PorcentajePercepcion { get; init; }
+    public decimal BasePercepcion { get; init; }
+    public decimal ImportePercepcion { get; init; }
     public string? Observacion { get; init; }
+    public DateTime? FechaValidacionCpe { get; init; }
+    public string? EstadoValidacionCpe { get; init; }
+    public string? MensajeValidacionCpe { get; init; }
     public string Estado { get; init; } = string.Empty;
     public string Situacion { get; init; } = string.Empty;
 }

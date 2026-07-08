@@ -1,4 +1,5 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.PersonaIndexViewModel
+@* Firma: FRANCO LARA - 29/06/2026 | Agrega consulta Migo por RUC o DNI en el registro de persona para autollenar nombres o razon social, direccion y ubigeo cuando aplique. *@
 
 @{
     ViewData["Title"] = Model.Formulario.IdPersona.HasValue ? "Editar persona" : "Registrar persona";
@@ -24,7 +25,8 @@
                   method="post"
                   data-persona-form="true"
                   data-provincias-url="@Url.Action("Provincias")"
-                  data-distritos-url="@Url.Action("Distritos")">
+                  data-distritos-url="@Url.Action("Distritos")"
+                  data-consulta-documento-url="@Url.Action("ConsultarDocumentoMigo")">
                 @Html.AntiForgeryToken()
                 <input type="hidden" asp-for="Formulario.IdPersona" />
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
@@ -53,7 +55,10 @@
                     </div>
                     <div class="workspace-field">
                         <label asp-for="Formulario.NumeroDocumento" class="form-label">Numero de documento</label>
-                        <input asp-for="Formulario.NumeroDocumento" class="form-control" />
+                        <div class="input-group">
+                            <input asp-for="Formulario.NumeroDocumento" class="form-control" data-persona-numero-documento />
+                            <button type="button" class="btn btn-outline-secondary" data-persona-consultar-documento>Consultar</button>
+                        </div>
                         <span asp-validation-for="Formulario.NumeroDocumento" class="text-danger"></span>
                     </div>
                     <div class="workspace-field">
@@ -62,6 +67,8 @@
                         <span asp-validation-for="Formulario.CorreoElectronico" class="text-danger"></span>
                     </div>
                 </div>
+
+                <div class="alert d-none mb-3" data-persona-consulta-mensaje role="alert"></div>
 
                 <div class="workspace-form-grid persona-type-grid" data-persona-natural-section>
                     <div class="workspace-field">

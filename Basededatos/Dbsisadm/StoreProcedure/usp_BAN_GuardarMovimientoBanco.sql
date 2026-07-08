@@ -27,9 +27,14 @@
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   26/06/2026
--- Description:   Permite pagar documentos de detraccion desde Caja y Bancos enlazando el saldo pendiente de COM_CompraDetraccion.
+-- Description:   Permite pagar documentos de detraccion y percepcion desde Caja y Bancos enlazando saldos pendientes de compras.
 -- =============================================
--- Firma: FRANCO LARA - 26/06/2026 | Corrige detracciones para conservar tipo documento por codigo, recalcula importes por moneda en el detalle bancario y en su asiento automatico.
+-- Firma: FRANCO LARA - 29/06/2026 | Corrige documentos enlazados para conservar tipo documento por codigo, recalcula importes por moneda y soporta percepciones de compras como pendiente independiente.
+-- Firma: FRANCO LARA - 29/06/2026 | Vuelve obligatorio el tipo de cambio por linea en Caja y Bancos y en el asiento automatico generado desde su detalle.
+-- Firma: FRANCO LARA - 30/06/2026 | Agrega soporte de pagos para documentos pendientes de Renta4ta (R4T) originados desde compras de recibos por honorarios.
+-- Firma: FRANCO LARA - 03/07/2026 | Valida el sentido contable del detalle bancario segun el tipo de movimiento para evitar ingresos con exceso de Debe o egresos con exceso de Haber que cuadraban visualmente por valor absoluto pero desbalanceaban el asiento automatico; ademas persiste el Periodo del movimiento bancario desde FechaEmision para mantener consistente el listado operativo con la fecha real grabada y ahora guarda DH en cada linea del asiento automatico.
+-- Firma: FRANCO LARA - 04/07/2026 | Convierte los pagos de Caja y Bancos a la moneda del comprobante antes de afectar saldos, topa la aplicacion para no dejar compras/ventas/documentos auxiliares en negativo, guarda en ImporteAplicado solo el monto efectivamente consumido por cada saldo documentario y resuelve la moneda documental desde ADM_Moneda para esquemas donde compras/ventas guardan IdMoneda.
+-- Firma: FRANCO LARA - 06/07/2026 | Cuando un documento queda cancelado al 100 por ciento, agrega lineas analiticas de ajuste cambiario en soles y/o dolares usando las cuentas de ganancia/perdida de diferencia en cambio sin alterar el Debe/Haber del asiento bancario.
 
 CREATE OR ALTER PROCEDURE dbo.usp_BAN_GuardarMovimientoBanco
     @IdMovimientoBanco INT = NULL,
@@ -102,7 +107,7 @@ BEGIN
             TipoDocumento NVARCHAR(150) NULL,
             Serie VARCHAR(10) NULL,
             ReferenciaLinea NVARCHAR(100) NULL,
-            TipoCambioLinea DECIMAL(18, 6) NULL,
+            TipoCambioLinea DECIMAL(18, 6) NOT NULL,
             Debe DECIMAL(18, 2) NOT NULL,
             Haber DECIMAL(18, 2) NOT NULL
         );
@@ -117,7 +122,7 @@ BEGIN
             TipoDocumento NVARCHAR(150) NULL,
             Serie VARCHAR(10) NULL,
             ReferenciaLinea NVARCHAR(100) NULL,
-            TipoCambioLinea DECIMAL(18, 6) NULL,
+            TipoCambioLinea DECIMAL(18, 6) NOT NULL,
             Debe DECIMAL(18, 2) NOT NULL,
             Haber DECIMAL(18, 2) NOT NULL
         );
@@ -131,7 +136,7 @@ BEGIN
             TipoDocumento NVARCHAR(150) NULL,
             Serie VARCHAR(10) NULL,
             ReferenciaLinea NVARCHAR(100) NULL,
-            TipoCambioLinea DECIMAL(18,6) NULL,
+            TipoCambioLinea DECIMAL(18,6) NOT NULL,
             ImporteBase DECIMAL(18,2) NOT NULL
         );
 
@@ -176,28 +181,28 @@ BEGIN
             NULLIF(T.N.value('@TipoDocumento', 'nvarchar(150)'), N''),
             NULLIF(T.N.value('@Serie', 'varchar(10)'), ''),
             NULLIF(T.N.value('@ReferenciaLinea', 'nvarchar(100)'), N''),
-            NULLIF(T.N.value('@TipoCambioLinea', 'decimal(18,6)'), 0),
+            T.N.value('@TipoCambioLinea', 'decimal(18,6)'),
             T.N.value('@Debe', 'decimal(18,2)'),
             T.N.value('@Haber', 'decimal(18,2)')
         FROM @DetallesXml.nodes('/Detalles/Detalle') AS T(N);
 
         UPDATE d
         SET ModuloOperacionComprobante = CASE
-                                             WHEN d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET')
+                                             WHEN d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET', 'PER', 'R4T')
                                               AND ISNULL(d.IdRegistroComprobante, 0) > 0
                                               AND ISNULL(d.ImporteAplicado, 0) > 0
                                                  THEN d.ModuloOperacionComprobante
                                              ELSE NULL
                                          END,
             IdRegistroComprobante = CASE
-                                        WHEN d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET')
+                                        WHEN d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET', 'PER', 'R4T')
                                          AND ISNULL(d.IdRegistroComprobante, 0) > 0
                                          AND ISNULL(d.ImporteAplicado, 0) > 0
                                             THEN d.IdRegistroComprobante
                                         ELSE NULL
                                     END,
             ImporteAplicado = CASE
-                                  WHEN d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET')
+                                  WHEN d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET', 'PER', 'R4T')
                                    AND ISNULL(d.IdRegistroComprobante, 0) > 0
                                    AND ISNULL(d.ImporteAplicado, 0) > 0
                                       THEN d.ImporteAplicado
@@ -225,6 +230,8 @@ BEGIN
         BEGIN
             RAISERROR('La cuenta corriente seleccionada no tiene moneda configurada para generar el asiento.', 16, 1);
         END;
+
+        SET @CodigoMonedaCuenta = UPPER(LTRIM(RTRIM(ISNULL(@CodigoMonedaCuenta, ''))));
 
         IF NOT EXISTS
         (
@@ -374,6 +381,16 @@ BEGIN
             RAISERROR('Cada linea del detalle debe tener importe solo en Debe o solo en Haber.', 16, 1);
         END;
 
+        IF EXISTS
+        (
+            SELECT 1
+            FROM @Detalles AS d
+            WHERE d.TipoCambioLinea <= 0
+        )
+        BEGIN
+            RAISERROR('Cada linea del detalle debe tener tipo de cambio mayor a cero.', 16, 1);
+        END;
+
         SELECT
             @ImporteTotalDebe = ISNULL(SUM(d.Debe), 0),
             @ImporteTotalHaber = ISNULL(SUM(d.Haber), 0)
@@ -392,6 +409,16 @@ BEGIN
         IF ABS(@ImporteTotal - @TotalDetalle) >= 0.005
         BEGIN
             RAISERROR('No puede guardar mientras exista diferencia entre Total Operacion y Total Detalle.', 16, 1);
+        END;
+
+        IF @TipoMovimiento = 'I' AND @ImporteTotalHaber <= @ImporteTotalDebe
+        BEGIN
+            RAISERROR('En ingresos, el detalle debe tener mayor Haber que Debe para compensar la cuenta bancaria.', 16, 1);
+        END;
+
+        IF @TipoMovimiento = 'E' AND @ImporteTotalDebe <= @ImporteTotalHaber
+        BEGIN
+            RAISERROR('En egresos, el detalle debe tener mayor Debe que Haber para compensar la cuenta bancaria.', 16, 1);
         END;
 
         BEGIN TRANSACTION;
@@ -419,7 +446,7 @@ BEGIN
                     SUM(ISNULL(d.ImporteAplicado, 0)) AS ImporteAplicado
                 FROM dbo.BAN_MovimientoBancoDetalle AS d
                 WHERE d.IdMovimientoBanco = @IdMovimientoBanco
-                  AND d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET')
+                  AND d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET', 'PER', 'R4T')
                   AND d.IdRegistroComprobante IS NOT NULL
                 GROUP BY
                     d.ModuloOperacionComprobante,
@@ -444,7 +471,7 @@ BEGIN
                     SUM(ISNULL(d.ImporteAplicado, 0)) AS ImporteAplicado
                 FROM dbo.BAN_MovimientoBancoDetalle AS d
                 WHERE d.IdMovimientoBanco = @IdMovimientoBanco
-                  AND d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET')
+                  AND d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET', 'PER', 'R4T')
                   AND d.IdRegistroComprobante IS NOT NULL
                 GROUP BY
                     d.ModuloOperacionComprobante,
@@ -469,7 +496,57 @@ BEGIN
                     SUM(ISNULL(d.ImporteAplicado, 0)) AS ImporteAplicado
                 FROM dbo.BAN_MovimientoBancoDetalle AS d
                 WHERE d.IdMovimientoBanco = @IdMovimientoBanco
-                  AND d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET')
+                  AND d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET', 'PER', 'R4T')
+                  AND d.IdRegistroComprobante IS NOT NULL
+                GROUP BY
+                    d.ModuloOperacionComprobante,
+                    d.IdRegistroComprobante
+            )
+            UPDATE cp
+            SET cp.Saldo = CASE
+                               WHEN cp.Saldo + a.ImporteAplicado > cp.ImportePercepcion THEN cp.ImportePercepcion
+                               ELSE cp.Saldo + a.ImporteAplicado
+                           END
+            FROM dbo.COM_CompraPercepcion AS cp
+            INNER JOIN AplicacionesPrevias AS a
+                ON a.ModuloOperacionComprobante = 'PER'
+               AND a.IdRegistroComprobante = cp.IdCompraPercepcion
+            WHERE cp.IdEmpresa = @IdEmpresa;
+
+            ;WITH AplicacionesPrevias AS
+            (
+                SELECT
+                    d.ModuloOperacionComprobante,
+                    d.IdRegistroComprobante,
+                    SUM(ISNULL(d.ImporteAplicado, 0)) AS ImporteAplicado
+                FROM dbo.BAN_MovimientoBancoDetalle AS d
+                WHERE d.IdMovimientoBanco = @IdMovimientoBanco
+                  AND d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET', 'PER', 'R4T')
+                  AND d.IdRegistroComprobante IS NOT NULL
+                GROUP BY
+                    d.ModuloOperacionComprobante,
+                    d.IdRegistroComprobante
+            )
+            UPDATE cr
+            SET cr.Saldo = CASE
+                               WHEN cr.Saldo + a.ImporteAplicado > cr.Retencion THEN cr.Retencion
+                               ELSE cr.Saldo + a.ImporteAplicado
+                           END
+            FROM dbo.COM_CompraRetencion AS cr
+            INNER JOIN AplicacionesPrevias AS a
+                ON a.ModuloOperacionComprobante = 'R4T'
+               AND a.IdRegistroComprobante = cr.IdCompraRetencion
+            WHERE cr.IdEmpresa = @IdEmpresa;
+
+            ;WITH AplicacionesPrevias AS
+            (
+                SELECT
+                    d.ModuloOperacionComprobante,
+                    d.IdRegistroComprobante,
+                    SUM(ISNULL(d.ImporteAplicado, 0)) AS ImporteAplicado
+                FROM dbo.BAN_MovimientoBancoDetalle AS d
+                WHERE d.IdMovimientoBanco = @IdMovimientoBanco
+                  AND d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET', 'PER', 'R4T')
                   AND d.IdRegistroComprobante IS NOT NULL
                 GROUP BY
                     d.ModuloOperacionComprobante,
@@ -556,7 +633,7 @@ BEGIN
                 d.TipoDocumento,
                 d.Serie,
                 d.ReferenciaLinea,
-                ISNULL(d.TipoCambioLinea, @TipoCambio),
+                d.TipoCambioLinea,
                 d.Debe,
                 d.Haber
             FROM @Detalles AS d
@@ -582,7 +659,7 @@ BEGIN
                 d.TipoDocumento,
                 d.Serie,
                 d.ReferenciaLinea,
-                ISNULL(d.TipoCambioLinea, @TipoCambio),
+                d.TipoCambioLinea,
                 CASE
                     WHEN d.Debe > 0 THEN d.Debe
                     ELSE d.Haber
@@ -847,43 +924,107 @@ BEGIN
         (
             SELECT 1
             FROM @Detalles AS d
-            INNER JOIN dbo.COM_Compra AS c
+            LEFT JOIN dbo.COM_CompraPercepcion AS cp
+                ON d.ModuloOperacionComprobante = 'PER'
+               AND cp.IdCompraPercepcion = d.IdRegistroComprobante
+               AND cp.IdEmpresa = @IdEmpresa
+            WHERE d.ModuloOperacionComprobante = 'PER'
+              AND cp.IdCompraPercepcion IS NULL
+        )
+        BEGIN
+            RAISERROR('Existe una linea con documento de percepcion que no pertenece a la empresa activa.', 16, 1);
+        END;
+
+        IF EXISTS
+        (
+            SELECT 1
+            FROM @Detalles AS d
+            LEFT JOIN dbo.COM_CompraRetencion AS cr
+                ON d.ModuloOperacionComprobante = 'R4T'
+               AND cr.IdCompraRetencion = d.IdRegistroComprobante
+               AND cr.IdEmpresa = @IdEmpresa
+            WHERE d.ModuloOperacionComprobante = 'R4T'
+              AND cr.IdCompraRetencion IS NULL
+        )
+        BEGIN
+            RAISERROR('Existe una linea con documento de Renta4ta que no pertenece a la empresa activa.', 16, 1);
+        END;
+
+        ;WITH AplicacionesSolicitadas AS
+        (
+            SELECT
+                d.Item,
+                d.ModuloOperacionComprobante,
+                d.IdRegistroComprobante,
+                SaldoDocumento = COALESCE(c.Saldo, v.Saldo, cd.Saldo, cp.Saldo, cr.Saldo, 0),
+                ImporteDocumentoSolicitado = CASE
+                                                 WHEN @CodigoMonedaCuenta = UPPER(LTRIM(RTRIM(COALESCE(mc.CodigoMoneda, mv.CodigoMoneda, mcd.CodigoMoneda, mcp.CodigoMoneda, mcr.CodigoMoneda, @CodigoMonedaCuenta))))
+                                                     THEN ISNULL(d.ImporteAplicado, 0)
+                                                 WHEN @CodigoMonedaCuenta = 'PEN'
+                                                  AND UPPER(LTRIM(RTRIM(COALESCE(mc.CodigoMoneda, mv.CodigoMoneda, mcd.CodigoMoneda, mcp.CodigoMoneda, mcr.CodigoMoneda, '')))) = 'USD'
+                                                     THEN ROUND(ISNULL(d.ImporteAplicado, 0) / NULLIF(d.TipoCambioLinea, 0), 2)
+                                                 WHEN @CodigoMonedaCuenta = 'USD'
+                                                  AND UPPER(LTRIM(RTRIM(COALESCE(mc.CodigoMoneda, mv.CodigoMoneda, mcd.CodigoMoneda, mcp.CodigoMoneda, mcr.CodigoMoneda, '')))) = 'PEN'
+                                                     THEN ROUND(ISNULL(d.ImporteAplicado, 0) * d.TipoCambioLinea, 2)
+                                                 ELSE ISNULL(d.ImporteAplicado, 0)
+                                             END
+            FROM @Detalles AS d
+            LEFT JOIN dbo.COM_Compra AS c
                 ON d.ModuloOperacionComprobante = 'COM'
                AND c.IdCompra = d.IdRegistroComprobante
                AND c.IdEmpresa = @IdEmpresa
-            WHERE d.ImporteAplicado > c.Saldo
-        )
-        BEGIN
-            RAISERROR('El importe aplicado en una linea supera el saldo pendiente del comprobante de compra seleccionado.', 16, 1);
-        END;
-
-        IF EXISTS
-        (
-            SELECT 1
-            FROM @Detalles AS d
-            INNER JOIN dbo.VEN_Venta AS v
+            LEFT JOIN dbo.ADM_Moneda AS mc
+                ON mc.IdMoneda = c.IdMoneda
+            LEFT JOIN dbo.VEN_Venta AS v
                 ON d.ModuloOperacionComprobante = 'VEN'
                AND v.IdVenta = d.IdRegistroComprobante
                AND v.IdEmpresa = @IdEmpresa
-            WHERE d.ImporteAplicado > v.Saldo
-        )
-        BEGIN
-            RAISERROR('El importe aplicado en una linea supera el saldo pendiente del comprobante de venta seleccionado.', 16, 1);
-        END;
-
-        IF EXISTS
-        (
-            SELECT 1
-            FROM @Detalles AS d
-            INNER JOIN dbo.COM_CompraDetraccion AS cd
+            LEFT JOIN dbo.ADM_Moneda AS mv
+                ON mv.IdMoneda = v.IdMoneda
+            LEFT JOIN dbo.COM_CompraDetraccion AS cd
                 ON d.ModuloOperacionComprobante = 'DET'
                AND cd.IdCompraDetraccion = d.IdRegistroComprobante
                AND cd.IdEmpresa = @IdEmpresa
-            WHERE d.ImporteAplicado > cd.Saldo
+            LEFT JOIN dbo.ADM_Moneda AS mcd
+                ON mcd.IdMoneda = cd.IdMoneda
+            LEFT JOIN dbo.COM_CompraPercepcion AS cp
+                ON d.ModuloOperacionComprobante = 'PER'
+               AND cp.IdCompraPercepcion = d.IdRegistroComprobante
+               AND cp.IdEmpresa = @IdEmpresa
+            LEFT JOIN dbo.ADM_Moneda AS mcp
+                ON mcp.IdMoneda = cp.IdMoneda
+            LEFT JOIN dbo.COM_CompraRetencion AS cr
+                ON d.ModuloOperacionComprobante = 'R4T'
+               AND cr.IdCompraRetencion = d.IdRegistroComprobante
+               AND cr.IdEmpresa = @IdEmpresa
+            LEFT JOIN dbo.ADM_Moneda AS mcr
+                ON mcr.IdMoneda = cr.IdMoneda
+            WHERE d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET', 'PER', 'R4T')
+              AND d.IdRegistroComprobante IS NOT NULL
+              AND ISNULL(d.ImporteAplicado, 0) > 0
+        ),
+        AplicacionesDistribuidas AS
+        (
+            SELECT
+                a.Item,
+                a.SaldoDocumento,
+                a.ImporteDocumentoSolicitado,
+                ImporteDocumentoPrevio = ISNULL(
+                    SUM(a.ImporteDocumentoSolicitado) OVER (
+                        PARTITION BY a.ModuloOperacionComprobante, a.IdRegistroComprobante
+                        ORDER BY a.Item
+                        ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING), 0)
+            FROM AplicacionesSolicitadas AS a
         )
-        BEGIN
-            RAISERROR('El importe aplicado en una linea supera el saldo pendiente del documento de detraccion seleccionado.', 16, 1);
-        END;
+        UPDATE d
+        SET d.ImporteAplicado = CASE
+                                    WHEN a.SaldoDocumento <= a.ImporteDocumentoPrevio THEN 0
+                                    WHEN a.ImporteDocumentoSolicitado <= a.SaldoDocumento - a.ImporteDocumentoPrevio THEN a.ImporteDocumentoSolicitado
+                                    ELSE a.SaldoDocumento - a.ImporteDocumentoPrevio
+                                END
+        FROM @Detalles AS d
+        INNER JOIN AplicacionesDistribuidas AS a
+            ON a.Item = d.Item;
 
         IF @IndTranConta = 'S' AND @IdAsientoTrabajo IS NULL
         BEGIN
@@ -1047,6 +1188,7 @@ BEGIN
                 TipoMovimiento,
                 IdOpeBancaria,
                 FechaEmision,
+                Periodo,
                 TipoCambio,
                 NumeroMovimiento,
                 IdAsiento,
@@ -1068,6 +1210,7 @@ BEGIN
                 @TipoMovimiento,
                 @IdOpeBancaria,
                 @FechaEmision,
+                @Periodo,
                 @TipoCambio,
                 @NumeroMovimiento,
                 @IdAsientoTrabajo,
@@ -1092,6 +1235,7 @@ BEGIN
                 TipoMovimiento = @TipoMovimiento,
                 IdOpeBancaria = @IdOpeBancaria,
                 FechaEmision = @FechaEmision,
+                Periodo = @Periodo,
                 TipoCambio = @TipoCambio,
                 NumeroMovimiento = @NumeroMovimiento,
                 IdAsiento = @IdAsientoTrabajo,
@@ -1165,7 +1309,7 @@ BEGIN
                     WHEN d.Debe > 0 THEN d.Debe
                     ELSE d.Haber
                 END AS ImporteLinea,
-                ISNULL(NULLIF(d.TipoCambioLinea, 0), CASE WHEN @TipoCambio > 0 THEN @TipoCambio ELSE 1 END) AS TipoCambioAplicado
+                d.TipoCambioLinea AS TipoCambioAplicado
         ) AS calc
         ORDER BY d.Item;
 
@@ -1176,6 +1320,7 @@ BEGIN
                 IdAsiento,
                 Item,
                 IdPlanCuenta,
+                DH,
                 GlosaDetalle,
                 CodigoCentroCosto,
                 TipoDocumento,
@@ -1192,6 +1337,7 @@ BEGIN
                 @IdAsientoTrabajo,
                 ROW_NUMBER() OVER (ORDER BY d.Orden),
                 d.IdPlanCuenta,
+                calc.Dh,
                 d.GlosaDetalle,
                 d.CodigoCentroCosto,
                 d.TipoDocumento,
@@ -1217,7 +1363,8 @@ BEGIN
                         WHEN d.Debe > 0 THEN d.Debe
                         ELSE d.Haber
                     END AS ImporteLinea,
-                    ISNULL(NULLIF(d.TipoCambioLinea, 0), CASE WHEN @TipoCambio > 0 THEN @TipoCambio ELSE 1 END) AS TipoCambioAplicado
+                    CASE WHEN d.Debe > 0 THEN 'D' ELSE 'H' END AS Dh,
+                    d.TipoCambioLinea AS TipoCambioAplicado
             ) AS calc
             ORDER BY d.Orden;
         END;
@@ -1229,14 +1376,17 @@ BEGIN
                 d.IdRegistroComprobante,
                 SUM(ISNULL(d.ImporteAplicado, 0)) AS ImporteAplicado
             FROM @Detalles AS d
-            WHERE d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET')
+            WHERE d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET', 'PER', 'R4T')
               AND d.IdRegistroComprobante IS NOT NULL
             GROUP BY
                 d.ModuloOperacionComprobante,
                 d.IdRegistroComprobante
         )
         UPDATE c
-        SET c.Saldo = c.Saldo - a.ImporteAplicado
+        SET c.Saldo = CASE
+                          WHEN c.Saldo - a.ImporteAplicado < 0 THEN 0
+                          ELSE c.Saldo - a.ImporteAplicado
+                      END
         FROM dbo.COM_Compra AS c
         INNER JOIN AplicacionesActuales AS a
             ON a.ModuloOperacionComprobante = 'COM'
@@ -1250,14 +1400,17 @@ BEGIN
                 d.IdRegistroComprobante,
                 SUM(ISNULL(d.ImporteAplicado, 0)) AS ImporteAplicado
             FROM @Detalles AS d
-            WHERE d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET')
+            WHERE d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET', 'PER', 'R4T')
               AND d.IdRegistroComprobante IS NOT NULL
             GROUP BY
                 d.ModuloOperacionComprobante,
                 d.IdRegistroComprobante
         )
         UPDATE cd
-        SET cd.Saldo = cd.Saldo - a.ImporteAplicado
+        SET cd.Saldo = CASE
+                           WHEN cd.Saldo - a.ImporteAplicado < 0 THEN 0
+                           ELSE cd.Saldo - a.ImporteAplicado
+                       END
         FROM dbo.COM_CompraDetraccion AS cd
         INNER JOIN AplicacionesActuales AS a
             ON a.ModuloOperacionComprobante = 'DET'
@@ -1271,19 +1424,150 @@ BEGIN
                 d.IdRegistroComprobante,
                 SUM(ISNULL(d.ImporteAplicado, 0)) AS ImporteAplicado
             FROM @Detalles AS d
-            WHERE d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET')
+            WHERE d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET', 'PER', 'R4T')
+              AND d.IdRegistroComprobante IS NOT NULL
+            GROUP BY
+                d.ModuloOperacionComprobante,
+                d.IdRegistroComprobante
+        )
+        UPDATE cp
+        SET cp.Saldo = CASE
+                           WHEN cp.Saldo - a.ImporteAplicado < 0 THEN 0
+                           ELSE cp.Saldo - a.ImporteAplicado
+                       END
+        FROM dbo.COM_CompraPercepcion AS cp
+        INNER JOIN AplicacionesActuales AS a
+            ON a.ModuloOperacionComprobante = 'PER'
+           AND a.IdRegistroComprobante = cp.IdCompraPercepcion
+        WHERE cp.IdEmpresa = @IdEmpresa;
+
+        ;WITH AplicacionesActuales AS
+        (
+            SELECT
+                d.ModuloOperacionComprobante,
+                d.IdRegistroComprobante,
+                SUM(ISNULL(d.ImporteAplicado, 0)) AS ImporteAplicado
+            FROM @Detalles AS d
+            WHERE d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET', 'PER', 'R4T')
+              AND d.IdRegistroComprobante IS NOT NULL
+            GROUP BY
+                d.ModuloOperacionComprobante,
+                d.IdRegistroComprobante
+        )
+        UPDATE cr
+        SET cr.Saldo = CASE
+                           WHEN cr.Saldo - a.ImporteAplicado < 0 THEN 0
+                           ELSE cr.Saldo - a.ImporteAplicado
+                       END
+        FROM dbo.COM_CompraRetencion AS cr
+        INNER JOIN AplicacionesActuales AS a
+            ON a.ModuloOperacionComprobante = 'R4T'
+           AND a.IdRegistroComprobante = cr.IdCompraRetencion
+        WHERE cr.IdEmpresa = @IdEmpresa;
+
+        ;WITH AplicacionesActuales AS
+        (
+            SELECT
+                d.ModuloOperacionComprobante,
+                d.IdRegistroComprobante,
+                SUM(ISNULL(d.ImporteAplicado, 0)) AS ImporteAplicado
+            FROM @Detalles AS d
+            WHERE d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET', 'PER', 'R4T')
               AND d.IdRegistroComprobante IS NOT NULL
             GROUP BY
                 d.ModuloOperacionComprobante,
                 d.IdRegistroComprobante
         )
         UPDATE v
-        SET v.Saldo = v.Saldo - a.ImporteAplicado
+        SET v.Saldo = CASE
+                          WHEN v.Saldo - a.ImporteAplicado < 0 THEN 0
+                          ELSE v.Saldo - a.ImporteAplicado
+                      END
         FROM dbo.VEN_Venta AS v
         INNER JOIN AplicacionesActuales AS a
             ON a.ModuloOperacionComprobante = 'VEN'
            AND a.IdRegistroComprobante = v.IdVenta
         WHERE v.IdEmpresa = @IdEmpresa;
+
+        IF @IndTranConta = 'S' AND @IdAsientoTrabajo IS NOT NULL
+        BEGIN
+            DECLARE @IdPlanCuentaAjuste INT
+            DECLARE @ModuloOperacionAjuste CHAR(3)
+            DECLARE @IdRegistroAjuste INT
+            DECLARE @NumeroDocumentoAjuste VARCHAR(20)
+            DECLARE @TipoDocumentoAjuste NVARCHAR(150)
+            DECLARE @SerieAjuste VARCHAR(10)
+            DECLARE @ReferenciaLineaAjuste NVARCHAR(100)
+            DECLARE @TipoCambioLineaAjuste DECIMAL(18, 6)
+            DECLARE @GlosaDetalleAjuste NVARCHAR(300)
+
+            DECLARE cursor_ajuste_cancelacion CURSOR LOCAL FAST_FORWARD FOR
+            SELECT DISTINCT
+                d.IdPlanCuenta,
+                d.ModuloOperacionComprobante,
+                d.IdRegistroComprobante,
+                d.NumeroDocumento,
+                d.TipoDocumento,
+                d.Serie,
+                d.ReferenciaLinea,
+                d.TipoCambioLinea,
+                d.GlosaDetalle
+            FROM @Detalles AS d
+            LEFT JOIN dbo.COM_Compra AS c
+                ON d.ModuloOperacionComprobante = 'COM'
+               AND c.IdCompra = d.IdRegistroComprobante
+               AND c.IdEmpresa = @IdEmpresa
+            LEFT JOIN dbo.VEN_Venta AS v
+                ON d.ModuloOperacionComprobante = 'VEN'
+               AND v.IdVenta = d.IdRegistroComprobante
+               AND v.IdEmpresa = @IdEmpresa
+            LEFT JOIN dbo.COM_CompraDetraccion AS cd
+                ON d.ModuloOperacionComprobante = 'DET'
+               AND cd.IdCompraDetraccion = d.IdRegistroComprobante
+               AND cd.IdEmpresa = @IdEmpresa
+            LEFT JOIN dbo.COM_CompraPercepcion AS cp
+                ON d.ModuloOperacionComprobante = 'PER'
+               AND cp.IdCompraPercepcion = d.IdRegistroComprobante
+               AND cp.IdEmpresa = @IdEmpresa
+            LEFT JOIN dbo.COM_CompraRetencion AS cr
+                ON d.ModuloOperacionComprobante = 'R4T'
+               AND cr.IdCompraRetencion = d.IdRegistroComprobante
+               AND cr.IdEmpresa = @IdEmpresa
+            WHERE d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET', 'PER', 'R4T')
+              AND d.IdRegistroComprobante IS NOT NULL
+              AND ISNULL(d.ImporteAplicado, 0) > 0
+              AND ABS(COALESCE(c.Saldo, v.Saldo, cd.Saldo, cp.Saldo, cr.Saldo, 1)) < 0.005;
+
+            OPEN cursor_ajuste_cancelacion;
+
+            FETCH NEXT FROM cursor_ajuste_cancelacion
+            INTO @IdPlanCuentaAjuste, @ModuloOperacionAjuste, @IdRegistroAjuste, @NumeroDocumentoAjuste, @TipoDocumentoAjuste,
+                 @SerieAjuste, @ReferenciaLineaAjuste, @TipoCambioLineaAjuste, @GlosaDetalleAjuste;
+
+            WHILE @@FETCH_STATUS = 0
+            BEGIN
+                EXEC dbo.usp_CON_GenerarAjusteCancelacionDiferenciaCambio
+                    @IdEmpresa = @IdEmpresa,
+                    @IdAsiento = @IdAsientoTrabajo,
+                    @IdPlanCuentaDocumento = @IdPlanCuentaAjuste,
+                    @ModuloOperacionComprobante = @ModuloOperacionAjuste,
+                    @IdRegistroComprobante = @IdRegistroAjuste,
+                    @NumeroDocumento = @NumeroDocumentoAjuste,
+                    @TipoDocumento = @TipoDocumentoAjuste,
+                    @Serie = @SerieAjuste,
+                    @ReferenciaLinea = @ReferenciaLineaAjuste,
+                    @TipoCambioLinea = @TipoCambioLineaAjuste,
+                    @GlosaDetalle = @GlosaDetalleAjuste,
+                    @UsuarioRegistro = @UsuarioRegistro;
+
+                FETCH NEXT FROM cursor_ajuste_cancelacion
+                INTO @IdPlanCuentaAjuste, @ModuloOperacionAjuste, @IdRegistroAjuste, @NumeroDocumentoAjuste, @TipoDocumentoAjuste,
+                     @SerieAjuste, @ReferenciaLineaAjuste, @TipoCambioLineaAjuste, @GlosaDetalleAjuste;
+            END;
+
+            CLOSE cursor_ajuste_cancelacion;
+            DEALLOCATE cursor_ajuste_cancelacion;
+        END;
 
         COMMIT TRANSACTION;
 
@@ -1302,6 +1586,12 @@ BEGIN
     END TRY
 
     BEGIN CATCH
+
+        IF CURSOR_STATUS('local', 'cursor_ajuste_cancelacion') >= -1
+        BEGIN
+            CLOSE cursor_ajuste_cancelacion;
+            DEALLOCATE cursor_ajuste_cancelacion;
+        END;
 
         IF @@TRANCOUNT > 0
         BEGIN

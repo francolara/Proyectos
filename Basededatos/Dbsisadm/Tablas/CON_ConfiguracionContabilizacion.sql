@@ -16,8 +16,14 @@
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   26/06/2026
--- Description:   Incorpora el modulo DET para la provision automatica de detracciones en compras.
+-- Description:   Incorpora los modulos DET y PER para provisiones automaticas de detracciones y percepciones en compras.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   29/06/2026
+-- Description:   Extiende el check de modulo operativo para incluir percepciones de compras bajo el codigo PER.
+-- =============================================
+-- Firma: FRANCO LARA - 02/07/2026 | Incluye los modulos DIF y AJU para configurar desde web los origenes de diferencia en cambio y ajuste de cuentas.
 
 IF OBJECT_ID(N'dbo.CON_ConfiguracionContabilizacion', N'U') IS NULL
 BEGIN
@@ -46,7 +52,7 @@ BEGIN
 
     ALTER TABLE dbo.CON_ConfiguracionContabilizacion
         ADD CONSTRAINT CK_CON_ConfiguracionContabilizacion_ModuloOperacion
-            CHECK (ModuloOperacion IN ('COM', 'VEN', 'EGR', 'ING', 'APNC', 'DET'));
+            CHECK (ModuloOperacion IN ('COM', 'VEN', 'EGR', 'ING', 'APNC', 'DET', 'PER', 'DIF', 'AJU'));
 
     ALTER TABLE dbo.CON_ConfiguracionContabilizacion
         ADD CONSTRAINT CK_CON_ConfiguracionContabilizacion_EscenarioOperacion
@@ -56,3 +62,19 @@ BEGIN
         ADD CONSTRAINT UQ_CON_ConfiguracionContabilizacion
             UNIQUE (IdEmpresa, ModuloOperacion, EscenarioOperacion);
 END;
+
+IF EXISTS
+(
+    SELECT 1
+    FROM sys.check_constraints
+    WHERE name = N'CK_CON_ConfiguracionContabilizacion_ModuloOperacion'
+      AND parent_object_id = OBJECT_ID(N'dbo.CON_ConfiguracionContabilizacion')
+)
+BEGIN
+    ALTER TABLE dbo.CON_ConfiguracionContabilizacion
+        DROP CONSTRAINT CK_CON_ConfiguracionContabilizacion_ModuloOperacion;
+END;
+
+ALTER TABLE dbo.CON_ConfiguracionContabilizacion
+    ADD CONSTRAINT CK_CON_ConfiguracionContabilizacion_ModuloOperacion
+        CHECK (ModuloOperacion IN ('COM', 'VEN', 'EGR', 'ING', 'APNC', 'DET', 'PER', 'DIF', 'AJU'));

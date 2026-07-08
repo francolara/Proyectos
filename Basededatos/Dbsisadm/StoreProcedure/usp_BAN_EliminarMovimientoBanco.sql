@@ -21,8 +21,14 @@
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   26/06/2026
--- Description:   Restaura tambien el saldo de documentos de detraccion enlazados al eliminar un movimiento bancario.
+-- Description:   Restaura tambien el saldo de documentos de detraccion y percepcion enlazados al eliminar un movimiento bancario.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   29/06/2026
+-- Description:   Rehabilita tambien el saldo de COM_CompraPercepcion cuando se elimina un movimiento bancario aplicado.
+-- =============================================
+-- Firma: FRANCO LARA - 04/07/2026 | Incluye tambien los documentos R4T al restaurar saldos de Caja y Bancos para que la eliminacion revierta todos los comprobantes auxiliares afectados por el pago.
 
 CREATE OR ALTER PROCEDURE dbo.usp_BAN_EliminarMovimientoBanco
     @IdMovimientoBanco INT,
@@ -62,7 +68,7 @@ BEGIN
                 ON m.IdMovimientoBanco = d.IdMovimientoBanco
             WHERE d.IdMovimientoBanco = @IdMovimientoBanco
               AND m.IdEmpresa = @IdEmpresa
-              AND d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET')
+              AND d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET', 'PER', 'R4T')
               AND d.IdRegistroComprobante IS NOT NULL
             GROUP BY
                 d.ModuloOperacionComprobante,
@@ -90,7 +96,7 @@ BEGIN
                 ON m.IdMovimientoBanco = d.IdMovimientoBanco
             WHERE d.IdMovimientoBanco = @IdMovimientoBanco
               AND m.IdEmpresa = @IdEmpresa
-              AND d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET')
+              AND d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET', 'PER', 'R4T')
               AND d.IdRegistroComprobante IS NOT NULL
             GROUP BY
                 d.ModuloOperacionComprobante,
@@ -118,7 +124,63 @@ BEGIN
                 ON m.IdMovimientoBanco = d.IdMovimientoBanco
             WHERE d.IdMovimientoBanco = @IdMovimientoBanco
               AND m.IdEmpresa = @IdEmpresa
-              AND d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET')
+              AND d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET', 'PER', 'R4T')
+              AND d.IdRegistroComprobante IS NOT NULL
+            GROUP BY
+                d.ModuloOperacionComprobante,
+                d.IdRegistroComprobante
+        )
+        UPDATE cp
+        SET cp.Saldo = CASE
+                           WHEN cp.Saldo + a.ImporteAplicado > cp.ImportePercepcion THEN cp.ImportePercepcion
+                           ELSE cp.Saldo + a.ImporteAplicado
+                       END
+        FROM dbo.COM_CompraPercepcion AS cp
+        INNER JOIN AplicacionesPrevias AS a
+            ON a.ModuloOperacionComprobante = 'PER'
+           AND a.IdRegistroComprobante = cp.IdCompraPercepcion
+        WHERE cp.IdEmpresa = @IdEmpresa;
+
+        ;WITH AplicacionesPrevias AS
+        (
+            SELECT
+                d.ModuloOperacionComprobante,
+                d.IdRegistroComprobante,
+                SUM(ISNULL(d.ImporteAplicado, 0)) AS ImporteAplicado
+            FROM dbo.BAN_MovimientoBancoDetalle AS d
+            INNER JOIN dbo.BAN_MovimientoBanco AS m
+                ON m.IdMovimientoBanco = d.IdMovimientoBanco
+            WHERE d.IdMovimientoBanco = @IdMovimientoBanco
+              AND m.IdEmpresa = @IdEmpresa
+              AND d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET', 'PER', 'R4T')
+              AND d.IdRegistroComprobante IS NOT NULL
+            GROUP BY
+                d.ModuloOperacionComprobante,
+                d.IdRegistroComprobante
+        )
+        UPDATE cr
+        SET cr.Saldo = CASE
+                           WHEN cr.Saldo + a.ImporteAplicado > cr.Retencion THEN cr.Retencion
+                           ELSE cr.Saldo + a.ImporteAplicado
+                       END
+        FROM dbo.COM_CompraRetencion AS cr
+        INNER JOIN AplicacionesPrevias AS a
+            ON a.ModuloOperacionComprobante = 'R4T'
+           AND a.IdRegistroComprobante = cr.IdCompraRetencion
+        WHERE cr.IdEmpresa = @IdEmpresa;
+
+        ;WITH AplicacionesPrevias AS
+        (
+            SELECT
+                d.ModuloOperacionComprobante,
+                d.IdRegistroComprobante,
+                SUM(ISNULL(d.ImporteAplicado, 0)) AS ImporteAplicado
+            FROM dbo.BAN_MovimientoBancoDetalle AS d
+            INNER JOIN dbo.BAN_MovimientoBanco AS m
+                ON m.IdMovimientoBanco = d.IdMovimientoBanco
+            WHERE d.IdMovimientoBanco = @IdMovimientoBanco
+              AND m.IdEmpresa = @IdEmpresa
+              AND d.ModuloOperacionComprobante IN ('COM', 'VEN', 'DET', 'PER', 'R4T')
               AND d.IdRegistroComprobante IS NOT NULL
             GROUP BY
                 d.ModuloOperacionComprobante,

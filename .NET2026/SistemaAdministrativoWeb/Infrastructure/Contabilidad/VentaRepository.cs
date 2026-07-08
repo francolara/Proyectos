@@ -37,6 +37,7 @@ public sealed class VentaRepository(IDbConnectionFactory connectionFactory) : IV
                 ModuloOperacion = reader.GetString(reader.GetOrdinal("ModuloOperacion")),
                 EscenarioOperacion = reader.GetString(reader.GetOrdinal("EscenarioOperacion")),
                 IdAsiento = reader.IsDBNull(reader.GetOrdinal("IdAsiento")) ? null : reader.GetInt32(reader.GetOrdinal("IdAsiento")),
+                NumeroAsiento = reader.IsDBNull(reader.GetOrdinal("NumeroAsiento")) ? null : reader.GetInt32(reader.GetOrdinal("NumeroAsiento")),
                 FechaEmision = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("FechaEmision"))),
                 FechaContabilizacion = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("FechaContabilizacion"))),
                 Periodo = reader.GetString(reader.GetOrdinal("Periodo")),
@@ -67,7 +68,7 @@ public sealed class VentaRepository(IDbConnectionFactory connectionFactory) : IV
         return result;
     }
 
-    public async Task<PagedResult<VentaResumenDto>> ListarPaginadoPorEmpresaAsync(int idEmpresa, short ejercicio, byte mes, string? textoBusqueda, int numeroPagina, int tamanoPagina, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<VentaResumenDto>> ListarPaginadoPorEmpresaAsync(int idEmpresa, short ejercicio, byte mes, string? textoBusqueda, string? tipoComprobante, int numeroPagina, int tamanoPagina, CancellationToken cancellationToken = default)
     {
         var result = new List<VentaResumenDto>();
         var totalRegistros = 0;
@@ -82,6 +83,7 @@ public sealed class VentaRepository(IDbConnectionFactory connectionFactory) : IV
         command.Parameters.AddWithValue("@Ejercicio", ejercicio);
         command.Parameters.AddWithValue("@Mes", mes);
         command.Parameters.AddWithValue("@TextoBusqueda", string.IsNullOrWhiteSpace(textoBusqueda) ? (object)DBNull.Value : textoBusqueda.Trim());
+        command.Parameters.AddWithValue("@TipoComprobante", string.IsNullOrWhiteSpace(tipoComprobante) ? (object)DBNull.Value : tipoComprobante.Trim().ToUpperInvariant());
         command.Parameters.AddWithValue("@NumeroPagina", numeroPagina);
         command.Parameters.AddWithValue("@TamanoPagina", tamanoPagina);
 
@@ -173,9 +175,9 @@ public sealed class VentaRepository(IDbConnectionFactory connectionFactory) : IV
                     IdVentaDetalle = reader.GetInt32(reader.GetOrdinal("IdVentaDetalle")),
                     IdVenta = reader.GetInt32(reader.GetOrdinal("IdVenta")),
                     Item = reader.GetInt16(reader.GetOrdinal("Item")),
-                    IdPlanCuenta = reader.GetInt32(reader.GetOrdinal("IdPlanCuenta")),
-                    CodigoCuenta = reader.GetString(reader.GetOrdinal("CodigoCuenta")),
-                    NombreCuenta = reader.GetString(reader.GetOrdinal("NombreCuenta")),
+                    IdPlanCuenta = reader.IsDBNull(reader.GetOrdinal("IdPlanCuenta")) ? null : reader.GetInt32(reader.GetOrdinal("IdPlanCuenta")),
+                    CodigoCuenta = reader.IsDBNull(reader.GetOrdinal("CodigoCuenta")) ? null : reader.GetString(reader.GetOrdinal("CodigoCuenta")),
+                    NombreCuenta = reader.IsDBNull(reader.GetOrdinal("NombreCuenta")) ? null : reader.GetString(reader.GetOrdinal("NombreCuenta")),
                     IdTipoAfectacionIGV = reader.GetInt32(reader.GetOrdinal("IdTipoAfectacionIGV")),
                     CodigoAfectacionIGV = reader.GetString(reader.GetOrdinal("CodigoAfectacionIGV")),
                     NombreAfectacionIGV = reader.GetString(reader.GetOrdinal("NombreAfectacionIGV")),
@@ -236,6 +238,52 @@ public sealed class VentaRepository(IDbConnectionFactory connectionFactory) : IV
             IdAsiento = reader.IsDBNull(reader.GetOrdinal("IdAsiento")) ? null : reader.GetInt32(reader.GetOrdinal("IdAsiento")),
             ImporteTotal = reader.GetDecimal(reader.GetOrdinal("ImporteTotal")),
             Estado = reader.GetString(reader.GetOrdinal("Estado"))
+        };
+    }
+
+    public async Task<ImportarVentaXmlResultDto> ImportarXmlAsync(ImportarVentaXmlRequest request, CancellationToken cancellationToken = default)
+    {
+        await using var connection = connectionFactory.CreateConnection();
+        await using var command = new SqlCommand("dbo.usp_VEN_ImportarVentaXml", connection)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        command.Parameters.AddWithValue("@IdEmpresa", request.IdEmpresa);
+        command.Parameters.AddWithValue("@IdCliente", request.IdCliente);
+        command.Parameters.AddWithValue("@IdConfiguracionContabilizacion", request.IdConfiguracionContabilizacion);
+        command.Parameters.AddWithValue("@FechaEmision", request.FechaEmision.ToDateTime(TimeOnly.MinValue));
+        command.Parameters.AddWithValue("@FechaContabilizacion", request.FechaContabilizacion.ToDateTime(TimeOnly.MinValue));
+        command.Parameters.AddWithValue("@TipoComprobante", request.TipoComprobante);
+        command.Parameters.AddWithValue("@Serie", request.Serie);
+        command.Parameters.AddWithValue("@Numero", request.Numero);
+        command.Parameters.AddWithValue("@IdMoneda", request.IdMoneda);
+        command.Parameters.AddWithValue("@TipoCambio", request.TipoCambio);
+        command.Parameters.AddWithValue("@BaseImponible", request.BaseImponible);
+        command.Parameters.AddWithValue("@TotalExonerado", request.TotalExonerado);
+        command.Parameters.AddWithValue("@TotalInafecto", request.TotalInafecto);
+        command.Parameters.AddWithValue("@Icbper", request.Icbper);
+        command.Parameters.AddWithValue("@Igv", request.Igv);
+        command.Parameters.AddWithValue("@Isc", request.Isc);
+        command.Parameters.AddWithValue("@OtrosTributos", request.OtrosTributos);
+        command.Parameters.AddWithValue("@Redondeo", request.Redondeo);
+        command.Parameters.AddWithValue("@ImporteTotal", request.ImporteTotal);
+        command.Parameters.AddWithValue("@Observacion", (object?)request.Observacion ?? DBNull.Value);
+        command.Parameters.AddWithValue("@DetalleXml", ConstruirDetalleImportacionXml(request.Detalles));
+        command.Parameters.AddWithValue("@UsuarioRegistro", (object?)request.UsuarioRegistro ?? DBNull.Value);
+
+        await connection.OpenAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            throw new InvalidOperationException("No se pudo obtener el resultado de la venta importada.");
+        }
+
+        return new ImportarVentaXmlResultDto
+        {
+            IdVenta = reader.GetInt32(reader.GetOrdinal("IdVenta")),
+            Estado = reader.GetString(reader.GetOrdinal("Estado")),
+            ImporteTotal = reader.GetDecimal(reader.GetOrdinal("ImporteTotal"))
         };
     }
 
@@ -300,6 +348,21 @@ public sealed class VentaRepository(IDbConnectionFactory connectionFactory) : IV
             detalles.Select(x => new XElement("Detalle",
                 new XAttribute("Item", x.Item),
                 new XAttribute("IdPlanCuenta", x.IdPlanCuenta),
+                new XAttribute("IdTipoAfectacionIGV", x.IdTipoAfectacionIGV),
+                new XAttribute("Descripcion", x.Descripcion),
+                new XAttribute("Cantidad", x.Cantidad.ToString("0.####", CultureInfo.InvariantCulture)),
+                new XAttribute("ValorUnitario", x.ValorUnitario.ToString("0.######", CultureInfo.InvariantCulture)),
+                new XAttribute("ImporteBruto", x.ImporteBruto.ToString("0.00", CultureInfo.InvariantCulture)))));
+
+        return xml.ToString(SaveOptions.DisableFormatting);
+    }
+
+    private static string ConstruirDetalleImportacionXml(IReadOnlyCollection<ImportarVentaXmlDetalleRequest> detalles)
+    {
+        var xml = new XElement("Detalles",
+            detalles.Select(x => new XElement("Detalle",
+                new XAttribute("Item", x.Item),
+                new XAttribute("IdPlanCuenta", x.IdPlanCuenta.HasValue ? x.IdPlanCuenta.Value.ToString(CultureInfo.InvariantCulture) : string.Empty),
                 new XAttribute("IdTipoAfectacionIGV", x.IdTipoAfectacionIGV),
                 new XAttribute("Descripcion", x.Descripcion),
                 new XAttribute("Cantidad", x.Cantidad.ToString("0.####", CultureInfo.InvariantCulture)),

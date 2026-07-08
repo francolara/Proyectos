@@ -22,6 +22,8 @@ public class AsientoController(
     private const int TamanoPagina = 20;
     private const int TamanoAyudaCuenta = 100;
     private const int TamanoAyudaPersona = 20;
+    private const byte MesContableMinimo = 0;
+    private const byte MesContableMaximo = 15;
 
     [HttpGet]
     public async Task<IActionResult> Index(short? anio = null, byte? mes = null, string? textoBusqueda = null, int pagina = 1, CancellationToken cancellationToken = default)
@@ -104,6 +106,12 @@ public class AsientoController(
 
         try
         {
+            var asiento = await asientoRepository.ObtenerAsync(idAsiento, cancellationToken);
+            if (asiento is not null && !asiento.PermiteRegistroManual)
+            {
+                throw new InvalidOperationException("El asiento fue generado automaticamente. Debe eliminarlo desde su modulo de origen.");
+            }
+
             await asientoRepository.EliminarAsync(idAsiento, currentCompanyAccessor.EmpresaId.Value, cancellationToken);
             TempData["AsientoOk"] = "Asiento eliminado correctamente.";
         }
@@ -125,10 +133,21 @@ public class AsientoController(
         }
 
         ViewData["AdminShell"] = true;
-        var fechaContabilizacion = ParsePeriodo(NormalizarPeriodo(periodo));
+        var periodoTrabajo = NormalizarPeriodo(periodo);
+        var (anioTrabajo, mesTrabajo) = DescomponerPeriodo(periodoTrabajo);
+        var fechaContabilizacion = ParsePeriodo(periodoTrabajo);
         formulario.FechaAsiento = fechaContabilizacion;
 
         NormalizarFormulario(formulario);
+
+        if (formulario.IdAsiento.HasValue)
+        {
+            var asientoExistente = await asientoRepository.ObtenerAsync(formulario.IdAsiento.Value, cancellationToken);
+            if (asientoExistente is not null && !asientoExistente.PermiteRegistroManual)
+            {
+                ModelState.AddModelError(string.Empty, "El asiento fue generado automaticamente y solo puede modificarse desde su modulo de origen.");
+            }
+        }
 
         var cuentasMovimiento = (await planCuentaRepository.ListarPorEmpresaAsync(currentCompanyAccessor.EmpresaId.Value, true, cancellationToken))
             .Where(x => x.Estado && x.AceptaMovimiento)
@@ -138,8 +157,6 @@ public class AsientoController(
             .ToDictionary(x => x.Key, x => x.First(), StringComparer.OrdinalIgnoreCase);
 
         ValidarFormulario(formulario, cuentasMovimiento, centrosCostoActivos);
-
-        var periodoTrabajo = $"{fechaContabilizacion.Year:0000}{fechaContabilizacion.Month:00}";
 
         if (!ModelState.IsValid)
         {
@@ -154,6 +171,7 @@ public class AsientoController(
                 IdAsiento = formulario.IdAsiento,
                 IdEmpresa = currentCompanyAccessor.EmpresaId.Value,
                 IdOrigen = formulario.IdOrigen!.Value,
+                Periodo = periodoTrabajo,
                 FechaEmision = formulario.FechaEmision,
                 FechaAsiento = fechaContabilizacion,
                 Glosa = formulario.Glosa.Trim(),
@@ -167,6 +185,7 @@ public class AsientoController(
                     {
                         Item = x.Item,
                         IdPlanCuenta = x.IdPlanCuenta!.Value,
+                        Dh = x.Debe > 0 ? "D" : "H",
                         GlosaDetalle = string.IsNullOrWhiteSpace(x.GlosaDetalle) ? null : x.GlosaDetalle.Trim(),
                         CodigoCentroCosto = string.IsNullOrWhiteSpace(x.CodigoCentroCosto) ? null : x.CodigoCentroCosto.Trim(),
                         TipoDocumento = string.IsNullOrWhiteSpace(x.TipoDocumento) ? null : x.TipoDocumento.Trim(),
@@ -181,7 +200,7 @@ public class AsientoController(
             }, cancellationToken);
 
             TempData["AsientoOk"] = $"Asiento {result.Periodo}-{result.NumeroAsiento} guardado correctamente.";
-            return RedirectToAction(nameof(Index), new { anio = fechaContabilizacion.Year, mes = fechaContabilizacion.Month });
+            return RedirectToAction(nameof(Index), new { anio = anioTrabajo, mes = mesTrabajo });
         }
         catch (Exception ex)
         {
@@ -417,7 +436,7 @@ public class AsientoController(
                      || !string.IsNullOrWhiteSpace(x.NumeroDocumento)
                      || !string.IsNullOrWhiteSpace(x.Serie)
                      || !string.IsNullOrWhiteSpace(x.ReferenciaLinea)
-                     || x.TipoCambioLinea.HasValue
+                     || x.TipoCambioLinea > 0
                      || x.Debe > 0
                      || x.Haber > 0)
             .Select((x, index) =>
@@ -485,6 +504,11 @@ public class AsientoController(
                 ModelState.AddModelError($"{prefijo}.CodigoCentroCosto", "El centro de costo ingresado no existe o no esta activo para la empresa.");
             }
 
+            if (detalle.TipoCambioLinea <= 0)
+            {
+                ModelState.AddModelError($"{prefijo}.TipoCambioLinea", "Ingrese un tipo de cambio mayor a cero en la linea.");
+            }
+
             var tieneDebe = detalle.Debe > 0;
             var tieneHaber = detalle.Haber > 0;
 
@@ -507,7 +531,7 @@ public class AsientoController(
     {
         var today = DateTime.Today;
         var anioTrabajo = anio ?? (short)today.Year;
-        var mesTrabajo = mes is >= 1 and <= 12 ? mes.Value : (byte)today.Month;
+        var mesTrabajo = EsMesContableValido(mes) ? mes!.Value : (byte)today.Month;
         return (anioTrabajo, mesTrabajo);
     }
 
@@ -517,7 +541,7 @@ public class AsientoController(
             && periodo.Length == 6
             && short.TryParse(periodo[..4], out var anio)
             && byte.TryParse(periodo[4..], out var mes)
-            && mes is >= 1 and <= 12)
+            && EsMesContableValido(mes))
         {
             return $"{anio:0000}{mes:00}";
         }
@@ -556,6 +580,8 @@ public class AsientoController(
                 TipoCambio = x.TipoCambio,
                 TotalDebe = x.TotalDebe,
                 TotalHaber = x.TotalHaber,
+                TotalImporteS = x.TotalImporteS,
+                TotalImporteD = x.TotalImporteD,
                 Estado = x.Estado,
                 PermiteRegistroManual = x.PermiteRegistroManual
             })
@@ -611,6 +637,8 @@ public class AsientoController(
                 : new AsientoFormViewModel
                 {
                     IdAsiento = asientoEditar.IdAsiento,
+                    NumeroAsiento = asientoEditar.NumeroAsiento,
+                    PermiteRegistroManual = asientoEditar.PermiteRegistroManual,
                     IdOrigen = asientoEditar.IdOrigen,
                     OrigenTexto = $"{asientoEditar.CodigoOrigen} - {asientoEditar.NombreOrigen}",
                     FechaEmision = asientoEditar.FechaEmision,
@@ -636,7 +664,7 @@ public class AsientoController(
                             NumeroDocumento = x.NumeroDocumento,
                             PersonaTexto = x.NumeroDocumento ?? string.Empty,
                             Serie = x.Serie,
-                            TipoCambioLinea = x.TipoCambioLinea,
+                            TipoCambioLinea = x.TipoCambioLinea ?? asientoEditar.TipoCambio,
                             Debe = x.Debe,
                             Haber = x.Haber,
                             ReferenciaLinea = x.ReferenciaLinea
@@ -695,13 +723,25 @@ public class AsientoController(
 
     private static List<MesOpcionViewModel> ConstruirMeses()
     {
-        return Enumerable.Range(1, 12)
-            .Select(x => new MesOpcionViewModel
-            {
-                Valor = (byte)x,
-                Nombre = new DateTime(2000, x, 1).ToString("MMMM")
-            })
-            .ToList();
+        return
+        [
+            new() { Valor = 0, Nombre = "Apertura" },
+            new() { Valor = 1, Nombre = "Enero" },
+            new() { Valor = 2, Nombre = "Febrero" },
+            new() { Valor = 3, Nombre = "Marzo" },
+            new() { Valor = 4, Nombre = "Abril" },
+            new() { Valor = 5, Nombre = "Mayo" },
+            new() { Valor = 6, Nombre = "Junio" },
+            new() { Valor = 7, Nombre = "Julio" },
+            new() { Valor = 8, Nombre = "Agosto" },
+            new() { Valor = 9, Nombre = "Setiembre" },
+            new() { Valor = 10, Nombre = "Octubre" },
+            new() { Valor = 11, Nombre = "Noviembre" },
+            new() { Valor = 12, Nombre = "Diciembre" },
+            new() { Valor = 13, Nombre = "Ajustes y Liquidaciones" },
+            new() { Valor = 14, Nombre = "Cierre de Ganancias y Perdidas" },
+            new() { Valor = 15, Nombre = "Cierre de Inventarios" }
+        ];
     }
 
     private static DateOnly ParsePeriodo(string periodo)
@@ -709,11 +749,27 @@ public class AsientoController(
         if (periodo.Length == 6
             && int.TryParse(periodo[..4], out var year)
             && int.TryParse(periodo[4..], out var month)
-            && month is >= 1 and <= 12)
+            && month >= MesContableMinimo
+            && month <= MesContableMaximo)
         {
-            return new DateOnly(year, month, 1);
+            return month switch
+            {
+                0 => new DateOnly(year, 1, 1),
+                >= 1 and <= 12 => new DateOnly(year, month, 1),
+                _ => new DateOnly(year, 12, 31)
+            };
         }
 
         return DateOnly.FromDateTime(DateTime.Today);
+    }
+
+    private static bool EsMesContableValido(byte? mes)
+        => mes.HasValue
+           && mes.Value >= MesContableMinimo
+           && mes.Value <= MesContableMaximo;
+
+    private static (short anio, byte mes) DescomponerPeriodo(string periodo)
+    {
+        return (short.Parse(periodo[..4]), byte.Parse(periodo[4..]));
     }
 }

@@ -1,4 +1,4 @@
--- =============================================
+﻿-- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   18/06/2026
 -- Description:   Guarda configuracion de provision contable por modulo y empresa.
@@ -13,6 +13,12 @@
 -- Create date:   26/06/2026
 -- Description:   Agrega el modulo de detracciones para definir el origen automatico del segundo asiento en compras.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   30/06/2026
+-- Description:   Habilita el modulo PER para guardar la provision contable de percepciones de compras.
+-- =============================================
+-- Firma: FRANCO LARA - 02/07/2026 | Habilita los modulos DIF, AJU, APR y CIE para guardar desde configuracion contable los origenes de diferencia en cambio, ajuste de cuentas, apertura y cierre.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_GuardarProvisionContableEmpresa
     @IdEmpresa INT,
@@ -38,6 +44,11 @@ BEGIN
                 WHEN 'ING' THEN N'Provision Ingresos'
                 WHEN 'APNC' THEN N'Provision Aplicaciones'
                 WHEN 'DET' THEN N'Provision Detracciones'
+                WHEN 'PER' THEN N'Provision Percepciones'
+                WHEN 'DIF' THEN N'Provision Diferencia en Cambio'
+                WHEN 'AJU' THEN N'Provision Ajuste de Cuentas'
+                WHEN 'APR' THEN N'Provision Asiento de Apertura'
+                WHEN 'CIE' THEN N'Provision Asiento de Cierre'
                 ELSE NULL
             END;
 

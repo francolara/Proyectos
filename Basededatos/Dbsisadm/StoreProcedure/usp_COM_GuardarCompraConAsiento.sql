@@ -14,6 +14,8 @@
 -- Create date:   22/06/2026
 -- Description:   Usa cuenta del detalle, cuenta por documento/impuesto, valida cuentas activas con movimiento, separa RUC/DNI, tipo comprobante, serie y numero en el asiento e informa fecha de emision en la cabecera contable.
 -- =============================================
+-- Firma: FRANCO LARA - 03/07/2026 | Persiste DH en todas las lineas automaticas de compras, detracciones y percepciones para dejar explicito el sentido Debe/Haber del detalle contable.
+-- =============================================
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   23/06/2026
@@ -27,9 +29,11 @@
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   26/06/2026
--- Description:   Genera detraccion opcional en compras, descuenta el saldo principal, mantiene el documento hijo SPOT con su asiento en altas y ediciones, toma la cuenta SPOT desde ADM_ParametroEmpresa (CTADETRACCION) y marca la linea SPOT con tipo de documento Otros.
+-- Description:   Genera detraccion y percepcion opcionales en compras, mantiene documentos hijos con sus asientos en altas y ediciones, toma cuentas desde ADM_ParametroEmpresa y separa ambos pendientes de pago.
 -- =============================================
--- Firma: FRANCO LARA - 26/06/2026 | Guarda tipo documento por codigo en compras y detracciones, usa 00 para Otros y calcula importes por moneda en cada linea del asiento.
+-- Firma: FRANCO LARA - 29/06/2026 | Guarda tipo documento por codigo en compras, detracciones y percepciones, usa 00 para documentos adicionales y calcula importes por moneda en cada linea del asiento.
+-- Firma: FRANCO LARA - 30/06/2026 | Corrige el asiento de percepciones para debitar el impuesto IGVPER configurado por empresa, acreditar la cuenta parametrizada CTADEPERCEPCION, usar TipoDocumento 00 en ambas lineas, grabar TipoCambioLinea en todas las lineas del asiento y crear el asiento principal cuando una compra importada estaba en EN REVISION sin IdAsiento.
+-- Firma: FRANCO LARA - 30/06/2026 | Agrega retencion de renta de 4ta para recibos por honorarios, genera el pendiente COM_CompraRetencion y acredita la cuenta R4TA en el asiento principal de la compra.
 
 CREATE OR ALTER PROCEDURE dbo.usp_COM_GuardarCompraConAsiento
     @IdCompra INT = NULL,
@@ -52,9 +56,15 @@ CREATE OR ALTER PROCEDURE dbo.usp_COM_GuardarCompraConAsiento
     @OtrosTributos DECIMAL(18,2),
     @Redondeo DECIMAL(18,2),
     @ImporteTotal DECIMAL(18,2),
+    @ExoneracionRenta4ta BIT = 0,
+    @Retencion DECIMAL(18,2) = 0,
     @TieneDetraccion BIT = 0,
     @IdDetraccionSunat INT = NULL,
     @ImporteDetraccion DECIMAL(18,2) = 0,
+    @TienePercepcion BIT = 0,
+    @IdTipoPercepcion INT = NULL,
+    @BasePercepcion DECIMAL(18,2) = 0,
+    @ImportePercepcion DECIMAL(18,2) = 0,
     @Observacion NVARCHAR(500) = NULL,
     @DetalleXml XML,
     @UsuarioRegistro NVARCHAR(450) = NULL
@@ -67,25 +77,35 @@ BEGIN
 
         DECLARE @IdCompraTrabajo INT
         DECLARE @IdAsientoTrabajo INT
+        DECLARE @IdCompraRetencionTrabajo INT
         DECLARE @IdCompraDetraccionTrabajo INT
         DECLARE @IdAsientoDetraccionTrabajo INT
+        DECLARE @IdCompraPercepcionTrabajo INT
+        DECLARE @IdAsientoPercepcionTrabajo INT
         DECLARE @IdOrigen INT
         DECLARE @IdOrigenDetraccion INT
+        DECLARE @IdOrigenPercepcion INT
         DECLARE @Periodo CHAR(6) = CONVERT(CHAR(4), YEAR(@FechaContabilizacion)) + RIGHT('0' + CONVERT(VARCHAR(2), MONTH(@FechaContabilizacion)), 2)
         DECLARE @Ejercicio SMALLINT = YEAR(@FechaContabilizacion)
         DECLARE @Mes TINYINT = MONTH(@FechaContabilizacion)
         DECLARE @NumeroAsiento INT
         DECLARE @NumeroAsientoDetraccion INT
+        DECLARE @NumeroAsientoPercepcion INT
         DECLARE @GlosaAsiento NVARCHAR(500)
         DECLARE @GlosaAsientoDetraccion NVARCHAR(500)
+        DECLARE @GlosaAsientoPercepcion NVARCHAR(500)
         DECLARE @TotalDebe DECIMAL(18,2)
         DECLARE @TotalHaber DECIMAL(18,2)
         DECLARE @TotalDebeDetraccion DECIMAL(18,2)
         DECLARE @TotalHaberDetraccion DECIMAL(18,2)
+        DECLARE @TotalDebePercepcion DECIMAL(18,2)
+        DECLARE @TotalHaberPercepcion DECIMAL(18,2)
         DECLARE @EstadoConfiguracion BIT
         DECLARE @GeneraAsientoAutomatico BIT
         DECLARE @EstadoConfiguracionDetraccion BIT
         DECLARE @GeneraAsientoAutomaticoDetraccion BIT
+        DECLARE @EstadoConfiguracionPercepcion BIT
+        DECLARE @GeneraAsientoAutomaticoPercepcion BIT
         DECLARE @SubtotalDetalle DECIMAL(18,2)
         DECLARE @TotalExoneradoDetalle DECIMAL(18,2)
         DECLARE @TotalInafectoDetalle DECIMAL(18,2)
@@ -94,20 +114,33 @@ BEGIN
         DECLARE @CodigoMoneda VARCHAR(10)
         DECLARE @IdCuentaDocumento INT
         DECLARE @IdCuentaIgv INT
+        DECLARE @IdCuentaRenta4ta INT
+        DECLARE @IdCuentaIgvPercepcion INT
         DECLARE @IdCuentaIsc INT
         DECLARE @IdCuentaIcbper INT
         DECLARE @IdCuentaOtros INT
         DECLARE @IdCuentaSpot INT
+        DECLARE @IdCuentaPercepcion INT
         DECLARE @NumeroDocumentoProveedor VARCHAR(20)
         DECLARE @DescripcionTipoComprobante NVARCHAR(150)
         DECLARE @CodigoDetraccionSunat VARCHAR(3)
         DECLARE @DescripcionDetraccionSunat NVARCHAR(250)
         DECLARE @PorcentajeDetraccion DECIMAL(7,4)
         DECLARE @ImporteDetraccionCalculado DECIMAL(18,2)
+        DECLARE @CodigoPercepcion VARCHAR(2)
+        DECLARE @DescripcionPercepcion NVARCHAR(200)
+        DECLARE @PorcentajePercepcion DECIMAL(7,4)
+        DECLARE @ImportePercepcionCalculado DECIMAL(18,2)
+        DECLARE @PorcentajeRetencion DECIMAL(7,4) = 0
+        DECLARE @RetencionCalculada DECIMAL(18,2) = 0
         DECLARE @SaldoCompraAnterior DECIMAL(18,2)
         DECLARE @ImporteTotalAnterior DECIMAL(18,2)
+        DECLARE @RetencionAnterior DECIMAL(18,2)
+        DECLARE @SaldoRetencionAnterior DECIMAL(18,2)
         DECLARE @ImporteDetraccionAnterior DECIMAL(18,2)
         DECLARE @SaldoDetraccionAnterior DECIMAL(18,2)
+        DECLARE @ImportePercepcionAnterior DECIMAL(18,2)
+        DECLARE @SaldoPercepcionAnterior DECIMAL(18,2)
 
         IF @BaseImponible < 0
            OR @TotalExonerado < 0
@@ -122,7 +155,14 @@ BEGIN
             RAISERROR(N'Los montos de la compra no pueden ser negativos.', 16, 1);
         END;
 
-        IF @ImporteTotal <> (@BaseImponible + @Igv)
+        IF @TipoComprobante = '02'
+        BEGIN
+            IF @Igv <> 0
+            BEGIN
+                RAISERROR(N'Los recibos por honorarios no deben calcular IGV.', 16, 1);
+            END;
+        END
+        ELSE IF @ImporteTotal <> (@BaseImponible + @Igv)
         BEGIN
             RAISERROR(N'El importe total debe ser igual a la suma del subtotal e IGV.', 16, 1);
         END;
@@ -133,9 +173,27 @@ BEGIN
             SET @ImporteDetraccion = 0;
         END;
 
+        IF @TienePercepcion = 0
+        BEGIN
+            SET @IdTipoPercepcion = NULL;
+            SET @BasePercepcion = 0;
+            SET @ImportePercepcion = 0;
+        END;
+
+        IF @TipoComprobante <> '02'
+        BEGIN
+            SET @ExoneracionRenta4ta = 0;
+            SET @Retencion = 0;
+        END;
+
         IF @TieneDetraccion = 1 AND ISNULL(@IdDetraccionSunat, 0) <= 0
         BEGIN
             RAISERROR(N'Debe seleccionar el codigo de detraccion SUNAT.', 16, 1);
+        END;
+
+        IF @TienePercepcion = 1 AND ISNULL(@IdTipoPercepcion, 0) <= 0
+        BEGIN
+            RAISERROR(N'Debe seleccionar el tipo de percepcion.', 16, 1);
         END;
 
         IF @DetalleXml IS NULL
@@ -183,6 +241,41 @@ BEGIN
             RAISERROR(N'La moneda seleccionada no existe o no esta activa.', 16, 1);
         END;
 
+        IF @TipoComprobante = '02'
+        BEGIN
+            SELECT TOP (1)
+                @PorcentajeRetencion = TRY_CONVERT(DECIMAL(7,4), pe.ValorParametro)
+            FROM dbo.ADM_ParametroEmpresa AS pe
+            WHERE pe.IdEmpresa = @IdEmpresa
+              AND pe.CodigoParametro = 'PORCRETEN4TA'
+              AND pe.Activo = 1
+            ORDER BY pe.IdParametroEmpresa DESC;
+
+            IF @ExoneracionRenta4ta = 1
+            BEGIN
+                SET @RetencionCalculada = 0;
+            END
+            ELSE
+            BEGIN
+                IF ISNULL(@PorcentajeRetencion, 0) <= 0
+                BEGIN
+                    RAISERROR(N'No existe un porcentaje valido configurado en el parametro PORCRETEN4TA.', 16, 1);
+                END;
+
+                SET @RetencionCalculada = ROUND(@BaseImponible * (@PorcentajeRetencion / 100.0), 2);
+            END;
+
+            IF @Retencion <> @RetencionCalculada
+            BEGIN
+                RAISERROR(N'La retencion no coincide con el porcentaje configurado para renta de 4ta.', 16, 1);
+            END;
+
+            IF @ImporteTotal <> (@BaseImponible - @Retencion)
+            BEGIN
+                RAISERROR(N'El importe total del recibo por honorarios debe ser igual al subtotal menos la retencion.', 16, 1);
+            END;
+        END;
+
         IF @TieneDetraccion = 1
         BEGIN
             SELECT
@@ -208,6 +301,39 @@ BEGIN
             IF @ImporteDetraccion <= 0 OR @ImporteDetraccion >= @ImporteTotal
             BEGIN
                 RAISERROR(N'La detraccion debe ser mayor a cero y menor al importe total de la compra.', 16, 1);
+            END;
+        END;
+
+        IF @TienePercepcion = 1
+        BEGIN
+            SELECT
+                @CodigoPercepcion = tp.Codigo,
+                @DescripcionPercepcion = tp.Descripcion,
+                @PorcentajePercepcion = tp.Porcentaje
+            FROM dbo.ADM_TipoPercepcion AS tp
+            WHERE tp.IdTipoPercepcion = @IdTipoPercepcion
+              AND tp.Estado = 1;
+
+            IF @CodigoPercepcion IS NULL
+            BEGIN
+                RAISERROR(N'El tipo de percepcion seleccionado no existe o no esta activo.', 16, 1);
+            END;
+
+            IF @BasePercepcion <> @ImporteTotal
+            BEGIN
+                RAISERROR(N'La base de percepcion debe ser igual al total del comprobante incluido IGV.', 16, 1);
+            END;
+
+            SET @ImportePercepcionCalculado = ROUND(@BasePercepcion * (@PorcentajePercepcion / 100.0), 2);
+
+            IF @ImportePercepcion <> @ImportePercepcionCalculado
+            BEGIN
+                RAISERROR(N'El importe de percepcion no coincide con el porcentaje configurado para el tipo seleccionado.', 16, 1);
+            END;
+
+            IF @ImportePercepcion <= 0
+            BEGIN
+                RAISERROR(N'La percepcion debe ser mayor a cero.', 16, 1);
             END;
         END;
 
@@ -259,6 +385,33 @@ BEGIN
             IF @GeneraAsientoAutomaticoDetraccion = 0
             BEGIN
                 RAISERROR(N'La configuracion contable de detracciones no esta habilitada para generar asiento automatico.', 16, 1);
+            END;
+        END;
+
+        IF @TienePercepcion = 1
+        BEGIN
+            SELECT
+                @IdOrigenPercepcion = c.IdOrigen,
+                @EstadoConfiguracionPercepcion = c.Activo,
+                @GeneraAsientoAutomaticoPercepcion = c.GeneraAsientoAutomatico
+            FROM dbo.CON_ConfiguracionContabilizacion AS c
+            WHERE c.IdEmpresa = @IdEmpresa
+              AND c.ModuloOperacion = 'PER'
+              AND c.EscenarioOperacion = 'PROVISION';
+
+            IF @IdOrigenPercepcion IS NULL
+            BEGIN
+                RAISERROR(N'No existe configuracion contable activa para percepciones en la empresa.', 16, 1);
+            END;
+
+            IF @EstadoConfiguracionPercepcion = 0
+            BEGIN
+                RAISERROR(N'La configuracion contable de percepciones esta inactiva.', 16, 1);
+            END;
+
+            IF @GeneraAsientoAutomaticoPercepcion = 0
+            BEGIN
+                RAISERROR(N'La configuracion contable de percepciones no esta habilitada para generar asiento automatico.', 16, 1);
             END;
         END;
 
@@ -381,7 +534,8 @@ BEGIN
             RAISERROR(N'El total inafecto debe coincidir con la afectacion IGV del detalle.', 16, 1);
         END;
 
-        IF @Igv <> ROUND(@TotalGravadoDetalle * 0.18, 2)
+        IF @TipoComprobante <> '02'
+           AND @Igv <> ROUND(@TotalGravadoDetalle * 0.18, 2)
         BEGIN
             RAISERROR(N'El IGV debe calcularse con base en los items gravados del detalle.', 16, 1);
         END;
@@ -417,6 +571,8 @@ BEGIN
 
         SELECT
             @IdCuentaIgv = MAX(CASE WHEN i.CodigoSunat = 'IGV' THEN COALESCE(CASE WHEN ISNULL(cfg.Activo, 1) = 1 THEN cfg.IdPlanCuenta END, i.IdPlanCuenta) END),
+            @IdCuentaRenta4ta = MAX(CASE WHEN i.CodigoSunat = 'R4TA' THEN COALESCE(CASE WHEN ISNULL(cfg.Activo, 1) = 1 THEN cfg.IdPlanCuenta END, i.IdPlanCuenta) END),
+            @IdCuentaIgvPercepcion = MAX(CASE WHEN i.CodigoSunat = 'IGVPER' THEN COALESCE(CASE WHEN ISNULL(cfg.Activo, 1) = 1 THEN cfg.IdPlanCuenta END, i.IdPlanCuenta) END),
             @IdCuentaIsc = MAX(CASE WHEN i.CodigoSunat = 'ISC' THEN COALESCE(CASE WHEN ISNULL(cfg.Activo, 1) = 1 THEN cfg.IdPlanCuenta END, i.IdPlanCuenta) END),
             @IdCuentaIcbper = MAX(CASE WHEN i.CodigoSunat = 'ICBPER' THEN COALESCE(CASE WHEN ISNULL(cfg.Activo, 1) = 1 THEN cfg.IdPlanCuenta END, i.IdPlanCuenta) END),
             @IdCuentaOtros = MAX(CASE WHEN i.CodigoSunat = 'OTROS' THEN COALESCE(CASE WHEN ISNULL(cfg.Activo, 1) = 1 THEN cfg.IdPlanCuenta END, i.IdPlanCuenta) END)
@@ -440,6 +596,20 @@ BEGIN
         ORDER BY
             pe.IdParametroEmpresa DESC;
 
+        SELECT TOP (1)
+            @IdCuentaPercepcion = pc.IdPlanCuenta
+        FROM dbo.ADM_ParametroEmpresa AS pe
+        INNER JOIN dbo.CON_PlanCuenta AS pc
+            ON pc.CodigoCuenta = pe.ValorParametro
+           AND pc.IdEmpresa = pe.IdEmpresa
+        WHERE pe.IdEmpresa = @IdEmpresa
+          AND pe.CodigoParametro = 'CTADEPERCEPCION'
+          AND pe.Activo = 1
+          AND pc.Estado = 1
+          AND pc.AceptaMovimiento = 1
+        ORDER BY
+            pe.IdParametroEmpresa DESC;
+
         IF @Igv > 0
         AND (
             @IdCuentaIgv IS NULL
@@ -455,6 +625,23 @@ BEGIN
         )
         BEGIN
             RAISERROR(N'No existe una cuenta contable valida configurada para IGV en la empresa.', 16, 1);
+        END;
+
+        IF @Retencion > 0
+        AND (
+            @IdCuentaRenta4ta IS NULL
+            OR NOT EXISTS
+            (
+                SELECT 1
+                FROM dbo.CON_PlanCuenta AS p
+                WHERE p.IdPlanCuenta = @IdCuentaRenta4ta
+                  AND p.IdEmpresa = @IdEmpresa
+                  AND p.Estado = 1
+                  AND p.AceptaMovimiento = 1
+            )
+        )
+        BEGIN
+            RAISERROR(N'No existe una cuenta contable valida configurada para R4TA en la empresa.', 16, 1);
         END;
 
         IF @Isc > 0
@@ -525,6 +712,40 @@ BEGIN
             RAISERROR(N'No existe una cuenta contable valida configurada para el parametro CTADETRACCION en la empresa.', 16, 1);
         END;
 
+        IF @TienePercepcion = 1
+        AND (
+            @IdCuentaIgvPercepcion IS NULL
+            OR NOT EXISTS
+            (
+                SELECT 1
+                FROM dbo.CON_PlanCuenta AS p
+                WHERE p.IdPlanCuenta = @IdCuentaIgvPercepcion
+                  AND p.IdEmpresa = @IdEmpresa
+                  AND p.Estado = 1
+                  AND p.AceptaMovimiento = 1
+            )
+        )
+        BEGIN
+            RAISERROR(N'No existe una cuenta contable valida configurada para IGVPER en la empresa.', 16, 1);
+        END;
+
+        IF @TienePercepcion = 1
+        AND (
+            @IdCuentaPercepcion IS NULL
+            OR NOT EXISTS
+            (
+                SELECT 1
+                FROM dbo.CON_PlanCuenta AS p
+                WHERE p.IdPlanCuenta = @IdCuentaPercepcion
+                  AND p.IdEmpresa = @IdEmpresa
+                  AND p.Estado = 1
+                  AND p.AceptaMovimiento = 1
+            )
+        )
+        BEGIN
+            RAISERROR(N'No existe una cuenta contable valida configurada para el parametro CTADEPERCEPCION en la empresa.', 16, 1);
+        END;
+
         DECLARE @AsientoDetalle TABLE
         (
             Item SMALLINT IDENTITY(1,1) NOT NULL,
@@ -535,6 +756,19 @@ BEGIN
         );
 
         DECLARE @AsientoDetraccionDetalle TABLE
+        (
+            Item SMALLINT IDENTITY(1,1) NOT NULL,
+            IdPlanCuenta INT NOT NULL,
+            Debe DECIMAL(18,2) NOT NULL,
+            Haber DECIMAL(18,2) NOT NULL,
+            GlosaDetalle NVARCHAR(300) NULL,
+            TipoDocumento NVARCHAR(150) NULL,
+            NumeroDocumento VARCHAR(20) NULL,
+            Serie VARCHAR(10) NULL,
+            ReferenciaLinea NVARCHAR(100) NULL
+        );
+
+        DECLARE @AsientoPercepcionDetalle TABLE
         (
             Item SMALLINT IDENTITY(1,1) NOT NULL,
             IdPlanCuenta INT NOT NULL,
@@ -679,6 +913,24 @@ BEGIN
             CONCAT(N'Compra ', @TipoComprobante, N' ', @Serie, N'-', @Numero, N' / Documento')
         );
 
+        IF @Retencion > 0
+        BEGIN
+            INSERT INTO @AsientoDetalle
+            (
+                IdPlanCuenta,
+                Debe,
+                Haber,
+                GlosaDetalle
+            )
+            VALUES
+            (
+                @IdCuentaRenta4ta,
+                0,
+                @Retencion,
+                CONCAT(N'Compra ', @TipoComprobante, N' ', @Serie, N'-', @Numero, N' / Retencion renta 4ta')
+            );
+        END;
+
         IF @TieneDetraccion = 1
         BEGIN
             INSERT INTO @AsientoDetraccionDetalle
@@ -721,6 +973,55 @@ BEGIN
                 0,
                 @ImporteDetraccion,
                 CONCAT(N'Compra ', @TipoComprobante, N' ', @Serie, N'-', @Numero, N' / Detraccion'),
+                N'00',
+                @NumeroDocumentoProveedor,
+                @Serie,
+                @Numero
+            );
+        END;
+
+        IF @TienePercepcion = 1
+        BEGIN
+            INSERT INTO @AsientoPercepcionDetalle
+            (
+                IdPlanCuenta,
+                Debe,
+                Haber,
+                GlosaDetalle,
+                TipoDocumento,
+                NumeroDocumento,
+                Serie,
+                ReferenciaLinea
+            )
+            VALUES
+            (
+                @IdCuentaIgvPercepcion,
+                @ImportePercepcion,
+                0,
+                CONCAT(N'Compra ', @TipoComprobante, N' ', @Serie, N'-', @Numero, N' / Percepcion'),
+                N'00',
+                @NumeroDocumentoProveedor,
+                @Serie,
+                @Numero
+            );
+
+            INSERT INTO @AsientoPercepcionDetalle
+            (
+                IdPlanCuenta,
+                Debe,
+                Haber,
+                GlosaDetalle,
+                TipoDocumento,
+                NumeroDocumento,
+                Serie,
+                ReferenciaLinea
+            )
+            VALUES
+            (
+                @IdCuentaPercepcion,
+                0,
+                @ImportePercepcion,
+                CONCAT(N'Compra ', @TipoComprobante, N' ', @Serie, N'-', @Numero, N' / Aplicacion percepcion'),
                 N'00',
                 @NumeroDocumentoProveedor,
                 @Serie,
@@ -907,6 +1208,7 @@ BEGIN
 
         SET @GlosaAsiento = CONCAT(N'Compra ', @TipoComprobante, N' ', @Serie, N'-', @Numero);
         SET @GlosaAsientoDetraccion = CONCAT(N'Detraccion compra ', @TipoComprobante, N' ', @Serie, N'-', @Numero);
+        SET @GlosaAsientoPercepcion = CONCAT(N'Percepcion compra ', @TipoComprobante, N' ', @Serie, N'-', @Numero);
 
         IF @TieneDetraccion = 1
         BEGIN
@@ -918,6 +1220,19 @@ BEGIN
             IF ISNULL(@TotalDebeDetraccion, 0) <> ISNULL(@TotalHaberDetraccion, 0)
             BEGIN
                 RAISERROR(N'La configuracion contable de detracciones no genera un asiento cuadrado para la compra.', 16, 1);
+            END;
+        END;
+
+        IF @TienePercepcion = 1
+        BEGIN
+            SELECT
+                @TotalDebePercepcion = SUM(d.Debe),
+                @TotalHaberPercepcion = SUM(d.Haber)
+            FROM @AsientoPercepcionDetalle AS d;
+
+            IF ISNULL(@TotalDebePercepcion, 0) <> ISNULL(@TotalHaberPercepcion, 0)
+            BEGIN
+                RAISERROR(N'La configuracion contable de percepciones no genera un asiento cuadrado para la compra.', 16, 1);
             END;
         END;
 
@@ -1041,10 +1356,18 @@ BEGIN
                 Redondeo,
                 ImporteTotal,
                 Saldo,
+                ExoneracionRenta4ta,
+                PorcentajeRetencion,
+                Retencion,
                 TieneDetraccion,
                 IdDetraccionSunat,
                 PorcentajeDetraccion,
                 ImporteDetraccion,
+                TienePercepcion,
+                IdTipoPercepcion,
+                PorcentajePercepcion,
+                BasePercepcion,
+                ImportePercepcion,
                 Observacion,
                 Estado,
                 UsuarioRegistro
@@ -1072,10 +1395,18 @@ BEGIN
                 @Redondeo,
                 @ImporteTotal,
                 @ImporteTotal - @ImporteDetraccion,
+                CASE WHEN @TipoComprobante = '02' THEN @ExoneracionRenta4ta ELSE 0 END,
+                CASE WHEN @TipoComprobante = '02' THEN @PorcentajeRetencion ELSE 0 END,
+                CASE WHEN @TipoComprobante = '02' THEN @Retencion ELSE 0 END,
                 @TieneDetraccion,
                 @IdDetraccionSunat,
                 CASE WHEN @TieneDetraccion = 1 THEN @PorcentajeDetraccion ELSE 0 END,
                 CASE WHEN @TieneDetraccion = 1 THEN @ImporteDetraccion ELSE 0 END,
+                @TienePercepcion,
+                @IdTipoPercepcion,
+                CASE WHEN @TienePercepcion = 1 THEN @PorcentajePercepcion ELSE 0 END,
+                CASE WHEN @TienePercepcion = 1 THEN @BasePercepcion ELSE 0 END,
+                CASE WHEN @TienePercepcion = 1 THEN @ImportePercepcion ELSE 0 END,
                 @Observacion,
                 N'PROVISIONADO',
                 @UsuarioRegistro
@@ -1090,19 +1421,124 @@ BEGIN
                 @IdAsientoTrabajo = c.IdAsiento,
                 @ImporteTotalAnterior = c.ImporteTotal,
                 @SaldoCompraAnterior = c.Saldo,
+                @RetencionAnterior = c.Retencion,
                 @ImporteDetraccionAnterior = c.ImporteDetraccion,
+                @ImportePercepcionAnterior = c.ImportePercepcion,
+                @IdCompraRetencionTrabajo = cr.IdCompraRetencion,
+                @SaldoRetencionAnterior = cr.Saldo,
                 @IdCompraDetraccionTrabajo = cd.IdCompraDetraccion,
                 @IdAsientoDetraccionTrabajo = cd.IdAsiento,
-                @SaldoDetraccionAnterior = cd.Saldo
+                @SaldoDetraccionAnterior = cd.Saldo,
+                @IdCompraPercepcionTrabajo = cp.IdCompraPercepcion,
+                @IdAsientoPercepcionTrabajo = cp.IdAsiento,
+                @SaldoPercepcionAnterior = cp.Saldo
             FROM dbo.COM_Compra AS c
+            LEFT JOIN dbo.COM_CompraRetencion AS cr
+                ON cr.IdCompra = c.IdCompra
             LEFT JOIN dbo.COM_CompraDetraccion AS cd
                 ON cd.IdCompra = c.IdCompra
+            LEFT JOIN dbo.COM_CompraPercepcion AS cp
+                ON cp.IdCompra = c.IdCompra
             WHERE c.IdCompra = @IdCompra
               AND c.IdEmpresa = @IdEmpresa;
 
             IF @IdCompraTrabajo IS NULL
             BEGIN
                 RAISERROR(N'La compra indicada no existe para la empresa activa.', 16, 1);
+            END;
+
+            IF @IdAsientoTrabajo IS NULL
+            BEGIN
+                IF EXISTS
+                (
+                    SELECT 1
+                    FROM dbo.CON_CorrelativoAsiento AS c WITH (UPDLOCK, HOLDLOCK)
+                    WHERE c.IdEmpresa = @IdEmpresa
+                      AND c.IdOrigen = @IdOrigen
+                      AND c.Periodo = @Periodo
+                )
+                BEGIN
+                    UPDATE dbo.CON_CorrelativoAsiento
+                    SET UltimoNumero = UltimoNumero + 1,
+                        FechaActualizacion = SYSDATETIME(),
+                        UsuarioRegistro = @UsuarioRegistro
+                    WHERE IdEmpresa = @IdEmpresa
+                      AND IdOrigen = @IdOrigen
+                      AND Periodo = @Periodo;
+
+                    SELECT
+                        @NumeroAsiento = c.UltimoNumero
+                    FROM dbo.CON_CorrelativoAsiento AS c
+                    WHERE c.IdEmpresa = @IdEmpresa
+                      AND c.IdOrigen = @IdOrigen
+                      AND c.Periodo = @Periodo;
+                END
+                ELSE
+                BEGIN
+                    INSERT INTO dbo.CON_CorrelativoAsiento
+                    (
+                        IdEmpresa,
+                        IdOrigen,
+                        Periodo,
+                        UltimoNumero,
+                        FechaActualizacion,
+                        UsuarioRegistro
+                    )
+                    VALUES
+                    (
+                        @IdEmpresa,
+                        @IdOrigen,
+                        @Periodo,
+                        1,
+                        SYSDATETIME(),
+                        @UsuarioRegistro
+                    );
+
+                    SET @NumeroAsiento = 1;
+                END;
+
+                INSERT INTO dbo.CON_Asiento
+                (
+                    IdEmpresa,
+                    IdOrigen,
+                    Ejercicio,
+                    Mes,
+                    Periodo,
+                    NumeroAsiento,
+                    FechaEmision,
+                    FechaAsiento,
+                    Glosa,
+                    IdMoneda,
+                    TipoCambio,
+                    TotalDebe,
+                    TotalHaber,
+                    Estado,
+                    ReferenciaExterna,
+                    Observacion,
+                    UsuarioRegistro
+                )
+                VALUES
+                (
+                    @IdEmpresa,
+                    @IdOrigen,
+                    @Ejercicio,
+                    @Mes,
+                    @Periodo,
+                    @NumeroAsiento,
+                    @FechaEmision,
+                    @FechaContabilizacion,
+                    @GlosaAsiento,
+                    @IdMoneda,
+                    @TipoCambio,
+                    @TotalDebe,
+                    @TotalHaber,
+                    N'PROVISIONADO',
+                    CONCAT(@TipoComprobante, N' ', @Serie, N'-', @Numero),
+                    @Observacion,
+                    @UsuarioRegistro
+                );
+
+                SET @IdAsientoTrabajo = SCOPE_IDENTITY();
             END;
 
             IF ISNULL(@SaldoCompraAnterior, 0) < ISNULL(@ImporteTotalAnterior, 0) - ISNULL(@ImporteDetraccionAnterior, 0)
@@ -1116,9 +1552,22 @@ BEGIN
                 RAISERROR(N'La detraccion vinculada ya tiene pagos aplicados y no puede modificarse desde provisiones.', 16, 1);
             END;
 
+            IF @IdCompraRetencionTrabajo IS NOT NULL
+               AND ISNULL(@SaldoRetencionAnterior, 0) < ISNULL(@RetencionAnterior, 0)
+            BEGIN
+                RAISERROR(N'La retencion vinculada ya tiene pagos aplicados y no puede modificarse desde provisiones.', 16, 1);
+            END;
+
+            IF @IdCompraPercepcionTrabajo IS NOT NULL
+               AND ISNULL(@SaldoPercepcionAnterior, 0) < ISNULL(@ImportePercepcionAnterior, 0)
+            BEGIN
+                RAISERROR(N'La percepcion vinculada ya tiene pagos aplicados y no puede modificarse desde provisiones.', 16, 1);
+            END;
+
             UPDATE dbo.COM_Compra
             SET IdProveedor = @IdProveedor,
                 IdConfiguracionContabilizacion = @IdConfiguracionContabilizacion,
+                IdAsiento = @IdAsientoTrabajo,
                 FechaEmision = @FechaEmision,
                 FechaContabilizacion = @FechaContabilizacion,
                 TipoComprobante = @TipoComprobante,
@@ -1136,10 +1585,18 @@ BEGIN
                 Redondeo = @Redondeo,
                 ImporteTotal = @ImporteTotal,
                 Saldo = @ImporteTotal - @ImporteDetraccion,
+                ExoneracionRenta4ta = CASE WHEN @TipoComprobante = '02' THEN @ExoneracionRenta4ta ELSE 0 END,
+                PorcentajeRetencion = CASE WHEN @TipoComprobante = '02' THEN @PorcentajeRetencion ELSE 0 END,
+                Retencion = CASE WHEN @TipoComprobante = '02' THEN @Retencion ELSE 0 END,
                 TieneDetraccion = @TieneDetraccion,
                 IdDetraccionSunat = @IdDetraccionSunat,
                 PorcentajeDetraccion = CASE WHEN @TieneDetraccion = 1 THEN @PorcentajeDetraccion ELSE 0 END,
                 ImporteDetraccion = CASE WHEN @TieneDetraccion = 1 THEN @ImporteDetraccion ELSE 0 END,
+                TienePercepcion = @TienePercepcion,
+                IdTipoPercepcion = @IdTipoPercepcion,
+                PorcentajePercepcion = CASE WHEN @TienePercepcion = 1 THEN @PorcentajePercepcion ELSE 0 END,
+                BasePercepcion = CASE WHEN @TienePercepcion = 1 THEN @BasePercepcion ELSE 0 END,
+                ImportePercepcion = CASE WHEN @TienePercepcion = 1 THEN @ImportePercepcion ELSE 0 END,
                 Observacion = @Observacion,
                 Estado = N'PROVISIONADO',
                 UsuarioRegistro = @UsuarioRegistro
@@ -1164,6 +1621,73 @@ BEGIN
 
             DELETE FROM dbo.COM_CompraDetalle
             WHERE IdCompra = @IdCompraTrabajo;
+        END;
+
+        IF @Retencion > 0
+        BEGIN
+            IF @IdCompraRetencionTrabajo IS NULL
+            BEGIN
+                INSERT INTO dbo.COM_CompraRetencion
+                (
+                    IdEmpresa,
+                    IdCompra,
+                    IdProveedor,
+                    FechaEmision,
+                    FechaContabilizacion,
+                    IdMoneda,
+                    TipoCambio,
+                    PorcentajeRetencion,
+                    Retencion,
+                    Saldo,
+                    ReferenciaDocumento,
+                    Observacion,
+                    Estado,
+                    UsuarioRegistro
+                )
+                VALUES
+                (
+                    @IdEmpresa,
+                    @IdCompraTrabajo,
+                    @IdProveedor,
+                    @FechaEmision,
+                    @FechaContabilizacion,
+                    @IdMoneda,
+                    @TipoCambio,
+                    @PorcentajeRetencion,
+                    @Retencion,
+                    @Retencion,
+                    CONCAT(@TipoComprobante, N' ', @Serie, N'-', @Numero),
+                    @Observacion,
+                    N'PROVISIONADO',
+                    @UsuarioRegistro
+                );
+
+                SET @IdCompraRetencionTrabajo = SCOPE_IDENTITY();
+            END
+            ELSE
+            BEGIN
+                UPDATE dbo.COM_CompraRetencion
+                SET IdProveedor = @IdProveedor,
+                    FechaEmision = @FechaEmision,
+                    FechaContabilizacion = @FechaContabilizacion,
+                    IdMoneda = @IdMoneda,
+                    TipoCambio = @TipoCambio,
+                    PorcentajeRetencion = @PorcentajeRetencion,
+                    Retencion = @Retencion,
+                    Saldo = @Retencion,
+                    ReferenciaDocumento = CONCAT(@TipoComprobante, N' ', @Serie, N'-', @Numero),
+                    Observacion = @Observacion,
+                    Estado = N'PROVISIONADO',
+                    UsuarioRegistro = @UsuarioRegistro
+                WHERE IdCompraRetencion = @IdCompraRetencionTrabajo;
+            END;
+        END
+        ELSE IF @IdCompraRetencionTrabajo IS NOT NULL
+        BEGIN
+            DELETE FROM dbo.COM_CompraRetencion
+            WHERE IdCompraRetencion = @IdCompraRetencionTrabajo;
+
+            SET @IdCompraRetencionTrabajo = NULL;
         END;
 
         IF @TieneDetraccion = 1
@@ -1364,11 +1888,213 @@ BEGIN
             SET @IdAsientoDetraccionTrabajo = NULL;
         END;
 
+        IF @TienePercepcion = 1
+        BEGIN
+            IF @IdCompraPercepcionTrabajo IS NULL
+            BEGIN
+                IF EXISTS
+                (
+                    SELECT 1
+                    FROM dbo.CON_CorrelativoAsiento AS c WITH (UPDLOCK, HOLDLOCK)
+                    WHERE c.IdEmpresa = @IdEmpresa
+                      AND c.IdOrigen = @IdOrigenPercepcion
+                      AND c.Periodo = @Periodo
+                )
+                BEGIN
+                    UPDATE dbo.CON_CorrelativoAsiento
+                    SET UltimoNumero = UltimoNumero + 1,
+                        FechaActualizacion = SYSDATETIME(),
+                        UsuarioRegistro = @UsuarioRegistro
+                    WHERE IdEmpresa = @IdEmpresa
+                      AND IdOrigen = @IdOrigenPercepcion
+                      AND Periodo = @Periodo;
+
+                    SELECT
+                        @NumeroAsientoPercepcion = c.UltimoNumero
+                    FROM dbo.CON_CorrelativoAsiento AS c
+                    WHERE c.IdEmpresa = @IdEmpresa
+                      AND c.IdOrigen = @IdOrigenPercepcion
+                      AND c.Periodo = @Periodo;
+                END
+                ELSE
+                BEGIN
+                    INSERT INTO dbo.CON_CorrelativoAsiento
+                    (
+                        IdEmpresa,
+                        IdOrigen,
+                        Periodo,
+                        UltimoNumero,
+                        FechaActualizacion,
+                        UsuarioRegistro
+                    )
+                    VALUES
+                    (
+                        @IdEmpresa,
+                        @IdOrigenPercepcion,
+                        @Periodo,
+                        1,
+                        SYSDATETIME(),
+                        @UsuarioRegistro
+                    );
+
+                    SET @NumeroAsientoPercepcion = 1;
+                END;
+
+                INSERT INTO dbo.CON_Asiento
+                (
+                    IdEmpresa,
+                    IdOrigen,
+                    Ejercicio,
+                    Mes,
+                    Periodo,
+                    NumeroAsiento,
+                    FechaEmision,
+                    FechaAsiento,
+                    Glosa,
+                    IdMoneda,
+                    TipoCambio,
+                    TotalDebe,
+                    TotalHaber,
+                    Estado,
+                    ReferenciaExterna,
+                    Observacion,
+                    UsuarioRegistro
+                )
+                VALUES
+                (
+                    @IdEmpresa,
+                    @IdOrigenPercepcion,
+                    @Ejercicio,
+                    @Mes,
+                    @Periodo,
+                    @NumeroAsientoPercepcion,
+                    @FechaEmision,
+                    @FechaContabilizacion,
+                    @GlosaAsientoPercepcion,
+                    @IdMoneda,
+                    @TipoCambio,
+                    @TotalDebePercepcion,
+                    @TotalHaberPercepcion,
+                    N'PROVISIONADO',
+                    CONCAT(N'PER ', @TipoComprobante, N' ', @Serie, N'-', @Numero),
+                    @Observacion,
+                    @UsuarioRegistro
+                );
+
+                SET @IdAsientoPercepcionTrabajo = SCOPE_IDENTITY();
+
+                INSERT INTO dbo.COM_CompraPercepcion
+                (
+                    IdEmpresa,
+                    IdCompra,
+                    IdProveedor,
+                    IdTipoPercepcion,
+                    IdAsiento,
+                    FechaEmision,
+                    FechaContabilizacion,
+                    IdMoneda,
+                    TipoCambio,
+                    CodigoPercepcion,
+                    DescripcionPercepcion,
+                    PorcentajePercepcion,
+                    BasePercepcion,
+                    ImportePercepcion,
+                    Saldo,
+                    ReferenciaDocumento,
+                    Observacion,
+                    Estado,
+                    UsuarioRegistro
+                )
+                VALUES
+                (
+                    @IdEmpresa,
+                    @IdCompraTrabajo,
+                    @IdProveedor,
+                    @IdTipoPercepcion,
+                    @IdAsientoPercepcionTrabajo,
+                    @FechaEmision,
+                    @FechaContabilizacion,
+                    @IdMoneda,
+                    @TipoCambio,
+                    @CodigoPercepcion,
+                    @DescripcionPercepcion,
+                    @PorcentajePercepcion,
+                    @BasePercepcion,
+                    @ImportePercepcion,
+                    @ImportePercepcion,
+                    CONCAT(@TipoComprobante, N' ', @Serie, N'-', @Numero),
+                    @Observacion,
+                    N'PROVISIONADO',
+                    @UsuarioRegistro
+                );
+
+                SET @IdCompraPercepcionTrabajo = SCOPE_IDENTITY();
+            END
+            ELSE
+            BEGIN
+                DELETE FROM dbo.CON_AsientoDetalle
+                WHERE IdAsiento = @IdAsientoPercepcionTrabajo;
+
+                UPDATE dbo.CON_Asiento
+                SET FechaEmision = @FechaEmision,
+                    FechaAsiento = @FechaContabilizacion,
+                    Glosa = @GlosaAsientoPercepcion,
+                    IdMoneda = @IdMoneda,
+                    TipoCambio = @TipoCambio,
+                    TotalDebe = @TotalDebePercepcion,
+                    TotalHaber = @TotalHaberPercepcion,
+                    Estado = N'PROVISIONADO',
+                    ReferenciaExterna = CONCAT(N'PER ', @TipoComprobante, N' ', @Serie, N'-', @Numero),
+                    Observacion = @Observacion,
+                    UsuarioRegistro = @UsuarioRegistro
+                WHERE IdAsiento = @IdAsientoPercepcionTrabajo;
+
+                UPDATE dbo.COM_CompraPercepcion
+                SET IdProveedor = @IdProveedor,
+                    IdTipoPercepcion = @IdTipoPercepcion,
+                    IdAsiento = @IdAsientoPercepcionTrabajo,
+                    FechaEmision = @FechaEmision,
+                    FechaContabilizacion = @FechaContabilizacion,
+                    IdMoneda = @IdMoneda,
+                    TipoCambio = @TipoCambio,
+                    CodigoPercepcion = @CodigoPercepcion,
+                    DescripcionPercepcion = @DescripcionPercepcion,
+                    PorcentajePercepcion = @PorcentajePercepcion,
+                    BasePercepcion = @BasePercepcion,
+                    ImportePercepcion = @ImportePercepcion,
+                    Saldo = @ImportePercepcion,
+                    ReferenciaDocumento = CONCAT(@TipoComprobante, N' ', @Serie, N'-', @Numero),
+                    Observacion = @Observacion,
+                    Estado = N'PROVISIONADO',
+                    UsuarioRegistro = @UsuarioRegistro
+                WHERE IdCompraPercepcion = @IdCompraPercepcionTrabajo;
+            END;
+        END
+        ELSE IF @IdCompraPercepcionTrabajo IS NOT NULL
+        BEGIN
+            DELETE FROM dbo.COM_CompraPercepcion
+            WHERE IdCompraPercepcion = @IdCompraPercepcionTrabajo;
+
+            IF @IdAsientoPercepcionTrabajo IS NOT NULL
+            BEGIN
+                DELETE FROM dbo.CON_AsientoDetalle
+                WHERE IdAsiento = @IdAsientoPercepcionTrabajo;
+
+                DELETE FROM dbo.CON_Asiento
+                WHERE IdAsiento = @IdAsientoPercepcionTrabajo
+                  AND IdEmpresa = @IdEmpresa;
+            END;
+
+            SET @IdCompraPercepcionTrabajo = NULL;
+            SET @IdAsientoPercepcionTrabajo = NULL;
+        END;
+
         INSERT INTO dbo.CON_AsientoDetalle
         (
             IdAsiento,
             Item,
             IdPlanCuenta,
+            DH,
             GlosaDetalle,
             TipoDocumento,
             NumeroDocumento,
@@ -1376,6 +2102,7 @@ BEGIN
             IdProveedor,
             Debe,
             Haber,
+            TipoCambioLinea,
             TotalImporteS,
             TotalImporteD,
             ReferenciaLinea,
@@ -1385,6 +2112,7 @@ BEGIN
             @IdAsientoTrabajo,
             d.Item,
             d.IdPlanCuenta,
+            calc.Dh,
             d.GlosaDetalle,
             @TipoComprobante,
             @NumeroDocumentoProveedor,
@@ -1392,6 +2120,7 @@ BEGIN
             @IdProveedor,
             d.Debe,
             d.Haber,
+            calc.TipoCambioAplicado,
             CASE
                 WHEN @CodigoMoneda = 'USD' THEN ROUND(calc.ImporteLinea * calc.TipoCambioAplicado, 2)
                 ELSE calc.ImporteLinea
@@ -1410,6 +2139,7 @@ BEGIN
                     WHEN d.Debe > 0 THEN d.Debe
                     ELSE d.Haber
                 END AS ImporteLinea,
+                CASE WHEN d.Debe > 0 THEN 'D' ELSE 'H' END AS Dh,
                 CASE WHEN @TipoCambio > 0 THEN @TipoCambio ELSE 1 END AS TipoCambioAplicado
         ) AS calc
         ORDER BY
@@ -1422,6 +2152,7 @@ BEGIN
                 IdAsiento,
                 Item,
                 IdPlanCuenta,
+                DH,
                 GlosaDetalle,
                 TipoDocumento,
                 NumeroDocumento,
@@ -1429,6 +2160,7 @@ BEGIN
                 IdProveedor,
                 Debe,
                 Haber,
+                TipoCambioLinea,
                 TotalImporteS,
                 TotalImporteD,
                 ReferenciaLinea,
@@ -1438,6 +2170,7 @@ BEGIN
                 @IdAsientoDetraccionTrabajo,
                 d.Item,
                 d.IdPlanCuenta,
+                calc.Dh,
                 d.GlosaDetalle,
                 d.TipoDocumento,
                 d.NumeroDocumento,
@@ -1445,6 +2178,7 @@ BEGIN
                 @IdProveedor,
                 d.Debe,
                 d.Haber,
+                calc.TipoCambioAplicado,
                 CASE
                     WHEN @CodigoMoneda = 'USD' THEN ROUND(calc.ImporteLinea * calc.TipoCambioAplicado, 2)
                     ELSE calc.ImporteLinea
@@ -1463,6 +2197,66 @@ BEGIN
                         WHEN d.Debe > 0 THEN d.Debe
                         ELSE d.Haber
                     END AS ImporteLinea,
+                    CASE WHEN d.Debe > 0 THEN 'D' ELSE 'H' END AS Dh,
+                    CASE WHEN @TipoCambio > 0 THEN @TipoCambio ELSE 1 END AS TipoCambioAplicado
+            ) AS calc
+            ORDER BY
+                d.Item ASC;
+        END;
+
+        IF @TienePercepcion = 1 AND @IdAsientoPercepcionTrabajo IS NOT NULL
+        BEGIN
+            INSERT INTO dbo.CON_AsientoDetalle
+            (
+                IdAsiento,
+                Item,
+                IdPlanCuenta,
+                DH,
+                GlosaDetalle,
+                TipoDocumento,
+                NumeroDocumento,
+                Serie,
+                IdProveedor,
+                Debe,
+                Haber,
+                TipoCambioLinea,
+                TotalImporteS,
+                TotalImporteD,
+                ReferenciaLinea,
+                UsuarioRegistro
+            )
+            SELECT
+                @IdAsientoPercepcionTrabajo,
+                d.Item,
+                d.IdPlanCuenta,
+                calc.Dh,
+                d.GlosaDetalle,
+                d.TipoDocumento,
+                d.NumeroDocumento,
+                d.Serie,
+                @IdProveedor,
+                d.Debe,
+                d.Haber,
+                calc.TipoCambioAplicado,
+                CASE
+                    WHEN @CodigoMoneda = 'USD' THEN ROUND(calc.ImporteLinea * calc.TipoCambioAplicado, 2)
+                    ELSE calc.ImporteLinea
+                END,
+                CASE
+                    WHEN @CodigoMoneda = 'USD' THEN calc.ImporteLinea
+                    ELSE ROUND(calc.ImporteLinea / NULLIF(calc.TipoCambioAplicado, 0), 2)
+                END,
+                d.ReferenciaLinea,
+                @UsuarioRegistro
+            FROM @AsientoPercepcionDetalle AS d
+            CROSS APPLY
+            (
+                SELECT
+                    CASE
+                        WHEN d.Debe > 0 THEN d.Debe
+                        ELSE d.Haber
+                    END AS ImporteLinea,
+                    CASE WHEN d.Debe > 0 THEN 'D' ELSE 'H' END AS Dh,
                     CASE WHEN @TipoCambio > 0 THEN @TipoCambio ELSE 1 END AS TipoCambioAplicado
             ) AS calc
             ORDER BY
@@ -1502,13 +2296,21 @@ BEGIN
         SELECT
             c.IdCompra,
             c.IdAsiento,
+            cr.IdCompraRetencion,
             cd.IdAsiento AS IdAsientoDetraccion,
+            cp.IdAsiento AS IdAsientoPercepcion,
             c.ImporteTotal,
+            c.Retencion,
             c.ImporteDetraccion,
+            c.ImportePercepcion,
             c.Estado
         FROM dbo.COM_Compra AS c
+        LEFT JOIN dbo.COM_CompraRetencion AS cr
+            ON cr.IdCompra = c.IdCompra
         LEFT JOIN dbo.COM_CompraDetraccion AS cd
             ON cd.IdCompra = c.IdCompra
+        LEFT JOIN dbo.COM_CompraPercepcion AS cp
+            ON cp.IdCompra = c.IdCompra
         WHERE c.IdCompra = @IdCompraTrabajo;
 
     END TRY

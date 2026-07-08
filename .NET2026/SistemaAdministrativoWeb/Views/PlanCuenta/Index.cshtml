@@ -5,6 +5,7 @@
    Create date:   18/06/2026
    Description:   Agrega filtro de nivel en el listado de plan de cuentas.
    ============================================= *@
+@* Firma: FRANCO LARA - 01/07/2026 | Muestra el modo de diferencia en cambio por cuenta para identificar rapidamente si una cuenta en USD se procesa por saldo o por analisis. *@
 
 @{
     ViewData["Title"] = "Plan de cuentas";
@@ -28,6 +29,18 @@
         "C" => "Compra",
         _ => "-"
     };
+
+    static string NormalizarMonedaPlanCuenta(string idMoneda) => (idMoneda ?? string.Empty).Trim().ToUpperInvariant() switch
+    {
+        "S" => "PEN",
+        "D" => "USD",
+        var valor => valor
+    };
+
+    static string ObtenerModoDiferenciaCambio(string idMoneda, bool generaPorAnalisis) =>
+        !string.Equals(NormalizarMonedaPlanCuenta(idMoneda), "USD", StringComparison.OrdinalIgnoreCase)
+            ? "-"
+            : generaPorAnalisis ? "Analisis" : "Saldo";
 }
 
 <section class="dashboard-shell">
@@ -122,6 +135,7 @@
                             <th>Col. balance</th>
                             <th>Moneda</th>
                             <th>TC</th>
+                            <th>Dif. cambio</th>
                             <th>Movimiento</th>
                             <th>Centro costo</th>
                             <th>Estado</th>
@@ -132,7 +146,7 @@
                         @if (Model.Cuentas.Count == 0)
                         {
                             <tr>
-                                <td colspan="10">
+                                <td colspan="11">
                                     <div class="app-empty-state app-empty-state-inline">
                                         <i class="bi bi-diagram-3"></i>
                                         <div>
@@ -157,8 +171,9 @@
                                     </td>
                                     <td>@cuenta.NivelCuenta</td>
                                     <td>@ObtenerColBalance(cuenta.ColBalance)</td>
-                                    <td>@(string.IsNullOrWhiteSpace(cuenta.IdMoneda) ? "-" : cuenta.IdMoneda)</td>
+                                    <td>@(string.IsNullOrWhiteSpace(cuenta.IdMoneda) ? "-" : NormalizarMonedaPlanCuenta(cuenta.IdMoneda))</td>
                                     <td>@ObtenerTipoCambio(cuenta.TipoCambio)</td>
+                                    <td>@ObtenerModoDiferenciaCambio(cuenta.IdMoneda, cuenta.GeneraDiferenciaPorAnalisis)</td>
                                     <td>@(cuenta.AceptaMovimiento ? "Si" : "No")</td>
                                     <td>@(cuenta.RequiereCentroCosto ? "Si" : "No")</td>
                                     <td>

@@ -18,6 +18,8 @@
 -- Create date:   24/06/2026
 -- Description:   Agrega indicador de ultimo nivel y permite filtrar ayudas para seleccionar solo cuentas hoja.
 -- =============================================
+-- Firma: FRANCO LARA - 01/07/2026 | Expone GeneraDiferenciaPorAnalisis en el mantenimiento web del plan de cuentas para soportar la generacion de diferencia en cambio por cuenta.
+-- Firma: FRANCO LARA - 02/07/2026 | Corrige el filtro SoloMovimiento para que las ayudas web de plan de cuentas vuelvan a listar las cuentas operativas en compras, asientos y caja bancos.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_ListarPlanCuentaPorEmpresa
     @IdEmpresa INT,
@@ -50,6 +52,7 @@ BEGIN
                 pc.IdMoneda,
                 pc.TipoCambio,
                 pc.AceptaMovimiento,
+                pc.GeneraDiferenciaPorAnalisis,
                 CAST(CASE
                     WHEN EXISTS
                     (
@@ -67,7 +70,7 @@ BEGIN
             FROM dbo.CON_PlanCuenta AS pc
             WHERE pc.IdEmpresa = @IdEmpresa
               AND pc.Estado = 1
-              AND (@SoloMovimiento = 0 )
+              AND (@SoloMovimiento = 0 OR pc.AceptaMovimiento = 1)
               AND (@NivelCuenta IS NULL OR pc.NivelCuenta = @NivelCuenta)
               AND (
                     @SoloUltimoNivel = 0
@@ -96,6 +99,7 @@ BEGIN
             b.IdMoneda,
             b.TipoCambio,
             b.AceptaMovimiento,
+            b.GeneraDiferenciaPorAnalisis,
             b.EsUltimoNivel,
             b.RequiereCentroCosto,
             b.Estado,

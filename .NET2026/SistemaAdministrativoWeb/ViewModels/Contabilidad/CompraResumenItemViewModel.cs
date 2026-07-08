@@ -12,6 +12,11 @@ public sealed class CompraResumenItemViewModel
     public decimal ImporteTotal { get; init; }
     public decimal Saldo { get; init; }
     public int? IdAsiento { get; init; }
+    public int? NumeroAsiento { get; init; }
+    public string TipoComprobante { get; init; } = string.Empty;
+    public DateTime? FechaValidacionCpe { get; init; }
+    public string? EstadoValidacionCpe { get; init; }
+    public string? MensajeValidacionCpe { get; init; }
     public string Estado { get; init; } = string.Empty;
     public string Situacion { get; init; } = string.Empty;
 }

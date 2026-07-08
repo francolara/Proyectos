@@ -35,8 +35,8 @@ public sealed class AsientoDetalleFormViewModel
     [StringLength(10)]
     public string? Serie { get; set; }
 
-    [Range(typeof(decimal), "0", "999999999999")]
-    public decimal? TipoCambioLinea { get; set; }
+    [Range(typeof(decimal), "0.000001", "999999999999", ErrorMessage = "Ingrese un tipo de cambio mayor a cero en la linea.")]
+    public decimal TipoCambioLinea { get; set; }
 
     [Range(typeof(decimal), "0", "999999999999")]
     public decimal Debe { get; set; }

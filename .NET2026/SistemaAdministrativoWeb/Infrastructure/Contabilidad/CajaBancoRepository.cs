@@ -249,7 +249,7 @@ public sealed class CajaBancoRepository(IDbConnectionFactory connectionFactory) 
                     new XAttribute("TipoDocumento", x.TipoDocumento ?? string.Empty),
                     new XAttribute("Serie", x.Serie ?? string.Empty),
                     new XAttribute("ReferenciaLinea", x.ReferenciaLinea ?? string.Empty),
-                    new XAttribute("TipoCambioLinea", x.TipoCambioLinea ?? 0),
+                    new XAttribute("TipoCambioLinea", x.TipoCambioLinea),
                     new XAttribute("Debe", x.Debe),
                     new XAttribute("Haber", x.Haber)))));
 
@@ -420,6 +420,7 @@ public sealed class CajaBancoRepository(IDbConnectionFactory connectionFactory) 
             {
                 IdTransferenciaCuenta = reader.GetGuid(reader.GetOrdinal("IdTransferenciaCuenta")),
                 IdMovimientoBancoEmisor = reader.GetInt32(reader.GetOrdinal("IdMovimientoBancoEmisor")),
+                IdAsientoEmisor = reader.IsDBNull(reader.GetOrdinal("IdAsientoEmisor")) ? null : reader.GetInt32(reader.GetOrdinal("IdAsientoEmisor")),
                 NumeroMovimientoEmisor = reader.GetInt32(reader.GetOrdinal("NumeroMovimientoEmisor")),
                 NumeroAsientoEmisor = reader.IsDBNull(reader.GetOrdinal("NumeroAsientoEmisor")) ? null : reader.GetInt32(reader.GetOrdinal("NumeroAsientoEmisor")),
                 IdBancoConfiguracionEmpresaEmisor = reader.GetInt32(reader.GetOrdinal("IdBancoConfiguracionEmpresaEmisor")),
@@ -432,6 +433,7 @@ public sealed class CajaBancoRepository(IDbConnectionFactory connectionFactory) 
                 ImporteEmisor = reader.GetDecimal(reader.GetOrdinal("ImporteEmisor")),
                 GlosaEmisor = reader.GetString(reader.GetOrdinal("GlosaEmisor")),
                 IdMovimientoBancoReceptor = reader.GetInt32(reader.GetOrdinal("IdMovimientoBancoReceptor")),
+                IdAsientoReceptor = reader.IsDBNull(reader.GetOrdinal("IdAsientoReceptor")) ? null : reader.GetInt32(reader.GetOrdinal("IdAsientoReceptor")),
                 NumeroMovimientoReceptor = reader.GetInt32(reader.GetOrdinal("NumeroMovimientoReceptor")),
                 NumeroAsientoReceptor = reader.IsDBNull(reader.GetOrdinal("NumeroAsientoReceptor")) ? null : reader.GetInt32(reader.GetOrdinal("NumeroAsientoReceptor")),
                 IdBancoConfiguracionEmpresaReceptor = reader.GetInt32(reader.GetOrdinal("IdBancoConfiguracionEmpresaReceptor")),

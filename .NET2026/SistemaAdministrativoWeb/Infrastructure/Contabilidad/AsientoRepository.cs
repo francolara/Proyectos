@@ -131,6 +131,7 @@ public sealed class AsientoRepository(IDbConnectionFactory connectionFactory) : 
                     IdAsiento = reader.GetInt32(reader.GetOrdinal("IdAsiento")),
                     Item = reader.GetInt16(reader.GetOrdinal("Item")),
                     IdPlanCuenta = reader.GetInt32(reader.GetOrdinal("IdPlanCuenta")),
+                    Dh = reader.IsDBNull(reader.GetOrdinal("DH")) ? "D" : reader.GetString(reader.GetOrdinal("DH")),
                     CodigoCuenta = reader.GetString(reader.GetOrdinal("CodigoCuenta")),
                     NombreCuenta = reader.GetString(reader.GetOrdinal("NombreCuenta")),
                     GlosaDetalle = reader.IsDBNull(reader.GetOrdinal("GlosaDetalle")) ? null : reader.GetString(reader.GetOrdinal("GlosaDetalle")),
@@ -162,6 +163,7 @@ public sealed class AsientoRepository(IDbConnectionFactory connectionFactory) : 
         command.Parameters.AddWithValue("@IdAsiento", (object?)request.IdAsiento ?? DBNull.Value);
         command.Parameters.AddWithValue("@IdEmpresa", request.IdEmpresa);
         command.Parameters.AddWithValue("@IdOrigen", request.IdOrigen);
+        command.Parameters.AddWithValue("@Periodo", request.Periodo);
         command.Parameters.AddWithValue("@FechaEmision", request.FechaEmision.ToDateTime(TimeOnly.MinValue));
         command.Parameters.AddWithValue("@FechaAsiento", request.FechaAsiento.ToDateTime(TimeOnly.MinValue));
         command.Parameters.AddWithValue("@Glosa", request.Glosa);
@@ -230,6 +232,8 @@ public sealed class AsientoRepository(IDbConnectionFactory connectionFactory) : 
             TipoCambio = reader.GetDecimal(reader.GetOrdinal("TipoCambio")),
             TotalDebe = reader.GetDecimal(reader.GetOrdinal("TotalDebe")),
             TotalHaber = reader.GetDecimal(reader.GetOrdinal("TotalHaber")),
+            TotalImporteS = reader.IsDBNull(reader.GetOrdinal("TotalImporteS")) ? 0m : reader.GetDecimal(reader.GetOrdinal("TotalImporteS")),
+            TotalImporteD = reader.IsDBNull(reader.GetOrdinal("TotalImporteD")) ? 0m : reader.GetDecimal(reader.GetOrdinal("TotalImporteD")),
             Estado = reader.GetString(reader.GetOrdinal("Estado")),
             ReferenciaExterna = reader.IsDBNull(reader.GetOrdinal("ReferenciaExterna")) ? null : reader.GetString(reader.GetOrdinal("ReferenciaExterna")),
             Observacion = reader.IsDBNull(reader.GetOrdinal("Observacion")) ? null : reader.GetString(reader.GetOrdinal("Observacion"))
@@ -242,12 +246,13 @@ public sealed class AsientoRepository(IDbConnectionFactory connectionFactory) : 
             detalles.Select(x => new XElement("Detalle",
                 new XAttribute("Item", x.Item),
                 new XAttribute("IdPlanCuenta", x.IdPlanCuenta),
+                new XAttribute("DH", string.IsNullOrWhiteSpace(x.Dh) ? (x.Debe > 0 ? "D" : "H") : x.Dh.Trim().ToUpperInvariant()),
                 new XAttribute("GlosaDetalle", x.GlosaDetalle ?? string.Empty),
                 new XAttribute("CodigoCentroCosto", x.CodigoCentroCosto ?? string.Empty),
                 new XAttribute("TipoDocumento", x.TipoDocumento ?? string.Empty),
                 new XAttribute("NumeroDocumento", x.NumeroDocumento ?? string.Empty),
                 new XAttribute("Serie", x.Serie ?? string.Empty),
-                new XAttribute("TipoCambioLinea", (x.TipoCambioLinea ?? 0m).ToString("0.000000", CultureInfo.InvariantCulture)),
+                new XAttribute("TipoCambioLinea", x.TipoCambioLinea.ToString("0.000000", CultureInfo.InvariantCulture)),
                 new XAttribute("Debe", x.Debe.ToString("0.00", CultureInfo.InvariantCulture)),
                 new XAttribute("Haber", x.Haber.ToString("0.00", CultureInfo.InvariantCulture)),
                 new XAttribute("ReferenciaLinea", x.ReferenciaLinea ?? string.Empty))));

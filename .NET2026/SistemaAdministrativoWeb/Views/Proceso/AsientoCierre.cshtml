@@ -1,0 +1,259 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.ProcesoCierreViewModel
+
+@* Firma: FRANCO LARA - 02/07/2026 | Crea la pantalla Proceso > Asiento de cierre para generar o regenerar el cierre anual basado en ColBalance, con TC editable al 31/12 y seleccion independiente de los periodos 14 y 15. *@
+@* Firma: FRANCO LARA - 02/07/2026 | Ajusta la visualizacion del tipo de cambio a 3 decimales en la tarjeta, formulario y detalle del cierre, y agrega la eliminacion exclusiva de la generacion del ejercicio. *@
+
+@{
+    ViewData["Title"] = "Asiento de cierre";
+    ViewData["AdminShell"] = true;
+}
+
+<section class="dashboard-shell">
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Proceso</span>
+                <h1>Asiento de cierre</h1>
+                <p>Genera el cierre anual por cuenta usando <strong>ColBalance</strong>: <strong>R</strong> para ganancias y perdidas, <strong>I</strong> para inventarios. Si el ejercicio ya fue procesado, se elimina y se recrea segun la seleccion actual.</p>
+            </div>
+            <div class="workspace-window-badge">
+                <strong>@(Model.ProcesoGenerado ? "Proceso generado" : "Pendiente")</strong>
+                <span>Ejercicio @Model.AnioSeleccionado</span>
+            </div>
+        </div>
+
+        <div class="workspace-window-body">
+            @if (TempData["ProcesoOk"] is string ok)
+            {
+                <div class="alert alert-success">@ok</div>
+            }
+            @if (TempData["ProcesoError"] is string error)
+            {
+                <div class="alert alert-danger">@error</div>
+            }
+
+            <form asp-action="AsientoCierre" method="get" class="workspace-filter-card">
+                <div class="workspace-filter-grid">
+                    <div class="workspace-field">
+                        <label class="form-label" for="anio">Anio</label>
+                        <select id="anio" name="anio" class="form-select">
+                            @foreach (var anio in Model.AniosDisponibles)
+                            {
+                                <option value="@anio" selected="@(anio == Model.AnioSeleccionado ? "selected" : null)">@anio</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary">Consultar ejercicio</button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="workspace-balance-summary">
+                <article class="workspace-balance-card">
+                    <span>Origen configurado</span>
+                    <strong>@Model.OrigenConfiguradoTexto</strong>
+                    <small>@(Model.PuedeGenerar ? "Tomado desde Configuracion contable > Asiento de cierre." : "Debe configurarse antes de ejecutar el proceso.")</small>
+                </article>
+                <article class="workspace-balance-card">
+                    <span>Tipo de cambio 31/12</span>
+                    <strong>C @Model.TipoCambioCompra.ToString("N3") / V @Model.TipoCambioVenta.ToString("N3")</strong>
+                    <small>@(Model.UsaTipoCambioSbs ? "Se usara TC SBS si la empresa lo tiene habilitado." : "Se usara TC regular almacenado para el 31/12.")</small>
+                </article>
+                <article class="workspace-balance-card @(Model.ProcesoGenerado ? "is-balanced" : "workspace-balance-card-diff is-unbalanced")">
+                    <span>Estado</span>
+                    <strong>@(Model.ProcesoGenerado ? "Generado" : "Sin generar")</strong>
+                    <small>@(Model.ProcesoGenerado ? $"Asientos generados: {Model.TotalAsientos}" : "No existe una generacion previa para este ejercicio.")</small>
+                </article>
+            </div>
+
+            @if (!Model.PuedeGenerar)
+            {
+                <div class="alert alert-warning mt-4">
+                    Primero configure el origen del proceso en <a asp-controller="ConfiguracionContabilizacion" asp-action="Index">Configuracion contable</a> usando la tarjeta <strong>Asiento de cierre</strong>.
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info mt-4">
+                    El proceso toma el saldo acumulado del ejercicio hasta el periodo <strong>13</strong> y genera los asientos especiales <strong>14</strong> y/o <strong>15</strong> usando la contrapartida configurada en <strong>CUENTAGANANCIA</strong> y <strong>CUENTAPERDIDA</strong>.
+                </div>
+
+                <form asp-action="GenerarAsientoCierre" method="post" class="mt-4">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="anio" value="@Model.AnioSeleccionado" />
+
+                    <div class="workspace-form-grid">
+                        <div class="workspace-field">
+                            <label class="form-label" for="tipoCambioCompra">Tipo de cambio compra</label>
+                            <input id="tipoCambioCompra" name="tipoCambioCompra" value="@Model.TipoCambioCompra.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture)" class="form-control" />
+                        </div>
+                        <div class="workspace-field">
+                            <label class="form-label" for="tipoCambioVenta">Tipo de cambio venta</label>
+                            <input id="tipoCambioVenta" name="tipoCambioVenta" value="@Model.TipoCambioVenta.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture)" class="form-control" />
+                        </div>
+                    </div>
+
+                    <div class="workspace-check-grid mt-3">
+                        <label class="workspace-check">
+                            <input type="checkbox" name="procesarGananciasPerdidas" value="true" class="form-check-input" checked="@Model.ProcesarGananciasPerdidas" />
+                            <input type="hidden" name="procesarGananciasPerdidas" value="false" />
+                            <span>Procesar cierre de ganancias y perdidas (periodo @($"{Model.AnioSeleccionado:0000}14"))</span>
+                        </label>
+                        <label class="workspace-check">
+                            <input type="checkbox" name="procesarInventarios" value="true" class="form-check-input" checked="@Model.ProcesarInventarios" />
+                            <input type="hidden" name="procesarInventarios" value="false" />
+                            <span>Procesar cierre de inventarios (periodo @($"{Model.AnioSeleccionado:0000}15"))</span>
+                        </label>
+                    </div>
+
+                    <div class="workspace-actions mt-4">
+                        <button type="submit" class="btn @(Model.ProcesoGenerado ? "btn-danger" : "btn-primary")">
+                            @(Model.ProcesoGenerado ? "Regenerar asiento de cierre" : "Generar asiento de cierre")
+                        </button>
+                        @if (Model.ProcesoGenerado)
+                        {
+                            <button type="submit"
+                                    formaction="@Url.Action("EliminarAsientoCierre", "Proceso")"
+                                    formmethod="post"
+                                    class="btn btn-outline-danger">
+                                Eliminar asiento de cierre
+                            </button>
+                        }
+                    </div>
+                </form>
+            }
+
+            @if (Model.ProcesoGenerado)
+            {
+                <div class="workspace-balance-summary mt-4">
+                    <article class="workspace-balance-card">
+                        <span>Fecha asiento</span>
+                        <strong>@Model.FechaAsiento?.ToString("dd/MM/yyyy")</strong>
+                        <small>Fecha fija de cierre del ejercicio.</small>
+                    </article>
+                    <article class="workspace-balance-card">
+                        <span>Total Debe</span>
+                        <strong>@Model.TotalDebe.ToString("N2")</strong>
+                        <small>Importe total generado por el proceso.</small>
+                    </article>
+                    <article class="workspace-balance-card">
+                        <span>Total Haber</span>
+                        <strong>@Model.TotalHaber.ToString("N2")</strong>
+                        <small>Debe y Haber deben quedar equilibrados.</small>
+                    </article>
+                </div>
+
+                @if (Model.DetallesGananciasPerdidas.Count > 0)
+                {
+                    <div class="workspace-section mt-4">
+                        <div class="workspace-section-head">
+                            <div>
+                                <span class="workspace-section-kicker">Periodo @($"{Model.AnioSeleccionado:0000}14")</span>
+                                <h2>Cierre de Ganancias y Perdidas</h2>
+                            </div>
+                        </div>
+                        <div class="table-responsive workspace-table-wrap">
+                            <table class="table align-middle app-table workspace-table">
+                                <thead>
+                                    <tr>
+                                        <th>Cuenta</th>
+                                        <th>Moneda</th>
+                                        <th>TC</th>
+                                        <th>Asiento</th>
+                                        <th>Debe</th>
+                                        <th>Haber</th>
+                                        <th>Estado</th>
+                                        <th>Observacion</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.DetallesGananciasPerdidas)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong class="workspace-tree-code">@item.CodigoCuenta</strong>
+                                                <div>@item.NombreCuenta</div>
+                                            </td>
+                                            <td>@item.CodigoMoneda</td>
+                                            <td>@item.TipoCambioAplicado.ToString("N3")</td>
+                                            <td>
+                                                @if (item.IdAsiento.HasValue)
+                                                {
+                                                    <a asp-controller="Asiento" asp-action="Editar" asp-route-idAsiento="@item.IdAsiento.Value" asp-route-periodo="@($"{Model.AnioSeleccionado:0000}14")">Nro @item.NumeroAsiento</a>
+                                                }
+                                                else
+                                                {
+                                                    <span>-</span>
+                                                }
+                                            </td>
+                                            <td>@item.TotalDebe.ToString("N2")</td>
+                                            <td>@item.TotalHaber.ToString("N2")</td>
+                                            <td>@item.Estado</td>
+                                            <td>@(string.IsNullOrWhiteSpace(item.Observacion) ? "-" : item.Observacion)</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+
+                @if (Model.DetallesInventarios.Count > 0)
+                {
+                    <div class="workspace-section mt-4">
+                        <div class="workspace-section-head">
+                            <div>
+                                <span class="workspace-section-kicker">Periodo @($"{Model.AnioSeleccionado:0000}15")</span>
+                                <h2>Cierre de Inventarios</h2>
+                            </div>
+                        </div>
+                        <div class="table-responsive workspace-table-wrap">
+                            <table class="table align-middle app-table workspace-table">
+                                <thead>
+                                    <tr>
+                                        <th>Cuenta</th>
+                                        <th>Moneda</th>
+                                        <th>TC</th>
+                                        <th>Asiento</th>
+                                        <th>Debe</th>
+                                        <th>Haber</th>
+                                        <th>Estado</th>
+                                        <th>Observacion</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.DetallesInventarios)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong class="workspace-tree-code">@item.CodigoCuenta</strong>
+                                                <div>@item.NombreCuenta</div>
+                                            </td>
+                                            <td>@item.CodigoMoneda</td>
+                                            <td>@item.TipoCambioAplicado.ToString("N3")</td>
+                                            <td>
+                                                @if (item.IdAsiento.HasValue)
+                                                {
+                                                    <a asp-controller="Asiento" asp-action="Editar" asp-route-idAsiento="@item.IdAsiento.Value" asp-route-periodo="@($"{Model.AnioSeleccionado:0000}15")">Nro @item.NumeroAsiento</a>
+                                                }
+                                                else
+                                                {
+                                                    <span>-</span>
+                                                }
+                                            </td>
+                                            <td>@item.TotalDebe.ToString("N2")</td>
+                                            <td>@item.TotalHaber.ToString("N2")</td>
+                                            <td>@item.Estado</td>
+                                            <td>@(string.IsNullOrWhiteSpace(item.Observacion) ? "-" : item.Observacion)</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </section>
+</section>

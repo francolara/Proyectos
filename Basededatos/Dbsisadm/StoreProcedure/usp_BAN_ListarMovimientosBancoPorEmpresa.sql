@@ -8,6 +8,7 @@
 -- Create date:   24/06/2026
 -- Description:   Agrega el numero de asiento contable vinculado al listado de movimientos bancarios.
 -- =============================================
+-- Firma: FRANCO LARA - 03/07/2026 | Cambia el filtro del listado para usar el Periodo persistido del movimiento bancario en lugar del rango directo por FechaEmision.
 
 CREATE OR ALTER PROCEDURE dbo.usp_BAN_ListarMovimientosBancoPorEmpresa
     @IdEmpresa INT,
@@ -25,8 +26,7 @@ BEGIN
     BEGIN TRY
 
         DECLARE @TextoBusquedaTrabajo NVARCHAR(200) = NULLIF(LTRIM(RTRIM(@TextoBusqueda)), N'');
-        DECLARE @FechaInicio DATE = DATEFROMPARTS(@Anio, @Mes, 1);
-        DECLARE @FechaFin DATE = DATEADD(MONTH, 1, @FechaInicio);
+        DECLARE @Periodo CHAR(6) = CONVERT(CHAR(4), @Anio) + RIGHT('0' + CONVERT(VARCHAR(2), @Mes), 2);
         DECLARE @NumeroPaginaTrabajo INT = CASE WHEN ISNULL(@NumeroPagina, 0) > 0 THEN @NumeroPagina ELSE 1 END;
         DECLARE @TamanoPaginaTrabajo INT = CASE WHEN ISNULL(@TamanoPagina, 0) > 0 THEN @TamanoPagina ELSE 20 END;
 
@@ -91,8 +91,7 @@ BEGIN
             WHERE m.IdEmpresa = @IdEmpresa
               AND m.Activo = 1
               AND (@IdBancoConfiguracionEmpresa IS NULL OR m.IdBancoConfiguracionEmpresa = @IdBancoConfiguracionEmpresa)
-              AND m.FechaEmision >= @FechaInicio
-              AND m.FechaEmision < @FechaFin
+              AND m.Periodo = @Periodo
               AND (
                     @TextoBusquedaTrabajo IS NULL
                     OR cc.NroCuentaCorriente LIKE '%' + @TextoBusquedaTrabajo + '%'

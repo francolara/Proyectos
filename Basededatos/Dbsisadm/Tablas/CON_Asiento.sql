@@ -1,8 +1,9 @@
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   15/06/2026
--- Description:   Cabecera de asientos contables por empresa con correlativo por origen y periodo mensual.
+-- Description:   Cabecera de asientos contables por empresa con correlativo por origen y periodo contable.
 -- =============================================
+-- Firma: FRANCO LARA - 02/07/2026 | Amplia CON_Asiento a 16 periodos contables admitiendo meses 00-15 para apertura, ajustes y cierres con fecha fisica independiente del periodo logico.
 
 IF OBJECT_ID(N'dbo.CON_Asiento', N'U') IS NULL
 BEGIN
@@ -43,12 +44,13 @@ BEGIN
 
     ALTER TABLE dbo.CON_Asiento
         ADD CONSTRAINT CK_CON_Asiento_Mes
-            CHECK (Mes BETWEEN 1 AND 12);
+            CHECK (Mes BETWEEN 0 AND 15);
 
     ALTER TABLE dbo.CON_Asiento
         ADD CONSTRAINT CK_CON_Asiento_Periodo
             CHECK (
-                Periodo = CONVERT(CHAR(4), Ejercicio) + RIGHT('0' + CONVERT(VARCHAR(2), Mes), 2)
+                Periodo LIKE '[1-2][0-9][0-9][0-9][0-1][0-9]'
+                AND Periodo = CONVERT(CHAR(4), Ejercicio) + RIGHT('0' + CONVERT(VARCHAR(2), Mes), 2)
             );
 
     ALTER TABLE dbo.CON_Asiento

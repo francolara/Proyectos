@@ -8,6 +8,7 @@
 -- Create date:   18/06/2026
 -- Description:   Renombra NaturalezaSaldo a ColBalance y agrega IdMoneda y TipoCambio.
 -- =============================================
+-- Firma: FRANCO LARA - 01/07/2026 | Agrega el indicador GeneraDiferenciaPorAnalisis para decidir si la diferencia en cambio se calcula por saldo consolidado o por analisis documental.
 
 IF OBJECT_ID(N'dbo.CON_PlanCuenta', N'U') IS NULL
 BEGIN
@@ -23,6 +24,7 @@ BEGIN
         IdMoneda VARCHAR(3) NOT NULL CONSTRAINT DF_CON_PlanCuenta_IdMoneda DEFAULT (''),
         TipoCambio CHAR(1) NOT NULL CONSTRAINT DF_CON_PlanCuenta_TipoCambio DEFAULT (''),
         AceptaMovimiento BIT NOT NULL CONSTRAINT DF_CON_PlanCuenta_AceptaMovimiento DEFAULT (0),
+        GeneraDiferenciaPorAnalisis BIT NOT NULL CONSTRAINT DF_CON_PlanCuenta_GeneraDiferenciaPorAnalisis DEFAULT (0),
         RequiereCentroCosto BIT NOT NULL CONSTRAINT DF_CON_PlanCuenta_RequiereCentroCosto DEFAULT (0),
         Estado BIT NOT NULL CONSTRAINT DF_CON_PlanCuenta_Estado DEFAULT (1),
         FechaRegistro DATETIME2(0) NOT NULL CONSTRAINT DF_CON_PlanCuenta_FechaRegistro DEFAULT (SYSDATETIME()),
@@ -44,4 +46,11 @@ BEGIN
     ALTER TABLE dbo.CON_PlanCuenta
         ADD CONSTRAINT UQ_CON_PlanCuenta_IdEmpresa_CodigoCuenta
             UNIQUE (IdEmpresa, CodigoCuenta);
+END;
+
+IF COL_LENGTH(N'dbo.CON_PlanCuenta', N'GeneraDiferenciaPorAnalisis') IS NULL
+BEGIN
+    ALTER TABLE dbo.CON_PlanCuenta
+        ADD GeneraDiferenciaPorAnalisis BIT NOT NULL
+            CONSTRAINT DF_CON_PlanCuenta_GeneraDiferenciaPorAnalisis DEFAULT (0);
 END;

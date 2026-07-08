@@ -1,8 +1,9 @@
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   15/06/2026
--- Description:   Numerador contable por empresa, origen y periodo para reinicio mensual de comprobantes.
+-- Description:   Numerador contable por empresa, origen y periodo para reinicio por periodo contable.
 -- =============================================
+-- Firma: FRANCO LARA - 02/07/2026 | Amplia CON_CorrelativoAsiento a 16 periodos contables admitiendo meses 00-15 para apertura, ajustes y cierres.
 
 IF OBJECT_ID(N'dbo.CON_CorrelativoAsiento', N'U') IS NULL
 BEGIN
@@ -30,7 +31,7 @@ BEGIN
         ADD CONSTRAINT CK_CON_CorrelativoAsiento_Periodo
             CHECK (
                 Periodo LIKE '[1-2][0-9][0-9][0-9][0-1][0-9]'
-                AND RIGHT(Periodo, 2) BETWEEN '01' AND '12'
+                AND RIGHT(Periodo, 2) BETWEEN '00' AND '15'
             );
 
     ALTER TABLE dbo.CON_CorrelativoAsiento

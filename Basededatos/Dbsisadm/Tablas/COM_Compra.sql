@@ -20,6 +20,12 @@
 -- Create date:   26/06/2026
 -- Description:   Agrega soporte para detracciones en compras con codigo SUNAT, porcentaje e importe descontado del saldo principal.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   29/06/2026
+-- Description:   Agrega columnas para guardar fecha, estado y mensaje de validacion CPE en compras, ademas de la percepcion aplicada en cabecera.
+-- =============================================
+-- Firma: FRANCO LARA - 30/06/2026 | Agrega soporte de retencion de renta de 4ta en compras con exoneracion, porcentaje e importe retenido en cabecera.
 
 IF OBJECT_ID(N'dbo.COM_Compra', N'U') IS NULL
 BEGIN
@@ -47,11 +53,22 @@ BEGIN
         Redondeo DECIMAL(18,2) NOT NULL CONSTRAINT DF_COM_Compra_Redondeo DEFAULT (0),
         ImporteTotal DECIMAL(18,2) NOT NULL CONSTRAINT DF_COM_Compra_ImporteTotal DEFAULT (0),
         Saldo DECIMAL(18,2) NOT NULL CONSTRAINT DF_COM_Compra_Saldo DEFAULT (0),
+        ExoneracionRenta4ta BIT NOT NULL CONSTRAINT DF_COM_Compra_ExoneracionRenta4ta DEFAULT (0),
+        PorcentajeRetencion DECIMAL(7,4) NOT NULL CONSTRAINT DF_COM_Compra_PorcentajeRetencion DEFAULT (0),
+        Retencion DECIMAL(18,2) NOT NULL CONSTRAINT DF_COM_Compra_Retencion DEFAULT (0),
         TieneDetraccion BIT NOT NULL CONSTRAINT DF_COM_Compra_TieneDetraccion DEFAULT (0),
         IdDetraccionSunat INT NULL,
         PorcentajeDetraccion DECIMAL(7,4) NOT NULL CONSTRAINT DF_COM_Compra_PorcentajeDetraccion DEFAULT (0),
         ImporteDetraccion DECIMAL(18,2) NOT NULL CONSTRAINT DF_COM_Compra_ImporteDetraccion DEFAULT (0),
+        TienePercepcion BIT NOT NULL CONSTRAINT DF_COM_Compra_TienePercepcion DEFAULT (0),
+        IdTipoPercepcion INT NULL,
+        PorcentajePercepcion DECIMAL(7,4) NOT NULL CONSTRAINT DF_COM_Compra_PorcentajePercepcion DEFAULT (0),
+        BasePercepcion DECIMAL(18,2) NOT NULL CONSTRAINT DF_COM_Compra_BasePercepcion DEFAULT (0),
+        ImportePercepcion DECIMAL(18,2) NOT NULL CONSTRAINT DF_COM_Compra_ImportePercepcion DEFAULT (0),
         Observacion NVARCHAR(500) NULL,
+        FechaValidacionCpe DATETIME2(0) NULL,
+        EstadoValidacionCpe NVARCHAR(50) NULL,
+        MensajeValidacionCpe NVARCHAR(500) NULL,
         Estado NVARCHAR(20) NOT NULL CONSTRAINT DF_COM_Compra_Estado DEFAULT (N'PROVISIONADO'),
         FechaRegistro DATETIME2(0) NOT NULL CONSTRAINT DF_COM_Compra_FechaRegistro DEFAULT (SYSDATETIME()),
         UsuarioRegistro NVARCHAR(450) NULL
@@ -80,6 +97,10 @@ BEGIN
     ALTER TABLE dbo.COM_Compra
         ADD CONSTRAINT FK_COM_Compra_ADM_DetraccionSunat
             FOREIGN KEY (IdDetraccionSunat) REFERENCES dbo.ADM_DetraccionSunat (IdDetraccionSunat);
+
+    ALTER TABLE dbo.COM_Compra
+        ADD CONSTRAINT FK_COM_Compra_ADM_TipoPercepcion
+            FOREIGN KEY (IdTipoPercepcion) REFERENCES dbo.ADM_TipoPercepcion (IdTipoPercepcion);
 
     ALTER TABLE dbo.COM_Compra
         ADD CONSTRAINT CK_COM_Compra_Montos
@@ -125,6 +146,24 @@ BEGIN
         ADD Saldo DECIMAL(18,2) NOT NULL CONSTRAINT DF_COM_Compra_Saldo DEFAULT (0);
 END;
 
+IF COL_LENGTH(N'dbo.COM_Compra', N'ExoneracionRenta4ta') IS NULL
+BEGIN
+    ALTER TABLE dbo.COM_Compra
+        ADD ExoneracionRenta4ta BIT NOT NULL CONSTRAINT DF_COM_Compra_ExoneracionRenta4ta DEFAULT (0);
+END;
+
+IF COL_LENGTH(N'dbo.COM_Compra', N'PorcentajeRetencion') IS NULL
+BEGIN
+    ALTER TABLE dbo.COM_Compra
+        ADD PorcentajeRetencion DECIMAL(7,4) NOT NULL CONSTRAINT DF_COM_Compra_PorcentajeRetencion DEFAULT (0);
+END;
+
+IF COL_LENGTH(N'dbo.COM_Compra', N'Retencion') IS NULL
+BEGIN
+    ALTER TABLE dbo.COM_Compra
+        ADD Retencion DECIMAL(18,2) NOT NULL CONSTRAINT DF_COM_Compra_Retencion DEFAULT (0);
+END;
+
 IF COL_LENGTH(N'dbo.COM_Compra', N'TieneDetraccion') IS NULL
 BEGIN
     ALTER TABLE dbo.COM_Compra
@@ -149,6 +188,54 @@ BEGIN
         ADD ImporteDetraccion DECIMAL(18,2) NOT NULL CONSTRAINT DF_COM_Compra_ImporteDetraccion DEFAULT (0);
 END;
 
+IF COL_LENGTH(N'dbo.COM_Compra', N'FechaValidacionCpe') IS NULL
+BEGIN
+    ALTER TABLE dbo.COM_Compra
+        ADD FechaValidacionCpe DATETIME2(0) NULL;
+END;
+
+IF COL_LENGTH(N'dbo.COM_Compra', N'TienePercepcion') IS NULL
+BEGIN
+    ALTER TABLE dbo.COM_Compra
+        ADD TienePercepcion BIT NOT NULL CONSTRAINT DF_COM_Compra_TienePercepcion DEFAULT (0);
+END;
+
+IF COL_LENGTH(N'dbo.COM_Compra', N'IdTipoPercepcion') IS NULL
+BEGIN
+    ALTER TABLE dbo.COM_Compra
+        ADD IdTipoPercepcion INT NULL;
+END;
+
+IF COL_LENGTH(N'dbo.COM_Compra', N'PorcentajePercepcion') IS NULL
+BEGIN
+    ALTER TABLE dbo.COM_Compra
+        ADD PorcentajePercepcion DECIMAL(7,4) NOT NULL CONSTRAINT DF_COM_Compra_PorcentajePercepcion DEFAULT (0);
+END;
+
+IF COL_LENGTH(N'dbo.COM_Compra', N'BasePercepcion') IS NULL
+BEGIN
+    ALTER TABLE dbo.COM_Compra
+        ADD BasePercepcion DECIMAL(18,2) NOT NULL CONSTRAINT DF_COM_Compra_BasePercepcion DEFAULT (0);
+END;
+
+IF COL_LENGTH(N'dbo.COM_Compra', N'ImportePercepcion') IS NULL
+BEGIN
+    ALTER TABLE dbo.COM_Compra
+        ADD ImportePercepcion DECIMAL(18,2) NOT NULL CONSTRAINT DF_COM_Compra_ImportePercepcion DEFAULT (0);
+END;
+
+IF COL_LENGTH(N'dbo.COM_Compra', N'EstadoValidacionCpe') IS NULL
+BEGIN
+    ALTER TABLE dbo.COM_Compra
+        ADD EstadoValidacionCpe NVARCHAR(50) NULL;
+END;
+
+IF COL_LENGTH(N'dbo.COM_Compra', N'MensajeValidacionCpe') IS NULL
+BEGIN
+    ALTER TABLE dbo.COM_Compra
+        ADD MensajeValidacionCpe NVARCHAR(500) NULL;
+END;
+
 IF NOT EXISTS
 (
     SELECT 1
@@ -160,4 +247,17 @@ BEGIN
     ALTER TABLE dbo.COM_Compra
         ADD CONSTRAINT FK_COM_Compra_ADM_DetraccionSunat
             FOREIGN KEY (IdDetraccionSunat) REFERENCES dbo.ADM_DetraccionSunat (IdDetraccionSunat);
+END;
+
+IF NOT EXISTS
+(
+    SELECT 1
+    FROM sys.foreign_keys
+    WHERE name = N'FK_COM_Compra_ADM_TipoPercepcion'
+)
+AND COL_LENGTH(N'dbo.COM_Compra', N'IdTipoPercepcion') IS NOT NULL
+BEGIN
+    ALTER TABLE dbo.COM_Compra
+        ADD CONSTRAINT FK_COM_Compra_ADM_TipoPercepcion
+            FOREIGN KEY (IdTipoPercepcion) REFERENCES dbo.ADM_TipoPercepcion (IdTipoPercepcion);
 END;

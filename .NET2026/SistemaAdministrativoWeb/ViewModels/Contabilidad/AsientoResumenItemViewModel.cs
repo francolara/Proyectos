@@ -14,6 +14,8 @@ public sealed class AsientoResumenItemViewModel
     public decimal TipoCambio { get; init; }
     public decimal TotalDebe { get; init; }
     public decimal TotalHaber { get; init; }
+    public decimal TotalImporteS { get; init; }
+    public decimal TotalImporteD { get; init; }
     public string Estado { get; init; } = string.Empty;
     public bool PermiteRegistroManual { get; init; }
 }

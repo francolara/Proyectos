@@ -8,6 +8,11 @@
 -- Create date:   18/06/2026
 -- Description:   Agrega carga automatica de parametros base desde maestro interno al crear empresa inicial.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   02/07/2026
+-- Description:   Agrega carga automatica del plan de cuentas base desde el maestro al crear la empresa inicial.
+-- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.usp_SEG_RegistrarCuentaAdministradoraConEmpresa
     @AspNetUserId NVARCHAR(450),
@@ -171,6 +176,10 @@ BEGIN
         );
 
         EXEC dbo.usp_ADM_CargarParametrosDefaultEmpresa
+            @IdEmpresa = @IdEmpresa,
+            @UsuarioRegistro = @UsuarioRegistro;
+
+        EXEC dbo.usp_CON_CargarPlanCuentaDefaultEmpresa
             @IdEmpresa = @IdEmpresa,
             @UsuarioRegistro = @UsuarioRegistro;
 

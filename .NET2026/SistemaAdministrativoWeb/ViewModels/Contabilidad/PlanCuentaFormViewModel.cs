@@ -25,7 +25,7 @@ public sealed class PlanCuentaFormViewModel
     public string ColBalance { get; set; } = string.Empty;
 
     [StringLength(3)]
-    [RegularExpression("^(|PEN|USD)$", ErrorMessage = "Seleccione una moneda valida.")]
+    [RegularExpression("^(|PEN|USD|S|D)$", ErrorMessage = "Seleccione una moneda valida.")]
     public string? IdMoneda { get; set; }
 
     [StringLength(1)]
@@ -33,6 +33,7 @@ public sealed class PlanCuentaFormViewModel
     public string? TipoCambio { get; set; }
 
     public bool AceptaMovimiento { get; set; }
+    public bool GeneraDiferenciaPorAnalisis { get; set; }
     public bool RequiereCentroCosto { get; set; }
     public bool Estado { get; set; } = true;
     public bool PermiteConfigurarDestinos { get; set; }

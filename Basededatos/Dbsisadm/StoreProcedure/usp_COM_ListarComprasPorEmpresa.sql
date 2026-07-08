@@ -29,6 +29,13 @@
 -- Create date:   26/06/2026
 -- Description:   Expone detraccion aplicada en la compra para distinguir saldo neto y documento SPOT asociado.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   29/06/2026
+-- Description:   Expone fecha, estado y mensaje de validacion CPE para el listado de compras, agrega filtro por tipo de comprobante e incluye la percepcion aplicada en cabecera.
+-- =============================================
+-- Firma: FRANCO LARA - 30/06/2026 | Expone exoneracion, porcentaje e importe de retencion de renta de 4ta en el listado de compras.
+-- Firma: FRANCO LARA - 02/07/2026 | Corrige la situacion del listado para que la detraccion no marque la compra principal como pagada parcial cuando el saldo neto exigible sigue integro y expone el numero de asiento para navegar desde el listado al asiento generado.
 
 CREATE OR ALTER PROCEDURE dbo.usp_COM_ListarComprasPorEmpresa
     @IdEmpresa INT,
@@ -36,6 +43,7 @@ CREATE OR ALTER PROCEDURE dbo.usp_COM_ListarComprasPorEmpresa
     @Ejercicio SMALLINT = NULL,
     @Mes TINYINT = NULL,
     @TextoBusqueda NVARCHAR(150) = NULL,
+    @TipoComprobante VARCHAR(3) = NULL,
     @NumeroPagina INT = NULL,
     @TamanoPagina INT = NULL
 AS
@@ -52,6 +60,7 @@ BEGIN
                 ELSE NULL
             END
         DECLARE @TextoBusquedaTrabajo NVARCHAR(150) = NULLIF(LTRIM(RTRIM(@TextoBusqueda)), '')
+        DECLARE @TipoComprobanteTrabajo VARCHAR(3) = NULLIF(UPPER(LTRIM(RTRIM(@TipoComprobante))), '')
         DECLARE @NumeroPaginaTrabajo INT = CASE WHEN ISNULL(@NumeroPagina, 0) > 0 THEN @NumeroPagina ELSE NULL END
         DECLARE @TamanoPaginaTrabajo INT = CASE WHEN ISNULL(@TamanoPagina, 0) > 0 THEN @TamanoPagina ELSE NULL END
 
@@ -67,6 +76,7 @@ BEGIN
                 cfg.ModuloOperacion,
                 cfg.EscenarioOperacion,
                 c.IdAsiento,
+                a.NumeroAsiento,
                 c.FechaEmision,
                 c.FechaContabilizacion,
                 CONVERT(CHAR(4), YEAR(c.FechaContabilizacion)) + RIGHT('0' + CONVERT(VARCHAR(2), MONTH(c.FechaContabilizacion)), 2) AS Periodo,
@@ -88,15 +98,29 @@ BEGIN
                 c.Redondeo,
                 c.ImporteTotal,
                 c.Saldo,
+                c.ExoneracionRenta4ta,
+                c.PorcentajeRetencion,
+                c.Retencion,
                 c.TieneDetraccion,
                 c.IdDetraccionSunat,
                 c.PorcentajeDetraccion,
                 c.ImporteDetraccion,
+                c.TienePercepcion,
+                c.IdTipoPercepcion,
+                c.PorcentajePercepcion,
+                c.BasePercepcion,
+                c.ImportePercepcion,
                 c.Observacion,
+                c.FechaValidacionCpe,
+                c.EstadoValidacionCpe,
+                c.MensajeValidacionCpe,
                 c.Estado,
                 CASE
                     WHEN c.Saldo <= 0 THEN N'Pagada'
-                    WHEN c.Saldo < c.ImporteTotal THEN N'Pagada Parcial'
+                    WHEN c.Saldo < CASE
+                                        WHEN c.ImporteTotal - ISNULL(c.ImporteDetraccion, 0) < 0 THEN 0
+                                        ELSE c.ImporteTotal - ISNULL(c.ImporteDetraccion, 0)
+                                   END THEN N'Pagada Parcial'
                     ELSE N'Pendiente'
                 END AS Situacion
             FROM dbo.COM_Compra AS c
@@ -110,10 +134,16 @@ BEGIN
                 ON m.IdMoneda = c.IdMoneda
             INNER JOIN dbo.ADM_TipoComprobante AS tc
                 ON tc.CodigoTipoComprobante = c.TipoComprobante
+            LEFT JOIN dbo.CON_Asiento AS a
+                ON a.IdAsiento = c.IdAsiento
             WHERE c.IdEmpresa = @IdEmpresa
               AND (
                     @PeriodoTrabajo IS NULL
                     OR CONVERT(CHAR(4), YEAR(c.FechaContabilizacion)) + RIGHT('0' + CONVERT(VARCHAR(2), MONTH(c.FechaContabilizacion)), 2) = @PeriodoTrabajo
+                  )
+              AND (
+                    @TipoComprobanteTrabajo IS NULL
+                    OR c.TipoComprobante = @TipoComprobanteTrabajo
                   )
               AND (
                     @TextoBusquedaTrabajo IS NULL
@@ -136,6 +166,7 @@ BEGIN
             b.ModuloOperacion,
             b.EscenarioOperacion,
             b.IdAsiento,
+            b.NumeroAsiento,
             b.FechaEmision,
             b.FechaContabilizacion,
             b.Periodo,
@@ -157,11 +188,22 @@ BEGIN
             b.Redondeo,
             b.ImporteTotal,
             b.Saldo,
+            b.ExoneracionRenta4ta,
+            b.PorcentajeRetencion,
+            b.Retencion,
             b.TieneDetraccion,
             b.IdDetraccionSunat,
             b.PorcentajeDetraccion,
             b.ImporteDetraccion,
+            b.TienePercepcion,
+            b.IdTipoPercepcion,
+            b.PorcentajePercepcion,
+            b.BasePercepcion,
+            b.ImportePercepcion,
             b.Observacion,
+            b.FechaValidacionCpe,
+            b.EstadoValidacionCpe,
+            b.MensajeValidacionCpe,
             b.Estado,
             b.Situacion,
             COUNT(1) OVER() AS TotalRegistros

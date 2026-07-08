@@ -18,6 +18,7 @@
 -- Create date:   24/06/2026
 -- Description:   Agrega el enlace funcional para transferencias entre cuentas guardando codigo comun, rol emisor/receptor y movimiento relacionado.
 -- =============================================
+-- Firma: FRANCO LARA - 03/07/2026 | Agrega Periodo en la cabecera bancaria, lo rellena desde FechaEmision y prepara filtros/indexes para consultar movimientos por periodo contable persistido.
 
 IF OBJECT_ID(N'dbo.BAN_MovimientoBanco', N'U') IS NULL
 BEGIN
@@ -29,6 +30,7 @@ BEGIN
         TipoMovimiento CHAR(1) NOT NULL,
         IdOpeBancaria CHAR(2) NOT NULL,
         FechaEmision DATE NOT NULL,
+        Periodo CHAR(6) NOT NULL,
         TipoCambio DECIMAL(18, 6) NOT NULL CONSTRAINT DF_BAN_MovimientoBanco_TipoCambio DEFAULT (1),
         NumeroMovimiento INT NOT NULL,
         IdAsiento INT NULL,
@@ -78,8 +80,38 @@ BEGIN
             CHECK (ImporteTotal >= 0);
 
     ALTER TABLE dbo.BAN_MovimientoBanco
+        ADD CONSTRAINT CK_BAN_MovimientoBanco_Periodo
+            CHECK (
+                Periodo LIKE '[1-2][0-9][0-9][0-9][0-1][0-9]'
+                AND RIGHT(Periodo, 2) BETWEEN '01' AND '12'
+            );
+
+    ALTER TABLE dbo.BAN_MovimientoBanco
         ADD CONSTRAINT CK_BAN_MovimientoBanco_RolTransferencia
             CHECK (RolTransferencia IS NULL OR RolTransferencia IN ('E', 'I'));
+END;
+
+IF COL_LENGTH(N'dbo.BAN_MovimientoBanco', N'Periodo') IS NULL
+BEGIN
+    ALTER TABLE dbo.BAN_MovimientoBanco
+        ADD Periodo CHAR(6) NULL;
+END;
+
+UPDATE dbo.BAN_MovimientoBanco
+SET Periodo = CONVERT(CHAR(4), YEAR(FechaEmision)) + RIGHT('0' + CONVERT(VARCHAR(2), MONTH(FechaEmision)), 2)
+WHERE Periodo IS NULL;
+
+IF EXISTS
+(
+    SELECT 1
+    FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.BAN_MovimientoBanco')
+      AND name = N'Periodo'
+      AND is_nullable = 1
+)
+BEGIN
+    ALTER TABLE dbo.BAN_MovimientoBanco
+        ALTER COLUMN Periodo CHAR(6) NOT NULL;
 END;
 
 IF COL_LENGTH(N'dbo.BAN_MovimientoBanco', N'IdAsiento') IS NULL
@@ -122,6 +154,21 @@ IF NOT EXISTS
 (
     SELECT 1
     FROM sys.check_constraints
+    WHERE name = N'CK_BAN_MovimientoBanco_Periodo'
+)
+BEGIN
+    ALTER TABLE dbo.BAN_MovimientoBanco
+        ADD CONSTRAINT CK_BAN_MovimientoBanco_Periodo
+            CHECK (
+                Periodo LIKE '[1-2][0-9][0-9][0-9][0-1][0-9]'
+                AND RIGHT(Periodo, 2) BETWEEN '01' AND '12'
+            );
+END;
+
+IF NOT EXISTS
+(
+    SELECT 1
+    FROM sys.check_constraints
     WHERE name = N'CK_BAN_MovimientoBanco_RolTransferencia'
 )
 BEGIN
@@ -152,4 +199,16 @@ IF NOT EXISTS
 BEGIN
     CREATE INDEX IX_BAN_MovimientoBanco_IdTransferenciaCuenta
         ON dbo.BAN_MovimientoBanco (IdTransferenciaCuenta, RolTransferencia);
+END;
+
+IF NOT EXISTS
+(
+    SELECT 1
+    FROM sys.indexes
+    WHERE name = N'IX_BAN_MovimientoBanco_IdEmpresa_Periodo'
+      AND object_id = OBJECT_ID(N'dbo.BAN_MovimientoBanco')
+)
+BEGIN
+    CREATE INDEX IX_BAN_MovimientoBanco_IdEmpresa_Periodo
+        ON dbo.BAN_MovimientoBanco (IdEmpresa, Periodo, IdBancoConfiguracionEmpresa, Activo);
 END;

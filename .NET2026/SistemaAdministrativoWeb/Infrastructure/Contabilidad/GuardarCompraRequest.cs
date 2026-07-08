@@ -22,9 +22,15 @@ public sealed class GuardarCompraRequest
     public decimal OtrosTributos { get; init; }
     public decimal Redondeo { get; init; }
     public decimal ImporteTotal { get; init; }
+    public bool ExoneracionRenta4ta { get; init; }
+    public decimal Retencion { get; init; }
     public bool TieneDetraccion { get; init; }
     public int? IdDetraccionSunat { get; init; }
     public decimal ImporteDetraccion { get; init; }
+    public bool TienePercepcion { get; init; }
+    public int? IdTipoPercepcion { get; init; }
+    public decimal BasePercepcion { get; init; }
+    public decimal ImportePercepcion { get; init; }
     public string? Observacion { get; init; }
     public string? UsuarioRegistro { get; init; }
     public IReadOnlyCollection<GuardarCompraDetalleRequest> Detalles { get; init; } = [];

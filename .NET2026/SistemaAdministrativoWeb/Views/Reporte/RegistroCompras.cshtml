@@ -1,0 +1,162 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.RegistroComprasViewModel
+
+@* Firma: FRANCO LARA - 07/07/2026 | Crea el reporte HTML Registro de compras con formato A4 inspirado en RptRegistroCompra_A4_Oxa del legacy, usando solo la provision actual y habilitando impresion directa. *@
+@* Firma: FRANCO LARA - 08/07/2026 | Ajusta el formato visible del registro de compras retirando las columnas Cod., BI 2, IGV 2, BI 3 e IGV 3 segun el disenio solicitado. *@
+
+@{
+    ViewData["Title"] = "Registro de compras";
+    ViewData["AdminShell"] = true;
+    var textInfo = System.Globalization.CultureInfo.CurrentCulture.TextInfo;
+    var mesTexto = Model.MesesDisponibles.FirstOrDefault(x => x.Valor == Model.MesSeleccionado)?.Nombre ?? Model.MesSeleccionado.ToString("00");
+}
+
+<section class="dashboard-shell">
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Reporte</span>
+                <h1>Registro de compras</h1>
+                <p>Replica en HTML el formato legacy <strong>RptRegistroCompra_A4_Oxa</strong> usando la provisión de compras actual, sin depender de Crystal Reports.</p>
+            </div>
+            <div class="workspace-window-badge">
+                <strong>@Model.EmpresaNombre</strong>
+                <span>@textInfo.ToTitleCase(mesTexto) @Model.AnioSeleccionado</span>
+            </div>
+        </div>
+
+        <div class="workspace-window-body">
+            @if (!string.IsNullOrWhiteSpace(Model.MensajeError))
+            {
+                <div class="alert alert-danger">@Model.MensajeError</div>
+            }
+
+            <form asp-action="RegistroCompras" method="get" class="workspace-filter-card">
+                <input type="hidden" name="consultar" value="true" />
+                <div class="workspace-filter-grid">
+                    <div class="workspace-field">
+                        <label class="form-label" for="anio">Anio</label>
+                        <select id="anio" name="anio" class="form-select">
+                            @foreach (var anio in Model.AniosDisponibles)
+                            {
+                                <option value="@anio" selected="@(anio == Model.AnioSeleccionado ? "selected" : null)">@anio</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="mes">Periodo</label>
+                        <select id="mes" name="mes" class="form-select">
+                            @foreach (var mes in Model.MesesDisponibles)
+                            {
+                                <option value="@mes.Valor" selected="@(mes.Valor == Model.MesSeleccionado ? "selected" : null)">@textInfo.ToTitleCase(mes.Nombre)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="codigoPersona">Codigo persona</label>
+                        <input id="codigoPersona" name="codigoPersona" class="form-control" value="@Model.CodigoPersona" maxlength="20" placeholder="Opcional" />
+                    </div>
+                    <div class="workspace-field d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary">Consultar registro</button>
+                    </div>
+                </div>
+            </form>
+
+            @if (Model.ConsultaEjecutada && Model.Resultados.Count == 0 && string.IsNullOrWhiteSpace(Model.MensajeError))
+            {
+                <div class="alert alert-info mt-4">No se encontraron compras para los filtros seleccionados.</div>
+            }
+
+            @if (Model.Resultados.Count > 0)
+            {
+                <section class="workspace-report-sheet balance-a4-sheet mt-4">
+                    <div class="report-action-bar no-print">
+                        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Imprimir</button>
+                    </div>
+
+                    <header class="balance-a4-header">
+                        <div>
+                            <strong>@Model.EmpresaNombre</strong>
+                            <span>REGISTRO DE COMPRAS - @textInfo.ToTitleCase(mesTexto) @Model.AnioSeleccionado</span>
+                        </div>
+                        <div class="balance-a4-meta">
+                            <span>Codigo persona: @(string.IsNullOrWhiteSpace(Model.CodigoPersona) ? "Todos" : Model.CodigoPersona)</span>
+                            <span>Filas: @Model.Resultados.Count</span>
+                        </div>
+                    </header>
+
+                    <div class="table-responsive balance-a4-table-wrap">
+                        <table class="table app-table balance-a4-table">
+                            <thead>
+                                <tr>
+                                    <th>F. emision</th>
+                                    <th>F. cont.</th>
+                                    <th>T.D.</th>
+                                    <th>Serie</th>
+                                    <th>Numero</th>
+                                    <th>Nro doc.</th>
+                                    <th>Proveedor</th>
+                                    <th>Mon.</th>
+                                    <th>T.C.</th>
+                                    <th>BI 1</th>
+                                    <th>IGV 1</th>
+                                    <th>Exon.</th>
+                                    <th>Inaf.</th>
+                                    <th>Otros</th>
+                                    <th>ICBPER</th>
+                                    <th>Ret.</th>
+                                    <th>Detr.</th>
+                                    <th>Perc.</th>
+                                    <th>Total</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.Resultados)
+                                {
+                                    <tr>
+                                        <td>@item.FechaEmision.ToString("dd/MM/yyyy")</td>
+                                        <td>@item.FechaContabilizacion.ToString("dd/MM/yyyy")</td>
+                                        <td>@item.TipoComprobante</td>
+                                        <td>@item.Serie</td>
+                                        <td>@item.Numero</td>
+                                        <td>@item.NumeroDocumentoPersona</td>
+                                        <td class="balance-a4-description">@item.NombrePersona</td>
+                                        <td>@item.CodigoMoneda</td>
+                                        <td class="workspace-money-cell">@item.TipoCambio.ToString("N3")</td>
+                                        <td class="workspace-money-cell">@item.BaseImponibleGravada.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@item.IgvGravado.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@item.TotalExonerado.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@item.TotalInafecto.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@item.OtrosTributos.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@item.Icbper.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@item.Retencion.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@item.ImporteDetraccion.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@item.ImportePercepcion.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@item.ImporteTotal.ToString("N2")</td>
+                                        <td>@item.Estado</td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr class="balance-a4-total-row">
+                                    <td colspan="9">Totales</td>
+                                    <td class="workspace-money-cell">@Model.TotalBaseImponibleGravada.ToString("N2")</td>
+                                    <td class="workspace-money-cell">@Model.TotalIgvGravado.ToString("N2")</td>
+                                    <td class="workspace-money-cell">@Model.TotalExonerado.ToString("N2")</td>
+                                    <td class="workspace-money-cell">@Model.TotalInafecto.ToString("N2")</td>
+                                    <td class="workspace-money-cell">@Model.TotalOtrosTributos.ToString("N2")</td>
+                                    <td class="workspace-money-cell">@Model.TotalIcbper.ToString("N2")</td>
+                                    <td class="workspace-money-cell">@Model.TotalRetencion.ToString("N2")</td>
+                                    <td class="workspace-money-cell">@Model.TotalDetraccion.ToString("N2")</td>
+                                    <td class="workspace-money-cell">@Model.TotalPercepcion.ToString("N2")</td>
+                                    <td class="workspace-money-cell">@Model.TotalImporte.ToString("N2")</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </section>
+            }
+        </div>
+    </section>
+</section>

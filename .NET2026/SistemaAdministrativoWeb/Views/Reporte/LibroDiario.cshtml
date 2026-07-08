@@ -1,0 +1,250 @@
+﻿@model SistemaAdministrativoWeb.ViewModels.Contabilidad.LibroDiarioViewModel
+
+@* Firma: FRANCO LARA - 07/07/2026 | Mantiene el reporte HTML Libro Diario, adapta su visualizacion al formato compacto tipo hoja A4 de los reportes legacy y agrega impresion directa en pantalla. *@
+@* Firma: FRANCO LARA - 08/07/2026 | Ajusta Libro Diario para trabajar siempre en soles, elimina filtros de moneda y origen, y separa las vistas Diario auxiliar, Por Cuenta y Por Origen. *@
+
+@{
+    ViewData["Title"] = "Libro Diario";
+    ViewData["AdminShell"] = true;
+    var textInfo = System.Globalization.CultureInfo.CurrentCulture.TextInfo;
+    var vistaTexto = Model.ModosDisponibles.FirstOrDefault(x => x.Valor == Model.ModoSeleccionado)?.Texto ?? "Diario auxiliar";
+    var esDiarioAuxiliar = Model.ModoSeleccionado == "A";
+    var esPorCuenta = Model.ModoSeleccionado == "D";
+    var esPorOrigen = Model.ModoSeleccionado == "R";
+}
+
+<section class="dashboard-shell">
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Reporte</span>
+                <h1>Libro Diario</h1>
+                <p>Replica en HTML los formatos legacy <strong>Diario auxiliar</strong>, <strong>Por Cuenta</strong> y <strong>Por Origen</strong>, manteniendo importes en soles y su referencia en dolares.</p>
+            </div>
+            <div class="workspace-window-badge">
+                <strong>@Model.EmpresaNombre</strong>
+                <span>@Model.PeriodoConsulta</span>
+            </div>
+        </div>
+
+        <div class="workspace-window-body">
+            @if (!string.IsNullOrWhiteSpace(Model.MensajeError))
+            {
+                <div class="alert alert-danger">@Model.MensajeError</div>
+            }
+
+            <form asp-action="LibroDiario" method="get" class="workspace-filter-card">
+                <input type="hidden" name="consultar" value="true" />
+                <div class="workspace-filter-grid">
+                    <div class="workspace-field">
+                        <label class="form-label" for="anio">Anio</label>
+                        <select id="anio" name="anio" class="form-select">
+                            @foreach (var anio in Model.AniosDisponibles)
+                            {
+                                <option value="@anio" selected="@(anio == Model.AnioSeleccionado ? "selected" : null)">@anio</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="periodo">Periodo</label>
+                        <select id="periodo" name="periodo" class="form-select">
+                            @foreach (var periodo in Model.PeriodosDisponibles)
+                            {
+                                <option value="@periodo.Valor" selected="@(periodo.Valor == Model.PeriodoSeleccionado ? "selected" : null)">@textInfo.ToTitleCase(periodo.Nombre)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label">Moneda base</label>
+                        <input class="form-control" value="Soles" readonly />
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="modo">Vista</label>
+                        <select id="modo" name="modo" class="form-select">
+                            @foreach (var modo in Model.ModosDisponibles)
+                            {
+                                <option value="@modo.Valor" selected="@(modo.Valor == Model.ModoSeleccionado ? "selected" : null)">@modo.Texto</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary">Consultar diario</button>
+                    </div>
+                </div>
+            </form>
+
+            @if (Model.ConsultaEjecutada && Model.Resultados.Count == 0 && string.IsNullOrWhiteSpace(Model.MensajeError))
+            {
+                <div class="alert alert-info mt-4">No se encontraron movimientos para el periodo consultado.</div>
+            }
+
+            @if (Model.Resultados.Count > 0)
+            {
+                <section class="workspace-report-sheet report-ledger-sheet mt-4">
+                    <div class="report-action-bar no-print">
+                        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Imprimir</button>
+                    </div>
+
+                    <header class="report-ledger-header">
+                        <div>
+                            <strong>@Model.EmpresaNombre</strong>
+                            <span>LIBRO DIARIO</span>
+                        </div>
+                        <div class="report-ledger-meta">
+                            <span>Periodo: @Model.PeriodoConsulta</span>
+                            <span>Vista: @vistaTexto</span>
+                            <span>Moneda base: Soles</span>
+                            <span>Detalle USD: Visible</span>
+                            <span>Filas: @Model.Resultados.Count</span>
+                        </div>
+                    </header>
+
+                    <div class="table-responsive report-ledger-table-wrap">
+                        @if (esDiarioAuxiliar)
+                        {
+                            <table class="table app-table report-ledger-table">
+                                <thead>
+                                    <tr>
+                                        <th>Origen</th>
+                                        <th>Asiento</th>
+                                        <th>Cuenta</th>
+                                        <th>Auxiliar</th>
+                                        <th>Documento</th>
+                                        <th>Glosa</th>
+                                        <th>Fecha</th>
+                                        <th>TC</th>
+                                        <th>Debe</th>
+                                        <th>Haber</th>
+                                        <th>Debe USD</th>
+                                        <th>Haber USD</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.Resultados)
+                                    {
+                                        <tr>
+                                            <td class="report-ledger-strong-cell">
+                                                <strong>@item.CodigoOrigen</strong>
+                                                <div>@item.NombreOrigen</div>
+                                            </td>
+                                            <td>
+                                                <strong>@(item.NumeroAsiento == 0 ? "-" : item.NumeroAsiento.ToString("00000000"))</strong>
+                                                <div>Item @(item.Item == 0 ? "-" : item.Item)</div>
+                                            </td>
+                                            <td class="report-ledger-strong-cell">
+                                                <strong>@item.CodigoCuenta</strong>
+                                                <div>@item.NombreCuenta</div>
+                                            </td>
+                                            <td>
+                                                <strong>@(string.IsNullOrWhiteSpace(item.NumeroDocumento) ? "-" : item.NumeroDocumento)</strong>
+                                                <div>@(string.IsNullOrWhiteSpace(item.NombreAuxiliar) ? "-" : item.NombreAuxiliar)</div>
+                                            </td>
+                                            <td>
+                                                <strong>@(string.IsNullOrWhiteSpace(item.TipoDocumento) ? "-" : item.TipoDocumento)</strong>
+                                                <div>@($"{(string.IsNullOrWhiteSpace(item.Serie) ? "-" : item.Serie)} / {(string.IsNullOrWhiteSpace(item.Referencia) ? "-" : item.Referencia)}")</div>
+                                            </td>
+                                            <td class="report-ledger-description">@item.Glosa</td>
+                                            <td>@item.FechaEmision?.ToString("dd/MM/yyyy")</td>
+                                            <td class="workspace-money-cell">@item.TipoCambio.ToString("N3")</td>
+                                            <td class="workspace-money-cell">@item.Debe.ToString("N2")</td>
+                                            <td class="workspace-money-cell">@item.Haber.ToString("N2")</td>
+                                            <td class="workspace-money-cell">@item.DebeDolares.ToString("N2")</td>
+                                            <td class="workspace-money-cell">@item.HaberDolares.ToString("N2")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot>
+                                    <tr class="report-ledger-total-row">
+                                        <td colspan="8">Totales</td>
+                                        <td class="workspace-money-cell">@Model.TotalDebe.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@Model.TotalHaber.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@Model.TotalDebeDolares.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@Model.TotalHaberDolares.ToString("N2")</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        }
+                        else if (esPorCuenta)
+                        {
+                            <table class="table app-table report-ledger-table">
+                                <thead>
+                                    <tr>
+                                        <th>Cuenta</th>
+                                        <th>Descripcion</th>
+                                        <th>Debe</th>
+                                        <th>Haber</th>
+                                        <th>Debe USD</th>
+                                        <th>Haber USD</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.Resultados)
+                                    {
+                                        <tr>
+                                            <td class="report-ledger-strong-cell">
+                                                <strong>@item.CodigoCuenta</strong>
+                                            </td>
+                                            <td class="report-ledger-description">@item.NombreCuenta</td>
+                                            <td class="workspace-money-cell">@item.Debe.ToString("N2")</td>
+                                            <td class="workspace-money-cell">@item.Haber.ToString("N2")</td>
+                                            <td class="workspace-money-cell">@item.DebeDolares.ToString("N2")</td>
+                                            <td class="workspace-money-cell">@item.HaberDolares.ToString("N2")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot>
+                                    <tr class="report-ledger-total-row">
+                                        <td colspan="2">Totales</td>
+                                        <td class="workspace-money-cell">@Model.TotalDebe.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@Model.TotalHaber.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@Model.TotalDebeDolares.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@Model.TotalHaberDolares.ToString("N2")</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        }
+                        else if (esPorOrigen)
+                        {
+                            <table class="table app-table report-ledger-table">
+                                <thead>
+                                    <tr>
+                                        <th>Origen</th>
+                                        <th>Descripcion</th>
+                                        <th>Debe</th>
+                                        <th>Haber</th>
+                                        <th>Debe USD</th>
+                                        <th>Haber USD</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.Resultados)
+                                    {
+                                        <tr>
+                                            <td class="report-ledger-strong-cell">
+                                                <strong>@item.CodigoOrigen</strong>
+                                            </td>
+                                            <td class="report-ledger-description">@item.NombreOrigen</td>
+                                            <td class="workspace-money-cell">@item.Debe.ToString("N2")</td>
+                                            <td class="workspace-money-cell">@item.Haber.ToString("N2")</td>
+                                            <td class="workspace-money-cell">@item.DebeDolares.ToString("N2")</td>
+                                            <td class="workspace-money-cell">@item.HaberDolares.ToString("N2")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot>
+                                    <tr class="report-ledger-total-row">
+                                        <td colspan="2">Totales</td>
+                                        <td class="workspace-money-cell">@Model.TotalDebe.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@Model.TotalHaber.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@Model.TotalDebeDolares.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@Model.TotalHaberDolares.ToString("N2")</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        }
+                    </div>
+                </section>
+            }
+        </div>
+    </section>
+</section>

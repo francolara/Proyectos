@@ -1,0 +1,155 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.TipoCambioIndexViewModel
+
+@* Firma: FRANCO LARA - 29/06/2026 | Agrega el mantenimiento de tipos de cambio por periodo y habilita la sincronizacion mensual desde la API Migo, ocultando la cuenta administradora en la vista. *@
+@* Firma: FRANCO LARA - 02/07/2026 | Corrige la seleccion visible de anio y mes en tipos de cambio para que el periodo mostrado respete el contexto devuelto por la opcion. *@
+
+@{
+    ViewData["Title"] = "Tipos de cambio";
+    ViewData["AdminShell"] = true;
+    var periodoTexto = new DateTime(Model.AnioSeleccionado, Model.MesSeleccionado, 1).ToString("MMMM 'de' yyyy");
+    static string ObtenerTextoMoneda(string codigoMoneda)
+    {
+        return codigoMoneda.Trim().ToUpperInvariant() switch
+        {
+            "PEN" => "SOLES",
+            "USD" => "DOLARES",
+            _ => codigoMoneda
+        };
+    }
+}
+
+<section class="dashboard-shell">
+    <section class="dashboard-metrics">
+        <article class="dashboard-metric-card dashboard-metric-card-count">
+            <span>Total registros</span>
+            <strong>@Model.TotalTiposCambio</strong>
+            <small>Tipos de cambio visibles para el periodo consultado.</small>
+        </article>
+        <article class="dashboard-metric-card dashboard-metric-card-count">
+            <span>Activos</span>
+            <strong>@Model.TotalActivos</strong>
+            <small>Registros operativos en la cuenta administradora.</small>
+        </article>
+        <article class="dashboard-metric-card dashboard-metric-card-count">
+            <span>Inactivos</span>
+            <strong>@Model.TotalInactivos</strong>
+            <small>Registros historicos no operativos.</small>
+        </article>
+    </section>
+
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Mantenimiento</span>
+                <h1>Tipos de cambio</h1>
+                <p>Consulta, administra y sincroniza los tipos de cambio por cuenta administradora usando el periodo contable como filtro.</p>
+            </div>
+            <div class="workspace-row-actions">
+                <form asp-action="SincronizarPeriodoDesdeApi" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="anio" value="@Model.AnioSeleccionado" />
+                    <input type="hidden" name="mes" value="@Model.MesSeleccionado" />
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">Obtener tipos de cambio</button>
+                </form>
+                <a asp-action="Registrar" asp-route-periodo="@Model.PeriodoConsulta" class="btn btn-light btn-sm">Registrar tipo de cambio</a>
+            </div>
+        </div>
+        <div class="workspace-window-body">
+            @if (TempData["TipoCambioOk"] is string ok)
+            {
+                <div class="alert alert-success">@ok</div>
+            }
+            @if (TempData["TipoCambioError"] is string error)
+            {
+                <div class="alert alert-warning">@error</div>
+            }
+
+            <form asp-action="Index" method="get" class="workspace-filter-card">
+                <div class="workspace-filter-grid">
+                    <div class="workspace-field">
+                        <label class="form-label" for="anio">Anio</label>
+                        <select id="anio" name="anio" class="form-select">
+                            @foreach (var anio in Model.AniosDisponibles)
+                            {
+                                <option value="@anio" selected="@(anio == Model.AnioSeleccionado ? "selected" : null)">@anio</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="mes">Mes</label>
+                        <select id="mes" name="mes" class="form-select">
+                            @foreach (var mes in Model.MesesDisponibles)
+                            {
+                                <option value="@mes.Valor" selected="@(mes.Valor == Model.MesSeleccionado ? "selected" : null)">@mes.Nombre</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label">Periodo</label>
+                        <input class="form-control" value="@periodoTexto" readonly />
+                    </div>
+                </div>
+                <div class="workspace-actions">
+                    <button type="submit" class="btn btn-primary">Consultar</button>
+                </div>
+            </form>
+
+            <div class="table-responsive workspace-table-wrap">
+                <table class="table align-middle app-table workspace-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Moneda</th>
+                            <th>Compra</th>
+                            <th>Venta</th>
+                            <th>Compra SBS</th>
+                            <th>Venta SBS</th>
+                            <th>Fuente</th>
+                            <th>Estado</th>
+                            <th class="text-end">Accion</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.TiposCambio.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="9">
+                                    <div class="app-empty-state app-empty-state-inline">
+                                        <i class="bi bi-currency-exchange"></i>
+                                        <div>
+                                            <strong>No hay tipos de cambio para el periodo consultado</strong>
+                                            <p>Registra el primer tipo de cambio manualmente o sincroniza el mes desde la API.</p>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.TiposCambio)
+                            {
+                                <tr class="workspace-clickable-row" data-edit-url="@Url.Action("Editar", new { idTipoCambio = item.IdTipoCambio, periodo = Model.PeriodoConsulta })">
+                                    <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
+                                    <td class="workspace-tree-code">@ObtenerTextoMoneda(item.IdMoneda)</td>
+                                    <td>@item.Compra.ToString("N4")</td>
+                                    <td>@item.Venta.ToString("N4")</td>
+                                    <td>@item.CompraSbs.ToString("N4")</td>
+                                    <td>@item.VentaSbs.ToString("N4")</td>
+                                    <td>@item.Fuente</td>
+                                    <td>
+                                        <span class="workspace-status-badge @(item.Estado ? "is-active" : "is-inactive")">
+                                            @(item.Estado ? "Activo" : "Inactivo")
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <a asp-action="Editar" asp-route-idTipoCambio="@item.IdTipoCambio" asp-route-periodo="@Model.PeriodoConsulta" class="workspace-row-link">Editar</a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+</section>

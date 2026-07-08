@@ -19,6 +19,8 @@
    Create date:   23/06/2026
    Description:   Oculta la fecha de contabilizacion del asiento, la fija automaticamente segun el periodo contable, reubica dicho periodo en la tarjeta derecha del encabezado, mantiene visible el origen actual al editar, agrega seleccion modal de centro de costo segun la cuenta contable y suma ayudas de persona/comprobantes con botones compactos por icono en el detalle.
    ============================================= *@
+@* Firma: FRANCO LARA - 29/06/2026 | Exige tipo de cambio en cabecera y detalle del asiento manual, consulta siempre USD por fecha al cargar o cambiarla, muestra 3 decimales en ambos niveles y deja el valor por defecto en 0 para validar al grabar; corrige el script del formulario declarando la referencia del form para que el resumen Debe/Haber/Diferencia se recalcule tambien en asientos generados desde provisiones importadas. *@
+@* Firma: FRANCO LARA - 06/07/2026 | Mantiene el formulario de asientos con 16 periodos contables y reorganiza el detalle para pantallas pequenas, evitando que los botones de ayuda se monten sobre los campos de texto. *@
 
 @{
     ViewData["Title"] = Model.Formulario.IdAsiento.HasValue ? "Editar asiento manual" : "Registrar asiento manual";
@@ -31,8 +33,8 @@
         : origenSeleccionado is null
             ? "Seleccione origen"
             : $"{origenSeleccionado.CodigoOrigen} - {origenSeleccionado.NombreOrigen}";
-    var periodoContableValue = $"{Model.AnioSeleccionado:0000}-{Model.MesSeleccionado:00}";
-    var periodoContableTexto = new DateTime(Model.AnioSeleccionado, Model.MesSeleccionado, 1).ToString("MMMM 'de' yyyy");
+    var periodoContableNombre = Model.MesesDisponibles.FirstOrDefault(x => x.Valor == Model.MesSeleccionado)?.Nombre ?? Model.PeriodoConsulta;
+    var periodoContableTexto = $"{periodoContableNombre} {Model.AnioSeleccionado:0000}";
 
 }
 
@@ -45,9 +47,12 @@
                 <p>Registra origen, fechas, moneda y detalle del asiento con resumen visual de Debe, Haber y diferencia.</p>
             </div>
             <div class="workspace-window-badge">
-                <strong>@System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(periodoContableTexto)</strong>
+                <strong>@periodoContableTexto</strong>
                 <span>Periodo contable</span>
-                <small>control mensual activo · @Model.PeriodoConsulta</small>
+                @if (Model.Formulario.NumeroAsiento.HasValue)
+                {
+                    <small>Asiento - @Model.Formulario.NumeroAsiento.Value</small>
+                }
             </div>
         </div>
         <div class="workspace-window-body">
@@ -64,8 +69,13 @@
                 <form asp-action="Guardar" method="post" id="asiento-form">
                     @Html.AntiForgeryToken()
                     <input type="hidden" asp-for="Formulario.IdAsiento" />
+                    <input type="hidden" asp-for="Formulario.PermiteRegistroManual" />
                     <input type="hidden" name="periodo" value="@Model.PeriodoConsulta" />
                     <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                    @if (Model.Formulario.IdAsiento.HasValue && !Model.Formulario.PermiteRegistroManual)
+                    {
+                        <div class="alert alert-warning mb-3">Asiento generado automaticamente. Revise el detalle, pero cualquier cambio debe hacerse desde el modulo de origen.</div>
+                    }
 
                     <div class="workspace-form-grid">
                         <div class="workspace-field">
@@ -80,7 +90,7 @@
                         </div>
                         <div class="workspace-field">
                             <label asp-for="Formulario.FechaEmision" class="form-label">Fecha emision</label>
-                            <input asp-for="Formulario.FechaEmision" class="form-control" />
+                            <input asp-for="Formulario.FechaEmision" class="form-control js-fecha-tipo-cambio" id="asientoFechaEmision" />
                             <span asp-validation-for="Formulario.FechaEmision" class="text-danger"></span>
                         </div>
                         <div class="workspace-field workspace-field-span-2">
@@ -90,18 +100,21 @@
                         </div>
                         <div class="workspace-field">
                             <label asp-for="Formulario.IdMoneda" class="form-label">Moneda</label>
-                            <select asp-for="Formulario.IdMoneda" class="form-select">
+                            <select asp-for="Formulario.IdMoneda" class="form-select js-moneda-tipo-cambio" id="asientoMonedaSelect">
                                 <option value="">Seleccione</option>
                                 @foreach (var moneda in Model.Monedas)
                                 {
-                                    <option value="@moneda.IdMoneda">@moneda.CodigoMoneda - @moneda.NombreMoneda</option>
+                                    <option value="@moneda.IdMoneda" data-codigo-moneda="@moneda.CodigoMoneda" data-es-moneda-base="@(moneda.EsMonedaBase.ToString().ToLowerInvariant())">@moneda.CodigoMoneda - @moneda.NombreMoneda</option>
                                 }
                             </select>
                             <span asp-validation-for="Formulario.IdMoneda" class="text-danger"></span>
                         </div>
                         <div class="workspace-field">
                             <label asp-for="Formulario.TipoCambio" class="form-label">Tipo de cambio</label>
-                            <input asp-for="Formulario.TipoCambio" class="form-control" />
+                            <div class="input-group">
+                                <input asp-for="Formulario.TipoCambio" class="form-control js-tipo-cambio-cabecera" id="asientoTipoCambio" />
+                                <button type="button" class="btn btn-outline-secondary workspace-icon-button js-actualizar-tipo-cambio" title="Actualizar tipo de cambio" aria-label="Actualizar tipo de cambio"><i class="bi bi-arrow-clockwise"></i></button>
+                            </div>
                             <span asp-validation-for="Formulario.TipoCambio" class="text-danger"></span>
                         </div>
                         <div class="workspace-field">
@@ -120,7 +133,6 @@
                         <div class="workspace-section-head workspace-section-head-compact">
                             <div>
                                 <h2>Detalle contable</h2>
-                                <p>Agrega las lineas del asiento. Cada linea debe tener monto solo en Debe o solo en Haber.</p>
                             </div>
                             <button type="button" class="btn btn-outline-secondary btn-sm" id="agregar-linea">Agregar linea</button>
                         </div>
@@ -130,8 +142,8 @@
                                 <thead>
                                     <tr>
                                         <th>Item</th>
-                                        <th>Cuenta</th>
-                                        <th>Glosa detalle</th>
+                                        <th class="asiento-col-cuenta">Cuenta</th>
+                                        <th class="asiento-col-glosa">Glosa detalle</th>
                                         <th>Centro costo</th>
                                         <th>RUC/DNI</th>
                                         <th>TipoDoc</th>
@@ -150,11 +162,11 @@
                                         var tipoDocumentoEsPersonalizado = !string.IsNullOrWhiteSpace(tipoDocumentoActual)
                                             && !Model.TiposDocumentoIdentidad.Any(x => x.Valor == tipoDocumentoActual);
                                         <tr>
-                                            <td class="detalle-orden-cell">
+                                            <td class="detalle-orden-cell" data-label="Item">
                                                 <input asp-for="Formulario.Detalles[i].Item" class="form-control" readonly />
                                                 <span asp-validation-for="Formulario.Detalles[i].Item" class="text-danger"></span>
                                             </td>
-                                            <td>
+                                            <td class="asiento-col-cuenta detalle-col-full-sm" data-label="Cuenta">
                                                 <input type="hidden" asp-for="Formulario.Detalles[i].IdPlanCuenta" class="js-cuenta-id" />
                                                 <input type="hidden" asp-for="Formulario.Detalles[i].RequiereCentroCostoCuenta" class="js-cuenta-requiere-centro-costo" />
                                                 <div class="workspace-lookup-control workspace-lookup-control-compact">
@@ -163,11 +175,11 @@
                                                 </div>
                                                 <span asp-validation-for="Formulario.Detalles[i].IdPlanCuenta" class="text-danger"></span>
                                             </td>
-                                            <td>
+                                            <td class="asiento-col-glosa detalle-col-full-sm" data-label="Glosa detalle">
                                                 <input asp-for="Formulario.Detalles[i].GlosaDetalle" class="form-control" />
                                                 <span asp-validation-for="Formulario.Detalles[i].GlosaDetalle" class="text-danger"></span>
                                             </td>
-                                            <td class="detalle-centro-costo-cell">
+                                            <td class="detalle-centro-costo-cell" data-label="Centro costo">
                                                 <input type="hidden" asp-for="Formulario.Detalles[i].CodigoCentroCosto" class="js-centro-costo-codigo" />
                                                 <div class="workspace-lookup-control workspace-lookup-control-compact workspace-lookup-control-inline-tools js-centro-costo-control">
                                                     <input class="form-control js-centro-costo-texto"
@@ -179,7 +191,7 @@
                                                 </div>
                                                 <span asp-validation-for="Formulario.Detalles[i].CodigoCentroCosto" class="text-danger"></span>
                                             </td>
-                                            <td class="detalle-persona-cell">
+                                            <td class="detalle-persona-cell" data-label="RUC/DNI">
                                                 <div class="workspace-lookup-control workspace-lookup-control-inline-tools">
                                                     <input asp-for="Formulario.Detalles[i].NumeroDocumento" class="form-control js-numero-documento" />
                                                     <button type="button" class="btn btn-outline-secondary btn-sm workspace-icon-button js-open-persona-modal" title="Buscar persona" aria-label="Buscar persona"><i class="bi bi-person"></i></button>
@@ -187,7 +199,7 @@
                                                 </div>
                                                 <span asp-validation-for="Formulario.Detalles[i].NumeroDocumento" class="text-danger"></span>
                                             </td>
-                                            <td class="detalle-tipodoc-cell">
+                                            <td class="detalle-tipodoc-cell" data-label="TipoDoc">
                                                 <select asp-for="Formulario.Detalles[i].TipoDocumento" class="form-select form-select-sm workspace-form-select-compact">
                                                     <option value="">Seleccione</option>
                                                     @if (tipoDocumentoEsPersonalizado)
@@ -201,27 +213,27 @@
                                                 </select>
                                                 <span asp-validation-for="Formulario.Detalles[i].TipoDocumento" class="text-danger"></span>
                                             </td>
-                                            <td class="detalle-serie-cell">
+                                            <td class="detalle-serie-cell" data-label="Serie">
                                                 <input asp-for="Formulario.Detalles[i].Serie" class="form-control" />
                                                 <span asp-validation-for="Formulario.Detalles[i].Serie" class="text-danger"></span>
                                             </td>
-                                            <td class="detalle-referencia-cell">
+                                            <td class="detalle-referencia-cell" data-label="Referencia">
                                                 <input asp-for="Formulario.Detalles[i].ReferenciaLinea" class="form-control" />
                                                 <span asp-validation-for="Formulario.Detalles[i].ReferenciaLinea" class="text-danger"></span>
                                             </td>
-                                            <td class="detalle-tc-cell">
-                                                <input asp-for="Formulario.Detalles[i].TipoCambioLinea" class="form-control" />
+                                            <td class="detalle-tc-cell" data-label="TC">
+                                                <input asp-for="Formulario.Detalles[i].TipoCambioLinea" class="form-control js-tipo-cambio-linea" />
                                                 <span asp-validation-for="Formulario.Detalles[i].TipoCambioLinea" class="text-danger"></span>
                                             </td>
-                                            <td class="detalle-porcentaje-cell">
+                                            <td class="detalle-porcentaje-cell" data-label="Debe">
                                                 <input asp-for="Formulario.Detalles[i].Debe" class="form-control js-debe" />
                                                 <span asp-validation-for="Formulario.Detalles[i].Debe" class="text-danger"></span>
                                             </td>
-                                            <td class="detalle-porcentaje-cell">
+                                            <td class="detalle-porcentaje-cell" data-label="Haber">
                                                 <input asp-for="Formulario.Detalles[i].Haber" class="form-control js-haber" />
                                                 <span asp-validation-for="Formulario.Detalles[i].Haber" class="text-danger"></span>
                                             </td>
-                                            <td class="text-end">
+                                            <td class="text-end detalle-action-cell" data-label="Accion">
                                                 <button type="button" class="btn btn-outline-secondary btn-sm js-remove-row">Quitar</button>
                                             </td>
                                         </tr>
@@ -248,8 +260,15 @@
                     </div>
 
                     <div class="workspace-actions">
-                        <button type="submit" class="btn btn-primary">Guardar asiento</button>
-                        <a asp-action="Index" asp-route-periodo="@Model.PeriodoConsulta" class="btn btn-outline-secondary">Cancelar</a>
+                        @if (Model.Formulario.PermiteRegistroManual)
+                        {
+                            <button type="submit" class="btn btn-primary">Guardar asiento</button>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-primary" disabled>Guardar asiento</button>
+                        }
+                        <a asp-action="Index" asp-route-anio="@Model.AnioSeleccionado" asp-route-mes="@Model.MesSeleccionado" class="btn btn-outline-secondary">Cancelar</a>
                     </div>
                 </form>
             }
@@ -567,10 +586,10 @@
 
 <template id="detalle-row-template">
     <tr>
-        <td class="detalle-orden-cell">
+        <td class="detalle-orden-cell" data-label="Item">
             <input name="Formulario.Detalles[__index__].Item" class="form-control" readonly value="0" />
         </td>
-        <td>
+        <td class="asiento-col-cuenta detalle-col-full-sm" data-label="Cuenta">
             <input type="hidden" name="Formulario.Detalles[__index__].IdPlanCuenta" class="js-cuenta-id" />
             <input type="hidden" name="Formulario.Detalles[__index__].RequiereCentroCostoCuenta" class="js-cuenta-requiere-centro-costo" value="false" />
             <div class="workspace-lookup-control workspace-lookup-control-compact">
@@ -578,10 +597,10 @@
                 <button type="button" class="btn btn-outline-secondary btn-sm workspace-icon-button js-open-cuenta-modal" title="Buscar cuenta" aria-label="Buscar cuenta"><i class="bi bi-search"></i></button>
             </div>
         </td>
-        <td>
+        <td class="asiento-col-glosa detalle-col-full-sm" data-label="Glosa detalle">
             <input name="Formulario.Detalles[__index__].GlosaDetalle" class="form-control" />
         </td>
-        <td class="detalle-centro-costo-cell">
+        <td class="detalle-centro-costo-cell" data-label="Centro costo">
             <input type="hidden" name="Formulario.Detalles[__index__].CodigoCentroCosto" class="js-centro-costo-codigo" />
             <div class="workspace-lookup-control workspace-lookup-control-compact workspace-lookup-control-inline-tools js-centro-costo-control">
                 <input class="form-control js-centro-costo-texto" placeholder="Centro de costo opcional" readonly />
@@ -589,14 +608,14 @@
                 <button type="button" class="btn btn-outline-secondary btn-sm workspace-icon-button js-clear-centro-costo" title="Limpiar centro de costo" aria-label="Limpiar centro de costo"><i class="bi bi-brush"></i></button>
             </div>
         </td>
-        <td class="detalle-persona-cell">
+        <td class="detalle-persona-cell" data-label="RUC/DNI">
             <div class="workspace-lookup-control workspace-lookup-control-inline-tools">
                 <input name="Formulario.Detalles[__index__].NumeroDocumento" class="form-control js-numero-documento" />
                 <button type="button" class="btn btn-outline-secondary btn-sm workspace-icon-button js-open-persona-modal" title="Buscar persona" aria-label="Buscar persona"><i class="bi bi-person"></i></button>
                 <button type="button" class="btn btn-outline-secondary btn-sm workspace-icon-button js-open-comprobante-modal" title="Buscar comprobante con saldo" aria-label="Buscar comprobante con saldo"><i class="bi bi-receipt"></i></button>
             </div>
         </td>
-        <td class="detalle-tipodoc-cell">
+        <td class="detalle-tipodoc-cell" data-label="TipoDoc">
             <select name="Formulario.Detalles[__index__].TipoDocumento" class="form-select form-select-sm workspace-form-select-compact">
                 <option value="">Seleccione</option>
                 @foreach (var tipoDocumento in Model.TiposDocumentoIdentidad)
@@ -605,22 +624,22 @@
                 }
             </select>
         </td>
-        <td class="detalle-serie-cell">
+        <td class="detalle-serie-cell" data-label="Serie">
             <input name="Formulario.Detalles[__index__].Serie" class="form-control" />
         </td>
-        <td class="detalle-referencia-cell">
+        <td class="detalle-referencia-cell" data-label="Referencia">
             <input name="Formulario.Detalles[__index__].ReferenciaLinea" class="form-control" />
         </td>
-        <td class="detalle-tc-cell">
-            <input name="Formulario.Detalles[__index__].TipoCambioLinea" class="form-control" />
+        <td class="detalle-tc-cell" data-label="TC">
+            <input name="Formulario.Detalles[__index__].TipoCambioLinea" class="form-control js-tipo-cambio-linea" value="0" />
         </td>
-        <td class="detalle-porcentaje-cell">
+        <td class="detalle-porcentaje-cell" data-label="Debe">
             <input name="Formulario.Detalles[__index__].Debe" class="form-control js-debe" value="0" />
         </td>
-        <td class="detalle-porcentaje-cell">
+        <td class="detalle-porcentaje-cell" data-label="Haber">
             <input name="Formulario.Detalles[__index__].Haber" class="form-control js-haber" value="0" />
         </td>
-        <td class="text-end">
+        <td class="text-end detalle-action-cell" data-label="Accion">
             <button type="button" class="btn btn-outline-secondary btn-sm js-remove-row">Quitar</button>
         </td>
     </tr>
@@ -633,6 +652,7 @@
             const tableBody = document.querySelector("#detalle-table tbody");
             const template = document.getElementById("detalle-row-template");
             const addButton = document.getElementById("agregar-linea");
+            const form = document.getElementById("asiento-form");
             const totalDebeLabel = document.getElementById("total-debe");
             const totalHaberLabel = document.getElementById("total-haber");
             const diferenciaLabel = document.getElementById("total-diferencia");
@@ -660,10 +680,15 @@
             const personaFiltro = document.getElementById("personaFiltro");
             const comprobantePersonaNumeroDocumento = document.getElementById("comprobantePersonaNumeroDocumento");
             const comprobantePersonaFiltro = document.getElementById("comprobantePersonaFiltro");
+            const fechaEmisionEl = document.getElementById("asientoFechaEmision");
+            const monedaSelectEl = document.getElementById("asientoMonedaSelect");
+            const tipoCambioCabeceraEl = document.getElementById("asientoTipoCambio");
+            const actualizarTipoCambioButton = document.querySelector(".js-actualizar-tipo-cambio");
             const buscarCuentasUrl = '@Url.Action("BuscarAyuda", "PlanCuenta")';
             const buscarCentroCostoUrl = '@Url.Action("BuscarAyuda", "CentroCosto")';
             const buscarPersonasUrl = '@Url.Action("BuscarPersonasAyuda", "Asiento")';
             const buscarComprobantesPersonaUrl = '@Url.Action("BuscarComprobantesPersonaAyuda", "Asiento")';
+            const obtenerTipoCambioUrl = '@Url.Action("ObtenerValorPorFecha", "TipoCambio")';
             const origenId = document.getElementById("origenId");
             const origenTexto = document.getElementById("origenTexto");
             let origenSeleccion = origenRows.find((row) => row.classList.contains("is-selected")) || null;
@@ -687,6 +712,68 @@
             const parseAmount = (value) => {
                 const parsed = parseFloat((value ?? "0").replace(",", "."));
                 return Number.isNaN(parsed) ? 0 : parsed;
+            };
+
+            const formatTipoCambioInput = (input) => {
+                if (!input) {
+                    return;
+                }
+
+                input.value = parseAmount(input.value).toFixed(3);
+            };
+
+            const sincronizarTipoCambioDetalle = (row = null) => {
+                const valorCabecera = Number(tipoCambioCabeceraEl?.value || 0);
+                if (!Number.isFinite(valorCabecera) || valorCabecera <= 0) {
+                    return;
+                }
+
+                const aplicar = (targetRow) => {
+                    const input = targetRow?.querySelector(".js-tipo-cambio-linea");
+                    if (input) {
+                        input.value = valorCabecera.toFixed(3);
+                    }
+                };
+
+                if (row) {
+                    aplicar(row);
+                    return;
+                }
+
+                Array.from(tableBody.querySelectorAll("tr")).forEach(aplicar);
+            };
+
+            const consultarTipoCambioCabecera = async (mostrarMensaje) => {
+                const fecha = String(fechaEmisionEl?.value || "").trim();
+
+                if (!fecha) {
+                    if (mostrarMensaje) {
+                        window.alert("Seleccione fecha antes de actualizar el tipo de cambio.");
+                    }
+                    return false;
+                }
+
+                const response = await fetch(`${obtenerTipoCambioUrl}?${new URLSearchParams({ fecha, idMoneda: "USD" }).toString()}`, { cache: "no-store" });
+                const payload = await response.json();
+                if (!response.ok || !payload.ok) {
+                    if (mostrarMensaje) {
+                        window.alert(payload.mensaje || "No se pudo obtener el tipo de cambio.");
+                    }
+                    return false;
+                }
+
+                if (!payload.encontrado) {
+                    if (mostrarMensaje) {
+                        window.alert(payload.mensaje || "No existe un tipo de cambio registrado para la fecha y moneda seleccionadas.");
+                    }
+                    return false;
+                }
+
+                if (tipoCambioCabeceraEl) {
+                    tipoCambioCabeceraEl.value = Number(payload.tipoCambio || 0).toFixed(3);
+                }
+                sincronizarTipoCambioDetalle();
+                return true;
             };
 
             const marcarSeleccion = (rows, selectedRow) => {
@@ -1228,9 +1315,46 @@
                 const row = tableBody.lastElementChild;
                 if (row) {
                     bindRowActions(row);
+                    sincronizarTipoCambioDetalle(row);
                 }
                 refreshRows();
             });
+
+            fechaEmisionEl?.addEventListener("change", () => {
+                consultarTipoCambioCabecera(false).catch((error) => console.warn(error));
+            });
+            monedaSelectEl?.addEventListener("change", () => {
+                consultarTipoCambioCabecera(false).catch((error) => console.warn(error));
+            });
+            formatTipoCambioInput(tipoCambioCabeceraEl);
+            Array.from(tableBody.querySelectorAll(".js-tipo-cambio-linea")).forEach((input) => formatTipoCambioInput(input));
+            form?.addEventListener("blur", (event) => {
+                const input = event.target;
+                if (input instanceof HTMLInputElement && input.matches(".js-tipo-cambio-cabecera, .js-tipo-cambio-linea")) {
+                    formatTipoCambioInput(input);
+                    if (input.matches(".js-tipo-cambio-cabecera")) {
+                        sincronizarTipoCambioDetalle();
+                    }
+                }
+            }, true);
+            form?.addEventListener("change", (event) => {
+                const input = event.target;
+                if (input instanceof HTMLInputElement && input.matches(".js-tipo-cambio-cabecera, .js-tipo-cambio-linea")) {
+                    formatTipoCambioInput(input);
+                    if (input.matches(".js-tipo-cambio-cabecera")) {
+                        sincronizarTipoCambioDetalle();
+                    }
+                }
+            });
+            actualizarTipoCambioButton?.addEventListener("click", async () => {
+                try {
+                    await consultarTipoCambioCabecera(true);
+                } catch (error) {
+                    console.warn(error);
+                    window.alert("No se pudo obtener el tipo de cambio.");
+                }
+            });
+            consultarTipoCambioCabecera(false).catch((error) => console.warn(error));
 
             document.getElementById("abrirOrigenModal")?.addEventListener("click", () => {
                 aplicarFiltroOrigen();

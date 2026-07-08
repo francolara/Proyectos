@@ -22,7 +22,12 @@ public class ConfiguracionContabilizacionController(
         ("EGR", "Egresos", "Origen y asiento automatico", "Define el origen contable base para futuros movimientos operativos de egresos.", "bi-box-arrow-right", "egresos"),
         ("ING", "Ingresos", "Origen y asiento automatico", "Define el origen contable base para futuros movimientos operativos de ingresos.", "bi-box-arrow-in-left", "ingresos"),
         ("APNC", "Aplicaciones", "Origen y asiento automatico", "Define el origen contable base para futuras aplicaciones de notas de credito.", "bi-arrow-repeat", "aplicaciones"),
-        ("DET", "Detracciones", "Origen y asiento automatico", "Define el origen contable del asiento adicional que aplica la 42 contra la cuenta SPOT en compras.", "bi-bank", "detracciones")
+        ("DET", "Detracciones", "Origen y asiento automatico", "Define el origen contable del asiento adicional que aplica la 42 contra la cuenta SPOT en compras.", "bi-bank", "detracciones"),
+        ("PER", "Percepciones", "Origen y asiento automatico", "Define el origen contable del asiento adicional que registra la percepcion en compras contra la cuenta parametrizada.", "bi-wallet2", "percepciones"),
+        ("DIF", "Diferencia en cambio", "Origen del proceso mensual", "Define el origen contable que usara el proceso web de diferencia en cambio para generar asientos separados por cuenta.", "bi-currency-exchange", "diferencia-cambio"),
+        ("AJU", "Ajuste de cuentas", "Origen del proceso mensual", "Define el origen contable que usara el proceso web de ajuste de cuentas para generar asientos separados por cuenta analitica.", "bi-sliders", "ajuste-cuentas"),
+        ("APR", "Asiento de apertura", "Origen del proceso anual", "Define el origen contable que usara el proceso web de apertura anual para generar el asiento del periodo 00 usando saldos del anio anterior.", "bi-journal-plus", "asiento-apertura"),
+        ("CIE", "Asiento de cierre", "Origen del proceso anual", "Define el origen contable que usara el proceso web de cierre anual para generar los asientos de ganancias y perdidas e inventarios.", "bi-journal-x", "asiento-cierre")
     ];
 
     private const int TamanoPagina = 20;
@@ -342,7 +347,15 @@ public class ConfiguracionContabilizacionController(
     private static ConfiguracionProvisionFormViewModel MapearProvision(string moduloOperacion, ConfiguracionContableProvisionDto? provision, IReadOnlyCollection<OrigenDto> origenes)
     {
         var origenInicial = provision?.IdOrigen is null
-            ? origenes.FirstOrDefault()
+                ? (string.Equals(moduloOperacion, "DIF", StringComparison.OrdinalIgnoreCase)
+                ? origenes.FirstOrDefault(x => string.Equals(x.CodigoOrigen, "88", StringComparison.OrdinalIgnoreCase)) ?? origenes.FirstOrDefault()
+                : string.Equals(moduloOperacion, "AJU", StringComparison.OrdinalIgnoreCase)
+                    ? origenes.FirstOrDefault(x => string.Equals(x.CodigoOrigen, "67", StringComparison.OrdinalIgnoreCase)) ?? origenes.FirstOrDefault()
+                    : string.Equals(moduloOperacion, "APR", StringComparison.OrdinalIgnoreCase)
+                        ? origenes.FirstOrDefault(x => string.Equals(x.CodigoOrigen, "00", StringComparison.OrdinalIgnoreCase)) ?? origenes.FirstOrDefault()
+                    : string.Equals(moduloOperacion, "CIE", StringComparison.OrdinalIgnoreCase)
+                        ? origenes.FirstOrDefault(x => string.Equals(x.CodigoOrigen, "77", StringComparison.OrdinalIgnoreCase)) ?? origenes.FirstOrDefault()
+                    : origenes.FirstOrDefault())
             : origenes.FirstOrDefault(x => x.IdOrigen == provision.IdOrigen.Value);
 
         return new ConfiguracionProvisionFormViewModel

@@ -9,6 +9,7 @@
 -- Create date:   21/06/2026
 -- Description:   Alinea ventas con compras agregando subtotal, total exonerado, total inafecto, ICBPER interno y detalle con cuenta contable y afectacion IGV.
 -- =============================================
+-- Firma: FRANCO LARA - 03/07/2026 | Persiste DH en las lineas automaticas del asiento de ventas para fijar el sentido contable explicito del detalle.
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   22/06/2026
@@ -21,10 +22,15 @@
 -- =============================================
 -- =============================================
 -- Author:        FRANCO LARA
+-- Create date:   30/06/2026
+-- Description:   Graba TipoCambioLinea en cada linea del asiento de ventas usando el mismo tipo de cambio de la cabecera.
+-- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
 -- Create date:   24/06/2026
 -- Description:   Unifica el estado de la provision de venta a PROVISIONADO.
 -- =============================================
--- Firma: FRANCO LARA - 26/06/2026 | Guarda tipo documento por codigo en ventas y calcula equivalencias en soles y dolares por linea del asiento generado.
+-- Firma: FRANCO LARA - 30/06/2026 | Guarda tipo documento por codigo en ventas, calcula equivalencias en soles y dolares por linea del asiento generado y crea el asiento principal cuando la venta fue importada en EN REVISION sin IdAsiento.
 
 CREATE OR ALTER PROCEDURE dbo.usp_VEN_GuardarVentaConAsiento
     @IdVenta INT = NULL,
@@ -692,9 +698,104 @@ BEGIN
                 RAISERROR(N'La venta indicada no existe para la empresa activa.', 16, 1);
             END;
 
+            IF @IdAsientoTrabajo IS NULL
+            BEGIN
+                IF EXISTS
+                (
+                    SELECT 1
+                    FROM dbo.CON_CorrelativoAsiento AS c WITH (UPDLOCK, HOLDLOCK)
+                    WHERE c.IdEmpresa = @IdEmpresa
+                      AND c.IdOrigen = @IdOrigen
+                      AND c.Periodo = @Periodo
+                )
+                BEGIN
+                    UPDATE dbo.CON_CorrelativoAsiento
+                    SET UltimoNumero = UltimoNumero + 1,
+                        FechaActualizacion = SYSDATETIME(),
+                        UsuarioRegistro = @UsuarioRegistro
+                    WHERE IdEmpresa = @IdEmpresa
+                      AND IdOrigen = @IdOrigen
+                      AND Periodo = @Periodo;
+
+                    SELECT
+                        @NumeroAsiento = c.UltimoNumero
+                    FROM dbo.CON_CorrelativoAsiento AS c
+                    WHERE c.IdEmpresa = @IdEmpresa
+                      AND c.IdOrigen = @IdOrigen
+                      AND c.Periodo = @Periodo;
+                END
+                ELSE
+                BEGIN
+                    INSERT INTO dbo.CON_CorrelativoAsiento
+                    (
+                        IdEmpresa,
+                        IdOrigen,
+                        Periodo,
+                        UltimoNumero,
+                        FechaActualizacion,
+                        UsuarioRegistro
+                    )
+                    VALUES
+                    (
+                        @IdEmpresa,
+                        @IdOrigen,
+                        @Periodo,
+                        1,
+                        SYSDATETIME(),
+                        @UsuarioRegistro
+                    );
+
+                    SET @NumeroAsiento = 1;
+                END;
+
+                INSERT INTO dbo.CON_Asiento
+                (
+                    IdEmpresa,
+                    IdOrigen,
+                    Ejercicio,
+                    Mes,
+                    Periodo,
+                    NumeroAsiento,
+                    FechaEmision,
+                    FechaAsiento,
+                    Glosa,
+                    IdMoneda,
+                    TipoCambio,
+                    TotalDebe,
+                    TotalHaber,
+                    Estado,
+                    ReferenciaExterna,
+                    Observacion,
+                    UsuarioRegistro
+                )
+                VALUES
+                (
+                    @IdEmpresa,
+                    @IdOrigen,
+                    @Ejercicio,
+                    @Mes,
+                    @Periodo,
+                    @NumeroAsiento,
+                    @FechaEmision,
+                    @FechaContabilizacion,
+                    @GlosaAsiento,
+                    @IdMoneda,
+                    @TipoCambio,
+                    @TotalDebe,
+                    @TotalHaber,
+                    N'PROVISIONADO',
+                    CONCAT(@TipoComprobante, N' ', @Serie, N'-', @Numero),
+                    @Observacion,
+                    @UsuarioRegistro
+                );
+
+                SET @IdAsientoTrabajo = SCOPE_IDENTITY();
+            END;
+
             UPDATE dbo.VEN_Venta
             SET IdCliente = @IdCliente,
                 IdConfiguracionContabilizacion = @IdConfiguracionContabilizacion,
+                IdAsiento = @IdAsientoTrabajo,
                 FechaEmision = @FechaEmision,
                 FechaContabilizacion = @FechaContabilizacion,
                 TipoComprobante = @TipoComprobante,
@@ -742,6 +843,7 @@ BEGIN
             IdAsiento,
             Item,
             IdPlanCuenta,
+            DH,
             GlosaDetalle,
             TipoDocumento,
             NumeroDocumento,
@@ -749,6 +851,7 @@ BEGIN
             IdCliente,
             Debe,
             Haber,
+            TipoCambioLinea,
             TotalImporteS,
             TotalImporteD,
             ReferenciaLinea,
@@ -758,6 +861,7 @@ BEGIN
             @IdAsientoTrabajo,
             d.Item,
             d.IdPlanCuenta,
+            calc.Dh,
             d.GlosaDetalle,
             @TipoComprobante,
             @NumeroDocumentoCliente,
@@ -765,6 +869,7 @@ BEGIN
             @IdCliente,
             d.Debe,
             d.Haber,
+            calc.TipoCambioAplicado,
             CASE
                 WHEN @CodigoMoneda = 'USD' THEN ROUND(calc.ImporteLinea * calc.TipoCambioAplicado, 2)
                 ELSE calc.ImporteLinea
@@ -783,6 +888,7 @@ BEGIN
                     WHEN d.Debe > 0 THEN d.Debe
                     ELSE d.Haber
                 END AS ImporteLinea,
+                CASE WHEN d.Debe > 0 THEN 'D' ELSE 'H' END AS Dh,
                 CASE WHEN @TipoCambio > 0 THEN @TipoCambio ELSE 1 END AS TipoCambioAplicado
         ) AS calc
         ORDER BY

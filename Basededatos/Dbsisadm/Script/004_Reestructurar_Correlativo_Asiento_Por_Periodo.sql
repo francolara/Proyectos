@@ -3,6 +3,7 @@
 -- Create date:   15/06/2026
 -- Description:   Ajusta la cabecera contable para correlativo por empresa, origen y periodo; ademas inicializa la tabla de numeradores.
 -- =============================================
+-- Firma: FRANCO LARA - 02/07/2026 | Adecua las restricciones de asiento y correlativo para admitir periodos contables 00-15 sin perder el correlativo por periodo.
 
 IF COL_LENGTH(N'dbo.CON_Asiento', N'Periodo') IS NULL
 BEGIN
@@ -52,7 +53,9 @@ BEGIN
     ALTER TABLE dbo.CON_Asiento
         ADD CONSTRAINT CK_CON_Asiento_Periodo
             CHECK (
-                Periodo = CONVERT(CHAR(4), Ejercicio) + RIGHT('0' + CONVERT(VARCHAR(2), Mes), 2)
+                Periodo LIKE '[1-2][0-9][0-9][0-9][0-1][0-9]'
+                AND Mes BETWEEN 0 AND 15
+                AND Periodo = CONVERT(CHAR(4), Ejercicio) + RIGHT('0' + CONVERT(VARCHAR(2), Mes), 2)
             );
 END;
 

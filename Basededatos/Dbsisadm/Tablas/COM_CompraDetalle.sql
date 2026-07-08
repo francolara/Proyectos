@@ -9,6 +9,7 @@
 -- Create date:   21/06/2026
 -- Description:   Agrega cuenta contable y tipo de afectacion IGV por linea de compra.
 -- =============================================
+-- Firma: FRANCO LARA - 30/06/2026 | Permite importar compras XML con cuenta contable pendiente dejando IdPlanCuenta nulo hasta la provision final.
 
 IF OBJECT_ID(N'dbo.COM_CompraDetalle', N'U') IS NULL
 BEGIN
@@ -17,7 +18,7 @@ BEGIN
         IdCompraDetalle INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_COM_CompraDetalle PRIMARY KEY,
         IdCompra INT NOT NULL,
         Item SMALLINT NOT NULL,
-        IdPlanCuenta INT NOT NULL,
+        IdPlanCuenta INT NULL,
         IdTipoAfectacionIGV INT NOT NULL,
         Descripcion NVARCHAR(250) NOT NULL,
         Cantidad DECIMAL(18,4) NOT NULL CONSTRAINT DF_COM_CompraDetalle_Cantidad DEFAULT (1),

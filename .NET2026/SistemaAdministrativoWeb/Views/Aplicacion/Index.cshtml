@@ -6,6 +6,7 @@
    Description:   Agrega el listado operativo del modulo Aplicaciones para consultar aplicaciones de notas de credito por periodo, persona y asiento generado.
    ============================================= *@
 @* Firma: FRANCO LARA - 24/06/2026 | Crea el listado del nuevo modulo Aplicaciones con filtros mensuales, monto aplicado, referencia de comprobante y nota de credito, y eliminacion de la aplicacion. *@
+@* Firma: FRANCO LARA - 02/07/2026 | Corrige la seleccion visible de anio y mes en aplicaciones para que el periodo mostrado respete el contexto devuelto por la opcion, y convierte el numero de asiento del listado en acceso directo al asiento generado. *@
 
 @{
     ViewData["Title"] = "Aplicaciones";
@@ -66,7 +67,7 @@
                         <select id="anio" name="anio" class="form-select">
                             @foreach (var anio in Model.AniosDisponibles)
                             {
-                                <option value="@anio" selected="@(anio == Model.AnioSeleccionado)">@anio</option>
+                                <option value="@anio" selected="@(anio == Model.AnioSeleccionado ? "selected" : null)">@anio</option>
                             }
                         </select>
                     </div>
@@ -75,7 +76,7 @@
                         <select id="mes" name="mes" class="form-select">
                             @foreach (var mes in Model.MesesDisponibles)
                             {
-                                <option value="@mes.Valor" selected="@(mes.Valor == Model.MesSeleccionado)">@textInfo.ToTitleCase(mes.Nombre)</option>
+                                <option value="@mes.Valor" selected="@(mes.Valor == Model.MesSeleccionado ? "selected" : null)">@textInfo.ToTitleCase(mes.Nombre)</option>
                             }
                         </select>
                     </div>
@@ -139,7 +140,20 @@
                                     <td>@item.DocumentoNcTexto</td>
                                     <td>@item.CodigoMoneda</td>
                                     <td class="workspace-money-cell">@item.ImporteAplicado.ToString("0.00")</td>
-                                    <td>@(item.NumeroAsiento?.ToString() ?? "-")</td>
+                                    <td>
+                                        @if (item.IdAsiento.HasValue)
+                                        {
+                                            <a asp-controller="Asiento"
+                                               asp-action="Editar"
+                                               asp-route-idAsiento="@item.IdAsiento.Value"
+                                               asp-route-periodo="@Model.PeriodoConsulta"
+                                               data-loading-link="true">@item.NumeroAsiento</a>
+                                        }
+                                        else
+                                        {
+                                            <span>-</span>
+                                        }
+                                    </td>
                                     <td>@item.Glosa</td>
                                     <td class="text-end">
                                         <form asp-action="Eliminar" method="post" onsubmit="return confirm('Se eliminara la aplicacion y se restauraran los saldos del comprobante y la NC. ¿Desea continuar?');">

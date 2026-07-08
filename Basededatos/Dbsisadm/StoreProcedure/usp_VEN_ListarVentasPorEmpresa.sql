@@ -24,6 +24,12 @@
 -- Create date:   24/06/2026
 -- Description:   Unifica el estado provisionado de ventas y agrega la situacion del comprobante segun el saldo pendiente.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   29/06/2026
+-- Description:   Agrega filtro por tipo de comprobante en el listado de ventas.
+-- =============================================
+-- Firma: FRANCO LARA - 02/07/2026 | Expone el numero de asiento del comprobante para navegar desde el listado de ventas al asiento generado.
 
 CREATE OR ALTER PROCEDURE dbo.usp_VEN_ListarVentasPorEmpresa
     @IdEmpresa INT,
@@ -31,6 +37,7 @@ CREATE OR ALTER PROCEDURE dbo.usp_VEN_ListarVentasPorEmpresa
     @Ejercicio SMALLINT = NULL,
     @Mes TINYINT = NULL,
     @TextoBusqueda NVARCHAR(150) = NULL,
+    @TipoComprobante VARCHAR(3) = NULL,
     @NumeroPagina INT = NULL,
     @TamanoPagina INT = NULL
 AS
@@ -47,6 +54,7 @@ BEGIN
                 ELSE NULL
             END
         DECLARE @TextoBusquedaTrabajo NVARCHAR(150) = NULLIF(LTRIM(RTRIM(@TextoBusqueda)), '')
+        DECLARE @TipoComprobanteTrabajo VARCHAR(3) = NULLIF(UPPER(LTRIM(RTRIM(@TipoComprobante))), '')
         DECLARE @NumeroPaginaTrabajo INT = CASE WHEN ISNULL(@NumeroPagina, 0) > 0 THEN @NumeroPagina ELSE NULL END
         DECLARE @TamanoPaginaTrabajo INT = CASE WHEN ISNULL(@TamanoPagina, 0) > 0 THEN @TamanoPagina ELSE NULL END
 
@@ -62,6 +70,7 @@ BEGIN
                 cfg.ModuloOperacion,
                 cfg.EscenarioOperacion,
                 v.IdAsiento,
+                a.NumeroAsiento,
                 v.FechaEmision,
                 v.FechaContabilizacion,
                 CONVERT(CHAR(4), YEAR(v.FechaContabilizacion)) + RIGHT('0' + CONVERT(VARCHAR(2), MONTH(v.FechaContabilizacion)), 2) AS Periodo,
@@ -101,10 +110,16 @@ BEGIN
                 ON m.IdMoneda = v.IdMoneda
             INNER JOIN dbo.ADM_TipoComprobante AS tc
                 ON tc.CodigoTipoComprobante = v.TipoComprobante
+            LEFT JOIN dbo.CON_Asiento AS a
+                ON a.IdAsiento = v.IdAsiento
             WHERE v.IdEmpresa = @IdEmpresa
               AND (
                     @PeriodoTrabajo IS NULL
                     OR CONVERT(CHAR(4), YEAR(v.FechaContabilizacion)) + RIGHT('0' + CONVERT(VARCHAR(2), MONTH(v.FechaContabilizacion)), 2) = @PeriodoTrabajo
+                  )
+              AND (
+                    @TipoComprobanteTrabajo IS NULL
+                    OR v.TipoComprobante = @TipoComprobanteTrabajo
                   )
               AND (
                     @TextoBusquedaTrabajo IS NULL
@@ -127,6 +142,7 @@ BEGIN
             b.ModuloOperacion,
             b.EscenarioOperacion,
             b.IdAsiento,
+            b.NumeroAsiento,
             b.FechaEmision,
             b.FechaContabilizacion,
             b.Periodo,

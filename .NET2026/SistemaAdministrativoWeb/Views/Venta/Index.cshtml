@@ -1,4 +1,7 @@
 @* Firma: FRANCO LARA - 24/06/2026 | Unifica Estado como Provisionado en provisiones de venta y agrega la columna Situacion segun saldo pendiente. *@
+@* Firma: FRANCO LARA - 29/06/2026 | Agrega filtro por tipo de documento en el listado de ventas para refrescar la consulta y sus KPIs visibles. *@
+@* Firma: FRANCO LARA - 30/06/2026 | Agrega el acceso a carga masiva de ventas por XML SUNAT en el listado del periodo y reubica el boton Consultar al costado del buscador. *@
+@* Firma: FRANCO LARA - 02/07/2026 | Corrige la seleccion visible de anio, mes y tipo de documento en ventas para que el periodo mostrado respete el contexto devuelto por la opcion, convierte el numero de asiento del listado en acceso directo al asiento generado y deja el boton Consultar en la misma fila de filtros. *@
 
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.VentaIndexViewModel
 
@@ -47,6 +50,7 @@
             </div>
             <div class="workspace-row-actions">
                 <a asp-action="Registrar" asp-route-periodo="@Model.PeriodoConsulta" class="btn btn-light btn-sm">Registrar venta</a>
+                <a asp-action="CargaMasiva" asp-route-periodo="@Model.PeriodoConsulta" class="btn btn-outline-light btn-sm">Carga masiva de ventas</a>
             </div>
         </div>
         <div class="workspace-window-body">
@@ -60,13 +64,13 @@
             }
 
             <form asp-action="Index" method="get" class="workspace-filter-card">
-                <div class="workspace-filter-grid">
+                <div class="workspace-filter-grid workspace-filter-grid-compact">
                     <div class="workspace-field">
                         <label class="form-label" for="anio">Año</label>
                         <select id="anio" name="anio" class="form-select">
                             @foreach (var anio in Model.AniosDisponibles)
                             {
-                                <option value="@anio" selected="@(anio == Model.AnioSeleccionado)">@anio</option>
+                                <option value="@anio" selected="@(anio == Model.AnioSeleccionado ? "selected" : null)">@anio</option>
                             }
                         </select>
                     </div>
@@ -75,11 +79,21 @@
                         <select id="mes" name="mes" class="form-select">
                             @foreach (var mes in Model.MesesDisponibles)
                             {
-                                <option value="@mes.Valor" selected="@(mes.Valor == Model.MesSeleccionado)">@textInfo.ToTitleCase(mes.Nombre)</option>
+                                <option value="@mes.Valor" selected="@(mes.Valor == Model.MesSeleccionado ? "selected" : null)">@textInfo.ToTitleCase(mes.Nombre)</option>
                             }
                         </select>
                     </div>
-                    <div class="workspace-field workspace-field-span-2">
+                    <div class="workspace-field">
+                        <label class="form-label" for="tipoComprobante">Tipo documento</label>
+                        <select id="tipoComprobante" name="tipoComprobante" class="form-select">
+                            <option value="">Todos</option>
+                            @foreach (var tipo in Model.TiposComprobante)
+                            {
+                                <option value="@tipo.CodigoTipoComprobante" selected="@(tipo.CodigoTipoComprobante == Model.TipoComprobanteFiltro ? "selected" : null)">@tipo.CodigoTipoComprobante - @tipo.Descripcion</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
                         <label class="form-label" for="textoBusqueda">Buscar venta</label>
                         <input id="textoBusqueda" name="textoBusqueda" value="@Model.TextoBusqueda" class="form-control" placeholder="Cliente, documento, escenario u observacion" />
                     </div>
@@ -133,7 +147,20 @@
                                     <td>@venta.CodigoMoneda</td>
                                     <td>@venta.ImporteTotal.ToString("0.00")</td>
                                     <td>@venta.Saldo.ToString("0.00")</td>
-                                    <td>@(venta.IdAsiento?.ToString() ?? "-")</td>
+                                    <td>
+                                        @if (venta.IdAsiento.HasValue)
+                                        {
+                                            <a asp-controller="Asiento"
+                                               asp-action="Editar"
+                                               asp-route-idAsiento="@venta.IdAsiento.Value"
+                                               asp-route-periodo="@Model.PeriodoConsulta"
+                                               data-loading-link="true">@(venta.NumeroAsiento?.ToString() ?? venta.IdAsiento.Value.ToString())</a>
+                                        }
+                                        else
+                                        {
+                                            <span>-</span>
+                                        }
+                                    </td>
                                     <td><span class="workspace-status-badge is-active">@venta.Estado</span></td>
                                     <td><span class="workspace-status-badge">@venta.Situacion</span></td>
                                     <td class="text-end">
@@ -145,6 +172,7 @@
                                                 <input type="hidden" name="anio" value="@Model.AnioSeleccionado" />
                                                 <input type="hidden" name="mes" value="@Model.MesSeleccionado" />
                                                 <input type="hidden" name="textoBusqueda" value="@Model.TextoBusqueda" />
+                                                <input type="hidden" name="tipoComprobante" value="@Model.TipoComprobanteFiltro" />
                                                 <input type="hidden" name="pagina" value="@Model.Paginacion.PaginaActual" />
                                                 <button type="submit" class="workspace-row-btn workspace-row-btn-danger">Eliminar</button>
                                             </form>
@@ -165,6 +193,7 @@
                        asp-route-anio="@Model.AnioSeleccionado"
                        asp-route-mes="@Model.MesSeleccionado"
                        asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-tipoComprobante="@Model.TipoComprobanteFiltro"
                        asp-route-pagina="@(Model.Paginacion.PaginaActual - 1)">Anterior</a>
 
                     @for (var pagina = paginaInicio; pagina <= paginaFin; pagina++)
@@ -174,6 +203,7 @@
                            asp-route-anio="@Model.AnioSeleccionado"
                            asp-route-mes="@Model.MesSeleccionado"
                            asp-route-textoBusqueda="@Model.TextoBusqueda"
+                           asp-route-tipoComprobante="@Model.TipoComprobanteFiltro"
                            asp-route-pagina="@pagina">@pagina</a>
                     }
 
@@ -182,6 +212,7 @@
                        asp-route-anio="@Model.AnioSeleccionado"
                        asp-route-mes="@Model.MesSeleccionado"
                        asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-tipoComprobante="@Model.TipoComprobanteFiltro"
                        asp-route-pagina="@(Model.Paginacion.PaginaActual + 1)">Siguiente</a>
                 </nav>
             }

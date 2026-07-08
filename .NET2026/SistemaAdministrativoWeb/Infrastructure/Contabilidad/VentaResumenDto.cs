@@ -11,6 +11,7 @@ public class VentaResumenDto
     public string ModuloOperacion { get; init; } = string.Empty;
     public string EscenarioOperacion { get; init; } = string.Empty;
     public int? IdAsiento { get; init; }
+    public int? NumeroAsiento { get; init; }
     public DateOnly FechaEmision { get; init; }
     public DateOnly FechaContabilizacion { get; init; }
     public string Periodo { get; init; } = string.Empty;

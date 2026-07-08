@@ -84,6 +84,7 @@ public sealed class PlanCuentaRepository(IDbConnectionFactory connectionFactory)
         command.Parameters.AddWithValue("@IdMoneda", request.IdMoneda);
         command.Parameters.AddWithValue("@TipoCambio", request.TipoCambio);
         command.Parameters.AddWithValue("@AceptaMovimiento", request.AceptaMovimiento);
+        command.Parameters.AddWithValue("@GeneraDiferenciaPorAnalisis", request.GeneraDiferenciaPorAnalisis);
         command.Parameters.AddWithValue("@RequiereCentroCosto", request.RequiereCentroCosto);
         command.Parameters.AddWithValue("@Estado", request.Estado);
         command.Parameters.AddWithValue("@UsuarioRegistro", (object?)request.UsuarioRegistro ?? DBNull.Value);
@@ -99,7 +100,7 @@ public sealed class PlanCuentaRepository(IDbConnectionFactory connectionFactory)
         return MapPlanCuenta(reader);
     }
 
-    public async Task CargarDefaultAsync(int idEmpresa, string? usuarioRegistro, CancellationToken cancellationToken = default)
+    public async Task CargarDefaultAsync(int idEmpresa, string? usuarioRegistro, CancellationToken cancellationToken = default, int? idEmpresaBase = null)
     {
         await using var connection = connectionFactory.CreateConnection();
         await using var command = new SqlCommand("dbo.usp_CON_CargarPlanCuentaDefaultEmpresa", connection)
@@ -108,6 +109,7 @@ public sealed class PlanCuentaRepository(IDbConnectionFactory connectionFactory)
         };
 
         command.Parameters.AddWithValue("@IdEmpresa", idEmpresa);
+        command.Parameters.AddWithValue("@IdEmpresaBase", (object?)idEmpresaBase ?? DBNull.Value);
         command.Parameters.AddWithValue("@UsuarioRegistro", (object?)usuarioRegistro ?? DBNull.Value);
 
         await connection.OpenAsync(cancellationToken);
@@ -127,6 +129,7 @@ public sealed class PlanCuentaRepository(IDbConnectionFactory connectionFactory)
             IdMoneda = reader.GetString(reader.GetOrdinal("IdMoneda")),
             TipoCambio = reader.GetString(reader.GetOrdinal("TipoCambio")),
             AceptaMovimiento = reader.GetBoolean(reader.GetOrdinal("AceptaMovimiento")),
+            GeneraDiferenciaPorAnalisis = reader.GetBoolean(reader.GetOrdinal("GeneraDiferenciaPorAnalisis")),
             EsUltimoNivel = reader.GetBoolean(reader.GetOrdinal("EsUltimoNivel")),
             RequiereCentroCosto = reader.GetBoolean(reader.GetOrdinal("RequiereCentroCosto")),
             Estado = reader.GetBoolean(reader.GetOrdinal("Estado"))

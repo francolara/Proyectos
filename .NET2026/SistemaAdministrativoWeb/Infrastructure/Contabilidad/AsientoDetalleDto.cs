@@ -6,6 +6,7 @@ public sealed class AsientoDetalleDto
     public int IdAsiento { get; init; }
     public short Item { get; init; }
     public int IdPlanCuenta { get; init; }
+    public string Dh { get; init; } = "D";
     public string CodigoCuenta { get; init; } = string.Empty;
     public string NombreCuenta { get; init; } = string.Empty;
     public string? GlosaDetalle { get; init; }

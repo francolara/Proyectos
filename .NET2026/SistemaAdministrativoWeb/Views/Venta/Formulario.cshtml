@@ -5,6 +5,7 @@
    Create date:   18/06/2026
    Description:   Retira la previsualizacion visible del asiento en provision de ventas.
    ============================================= *@
+@* Firma: FRANCO LARA - 04/07/2026 | Bloquea la edicion manual del tipo de cambio en ventas para que la actualizacion se haga desde el boton refrescar. *@
 
 @* =============================================
    Author:        FRANCO LARA
@@ -24,6 +25,9 @@
    Create date:   23/06/2026
    Description:   Reubica el periodo contable en la tarjeta derecha del encabezado del registro de ventas, deja la cabecera mas compacta y reemplaza los botones de ayuda por iconos de lupa.
    ============================================= *@
+@* Firma: FRANCO LARA - 29/06/2026 | Agrega autocompletado inicial y por fecha del tipo de cambio en ventas consultando siempre USD, mostrando 3 decimales en cabecera y dejando el valor por defecto en 0 para validar al grabar. *@
+@* Firma: FRANCO LARA - 30/06/2026 | Cambia los Totales globales de ventas a tarjetas resumen visuales como en asientos y caja bancos, manteniendo el recalculo automatico actual y ampliando serie/numero para documentos importados desde XML. *@
+@* Firma: FRANCO LARA - 02/07/2026 | Conserva el periodo seleccionado del listado de ventas al cancelar o guardar dentro de la misma pestaña, enviando el contexto del periodo en el formulario en vez de recalcularlo al volver. *@
 
 @{
     ViewData["Title"] = Model.Formulario.IdVenta.HasValue ? "Editar venta" : "Registrar venta";
@@ -59,6 +63,7 @@
                     <input type="hidden" asp-for="Formulario.IdVenta" />
                     <input type="hidden" asp-for="Formulario.IdConfiguracionContabilizacion" />
                     <input asp-for="Formulario.FechaContabilizacion" type="hidden" id="ventaFechaContabilizacion" />
+                    <input type="hidden" name="periodo" value="@Model.PeriodoConsulta" />
                     <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
                     @if (Model.Clientes.Count == 0)
@@ -69,9 +74,7 @@
                     <div class="workspace-section">
                         <div class="workspace-section-head workspace-section-head-compact">
                             <div>
-                                <span class="workspace-section-kicker">Cabecera</span>
                                 <h2>Datos de la Venta</h2>
-                                <p>Completa los datos principales del comprobante antes de registrar el detalle.</p>
                             </div>
                         </div>
 
@@ -108,7 +111,7 @@
                             </div>
                             <div class="workspace-field">
                                 <label asp-for="Formulario.FechaEmision" class="form-label">Fecha emision</label>
-                                <input asp-for="Formulario.FechaEmision" class="form-control" />
+                                <input asp-for="Formulario.FechaEmision" class="form-control js-fecha-tipo-cambio" id="ventaFechaEmision" />
                             </div>
                             <div class="workspace-field">
                                 <label asp-for="Formulario.TipoComprobante" class="form-label">Tipo comprobante</label>
@@ -122,25 +125,29 @@
                             </div>
                             <div class="workspace-field">
                                 <label asp-for="Formulario.Serie" class="form-label">Serie</label>
-                                <input asp-for="Formulario.Serie" class="form-control js-serie-documento" maxlength="4" inputmode="text" placeholder="F001" />
+                                <input asp-for="Formulario.Serie" class="form-control js-serie-documento" maxlength="10" inputmode="text" placeholder="F001" />
                             </div>
                             <div class="workspace-field">
                                 <label asp-for="Formulario.Numero" class="form-label">Numero</label>
-                                <input asp-for="Formulario.Numero" class="form-control js-numero-documento" maxlength="10" inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
+                                <input asp-for="Formulario.Numero" class="form-control js-numero-documento" maxlength="20" inputmode="text" autocomplete="off" />
                             </div>
                             <div class="workspace-field">
                                 <label asp-for="Formulario.IdMoneda" class="form-label">Moneda</label>
-                                <select asp-for="Formulario.IdMoneda" class="form-select">
+                                <select asp-for="Formulario.IdMoneda" class="form-select js-moneda-tipo-cambio" id="ventaMonedaSelect">
                                     <option value="">Seleccione</option>
                                     @foreach (var moneda in Model.Monedas)
                                     {
-                                        <option value="@moneda.IdMoneda">@moneda.CodigoMoneda - @moneda.NombreMoneda</option>
+                                        <option value="@moneda.IdMoneda" data-codigo-moneda="@moneda.CodigoMoneda" data-es-moneda-base="@(moneda.EsMonedaBase.ToString().ToLowerInvariant())">@moneda.CodigoMoneda - @moneda.NombreMoneda</option>
                                     }
                                 </select>
                             </div>
                             <div class="workspace-field">
                                 <label asp-for="Formulario.TipoCambio" class="form-label">Tipo cambio</label>
-                                <input asp-for="Formulario.TipoCambio" class="form-control" />
+                                <div class="input-group">
+                                    <input asp-for="Formulario.TipoCambio" class="form-control js-tipo-cambio-cabecera" id="ventaTipoCambio" readonly />
+                                    <button type="button" class="btn btn-outline-secondary workspace-icon-button js-actualizar-tipo-cambio" title="Actualizar tipo de cambio" aria-label="Actualizar tipo de cambio"><i class="bi bi-arrow-clockwise"></i></button>
+                                </div>
+                                <span asp-validation-for="Formulario.TipoCambio" class="text-danger"></span>
                             </div>
                             <div class="workspace-field workspace-field-span-3">
                                 <label asp-for="Formulario.Observacion" class="form-label">Observacion</label>
@@ -153,7 +160,6 @@
                         <div class="workspace-section-head workspace-section-head-compact">
                             <div>
                                 <h2>Detalle de venta</h2>
-                                <p>La suma del detalle debe coincidir con la base imponible.</p>
                             </div>
                             <button type="button" class="btn btn-outline-secondary btn-sm" id="agregar-detalle">Agregar linea</button>
                         </div>
@@ -226,38 +232,43 @@
                     <div class="workspace-section workspace-totals-section">
                         <div class="workspace-section-head workspace-section-head-compact">
                             <div>
-                                <span class="workspace-section-kicker">Totales</span>
                                 <h2>Totales globales</h2>
-                                <p>Resume los importes tributarios y el total del comprobante.</p>
                             </div>
                         </div>
                         <div class="workspace-window-body">
-                            <div class="workspace-form-grid workspace-totals-grid">
-                                <div class="workspace-field">
-                                    <label asp-for="Formulario.BaseImponible" class="form-label">Sub total</label>
-                                    <input asp-for="Formulario.BaseImponible" class="form-control js-total-global" readonly />
-                                </div>
-                                <div class="workspace-field">
-                                    <label asp-for="Formulario.TotalExonerado" class="form-label">Total exonerado</label>
-                                    <input asp-for="Formulario.TotalExonerado" class="form-control js-total-global" readonly />
-                                </div>
-                                <div class="workspace-field">
-                                    <label asp-for="Formulario.TotalInafecto" class="form-label">Total inafecto</label>
-                                    <input asp-for="Formulario.TotalInafecto" class="form-control js-total-global" readonly />
-                                </div>
-                                <div class="workspace-field">
-                                    <label asp-for="Formulario.Icbper" class="form-label">ICBPER</label>
-                                    <input asp-for="Formulario.Icbper" class="form-control js-total-global" readonly />
-                                </div>
-                                <div class="workspace-field">
-                                    <label asp-for="Formulario.Igv" class="form-label">IGV</label>
-                                    <input asp-for="Formulario.Igv" class="form-control js-total-global" readonly />
-                                    <small class="workspace-field-help">Impuesto General a las Ventas.</small>
-                                </div>
-                                <div class="workspace-field">
-                                    <label asp-for="Formulario.ImporteTotal" class="form-label">Importe total</label>
-                                    <input asp-for="Formulario.ImporteTotal" class="form-control workspace-total-input js-total-global" readonly />
-                                </div>
+                            <div class="workspace-balance-summary">
+                                <article class="workspace-balance-card">
+                                    <span>Sub total</span>
+                                    <strong class="workspace-balance-value" data-resumen-for="Formulario.BaseImponible">@Model.Formulario.BaseImponible.ToString("0.00")</strong>
+                                    <input asp-for="Formulario.BaseImponible" type="hidden" class="js-total-global" />
+                                </article>
+                                <article class="workspace-balance-card">
+                                    <span>Total exonerado</span>
+                                    <strong class="workspace-balance-value" data-resumen-for="Formulario.TotalExonerado">@Model.Formulario.TotalExonerado.ToString("0.00")</strong>
+                                    <input asp-for="Formulario.TotalExonerado" type="hidden" class="js-total-global" />
+                                </article>
+                                <article class="workspace-balance-card">
+                                    <span>Total inafecto</span>
+                                    <strong class="workspace-balance-value" data-resumen-for="Formulario.TotalInafecto">@Model.Formulario.TotalInafecto.ToString("0.00")</strong>
+                                    <input asp-for="Formulario.TotalInafecto" type="hidden" class="js-total-global" />
+                                </article>
+                                <article class="workspace-balance-card">
+                                    <span>ICBPER</span>
+                                    <strong class="workspace-balance-value" data-resumen-for="Formulario.Icbper">@Model.Formulario.Icbper.ToString("0.00")</strong>
+                                    <input asp-for="Formulario.Icbper" type="hidden" class="js-total-global" />
+                                </article>
+                                <article class="workspace-balance-card">
+                                    <span>IGV</span>
+                                    <strong class="workspace-balance-value" data-resumen-for="Formulario.Igv">@Model.Formulario.Igv.ToString("0.00")</strong>
+                                    <small class="workspace-balance-helper">Impuesto General a las Ventas.</small>
+                                    <input asp-for="Formulario.Igv" type="hidden" class="js-total-global" />
+                                </article>
+                                <article class="workspace-balance-card workspace-balance-card-diff is-balanced">
+                                    <span>Importe total</span>
+                                    <strong class="workspace-balance-value" data-resumen-for="Formulario.ImporteTotal">@Model.Formulario.ImporteTotal.ToString("0.00")</strong>
+                                    <small class="workspace-balance-helper">Total neto del comprobante.</small>
+                                    <input asp-for="Formulario.ImporteTotal" type="hidden" class="workspace-total-input js-total-global" />
+                                </article>
                                 <input asp-for="Formulario.Isc" type="hidden" />
                                 <input asp-for="Formulario.OtrosTributos" type="hidden" />
                                 <input asp-for="Formulario.Redondeo" type="hidden" />
@@ -267,7 +278,7 @@
 
                     <div class="workspace-actions">
                         <button type="submit" class="btn btn-primary">Guardar venta</button>
-                        <a asp-action="Index" asp-route-anio="@Model.Formulario.FechaContabilizacion.Year" asp-route-mes="@Model.Formulario.FechaContabilizacion.Month" class="btn btn-outline-secondary">Cancelar</a>
+                        <a asp-action="Index" asp-route-anio="@Model.AnioSeleccionado" asp-route-mes="@Model.MesSeleccionado" class="btn btn-outline-secondary">Cancelar</a>
                     </div>
                 </form>
             }
@@ -473,6 +484,10 @@
             const formEl = document.getElementById("venta-form");
             const serieDocumentoEl = formEl?.querySelector(".js-serie-documento");
             const numeroDocumentoEl = formEl?.querySelector(".js-numero-documento");
+            const fechaEmisionEl = document.getElementById("ventaFechaEmision");
+            const monedaSelectEl = document.getElementById("ventaMonedaSelect");
+            const tipoCambioInputEl = document.getElementById("ventaTipoCambio");
+            const actualizarTipoCambioButton = formEl?.querySelector(".js-actualizar-tipo-cambio");
             const tableBody = document.querySelector("#detalle-table tbody");
             const template = document.getElementById("detalle-row-template");
             const addButton = document.getElementById("agregar-detalle");
@@ -483,6 +498,7 @@
             const cuentaFiltro = document.getElementById("ventaCuentaFiltro");
             const cuentaNivelFiltro = document.getElementById("ventaCuentaNivelFiltro");
             const buscarCuentasUrl = '@Url.Action("BuscarAyuda", "PlanCuenta")';
+            const obtenerTipoCambioUrl = '@Url.Action("ObtenerValorPorFecha", "TipoCambio")';
             let cuentaSeleccion = null;
             let cuentaRowActiva = null;
             let cuentaBusquedaProgramada = null;
@@ -500,20 +516,16 @@
             };
 
             const formatMoney = (value) => Number(value || 0).toFixed(2);
-            const normalizeDigits = (value, maxLength) => String(value || "").replace(/\D/g, "").slice(0, maxLength);
+            const formatTipoCambioInput = (input) => {
+                if (!input) {
+                    return;
+                }
+
+                input.value = parseAmount(input.value).toFixed(3);
+            };
+            const normalizeAlphaNumeric = (value, maxLength) => String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, maxLength);
             const normalizeSerieDocumento = (value, completar = false) => {
-                const cleaned = String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
-                if (!cleaned) {
-                    return "";
-                }
-
-                const prefijo = cleaned.charAt(0);
-                if (prefijo !== "F" && prefijo !== "B") {
-                    return "";
-                }
-
-                const digitos = cleaned.slice(1).replace(/\D/g, "").slice(0, 3);
-                return completar ? `${prefijo}${digitos.padStart(3, "0")}` : `${prefijo}${digitos}`;
+                return normalizeAlphaNumeric(value, 10);
             };
 
             const obtenerCategoriaAfectacion = (codigoAfectacion) => {
@@ -536,6 +548,48 @@
                 if (input) {
                     input.value = formatMoney(value);
                 }
+
+                const resumen = formEl?.querySelector(`[data-resumen-for="${name}"]`);
+                if (resumen) {
+                    resumen.textContent = formatMoney(value);
+                }
+            };
+
+            const obtenerMonedaSeleccionada = () => monedaSelectEl?.selectedOptions?.[0] ?? null;
+
+            const consultarTipoCambioCabecera = async (mostrarMensaje) => {
+                const fecha = String(fechaEmisionEl?.value || "").trim();
+                const moneda = obtenerMonedaSeleccionada();
+                const codigoMoneda = String(moneda?.dataset.codigoMoneda || "").trim().toUpperCase();
+
+                if (!fecha || !codigoMoneda) {
+                    if (mostrarMensaje) {
+                        window.alert("Seleccione fecha y moneda antes de actualizar el tipo de cambio.");
+                    }
+                    return false;
+                }
+
+                const response = await fetch(`${obtenerTipoCambioUrl}?${new URLSearchParams({ fecha, idMoneda: "USD" }).toString()}`, { cache: "no-store" });
+                const payload = await response.json();
+                if (!response.ok || !payload.ok) {
+                    if (mostrarMensaje) {
+                        window.alert(payload.mensaje || "No se pudo obtener el tipo de cambio.");
+                    }
+                    return false;
+                }
+
+                if (!payload.encontrado) {
+                    if (mostrarMensaje) {
+                        window.alert(payload.mensaje || "No existe un tipo de cambio registrado para la fecha y moneda seleccionadas.");
+                    }
+                    return false;
+                }
+
+                if (tipoCambioInputEl) {
+                    tipoCambioInputEl.value = Number(payload.tipoCambio || 0).toFixed(3);
+                }
+
+                return true;
             };
 
             const marcarSeleccionCuenta = () => {
@@ -900,13 +954,31 @@
             tableBody.addEventListener("change", refreshRows);
             refreshRows();
             fechaContabilizacionEl.value = `${@Html.Raw(System.Text.Json.JsonSerializer.Serialize(periodoContableValue))}-01`;
+            fechaEmisionEl?.addEventListener("change", () => {
+                consultarTipoCambioCabecera(false).catch((error) => console.warn(error));
+            });
+            monedaSelectEl?.addEventListener("change", () => {
+                consultarTipoCambioCabecera(false).catch((error) => console.warn(error));
+            });
+            formatTipoCambioInput(tipoCambioInputEl);
+            tipoCambioInputEl?.addEventListener("blur", () => formatTipoCambioInput(tipoCambioInputEl));
+            tipoCambioInputEl?.addEventListener("change", () => formatTipoCambioInput(tipoCambioInputEl));
+            actualizarTipoCambioButton?.addEventListener("click", async () => {
+                try {
+                    await consultarTipoCambioCabecera(true);
+                } catch (error) {
+                    console.warn(error);
+                    window.alert("No se pudo obtener el tipo de cambio.");
+                }
+            });
+            consultarTipoCambioCabecera(false).catch((error) => console.warn(error));
             numeroDocumentoEl?.addEventListener("keydown", (event) => {
                 const teclasPermitidas = ["Backspace", "Delete", "Tab", "ArrowLeft", "ArrowRight", "Home", "End"];
                 if (teclasPermitidas.includes(event.key) || event.ctrlKey || event.metaKey) {
                     return;
                 }
 
-                if (!/^\d$/.test(event.key)) {
+                if (!/^[A-Za-z0-9]$/.test(event.key)) {
                     event.preventDefault();
                 }
             });
@@ -917,10 +989,10 @@
                 serieDocumentoEl.value = normalizeSerieDocumento(serieDocumentoEl.value, true);
             });
             numeroDocumentoEl?.addEventListener("input", () => {
-                numeroDocumentoEl.value = normalizeDigits(numeroDocumentoEl.value, 10);
+                numeroDocumentoEl.value = normalizeAlphaNumeric(numeroDocumentoEl.value, 20);
             });
             numeroDocumentoEl?.addEventListener("blur", () => {
-                numeroDocumentoEl.value = normalizeDigits(numeroDocumentoEl.value, 10);
+                numeroDocumentoEl.value = normalizeAlphaNumeric(numeroDocumentoEl.value, 20);
             });
 
             document.getElementById("aceptarCuentaVenta")?.addEventListener("click", () => {

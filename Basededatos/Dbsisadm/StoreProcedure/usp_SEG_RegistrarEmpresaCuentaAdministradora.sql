@@ -8,6 +8,11 @@
 -- Create date:   18/06/2026
 -- Description:   Agrega carga automatica de parametros base desde maestro interno al crear empresa.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   02/07/2026
+-- Description:   Permite heredar el plan de cuentas desde una empresa base al registrar una empresa adicional.
+-- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.usp_SEG_RegistrarEmpresaCuentaAdministradora
     @IdCuentaAdministradora INT,
@@ -16,6 +21,7 @@ CREATE OR ALTER PROCEDURE dbo.usp_SEG_RegistrarEmpresaCuentaAdministradora
     @RazonSocial NVARCHAR(200),
     @NombreComercial NVARCHAR(200) = NULL,
     @Ruc VARCHAR(11),
+    @IdEmpresaBase INT = NULL,
     @EsEmpresaPredeterminada BIT = 0,
     @UsuarioRegistro NVARCHAR(450) = NULL
 AS
@@ -80,6 +86,11 @@ BEGIN
 
         EXEC dbo.usp_ADM_CargarParametrosDefaultEmpresa
             @IdEmpresa = @IdEmpresa,
+            @UsuarioRegistro = @UsuarioRegistro;
+
+        EXEC dbo.usp_CON_CargarPlanCuentaDefaultEmpresa
+            @IdEmpresa = @IdEmpresa,
+            @IdEmpresaBase = @IdEmpresaBase,
             @UsuarioRegistro = @UsuarioRegistro;
 
         SELECT

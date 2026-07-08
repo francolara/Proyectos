@@ -130,6 +130,7 @@ public class EmpresaContextoController(
                 RazonSocial = razonSocial,
                 NombreComercial = nombreComercial,
                 Ruc = model.Ruc.Trim(),
+                IdEmpresaBase = empresaBaseId,
                 EsEmpresaPredeterminada = false,
                 UsuarioRegistro = email
             }, cancellationToken);

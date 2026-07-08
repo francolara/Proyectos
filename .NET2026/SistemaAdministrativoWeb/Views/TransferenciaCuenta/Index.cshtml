@@ -6,6 +6,7 @@
    Description:   Agrega el listado operativo del nuevo modulo de transferencias entre cuentas mostrando la pareja emisor/receptor registrada desde BAN_MovimientoBanco.
    ============================================= *@
 @* Firma: FRANCO LARA - 24/06/2026 | Crea el listado del modulo Transferencias entre cuentas con filtros por periodo, resumen operativo y eliminacion de la transferencia completa. *@
+@* Firma: FRANCO LARA - 02/07/2026 | Corrige la seleccion visible de anio y mes en transferencias para que el periodo mostrado respete el contexto devuelto por la opcion, y convierte los numeros de asiento emisor y receptor en accesos directos al asiento generado. *@
 
 @{
     ViewData["Title"] = "Transferencias entre cuentas";
@@ -66,7 +67,7 @@
                         <select id="anio" name="anio" class="form-select">
                             @foreach (var anio in Model.AniosDisponibles)
                             {
-                                <option value="@anio" selected="@(anio == Model.AnioSeleccionado)">@anio</option>
+                                <option value="@anio" selected="@(anio == Model.AnioSeleccionado ? "selected" : null)">@anio</option>
                             }
                         </select>
                     </div>
@@ -75,7 +76,7 @@
                         <select id="mes" name="mes" class="form-select">
                             @foreach (var mes in Model.MesesDisponibles)
                             {
-                                <option value="@mes.Valor" selected="@(mes.Valor == Model.MesSeleccionado)">@textInfo.ToTitleCase(mes.Nombre)</option>
+                                <option value="@mes.Valor" selected="@(mes.Valor == Model.MesSeleccionado ? "selected" : null)">@textInfo.ToTitleCase(mes.Nombre)</option>
                             }
                         </select>
                     </div>
@@ -133,7 +134,20 @@
                             {
                                 <tr>
                                     <td>@item.NumeroMovimientoEmisor</td>
-                                    <td>@(item.NumeroAsientoEmisor?.ToString() ?? "-")</td>
+                                    <td>
+                                        @if (item.IdAsientoEmisor.HasValue)
+                                        {
+                                            <a asp-controller="Asiento"
+                                               asp-action="Editar"
+                                               asp-route-idAsiento="@item.IdAsientoEmisor.Value"
+                                               asp-route-periodo="@Model.PeriodoConsulta"
+                                               data-loading-link="true">@item.NumeroAsientoEmisor</a>
+                                        }
+                                        else
+                                        {
+                                            <span>-</span>
+                                        }
+                                    </td>
                                     <td>
                                         <strong>@item.CuentaCorrienteEmisor</strong>
                                         <div class="workspace-inline-note">@item.OperacionEmisor</div>
@@ -141,7 +155,20 @@
                                     <td>@item.MonedaEmisor</td>
                                     <td class="workspace-money-cell">@item.ImporteEmisor.ToString("0.00")</td>
                                     <td>@item.NumeroMovimientoReceptor</td>
-                                    <td>@(item.NumeroAsientoReceptor?.ToString() ?? "-")</td>
+                                    <td>
+                                        @if (item.IdAsientoReceptor.HasValue)
+                                        {
+                                            <a asp-controller="Asiento"
+                                               asp-action="Editar"
+                                               asp-route-idAsiento="@item.IdAsientoReceptor.Value"
+                                               asp-route-periodo="@Model.PeriodoConsulta"
+                                               data-loading-link="true">@item.NumeroAsientoReceptor</a>
+                                        }
+                                        else
+                                        {
+                                            <span>-</span>
+                                        }
+                                    </td>
                                     <td>
                                         <strong>@item.CuentaCorrienteReceptor</strong>
                                         <div class="workspace-inline-note">@item.OperacionReceptor</div>

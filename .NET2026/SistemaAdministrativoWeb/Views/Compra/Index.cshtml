@@ -1,4 +1,7 @@
 @* Firma: FRANCO LARA - 24/06/2026 | Mantiene Estado como Provisionado en provisiones de compra y agrega la columna Situacion segun saldo pendiente. *@
+@* Firma: FRANCO LARA - 29/06/2026 | Agrega validacion CPE por compra solo para factura, boleta, recibo por honorarios, nota de credito y nota de debito, mostrando fecha y estado de validacion en el listado, y suma filtro por tipo de documento. *@
+@* Firma: FRANCO LARA - 30/06/2026 | Agrega el acceso a carga masiva de compras por XML SUNAT en el listado del periodo, mantiene visible la validacion CPE para RxH aunque el codigo del comprobante venga con espacios y reubica el boton Consultar al costado del buscador. *@
+@* Firma: FRANCO LARA - 02/07/2026 | Corrige la seleccion visible de anio, mes y tipo de documento en compras para que el periodo mostrado respete el contexto devuelto por la opcion, convierte el numero de asiento del listado en acceso directo al asiento generado y deja el boton Consultar en la misma fila de filtros. *@
 
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.CompraIndexViewModel
 
@@ -47,6 +50,7 @@
             </div>
             <div class="workspace-row-actions">
                 <a asp-action="Registrar" asp-route-periodo="@Model.PeriodoConsulta" class="btn btn-light btn-sm">Registrar compra</a>
+                <a asp-action="CargaMasiva" asp-route-periodo="@Model.PeriodoConsulta" class="btn btn-outline-light btn-sm">Carga masiva de compras</a>
             </div>
         </div>
         <div class="workspace-window-body">
@@ -60,13 +64,13 @@
             }
 
             <form asp-action="Index" method="get" class="workspace-filter-card">
-                <div class="workspace-filter-grid">
+                <div class="workspace-filter-grid workspace-filter-grid-compact">
                     <div class="workspace-field">
                         <label class="form-label" for="anio">Año</label>
                         <select id="anio" name="anio" class="form-select">
                             @foreach (var anio in Model.AniosDisponibles)
                             {
-                                <option value="@anio" selected="@(anio == Model.AnioSeleccionado)">@anio</option>
+                                <option value="@anio" selected="@(anio == Model.AnioSeleccionado ? "selected" : null)">@anio</option>
                             }
                         </select>
                     </div>
@@ -75,11 +79,21 @@
                         <select id="mes" name="mes" class="form-select">
                             @foreach (var mes in Model.MesesDisponibles)
                             {
-                                <option value="@mes.Valor" selected="@(mes.Valor == Model.MesSeleccionado)">@textInfo.ToTitleCase(mes.Nombre)</option>
+                                <option value="@mes.Valor" selected="@(mes.Valor == Model.MesSeleccionado ? "selected" : null)">@textInfo.ToTitleCase(mes.Nombre)</option>
                             }
                         </select>
                     </div>
-                    <div class="workspace-field workspace-field-span-2">
+                    <div class="workspace-field">
+                        <label class="form-label" for="tipoComprobante">Tipo documento</label>
+                        <select id="tipoComprobante" name="tipoComprobante" class="form-select">
+                            <option value="">Todos</option>
+                            @foreach (var tipo in Model.TiposComprobante)
+                            {
+                                <option value="@tipo.CodigoTipoComprobante" selected="@(tipo.CodigoTipoComprobante == Model.TipoComprobanteFiltro ? "selected" : null)">@tipo.CodigoTipoComprobante - @tipo.Descripcion</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
                         <label class="form-label" for="textoBusqueda">Buscar compra</label>
                         <input id="textoBusqueda" name="textoBusqueda" value="@Model.TextoBusqueda" class="form-control" placeholder="Proveedor, documento, escenario u observacion" />
                     </div>
@@ -103,6 +117,8 @@
                             <th>Asiento</th>
                             <th>Estado</th>
                             <th>Situacion</th>
+                            <th>Validacion CPE</th>
+                            <th>Fecha validacion</th>
                             <th class="text-end">Accion</th>
                         </tr>
                     </thead>
@@ -110,7 +126,7 @@
                         @if (Model.Compras.Count == 0)
                         {
                             <tr>
-                                <td colspan="11">
+                                <td colspan="13">
                                     <div class="app-empty-state app-empty-state-inline">
                                         <i class="bi bi-cart-check"></i>
                                         <div>
@@ -125,6 +141,7 @@
                         {
                             @foreach (var compra in Model.Compras)
                             {
+                                var codigoTipoComprobante = (compra.TipoComprobante ?? string.Empty).Trim();
                                 <tr class="workspace-clickable-row" data-edit-url="@Url.Action("Editar", new { periodo = Model.PeriodoConsulta, idCompra = compra.IdCompra })">
                                     <td>@compra.FechaEmision.ToString("dd/MM/yyyy")</td>
                                     <td>@compra.NombreProveedor</td>
@@ -133,18 +150,56 @@
                                     <td>@compra.CodigoMoneda</td>
                                     <td>@compra.ImporteTotal.ToString("0.00")</td>
                                     <td>@compra.Saldo.ToString("0.00")</td>
-                                    <td>@(compra.IdAsiento?.ToString() ?? "-")</td>
+                                    <td>
+                                        @if (compra.IdAsiento.HasValue)
+                                        {
+                                            <a asp-controller="Asiento"
+                                               asp-action="Editar"
+                                               asp-route-idAsiento="@compra.IdAsiento.Value"
+                                               asp-route-periodo="@Model.PeriodoConsulta"
+                                               data-loading-link="true">@(compra.NumeroAsiento?.ToString() ?? compra.IdAsiento.Value.ToString())</a>
+                                        }
+                                        else
+                                        {
+                                            <span>-</span>
+                                        }
+                                    </td>
                                     <td><span class="workspace-status-badge is-active">@compra.Estado</span></td>
                                     <td><span class="workspace-status-badge">@compra.Situacion</span></td>
+                                    <td>
+                                        @if (string.IsNullOrWhiteSpace(compra.EstadoValidacionCpe))
+                                        {
+                                            <span class="workspace-status-badge is-inactive">Sin validar</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="workspace-status-badge is-active" title="@compra.MensajeValidacionCpe">@compra.EstadoValidacionCpe</span>
+                                        }
+                                    </td>
+                                    <td>@(compra.FechaValidacionCpe?.ToString("dd/MM/yyyy HH:mm") ?? "-")</td>
                                     <td class="text-end">
                                         <div class="workspace-row-actions-compact">
                                             <a asp-action="Editar" asp-route-periodo="@Model.PeriodoConsulta" asp-route-idCompra="@compra.IdCompra" class="workspace-row-btn workspace-row-btn-primary">Editar</a>
+                                            @if (codigoTipoComprobante is "01" or "03" or "07" or "08" or "02")
+                                            {
+                                                <form asp-action="ValidarCpe" method="post">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="idCompra" value="@compra.IdCompra" />
+                                                    <input type="hidden" name="anio" value="@Model.AnioSeleccionado" />
+                                                    <input type="hidden" name="mes" value="@Model.MesSeleccionado" />
+                                                    <input type="hidden" name="textoBusqueda" value="@Model.TextoBusqueda" />
+                                                    <input type="hidden" name="tipoComprobante" value="@Model.TipoComprobanteFiltro" />
+                                                    <input type="hidden" name="pagina" value="@Model.Paginacion.PaginaActual" />
+                                                    <button type="submit" class="workspace-row-btn workspace-row-btn-secondary">Validar CPE</button>
+                                                </form>
+                                            }
                                             <form asp-action="Eliminar" method="post" onsubmit="return confirm('Se eliminara la compra seleccionada. ¿Desea continuar?');">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="idCompra" value="@compra.IdCompra" />
                                                 <input type="hidden" name="anio" value="@Model.AnioSeleccionado" />
                                                 <input type="hidden" name="mes" value="@Model.MesSeleccionado" />
                                                 <input type="hidden" name="textoBusqueda" value="@Model.TextoBusqueda" />
+                                                <input type="hidden" name="tipoComprobante" value="@Model.TipoComprobanteFiltro" />
                                                 <input type="hidden" name="pagina" value="@Model.Paginacion.PaginaActual" />
                                                 <button type="submit" class="workspace-row-btn workspace-row-btn-danger">Eliminar</button>
                                             </form>
@@ -165,6 +220,7 @@
                        asp-route-anio="@Model.AnioSeleccionado"
                        asp-route-mes="@Model.MesSeleccionado"
                        asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-tipoComprobante="@Model.TipoComprobanteFiltro"
                        asp-route-pagina="@(Model.Paginacion.PaginaActual - 1)">Anterior</a>
 
                     @for (var pagina = paginaInicio; pagina <= paginaFin; pagina++)
@@ -174,6 +230,7 @@
                            asp-route-anio="@Model.AnioSeleccionado"
                            asp-route-mes="@Model.MesSeleccionado"
                            asp-route-textoBusqueda="@Model.TextoBusqueda"
+                           asp-route-tipoComprobante="@Model.TipoComprobanteFiltro"
                            asp-route-pagina="@pagina">@pagina</a>
                     }
 
@@ -182,6 +239,7 @@
                        asp-route-anio="@Model.AnioSeleccionado"
                        asp-route-mes="@Model.MesSeleccionado"
                        asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-tipoComprobante="@Model.TipoComprobanteFiltro"
                        asp-route-pagina="@(Model.Paginacion.PaginaActual + 1)">Siguiente</a>
                 </nav>
             }

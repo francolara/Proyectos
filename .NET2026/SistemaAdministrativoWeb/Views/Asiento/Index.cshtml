@@ -1,11 +1,14 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.AsientoIndexViewModel
 
+@* Firma: FRANCO LARA - 06/07/2026 | Agrega al listado de asientos la columna visible de moneda equivalente usando TotalImporteS y TotalImporteD segun la moneda del asiento. *@
+
+@* Firma: FRANCO LARA - 02/07/2026 | Corrige la seleccion visible de año y mes en asientos para que el periodo mostrado respete el contexto devuelto por la opcion, incorpora los 16 periodos contables del libro diario y bloquea la eliminacion directa de asientos automaticos manteniendo el acceso por clic en la fila. *@
+
 @{
     ViewData["Title"] = "Asientos contables";
     ViewData["AdminShell"] = true;
     var paginaInicio = Math.Max(1, Model.Paginacion.PaginaActual - 2);
     var paginaFin = Math.Min(Model.Paginacion.TotalPaginas, Model.Paginacion.PaginaActual + 2);
-    var textInfo = System.Globalization.CultureInfo.CurrentCulture.TextInfo;
 }
 
 <section class="dashboard-shell">
@@ -73,7 +76,7 @@
                         <select id="anio" name="anio" class="form-select">
                             @foreach (var anio in Model.AniosDisponibles)
                             {
-                                <option value="@anio" selected="@(anio == Model.AnioSeleccionado)">@anio</option>
+                                <option value="@anio" selected="@(anio == Model.AnioSeleccionado ? "selected" : null)">@anio</option>
                             }
                         </select>
                     </div>
@@ -82,7 +85,7 @@
                         <select id="mes" name="mes" class="form-select">
                             @foreach (var mes in Model.MesesDisponibles)
                             {
-                                <option value="@mes.Valor" selected="@(mes.Valor == Model.MesSeleccionado)">@textInfo.ToTitleCase(mes.Nombre)</option>
+                                <option value="@mes.Valor" selected="@(mes.Valor == Model.MesSeleccionado ? "selected" : null)">@mes.Nombre</option>
                             }
                         </select>
                     </div>
@@ -107,6 +110,7 @@
                             <th>Moneda</th>
                             <th>Debe</th>
                             <th>Haber</th>
+                            <th>Soles / Dolares</th>
                             <th>Estado</th>
                             <th class="text-end">Accion</th>
                         </tr>
@@ -115,7 +119,7 @@
                         @if (Model.Asientos.Count == 0)
                         {
                             <tr>
-                                <td colspan="9">
+                                <td colspan="10">
                                     <div class="app-empty-state app-empty-state-inline">
                                         <i class="bi bi-journal-check"></i>
                                         <div>
@@ -139,20 +143,37 @@
                                     <td>@asiento.TotalDebe.ToString("0.00")</td>
                                     <td>@asiento.TotalHaber.ToString("0.00")</td>
                                     <td>
+                                        @if (string.Equals(asiento.CodigoMoneda, "USD", StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            <span>Soles: @asiento.TotalImporteS.ToString("0.00")</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Dolares: @asiento.TotalImporteD.ToString("0.00")</span>
+                                        }
+                                    </td>
+                                    <td>
                                         <span class="workspace-status-badge is-active">@asiento.Estado</span>
                                     </td>
                                     <td class="text-end">
                                         <div class="workspace-row-actions-compact">
                                             <a asp-action="Editar" asp-route-periodo="@Model.PeriodoConsulta" asp-route-idAsiento="@asiento.IdAsiento" class="workspace-row-btn workspace-row-btn-primary">Editar</a>
-                                            <form asp-action="Eliminar" method="post" onsubmit="return confirm('Se eliminara el asiento seleccionado. ¿Desea continuar?');">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="idAsiento" value="@asiento.IdAsiento" />
-                                                <input type="hidden" name="anio" value="@Model.AnioSeleccionado" />
-                                                <input type="hidden" name="mes" value="@Model.MesSeleccionado" />
-                                                <input type="hidden" name="textoBusqueda" value="@Model.TextoBusqueda" />
-                                                <input type="hidden" name="pagina" value="@Model.Paginacion.PaginaActual" />
-                                                <button type="submit" class="workspace-row-btn workspace-row-btn-danger">Eliminar</button>
-                                            </form>
+                                            @if (asiento.PermiteRegistroManual)
+                                            {
+                                                <form asp-action="Eliminar" method="post" onsubmit="return confirm('Se eliminara el asiento seleccionado. ¿Desea continuar?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="idAsiento" value="@asiento.IdAsiento" />
+                                                    <input type="hidden" name="anio" value="@Model.AnioSeleccionado" />
+                                                    <input type="hidden" name="mes" value="@Model.MesSeleccionado" />
+                                                    <input type="hidden" name="textoBusqueda" value="@Model.TextoBusqueda" />
+                                                    <input type="hidden" name="pagina" value="@Model.Paginacion.PaginaActual" />
+                                                    <button type="submit" class="workspace-row-btn workspace-row-btn-danger">Eliminar</button>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <span class="workspace-status-badge is-inactive">Automatico</span>
+                                            }
                                         </div>
                                     </td>
                                 </tr>

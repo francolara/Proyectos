@@ -109,6 +109,62 @@ public class PanelController(
                     Icono = "bi-link-45deg",
                     Url = "/Aplicacion",
                     Habilitado = true
+                },
+                new PanelModuloViewModel
+                {
+                    Titulo = "Analisis de cuentas",
+                    Descripcion = "Reporte HTML de seguimiento por cuenta, documento y auxiliar rescatado del flujo legacy.",
+                    Icono = "bi-bar-chart",
+                    Url = "/Reporte/AnalisisCuentas",
+                    Habilitado = true
+                },
+                new PanelModuloViewModel
+                {
+                    Titulo = "Libro Diario",
+                    Descripcion = "Reporte HTML que replica diario auxiliar y diario por origen del sistema legacy.",
+                    Icono = "bi-journal-richtext",
+                    Url = "/Reporte/LibroDiario",
+                    Habilitado = true
+                },
+                new PanelModuloViewModel
+                {
+                    Titulo = "Libro Mayor",
+                    Descripcion = "Reporte HTML del mayor contable con saldo inicial por cuenta y filtro por Nro documento.",
+                    Icono = "bi-journals",
+                    Url = "/Reporte/LibroMayor",
+                    Habilitado = true
+                },
+                new PanelModuloViewModel
+                {
+                    Titulo = "Registro de ventas",
+                    Descripcion = "Reporte HTML del registro de ventas mensual en formato A4 basado en la provision de ventas.",
+                    Icono = "bi-receipt-cutoff",
+                    Url = "/Reporte/RegistroVentas",
+                    Habilitado = true
+                },
+                new PanelModuloViewModel
+                {
+                    Titulo = "Registro de compras",
+                    Descripcion = "Reporte HTML del registro de compras mensual en formato A4 basado en la provision de compras.",
+                    Icono = "bi-cart3",
+                    Url = "/Reporte/RegistroCompras",
+                    Habilitado = true
+                },
+                new PanelModuloViewModel
+                {
+                    Titulo = "Balance de comprobacion",
+                    Descripcion = "Reporte HTML que replica el balance de comprobacion mensual del legacy por rango de periodos y grado.",
+                    Icono = "bi-table",
+                    Url = "/Reporte/BalanceComprobacion",
+                    Habilitado = true
+                },
+                new PanelModuloViewModel
+                {
+                    Titulo = "Libros Electronicos",
+                    Descripcion = "Generacion, validacion y descarga TXT de PLE 5.1, 5.2 y 6.1 basada en asientos contables existentes.",
+                    Icono = "bi-filetype-txt",
+                    Url = "/LibroElectronico",
+                    Habilitado = true
                 }
             ]
         };

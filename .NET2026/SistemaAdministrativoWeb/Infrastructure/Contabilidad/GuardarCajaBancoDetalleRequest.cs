@@ -14,7 +14,7 @@ public sealed class GuardarCajaBancoDetalleRequest
     public string? TipoDocumento { get; init; }
     public string? Serie { get; init; }
     public string? ReferenciaLinea { get; init; }
-    public decimal? TipoCambioLinea { get; init; }
+    public decimal TipoCambioLinea { get; init; }
     public decimal Debe { get; init; }
     public decimal Haber { get; init; }
 }

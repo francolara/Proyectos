@@ -322,6 +322,14 @@
                 return Number.isFinite(parsed) ? parsed : 0;
             };
 
+            const formatTipoCambioInput = (input) => {
+                if (!input) {
+                    return;
+                }
+
+                input.value = parseDecimal(input.value).toFixed(3);
+            };
+
             const obtenerMoneda = (select) => {
                 const option = select?.selectedOptions?.[0];
                 return option?.dataset?.moneda || "";
@@ -363,6 +371,7 @@
                     fechaReceptor.value = fechaEmisor.value;
                 }
                 if (tipoCambioEmisor && tipoCambioReceptor) {
+                    formatTipoCambioInput(tipoCambioEmisor);
                     tipoCambioReceptor.value = tipoCambioEmisor.value;
                 }
                 if (numeroEmisor && numeroReceptor) {
@@ -404,6 +413,14 @@
                 }
                 calcularImporteReceptor();
             });
+            tipoCambioEmisor?.addEventListener("blur", () => {
+                formatTipoCambioInput(tipoCambioEmisor);
+                sincronizarCabecera();
+            });
+            tipoCambioEmisor?.addEventListener("change", () => {
+                formatTipoCambioInput(tipoCambioEmisor);
+                sincronizarCabecera();
+            });
 
             fechaEmisor?.addEventListener("change", () => {
                 if (fechaReceptor) {
@@ -437,6 +454,8 @@
                 observacionReceptorEditada = observacionReceptor.value !== observacionEmisor?.value;
             });
 
+            formatTipoCambioInput(tipoCambioEmisor);
+            formatTipoCambioInput(tipoCambioReceptor);
             actualizarMoneda(emisorCuenta, emisorMonedaTexto);
             actualizarMoneda(receptorCuenta, receptorMonedaTexto);
             sincronizarCabecera();

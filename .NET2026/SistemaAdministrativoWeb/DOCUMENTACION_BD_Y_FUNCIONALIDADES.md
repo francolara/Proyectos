@@ -1,6 +1,6 @@
 # DOCUMENTACION BD Y FUNCIONALIDADES - SisAdm
 
-Ultima actualizacion: 26/06/2026
+Ultima actualizacion: 07/07/2026
 Proyecto: `SistemaAdministrativoWeb`  
 Base de datos: `Dbsisadm`  
 Arquitectura definida: ASP.NET Core MVC + ASP.NET Identity + ADO.NET + Stored Procedures + SQL Server
@@ -76,6 +76,37 @@ Claves principales:
 - `IdentityBehavior:RequireConfirmedAccount`: obliga o no confirmacion de cuenta.
 - `IdentityBehavior:AutoConfirmEmail`: permite autoconfirmar correo en desarrollo.
 - `IdentitySeed:SuperAdminEmails`: correos que deben recibir rol de superadmin.
+- `MigoApi:BaseUrl`: URL base de la API de Migo para tipos de cambio, padron por RUC/DNI y validacion CPE.
+- `MigoApi:Token`: token privado de autenticacion emitido por Migo.
+
+## 5. Cambios recientes relevantes
+
+- `30/06/2026`: se agrega el grupo de menu `Proceso` con la pantalla `Cerrar Periodo`. El cierre se almacena por empresa y periodo en `CON_PeriodoContableEstado`, se consulta con `usp_CON_ObtenerPeriodoContableEstado` y se persiste con `usp_CON_GuardarPeriodoContableEstado`. Cuando un periodo queda cerrado se bloquean compras, ventas, caja y bancos, transferencias y aplicaciones; los asientos manuales continúan habilitados.
+- `02/07/2026`: `Registro > Asientos` amplía su manejo a 16 periodos contables (`00`, `01-12`, `13-15`). El formulario precarga fechas fisicas de apertura/cierre y el guardado manual usa `Periodo` logico para correlativo, consulta y edicion en `CON_Asiento` y `CON_CorrelativoAsiento`.
+- `02/07/2026`: se habilita `Proceso > Ajuste de Cuentas`, con origen configurable desde `Configuracion contable` bajo el modulo `AJU`, parametros `CUENTAGANANCIA_AJ` y `CUENTAPERDIDA_AJ`, proceso unico por periodo y generacion de asientos separados por cuenta analitica.
+- `02/07/2026`: en `Ajuste de Cuentas`, el agrupamiento documental replica el legado usando `CON_AsientoDetalle.NumeroDocumento` como auxiliar/RUC-DNI y `TipoDocumento + Serie + ReferenciaLinea` como identificacion del comprobante, evitando tratar el auxiliar como numero de comprobante.
+- `02/07/2026`: `Diferencia en Cambio` y `Ajuste de Cuentas` limpian sus tablas variables en cada iteracion por cuenta para evitar que un analisis o comprobante arrastre lineas hacia la siguiente cuenta procesada. En `AJU`, cada asiento ahora se genera en la moneda natural de la cuenta (`PEN`/`USD`) sin perder `TotalImporteS` y `TotalImporteD` en el detalle.
+- `02/07/2026`: `CON_PlanCuentaMaestro` incorpora `GeneraDiferenciaPorAnalisis` y el alta de empresas ahora carga plan de cuentas automatico; la empresa principal parte del maestro y la empresa adicional puede heredar el `CON_PlanCuenta` de una empresa base.
+- `02/07/2026`: se habilita `Proceso > Asiento de apertura`, con origen configurable desde `Configuracion contable` bajo el modulo `APR`, proceso anual por ejercicio, corte configurable sobre los 16 periodos contables del ejercicio base y generacion de un unico asiento en el periodo especial `00`.
+- `02/07/2026`: se habilita `Proceso > Asiento de cierre`, con origen configurable desde `Configuracion contable` bajo el modulo `CIE`, proceso anual por ejercicio y generacion de asientos por cuenta para los periodos especiales `14` y `15`.
+- `02/07/2026`: las pantallas `Proceso > Diferencia en Cambio`, `Ajuste de Cuentas`, `Asiento de apertura` y `Asiento de cierre` agregan una accion de eliminacion exclusiva para borrar solo la generacion automatica del periodo o ejercicio consultado, sin relanzar el proceso.
+- `02/07/2026`: los listados operativos y de mantenimiento con filtros por `anio/mes` consultan automaticamente al cambiar el periodo, muestran overlay global de carga en consultar/guardar/procesar y convierten el numero de asiento en enlace al detalle cuando existe asiento relacionado.
+- `02/07/2026`: el modulo `Registro > Asientos` oculta la eliminacion de asientos automaticos, marca visualmente esos registros y bloquea el boton `Guardar asiento` cuando el asiento proviene de compras, ventas, caja y bancos o procesos automaticos.
+- `06/07/2026`: `CON_AsientoDetalle` amplia `CK_CON_AsientoDetalle_Montos` para aceptar lineas analiticas de ajuste cambiario con `Debe = 0` y `Haber = 0` siempre que la diferencia quede registrada en `TotalImporteS` y/o `TotalImporteD`. Esto habilita pagos cruzados y cancelaciones al `100 %` desde `Caja y Bancos` sin romper la consistencia del detalle contable.
+- `06/07/2026`: se habilita `Reportes > Analisis de cuentas` como reporte HTML sin Crystal. El nuevo `usp_CON_ReporteAnalisisCuentas` replica la salida legacy por cuenta, documento o auxiliar usando `CON_Asiento`, `CON_AsientoDetalle` y `CON_PlanCuenta` sobre cuentas marcadas para analisis documental.
+- `06/07/2026`: se habilitan `Reportes > Libro Diario` y `Reportes > Libro Mayor` como reportes HTML. `Libro Diario` cubre diario auxiliar y diario por origen en modo detallado o resumido; `Libro Mayor` replica el mayor por cuenta usando `NumeroDocumento` como equivalente funcional del auxiliar legacy.
+- `07/07/2026`: se habilita `Reportes > Balance de comprobacion` como reporte HTML. El nuevo `usp_CON_ReporteBalanceComprobacion` replica `FrmBalanceComprobacion` del legacy con rango de periodos `00-15`, moneda, grado, filtro de grado exacto y rango opcional de cuentas, consolidando por jerarquia de `CON_PlanCuenta`.
+- `07/07/2026`: los reportes HTML `Balance de comprobacion`, `Analisis de cuentas`, `Libro Diario` y `Libro Mayor` adoptan una presentacion compacta tipo hoja A4 inspirada en los Crystal legacy y agregan impresion directa desde pantalla con barra de acciones oculta al imprimir. Esta forma visual queda como estandar para futuras solicitudes de reportes contables HTML.
+- `07/07/2026`: se habilitan `Reportes > Registro de ventas` y `Reportes > Registro de compras` como reportes HTML tipo A4 basados en `VEN_Venta` y `COM_Compra`, con filtro por anio, periodo y codigo de persona opcional, sin depender de `CON_AsientoDetalle`.
+- `08/07/2026`: `Libro Diario` fija la moneda base del reporte en `PEN`, retira los filtros visibles de moneda y origen, y redefine sus vistas como `Diario auxiliar`, `Por Cuenta` y `Por Origen`. El `usp_CON_ReporteLibroDiario` ahora totaliza `Por Cuenta` por `CodigoCuenta` y `Por Origen` por `CodigoOrigen`, manteniendo visibles las columnas `Debe/Haber` en soles y `Debe/Haber USD`.
+- `08/07/2026`: `Libro Mayor` cambia a filtro por `anio + mes`, elimina la moneda editable y replica `rptMayorAuxiliarA4` segmentando por cuenta contable. El `usp_CON_ReporteLibroMayor` ahora filtra por `CON_Asiento.Periodo`, calcula saldo anterior solo con periodos menores del mismo anio, usa siempre `TotalImporteS` como base en soles, expone `Debe/Haber USD` separados y deja el saldo final unicamente al cierre de cada cuenta.
+- `01/07/2026`: se habilita `Proceso > Diferencia en Cambio`, con origen configurable desde `Configuracion contable`, un proceso por periodo y generacion de asientos separados por cuenta en dolares.
+- `30/06/2026`: la importacion XML de compras (`usp_COM_ImportarCompraXml`) valida duplicados por `IdEmpresa + IdProveedor + TipoComprobante + Serie + Numero`. Cuando detecta un duplicado ahora informa tambien `IdCompra`, `FechaEmision` y `Estado` del comprobante existente para facilitar la identificacion de registros `EN REVISION` importados previamente en otro periodo visible.
+- `MigoApi:ExchangeDatePath`: path relativo para consultar tipo de cambio por fecha.
+- `MigoApi:ExchangeRangePath`: path relativo para consultar tipos de cambio por rango de fechas.
+- `MigoApi:RucPath`: path relativo para consultar RUC en Migo.
+- `MigoApi:DniPath`: path relativo para consultar DNI en Migo.
+- `MigoApi:CpePath`: path relativo para validar comprobantes electronicos en Migo.
 - `RutasLocales:BaseDatosRootPath`: ruta raiz SQL del proyecto.
 - `RutasLocales:SqlTablasPath`: ruta de tablas.
 - `RutasLocales:SqlStoreProcedurePath`: ruta de procedimientos.
@@ -155,8 +186,9 @@ Menu administrador:
 
 - General: Dashboard, Empresas.
 - Mantenimiento: Plan de cuentas, Centros de costo, Cuentas corrientes, Personas, Origenes, Cuentas destino, Configuracion contable.
+- Proceso: Diferencia en Cambio, Ajuste de Cuentas, Asiento de apertura, Asiento de cierre, Cerrar Periodo.
 - Registro: Asientos, Compras, Ventas, Caja y Bancos, Transferencias, Aplicaciones.
-- Reportes: Libros, Analisis. Actualmente deshabilitados.
+- Reportes: Balance de comprobacion, Analisis de cuentas, Libro Diario, Libro Mayor.
 
 El mantenimiento independiente de parametros fue retirado. La parametrizacion operativa debe gestionarse desde Configuracion contable.
 
@@ -241,6 +273,41 @@ Funciones:
 - Alta, baja o actualizacion de datos de suscripcion.
 - Gestion operativa de clientes/suscriptores de la plataforma.
 
+### 9.5.1 Reportes contables
+
+Controlador:
+
+- `ReporteController`
+
+Vistas:
+
+- `Views/Reporte/AnalisisCuentas.cshtml`
+- `Views/Reporte/BalanceComprobacion.cshtml`
+- `Views/Reporte/LibroDiario.cshtml`
+- `Views/Reporte/LibroMayor.cshtml`
+- `Views/Reporte/RegistroVentas.cshtml`
+- `Views/Reporte/RegistroCompras.cshtml`
+
+Funciones:
+
+- Habilita `Reportes > Analisis de cuentas`, `Libro Diario`, `Libro Mayor`, `Registro de ventas`, `Registro de compras` y `Balance de comprobacion` como reportes HTML del bloque contable.
+- Para futuras solicitudes de reportes contables HTML, la presentacion base debe seguir el formato compacto tipo hoja A4 del legacy: encabezado de reporte, bloque meta corto, tabla densa, pie de totales y barra de acciones en pantalla con impresion directa, evitando layouts de dashboard para la salida principal del reporte.
+- `Balance de comprobacion` replica `FrmBalanceComprobacion`, manejando `anio`, `periodo desde`, `periodo hasta`, `moneda`, `grado`, `todas las cuentas`, `rango de cuentas` y `filtrar grado`.
+- La salida muestra columnas de anterior, periodo final, acumulado del rango y distribucion por activo/pasivo, naturaleza y funcion, siguiendo `ColBalance`.
+- Replica el comportamiento base del legacy `FrmRptAnalisisCta` sin depender de Crystal Reports.
+- Permite consultar por `anio`, `mes`, `moneda`, `estado`, `tipo de vista`, rango de cuentas y `NumeroDocumento`.
+- En esta migracion, el `CtaAuxiliar` del legacy se mapea a `CON_AsientoDetalle.NumeroDocumento`; la clave analitica/documental usa `NumeroDocumento + TipoDocumento + Serie + ReferenciaLinea`, igual que en diferencia en cambio.
+- La vista `Detallado` devuelve movimientos linea por linea.
+- La vista `Por documento` consolida por cuenta, auxiliar, tipo, serie y numero de referencia.
+- La vista `Por auxiliar` consolida por cuenta y auxiliar.
+- El filtro de pendientes o cancelados se calcula por saldo acumulado del analisis en la moneda seleccionada.
+- `Libro Diario` replica `FrmRptDiarioAux` y `FrmRptDiarioPorOrigenGeneral`, ofreciendo `Diario auxiliar`, `Por Cuenta` y `Por Origen`.
+- La consulta del diario usa siempre moneda base `PEN` hacia `usp_CON_ReporteLibroDiario`; las columnas en USD siguen visibles como referencia usando `TotalImporteD`.
+- `Libro Mayor` replica el enfoque de `usp_MayorAuxiliar` y `rptMayorAuxiliarA4`, filtrando por `anio`, `mes`, rango de cuentas y `NumeroDocumento`.
+- La salida del mayor se segmenta por cuenta contable, muestra saldo del mes anterior y detalla cada movimiento con `Debe/Haber` en soles y `Debe/Haber USD`; el saldo final se muestra solo al cierre de cada cuenta y no por cada linea.
+- `Registro de ventas` replica el formato A4 de `rptRegVentasA4`, tomando la provision `VEN_Venta` y filtrando por `anio`, `periodo` y `CodigoCliente`.
+- `Registro de compras` replica el formato A4 de `RptRegistroCompra_A4_Oxa`, tomando la provision `COM_Compra` y filtrando por `anio`, `periodo` y `CodigoProveedor`.
+
 ### 9.6 Plan de cuentas
 
 Controlador:
@@ -259,9 +326,11 @@ Funciones:
 - Registro y edicion de cuentas.
 - Popup reutilizable para seleccionar cuenta padre.
 - Permite configurar cuentas destino y contrapartida desde el mismo mantenimiento cuando la cuenta es operativa o de ultimo nivel.
-- Carga default desde `CON_PlanCuentaMaestro`.
+- Carga default desde `CON_PlanCuentaMaestro` o desde `CON_PlanCuenta` de una empresa base cuando la nueva empresa se registra usando otra empresa como origen.
 - Validacion de jerarquia por niveles usando parametros:
   `GRADO_MAXIMO`, `GRADO1_LONG`, `GRADO2_LONG`, `GRADO3_LONG`, `GRADO4_LONG`, `GRADO5_LONG`.
+- El guardado del plan de cuentas toma esos parametros desde `ADM_ParametroEmpresa` usando `TipoParametro = 'NA'`, que es la convencion vigente para la estructura contable por empresa.
+- En el mantenimiento web del plan contable, la moneda puede venir historicamente como `S/D`; la interfaz la normaliza y la persiste como `PEN/USD` para no romper los procesos nuevos que ya trabajan con esos codigos.
 
 Campos relevantes:
 
@@ -295,6 +364,9 @@ Funciones:
 - Ubigeo por departamento, provincia y distrito.
 - Tipo de persona: Natural o Juridica.
 - Tipo de documento desde `TiposDocumentoIdentidadSunat`.
+- Boton `Consultar` en el formulario para consultar Migo por RUC o DNI antes de guardar.
+- Con RUC, Migo devuelve razon social, direccion y ubigeo para poblar automaticamente el formulario.
+- Con DNI, Migo devuelve el nombre completo y el sistema lo separa de forma heuristica en apellidos y nombres.
 - Si se marca cliente, crea o actualiza `ADM_Cliente`.
 - Si se marca proveedor, crea o actualiza `ADM_Proveedor`.
 - Si no se marca cliente/proveedor, queda solo como persona.
@@ -405,7 +477,7 @@ Tabs:
 Provision:
 
 - Subtarjetas operativas para:
-  `Compras`, `Ventas`, `Egresos`, `Ingresos` y `Aplicaciones`.
+  `Compras`, `Ventas`, `Egresos`, `Ingresos`, `Aplicaciones`, `Diferencia en Cambio`, `Ajuste de Cuentas`, `Asiento de apertura` y `Asiento de cierre`.
 - Cada subtarjeta guarda una fila en `CON_ConfiguracionContabilizacion` con escenario `PROVISION`.
 - Origen contable seleccionado mediante popup.
 - Genera asiento automatico.
@@ -435,6 +507,27 @@ Parametros:
 - Guarda el codigo de cuenta seleccionado en `ValorParametro`.
 - El parametro `CTADETRACCION` define la cuenta contable usada por el asiento adicional de detracciones en compras.
 
+### 9.10.1 Tipos de cambio
+
+Controlador:
+
+- `TipoCambioController`
+
+Vistas:
+
+- `Views/TipoCambio/Index.cshtml`
+- `Views/TipoCambio/Formulario.cshtml`
+
+Funciones:
+
+- Mantenimiento por `IdCuentaAdministradora`, no por empresa.
+- Filtro operativo por periodo contable `yyyyMM`.
+- Registro y edicion manual de tipos de cambio.
+- Sincronizacion mensual desde el listado usando la API de Migo.
+- Sincronizacion puntual por fecha desde el formulario usando la API de Migo.
+- La integracion consulta el endpoint por fecha o rango, guarda o actualiza `CON_TipoCambio` y deja `Fuente = API`.
+- Los registros de compras, ventas, asientos y Caja y Bancos consumen el mismo endpoint MVC para consultar por fecha; cuando la API devuelve el dato, el sistema lo persiste primero en `CON_TipoCambio` y luego lo refleja en el formulario.
+
 ### 9.11 Asientos contables
 
 Controlador:
@@ -455,8 +548,11 @@ Funciones:
 - Popup para origen.
 - Popup para centro de costo con seleccion por empresa activa.
 - Detalle con glosa, centro de costo, RUC/DNI, tipo documento, serie, referencia, TC, debe y haber.
+- El tipo de cambio de cabecera es obligatorio y cada linea del detalle exige un tipo de cambio mayor a cero, con boton visual de actualizacion junto al campo.
 - El formulario muestra mes contable informativo y fecha de emision.
 - La fecha de contabilizacion se fija automaticamente segun el periodo contable del registro.
+- El modulo admite 16 periodos contables: `00 = Apertura`, `01-12 = Enero-Diciembre`, `13 = Ajustes y Liquidaciones`, `14 = Cierre de Ganancias y Pérdidas`, `15 = Cierre de Inventarios`.
+- En asiento manual, la fecha visible por defecto es `01/01/<anio>` para el periodo `00`; para los periodos `13`, `14` y `15` la fecha por defecto es `31/12/<anio>`.
 - El centro de costo es obligatorio solo cuando la cuenta seleccionada tiene activado `RequiereCentroCosto`.
 - El resumen de Debe/Haber/Diferencia cambia visualmente segun el asiento este cuadrado o no.
 - El asiento manual puede quedar descuadrado; el sistema ya no obliga el cuadre para guardar.
@@ -483,6 +579,10 @@ Funciones:
 - Filtro por anio, mes y texto.
 - Registro y edicion de compras.
 - Eliminacion de compras desde el listado.
+- Filtro adicional por tipo de documento en el listado; los KPIs visibles se recalculan sobre la consulta filtrada.
+- Boton `Carga masiva de compras` junto a `Registrar compra` para importar XML SUNAT.
+- Boton `Validar CPE` solo para factura (`01`), boleta (`03`), recibo por honorarios (`02`), nota de credito (`07`) y nota de debito (`08`).
+- La validacion CPE guarda fecha, estado y mensaje devueltos por Migo para mostrar el resultado en el listado.
 - Ayuda popup de proveedores.
 - Creacion rapida de proveedor.
 - Si se crea proveedor rapido se inserta persona y proveedor con ubigeo por defecto `150101`.
@@ -492,6 +592,8 @@ Funciones:
 - Tipo de afectacion IGV por defecto: `10 - Gravado - Operacion Onerosa`.
 - Totales globales calculados desde el detalle: subtotal, total exonerado, total inafecto, IGV e importe total.
 - Los totales globales no son editables desde el formulario.
+- La carga masiva de compras acepta `01`, `03`, `07`, `08` y `02` (recibo por honorarios), crea proveedores automaticamente cuando no existen y evita duplicados por proveedor + tipo + serie + numero.
+- La compra importada desde XML se guarda en estado `EN REVISION`, sin `IdAsiento` y con la cuenta del detalle precargada desde el parametro de empresa `CTACOMPRADEFAULT`; el usuario aun debe entrar al comprobante y volver a grabar para generar el asiento o cambiar la cuenta si lo necesita.
 - Guarda compra y genera asiento contable segun configuracion.
 
 ### 9.13 Ventas
@@ -511,11 +613,15 @@ Funciones:
 - Filtro por anio, mes y texto.
 - Registro y edicion de ventas.
 - Eliminacion de ventas desde el listado.
+- Filtro adicional por tipo de documento en el listado; los KPIs visibles se recalculan sobre la consulta filtrada.
+- Boton `Carga masiva de ventas` junto a `Registrar venta` para importar XML SUNAT.
 - Ayuda popup de clientes.
 - Creacion rapida de cliente.
 - Si se crea cliente rapido se inserta persona y cliente con ubigeo por defecto `150101`.
 - Al seleccionar cliente se autocompletan datos.
 - Periodo contable visible en la parte superior del formulario solo como referencia del periodo elegido en el listado.
+- La carga masiva de ventas acepta `01`, `03`, `07` y `08`, crea clientes automaticamente cuando no existen y evita duplicados por cliente + tipo + serie + numero.
+- La venta importada desde XML se guarda en estado `EN REVISION`, sin `IdAsiento` y con la cuenta del detalle precargada desde el parametro de empresa `CTAVENTADEFAULT`; el usuario aun debe entrar al comprobante y volver a grabar para generar el asiento o cambiar la cuenta si lo necesita.
 - Guarda venta y genera asiento contable segun configuracion.
 - Permite previsualizar asiento desde la informacion ingresada.
 
@@ -579,6 +685,31 @@ Funciones:
 
 ### 9.16 Aplicaciones
 
+### 9.17 Procesos
+
+Controlador:
+
+- `ProcesoController`
+
+Vista:
+
+- `Views/Proceso/CerrarPeriodo.cshtml`
+
+Funciones actuales:
+
+- Permite consultar el estado operativo de un periodo por `Año + Mes`.
+- Permite cerrar el periodo cuando está abierto.
+- Permite abrir nuevamente el periodo cuando ya estaba cerrado.
+- Muestra el ultimo cambio realizado con fecha y usuario.
+- El cierre afecta a Compras, Ventas, Caja y Bancos, Transferencias y Aplicaciones.
+- Los asientos manuales no se bloquean por esta funcionalidad.
+
+Objetos SQL asociados:
+
+- Tabla `CON_PeriodoContableEstado`: guarda el estado `abierto/cerrado` por `IdEmpresa + Periodo`, junto con fechas y usuarios de cierre/apertura.
+- `usp_CON_ObtenerPeriodoContableEstado`: devuelve el estado actual del periodo consultado.
+- `usp_CON_GuardarPeriodoContableEstado`: inserta o actualiza el estado del periodo y registra fecha/usuario de cierre o reapertura.
+
 Controlador:
 
 - `AplicacionController`
@@ -640,8 +771,8 @@ Administracion y catalogos funcionales.
 
 Movimiento de caja y bancos.
 
-- `BAN_MovimientoBanco`: cabecera del movimiento bancario por empresa y cuenta corriente. Incluye `NumeroMovimiento` como correlativo interno por empresa y periodo, ademas de `TipoCambio`, `Observacion`, `IdTransferenciaCuenta`, `RolTransferencia` e `IdMovimientoBancoRelacionado`.
-- `BAN_MovimientoBancoDetalle`: detalle contable del movimiento bancario, con persona por linea, centro de costo, referencias documentarias por codigo SUNAT (`IdPersona`, `NumeroDocumento`, `TipoDocumento`, `Serie`, `ReferenciaLinea`, `TipoCambioLinea`) e importes equivalentes por moneda (`TotalImporteS`, `TotalImporteD`).
+- `BAN_MovimientoBanco`: cabecera del movimiento bancario por empresa y cuenta corriente. Incluye `Periodo` persistido desde `FechaEmision`, `NumeroMovimiento` como correlativo interno por empresa y periodo, ademas de `TipoCambio`, `Observacion`, `IdTransferenciaCuenta`, `RolTransferencia` e `IdMovimientoBancoRelacionado`.
+- `BAN_MovimientoBancoDetalle`: detalle contable del movimiento bancario, con persona por linea, centro de costo, referencias documentarias por codigo SUNAT (`IdPersona`, `NumeroDocumento`, `TipoDocumento`, `Serie`, `ReferenciaLinea`, `TipoCambioLinea`) e importes equivalentes por moneda (`TotalImporteS`, `TotalImporteD`). `TipoCambioLinea` es obligatorio y debe ser mayor a cero.
 
 ### CON
 
@@ -651,6 +782,7 @@ Configuracion y catalogos contables por empresa.
 - `CON_BancosConfiguracionEmpresa`: cuentas corrientes bancarias por empresa, con banco y cuenta contable asociada.
 - `ADM_Moneda`: monedas activas.
 - `ADM_TipoCambio`: tipos de cambio.
+- `CON_TipoCambio`: tipos de cambio por `IdCuentaAdministradora`, fecha y moneda, usados por el nuevo mantenimiento operativo.
 - `ADM_TipoComprobante`: comprobantes SUNAT y cuentas maestras.
 - `ADM_ParametroMaestro`: parametros base internos, no por empresa.
 - `ADM_ParametroEmpresa`: parametros copiados y editables por empresa.
@@ -659,15 +791,15 @@ Configuracion y catalogos contables por empresa.
 
 Contabilidad.
 
-- `CON_PlanCuentaMaestro`: plan de cuentas base interno, no por empresa.
-- `CON_PlanCuenta`: plan de cuentas por empresa.
+- `CON_PlanCuentaMaestro`: plan de cuentas base interno, no por empresa. Incorpora `GeneraDiferenciaPorAnalisis` para sembrar el criterio por defecto.
+- `CON_PlanCuenta`: plan de cuentas por empresa. Incorpora `GeneraDiferenciaPorAnalisis` para indicar si la diferencia en cambio de una cuenta en USD se calcula por saldo global o por analisis documental/auxiliar.
 - `CON_OrigenMaestro`: origenes base internos.
 - `CON_Origen`: origenes por empresa.
 - `CON_CuentaDestinoReglaMaestro`: reglas destino base internas.
 - `CON_CuentaDestinoReglaDetalleMaestro`: detalle de reglas destino base internas.
 - `CON_CuentaDestinoRegla`: cuentas destino por empresa y cuenta origen.
 - `CON_CuentaDestinoReglaDetalle`: detalle de cuentas destino por empresa.
-- `CON_ConfiguracionContabilizacion`: configuracion de provision compra/venta por empresa.
+- `CON_ConfiguracionContabilizacion`: configuracion de provision compra/venta por empresa. Ahora incluye los modulos `DIF`, `AJU` y `CIE` para seleccionar los origenes de diferencia en cambio, ajuste de cuentas y asiento de cierre.
 - `CON_ConfiguracionContabilizacionDetalle`: detalle legacy de configuracion contable.
 - `CON_DocumentoConfiguracionEmpresa`: cuentas contables por documento y empresa.
 - `CON_Bancos`: catalogo maestro de bancos para ayudas operativas.
@@ -676,14 +808,21 @@ Contabilidad.
 - `CON_TipoImpuestoConfiguracionEmpresa`: configuracion de cuenta de impuesto por empresa.
 - `CON_TipoAfectacionIGV`: catalogo maestro de afectaciones IGV SUNAT usado por compras y ventas.
 - `CON_Asiento`: cabecera de asiento. Incluye `FechaEmision` y `FechaAsiento` como fechas separadas.
-- `CON_AsientoDetalle`: detalle de asiento con datos documentarios por codigo SUNAT e importes equivalentes por moneda (`TotalImporteS`, `TotalImporteD`).
+- `CON_AsientoDetalle`: detalle de asiento con datos documentarios por codigo SUNAT e importes equivalentes por moneda (`TotalImporteS`, `TotalImporteD`). Desde el 03/07/2026 incorpora tambien `DH` (`D`/`H`) como marca explicita del sentido contable por linea; en asientos manuales y automaticos `TipoCambioLinea` es obligatorio y debe ser mayor a cero.
+- El listado de `Asientos contables` ahora muestra una columna adicional de moneda equivalente: si el asiento esta en `PEN` muestra `Dolares` usando `TotalImporteD`; si esta en `USD` muestra `Soles` usando `TotalImporteS`, ambos agregados desde `CON_AsientoDetalle`.
 - `CON_CorrelativoAsiento`: correlativo por empresa, origen y periodo.
+- `CON_DiferenciaCambioProceso`: cabecera del proceso de diferencia en cambio por empresa y periodo, con tipo de cambio de cierre aplicado y totales generados.
+- `CON_DiferenciaCambioProcesoDetalle`: detalle por cuenta procesada, modo de calculo (`Saldo`/`Analisis`), asiento generado y estado final.
+- `CON_AjusteCuentaProceso`: cabecera del proceso de ajuste de cuentas por empresa y periodo.
+- `CON_AjusteCuentaProcesoDetalle`: detalle por cuenta analitica procesada, moneda de trabajo, cantidad de analisis residuales, asiento generado y estado final.
+- `CON_CierreProceso`: cabecera del proceso anual de asiento de cierre por empresa y ejercicio, con origen `CIE`, bandera de uso SBS y totales consolidados.
+- `CON_CierreProcesoDetalle`: detalle por cuenta del cierre anual, indicando si el asiento corresponde al periodo `14` o `15`, su moneda, tipo de cambio y asiento generado.
 
 ### COM
 
 Compras.
 
-- `COM_Compra`: cabecera de compra. Incluye subtotal, total exonerado, total inafecto, ICBPER interno, IGV, importe total y saldo del comprobante.
+- `COM_Compra`: cabecera de compra. Incluye subtotal, total exonerado, total inafecto, ICBPER interno, IGV, importe total, saldo del comprobante y campos `FechaValidacionCpe`, `EstadoValidacionCpe`, `MensajeValidacionCpe`.
 - `COM_CompraDetalle`: detalle de compra. Incluye cuenta contable y tipo de afectacion IGV por linea.
 
 ### VEN
@@ -739,10 +878,17 @@ Seguridad funcional, empresas y suscripciones.
 - `usp_CON_CargarCuentasDestinoDefaultEmpresa`
 - `usp_CON_CargarOrigenesDefaultEmpresa`
 - `usp_CON_CargarPlanCuentaDefaultEmpresa`
+  Carga el plan contable desde `CON_PlanCuentaMaestro` o, si recibe `IdEmpresaBase` con plan existente, replica la configuracion de `CON_PlanCuenta` de esa empresa incluyendo `GeneraDiferenciaPorAnalisis`.
 - `usp_CON_EliminarConfiguracionContabilizacion`
+- `usp_CON_EliminarAjusteCuentaProceso`
+- `usp_CON_EliminarAperturaProceso`
 - `usp_CON_EliminarAsiento`
+- `usp_CON_EliminarCierreProceso`
 - `usp_CON_EliminarCuentaDestinoRegla`
+- `usp_CON_EliminarDiferenciaCambioProceso`
 - `usp_CON_GenerarOrigenesBaseEmpresa`
+- `usp_CON_GenerarAjusteCancelacionDiferenciaCambio`
+- `usp_CON_GenerarDiferenciaCambioProceso`
 - `usp_CON_GuardarAsientoManual`
 - `usp_CON_GuardarBancoConfiguracionEmpresa`
 - `usp_CON_GuardarCentroCostoConfiguracionEmpresa`
@@ -761,16 +907,22 @@ Seguridad funcional, empresas y suscripciones.
 - `usp_CON_ListarCuentasDestinoReglaPorEmpresa`
 - `usp_CON_ListarOrigenesActivos`
 - `usp_CON_ListarPlanCuentaPorEmpresa`
+- `usp_CON_ListarTipoCambioPorCuentaAdministradora`
 - `usp_CON_ListarTiposAfectacionIGV`
 - `usp_CON_ObtenerAsiento`
 - `usp_CON_ObtenerConfiguracionContabilizacion`
 - `usp_CON_ObtenerConfiguracionContableEmpresa`
 - `usp_CON_ObtenerCuentaDestinoRegla`
+- `usp_CON_ObtenerDiferenciaCambioProceso`
+- `usp_CON_ObtenerTipoCambioPorFecha`
+- `usp_CON_ObtenerTipoCambio`
 - `usp_CON_ObtenerSiguienteNumeroAsiento`
+- `usp_CON_GuardarTipoCambio`
 
 ### COM
 
 - `usp_COM_GuardarCompraConAsiento`
+- `usp_COM_GuardarValidacionCpe`
 - `usp_COM_EliminarCompra`
 - `usp_COM_ListarComprasPorEmpresa`
 - `usp_COM_ObtenerCompra`
@@ -792,6 +944,7 @@ Seguridad funcional, empresas y suscripciones.
 - `usp_SEG_ObtenerContextoSuscripcionPorEmpresa`
 - `usp_SEG_RegistrarCuentaAdministradoraConEmpresa`
 - `usp_SEG_RegistrarEmpresaCuentaAdministradora`
+  Ambos procedimientos cargan parametros por defecto; adicionalmente crean el plan de cuentas inicial, desde maestro para la empresa principal o desde una empresa base para empresas adicionales.
 - `usp_BAN_ListarOperacionesBancarias`
 - `usp_BAN_ObtenerResumenMovimientoBanco`
 - `usp_BAN_ListarMovimientosBancoPorEmpresa`
@@ -802,7 +955,11 @@ Seguridad funcional, empresas y suscripciones.
 - `usp_BAN_ListarTransferenciasCuentaPorEmpresa`
 - `usp_BAN_EliminarTransferenciaCuenta`
 - Los procedimientos `usp_BAN_GuardarMovimientoBanco` y `usp_BAN_ObtenerMovimientoBanco` ahora persisten y devuelven tambien `TipoCambio` y `Observacion` en la cabecera del movimiento.
+- `usp_BAN_GuardarMovimientoBanco` persiste tambien `Periodo` en `BAN_MovimientoBanco`, calculandolo desde `FechaEmision`; el listado y resumen de Caja y Bancos consultan ese periodo grabado.
 - El asiento contable de Caja y Bancos, incluido el usado por transferencias entre cuentas, solo se genera si la operacion bancaria configurada tiene `indTranConta = 'S'`; en caso contrario el proceso guarda solo `BAN_MovimientoBanco`.
+- En Caja y Bancos, cuando la moneda de la cuenta corriente no coincide con la moneda del comprobante pagado, el sistema convierte el importe sugerido con el `TipoCambio` de cabecera y guarda en `BAN_MovimientoBancoDetalle.ImporteAplicado` solo el monto efectivamente consumido por el saldo del documento, topando el saldo restante en `0` para evitar negativos.
+- Cuando un comprobante pagado o cobrado desde Caja y Bancos queda cancelado al `100 %`, el sistema invoca `usp_CON_GenerarAjusteCancelacionDiferenciaCambio` y agrega al asiento automatico una o dos lineas analiticas adicionales de ajuste por cancelacion total. Estas lineas usan las cuentas configuradas en `CUENTAGANANCIA_DC` y `CUENTAPERDIDA_DC`, guardan `Debe = 0`, `Haber = 0`, dejan el sentido en `DH` y saldan de forma independiente el residuo pendiente en `Soles` y/o `Dolares`.
+- Si la cuenta de ganancia o perdida usada por ese ajuste tiene una regla activa en `CON_CuentaDestinoRegla`, el procedimiento agrega al final sus lineas de `Destino` y `Contrapartida`, tambien con `Debe/Haber = 0`, preservando solo `TotalImporteS` y `TotalImporteD` repartidos por porcentaje.
 - Los `SP` de caja y bancos devuelven y persisten tambien la persona por linea junto con las referencias documentarias para reutilizar comprobantes desde el detalle del movimiento.
 - Los movimientos bancarios ahora guardan por linea el modulo de origen (`COM`/`VEN`) y el `IdRegistroComprobante`, usando ese enlace para descontar o restaurar el `Saldo` pendiente de compras y ventas al grabar, editar o eliminar el movimiento.
 - `usp_BAN_EliminarMovimientoBanco`
@@ -842,6 +999,8 @@ Seguridad funcional, empresas y suscripciones.
 - `022_Caja_Bancos_Correlativo_Por_Periodo.sql`: agrega y rellena correlativo interno mensual para movimientos de Caja y Bancos.
 - `023_Caja_Bancos_Detalle_DatosDocumentarios.sql`: agrega columnas documentarias por linea en `BAN_MovimientoBancoDetalle`.
 - `024_Caja_Bancos_Cabecera_TipoCambio_Observacion.sql`: agrega `TipoCambio` y `Observacion` en la cabecera del movimiento bancario.
+- `043_AsientoDetalle_DH.sql`: agrega la columna `DH` en `CON_AsientoDetalle`, rellena el historico segun `Debe/Haber` y actualiza la restriccion de consistencia del detalle contable.
+- `044_AsientoDetalle_AjusteCambio_Analitico.sql`: amplia `CK_CON_AsientoDetalle_Montos` para aceptar lineas analiticas de cancelacion total con `Debe/Haber` en cero y diferencia conservada en `TotalImporteS` y/o `TotalImporteD`.
 - `025_Caja_Bancos_Detalle_Persona.sql`: agrega `IdPersona` por linea en `BAN_MovimientoBancoDetalle` para buscar comprobantes desde cada detalle.
 - `026_Caja_Bancos_Comprobantes_Saldo.sql`: agrega `ModuloOperacionComprobante`, `IdRegistroComprobante` e `ImporteAplicado` para enlazar compras/ventas y actualizar su saldo pendiente desde Caja y Bancos.
 - `027_Caja_Bancos_Asiento_Contable.sql`: agrega `IdAsiento` en `BAN_MovimientoBanco` para vincular y mantener el asiento automatico del movimiento bancario.
@@ -851,8 +1010,13 @@ Seguridad funcional, empresas y suscripciones.
 - `034_DetalleContable_ImportesMoneda.sql`: agrega `TotalImporteS` y `TotalImporteD` al detalle bancario y contable para conservar equivalencias por moneda en cada linea.
 - `031_Aplicaciones_NC.sql`: habilita el origen `47 - APLICACIONES N/C` para empresas existentes y prepara la provision APNC.
 - `033_Detracciones_Compras.sql`: agrega maestro general de detracciones SUNAT, documento hijo de detraccion por compra y modulo contable `DET`.
+- `035_Compras_Validacion_Cpe.sql`: agrega `FechaValidacionCpe`, `EstadoValidacionCpe` y `MensajeValidacionCpe` en `COM_Compra`.
+- `036_Percepciones_Compras.sql`: agrega maestro general de percepciones, documento hijo `COM_CompraPercepcion`, origen contable `PER` y parametro `CTADEPERCEPCION`.
+- `037_Retencion_Renta4ta_Compras.sql`: agrega columnas de retencion en `COM_Compra`, crea `COM_CompraRetencion` y asegura el impuesto `R4TA` y el parametro `PORCRETEN4TA`.
+- `037_CargaMasiva_Xml_Provisiones.sql`: habilita detalle importado sin cuenta contable inicial, asegura boletas y recibos por honorarios en compras y despliega la base SQL para importacion XML en estado `EN REVISION`.
 - `024_Caja_Bancos_TipoCambio_Observacion.sql`: agrega `TipoCambio` y `Observacion` a la cabecera `BAN_MovimientoBanco`.
 - `025_Caja_Bancos_Detalle_Persona.sql`: agrega `IdPersona` al detalle de Caja y Bancos para asociar comprobantes por linea.
+- `042_Caja_Bancos_Periodo_Movimiento.sql`: agrega `Periodo` persistido en `BAN_MovimientoBanco`, rellena historicos desde `FechaEmision` y crea el indice operativo por empresa/periodo/cuenta.
 
 ## 14. Reglas de negocio contable actuales
 
@@ -862,6 +1026,11 @@ Seguridad funcional, empresas y suscripciones.
 - Paginacion estandar funcional: 20 registros por pagina.
 - Compras, ventas y asientos filtran por anio y mes mediante periodo.
 - El periodo contable se representa como `yyyyMM`.
+- El mantenimiento de tipos de cambio por cuenta administradora filtra por periodo, permite sincronizar un mes completo desde el listado y consultar una fecha puntual desde el formulario usando la API de Migo.
+- Compras, ventas, asientos y Caja y Bancos consultan el endpoint MVC de tipos de cambio al cambiar la fecha o al usar el boton de actualizacion del tipo de cambio; el endpoint consulta Migo por fecha, guarda o actualiza `CON_TipoCambio` y devuelve siempre la cotizacion `USD` para sostener la contabilidad bimoneda.
+- En compras y ventas el campo `TipoCambio` ya no admite edicion manual; se mantiene visible y solo debe actualizarse desde el boton de refresco del propio formulario.
+- La integracion automatica de Migo actualmente opera sobre moneda `USD`; si la API no devuelve cotizacion para la fecha consultada, el registro mantiene la captura manual.
+- El formulario de personas puede consultar Migo por RUC o DNI antes de grabar; para RUC se prioriza direccion y ubigeo, y para DNI solo el nombre completo.
 - El periodo `yyyyMM` no debe formarse con conversiones `CHAR(6)` del anio porque agregan espacios y rompen el filtro.
 - El correlativo de asiento se controla por empresa, origen y periodo.
 - Cada mes puede reiniciar numeracion por origen.
@@ -869,12 +1038,16 @@ Seguridad funcional, empresas y suscripciones.
 - Los movimientos de caja y bancos generan asiento automatico y quedan vinculados a `CON_Asiento`.
 - El movimiento bancario guarda `IdOpeBancaria` como `CHAR(2)` y el detalle permite registrar Debe/Haber.
 - La cabecera de Caja y Bancos guarda `TipoCambio` mayor a cero y `Observacion` opcional.
+- La cabecera y cada linea del detalle de Caja y Bancos muestran `TipoCambio` y `TipoCambioLinea` como valores de solo lectura; ambos se actualizan desde el boton de refresco y el cambio de fecha/cuenta corriente cuando corresponde.
 - El importe total de Caja y Bancos corresponde al total operativo ingresado en la cabecera y se compara contra el neto del detalle.
 - El guardado de Caja y Bancos bloquea cualquier movimiento con diferencia distinta de cero entre `Total Operacion` y `Total Detalle`.
+- En Caja y Bancos, ademas del cuadre por importe, el sistema valida el sentido contable del detalle: en `Ingresos` el `Haber` del detalle debe superar al `Debe`, y en `Egresos` el `Debe` debe superar al `Haber`, para que el asiento automatico compense correctamente la cuenta bancaria de cabecera.
 - El saldo inicial de Caja y Bancos se calcula con el acumulado de meses anteriores y el saldo final con el movimiento del mes consultado.
 - El correlativo de Caja y Bancos es interno al modulo, reinicia por empresa y periodo mensual de `FechaEmision` y no depende del `Nro documento` operativo.
+- El periodo operativo de Caja y Bancos se guarda en `BAN_MovimientoBanco.Periodo` tomando el anio y mes de `FechaEmision`; por eso, si el usuario cambia la fecha antes de grabar, el movimiento queda consultable en el periodo real de esa fecha.
 - Las cuentas de detalle de Caja y Bancos deben permitir registrar persona, centro de costo y datos documentarios por linea, pero solo son obligatorios `Cuenta`, `Glosa detalle` y un importe en `Debe` o `Haber`.
 - Si se selecciona una persona en la cabecera de Caja y Bancos, las lineas nuevas del detalle deben heredar como valor inicial el `RUC/DNI` de esa persona y usarlo para filtrar la ayuda de comprobantes.
+- Si el usuario vincula en Caja y Bancos un comprobante en moneda distinta a la cuenta corriente, el importe sugerido del pago debe mostrarse convertido a la moneda bancaria usando el `TipoCambio` de cabecera, mientras que el saldo del documento original se sigue controlando en su propia moneda.
 - Las transferencias entre cuentas deben generar un movimiento bancario emisor y otro receptor, enlazados entre si, cada uno con su asiento contable automatico.
 - Una transferencia entre cuentas no se elimina por lados; se elimina siempre como operacion completa.
 - Las aplicaciones de notas de credito solo pueden darse entre registros del mismo modulo (`VEN` o `COM`), la misma persona y la misma moneda.
@@ -882,14 +1055,32 @@ Seguridad funcional, empresas y suscripciones.
 - El modulo Aplicaciones usa la provision `APNC`; si la configuracion esta activa y con asiento automatico, genera un asiento nuevo con el origen contable asociado.
 - En asientos automaticos de compras y ventas, cada linea debe guardar `RUC/DNI` de la contraparte, `TipoDoc` con la descripcion del comprobante, `Serie` del comprobante y `Referencia` solo con el numero.
 - En asientos automaticos de compras y ventas, la cabecera del asiento debe guardar `FechaEmision` con la fecha de emision de la provision.
+- En compras y ventas el tipo de cambio es obligatorio solo en cabecera; no se exige tipo de cambio por item en la interfaz del detalle, se muestra con 3 decimales y cada linea generada en `CON_AsientoDetalle` hereda el mismo `TipoCambioLinea` de la cabecera.
+- En compras, ventas, asientos y Caja y Bancos el tipo de cambio ahora inicia en `0`; al abrir el formulario con fecha informada se intenta consultar automaticamente el valor `USD`, y si sigue en cero el guardado lo rechaza.
+- Las ayudas de plan de cuentas usadas en compras, asientos y Caja y Bancos deben filtrar solo cuentas operativas cuando la vista pide `soloMovimiento = 1`; ese filtro no puede vaciar la ayuda cuando existen cuentas activas de movimiento.
+- En compras, el boton `Validar CPE` solo debe mostrarse para los comprobantes `01`, `03`, `02`, `07` y `08`; para los demas comprobantes no debe figurar.
+- En compras, la validacion CPE registra fecha, estado y mensaje de respuesta para que el usuario identifique si ya fue validado o por que fallo.
+- En compras y ventas existe carga masiva por XML SUNAT desde el listado; el proceso crea o reutiliza proveedor/cliente por documento, levanta cabecera, detalle y totales, rechaza comprobantes duplicados y asigna una cuenta contable default por linea desde parametros de empresa.
+- La importacion masiva registra inicialmente la provision con `Estado = EN REVISION` y `IdAsiento = NULL`; el asiento contable solo se crea cuando el usuario entra al comprobante, completa la cuenta del detalle y guarda la provision final.
 - En compras, el subtotal, total exonerado, total inafecto, IGV e importe total de cabecera se calculan desde el detalle.
 - En compras, solo la afectacion IGV SUNAT `10 - Gravado - Operacion Onerosa` calcula IGV de detalle.
 - En compras, el total exonerado se acumula con afectaciones SUNAT `2x` y el total inafecto con afectaciones `3x`.
 - En compras, ICBPER queda preparado solo de forma interna y actualmente se calcula en cero hasta definir cantidad de bolsas por detalle.
 - Al registrar o editar una provision de compra sin detraccion, el saldo inicial del comprobante debe quedar igual al importe total.
 - Si la compra tiene detraccion, el saldo inicial del comprobante principal debe quedar en `ImporteTotal - ImporteDetraccion` y debe generarse un documento hijo `COM_CompraDetraccion` con saldo propio igual al importe de detraccion.
+- En compras con detraccion, la `Situacion` del comprobante principal y la validacion de eliminacion deben evaluarse contra ese saldo neto exigible (`ImporteTotal - ImporteDetraccion`), por lo que la mera existencia del pendiente SPOT no debe marcar la compra como pagada parcial ni bloquear su eliminacion.
 - La detraccion de compras usa un segundo asiento automatico con origen `DET`, debitando la cuenta 42 del documento y acreditando la cuenta configurada en `ADM_ParametroEmpresa` bajo `CodigoParametro = 'CTADETRACCION'`.
 - En ese asiento adicional, la linea de la cuenta de detraccion debe grabarse con `TipoDocumento = 00` (descripcion visible `Otros`).
+- Si la compra tiene percepcion, el saldo principal del comprobante no se incrementa ni se descuenta; se genera un documento hijo `COM_CompraPercepcion` con saldo propio igual al importe de percepcion.
+- La percepcion de compras usa un segundo asiento automatico con origen `PER`, debitando la cuenta del impuesto `IGVPER` configurada por empresa en `CON_TipoImpuestoConfiguracionEmpresa` y acreditando la cuenta configurada en `ADM_ParametroEmpresa` bajo `CodigoParametro = 'CTADEPERCEPCION'`.
+- En ese asiento adicional, ambas lineas de percepcion deben grabarse con `TipoDocumento = 00` (descripcion visible `Otros`).
+- La base de percepcion siempre es el total del comprobante incluido IGV y el importe se calcula como `BasePercepcion x PorcentajePercepcion`.
+- Cuando la compra usa tipo de comprobante `02` (Recibo por Honorarios), la cabecera muestra el check `Exoneracion renta de 4ta`; si esta desactivado, calcula `Retencion = BaseImponible x PORCRETEN4TA / 100` y cambia visualmente el bloque de totales para mostrar `Retencion` en lugar de `IGV`.
+- En recibos por honorarios el `ImporteTotal` del comprobante se calcula como `BaseImponible - Retencion`; por eso el saldo principal de la compra y la cuenta del documento quedan por el importe neto, mientras la cuenta de impuesto `R4TA` acredita la retencion dentro del mismo asiento principal.
+- La retencion de renta de 4ta se persiste historicamente en `COM_Compra` (`ExoneracionRenta4ta`, `PorcentajeRetencion`, `Retencion`) y ademas genera el documento hijo `COM_CompraRetencion`, con saldo propio igual al importe retenido para su pago posterior.
+- Al eliminar una compra, el sistema tambien debe eliminar su pendiente `COM_CompraRetencion`; si esa retencion ya tiene pagos aplicados en Caja y Bancos, la eliminacion de la compra debe bloquearse hasta revertir primero dichos pagos.
+- Caja y Bancos debe considerar `PER` como comprobante pendiente adicional de compras, mostrando el modulo `Percepciones` en la ayuda y actualizando su saldo independiente al aplicar o eliminar pagos.
+- Caja y Bancos debe considerar `R4T` como comprobante pendiente adicional de compras, mostrando el modulo `Renta4ta`, usando `TipoComprobante = 00 - Otros` y precargando la cuenta del impuesto `R4TA` configurada en contabilidad.
 - Caja y Bancos debe listar tambien documentos `COM_CompraDetraccion` con saldo pendiente bajo modulo `Detraccion`, heredando `Serie` y `Numero` del comprobante de compra origen, permitiendo aplicar su saldo y precargar la cuenta `CTADETRACCION`.
 - Todo asiento automatico o manual y todo detalle bancario debe guardar por linea `TotalImporteS` y `TotalImporteD` usando la moneda del comprobante/asiento y el tipo de cambio efectivo de la linea.
 - Las provisiones de compra y venta usan `Estado = PROVISIONADO`; la cobranza o pago se representa en el listado con `Situacion` calculada por saldo (`Pendiente`, `Pagada Parcial`, `Pagada`).
@@ -899,10 +1090,25 @@ Seguridad funcional, empresas y suscripciones.
 - Si una cuenta del detalle tiene configuracion en `Cuentas destino`, la linea original se conserva y se agregan lineas adicionales de destino y contrapartida segun sus porcentajes activos.
 - En ventas, el asiento automatico usa la cuenta del documento para la cobranza, la cuenta del detalle para el ingreso y las cuentas de impuesto configuradas por empresa.
 - La configuracion de provision ya contempla tipos futuros de operacion para egresos, ingresos y aplicaciones de nota de credito, todos persistidos en `CON_ConfiguracionContabilizacion` con escenario `PROVISION`.
+- La diferencia en cambio se ejecuta por empresa y periodo desde el modulo `Proceso`, usa el origen configurado en `CON_ConfiguracionContabilizacion` bajo modulo `DIF` y, si el periodo ya fue generado, elimina primero la generacion previa antes de recrearla.
+- El proceso de diferencia en cambio solo evalua cuentas activas de movimiento en `USD` con `TipoCambio = C/V`; si `GeneraDiferenciaPorAnalisis = 1`, separa el ajuste por `NumeroDocumento`, `TipoDocumento`, `Serie` y `ReferenciaLinea` del detalle contable, sin heredar `IdCliente` ni `IdProveedor` al asiento generado. Tambien excluye de su base los asientos producidos por procesos automaticos `DIF`, `AJU`, `APR` y `CIE` para no recalcular sobre movimientos ya regularizados, y reinicia sus acumuladores temporales en cada cuenta para no mezclar analisis entre iteraciones.
+- Si cualquier linea del asiento generado por diferencia en cambio tiene una regla activa en `CON_CuentaDestinoRegla`, el asiento conserva la linea original y agrega tambien sus lineas de cuenta destino y contrapartida, siguiendo el mismo criterio del proceso legacy.
+- La contrapartida del proceso de diferencia en cambio usa los parametros de empresa `CUENTAGANANCIA_DC` y `CUENTAPERDIDA_DC`, y toma el tipo de cambio del ultimo dia del periodo desde `CON_TipoCambio`, usando `CompraSBS/VentaSBS` solo cuando `TIPO_CAMBIO_SBS_CIERRE = 'S'` y el periodo corresponde a diciembre.
+- El ajuste de cuentas se ejecuta por empresa y periodo desde el modulo `Proceso`, usa el origen configurado en `CON_ConfiguracionContabilizacion` bajo modulo `AJU` y, si el periodo ya fue generado, elimina primero la generacion previa antes de recrearla.
+- El proceso de ajuste de cuentas solo trabaja con cuentas activas de movimiento marcadas para analisis (`GeneraDiferenciaPorAnalisis = 1`), agrupa por `NumeroDocumento`, `TipoDocumento`, `Serie` y `ReferenciaLinea`, y solo genera asiento cuando el residual del analisis es distinto de cero y menor a una unidad. Tambien excluye de su base los asientos producidos por procesos automaticos `DIF`, `AJU`, `APR` y `CIE` para no volver a ajustar cuentas destino o regularizaciones ya generadas.
+- Cada asiento de ajuste se genera en la moneda natural de la cuenta procesada: cuentas `PEN` ajustan y cuadran en soles, cuentas `USD` ajustan y cuadran en dolares. El detalle sigue guardando `TotalImporteS` y `TotalImporteD` como equivalencias completas del movimiento.
+- La contrapartida del proceso de ajuste de cuentas usa los parametros de empresa `CUENTAGANANCIA_AJ` y `CUENTAPERDIDA_AJ`; si cualquier linea generada tiene una regla activa en `CON_CuentaDestinoRegla`, el asiento conserva la linea original y agrega tambien sus lineas de cuenta destino y contrapartida, distribuyendo el importe en la misma moneda de la cuenta origen.
+- El asiento de apertura se ejecuta por empresa y ejercicio desde el modulo `Proceso`, usa el origen configurado en `CON_ConfiguracionContabilizacion` bajo modulo `APR` y, si el ejercicio ya fue generado, elimina primero el asiento y el proceso previo antes de recrearlo.
+- El asiento de apertura genera un unico asiento en el periodo `00`, con fecha fija `01/01/<anio apertura>`, tomando saldos acumulados del ejercicio base desde `yyyy00` hasta el periodo contable seleccionado (`00-15`).
+- El asiento de apertura usa el tipo de cambio del `31/12` del anio base desde `CON_TipoCambio`; para cuentas cuyo codigo empieza en `1`, `2` o `3` aplica compra y para el resto aplica venta, manteniendo tanto bloque resumen como bloque analitico/documentario. El bloque analitico agrupa por `NumeroDocumento`, `TipoDocumento`, `Serie` y `ReferenciaLinea`, sin heredar `IdCliente` ni `IdProveedor`.
+- El asiento de cierre se ejecuta por empresa y ejercicio desde el modulo `Proceso`, usa el origen configurado en `CON_ConfiguracionContabilizacion` bajo modulo `CIE` y, si el ejercicio ya fue generado, elimina primero los asientos y el proceso previo antes de recrearlo.
+- El asiento de cierre toma como base los periodos `00` a `13`, usa `ColBalance = 'R'` para cierre de ganancias y perdidas y `ColBalance = 'I'` para cierre de inventarios, y genera un asiento independiente por cuenta en los periodos `14` y `15`.
+- La contrapartida del asiento de cierre usa los parametros de empresa `CUENTAGANANCIA` y `CUENTAPERDIDA`; el tipo de cambio de `31/12` sale de `CON_TipoCambio`, usando `CompraSBS/VentaSBS` solo cuando `TIPO_CAMBIO_SBS_CIERRE = 'S'`.
 - Las compras y ventas se eliminan desde su propio modulo y deben borrar tambien el asiento automatico relacionado.
 - Un asiento automatico no debe eliminarse desde el modulo de asientos; debe eliminarse desde el modulo de origen.
 - Las tablas maestras internas no deben depender de empresa.
 - Al crear empresa se deben cargar parametros default desde maestros.
+- Al crear empresa tambien se debe cargar el plan de cuentas: desde `CON_PlanCuentaMaestro` en la empresa inicial y desde `CON_PlanCuenta` de la empresa base cuando corresponda.
 - Plan de cuentas, origenes y cuentas destino pueden cargarse por defecto desde tablas maestras.
 
 ## 15. Reglas de UI actuales
@@ -921,6 +1127,9 @@ Seguridad funcional, empresas y suscripciones.
 - El modulo de Transferencias entre cuentas usa el mismo patron visual administrativo, pero separa la captura en bloques `Emisor` y `Receptor`.
 - El modulo Aplicaciones reutiliza el mismo patron visual administrativo, pero divide la seleccion operacional en dos paneles: comprobantes pendientes y notas de credito disponibles.
 - Los listados de compras, ventas y asientos muestran acciones `Editar` y `Eliminar`.
+- Cuando un listado muestra numero de asiento, ese numero debe ser clickeable y abrir `Registro > Asientos` en modo detalle del asiento correspondiente.
+- Los filtros `anio/mes` en listados y procesos se ejecutan automaticamente al cambiar el periodo y muestran un indicador global de carga mientras la peticion esta en curso.
+- Un asiento automatico solo puede revisarse desde `Registro > Asientos`; la vista debe informar que fue generado automaticamente y mantener bloqueado el guardado manual.
 
 ## 16. Tablas maestras internas vs tablas por empresa
 
@@ -928,6 +1137,8 @@ Maestras internas, no por empresa:
 
 - `ADM_ParametroMaestro`
 - `CON_PlanCuentaMaestro`
+- `CON_PlanCuentaMaestro` incluye `GeneraDiferenciaPorAnalisis` para propagar la modalidad de diferencia en cambio al plan inicial de cada empresa.
+- `CON_PlanCuentaMaestro` tambien incluye `ColBalance` para que la empresa nueva herede la clasificacion usada luego por el cierre anual.
 - `CON_OrigenMaestro`
 - `CON_CuentaDestinoReglaMaestro`
 - `CON_CuentaDestinoReglaDetalleMaestro`
@@ -947,10 +1158,12 @@ Tablas por empresa:
 - `CON_CuentaDestinoRegla`
 - `CON_CuentaDestinoReglaDetalle`
 - `CON_ConfiguracionContabilizacion`
+- `CON_AperturaProceso`
+- `CON_AperturaProcesoDetalle`
 - `CON_DocumentoConfiguracionEmpresa`
 - `CON_TipoImpuestoConfiguracionEmpresa`
 - `CON_Asiento`
-- `CON_AsientoDetalle`
+- `CON_AsientoDetalle`: ahora guarda tambien `DH` como fuente explicita del sentido Debe/Haber. Los procesos `usp_CON_GenerarDiferenciaCambioProceso`, `usp_CON_GenerarAjusteCuentaProceso`, `usp_CON_GenerarAperturaProceso` y `usp_CON_GenerarCierreProceso` toman esa marca para sus calculos, y los asientos manuales/automaticos la persisten al grabar.
 - `COM_Compra`
 - `COM_CompraDetalle`
 - `COM_CompraDetraccion`
@@ -1003,6 +1216,43 @@ flowchart LR
     VEN --> ASI
 ```
 
+### 9.5.2 Libros electronicos PLE
+
+Componentes principales:
+
+- `LibroElectronicoController`
+- `Views/LibroElectronico/Index.cshtml`
+- `Infrastructure/Contabilidad/LibroElectronicoService`
+- `Infrastructure/Contabilidad/PleValidationService`
+- `Infrastructure/Contabilidad/PleTxtGenerator`
+- `Infrastructure/Contabilidad/PleFileNameService`
+- `Infrastructure/Contabilidad/PleDownloadStore`
+- `Infrastructure/Contabilidad/LibroElectronicoRepository`
+
+Formatos soportados:
+
+- `5.1 - Libro Diario`
+- `5.2 - Libro Diario Simplificado`
+- `6.1 - Libro Mayor`
+
+Capacidades:
+
+- Filtros por empresa, año, mes, libro, moneda, estado y rango de fechas.
+- Previsualización paginada del contenido exportable sin enviar todo el periodo al navegador.
+- Validaciones previas de empresa, RUC, periodo, asientos cuadrados, duplicidad de CUO/correlativos, cuentas, monedas, documentos, glosas y estados PLE.
+- Generación de TXT en UTF-8 sin BOM con separador `|` y una línea por movimiento.
+- Descarga temporal en memoria sin persistir el contenido del archivo en base de datos.
+- Historial de exportaciones con metadatos de archivo, usuario, totales y observaciones.
+
+Objetos SQL:
+
+- `CON_LibroElectronicoGeneracion`
+- `usp_CON_PLE_LibroDiario51_Listar`
+- `usp_CON_PLE_LibroDiario52_Listar`
+- `usp_CON_PLE_LibroMayor61_Listar`
+- `usp_CON_PLE_Historial_Listar`
+- `usp_CON_PLE_Historial_Registrar`
+
 ## 20. Firma
 
 -- =============================================  
@@ -1038,5 +1288,35 @@ flowchart LR
 -- =============================================  
 -- Author:        FRANCO LARA / Codex  
 -- Create date:   26/06/2026  
--- Description:   Documenta la tarjeta Parametros en configuracion contable y el uso del parametro CTADETRACCION para el asiento adicional de detracciones.  
+-- Description:   Documenta la tarjeta Parametros en configuracion contable y el uso del parametro CTADETRACCION para el asiento adicional de detracciones.
+-- =============================================
+
+-- =============================================
+-- Author:        FRANCO LARA / Codex
+-- Create date:   29/06/2026
+-- Description:   Documenta la configuracion MigoApi, la sincronizacion de tipos de cambio por fecha y periodo desde el mantenimiento y los registros contables, y la nueva gestion de percepciones de compras con documento pendiente y origen contable PER.
+-- =============================================
+
+-- =============================================
+-- Author:        FRANCO LARA / Codex
+-- Create date:   02/07/2026
+-- Description:   Documenta los procesos anuales de apertura y cierre, los modulos APR/CIE en configuracion contable, el soporte de 16 periodos contables, las tablas CON_AperturaProceso y CON_CierreProceso, las reglas de eliminacion/situacion para compras con retencion R4T o detraccion, la ayuda contable filtrada por cuentas operativas, la normalizacion del plan contable para parametros NA y monedas S/D a PEN/USD, el agrupamiento analitico documental por numero, tipo, serie y referencia en APR/AJU/DIF, la generacion del ajuste de cuentas en la moneda natural de cada cuenta y la nueva navegacion/carga visual de listados con bloqueo explicito para asientos automaticos.
+-- =============================================
+
+-- =============================================
+-- Author:        FRANCO LARA / Codex
+-- Create date:   03/07/2026
+-- Description:   Documenta la validacion adicional de sentido contable en Caja y Bancos para que ingresos y egresos no aparenten cuadrar por valor absoluto cuando el asiento automatico quedaria invertido frente a la cuenta bancaria.
+-- =============================================
+
+-- =============================================
+-- Author:        FRANCO LARA / Codex
+-- Create date:   06/07/2026
+-- Description:   Documenta los nuevos reportes HTML Libro Diario y Libro Mayor, incluyendo la adaptacion del auxiliar legacy al NumeroDocumento del proyecto actual.
+-- =============================================
+
+-- =============================================
+-- Author:        FRANCO LARA / Codex
+-- Create date:   07/07/2026
+-- Description:   Documenta el nuevo modulo Libros Electronicos con formatos PLE 5.1, 5.2 y 6.1, validacion previa, generacion TXT temporal e historial de exportaciones.
 -- =============================================

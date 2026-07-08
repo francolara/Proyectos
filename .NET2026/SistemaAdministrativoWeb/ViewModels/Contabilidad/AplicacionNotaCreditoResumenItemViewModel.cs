@@ -10,6 +10,7 @@ public sealed class AplicacionNotaCreditoResumenItemViewModel
     public DateOnly FechaAplicacion { get; init; }
     public string CodigoMoneda { get; init; } = string.Empty;
     public decimal ImporteAplicado { get; init; }
+    public int? IdAsiento { get; init; }
     public int? NumeroAsiento { get; init; }
     public string Glosa { get; init; } = string.Empty;
     public string TipoComprobanteAplicado { get; init; } = string.Empty;

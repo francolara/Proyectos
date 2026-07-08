@@ -24,11 +24,14 @@
 -- Description:   Conserva la linea original del detalle, agrega cuentas destino y contrapartida segun la configuracion activa y deja el estado del asiento como PROVISIONADO.
 -- =============================================
 -- Firma: FRANCO LARA - 26/06/2026 | Guarda tipo documento por codigo y calcula equivalencias en soles y dolares por cada linea del asiento manual.
+-- Firma: FRANCO LARA - 02/07/2026 | Vuelve obligatorio el tipo de cambio por linea en asientos manuales, agrega validacion explicita en el detalle y admite periodos contables 00-15 sin depender del mes calendario de la fecha fisica.
+-- Firma: FRANCO LARA - 03/07/2026 | Persiste DH por linea en asientos manuales, lo valida con Debe/Haber y lo hereda tambien a la expansion de cuentas destino.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_GuardarAsientoManual
     @IdAsiento INT = NULL,
     @IdEmpresa INT,
     @IdOrigen INT,
+    @Periodo CHAR(6) = NULL,
     @FechaEmision DATE,
     @FechaAsiento DATE,
     @Glosa NVARCHAR(500),
@@ -45,9 +48,9 @@ BEGIN
 
     BEGIN TRY
 
-        DECLARE @Ejercicio SMALLINT = YEAR(@FechaAsiento)
-        DECLARE @Mes TINYINT = MONTH(@FechaAsiento)
-        DECLARE @Periodo CHAR(6) = CONVERT(CHAR(4), YEAR(@FechaAsiento)) + RIGHT('0' + CONVERT(VARCHAR(2), MONTH(@FechaAsiento)), 2)
+        DECLARE @PeriodoTrabajo CHAR(6) = NULLIF(LTRIM(RTRIM(@Periodo)), '')
+        DECLARE @Ejercicio SMALLINT
+        DECLARE @Mes TINYINT
         DECLARE @NumeroAsiento INT
         DECLARE @TotalDebe DECIMAL(18,2)
         DECLARE @TotalHaber DECIMAL(18,2)
@@ -55,6 +58,25 @@ BEGIN
         DECLARE @IdAsientoTrabajo INT
         DECLARE @PeriodoExistente CHAR(6)
         DECLARE @IdOrigenExistente INT
+
+        IF @PeriodoTrabajo IS NULL
+        BEGIN
+            SET @PeriodoTrabajo = CONVERT(CHAR(4), YEAR(@FechaAsiento)) + RIGHT('0' + CONVERT(VARCHAR(2), MONTH(@FechaAsiento)), 2);
+        END;
+
+        IF @PeriodoTrabajo NOT LIKE '[1-2][0-9][0-9][0-9][0-1][0-9]'
+        BEGIN
+            RAISERROR(N'El periodo del asiento debe tener formato yyyyMM.', 16, 1);
+        END;
+
+        SELECT
+            @Ejercicio = TRY_CONVERT(SMALLINT, LEFT(@PeriodoTrabajo, 4)),
+            @Mes = TRY_CONVERT(TINYINT, RIGHT(@PeriodoTrabajo, 2));
+
+        IF @Ejercicio IS NULL OR @Mes IS NULL OR @Mes NOT BETWEEN 0 AND 15
+        BEGIN
+            RAISERROR(N'El periodo del asiento solo admite meses contables entre 00 y 15.', 16, 1);
+        END;
 
         IF @DetalleXml IS NULL
         BEGIN
@@ -65,12 +87,13 @@ BEGIN
         (
             Item SMALLINT NOT NULL,
             IdPlanCuenta INT NOT NULL,
+            DH CHAR(1) NOT NULL,
             GlosaDetalle NVARCHAR(300) NULL,
             CodigoCentroCosto NVARCHAR(50) NULL,
             TipoDocumento NVARCHAR(150) NULL,
             NumeroDocumento VARCHAR(20) NULL,
             Serie VARCHAR(10) NULL,
-            TipoCambioLinea DECIMAL(18,6) NULL,
+            TipoCambioLinea DECIMAL(18,6) NOT NULL,
             Debe DECIMAL(18,2) NOT NULL,
             Haber DECIMAL(18,2) NOT NULL,
             ReferenciaLinea NVARCHAR(100) NULL
@@ -80,12 +103,13 @@ BEGIN
         (
             Item INT IDENTITY(1,1) NOT NULL,
             IdPlanCuenta INT NOT NULL,
+            DH CHAR(1) NOT NULL,
             GlosaDetalle NVARCHAR(300) NULL,
             CodigoCentroCosto NVARCHAR(50) NULL,
             TipoDocumento NVARCHAR(150) NULL,
             NumeroDocumento VARCHAR(20) NULL,
             Serie VARCHAR(10) NULL,
-            TipoCambioLinea DECIMAL(18,6) NULL,
+            TipoCambioLinea DECIMAL(18,6) NOT NULL,
             Debe DECIMAL(18,2) NOT NULL,
             Haber DECIMAL(18,2) NOT NULL,
             ReferenciaLinea NVARCHAR(100) NULL
@@ -105,6 +129,7 @@ BEGIN
         (
             Item,
             IdPlanCuenta,
+            DH,
             GlosaDetalle,
             CodigoCentroCosto,
             TipoDocumento,
@@ -118,12 +143,13 @@ BEGIN
         SELECT
             T.N.value('@Item', 'smallint'),
             T.N.value('@IdPlanCuenta', 'int'),
+            UPPER(ISNULL(NULLIF(T.N.value('@DH', 'char(1)'), ''), CASE WHEN T.N.value('@Debe', 'decimal(18,2)') > 0 THEN 'D' ELSE 'H' END)),
             NULLIF(T.N.value('@GlosaDetalle', 'nvarchar(300)'), N''),
             NULLIF(LTRIM(RTRIM(T.N.value('@CodigoCentroCosto', 'nvarchar(50)'))), N''),
             NULLIF(T.N.value('@TipoDocumento', 'nvarchar(150)'), N''),
             NULLIF(T.N.value('@NumeroDocumento', 'varchar(20)'), ''),
             NULLIF(T.N.value('@Serie', 'varchar(10)'), ''),
-            NULLIF(T.N.value('@TipoCambioLinea', 'decimal(18,6)'), 0),
+            T.N.value('@TipoCambioLinea', 'decimal(18,6)'),
             T.N.value('@Debe', 'decimal(18,2)'),
             T.N.value('@Haber', 'decimal(18,2)'),
             NULLIF(T.N.value('@ReferenciaLinea', 'nvarchar(100)'), N'')
@@ -143,12 +169,16 @@ BEGIN
             SELECT 1
             FROM @Detalle AS d
             WHERE d.Item < 1
+               OR d.DH NOT IN ('D', 'H')
                OR d.Debe < 0
                OR d.Haber < 0
+               OR d.TipoCambioLinea <= 0
                OR ((d.Debe > 0 AND d.Haber > 0) OR (d.Debe = 0 AND d.Haber = 0))
+               OR (d.DH = 'D' AND (d.Debe <= 0 OR d.Haber <> 0))
+               OR (d.DH = 'H' AND (d.Haber <= 0 OR d.Debe <> 0))
         )
         BEGIN
-            RAISERROR(N'Cada linea del asiento debe tener item valido y monto solo en Debe o Haber.', 16, 1);
+            RAISERROR(N'Cada linea del asiento debe tener item valido, DH consistente, tipo de cambio mayor a cero y monto solo en Debe o Haber.', 16, 1);
         END;
 
         IF EXISTS
@@ -249,6 +279,7 @@ BEGIN
         INSERT INTO @DetalleExpandido
         (
             IdPlanCuenta,
+            DH,
             GlosaDetalle,
             CodigoCentroCosto,
             TipoDocumento,
@@ -261,6 +292,7 @@ BEGIN
         )
         SELECT
             d.IdPlanCuenta,
+            d.DH,
             d.GlosaDetalle,
             d.CodigoCentroCosto,
             d.TipoDocumento,
@@ -349,6 +381,7 @@ BEGIN
         DECLARE cursor_linea_destino CURSOR LOCAL FAST_FORWARD FOR
         SELECT
             d.IdPlanCuenta,
+            d.DH,
             d.GlosaDetalle,
             d.CodigoCentroCosto,
             d.TipoDocumento,
@@ -359,7 +392,7 @@ BEGIN
             d.Haber,
             d.ReferenciaLinea
         FROM @Detalle AS d
-        WHERE (d.Debe > 0 OR d.Haber > 0)
+        WHERE d.DH IN ('D', 'H')
           AND EXISTS
           (
               SELECT 1
@@ -411,6 +444,7 @@ BEGIN
                     INSERT INTO @DetalleExpandido
                     (
                         IdPlanCuenta,
+                        DH,
                         GlosaDetalle,
                         CodigoCentroCosto,
                         TipoDocumento,
@@ -424,6 +458,7 @@ BEGIN
                     VALUES
                     (
                         @IdCuentaCargoDestino,
+                        'D',
                         LEFT(CONCAT(ISNULL(NULLIF(LTRIM(RTRIM(@GlosaBaseDestino)), N''), N'Distribucion cuenta destino'), N' / Destino'), 300),
                         @CodigoCentroCostoDestino,
                         @TipoDocumentoDestino,
@@ -438,6 +473,7 @@ BEGIN
                     INSERT INTO @DetalleExpandido
                     (
                         IdPlanCuenta,
+                        DH,
                         GlosaDetalle,
                         CodigoCentroCosto,
                         TipoDocumento,
@@ -451,6 +487,7 @@ BEGIN
                     VALUES
                     (
                         @IdCuentaAbonoDestino,
+                        'H',
                         LEFT(CONCAT(ISNULL(NULLIF(LTRIM(RTRIM(@GlosaBaseDestino)), N''), N'Distribucion cuenta destino'), N' / Contrapartida'), 300),
                         @CodigoCentroCostoDestino,
                         @TipoDocumentoDestino,
@@ -497,7 +534,7 @@ BEGIN
                 FROM dbo.CON_CorrelativoAsiento AS c WITH (UPDLOCK, HOLDLOCK)
                 WHERE c.IdEmpresa = @IdEmpresa
                   AND c.IdOrigen = @IdOrigen
-                  AND c.Periodo = @Periodo
+                  AND c.Periodo = @PeriodoTrabajo
             )
             BEGIN
                 UPDATE dbo.CON_CorrelativoAsiento
@@ -506,14 +543,14 @@ BEGIN
                     UsuarioRegistro = @UsuarioRegistro
                 WHERE IdEmpresa = @IdEmpresa
                   AND IdOrigen = @IdOrigen
-                  AND Periodo = @Periodo;
+                  AND Periodo = @PeriodoTrabajo;
 
                 SELECT
                     @NumeroAsiento = c.UltimoNumero
                 FROM dbo.CON_CorrelativoAsiento AS c
                 WHERE c.IdEmpresa = @IdEmpresa
                   AND c.IdOrigen = @IdOrigen
-                  AND c.Periodo = @Periodo;
+                  AND c.Periodo = @PeriodoTrabajo;
             END
             ELSE
             BEGIN
@@ -530,7 +567,7 @@ BEGIN
                 (
                     @IdEmpresa,
                     @IdOrigen,
-                    @Periodo,
+                    @PeriodoTrabajo,
                     1,
                     SYSDATETIME(),
                     @UsuarioRegistro
@@ -565,7 +602,7 @@ BEGIN
                 @IdOrigen,
                 @Ejercicio,
                 @Mes,
-                @Periodo,
+                @PeriodoTrabajo,
                 @NumeroAsiento,
                 @FechaEmision,
                 @FechaAsiento,
@@ -598,9 +635,9 @@ BEGIN
                 RAISERROR(N'El asiento indicado no existe para la empresa activa.', 16, 1);
             END;
 
-            IF @PeriodoExistente <> @Periodo
+            IF @PeriodoExistente <> @PeriodoTrabajo
             BEGIN
-                RAISERROR(N'No se puede cambiar el periodo del asiento existente. Mantenga la fecha dentro del mismo mes.', 16, 1);
+                RAISERROR(N'No se puede cambiar el periodo contable del asiento existente.', 16, 1);
             END;
 
             IF @IdOrigenExistente <> @IdOrigen
@@ -631,6 +668,7 @@ BEGIN
             IdAsiento,
             Item,
             IdPlanCuenta,
+            DH,
             GlosaDetalle,
             CodigoCentroCosto,
             TipoDocumento,
@@ -648,6 +686,7 @@ BEGIN
             @IdAsientoTrabajo,
             d.Item,
             d.IdPlanCuenta,
+            d.DH,
             d.GlosaDetalle,
             d.CodigoCentroCosto,
             d.TipoDocumento,
@@ -671,10 +710,10 @@ BEGIN
         (
             SELECT
                 CASE
-                    WHEN d.Debe > 0 THEN d.Debe
+                    WHEN d.DH = 'D' THEN d.Debe
                     ELSE d.Haber
                 END AS ImporteLinea,
-                ISNULL(NULLIF(d.TipoCambioLinea, 0), CASE WHEN @TipoCambio > 0 THEN @TipoCambio ELSE 1 END) AS TipoCambioAplicado
+                d.TipoCambioLinea AS TipoCambioAplicado
         ) AS calc
         ORDER BY
             d.Item ASC;

@@ -14,6 +14,7 @@
 -- Create date:   23/06/2026
 -- Description:   Incluye saldo, descripcion del comprobante y numero de documento de la persona para la edicion y ayudas del modulo.
 -- =============================================
+-- Firma: FRANCO LARA - 30/06/2026 | Permite recuperar detalles de ventas importadas sin cuenta contable asignada para completar la provision antes del asiento final.
 
 CREATE OR ALTER PROCEDURE dbo.usp_VEN_ObtenerVenta
     @IdVenta INT
@@ -87,7 +88,7 @@ BEGIN
             d.ValorUnitario,
             d.ImporteBruto
         FROM dbo.VEN_VentaDetalle AS d
-        INNER JOIN dbo.CON_PlanCuenta AS pc
+        LEFT JOIN dbo.CON_PlanCuenta AS pc
             ON pc.IdPlanCuenta = d.IdPlanCuenta
         INNER JOIN dbo.CON_TipoAfectacionIGV AS ta
             ON ta.IdTipoAfectacionIGV = d.IdTipoAfectacionIGV

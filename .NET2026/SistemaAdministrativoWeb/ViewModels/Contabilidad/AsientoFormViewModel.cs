@@ -5,6 +5,8 @@ namespace SistemaAdministrativoWeb.ViewModels.Contabilidad;
 public sealed class AsientoFormViewModel
 {
     public int? IdAsiento { get; set; }
+    public int? NumeroAsiento { get; set; }
+    public bool PermiteRegistroManual { get; set; } = true;
 
     [Range(1, int.MaxValue, ErrorMessage = "Seleccione un origen.")]
     public int? IdOrigen { get; set; }
@@ -25,7 +27,7 @@ public sealed class AsientoFormViewModel
     public int? IdMoneda { get; set; }
 
     [Range(typeof(decimal), "0.000001", "999999999999", ErrorMessage = "Ingrese un tipo de cambio valido.")]
-    public decimal TipoCambio { get; set; } = 1m;
+    public decimal TipoCambio { get; set; }
 
     [StringLength(100)]
     public string? ReferenciaExterna { get; set; }

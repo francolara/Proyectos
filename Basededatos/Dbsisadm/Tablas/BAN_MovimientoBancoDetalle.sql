@@ -14,6 +14,7 @@
 -- Description:   Agrega importes por moneda al detalle para conservar total en soles y dolares por linea del movimiento bancario.
 -- =============================================
 -- Firma: FRANCO LARA - 26/06/2026 | Incorpora TotalImporteS y TotalImporteD para conservar equivalencias por moneda en cada linea bancaria.
+-- Firma: FRANCO LARA - 29/06/2026 | Vuelve obligatorio TipoCambioLinea en el detalle bancario y deja default en 1 para nuevas lineas.
 
 IF OBJECT_ID(N'dbo.BAN_MovimientoBancoDetalle', N'U') IS NULL
 BEGIN
@@ -33,7 +34,7 @@ BEGIN
         TipoDocumento NVARCHAR(150) NULL,
         Serie VARCHAR(10) NULL,
         ReferenciaLinea NVARCHAR(100) NULL,
-        TipoCambioLinea DECIMAL(18, 6) NULL,
+        TipoCambioLinea DECIMAL(18, 6) NOT NULL CONSTRAINT DF_BAN_MovimientoBancoDetalle_TipoCambioLinea DEFAULT (1),
         Debe DECIMAL(18, 2) NOT NULL CONSTRAINT DF_BAN_MovimientoBancoDetalle_Debe DEFAULT (0),
         Haber DECIMAL(18, 2) NOT NULL CONSTRAINT DF_BAN_MovimientoBancoDetalle_Haber DEFAULT (0),
         TotalImporteS DECIMAL(18, 2) NOT NULL CONSTRAINT DF_BAN_MovimientoBancoDetalle_TotalImporteS DEFAULT (0),
@@ -93,4 +94,31 @@ IF COL_LENGTH(N'dbo.BAN_MovimientoBancoDetalle', N'TotalImporteD') IS NULL
 BEGIN
     ALTER TABLE dbo.BAN_MovimientoBancoDetalle
         ADD TotalImporteD DECIMAL(18,2) NOT NULL CONSTRAINT DF_BAN_MovimientoBancoDetalle_TotalImporteD DEFAULT (0);
+END;
+
+IF COL_LENGTH(N'dbo.BAN_MovimientoBancoDetalle', N'TipoCambioLinea') IS NULL
+BEGIN
+    ALTER TABLE dbo.BAN_MovimientoBancoDetalle
+        ADD TipoCambioLinea DECIMAL(18,6) NOT NULL CONSTRAINT DF_BAN_MovimientoBancoDetalle_TipoCambioLinea DEFAULT (1);
+END;
+
+UPDATE d
+SET TipoCambioLinea = ISNULL(NULLIF(d.TipoCambioLinea, 0), CASE WHEN m.TipoCambio > 0 THEN m.TipoCambio ELSE 1 END)
+FROM dbo.BAN_MovimientoBancoDetalle AS d
+INNER JOIN dbo.BAN_MovimientoBanco AS m
+    ON m.IdMovimientoBanco = d.IdMovimientoBanco
+WHERE d.TipoCambioLinea IS NULL
+   OR d.TipoCambioLinea <= 0;
+
+IF EXISTS
+(
+    SELECT 1
+    FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.BAN_MovimientoBancoDetalle')
+      AND name = N'TipoCambioLinea'
+      AND is_nullable = 1
+)
+BEGIN
+    ALTER TABLE dbo.BAN_MovimientoBancoDetalle
+        ALTER COLUMN TipoCambioLinea DECIMAL(18,6) NOT NULL;
 END;

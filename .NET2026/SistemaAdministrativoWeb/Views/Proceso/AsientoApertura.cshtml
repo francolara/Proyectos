@@ -1,0 +1,190 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.ProcesoAperturaViewModel
+
+@* Firma: FRANCO LARA - 02/07/2026 | Crea la pantalla Proceso > Asiento de apertura usando origen configurable APR, corte contable del anio anterior, tipo de cambio editable al 31/12 y eliminacion exclusiva de la generacion del ejercicio. *@
+
+@{
+    ViewData["Title"] = "Asiento de apertura";
+    ViewData["AdminShell"] = true;
+}
+
+<section class="dashboard-shell">
+    <section class="workspace-window">
+        <div class="workspace-window-head">
+            <div>
+                <span class="workspace-window-kicker">Proceso</span>
+                <h1>Asiento de apertura</h1>
+                <p>Genera un unico asiento en el periodo <strong>00</strong> usando los saldos acumulados del anio anterior hasta el mes contable seleccionado.</p>
+            </div>
+            <div class="workspace-window-badge">
+                <strong>@(Model.ProcesoGenerado ? "Proceso generado" : "Pendiente")</strong>
+                <span>Ejercicio @Model.AnioAperturaSeleccionado</span>
+            </div>
+        </div>
+
+        <div class="workspace-window-body">
+            @if (TempData["ProcesoOk"] is string ok)
+            {
+                <div class="alert alert-success">@ok</div>
+            }
+            @if (TempData["ProcesoError"] is string error)
+            {
+                <div class="alert alert-danger">@error</div>
+            }
+
+            <form asp-action="AsientoApertura" method="get" class="workspace-filter-card">
+                <div class="workspace-filter-grid">
+                    <div class="workspace-field">
+                        <label class="form-label" for="anioApertura">Anio apertura</label>
+                        <select id="anioApertura" name="anioApertura" class="form-select">
+                            @foreach (var anio in Model.AniosDisponibles)
+                            {
+                                <option value="@anio" selected="@(anio == Model.AnioAperturaSeleccionado ? "selected" : null)">@anio</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field">
+                        <label class="form-label" for="mesSaldoHasta">Procesar saldos hasta</label>
+                        <select id="mesSaldoHasta" name="mesSaldoHasta" class="form-select">
+                            @foreach (var mes in Model.MesesContablesDisponibles)
+                            {
+                                <option value="@mes.Valor" selected="@(mes.Valor == Model.MesSaldoHastaSeleccionado ? "selected" : null)">@Model.AnioSaldo - @mes.Nombre</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="workspace-field d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary">Consultar apertura</button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="workspace-balance-summary">
+                <article class="workspace-balance-card">
+                    <span>Origen configurado</span>
+                    <strong>@Model.OrigenConfiguradoTexto</strong>
+                    <small>@(Model.PuedeGenerar ? "Tomado desde Configuracion contable > Asiento de apertura." : "Debe configurarse antes de ejecutar el proceso.")</small>
+                </article>
+                <article class="workspace-balance-card">
+                    <span>Tipo de cambio 31/12/@Model.AnioSaldo</span>
+                    <strong>@($"C {Model.TipoCambioCompra:N3} / V {Model.TipoCambioVenta:N3}")</strong>
+                    <small>@(Model.UsaTipoCambioSbs ? "Se propone TC SBS del cierre del anio base." : "Se propone TC regular del cierre del anio base.")</small>
+                </article>
+                <article class="workspace-balance-card @(Model.ProcesoGenerado ? "is-balanced" : "workspace-balance-card-diff is-unbalanced")">
+                    <span>Estado</span>
+                    <strong>@(Model.ProcesoGenerado ? "Generado" : "Sin generar")</strong>
+                    <small>@(Model.ProcesoGenerado ? $"Lineas generadas: {Model.TotalLineas}" : "No existe una generacion previa para este ejercicio.")</small>
+                </article>
+            </div>
+
+            @if (!Model.PuedeGenerar)
+            {
+                <div class="alert alert-warning mt-4">
+                    Primero configure el origen del proceso en <a asp-controller="ConfiguracionContabilizacion" asp-action="Index">Configuracion contable</a> usando la tarjeta <strong>Asiento de apertura</strong>.
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info mt-4">
+                    El proceso genera el asiento en <strong>@($"{Model.AnioAperturaSeleccionado:0000}00")</strong>, usa fecha <strong>01/01/@Model.AnioAperturaSeleccionado</strong> y toma los saldos del anio <strong>@Model.AnioSaldo</strong> hasta el corte contable elegido.
+                </div>
+
+                <form asp-action="GenerarAsientoApertura" method="post" class="mt-4">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="anioApertura" value="@Model.AnioAperturaSeleccionado" />
+                    <input type="hidden" name="mesSaldoHasta" value="@Model.MesSaldoHastaSeleccionado" />
+
+                    <div class="workspace-form-grid">
+                        <div class="workspace-field">
+                            <label class="form-label" for="tipoCambioCompra">Tipo de cambio compra</label>
+                            <input id="tipoCambioCompra" name="tipoCambioCompra" value="@Model.TipoCambioCompra.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture)" class="form-control" />
+                        </div>
+                        <div class="workspace-field">
+                            <label class="form-label" for="tipoCambioVenta">Tipo de cambio venta</label>
+                            <input id="tipoCambioVenta" name="tipoCambioVenta" value="@Model.TipoCambioVenta.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture)" class="form-control" />
+                        </div>
+                    </div>
+
+                    <div class="workspace-actions mt-4">
+                        <button type="submit" class="btn @(Model.ProcesoGenerado ? "btn-danger" : "btn-primary")">
+                            @(Model.ProcesoGenerado ? "Regenerar asiento de apertura" : "Generar asiento de apertura")
+                        </button>
+                        @if (Model.ProcesoGenerado)
+                        {
+                            <button type="submit"
+                                    formaction="@Url.Action("EliminarAsientoApertura", "Proceso")"
+                                    formmethod="post"
+                                    class="btn btn-outline-danger">
+                                Eliminar asiento de apertura
+                            </button>
+                        }
+                    </div>
+                </form>
+            }
+
+            @if (Model.ProcesoGenerado)
+            {
+                <div class="workspace-balance-summary mt-4">
+                    <article class="workspace-balance-card">
+                        <span>Fecha asiento</span>
+                        <strong>@Model.FechaAsiento?.ToString("dd/MM/yyyy")</strong>
+                        <small>Fecha fija del asiento de apertura.</small>
+                    </article>
+                    <article class="workspace-balance-card">
+                        <span>Asiento generado</span>
+                        <strong>
+                            @if (Model.IdAsiento.HasValue)
+                            {
+                                <a asp-controller="Asiento" asp-action="Editar" asp-route-idAsiento="@Model.IdAsiento.Value" asp-route-periodo="@($"{Model.AnioAperturaSeleccionado:0000}00")">Nro @Model.NumeroAsiento</a>
+                            }
+                            else
+                            {
+                                <span>-</span>
+                            }
+                        </strong>
+                        <small>Periodo @($"{Model.AnioAperturaSeleccionado:0000}00").</small>
+                    </article>
+                    <article class="workspace-balance-card">
+                        <span>Total Debe / Haber</span>
+                        <strong>@Model.TotalDebe.ToString("N2") / @Model.TotalHaber.ToString("N2")</strong>
+                        <small>El asiento debe quedar equilibrado.</small>
+                    </article>
+                </div>
+
+                <div class="table-responsive workspace-table-wrap mt-4">
+                    <table class="table align-middle app-table workspace-table">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Tipo</th>
+                                <th>Cuenta</th>
+                                <th>Documento</th>
+                                <th>TC</th>
+                                <th>Debe</th>
+                                <th>Haber</th>
+                                <th>Observacion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Detalles)
+                            {
+                                var documento = string.Join(" ", new[] { item.TipoDocumento, item.Serie, item.NumeroDocumento }.Where(x => !string.IsNullOrWhiteSpace(x)));
+                                <tr>
+                                    <td>@item.Item</td>
+                                    <td>@item.TipoDetalle</td>
+                                    <td>
+                                        <strong class="workspace-tree-code">@item.CodigoCuenta</strong>
+                                        <div>@item.NombreCuenta</div>
+                                    </td>
+                                    <td>@(string.IsNullOrWhiteSpace(documento) ? "-" : documento)</td>
+                                    <td>@item.TipoCambioAplicado.ToString("N3")</td>
+                                    <td>@item.Debe.ToString("N2")</td>
+                                    <td>@item.Haber.ToString("N2")</td>
+                                    <td>@(string.IsNullOrWhiteSpace(item.Observacion) ? "-" : item.Observacion)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </section>
+</section>

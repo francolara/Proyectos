@@ -23,20 +23,20 @@ public sealed class CompraFormViewModel
     public string TipoComprobante { get; set; } = "01";
 
     [Required]
-    [StringLength(4, MinimumLength = 4, ErrorMessage = "La serie debe tener 4 caracteres.")]
-    [RegularExpression(@"^[FB]\d{3}$", ErrorMessage = "La serie debe empezar con F o B y completar 3 digitos, por ejemplo F004 o B123.")]
+    [StringLength(10, MinimumLength = 1, ErrorMessage = "La serie debe tener entre 1 y 10 caracteres.")]
+    [RegularExpression(@"^[A-Z0-9]{1,10}$", ErrorMessage = "La serie solo puede contener letras y numeros.")]
     public string Serie { get; set; } = string.Empty;
 
     [Required]
-    [StringLength(10, ErrorMessage = "El numero debe tener como maximo 10 digitos.")]
-    [RegularExpression(@"^\d{1,10}$", ErrorMessage = "El numero debe contener solo digitos enteros, con un maximo de 10 posiciones.")]
+    [StringLength(20, ErrorMessage = "El numero debe tener como maximo 20 caracteres.")]
+    [RegularExpression(@"^[A-Z0-9]{1,20}$", ErrorMessage = "El numero solo puede contener letras y numeros, con un maximo de 20 posiciones.")]
     public string Numero { get; set; } = string.Empty;
 
     [Range(1, int.MaxValue, ErrorMessage = "Seleccione la moneda.")]
     public int? IdMoneda { get; set; }
 
     [Range(typeof(decimal), "0.000001", "999999999999")]
-    public decimal TipoCambio { get; set; } = 1m;
+    public decimal TipoCambio { get; set; }
 
     [Range(typeof(decimal), "0", "999999999999")]
     public decimal BaseImponible { get; set; }
@@ -65,11 +65,19 @@ public sealed class CompraFormViewModel
     [Range(typeof(decimal), "0", "999999999999")]
     public decimal ImporteTotal { get; set; }
 
+    public bool ExoneracionRenta4ta { get; set; }
+
+    [Range(typeof(decimal), "0", "100")]
+    public decimal PorcentajeRetencion { get; set; }
+
+    [Range(typeof(decimal), "0", "999999999999")]
+    public decimal Retencion { get; set; }
+
     public bool TieneDetraccion { get; set; }
 
     public int? IdDetraccionSunat { get; set; }
 
-    public string DetraccionTexto { get; set; } = string.Empty;
+    public string? DetraccionTexto { get; set; }
 
     [Range(typeof(decimal), "0", "100")]
     public decimal PorcentajeDetraccion { get; set; }
@@ -79,6 +87,21 @@ public sealed class CompraFormViewModel
 
     [Range(typeof(decimal), "0", "999999999999")]
     public decimal SaldoPago { get; set; }
+
+    public bool TienePercepcion { get; set; }
+
+    public int? IdTipoPercepcion { get; set; }
+
+    public string? TipoPercepcionTexto { get; set; }
+
+    [Range(typeof(decimal), "0", "100")]
+    public decimal PorcentajePercepcion { get; set; }
+
+    [Range(typeof(decimal), "0", "999999999999")]
+    public decimal BasePercepcion { get; set; }
+
+    [Range(typeof(decimal), "0", "999999999999")]
+    public decimal ImportePercepcion { get; set; }
 
     [StringLength(500)]
     public string? Observacion { get; set; }
