@@ -1,7 +1,7 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.RegistroVentasViewModel
 
 @* Firma: FRANCO LARA - 07/07/2026 | Crea el reporte HTML Registro de ventas con formato A4 inspirado en rptRegVentasA4 del legacy, usando solo la provision actual y habilitando impresion directa. *@
-@* Firma: FRANCO LARA - 08/07/2026 | Ajusta el formato visible del registro de ventas retirando la columna Cod. segun el disenio solicitado. *@
+@* Firma: FRANCO LARA - 08/07/2026 | Ajusta el formato visible del registro de ventas retirando la columna Cod. segun el disenio solicitado y actualiza el subtitulo del reporte. *@
 
 @{
     ViewData["Title"] = "Registro de ventas";
@@ -16,7 +16,7 @@
             <div>
                 <span class="workspace-window-kicker">Reporte</span>
                 <h1>Registro de ventas</h1>
-                <p>Replica en HTML el enfoque del Crystal legacy <strong>rptRegVentasA4</strong> usando la provisión de ventas del sistema actual, sin depender de Crystal Reports.</p>
+                <p>Consulta el registro mensual de ventas con la provision actual del sistema y salida lista para impresion.</p>
             </div>
             <div class="workspace-window-badge">
                 <strong>@Model.EmpresaNombre</strong>

@@ -7,6 +7,7 @@
    ============================================= *@
 @* Firma: FRANCO LARA - 24/06/2026 | Agrega numero de asiento al listado de Caja y Bancos, quita la columna banco y exige seleccionar una cuenta corriente antes de consultar movimientos. *@
 @* Firma: FRANCO LARA - 02/07/2026 | Corrige la seleccion visible de cuenta corriente, anio y mes en caja y bancos para que el periodo mostrado respete el contexto devuelto por la opcion, y convierte el numero de asiento del listado en acceso directo al asiento generado. *@
+@* Firma: FRANCO LARA - 08/07/2026 | Autoejecuta la consulta de Caja y Bancos al cambiar cuenta corriente o periodo y habilita el boton Consultar solo cuando existe una cuenta seleccionada. *@
 
 @{
     ViewData["Title"] = "Caja y Bancos";
@@ -83,7 +84,7 @@
                 <div class="alert alert-warning">No existen cuentas corrientes activas para la empresa. Registre una desde mantenimiento antes de usar Caja y Bancos.</div>
             }
 
-            <form asp-action="Index" method="get" class="workspace-filter-card">
+            <form asp-action="Index" method="get" class="workspace-filter-card" id="cajaBancoFiltroForm">
                 <div class="workspace-filter-grid">
                     <div class="workspace-field">
                         <label class="form-label" for="idBancoConfiguracionEmpresa">Cuenta corriente</label>
@@ -121,7 +122,7 @@
                     </div>
                 </div>
                 <div class="workspace-actions">
-                    <button type="submit" class="btn btn-primary">Consultar</button>
+                    <button type="submit" class="btn btn-primary" id="cajaBancoConsultarBtn" disabled="@(!Model.IdBancoConfiguracionEmpresaSeleccionada.HasValue)">Consultar</button>
                 </div>
             </form>
 
@@ -259,6 +260,40 @@
 @section Scripts {
     <script>
         (() => {
+            const filtroForm = document.getElementById("cajaBancoFiltroForm");
+            const cuentaSelect = document.getElementById("idBancoConfiguracionEmpresa");
+            const anioSelect = document.getElementById("anio");
+            const mesSelect = document.getElementById("mes");
+            const consultarBtn = document.getElementById("cajaBancoConsultarBtn");
+
+            const actualizarEstadoConsulta = () => {
+                const tieneCuenta = !!cuentaSelect?.value;
+                if (consultarBtn) {
+                    consultarBtn.disabled = !tieneCuenta;
+                }
+
+                return tieneCuenta;
+            };
+
+            const ejecutarConsultaAutomatica = () => {
+                if (!filtroForm || !actualizarEstadoConsulta()) {
+                    return;
+                }
+
+                filtroForm.requestSubmit();
+            };
+
+            cuentaSelect?.addEventListener("change", () => {
+                actualizarEstadoConsulta();
+                if (cuentaSelect.value) {
+                    ejecutarConsultaAutomatica();
+                }
+            });
+
+            anioSelect?.addEventListener("change", ejecutarConsultaAutomatica);
+            mesSelect?.addEventListener("change", ejecutarConsultaAutomatica);
+            actualizarEstadoConsulta();
+
             document.querySelectorAll(".workspace-clickable-row[data-edit-url]").forEach((row) => {
                 row.addEventListener("click", (event) => {
                     if (event.target.closest("a, button, form, input, select, textarea, label")) {

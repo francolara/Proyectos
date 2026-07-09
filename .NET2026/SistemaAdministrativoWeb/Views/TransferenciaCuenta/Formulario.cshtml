@@ -6,6 +6,7 @@
    Description:   Crea el formulario del modulo Transferencias entre cuentas con bloques emisor y receptor, conversion automatica por moneda, tipo de cambio receptor bloqueado y replica editable de glosa y observaciones.
    ============================================= *@
 @* Firma: FRANCO LARA - 24/06/2026 | Agrega el formulario de transferencias entre cuentas con operacion bancaria por destino, conversion automatica del importe receptor, tipo de cambio receptor bloqueado, replica editable de glosa/observaciones y calendario en las fechas de emisor/receptor antes de registrar en BAN_MovimientoBanco. *@
+@* Firma: FRANCO LARA - 08/07/2026 | Ajusta el modo oscuro de transferencias mejorando contraste en tarjetas emisor/receptor y resumen visual de conversion. *@
 
 @{
     ViewData["Title"] = "Registrar transferencia entre cuentas";
@@ -86,6 +87,30 @@
     .workspace-transfer-stat small {
         margin-top: 0.18rem;
         color: #627493;
+    }
+
+    html[data-theme="dark"] .workspace-transfer-card {
+        border-color: rgba(94, 116, 150, 0.28);
+        background: linear-gradient(180deg, rgba(18, 27, 44, 0.98) 0%, rgba(11, 18, 31, 0.96) 100%);
+        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.22);
+    }
+
+    html[data-theme="dark"] .workspace-transfer-card-body {
+        color: var(--app-ink);
+    }
+
+    html[data-theme="dark"] .workspace-transfer-stat {
+        border-color: rgba(94, 116, 150, 0.28);
+        background: linear-gradient(180deg, rgba(22, 31, 50, 0.96) 0%, rgba(14, 23, 39, 0.94) 100%);
+    }
+
+    html[data-theme="dark"] .workspace-transfer-stat span,
+    html[data-theme="dark"] .workspace-transfer-stat small {
+        color: #9cb0d1;
+    }
+
+    html[data-theme="dark"] .workspace-transfer-stat strong {
+        color: #f2f7ff;
     }
 
     @@media (max-width: 991.98px) {

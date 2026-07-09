@@ -439,15 +439,15 @@ BEGIN
                   AND LEFT(a.Periodo, 4) = LEFT(@Periodo, 4)
                   AND a.IdOrigen <> @IdOrigen
                   AND d.IdPlanCuenta = @IdPlanCuentaTrabajo
-                  AND NOT EXISTS
-                  (
-                      SELECT 1
-                      FROM dbo.CON_ConfiguracionContabilizacion AS cfg
-                      WHERE cfg.IdEmpresa = @IdEmpresa
-                        AND cfg.IdOrigen = a.IdOrigen
-                        AND cfg.Activo = 1
-                        AND cfg.ModuloOperacion IN ('DIF', 'AJU', 'APR', 'CIE')
-                  )
+                  --AND NOT EXISTS
+                  --(
+                  --    SELECT 1
+                  --    FROM dbo.CON_ConfiguracionContabilizacion AS cfg
+                  --    WHERE cfg.IdEmpresa = @IdEmpresa
+                  --      AND cfg.IdOrigen = a.IdOrigen
+                  --      AND cfg.Activo = 1
+                  --      AND cfg.ModuloOperacion IN ('DIF', 'AJU', 'APR', 'CIE')
+                  --)
                 GROUP BY
                     NULLIF(LTRIM(RTRIM(d.NumeroDocumento)), ''),
                     NULLIF(LTRIM(RTRIM(d.TipoDocumento)), N''),

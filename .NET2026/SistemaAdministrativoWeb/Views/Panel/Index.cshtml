@@ -1,115 +1,197 @@
 @model SistemaAdministrativoWeb.ViewModels.Panel.PanelIndexViewModel
 @* Firma: FRANCO LARA - 07/07/2026 | Integra el acceso rapido del panel para el nuevo modulo Libros Electronicos manteniendo la navegacion administrativa existente. *@
+@* Firma: FRANCO LARA - 08/07/2026 | Reestructura el dashboard con KPIs reales del periodo, indicadores operativos, tendencias de compras y ventas y graficos CSS para distribucion de registros por modulo, movimientos bancarios y aplicaciones. *@
 @{
     ViewData["Title"] = "Panel administrativo";
     ViewData["AdminShell"] = true;
+
+    var totalDistribucion = Model.DistribucionRegistros.Sum(x => x.Valor);
+    var maximoCompras = Math.Max(1m, Model.ComprasPorPeriodo.Count == 0 ? 0m : Model.ComprasPorPeriodo.Max(x => x.ImporteTotal));
+    var maximoVentas = Math.Max(1m, Model.VentasPorPeriodo.Count == 0 ? 0m : Model.VentasPorPeriodo.Max(x => x.ImporteTotal));
+    var donutStops = new List<string>();
+    decimal acumulado = 0m;
+
+    foreach (var item in Model.DistribucionRegistros.Where(x => x.Porcentaje > 0))
+    {
+        var inicio = acumulado.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+        acumulado += item.Porcentaje;
+        var fin = Math.Min(100m, acumulado).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+        donutStops.Add($"{item.Color} {inicio}% {fin}%");
+    }
+
+    var donutGradient = donutStops.Count == 0
+        ? "#dbe6f7 0% 100%"
+        : string.Join(", ", donutStops);
 }
 
 <section class="dashboard-shell">
+    <section class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">Resumen ejecutivo</span>
+            <h1>@Model.NombreEmpresa</h1>
+            <p>Vista central del periodo @Model.PeriodoActual con foco en compras, ventas, asientos e indicadores de registro para la empresa activa.</p>
+        </div>
+        <article class="dashboard-status-card">
+            <span>Estado del panel</span>
+            <strong>@Model.EstadoPanel</strong>
+            <small>@Model.ResumenVigencia</small>
+            <small>Periodo: @Model.EstadoPeriodo</small>
+        </article>
+    </section>
+
     <section class="dashboard-metrics">
-        <article class="dashboard-metric-card dashboard-metric-card-text">
-            <span>Modulo prioritario</span>
-            <strong>Asientos contables</strong>
-            <small>Primer flujo operativo recomendado para este proyecto.</small>
+        <article class="dashboard-metric-card dashboard-metric-card-amount">
+            <span>Compras del periodo</span>
+            <div class="dashboard-metric-amounts">
+                <div class="dashboard-metric-amount-line">
+                    <label>Registros</label>
+                    <strong>@Model.TotalComprasPeriodo</strong>
+                </div>
+                <div class="dashboard-metric-amount-line">
+                    <label>Total</label>
+                    <strong>@Model.ImporteComprasPeriodo.ToString("0.00")</strong>
+                </div>
+            </div>
+            <small>Movimientos de compras contabilizados en @Model.PeriodoActual.</small>
         </article>
-        <article class="dashboard-metric-card dashboard-metric-card-text">
-            <span>Contexto activo</span>
-            <strong>Multiempresa</strong>
-            <small>La sesion actual opera sobre la empresa seleccionada.</small>
+        <article class="dashboard-metric-card dashboard-metric-card-amount">
+            <span>Ventas del periodo</span>
+            <div class="dashboard-metric-amounts">
+                <div class="dashboard-metric-amount-line">
+                    <label>Registros</label>
+                    <strong>@Model.TotalVentasPeriodo</strong>
+                </div>
+                <div class="dashboard-metric-amount-line">
+                    <label>Total</label>
+                    <strong>@Model.ImporteVentasPeriodo.ToString("0.00")</strong>
+                </div>
+            </div>
+            <small>Documentos de ventas registrados en el mismo corte mensual.</small>
         </article>
-        <article class="dashboard-metric-card dashboard-metric-card-text">
-            <span>Base tecnica</span>
-            <strong>ADO.NET + SP</strong>
-            <small>Reglas de negocio y seguridad alineadas a SQL Server.</small>
+        <article class="dashboard-metric-card dashboard-metric-card-amount">
+            <span>Asientos del periodo</span>
+            <div class="dashboard-metric-amounts">
+                <div class="dashboard-metric-amount-line">
+                    <label>Registros</label>
+                    <strong>@Model.TotalAsientosPeriodo</strong>
+                </div>
+                <div class="dashboard-metric-amount-line">
+                    <label>Importe S/</label>
+                    <strong>@Model.ImporteAsientosPeriodo.ToString("0.00")</strong>
+                </div>
+            </div>
+            <small>Asientos emitidos para la empresa en el periodo activo.</small>
+        </article>
+        <article class="dashboard-metric-card dashboard-metric-card-count">
+            <span>Cuentas corrientes activas</span>
+            <strong>@Model.TotalCuentasCorrientesActivas</strong>
+            <small>Base operativa disponible para caja, bancos y transferencias.</small>
         </article>
     </section>
 
     <section class="workspace-section">
         <div class="workspace-section-head">
-            <span class="workspace-section-kicker">Niveles del panel</span>
-            <h2>Mapa operativo</h2>
-            <p>La navegacion queda agrupada por el tipo de trabajo que hara el usuario dentro del sistema.</p>
+            <span class="workspace-section-kicker">Indicadores</span>
+            <h2>Control de registros</h2>
+            <p>Lectura rapida de pendientes y validaciones del periodo para detectar cuellos de botella operativos.</p>
         </div>
 
-        <div class="dashboard-level-grid">
-            <article class="dashboard-level-card">
-                <div class="dashboard-level-head">
-                    <div class="dashboard-module-icon"><i class="bi bi-sliders2"></i></div>
-                    <div>
-                        <h3>Mantenimiento</h3>
-                        <span>Catalogos y configuracion</span>
-                    </div>
-                </div>
-                <ul class="dashboard-level-list">
-                    <li>Plan de cuentas</li>
-                    <li>Cuentas corrientes</li>
-                    <li>Personas</li>
-                    <li>Empresas</li>
-                    <li>Parametros contables</li>
-                    <li>Auxiliares y reglas</li>
-                </ul>
-                <a class="btn btn-outline-secondary disabled" href="#">Disponible en siguientes iteraciones</a>
-            </article>
-
-            <article class="dashboard-level-card dashboard-level-card-accent">
-                <div class="dashboard-level-head">
-                    <div class="dashboard-module-icon"><i class="bi bi-journal-check"></i></div>
-                    <div>
-                        <h3>Registro</h3>
-                        <span>Operacion diaria</span>
-                    </div>
-                </div>
-                <ul class="dashboard-level-list">
-                    <li>Asientos contables</li>
-                    <li>Compras</li>
-                    <li>Ventas</li>
-                    <li>Caja y Bancos</li>
-                    <li>Transferencias</li>
-                    <li>Aplicaciones</li>
-                </ul>
-                <a class="btn btn-primary" href="#">Prioridad del desarrollo</a>
-            </article>
-
-            <article class="dashboard-level-card">
-                <div class="dashboard-level-head">
-                    <div class="dashboard-module-icon"><i class="bi bi-bar-chart"></i></div>
-                    <div>
-                        <h3>Reportes</h3>
-                        <span>Consulta y control</span>
-                    </div>
-                </div>
-                <ul class="dashboard-level-list">
-                    <li>Libros contables</li>
-                    <li>Analisis por cuenta</li>
-                    <li>Resumen por periodo</li>
-                    <li>Estados de control</li>
-                </ul>
-                <a class="btn btn-primary" asp-controller="Reporte" asp-action="AnalisisCuentas">Abrir analisis</a>
-            </article>
-        </div>
-    </section>
-
-    <section class="workspace-section">
-        <div class="workspace-section-head">
-            <span class="workspace-section-kicker">Acceso rapido</span>
-            <h2>Modulos iniciales</h2>
-            <p>Bloques operativos que iran quedando listos dentro de la primera version del sistema.</p>
-        </div>
-
-        <div class="dashboard-module-grid">
-            @foreach (var modulo in Model.Modulos)
+        <div class="dashboard-indicator-grid">
+            @foreach (var indicador in Model.Indicadores)
             {
-                <article class="dashboard-module-card @(modulo.Habilitado ? string.Empty : "is-disabled")">
-                    <div class="dashboard-module-icon">
-                        <i class="bi @modulo.Icono"></i>
+                <article class="dashboard-indicator-card">
+                    <div class="dashboard-indicator-icon">
+                        <i class="bi @indicador.Icono"></i>
                     </div>
-                    <h2>@modulo.Titulo</h2>
-                    <p>@modulo.Descripcion</p>
-                    <a class="btn @(modulo.Habilitado ? "btn-primary" : "btn-outline-secondary disabled")" href="@modulo.Url">
-                        @(modulo.Habilitado ? "Abrir modulo" : "En construccion")
-                    </a>
+                    <div class="dashboard-indicator-copy">
+                        <span>@indicador.Titulo</span>
+                        <strong>@indicador.Valor</strong>
+                        <small>@indicador.Descripcion</small>
+                    </div>
                 </article>
             }
         </div>
     </section>
+
+    <section class="dashboard-analytics-grid">
+        <div class="dashboard-analytics-stack">
+            <article class="workspace-section dashboard-analytics-card">
+                <div class="workspace-section-head">
+                    <span class="workspace-section-kicker">Grafico de torres</span>
+                    <h2>Movimientos de compras por periodo</h2>
+                    <p>Comparativo de importes y cantidad de compras en los ultimos seis periodos del sistema.</p>
+                </div>
+
+                <div class="dashboard-bar-chart">
+                    @foreach (var item in Model.ComprasPorPeriodo)
+                    {
+                        var altura = maximoCompras <= 0m ? 0m : Math.Round(item.ImporteTotal * 100m / maximoCompras, 2);
+                        <article class="dashboard-bar-item" style="--bar-height:@altura.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%">
+                            <span class="dashboard-bar-value">@item.ImporteTotal.ToString("0.00")</span>
+                            <div class="dashboard-bar-column"></div>
+                            <strong>@item.Periodo</strong>
+                            <small>@item.Registros registro(s)</small>
+                        </article>
+                    }
+                </div>
+            </article>
+
+            <article class="workspace-section dashboard-analytics-card">
+                <div class="workspace-section-head">
+                    <span class="workspace-section-kicker">Grafico de torres</span>
+                    <h2>Movimientos de ventas por periodo</h2>
+                    <p>Comparativo de importes y cantidad de ventas en los ultimos seis periodos del sistema.</p>
+                </div>
+
+                <div class="dashboard-bar-chart">
+                    @foreach (var item in Model.VentasPorPeriodo)
+                    {
+                        var altura = maximoVentas <= 0m ? 0m : Math.Round(item.ImporteTotal * 100m / maximoVentas, 2);
+                        <article class="dashboard-bar-item" style="--bar-height:@altura.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%">
+                            <span class="dashboard-bar-value">@item.ImporteTotal.ToString("0.00")</span>
+                            <div class="dashboard-bar-column"></div>
+                            <strong>@item.Periodo</strong>
+                            <small>@item.Registros registro(s)</small>
+                        </article>
+                    }
+                </div>
+            </article>
+        </div>
+
+        <article class="workspace-section dashboard-analytics-card">
+            <div class="workspace-section-head">
+                <span class="workspace-section-kicker">Grafico de torta</span>
+                <h2>Distribucion de registros del periodo</h2>
+                <p>Participacion actual de compras, ventas, asientos, movimientos bancarios y aplicaciones dentro del volumen operativo del sistema.</p>
+            </div>
+
+            <div class="dashboard-donut-layout">
+                <div class="dashboard-donut" style="--dashboard-donut:@donutGradient">
+                    <div class="dashboard-donut-center">
+                        <span>Total</span>
+                        <strong>@totalDistribucion</strong>
+                        <small>registros</small>
+                    </div>
+                </div>
+
+                <div class="dashboard-donut-legend">
+                    @foreach (var item in Model.DistribucionRegistros)
+                    {
+                        <article class="dashboard-donut-legend-item">
+                            <span class="dashboard-donut-swatch" style="background:@item.Color"></span>
+                            <div>
+                                <strong>@item.Titulo</strong>
+                                <small>@item.Descripcion</small>
+                            </div>
+                            <div class="dashboard-donut-metrics">
+                                <strong>@item.Valor</strong>
+                                <small>@item.Porcentaje.ToString("0.##")%</small>
+                            </div>
+                        </article>
+                    }
+                </div>
+            </div>
+        </article>
+    </section>
+
 </section>

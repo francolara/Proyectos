@@ -1,4 +1,4 @@
--- =============================================
+﻿-- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   02/07/2026
 -- Description:   Genera o regenera los asientos de ajuste de cuentas por cuenta analitica para un periodo.
@@ -509,15 +509,15 @@ BEGIN
               AND LEFT(a.Periodo, 4) = LEFT(@Periodo, 4)
               AND a.IdOrigen <> @IdOrigen
               AND d.IdPlanCuenta = @IdPlanCuentaTrabajo
-              AND NOT EXISTS
-              (
-                  SELECT 1
-                  FROM dbo.CON_ConfiguracionContabilizacion AS cfg
-                  WHERE cfg.IdEmpresa = @IdEmpresa
-                    AND cfg.IdOrigen = a.IdOrigen
-                    AND cfg.Activo = 1
-                    AND cfg.ModuloOperacion IN ('DIF', 'AJU', 'APR', 'CIE')
-              )
+              --AND NOT EXISTS
+              --(
+              --    SELECT 1
+              --    FROM dbo.CON_ConfiguracionContabilizacion AS cfg
+              --    WHERE cfg.IdEmpresa = @IdEmpresa
+              --      AND cfg.IdOrigen = a.IdOrigen
+              --      AND cfg.Activo = 1
+              --      AND cfg.ModuloOperacion IN ('DIF', 'AJU', 'APR', 'CIE')
+              --)
               AND NULLIF(LTRIM(RTRIM(d.NumeroDocumento)), '') IS NOT NULL
             GROUP BY
                 NULLIF(LTRIM(RTRIM(d.NumeroDocumento)), ''),

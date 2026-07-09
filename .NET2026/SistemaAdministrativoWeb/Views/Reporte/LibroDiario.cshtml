@@ -1,4 +1,4 @@
-﻿@model SistemaAdministrativoWeb.ViewModels.Contabilidad.LibroDiarioViewModel
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.LibroDiarioViewModel
 
 @* Firma: FRANCO LARA - 07/07/2026 | Mantiene el reporte HTML Libro Diario, adapta su visualizacion al formato compacto tipo hoja A4 de los reportes legacy y agrega impresion directa en pantalla. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Ajusta Libro Diario para trabajar siempre en soles, elimina filtros de moneda y origen, y separa las vistas Diario auxiliar, Por Cuenta y Por Origen. *@
@@ -19,7 +19,7 @@
             <div>
                 <span class="workspace-window-kicker">Reporte</span>
                 <h1>Libro Diario</h1>
-                <p>Replica en HTML los formatos legacy <strong>Diario auxiliar</strong>, <strong>Por Cuenta</strong> y <strong>Por Origen</strong>, manteniendo importes en soles y su referencia en dolares.</p>
+                <p>Consulta el libro diario en vistas Diario auxiliar, Por Cuenta y Por Origen con importes en soles y referencia en dolares.</p>
             </div>
             <div class="workspace-window-badge">
                 <strong>@Model.EmpresaNombre</strong>

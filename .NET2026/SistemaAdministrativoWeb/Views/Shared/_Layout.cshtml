@@ -3,12 +3,14 @@
 @inject ICurrentCompanyAccessor CurrentCompanyAccessor
 @inject UserManager<IdentityUser> UserManager
 @* Firma: FRANCO LARA - 07/07/2026 | Agrega y reordena el bloque Reportes del menu administrativo con Balance de comprobacion, Analisis de cuentas, Libro Diario, Libro Mayor, Registro de ventas, Registro de compras y Libros Electronicos. *@
+@* Firma: FRANCO LARA - 08/07/2026 | Reemplaza la tarjeta redundante del panel por un selector persistente de modo oscuro, agrega Mi suscripcion y Ayuda al menu General e incorpora acceso contextual de ayuda por modulo. *@
 <!DOCTYPE html>
 @{
     var adminShell = ViewData["AdminShell"] as bool? ?? false;
     var platformShell = ViewData["PlatformShell"] as bool? ?? false;
     var pageTitle = ViewData["Title"]?.ToString() ?? "Sistema Administrativo";
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
     var currentPath = Context.Request.Path.Value ?? string.Empty;
     var userEmail = User.Identity?.Name ?? "usuario@sisadm.local";
     var userDisplayName = userEmail;
@@ -27,7 +29,67 @@
     bool IsActivePath(params string[] segments) =>
         segments.Any(x => currentPath.StartsWith($"/{x}", StringComparison.OrdinalIgnoreCase));
 
-    var generalOpen = IsActiveController("Panel", "EmpresaContexto");
+    string ResolverModuloAyuda()
+    {
+        if (string.Equals(currentController, "Panel", StringComparison.OrdinalIgnoreCase))
+        {
+            return "DASHBOARD";
+        }
+
+        if (string.Equals(currentController, "EmpresaContexto", StringComparison.OrdinalIgnoreCase))
+        {
+            return "EMPRESAS";
+        }
+
+        if (string.Equals(currentController, "MiSuscripcion", StringComparison.OrdinalIgnoreCase))
+        {
+            return "MISUSCRIPCION";
+        }
+
+        if (string.Equals(currentController, "Ayuda", StringComparison.OrdinalIgnoreCase))
+        {
+            return "AYUDA";
+        }
+
+        if (string.Equals(currentController, "Proceso", StringComparison.OrdinalIgnoreCase))
+        {
+            return currentAction.ToUpperInvariant() switch
+            {
+                "DIFERENCIACAMBIO" => "DIFERENCIACAMBIO",
+                "AJUSTECUENTA" => "AJUSTECUENTA",
+                "ASIENTOAPERTURA" => "ASIENTOAPERTURA",
+                "ASIENTOCIERRE" => "ASIENTOCIERRE",
+                "CERRARPERIODO" => "CERRARPERIODO",
+                _ => "DIFERENCIACAMBIO"
+            };
+        }
+
+        if (string.Equals(currentController, "Reporte", StringComparison.OrdinalIgnoreCase))
+        {
+            return currentAction.ToUpperInvariant() switch
+            {
+                "ANALISISCUENTAS" => "ANALISISCUENTAS",
+                "LIBRODIARIO" => "LIBRODIARIO",
+                "LIBROMAYOR" => "LIBROMAYOR",
+                "REGISTROVENTAS" => "REGISTROVENTAS",
+                "REGISTROCOMPRAS" => "REGISTROCOMPRAS",
+                "BALANCECOMPROBACION" => "BALANCECOMPROBACION",
+                _ => "ANALISISCUENTAS"
+            };
+        }
+
+        if (string.Equals(currentController, "LibroElectronico", StringComparison.OrdinalIgnoreCase))
+        {
+            return "LIBROELECTRONICO";
+        }
+
+        return currentController.Replace(" ", string.Empty, StringComparison.Ordinal).ToUpperInvariant();
+    }
+
+    var helpModuleKey = ResolverModuloAyuda();
+    var showContextHelp = adminShell && !string.Equals(currentController, "Ayuda", StringComparison.OrdinalIgnoreCase);
+
+    var generalOpen = IsActiveController("Panel", "EmpresaContexto", "MiSuscripcion", "Ayuda");
     var mantenimientoOpen = IsActiveController("PlanCuenta", "CentroCosto", "CuentaCorriente", "Persona", "TipoCambio", "Origen", "CuentaDestinoRegla", "ConfiguracionContabilizacion")
         || IsActivePath("PlanCuenta", "CentroCosto", "CuentaCorriente", "Persona", "TipoCambio", "Origen", "CuentaDestinoRegla", "ConfiguracionContabilizacion");
     var registroOpen = IsActiveController("Asiento", "Compra", "Venta", "CajaBanco", "TransferenciaCuenta", "Aplicacion")
@@ -40,6 +102,18 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@pageTitle - SisAdm</title>
+    <script>
+        (() => {
+            try {
+                const theme = localStorage.getItem("sisadm-theme") === "dark" ? "dark" : "light";
+                document.documentElement.setAttribute("data-theme", theme);
+                document.documentElement.setAttribute("data-bs-theme", theme);
+            } catch {
+                document.documentElement.setAttribute("data-theme", "light");
+                document.documentElement.setAttribute("data-bs-theme", "light");
+            }
+        })();
+    </script>
     <script type="importmap"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -85,13 +159,20 @@
     {
         <div class="app-shell">
             <aside class="app-sidebar">
-                <a class="app-sidebar-brand" asp-controller="Panel" asp-action="Index">
-                    <span class="app-brand-mark"><i class="bi bi-building"></i></span>
-                    <div>
-                        <strong>Panel</strong>
-                        <small>@(CurrentCompanyAccessor.EmpresaNombre ?? "Sin empresa activa")</small>
+                <section class="app-sidebar-theme-card">
+                    <div class="app-sidebar-theme-copy">
+                        <span>Apariencia</span>
+                        <strong class="app-theme-label" data-theme-label aria-live="polite"></strong>
+                        <small>Cambia el tema del sistema y conserva la preferencia.</small>
                     </div>
-                </a>
+                    <button type="button" class="app-theme-toggle" data-theme-toggle aria-pressed="false" aria-label="Alternar modo oscuro">
+                        <span class="app-theme-toggle-track">
+                            <i class="bi bi-sun-fill app-theme-icon app-theme-icon-sun"></i>
+                            <span class="app-theme-toggle-thumb"></span>
+                            <i class="bi bi-moon-stars-fill app-theme-icon app-theme-icon-moon"></i>
+                        </span>
+                    </button>
+                </section>
                 <div class="app-sidebar-company-chip">
                     <span>Empresa activa</span>
                     <strong>@(CurrentCompanyAccessor.EmpresaNombre ?? "Seleccione empresa")</strong>
@@ -106,6 +187,8 @@
                             <div class="app-sidebar-group-body">
                                 <a class="app-sidebar-link @(IsActiveController("Panel") ? "active" : string.Empty)" asp-controller="Panel" asp-action="Index"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
                                 <a class="app-sidebar-link @(IsActiveController("EmpresaContexto") ? "active" : string.Empty)" asp-controller="EmpresaContexto" asp-action="Index"><i class="bi bi-buildings"></i><span>Empresas</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("MiSuscripcion") ? "active" : string.Empty)" asp-controller="MiSuscripcion" asp-action="Index"><i class="bi bi-credit-card-2-front"></i><span>Mi suscripcion</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("Ayuda") ? "active" : string.Empty)" asp-controller="Ayuda" asp-action="Index"><i class="bi bi-life-preserver"></i><span>Ayuda</span></a>
                             </div>
                         </div>
                     </section>
@@ -188,6 +271,15 @@
                 </div>
             </aside>
             <div class="app-shell-main">
+                @if (showContextHelp)
+                {
+                    <div class="app-context-toolbar">
+                        <a class="app-context-help-link" asp-controller="Ayuda" asp-action="Index" asp-route-modulo="@helpModuleKey">
+                            <i class="bi bi-life-preserver"></i>
+                            <span>Ayuda de este modulo</span>
+                        </a>
+                    </div>
+                }
                 <main role="main" class="app-shell-content">
                     @RenderBody()
                 </main>

@@ -1,7 +1,7 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.RegistroComprasViewModel
 
 @* Firma: FRANCO LARA - 07/07/2026 | Crea el reporte HTML Registro de compras con formato A4 inspirado en RptRegistroCompra_A4_Oxa del legacy, usando solo la provision actual y habilitando impresion directa. *@
-@* Firma: FRANCO LARA - 08/07/2026 | Ajusta el formato visible del registro de compras retirando las columnas Cod., BI 2, IGV 2, BI 3 e IGV 3 segun el disenio solicitado. *@
+@* Firma: FRANCO LARA - 08/07/2026 | Ajusta el formato visible del registro de compras retirando las columnas Cod., BI 2, IGV 2, BI 3 e IGV 3 segun el disenio solicitado y actualiza el subtitulo del reporte. *@
 
 @{
     ViewData["Title"] = "Registro de compras";
@@ -16,7 +16,7 @@
             <div>
                 <span class="workspace-window-kicker">Reporte</span>
                 <h1>Registro de compras</h1>
-                <p>Replica en HTML el formato legacy <strong>RptRegistroCompra_A4_Oxa</strong> usando la provisión de compras actual, sin depender de Crystal Reports.</p>
+                <p>Consulta el registro mensual de compras con la provision actual del sistema y salida lista para impresion.</p>
             </div>
             <div class="workspace-window-badge">
                 <strong>@Model.EmpresaNombre</strong>

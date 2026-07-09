@@ -63,6 +63,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXNpZW50b1xJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/Ayuda/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXl1ZGFcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/CajaBanco/Formulario.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ2FqYUJhbmNvXEZvcm11bGFyaW8uY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
@@ -141,6 +145,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/LibroElectronico/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTGlicm9FbGVjdHJvbmljb1xJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/MiSuscripcion/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWlTdXNjcmlwY2lvblxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/Origen/Formulario.cshtml]

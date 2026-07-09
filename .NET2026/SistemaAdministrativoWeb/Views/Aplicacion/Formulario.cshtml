@@ -6,6 +6,7 @@
    Description:   Crea el formulario del modulo Aplicaciones separando comprobantes pendientes y notas de credito por cliente o proveedor para registrar aplicaciones parciales.
    ============================================= *@
 @* Firma: FRANCO LARA - 24/06/2026 | Cambia la seleccion de persona a popup filtrado por cliente/proveedor, muestra moneda y tipo de cambio de la aplicacion, bloquea combinaciones de distinta moneda y mejora la validacion visual del guardado. *@
+@* Firma: FRANCO LARA - 08/07/2026 | Ajusta el modo oscuro del formulario de aplicaciones mejorando contraste en paneles gemelos, tablas de seleccion y tarjetas resumen. *@
 
 @{
     ViewData["Title"] = "Registrar aplicacion";
@@ -112,6 +113,34 @@
     .workspace-lookup-select-cell {
         width: 52px;
         text-align: center;
+    }
+
+    html[data-theme="dark"] .workspace-application-card {
+        border-color: rgba(94, 116, 150, 0.28);
+        background: linear-gradient(180deg, rgba(18, 27, 44, 0.98) 0%, rgba(11, 18, 31, 0.96) 100%);
+        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.22);
+    }
+
+    html[data-theme="dark"] .workspace-application-card-body {
+        color: var(--app-ink);
+    }
+
+    html[data-theme="dark"] .workspace-application-stat {
+        border-color: rgba(94, 116, 150, 0.28);
+        background: linear-gradient(180deg, rgba(22, 31, 50, 0.96) 0%, rgba(14, 23, 39, 0.94) 100%);
+    }
+
+    html[data-theme="dark"] .workspace-application-stat span,
+    html[data-theme="dark"] .workspace-persona-note {
+        color: #9cb0d1;
+    }
+
+    html[data-theme="dark"] .workspace-application-stat strong {
+        color: #f2f7ff;
+    }
+
+    html[data-theme="dark"] .workspace-application-stat small {
+        color: #9cb0d1;
     }
 
     @@media (max-width: 991.98px) {

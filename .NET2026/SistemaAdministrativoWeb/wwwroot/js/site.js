@@ -20,6 +20,46 @@ document.addEventListener("click", function (event) {
 });
 
 document.addEventListener("DOMContentLoaded", function () {
+    const storageKey = "sisadm-theme";
+    const root = document.documentElement;
+    const toggles = Array.from(document.querySelectorAll("[data-theme-toggle]"));
+    const labels = Array.from(document.querySelectorAll("[data-theme-label]"));
+    if (toggles.length === 0 && labels.length === 0) {
+        return;
+    }
+
+    const applyTheme = function (theme) {
+        const resolvedTheme = theme === "dark" ? "dark" : "light";
+        root.setAttribute("data-theme", resolvedTheme);
+        root.setAttribute("data-bs-theme", resolvedTheme);
+
+        try {
+            localStorage.setItem(storageKey, resolvedTheme);
+        } catch {
+            // Ignora errores de almacenamiento y mantiene el tema aplicado.
+        }
+
+        const isDark = resolvedTheme === "dark";
+        toggles.forEach(function (toggle) {
+            toggle.setAttribute("aria-pressed", isDark ? "true" : "false");
+        });
+
+        labels.forEach(function (label) {
+            label.textContent = isDark ? "Modo oscuro" : "Modo claro";
+        });
+    };
+
+    toggles.forEach(function (toggle) {
+        toggle.addEventListener("click", function () {
+            const nextTheme = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+            applyTheme(nextTheme);
+        });
+    });
+
+    applyTheme(root.getAttribute("data-theme"));
+});
+
+document.addEventListener("DOMContentLoaded", function () {
     const personaForm = document.querySelector("[data-persona-form='true']");
     if (!personaForm) {
         return;

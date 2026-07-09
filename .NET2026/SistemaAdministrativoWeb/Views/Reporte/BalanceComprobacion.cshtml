@@ -1,6 +1,7 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.BalanceComprobacionViewModel
 
 @* Firma: FRANCO LARA - 07/07/2026 | Crea el reporte HTML Balance de comprobacion replicando FrmBalanceComprobacion del legacy, corrige la presentacion para seguir el formato compacto tipo rptBalanceComprobacionA4, agrega impresion directa y ajusta nombres/columnas para alinearlo mejor al formato A4 legacy. *@
+@* Firma: FRANCO LARA - 08/07/2026 | Corrige el envio por GET de los checks de filtros para que conserven el estado desmarcado al consultar el balance, apliquen correctamente los rangos configurados y actualiza el subtitulo del reporte. *@
 
 @{
     ViewData["Title"] = "Balance de comprobación";
@@ -23,7 +24,7 @@
             <div>
                 <span class="workspace-window-kicker">Reporte</span>
                 <h1>Balance de comprobación</h1>
-                <p>Replica en HTML el formato legacy <strong>rptBalanceComprobacionA4</strong> usando rango de periodos contables, moneda, grado y agrupación jerárquica de cuentas.</p>
+                <p>Consulta el balance del periodo por rango contable, moneda, grado y agrupacion jerarquica de cuentas.</p>
             </div>
             <div class="workspace-window-badge">
                 <strong>@Model.EmpresaNombre</strong>
@@ -97,10 +98,12 @@
                         <div class="workspace-check-grid workspace-check-grid-compact">
                             <label class="workspace-check">
                                 <input id="todasLasCuentas" name="todasLasCuentas" type="checkbox" value="true" @(Model.TodasLasCuentas ? "checked" : null) />
+                                <input name="todasLasCuentas" type="hidden" value="false" />
                                 <span>Todas las cuentas</span>
                             </label>
                             <label class="workspace-check">
                                 <input id="filtrarGrado" name="filtrarGrado" type="checkbox" value="true" @(Model.FiltrarGrado ? "checked" : null) />
+                                <input name="filtrarGrado" type="hidden" value="false" />
                                 <span>Filtrar grado exacto</span>
                             </label>
                         </div>

@@ -1,0 +1,241 @@
+@model SistemaAdministrativoWeb.ViewModels.Ayuda.AyudaIndexViewModel
+@* Firma: FRANCO LARA - 08/07/2026 | Incorpora FAQ operativo por categorias y modulos con ayuda contextual desde cada vista del panel contable. *@
+@{
+    ViewData["Title"] = "Ayuda";
+    ViewData["AdminShell"] = true;
+}
+
+<section class="dashboard-shell help-shell" data-help-root data-help-default-category="@Model.CategoriaSeleccionadaClave" data-help-default-module="@Model.ModuloSeleccionadoClave">
+    <section class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">General</span>
+            <h1>Ayuda operativa</h1>
+            <p>FAQ estructurado por mantenimiento, registros, procesos y reportes para uso diario del sistema contable.</p>
+        </div>
+        <article class="dashboard-status-card">
+            <span>Modulo activo</span>
+            <strong>@Model.ModuloSeleccionadoTitulo</strong>
+            <small>Total FAQ cargadas: @Model.TotalPreguntas</small>
+            <small>Categoria inicial: @Model.CategoriaSeleccionadaClave</small>
+        </article>
+    </section>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ModuloSolicitado))
+    {
+        <section class="help-context-banner">
+            <i class="bi bi-compass"></i>
+            <div>
+                <strong>Ayuda contextual habilitada</strong>
+                <span>Estas viendo el catalogo enfocado en <strong>@Model.ModuloSeleccionadoTitulo</strong>.</span>
+            </div>
+        </section>
+    }
+
+    <section class="help-layout">
+        <aside class="help-sidebar" aria-label="Categorias de ayuda">
+            @foreach (var categoria in Model.Categorias)
+            {
+                <button type="button"
+                        class="help-category-button @(categoria.Clave == Model.CategoriaSeleccionadaClave ? "is-active" : string.Empty)"
+                        data-help-category-tab="@categoria.Clave">
+                    <span class="help-category-icon"><i class="bi @categoria.Icono"></i></span>
+                    <span class="help-category-copy">
+                        <strong>@categoria.Titulo</strong>
+                        <small>@categoria.Modulos.Count modulo(s)</small>
+                    </span>
+                </button>
+            }
+        </aside>
+
+        <div class="help-content">
+            <div class="help-search-row">
+                <div>
+                    <label class="form-label" for="helpSearchInput">Buscar en el modulo visible</label>
+                    <input id="helpSearchInput" type="search" class="form-control" placeholder="Buscar por pregunta, saldo, asiento, proveedor, cierre, reporte..." data-help-search />
+                </div>
+                <small data-help-search-state>Mostrando todas las preguntas del modulo visible.</small>
+            </div>
+
+            @foreach (var categoria in Model.Categorias)
+            {
+                <section class="help-category-panel @(categoria.Clave == Model.CategoriaSeleccionadaClave ? "is-active" : string.Empty)"
+                         data-help-category-panel="@categoria.Clave">
+                    <div class="workspace-section">
+                        <div class="workspace-section-head">
+                            <span class="workspace-section-kicker">Categoria</span>
+                            <h2>@categoria.Titulo</h2>
+                            <p>@categoria.Descripcion</p>
+                        </div>
+
+                        <div class="help-module-tabs">
+                            @foreach (var modulo in categoria.Modulos)
+                            {
+                                var moduloActivo = modulo.Clave == Model.ModuloSeleccionadoClave;
+                                <button type="button"
+                                        class="help-module-tab @(moduloActivo ? "is-active" : string.Empty)"
+                                        data-help-module-tab="@modulo.Clave">
+                                    <i class="bi @modulo.Icono"></i>
+                                    <span>@modulo.Titulo</span>
+                                    <small>@modulo.Preguntas.Count FAQ</small>
+                                </button>
+                            }
+                        </div>
+                    </div>
+
+                    @foreach (var modulo in categoria.Modulos)
+                    {
+                        var panelActivo = modulo.Clave == Model.ModuloSeleccionadoClave;
+                        <article class="workspace-section help-module-panel @(panelActivo ? "is-active" : string.Empty)"
+                                 data-help-module-panel="@modulo.Clave">
+                            <div class="workspace-section-head">
+                                <span class="workspace-section-kicker">Modulo</span>
+                                <h2>@modulo.Titulo</h2>
+                                <p>@modulo.Resumen</p>
+                            </div>
+
+                            <div class="accordion help-accordion" id="help-@modulo.Clave.ToLowerInvariant()">
+                                @{
+                                    var indicePregunta = 0;
+                                }
+                                @foreach (var pregunta in modulo.Preguntas)
+                                {
+                                    var abierta = indicePregunta == 0 && panelActivo;
+                                    <div class="accordion-item help-accordion-item"
+                                         data-help-question
+                                         data-help-search-text="@($"{pregunta.Pregunta} {pregunta.Respuesta}".ToLowerInvariant())">
+                                        <h2 class="accordion-header">
+                                            <button class="accordion-button @(abierta ? string.Empty : "collapsed")"
+                                                    type="button"
+                                                    data-bs-toggle="collapse"
+                                                    data-bs-target="#@pregunta.Id"
+                                                    aria-expanded="@(abierta.ToString().ToLowerInvariant())"
+                                                    aria-controls="@pregunta.Id">
+                                                @pregunta.Pregunta
+                                            </button>
+                                        </h2>
+                                        <div id="@pregunta.Id"
+                                             class="accordion-collapse collapse @(abierta ? "show" : string.Empty)"
+                                             data-bs-parent="#help-@modulo.Clave.ToLowerInvariant()">
+                                            <div class="accordion-body">
+                                                @pregunta.Respuesta
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    indicePregunta++;
+                                }
+                            </div>
+                        </article>
+                    }
+                </section>
+            }
+        </div>
+    </section>
+</section>
+
+@section Scripts {
+<script>
+(() => {
+    const root = document.querySelector("[data-help-root]");
+    if (!root) return;
+
+    const categoryButtons = Array.from(root.querySelectorAll("[data-help-category-tab]"));
+    const categoryPanels = Array.from(root.querySelectorAll("[data-help-category-panel]"));
+    const modulePanels = Array.from(root.querySelectorAll("[data-help-module-panel]"));
+    const moduleButtons = Array.from(root.querySelectorAll("[data-help-module-tab]"));
+    const searchInput = root.querySelector("[data-help-search]");
+    const searchState = root.querySelector("[data-help-search-state]");
+
+    let activeCategory = root.getAttribute("data-help-default-category") || "";
+    let activeModule = root.getAttribute("data-help-default-module") || "";
+
+    const visibleModulePanel = () =>
+        modulePanels.find(panel =>
+            panel.classList.contains("is-active") &&
+            panel.closest("[data-help-category-panel]")?.classList.contains("is-active"));
+
+    const updateSearch = () => {
+        const panel = visibleModulePanel();
+        if (!panel) return;
+
+        const term = (searchInput?.value || "").trim().toLowerCase();
+        const questions = Array.from(panel.querySelectorAll("[data-help-question]"));
+        let visibleCount = 0;
+
+        questions.forEach(question => {
+            const text = question.getAttribute("data-help-search-text") || "";
+            const match = term.length === 0 || text.includes(term);
+            question.style.display = match ? "" : "none";
+            if (match) visibleCount++;
+        });
+
+        if (!searchState) return;
+
+        searchState.textContent = term.length === 0
+            ? "Mostrando todas las preguntas del modulo visible."
+            : `Mostrando ${visibleCount} pregunta(s) para "${searchInput.value.trim()}".`;
+    };
+
+    const activateModule = (moduleKey) => {
+        activeModule = moduleKey;
+
+        modulePanels.forEach(panel => {
+            panel.classList.toggle("is-active", panel.getAttribute("data-help-module-panel") === moduleKey);
+        });
+
+        moduleButtons.forEach(button => {
+            const sameModule = button.getAttribute("data-help-module-tab") === moduleKey;
+            const sameCategory = button.closest("[data-help-category-panel]")?.classList.contains("is-active");
+            button.classList.toggle("is-active", sameModule && sameCategory);
+        });
+
+        updateSearch();
+    };
+
+    const activateCategory = (categoryKey, preferredModule) => {
+        activeCategory = categoryKey;
+
+        categoryButtons.forEach(button => {
+            button.classList.toggle("is-active", button.getAttribute("data-help-category-tab") === categoryKey);
+        });
+
+        categoryPanels.forEach(panel => {
+            panel.classList.toggle("is-active", panel.getAttribute("data-help-category-panel") === categoryKey);
+        });
+
+        const categoryPanel = categoryPanels.find(panel => panel.getAttribute("data-help-category-panel") === categoryKey);
+        if (!categoryPanel) return;
+
+        const categoryModuleButtons = Array.from(categoryPanel.querySelectorAll("[data-help-module-tab]"));
+        const fallbackModule = preferredModule && categoryModuleButtons.some(button => button.getAttribute("data-help-module-tab") === preferredModule)
+            ? preferredModule
+            : categoryModuleButtons[0]?.getAttribute("data-help-module-tab");
+
+        if (fallbackModule) {
+            activateModule(fallbackModule);
+        }
+    };
+
+    categoryButtons.forEach(button => {
+        button.addEventListener("click", () => {
+            activateCategory(button.getAttribute("data-help-category-tab") || "", null);
+        });
+    });
+
+    moduleButtons.forEach(button => {
+        button.addEventListener("click", () => {
+            const categoryPanel = button.closest("[data-help-category-panel]");
+            if (!categoryPanel) return;
+
+            activateCategory(
+                categoryPanel.getAttribute("data-help-category-panel") || "",
+                button.getAttribute("data-help-module-tab") || "");
+        });
+    });
+
+    searchInput?.addEventListener("input", updateSearch);
+
+    activateCategory(activeCategory, activeModule);
+})();
+</script>
+}
