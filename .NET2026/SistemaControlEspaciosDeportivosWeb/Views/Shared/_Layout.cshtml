@@ -6,6 +6,11 @@
 @inject ISportCenterStoredProcedureService spService
 @inject IModuloPermisoService moduloPermisoService
 @inject UserManager<ApplicationUser> userManager
+@{
+    var adminShellHead = ViewData["AdminShell"] as bool? ?? false;
+    var platformShellHead = ViewData["PlatformShell"] as bool? ?? false;
+    var adminThemeEnabled = adminShellHead || platformShellHead;
+}
 <html lang="es">
 <head>
 @{
@@ -18,6 +23,24 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - La Zona Deportiva</title>
+    <script>
+        (() => {
+            const isAdminThemeEnabled = @(adminThemeEnabled ? "true" : "false");
+            const storageKey = "sc-admin-theme";
+            let theme = "light";
+
+            if (isAdminThemeEnabled) {
+                try {
+                    theme = localStorage.getItem(storageKey) === "dark" ? "dark" : "light";
+                } catch {
+                    theme = "light";
+                }
+            }
+
+            document.documentElement.setAttribute("data-theme", theme);
+            document.documentElement.setAttribute("data-bs-theme", theme);
+        })();
+    </script>
     <meta name="description" content="Reserva canchas y espacios deportivos en La Zona Deportiva. Consulta disponibilidad, precios y confirma tu reserva en linea de forma rapida y segura." />
     @if (!string.IsNullOrWhiteSpace(robotsContent))
     {
@@ -300,7 +323,7 @@
         }
     }
 }
-<body class="d-flex flex-column min-vh-100">
+<body class="d-flex flex-column min-vh-100 @(adminThemeEnabled ? "sc-admin-theme-shell" : "sc-public-theme-shell")">
     @if (!adminShell && !platformShell)
     {
         <header>
@@ -382,6 +405,21 @@
                     }
                     <p class="sc-admin-brand-title">@adminNegocioNombre</p>
                 </div>
+                @* Firma: FRANCO LARA - 08/07/2026 | Replica el selector de modo oscuro del sistema administrativo y unifica el scroll del panel lateral para admin y super admin. *@
+                <section class="sc-admin-theme-card">
+                    <div class="sc-admin-theme-copy">
+                        <span>Apariencia</span>
+                        <strong class="sc-theme-label" data-theme-label aria-live="polite"></strong>
+                        <small>Cambia el tema del panel y conserva tu preferencia.</small>
+                    </div>
+                    <button type="button" class="sc-theme-toggle" data-theme-toggle aria-pressed="false" aria-label="Alternar modo oscuro">
+                        <span class="sc-theme-toggle-track">
+                            <i class="bi bi-sun-fill sc-theme-icon sc-theme-icon-sun"></i>
+                            <span class="sc-theme-toggle-thumb"></span>
+                            <i class="bi bi-moon-stars-fill sc-theme-icon sc-theme-icon-moon"></i>
+                        </span>
+                    </button>
+                </section>
 
                 @if (hasNegocioId)
                 {
@@ -564,6 +602,20 @@
                     <img src="https://pub-3afaea6b0b354821989565fa4b8bd250.r2.dev/logos/LaZonaDeportiva/LaZonaDeportiva_Logo.webp" alt="La Zona Deportiva" class="sc-platform-brand-logo" width="330" height="72" />
                     <p class="sc-admin-brand-title">Control de plataforma</p>
                 </div>
+                <section class="sc-admin-theme-card">
+                    <div class="sc-admin-theme-copy">
+                        <span>Apariencia</span>
+                        <strong class="sc-theme-label" data-theme-label aria-live="polite"></strong>
+                        <small>Cambia el tema del panel y conserva tu preferencia.</small>
+                    </div>
+                    <button type="button" class="sc-theme-toggle" data-theme-toggle aria-pressed="false" aria-label="Alternar modo oscuro">
+                        <span class="sc-theme-toggle-track">
+                            <i class="bi bi-sun-fill sc-theme-icon sc-theme-icon-sun"></i>
+                            <span class="sc-theme-toggle-thumb"></span>
+                            <i class="bi bi-moon-stars-fill sc-theme-icon sc-theme-icon-moon"></i>
+                        </span>
+                    </button>
+                </section>
 
                 <nav class="sc-admin-nav">
                     <a class="@menuClassAction("Plataforma", "Index")" href="@Url.Action("Index", "Plataforma")"><i class="bi bi-window-sidebar"></i><span>Dashboard global</span></a>
@@ -624,12 +676,13 @@
     {
         <script>
             (() => {
+                const sidebar = document.querySelector('.sc-admin-sidebar');
                 const nav = document.querySelector('.sc-admin-nav');
-                if (!nav) return;
+                if (!sidebar || !nav) return;
 
                 const pageKey = `${location.pathname}${location.search}`;
                 const negocioKey = new URLSearchParams(location.search).get('negocioId') || 'global';
-                const navKey = `sc-admin-nav-scroll:${negocioKey}`;
+                const navKey = `sc-admin-sidebar-scroll:${negocioKey}`;
                 const pageScrollKey = `sc-admin-page-scroll:${pageKey}`;
                 const mobileModuleAnchorKey = `sc-admin-mobile-module-anchor:${negocioKey}`;
                 const navBodies = Array.from(nav.querySelectorAll('.sc-admin-nav-group-body'));
@@ -680,7 +733,7 @@
                     const savedNavScrollValue = sessionStorage.getItem(navKey);
                     if (savedNavScrollValue !== null) {
                         savedNavScroll = Number(savedNavScrollValue) || 0;
-                        nav.scrollTop = savedNavScroll;
+                        sidebar.scrollTop = savedNavScroll;
                     }
 
                     const savedPageScroll = sessionStorage.getItem(pageScrollKey);
@@ -692,7 +745,7 @@
 
                 const restoreNavScroll = () => {
                     if (!savedNavScroll) return;
-                    nav.scrollTop = savedNavScroll;
+                    sidebar.scrollTop = savedNavScroll;
                 };
 
                 const getGroupBodyKey = (body) => {
@@ -733,13 +786,13 @@
 
                 const persistScrollState = () => {
                     try {
-                        sessionStorage.setItem(navKey, String(nav.scrollTop || 0));
+                        sessionStorage.setItem(navKey, String(sidebar.scrollTop || 0));
                         sessionStorage.setItem(pageScrollKey, String(window.scrollY || 0));
                     } catch {
                     }
                 };
 
-                nav.addEventListener('scroll', persistScrollState, { passive: true });
+                sidebar.addEventListener('scroll', persistScrollState, { passive: true });
                 navBodies.forEach(body => {
                     body.addEventListener('scroll', () => persistGroupBodyScroll(body), { passive: true });
                 });

@@ -3,6 +3,29 @@
   --sc-accent: #17a2b8;
   --sc-bg: #f4f7fb;
   --sc-sidebar-bg: linear-gradient(182deg, #0c2245 0%, #12356b 56%, #1b4f9a 100%);
+  --sc-body-bg: linear-gradient(180deg, #e7eef8 0%, #d6e6fb 100%);
+  --sc-body-color: #1f2937;
+  --sc-surface: rgba(255, 255, 255, 0.96);
+  --sc-border-soft: rgba(148, 163, 184, 0.24);
+  --sc-input-bg: rgba(255, 255, 255, 0.96);
+  --sc-input-border: rgba(148, 163, 184, 0.36);
+  --sc-theme-card-bg: rgba(255, 255, 255, 0.08);
+  --sc-theme-card-border: rgba(147, 197, 253, 0.28);
+  --sc-theme-track-bg: rgba(255, 255, 255, 0.12);
+  --sc-theme-thumb-bg: linear-gradient(135deg, #ffffff 0%, #dceeff 100%);
+}
+
+html[data-theme="dark"] {
+  --sc-body-bg: linear-gradient(180deg, #07111f 0%, #0d1728 52%, #121c31 100%);
+  --sc-body-color: #e5eefc;
+  --sc-surface: rgba(11, 18, 32, 0.94);
+  --sc-border-soft: rgba(96, 119, 156, 0.28);
+  --sc-input-bg: rgba(15, 23, 42, 0.92);
+  --sc-input-border: rgba(96, 119, 156, 0.38);
+  --sc-theme-card-bg: rgba(4, 11, 19, 0.34);
+  --sc-theme-card-border: rgba(125, 211, 252, 0.2);
+  --sc-theme-track-bg: rgba(255, 255, 255, 0.08);
+  --sc-theme-thumb-bg: linear-gradient(135deg, #7bc8ff 0%, #e8f4ff 100%);
 }
 
 html {
@@ -16,8 +39,8 @@ html {
 
 body {
   font-family: "Manrope", "Segoe UI", sans-serif;
-  background: linear-gradient(180deg, #e7eef8 0%, #d6e6fb 100%);
-  color: #1f2937;
+  background: var(--sc-body-bg);
+  color: var(--sc-body-color);
   min-height: 100vh;
   height: auto;
   overflow-y: auto;
@@ -127,13 +150,37 @@ body {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
   padding: 1.55rem 1.05rem;
   background: var(--sc-sidebar-bg);
   color: #eaf3ff;
   border-right: 1px solid rgba(147, 197, 253, 0.35);
   box-shadow: 14px 0 30px rgba(15, 23, 42, 0.28);
   z-index: 150;
+}
+
+/* Firma: FRANCO LARA - 08/07/2026 | Replica modo oscuro administrativo, traslada el scroll principal al sidebar y agrega overlay de carga para la navegacion interna. */
+.sc-admin-sidebar::-webkit-scrollbar {
+  width: 0.68rem;
+}
+
+.sc-admin-sidebar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+}
+
+.sc-admin-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(191, 219, 254, 0.34);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.sc-admin-sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(224, 242, 254, 0.52);
+  background-clip: padding-box;
 }
 
 .sc-admin-brand {
@@ -209,6 +256,111 @@ body {
   margin: 0;
   font-size: 0.75rem;
   color: #8fb1d4;
+}
+
+.sc-admin-theme-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.9rem;
+  margin-bottom: 0.9rem;
+  border-radius: 1rem;
+  background: var(--sc-theme-card-bg);
+  border: 1px solid var(--sc-theme-card-border);
+}
+
+.sc-admin-theme-copy span,
+.sc-admin-theme-copy strong,
+.sc-admin-theme-copy small {
+  display: block;
+}
+
+.sc-admin-theme-copy span {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(206, 243, 230, 0.78);
+  font-weight: 800;
+}
+
+.sc-admin-theme-copy strong {
+  margin-top: 0.2rem;
+  color: #fff;
+  font-size: 0.94rem;
+}
+
+.sc-theme-label {
+  position: relative;
+  color: transparent !important;
+}
+
+.sc-theme-label::after {
+  content: "Modo claro";
+  position: absolute;
+  inset: 0;
+  color: #fff;
+}
+
+html[data-theme="dark"] .sc-theme-label::after {
+  content: "Modo oscuro";
+}
+
+.sc-admin-theme-copy small {
+  margin-top: 0.2rem;
+  color: rgba(232, 248, 242, 0.72);
+  line-height: 1.35;
+}
+
+.sc-theme-toggle {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+.sc-theme-toggle-track {
+  position: relative;
+  width: 4.8rem;
+  height: 2.45rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.55rem;
+  border-radius: 999px;
+  background: var(--sc-theme-track-bg);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 2px rgba(6, 23, 19, 0.22);
+}
+
+.sc-theme-toggle-thumb {
+  position: absolute;
+  top: 0.19rem;
+  left: 0.2rem;
+  width: 1.82rem;
+  height: 1.82rem;
+  border-radius: 999px;
+  background: var(--sc-theme-thumb-bg);
+  box-shadow: 0 10px 18px rgba(2, 18, 32, 0.32);
+  transition: transform 0.18s ease;
+}
+
+html[data-theme="dark"] .sc-theme-toggle-thumb {
+  transform: translateX(2.34rem);
+}
+
+.sc-theme-icon {
+  position: relative;
+  z-index: 1;
+  font-size: 0.92rem;
+}
+
+.sc-theme-icon-sun {
+  color: #ffe492;
+}
+
+.sc-theme-icon-moon {
+  color: #c8deff;
 }
 
 .sc-admin-notify {
@@ -329,8 +481,8 @@ body {
   display: grid;
   gap: 0.4rem;
   flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
+  min-height: auto;
+  overflow: visible;
   align-content: start;
   padding-right: 0.2rem;
 }
@@ -370,29 +522,8 @@ body {
   padding: 0.3rem;
   display: grid;
   gap: 0.18rem;
-  max-height: min(34vh, 15.5rem);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(96, 165, 250, 0.75) rgba(255, 255, 255, 0.08);
-}
-
-.sc-admin-nav-group-body::-webkit-scrollbar {
-  width: 0.42rem;
-}
-
-.sc-admin-nav-group-body::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 999px;
-}
-
-.sc-admin-nav-group-body::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(37, 99, 235, 0.9) 0%, rgba(34, 197, 94, 0.86) 100%);
-  border-radius: 999px;
-}
-
-.sc-admin-nav-group-body::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, rgba(29, 78, 216, 0.96) 0%, rgba(22, 163, 74, 0.92) 100%);
+  max-height: none;
+  overflow: visible;
 }
 
 .sc-admin-nav-group-body .sc-admin-navlink {
@@ -451,6 +582,346 @@ body {
   border: 1px solid rgba(186, 230, 253, 0.55);
   box-shadow: 0 10px 20px rgba(14, 165, 233, 0.2);
   padding: 0.2rem;
+}
+
+.workspace-loading-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(7, 14, 28, 0.52);
+  backdrop-filter: blur(7px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  z-index: 2200;
+}
+
+.workspace-loading-overlay.is-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.workspace-loading-box {
+  min-width: min(92vw, 21rem);
+  display: grid;
+  justify-items: center;
+  gap: 0.65rem;
+  padding: 1.45rem 1.6rem;
+  border-radius: 1.2rem;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  box-shadow: 0 26px 54px rgba(15, 23, 42, 0.24);
+  text-align: center;
+}
+
+.workspace-loading-box strong {
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.workspace-loading-box small {
+  color: #475569;
+}
+
+.workspace-loading-spinner {
+  width: 2.8rem;
+  height: 2.8rem;
+  border-radius: 999px;
+  border: 0.22rem solid rgba(37, 99, 235, 0.18);
+  border-top-color: #2563eb;
+  animation: workspace-loading-spin 0.8s linear infinite;
+}
+
+body.workspace-loading-active {
+  overflow: hidden;
+}
+
+@keyframes workspace-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+html[data-theme="dark"] body.sc-admin-theme-shell {
+  color: var(--sc-body-color);
+}
+
+html[data-theme="dark"] .sc-admin-shell {
+  background:
+    linear-gradient(180deg, rgba(7, 17, 31, 0.98) 0%, rgba(13, 23, 40, 0.96) 100%),
+    radial-gradient(circle at 88% -10%, rgba(59, 130, 246, 0.16), transparent 32%),
+    radial-gradient(circle at 12% 112%, rgba(14, 165, 233, 0.12), transparent 28%);
+}
+
+html[data-theme="dark"] .sc-admin-main,
+html[data-theme="dark"] .admin-page-frame,
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .table,
+html[data-theme="dark"] .form-control,
+html[data-theme="dark"] .form-select,
+html[data-theme="dark"] .modal-content,
+html[data-theme="dark"] .accordion-item,
+html[data-theme="dark"] .list-group-item,
+html[data-theme="dark"] .offcanvas,
+html[data-theme="dark"] .dropdown-menu {
+  color: #e5eefc;
+}
+
+html[data-theme="dark"] .admin-page-frame,
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .table-responsive,
+html[data-theme="dark"] .modal-content,
+html[data-theme="dark"] .accordion-item,
+html[data-theme="dark"] .list-group-item,
+html[data-theme="dark"] .offcanvas,
+html[data-theme="dark"] .dropdown-menu {
+  background: var(--sc-surface);
+  border-color: var(--sc-border-soft);
+}
+
+html[data-theme="dark"] .form-control,
+html[data-theme="dark"] .form-select,
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]) {
+  background: var(--sc-input-bg);
+  border-color: var(--sc-input-border);
+  color: #e5eefc;
+}
+
+html[data-theme="dark"] .form-control::placeholder,
+html[data-theme="dark"] textarea::placeholder {
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .table > :not(caption) > * > *,
+html[data-theme="dark"] .list-group-item,
+html[data-theme="dark"] .accordion-button,
+html[data-theme="dark"] .modal-header,
+html[data-theme="dark"] .modal-footer,
+html[data-theme="dark"] .dropdown-item {
+  border-color: var(--sc-border-soft);
+}
+
+html[data-theme="dark"] .accordion-button,
+html[data-theme="dark"] .dropdown-item,
+html[data-theme="dark"] .text-muted,
+html[data-theme="dark"] small {
+  color: #9fb0ca !important;
+}
+
+html[data-theme="dark"] .workspace-loading-box {
+  background: rgba(10, 16, 29, 0.96);
+  border-color: rgba(96, 119, 156, 0.38);
+}
+
+html[data-theme="dark"] .workspace-loading-box strong {
+  color: #f8fafc;
+}
+
+html[data-theme="dark"] .workspace-loading-box small {
+  color: #9fb0ca;
+}
+
+html[data-theme="dark"] .sc-admin-topbar,
+html[data-theme="dark"] .page-header,
+html[data-theme="dark"] .page-header-card {
+  background:
+    radial-gradient(circle at top right, rgba(125, 211, 252, 0.14), transparent 28%),
+    linear-gradient(135deg, #0c2446 0%, #12386a 52%, #1b56a5 100%);
+  border-color: rgba(96, 165, 250, 0.2);
+  box-shadow: 0 20px 42px rgba(0, 0, 0, 0.3);
+  color: #f8fbff;
+}
+
+html[data-theme="dark"] .sc-admin-topbar .sc-admin-topbar-head h1,
+html[data-theme="dark"] .page-header h1,
+html[data-theme="dark"] .page-header .h4,
+html[data-theme="dark"] .page-title,
+html[data-theme="dark"] .page-header .page-subtitle,
+html[data-theme="dark"] .sc-admin-topbar-head p {
+  color: #f8fbff;
+}
+
+html[data-theme="dark"] .content-card,
+html[data-theme="dark"] .filter-card,
+html[data-theme="dark"] .table-card,
+html[data-theme="dark"] .sc-form-card,
+html[data-theme="dark"] .sc-form-section,
+html[data-theme="dark"] .sc-form-actions,
+html[data-theme="dark"] .empty-state,
+html[data-theme="dark"] .sc-listado-filtro-form,
+html[data-theme="dark"] .sc-reservas-list-head,
+html[data-theme="dark"] .sc-maestros-nav-card,
+html[data-theme="dark"] .sc-maestro-form,
+html[data-theme="dark"] .sc-maestro-panel-search,
+html[data-theme="dark"] .sc-dash-filter-card,
+html[data-theme="dark"] .sc-dash-kpi-card,
+html[data-theme="dark"] .sc-dash-panel,
+html[data-theme="dark"] .sc-dash-action-link,
+html[data-theme="dark"] .sc-negocio-ref-card,
+html[data-theme="dark"] .sc-check-chip,
+html[data-theme="dark"] .sc-day-chip,
+html[data-theme="dark"] .sc-maestro-tab,
+html[data-theme="dark"] .sc-maestro-tab-icon,
+html[data-theme="dark"] .sc-maestro-stat-pill,
+html[data-theme="dark"] .sc-admin-notify-btn,
+html[data-theme="dark"] .sc-admin-session-box {
+  color: #e5eefc;
+  border-color: rgba(93, 116, 150, 0.28);
+  background: linear-gradient(180deg, rgba(20, 29, 48, 0.96) 0%, rgba(12, 20, 35, 0.94) 100%);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.24);
+}
+
+html[data-theme="dark"] .sc-admin-nav-group,
+html[data-theme="dark"] .sc-admin-homecard,
+html[data-theme="dark"] .sc-admin-brand,
+html[data-theme="dark"] .sc-admin-welcome {
+  border-color: rgba(151, 221, 197, 0.18);
+  background: rgba(8, 18, 34, 0.28);
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .sc-admin-nav-group-toggle {
+  background: rgba(37, 115, 88, 0.24);
+}
+
+html[data-theme="dark"] .sc-admin-navlink {
+  border-color: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+html[data-theme="dark"] .sc-admin-navlink:hover {
+  background: linear-gradient(135deg, rgba(55, 170, 127, 0.32), rgba(22, 98, 74, 0.22));
+  border-color: rgba(183, 237, 220, 0.38);
+}
+
+html[data-theme="dark"] .sc-admin-navlink.active {
+  background: linear-gradient(138deg, rgba(21, 131, 96, 0.96), rgba(43, 197, 138, 0.76));
+  border-color: rgba(219, 249, 239, 0.54);
+  box-shadow: 0 12px 22px rgba(9, 57, 42, 0.26);
+}
+
+html[data-theme="dark"] .section-title,
+html[data-theme="dark"] .sc-form-title,
+html[data-theme="dark"] .sc-dash-panel-head h3,
+html[data-theme="dark"] .sc-dash-kpi-value,
+html[data-theme="dark"] .kpi-card-value,
+html[data-theme="dark"] .sc-admin-main strong,
+html[data-theme="dark"] .table-card .table-card-title {
+  color: #f3f7ff;
+}
+
+html[data-theme="dark"] .page-subtitle,
+html[data-theme="dark"] .sc-form-shell .form-label,
+html[data-theme="dark"] .filter-card .form-label,
+html[data-theme="dark"] .sc-dash-panel-head p,
+html[data-theme="dark"] .sc-dash-kpi-label,
+html[data-theme="dark"] .sc-dash-kpi-foot,
+html[data-theme="dark"] .empty-state,
+html[data-theme="dark"] .content-card,
+html[data-theme="dark"] .filter-card,
+html[data-theme="dark"] .table-card,
+html[data-theme="dark"] .sc-maestro-tab-text small,
+html[data-theme="dark"] .sc-maestro-panel-search i,
+html[data-theme="dark"] .sc-negocio-ref-card-head,
+html[data-theme="dark"] .sc-negocio-ref-card-id,
+html[data-theme="dark"] .form-text,
+html[data-theme="dark"] .text-muted {
+  color: #9fb0ca !important;
+}
+
+html[data-theme="dark"] .sc-check-chip:has(input:checked),
+html[data-theme="dark"] .sc-day-chip:has(input:checked),
+html[data-theme="dark"] .sc-maestro-tab.is-active,
+html[data-theme="dark"] .sc-action-primary {
+  border-color: rgba(73, 141, 255, 0.42);
+  background: linear-gradient(180deg, rgba(19, 43, 78, 0.92) 0%, rgba(13, 28, 52, 0.96) 100%);
+  color: #dce8ff;
+}
+
+html[data-theme="dark"] .sc-maestro-tab:hover,
+html[data-theme="dark"] .sc-action-btn:hover,
+html[data-theme="dark"] .sc-maestro-table tbody tr:hover {
+  background: rgba(36, 51, 80, 0.52);
+  border-color: rgba(89, 140, 231, 0.36);
+}
+
+html[data-theme="dark"] .sc-maestro-stat-pill {
+  color: #dce8ff;
+  background: rgba(101, 125, 164, 0.16);
+}
+
+html[data-theme="dark"] .sc-maestro-stat-pill.is-success {
+  color: #c9f2dc;
+  background: rgba(39, 170, 105, 0.18);
+  border-color: rgba(39, 170, 105, 0.32);
+}
+
+html[data-theme="dark"] .sc-maestro-stat-pill.is-danger {
+  color: #ffd0d3;
+  background: rgba(227, 89, 99, 0.18);
+  border-color: rgba(227, 89, 99, 0.3);
+}
+
+html[data-theme="dark"] .table-card .table-responsive,
+html[data-theme="dark"] .table-responsive {
+  background: transparent;
+}
+
+html[data-theme="dark"] .table-card .table > :not(caption) > * > *,
+html[data-theme="dark"] .sc-maestro-table thead th,
+html[data-theme="dark"] .sc-maestro-table tbody td,
+html[data-theme="dark"] .table thead th,
+html[data-theme="dark"] .table tbody td {
+  border-color: rgba(98, 118, 154, 0.24);
+}
+
+html[data-theme="dark"] .sc-maestro-table thead th,
+html[data-theme="dark"] .table thead th {
+  color: #dce8ff;
+  background: rgba(23, 33, 54, 0.94);
+}
+
+html[data-theme="dark"] .sc-maestro-table tbody tr:nth-child(even),
+html[data-theme="dark"] :is(#tablaEspaciosDetallada, #tablaSedesDetallada, #tablaClientesDetallada, #tablaPagosDetallada, #tablaComprobantesDetallada, #tablaPromocionesDetallada, #tablaReservasDetallada) tbody tr:nth-child(even) > td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+html[data-theme="dark"] :is(#tablaEspaciosDetallada, #tablaSedesDetallada, #tablaClientesDetallada, #tablaPagosDetallada, #tablaComprobantesDetallada, #tablaPromocionesDetallada, #tablaReservasDetallada) tbody tr:nth-child(odd) > td,
+html[data-theme="dark"] .sc-maestro-table tbody tr > td {
+  background: transparent;
+}
+
+html[data-theme="dark"] :is(#tablaEspaciosDetallada, #tablaSedesDetallada, #tablaClientesDetallada, #tablaPagosDetallada, #tablaComprobantesDetallada, #tablaPromocionesDetallada, #tablaReservasDetallada) tbody tr:hover > td {
+  background: rgba(36, 51, 80, 0.46);
+}
+
+html[data-theme="dark"] .btn-outline-secondary {
+  color: #dce8ff;
+  border-color: rgba(141, 169, 214, 0.28);
+  background: rgba(13, 20, 35, 0.84);
+}
+
+html[data-theme="dark"] .btn-outline-secondary:hover,
+html[data-theme="dark"] .btn-outline-secondary:focus {
+  color: #ffffff;
+  border-color: rgba(103, 157, 255, 0.5);
+  background: rgba(25, 38, 63, 0.96);
+}
+
+html[data-theme="dark"] .form-check-input {
+  border-color: rgba(117, 146, 196, 0.42);
+  background-color: rgba(11, 18, 32, 0.88);
+}
+
+html[data-theme="dark"] .form-check-input:checked {
+  background-color: #2563eb;
+  border-color: #2563eb;
 }
 
 .sc-platform-brand-logo {
