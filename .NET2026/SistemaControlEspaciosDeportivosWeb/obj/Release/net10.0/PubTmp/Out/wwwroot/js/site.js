@@ -82,3 +82,226 @@
         estilizarKpis();
     }
 })();
+
+// Firma: FRANCO LARA - 08/07/2026 | Replica modo oscuro administrativo y ventana de carga del sistema administrativo para navegacion interna, formularios y acciones principales del panel.
+document.addEventListener("DOMContentLoaded", function () {
+    const body = document.body;
+    const root = document.documentElement;
+    if (!body || !body.classList.contains("sc-admin-theme-shell")) {
+        return;
+    }
+
+    const storageKey = "sc-admin-theme";
+    const toggles = Array.from(document.querySelectorAll("[data-theme-toggle]"));
+    const labels = Array.from(document.querySelectorAll("[data-theme-label]"));
+
+    if (toggles.length === 0 && labels.length === 0) {
+        return;
+    }
+
+    const applyTheme = function (theme) {
+        const resolvedTheme = theme === "dark" ? "dark" : "light";
+        root.setAttribute("data-theme", resolvedTheme);
+        root.setAttribute("data-bs-theme", resolvedTheme);
+
+        try {
+            localStorage.setItem(storageKey, resolvedTheme);
+        } catch {
+        }
+
+        const isDark = resolvedTheme === "dark";
+        toggles.forEach(function (toggle) {
+            toggle.setAttribute("aria-pressed", isDark ? "true" : "false");
+        });
+
+        labels.forEach(function (label) {
+            label.textContent = isDark ? "Modo oscuro" : "Modo claro";
+        });
+    };
+
+    toggles.forEach(function (toggle) {
+        toggle.addEventListener("click", function () {
+            const nextTheme = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+            applyTheme(nextTheme);
+        });
+    });
+
+    applyTheme(root.getAttribute("data-theme"));
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+    const body = document.body;
+    if (!body || !body.classList.contains("sc-admin-theme-shell")) {
+        return;
+    }
+
+    const overlayId = "global-loading-overlay";
+
+    const ensureLoadingOverlay = function () {
+        let overlay = document.getElementById(overlayId);
+        if (overlay) {
+            return overlay;
+        }
+
+        overlay = document.createElement("div");
+        overlay.id = overlayId;
+        overlay.className = "workspace-loading-overlay";
+        overlay.setAttribute("aria-hidden", "true");
+        overlay.innerHTML = [
+            "<div class=\"workspace-loading-box\" role=\"status\" aria-live=\"polite\" aria-busy=\"true\">",
+            "  <span class=\"workspace-loading-spinner\"></span>",
+            "  <strong>Cargando...</strong>",
+            "  <small>Espere mientras se procesa la solicitud.</small>",
+            "</div>"
+        ].join("");
+
+        document.body.appendChild(overlay);
+        return overlay;
+    };
+
+    const showLoadingOverlay = function () {
+        const overlay = ensureLoadingOverlay();
+        overlay.classList.add("is-visible");
+        overlay.setAttribute("aria-hidden", "false");
+        document.body.classList.add("workspace-loading-active");
+    };
+
+    const hideLoadingOverlay = function () {
+        const overlay = document.getElementById(overlayId);
+        if (!overlay) {
+            return;
+        }
+
+        overlay.classList.remove("is-visible");
+        overlay.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("workspace-loading-active");
+    };
+
+    const disableSubmitControls = function (form) {
+        form.querySelectorAll("button[type='submit'], input[type='submit']").forEach(function (element) {
+            if (!(element instanceof HTMLButtonElement || element instanceof HTMLInputElement)) {
+                return;
+            }
+
+            element.disabled = true;
+        });
+    };
+
+    const sameOriginNavigation = function (href) {
+        if (!href || href.startsWith("#") || href.startsWith("javascript:")) {
+            return false;
+        }
+
+        try {
+            const targetUrl = new URL(href, window.location.href);
+            if (targetUrl.origin !== window.location.origin) {
+                return false;
+            }
+
+            const currentWithoutHash = `${window.location.pathname}${window.location.search}`;
+            const targetWithoutHash = `${targetUrl.pathname}${targetUrl.search}`;
+            return currentWithoutHash !== targetWithoutHash || !targetUrl.hash;
+        } catch {
+            return false;
+        }
+    };
+
+    const shouldHandleLink = function (link) {
+        if (!(link instanceof HTMLAnchorElement)) {
+            return false;
+        }
+
+        if (link.target === "_blank" || link.hasAttribute("download") || link.dataset.skipLoading === "true") {
+            return false;
+        }
+
+        if (link.hasAttribute("data-bs-toggle") || link.hasAttribute("data-bs-dismiss")) {
+            return false;
+        }
+
+        return sameOriginNavigation(link.getAttribute("href"));
+    };
+
+    const shouldHandleActionButton = function (button) {
+        if (!(button instanceof HTMLButtonElement || button instanceof HTMLInputElement)) {
+            return false;
+        }
+
+        if (button.disabled || button.dataset.skipLoading === "true") {
+            return false;
+        }
+
+        if (button.type === "submit" || button.form) {
+            return false;
+        }
+
+        if (button.hasAttribute("data-bs-toggle") || button.hasAttribute("data-bs-dismiss")) {
+            return false;
+        }
+
+        const sourceText = button instanceof HTMLInputElement
+            ? (button.value || "")
+            : (button.textContent || "");
+        const normalized = sourceText
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .trim();
+
+        return /(grabar|guardar|listar|consultar|buscar|filtrar|procesar|generar)/.test(normalized);
+    };
+
+    document.querySelectorAll("form").forEach(function (form) {
+        form.addEventListener("submit", function () {
+            if (form.dataset.skipLoading === "true") {
+                return;
+            }
+
+            if (typeof form.checkValidity === "function" && !form.checkValidity()) {
+                hideLoadingOverlay();
+                return;
+            }
+
+            window.setTimeout(function () {
+                if (window.jQuery) {
+                    const jqueryForm = window.jQuery(form);
+                    if (typeof jqueryForm.valid === "function" && !jqueryForm.valid()) {
+                        hideLoadingOverlay();
+                        return;
+                    }
+                }
+
+                showLoadingOverlay();
+                disableSubmitControls(form);
+            }, 0);
+        });
+
+        form.addEventListener("invalid", function () {
+            hideLoadingOverlay();
+        }, true);
+    });
+
+    document.querySelectorAll(".sc-admin-sidebar a[href], .sc-admin-main a[href]").forEach(function (link) {
+        link.addEventListener("click", function () {
+            if (!shouldHandleLink(link)) {
+                return;
+            }
+
+            showLoadingOverlay();
+        });
+    });
+
+    document.querySelectorAll(".sc-admin-main .btn, .sc-admin-sidebar .btn").forEach(function (button) {
+        button.addEventListener("click", function () {
+            if (!shouldHandleActionButton(button)) {
+                return;
+            }
+
+            showLoadingOverlay();
+        });
+    });
+
+    window.addEventListener("pageshow", function () {
+        hideLoadingOverlay();
+    });
+});

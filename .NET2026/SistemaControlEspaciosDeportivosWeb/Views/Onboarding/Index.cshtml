@@ -8,7 +8,7 @@
         <div class="d-flex align-items-center gap-3">
             @if (!string.IsNullOrWhiteSpace(Model.LogoUrl))
             {
-                <img src="@Url.Action("VerImagen", "Sedes", new { url = Model.LogoUrl })" alt="Logo" style="width:64px;height:64px;object-fit:contain;background:#fff;border:1px solid #dee2e6;border-radius:12px;" />
+                <img src="@Url.Action("VerImagen", "Sedes", new { url = Model.LogoUrl })" alt="Logo" class="sc-onboarding-logo" />
             }
             <div>
                 <h1>Guia de configuracion</h1>
@@ -99,6 +99,15 @@
 
 @section Styles {
     <style>
+        .sc-onboarding-logo {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+        }
+
         .sc-activacion-title {
             font-size: 1.02rem;
             letter-spacing: .2px;
@@ -139,6 +148,30 @@
 
         .sc-activacion-table tbody td {
             vertical-align: middle;
+        }
+
+        html[data-theme="dark"] .sc-onboarding-logo {
+            background: linear-gradient(180deg, rgba(24, 34, 54, 0.96) 0%, rgba(14, 22, 38, 0.98) 100%);
+            border-color: rgba(88, 116, 158, 0.34);
+        }
+
+        html[data-theme="dark"] .sc-activacion-meta > div {
+            background: linear-gradient(180deg, rgba(23, 34, 55, 0.96) 0%, rgba(13, 22, 38, 0.98) 100%);
+            border-color: rgba(88, 116, 158, 0.34);
+        }
+
+        html[data-theme="dark"] .sc-activacion-meta span {
+            color: #9fb0ca;
+        }
+
+        html[data-theme="dark"] .sc-activacion-meta strong {
+            color: #f4f8ff;
+        }
+
+        html[data-theme="dark"] .sc-activacion-table thead th {
+            color: #dbe7ff;
+            background: rgba(23, 33, 54, 0.94);
+            border-bottom-color: rgba(88, 116, 158, 0.34);
         }
     </style>
 }

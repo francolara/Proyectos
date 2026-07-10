@@ -365,7 +365,7 @@
         </section>
 
         <section class="sc-form-card">
-            <div class="sc-form-section">
+            <div class="sc-form-section sc-photo-upload-section">
                 <h2 class="sc-form-title"><i class="bi bi-images"></i> Fotos del espacio deportivo</h2>
                 <div class="row g-3">
                     <div class="col-md-8">
@@ -380,7 +380,7 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Resumen actual</label>
-                        <div class="border rounded-3 p-2 bg-light-subtle small text-secondary">
+                        <div class="border rounded-3 p-2 bg-light-subtle small text-secondary sc-photo-summary">
                             <div><strong>Principal:</strong> @(string.IsNullOrWhiteSpace(Model.FotoPrincipalUrl) ? "Sin definir" : "Disponible")</div>
                             <div><strong>Alternativas:</strong> @(Model.FotosUrls?.Count ?? 0)</div>
                         </div>
@@ -411,7 +411,7 @@
                         </div>
                     }
                     <div class="col-12">
-                        <div class="table-responsive">
+                        <div class="table-responsive sc-photo-table-wrap">
                             <table class="table table-sm align-middle mb-0">
                                 <thead>
                                     <tr>

@@ -643,9 +643,9 @@ C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlE
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Release\net10.0\SistemaControlEspaciosDeportivosWeb.pdb
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Release\net10.0\SistemaControlEspaciosDeportivosWeb.genruntimeconfig.cache
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Release\net10.0\ref\SistemaControlEspaciosDeportivosWeb.dll
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Release\net10.0\compressed\9mwl8mstqz-{0}-g0xx77tmar-g0xx77tmar.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Release\net10.0\compressed\376ed26qh3-{0}-j6erohxcak-j6erohxcak.gz
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Release\net10.0\compressed\fdmqcrxzoz-{0}-ekqfevwdo6-ekqfevwdo6.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Release\net10.0\compressed\zp4r0czzpx-{0}-sptc6882wj-sptc6882wj.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Release\net10.0\compressed\lmsxrkt941-{0}-rtzofh0cs2-rtzofh0cs2.gz
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Release\net10.0\compressed\vnbh1609s7-{0}-zbpstp8dye-zbpstp8dye.gz
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Release\net10.0\compressed\fdmqcrxzoz-{0}-qeq05vsfp6-qeq05vsfp6.gz
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Release\net10.0\compressed\vnbh1609s7-{0}-e9551ja9mw-e9551ja9mw.gz
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Release\net10.0\compressed\9mwl8mstqz-{0}-v4cq3hfe04-v4cq3hfe04.gz

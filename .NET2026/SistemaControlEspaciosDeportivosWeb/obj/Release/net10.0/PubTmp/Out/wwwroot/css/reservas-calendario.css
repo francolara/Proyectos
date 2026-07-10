@@ -800,6 +800,56 @@
   border: 1px solid #c4b5fd !important;
 }
 
+/* Firma: Codex - 09/07/2026 | Ajusta modo oscuro de Filtro operativo de reservas y Estado de reservas para mantener contraste, fondos y pills coherentes. */
+html[data-theme="dark"] .sc-calendar-filter-card {
+  border-color: rgba(58, 132, 98, 0.4) !important;
+  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.24) !important;
+  background:
+    radial-gradient(130% 140% at 0% 0%, rgba(34, 197, 94, 0.12) 0%, rgba(34, 197, 94, 0) 55%),
+    linear-gradient(180deg, rgba(20, 31, 49, 0.97) 0%, rgba(12, 21, 37, 0.98) 100%) !important;
+}
+
+html[data-theme="dark"] .sc-calendar-filter-card::before {
+  background: #22c55e;
+}
+
+html[data-theme="dark"] .sc-calendar-filter-head .section-title,
+html[data-theme="dark"] .sc-calendar-legend-header .section-title {
+  border-color: rgba(118, 162, 232, 0.38);
+  background: linear-gradient(180deg, rgba(224, 238, 255, 0.96) 0%, rgba(201, 224, 255, 0.94) 100%);
+  color: #18478d;
+  box-shadow: 0 8px 18px rgba(6, 18, 36, 0.28);
+}
+
+html[data-theme="dark"] .sc-calendar-filter-head .section-title i,
+html[data-theme="dark"] .sc-calendar-legend-header .section-title i {
+  color: #1f5fd4;
+}
+
+html[data-theme="dark"] .sc-calendar-legend-card {
+  border-color: rgba(88, 116, 158, 0.34);
+  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.24);
+  background:
+    radial-gradient(130% 140% at 100% 0%, rgba(37, 99, 235, 0.1) 0%, rgba(37, 99, 235, 0) 55%),
+    linear-gradient(180deg, rgba(20, 31, 49, 0.97) 0%, rgba(12, 21, 37, 0.98) 100%);
+}
+
+html[data-theme="dark"] .sc-calendar-legend-actions small {
+  color: #9fb0ca !important;
+}
+
+html[data-theme="dark"] .sc-calendar-legend-list .sc-legend-pill {
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .sc-calendar-legend-list .sc-legend-pill.is-pendiente { background: rgba(120, 53, 15, 0.22); border-color: rgba(245, 158, 11, 0.52); color: #ffd18a; }
+html[data-theme="dark"] .sc-calendar-legend-list .sc-legend-pill.is-confirmada { background: rgba(20, 83, 45, 0.26); border-color: rgba(34, 197, 94, 0.5); color: #baf7cf; }
+html[data-theme="dark"] .sc-calendar-legend-list .sc-legend-pill.is-enuso { background: rgba(30, 64, 175, 0.24); border-color: rgba(59, 130, 246, 0.48); color: #bfd9ff; }
+html[data-theme="dark"] .sc-calendar-legend-list .sc-legend-pill.is-finalizada { background: rgba(8, 74, 76, 0.28); border-color: rgba(6, 182, 212, 0.48); color: #b4fbff; }
+html[data-theme="dark"] .sc-calendar-legend-list .sc-legend-pill.is-cancelada { background: rgba(127, 29, 29, 0.24); border-color: rgba(239, 68, 68, 0.48); color: #ffc4c4; }
+html[data-theme="dark"] .sc-calendar-legend-list .sc-legend-pill.is-noshow { background: rgba(76, 29, 149, 0.24); border-color: rgba(139, 92, 246, 0.48); color: #dbc6ff; }
+html[data-theme="dark"] .sc-calendar-legend-list .sc-legend-pill.is-bloqueada { background: rgba(51, 65, 85, 0.42); border-color: rgba(148, 163, 184, 0.36); color: #d5dfed; }
+
 #calendarioReservas .sc-fc-event.is-reservada {
   background: linear-gradient(180deg, #e6f0ff 0%, #dbeafe 100%) !important;
   border-color: #bfdbfe !important;

@@ -456,7 +456,7 @@
                             <span><i class="bi bi-grid-3x3-gap me-1"></i>Operacion</span>
                             <i class="bi bi-chevron-down"></i>
                         </button>
-                        <div class="collapse @(seccionOperacionAbierta ? "show" : null)" id="scNavOperacion" data-bs-parent="#scAdminNavAccordion">
+                        <div class="collapse @(seccionOperacionAbierta ? "show" : null)" id="scNavOperacion">
                             <div class="sc-admin-nav-group-body">
                                 <a class="@menuClass("Panel")" href="@menuUrl("Panel")"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
                                 <a class="@menuClass("Onboarding")" href="@menuUrl("Onboarding")"><i class="bi bi-signpost-split"></i><span>Guia de configuracion</span></a>
@@ -478,7 +478,7 @@
                             <span><i class="bi bi-briefcase me-1"></i>Comercial</span>
                             <i class="bi bi-chevron-down"></i>
                         </button>
-                        <div class="collapse @(seccionComercialAbierta ? "show" : null)" id="scNavComercial" data-bs-parent="#scAdminNavAccordion">
+                        <div class="collapse @(seccionComercialAbierta ? "show" : null)" id="scNavComercial">
                             <div class="sc-admin-nav-group-body">
                                 @if (!bloquearModulosPorSuscripcion)
                                 {
@@ -496,7 +496,7 @@
                             <span><i class="bi bi-gear me-1"></i>Sistema</span>
                             <i class="bi bi-chevron-down"></i>
                         </button>
-                        <div class="collapse @(seccionSistemaAbierta ? "show" : null)" id="scNavSistema" data-bs-parent="#scAdminNavAccordion">
+                        <div class="collapse @(seccionSistemaAbierta ? "show" : null)" id="scNavSistema">
                             <div class="sc-admin-nav-group-body">
                                 @if (!bloquearModulosPorSuscripcion)
                                 {
