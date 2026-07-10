@@ -5886,6 +5886,60 @@ html[data-theme="dark"] :is(.admin-page-frame, .sc-admin-main) .sc-sede-highligh
   color: #8eb8ff;
 }
 
+html[data-theme="dark"] :is(.admin-page-frame, .sc-admin-main) :is(.sc-list-title, .sc-espacio-name, .sc-list-main, .sc-espacio-main, .table-card .fw-semibold) {
+  color: #f4f8ff !important;
+}
+
+html[data-theme="dark"] :is(.admin-page-frame, .sc-admin-main) :is(.sc-list-code, .sc-espacio-code) {
+  border-color: rgba(110, 143, 194, 0.34);
+  background: rgba(21, 37, 63, 0.94);
+  color: #dbe7ff;
+}
+
+html[data-theme="dark"] :is(.admin-page-frame, .sc-admin-main) :is(.sc-list-mini-card span, .sc-list-mini-card i, .sc-id-chip, .table-card tbody td, .table-card tbody th) {
+  color: #dbe7ff;
+}
+
+html[data-theme="dark"] :is(.admin-page-frame, .sc-admin-main) :is(.badge.bg-primary-subtle, .badge.bg-info-subtle, .badge.bg-success-subtle, .badge.bg-warning-subtle, .badge.bg-danger-subtle, .badge.bg-secondary-subtle, .badge.bg-dark-subtle) {
+  border-color: rgba(110, 143, 194, 0.34) !important;
+  box-shadow: none;
+}
+
+html[data-theme="dark"] :is(.admin-page-frame, .sc-admin-main) .badge.bg-primary-subtle {
+  background: rgba(32, 64, 120, 0.34) !important;
+  color: #bcd7ff !important;
+}
+
+html[data-theme="dark"] :is(.admin-page-frame, .sc-admin-main) .badge.bg-info-subtle {
+  background: rgba(10, 82, 108, 0.3) !important;
+  color: #a8ebff !important;
+}
+
+html[data-theme="dark"] :is(.admin-page-frame, .sc-admin-main) .badge.bg-success-subtle {
+  background: rgba(16, 89, 63, 0.3) !important;
+  color: #aff3ce !important;
+}
+
+html[data-theme="dark"] :is(.admin-page-frame, .sc-admin-main) .badge.bg-warning-subtle {
+  background: rgba(119, 77, 16, 0.34) !important;
+  color: #ffd996 !important;
+}
+
+html[data-theme="dark"] :is(.admin-page-frame, .sc-admin-main) .badge.bg-danger-subtle {
+  background: rgba(119, 31, 43, 0.3) !important;
+  color: #ffbac3 !important;
+}
+
+html[data-theme="dark"] :is(.admin-page-frame, .sc-admin-main) .badge.bg-secondary-subtle {
+  background: rgba(63, 74, 95, 0.34) !important;
+  color: #d8e3f8 !important;
+}
+
+html[data-theme="dark"] :is(.admin-page-frame, .sc-admin-main) .badge.bg-dark-subtle {
+  background: rgba(53, 64, 86, 0.42) !important;
+  color: #e5eefc !important;
+}
+
 html[data-theme="dark"] :is(.admin-page-frame, .sc-admin-main) .sc-page-link {
   background: rgba(18, 27, 43, 0.96);
   border-color: rgba(88, 116, 158, 0.34);
