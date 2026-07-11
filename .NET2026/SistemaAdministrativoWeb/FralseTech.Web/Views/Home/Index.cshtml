@@ -1,0 +1,204 @@
+@model FralseTech.Web.ViewModels.LandingPageViewModel
+@{
+    ViewData["Title"] = Model.PageTitle;
+    ViewData["MetaDescription"] = Model.MetaDescription;
+    ViewData["CanonicalUrl"] = Model.CanonicalUrl;
+    ViewData["StructuredDataJson"] = Model.StructuredDataJson;
+}
+
+<main>
+    <section class="hero-section section-shell" id="inicio">
+        <div class="section-container">
+            <div class="hero-banner reveal">
+                <img class="hero-banner__image"
+                     src="@Url.Content("~/images/oficina.png")"
+                     alt="Oficina tecnológica de FRALSE TECH"
+                     width="1664"
+                     height="944"
+                     fetchpriority="high" />
+                <div class="hero-banner__content">
+                    <span class="eyebrow">@Model.HeaderTagline</span>
+                    <h1 class="hero-title">
+                        <span>Transformamos</span>
+                        <span>ideas</span>
+                        <span>en soluciones</span>
+                        <span>digitales</span>
+                    </h1>
+                    <p class="hero-text">@Model.HeroDescription</p>
+                    <div class="hero-actions">
+                        <a class="btn btn-primary" href="@Model.HeroPrimaryActionTarget">@Model.HeroPrimaryActionText</a>
+                        <a class="btn btn-secondary" href="@Model.HeroSecondaryActionTarget">@Model.HeroSecondaryActionText</a>
+                    </div>
+                    <div class="hero-pill-grid" aria-label="Soluciones principales">
+                        @foreach (var pill in Model.HeroPills)
+                        {
+                            <div class="hero-pill">
+                                <i class="@pill.IconClass" aria-hidden="true"></i>
+                                <span>@pill.Text</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-shell" id="nosotros">
+        <div class="section-container section-grid section-grid--about">
+            <div class="section-heading reveal">
+                <span class="eyebrow">Nosotros</span>
+                <h2>Tecnología pensada para hacer crecer tu negocio</h2>
+                <p>En FRALSE TECH S.A.C. desarrollamos soluciones de software enfocadas en optimizar procesos, mejorar la gestión empresarial y facilitar la transformación digital de nuestros clientes.</p>
+                <p>Creamos productos tecnológicos modernos, seguros y adaptados a las necesidades reales de cada organización.</p>
+            </div>
+            <div class="feature-grid">
+                @foreach (var feature in Model.AboutFeatures)
+                {
+                    <article class="feature-card reveal">
+                        <i class="@feature.IconClass" aria-hidden="true"></i>
+                        <h3>@feature.Title</h3>
+                        <p>@feature.Description</p>
+                    </article>
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="section-shell section-shell--muted" id="servicios">
+        <div class="section-container">
+            <div class="section-heading section-heading--center reveal">
+                <span class="eyebrow">Servicios</span>
+                <h2>Soluciones que impulsan tu empresa</h2>
+                <p>Desarrollamos herramientas digitales con foco en control, operación y escalabilidad.</p>
+            </div>
+            <div class="service-grid">
+                @foreach (var service in Model.Services)
+                {
+                    <article class="service-card reveal">
+                        <div class="service-card__line"></div>
+                        <i class="@service.IconClass" aria-hidden="true"></i>
+                        <h3>@service.Title</h3>
+                        <p>@service.Description</p>
+                    </article>
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="section-shell" id="productos">
+        <div class="section-container">
+            <div class="section-heading section-heading--center reveal">
+                <span class="eyebrow">Productos</span>
+                <h2>Productos desarrollados por FRALSE TECH</h2>
+                <p>Soluciones creadas para resolver necesidades reales de gestión y operación.</p>
+            </div>
+            <div class="product-grid">
+                @foreach (var product in Model.Products)
+                {
+                    <article class="product-card @product.AccentClass reveal">
+                        <div class="product-card__content">
+                            <span class="status-chip">@product.Status</span>
+                            <span class="product-card__category">@product.Category</span>
+                            <h3>@product.Name</h3>
+                            <p>@product.Description</p>
+                            <div class="chip-list" aria-label="Características de @product.Name">
+                                @foreach (var feature in product.Features)
+                                {
+                                    <span class="info-chip"><i class="bi bi-check2-circle" aria-hidden="true"></i>@feature</span>
+                                }
+                            </div>
+                            <div class="product-card__actions">
+                                <a class="btn btn-primary" href="@product.PrimaryActionUrl" target="_blank" rel="noreferrer">@product.PrimaryActionText</a>
+                                <a class="btn btn-tertiary" href="@product.SecondaryActionUrl" target="_blank" rel="noreferrer">@product.SecondaryActionText</a>
+                            </div>
+                        </div>
+                        <div class="product-mockup" aria-hidden="true">
+                            <div class="product-mockup__screen">
+                                <div class="product-mockup__topbar"></div>
+                                @foreach (var line in product.MockupLines)
+                                {
+                                    <div class="product-mockup__row">
+                                        <span>@line.Label</span>
+                                        <strong>@line.Value</strong>
+                                    </div>
+                                }
+                                <div class="product-mockup__chart">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="section-shell section-shell--muted" id="ventajas">
+        <div class="section-container">
+            <div class="section-heading section-heading--center reveal">
+                <span class="eyebrow">Ventajas</span>
+                <h2>¿Por qué elegir FRALSE TECH?</h2>
+                <p>Trabajamos con foco en resultados reales, continuidad operativa y crecimiento sostenible.</p>
+            </div>
+            <div class="advantage-grid">
+                @foreach (var advantage in Model.Advantages)
+                {
+                    <article class="advantage-card reveal">
+                        <span class="advantage-card__indicator">@advantage.Indicator</span>
+                        <h3>@advantage.Title</h3>
+                        <p>@advantage.Description</p>
+                    </article>
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-section section-shell">
+        <div class="section-container cta-panel reveal">
+            <div>
+                <span class="eyebrow eyebrow--light">Conversemos</span>
+                <h2>@Model.CallToActionTitle</h2>
+                <p>@Model.CallToActionText</p>
+            </div>
+            <div class="cta-actions">
+                <a class="btn btn-primary-light" href="@Model.WhatsAppUrl" target="_blank" rel="noreferrer">Hablar por WhatsApp</a>
+                <a class="btn btn-outline-light" href="@Model.MailToUrl">Enviar un correo</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-shell" id="contacto">
+        <div class="section-container section-grid section-grid--contact">
+            <div class="section-heading reveal">
+                <span class="eyebrow">Contacto</span>
+                <h2>Hablemos de tu próximo proyecto</h2>
+                <p>La información de contacto está centralizada en el código para que puedas actualizarla rápidamente.</p>
+                <div class="contact-actions">
+                    <a class="btn btn-primary" href="@Model.WhatsAppUrl" target="_blank" rel="noreferrer">WhatsApp</a>
+                    <a class="btn btn-secondary" href="@Model.MailToUrl">Enviar correo</a>
+                </div>
+            </div>
+
+            <div class="contact-grid">
+                @foreach (var contact in Model.ContactCards)
+                {
+                    <article class="contact-card reveal">
+                        <i class="@contact.IconClass" aria-hidden="true"></i>
+                        <span class="contact-card__title">@contact.Title</span>
+                        <a href="@contact.Link" target="_blank" rel="noreferrer">@contact.Value</a>
+                        <small>@contact.Hint</small>
+                    </article>
+                }
+                <article class="contact-card contact-card--wide reveal">
+                    <i class="bi bi-clock-history" aria-hidden="true"></i>
+                    <span class="contact-card__title">Horario referencial</span>
+                    <strong>@Model.BusinessHours</strong>
+                    <small>Editable desde el contenido centralizado del proyecto.</small>
+                </article>
+            </div>
+        </div>
+    </section>
+</main>

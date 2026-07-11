@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="SistemaAdministrativoWeb.csproj" />
+  <Project Path="FralseTech.Web\FralseTech.Web.csproj" />
 </Solution>

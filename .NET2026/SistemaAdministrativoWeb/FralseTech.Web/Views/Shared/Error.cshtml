@@ -1,0 +1,19 @@
+@model ErrorViewModel
+@{
+    ViewData["Title"] = "Error";
+}
+
+<main class="section-shell">
+    <div class="section-container">
+        <div class="feature-card">
+            <span class="eyebrow">Error</span>
+            <h1>Ocurrió un problema al procesar la solicitud.</h1>
+            <p>La aplicación registró el incidente para poder revisarlo. Intenta nuevamente en unos momentos.</p>
+            @if (Model.ShowRequestId)
+            {
+                <p><strong>Identificador:</strong> <code>@Model.RequestId</code></p>
+            }
+            <a class="btn btn-primary" href="@Url.Action("Index", "Home")">Volver al inicio</a>
+        </div>
+    </div>
+</main>
