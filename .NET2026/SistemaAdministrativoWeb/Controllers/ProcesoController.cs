@@ -3,12 +3,14 @@ using Microsoft.AspNetCore.Mvc;
 using SistemaAdministrativoWeb.Infrastructure.Contabilidad;
 using SistemaAdministrativoWeb.Infrastructure.Empresas;
 using SistemaAdministrativoWeb.Infrastructure.Parametros;
+using SistemaAdministrativoWeb.Infrastructure.Security;
 using SistemaAdministrativoWeb.Infrastructure.Suscripciones;
 using SistemaAdministrativoWeb.ViewModels.Contabilidad;
 
 namespace SistemaAdministrativoWeb.Controllers;
 
 [Authorize]
+[ModulePermission("PROCESOS")]
 public class ProcesoController(
     ICurrentCompanyAccessor currentCompanyAccessor,
     IPeriodoContableService periodoContableService,

@@ -1,0 +1,112 @@
+@model SistemaAdministrativoWeb.ViewModels.Legal.LegalDocumentViewModel
+@{
+    ViewData["Title"] = Model.Title;
+    ViewData["MetaDescription"] = Model.MetaDescription;
+}
+@* Firma: FRANCO LARA - 10/07/2026 | Crea la politica publica de cancelaciones y devoluciones de FralseCont con contacto centralizado y fondo legal claro por pagina. *@
+
+<section class="fralsecont-legal-page fralsecont-legal-page--cancellations">
+    <div class="fralsecont-legal-container">
+        <header class="fralsecont-legal-header">
+            <p class="fralsecont-legal-eyebrow">@Model.BusinessInformation.CommercialName</p>
+            <h1 class="fralsecont-legal-title">Politica de cancelaciones y devoluciones</h1>
+            <p class="fralsecont-legal-updated">Ultima actualizacion: @Model.LastUpdated</p>
+            <p class="fralsecont-legal-lead">
+                La presente Politica de cancelaciones y devoluciones regula las solicitudes relacionadas con la
+                cancelacion, renovacion, suspension, reactivacion y evaluacion de devoluciones de los planes de
+                FralseCont.
+            </p>
+        </header>
+
+        @if (Model.ShowDraftNotice)
+        {
+            <div class="fralsecont-legal-notice" role="status">
+                Documento preliminar pendiente de revision legal antes de su publicacion definitiva.
+            </div>
+        }
+
+        <nav class="fralsecont-legal-index" aria-label="Indice de cancelaciones y devoluciones">
+            <a href="#alcance">1. Alcance</a>
+            <a href="#plan-gratis">2. Plan Gratis</a>
+            <a href="#planes-pagados">3. Planes pagados</a>
+            <a href="#cancelacion-suscripcion">4. Cancelacion de suscripcion</a>
+            <a href="#fecha-efectiva">5. Fecha efectiva de cancelacion</a>
+            <a href="#acceso-periodo-pagado">6. Acceso durante el periodo pagado</a>
+            <a href="#renovacion">7. Renovacion</a>
+            <a href="#cambio-plan">8. Cambio de plan</a>
+            <a href="#suspension">9. Suspension por falta de pago</a>
+            <a href="#reactivacion">10. Reactivacion</a>
+            <a href="#solicitudes-devolucion">11. Solicitudes de devolucion</a>
+            <a href="#pagos-duplicados">12. Pagos duplicados</a>
+            <a href="#cobros-incorrectos">13. Cobros incorrectos</a>
+            <a href="#fallas-tecnicas">14. Fallas tecnicas verificables</a>
+            <a href="#falta-uso">15. Falta de uso del servicio</a>
+            <a href="#promociones">16. Promociones</a>
+            <a href="#fraude">17. Casos de fraude</a>
+            <a href="#uso-indebido">18. Uso indebido</a>
+            <a href="#conservacion-temporal">19. Conservacion temporal de informacion</a>
+            <a href="#eliminacion-datos">20. Eliminacion de datos</a>
+            <a href="#procedimiento">21. Procedimiento para presentar una solicitud</a>
+            <a href="#datos-requeridos">22. Datos requeridos</a>
+            <a href="#evaluacion">23. Evaluacion del caso</a>
+            <a href="#plazo">24. Plazo de atencion</a>
+            <a href="#medio-contacto">25. Medio de contacto</a>
+            <a href="#modificacion-politica">26. Modificacion de la politica</a>
+        </nav>
+
+        <div class="fralsecont-legal-content">
+            <section id="alcance" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">1. Alcance</h2><p>Esta politica es informativa y describe como FralseCont evalua solicitudes relacionadas con cancelaciones, renovaciones, suspensiones y devoluciones de sus planes comerciales.</p></section>
+            <section id="plan-gratis" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">2. Plan Gratis</h2><p>El Plan Gratis no genera devolucion porque no tiene costo. Su cancelacion solo detiene accesos futuros o evita una migracion posterior a planes pagados.</p></section>
+            <section id="planes-pagados" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">3. Planes pagados</h2><p>Los planes pagados se rigen por el periodo comercial contratado y por las condiciones vigentes comunicadas al usuario al momento de su activacion o renovacion.</p></section>
+            <section id="cancelacion-suscripcion" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">4. Cancelacion de suscripcion</h2><p>El usuario puede solicitar la cancelacion de su suscripcion para evitar nuevos cobros o renovaciones futuras, sin que ello implique automaticamente una devolucion.</p></section>
+            <section id="fecha-efectiva" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">5. Fecha efectiva de cancelacion</h2><p>La fecha efectiva dependera de la validacion comercial de la solicitud, del estado del plan y del momento en que sea registrada y confirmada por el equipo responsable.</p></section>
+            <section id="acceso-periodo-pagado" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">6. Acceso durante el periodo pagado</h2><p>Salvo fraude, incumplimiento grave o uso indebido, el acceso puede mantenerse hasta el final del periodo ya pagado conforme a la politica operativa vigente.</p></section>
+            <section id="renovacion" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">7. Renovacion</h2><p>Las renovaciones pueden ser manuales o sujetas al mecanismo comercial vigente. La cancelacion correctamente procesada debe impedir nuevos cobros posteriores a la fecha efectiva correspondiente.</p></section>
+            <section id="cambio-plan" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">8. Cambio de plan</h2><p>Los cambios de plan pueden generar ajustes de vigencia, limites o condiciones comerciales. Cualquier efecto economico se evaluara segun la modalidad informada al usuario.</p></section>
+            <section id="suspension" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">9. Suspension por falta de pago</h2><p>La falta de pago puede limitar funciones de registro, edicion, procesamiento o acceso pleno al servicio, sin perjuicio de medidas temporales de consulta cuando ello resulte operativamente viable.</p></section>
+            <section id="reactivacion" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">10. Reactivacion</h2><p>La cuenta puede reactivarse mientras la informacion continue disponible y se regularicen las condiciones comerciales o tecnicas necesarias para ello.</p></section>
+            <section id="solicitudes-devolucion" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">11. Solicitudes de devolucion</h2><p>Las devoluciones no son automaticas. Cada solicitud se revisa individualmente considerando la informacion aportada, el historial comercial y los resultados de la verificacion correspondiente.</p></section>
+            <section id="pagos-duplicados" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">12. Pagos duplicados</h2><p>Una devolucion puede evaluarse cuando exista evidencia de pago duplicado correspondiente a la misma obligacion comercial.</p></section>
+            <section id="cobros-incorrectos" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">13. Cobros incorrectos</h2><p>Tambien puede evaluarse cuando el usuario demuestre que se aplico un cobro por un importe, plan o periodo incorrecto.</p></section>
+            <section id="fallas-tecnicas" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">14. Fallas tecnicas verificables</h2><p>La devolucion podra revisarse si existio una falla grave y verificable atribuible a FralseCont que haya impedido de forma sustancial la prestacion del servicio contratado.</p></section>
+            <section id="falta-uso" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">15. Falta de uso del servicio</h2><p>La falta de uso del sistema no genera automaticamente una devolucion, porque la disponibilidad de acceso y de funcionalidades no depende del nivel de uso efectivo del usuario.</p></section>
+            <section id="promociones" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">16. Promociones</h2><p>Las promociones, descuentos o condiciones especiales pueden tener reglas particulares que seran comunicadas antes de su contratacion o activacion.</p></section>
+            <section id="fraude" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">17. Casos de fraude</h2><p>FralseCont puede suspender o rechazar solicitudes cuando existan indicios razonables de fraude, suplantacion, desconocimiento injustificado del pago o uso abusivo del sistema.</p></section>
+            <section id="uso-indebido" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">18. Uso indebido</h2><p>El uso indebido, incumplimiento grave de los terminos o afectacion a la seguridad del servicio puede motivar cancelacion o suspension anticipada del acceso.</p></section>
+            <section id="conservacion-temporal" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">19. Conservacion temporal de informacion</h2><p>La cancelacion de la suscripcion no elimina de inmediato la informacion almacenada. Los datos pueden conservarse temporalmente por razones tecnicas, operativas o legales.</p></section>
+            <section id="eliminacion-datos" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">20. Eliminacion de datos</h2><p>La eliminacion de datos sigue un procedimiento separado y puede requerir validacion adicional para proteger la integridad de la informacion y los derechos de terceros.</p></section>
+            <section id="procedimiento" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">21. Procedimiento para presentar una solicitud</h2><p>Las solicitudes deben presentarse por los canales oficiales de soporte, indicando claramente si se trata de cancelacion, reevaluacion comercial o devolucion.</p></section>
+            <section id="datos-requeridos" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">22. Datos requeridos</h2>
+                <ul>
+                    <li>Nombre o razon social.</li>
+                    <li>RUC o documento asociado a la cuenta.</li>
+                    <li>Correo registrado.</li>
+                    <li>Plan contratado.</li>
+                    <li>Fecha del pago e importe.</li>
+                    <li>Motivo de la solicitud.</li>
+                    <li>Comprobante o constancia, cuando corresponda.</li>
+                </ul>
+                <p>No deben enviarse contrasenas, claves de tarjetas, codigos de seguridad, tokens ni credenciales personales.</p>
+            </section>
+            <section id="evaluacion" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">23. Evaluacion del caso</h2><p>Cada solicitud sera evaluada considerando la informacion disponible, la evidencia entregada, el historial comercial y, cuando corresponda, la respuesta de proveedores de pago o entidades financieras.</p></section>
+            <section id="plazo" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">24. Plazo de atencion</h2><p>Las solicitudes seran revisadas dentro de un plazo razonable, de acuerdo con la complejidad del caso, la informacion proporcionada y los tiempos de respuesta de los proveedores de pago involucrados.</p></section>
+            <section id="medio-contacto" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">25. Medio de contacto</h2>
+                <p>
+                    Las solicitudes pueden presentarse a <a href="mailto:@Model.BusinessInformation.SupportEmail">@Model.BusinessInformation.SupportEmail</a>
+                    o mediante WhatsApp al numero visible publicado por FralseCont.
+                </p>
+                <partial name="_LegalContactBlock" />
+            </section>
+            <section id="modificacion-politica" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">26. Modificacion de la politica</h2><p>FralseCont puede actualizar esta politica para reflejar cambios operativos, comerciales, legales o tecnicos. La version vigente sera la publicada por los medios oficiales disponibles.</p></section>
+        </div>
+
+        <div class="fralsecont-legal-links">
+            <a asp-controller="Legal" asp-action="Terminos">Ir a Terminos y condiciones</a>
+            <a asp-controller="Legal" asp-action="Privacidad">Ir a Politica de privacidad</a>
+        </div>
+
+        <a class="fralsecont-legal-back-link" asp-controller="Home" asp-action="Index">Volver al inicio</a>
+    </div>
+</section>

@@ -47,6 +47,10 @@ builder.Services.Configure<CloudflareTurnstileSettings>(
     builder.Configuration.GetSection(CloudflareTurnstileSettings.SectionName));
 builder.Services.Configure<MigoApiSettings>(
     builder.Configuration.GetSection(MigoApiSettings.SectionName));
+builder.Services.Configure<BusinessInformationOptions>(
+    builder.Configuration.GetSection(BusinessInformationOptions.SectionName));
+builder.Services.Configure<LegalDocumentsOptions>(
+    builder.Configuration.GetSection(LegalDocumentsOptions.SectionName));
 var identityBehaviorSettings = builder.Configuration
     .GetSection(IdentityBehaviorSettings.SectionName)
     .Get<IdentityBehaviorSettings>() ?? new IdentityBehaviorSettings();
@@ -153,6 +157,7 @@ builder.Services.AddScoped<IVentaRepository, VentaRepository>();
 builder.Services.AddScoped<IEmpresaRepository, EmpresaRepository>();
 builder.Services.AddScoped<ICurrentCompanyAccessor, SessionCurrentCompanyAccessor>();
 builder.Services.AddScoped<ICuentaAdministradoraRepository, CuentaAdministradoraRepository>();
+builder.Services.AddScoped<IModulePermissionService, ModulePermissionService>();
 builder.Services.AddScoped<IParametroEmpresaRepository, ParametroEmpresaRepository>();
 builder.Services.AddScoped<IdentityStartupSeeder>();
 builder.Services.AddHttpClient<ITurnstileValidationService, TurnstileValidationService>();
@@ -179,6 +184,7 @@ app.UseHttpsRedirection();
 app.UseRouting();
 app.UseSession();
 app.UseAuthentication();
+app.UseMiddleware<ActiveCompanySessionValidationMiddleware>();
 app.UseAuthorization();
 
 app.MapStaticAssets();

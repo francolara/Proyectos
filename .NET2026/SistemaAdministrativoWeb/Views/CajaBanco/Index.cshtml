@@ -8,6 +8,7 @@
 @* Firma: FRANCO LARA - 24/06/2026 | Agrega numero de asiento al listado de Caja y Bancos, quita la columna banco y exige seleccionar una cuenta corriente antes de consultar movimientos. *@
 @* Firma: FRANCO LARA - 02/07/2026 | Corrige la seleccion visible de cuenta corriente, anio y mes en caja y bancos para que el periodo mostrado respete el contexto devuelto por la opcion, y convierte el numero de asiento del listado en acceso directo al asiento generado. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Autoejecuta la consulta de Caja y Bancos al cambiar cuenta corriente o periodo y habilita el boton Consultar solo cuando existe una cuenta seleccionada. *@
+@* Firma: FRANCO LARA - 09/07/2026 | Renombra Documento a Nro operacion en el listado de Caja y Bancos para reflejar el dato operativo de la transaccion bancaria. *@
 
 @{
     ViewData["Title"] = "Caja y Bancos";
@@ -118,7 +119,7 @@
                     </div>
                     <div class="workspace-field">
                         <label class="form-label" for="textoBusqueda">Buscar movimiento</label>
-                        <input id="textoBusqueda" name="textoBusqueda" value="@Model.TextoBusqueda" class="form-control" placeholder="Persona, documento, glosa u operacion" />
+                        <input id="textoBusqueda" name="textoBusqueda" value="@Model.TextoBusqueda" class="form-control" placeholder="Persona, nro operacion, glosa u operacion" />
                     </div>
                 </div>
                 <div class="workspace-actions">
@@ -142,7 +143,7 @@
                             <th>Tipo</th>
                             <th>Operacion</th>
                             <th>Persona</th>
-                            <th>Documento</th>
+                            <th>Nro operacion</th>
                             <th>Glosa</th>
                             <th>Ingreso</th>
                             <th>Egreso</th>
@@ -191,7 +192,7 @@
                                     <td>@tipoTexto</td>
                                     <td>@item.TipoOperacion</td>
                                     <td>@(string.IsNullOrWhiteSpace(item.NombrePersona) ? "-" : item.NombrePersona)</td>
-                                    <td>@(string.IsNullOrWhiteSpace(item.NumeroDocumento) ? "-" : item.NumeroDocumento)</td>
+                                    <td>@(string.IsNullOrWhiteSpace(item.NumeroOperacion) ? "-" : item.NumeroOperacion)</td>
                                     <td>@item.Glosa</td>
                                     <td class="workspace-money-cell">@item.Ingreso.ToString("0.00")</td>
                                     <td class="workspace-money-cell">@item.Egreso.ToString("0.00")</td>

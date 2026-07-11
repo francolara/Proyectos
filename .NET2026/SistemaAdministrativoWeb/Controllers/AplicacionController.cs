@@ -3,11 +3,13 @@ using Microsoft.AspNetCore.Mvc;
 using SistemaAdministrativoWeb.Infrastructure.Contabilidad;
 using SistemaAdministrativoWeb.Infrastructure.Data;
 using SistemaAdministrativoWeb.Infrastructure.Empresas;
+using SistemaAdministrativoWeb.Infrastructure.Security;
 using SistemaAdministrativoWeb.ViewModels.Contabilidad;
 
 namespace SistemaAdministrativoWeb.Controllers;
 
 [Authorize]
+[ModulePermission("APLICACIONES")]
 public class AplicacionController(
     ICurrentCompanyAccessor currentCompanyAccessor,
     IPeriodoContableService periodoContableService,

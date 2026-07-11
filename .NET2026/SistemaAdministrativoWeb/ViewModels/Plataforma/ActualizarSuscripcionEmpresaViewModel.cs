@@ -20,6 +20,10 @@ public sealed class ActualizarSuscripcionCuentaViewModel
     public DateOnly? FechaFinPrueba { get; init; }
     public DateOnly? FechaInicioPlan { get; init; }
     public DateOnly? FechaFinPlan { get; init; }
+    [StringLength(20)]
+    public string? TipoCobro { get; init; }
+    [Range(0, 60)]
+    public int DiasGracia { get; init; } = 5;
     public int? EmpresasPermitidas { get; init; }
     public int? UsuariosPermitidos { get; init; }
     public bool Activo { get; init; }

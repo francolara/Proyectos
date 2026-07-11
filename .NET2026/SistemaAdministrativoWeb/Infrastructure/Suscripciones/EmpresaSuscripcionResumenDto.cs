@@ -22,6 +22,9 @@ public sealed class CuentaSuscripcionResumenDto
     public DateOnly? FechaFinPrueba { get; init; }
     public DateOnly? FechaInicioPlan { get; init; }
     public DateOnly? FechaFinPlan { get; init; }
+    public string? TipoCobro { get; init; }
+    public int DiasGracia { get; init; }
+    public DateOnly? FechaFinGracia { get; init; }
     public int? EmpresasPermitidas { get; init; }
     public int? UsuariosPermitidos { get; init; }
     public bool Activo { get; init; }

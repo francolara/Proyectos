@@ -15,6 +15,9 @@ public sealed class BancoConfiguracionEmpresaDto
     public int IdPlanCuenta { get; init; }
     public string CodigoCuenta { get; init; } = string.Empty;
     public string NombreCuenta { get; init; } = string.Empty;
+    public string PeriodoSaldoInicial { get; init; } = string.Empty;
+    public decimal SaldoInicialDebe { get; init; }
+    public decimal SaldoInicialHaber { get; init; }
     public bool Activo { get; init; }
     public DateTime FechaRegistro { get; init; }
     public string UsuarioRegistro { get; init; } = string.Empty;

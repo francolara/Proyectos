@@ -2,11 +2,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SistemaAdministrativoWeb.Infrastructure.Contabilidad;
 using SistemaAdministrativoWeb.Infrastructure.Empresas;
+using SistemaAdministrativoWeb.Infrastructure.Security;
 using SistemaAdministrativoWeb.ViewModels.Contabilidad;
 
 namespace SistemaAdministrativoWeb.Controllers;
 
 [Authorize]
+[ModulePermission("CUENTACORRIENTE")]
 public class CuentaCorrienteController(
     ICurrentCompanyAccessor currentCompanyAccessor,
     ICuentaCorrienteRepository cuentaCorrienteRepository,
@@ -146,6 +148,9 @@ public class CuentaCorrienteController(
                 Titular = formulario.Titular.Trim(),
                 IdMoneda = formulario.IdMoneda!.Value,
                 IdPlanCuenta = formulario.IdPlanCuenta!.Value,
+                PeriodoSaldoInicial = NormalizarPeriodoSaldoInicial(formulario.PeriodoSaldoInicial),
+                SaldoInicialDebe = formulario.SaldoInicialDebe,
+                SaldoInicialHaber = formulario.SaldoInicialHaber,
                 Activo = formulario.Activo,
                 UsuarioRegistro = User.Identity?.Name
             }, cancellationToken);
@@ -186,6 +191,9 @@ public class CuentaCorrienteController(
                 IdPlanCuenta = x.IdPlanCuenta,
                 CodigoCuenta = x.CodigoCuenta,
                 NombreCuenta = x.NombreCuenta,
+                PeriodoSaldoInicial = FormatearPeriodoSaldoInicial(x.PeriodoSaldoInicial),
+                SaldoInicialDebe = x.SaldoInicialDebe,
+                SaldoInicialHaber = x.SaldoInicialHaber,
                 Activo = x.Activo,
                 FechaRegistro = x.FechaRegistro,
                 UsuarioRegistro = x.UsuarioRegistro
@@ -204,6 +212,7 @@ public class CuentaCorrienteController(
             Formulario = cuentaEditar is null
                 ? new CuentaCorrienteFormViewModel
                 {
+                    PeriodoSaldoInicial = DateTime.Today.ToString("yyyy-MM"),
                     Monedas = monedas.ToList()
                 }
                 : new CuentaCorrienteFormViewModel
@@ -216,11 +225,36 @@ public class CuentaCorrienteController(
                     IdMoneda = cuentaEditar.IdMoneda,
                     IdPlanCuenta = cuentaEditar.IdPlanCuenta,
                     CuentaTexto = $"{cuentaEditar.CodigoCuenta} - {cuentaEditar.NombreCuenta}",
+                    PeriodoSaldoInicial = FormatearPeriodoSaldoInicial(cuentaEditar.PeriodoSaldoInicial),
+                    SaldoInicialDebe = cuentaEditar.SaldoInicialDebe,
+                    SaldoInicialHaber = cuentaEditar.SaldoInicialHaber,
                     Activo = cuentaEditar.Activo,
                     FechaRegistro = cuentaEditar.FechaRegistro,
                     UsuarioRegistro = cuentaEditar.UsuarioRegistro,
                     Monedas = monedas.ToList()
                 }
         };
+    }
+
+    private static string FormatearPeriodoSaldoInicial(string? periodo)
+    {
+        if (!string.IsNullOrWhiteSpace(periodo)
+            && periodo.Length == 6
+            && int.TryParse(periodo[..4], out _)
+            && int.TryParse(periodo[4..], out var mes)
+            && mes is >= 1 and <= 12)
+        {
+            return $"{periodo[..4]}-{periodo[4..]}";
+        }
+
+        return DateTime.Today.ToString("yyyy-MM");
+    }
+
+    private static string NormalizarPeriodoSaldoInicial(string periodo)
+    {
+        var periodoTrabajo = (periodo ?? string.Empty).Trim();
+        return periodoTrabajo.Length == 7 && periodoTrabajo[4] == '-'
+            ? string.Concat(periodoTrabajo.AsSpan(0, 4), periodoTrabajo.AsSpan(5, 2))
+            : periodoTrabajo;
     }
 }

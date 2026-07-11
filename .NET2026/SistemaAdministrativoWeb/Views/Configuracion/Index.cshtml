@@ -1,0 +1,181 @@
+@model SistemaAdministrativoWeb.ViewModels.Configuracion.ConfiguracionCuentaAdministradoraViewModel
+@* Firma: FRANCO LARA - 10/07/2026 | Crea la vista General > Configuracion para editar datos de la cuenta administradora y completar la ficha de facturacion con consulta DNI/RUC via Migo. *@
+@* Firma: FRANCO LARA - 11/07/2026 | Ajusta el formulario de configuracion para usar correo/telefono principal por defecto, renombra campos administrativos y simplifica los datos visibles del comprobante. *@
+@{
+    ViewData["Title"] = "Configuracion";
+    ViewData["AdminShell"] = true;
+}
+
+<section class="dashboard-shell subscription-shell">
+    <section class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">General</span>
+            <h1>Configuracion</h1>
+            <p>Informacion de facturacion que se reutilizara en boletas y facturas.</p>
+        </div>
+        <article class="dashboard-status-card">
+            <span>Cuenta administradora</span>
+            <strong>@Model.NombreCuenta</strong>
+            <small>Codigo: @Model.CodigoCuenta</small>
+            <small>Contacto principal: @(Model.CorreoPrincipal ?? "No configurado")</small>
+        </article>
+    </section>
+
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="alert alert-success">@successMessage</div>
+    }
+
+    <form asp-action="Guardar" method="post" class="workspace-section">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+        <input asp-for="NombreResponsablePrincipal" type="hidden" />
+        <input asp-for="CorreoAdministrativo" type="hidden" />
+        <input asp-for="TelefonoAdministrativo" type="hidden" />
+        <input asp-for="IdEmpresaPredeterminada" type="hidden" />
+        <input asp-for="ObservacionAdministrativa" type="hidden" />
+
+        <div class="workspace-section-head workspace-section-head-compact">
+            <span class="workspace-section-kicker">Facturacion</span>
+            <h2>Datos del comprobante</h2>
+            <p>Configura el documento, nombre fiscal y direccion que se usaran por defecto al emitir comprobantes comerciales.</p>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label asp-for="TipoComprobantePreferido" class="form-label"></label>
+                <select asp-for="TipoComprobantePreferido" class="form-select">
+                    <option value="BOLETA">Boleta</option>
+                    <option value="FACTURA">Factura</option>
+                </select>
+                <span asp-validation-for="TipoComprobantePreferido" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="TipoDocumentoFacturacion" class="form-label"></label>
+                <select asp-for="TipoDocumentoFacturacion" class="form-select" id="tipoDocumentoFacturacion">
+                    <option value="DNI">DNI</option>
+                    <option value="RUC">RUC</option>
+                    <option value="CE">Carnet de extranjeria</option>
+                    <option value="PASAPORTE">Pasaporte</option>
+                    <option value="OTRO">Otro</option>
+                </select>
+                <span asp-validation-for="TipoDocumentoFacturacion" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="NumeroDocumento" class="form-label"></label>
+                <div class="input-group">
+                    <input asp-for="NumeroDocumento" class="form-control" id="numeroDocumentoFacturacion" />
+                    <button type="button" class="btn btn-outline-secondary" id="btnConsultarPadron">Consultar</button>
+                </div>
+                <span asp-validation-for="NumeroDocumento" class="text-danger"></span>
+                <small class="text-muted d-block mt-1" id="padronStatus">Consulta disponible para DNI y RUC.</small>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="NombreFacturacion" class="form-label"></label>
+                <input asp-for="NombreFacturacion" class="form-control" id="nombreFacturacion" />
+                <span asp-validation-for="NombreFacturacion" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="RazonSocialFacturacion" class="form-label"></label>
+                <input asp-for="RazonSocialFacturacion" class="form-control" id="razonSocialFacturacion" />
+                <span asp-validation-for="RazonSocialFacturacion" class="text-danger"></span>
+            </div>
+            <input asp-for="CorreoFacturacion" type="hidden" />
+            <input asp-for="TelefonoFacturacion" type="hidden" />
+            <div class="col-md-12">
+                <label asp-for="DireccionFiscal" class="form-label"></label>
+                <input asp-for="DireccionFiscal" class="form-control" id="direccionFiscal" />
+                <span asp-validation-for="DireccionFiscal" class="text-danger"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Ubigeo" class="form-label"></label>
+                <input asp-for="Ubigeo" class="form-control" id="ubigeoFacturacion" />
+                <span asp-validation-for="Ubigeo" class="text-danger"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Distrito" class="form-label"></label>
+                <input asp-for="Distrito" class="form-control" id="distritoFacturacion" />
+                <span asp-validation-for="Distrito" class="text-danger"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Provincia" class="form-label"></label>
+                <input asp-for="Provincia" class="form-control" id="provinciaFacturacion" />
+                <span asp-validation-for="Provincia" class="text-danger"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Departamento" class="form-label"></label>
+                <input asp-for="Departamento" class="form-control" id="departamentoFacturacion" />
+                <span asp-validation-for="Departamento" class="text-danger"></span>
+            </div>
+            <div class="col-12">
+                <label asp-for="ObservacionFacturacion" class="form-label"></label>
+                <textarea asp-for="ObservacionFacturacion" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="ObservacionFacturacion" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="workspace-actions mt-4">
+            <button type="submit" class="btn btn-primary">Guardar configuracion</button>
+        </div>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const btn = document.getElementById("btnConsultarPadron");
+            const tipo = document.getElementById("tipoDocumentoFacturacion");
+            const numero = document.getElementById("numeroDocumentoFacturacion");
+            const status = document.getElementById("padronStatus");
+
+            if (!btn || !tipo || !numero || !status) {
+                return;
+            }
+
+            btn.addEventListener("click", async () => {
+                const tipoValue = (tipo.value || "").trim();
+                const numeroValue = (numero.value || "").trim();
+                if (!numeroValue) {
+                    status.textContent = "Ingrese un numero de documento antes de consultar.";
+                    status.className = "text-danger d-block mt-1";
+                    return;
+                }
+
+                status.textContent = "Consultando padron...";
+                status.className = "text-muted d-block mt-1";
+
+                const url = `@Url.Action("ConsultarPadron", "Configuracion")?tipoDocumento=${encodeURIComponent(tipoValue)}&numeroDocumento=${encodeURIComponent(numeroValue)}`;
+                const response = await fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } });
+                const data = await response.json();
+
+                if (!data.encontrado) {
+                    status.textContent = data.mensaje || "No se encontro informacion.";
+                    status.className = "text-danger d-block mt-1";
+                    return;
+                }
+
+                numero.value = data.numeroDocumento || numero.value;
+                const nombre = document.getElementById("nombreFacturacion");
+                const razon = document.getElementById("razonSocialFacturacion");
+                const direccion = document.getElementById("direccionFiscal");
+                const ubigeo = document.getElementById("ubigeoFacturacion");
+                const distrito = document.getElementById("distritoFacturacion");
+                const provincia = document.getElementById("provinciaFacturacion");
+                const departamento = document.getElementById("departamentoFacturacion");
+
+                if (nombre && data.nombreFacturacion) nombre.value = data.nombreFacturacion;
+                if (razon && data.razonSocialFacturacion) razon.value = data.razonSocialFacturacion;
+                if (direccion && data.direccionFiscal) direccion.value = data.direccionFiscal;
+                if (ubigeo && data.ubigeo) ubigeo.value = data.ubigeo;
+                if (distrito && data.distrito) distrito.value = data.distrito;
+                if (provincia && data.provincia) provincia.value = data.provincia;
+                if (departamento && data.departamento) departamento.value = data.departamento;
+
+                status.textContent = data.mensaje || "Datos cargados correctamente.";
+                status.className = "text-success d-block mt-1";
+            });
+        })();
+    </script>
+}

@@ -3,6 +3,7 @@
 -- Create date:   23/06/2026
 -- Description:   Lista cuentas corrientes bancarias por empresa con banco, titular, moneda y cuenta contable asociada.
 -- =============================================
+-- Firma: FRANCO LARA - 09/07/2026 | Expone periodo y saldos iniciales Debe/Haber de la cuenta corriente para su mantenimiento y reutilizacion en Caja y Bancos.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_ListarBancosConfiguracionEmpresa
     @IdEmpresa INT,
@@ -37,6 +38,9 @@ BEGIN
                 c.IdPlanCuenta,
                 p.CodigoCuenta,
                 p.NombreCuenta,
+                c.PeriodoSaldoInicial,
+                c.SaldoInicialDebe,
+                c.SaldoInicialHaber,
                 c.Activo,
                 c.FechaRegistro,
                 c.UsuarioRegistro
@@ -75,6 +79,9 @@ BEGIN
             b.IdPlanCuenta,
             b.CodigoCuenta,
             b.NombreCuenta,
+            b.PeriodoSaldoInicial,
+            b.SaldoInicialDebe,
+            b.SaldoInicialHaber,
             b.Activo,
             b.FechaRegistro,
             b.UsuarioRegistro,

@@ -11,11 +11,14 @@ public sealed class PanelIndexViewModel
     public bool PeriodoCerrado { get; init; }
     public string EstadoPeriodo { get; init; } = string.Empty;
     public int TotalComprasPeriodo { get; init; }
-    public decimal ImporteComprasPeriodo { get; init; }
+    public decimal ImporteComprasPeriodoPen { get; init; }
+    public decimal ImporteComprasPeriodoUsd { get; init; }
     public int TotalVentasPeriodo { get; init; }
-    public decimal ImporteVentasPeriodo { get; init; }
+    public decimal ImporteVentasPeriodoPen { get; init; }
+    public decimal ImporteVentasPeriodoUsd { get; init; }
     public int TotalAsientosPeriodo { get; init; }
-    public decimal ImporteAsientosPeriodo { get; init; }
+    public decimal ImporteAsientosPeriodoPen { get; init; }
+    public decimal ImporteAsientosPeriodoUsd { get; init; }
     public int TotalCuentasCorrientesActivas { get; init; }
     public IReadOnlyCollection<PanelIndicadorViewModel> Indicadores { get; init; } = [];
     public IReadOnlyCollection<PanelSeriePeriodoViewModel> ComprasPorPeriodo { get; init; } = [];

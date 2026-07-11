@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using SistemaAdministrativoWeb.Infrastructure.Empresas;
+using SistemaAdministrativoWeb.Infrastructure.Security;
 using SistemaAdministrativoWeb.Infrastructure.Suscripciones;
 using SistemaAdministrativoWeb.ViewModels.Empresas;
 using System.Security.Claims;
@@ -16,6 +18,7 @@ public class EmpresaContextoController(
     UserManager<IdentityUser> userManager) : Controller
 {
     [HttpGet]
+    [ModulePermission("EMPRESAS", ModulePermissionOperation.View)]
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
         ViewData["Title"] = "Seleccion de empresa";
@@ -53,6 +56,7 @@ public class EmpresaContextoController(
     }
 
     [HttpGet]
+    [ModulePermission("EMPRESAS", ModulePermissionOperation.View)]
     public async Task<IActionResult> RegistrarEmpresaInicial()
     {
         var empresas = await ObtenerEmpresasAsync(HttpContext.RequestAborted);
@@ -68,13 +72,14 @@ public class EmpresaContextoController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [ModulePermission("EMPRESAS", ModulePermissionOperation.Create)]
     public async Task<IActionResult> RegistrarEmpresaInicial(RegistroEmpresaInicialViewModel model, CancellationToken cancellationToken)
     {
         var empresas = await ObtenerEmpresasAsync(cancellationToken);
         if (!ModelState.IsValid)
         {
             model.EsEmpresaInicial = empresas.Count == 0;
-            return View(model);
+            return View("RegistrarEmpresaInicial", model);
         }
 
         var aspNetUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -93,21 +98,16 @@ public class EmpresaContextoController(
         int idEmpresa;
         if (empresas.Count == 0)
         {
-            var result = await cuentaAdministradoraRepository.RegistrarCuentaConEmpresaAsync(new RegistroCuentaAdministradoraConEmpresaRequest
-            {
-                AspNetUserId = aspNetUserId,
-                NombreCompleto = model.NombreContacto.Trim(),
-                Telefono = telefono,
-                CorreoReferencia = email,
-                CodigoCuenta = GenerarCodigoCuenta(model.NombreContacto, email),
-                NombreCuenta = model.NombreContacto.Trim(),
-                CodigoEmpresa = codigoEmpresa,
-                RazonSocial = razonSocial,
-                NombreComercial = nombreComercial,
-                Ruc = model.Ruc.Trim(),
-                DiasPrueba = 30,
-                UsuarioRegistro = email
-            }, cancellationToken);
+            var result = await RegistrarCuentaInicialConReintentoAsync(
+                aspNetUserId,
+                model.NombreContacto.Trim(),
+                telefono,
+                email,
+                codigoEmpresa,
+                razonSocial,
+                nombreComercial,
+                model.Ruc.Trim(),
+                cancellationToken);
 
             idEmpresa = result.IdEmpresa;
         }
@@ -119,7 +119,7 @@ public class EmpresaContextoController(
             {
                 ModelState.AddModelError(string.Empty, "No se pudo resolver la cuenta administradora para registrar la nueva empresa.");
                 model.EsEmpresaInicial = false;
-                return View(model);
+                return View("RegistrarEmpresaInicial", model);
             }
 
             var result = await cuentaAdministradoraRepository.RegistrarEmpresaCuentaAsync(new RegistroEmpresaCuentaAdministradoraRequest
@@ -152,6 +152,7 @@ public class EmpresaContextoController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [ModulePermission("EMPRESAS", ModulePermissionOperation.View)]
     public async Task<IActionResult> Seleccionar(SeleccionEmpresaViewModel model, CancellationToken cancellationToken)
     {
         var empresas = await ObtenerEmpresasAsync(cancellationToken);
@@ -214,20 +215,75 @@ public class EmpresaContextoController(
         return baseCodigo.Length > 20 ? baseCodigo[..20] : baseCodigo;
     }
 
-    private static string GenerarCodigoCuenta(string nombreCuenta, string correo)
+    private async Task<RegistroCuentaAdministradoraConEmpresaResult> RegistrarCuentaInicialConReintentoAsync(
+        string aspNetUserId,
+        string nombreContacto,
+        string? telefono,
+        string email,
+        string codigoEmpresa,
+        string razonSocial,
+        string nombreComercial,
+        string ruc,
+        CancellationToken cancellationToken)
     {
-        var baseCodigo = new string(nombreCuenta.Where(char.IsLetterOrDigit).Take(12).ToArray()).ToUpperInvariant();
+        const int maxIntentos = 5;
+        SqlException? ultimaExcepcion = null;
+
+        for (var intento = 0; intento < maxIntentos; intento++)
+        {
+            try
+            {
+                return await cuentaAdministradoraRepository.RegistrarCuentaConEmpresaAsync(new RegistroCuentaAdministradoraConEmpresaRequest
+                {
+                    AspNetUserId = aspNetUserId,
+                    NombreCompleto = nombreContacto,
+                    Telefono = telefono,
+                    CorreoReferencia = email,
+                    CodigoCuenta = GenerarCodigoCuenta(nombreContacto, email, intento),
+                    NombreCuenta = nombreContacto,
+                    CodigoEmpresa = codigoEmpresa,
+                    RazonSocial = razonSocial,
+                    NombreComercial = nombreComercial,
+                    Ruc = ruc,
+                    DiasPrueba = 30,
+                    UsuarioRegistro = email
+                }, cancellationToken);
+            }
+            catch (SqlException ex) when (EsCodigoCuentaDuplicado(ex) && intento < maxIntentos - 1)
+            {
+                ultimaExcepcion = ex;
+            }
+        }
+
+        if (ultimaExcepcion is not null)
+        {
+            throw ultimaExcepcion;
+        }
+
+        throw new InvalidOperationException("No se pudo registrar la cuenta administradora inicial.");
+    }
+
+    private static bool EsCodigoCuentaDuplicado(SqlException ex)
+        => ex.Message.Contains("codigo de cuenta ya existe", StringComparison.OrdinalIgnoreCase);
+
+    private static string GenerarCodigoCuenta(string nombreCuenta, string correo, int intento)
+    {
+        var baseCodigo = new string(nombreCuenta.Where(char.IsLetterOrDigit).Take(10).ToArray()).ToUpperInvariant();
 
         if (string.IsNullOrWhiteSpace(baseCodigo))
         {
-            baseCodigo = new string(correo.Where(char.IsLetterOrDigit).Take(12).ToArray()).ToUpperInvariant();
+            baseCodigo = new string(correo.Where(char.IsLetterOrDigit).Take(10).ToArray()).ToUpperInvariant();
         }
 
         if (string.IsNullOrWhiteSpace(baseCodigo))
         {
-            baseCodigo = $"CTA{DateTime.UtcNow:HHmmss}";
+            baseCodigo = "CTA";
         }
 
-        return baseCodigo.Length > 20 ? baseCodigo[..20] : baseCodigo;
+        var sufijo = intento <= 0
+            ? DateTime.UtcNow.ToString("ddHHmm")
+            : $"{DateTime.UtcNow:HHmm}{intento:0}";
+        var codigo = $"{baseCodigo}{sufijo}".ToUpperInvariant();
+        return codigo.Length > 20 ? codigo[..20] : codigo;
     }
 }

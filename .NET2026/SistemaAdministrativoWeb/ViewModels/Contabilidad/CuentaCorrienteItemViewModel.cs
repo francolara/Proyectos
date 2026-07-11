@@ -12,6 +12,9 @@ public sealed class CuentaCorrienteItemViewModel
     public int IdPlanCuenta { get; set; }
     public string CodigoCuenta { get; set; } = string.Empty;
     public string NombreCuenta { get; set; } = string.Empty;
+    public string PeriodoSaldoInicial { get; set; } = string.Empty;
+    public decimal SaldoInicialDebe { get; set; }
+    public decimal SaldoInicialHaber { get; set; }
     public bool Activo { get; set; }
     public DateTime FechaRegistro { get; set; }
     public string UsuarioRegistro { get; set; } = string.Empty;

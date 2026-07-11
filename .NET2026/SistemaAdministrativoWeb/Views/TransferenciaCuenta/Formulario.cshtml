@@ -7,6 +7,7 @@
    ============================================= *@
 @* Firma: FRANCO LARA - 24/06/2026 | Agrega el formulario de transferencias entre cuentas con operacion bancaria por destino, conversion automatica del importe receptor, tipo de cambio receptor bloqueado, replica editable de glosa/observaciones y calendario en las fechas de emisor/receptor antes de registrar en BAN_MovimientoBanco. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Ajusta el modo oscuro de transferencias mejorando contraste en tarjetas emisor/receptor y resumen visual de conversion. *@
+@* Firma: FRANCO LARA - 09/07/2026 | Cambia transferencias para obtener tipo de cambio por fecha desde el maestro, bloquear su edicion y permitir ajustar manualmente el monto receptor cuando las monedas de las cuentas corrientes son distintas. *@
 
 @{
     ViewData["Title"] = "Registrar transferencia entre cuentas";
@@ -187,7 +188,7 @@
                                 </div>
                                 <div class="workspace-field">
                                     <label asp-for="Formulario.Emisor.TipoCambio" class="form-label">Tipo de cambio</label>
-                                    <input asp-for="Formulario.Emisor.TipoCambio" class="form-control js-tipo-cambio" />
+                                    <input asp-for="Formulario.Emisor.TipoCambio" class="form-control js-tipo-cambio" readonly />
                                     <span asp-validation-for="Formulario.Emisor.TipoCambio" class="text-danger"></span>
                                 </div>
                                 <div class="workspace-field">
@@ -267,7 +268,7 @@
                                 </div>
                                 <div class="workspace-field">
                                     <label asp-for="Formulario.Receptor.Importe" class="form-label">Monto receptor</label>
-                                    <input asp-for="Formulario.Receptor.Importe" class="form-control js-importe-receptor" readonly />
+                                    <input asp-for="Formulario.Receptor.Importe" class="form-control js-importe-receptor" />
                                     <span asp-validation-for="Formulario.Receptor.Importe" class="text-danger"></span>
                                 </div>
                                 <div class="workspace-field workspace-field-span-2">
@@ -299,7 +300,7 @@
                     <article class="workspace-transfer-stat">
                         <span>Conversion</span>
                         <strong id="conversionTexto">@(Model.Formulario.Receptor.Importe > 0 ? Model.Formulario.Receptor.Importe.ToString("0.00") : "0.00")</strong>
-                        <small>Importe calculado automaticamente para la cuenta receptora.</small>
+                        <small id="conversionAyuda">Importe sugerido automaticamente para la cuenta receptora.</small>
                     </article>
                 </div>
 
@@ -338,6 +339,8 @@
             const observacionEmisor = form.querySelector(".js-sync-observacion");
             const observacionReceptor = form.querySelector(".js-observacion-receptor");
             const conversionTexto = document.getElementById("conversionTexto");
+            const conversionAyuda = document.getElementById("conversionAyuda");
+            const obtenerTipoCambioUrl = '@Url.Action("ObtenerValorPorFecha", "TipoCambio")';
             let glosaReceptorEditada = false;
             let observacionReceptorEditada = false;
 
@@ -353,6 +356,25 @@
                 }
 
                 input.value = parseDecimal(input.value).toFixed(3);
+            };
+
+            const monedasCoinciden = () => {
+                const monedaEmisor = obtenerMoneda(emisorCuenta).toUpperCase();
+                const monedaReceptor = obtenerMoneda(receptorCuenta).toUpperCase();
+                return Boolean(monedaEmisor) && monedaEmisor === monedaReceptor;
+            };
+
+            const actualizarEstadoImporteReceptor = () => {
+                const mismasMonedas = monedasCoinciden();
+                if (receptorImporte) {
+                    receptorImporte.readOnly = mismasMonedas;
+                }
+
+                if (conversionAyuda) {
+                    conversionAyuda.textContent = mismasMonedas
+                        ? "Importe replicado automaticamente porque ambas cuentas operan en la misma moneda."
+                        : "Importe sugerido automaticamente. Puede ajustarlo segun el monto real abonado por el banco.";
+                }
             };
 
             const obtenerMoneda = (select) => {
@@ -391,13 +413,45 @@
                 }
             };
 
+            const actualizarResumenReceptor = () => {
+                const montoReceptor = parseDecimal(receptorImporte?.value);
+                if (conversionTexto) {
+                    conversionTexto.textContent = montoReceptor.toFixed(2);
+                }
+            };
+
+            const consultarTipoCambio = async (fechaInput, tipoCambioInput, mostrarMensaje) => {
+                const fecha = String(fechaInput?.value || "").trim();
+                if (!fecha || !tipoCambioInput) {
+                    if (mostrarMensaje) {
+                        window.alert("Ingrese una fecha valida antes de consultar el tipo de cambio.");
+                    }
+                    return false;
+                }
+
+                const response = await fetch(`${obtenerTipoCambioUrl}?${new URLSearchParams({ fecha, idMoneda: "USD" }).toString()}`, { cache: "no-store" });
+                const payload = await response.json();
+                if (!response.ok || !payload.ok) {
+                    if (mostrarMensaje) {
+                        window.alert(payload.mensaje || "No se pudo obtener el tipo de cambio.");
+                    }
+                    return false;
+                }
+
+                if (!payload.encontrado) {
+                    if (mostrarMensaje) {
+                        window.alert(payload.mensaje || "No existe un tipo de cambio registrado para la fecha seleccionada.");
+                    }
+                    return false;
+                }
+
+                tipoCambioInput.value = Number(payload.tipoCambio || 0).toFixed(3);
+                return true;
+            };
+
             const sincronizarCabecera = () => {
                 if (fechaEmisor && fechaReceptor) {
                     fechaReceptor.value = fechaEmisor.value;
-                }
-                if (tipoCambioEmisor && tipoCambioReceptor) {
-                    formatTipoCambioInput(tipoCambioEmisor);
-                    tipoCambioReceptor.value = tipoCambioEmisor.value;
                 }
                 if (numeroEmisor && numeroReceptor) {
                     numeroReceptor.value = numeroEmisor.value;
@@ -408,6 +462,7 @@
                 if (observacionEmisor && observacionReceptor && !observacionReceptorEditada) {
                     observacionReceptor.value = observacionEmisor.value;
                 }
+                actualizarEstadoImporteReceptor();
                 calcularImporteReceptor();
             };
 
@@ -423,33 +478,34 @@
 
             emisorCuenta?.addEventListener("change", () => {
                 actualizarMoneda(emisorCuenta, emisorMonedaTexto);
+                actualizarEstadoImporteReceptor();
                 calcularImporteReceptor();
             });
 
             receptorCuenta?.addEventListener("change", () => {
                 actualizarMoneda(receptorCuenta, receptorMonedaTexto);
+                actualizarEstadoImporteReceptor();
                 calcularImporteReceptor();
             });
 
             emisorImporte?.addEventListener("input", calcularImporteReceptor);
-            tipoCambioEmisor?.addEventListener("input", () => {
-                if (tipoCambioReceptor) {
-                    tipoCambioReceptor.value = tipoCambioEmisor.value;
-                }
-                calcularImporteReceptor();
-            });
-            tipoCambioEmisor?.addEventListener("blur", () => {
-                formatTipoCambioInput(tipoCambioEmisor);
-                sincronizarCabecera();
-            });
-            tipoCambioEmisor?.addEventListener("change", () => {
-                formatTipoCambioInput(tipoCambioEmisor);
-                sincronizarCabecera();
-            });
+            tipoCambioEmisor?.addEventListener("change", calcularImporteReceptor);
 
-            fechaEmisor?.addEventListener("change", () => {
+            fechaEmisor?.addEventListener("change", async () => {
                 if (fechaReceptor) {
                     fechaReceptor.value = fechaEmisor.value;
+                }
+                const emisorActualizado = await consultarTipoCambio(fechaEmisor, tipoCambioEmisor, false);
+                const receptorActualizado = await consultarTipoCambio(fechaReceptor, tipoCambioReceptor, false);
+                if (emisorActualizado || receptorActualizado) {
+                    calcularImporteReceptor();
+                }
+            });
+
+            fechaReceptor?.addEventListener("change", async () => {
+                const receptorActualizado = await consultarTipoCambio(fechaReceptor, tipoCambioReceptor, false);
+                if (receptorActualizado) {
+                    calcularImporteReceptor();
                 }
             });
 
@@ -479,11 +535,21 @@
                 observacionReceptorEditada = observacionReceptor.value !== observacionEmisor?.value;
             });
 
+            receptorImporte?.addEventListener("input", actualizarResumenReceptor);
+
             formatTipoCambioInput(tipoCambioEmisor);
             formatTipoCambioInput(tipoCambioReceptor);
             actualizarMoneda(emisorCuenta, emisorMonedaTexto);
             actualizarMoneda(receptorCuenta, receptorMonedaTexto);
+            actualizarEstadoImporteReceptor();
             sincronizarCabecera();
+            Promise.all([
+                consultarTipoCambio(fechaEmisor, tipoCambioEmisor, false),
+                consultarTipoCambio(fechaReceptor, tipoCambioReceptor, false)
+            ]).then(() => {
+                calcularImporteReceptor();
+                actualizarResumenReceptor();
+            }).catch((error) => console.warn(error));
         })();
     </script>
 }

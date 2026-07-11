@@ -1,5 +1,7 @@
 @page
 @model SistemaAdministrativoWeb.Areas.Identity.Pages.Account.RegisterModel
+@* Firma: FRANCO LARA - 09/07/2026 | Agrega control visual para mostrar u ocultar la contrasena y confirmar contrasena en el registro de usuarios. *@
+@* Firma: FRANCO LARA - 10/07/2026 | Muestra el plan comercial recibido desde la landing publica, conserva el parametro de registro durante el alta del usuario y mejora la presentacion del formulario evitando autocompletar correo y contrasena en la apertura inicial. *@
 @{
     ViewData["Title"] = "Crear cuenta";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -23,10 +25,19 @@
             <h1>Crear una cuenta</h1>
             <p class="auth-subtitle">Registra un usuario para ingresar a la plataforma y luego vincular sus empresas.</p>
 
+            @if (!string.IsNullOrWhiteSpace(Model.Plan))
+            {
+                <div class="auth-plan-chip" role="status" aria-live="polite">
+                    <strong>Plan seleccionado: @Model.ObtenerNombrePlanSeleccionado()</strong>
+                    <span>@Model.ObtenerResumenPlanSeleccionado()</span>
+                </div>
+            }
+
             <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-            <form method="post" id="registerForm">
+            <form method="post" id="registerForm" autocomplete="off" data-clear-sensitive-fields="@Model.LimpiarCamposIniciales.ToString().ToLowerInvariant()">
                 <input type="hidden" asp-for="ReturnUrl" />
+                <input type="hidden" asp-for="Plan" />
 
                 <div class="mb-3">
                     <label asp-for="Usuario.NombreCompleto" class="form-label">Nombre completo</label>
@@ -40,18 +51,39 @@
                 </div>
                 <div class="mb-3">
                     <label asp-for="Usuario.Email" class="form-label">Correo electronico</label>
-                    <input asp-for="Usuario.Email" class="form-control" />
+                    <input asp-for="Usuario.Email" class="form-control" autocomplete="off" spellcheck="false" />
+                    <div class="form-text">Enviaremos un correo electronico para verificar su cuenta.</div>
                     <span asp-validation-for="Usuario.Email" class="text-danger"></span>
                 </div>
                 <div class="mb-3">
                     <label asp-for="Usuario.Password" class="form-label">Contrasena</label>
-                    <input asp-for="Usuario.Password" class="form-control" />
+                    <div class="auth-password-field">
+                        <input asp-for="Usuario.Password" class="form-control pe-5" autocomplete="new-password" />
+                        <button type="button"
+                                class="auth-password-toggle"
+                                data-password-toggle
+                                data-password-target="Usuario_Password"
+                                aria-label="Mostrar contrasena"
+                                aria-pressed="false">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
                     <div class="form-text">Debe tener minimo 6 caracteres e incluir mayuscula, minuscula, numero y caracter especial.</div>
                     <span asp-validation-for="Usuario.Password" class="text-danger"></span>
                 </div>
                 <div class="mb-3">
                     <label asp-for="Usuario.ConfirmPassword" class="form-label">Confirmar contrasena</label>
-                    <input asp-for="Usuario.ConfirmPassword" class="form-control" />
+                    <div class="auth-password-field">
+                        <input asp-for="Usuario.ConfirmPassword" class="form-control pe-5" autocomplete="new-password" />
+                        <button type="button"
+                                class="auth-password-toggle"
+                                data-password-toggle
+                                data-password-target="Usuario_ConfirmPassword"
+                                aria-label="Mostrar contrasena"
+                                aria-pressed="false">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
                     <span asp-validation-for="Usuario.ConfirmPassword" class="text-danger"></span>
                 </div>
                 <div class="mb-3">
@@ -79,7 +111,7 @@
                     }
                 }
 
-                <div class="auth-foot-links auth-foot-links-pro">
+                <div class="auth-foot-links auth-foot-links-pro auth-foot-links-centered">
                     <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl">Ya tengo cuenta</a>
                     <a asp-controller="Home" asp-action="Index">Volver al inicio</a>
                 </div>
@@ -90,5 +122,24 @@
 
 @section Scripts {
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <script>
+        (() => {
+            const form = document.getElementById("registerForm");
+            if (!form || form.dataset.clearSensitiveFields !== "true") {
+                return;
+            }
+
+            const clearFields = () => {
+                ["Usuario_Email", "Usuario_Password", "Usuario_ConfirmPassword"].forEach((id) => {
+                    const field = document.getElementById(id);
+                    if (field) {
+                        field.value = "";
+                    }
+                });
+            };
+
+            window.addEventListener("pageshow", () => window.setTimeout(clearFields, 120), { once: true });
+        })();
+    </script>
     <partial name="_ValidationScriptsPartial" />
 }

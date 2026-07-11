@@ -2,11 +2,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SistemaAdministrativoWeb.Infrastructure.Contabilidad;
 using SistemaAdministrativoWeb.Infrastructure.Empresas;
+using SistemaAdministrativoWeb.Infrastructure.Security;
 using SistemaAdministrativoWeb.ViewModels.Contabilidad;
 
 namespace SistemaAdministrativoWeb.Controllers;
 
 [Authorize]
+[ModulePermission("CUENTASDESTINO")]
 public class CuentaDestinoReglaController(
     ICurrentCompanyAccessor currentCompanyAccessor,
     IPlanCuentaRepository planCuentaRepository,

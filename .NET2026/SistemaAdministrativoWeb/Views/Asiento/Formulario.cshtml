@@ -21,6 +21,8 @@
    ============================================= *@
 @* Firma: FRANCO LARA - 29/06/2026 | Exige tipo de cambio en cabecera y detalle del asiento manual, consulta siempre USD por fecha al cargar o cambiarla, muestra 3 decimales en ambos niveles y deja el valor por defecto en 0 para validar al grabar; corrige el script del formulario declarando la referencia del form para que el resumen Debe/Haber/Diferencia se recalcule tambien en asientos generados desde provisiones importadas. *@
 @* Firma: FRANCO LARA - 06/07/2026 | Mantiene el formulario de asientos con 16 periodos contables y reorganiza el detalle para pantallas pequenas, evitando que los botones de ayuda se monten sobre los campos de texto. *@
+@* Firma: FRANCO LARA - 09/07/2026 | Amplia el layout del detalle de asientos para escritorio y prioriza scroll horizontal util antes que superponer ayudas o inputs entre columnas. *@
+@* Firma: FRANCO LARA - 10/07/2026 | Corrige el detalle de asientos para que use ancho horizontal real con scroll como compras, evitando comprimir columnas y manteniendo visible el boton Quitar segun el tamano de pantalla. *@
 
 @{
     ViewData["Title"] = Model.Formulario.IdAsiento.HasValue ? "Editar asiento manual" : "Registrar asiento manual";
@@ -37,6 +39,79 @@
     var periodoContableTexto = $"{periodoContableNombre} {Model.AnioSeleccionado:0000}";
 
 }
+
+<style>
+    .asiento-detail-wrap {
+        overflow-x: auto;
+        padding-bottom: 0.2rem;
+    }
+
+    .asiento-detail-table {
+        width: max-content;
+        min-width: 100%;
+        table-layout: auto;
+    }
+
+    .asiento-detail-table th,
+    .asiento-detail-table td {
+        white-space: nowrap;
+        min-width: 0;
+    }
+
+    .asiento-detail-table .detalle-col-full-sm,
+    .asiento-detail-table .detalle-action-cell {
+        white-space: normal;
+    }
+
+    .asiento-detail-table .asiento-col-cuenta {
+        min-width: 18rem;
+    }
+
+    .asiento-detail-table .asiento-col-glosa {
+        min-width: 18rem;
+    }
+
+    .asiento-detail-table .detalle-centro-costo-cell {
+        min-width: 16rem;
+    }
+
+    .asiento-detail-table .detalle-persona-cell {
+        min-width: 14rem;
+    }
+
+    .asiento-detail-table .detalle-tipodoc-cell {
+        min-width: 9rem;
+    }
+
+    .asiento-detail-table .detalle-serie-cell,
+    .asiento-detail-table .detalle-referencia-cell {
+        min-width: 7rem;
+    }
+
+    .asiento-detail-table .detalle-tc-cell,
+    .asiento-detail-table .detalle-porcentaje-cell,
+    .asiento-detail-table .detalle-orden-cell {
+        min-width: 6rem;
+    }
+
+    .asiento-detail-table .detalle-action-cell {
+        min-width: 8rem;
+    }
+
+    .asiento-detail-table .workspace-lookup-control,
+    .asiento-detail-table .workspace-lookup-control-compact,
+    .asiento-detail-table .workspace-lookup-control-inline-tools,
+    .asiento-detail-table .form-control,
+    .asiento-detail-table .form-select {
+        width: 100%;
+    }
+
+    @@media (max-width: 991.98px) {
+        .asiento-detail-table {
+            min-width: 120rem;
+        }
+    }
+</style>
 
 <section class="dashboard-shell">
     <section class="workspace-window">
@@ -137,7 +212,7 @@
                             <button type="button" class="btn btn-outline-secondary btn-sm" id="agregar-linea">Agregar linea</button>
                         </div>
 
-                        <div class="table-responsive workspace-table-wrap">
+                        <div class="table-responsive workspace-table-wrap asiento-detail-wrap">
                             <table class="table align-middle app-table workspace-table asiento-detail-table" id="detalle-table">
                                 <thead>
                                     <tr>

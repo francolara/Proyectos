@@ -28,6 +28,16 @@ public sealed class CuentaCorrienteFormViewModel
 
     public string CuentaTexto { get; set; } = string.Empty;
 
+    [Required(ErrorMessage = "Ingrese el periodo del saldo inicial.")]
+    [RegularExpression(@"^\d{4}-(0[1-9]|1[0-2])$", ErrorMessage = "Ingrese un periodo valido.")]
+    public string PeriodoSaldoInicial { get; set; } = string.Empty;
+
+    [Range(typeof(decimal), "0", "999999999999999.99", ErrorMessage = "El saldo inicial al Debe no puede ser negativo.")]
+    public decimal SaldoInicialDebe { get; set; }
+
+    [Range(typeof(decimal), "0", "999999999999999.99", ErrorMessage = "El saldo inicial al Haber no puede ser negativo.")]
+    public decimal SaldoInicialHaber { get; set; }
+
     public bool Activo { get; set; } = true;
 
     public DateTime? FechaRegistro { get; set; }

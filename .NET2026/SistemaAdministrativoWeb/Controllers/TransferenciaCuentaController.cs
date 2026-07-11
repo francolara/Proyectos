@@ -3,16 +3,22 @@ using Microsoft.AspNetCore.Mvc;
 using SistemaAdministrativoWeb.Infrastructure.Contabilidad;
 using SistemaAdministrativoWeb.Infrastructure.Data;
 using SistemaAdministrativoWeb.Infrastructure.Empresas;
+using SistemaAdministrativoWeb.Infrastructure.Security;
+using SistemaAdministrativoWeb.Infrastructure.Suscripciones;
 using SistemaAdministrativoWeb.ViewModels.Contabilidad;
 
 namespace SistemaAdministrativoWeb.Controllers;
 
 [Authorize]
+[ModulePermission("TRANSFERENCIAS")]
 public class TransferenciaCuentaController(
     ICurrentCompanyAccessor currentCompanyAccessor,
     IPeriodoContableService periodoContableService,
     ICajaBancoRepository cajaBancoRepository,
-    ICuentaCorrienteRepository cuentaCorrienteRepository) : Controller
+    ICuentaCorrienteRepository cuentaCorrienteRepository,
+    ICuentaAdministradoraRepository cuentaAdministradoraRepository,
+    ITipoCambioRepository tipoCambioRepository,
+    ITipoCambioSyncService tipoCambioSyncService) : Controller
 {
     private const int TamanoPagina = 20;
 
@@ -103,6 +109,13 @@ public class TransferenciaCuentaController(
                 TipoOperacionTexto = operacionesReceptor.FirstOrDefault()?.TipoOperacion ?? string.Empty
             }
         };
+
+        var tipoCambioInicial = await ResolverTipoCambioTransferenciaAsync(empresaId, formulario.Emisor.FechaEmision, cancellationToken);
+        if (tipoCambioInicial.HasValue)
+        {
+            formulario.Emisor.TipoCambio = tipoCambioInicial.Value;
+            formulario.Receptor.TipoCambio = tipoCambioInicial.Value;
+        }
 
         var model = ConstruirViewModel(
             empresaId,
@@ -195,13 +208,37 @@ public class TransferenciaCuentaController(
             ModelState.AddModelError("Receptor.IdOpeBancaria", "Seleccione una operacion bancaria de transferencia para el receptor.");
         }
 
+        var contextoSuscripcion = await cuentaAdministradoraRepository.ObtenerContextoSuscripcionPorEmpresaAsync(empresaId, cancellationToken);
+        if (contextoSuscripcion is null)
+        {
+            ModelState.AddModelError(string.Empty, "No se pudo resolver la cuenta administradora de la empresa activa.");
+        }
+        else
+        {
+            var tipoCambioEmisor = await ResolverTipoCambioAsync(contextoSuscripcion.IdCuentaAdministradora, formulario.Emisor.FechaEmision, cancellationToken);
+            if (!tipoCambioEmisor.HasValue)
+            {
+                ModelState.AddModelError("Emisor.FechaEmision", "No existe un tipo de cambio registrado para la fecha del emisor.");
+            }
+            else
+            {
+                formulario.Emisor.TipoCambio = tipoCambioEmisor.Value;
+            }
+
+            var tipoCambioReceptor = await ResolverTipoCambioAsync(contextoSuscripcion.IdCuentaAdministradora, formulario.Receptor.FechaEmision, cancellationToken);
+            if (!tipoCambioReceptor.HasValue)
+            {
+                ModelState.AddModelError("Receptor.FechaEmision", "No existe un tipo de cambio registrado para la fecha del receptor.");
+            }
+            else
+            {
+                formulario.Receptor.TipoCambio = tipoCambioReceptor.Value;
+            }
+        }
+
         if (formulario.Emisor.TipoCambio <= 0 || formulario.Receptor.TipoCambio <= 0)
         {
             ModelState.AddModelError(string.Empty, "El tipo de cambio debe ser mayor a cero en ambas secciones.");
-        }
-        else if (Math.Abs(formulario.Emisor.TipoCambio - formulario.Receptor.TipoCambio) >= 0.000001m)
-        {
-            ModelState.AddModelError(string.Empty, "El tipo de cambio del emisor y receptor debe ser el mismo.");
         }
 
         if (formulario.Emisor.Importe <= 0)
@@ -213,16 +250,30 @@ public class TransferenciaCuentaController(
         {
             try
             {
-                formulario.Receptor.Importe = CalcularImporteReceptor(
+                var importeSugeridoReceptor = CalcularImporteReceptor(
                     cuentaEmisor.CodigoMoneda,
                     cuentaReceptor.CodigoMoneda,
                     formulario.Emisor.Importe,
                     formulario.Emisor.TipoCambio);
+
+                if (string.Equals(cuentaEmisor.CodigoMoneda, cuentaReceptor.CodigoMoneda, StringComparison.OrdinalIgnoreCase))
+                {
+                    formulario.Receptor.Importe = importeSugeridoReceptor;
+                }
+                else if (formulario.Receptor.Importe <= 0)
+                {
+                    formulario.Receptor.Importe = importeSugeridoReceptor;
+                }
             }
             catch (InvalidOperationException ex)
             {
                 ModelState.AddModelError(string.Empty, ex.Message);
             }
+        }
+
+        if (formulario.Receptor.Importe <= 0)
+        {
+            ModelState.AddModelError("Receptor.Importe", "Ingrese un monto receptor mayor a cero.");
         }
 
         var (anioTrabajo, mesTrabajo) = NormalizarPeriodo(anio, mes);
@@ -258,6 +309,7 @@ public class TransferenciaCuentaController(
             NumeroOperacionEmisor = formulario.Emisor.NumeroOperacion,
             NumeroOperacionReceptor = formulario.Receptor.NumeroOperacion,
             ImporteEmisor = formulario.Emisor.Importe,
+            ImporteReceptor = formulario.Receptor.Importe,
             GlosaEmisor = formulario.Emisor.Glosa,
             GlosaReceptor = formulario.Receptor.Glosa,
             ObservacionEmisor = formulario.Emisor.Observacion,
@@ -444,5 +496,32 @@ public class TransferenciaCuentaController(
         formulario.Receptor.Glosa = (formulario.Receptor.Glosa ?? string.Empty).Trim();
         formulario.Emisor.Observacion = string.IsNullOrWhiteSpace(formulario.Emisor.Observacion) ? null : formulario.Emisor.Observacion.Trim();
         formulario.Receptor.Observacion = string.IsNullOrWhiteSpace(formulario.Receptor.Observacion) ? null : formulario.Receptor.Observacion.Trim();
+    }
+
+    private async Task<decimal?> ResolverTipoCambioTransferenciaAsync(int idEmpresa, DateOnly fecha, CancellationToken cancellationToken)
+    {
+        var contexto = await cuentaAdministradoraRepository.ObtenerContextoSuscripcionPorEmpresaAsync(idEmpresa, cancellationToken);
+        if (contexto is null)
+        {
+            return null;
+        }
+
+        return await ResolverTipoCambioAsync(contexto.IdCuentaAdministradora, fecha, cancellationToken);
+    }
+
+    private async Task<decimal?> ResolverTipoCambioAsync(int idCuentaAdministradora, DateOnly fecha, CancellationToken cancellationToken)
+    {
+        var tipoCambio = await tipoCambioRepository.ObtenerPorFechaMonedaAsync(idCuentaAdministradora, fecha, "USD", cancellationToken);
+        if (tipoCambio is null)
+        {
+            tipoCambio = await tipoCambioSyncService.SincronizarFechaAsync(
+                idCuentaAdministradora,
+                fecha,
+                "USD",
+                User.Identity?.Name,
+                cancellationToken);
+        }
+
+        return tipoCambio?.Venta;
     }
 }

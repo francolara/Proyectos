@@ -71,6 +71,9 @@ public sealed class CuentaCorrienteRepository(IDbConnectionFactory connectionFac
         command.Parameters.AddWithValue("@Titular", request.Titular);
         command.Parameters.AddWithValue("@IdMoneda", request.IdMoneda);
         command.Parameters.AddWithValue("@IdPlanCuenta", request.IdPlanCuenta);
+        command.Parameters.AddWithValue("@PeriodoSaldoInicial", request.PeriodoSaldoInicial);
+        command.Parameters.AddWithValue("@SaldoInicialDebe", request.SaldoInicialDebe);
+        command.Parameters.AddWithValue("@SaldoInicialHaber", request.SaldoInicialHaber);
         command.Parameters.AddWithValue("@Activo", request.Activo);
         command.Parameters.AddWithValue("@UsuarioRegistro", string.IsNullOrWhiteSpace(request.UsuarioRegistro) ? (object)DBNull.Value : request.UsuarioRegistro.Trim());
 
@@ -110,6 +113,15 @@ public sealed class CuentaCorrienteRepository(IDbConnectionFactory connectionFac
             IdPlanCuenta = reader.GetInt32(reader.GetOrdinal("IdPlanCuenta")),
             CodigoCuenta = reader.GetString(reader.GetOrdinal("CodigoCuenta")),
             NombreCuenta = reader.GetString(reader.GetOrdinal("NombreCuenta")),
+            PeriodoSaldoInicial = reader.IsDBNull(reader.GetOrdinal("PeriodoSaldoInicial"))
+                ? string.Empty
+                : reader.GetString(reader.GetOrdinal("PeriodoSaldoInicial")),
+            SaldoInicialDebe = reader.IsDBNull(reader.GetOrdinal("SaldoInicialDebe"))
+                ? 0m
+                : reader.GetDecimal(reader.GetOrdinal("SaldoInicialDebe")),
+            SaldoInicialHaber = reader.IsDBNull(reader.GetOrdinal("SaldoInicialHaber"))
+                ? 0m
+                : reader.GetDecimal(reader.GetOrdinal("SaldoInicialHaber")),
             Activo = reader.GetBoolean(reader.GetOrdinal("Activo")),
             FechaRegistro = reader.GetDateTime(reader.GetOrdinal("FechaRegistro")),
             UsuarioRegistro = reader.IsDBNull(reader.GetOrdinal("UsuarioRegistro"))

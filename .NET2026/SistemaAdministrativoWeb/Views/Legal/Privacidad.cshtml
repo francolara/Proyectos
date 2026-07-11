@@ -1,0 +1,140 @@
+@model SistemaAdministrativoWeb.ViewModels.Legal.LegalDocumentViewModel
+@{
+    ViewData["Title"] = Model.Title;
+    ViewData["MetaDescription"] = Model.MetaDescription;
+}
+@* Firma: FRANCO LARA - 10/07/2026 | Crea la politica de privacidad publica de FralseCont con bloque de contacto reutilizable y fondo legal claro por pagina. *@
+
+<section class="fralsecont-legal-page fralsecont-legal-page--privacy">
+    <div class="fralsecont-legal-container">
+        <header class="fralsecont-legal-header">
+            <p class="fralsecont-legal-eyebrow">@Model.BusinessInformation.CommercialName</p>
+            <h1 class="fralsecont-legal-title">Politica de privacidad</h1>
+            <p class="fralsecont-legal-updated">Ultima actualizacion: @Model.LastUpdated</p>
+            <p class="fralsecont-legal-lead">
+                La presente Politica de privacidad describe como @Model.BusinessInformation.LegalName,
+                identificada con RUC @Model.BusinessInformation.Ruc, recopila, utiliza, almacena y protege la
+                informacion tratada mediante FralseCont.
+            </p>
+        </header>
+
+        @if (Model.ShowDraftNotice)
+        {
+            <div class="fralsecont-legal-notice" role="status">
+                Documento preliminar pendiente de revision legal antes de su publicacion definitiva.
+            </div>
+        }
+
+        <nav class="fralsecont-legal-index" aria-label="Indice de politica de privacidad">
+            <a href="#identidad">1. Identidad del responsable</a>
+            <a href="#alcance">2. Alcance</a>
+            <a href="#informacion-recopilada">3. Informacion recopilada</a>
+            <a href="#datos-registro">4. Datos de registro</a>
+            <a href="#datos-usuario">5. Datos del usuario</a>
+            <a href="#datos-empresas">6. Datos de las empresas administradas</a>
+            <a href="#datos-clientes">7. Datos de clientes</a>
+            <a href="#datos-proveedores">8. Datos de proveedores</a>
+            <a href="#informacion-contable">9. Informacion contable</a>
+            <a href="#compras">10. Compras</a>
+            <a href="#ventas">11. Ventas</a>
+            <a href="#asientos">12. Asientos</a>
+            <a href="#caja-bancos">13. Movimientos de Caja y Bancos</a>
+            <a href="#cuentas-corrientes">14. Cuentas corrientes</a>
+            <a href="#documentos-reportes">15. Documentos y reportes</a>
+            <a href="#datos-tecnicos">16. Datos tecnicos</a>
+            <a href="#datos-sesion">17. Datos de sesion</a>
+            <a href="#finalidades">18. Finalidades del tratamiento</a>
+            <a href="#gestion-cuenta">19. Creacion y gestion de cuenta</a>
+            <a href="#autenticacion">20. Autenticacion</a>
+            <a href="#prestacion">21. Prestacion del servicio</a>
+            <a href="#suscripciones">22. Gestion de suscripciones</a>
+            <a href="#soporte">23. Atencion de soporte</a>
+            <a href="#comunicaciones">24. Comunicaciones transaccionales</a>
+            <a href="#seguridad">25. Seguridad</a>
+            <a href="#proveedores-tecnologicos">26. Proveedores tecnologicos</a>
+            <a href="#consulta-ruc-dni">27. Consulta de RUC y DNI</a>
+            <a href="#tipo-cambio">28. Tipo de cambio en linea</a>
+            <a href="#validacion-cpe">29. Validacion CPE</a>
+            <a href="#alojamiento">30. Alojamiento</a>
+            <a href="#base-datos">31. Base de datos</a>
+            <a href="#correo">32. Servicios de correo</a>
+            <a href="#autenticacion-externa">33. Autenticacion externa</a>
+            <a href="#cookies">34. Cookies</a>
+            <a href="#conservacion">35. Conservacion de informacion</a>
+            <a href="#terceros">36. Transferencia o encargo a terceros</a>
+            <a href="#derechos">37. Derechos del titular</a>
+            <a href="#acceso">38. Acceso</a>
+            <a href="#rectificacion">39. Rectificacion</a>
+            <a href="#actualizacion">40. Actualizacion</a>
+            <a href="#eliminacion">41. Eliminacion</a>
+            <a href="#oposicion">42. Oposicion, cuando corresponda</a>
+            <a href="#seguridad-informacion">43. Seguridad de la informacion</a>
+            <a href="#enlaces-externos">44. Enlaces externos</a>
+            <a href="#cambios">45. Cambios de la politica</a>
+            <a href="#contacto-privacidad">46. Contacto de privacidad</a>
+        </nav>
+
+        <div class="fralsecont-legal-content">
+            <section id="identidad" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">1. Identidad del responsable</h2><p>El responsable del tratamiento descrito en esta politica es @Model.BusinessInformation.LegalName, con domicilio en @Model.BusinessInformation.FullAddress.</p></section>
+            <section id="alcance" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">2. Alcance</h2><p>Esta politica se aplica al tratamiento de informacion realizado a traves de FralseCont, sus formularios publicos, cuentas de acceso y canales de soporte relacionados con la plataforma.</p></section>
+            <section id="informacion-recopilada" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">3. Informacion recopilada</h2><p>FralseCont trata solo la informacion necesaria para registrar usuarios, administrar empresas, operar modulos contables y atender requerimientos funcionales, comerciales o de soporte.</p></section>
+            <section id="datos-registro" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">4. Datos de registro</h2><p>Se pueden tratar nombre completo, correo electronico, telefono, datos de cuenta y credenciales administradas mediante ASP.NET Identity.</p></section>
+            <section id="datos-usuario" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">5. Datos del usuario</h2><p>La plataforma puede tratar informacion del titular de la cuenta, administradores, operadores y otros usuarios vinculados segun el plan contratado.</p></section>
+            <section id="datos-empresas" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">6. Datos de las empresas administradas</h2><p>FralseCont puede almacenar razon social, nombre comercial, RUC, direccion, datos de contacto y configuraciones de las empresas registradas.</p></section>
+            <section id="datos-clientes" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">7. Datos de clientes</h2><p>Segun el uso del sistema, pueden tratarse nombres, documentos, direcciones y datos comerciales de clientes vinculados a operaciones contables o comerciales.</p></section>
+            <section id="datos-proveedores" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">8. Datos de proveedores</h2><p>El sistema puede tratar datos de proveedores, incluyendo razon social, documento, direccion y datos relacionados con compras, pagos o cuentas corrientes.</p></section>
+            <section id="informacion-contable" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">9. Informacion contable</h2><p>La plataforma puede almacenar plan contable, centros de costo, configuraciones contables, parametros y reglas de contabilizacion necesarias para su operacion.</p></section>
+            <section id="compras" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">10. Compras</h2><p>FralseCont puede tratar comprobantes de compra, importes, monedas, impuestos, detracciones, proveedores y referencias asociadas al registro de compras.</p></section>
+            <section id="ventas" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">11. Ventas</h2><p>La plataforma puede tratar comprobantes de venta, clientes, importes, impuestos, afectaciones y referencias ligadas al registro de ventas.</p></section>
+            <section id="asientos" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">12. Asientos</h2><p>El sistema puede tratar asientos contables manuales o automaticos, glosas, cuentas, importes, centros de costo, personas y datos documentarios relacionados.</p></section>
+            <section id="caja-bancos" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">13. Movimientos de Caja y Bancos</h2><p>FralseCont puede tratar cuentas corrientes, transferencias, movimientos bancarios, datos de operacion y referencias de conciliacion o aplicacion.</p></section>
+            <section id="cuentas-corrientes" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">14. Cuentas corrientes</h2><p>Puede tratarse informacion de saldos, vencimientos, pagos parciales, cobros, aplicaciones y terceros vinculados a cuentas corrientes.</p></section>
+            <section id="documentos-reportes" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">15. Documentos y reportes</h2><p>El sistema puede generar o almacenar reportes contables, libros electronicos, reportes de compras, ventas, balance, mayor, diario y archivos de apoyo funcional.</p></section>
+            <section id="datos-tecnicos" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">16. Datos tecnicos</h2><p>FralseCont puede tratar datos tecnicos minimos necesarios para operar la autenticacion, proteger formularios y mantener la sesion activa.</p></section>
+            <section id="datos-sesion" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">17. Datos de sesion</h2><p>Se utilizan cookies tecnicas, sesion del usuario, recordatorio de acceso cuando corresponda y preferencias operativas asociadas a la experiencia del sistema.</p></section>
+            <section id="finalidades" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">18. Finalidades del tratamiento</h2><p>La informacion se trata para habilitar la cuenta, prestar el servicio, administrar empresas, procesar funciones del sistema y atender soporte o comunicaciones operativas.</p></section>
+            <section id="gestion-cuenta" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">19. Creacion y gestion de cuenta</h2><p>Los datos de registro permiten crear, validar, administrar y recuperar el acceso a la cuenta del usuario.</p></section>
+            <section id="autenticacion" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">20. Autenticacion</h2><p>FralseCont usa mecanismos propios de ASP.NET Identity y puede habilitar autenticacion externa cuando dicha opcion se encuentre configurada.</p></section>
+            <section id="prestacion" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">21. Prestacion del servicio</h2><p>Los datos tratados permiten operar modulos contables, vistas publicas, validaciones, reportes y procesos administrativos relacionados con el servicio.</p></section>
+            <section id="suscripciones" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">22. Gestion de suscripciones</h2><p>La informacion comercial de planes, vigencias, limites, cobros y movimientos de suscripcion se trata para administrar el ciclo comercial de la cuenta.</p></section>
+            <section id="soporte" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">23. Atencion de soporte</h2><p>Los datos del usuario y de su cuenta pueden utilizarse para atender incidencias, consultas funcionales y requerimientos comerciales o de privacidad.</p></section>
+            <section id="comunicaciones" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">24. Comunicaciones transaccionales</h2><p>FralseCont puede enviar comunicaciones relacionadas con registro, acceso, soporte, alertas operativas, renovaciones, cambios del servicio o avisos legales.</p></section>
+            <section id="seguridad" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">25. Seguridad</h2><p>La informacion puede utilizarse para controles de acceso, verificacion de formularios, prevencion de abuso y medidas tecnicas razonables de seguridad.</p></section>
+            <section id="proveedores-tecnologicos" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">26. Proveedores tecnologicos</h2><p>El servicio puede apoyarse en proveedores tecnologicos necesarios para hosting, base de datos, seguridad, autenticacion, correo o funciones integradas de consulta.</p></section>
+            <section id="consulta-ruc-dni" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">27. Consulta de RUC y DNI</h2><p>La consulta de RUC y DNI puede apoyarse en servicios externos integrados. Los datos consultados se usan para completar o contrastar informacion de terceros registrada por el usuario.</p></section>
+            <section id="tipo-cambio" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">28. Tipo de cambio en linea</h2><p>Las funciones de tipo de cambio en linea pueden apoyarse en proveedores externos y se utilizan para sugerir o sincronizar datos dentro de la operacion contable.</p></section>
+            <section id="validacion-cpe" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">29. Validacion CPE</h2><p>La validacion de CPE puede requerir enviar datos minimos del comprobante a servicios externos de verificacion o consulta.</p></section>
+            <section id="alojamiento" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">30. Alojamiento</h2><p>La infraestructura puede apoyarse en proveedores de alojamiento y procesamiento necesarios para publicar y mantener disponible la plataforma.</p></section>
+            <section id="base-datos" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">31. Base de datos</h2><p>Los datos se almacenan en infraestructura de base de datos necesaria para la prestacion del servicio, bajo controles tecnicos razonables.</p></section>
+            <section id="correo" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">32. Servicios de correo</h2><p>Las comunicaciones operativas pueden apoyarse en servicios de correo o mensajeria contratados para notificaciones y soporte.</p></section>
+            <section id="autenticacion-externa" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">33. Autenticacion externa</h2><p>Cuando se habilite autenticacion con proveedores externos, estos podran tratar la informacion necesaria para identificar al usuario y completar el flujo de acceso.</p></section>
+            <section id="cookies" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">34. Cookies</h2><p>FralseCont utiliza cookies tecnicas y de autenticacion indispensables para el funcionamiento basico del servicio y para conservar determinadas preferencias de uso.</p></section>
+            <section id="conservacion" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">35. Conservacion de informacion</h2><p>La informacion se conserva durante el tiempo necesario para prestar el servicio, atender obligaciones operativas, resolver incidencias y cumplir exigencias legales o contractuales aplicables.</p></section>
+            <section id="terceros" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">36. Transferencia o encargo a terceros</h2><p>La informacion puede ser tratada por terceros solo dentro de las funciones tecnicas o contractuales necesarias para operar FralseCont y sus integraciones.</p></section>
+            <section id="derechos" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">37. Derechos del titular</h2><p>El titular puede solicitar informacion sobre el tratamiento de sus datos y ejercer los derechos que resulten aplicables conforme a la normativa vigente.</p></section>
+            <section id="acceso" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">38. Acceso</h2><p>El usuario puede solicitar informacion general sobre los datos personales asociados a su cuenta o a sus interacciones con FralseCont.</p></section>
+            <section id="rectificacion" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">39. Rectificacion</h2><p>Cuando la informacion resulte incompleta o inexacta, el usuario puede solicitar su correccion por los canales habilitados.</p></section>
+            <section id="actualizacion" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">40. Actualizacion</h2><p>El titular debe mantener actualizada la informacion bajo su control y puede solicitar apoyo para revisar o actualizar datos de cuenta cuando corresponda.</p></section>
+            <section id="eliminacion" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">41. Eliminacion</h2><p>La eliminacion podra solicitarse cuando sea procedente y no exista una base legal, contractual u operativa que obligue a conservar la informacion por un tiempo adicional.</p></section>
+            <section id="oposicion" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">42. Oposicion, cuando corresponda</h2><p>El titular puede manifestar oposicion o revocacion en los casos en que la normativa aplicable lo permita y la naturaleza del tratamiento lo haga viable.</p></section>
+            <section id="seguridad-informacion" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">43. Seguridad de la informacion</h2><p>FralseCont adopta medidas razonables para proteger la informacion contra acceso no autorizado, perdida, alteracion o uso indebido, sin garantizar una seguridad absoluta.</p></section>
+            <section id="enlaces-externos" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">44. Enlaces externos</h2><p>La plataforma puede incluir enlaces a servicios de terceros. El tratamiento posterior realizado fuera de FralseCont se rige por las politicas de esos servicios externos.</p></section>
+            <section id="cambios" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">45. Cambios de la politica</h2><p>Esta politica puede actualizarse para reflejar cambios operativos, comerciales, tecnicos o legales. La version vigente sera la publicada en los canales oficiales de FralseCont.</p></section>
+            <section id="contacto-privacidad" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">46. Contacto de privacidad</h2>
+                <p>
+                    Las solicitudes relacionadas con privacidad, acceso, correccion, actualizacion, eliminacion u
+                    oposicion pueden dirigirse a <a href="mailto:@Model.BusinessInformation.PrivacyEmail">@Model.BusinessInformation.PrivacyEmail</a>.
+                </p>
+                <partial name="_LegalContactBlock" />
+            </section>
+        </div>
+
+        <div class="fralsecont-legal-links">
+            <a asp-controller="Legal" asp-action="Terminos">Ir a Terminos y condiciones</a>
+            <a asp-controller="Legal" asp-action="Cancelaciones">Ir a Politica de cancelaciones y devoluciones</a>
+        </div>
+
+        <a class="fralsecont-legal-back-link" asp-controller="Home" asp-action="Index">Volver al inicio</a>
+    </div>
+</section>

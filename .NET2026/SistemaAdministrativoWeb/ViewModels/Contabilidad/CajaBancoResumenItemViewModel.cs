@@ -13,7 +13,7 @@ public sealed class CajaBancoResumenItemViewModel
     public string TipoMovimiento { get; set; } = string.Empty;
     public string TipoOperacion { get; set; } = string.Empty;
     public string NombrePersona { get; set; } = string.Empty;
-    public string NumeroDocumento { get; set; } = string.Empty;
+    public string NumeroOperacion { get; set; } = string.Empty;
     public string Glosa { get; set; } = string.Empty;
     public decimal Ingreso { get; set; }
     public decimal Egreso { get; set; }

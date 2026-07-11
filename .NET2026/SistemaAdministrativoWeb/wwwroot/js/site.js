@@ -60,6 +60,45 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll("[data-password-toggle]").forEach(function (toggle) {
+        const targetId = toggle.getAttribute("data-password-target");
+        const input = targetId
+            ? document.getElementById(targetId)
+            : toggle.closest(".auth-password-field")?.querySelector("input");
+
+        if (!(input instanceof HTMLInputElement)) {
+            return;
+        }
+
+        const icon = toggle.querySelector("i");
+
+        const syncState = function () {
+            const visible = input.type === "text";
+            toggle.setAttribute("aria-pressed", visible ? "true" : "false");
+            toggle.setAttribute("aria-label", visible ? "Ocultar contrasena" : "Mostrar contrasena");
+
+            if (icon) {
+                icon.classList.toggle("bi-eye", !visible);
+                icon.classList.toggle("bi-eye-slash", visible);
+            }
+        };
+
+        toggle.addEventListener("click", function () {
+            input.type = input.type === "password" ? "text" : "password";
+            syncState();
+            input.focus({ preventScroll: true });
+
+            if (typeof input.setSelectionRange === "function") {
+                const cursor = input.value.length;
+                input.setSelectionRange(cursor, cursor);
+            }
+        });
+
+        syncState();
+    });
+});
+
+document.addEventListener("DOMContentLoaded", function () {
     const personaForm = document.querySelector("[data-persona-form='true']");
     if (!personaForm) {
         return;

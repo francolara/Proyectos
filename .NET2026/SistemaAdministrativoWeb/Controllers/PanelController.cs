@@ -2,12 +2,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SistemaAdministrativoWeb.Infrastructure.Contabilidad;
 using SistemaAdministrativoWeb.Infrastructure.Empresas;
+using SistemaAdministrativoWeb.Infrastructure.Security;
 using SistemaAdministrativoWeb.Infrastructure.Suscripciones;
 using SistemaAdministrativoWeb.ViewModels.Panel;
 
 namespace SistemaAdministrativoWeb.Controllers;
 
 [Authorize]
+[ModulePermission("DASHBOARD")]
 public class PanelController(
     ICurrentCompanyAccessor currentCompanyAccessor,
     ICuentaAdministradoraRepository cuentaAdministradoraRepository,
@@ -72,7 +74,12 @@ public class PanelController(
             {
                 Periodo = periodo.etiqueta,
                 Registros = task.Result.Count,
-                ImporteTotal = task.Result.Sum(x => x.ImporteTotal)
+                ImporteTotalPen = task.Result
+                    .Where(x => string.Equals(x.CodigoMoneda, "PEN", StringComparison.OrdinalIgnoreCase))
+                    .Sum(x => x.ImporteTotal),
+                ImporteTotalUsd = task.Result
+                    .Where(x => string.Equals(x.CodigoMoneda, "USD", StringComparison.OrdinalIgnoreCase))
+                    .Sum(x => x.ImporteTotal)
             })
             .ToList();
         var ventasPorPeriodo = periodosHistoricos
@@ -80,7 +87,12 @@ public class PanelController(
             {
                 Periodo = periodo.etiqueta,
                 Registros = task.Result.Count,
-                ImporteTotal = task.Result.Sum(x => x.ImporteTotal)
+                ImporteTotalPen = task.Result
+                    .Where(x => string.Equals(x.CodigoMoneda, "PEN", StringComparison.OrdinalIgnoreCase))
+                    .Sum(x => x.ImporteTotal),
+                ImporteTotalUsd = task.Result
+                    .Where(x => string.Equals(x.CodigoMoneda, "USD", StringComparison.OrdinalIgnoreCase))
+                    .Sum(x => x.ImporteTotal)
             })
             .ToList();
 
@@ -102,11 +114,22 @@ public class PanelController(
             PeriodoCerrado = estadoPeriodo.Cerrado,
             EstadoPeriodo = estadoPeriodo.Cerrado ? "Periodo cerrado" : "Periodo abierto",
             TotalComprasPeriodo = comprasPeriodo.Count,
-            ImporteComprasPeriodo = comprasPeriodo.Sum(x => x.ImporteTotal),
+            ImporteComprasPeriodoPen = comprasPeriodo
+                .Where(x => string.Equals(x.CodigoMoneda, "PEN", StringComparison.OrdinalIgnoreCase))
+                .Sum(x => x.ImporteTotal),
+            ImporteComprasPeriodoUsd = comprasPeriodo
+                .Where(x => string.Equals(x.CodigoMoneda, "USD", StringComparison.OrdinalIgnoreCase))
+                .Sum(x => x.ImporteTotal),
             TotalVentasPeriodo = ventasPeriodo.Count,
-            ImporteVentasPeriodo = ventasPeriodo.Sum(x => x.ImporteTotal),
+            ImporteVentasPeriodoPen = ventasPeriodo
+                .Where(x => string.Equals(x.CodigoMoneda, "PEN", StringComparison.OrdinalIgnoreCase))
+                .Sum(x => x.ImporteTotal),
+            ImporteVentasPeriodoUsd = ventasPeriodo
+                .Where(x => string.Equals(x.CodigoMoneda, "USD", StringComparison.OrdinalIgnoreCase))
+                .Sum(x => x.ImporteTotal),
             TotalAsientosPeriodo = asientosPeriodo.Count,
-            ImporteAsientosPeriodo = asientosPeriodo.Sum(x => x.TotalImporteS),
+            ImporteAsientosPeriodoPen = asientosPeriodo.Sum(x => x.TotalImporteS),
+            ImporteAsientosPeriodoUsd = asientosPeriodo.Sum(x => x.TotalImporteD),
             TotalCuentasCorrientesActivas = cuentasCorrientes.Count,
             ComprasPorPeriodo = comprasPorPeriodo,
             VentasPorPeriodo = ventasPorPeriodo,

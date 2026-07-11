@@ -6,8 +6,8 @@
     ViewData["AdminShell"] = true;
 
     var totalDistribucion = Model.DistribucionRegistros.Sum(x => x.Valor);
-    var maximoCompras = Math.Max(1m, Model.ComprasPorPeriodo.Count == 0 ? 0m : Model.ComprasPorPeriodo.Max(x => x.ImporteTotal));
-    var maximoVentas = Math.Max(1m, Model.VentasPorPeriodo.Count == 0 ? 0m : Model.VentasPorPeriodo.Max(x => x.ImporteTotal));
+    var maximoCompras = Math.Max(1m, Model.ComprasPorPeriodo.Count == 0 ? 0m : Model.ComprasPorPeriodo.Max(x => Math.Max(x.ImporteTotalPen, x.ImporteTotalUsd)));
+    var maximoVentas = Math.Max(1m, Model.VentasPorPeriodo.Count == 0 ? 0m : Model.VentasPorPeriodo.Max(x => Math.Max(x.ImporteTotalPen, x.ImporteTotalUsd)));
     var donutStops = new List<string>();
     decimal acumulado = 0m;
 
@@ -48,8 +48,12 @@
                     <strong>@Model.TotalComprasPeriodo</strong>
                 </div>
                 <div class="dashboard-metric-amount-line">
-                    <label>Total</label>
-                    <strong>@Model.ImporteComprasPeriodo.ToString("0.00")</strong>
+                    <label>Total PEN</label>
+                    <strong>@Model.ImporteComprasPeriodoPen.ToString("0.00")</strong>
+                </div>
+                <div class="dashboard-metric-amount-line">
+                    <label>Total USD</label>
+                    <strong>@Model.ImporteComprasPeriodoUsd.ToString("0.00")</strong>
                 </div>
             </div>
             <small>Movimientos de compras contabilizados en @Model.PeriodoActual.</small>
@@ -62,8 +66,12 @@
                     <strong>@Model.TotalVentasPeriodo</strong>
                 </div>
                 <div class="dashboard-metric-amount-line">
-                    <label>Total</label>
-                    <strong>@Model.ImporteVentasPeriodo.ToString("0.00")</strong>
+                    <label>Total PEN</label>
+                    <strong>@Model.ImporteVentasPeriodoPen.ToString("0.00")</strong>
+                </div>
+                <div class="dashboard-metric-amount-line">
+                    <label>Total USD</label>
+                    <strong>@Model.ImporteVentasPeriodoUsd.ToString("0.00")</strong>
                 </div>
             </div>
             <small>Documentos de ventas registrados en el mismo corte mensual.</small>
@@ -76,8 +84,12 @@
                     <strong>@Model.TotalAsientosPeriodo</strong>
                 </div>
                 <div class="dashboard-metric-amount-line">
-                    <label>Importe S/</label>
-                    <strong>@Model.ImporteAsientosPeriodo.ToString("0.00")</strong>
+                    <label>Importe PEN</label>
+                    <strong>@Model.ImporteAsientosPeriodoPen.ToString("0.00")</strong>
+                </div>
+                <div class="dashboard-metric-amount-line">
+                    <label>Importe USD</label>
+                    <strong>@Model.ImporteAsientosPeriodoUsd.ToString("0.00")</strong>
                 </div>
             </div>
             <small>Asientos emitidos para la empresa en el periodo activo.</small>
@@ -90,7 +102,7 @@
     </section>
 
     <section class="workspace-section">
-        <div class="workspace-section-head">
+        <div class="workspace-section-head workspace-section-head-compact">
             <span class="workspace-section-kicker">Indicadores</span>
             <h2>Control de registros</h2>
             <p>Lectura rapida de pendientes y validaciones del periodo para detectar cuellos de botella operativos.</p>
@@ -116,7 +128,7 @@
     <section class="dashboard-analytics-grid">
         <div class="dashboard-analytics-stack">
             <article class="workspace-section dashboard-analytics-card">
-                <div class="workspace-section-head">
+                <div class="workspace-section-head workspace-section-head-compact">
                     <span class="workspace-section-kicker">Grafico de torres</span>
                     <h2>Movimientos de compras por periodo</h2>
                     <p>Comparativo de importes y cantidad de compras en los ultimos seis periodos del sistema.</p>
@@ -125,9 +137,9 @@
                 <div class="dashboard-bar-chart">
                     @foreach (var item in Model.ComprasPorPeriodo)
                     {
-                        var altura = maximoCompras <= 0m ? 0m : Math.Round(item.ImporteTotal * 100m / maximoCompras, 2);
+                        var altura = maximoCompras <= 0m ? 0m : Math.Round(Math.Max(item.ImporteTotalPen, item.ImporteTotalUsd) * 100m / maximoCompras, 2);
                         <article class="dashboard-bar-item" style="--bar-height:@altura.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%">
-                            <span class="dashboard-bar-value">@item.ImporteTotal.ToString("0.00")</span>
+                            <span class="dashboard-bar-value">PEN @item.ImporteTotalPen.ToString("0.00") | USD @item.ImporteTotalUsd.ToString("0.00")</span>
                             <div class="dashboard-bar-column"></div>
                             <strong>@item.Periodo</strong>
                             <small>@item.Registros registro(s)</small>
@@ -137,7 +149,7 @@
             </article>
 
             <article class="workspace-section dashboard-analytics-card">
-                <div class="workspace-section-head">
+                <div class="workspace-section-head workspace-section-head-compact">
                     <span class="workspace-section-kicker">Grafico de torres</span>
                     <h2>Movimientos de ventas por periodo</h2>
                     <p>Comparativo de importes y cantidad de ventas en los ultimos seis periodos del sistema.</p>
@@ -146,9 +158,9 @@
                 <div class="dashboard-bar-chart">
                     @foreach (var item in Model.VentasPorPeriodo)
                     {
-                        var altura = maximoVentas <= 0m ? 0m : Math.Round(item.ImporteTotal * 100m / maximoVentas, 2);
+                        var altura = maximoVentas <= 0m ? 0m : Math.Round(Math.Max(item.ImporteTotalPen, item.ImporteTotalUsd) * 100m / maximoVentas, 2);
                         <article class="dashboard-bar-item" style="--bar-height:@altura.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%">
-                            <span class="dashboard-bar-value">@item.ImporteTotal.ToString("0.00")</span>
+                            <span class="dashboard-bar-value">PEN @item.ImporteTotalPen.ToString("0.00") | USD @item.ImporteTotalUsd.ToString("0.00")</span>
                             <div class="dashboard-bar-column"></div>
                             <strong>@item.Periodo</strong>
                             <small>@item.Registros registro(s)</small>
@@ -159,7 +171,7 @@
         </div>
 
         <article class="workspace-section dashboard-analytics-card">
-            <div class="workspace-section-head">
+            <div class="workspace-section-head workspace-section-head-compact">
                 <span class="workspace-section-kicker">Grafico de torta</span>
                 <h2>Distribucion de registros del periodo</h2>
                 <p>Participacion actual de compras, ventas, asientos, movimientos bancarios y aplicaciones dentro del volumen operativo del sistema.</p>

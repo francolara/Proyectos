@@ -1,0 +1,164 @@
+@model SistemaAdministrativoWeb.ViewModels.Plataforma.PlataformaCobrosViewModel
+@{
+    ViewData["Title"] = "Registro de cobros";
+    ViewData["PlatformShell"] = true;
+}
+<!-- Firma: FRANCO LARA - 10/07/2026 | Agrega el modulo administrativo de registro de cobros por suscriptor con dashboard, filtros y conciliacion pendiente. -->
+
+<section class="dashboard-shell">
+    @if (TempData["SuperAdminOk"] is string ok)
+    {
+        <div class="alert alert-success">@ok</div>
+    }
+    @if (TempData["SuperAdminError"] is string error)
+    {
+        <div class="alert alert-danger">@error</div>
+    }
+
+    <section class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">Cobros</span>
+            <h1>Registro de cobros por suscriptor</h1>
+            <p>Consulta todos los cobros registrados, identifica pendientes y confirma la aplicacion comercial desde un modulo especializado.</p>
+        </div>
+        <div class="dashboard-hero-summary">
+            <div>
+                <span>Total cobros</span>
+                <strong>@Model.TotalCobros</strong>
+            </div>
+            <div>
+                <span>Total pagado</span>
+                <strong>S/ @Model.TotalMontoPagado.ToString("0.00")</strong>
+            </div>
+            <div>
+                <span>Total pendiente</span>
+                <strong>S/ @Model.TotalMontoPendiente.ToString("0.00")</strong>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-metrics">
+        <article class="dashboard-metric-card dashboard-metric-card-count">
+            <span>Cobros pagados</span>
+            <strong>@Model.CobrosPagados</strong>
+            <small>Pagos ya confirmados dentro del flujo comercial.</small>
+        </article>
+        <article class="dashboard-metric-card dashboard-metric-card-count">
+            <span>Cobros pendientes</span>
+            <strong>@Model.CobrosPendientes</strong>
+            <small>Operaciones aun no confirmadas o no aplicadas.</small>
+        </article>
+        <article class="dashboard-metric-card dashboard-metric-card-count">
+            <span>Vista</span>
+            <strong>Suscriptores</strong>
+            <small>Cada fila relaciona cobro, suscriptor y objetivo comercial.</small>
+        </article>
+        <article class="dashboard-metric-card dashboard-metric-card-count">
+            <span>Acceso rapido</span>
+            <strong>Resumen</strong>
+            <small><a asp-action="Index" class="link-light text-decoration-none">Volver al panel de suscriptores</a></small>
+        </article>
+    </section>
+
+    <section class="table-panel">
+        <div class="table-panel-head">
+            <h2>Listado de cobros</h2>
+            <p>Filtra por suscriptor, operacion, pasarela o estado del cobro.</p>
+        </div>
+
+        <form method="get" class="workspace-filter-card platform-filter-card">
+            <div class="workspace-filter-grid">
+                <div class="workspace-field">
+                    <label class="form-label">Buscar</label>
+                    <input type="text" name="textoBusqueda" class="form-control" value="@Model.TextoBusqueda" placeholder="Suscriptor, cuenta, operacion o pasarela" />
+                </div>
+                <div class="workspace-field">
+                    <label class="form-label">Estado pago</label>
+                    <select name="estadoPagoFiltro" class="form-select">
+                        <option value="TODOS" selected="@(Model.EstadoPagoFiltro == "TODOS" ? "selected" : null)">Todos</option>
+                        <option value="PAGADO" selected="@(Model.EstadoPagoFiltro == "PAGADO" ? "selected" : null)">Pagado</option>
+                        <option value="PENDIENTE" selected="@(Model.EstadoPagoFiltro == "PENDIENTE" ? "selected" : null)">Pendiente</option>
+                    </select>
+                </div>
+            </div>
+            <div class="workspace-actions">
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+                <a class="btn btn-outline-secondary" asp-action="Cobros">Limpiar</a>
+                <a class="btn btn-outline-secondary" asp-action="Index">Volver a suscriptores</a>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table workspace-table mb-0">
+                <thead>
+                    <tr>
+                        <th>Suscriptor</th>
+                        <th>Fecha pago</th>
+                        <th>Tipo</th>
+                        <th>Monto</th>
+                        <th>Operacion</th>
+                        <th>Pasarela</th>
+                        <th>Aplicacion</th>
+                        <th>Estado</th>
+                        <th class="text-end">Accion</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @if (Model.Cobros.Count == 0)
+                {
+                    <tr>
+                        <td colspan="9" class="text-muted">No se encontraron cobros con los filtros aplicados.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var cobro in Model.Cobros)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@cobro.NombreCuenta</strong><br />
+                                <span class="text-muted">@cobro.CodigoCuenta</span><br />
+                                <span class="text-muted">@cobro.Contacto</span>
+                            </td>
+                            <td>@cobro.FechaPago.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@cobro.TipoPago</td>
+                            <td>@cobro.Moneda @cobro.Monto.ToString("0.00")</td>
+                            <td>
+                                @(cobro.OperacionNumero ?? "-")<br />
+                                <span class="text-muted">@(cobro.EntidadFinanciera ?? cobro.ReferenciaExterna ?? "-")</span>
+                            </td>
+                            <td>
+                                @(cobro.ProveedorPasarela ?? "-")<br />
+                                <span class="text-muted">@(cobro.EstadoPasarela ?? "-")</span>
+                            </td>
+                            <td>
+                                @(cobro.AccionAplicacion ?? "-")<br />
+                                <span class="text-muted">Objetivo: @(cobro.TipoCobroObjetivo ?? "-")</span>
+                            </td>
+                            <td>
+                                <span class="badge @(cobro.EstadoPago == "PAGADO" ? "text-bg-success" : "text-bg-warning text-dark")">@cobro.EstadoPago</span>
+                                <div class="small text-muted mt-1">Aplicado: @(cobro.AplicadoSuscripcion ? "Si" : "No")</div>
+                            </td>
+                            <td class="text-end">
+                                @if (cobro.EstadoPago == "PENDIENTE" && cobro.AplicarAlConfirmar && !cobro.AplicadoSuscripcion)
+                                {
+                                    <form asp-action="ConfirmarCobro" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="idCuentaAdministradora" value="@cobro.IdCuentaAdministradora" />
+                                        <input type="hidden" name="idCuentaAdministradoraSuscripcionPago" value="@cobro.IdCuentaAdministradoraSuscripcionPago" />
+                                        <button type="submit" class="btn btn-primary btn-sm">Confirmar</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">Sin accion</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</section>

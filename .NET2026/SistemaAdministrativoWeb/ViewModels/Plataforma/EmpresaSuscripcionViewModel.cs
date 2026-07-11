@@ -23,9 +23,14 @@ public sealed class CuentaSuscripcionViewModel
     public DateOnly? FechaFinPrueba { get; init; }
     public DateOnly? FechaInicioPlan { get; init; }
     public DateOnly? FechaFinPlan { get; init; }
+    public string? TipoCobro { get; init; }
+    public int DiasGracia { get; init; }
+    public DateOnly? FechaFinGracia { get; init; }
     public int? EmpresasPermitidas { get; init; }
     public int? UsuariosPermitidos { get; init; }
     public bool Activo { get; init; }
     public bool EstadoCuenta { get; init; }
     public string? Observacion { get; init; }
+    public IReadOnlyCollection<CuentaSuscripcionMovimientoViewModel> HistorialComercial { get; init; } = [];
+    public IReadOnlyCollection<CuentaSuscripcionPagoViewModel> HistorialCobros { get; init; } = [];
 }

@@ -3,6 +3,7 @@
 -- Create date:   23/06/2026
 -- Description:   Crea la configuracion de cuentas corrientes bancarias por empresa vinculada al plan de cuentas, titular y moneda operativa.
 -- =============================================
+-- Firma: FRANCO LARA - 09/07/2026 | Agrega periodo y saldos iniciales Debe/Haber para definir el arranque operativo de cada cuenta corriente.
 
 IF OBJECT_ID(N'dbo.CON_BancosConfiguracionEmpresa', N'U') IS NULL
 BEGIN
@@ -15,6 +16,9 @@ BEGIN
         Titular VARCHAR(200) NULL,
         IdMoneda INT NULL,
         IdPlanCuenta INT NOT NULL,
+        PeriodoSaldoInicial CHAR(6) NULL,
+        SaldoInicialDebe DECIMAL(18, 2) NOT NULL CONSTRAINT DF_CON_BancosConfiguracionEmpresa_SaldoInicialDebe DEFAULT (0),
+        SaldoInicialHaber DECIMAL(18, 2) NOT NULL CONSTRAINT DF_CON_BancosConfiguracionEmpresa_SaldoInicialHaber DEFAULT (0),
         Activo BIT NOT NULL CONSTRAINT DF_CON_BancosConfiguracionEmpresa_Activo DEFAULT (1),
         FechaRegistro DATETIME2(0) NOT NULL CONSTRAINT DF_CON_BancosConfiguracionEmpresa_FechaRegistro DEFAULT (SYSDATETIME()),
         UsuarioRegistro NVARCHAR(450) NULL
@@ -39,6 +43,61 @@ BEGIN
     ALTER TABLE dbo.CON_BancosConfiguracionEmpresa
         ADD CONSTRAINT UQ_CON_BancosConfiguracionEmpresa_IdEmpresa_NroCuentaCorriente
             UNIQUE (IdEmpresa, NroCuentaCorriente);
+END;
+
+IF COL_LENGTH(N'dbo.CON_BancosConfiguracionEmpresa', N'PeriodoSaldoInicial') IS NULL
+BEGIN
+    ALTER TABLE dbo.CON_BancosConfiguracionEmpresa
+        ADD PeriodoSaldoInicial CHAR(6) NULL;
+END;
+
+IF COL_LENGTH(N'dbo.CON_BancosConfiguracionEmpresa', N'SaldoInicialDebe') IS NULL
+BEGIN
+    ALTER TABLE dbo.CON_BancosConfiguracionEmpresa
+        ADD SaldoInicialDebe DECIMAL(18, 2) NOT NULL
+            CONSTRAINT DF_CON_BancosConfiguracionEmpresa_SaldoInicialDebe DEFAULT (0);
+END;
+
+IF COL_LENGTH(N'dbo.CON_BancosConfiguracionEmpresa', N'SaldoInicialHaber') IS NULL
+BEGIN
+    ALTER TABLE dbo.CON_BancosConfiguracionEmpresa
+        ADD SaldoInicialHaber DECIMAL(18, 2) NOT NULL
+            CONSTRAINT DF_CON_BancosConfiguracionEmpresa_SaldoInicialHaber DEFAULT (0);
+END;
+
+EXEC sys.sp_executesql N'
+IF EXISTS
+(
+    SELECT 1
+    FROM dbo.CON_BancosConfiguracionEmpresa AS c
+    WHERE c.PeriodoSaldoInicial IS NULL
+)
+BEGIN
+    UPDATE dbo.CON_BancosConfiguracionEmpresa
+    SET PeriodoSaldoInicial = CONVERT(CHAR(6), FechaRegistro, 112)
+    WHERE PeriodoSaldoInicial IS NULL;
+END;
+';
+
+IF NOT EXISTS
+(
+    SELECT 1
+    FROM sys.check_constraints
+    WHERE name = N'CK_CON_BancosConfiguracionEmpresa_PeriodoSaldoInicial'
+)
+BEGIN
+    EXEC sys.sp_executesql N'
+    ALTER TABLE dbo.CON_BancosConfiguracionEmpresa
+        ADD CONSTRAINT CK_CON_BancosConfiguracionEmpresa_PeriodoSaldoInicial
+            CHECK
+            (
+                PeriodoSaldoInicial IS NULL
+                OR (
+                    PeriodoSaldoInicial NOT LIKE ''%[^0-9]%''
+                    AND TRY_CONVERT(INT, LEFT(PeriodoSaldoInicial, 4)) IS NOT NULL
+                    AND TRY_CONVERT(INT, RIGHT(PeriodoSaldoInicial, 2)) BETWEEN 1 AND 12
+                )
+            );';
 END;
 
 IF COL_LENGTH(N'dbo.CON_BancosConfiguracionEmpresa', N'Titular') IS NULL

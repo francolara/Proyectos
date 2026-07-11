@@ -2,6 +2,7 @@
 
 @* Firma: FRANCO LARA - 07/07/2026 | Mantiene el reporte HTML de Analisis de cuentas, adapta su visualizacion al formato compacto tipo hoja A4 usado en los reportes legacy y agrega impresion directa en pantalla. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Reestructura Analisis de cuentas segun las vistas legacy Por auxiliar, Auxiliar y documento y Detallado, segmentando por cuenta y persona, agrupando documentos cuando corresponde y usando solo importes de la moneda seleccionada. *@
+@* Firma: FRANCO LARA - 11/07/2026 | Corrige el bloque final de totales en modo oscuro y ajusta el formateo del saldo final del reporte. *@
 
 @{
     ViewData["Title"] = "Analisis de cuentas";
@@ -349,11 +350,11 @@
                         </article>
                     }
 
-                    <div class="mt-3 px-3 py-3 border rounded-4 bg-light">
+                    <div class="report-ledger-summary mt-3">
                         <div class="d-flex flex-wrap gap-4 justify-content-end">
                             <span>Total Debe: <strong>@Model.TotalDebe.ToString("N2")</strong></span>
                             <span>Total Haber: <strong>@Model.TotalHaber.ToString("N2")</strong></span>
-                            <span>Saldo Final: <strong>@(Model.TotalDebe - Model.TotalHaber).ToString("N2")</strong></span>
+                            <span>Saldo Final: <strong>@((Model.TotalDebe - Model.TotalHaber).ToString("N2"))</strong></span>
                         </div>
                     </div>
                 </section>

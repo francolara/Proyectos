@@ -1,14 +1,21 @@
 @using Microsoft.AspNetCore.Identity
 @using SistemaAdministrativoWeb.Infrastructure.Empresas
+@using SistemaAdministrativoWeb.Infrastructure.Security
 @inject ICurrentCompanyAccessor CurrentCompanyAccessor
+@inject IModulePermissionService ModulePermissionService
 @inject UserManager<IdentityUser> UserManager
 @* Firma: FRANCO LARA - 07/07/2026 | Agrega y reordena el bloque Reportes del menu administrativo con Balance de comprobacion, Analisis de cuentas, Libro Diario, Libro Mayor, Registro de ventas, Registro de compras y Libros Electronicos. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Reemplaza la tarjeta redundante del panel por un selector persistente de modo oscuro, agrega Mi suscripcion y Ayuda al menu General e incorpora acceso contextual de ayuda por modulo. *@
+@* Firma: FRANCO LARA - 10/07/2026 | Ajusta el branding publico para alinear portada, login y registro con la nueva presentacion comercial de FralseCont, separa Fralse y Cont en dos colores, agrega soporte para metadatos basicos, enlaces legales en el footer y la burbuja publica de WhatsApp, e incorpora Usuarios y Configuracion al bloque General del menu administrativo. *@
 <!DOCTYPE html>
 @{
     var adminShell = ViewData["AdminShell"] as bool? ?? false;
     var platformShell = ViewData["PlatformShell"] as bool? ?? false;
     var pageTitle = ViewData["Title"]?.ToString() ?? "Sistema Administrativo";
+    var fullTitle = pageTitle.Contains("FralseCont", StringComparison.OrdinalIgnoreCase)
+        ? pageTitle
+        : $"{pageTitle} - FralseCont";
+    var metaDescription = ViewData["MetaDescription"]?.ToString() ?? "Sistema contable web para empresas y contadores.";
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
     var currentPath = Context.Request.Path.Value ?? string.Empty;
@@ -44,6 +51,16 @@
         if (string.Equals(currentController, "MiSuscripcion", StringComparison.OrdinalIgnoreCase))
         {
             return "MISUSCRIPCION";
+        }
+
+        if (string.Equals(currentController, "Usuarios", StringComparison.OrdinalIgnoreCase))
+        {
+            return "USUARIOS";
+        }
+
+        if (string.Equals(currentController, "Configuracion", StringComparison.OrdinalIgnoreCase))
+        {
+            return "CONFIGURACION";
         }
 
         if (string.Equals(currentController, "Ayuda", StringComparison.OrdinalIgnoreCase))
@@ -87,25 +104,56 @@
     }
 
     var helpModuleKey = ResolverModuloAyuda();
-    var showContextHelp = adminShell && !string.Equals(currentController, "Ayuda", StringComparison.OrdinalIgnoreCase);
+    var canDashboard = adminShell && await ModulePermissionService.CanAccessModuleAsync(User, "DASHBOARD", Context.RequestAborted);
+    var canEmpresas = adminShell && await ModulePermissionService.CanAccessModuleAsync(User, "EMPRESAS", Context.RequestAborted);
+    var canUsuarios = adminShell && await ModulePermissionService.CanAccessModuleAsync(User, "USUARIOS", Context.RequestAborted);
+    var canConfiguracion = adminShell && await ModulePermissionService.CanAccessModuleAsync(User, "CONFIGURACION", Context.RequestAborted);
+    var canMiSuscripcion = adminShell && await ModulePermissionService.CanAccessModuleAsync(User, "MISUSCRIPCION", Context.RequestAborted);
+    var canAyuda = adminShell && await ModulePermissionService.CanAccessModuleAsync(User, "AYUDA", Context.RequestAborted);
+    var canPlanCuenta = adminShell && await ModulePermissionService.CanAccessModuleAsync(User, "PLANCUENTA", Context.RequestAborted);
+    var canCentroCosto = adminShell && await ModulePermissionService.CanAccessModuleAsync(User, "CENTROCOSTO", Context.RequestAborted);
+    var canCuentaCorriente = adminShell && await ModulePermissionService.CanAccessModuleAsync(User, "CUENTACORRIENTE", Context.RequestAborted);
+    var canPersonas = adminShell && await ModulePermissionService.CanAccessModuleAsync(User, "PERSONAS", Context.RequestAborted);
+    var canTipoCambio = adminShell && await ModulePermissionService.CanAccessModuleAsync(User, "TIPOCAMBIO", Context.RequestAborted);
+    var canOrigenes = adminShell && await ModulePermissionService.CanAccessModuleAsync(User, "ORIGENES", Context.RequestAborted);
+    var canCuentasDestino = adminShell && await ModulePermissionService.CanAccessModuleAsync(User, "CUENTASDESTINO", Context.RequestAborted);
+    var canConfigContable = adminShell && await ModulePermissionService.CanAccessModuleAsync(User, "CONFIGCONTABLE", Context.RequestAborted);
+    var canAsientos = adminShell && await ModulePermissionService.CanAccessModuleAsync(User, "ASIENTOS", Context.RequestAborted);
+    var canCompras = adminShell && await ModulePermissionService.CanAccessModuleAsync(User, "COMPRAS", Context.RequestAborted);
+    var canVentas = adminShell && await ModulePermissionService.CanAccessModuleAsync(User, "VENTAS", Context.RequestAborted);
+    var canCajaBancos = adminShell && await ModulePermissionService.CanAccessModuleAsync(User, "CAJABANCOS", Context.RequestAborted);
+    var canTransferencias = adminShell && await ModulePermissionService.CanAccessModuleAsync(User, "TRANSFERENCIAS", Context.RequestAborted);
+    var canAplicaciones = adminShell && await ModulePermissionService.CanAccessModuleAsync(User, "APLICACIONES", Context.RequestAborted);
+    var canProcesos = adminShell && await ModulePermissionService.CanAccessModuleAsync(User, "PROCESOS", Context.RequestAborted);
+    var canReportes = adminShell && await ModulePermissionService.CanAccessModuleAsync(User, "REPORTES", Context.RequestAborted);
+    var canLibroElectronico = adminShell && await ModulePermissionService.CanAccessModuleAsync(User, "LIBROELECTRONICO", Context.RequestAborted);
+    var showContextHelp = adminShell && canAyuda && !string.Equals(currentController, "Ayuda", StringComparison.OrdinalIgnoreCase);
 
-    var generalOpen = IsActiveController("Panel", "EmpresaContexto", "MiSuscripcion", "Ayuda");
+    var generalOpen = IsActiveController("Panel", "EmpresaContexto", "Usuarios", "Configuracion", "MiSuscripcion", "Ayuda");
     var mantenimientoOpen = IsActiveController("PlanCuenta", "CentroCosto", "CuentaCorriente", "Persona", "TipoCambio", "Origen", "CuentaDestinoRegla", "ConfiguracionContabilizacion")
         || IsActivePath("PlanCuenta", "CentroCosto", "CuentaCorriente", "Persona", "TipoCambio", "Origen", "CuentaDestinoRegla", "ConfiguracionContabilizacion");
     var registroOpen = IsActiveController("Asiento", "Compra", "Venta", "CajaBanco", "TransferenciaCuenta", "Aplicacion")
         || IsActivePath("Asiento", "Compra", "Venta", "CajaBanco", "TransferenciaCuenta", "Aplicacion");
     var procesoOpen = IsActiveController("Proceso") || IsActivePath("Proceso");
     var reportesOpen = IsActiveController("Reporte", "LibroElectronico") || IsActivePath("Reporte", "LibroElectronico");
+    var showGeneralMenu = canDashboard || canEmpresas || canUsuarios || canConfiguracion || canMiSuscripcion || canAyuda;
+    var showMantenimientoMenu = canPlanCuenta || canCentroCosto || canCuentaCorriente || canPersonas || canTipoCambio || canOrigenes || canCuentasDestino || canConfigContable;
+    var showRegistroMenu = canAsientos || canCompras || canVentas || canCajaBancos || canTransferencias || canAplicaciones;
+    var showProcesoMenu = canProcesos;
+    var showReportesMenu = canReportes || canLibroElectronico;
 }
 <html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@pageTitle - SisAdm</title>
+    <title>@fullTitle</title>
+    <meta name="description" content="@metaDescription" />
     <script>
         (() => {
+            const allowStoredTheme = @((adminShell || platformShell).ToString().ToLowerInvariant());
+
             try {
-                const theme = localStorage.getItem("sisadm-theme") === "dark" ? "dark" : "light";
+                const theme = allowStoredTheme && localStorage.getItem("sisadm-theme") === "dark" ? "dark" : "light";
                 document.documentElement.setAttribute("data-theme", theme);
                 document.documentElement.setAttribute("data-bs-theme", theme);
             } catch {
@@ -132,22 +180,16 @@
                     <a class="navbar-brand app-brand" asp-area="" asp-controller="Home" asp-action="Index">
                         <span class="app-brand-mark"><i class="bi bi-journal-text"></i></span>
                         <span>
-                            <strong>SisAdm</strong>
-                            <small>Gestion contable multiempresa</small>
+                            <strong><span>Fralse</span><span class="app-brand-name-accent">Cont</span></strong>
+                            <small>Sistema contable web para empresas y contadores</small>
+                            <small>Powered by Fralse Tech S.A.C.</small>
                         </span>
                     </a>
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
                         <span class="navbar-toggler-icon"></span>
                     </button>
                     <div id="mainNav" class="collapse navbar-collapse">
-                        <ul class="navbar-nav me-auto">
-                            <li class="nav-item">
-                                <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Inicio</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" asp-area="Identity" asp-page="/Account/Register">Registro de usuario</a>
-                            </li>
-                        </ul>
+                        <div class="me-auto"></div>
                         <partial name="_LoginPartial" />
                     </div>
                 </div>
@@ -178,6 +220,8 @@
                     <strong>@(CurrentCompanyAccessor.EmpresaNombre ?? "Seleccione empresa")</strong>
                 </div>
                 <nav class="app-sidebar-nav app-sidebar-nav-accordion">
+                    @if (showGeneralMenu)
+                    {
                     <section class="app-sidebar-group app-sidebar-group-accordion">
                         <button class="app-sidebar-group-toggle @(generalOpen ? string.Empty : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-general" aria-expanded="@(generalOpen.ToString().ToLowerInvariant())" aria-controls="sidebar-general">
                             <span>General</span>
@@ -185,13 +229,36 @@
                         </button>
                         <div id="sidebar-general" class="collapse @(generalOpen ? "show" : string.Empty)">
                             <div class="app-sidebar-group-body">
+                                @if (canDashboard)
+                                {
                                 <a class="app-sidebar-link @(IsActiveController("Panel") ? "active" : string.Empty)" asp-controller="Panel" asp-action="Index"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
+                                }
+                                @if (canEmpresas)
+                                {
                                 <a class="app-sidebar-link @(IsActiveController("EmpresaContexto") ? "active" : string.Empty)" asp-controller="EmpresaContexto" asp-action="Index"><i class="bi bi-buildings"></i><span>Empresas</span></a>
+                                }
+                                @if (canUsuarios)
+                                {
+                                <a class="app-sidebar-link @(IsActiveController("Usuarios") ? "active" : string.Empty)" asp-controller="Usuarios" asp-action="Index"><i class="bi bi-people"></i><span>Usuarios</span></a>
+                                }
+                                @if (canConfiguracion)
+                                {
+                                <a class="app-sidebar-link @(IsActiveController("Configuracion") ? "active" : string.Empty)" asp-controller="Configuracion" asp-action="Index"><i class="bi bi-gear"></i><span>Configuracion</span></a>
+                                }
+                                @if (canMiSuscripcion)
+                                {
                                 <a class="app-sidebar-link @(IsActiveController("MiSuscripcion") ? "active" : string.Empty)" asp-controller="MiSuscripcion" asp-action="Index"><i class="bi bi-credit-card-2-front"></i><span>Mi suscripcion</span></a>
+                                }
+                                @if (canAyuda)
+                                {
                                 <a class="app-sidebar-link @(IsActiveController("Ayuda") ? "active" : string.Empty)" asp-controller="Ayuda" asp-action="Index"><i class="bi bi-life-preserver"></i><span>Ayuda</span></a>
+                                }
                             </div>
                         </div>
                     </section>
+                    }
+                    @if (showMantenimientoMenu)
+                    {
                     <section class="app-sidebar-group app-sidebar-group-accordion">
                         <button class="app-sidebar-group-toggle @(mantenimientoOpen ? string.Empty : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-mantenimiento" aria-expanded="@(mantenimientoOpen.ToString().ToLowerInvariant())" aria-controls="sidebar-mantenimiento">
                             <span>Mantenimiento</span>
@@ -199,17 +266,44 @@
                         </button>
                         <div id="sidebar-mantenimiento" class="collapse @(mantenimientoOpen ? "show" : string.Empty)">
                             <div class="app-sidebar-group-body">
+                                @if (canPlanCuenta)
+                                {
                                 <a class="app-sidebar-link @(IsActiveController("PlanCuenta") ? "active" : string.Empty)" asp-controller="PlanCuenta" asp-action="Index"><i class="bi bi-diagram-3"></i><span>Plan de cuentas</span></a>
+                                }
+                                @if (canCentroCosto)
+                                {
                                 <a class="app-sidebar-link @(IsActiveController("CentroCosto") ? "active" : string.Empty)" asp-controller="CentroCosto" asp-action="Index"><i class="bi bi-diagram-2"></i><span>Centros de costo</span></a>
+                                }
+                                @if (canCuentaCorriente)
+                                {
                                 <a class="app-sidebar-link @(IsActiveController("CuentaCorriente") ? "active" : string.Empty)" asp-controller="CuentaCorriente" asp-action="Index"><i class="bi bi-bank"></i><span>Cuentas corrientes</span></a>
+                                }
+                                @if (canPersonas)
+                                {
                                 <a class="app-sidebar-link @(IsActiveController("Persona") ? "active" : string.Empty)" asp-controller="Persona" asp-action="Index"><i class="bi bi-people"></i><span>Personas</span></a>
+                                }
+                                @if (canTipoCambio)
+                                {
                                 <a class="app-sidebar-link @(IsActiveController("TipoCambio") ? "active" : string.Empty)" asp-controller="TipoCambio" asp-action="Index"><i class="bi bi-currency-exchange"></i><span>Tipos de cambio</span></a>
+                                }
+                                @if (canOrigenes)
+                                {
                                 <a class="app-sidebar-link @(IsActiveController("Origen") ? "active" : string.Empty)" asp-controller="Origen" asp-action="Index"><i class="bi bi-journal-richtext"></i><span>Origenes</span></a>
+                                }
+                                @if (canCuentasDestino)
+                                {
                                 <a class="app-sidebar-link @(IsActiveController("CuentaDestinoRegla") ? "active" : string.Empty)" asp-controller="CuentaDestinoRegla" asp-action="Index"><i class="bi bi-sliders2"></i><span>Cuentas destino</span></a>
+                                }
+                                @if (canConfigContable)
+                                {
                                 <a class="app-sidebar-link @(IsActiveController("ConfiguracionContabilizacion") ? "active" : string.Empty)" asp-controller="ConfiguracionContabilizacion" asp-action="Index"><i class="bi bi-gear-wide-connected"></i><span>Configuracion contable</span></a>
+                                }
                             </div>
                         </div>
                     </section>
+                    }
+                    @if (showRegistroMenu)
+                    {
                     <section class="app-sidebar-group app-sidebar-group-accordion">
                         <button class="app-sidebar-group-toggle @(registroOpen ? string.Empty : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-registro" aria-expanded="@(registroOpen.ToString().ToLowerInvariant())" aria-controls="sidebar-registro">
                             <span>Registro</span>
@@ -217,15 +311,36 @@
                         </button>
                         <div id="sidebar-registro" class="collapse @(registroOpen ? "show" : string.Empty)">
                             <div class="app-sidebar-group-body">
+                                @if (canAsientos)
+                                {
                                 <a class="app-sidebar-link @(IsActiveController("Asiento") ? "active" : string.Empty)" asp-controller="Asiento" asp-action="Index"><i class="bi bi-receipt"></i><span>Asientos</span></a>
+                                }
+                                @if (canCompras)
+                                {
                                 <a class="app-sidebar-link @(IsActiveController("Compra") ? "active" : string.Empty)" asp-controller="Compra" asp-action="Index"><i class="bi bi-cart-check"></i><span>Compras</span></a>
+                                }
+                                @if (canVentas)
+                                {
                                 <a class="app-sidebar-link @(IsActiveController("Venta") ? "active" : string.Empty)" asp-controller="Venta" asp-action="Index"><i class="bi bi-cash-stack"></i><span>Ventas</span></a>
+                                }
+                                @if (canCajaBancos)
+                                {
                                 <a class="app-sidebar-link @(IsActiveController("CajaBanco") ? "active" : string.Empty)" asp-controller="CajaBanco" asp-action="Index"><i class="bi bi-cash-coin"></i><span>Caja y Bancos</span></a>
+                                }
+                                @if (canTransferencias)
+                                {
                                 <a class="app-sidebar-link @(IsActiveController("TransferenciaCuenta") ? "active" : string.Empty)" asp-controller="TransferenciaCuenta" asp-action="Index"><i class="bi bi-arrow-left-right"></i><span>Transferencias</span></a>
+                                }
+                                @if (canAplicaciones)
+                                {
                                 <a class="app-sidebar-link @(IsActiveController("Aplicacion") ? "active" : string.Empty)" asp-controller="Aplicacion" asp-action="Index"><i class="bi bi-link-45deg"></i><span>Aplicaciones</span></a>
+                                }
                             </div>
                         </div>
                     </section>
+                    }
+                    @if (showProcesoMenu)
+                    {
                     <section class="app-sidebar-group app-sidebar-group-accordion">
                         <button class="app-sidebar-group-toggle @(procesoOpen ? string.Empty : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-proceso" aria-expanded="@(procesoOpen.ToString().ToLowerInvariant())" aria-controls="sidebar-proceso">
                             <span>Proceso</span>
@@ -241,6 +356,9 @@
                             </div>
                         </div>
                     </section>
+                    }
+                    @if (showReportesMenu)
+                    {
                     <section class="app-sidebar-group app-sidebar-group-accordion">
                         <button class="app-sidebar-group-toggle @(reportesOpen ? string.Empty : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-reportes" aria-expanded="@(reportesOpen.ToString().ToLowerInvariant())" aria-controls="sidebar-reportes">
                             <span>Reportes</span>
@@ -248,16 +366,23 @@
                         </button>
                         <div id="sidebar-reportes" class="collapse @(reportesOpen ? "show" : string.Empty)">
                             <div class="app-sidebar-group-body">
+                                @if (canReportes)
+                                {
                                 <a class="app-sidebar-link @(IsActiveController("Reporte") && currentPath.StartsWith("/Reporte/AnalisisCuentas", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Reporte" asp-action="AnalisisCuentas"><i class="bi bi-bar-chart"></i><span>Analisis de cuentas</span></a>
                                 <a class="app-sidebar-link @(IsActiveController("Reporte") && currentPath.StartsWith("/Reporte/LibroDiario", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Reporte" asp-action="LibroDiario"><i class="bi bi-journal-richtext"></i><span>Libro Diario</span></a>
                                 <a class="app-sidebar-link @(IsActiveController("Reporte") && currentPath.StartsWith("/Reporte/LibroMayor", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Reporte" asp-action="LibroMayor"><i class="bi bi-journals"></i><span>Libro Mayor</span></a>
                                 <a class="app-sidebar-link @(IsActiveController("Reporte") && currentPath.StartsWith("/Reporte/RegistroVentas", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Reporte" asp-action="RegistroVentas"><i class="bi bi-receipt-cutoff"></i><span>Registro de ventas</span></a>
                                 <a class="app-sidebar-link @(IsActiveController("Reporte") && currentPath.StartsWith("/Reporte/RegistroCompras", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Reporte" asp-action="RegistroCompras"><i class="bi bi-cart3"></i><span>Registro de compras</span></a>
                                 <a class="app-sidebar-link @(IsActiveController("Reporte") && currentPath.StartsWith("/Reporte/BalanceComprobacion", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Reporte" asp-action="BalanceComprobacion"><i class="bi bi-table"></i><span>Balance de comprobacion</span></a>
+                                }
+                                @if (canLibroElectronico)
+                                {
                                 <a class="app-sidebar-link @(IsActiveController("LibroElectronico") ? "active" : string.Empty)" asp-controller="LibroElectronico" asp-action="Index"><i class="bi bi-filetype-txt"></i><span>Libros Electronicos</span></a>
+                                }
                             </div>
                         </div>
                     </section>
+                    }
                 </nav>
                 <div class="app-sidebar-session">
                     <div class="app-sidebar-session-user">
@@ -271,6 +396,12 @@
                 </div>
             </aside>
             <div class="app-shell-main">
+                @if (TempData["ErrorMessage"] is string layoutErrorMessage)
+                {
+                    <div class="container pt-3">
+                        <div class="alert alert-danger mb-0">@layoutErrorMessage</div>
+                    </div>
+                }
                 @if (showContextHelp)
                 {
                     <div class="app-context-toolbar">
@@ -290,17 +421,23 @@
     {
         <div class="app-shell">
             <aside class="app-sidebar app-sidebar-platform">
-                <a class="app-sidebar-brand" asp-controller="Plataforma" asp-action="Index">
-                    <span class="app-brand-mark"><i class="bi bi-shield-check"></i></span>
-                    <div>
-                        <strong>SuperAdmin</strong>
-                        <small>Control de suscriptores</small>
+                <section class="app-sidebar-theme-card">
+                    <div class="app-sidebar-theme-copy">
+                        <span>Apariencia</span>
+                        <strong class="app-theme-label" data-theme-label aria-live="polite"></strong>
+                        <small>Cambia el tema del sistema y conserva la preferencia.</small>
                     </div>
-                </a>
+                    <button type="button" class="app-theme-toggle" data-theme-toggle aria-pressed="false" aria-label="Alternar modo oscuro">
+                        <span class="app-theme-toggle-track">
+                            <i class="bi bi-sun-fill app-theme-icon app-theme-icon-sun"></i>
+                            <span class="app-theme-toggle-thumb"></span>
+                            <i class="bi bi-moon-stars-fill app-theme-icon app-theme-icon-moon"></i>
+                        </span>
+                    </button>
+                </section>
                 <nav class="app-sidebar-nav">
-                    <a class="app-sidebar-link" asp-controller="Plataforma" asp-action="Index"><i class="bi bi-grid-1x2"></i>Resumen</a>
-                    <a class="app-sidebar-link" asp-controller="EmpresaContexto" asp-action="Index"><i class="bi bi-buildings"></i>Empresas</a>
-                    <a class="app-sidebar-link disabled" href="#"><i class="bi bi-person-badge"></i>Contratos</a>
+                    <a class="app-sidebar-link @(string.Equals(currentController, "Plataforma", StringComparison.OrdinalIgnoreCase) && string.Equals(currentAction, "Index", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Plataforma" asp-action="Index"><i class="bi bi-grid-1x2"></i>Resumen</a>
+                    <a class="app-sidebar-link @(string.Equals(currentController, "Plataforma", StringComparison.OrdinalIgnoreCase) && string.Equals(currentAction, "Cobros", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Plataforma" asp-action="Cobros"><i class="bi bi-cash-coin"></i>Registro de cobros</a>
                 </nav>
                 <div class="app-sidebar-session">
                     <div class="app-sidebar-session-user">
@@ -323,13 +460,23 @@
     else
     {
         <main role="main" class="container app-public-main">
+            @if (TempData["ErrorMessage"] is string publicErrorMessage)
+            {
+                <div class="alert alert-danger">@publicErrorMessage</div>
+            }
             @RenderBody()
         </main>
         <footer class="app-public-footer">
             <div class="container">
-                &copy; 2026 - SisAdm
+                <div class="app-public-footer-links">
+                    <a asp-controller="Legal" asp-action="Terminos">Terminos y condiciones</a>
+                    <a asp-controller="Legal" asp-action="Privacidad">Politica de privacidad</a>
+                    <a asp-controller="Legal" asp-action="Cancelaciones">Cancelaciones y devoluciones</a>
+                </div>
+                <div>&copy; 2026 - FralseCont</div>
             </div>
         </footer>
+        <partial name="_WhatsAppFloatingButton" />
     }
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

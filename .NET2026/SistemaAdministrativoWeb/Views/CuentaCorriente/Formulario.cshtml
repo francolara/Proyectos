@@ -6,6 +6,7 @@
    Description:   Agrega el formulario de mantenimiento de cuentas corrientes por empresa con ayudas de bancos y plan de cuentas, incorporando titular y moneda operativa.
    ============================================= *@
 @* Firma: FRANCO LARA - 24/06/2026 | Restringe la ayuda popup de cuenta contable de cuentas corrientes a cuentas del ultimo nivel y muestra mensaje si se intenta elegir una cuenta intermedia. *@
+@* Firma: FRANCO LARA - 09/07/2026 | Agrega periodo y saldos iniciales Debe/Haber a la cuenta corriente para definir el arranque operativo de Caja y Bancos. *@
 
 @{
     ViewData["Title"] = Model.Formulario.IdBancoConfiguracionEmpresa.HasValue ? "Editar cuenta corriente" : "Registrar cuenta corriente";
@@ -73,6 +74,21 @@
                             <button type="button" class="btn btn-outline-secondary workspace-icon-button" id="limpiarPlanCuenta" title="Limpiar cuenta" aria-label="Limpiar cuenta"><i class="bi bi-brush"></i></button>
                         </div>
                         <span asp-validation-for="Formulario.IdPlanCuenta" class="text-danger"></span>
+                    </div>
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.PeriodoSaldoInicial" class="form-label">Periodo saldo inicial</label>
+                        <input asp-for="Formulario.PeriodoSaldoInicial" class="form-control" type="month" />
+                        <span asp-validation-for="Formulario.PeriodoSaldoInicial" class="text-danger"></span>
+                    </div>
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.SaldoInicialDebe" class="form-label">Saldo inicial Debe</label>
+                        <input asp-for="Formulario.SaldoInicialDebe" class="form-control" type="number" step="0.01" min="0" />
+                        <span asp-validation-for="Formulario.SaldoInicialDebe" class="text-danger"></span>
+                    </div>
+                    <div class="workspace-field">
+                        <label asp-for="Formulario.SaldoInicialHaber" class="form-label">Saldo inicial Haber</label>
+                        <input asp-for="Formulario.SaldoInicialHaber" class="form-control" type="number" step="0.01" min="0" />
+                        <span asp-validation-for="Formulario.SaldoInicialHaber" class="text-danger"></span>
                     </div>
                     @if (Model.Formulario.IdBancoConfiguracionEmpresa.HasValue)
                     {

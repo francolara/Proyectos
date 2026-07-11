@@ -3,6 +3,11 @@
 -- Create date:   15/06/2026
 -- Description:   Historial comercial de la suscripcion de la cuenta administradora.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   10/07/2026
+-- Description:   Agrega al historial comercial por cuenta el tipo de cobro, dias de gracia y dias extra para contratos y ajustes.
+-- =============================================
 
 IF OBJECT_ID(N'dbo.SEG_CuentaAdministradoraSuscripcionMovimiento', N'U') IS NULL
 BEGIN
@@ -18,8 +23,12 @@ BEGIN
         EstadoSuscripcionNuevo NVARCHAR(20) NOT NULL,
         EsPruebaAnterior BIT NULL,
         EsPruebaNuevo BIT NOT NULL,
+        TipoCobroAnterior NVARCHAR(20) NULL,
+        TipoCobroNuevo NVARCHAR(20) NULL,
         FechaInicioReferencia DATE NULL,
         FechaFinReferencia DATE NULL,
+        DiasGracia INT NULL,
+        DiasExtra INT NULL,
         EmpresasPermitidasAnterior INT NULL,
         EmpresasPermitidasNuevo INT NULL,
         UsuariosPermitidosAnterior INT NULL,
@@ -28,6 +37,9 @@ BEGIN
         FechaRegistro DATETIME2(0) NOT NULL CONSTRAINT DF_SEG_CuentaAdministradoraSuscripcionMovimiento_FechaRegistro DEFAULT (SYSDATETIME()),
         UsuarioRegistro NVARCHAR(450) NULL
     );
+
+    CREATE NONCLUSTERED INDEX IX_SEG_CuentaAdministradoraSuscripcionMovimiento_Cuenta_Fecha
+        ON dbo.SEG_CuentaAdministradoraSuscripcionMovimiento (IdCuentaAdministradora ASC, FechaRegistro DESC);
 
     ALTER TABLE dbo.SEG_CuentaAdministradoraSuscripcionMovimiento
         ADD CONSTRAINT FK_SEG_CuentaAdministradoraSuscripcionMovimiento_SEG_CuentaAdministradora

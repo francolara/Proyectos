@@ -3,6 +3,7 @@
 -- Create date:   23/06/2026
 -- Description:   Inserta o actualiza una cuenta corriente bancaria por empresa validando banco, numero, titular, moneda y cuenta contable.
 -- =============================================
+-- Firma: FRANCO LARA - 09/07/2026 | Agrega periodo y saldos iniciales Debe/Haber a la cuenta corriente para inicializar Caja y Bancos desde un corte definido.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_GuardarBancoConfiguracionEmpresa
     @IdBancoConfiguracionEmpresa INT = NULL,
@@ -12,6 +13,9 @@ CREATE OR ALTER PROCEDURE dbo.usp_CON_GuardarBancoConfiguracionEmpresa
     @Titular VARCHAR(200),
     @IdMoneda INT,
     @IdPlanCuenta INT,
+    @PeriodoSaldoInicial CHAR(6),
+    @SaldoInicialDebe DECIMAL(18, 2),
+    @SaldoInicialHaber DECIMAL(18, 2),
     @Activo BIT,
     @UsuarioRegistro NVARCHAR(450) = NULL
 AS
@@ -71,6 +75,20 @@ BEGIN
             RAISERROR(N'La cuenta contable asociada no existe, esta inactiva o no acepta movimiento.', 16, 1);
         END;
 
+        IF @PeriodoSaldoInicial IS NULL
+           OR @PeriodoSaldoInicial LIKE '%[^0-9]%'
+           OR LEN(@PeriodoSaldoInicial) <> 6
+           OR TRY_CONVERT(INT, LEFT(@PeriodoSaldoInicial, 4)) IS NULL
+           OR TRY_CONVERT(INT, RIGHT(@PeriodoSaldoInicial, 2)) NOT BETWEEN 1 AND 12
+        BEGIN
+            RAISERROR(N'Ingrese un periodo valido para el saldo inicial.', 16, 1);
+        END;
+
+        IF @SaldoInicialDebe < 0 OR @SaldoInicialHaber < 0
+        BEGIN
+            RAISERROR(N'Los saldos iniciales no pueden ser negativos.', 16, 1);
+        END;
+
         IF EXISTS
         (
             SELECT 1
@@ -93,6 +111,9 @@ BEGIN
                 Titular,
                 IdMoneda,
                 IdPlanCuenta,
+                PeriodoSaldoInicial,
+                SaldoInicialDebe,
+                SaldoInicialHaber,
                 Activo,
                 UsuarioRegistro
             )
@@ -104,6 +125,9 @@ BEGIN
                 LTRIM(RTRIM(@Titular)),
                 @IdMoneda,
                 @IdPlanCuenta,
+                @PeriodoSaldoInicial,
+                @SaldoInicialDebe,
+                @SaldoInicialHaber,
                 @Activo,
                 @UsuarioRegistro
             );
@@ -129,6 +153,9 @@ BEGIN
                 Titular = LTRIM(RTRIM(@Titular)),
                 IdMoneda = @IdMoneda,
                 IdPlanCuenta = @IdPlanCuenta,
+                PeriodoSaldoInicial = @PeriodoSaldoInicial,
+                SaldoInicialDebe = @SaldoInicialDebe,
+                SaldoInicialHaber = @SaldoInicialHaber,
                 Activo = @Activo
             WHERE IdBancoConfiguracionEmpresa = @IdBancoConfiguracionEmpresa
               AND IdEmpresa = @IdEmpresa;
@@ -148,6 +175,9 @@ BEGIN
             c.IdPlanCuenta,
             p.CodigoCuenta,
             p.NombreCuenta,
+            c.PeriodoSaldoInicial,
+            c.SaldoInicialDebe,
+            c.SaldoInicialHaber,
             c.Activo,
             c.FechaRegistro,
             c.UsuarioRegistro

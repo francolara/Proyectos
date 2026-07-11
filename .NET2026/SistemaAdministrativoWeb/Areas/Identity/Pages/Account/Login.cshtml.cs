@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Options;
 using SistemaAdministrativoWeb.Configuration;
+using SistemaAdministrativoWeb.Infrastructure.Empresas;
 using SistemaAdministrativoWeb.Infrastructure.Security;
 using SistemaAdministrativoWeb.Infrastructure.Suscripciones;
 
@@ -16,6 +17,7 @@ namespace SistemaAdministrativoWeb.Areas.Identity.Pages.Account;
 public class LoginModel(
     SignInManager<IdentityUser> signInManager,
     UserManager<IdentityUser> userManager,
+    ICurrentCompanyAccessor currentCompanyAccessor,
     ICuentaAdministradoraRepository cuentaAdministradoraRepository,
     ITurnstileValidationService turnstileValidationService,
     IOptions<CloudflareTurnstileSettings> turnstileOptions,
@@ -89,8 +91,9 @@ public class LoginModel(
         if (result.Succeeded)
         {
             ReiniciarContador(LoginFailuresSessionKey);
+            currentCompanyAccessor.LimpiarEmpresa();
             logger.LogInformation("Usuario autenticado.");
-            return LocalRedirect(returnUrl);
+            return await RedirigirSegunContextoAsync(returnUrl);
         }
 
         IncrementarContador(LoginFailuresSessionKey);
@@ -129,8 +132,9 @@ public class LoginModel(
         var result = await signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
         if (result.Succeeded)
         {
+            currentCompanyAccessor.LimpiarEmpresa();
             logger.LogInformation("Usuario inicio sesion con {Provider}.", info.LoginProvider);
-            return LocalRedirect(returnUrl);
+            return await RedirigirSegunContextoAsync(returnUrl);
         }
 
         var email = info.Principal.FindFirstValue(ClaimTypes.Email);
@@ -173,9 +177,10 @@ public class LoginModel(
             return RedirectToPage("./Login", new { returnUrl });
         }
 
+        currentCompanyAccessor.LimpiarEmpresa();
         await signInManager.SignInAsync(user, isPersistent: false);
         logger.LogInformation("Usuario creo o vinculo cuenta con {Provider}.", info.LoginProvider);
-        return LocalRedirect(returnUrl);
+        return await RedirigirSegunContextoAsync(returnUrl);
     }
 
     private async Task<bool> ValidarTurnstileAsync()
@@ -221,5 +226,48 @@ public class LoginModel(
     private void ReiniciarContador(string key)
     {
         HttpContext.Session.Remove(key);
+    }
+
+    private async Task<IActionResult> RedirigirSegunContextoAsync(string returnUrl)
+    {
+        var homeUrl = Url.Content("~/");
+        if (Url.IsLocalUrl(returnUrl)
+            && !string.Equals(returnUrl, homeUrl, StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(returnUrl, "/", StringComparison.OrdinalIgnoreCase))
+        {
+            return LocalRedirect(returnUrl);
+        }
+
+        var user = await userManager.GetUserAsync(User);
+        if (user is null)
+        {
+            return LocalRedirect(homeUrl);
+        }
+
+        if (await userManager.IsInRoleAsync(user, "SuperAdmin"))
+        {
+            return RedirectToAction("Index", "Plataforma", new { area = "" });
+        }
+
+        var contextoLogin = await cuentaAdministradoraRepository.ObtenerContextoLoginUsuarioAsync(user.Id, HttpContext.RequestAborted);
+        if (contextoLogin is null || !contextoLogin.TieneAcceso)
+        {
+            return RedirectToAction("Index", "EmpresaContexto", new { area = "" });
+        }
+
+        if (contextoLogin.CantidadEmpresasAsignadas == 1 && contextoLogin.IdEmpresaPredeterminada.HasValue)
+        {
+            currentCompanyAccessor.EstablecerEmpresa(
+                contextoLogin.IdEmpresaPredeterminada.Value,
+                contextoLogin.RazonSocialEmpresaPredeterminada ?? "Empresa");
+            return RedirectToAction("Index", "Panel", new { area = "" });
+        }
+
+        if (contextoLogin.SoloModulosCuenta)
+        {
+            return RedirectToAction("Index", "Configuracion", new { area = "" });
+        }
+
+        return RedirectToAction("Index", "EmpresaContexto", new { area = "" });
     }
 }

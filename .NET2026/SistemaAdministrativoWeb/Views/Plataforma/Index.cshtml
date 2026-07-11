@@ -4,6 +4,7 @@
     ViewData["PlatformShell"] = true;
 }
 <!-- Author: FRANCO LARA | Create date: 15/06/2026 | Firma: Superadmin orientado a cuentas administradoras con control de suscripcion, limites y empresa principal. -->
+<!-- Firma: FRANCO LARA - 10/07/2026 | Incorpora gestion comercial por cuenta con dashboard, filtro de suscriptores, formularios por secciones horizontales, acceso separado al registro de cobros y mueve los historiales comercial/cobros a modales para reducir ruido visual. -->
 
 <section class="dashboard-shell">
     @if (TempData["SuperAdminOk"] is string ok)
@@ -15,151 +16,504 @@
         <div class="alert alert-danger">@error</div>
     }
 
+    <section class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">SuperAdmin</span>
+            <h1>Control comercial de suscriptores</h1>
+            <p>Administra contratos, estado operativo y trazabilidad comercial por cuenta registrada desde un solo panel.</p>
+        </div>
+        <div class="dashboard-hero-summary">
+            <div>
+                <span>Cobros registrados</span>
+                <strong>@Model.CobrosRegistrados</strong>
+            </div>
+            <div>
+                <span>Pendientes por aplicar</span>
+                <strong>@Model.CobrosPendientesAplicacion</strong>
+            </div>
+            <div>
+                <span>Cobrado este mes</span>
+                <strong>S/ @Model.MontoCobradoMes.ToString("0.00")</strong>
+            </div>
+        </div>
+    </section>
+
     <section class="dashboard-metrics">
         <article class="dashboard-metric-card dashboard-metric-card-count">
             <span>Total cuentas</span>
             <strong>@Model.TotalCuentas</strong>
-            <small>Universo de suscriptores administrativos.</small>
+            <small>Universo administrativo registrado.</small>
         </article>
         <article class="dashboard-metric-card dashboard-metric-card-count">
             <span>Activas</span>
             <strong>@Model.CuentasActivas</strong>
-            <small>Con contrato vigente y cuenta habilitada.</small>
+            <small>Con contrato vigente y servicio habilitado.</small>
         </article>
         <article class="dashboard-metric-card dashboard-metric-card-count">
             <span>En prueba</span>
             <strong>@Model.CuentasEnPrueba</strong>
-            <small>Periodos trial pendientes de conversion.</small>
+            <small>Suscriptores pendientes de conversion.</small>
         </article>
         <article class="dashboard-metric-card dashboard-metric-card-count">
             <span>Suspendidas o de baja</span>
             <strong>@Model.CuentasSuspendidasOBaja</strong>
-            <small>Casos a revisar comercialmente.</small>
+            <small>Casos que requieren accion comercial.</small>
         </article>
     </section>
 
     <section class="table-panel">
         <div class="table-panel-head">
             <h2>Suscriptores</h2>
-            <p>Actualiza plan, vigencia, limites y estado operativo por cuenta administradora.</p>
+            <p>Filtra la cartera y abre la gestion comercial por bloques horizontales para cada cuenta.</p>
         </div>
-        <div class="table-responsive">
-            <table class="table align-middle table-hover app-table">
-                <thead>
-                    <tr>
-                        <th>Cuenta</th>
-                        <th>Contacto</th>
-                        <th>Estado</th>
-                        <th>Vigencia</th>
-                        <th>Gestion</th>
-                    </tr>
-                </thead>
-                <tbody>
+
+        <form method="get" class="workspace-filter-card platform-filter-card">
+            <div class="workspace-filter-grid">
+                <div class="workspace-field">
+                    <label class="form-label">Buscar suscriptor</label>
+                    <input type="text" name="textoBusqueda" class="form-control" value="@Model.TextoBusqueda" placeholder="Cuenta, correo, contacto, empresa o RUC" />
+                </div>
+                <div class="workspace-field">
+                    <label class="form-label">Estado</label>
+                    <select name="estadoFiltro" class="form-select">
+                        <option value="TODOS" selected="@(Model.EstadoFiltro == "TODOS" ? "selected" : null)">Todos</option>
+                        <option value="ACTIVAS" selected="@(Model.EstadoFiltro == "ACTIVAS" ? "selected" : null)">Activas</option>
+                        <option value="TRIAL" selected="@(Model.EstadoFiltro == "TRIAL" ? "selected" : null)">En prueba</option>
+                        <option value="SUSPENDIDAS" selected="@(Model.EstadoFiltro == "SUSPENDIDAS" ? "selected" : null)">Suspendidas o baja</option>
+                    </select>
+                </div>
+            </div>
+            <div class="workspace-actions">
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+                <a class="btn btn-outline-secondary" asp-action="Index">Limpiar</a>
+                <a class="btn btn-outline-secondary" asp-action="Cobros">Ver registro de cobros</a>
+            </div>
+        </form>
+
+        <div class="platform-account-stack">
+            @if (Model.Cuentas.Count == 0)
+            {
+                <article class="platform-account-card">
+                    <div class="small text-muted">No se encontraron suscriptores con los filtros aplicados.</div>
+                </article>
+            }
+            else
+            {
                 @foreach (var cuenta in Model.Cuentas)
                 {
-                    <tr>
-                        <td>
-                            <strong>@cuenta.NombreCuenta</strong>
-                            <div class="small text-muted">@cuenta.CodigoCuenta | @cuenta.CorreoPrincipal</div>
-                            <div class="small text-muted">Empresas: @cuenta.CantidadEmpresas</div>
-                            <div class="small text-muted">
-                                Principal: @(cuenta.NombreComercialEmpresaPrincipal ?? cuenta.RazonSocialEmpresaPrincipal ?? "Sin empresa")
-                                @if (!string.IsNullOrWhiteSpace(cuenta.RucEmpresaPrincipal))
+                    var tieneContrato = !cuenta.EsPrueba && !string.IsNullOrWhiteSpace(cuenta.TipoCobro) && cuenta.FechaFinPlan.HasValue;
+                    var puedeIniciarContrato = cuenta.EsPrueba || !tieneContrato;
+                    var pagosPendientesAplicables = cuenta.HistorialCobros.Count(x => x.EstadoPago == "PENDIENTE" && x.AplicarAlConfirmar && !x.AplicadoSuscripcion);
+                    var tabId = $"platform-tabs-{cuenta.IdCuentaAdministradora}";
+                    var suscripcionTabId = $"suscripcion-{cuenta.IdCuentaAdministradora}";
+                    var contratoTabId = $"contrato-{cuenta.IdCuentaAdministradora}";
+                    var cobroTabId = $"cobro-{cuenta.IdCuentaAdministradora}";
+                    var historialComercialModalId = $"historial-comercial-{cuenta.IdCuentaAdministradora}";
+                    var historialCobrosModalId = $"historial-cobros-{cuenta.IdCuentaAdministradora}";
+
+                    <article class="platform-account-card">
+                        <div class="platform-account-grid">
+                            <section>
+                                <strong>@cuenta.NombreCuenta</strong>
+                                <div class="small text-muted">@cuenta.CodigoCuenta | @cuenta.CorreoPrincipal</div>
+                                <div class="small text-muted">Empresas vinculadas: @cuenta.CantidadEmpresas</div>
+                                <div class="small text-muted">
+                                    Principal: @(cuenta.NombreComercialEmpresaPrincipal ?? cuenta.RazonSocialEmpresaPrincipal ?? "Sin empresa")
+                                    @if (!string.IsNullOrWhiteSpace(cuenta.RucEmpresaPrincipal))
+                                    {
+                                        <span>| RUC @cuenta.RucEmpresaPrincipal</span>
+                                    }
+                                </div>
+                                <div class="platform-summary-badges">
+                                    <span class="badge text-bg-light border">@cuenta.EstadoSuscripcion</span>
+                                    @if (tieneContrato)
+                                    {
+                                        <span class="badge text-bg-info">Contrato activo</span>
+                                    }
+                                    @if (cuenta.EsPrueba)
+                                    {
+                                        <span class="badge text-bg-warning text-dark">Trial</span>
+                                    }
+                                    @if (pagosPendientesAplicables > 0)
+                                    {
+                                        <span class="badge text-bg-warning text-dark">Pendientes por aplicar: @pagosPendientesAplicables</span>
+                                    }
+                                </div>
+                            </section>
+
+                            <section>
+                                <div>@(cuenta.NombreCompleto ?? "Sin contacto")</div>
+                                <div class="small text-muted">@cuenta.Email</div>
+                                <div class="small text-muted">@cuenta.Telefono</div>
+                                <div class="small text-muted">@cuenta.TelefonoPrincipal</div>
+                            </section>
+
+                            <section class="small">
+                                @if (cuenta.EsPrueba)
                                 {
-                                    <span>| RUC @cuenta.RucEmpresaPrincipal</span>
+                                    <div>Prueba: @(cuenta.FechaInicioPrueba?.ToString("dd/MM/yyyy") ?? "-") al @(cuenta.FechaFinPrueba?.ToString("dd/MM/yyyy") ?? "-")</div>
                                 }
+                                else
+                                {
+                                    <div>Plan: @(cuenta.TipoCobro ?? "-") | @(cuenta.FechaInicioPlan?.ToString("dd/MM/yyyy") ?? "-") al @(cuenta.FechaFinPlan?.ToString("dd/MM/yyyy") ?? "-")</div>
+                                    <div>Gracia: @cuenta.DiasGracia dia(s) | hasta @(cuenta.FechaFinGracia?.ToString("dd/MM/yyyy") ?? "-")</div>
+                                }
+                                <div>Empresas permitidas: @(cuenta.EmpresasPermitidas?.ToString() ?? "Ilimitado")</div>
+                                <div>Usuarios permitidos: @(cuenta.UsuariosPermitidos?.ToString() ?? "Ilimitado")</div>
+                                <div>Cuenta: @(cuenta.EstadoCuenta ? "Activa" : "Inactiva") | Servicio: @(cuenta.Activo ? "Habilitado" : "Detenido")</div>
+                            </section>
+                        </div>
+
+                        <div class="platform-section-divider"></div>
+
+                        <div class="platform-history-actions">
+                            <button type="button"
+                                    class="btn btn-outline-secondary btn-sm"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#@historialComercialModalId">
+                                Historial comercial
+                            </button>
+                            <button type="button"
+                                    class="btn btn-outline-secondary btn-sm"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#@historialCobrosModalId">
+                                Historial de cobros
+                            </button>
+                        </div>
+
+                        <ul class="nav nav-pills platform-tab-nav" id="@tabId" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#@suscripcionTabId" type="button" role="tab">Suscripcion base</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#@contratoTabId" type="button" role="tab">Iniciar contrato</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#@cobroTabId" type="button" role="tab">Registrar cobro</button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content platform-tab-content">
+                            <div class="tab-pane fade show active" id="@suscripcionTabId" role="tabpanel">
+                                <form asp-action="ActualizarSuscripcion" method="post" class="platform-form-card">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="IdCuentaAdministradora" value="@cuenta.IdCuentaAdministradora" />
+                                    <input type="hidden" name="FechaInicioPrueba" value="@(cuenta.FechaInicioPrueba?.ToString("yyyy-MM-dd"))" />
+                                    <input type="hidden" name="FechaInicioPlan" value="@(cuenta.FechaInicioPlan?.ToString("yyyy-MM-dd"))" />
+                                    <h3>Suscripcion base</h3>
+                                    <p>Ajusta estado, plan, limites y vigencias manuales.</p>
+                                    <div class="workspace-form-grid">
+                                        <div class="workspace-field">
+                                            <label class="form-label">Plan</label>
+                                            <select name="TipoPlan" class="form-select form-select-sm">
+                                                <option value="TRIAL" selected="@(cuenta.TipoPlan == "TRIAL" ? "selected" : null)">TRIAL</option>
+                                                <option value="BASICO" selected="@(cuenta.TipoPlan == "BASICO" ? "selected" : null)">BASICO</option>
+                                                <option value="PRO" selected="@(cuenta.TipoPlan == "PRO" ? "selected" : null)">PRO</option>
+                                            </select>
+                                        </div>
+                                        <div class="workspace-field">
+                                            <label class="form-label">Estado</label>
+                                            <select name="EstadoSuscripcion" class="form-select form-select-sm">
+                                                <option value="TRIAL" selected="@(cuenta.EstadoSuscripcion == "TRIAL" ? "selected" : null)">TRIAL</option>
+                                                <option value="ACTIVO" selected="@(cuenta.EstadoSuscripcion == "ACTIVO" ? "selected" : null)">ACTIVO</option>
+                                                <option value="SUSPENDIDO" selected="@(cuenta.EstadoSuscripcion == "SUSPENDIDO" ? "selected" : null)">SUSPENDIDO</option>
+                                                <option value="BAJA" selected="@(cuenta.EstadoSuscripcion == "BAJA" ? "selected" : null)">BAJA</option>
+                                            </select>
+                                        </div>
+                                        <div class="workspace-field">
+                                            <label class="form-label">Tipo cobro</label>
+                                            <select name="TipoCobro" class="form-select form-select-sm">
+                                                <option value="">Sin contrato</option>
+                                                <option value="MENSUAL" selected="@(cuenta.TipoCobro == "MENSUAL" ? "selected" : null)">MENSUAL</option>
+                                                <option value="TRIMESTRAL" selected="@(cuenta.TipoCobro == "TRIMESTRAL" ? "selected" : null)">TRIMESTRAL</option>
+                                                <option value="SEMESTRAL" selected="@(cuenta.TipoCobro == "SEMESTRAL" ? "selected" : null)">SEMESTRAL</option>
+                                                <option value="ANUAL" selected="@(cuenta.TipoCobro == "ANUAL" ? "selected" : null)">ANUAL</option>
+                                            </select>
+                                        </div>
+                                        <div class="workspace-field">
+                                            <label class="form-label">Dias gracia</label>
+                                            <input type="number" min="0" max="60" name="DiasGracia" class="form-control form-control-sm" value="@cuenta.DiasGracia" />
+                                        </div>
+                                        <div class="workspace-field">
+                                            <label class="form-label">Fin prueba</label>
+                                            <input type="date" name="FechaFinPrueba" class="form-control form-control-sm" value="@(cuenta.FechaFinPrueba?.ToString("yyyy-MM-dd"))" />
+                                        </div>
+                                        <div class="workspace-field">
+                                            <label class="form-label">Fin plan</label>
+                                            <input type="date" name="FechaFinPlan" class="form-control form-control-sm" value="@(cuenta.FechaFinPlan?.ToString("yyyy-MM-dd"))" />
+                                        </div>
+                                        <div class="workspace-field">
+                                            <label class="form-label">Empresas</label>
+                                            <input type="number" min="1" name="EmpresasPermitidas" class="form-control form-control-sm" value="@cuenta.EmpresasPermitidas" />
+                                        </div>
+                                        <div class="workspace-field">
+                                            <label class="form-label">Usuarios</label>
+                                            <input type="number" min="1" name="UsuariosPermitidos" class="form-control form-control-sm" value="@cuenta.UsuariosPermitidos" />
+                                        </div>
+                                        <div class="workspace-field">
+                                            <label class="form-check">
+                                                <input type="checkbox" class="form-check-input" name="EsPrueba" value="true" checked="@(cuenta.EsPrueba ? "checked" : null)" />
+                                                <input type="hidden" name="EsPrueba" value="false" />
+                                                <span class="form-check-label">En prueba</span>
+                                            </label>
+                                        </div>
+                                        <div class="workspace-field">
+                                            <label class="form-check">
+                                                <input type="checkbox" class="form-check-input" name="Activo" value="true" checked="@(cuenta.Activo ? "checked" : null)" />
+                                                <input type="hidden" name="Activo" value="false" />
+                                                <span class="form-check-label">Servicio activo</span>
+                                            </label>
+                                        </div>
+                                        <div class="workspace-field">
+                                            <label class="form-check">
+                                                <input type="checkbox" class="form-check-input" name="EstadoCuenta" value="true" checked="@(cuenta.EstadoCuenta ? "checked" : null)" />
+                                                <input type="hidden" name="EstadoCuenta" value="false" />
+                                                <span class="form-check-label">Cuenta activa</span>
+                                            </label>
+                                        </div>
+                                        <div class="workspace-field workspace-field-span-3">
+                                            <label class="form-label">Observacion</label>
+                                            <input type="text" name="Observacion" class="form-control form-control-sm" value="@cuenta.Observacion" />
+                                        </div>
+                                        <div class="workspace-field workspace-field-span-3">
+                                            <button type="submit" class="btn btn-primary btn-sm">Guardar suscripcion</button>
+                                        </div>
+                                    </div>
+                                </form>
                             </div>
-                        </td>
-                        <td>
-                            <div>@(cuenta.NombreCompleto ?? "Sin contacto")</div>
-                            <div class="small text-muted">@cuenta.Email</div>
-                            <div class="small text-muted">@cuenta.Telefono</div>
-                            <div class="small text-muted">@cuenta.TelefonoPrincipal</div>
-                        </td>
-                        <td>
-                            <span class="badge text-bg-light border">@cuenta.EstadoSuscripcion</span>
-                            <div class="small text-muted">
-                                Cuenta: @(cuenta.EstadoCuenta ? "Activa" : "Inactiva")
-                                | Servicio: @(cuenta.Activo ? "Habilitado" : "Detenido")
+
+                            <div class="tab-pane fade" id="@contratoTabId" role="tabpanel">
+                                <form asp-action="ActivarContrato" method="post" class="platform-form-card">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="IdCuentaAdministradora" value="@cuenta.IdCuentaAdministradora" />
+                                    <h3>Iniciar contrato</h3>
+                                    <p>@(puedeIniciarContrato ? "Convierte la cuenta a contrato comercial." : "Puedes reiniciar la vigencia desde este bloque.")</p>
+                                    <div class="workspace-form-grid">
+                                        <div class="workspace-field">
+                                            <label class="form-label">Tipo cobro</label>
+                                            <select name="TipoCobro" class="form-select form-select-sm">
+                                                <option value="MENSUAL">MENSUAL</option>
+                                                <option value="TRIMESTRAL">TRIMESTRAL</option>
+                                                <option value="SEMESTRAL">SEMESTRAL</option>
+                                                <option value="ANUAL">ANUAL</option>
+                                            </select>
+                                        </div>
+                                        <div class="workspace-field">
+                                            <label class="form-label">Inicio plan</label>
+                                            <input type="date" name="FechaInicioPlan" class="form-control form-control-sm" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                        </div>
+                                        <div class="workspace-field">
+                                            <label class="form-label">Dias gracia</label>
+                                            <input type="number" min="0" max="60" name="DiasGracia" class="form-control form-control-sm" value="@(cuenta.DiasGracia > 0 ? cuenta.DiasGracia : 5)" />
+                                        </div>
+                                        <div class="workspace-field workspace-field-span-3">
+                                            <label class="form-label">Observacion</label>
+                                            <input type="text" name="Observacion" class="form-control form-control-sm" value="Inicio de contrato desde SuperAdmin." />
+                                        </div>
+                                        <div class="workspace-field workspace-field-span-3">
+                                            <button type="submit" class="btn btn-primary btn-sm">Iniciar contrato</button>
+                                        </div>
+                                    </div>
+                                </form>
                             </div>
-                        </td>
-                        <td class="small">
-                            @if (cuenta.EsPrueba)
-                            {
-                                <div>Prueba: @(cuenta.FechaInicioPrueba?.ToString("dd/MM/yyyy") ?? "-") al @(cuenta.FechaFinPrueba?.ToString("dd/MM/yyyy") ?? "-")</div>
-                            }
-                            else
-                            {
-                                <div>Plan: @(cuenta.FechaInicioPlan?.ToString("dd/MM/yyyy") ?? "-") al @(cuenta.FechaFinPlan?.ToString("dd/MM/yyyy") ?? "-")</div>
-                            }
-                            <div>Empresas permitidas: @(cuenta.EmpresasPermitidas?.ToString() ?? "Ilimitado")</div>
-                            <div>Usuarios permitidos: @(cuenta.UsuariosPermitidos?.ToString() ?? "Ilimitado")</div>
-                        </td>
-                        <td>
-                            <form asp-action="ActualizarSuscripcion" method="post" class="superadmin-form-grid">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="IdCuentaAdministradora" value="@cuenta.IdCuentaAdministradora" />
-                                <div>
-                                    <label class="form-label">Plan</label>
-                                    <select name="TipoPlan" class="form-select form-select-sm">
-                                        <option value="TRIAL" selected="@(cuenta.TipoPlan == "TRIAL")">TRIAL</option>
-                                        <option value="BASICO" selected="@(cuenta.TipoPlan == "BASICO")">BASICO</option>
-                                        <option value="PRO" selected="@(cuenta.TipoPlan == "PRO")">PRO</option>
-                                    </select>
+
+                            <div class="tab-pane fade" id="@cobroTabId" role="tabpanel">
+                                <form asp-action="RegistrarCobro" method="post" class="platform-form-card">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="IdCuentaAdministradora" value="@cuenta.IdCuentaAdministradora" />
+                                    <h3>Registrar cobro</h3>
+                                    <p>Registra cobros manuales, de transferencia o conciliados desde pasarela.</p>
+                                    <div class="workspace-form-grid">
+                                        <div class="workspace-field">
+                                            <label class="form-label">Monto</label>
+                                            <input type="number" min="0.01" step="0.01" name="Monto" class="form-control form-control-sm" value="0.00" />
+                                        </div>
+                                        <div class="workspace-field">
+                                            <label class="form-label">Tipo pago</label>
+                                            <select name="TipoPago" class="form-select form-select-sm">
+                                                <option value="TRANSFERENCIA">TRANSFERENCIA</option>
+                                                <option value="YAPE">YAPE</option>
+                                                <option value="PLIN">PLIN</option>
+                                                <option value="TARJETA">TARJETA</option>
+                                                <option value="PASARELA">PASARELA</option>
+                                            </select>
+                                        </div>
+                                        <div class="workspace-field">
+                                            <label class="form-label">Fecha pago</label>
+                                            <input type="datetime-local" name="FechaPago" class="form-control form-control-sm" value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+                                        </div>
+                                        <div class="workspace-field">
+                                            <label class="form-label">Nro operacion</label>
+                                            <input type="text" name="OperacionNumero" class="form-control form-control-sm" />
+                                        </div>
+                                        <div class="workspace-field">
+                                            <label class="form-label">Entidad financiera</label>
+                                            <input type="text" name="EntidadFinanciera" class="form-control form-control-sm" />
+                                        </div>
+                                        <div class="workspace-field">
+                                            <label class="form-label">Referencia externa</label>
+                                            <input type="text" name="ReferenciaExterna" class="form-control form-control-sm" />
+                                        </div>
+                                        <div class="workspace-field">
+                                            <label class="form-label">Proveedor pasarela</label>
+                                            <input type="text" name="ProveedorPasarela" class="form-control form-control-sm" placeholder="Niubiz, MercadoPago, Culqi..." />
+                                        </div>
+                                        <div class="workspace-field">
+                                            <label class="form-label">Transaccion pasarela</label>
+                                            <input type="text" name="TransaccionPasarelaId" class="form-control form-control-sm" />
+                                        </div>
+                                        <div class="workspace-field">
+                                            <label class="form-label">Pago pasarela</label>
+                                            <input type="text" name="PagoPasarelaId" class="form-control form-control-sm" />
+                                        </div>
+                                        <div class="workspace-field">
+                                            <label class="form-label">Estado pasarela</label>
+                                            <input type="text" name="EstadoPasarela" class="form-control form-control-sm" placeholder="AUTHORIZED, CAPTURED..." />
+                                        </div>
+                                        <div class="workspace-field">
+                                            <label class="form-label">Accion aplicacion</label>
+                                            <select name="AccionAplicacion" class="form-select form-select-sm">
+                                                <option value="">Solo registrar</option>
+                                                <option value="ACTIVAR_CONTRATO">Activar contrato</option>
+                                            </select>
+                                        </div>
+                                        <div class="workspace-field">
+                                            <label class="form-label">Tipo cobro objetivo</label>
+                                            <select name="TipoCobroObjetivo" class="form-select form-select-sm">
+                                                <option value="">Sin objetivo</option>
+                                                <option value="MENSUAL">MENSUAL</option>
+                                                <option value="TRIMESTRAL">TRIMESTRAL</option>
+                                                <option value="SEMESTRAL">SEMESTRAL</option>
+                                                <option value="ANUAL">ANUAL</option>
+                                            </select>
+                                        </div>
+                                        <div class="workspace-field">
+                                            <label class="form-label">Inicio plan objetivo</label>
+                                            <input type="date" name="FechaInicioPlanObjetivo" class="form-control form-control-sm" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                        </div>
+                                        <div class="workspace-field">
+                                            <label class="form-label">Dias gracia objetivo</label>
+                                            <input type="number" min="0" max="60" name="DiasGraciaObjetivo" class="form-control form-control-sm" value="@(cuenta.DiasGracia > 0 ? cuenta.DiasGracia : 5)" />
+                                        </div>
+                                        <div class="workspace-field">
+                                            <label class="form-check">
+                                                <input type="checkbox" class="form-check-input" name="CobroConfirmado" value="true" checked="checked" />
+                                                <input type="hidden" name="CobroConfirmado" value="false" />
+                                                <span class="form-check-label">Cobro confirmado</span>
+                                            </label>
+                                        </div>
+                                        <div class="workspace-field">
+                                            <label class="form-check">
+                                                <input type="checkbox" class="form-check-input" name="AplicarAlConfirmar" value="true" />
+                                                <input type="hidden" name="AplicarAlConfirmar" value="false" />
+                                                <span class="form-check-label">Aplicar al confirmar</span>
+                                            </label>
+                                        </div>
+                                        <div class="workspace-field workspace-field-span-3">
+                                            <label class="form-label">Payload pasarela</label>
+                                            <textarea name="PayloadPasarela" class="form-control form-control-sm" rows="2"></textarea>
+                                        </div>
+                                        <div class="workspace-field workspace-field-span-3">
+                                            <label class="form-label">Observacion</label>
+                                            <input type="text" name="Observacion" class="form-control form-control-sm" value="Cobro de suscripcion registrado desde SuperAdmin." />
+                                        </div>
+                                        <div class="workspace-field workspace-field-span-3">
+                                            <button type="submit" class="btn btn-primary btn-sm">Registrar cobro</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </article>
+
+                    <div class="modal fade" id="@historialComercialModalId" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                            <div class="modal-content platform-modal-content">
+                                <div class="modal-header platform-modal-header">
+                                    <div>
+                                        <h2 class="modal-title h5 mb-1">Historial comercial</h2>
+                                        <p class="mb-0 small">@cuenta.NombreCuenta | @cuenta.HistorialComercial.Count movimiento(s)</p>
+                                    </div>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                                 </div>
-                                <div>
-                                    <label class="form-label">Estado</label>
-                                    <select name="EstadoSuscripcion" class="form-select form-select-sm">
-                                        <option value="TRIAL" selected="@(cuenta.EstadoSuscripcion == "TRIAL")">TRIAL</option>
-                                        <option value="ACTIVO" selected="@(cuenta.EstadoSuscripcion == "ACTIVO")">ACTIVO</option>
-                                        <option value="SUSPENDIDO" selected="@(cuenta.EstadoSuscripcion == "SUSPENDIDO")">SUSPENDIDO</option>
-                                        <option value="BAJA" selected="@(cuenta.EstadoSuscripcion == "BAJA")">BAJA</option>
-                                    </select>
+                                <div class="modal-body">
+                                    @if (cuenta.HistorialComercial.Count == 0)
+                                    {
+                                        <div class="small text-muted">Sin movimientos comerciales registrados.</div>
+                                    }
+                                    else
+                                    {
+                                        <div class="platform-history-list">
+                                            @foreach (var mov in cuenta.HistorialComercial)
+                                            {
+                                                <article class="platform-history-item">
+                                                    <strong>@mov.TipoMovimiento</strong>
+                                                    <small>
+                                                        Estado: @(mov.EstadoSuscripcionAnterior ?? "-") -> @mov.EstadoSuscripcionNuevo<br />
+                                                        Cobro: @(mov.TipoCobroAnterior ?? "-") -> @(mov.TipoCobroNuevo ?? "-")<br />
+                                                        Vigencia: @(mov.FechaInicioReferencia?.ToString("dd/MM/yyyy") ?? "-") al @(mov.FechaFinReferencia?.ToString("dd/MM/yyyy") ?? "-")<br />
+                                                        Gracia: @mov.DiasGracia | Extra: @mov.DiasExtra<br />
+                                                        Obs.: @(string.IsNullOrWhiteSpace(mov.Observacion) ? "-" : mov.Observacion)<br />
+                                                        @mov.FechaRegistro.ToString("dd/MM/yyyy HH:mm") | @(mov.UsuarioRegistro ?? "sistema")
+                                                    </small>
+                                                </article>
+                                            }
+                                        </div>
+                                    }
                                 </div>
-                                <div>
-                                    <label class="form-label">Fin prueba</label>
-                                    <input type="date" name="FechaFinPrueba" class="form-control form-control-sm" value="@(cuenta.FechaFinPrueba?.ToString("yyyy-MM-dd"))" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal fade" id="@historialCobrosModalId" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                            <div class="modal-content platform-modal-content">
+                                <div class="modal-header platform-modal-header">
+                                    <div>
+                                        <h2 class="modal-title h5 mb-1">Historial de cobros</h2>
+                                        <p class="mb-0 small">@cuenta.NombreCuenta | @cuenta.HistorialCobros.Count cobro(s)</p>
+                                    </div>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                                 </div>
-                                <div>
-                                    <label class="form-label">Fin plan</label>
-                                    <input type="date" name="FechaFinPlan" class="form-control form-control-sm" value="@(cuenta.FechaFinPlan?.ToString("yyyy-MM-dd"))" />
+                                <div class="modal-body">
+                                    @if (cuenta.HistorialCobros.Count == 0)
+                                    {
+                                        <div class="small text-muted">Sin cobros registrados.</div>
+                                    }
+                                    else
+                                    {
+                                        <div class="platform-history-list">
+                                            @foreach (var pago in cuenta.HistorialCobros)
+                                            {
+                                                <article class="platform-history-item">
+                                                    <strong>@pago.TipoPago | @pago.Moneda @pago.Monto.ToString("0.00")</strong>
+                                                    <small>
+                                                        Estado pago: @pago.EstadoPago | Aplicado: @(pago.AplicadoSuscripcion ? "Si" : "No")<br />
+                                                        Operacion: @(pago.OperacionNumero ?? "-") | Banco: @(pago.EntidadFinanciera ?? "-")<br />
+                                                        Pasarela: @(pago.ProveedorPasarela ?? "-") | Estado: @(pago.EstadoPasarela ?? "-")<br />
+                                                        Accion: @(pago.AccionAplicacion ?? "-") | Tipo objetivo: @(pago.TipoCobroObjetivo ?? "-")<br />
+                                                        Pago: @pago.FechaPago.ToString("dd/MM/yyyy HH:mm") | Registro: @pago.FechaRegistro.ToString("dd/MM/yyyy HH:mm")<br />
+                                                        Obs.: @(string.IsNullOrWhiteSpace(pago.Observacion) ? "-" : pago.Observacion)
+                                                    </small>
+                                                    @if (pago.EstadoPago == "PENDIENTE" && pago.AplicarAlConfirmar && !pago.AplicadoSuscripcion)
+                                                    {
+                                                        <form asp-action="ConfirmarCobro" method="post" class="mt-2">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="idCuentaAdministradora" value="@cuenta.IdCuentaAdministradora" />
+                                                            <input type="hidden" name="idCuentaAdministradoraSuscripcionPago" value="@pago.IdCuentaAdministradoraSuscripcionPago" />
+                                                            <button type="submit" class="btn btn-primary btn-sm">Confirmar y aplicar</button>
+                                                        </form>
+                                                    }
+                                                </article>
+                                            }
+                                        </div>
+                                    }
                                 </div>
-                                <div>
-                                    <label class="form-label">Empresas</label>
-                                    <input type="number" min="1" name="EmpresasPermitidas" class="form-control form-control-sm" value="@cuenta.EmpresasPermitidas" />
-                                </div>
-                                <div>
-                                    <label class="form-label">Usuarios</label>
-                                    <input type="number" min="1" name="UsuariosPermitidos" class="form-control form-control-sm" value="@cuenta.UsuariosPermitidos" />
-                                </div>
-                                <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" name="EsPrueba" value="true" checked="@cuenta.EsPrueba" />
-                                    <input type="hidden" name="EsPrueba" value="false" />
-                                    <label class="form-check-label">En prueba</label>
-                                </div>
-                                <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" name="Activo" value="true" checked="@cuenta.Activo" />
-                                    <input type="hidden" name="Activo" value="false" />
-                                    <label class="form-check-label">Servicio activo</label>
-                                </div>
-                                <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" name="EstadoCuenta" value="true" checked="@cuenta.EstadoCuenta" />
-                                    <input type="hidden" name="EstadoCuenta" value="false" />
-                                    <label class="form-check-label">Cuenta activa</label>
-                                </div>
-                                <div class="superadmin-form-observacion">
-                                    <label class="form-label">Observacion</label>
-                                    <input type="text" name="Observacion" class="form-control form-control-sm" value="@cuenta.Observacion" />
-                                </div>
-                                <div class="superadmin-form-actions">
-                                    <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
-                                </div>
-                            </form>
-                        </td>
-                    </tr>
+                            </div>
+                        </div>
+                    </div>
                 }
-                </tbody>
-            </table>
+            }
         </div>
     </section>
 </section>

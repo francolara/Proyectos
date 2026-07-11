@@ -111,6 +111,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ29uZmlndXJhY2lvbkNvbnRhYmlsaXphY2lvblxfUGFyYW1ldHJvQ29udGFibGVUYWIuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/Configuracion/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ29uZmlndXJhY2lvblxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/CuentaCorriente/Formulario.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ3VlbnRhQ29ycmllbnRlXEZvcm11bGFyaW8uY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
@@ -141,6 +145,18 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/Home/Privacy.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxQcml2YWN5LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/Legal/Cancelaciones.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTGVnYWxcQ2FuY2VsYWNpb25lcy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/Legal/Privacidad.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTGVnYWxcUHJpdmFjaWRhZC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/Legal/Terminos.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTGVnYWxcVGVybWlub3MuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/LibroElectronico/Index.cshtml]
@@ -177,6 +193,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/PlanCuenta/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGxhbkN1ZW50YVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/Plataforma/Cobros.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGxhdGFmb3JtYVxDb2Jyb3MuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/Plataforma/Index.cshtml]
@@ -231,12 +251,20 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXEVycm9yLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/Shared/_LegalContactBlock.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9MZWdhbENvbnRhY3RCbG9jay5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/Shared/_LoginPartial.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9Mb2dpblBhcnRpYWwuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/Shared/_ValidationScriptsPartial.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/Shared/_WhatsAppFloatingButton.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9XaGF0c0FwcEZsb2F0aW5nQnV0dG9uLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/TipoCambio/Formulario.cshtml]
@@ -253,6 +281,14 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/TransferenciaCuenta/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVHJhbnNmZXJlbmNpYUN1ZW50YVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/Usuarios/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVXN1YXJpb3NcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/Usuarios/Permisos.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVXN1YXJpb3NcUGVybWlzb3MuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/Venta/CargaMasiva.cshtml]

@@ -1,0 +1,23 @@
+@using Microsoft.Extensions.Options
+@using SistemaAdministrativoWeb.Configuration
+@inject IOptions<BusinessInformationOptions> BusinessInformationOptionsAccessor
+@{
+    var business = BusinessInformationOptionsAccessor.Value;
+    var hasWhatsApp = !string.IsNullOrWhiteSpace(business.WhatsAppNumber);
+    var encodedMessage = hasWhatsApp ? Uri.EscapeDataString(business.WhatsAppMessage ?? string.Empty) : string.Empty;
+    var whatsappUrl = hasWhatsApp ? $"https://wa.me/{business.WhatsAppNumber}?text={encodedMessage}" : string.Empty;
+}
+
+@if (hasWhatsApp)
+{
+    <div class="fralsecont-whatsapp" aria-hidden="false">
+        <a class="fralsecont-whatsapp-link"
+           href="@whatsappUrl"
+           target="_blank"
+           rel="noopener noreferrer"
+           aria-label="Contactar a FralseCont por WhatsApp">
+            <span class="fralsecont-whatsapp-tooltip">&iquest;Necesitas ayuda? Escr&iacute;benos</span>
+            <i class="bi bi-whatsapp fralsecont-whatsapp-icon" aria-hidden="true"></i>
+        </a>
+    </div>
+}

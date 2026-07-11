@@ -1,0 +1,261 @@
+@model SistemaAdministrativoWeb.ViewModels.Usuarios.UsuarioPermisosViewModel
+@* Firma: FRANCO LARA - 10/07/2026 | Crea la vista de detalle de permisos por cuenta y por empresa para usuarios de la cuenta administradora. *@
+@{
+    ViewData["Title"] = "Permisos de usuario";
+    ViewData["AdminShell"] = true;
+}
+
+<section class="dashboard-shell subscription-shell">
+    <section class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">General / Usuarios</span>
+            <h1>@Model.NombreCompleto</h1>
+            <p>@Model.CorreoUsuario</p>
+        </div>
+        <article class="dashboard-status-card">
+            <span>Rol de cuenta</span>
+            <strong>@Model.RolCuenta</strong>
+            <small>Empresas asignadas: @Model.EmpresasSeleccionadas.Count</small>
+            <small>@(Model.IdEmpresaSeleccionada.HasValue ? $"Empresa activa en revision: {Model.NombreEmpresaSeleccionada}" : "Sin empresa seleccionada")</small>
+        </article>
+    </section>
+
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="alert alert-success">@successMessage</div>
+    }
+
+    <section class="workspace-section">
+        <div class="workspace-section-head">
+            <span class="workspace-section-kicker">Acceso base</span>
+            <h2>Rol y empresas</h2>
+            <p>Aqui controlas el rol global del usuario dentro de la administradora y las empresas donde podra trabajar.</p>
+        </div>
+
+        <form asp-action="ActualizarAcceso" method="post">
+            @Html.AntiForgeryToken()
+            <input asp-for="IdCuentaAdministradora" type="hidden" />
+            <input asp-for="IdUsuarioCuentaAdministradora" type="hidden" />
+            <input asp-for="AspNetUserId" type="hidden" />
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label asp-for="RolCuenta" class="form-label"></label>
+                    <select asp-for="RolCuenta" asp-items="ViewBag.RoleOptions" class="form-select"></select>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="IdEmpresaPredeterminada" class="form-label">Empresa predeterminada</label>
+                    <select asp-for="IdEmpresaPredeterminada" class="form-select">
+                        <option value="">Sin empresa predeterminada</option>
+                        @foreach (var empresa in Model.EmpresasDisponibles.Where(x => x.Asignado || Model.EmpresasSeleccionadas.Contains(x.IdEmpresa)))
+                        {
+                            <option value="@empresa.IdEmpresa">@empresa.CodigoEmpresa - @empresa.RazonSocial</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <div class="form-check">
+                        <input asp-for="EsCuentaPredeterminada" class="form-check-input" />
+                        <label asp-for="EsCuentaPredeterminada" class="form-check-label"></label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <label class="form-label">Empresas habilitadas</label>
+                <div class="row g-2">
+                    @foreach (var empresa in Model.EmpresasDisponibles)
+                    {
+                        <div class="col-md-6">
+                            <label class="border rounded p-3 d-flex gap-2 align-items-start w-100">
+                                <input type="checkbox" class="form-check-input mt-1" name="EmpresasSeleccionadas" value="@empresa.IdEmpresa" @(Model.EmpresasSeleccionadas.Contains(empresa.IdEmpresa) ? "checked" : null) />
+                                <span>
+                                    <strong>@empresa.CodigoEmpresa</strong><br />
+                                    <small>@empresa.RazonSocial</small>
+                                </span>
+                            </label>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="workspace-actions mt-4">
+                <button type="submit" class="btn btn-primary">Actualizar acceso</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Volver</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="workspace-section">
+        <div class="workspace-section-head">
+            <span class="workspace-section-kicker">Overrides de cuenta</span>
+            <h2>Permisos sobre opciones generales</h2>
+            <p>Deja el valor vacio para heredar el permiso del rol; usa Si o No solo cuando necesites una excepcion.</p>
+        </div>
+
+        <div class="table-responsive workspace-table-wrap">
+            <table class="table table-sm align-middle app-table workspace-table">
+                <thead>
+                    <tr>
+                        <th>Modulo</th>
+                        <th>Ver</th>
+                        <th>Crear</th>
+                        <th>Editar</th>
+                        <th>Eliminar</th>
+                        <th>Estado efectivo</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var permiso in Model.PermisosCuenta)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@permiso.NombreModulo</strong><br />
+                                <small>@permiso.GrupoMenu</small>
+                            </td>
+                            <td colspan="5">
+                                <form asp-action="GuardarPermisoCuenta" method="post" class="row g-2 align-items-end">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="aspNetUserId" value="@Model.AspNetUserId" />
+                                    <input type="hidden" name="idUsuarioCuentaAdministradora" value="@Model.IdUsuarioCuentaAdministradora" />
+                                    <input type="hidden" name="idModuloSistema" value="@permiso.IdModuloSistema" />
+                                    <div class="col-md-2">
+                                        <select name="puedeVer" class="form-select form-select-sm">
+                                            <option value="" selected="@(permiso.PuedeVerOverride is null ? "selected" : null)">Rol</option>
+                                            <option value="true" selected="@(permiso.PuedeVerOverride == true ? "selected" : null)">Si</option>
+                                            <option value="false" selected="@(permiso.PuedeVerOverride == false ? "selected" : null)">No</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <select name="puedeCrear" class="form-select form-select-sm">
+                                            <option value="" selected="@(permiso.PuedeCrearOverride is null ? "selected" : null)">Rol</option>
+                                            <option value="true" selected="@(permiso.PuedeCrearOverride == true ? "selected" : null)">Si</option>
+                                            <option value="false" selected="@(permiso.PuedeCrearOverride == false ? "selected" : null)">No</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <select name="puedeEditar" class="form-select form-select-sm">
+                                            <option value="" selected="@(permiso.PuedeEditarOverride is null ? "selected" : null)">Rol</option>
+                                            <option value="true" selected="@(permiso.PuedeEditarOverride == true ? "selected" : null)">Si</option>
+                                            <option value="false" selected="@(permiso.PuedeEditarOverride == false ? "selected" : null)">No</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <select name="puedeEliminar" class="form-select form-select-sm">
+                                            <option value="" selected="@(permiso.PuedeEliminarOverride is null ? "selected" : null)">Rol</option>
+                                            <option value="true" selected="@(permiso.PuedeEliminarOverride == true ? "selected" : null)">Si</option>
+                                            <option value="false" selected="@(permiso.PuedeEliminarOverride == false ? "selected" : null)">No</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <small class="d-block">V:@(permiso.PuedeVerEfectivo ? "Si" : "No") C:@(permiso.PuedeCrearEfectivo ? "Si" : "No") E:@(permiso.PuedeEditarEfectivo ? "Si" : "No") X:@(permiso.PuedeEliminarEfectivo ? "Si" : "No")</small>
+                                    </div>
+                                    <div class="col-md-1 text-end">
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">Guardar</button>
+                                    </div>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="workspace-section">
+        <div class="workspace-section-head">
+            <span class="workspace-section-kicker">Overrides por empresa</span>
+            <h2>Permisos del modulo contable</h2>
+            <p>Selecciona una empresa asignada para revisar permisos puntuales sobre mantenimiento, registros, procesos y reportes.</p>
+        </div>
+
+        <form method="get" asp-action="Permisos" class="row g-3 mb-4">
+            <input type="hidden" name="aspNetUserId" value="@Model.AspNetUserId" />
+            <div class="col-md-6">
+                <label class="form-label">Empresa</label>
+                <select name="idEmpresa" asp-items="ViewBag.EmpresaFiltroOptions" class="form-select"></select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-outline-secondary">Cambiar empresa</button>
+            </div>
+        </form>
+
+        @if (!Model.IdUsuarioEmpresaSeleccionada.HasValue)
+        {
+            <div class="alert alert-warning">El usuario aun no tiene una empresa seleccionada para revisar permisos operativos.</div>
+        }
+        else
+        {
+            <div class="table-responsive workspace-table-wrap">
+                <table class="table table-sm align-middle app-table workspace-table">
+                    <thead>
+                        <tr>
+                            <th>Modulo</th>
+                            <th>Ver</th>
+                            <th>Crear</th>
+                            <th>Editar</th>
+                            <th>Eliminar</th>
+                            <th>Estado efectivo</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var permiso in Model.PermisosEmpresa)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@permiso.NombreModulo</strong><br />
+                                    <small>@permiso.GrupoMenu</small>
+                                </td>
+                                <td colspan="5">
+                                    <form asp-action="GuardarPermisoEmpresa" method="post" class="row g-2 align-items-end">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="aspNetUserId" value="@Model.AspNetUserId" />
+                                        <input type="hidden" name="idUsuarioEmpresa" value="@Model.IdUsuarioEmpresaSeleccionada" />
+                                        <input type="hidden" name="idEmpresa" value="@Model.IdEmpresaSeleccionada" />
+                                        <input type="hidden" name="idModuloSistema" value="@permiso.IdModuloSistema" />
+                                        <div class="col-md-2">
+                                            <select name="puedeVer" class="form-select form-select-sm">
+                                                <option value="" selected="@(permiso.PuedeVerOverride is null ? "selected" : null)">Rol</option>
+                                                <option value="true" selected="@(permiso.PuedeVerOverride == true ? "selected" : null)">Si</option>
+                                                <option value="false" selected="@(permiso.PuedeVerOverride == false ? "selected" : null)">No</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <select name="puedeCrear" class="form-select form-select-sm">
+                                                <option value="" selected="@(permiso.PuedeCrearOverride is null ? "selected" : null)">Rol</option>
+                                                <option value="true" selected="@(permiso.PuedeCrearOverride == true ? "selected" : null)">Si</option>
+                                                <option value="false" selected="@(permiso.PuedeCrearOverride == false ? "selected" : null)">No</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <select name="puedeEditar" class="form-select form-select-sm">
+                                                <option value="" selected="@(permiso.PuedeEditarOverride is null ? "selected" : null)">Rol</option>
+                                                <option value="true" selected="@(permiso.PuedeEditarOverride == true ? "selected" : null)">Si</option>
+                                                <option value="false" selected="@(permiso.PuedeEditarOverride == false ? "selected" : null)">No</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <select name="puedeEliminar" class="form-select form-select-sm">
+                                                <option value="" selected="@(permiso.PuedeEliminarOverride is null ? "selected" : null)">Rol</option>
+                                                <option value="true" selected="@(permiso.PuedeEliminarOverride == true ? "selected" : null)">Si</option>
+                                                <option value="false" selected="@(permiso.PuedeEliminarOverride == false ? "selected" : null)">No</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <small class="d-block">V:@(permiso.PuedeVerEfectivo ? "Si" : "No") C:@(permiso.PuedeCrearEfectivo ? "Si" : "No") E:@(permiso.PuedeEditarEfectivo ? "Si" : "No") X:@(permiso.PuedeEliminarEfectivo ? "Si" : "No")</small>
+                                        </div>
+                                        <div class="col-md-1 text-end">
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">Guardar</button>
+                                        </div>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</section>

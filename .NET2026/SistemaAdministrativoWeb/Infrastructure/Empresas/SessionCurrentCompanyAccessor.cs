@@ -4,6 +4,7 @@ public sealed class SessionCurrentCompanyAccessor(IHttpContextAccessor httpConte
 {
     private const string EmpresaIdKey = "EmpresaActivaId";
     private const string EmpresaNombreKey = "EmpresaActivaNombre";
+    private const string EmpresaValidationKey = "EmpresaActivaValidacion";
 
     public int? EmpresaId => httpContextAccessor.HttpContext?.Session.GetInt32(EmpresaIdKey);
 
@@ -21,6 +22,7 @@ public sealed class SessionCurrentCompanyAccessor(IHttpContextAccessor httpConte
 
         session.SetInt32(EmpresaIdKey, empresaId);
         session.SetString(EmpresaNombreKey, empresaNombre);
+        session.Remove(EmpresaValidationKey);
     }
 
     public void LimpiarEmpresa()
@@ -33,5 +35,6 @@ public sealed class SessionCurrentCompanyAccessor(IHttpContextAccessor httpConte
 
         session.Remove(EmpresaIdKey);
         session.Remove(EmpresaNombreKey);
+        session.Remove(EmpresaValidationKey);
     }
 }

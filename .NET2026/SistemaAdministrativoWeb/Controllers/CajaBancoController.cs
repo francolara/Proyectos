@@ -4,11 +4,13 @@ using SistemaAdministrativoWeb.Infrastructure.Contabilidad;
 using SistemaAdministrativoWeb.Infrastructure.Data;
 using SistemaAdministrativoWeb.Infrastructure.Empresas;
 using SistemaAdministrativoWeb.Infrastructure.Parametros;
+using SistemaAdministrativoWeb.Infrastructure.Security;
 using SistemaAdministrativoWeb.ViewModels.Contabilidad;
 
 namespace SistemaAdministrativoWeb.Controllers;
 
 [Authorize]
+[ModulePermission("CAJABANCOS")]
 public class CajaBancoController(
     ICurrentCompanyAccessor currentCompanyAccessor,
     IPeriodoContableService periodoContableService,
@@ -601,7 +603,7 @@ public class CajaBancoController(
                 TipoMovimiento = x.TipoMovimiento,
                 TipoOperacion = x.TipoOperacion,
                 NombrePersona = x.NombrePersona,
-                NumeroDocumento = x.NumeroDocumento,
+                NumeroOperacion = x.NumeroDocumento,
                 Glosa = x.Glosa,
                 Ingreso = x.Ingreso,
                 Egreso = x.Egreso

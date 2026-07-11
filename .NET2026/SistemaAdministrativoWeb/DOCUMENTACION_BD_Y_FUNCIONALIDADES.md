@@ -1,6 +1,6 @@
 # DOCUMENTACION BD Y FUNCIONALIDADES - SisAdm
 
-Ultima actualizacion: 07/07/2026
+Ultima actualizacion: 10/07/2026
 Proyecto: `SistemaAdministrativoWeb`  
 Base de datos: `Dbsisadm`  
 Arquitectura definida: ASP.NET Core MVC + ASP.NET Identity + ADO.NET + Stored Procedures + SQL Server
@@ -100,6 +100,7 @@ Claves principales:
 - `07/07/2026`: se habilitan `Reportes > Registro de ventas` y `Reportes > Registro de compras` como reportes HTML tipo A4 basados en `VEN_Venta` y `COM_Compra`, con filtro por anio, periodo y codigo de persona opcional, sin depender de `CON_AsientoDetalle`.
 - `08/07/2026`: `Libro Diario` fija la moneda base del reporte en `PEN`, retira los filtros visibles de moneda y origen, y redefine sus vistas como `Diario auxiliar`, `Por Cuenta` y `Por Origen`. El `usp_CON_ReporteLibroDiario` ahora totaliza `Por Cuenta` por `CodigoCuenta` y `Por Origen` por `CodigoOrigen`, manteniendo visibles las columnas `Debe/Haber` en soles y `Debe/Haber USD`.
 - `08/07/2026`: `Libro Mayor` cambia a filtro por `anio + mes`, elimina la moneda editable y replica `rptMayorAuxiliarA4` segmentando por cuenta contable. El `usp_CON_ReporteLibroMayor` ahora filtra por `CON_Asiento.Periodo`, calcula saldo anterior solo con periodos menores del mismo anio, usa siempre `TotalImporteS` como base en soles, expone `Debe/Haber USD` separados y deja el saldo final unicamente al cierre de cada cuenta.
+- `10/07/2026`: inicia la base tecnica de seguridad por opcion para cuentas administradoras. Se agregan catalogos de modulos y roles (`SEG_ModuloSistema`, `SEG_RolCuenta`), permisos base por rol (`SEG_RolCuentaPermiso`), overrides por usuario a nivel cuenta y empresa (`SEG_UsuarioCuentaPermiso`, `SEG_UsuarioEmpresaPermiso`) y nuevos SP para siembra y contexto de login (`usp_SEG_SeedSeguridadCuentaPermisosBase`, `usp_SEG_ObtenerContextoLoginUsuario`).
 - `01/07/2026`: se habilita `Proceso > Diferencia en Cambio`, con origen configurable desde `Configuracion contable`, un proceso por periodo y generacion de asientos separados por cuenta en dolares.
 - `30/06/2026`: la importacion XML de compras (`usp_COM_ImportarCompraXml`) valida duplicados por `IdEmpresa + IdProveedor + TipoComprobante + Serie + Numero`. Cuando detecta un duplicado ahora informa tambien `IdCompra`, `FechaEmision` y `Estado` del comprobante existente para facilitar la identificacion de registros `EN REVISION` importados previamente en otro periodo visible.
 - `MigoApi:ExchangeDatePath`: path relativo para consultar tipo de cambio por fecha.
@@ -272,6 +273,12 @@ Funciones:
 - Visualizacion de suscripciones.
 - Alta, baja o actualizacion de datos de suscripcion.
 - Gestion operativa de clientes/suscriptores de la plataforma.
+- Inicio manual de contrato comercial por cuenta administradora.
+- Registro de cobros manuales, por transferencia o conciliados desde pasarela.
+- Historial comercial de cambios de suscripcion por cuenta.
+- Historial de cobros con confirmacion y aplicacion sobre la suscripcion.
+- La suscripcion en SisAdm se controla por `CuentaAdministradora`, no por empresa individual.
+- La base actual soporta trazabilidad de pasarela mediante proveedor, ids externos, estado y payload, pero aun no ejecuta webhooks, reintentos ni renovacion automatica.
 
 ### 9.5.1 Reportes contables
 
@@ -423,6 +430,7 @@ Funciones:
 - Listado paginado de cuentas corrientes bancarias por empresa.
 - Registro y edicion sobre `CON_BancosConfiguracionEmpresa`.
 - Registro de titular y moneda operativa usando el mismo maestro `ADM_Moneda` de provisiones y asientos.
+- Registro de `Periodo saldo inicial`, `Saldo inicial Debe` y `Saldo inicial Haber` para definir desde que mes empieza a operar la cuenta en Caja y Bancos.
 - Ayuda popup de bancos basada en el catalogo maestro `CON_Bancos`.
 - Ayuda popup de plan de cuentas para amarrar la cuenta corriente a una cuenta contable activa de movimiento.
 
@@ -641,6 +649,7 @@ Funciones:
 - Listado paginado de movimientos bancarios por empresa.
 - Filtro por cuenta corriente, anio, mes y texto.
 - KPIs de saldo inicial, ingresos del mes, egresos del mes y saldo final.
+- El KPI `Saldo inicial` suma el arrastre historico de movimientos mas el saldo inicial configurado en la cuenta corriente cuando su `Periodo saldo inicial` es menor o igual al periodo consultado.
 - Registro y edicion de movimientos bancarios.
 - Seleccion de tipo de flujo `Ingreso` o `Egreso`.
 - Seleccion de operacion bancaria desde la tabla `operacionesbancarias` filtrando `Destino = 'I'` o `Destino = 'E'`.
@@ -779,7 +788,7 @@ Movimiento de caja y bancos.
 Configuracion y catalogos contables por empresa.
 
 - `CON_Bancos`: catalogo maestro de bancos.
-- `CON_BancosConfiguracionEmpresa`: cuentas corrientes bancarias por empresa, con banco y cuenta contable asociada.
+- `CON_BancosConfiguracionEmpresa`: cuentas corrientes bancarias por empresa, con banco, cuenta contable asociada, `PeriodoSaldoInicial`, `SaldoInicialDebe` y `SaldoInicialHaber`.
 - `ADM_Moneda`: monedas activas.
 - `ADM_TipoCambio`: tipos de cambio.
 - `CON_TipoCambio`: tipos de cambio por `IdCuentaAdministradora`, fecha y moneda, usados por el nuevo mantenimiento operativo.
@@ -803,7 +812,7 @@ Contabilidad.
 - `CON_ConfiguracionContabilizacionDetalle`: detalle legacy de configuracion contable.
 - `CON_DocumentoConfiguracionEmpresa`: cuentas contables por documento y empresa.
 - `CON_Bancos`: catalogo maestro de bancos para ayudas operativas.
-- `CON_BancosConfiguracionEmpresa`: cuentas corrientes bancarias por empresa vinculadas a una cuenta contable, con titular e identificador de moneda (`IdMoneda`).
+- `CON_BancosConfiguracionEmpresa`: cuentas corrientes bancarias por empresa vinculadas a una cuenta contable, con titular, identificador de moneda (`IdMoneda`) y arranque operativo configurable por `PeriodoSaldoInicial`, `SaldoInicialDebe` y `SaldoInicialHaber`.
 - `CON_TipoImpuesto`: catalogo maestro de impuestos.
 - `CON_TipoImpuestoConfiguracionEmpresa`: configuracion de cuenta de impuesto por empresa.
 - `CON_TipoAfectacionIGV`: catalogo maestro de afectaciones IGV SUNAT usado por compras y ventas.
@@ -837,12 +846,19 @@ Ventas.
 Seguridad funcional, empresas y suscripciones.
 
 - `SEG_CuentaAdministradora`: cuenta administradora de suscripcion.
+- `SEG_CuentaAdministradoraConfiguracion`: configuracion operativa principal de la cuenta administradora.
+- `SEG_CuentaAdministradoraFacturacion`: datos de facturacion de la cuenta administradora.
+- `SEG_ModuloSistema`: catalogo de modulos y opciones del sistema con alcance `CUENTA` o `EMPRESA`.
+- `SEG_RolCuenta`: catalogo de roles base para usuarios de la cuenta administradora.
+- `SEG_RolCuentaPermiso`: permisos base por rol y modulo.
 - `SEG_UsuarioCuentaAdministradora`: usuarios vinculados a cuenta administradora.
-- `SEG_CuentaAdministradoraSuscripcion`: contrato/suscripcion vigente.
-- `SEG_CuentaAdministradoraSuscripcionMovimiento`: historial de movimientos.
-- `SEG_CuentaAdministradoraSuscripcionPago`: pagos de suscripcion.
+- `SEG_UsuarioCuentaPermiso`: overrides por usuario para modulos de alcance cuenta.
+- `SEG_CuentaAdministradoraSuscripcion`: contrato/suscripcion vigente por cuenta. Ahora incluye `TipoCobro`, `DiasGracia`, `FechaFinGracia`, `FechaActualizacion` y `UsuarioActualizacion`.
+- `SEG_CuentaAdministradoraSuscripcionMovimiento`: historial de movimientos. Ahora registra `TipoCobroAnterior`, `TipoCobroNuevo`, `DiasGracia` y `DiasExtra`.
+- `SEG_CuentaAdministradoraSuscripcionPago`: pagos de suscripcion. Ahora incluye soporte de conciliacion y pasarela con `ProveedorPasarela`, `TransaccionPasarelaId`, `PagoPasarelaId`, `EstadoPasarela`, `PayloadPasarela`, `FechaConfirmacionPasarela`, `TipoCobroObjetivo`, `FechaInicioPlanObjetivo`, `DiasGraciaObjetivo`, `FechaActualizacion` y `UsuarioActualizacion`.
 - `SEG_Empresa`: empresas registradas.
 - `SEG_UsuarioEmpresa`: relacion usuario-empresa.
+- `SEG_UsuarioEmpresaPermiso`: overrides por usuario para modulos de alcance empresa.
 - `SEG_UsuarioPerfil`: datos complementarios del usuario.
 
 ### Catalogos externos
@@ -937,14 +953,32 @@ Seguridad funcional, empresas y suscripciones.
 ### SEG
 
 - `usp_SEG_ActualizarSuscripcionCuentaAdministradora`
+- `usp_SEG_ActivarContratoCuentaAdministradora`
+- `usp_SEG_AsignarUsuarioCuentaAdministradora`
 - `usp_SEG_AsignarUsuarioEmpresa`
+- `usp_SEG_ConfirmarPagoSuscripcionCuentaAdministradora`
+- `usp_SEG_DesactivarUsuarioCuentaAdministradora`
+- `usp_SEG_DesactivarUsuarioEmpresa`
+- `usp_SEG_GuardarConfiguracionCuentaAdministradora`
+- `usp_SEG_GuardarUsuarioCuentaPermiso`
+- `usp_SEG_GuardarUsuarioEmpresaPermiso`
 - `usp_SEG_GuardarUsuarioPerfil`
 - `usp_SEG_ListarCuentasAdministradorasSuscripcion`
+- `usp_SEG_ListarEmpresasCuentaAdministradora`
 - `usp_SEG_ListarEmpresasPorUsuario`
+- `usp_SEG_ListarEmpresasUsuarioCuentaAdministradora`
+- `usp_SEG_ListarPermisosUsuarioCuenta`
+- `usp_SEG_ListarPermisosUsuarioEmpresa`
+- `usp_SEG_ListarMovimientosSuscripcionCuentaAdministradora`
+- `usp_SEG_ObtenerContextoLoginUsuario`
+- `usp_SEG_ObtenerConfiguracionCuentaAdministradora`
+- `usp_SEG_ListarPagosSuscripcionCuentaAdministradora`
 - `usp_SEG_ObtenerContextoSuscripcionPorEmpresa`
+- `usp_SEG_RegistrarPagoSuscripcionCuentaAdministradora`
 - `usp_SEG_RegistrarCuentaAdministradoraConEmpresa`
 - `usp_SEG_RegistrarEmpresaCuentaAdministradora`
-  Ambos procedimientos cargan parametros por defecto; adicionalmente crean el plan de cuentas inicial, desde maestro para la empresa principal o desde una empresa base para empresas adicionales.
+  Ambos procedimientos cargan parametros por defecto; adicionalmente crean el plan de cuentas inicial, desde maestro para la empresa principal o desde una empresa base para empresas adicionales. Desde el ajuste del `10/07/2026`, el alta inicial asegura la semilla base de seguridad y registra al usuario fundador con rol `ADMINISTRADORCUENTA`.
+- `usp_SEG_SeedSeguridadCuentaPermisosBase`
 - `usp_BAN_ListarOperacionesBancarias`
 - `usp_BAN_ObtenerResumenMovimientoBanco`
 - `usp_BAN_ListarMovimientosBancoPorEmpresa`
@@ -952,9 +986,12 @@ Seguridad funcional, empresas y suscripciones.
 - En los `SP` de caja y bancos la persona vinculada se muestra usando `ADM_Persona.NombreCompleto` o `RazonSocial`, segun tipo de persona, para evitar dependencias con columnas legacy no vigentes.
 - `usp_BAN_GuardarMovimientoBanco`
 - `usp_BAN_GuardarTransferenciaCuenta`
+- En transferencias entre cuentas, el tipo de cambio del emisor y receptor se resuelve por fecha desde el maestro de tipos de cambio; ambas fechas pueden diferir y, cuando las monedas de las cuentas corrientes no coinciden, el importe receptor se sugiere automaticamente pero puede guardarse con el valor real abonado por el banco.
 - `usp_BAN_ListarTransferenciasCuentaPorEmpresa`
 - `usp_BAN_EliminarTransferenciaCuenta`
 - Los procedimientos `usp_BAN_GuardarMovimientoBanco` y `usp_BAN_ObtenerMovimientoBanco` ahora persisten y devuelven tambien `TipoCambio` y `Observacion` en la cabecera del movimiento.
+- `usp_CON_GuardarBancoConfiguracionEmpresa` y `usp_CON_ListarBancosConfiguracionEmpresa` persisten/devuelven tambien el `PeriodoSaldoInicial` y los saldos iniciales `Debe/Haber` de cada cuenta corriente.
+- `usp_BAN_ObtenerResumenMovimientoBanco` incorpora el saldo inicial configurado de la cuenta corriente al resumen mensual desde el periodo de arranque definido.
 - `usp_BAN_GuardarMovimientoBanco` persiste tambien `Periodo` en `BAN_MovimientoBanco`, calculandolo desde `FechaEmision`; el listado y resumen de Caja y Bancos consultan ese periodo grabado.
 - El asiento contable de Caja y Bancos, incluido el usado por transferencias entre cuentas, solo se genera si la operacion bancaria configurada tiene `indTranConta = 'S'`; en caso contrario el proceso guarda solo `BAN_MovimientoBanco`.
 - En Caja y Bancos, cuando la moneda de la cuenta corriente no coincide con la moneda del comprobante pagado, el sistema convierte el importe sugerido con el `TipoCambio` de cabecera y guarda en `BAN_MovimientoBancoDetalle.ImporteAplicado` solo el monto efectivamente consumido por el saldo del documento, topando el saldo restante en `0` para evitar negativos.
@@ -978,6 +1015,80 @@ Seguridad funcional, empresas y suscripciones.
 - `001_Seed_ADM_Moneda.sql`: monedas base.
 - `002_Seed_CON_Origen.sql`: origenes iniciales.
 - `003_Reestructurar_Suscripcion_Por_Cuenta_Administradora.sql`: cambio de suscripcion por cuenta administradora.
+- `20260710_SEG_SeguridadCuenta_UsuariosPermisos.sql`: ejecuta la semilla base de modulos, roles y permisos por opcion para la cuenta administradora, y regulariza usuarios fundadores grabados con rol legacy `ADMINISTRADOR`.
+- `20260710_SEG_SuscripcionCuenta_ComercialPasarela.sql`: amplifica la suscripcion por cuenta administradora para contrato comercial, cobros, conciliacion y trazabilidad de pasarela.
+
+## 15.1 Actualizacion comercial de suscripciones por cuenta (10/07/2026)
+
+Resumen funcional:
+
+- El superadmin puede iniciar contrato directamente sobre la cuenta administradora.
+- El superadmin puede registrar cobros manuales o conciliados de suscripcion.
+- Los cobros pueden dejarse pendientes o confirmados y, si corresponde, aplicarse sobre la suscripcion.
+- La plataforma ya separa el historial comercial del historial de cobros.
+
+Alcance tecnico actual para pasarela:
+
+- Se puede almacenar el proveedor de pasarela.
+- Se puede almacenar el id de transaccion y el id de pago externo.
+- Se puede persistir el estado devuelto por la pasarela y el payload crudo.
+- Se puede dejar preparado un cobro para aplicar una accion comercial al confirmarse.
+
+Pendientes para una integracion completa de pasarela:
+
+- Endpoint webhook para confirmacion asincrona.
+- Tabla o bitacora de eventos webhook por proveedor.
+- Manejo de intentos de pago, expiracion y reintentos.
+- Renovacion automatica de contratos segun tipo de cobro.
+
+## 15.2 Base tecnica de seguridad por opcion (10/07/2026)
+
+Resumen funcional:
+
+- El usuario se autentica con Identity, pero su acceso operativo se resuelve desde la cuenta administradora.
+- Cada modulo del sistema queda clasificado por alcance `CUENTA` o `EMPRESA`.
+- Los permisos base se heredan desde un rol de cuenta y pueden ajustarse por usuario.
+- La primera resolucion post-login ya puede determinar si el usuario entra directo, si debe seleccionar empresa o si solo puede ver modulos de cuenta.
+- Se crea la base estructural para `General > Configuracion` con tablas separadas de configuracion operativa y facturacion por cuenta administradora.
+- Se crean los contratos SQL para `General > Usuarios`, incluyendo alta de usuario-cuenta, asignacion de empresas, desactivacion y mantenimiento de permisos por modulo.
+
+Objetos nuevos:
+
+- `SEG_ModuloSistema`
+- `SEG_RolCuenta`
+- `SEG_RolCuentaPermiso`
+- `SEG_CuentaAdministradoraConfiguracion`
+- `SEG_CuentaAdministradoraFacturacion`
+- `SEG_UsuarioCuentaPermiso`
+- `SEG_UsuarioEmpresaPermiso`
+- `usp_SEG_ObtenerConfiguracionCuentaAdministradora`
+- `usp_SEG_GuardarConfiguracionCuentaAdministradora`
+- `usp_SEG_AsignarUsuarioCuentaAdministradora`
+- `usp_SEG_DesactivarUsuarioCuentaAdministradora`
+- `usp_SEG_DesactivarUsuarioEmpresa`
+- `usp_SEG_ListarUsuariosCuentaAdministradora`
+- `usp_SEG_ListarEmpresasCuentaAdministradora`
+- `usp_SEG_ListarEmpresasUsuarioCuentaAdministradora`
+- `usp_SEG_ListarPermisosUsuarioCuenta`
+- `usp_SEG_GuardarUsuarioCuentaPermiso`
+- `usp_SEG_ListarPermisosUsuarioEmpresa`
+- `usp_SEG_GuardarUsuarioEmpresaPermiso`
+- `usp_SEG_SeedSeguridadCuentaPermisosBase`
+- `usp_SEG_ObtenerContextoLoginUsuario`
+
+Alcance inicial:
+
+- Catalogo base de modulos para `General`, `Mantenimiento`, `Registro`, `Proceso` y `Reportes`.
+- Roles iniciales: `ADMINISTRADORCUENTA`, `SUPERVISOR`, `OPERADOR`, `CONSULTA`.
+- Resolucion de contexto de login compatible con `SuperAdmin`, usuarios con una empresa, multiples empresas o solo acceso de cuenta.
+- El alta inicial de una cuenta administradora deja al usuario fundador con rol `ADMINISTRADORCUENTA`; el script incremental del `10/07/2026` corrige cuentas creadas previamente con el codigo legacy `ADMINISTRADOR`.
+
+Pendientes siguientes:
+
+- Pantalla `General > Usuarios`.
+- Pantalla `General > Configuracion`.
+- Resolucion de permisos efectivos por modulo dentro de MVC.
+- Tokenizacion o referencia de medio de pago recurrente si la pasarela elegida lo permite.
 - `004_Reestructurar_Correlativo_Asiento_Por_Periodo.sql`: correlativo por empresa/origen/periodo.
 - `005_Seed_ADM_TipoComprobante.sql`: comprobantes SUNAT.
 - `006_Despliegue_Configuracion_Compras_Ventas.sql`: estructura inicial de configuracion compra/venta.

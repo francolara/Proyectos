@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Options;
 using SistemaAdministrativoWeb.Configuration;
+using SistemaAdministrativoWeb.Infrastructure.Empresas;
 using SistemaAdministrativoWeb.Infrastructure.Security;
 using SistemaAdministrativoWeb.Infrastructure.Suscripciones;
 
@@ -15,6 +16,7 @@ namespace SistemaAdministrativoWeb.Areas.Identity.Pages.Account;
 public class RegisterModel(
     UserManager<IdentityUser> userManager,
     SignInManager<IdentityUser> signInManager,
+    ICurrentCompanyAccessor currentCompanyAccessor,
     ICuentaAdministradoraRepository cuentaAdministradoraRepository,
     ITurnstileValidationService turnstileValidationService,
     IOptions<CloudflareTurnstileSettings> turnstileOptions,
@@ -24,9 +26,13 @@ public class RegisterModel(
     [BindProperty]
     public UsuarioRegistroInput Usuario { get; set; } = new();
 
+    [BindProperty(SupportsGet = true)]
+    public string Plan { get; set; } = string.Empty;
+
     public string ReturnUrl { get; set; } = string.Empty;
     public IList<AuthenticationScheme> ExternalLogins { get; set; } = new List<AuthenticationScheme>();
     public string TurnstileSiteKey { get; private set; } = string.Empty;
+    public bool LimpiarCamposIniciales { get; private set; }
 
     public sealed class UsuarioRegistroInput
     {
@@ -55,13 +61,16 @@ public class RegisterModel(
     public async Task OnGetAsync(string? returnUrl = null)
     {
         ReturnUrl = returnUrl ?? Url.Content("~/");
+        Plan = NormalizarPlan(Plan);
         ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
         TurnstileSiteKey = turnstileOptions.Value.SiteKey;
+        LimpiarCamposIniciales = true;
     }
 
     public async Task<IActionResult> OnPostUsuarioAsync(string? returnUrl = null)
     {
         ReturnUrl = returnUrl ?? Url.Content("~/");
+        Plan = NormalizarPlan(Plan);
         ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
         TurnstileSiteKey = turnstileOptions.Value.SiteKey;
 
@@ -100,6 +109,7 @@ public class RegisterModel(
         });
 
         logger.LogInformation("Usuario simple registrado.");
+        currentCompanyAccessor.LimpiarEmpresa();
         await signInManager.SignInAsync(user, isPersistent: false);
         return LocalRedirect(ReturnUrl);
     }
@@ -145,6 +155,40 @@ public class RegisterModel(
         }
 
         return new string(telefono.Where(x => char.IsDigit(x) || x == '+').ToArray());
+    }
+
+    public string ObtenerNombrePlanSeleccionado()
+    {
+        return Plan switch
+        {
+            "GRATIS" => "Gratis",
+            "EMPRENDEDOR" => "Emprendedor",
+            "CONTADOR" => "Contador",
+            _ => "Registro general"
+        };
+    }
+
+    public string ObtenerResumenPlanSeleccionado()
+    {
+        return Plan switch
+        {
+            "GRATIS" => "Prueba inicial de 30 dias con 1 empresa y 1 usuario.",
+            "EMPRENDEDOR" => "Plan mensual para pequenas empresas con hasta 3 empresas y 3 usuarios.",
+            "CONTADOR" => "Plan mensual recomendado para estudios contables y gestion multiempresa.",
+            _ => "Crea tu cuenta y luego vincula el plan comercial que corresponda."
+        };
+    }
+
+    private static string NormalizarPlan(string? plan)
+    {
+        var valor = (plan ?? string.Empty).Trim().ToUpperInvariant();
+        return valor switch
+        {
+            "GRATIS" => valor,
+            "EMPRENDEDOR" => valor,
+            "CONTADOR" => valor,
+            _ => string.Empty
+        };
     }
 
     private async Task<bool> ValidarTurnstileAsync()

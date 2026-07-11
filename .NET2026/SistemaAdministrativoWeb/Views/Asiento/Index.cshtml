@@ -1,6 +1,7 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.AsientoIndexViewModel
 
 @* Firma: FRANCO LARA - 06/07/2026 | Agrega al listado de asientos la columna visible de moneda equivalente usando TotalImporteS y TotalImporteD segun la moneda del asiento. *@
+@* Firma: FRANCO LARA - 09/07/2026 | Reemplaza la columna Soles / Dolares por Tipo de cambio y uniformiza la columna de acciones del listado de asientos. *@
 
 @* Firma: FRANCO LARA - 02/07/2026 | Corrige la seleccion visible de año y mes en asientos para que el periodo mostrado respete el contexto devuelto por la opcion, incorpora los 16 periodos contables del libro diario y bloquea la eliminacion directa de asientos automaticos manteniendo el acceso por clic en la fila. *@
 
@@ -108,9 +109,9 @@
                             <th>Origen</th>
                             <th>Glosa</th>
                             <th>Moneda</th>
+                            <th>Tipo cambio</th>
                             <th>Debe</th>
                             <th>Haber</th>
-                            <th>Soles / Dolares</th>
                             <th>Estado</th>
                             <th class="text-end">Accion</th>
                         </tr>
@@ -140,23 +141,14 @@
                                     <td>@asiento.NombreOrigen</td>
                                     <td>@asiento.Glosa</td>
                                     <td>@asiento.CodigoMoneda</td>
+                                    <td>@asiento.TipoCambio.ToString("0.000")</td>
                                     <td>@asiento.TotalDebe.ToString("0.00")</td>
                                     <td>@asiento.TotalHaber.ToString("0.00")</td>
-                                    <td>
-                                        @if (string.Equals(asiento.CodigoMoneda, "USD", StringComparison.OrdinalIgnoreCase))
-                                        {
-                                            <span>Soles: @asiento.TotalImporteS.ToString("0.00")</span>
-                                        }
-                                        else
-                                        {
-                                            <span>Dolares: @asiento.TotalImporteD.ToString("0.00")</span>
-                                        }
-                                    </td>
                                     <td>
                                         <span class="workspace-status-badge is-active">@asiento.Estado</span>
                                     </td>
                                     <td class="text-end">
-                                        <div class="workspace-row-actions-compact">
+                                        <div class="workspace-row-actions-compact asiento-row-actions">
                                             <a asp-action="Editar" asp-route-periodo="@Model.PeriodoConsulta" asp-route-idAsiento="@asiento.IdAsiento" class="workspace-row-btn workspace-row-btn-primary">Editar</a>
                                             @if (asiento.PermiteRegistroManual)
                                             {
@@ -172,7 +164,7 @@
                                             }
                                             else
                                             {
-                                                <span class="workspace-status-badge is-inactive">Automatico</span>
+                                                <span class="workspace-row-btn workspace-row-btn-secondary workspace-row-btn-static">Automatico</span>
                                             }
                                         </div>
                                     </td>

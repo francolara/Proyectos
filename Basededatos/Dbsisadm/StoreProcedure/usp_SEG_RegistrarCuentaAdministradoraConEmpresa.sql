@@ -13,6 +13,11 @@
 -- Create date:   02/07/2026
 -- Description:   Agrega carga automatica del plan de cuentas base desde el maestro al crear la empresa inicial.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA / Codex
+-- Create date:   10/07/2026
+-- Description:   Corrige el rol inicial de la cuenta administradora a ADMINISTRADORCUENTA y asegura la semilla base de seguridad antes del alta.
+-- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.usp_SEG_RegistrarCuentaAdministradoraConEmpresa
     @AspNetUserId NVARCHAR(450),
@@ -39,6 +44,12 @@ BEGIN
         DECLARE @IdCuentaAdministradoraSuscripcion INT
         DECLARE @FechaInicioPrueba DATE = CAST(SYSDATETIME() AS DATE)
         DECLARE @FechaFinPrueba DATE = DATEADD(DAY, @DiasPrueba, CAST(SYSDATETIME() AS DATE))
+
+        IF OBJECT_ID(N'dbo.usp_SEG_SeedSeguridadCuentaPermisosBase', N'P') IS NOT NULL
+        BEGIN
+            EXEC dbo.usp_SEG_SeedSeguridadCuentaPermisosBase
+                @UsuarioRegistro = COALESCE(@UsuarioRegistro, @CorreoReferencia, N'sistema');
+        END;
 
         IF EXISTS
         (
@@ -129,7 +140,7 @@ BEGIN
         (
             @AspNetUserId,
             @IdCuentaAdministradora,
-            N'ADMINISTRADOR',
+            N'ADMINISTRADORCUENTA',
             1,
             1,
             @UsuarioRegistro

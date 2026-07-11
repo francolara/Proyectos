@@ -9,6 +9,9 @@ public sealed class GuardarBancoConfiguracionEmpresaRequest
     public string Titular { get; init; } = string.Empty;
     public int IdMoneda { get; init; }
     public int IdPlanCuenta { get; init; }
+    public string PeriodoSaldoInicial { get; init; } = string.Empty;
+    public decimal SaldoInicialDebe { get; init; }
+    public decimal SaldoInicialHaber { get; init; }
     public bool Activo { get; init; }
     public string? UsuarioRegistro { get; init; }
 }

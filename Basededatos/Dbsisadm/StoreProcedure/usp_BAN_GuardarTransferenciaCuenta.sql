@@ -4,6 +4,7 @@
 -- Description:   Registra una transferencia entre cuentas generando los movimientos bancarios emisor/receptor enlazados entre si y sus asientos contables automaticos, usando la cuenta corriente contraria en la glosa detalle y el nro de operacion en Referencia.
 -- =============================================
 -- Firma: FRANCO LARA - 24/06/2026 | Ajusta el detalle de transferencias para mostrar la cuenta corriente contraria en la glosa y mover el nro de operacion a Referencia, evitando que aparezca en RUC/DNI.
+-- Firma: FRANCO LARA - 09/07/2026 | Obtiene y guarda tipo de cambio independiente por fecha en emisor/receptor, elimina la restriccion de igualdad entre ambos y permite persistir el importe real recibido en la cuenta receptora cuando las monedas difieren.
 
 CREATE OR ALTER PROCEDURE dbo.usp_BAN_GuardarTransferenciaCuenta
     @IdEmpresa INT,
@@ -18,6 +19,7 @@ CREATE OR ALTER PROCEDURE dbo.usp_BAN_GuardarTransferenciaCuenta
     @NumeroOperacionEmisor VARCHAR(20) = NULL,
     @NumeroOperacionReceptor VARCHAR(20) = NULL,
     @ImporteEmisor DECIMAL(18, 2),
+    @ImporteReceptor DECIMAL(18, 2),
     @GlosaEmisor NVARCHAR(300),
     @GlosaReceptor NVARCHAR(300),
     @ObservacionEmisor NVARCHAR(500) = NULL,
@@ -45,7 +47,6 @@ BEGIN
         DECLARE @NroCuentaCorrienteReceptor VARCHAR(50) = NULL;
         DECLARE @CodigoMonedaEmisor VARCHAR(10) = NULL;
         DECLARE @CodigoMonedaReceptor VARCHAR(10) = NULL;
-        DECLARE @ImporteReceptor DECIMAL(18, 2) = 0;
         DECLARE @DetallesXmlEmisor XML;
         DECLARE @DetallesXmlReceptor XML;
 
@@ -62,11 +63,6 @@ BEGIN
         IF @TipoCambioEmisor <= 0 OR @TipoCambioReceptor <= 0
         BEGIN
             RAISERROR('El tipo de cambio debe ser mayor a cero en ambas secciones.', 16, 1);
-        END;
-
-        IF ABS(@TipoCambioEmisor - @TipoCambioReceptor) >= 0.000001
-        BEGIN
-            RAISERROR('El tipo de cambio del emisor y receptor debe ser el mismo en la transferencia.', 16, 1);
         END;
 
         IF NOT EXISTS
@@ -129,15 +125,22 @@ BEGIN
         BEGIN
             SET @ImporteReceptor = @ImporteEmisor;
         END;
-        ELSE IF @CodigoMonedaEmisor = 'USD' AND @CodigoMonedaReceptor = 'PEN'
+        ELSE IF @ImporteReceptor <= 0
         BEGIN
-            SET @ImporteReceptor = ROUND(@ImporteEmisor * @TipoCambioEmisor, 2);
+            IF @CodigoMonedaEmisor = 'USD' AND @CodigoMonedaReceptor = 'PEN'
+            BEGIN
+                SET @ImporteReceptor = ROUND(@ImporteEmisor * @TipoCambioEmisor, 2);
+            END;
+            ELSE IF @CodigoMonedaEmisor = 'PEN' AND @CodigoMonedaReceptor = 'USD'
+            BEGIN
+                SET @ImporteReceptor = ROUND(@ImporteEmisor / @TipoCambioEmisor, 2);
+            END;
+            ELSE
+            BEGIN
+                RAISERROR('Solo se admite conversion automatica entre cuentas en PEN y USD.', 16, 1);
+            END;
         END;
-        ELSE IF @CodigoMonedaEmisor = 'PEN' AND @CodigoMonedaReceptor = 'USD'
-        BEGIN
-            SET @ImporteReceptor = ROUND(@ImporteEmisor / @TipoCambioEmisor, 2);
-        END;
-        ELSE
+        ELSE IF @CodigoMonedaEmisor NOT IN ('PEN', 'USD') OR @CodigoMonedaReceptor NOT IN ('PEN', 'USD')
         BEGIN
             RAISERROR('Solo se admite conversion automatica entre cuentas en PEN y USD.', 16, 1);
         END;

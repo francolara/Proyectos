@@ -1,0 +1,164 @@
+@model SistemaAdministrativoWeb.ViewModels.Usuarios.UsuariosIndexViewModel
+@* Firma: FRANCO LARA - 10/07/2026 | Crea la vista General > Usuarios para registrar o vincular accesos a la cuenta administradora y asignarles empresas operativas. *@
+@{
+    ViewData["Title"] = "Usuarios";
+    ViewData["AdminShell"] = true;
+}
+
+<section class="dashboard-shell subscription-shell">
+    <section class="dashboard-hero">
+        <div>
+            <span class="dashboard-kicker">General</span>
+            <h1>Usuarios</h1>
+            <p>Gestiona los accesos de la cuenta administradora, define el rol operativo y selecciona a que empresas podra entrar cada usuario.</p>
+        </div>
+        <article class="dashboard-status-card">
+            <span>Cuenta administradora</span>
+            <strong>@Model.NombreCuenta</strong>
+            <small>Codigo: @Model.CodigoCuenta</small>
+            <small>Usuarios vinculados: @Model.Usuarios.Count</small>
+        </article>
+    </section>
+
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="alert alert-success">@successMessage</div>
+    }
+    @if (TempData["ErrorMessage"] is string errorMessage)
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    <section class="workspace-section">
+        <div class="workspace-section-head workspace-section-head-compact">
+            <span class="workspace-section-kicker">Alta de acceso</span>
+            <h2>Registrar o vincular usuario</h2>
+            <p>Si el correo aun no existe en Identity, el sistema crea el acceso con contrasena temporal y luego lo liga a la cuenta administradora.</p>
+        </div>
+
+        <form asp-action="GuardarUsuario" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label asp-for="Formulario.NombreCompleto" class="form-label"></label>
+                    <input asp-for="Formulario.NombreCompleto" class="form-control" />
+                    <span asp-validation-for="Formulario.NombreCompleto" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Formulario.Correo" class="form-label"></label>
+                    <input asp-for="Formulario.Correo" class="form-control" />
+                    <span asp-validation-for="Formulario.Correo" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Formulario.Telefono" class="form-label"></label>
+                    <input asp-for="Formulario.Telefono" class="form-control" />
+                    <span asp-validation-for="Formulario.Telefono" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Formulario.PasswordTemporal" class="form-label"></label>
+                    <input asp-for="Formulario.PasswordTemporal" class="form-control" />
+                    <span asp-validation-for="Formulario.PasswordTemporal" class="text-danger"></span>
+                    <small class="text-muted">Solo se usa si el correo aun no tiene cuenta creada.</small>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Formulario.RolCuenta" class="form-label"></label>
+                    <select asp-for="Formulario.RolCuenta" asp-items="ViewBag.RoleOptions" class="form-select"></select>
+                    <span asp-validation-for="Formulario.RolCuenta" class="text-danger"></span>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <div class="form-check">
+                        <input asp-for="Formulario.EsCuentaPredeterminada" class="form-check-input" />
+                        <label asp-for="Formulario.EsCuentaPredeterminada" class="form-check-label"></label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <label asp-for="Formulario.IdEmpresaPredeterminada" class="form-label"></label>
+                <select asp-for="Formulario.IdEmpresaPredeterminada" class="form-select">
+                    <option value="">Sin empresa predeterminada</option>
+                    @foreach (var empresa in Model.EmpresasDisponibles)
+                    {
+                        <option value="@empresa.IdEmpresa">@empresa.CodigoEmpresa - @empresa.RazonSocial</option>
+                    }
+                </select>
+            </div>
+
+            <div class="mt-4">
+                <label class="form-label">Empresas asignadas</label>
+                <div class="row g-2">
+                    @for (var i = 0; i < Model.EmpresasDisponibles.Count; i++)
+                    {
+                        var empresa = Model.EmpresasDisponibles.ElementAt(i);
+                        <div class="col-md-6">
+                            <label class="border rounded p-3 d-flex gap-2 align-items-start w-100">
+                                <input type="checkbox" class="form-check-input mt-1" name="Formulario.EmpresasSeleccionadas" value="@empresa.IdEmpresa" @(Model.Formulario.EmpresasSeleccionadas.Contains(empresa.IdEmpresa) ? "checked" : null) />
+                                <span>
+                                    <strong>@empresa.CodigoEmpresa</strong><br />
+                                    <small>@empresa.RazonSocial</small>
+                                </span>
+                            </label>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="workspace-actions mt-4">
+                <button type="submit" class="btn btn-primary">Guardar usuario</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="workspace-section">
+        <div class="workspace-section-head workspace-section-head-compact">
+            <span class="workspace-section-kicker">Accesos vigentes</span>
+            <h2>Usuarios de la cuenta</h2>
+            <p>Desde la accion Permisos puedes afinar empresas asignadas y overrides por modulo.</p>
+        </div>
+
+        <div class="table-responsive workspace-table-wrap">
+            <table class="table table-sm align-middle app-table workspace-table">
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Rol</th>
+                        <th>Empresas</th>
+                        <th>Cuenta predet.</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var usuario in Model.Usuarios)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@usuario.NombreCompleto</strong><br />
+                                <small>@usuario.CorreoUsuario</small>
+                            </td>
+                            <td>@usuario.RolCuenta</td>
+                            <td>
+                                <strong>@usuario.CantidadEmpresasAsignadas</strong><br />
+                                <small>@usuario.EmpresasAsignadas</small>
+                            </td>
+                            <td>@(usuario.EsCuentaPredeterminada ? "Si" : "No")</td>
+                            <td class="text-end">
+                                <a asp-action="Permisos" asp-route-aspNetUserId="@usuario.AspNetUserId" class="btn btn-sm btn-outline-primary">Permisos</a>
+                                <form asp-action="Desactivar" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="aspNetUserId" value="@usuario.AspNetUserId" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Desactivar</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

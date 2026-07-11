@@ -3,6 +3,11 @@
 -- Create date:   15/06/2026
 -- Description:   Lista las cuentas administradoras con su estado comercial y empresa principal.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   10/07/2026
+-- Description:   Expone tipo de cobro y ventana de gracia en el resumen comercial del superadmin por cuenta.
+-- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.usp_SEG_ListarCuentasAdministradorasSuscripcion
 AS
@@ -33,6 +38,9 @@ BEGIN
             cas.FechaFinPrueba,
             cas.FechaInicioPlan,
             cas.FechaFinPlan,
+            cas.TipoCobro,
+            cas.DiasGracia,
+            cas.FechaFinGracia,
             cas.EmpresasPermitidas,
             cas.UsuariosPermitidos,
             cas.Activo,

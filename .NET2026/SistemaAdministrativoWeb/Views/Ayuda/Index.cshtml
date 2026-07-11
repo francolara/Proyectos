@@ -61,7 +61,7 @@
                 <section class="help-category-panel @(categoria.Clave == Model.CategoriaSeleccionadaClave ? "is-active" : string.Empty)"
                          data-help-category-panel="@categoria.Clave">
                     <div class="workspace-section">
-                        <div class="workspace-section-head">
+                        <div class="workspace-section-head workspace-section-head-compact">
                             <span class="workspace-section-kicker">Categoria</span>
                             <h2>@categoria.Titulo</h2>
                             <p>@categoria.Descripcion</p>
@@ -87,7 +87,7 @@
                         var panelActivo = modulo.Clave == Model.ModuloSeleccionadoClave;
                         <article class="workspace-section help-module-panel @(panelActivo ? "is-active" : string.Empty)"
                                  data-help-module-panel="@modulo.Clave">
-                            <div class="workspace-section-head">
+                            <div class="workspace-section-head workspace-section-head-compact">
                                 <span class="workspace-section-kicker">Modulo</span>
                                 <h2>@modulo.Titulo</h2>
                                 <p>@modulo.Resumen</p>

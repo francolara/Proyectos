@@ -3,6 +3,11 @@
 -- Create date:   15/06/2026
 -- Description:   Obtiene la empresa activa y la suscripcion de la cuenta administradora a la que pertenece.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   10/07/2026
+-- Description:   Agrega al contexto de empresa los datos de contrato comercial y gracia de la cuenta administradora.
+-- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.usp_SEG_ObtenerContextoSuscripcionPorEmpresa
     @IdEmpresa INT
@@ -34,6 +39,9 @@ BEGIN
             cas.FechaFinPrueba,
             cas.FechaInicioPlan,
             cas.FechaFinPlan,
+            cas.TipoCobro,
+            cas.DiasGracia,
+            cas.FechaFinGracia,
             cas.EmpresasPermitidas,
             cas.UsuariosPermitidos,
             cas.Activo,

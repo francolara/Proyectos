@@ -1,0 +1,412 @@
+@model SistemaAdministrativoWeb.ViewModels.Legal.LegalDocumentViewModel
+@{
+    ViewData["Title"] = Model.Title;
+    ViewData["MetaDescription"] = Model.MetaDescription;
+}
+@* Firma: FRANCO LARA - 10/07/2026 | Crea el documento publico de terminos y condiciones de FralseCont con indice navegable, contacto institucional y fondo legal claro por pagina. *@
+
+<section class="fralsecont-legal-page fralsecont-legal-page--terms">
+    <div class="fralsecont-legal-container">
+        <header class="fralsecont-legal-header">
+            <p class="fralsecont-legal-eyebrow">@Model.BusinessInformation.CommercialName</p>
+            <h1 class="fralsecont-legal-title">Terminos y condiciones</h1>
+            <p class="fralsecont-legal-updated">Ultima actualizacion: @Model.LastUpdated</p>
+            <p class="fralsecont-legal-lead">
+                Los presentes Terminos y condiciones regulan el registro, acceso y uso de FralseCont,
+                plataforma de software contable operada por @Model.BusinessInformation.LegalName,
+                identificada con RUC @Model.BusinessInformation.Ruc.
+            </p>
+        </header>
+
+        @if (Model.ShowDraftNotice)
+        {
+            <div class="fralsecont-legal-notice" role="status">
+                Documento preliminar pendiente de revision legal antes de su publicacion definitiva.
+            </div>
+        }
+
+        <nav class="fralsecont-legal-index" aria-label="Indice de terminos y condiciones">
+            <a href="#identificacion">1. Identificacion del proveedor</a>
+            <a href="#objeto">2. Objeto de los terminos</a>
+            <a href="#servicio">3. Descripcion del servicio</a>
+            <a href="#aceptacion">4. Aceptacion de los terminos</a>
+            <a href="#registro">5. Registro y creacion de cuenta</a>
+            <a href="#veracidad">6. Veracidad de la informacion</a>
+            <a href="#credenciales">7. Seguridad de credenciales</a>
+            <a href="#uso-autorizado">8. Uso autorizado</a>
+            <a href="#usos-prohibidos">9. Usos prohibidos</a>
+            <a href="#licencia">10. Licencia de uso</a>
+            <a href="#propiedad">11. Propiedad intelectual</a>
+            <a href="#empresas-usuarios">12. Empresas y usuarios vinculados</a>
+            <a href="#planes">13. Planes disponibles</a>
+            <a href="#plan-gratis">14. Plan Gratis</a>
+            <a href="#plan-emprendedor">15. Plan Emprendedor</a>
+            <a href="#plan-contador">16. Plan Contador</a>
+            <a href="#vigencia">17. Vigencia de las suscripciones</a>
+            <a href="#precios">18. Precios</a>
+            <a href="#pagos">19. Pagos</a>
+            <a href="#renovaciones">20. Renovaciones</a>
+            <a href="#cambio-plan">21. Cambio de plan</a>
+            <a href="#suspension">22. Suspension por falta de pago</a>
+            <a href="#cancelacion">23. Cancelacion</a>
+            <a href="#disponibilidad">24. Disponibilidad del servicio</a>
+            <a href="#mantenimiento">25. Mantenimiento</a>
+            <a href="#interrupciones">26. Interrupciones</a>
+            <a href="#terceros">27. Servicios de terceros</a>
+            <a href="#consulta-ruc-dni">28. Consulta de RUC y DNI</a>
+            <a href="#tipo-cambio">29. Tipo de cambio en linea</a>
+            <a href="#validacion-cpe">30. Validacion de CPE</a>
+            <a href="#datos-contables">31. Datos contables ingresados por el usuario</a>
+            <a href="#procesos-automaticos">32. Procesos automaticos</a>
+            <a href="#reportes">33. Reportes contables</a>
+            <a href="#responsabilidad-usuario">34. Responsabilidad del usuario</a>
+            <a href="#responsabilidad-tributaria">35. Responsabilidad tributaria</a>
+            <a href="#copias">36. Copias y conservacion de informacion</a>
+            <a href="#soporte">37. Soporte</a>
+            <a href="#limitacion">38. Limitacion de responsabilidad</a>
+            <a href="#modificaciones">39. Modificacion de los terminos</a>
+            <a href="#comunicaciones">40. Comunicaciones</a>
+            <a href="#legislacion">41. Legislacion aplicable</a>
+            <a href="#jurisdiccion">42. Jurisdiccion</a>
+            <a href="#contacto">43. Datos de contacto</a>
+        </nav>
+
+        <div class="fralsecont-legal-content">
+            <section id="identificacion" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">1. Identificacion del proveedor</h2>
+                <p>
+                    FralseCont es una plataforma operada por @Model.BusinessInformation.LegalName, con RUC
+                    @Model.BusinessInformation.Ruc, domicilio en @Model.BusinessInformation.FullAddress.
+                </p>
+            </section>
+            <section id="objeto" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">2. Objeto de los terminos</h2>
+                <p>
+                    Este documento establece las reglas aplicables al acceso, uso, administracion comercial y soporte
+                    de la plataforma, asi como las condiciones generales de los planes disponibles.
+                </p>
+            </section>
+            <section id="servicio" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">3. Descripcion del servicio</h2>
+                <p>
+                    FralseCont ofrece herramientas para registrar operaciones contables, compras, ventas, asientos,
+                    movimientos de caja y bancos, cuentas corrientes, configuraciones contables, reportes y procesos
+                    auxiliares para la gestion administrativa y contable de una o varias empresas.
+                </p>
+            </section>
+            <section id="aceptacion" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">4. Aceptacion de los terminos</h2>
+                <p>
+                    Al registrarse, iniciar sesion o continuar utilizando el servicio, el usuario declara haber leido
+                    y aceptado estos terminos en la version vigente al momento de su uso.
+                </p>
+            </section>
+            <section id="registro" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">5. Registro y creacion de cuenta</h2>
+                <p>
+                    El acceso a FralseCont requiere una cuenta personal o corporativa vinculada a un correo
+                    electronico valido y a los datos necesarios para identificar al titular o al responsable de la
+                    administracion de la cuenta.
+                </p>
+            </section>
+            <section id="veracidad" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">6. Veracidad de la informacion</h2>
+                <p>
+                    El usuario debe proporcionar informacion exacta, actualizada y suficiente para la correcta
+                    administracion de la cuenta, las empresas vinculadas y las comunicaciones operativas o comerciales.
+                </p>
+            </section>
+            <section id="credenciales" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">7. Seguridad de credenciales</h2>
+                <p>
+                    Las credenciales de acceso son personales. El usuario debe proteger su correo, contrasena y
+                    cualquier metodo adicional de autenticacion habilitado.
+                </p>
+            </section>
+            <section id="uso-autorizado" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">8. Uso autorizado</h2>
+                <p>
+                    La plataforma debe utilizarse solo para fines licitos, empresariales, contables o administrativos
+                    compatibles con la funcionalidad ofrecida por FralseCont.
+                </p>
+            </section>
+            <section id="usos-prohibidos" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">9. Usos prohibidos</h2>
+                <ul>
+                    <li>Compartir accesos sin autorizacion.</li>
+                    <li>Intentar vulnerar la seguridad, disponibilidad o integridad del sistema.</li>
+                    <li>Registrar informacion ilicita, fraudulenta o sin autorizacion del titular.</li>
+                    <li>Usar bots, scraping o automatizaciones no permitidas sobre funcionalidades publicas o privadas.</li>
+                </ul>
+            </section>
+            <section id="licencia" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">10. Licencia de uso</h2>
+                <p>
+                    FralseCont concede una licencia limitada, revocable, no exclusiva e intransferible para usar la
+                    plataforma durante la vigencia del plan activo y conforme a estos terminos.
+                </p>
+            </section>
+            <section id="propiedad" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">11. Propiedad intelectual</h2>
+                <p>
+                    El software, su diseno, codigo, estructura funcional, marca, interfaces, textos propios y demas
+                    elementos de FralseCont pertenecen a @Model.BusinessInformation.LegalName o a sus licenciantes.
+                </p>
+            </section>
+            <section id="empresas-usuarios" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">12. Empresas y usuarios vinculados</h2>
+                <p>
+                    Una cuenta puede vincular una o varias empresas y asignar usuarios segun el plan contratado. El
+                    titular de la cuenta responde por la administracion de esos accesos y permisos.
+                </p>
+            </section>
+            <section id="planes" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">13. Planes disponibles</h2>
+                <p>
+                    FralseCont puede ofrecer planes gratuitos, mensuales y otras modalidades comerciales. Las
+                    caracteristicas, limites y condiciones aplicables se informan en la plataforma o por los canales
+                    comerciales habilitados.
+                </p>
+            </section>
+            <section id="plan-gratis" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">14. Plan Gratis</h2>
+                <ul>
+                    <li>Precio referencial actual: S/ 0.</li>
+                    <li>Vigencia referencial actual: 30 dias.</li>
+                    <li>Incluye hasta 1 empresa y 1 usuario.</li>
+                    <li>Funcionalidades limitadas.</li>
+                    <li>Sin consulta de RUC y DNI en linea.</li>
+                    <li>Tipo de cambio manual.</li>
+                    <li>Sin tipo de cambio en linea y sin validacion CPE.</li>
+                </ul>
+            </section>
+            <section id="plan-emprendedor" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">15. Plan Emprendedor</h2>
+                <ul>
+                    <li>Precio mensual referencial actual: S/ 49.90.</li>
+                    <li>Hasta 3 empresas y hasta 3 usuarios.</li>
+                    <li>Consulta de RUC y DNI en linea.</li>
+                    <li>Tipo de cambio manual.</li>
+                    <li>Sin tipo de cambio en linea y sin validacion CPE.</li>
+                </ul>
+            </section>
+            <section id="plan-contador" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">16. Plan Contador</h2>
+                <ul>
+                    <li>Precio mensual referencial actual: S/ 99.90.</li>
+                    <li>Hasta 10 empresas y hasta 10 usuarios.</li>
+                    <li>Consulta de RUC y DNI en linea.</li>
+                    <li>Tipo de cambio manual y tipo de cambio en linea.</li>
+                    <li>Sincronizacion de tipos de cambio.</li>
+                    <li>Validacion CPE y procesos contables avanzados.</li>
+                </ul>
+            </section>
+            <section id="vigencia" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">17. Vigencia de las suscripciones</h2>
+                <p>
+                    Cada plan tiene una vigencia definida por el periodo contratado. El acceso y los limites aplicables
+                    dependen del estado comercial y del cumplimiento de pago del usuario.
+                </p>
+            </section>
+            <section id="precios" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">18. Precios</h2>
+                <p>
+                    Los precios, promociones, funcionalidades y limites publicados pueden actualizarse en el tiempo.
+                    Salvo disposicion legal o contractual aplicable, los cambios no afectaran retroactivamente un
+                    periodo ya pagado.
+                </p>
+            </section>
+            <section id="pagos" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">19. Pagos</h2>
+                <p>
+                    Los pagos deben realizarse por los medios autorizados por FralseCont. El usuario es responsable de
+                    verificar el importe, periodo y referencia comercial antes de confirmar la operacion.
+                </p>
+            </section>
+            <section id="renovaciones" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">20. Renovaciones</h2>
+                <p>
+                    La continuidad del servicio puede requerir renovacion manual o bajo la modalidad comercial que se
+                    informe al usuario. Toda renovacion quedara sujeta a la vigencia de las condiciones comerciales
+                    informadas al momento de su ejecucion.
+                </p>
+            </section>
+            <section id="cambio-plan" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">21. Cambio de plan</h2>
+                <p>
+                    El usuario puede solicitar cambios de plan segun disponibilidad operativa. Los nuevos limites y
+                    funcionalidades aplicaran desde la fecha que se confirme comercialmente.
+                </p>
+            </section>
+            <section id="suspension" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">22. Suspension por falta de pago</h2>
+                <p>
+                    La falta de pago puede ocasionar suspension parcial o total del acceso, incluyendo restricciones
+                    para registrar, editar o procesar informacion nueva, sin perjuicio de conservar accesos de consulta
+                    cuando la politica operativa lo permita.
+                </p>
+            </section>
+            <section id="cancelacion" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">23. Cancelacion</h2>
+                <p>
+                    El usuario puede solicitar la cancelacion para evitar renovaciones futuras. La cancelacion no
+                    implica necesariamente devolucion y puede surtir efecto al cierre del periodo ya pagado.
+                </p>
+            </section>
+            <section id="disponibilidad" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">24. Disponibilidad del servicio</h2>
+                <p>
+                    FralseCont procura mantener el servicio disponible de manera continua, pero no garantiza
+                    disponibilidad absoluta o libre de incidentes en todo momento.
+                </p>
+            </section>
+            <section id="mantenimiento" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">25. Mantenimiento</h2>
+                <p>
+                    La plataforma puede requerir mantenimiento preventivo, correctivo o evolutivo. Cuando resulte
+                    razonable, FralseCont procurara comunicar ventanas de mantenimiento por los medios disponibles.
+                </p>
+            </section>
+            <section id="interrupciones" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">26. Interrupciones</h2>
+                <p>
+                    Pueden ocurrir interrupciones por causas tecnicas, de conectividad, de terceros, de seguridad o por
+                    eventos fuera del control razonable de FralseCont.
+                </p>
+            </section>
+            <section id="terceros" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">27. Servicios de terceros</h2>
+                <p>
+                    Algunas funcionalidades dependen de proveedores tecnologicos integrados, servicios externos de
+                    consulta, autenticacion, seguridad, correo o procesamiento comercial. Su continuidad puede variar
+                    por mantenimiento, limites, demoras o cambios propios de dichos servicios.
+                </p>
+            </section>
+            <section id="consulta-ruc-dni" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">28. Consulta de RUC y DNI</h2>
+                <p>
+                    La consulta de RUC y DNI, cuando este habilitada por el plan, se apoya en fuentes oficiales o en
+                    proveedores tecnologicos contratados. FralseCont no garantiza disponibilidad ininterrumpida ni
+                    exactitud absoluta de la informacion entregada por terceros.
+                </p>
+            </section>
+            <section id="tipo-cambio" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">29. Tipo de cambio en linea</h2>
+                <p>
+                    Las funciones de consulta o sincronizacion del tipo de cambio pueden depender de servicios externos.
+                    El usuario debe revisar la informacion antes de utilizarla en registros contables o tributarios.
+                </p>
+            </section>
+            <section id="validacion-cpe" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">30. Validacion de CPE</h2>
+                <p>
+                    La validacion de comprobantes puede apoyarse en fuentes oficiales o proveedores integrados. El
+                    resultado obtenido debe ser verificado por el usuario cuando el proceso tenga impacto operativo,
+                    contractual o tributario.
+                </p>
+            </section>
+            <section id="datos-contables" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">31. Datos contables ingresados por el usuario</h2>
+                <p>
+                    El usuario conserva la responsabilidad sobre la calidad, exactitud, sustento, licitud y oportunidad
+                    de la informacion cargada en empresas, clientes, proveedores, compras, ventas, asientos, cuentas,
+                    movimientos y demas registros.
+                </p>
+            </section>
+            <section id="procesos-automaticos" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">32. Procesos automaticos</h2>
+                <p>
+                    FralseCont puede ofrecer automatizaciones, calculos y propuestas operativas. Tales procesos son una
+                    ayuda tecnologica y deben ser revisados antes de su aprobacion o uso definitivo.
+                </p>
+            </section>
+            <section id="reportes" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">33. Reportes contables</h2>
+                <p>
+                    La generacion de reportes, libros y resumentes no constituye asesoria legal, tributaria ni contable.
+                    El usuario debe revisar sus reportes antes de emplearlos para toma de decisiones o presentaciones.
+                </p>
+            </section>
+            <section id="responsabilidad-usuario" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">34. Responsabilidad del usuario</h2>
+                <p>
+                    El usuario debe revisar la informacion registrada, validar asientos automaticos, mantener correcta
+                    su configuracion contable y supervisar a los usuarios que operen bajo su cuenta.
+                </p>
+            </section>
+            <section id="responsabilidad-tributaria" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">35. Responsabilidad tributaria</h2>
+                <p>
+                    FralseCont es una herramienta tecnologica y no reemplaza el criterio profesional de un contador.
+                    La responsabilidad tributaria y contable corresponde al usuario y al profesional responsable de la
+                    informacion declarada o presentada ante cualquier autoridad.
+                </p>
+            </section>
+            <section id="copias" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">36. Copias y conservacion de informacion</h2>
+                <p>
+                    FralseCont puede mantener medidas razonables de resguardo operativo, pero el usuario tambien debe
+                    conservar los sustentos, comprobantes y respaldos que requiera para su propia operacion.
+                </p>
+            </section>
+            <section id="soporte" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">37. Soporte</h2>
+                <p>
+                    El soporte se presta por los canales disponibles y dentro del horario publicado. El alcance puede
+                    variar segun el tipo de plan, la naturaleza de la consulta y la capacidad operativa del proveedor.
+                </p>
+            </section>
+            <section id="limitacion" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">38. Limitacion de responsabilidad</h2>
+                <p>
+                    En la maxima medida permitida por la normativa aplicable, FralseCont no responde por perjuicios
+                    derivados de datos incorrectos ingresados por el usuario, decisiones tomadas sin validacion,
+                    indisponibilidad de terceros o incumplimientos tributarios ajenos al proveedor.
+                </p>
+            </section>
+            <section id="modificaciones" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">39. Modificacion de los terminos</h2>
+                <p>
+                    FralseCont puede actualizar estos terminos para reflejar cambios legales, tecnicos, operativos o
+                    comerciales. La version vigente sera publicada por los medios disponibles dentro de la plataforma.
+                </p>
+            </section>
+            <section id="comunicaciones" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">40. Comunicaciones</h2>
+                <p>
+                    Las comunicaciones relacionadas con cuenta, soporte, seguridad, renovaciones o cambios comerciales
+                    pueden enviarse al correo registrado u otros canales informados por el usuario.
+                </p>
+            </section>
+            <section id="legislacion" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">41. Legislacion aplicable</h2>
+                <p>
+                    Estos terminos se interpretan conforme a la normativa aplicable de la Republica del Peru.
+                </p>
+            </section>
+            <section id="jurisdiccion" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">42. Jurisdiccion</h2>
+                <p>
+                    Cualquier controversia sera atendida preferentemente por trato directo. De no alcanzarse una
+                    solucion, las partes se sujetaran a la jurisdiccion que corresponda conforme a la normativa
+                    aplicable.
+                </p>
+            </section>
+            <section id="contacto" class="fralsecont-legal-section">
+                <h2 class="fralsecont-legal-section-title">43. Datos de contacto</h2>
+                <p>
+                    Para consultas sobre estos terminos, el usuario puede comunicarse por los canales institucionales de
+                    FralseCont.
+                </p>
+                <partial name="_LegalContactBlock" />
+            </section>
+        </div>
+
+        <div class="fralsecont-legal-links">
+            <a asp-controller="Legal" asp-action="Privacidad">Ir a Politica de privacidad</a>
+            <a asp-controller="Legal" asp-action="Cancelaciones">Ir a Politica de cancelaciones y devoluciones</a>
+        </div>
+
+        <a class="fralsecont-legal-back-link" asp-controller="Home" asp-action="Index">Volver al inicio</a>
+    </div>
+</section>

@@ -9,6 +9,7 @@ using SistemaAdministrativoWeb.ViewModels.Contabilidad;
 namespace SistemaAdministrativoWeb.Controllers;
 
 [Authorize(Roles = "SuperAdmin,AdministradorEmpresa")]
+[ModulePermission("LIBROELECTRONICO")]
 public sealed class LibroElectronicoController(
     ICurrentCompanyAccessor currentCompanyAccessor,
     IEmpresaRepository empresaRepository,

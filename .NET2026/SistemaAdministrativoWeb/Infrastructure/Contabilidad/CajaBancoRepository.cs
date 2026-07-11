@@ -477,6 +477,7 @@ public sealed class CajaBancoRepository(IDbConnectionFactory connectionFactory) 
         command.Parameters.AddWithValue("@NumeroOperacionEmisor", string.IsNullOrWhiteSpace(request.NumeroOperacionEmisor) ? (object)DBNull.Value : request.NumeroOperacionEmisor.Trim());
         command.Parameters.AddWithValue("@NumeroOperacionReceptor", string.IsNullOrWhiteSpace(request.NumeroOperacionReceptor) ? (object)DBNull.Value : request.NumeroOperacionReceptor.Trim());
         command.Parameters.AddWithValue("@ImporteEmisor", request.ImporteEmisor);
+        command.Parameters.AddWithValue("@ImporteReceptor", request.ImporteReceptor);
         command.Parameters.AddWithValue("@GlosaEmisor", request.GlosaEmisor.Trim());
         command.Parameters.AddWithValue("@GlosaReceptor", request.GlosaReceptor.Trim());
         command.Parameters.AddWithValue("@ObservacionEmisor", string.IsNullOrWhiteSpace(request.ObservacionEmisor) ? (object)DBNull.Value : request.ObservacionEmisor.Trim());

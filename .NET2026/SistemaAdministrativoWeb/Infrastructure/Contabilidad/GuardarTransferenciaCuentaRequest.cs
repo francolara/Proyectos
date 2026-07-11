@@ -14,6 +14,7 @@ public sealed class GuardarTransferenciaCuentaRequest
     public string? NumeroOperacionEmisor { get; init; }
     public string? NumeroOperacionReceptor { get; init; }
     public decimal ImporteEmisor { get; init; }
+    public decimal ImporteReceptor { get; init; }
     public string GlosaEmisor { get; init; } = string.Empty;
     public string GlosaReceptor { get; init; } = string.Empty;
     public string? ObservacionEmisor { get; init; }
