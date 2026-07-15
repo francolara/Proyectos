@@ -7,18 +7,18 @@ public sealed class ConfiguracionContabilizacionFormViewModel
     public int? IdConfiguracionContabilizacion { get; set; }
 
     [Required(ErrorMessage = "Seleccione el modulo.")]
-    [StringLength(10)]
+    [StringLength(10, ErrorMessage = "El modulo no puede exceder 10 caracteres.")]
     public string ModuloOperacion { get; set; } = "COM";
 
     [Required(ErrorMessage = "Seleccione el escenario.")]
-    [StringLength(20)]
+    [StringLength(20, ErrorMessage = "El escenario no puede exceder 20 caracteres.")]
     public string EscenarioOperacion { get; set; } = "MERCADERIA";
 
     [Range(1, int.MaxValue, ErrorMessage = "Seleccione el origen contable.")]
     public int? IdOrigen { get; set; }
 
     [Required(ErrorMessage = "Ingrese una descripcion.")]
-    [StringLength(200)]
+    [StringLength(200, ErrorMessage = "La descripcion no puede exceder 200 caracteres.")]
     public string Descripcion { get; set; } = string.Empty;
 
     public bool GeneraAsientoAutomatico { get; set; } = true;

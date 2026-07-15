@@ -100,6 +100,9 @@ Claves principales:
 - `07/07/2026`: se habilitan `Reportes > Registro de ventas` y `Reportes > Registro de compras` como reportes HTML tipo A4 basados en `VEN_Venta` y `COM_Compra`, con filtro por anio, periodo y codigo de persona opcional, sin depender de `CON_AsientoDetalle`.
 - `08/07/2026`: `Libro Diario` fija la moneda base del reporte en `PEN`, retira los filtros visibles de moneda y origen, y redefine sus vistas como `Diario auxiliar`, `Por Cuenta` y `Por Origen`. El `usp_CON_ReporteLibroDiario` ahora totaliza `Por Cuenta` por `CodigoCuenta` y `Por Origen` por `CodigoOrigen`, manteniendo visibles las columnas `Debe/Haber` en soles y `Debe/Haber USD`.
 - `08/07/2026`: `Libro Mayor` cambia a filtro por `anio + mes`, elimina la moneda editable y replica `rptMayorAuxiliarA4` segmentando por cuenta contable. El `usp_CON_ReporteLibroMayor` ahora filtra por `CON_Asiento.Periodo`, calcula saldo anterior solo con periodos menores del mismo anio, usa siempre `TotalImporteS` como base en soles, expone `Debe/Haber USD` separados y deja el saldo final unicamente al cierre de cada cuenta.
+- `11/07/2026`: `Registro > Asientos` trata siempre como automaticos los asientos con origen `ING` y `EGR` generados desde `Caja y Bancos`, ocultando su eliminacion directa y bloqueando su edicion manual para que solo se mantengan desde el modulo bancario de origen.
+- `11/07/2026`: `Reportes > Analisis de cuentas` corrige su calculo multimoneda para que el filtro `USD` y las columnas dolarizadas del procedimiento `usp_CON_ReporteAnalisisCuentas` usen siempre `CON_AsientoDetalle.TotalImporteD` por linea, sin depender de la moneda fija configurada en la cuenta contable.
+- `11/07/2026`: se habilita `Voucher contable` como reporte HTML A4 inspirado en `rptVoucherContableA4`, consultando el asiento y su detalle desde `IAsientoRepository.ObtenerAsync`, con impresion directa, encabezado por empresa/RUC y acceso desde el formulario del asiento.
 - `10/07/2026`: inicia la base tecnica de seguridad por opcion para cuentas administradoras. Se agregan catalogos de modulos y roles (`SEG_ModuloSistema`, `SEG_RolCuenta`), permisos base por rol (`SEG_RolCuentaPermiso`), overrides por usuario a nivel cuenta y empresa (`SEG_UsuarioCuentaPermiso`, `SEG_UsuarioEmpresaPermiso`) y nuevos SP para siembra y contexto de login (`usp_SEG_SeedSeguridadCuentaPermisosBase`, `usp_SEG_ObtenerContextoLoginUsuario`).
 - `01/07/2026`: se habilita `Proceso > Diferencia en Cambio`, con origen configurable desde `Configuracion contable`, un proceso por periodo y generacion de asientos separados por cuenta en dolares.
 - `30/06/2026`: la importacion XML de compras (`usp_COM_ImportarCompraXml`) valida duplicados por `IdEmpresa + IdProveedor + TipoComprobante + Serie + Numero`. Cuando detecta un duplicado ahora informa tambien `IdCompra`, `FechaEmision` y `Estado` del comprobante existente para facilitar la identificacion de registros `EN REVISION` importados previamente en otro periodo visible.
@@ -294,14 +297,17 @@ Vistas:
 - `Views/Reporte/LibroMayor.cshtml`
 - `Views/Reporte/RegistroVentas.cshtml`
 - `Views/Reporte/RegistroCompras.cshtml`
+- `Views/Reporte/VoucherContable.cshtml`
 
 Funciones:
 
 - Habilita `Reportes > Analisis de cuentas`, `Libro Diario`, `Libro Mayor`, `Registro de ventas`, `Registro de compras` y `Balance de comprobacion` como reportes HTML del bloque contable.
+- Habilita `Voucher contable` como salida HTML A4 del asiento contable, abierta desde el formulario de asientos mediante `ReporteController.VoucherContable`.
 - Para futuras solicitudes de reportes contables HTML, la presentacion base debe seguir el formato compacto tipo hoja A4 del legacy: encabezado de reporte, bloque meta corto, tabla densa, pie de totales y barra de acciones en pantalla con impresion directa, evitando layouts de dashboard para la salida principal del reporte.
 - `Balance de comprobacion` replica `FrmBalanceComprobacion`, manejando `anio`, `periodo desde`, `periodo hasta`, `moneda`, `grado`, `todas las cuentas`, `rango de cuentas` y `filtrar grado`.
 - La salida muestra columnas de anterior, periodo final, acumulado del rango y distribucion por activo/pasivo, naturaleza y funcion, siguiendo `ColBalance`.
 - Replica el comportamiento base del legacy `FrmRptAnalisisCta` sin depender de Crystal Reports.
+- `Voucher contable` replica la salida del formulario `FrmRegistroComprobante` y el Crystal `rptVoucherContableA4`, mostrando cabecera del asiento, glosa, moneda, referencia y detalle por linea con importes en soles y, cuando exista data, referencia adicional en dolares.
 - Permite consultar por `anio`, `mes`, `moneda`, `estado`, `tipo de vista`, rango de cuentas y `NumeroDocumento`.
 - En esta migracion, el `CtaAuxiliar` del legacy se mapea a `CON_AsientoDetalle.NumeroDocumento`; la clave analitica/documental usa `NumeroDocumento + TipoDocumento + Serie + ReferenciaLinea`, igual que en diferencia en cambio.
 - La vista `Detallado` devuelve movimientos linea por linea.
@@ -995,7 +1001,7 @@ Seguridad funcional, empresas y suscripciones.
 - `usp_BAN_GuardarMovimientoBanco` persiste tambien `Periodo` en `BAN_MovimientoBanco`, calculandolo desde `FechaEmision`; el listado y resumen de Caja y Bancos consultan ese periodo grabado.
 - El asiento contable de Caja y Bancos, incluido el usado por transferencias entre cuentas, solo se genera si la operacion bancaria configurada tiene `indTranConta = 'S'`; en caso contrario el proceso guarda solo `BAN_MovimientoBanco`.
 - En Caja y Bancos, cuando la moneda de la cuenta corriente no coincide con la moneda del comprobante pagado, el sistema convierte el importe sugerido con el `TipoCambio` de cabecera y guarda en `BAN_MovimientoBancoDetalle.ImporteAplicado` solo el monto efectivamente consumido por el saldo del documento, topando el saldo restante en `0` para evitar negativos.
-- Cuando un comprobante pagado o cobrado desde Caja y Bancos queda cancelado al `100 %`, el sistema invoca `usp_CON_GenerarAjusteCancelacionDiferenciaCambio` y agrega al asiento automatico una o dos lineas analiticas adicionales de ajuste por cancelacion total. Estas lineas usan las cuentas configuradas en `CUENTAGANANCIA_DC` y `CUENTAPERDIDA_DC`, guardan `Debe = 0`, `Haber = 0`, dejan el sentido en `DH` y saldan de forma independiente el residuo pendiente en `Soles` y/o `Dolares`.
+- Cuando un comprobante pagado o cobrado desde Caja y Bancos queda cancelado al `100 %`, el sistema invoca `usp_CON_GenerarAjusteCancelacionDiferenciaCambio` y agrega al asiento automatico una o dos lineas analiticas adicionales de ajuste por cancelacion total. Cada residuo genera primero una linea sobre la cuenta del comprobante con `DH` inverso y luego la linea de ganancia o perdida en `CUENTAGANANCIA_DC` o `CUENTAPERDIDA_DC` con el `DH` del residual analitico: un residual acreedor se registra como `ganancia` y un residual deudor como `perdida`; ambas guardan `Debe = 0`, `Haber = 0` y saldan de forma independiente el residuo pendiente en `Soles` y/o `Dolares`.
 - Si la cuenta de ganancia o perdida usada por ese ajuste tiene una regla activa en `CON_CuentaDestinoRegla`, el procedimiento agrega al final sus lineas de `Destino` y `Contrapartida`, tambien con `Debe/Haber = 0`, preservando solo `TotalImporteS` y `TotalImporteD` repartidos por porcentaje.
 - Los `SP` de caja y bancos devuelven y persisten tambien la persona por linea junto con las referencias documentarias para reutilizar comprobantes desde el detalle del movimiento.
 - Los movimientos bancarios ahora guardan por linea el modulo de origen (`COM`/`VEN`) y el `IdRegistroComprobante`, usando ese enlace para descontar o restaurar el `Saldo` pendiente de compras y ventas al grabar, editar o eliminar el movimiento.
@@ -1016,6 +1022,8 @@ Seguridad funcional, empresas y suscripciones.
 - `002_Seed_CON_Origen.sql`: origenes iniciales.
 - `003_Reestructurar_Suscripcion_Por_Cuenta_Administradora.sql`: cambio de suscripcion por cuenta administradora.
 - `20260710_SEG_SeguridadCuenta_UsuariosPermisos.sql`: ejecuta la semilla base de modulos, roles y permisos por opcion para la cuenta administradora, y regulariza usuarios fundadores grabados con rol legacy `ADMINISTRADOR`.
+- `20260712_SEG_CorregirRolCuentaAdministradorCuenta.sql`: corrige registros existentes con `RolCuenta = ADMINISTRADOR`, actualiza el `DEFAULT` de `SEG_UsuarioCuentaAdministradora` a `ADMINISTRADORCUENTA` y republica `usp_SEG_RegistrarCuentaAdministradoraConEmpresa` para asegurar el rol correcto en altas nuevas.
+- `12/07/2026`: se corrigen las fuentes SQL de seguridad para que las nuevas altas y migraciones de `SEG_UsuarioCuentaAdministradora` usen `ADMINISTRADORCUENTA` como valor por defecto y como rol inicial de la migracion legacy, evitando que reaparezca el codigo `ADMINISTRADOR` en registros nuevos.
 - `20260710_SEG_SuscripcionCuenta_ComercialPasarela.sql`: amplifica la suscripcion por cuenta administradora para contrato comercial, cobros, conciliacion y trazabilidad de pasarela.
 
 ## 15.1 Actualizacion comercial de suscripciones por cuenta (10/07/2026)
@@ -1350,7 +1358,12 @@ Capacidades:
 
 - Filtros por empresa, año, mes, libro, moneda, estado y rango de fechas.
 - Previsualización paginada del contenido exportable sin enviar todo el periodo al navegador.
-- Validaciones previas de empresa, RUC, periodo, asientos cuadrados, duplicidad de CUO/correlativos, cuentas, monedas, documentos, glosas y estados PLE.
+- Validaciones previas de empresa, RUC, periodo, asientos cuadrados, duplicidad de CUO/correlativos, cuentas, monedas, documentos, glosas y estados PLE. La validacion interna no observa lineas con `Debe/Haber = 0` ni fechas de operacion fuera del mes consultado.
+- La exportacion de Libros Electronicos queda fija en moneda nacional (`PEN`): la interfaz no expone selector de moneda, el nombre del archivo se genera con indicador de moneda nacional y los formatos `5.1`, `5.2` y `6.1` toman siempre `CON_AsientoDetalle.TotalImporteS` para `Debe/Haber`.
+- Cuando se exporta enero, los libros `5.1`, `5.2` y `6.1` incorporan tambien el asiento de apertura del periodo `00`; cuando se exporta diciembre, incorporan los periodos `12`, `13`, `14` y `15`.
+- El TXT del `5.1 - Libro Diario` exporta un unico correlativo por linea despues del `CUO` (`CorrelativoMovimiento`), conserva el palote final requerido por SUNAT y completa los `21` campos base del formato, separando `Unidad de operacion` y `Centro de costo` para no desplazar columnas. El campo `20` se arma como referencia estructurada `CodigoLibro + Periodo + CUO + CorrelativoMovimiento`. La `Fecha contable` usa `FechaEmision` cuando el periodo `AAAAMM` de esa fecha coincide con `CON_Asiento.Periodo`; si no coincide, se exporta `FechaAsiento`.
+- El `CorrelativoMovimiento` de los formatos `5.1` y `6.1` se arma con prefijo `A` para lineas del periodo `00`, `M` para periodos mensuales regulares incluyendo el ajuste del periodo `13`, y `C` solo para lineas de cierre en los periodos `14` y `15`.
+- Cuando el asiento no proviene directo de `COM_Compra` o `VEN_Venta` y los datos documentarios viven en `CON_AsientoDetalle`, el PLE 5.1 prioriza `TipoDocumento`, `Serie` y `ReferenciaLinea` del detalle para poblar `TipoComprobante`, `SerieComprobante` y `NumeroComprobante` antes de usar el RUC/DNI del emisor como ultimo respaldo.
 - Generación de TXT en UTF-8 sin BOM con separador `|` y una línea por movimiento.
 - Descarga temporal en memoria sin persistir el contenido del archivo en base de datos.
 - Historial de exportaciones con metadatos de archivo, usuario, totales y observaciones.

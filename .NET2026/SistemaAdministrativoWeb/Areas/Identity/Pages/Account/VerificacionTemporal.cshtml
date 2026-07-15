@@ -1,0 +1,85 @@
+@page
+@model SistemaAdministrativoWeb.Areas.Identity.Pages.Account.VerificacionTemporalModel
+@* Firma: FRANCO LARA - 13/07/2026 | Agrega verificacion previa al cambio obligatorio de contrasena para usuarios creados con clave temporal y respaldo manual de captcha cuando Turnstile no responde. *@
+@{
+    ViewData["Title"] = "Verificacion de acceso temporal";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<section class="auth-shell">
+    <aside class="auth-visual">
+        <div class="auth-visual-content">
+            <p class="auth-visual-tag">Verificacion</p>
+            <h2>Antes de ingresar, confirma que eres la persona que recibio la contrasena temporal.</h2>
+            <ul class="auth-visual-list">
+                <li>Primero valida el acceso con el desafio de seguridad.</li>
+                <li>Luego el sistema te pedira cambiar la contrasena temporal.</li>
+                <li>Hasta completar el cambio no podras usar el panel.</li>
+            </ul>
+        </div>
+    </aside>
+
+    <section class="auth-panel">
+        <div class="auth-card">
+            <h1>Verificar acceso temporal</h1>
+            <p class="auth-subtitle">Supera la verificacion y en el siguiente paso cambia tu contrasena temporal por una definitiva.</p>
+
+            <form method="post" id="temporaryVerifyForm">
+                <input type="hidden" asp-for="ReturnUrl" />
+                <input type="hidden" asp-for="UsarCaptchaManual" id="UsarCaptchaManualTemporal" />
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                @if (!Model.MostrarCaptchaManual && !string.IsNullOrWhiteSpace(Model.TurnstileSiteKey))
+                {
+                    <div class="mb-3">
+                        <div class="cf-turnstile" data-sitekey="@Model.TurnstileSiteKey"></div>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm mb-3" data-manual-captcha-trigger="UsarCaptchaManualTemporal">
+                        No puedo usar la verificacion automatica
+                    </button>
+                }
+
+                @if (Model.MostrarCaptchaManual)
+                {
+                    <div class="auth-manual-captcha mb-3">
+                        <label asp-for="CaptchaManual" class="form-label">Captcha manual de respaldo</label>
+                        <div class="auth-manual-captcha-code" aria-label="Codigo captcha">@Model.CaptchaManualCodigo</div>
+                        <input asp-for="CaptchaManual" class="form-control mt-2" autocomplete="off" spellcheck="false" placeholder="Escribe el codigo mostrado" />
+                        <span asp-validation-for="CaptchaManual" class="text-danger"></span>
+                        <div class="form-text">Usa este respaldo cuando Turnstile no cargue o falle.</div>
+                    </div>
+                }
+
+                <button type="submit" class="w-100 btn btn-primary auth-cta">Continuar</button>
+
+                <div class="auth-foot-links auth-foot-links-pro auth-foot-links-centered">
+                    <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl">Volver al login</a>
+                </div>
+            </form>
+        </div>
+    </section>
+</section>
+
+@section Scripts {
+    @if (!Model.MostrarCaptchaManual && !string.IsNullOrWhiteSpace(Model.TurnstileSiteKey))
+    {
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    }
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            document.querySelectorAll("[data-manual-captcha-trigger]").forEach((button) => {
+                button.addEventListener("click", () => {
+                    const targetId = button.getAttribute("data-manual-captcha-trigger");
+                    const hidden = targetId ? document.getElementById(targetId) : null;
+                    if (!hidden) {
+                        return;
+                    }
+
+                    hidden.value = "true";
+                    button.closest("form")?.submit();
+                });
+            });
+        })();
+    </script>
+}

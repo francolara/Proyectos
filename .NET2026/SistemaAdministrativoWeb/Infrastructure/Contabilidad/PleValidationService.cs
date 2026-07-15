@@ -17,25 +17,26 @@ public sealed class PleValidationService(IPeriodoContableService periodoContable
         CancellationToken cancellationToken = default)
     {
         var observaciones = new List<PleValidationIssueDto>();
+        var esLibroDiarioSimplificado52 = libroDiario52Items.Count > 0;
 
         if (request.IdEmpresa <= 0)
         {
-            observaciones.Add(CrearError("EMPRESA", "Empresa obligatoria", "Debe seleccionar una empresa para generar el libro electrónico."));
+            observaciones.Add(CrearError("EMPRESA", "Empresa obligatoria", "Debe seleccionar una empresa para generar el libro electronico."));
         }
 
         if (string.IsNullOrWhiteSpace(empresa))
         {
-            observaciones.Add(CrearError("EMPRESA_NOMBRE", "Empresa no encontrada", "No se pudo resolver la razón social de la empresa seleccionada."));
+            observaciones.Add(CrearError("EMPRESA_NOMBRE", "Empresa no encontrada", "No se pudo resolver la razon social de la empresa seleccionada."));
         }
 
         if (string.IsNullOrWhiteSpace(ruc) || ruc.Trim().Length != 11 || !ruc.Trim().All(char.IsDigit))
         {
-            observaciones.Add(CrearError("RUC", "RUC inválido", "La empresa debe tener un RUC válido de 11 dígitos."));
+            observaciones.Add(CrearError("RUC", "RUC invalido", "La empresa debe tener un RUC valido de 11 digitos."));
         }
 
         if (request.Mes is < 1 or > 12)
         {
-            observaciones.Add(CrearError("PERIODO", "Mes inválido", "El periodo seleccionado no es válido."));
+            observaciones.Add(CrearError("PERIODO", "Mes invalido", "El periodo seleccionado no es valido."));
         }
 
         var estadoPeriodo = await periodoContableService.ObtenerEstadoAsync(request.IdEmpresa, request.Anio, request.Mes, cancellationToken);
@@ -46,7 +47,7 @@ public sealed class PleValidationService(IPeriodoContableService periodoContable
                 Severidad = PleValidationSeverity.Informacion,
                 Codigo = "PERIODO_CERRADO",
                 Titulo = "Periodo cerrado",
-                Detalle = $"El periodo {request.Mes:00}/{request.Anio:0000} está cerrado contablemente, pero se permite la exportación del libro electrónico."
+                Detalle = $"El periodo {request.Mes:00}/{request.Anio:0000} esta cerrado contablemente, pero se permite la exportacion del libro electronico."
             });
         }
 
@@ -58,7 +59,7 @@ public sealed class PleValidationService(IPeriodoContableService periodoContable
         var lineas = MapearLineas(libroDiario51Items, libroDiario52Items, libroMayor61Items);
         if (lineas.Count == 0)
         {
-            observaciones.Add(CrearError("SIN_LINEAS", "Sin detalle a exportar", "La consulta no devolvió líneas para el formato seleccionado."));
+            observaciones.Add(CrearError("SIN_LINEAS", "Sin detalle a exportar", "La consulta no devolvio lineas para el formato seleccionado."));
         }
 
         var periodoPle = PlePeriodoHelper.FormarPeriodo(request.Anio, request.Mes);
@@ -79,7 +80,7 @@ public sealed class PleValidationService(IPeriodoContableService periodoContable
                     Severidad = PleValidationSeverity.Error,
                     Codigo = "ASIENTO_DESCUADRADO",
                     Titulo = "Asiento descuadrado",
-                    Detalle = $"El asiento {asiento.NumeroAsiento} no está cuadrado.",
+                    Detalle = $"El asiento {asiento.NumeroAsiento} no esta cuadrado.",
                     Cuo = FormarCuo(asiento.IdAsiento),
                     NumeroAsiento = asiento.NumeroAsiento,
                     FechaOperacion = asiento.FechaAsiento,
@@ -108,20 +109,23 @@ public sealed class PleValidationService(IPeriodoContableService periodoContable
 
         foreach (var duplicado in lineas.GroupBy(x => x.Cuo, StringComparer.OrdinalIgnoreCase).Where(x => x.Count() > 1 && x.Select(y => y.NumeroAsiento).Distinct().Count() > 1))
         {
-            observaciones.Add(CrearError("CUO_DUPLICADO", "CUO duplicado", $"El CUO {duplicado.Key} se repite en más de un asiento.", duplicado.Key));
+            observaciones.Add(CrearError("CUO_DUPLICADO", "CUO duplicado", $"El CUO {duplicado.Key} se repite en mas de un asiento.", duplicado.Key));
         }
 
-        foreach (var duplicado in lineas.GroupBy(x => $"{x.Cuo}|{x.Correlativo}", StringComparer.OrdinalIgnoreCase).Where(x => x.Count() > 1))
+        if (!esLibroDiarioSimplificado52)
         {
-            var muestra = duplicado.First();
-            observaciones.Add(CrearError("CORRELATIVO_DUPLICADO", "Correlativo duplicado", $"El correlativo {muestra.Correlativo} se repite dentro del CUO {muestra.Cuo}.", muestra.Cuo, muestra.NumeroAsiento, muestra.FechaOperacion));
+            foreach (var duplicado in lineas.GroupBy(x => $"{x.Cuo}|{x.Correlativo}", StringComparer.OrdinalIgnoreCase).Where(x => x.Count() > 1))
+            {
+                var muestra = duplicado.First();
+                observaciones.Add(CrearError("CORRELATIVO_DUPLICADO", "Correlativo duplicado", $"El correlativo {muestra.Correlativo} se repite dentro del CUO {muestra.Cuo}.", muestra.Cuo, muestra.NumeroAsiento, muestra.FechaOperacion));
+            }
         }
 
         foreach (var linea in lineas)
         {
             if (!string.Equals(linea.Periodo, periodoPle, StringComparison.Ordinal))
             {
-                observaciones.Add(CrearError("PERIODO_LINEA", "Periodo inconsistente", $"La línea CUO {linea.Cuo} no pertenece al periodo {periodoPle}.", linea.Cuo, linea.NumeroAsiento, linea.FechaOperacion));
+                observaciones.Add(CrearError("PERIODO_LINEA", "Periodo inconsistente", $"La linea CUO {linea.Cuo} no pertenece al periodo {periodoPle}.", linea.Cuo, linea.NumeroAsiento, linea.FechaOperacion));
             }
 
             if (!cuentasValidas.ContainsKey(linea.CodigoCuenta))
@@ -135,61 +139,41 @@ public sealed class PleValidationService(IPeriodoContableService periodoContable
 
             if (!monedasValidas.Contains(linea.CodigoMoneda))
             {
-                observaciones.Add(CrearError("MONEDA_INVALIDA", "Moneda inválida", $"El código de moneda {linea.CodigoMoneda} no es válido.", linea.Cuo, linea.NumeroAsiento, linea.FechaOperacion));
+                observaciones.Add(CrearError("MONEDA_INVALIDA", "Moneda invalida", $"El codigo de moneda {linea.CodigoMoneda} no es valido.", linea.Cuo, linea.NumeroAsiento, linea.FechaOperacion));
             }
 
             if (!string.IsNullOrWhiteSpace(linea.TipoDocumentoEmisor) && !documentosValidos.Contains(linea.TipoDocumentoEmisor))
             {
-                observaciones.Add(CrearError("DOC_INVALIDO", "Tipo de documento inválido", $"El tipo de documento {linea.TipoDocumentoEmisor} no es válido.", linea.Cuo, linea.NumeroAsiento, linea.FechaOperacion));
+                observaciones.Add(CrearError("DOC_INVALIDO", "Tipo de documento invalido", $"El tipo de documento {linea.TipoDocumentoEmisor} no es valido.", linea.Cuo, linea.NumeroAsiento, linea.FechaOperacion));
             }
 
             if (!string.IsNullOrWhiteSpace(linea.TipoComprobante) && !comprobantesValidos.Contains(linea.TipoComprobante))
             {
-                observaciones.Add(CrearError("COMP_INVALIDO", "Tipo de comprobante inválido", $"El tipo de comprobante {linea.TipoComprobante} no es válido.", linea.Cuo, linea.NumeroAsiento, linea.FechaOperacion));
+                observaciones.Add(CrearError("COMP_INVALIDO", "Tipo de comprobante invalido", $"El tipo de comprobante {linea.TipoComprobante} no es valido.", linea.Cuo, linea.NumeroAsiento, linea.FechaOperacion));
             }
 
             if (linea.Debe < 0 || linea.Haber < 0)
             {
-                observaciones.Add(CrearError("IMPORTE_NEGATIVO", "Importe inválido", $"La línea {linea.Correlativo} contiene importes negativos.", linea.Cuo, linea.NumeroAsiento, linea.FechaOperacion));
+                observaciones.Add(CrearError("IMPORTE_NEGATIVO", "Importe invalido", $"La linea {linea.Correlativo} contiene importes negativos.", linea.Cuo, linea.NumeroAsiento, linea.FechaOperacion));
             }
 
             if (linea.Debe > 0 && linea.Haber > 0)
             {
-                observaciones.Add(CrearError("DEBE_HABER", "Debe y Haber simultáneos", $"La línea {linea.Correlativo} tiene Debe y Haber con importe.", linea.Cuo, linea.NumeroAsiento, linea.FechaOperacion));
-            }
-
-            if (linea.Debe == 0m && linea.Haber == 0m)
-            {
-                observaciones.Add(new PleValidationIssueDto
-                {
-                    Severidad = PleValidationSeverity.Advertencia,
-                    Codigo = "LINEA_CERO",
-                    Titulo = "Línea en cero",
-                    Detalle = $"La línea {linea.Correlativo} quedó con Debe y Haber en cero en la moneda exportada.",
-                    Cuo = linea.Cuo,
-                    NumeroAsiento = linea.NumeroAsiento,
-                    FechaOperacion = linea.FechaOperacion
-                });
+                observaciones.Add(CrearError("DEBE_HABER", "Debe y Haber simultaneos", $"La linea {linea.Correlativo} tiene Debe y Haber con importe.", linea.Cuo, linea.NumeroAsiento, linea.FechaOperacion));
             }
 
             if (string.IsNullOrWhiteSpace(linea.Glosa))
             {
-                observaciones.Add(CrearError("GLOSA_VACIA", "Glosa obligatoria", $"La línea {linea.Correlativo} no tiene glosa.", linea.Cuo, linea.NumeroAsiento, linea.FechaOperacion));
+                observaciones.Add(CrearError("GLOSA_VACIA", "Glosa obligatoria", $"La linea {linea.Correlativo} no tiene glosa.", linea.Cuo, linea.NumeroAsiento, linea.FechaOperacion));
             }
             else if (linea.Glosa.Contains('\r') || linea.Glosa.Contains('\n'))
             {
-                observaciones.Add(CrearError("GLOSA_SALTO", "Glosa inválida", $"La línea {linea.Correlativo} contiene saltos de línea.", linea.Cuo, linea.NumeroAsiento, linea.FechaOperacion));
+                observaciones.Add(CrearError("GLOSA_SALTO", "Glosa invalida", $"La linea {linea.Correlativo} contiene saltos de linea.", linea.Cuo, linea.NumeroAsiento, linea.FechaOperacion));
             }
 
             if (!PleEstadoRegistroCatalogo.ValoresValidos.Contains(linea.EstadoOperacion))
             {
-                observaciones.Add(CrearError("ESTADO_INVALIDO", "Estado inválido", $"El estado {linea.EstadoOperacion} no es válido para PLE.", linea.Cuo, linea.NumeroAsiento, linea.FechaOperacion));
-            }
-
-            if (linea.FechaOperacion < new DateOnly(request.Anio, request.Mes, 1)
-                || linea.FechaOperacion > new DateOnly(request.Anio, request.Mes, DateTime.DaysInMonth(request.Anio, request.Mes)))
-            {
-                observaciones.Add(CrearError("FECHA_PERIODO", "Fecha fuera de periodo", $"La fecha {linea.FechaOperacion:dd/MM/yyyy} no pertenece al periodo seleccionado.", linea.Cuo, linea.NumeroAsiento, linea.FechaOperacion));
+                observaciones.Add(CrearError("ESTADO_INVALIDO", "Estado invalido", $"El estado {linea.EstadoOperacion} no es valido para PLE.", linea.Cuo, linea.NumeroAsiento, linea.FechaOperacion));
             }
         }
 
@@ -199,7 +183,7 @@ public sealed class PleValidationService(IPeriodoContableService periodoContable
             {
                 Severidad = PleValidationSeverity.Informacion,
                 Codigo = "VALIDACION_OK",
-                Titulo = "Validación completa",
+                Titulo = "Validacion completa",
                 Detalle = "No se encontraron observaciones que impidan generar el archivo."
             });
         }

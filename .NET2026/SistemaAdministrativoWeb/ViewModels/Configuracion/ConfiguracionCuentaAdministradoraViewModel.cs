@@ -15,23 +15,23 @@ public sealed class ConfiguracionCuentaAdministradoraViewModel
     public string? TelefonoPrincipal { get; set; }
 
     [Display(Name = "Nombre Completo")]
-    [StringLength(180)]
+    [StringLength(180, ErrorMessage = "El nombre del responsable principal no puede exceder 180 caracteres.")]
     public string? NombreResponsablePrincipal { get; set; }
 
     [Display(Name = "Correo")]
     [EmailAddress(ErrorMessage = "Ingrese un correo valido.")]
-    [StringLength(256)]
+    [StringLength(256, ErrorMessage = "El correo administrativo no puede exceder 256 caracteres.")]
     public string? CorreoAdministrativo { get; set; }
 
     [Display(Name = "Telefono")]
-    [StringLength(30)]
+    [StringLength(30, ErrorMessage = "El telefono administrativo no puede exceder 30 caracteres.")]
     public string? TelefonoAdministrativo { get; set; }
 
     [Display(Name = "Empresa predeterminada")]
     public int? IdEmpresaPredeterminada { get; set; }
 
     [Display(Name = "Observacion administrativa")]
-    [StringLength(400)]
+    [StringLength(400, ErrorMessage = "La observacion administrativa no puede exceder 400 caracteres.")]
     public string? ObservacionAdministrativa { get; set; }
 
     [Required(ErrorMessage = "Seleccione el comprobante preferido.")]
@@ -43,48 +43,48 @@ public sealed class ConfiguracionCuentaAdministradoraViewModel
     public string TipoDocumentoFacturacion { get; set; } = "DNI";
 
     [Display(Name = "Numero de documento")]
-    [StringLength(20)]
+    [StringLength(20, ErrorMessage = "El numero de documento no puede exceder 20 caracteres.")]
     public string? NumeroDocumento { get; set; }
 
     [Display(Name = "Nombre completo")]
-    [StringLength(200)]
+    [StringLength(200, ErrorMessage = "El nombre completo no puede exceder 200 caracteres.")]
     public string? NombreFacturacion { get; set; }
 
     [Display(Name = "Razon social")]
-    [StringLength(200)]
+    [StringLength(200, ErrorMessage = "La razon social no puede exceder 200 caracteres.")]
     public string? RazonSocialFacturacion { get; set; }
 
     [Display(Name = "Correo de facturacion")]
     [EmailAddress(ErrorMessage = "Ingrese un correo valido.")]
-    [StringLength(256)]
+    [StringLength(256, ErrorMessage = "El correo de facturacion no puede exceder 256 caracteres.")]
     public string? CorreoFacturacion { get; set; }
 
     [Display(Name = "Telefono de facturacion")]
-    [StringLength(30)]
+    [StringLength(30, ErrorMessage = "El telefono de facturacion no puede exceder 30 caracteres.")]
     public string? TelefonoFacturacion { get; set; }
 
     [Display(Name = "Direccion fiscal")]
-    [StringLength(250)]
+    [StringLength(250, ErrorMessage = "La direccion fiscal no puede exceder 250 caracteres.")]
     public string? DireccionFiscal { get; set; }
 
     [Display(Name = "Ubigeo")]
-    [StringLength(6)]
+    [StringLength(6, ErrorMessage = "El ubigeo no puede exceder 6 caracteres.")]
     public string? Ubigeo { get; set; }
 
     [Display(Name = "Distrito")]
-    [StringLength(100)]
+    [StringLength(100, ErrorMessage = "El distrito no puede exceder 100 caracteres.")]
     public string? Distrito { get; set; }
 
     [Display(Name = "Provincia")]
-    [StringLength(100)]
+    [StringLength(100, ErrorMessage = "La provincia no puede exceder 100 caracteres.")]
     public string? Provincia { get; set; }
 
     [Display(Name = "Departamento")]
-    [StringLength(100)]
+    [StringLength(100, ErrorMessage = "El departamento no puede exceder 100 caracteres.")]
     public string? Departamento { get; set; }
 
     [Display(Name = "Observacion de facturacion")]
-    [StringLength(400)]
+    [StringLength(400, ErrorMessage = "La observacion de facturacion no puede exceder 400 caracteres.")]
     public string? ObservacionFacturacion { get; set; }
 
     public IReadOnlyCollection<ConfiguracionEmpresaItemViewModel> EmpresasDisponibles { get; set; } = [];

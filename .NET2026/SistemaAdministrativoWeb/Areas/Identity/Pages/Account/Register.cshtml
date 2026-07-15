@@ -2,6 +2,8 @@
 @model SistemaAdministrativoWeb.Areas.Identity.Pages.Account.RegisterModel
 @* Firma: FRANCO LARA - 09/07/2026 | Agrega control visual para mostrar u ocultar la contrasena y confirmar contrasena en el registro de usuarios. *@
 @* Firma: FRANCO LARA - 10/07/2026 | Muestra el plan comercial recibido desde la landing publica, conserva el parametro de registro durante el alta del usuario y mejora la presentacion del formulario evitando autocompletar correo y contrasena en la apertura inicial. *@
+@* Firma: FRANCO LARA - 13/07/2026 | Agrega captcha manual de respaldo para el registro cuando la verificacion automatica de Turnstile no se encuentra disponible. *@
+@* Firma: FRANCO LARA - 14/07/2026 | Retira la activacion manual del captcha de respaldo en registro para que solo se muestre cuando Turnstile no este disponible o falle durante la validacion. *@
 @{
     ViewData["Title"] = "Crear cuenta";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -38,6 +40,7 @@
             <form method="post" id="registerForm" autocomplete="off" data-clear-sensitive-fields="@Model.LimpiarCamposIniciales.ToString().ToLowerInvariant()">
                 <input type="hidden" asp-for="ReturnUrl" />
                 <input type="hidden" asp-for="Plan" />
+                <input asp-for="UsarCaptchaManual" type="hidden" id="UsarCaptchaManualRegister" />
 
                 <div class="mb-3">
                     <label asp-for="Usuario.NombreCompleto" class="form-label">Nombre completo</label>
@@ -86,9 +89,23 @@
                     </div>
                     <span asp-validation-for="Usuario.ConfirmPassword" class="text-danger"></span>
                 </div>
-                <div class="mb-3">
-                    <div class="cf-turnstile" data-sitekey="@Model.TurnstileSiteKey"></div>
-                </div>
+                @if (!Model.MostrarCaptchaManual && !string.IsNullOrWhiteSpace(Model.TurnstileSiteKey))
+                {
+                    <div class="mb-3">
+                        <div class="cf-turnstile" data-sitekey="@Model.TurnstileSiteKey"></div>
+                    </div>
+                }
+
+                @if (Model.MostrarCaptchaManual)
+                {
+                    <div class="auth-manual-captcha mb-3">
+                        <label asp-for="CaptchaManual" class="form-label">Captcha manual de respaldo</label>
+                        <div class="auth-manual-captcha-code" aria-label="Codigo captcha">@Model.CaptchaManualCodigo</div>
+                        <input asp-for="CaptchaManual" class="form-control mt-2" autocomplete="off" spellcheck="false" placeholder="Escribe el codigo mostrado" />
+                        <span asp-validation-for="CaptchaManual" class="text-danger"></span>
+                        <div class="form-text">Usa este respaldo si la verificacion automatica falla.</div>
+                    </div>
+                }
 
                 <button type="submit" asp-page-handler="Usuario" class="w-100 btn btn-primary auth-cta">Registrar usuario</button>
 
@@ -121,7 +138,10 @@
 </section>
 
 @section Scripts {
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    @if (!Model.MostrarCaptchaManual && !string.IsNullOrWhiteSpace(Model.TurnstileSiteKey))
+    {
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    }
     <script>
         (() => {
             const form = document.getElementById("registerForm");
@@ -142,4 +162,12 @@
         })();
     </script>
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const hidden = document.getElementById("UsarCaptchaManualRegister");
+            if (hidden) {
+                hidden.value = "false";
+            }
+        })();
+    </script>
 }

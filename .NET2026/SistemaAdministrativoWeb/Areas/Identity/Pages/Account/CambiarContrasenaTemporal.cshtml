@@ -1,0 +1,108 @@
+@page
+@model SistemaAdministrativoWeb.Areas.Identity.Pages.Account.CambiarContrasenaTemporalModel
+@* Firma: FRANCO LARA - 13/07/2026 | Obliga a reemplazar la contrasena temporal despues de la verificacion de acceso para dejar al usuario en el flujo normal de Identity. *@
+@{
+    ViewData["Title"] = "Cambiar contrasena temporal";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<section class="auth-shell">
+    <aside class="auth-visual">
+        <div class="auth-visual-content">
+            <p class="auth-visual-tag">Cambio obligatorio</p>
+            <h2>Esta clave temporal solo sirve para el primer ingreso.</h2>
+            <ul class="auth-visual-list">
+                <li>Ingresa la contrasena temporal actual.</li>
+                <li>Define una nueva clave personal.</li>
+                <li>Despues de este paso usaras el sistema con normalidad.</li>
+            </ul>
+        </div>
+    </aside>
+
+    <section class="auth-panel">
+        <div class="auth-card">
+            <h1>Cambiar contrasena temporal</h1>
+            <p class="auth-subtitle">Completa el reemplazo de la clave temporal para continuar al panel o al selector de empresa.</p>
+
+            <form method="post" autocomplete="off">
+                <input type="hidden" asp-for="ReturnUrl" />
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Input.PasswordActual" class="form-label">Contrasena temporal actual</label>
+                    <div class="auth-password-field">
+                        <input asp-for="Input.PasswordActual" class="form-control pe-5" autocomplete="current-password" />
+                        <button type="button"
+                                class="auth-password-toggle"
+                                data-password-toggle
+                                data-password-target="Input_PasswordActual"
+                                aria-label="Mostrar contrasena"
+                                aria-pressed="false">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    <span asp-validation-for="Input.PasswordActual" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Input.NuevaPassword" class="form-label">Nueva contrasena</label>
+                    <div class="auth-password-field">
+                        <input asp-for="Input.NuevaPassword" class="form-control pe-5" autocomplete="new-password" />
+                        <button type="button"
+                                class="auth-password-toggle"
+                                data-password-toggle
+                                data-password-target="Input_NuevaPassword"
+                                aria-label="Mostrar contrasena"
+                                aria-pressed="false">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    <div class="form-text">Debe tener minimo 6 caracteres e incluir mayuscula, minuscula, numero y caracter especial.</div>
+                    <span asp-validation-for="Input.NuevaPassword" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Input.ConfirmarPassword" class="form-label">Confirmar nueva contrasena</label>
+                    <div class="auth-password-field">
+                        <input asp-for="Input.ConfirmarPassword" class="form-control pe-5" autocomplete="new-password" />
+                        <button type="button"
+                                class="auth-password-toggle"
+                                data-password-toggle
+                                data-password-target="Input_ConfirmarPassword"
+                                aria-label="Mostrar contrasena"
+                                aria-pressed="false">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    <span asp-validation-for="Input.ConfirmarPassword" class="text-danger"></span>
+                </div>
+
+                <button type="submit" class="w-100 btn btn-primary auth-cta">Guardar nueva contrasena</button>
+            </form>
+        </div>
+    </section>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            document.querySelectorAll("[data-password-toggle]").forEach((button) => {
+                button.addEventListener("click", () => {
+                    const targetId = button.getAttribute("data-password-target");
+                    const field = targetId ? document.getElementById(targetId) : null;
+                    const icon = button.querySelector("i");
+                    if (!field || !icon) {
+                        return;
+                    }
+
+                    const visible = field.type === "text";
+                    field.type = visible ? "password" : "text";
+                    icon.className = visible ? "bi bi-eye" : "bi bi-eye-slash";
+                    button.setAttribute("aria-label", visible ? "Mostrar contrasena" : "Ocultar contrasena");
+                    button.setAttribute("aria-pressed", String(!visible).toLowerCase());
+                });
+            });
+        })();
+    </script>
+}

@@ -1,6 +1,7 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.LibroElectronicoViewModel
 
 @* Firma: FRANCO LARA - 07/07/2026 | Crea el modulo Libros Electronicos con filtros, previsualizacion paginada, validacion, generacion TXT, descarga temporal e historial para PLE 5.1, 5.2 y 6.1. *@
+@* Firma: FRANCO LARA - 13/07/2026 | Fija Libros Electronicos a moneda PEN, retira el filtro visual de moneda y mantiene la previsualizacion/exportacion en soles. *@
 
 @{
     ViewData["Title"] = "Libros Electrónicos";
@@ -66,39 +67,12 @@
                             }
                         </select>
                     </div>
-                    <div class="workspace-field">
-                        <label class="form-label" for="moneda">Moneda</label>
-                        <select id="moneda" name="moneda" class="form-select">
-                            @foreach (var moneda in Model.MonedasDisponibles)
-                            {
-                                <option value="@moneda.Valor" selected="@(moneda.Valor == Model.MonedaSeleccionada ? "selected" : null)">@moneda.Texto</option>
-                            }
-                        </select>
-                    </div>
-                    <div class="workspace-field">
-                        <label class="form-label" for="estado">Estado</label>
-                        <select id="estado" name="estado" class="form-select">
-                            @foreach (var estado in Model.EstadosDisponibles)
-                            {
-                                <option value="@estado.Valor" selected="@(estado.Valor == Model.EstadoSeleccionado ? "selected" : null)">@estado.Texto</option>
-                            }
-                        </select>
-                    </div>
-                    <div class="workspace-field">
-                        <label class="form-label" for="fechaDesde">Fecha desde</label>
-                        <input id="fechaDesde" name="fechaDesde" type="date" class="form-control" value="@(Model.FechaDesde?.ToString("yyyy-MM-dd"))" />
-                    </div>
-                    <div class="workspace-field">
-                        <label class="form-label" for="fechaHasta">Fecha hasta</label>
-                        <input id="fechaHasta" name="fechaHasta" type="date" class="form-control" value="@(Model.FechaHasta?.ToString("yyyy-MM-dd"))" />
-                    </div>
                     <input type="hidden" name="paginaPreview" value="1" />
                     <input type="hidden" name="paginaHistorial" value="1" />
                 </div>
 
                 <div class="d-flex flex-wrap gap-2 mt-3">
                     <button type="submit" name="operacion" value="consultar" class="btn btn-primary" @(Model.PuedeConsultar ? null : "disabled")>Consultar</button>
-                    <button type="submit" name="operacion" value="previsualizar" class="btn btn-outline-secondary" @(Model.PuedePrevisualizar ? null : "disabled")>Previsualizar</button>
                     <button type="submit" name="operacion" value="validar" class="btn btn-outline-secondary" @(Model.PuedeValidar ? null : "disabled")>Validar</button>
                     <button type="submit" name="operacion" value="observaciones" class="btn btn-outline-secondary" @(Model.PuedeValidar ? null : "disabled")>Ver observaciones</button>
                     <a class="btn @(Model.PuedeDescargarTxt ? "btn-success" : "btn-outline-secondary disabled")" asp-action="DescargarTxt" asp-route-token="@Model.TokenDescarga">Descargar TXT</a>
@@ -112,9 +86,6 @@
                 <input type="hidden" asp-for="MesSeleccionado" />
                 <input type="hidden" asp-for="LibroElectronicoSeleccionado" />
                 <input type="hidden" asp-for="MonedaSeleccionada" />
-                <input type="hidden" asp-for="EstadoSeleccionado" />
-                <input type="hidden" asp-for="FechaDesde" />
-                <input type="hidden" asp-for="FechaHasta" />
                 <input type="hidden" asp-for="PaginaPreview" />
                 <input type="hidden" asp-for="PaginaHistorial" />
                 <button type="submit" class="btn btn-primary" @(Model.PuedeGenerar ? null : "disabled")>Generar TXT</button>
@@ -172,7 +143,6 @@
                                         <th>Correlativo</th>
                                         <th>Fecha</th>
                                         <th>Cuenta</th>
-                                        <th>Moneda</th>
                                         <th>Glosa</th>
                                         <th>Debe</th>
                                         <th>Haber</th>
@@ -188,7 +158,6 @@
                                         <th>Correlativo</th>
                                         <th>Cuenta</th>
                                         <th>Fecha</th>
-                                        <th>Moneda</th>
                                         <th>Glosa</th>
                                         <th>Debe</th>
                                         <th>Haber</th>
@@ -204,7 +173,6 @@
                                         <th>Asiento</th>
                                         <th>Movimiento</th>
                                         <th>Cuenta</th>
-                                        <th>Moneda</th>
                                         <th>Doc Emisor</th>
                                         <th>Comprobante</th>
                                         <th>Fecha</th>
@@ -228,7 +196,6 @@
                                             <td>@item.CorrelativoAsiento</td>
                                             <td>@item.FechaOperacion.ToString("dd/MM/yyyy")</td>
                                             <td>@item.CodigoCuentaContable</td>
-                                            <td>@item.CodigoMoneda</td>
                                             <td>@item.Glosa</td>
                                             <td class="workspace-money-cell">@item.Debe.ToString("N2")</td>
                                             <td class="workspace-money-cell">@item.Haber.ToString("N2")</td>
@@ -249,7 +216,6 @@
                                             <td>@item.CorrelativoMovimiento</td>
                                             <td>@item.CodigoCuentaContable</td>
                                             <td>@item.FechaOperacion.ToString("dd/MM/yyyy")</td>
-                                            <td>@item.CodigoMoneda</td>
                                             <td>@item.Glosa</td>
                                             <td class="workspace-money-cell">@item.Debe.ToString("N2")</td>
                                             <td class="workspace-money-cell">@item.Haber.ToString("N2")</td>
@@ -270,7 +236,6 @@
                                             <td>@item.CorrelativoAsiento</td>
                                             <td>@item.CorrelativoMovimiento</td>
                                             <td>@item.CodigoCuentaContable</td>
-                                            <td>@item.CodigoMoneda</td>
                                             <td>@item.TipoDocumentoEmisor @item.NumeroDocumentoEmisor</td>
                                             <td>@item.TipoComprobante @item.SerieComprobante-@item.NumeroComprobante</td>
                                             <td>@item.FechaOperacion.ToString("dd/MM/yyyy")</td>
@@ -295,10 +260,6 @@
                                asp-route-anio="@Model.AnioSeleccionado"
                                asp-route-mes="@Model.MesSeleccionado"
                                asp-route-libroElectronico="@Model.LibroElectronicoSeleccionado"
-                               asp-route-moneda="@Model.MonedaSeleccionada"
-                               asp-route-estado="@Model.EstadoSeleccionado"
-                               asp-route-fechaDesde="@Model.FechaDesde?.ToString("yyyy-MM-dd")"
-                               asp-route-fechaHasta="@Model.FechaHasta?.ToString("yyyy-MM-dd")"
                                asp-route-operacion="@(Model.ValidacionEjecutada ? "validar" : "consultar")"
                                asp-route-paginaPreview="@(Model.PreviewPaginacion.PaginaActual - 1)"
                                asp-route-paginaHistorial="@Model.HistorialPaginacion.PaginaActual"
@@ -310,10 +271,6 @@
                                asp-route-anio="@Model.AnioSeleccionado"
                                asp-route-mes="@Model.MesSeleccionado"
                                asp-route-libroElectronico="@Model.LibroElectronicoSeleccionado"
-                               asp-route-moneda="@Model.MonedaSeleccionada"
-                               asp-route-estado="@Model.EstadoSeleccionado"
-                               asp-route-fechaDesde="@Model.FechaDesde?.ToString("yyyy-MM-dd")"
-                               asp-route-fechaHasta="@Model.FechaHasta?.ToString("yyyy-MM-dd")"
                                asp-route-operacion="@(Model.ValidacionEjecutada ? "validar" : "consultar")"
                                asp-route-paginaPreview="@(Model.PreviewPaginacion.PaginaActual + 1)"
                                asp-route-paginaHistorial="@Model.HistorialPaginacion.PaginaActual"
@@ -424,10 +381,6 @@
                                    asp-route-anio="@Model.AnioSeleccionado"
                                    asp-route-mes="@Model.MesSeleccionado"
                                    asp-route-libroElectronico="@Model.LibroElectronicoSeleccionado"
-                                   asp-route-moneda="@Model.MonedaSeleccionada"
-                                   asp-route-estado="@Model.EstadoSeleccionado"
-                                   asp-route-fechaDesde="@Model.FechaDesde?.ToString("yyyy-MM-dd")"
-                                   asp-route-fechaHasta="@Model.FechaHasta?.ToString("yyyy-MM-dd")"
                                    asp-route-operacion="@(Model.ValidacionEjecutada ? "validar" : "consultar")"
                                    asp-route-paginaPreview="@Model.PreviewPaginacion.PaginaActual"
                                    asp-route-paginaHistorial="@(Model.HistorialPaginacion.PaginaActual - 1)"
@@ -439,10 +392,6 @@
                                    asp-route-anio="@Model.AnioSeleccionado"
                                    asp-route-mes="@Model.MesSeleccionado"
                                    asp-route-libroElectronico="@Model.LibroElectronicoSeleccionado"
-                                   asp-route-moneda="@Model.MonedaSeleccionada"
-                                   asp-route-estado="@Model.EstadoSeleccionado"
-                                   asp-route-fechaDesde="@Model.FechaDesde?.ToString("yyyy-MM-dd")"
-                                   asp-route-fechaHasta="@Model.FechaHasta?.ToString("yyyy-MM-dd")"
                                    asp-route-operacion="@(Model.ValidacionEjecutada ? "validar" : "consultar")"
                                    asp-route-paginaPreview="@Model.PreviewPaginacion.PaginaActual"
                                    asp-route-paginaHistorial="@(Model.HistorialPaginacion.PaginaActual + 1)"

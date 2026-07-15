@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Options;
 using SistemaAdministrativoWeb.Configuration;
@@ -25,14 +26,24 @@ public class LoginModel(
     ILogger<LoginModel> logger) : PageModel
 {
     private const string LoginFailuresSessionKey = "Auth:LoginFailures";
+    private const string LoginCaptchaScope = "LOGIN";
+    private static readonly string LoginDebugPath = Path.Combine(AppContext.BaseDirectory, "login-debug.log");
 
     [BindProperty]
     public InputModel Input { get; set; } = new();
+
+    [BindProperty]
+    public string? CaptchaManual { get; set; }
+
+    [BindProperty]
+    public bool UsarCaptchaManual { get; set; }
 
     public IList<AuthenticationScheme> ExternalLogins { get; set; } = new List<AuthenticationScheme>();
     public string ReturnUrl { get; set; } = string.Empty;
     public string TurnstileSiteKey { get; private set; } = string.Empty;
     public bool MostrarTurnstile { get; private set; }
+    public bool MostrarCaptchaManual { get; private set; }
+    public string CaptchaManualCodigo { get; private set; } = string.Empty;
 
     public sealed class InputModel
     {
@@ -49,6 +60,7 @@ public class LoginModel(
 
     public async Task OnGetAsync(string? returnUrl = null)
     {
+        RegistrarDebug($"GET login | Auth={User.Identity?.IsAuthenticated} | ReturnUrl={returnUrl}");
         if (User.Identity?.IsAuthenticated == true)
         {
             Response.Redirect(Url.Content("~/"));
@@ -59,43 +71,97 @@ public class LoginModel(
         ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
         TurnstileSiteKey = turnstileOptions.Value.SiteKey;
         MostrarTurnstile = DebeMostrarTurnstile();
+        ConfigurarCaptchaManual();
         ReturnUrl = returnUrl ?? Url.Content("~/");
     }
 
     public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
     {
+        RegistrarDebug($"POST login START | Email={Input.Email} | ReturnUrl={returnUrl} | Auth={User.Identity?.IsAuthenticated}");
         returnUrl ??= Url.Content("~/");
         ReturnUrl = returnUrl;
         ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
         TurnstileSiteKey = turnstileOptions.Value.SiteKey;
         MostrarTurnstile = DebeMostrarTurnstile();
+        ConfigurarCaptchaManual();
 
         if (!ModelState.IsValid)
         {
+            RegistrarDebug($"POST login | ModelState invalido | Detalle={ObtenerErroresModelState(ModelState)}");
             return Page();
         }
 
-        if (DebeValidarTurnstileEnLogin() && !await ValidarTurnstileAsync())
+        if (DebeValidarTurnstileEnLogin() && !await ValidarDesafioAccesoAsync())
         {
+            RegistrarDebug("POST login | desafio no valido");
             IncrementarContador(LoginFailuresSessionKey);
             MostrarTurnstile = true;
             return Page();
         }
 
+        var authenticatedUser = await userManager.FindByEmailAsync(Input.Email.Trim());
+        if (authenticatedUser is null)
+        {
+            RegistrarDebug("POST login | usuario no encontrado por email");
+            IncrementarContador(LoginFailuresSessionKey);
+            MostrarTurnstile = DebeMostrarTurnstile();
+            ModelState.AddModelError(string.Empty, "Credenciales invalidas.");
+            return Page();
+        }
+
         var result = await signInManager.PasswordSignInAsync(
-            Input.Email,
+            authenticatedUser,
             Input.Password,
             Input.RememberMe,
             lockoutOnFailure: true);
 
         if (result.Succeeded)
         {
+            RegistrarDebug($"POST login | SUCCESS | UserId={authenticatedUser.Id}");
             ReiniciarContador(LoginFailuresSessionKey);
             currentCompanyAccessor.LimpiarEmpresa();
             logger.LogInformation("Usuario autenticado.");
-            return await RedirigirSegunContextoAsync(returnUrl);
+
+            if (authenticatedUser is not null
+                && await RequiereCambioContrasenaTemporalAsync(authenticatedUser))
+            {
+                RegistrarDebug($"POST login | requiere cambio temporal | UserId={authenticatedUser.Id}");
+                HttpContext.Session.Remove(TemporaryPasswordFlowConstants.VerificationSessionKey);
+                return RedirectToPage("./VerificacionTemporal", new { returnUrl });
+            }
+
+            RegistrarDebug($"POST login | redireccion contexto | UserId={authenticatedUser.Id}");
+            return await RedirigirSegunContextoAsync(authenticatedUser, returnUrl);
         }
 
+        if (result.IsLockedOut)
+        {
+            RegistrarDebug($"POST login | LOCKOUT | UserId={authenticatedUser.Id}");
+            IncrementarContador(LoginFailuresSessionKey);
+            MostrarTurnstile = DebeMostrarTurnstile();
+            ModelState.AddModelError(string.Empty, "La cuenta se encuentra bloqueada temporalmente por varios intentos fallidos.");
+            return Page();
+        }
+
+        if (result.IsNotAllowed)
+        {
+            RegistrarDebug($"POST login | NOT_ALLOWED | UserId={authenticatedUser.Id}");
+            IncrementarContador(LoginFailuresSessionKey);
+            MostrarTurnstile = DebeMostrarTurnstile();
+            ModelState.AddModelError(string.Empty, "La cuenta no tiene permitido iniciar sesion con la configuracion actual.");
+            return Page();
+        }
+
+        if (result.RequiresTwoFactor)
+        {
+            RegistrarDebug($"POST login | REQUIRES_2FA | UserId={authenticatedUser.Id}");
+            IncrementarContador(LoginFailuresSessionKey);
+            MostrarTurnstile = DebeMostrarTurnstile();
+            ModelState.AddModelError(string.Empty, "La cuenta requiere un segundo factor de autenticacion.");
+            return Page();
+        }
+
+        RegistrarDebug($"POST login | FAILED | UserId={authenticatedUser.Id}");
         IncrementarContador(LoginFailuresSessionKey);
         MostrarTurnstile = DebeMostrarTurnstile();
         ModelState.AddModelError(string.Empty, "Credenciales invalidas.");
@@ -134,7 +200,8 @@ public class LoginModel(
         {
             currentCompanyAccessor.LimpiarEmpresa();
             logger.LogInformation("Usuario inicio sesion con {Provider}.", info.LoginProvider);
-            return await RedirigirSegunContextoAsync(returnUrl);
+            var authenticatedUser = await userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
+            return await RedirigirSegunContextoAsync(authenticatedUser, returnUrl);
         }
 
         var email = info.Principal.FindFirstValue(ClaimTypes.Email);
@@ -180,15 +247,30 @@ public class LoginModel(
         currentCompanyAccessor.LimpiarEmpresa();
         await signInManager.SignInAsync(user, isPersistent: false);
         logger.LogInformation("Usuario creo o vinculo cuenta con {Provider}.", info.LoginProvider);
-        return await RedirigirSegunContextoAsync(returnUrl);
+        return await RedirigirSegunContextoAsync(user, returnUrl);
     }
 
-    private async Task<bool> ValidarTurnstileAsync()
+    private async Task<bool> ValidarDesafioAccesoAsync()
     {
+        if (MostrarCaptchaManual)
+        {
+            if (ManualCaptchaChallengeStore.Validate(HttpContext, LoginCaptchaScope, CaptchaManual))
+            {
+                ManualCaptchaChallengeStore.Clear(HttpContext, LoginCaptchaScope);
+                return true;
+            }
+
+            CaptchaManualCodigo = ManualCaptchaChallengeStore.Refresh(HttpContext, LoginCaptchaScope);
+            ModelState.AddModelError(string.Empty, "El codigo captcha manual no es valido.");
+            return false;
+        }
+
         var token = (Request.Form["cf-turnstile-response"].ToString() ?? string.Empty).Trim();
         if (string.IsNullOrWhiteSpace(token))
         {
-            ModelState.AddModelError(string.Empty, "Completa la verificacion de seguridad.");
+            MostrarCaptchaManual = true;
+            CaptchaManualCodigo = ManualCaptchaChallengeStore.Refresh(HttpContext, LoginCaptchaScope);
+            ModelState.AddModelError(string.Empty, "Completa la verificacion automatica o usa el captcha manual de respaldo.");
             return false;
         }
 
@@ -196,11 +278,14 @@ public class LoginModel(
         var resultado = await turnstileValidationService.VerifyAsync(token, remoteIp, HttpContext.RequestAborted);
         if (resultado.Success)
         {
+            ManualCaptchaChallengeStore.Clear(HttpContext, LoginCaptchaScope);
             return true;
         }
 
         logger.LogWarning("Turnstile rechazo login. Errores: {Errores}", string.Join(",", resultado.ErrorCodes ?? Array.Empty<string>()));
-        ModelState.AddModelError(string.Empty, "No se pudo validar la verificacion de seguridad. Intenta nuevamente.");
+        MostrarCaptchaManual = true;
+        CaptchaManualCodigo = ManualCaptchaChallengeStore.Refresh(HttpContext, LoginCaptchaScope);
+        ModelState.AddModelError(string.Empty, "No se pudo validar la verificacion automatica. Usa el captcha manual de respaldo.");
         return false;
     }
 
@@ -209,6 +294,21 @@ public class LoginModel(
 
     private bool DebeValidarTurnstileEnLogin()
         => DebeMostrarTurnstile();
+
+    private void ConfigurarCaptchaManual()
+    {
+        MostrarCaptchaManual = MostrarTurnstile
+            && (UsarCaptchaManual || string.IsNullOrWhiteSpace(TurnstileSiteKey));
+
+        if (MostrarCaptchaManual)
+        {
+            CaptchaManualCodigo = ManualCaptchaChallengeStore.GetOrCreate(HttpContext, LoginCaptchaScope);
+            return;
+        }
+
+        ManualCaptchaChallengeStore.Clear(HttpContext, LoginCaptchaScope);
+        CaptchaManualCodigo = string.Empty;
+    }
 
     private int ObtenerContador(string key)
     {
@@ -228,7 +328,7 @@ public class LoginModel(
         HttpContext.Session.Remove(key);
     }
 
-    private async Task<IActionResult> RedirigirSegunContextoAsync(string returnUrl)
+    private async Task<IActionResult> RedirigirSegunContextoAsync(IdentityUser? authenticatedUser, string returnUrl)
     {
         var homeUrl = Url.Content("~/");
         if (Url.IsLocalUrl(returnUrl)
@@ -238,18 +338,17 @@ public class LoginModel(
             return LocalRedirect(returnUrl);
         }
 
-        var user = await userManager.GetUserAsync(User);
-        if (user is null)
+        if (authenticatedUser is null)
         {
             return LocalRedirect(homeUrl);
         }
 
-        if (await userManager.IsInRoleAsync(user, "SuperAdmin"))
+        if (await userManager.IsInRoleAsync(authenticatedUser, "SuperAdmin"))
         {
             return RedirectToAction("Index", "Plataforma", new { area = "" });
         }
 
-        var contextoLogin = await cuentaAdministradoraRepository.ObtenerContextoLoginUsuarioAsync(user.Id, HttpContext.RequestAborted);
+        var contextoLogin = await cuentaAdministradoraRepository.ObtenerContextoLoginUsuarioAsync(authenticatedUser.Id, HttpContext.RequestAborted);
         if (contextoLogin is null || !contextoLogin.TieneAcceso)
         {
             return RedirectToAction("Index", "EmpresaContexto", new { area = "" });
@@ -269,5 +368,43 @@ public class LoginModel(
         }
 
         return RedirectToAction("Index", "EmpresaContexto", new { area = "" });
+    }
+
+    private async Task<bool> RequiereCambioContrasenaTemporalAsync(IdentityUser user)
+    {
+        var claims = await userManager.GetClaimsAsync(user);
+        return claims.Any(x =>
+            string.Equals(x.Type, TemporaryPasswordFlowConstants.RequirePasswordChangeClaimType, StringComparison.Ordinal)
+            && string.Equals(x.Value, TemporaryPasswordFlowConstants.RequirePasswordChangeClaimValue, StringComparison.Ordinal));
+    }
+
+    private static void RegistrarDebug(string mensaje)
+    {
+        try
+        {
+            System.IO.File.AppendAllText(LoginDebugPath, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} | {mensaje}{Environment.NewLine}");
+        }
+        catch
+        {
+        }
+    }
+
+    private static string ObtenerErroresModelState(ModelStateDictionary modelState)
+    {
+        var errores = modelState
+            .Where(x => x.Value is not null && x.Value.Errors.Count > 0)
+            .Select(x =>
+            {
+                var mensajes = x.Value!.Errors
+                    .Select(error => string.IsNullOrWhiteSpace(error.ErrorMessage)
+                        ? error.Exception?.Message ?? "(sin mensaje)"
+                        : error.ErrorMessage)
+                    .ToArray();
+
+                return $"{x.Key}=[{string.Join(" | ", mensajes)}]";
+            })
+            .ToArray();
+
+        return errores.Length == 0 ? "(sin errores detallados)" : string.Join("; ", errores);
     }
 }

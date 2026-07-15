@@ -3,6 +3,8 @@
 -- Create date:   07/07/2026
 -- Description:   Lista la estructura base del Libro Diario PLE formato 5.1 desde asientos contables, compras y ventas.
 -- =============================================
+-- Firma: FRANCO LARA - 13/07/2026 | Fija la exportacion PLE 5.1 a moneda PEN, elimina la bifurcacion por USD, usa siempre TotalImporteS como importe base de Debe y Haber, prioriza los datos documentarios del detalle para recuperar tipo y numero de comprobante en asientos de Caja y Bancos, separa Unidad de operacion de Centro de costo para respetar los 21 campos base del formato, recompone la referencia estructurada del campo 20 y ajusta la fecha contable para usar FechaEmision cuando su periodo coincide con CON_Asiento.Periodo.
+-- Firma: FRANCO LARA - 14/07/2026 | Incluye el asiento de apertura periodo 00 cuando se exporta enero, agrega en diciembre los periodos 12, 13, 14 y 15 y marca el correlativo de movimiento como A/M/C, dejando C solo para los asientos de cierre de los periodos 14 y 15.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_PLE_LibroDiario51_Listar
     @IdEmpresa INT,
@@ -21,29 +23,43 @@ BEGIN
 
         DECLARE @Periodo CHAR(6) = CONVERT(CHAR(4), @IdAnno) + RIGHT('0' + CONVERT(VARCHAR(2), @Mes), 2);
         DECLARE @PeriodoPle CHAR(8) = @Periodo + '00';
-        DECLARE @MonedaTrabajo VARCHAR(3) = CASE WHEN UPPER(LTRIM(RTRIM(ISNULL(@Moneda, 'PEN')))) = 'USD' THEN 'USD' ELSE 'PEN' END;
         DECLARE @EstadoTrabajo VARCHAR(10) = NULLIF(LTRIM(RTRIM(@Estado)), '');
+        DECLARE @PeriodoApertura CHAR(6) = CONVERT(CHAR(4), @IdAnno) + '00';
+        DECLARE @PeriodoAjusteFinal CHAR(6) = CONVERT(CHAR(4), @IdAnno) + '13';
+        DECLARE @PeriodoCierreResultados CHAR(6) = CONVERT(CHAR(4), @IdAnno) + '14';
+        DECLARE @PeriodoCierreInventarios CHAR(6) = CONVERT(CHAR(4), @IdAnno) + '15';
 
         SELECT
             @PeriodoPle AS PeriodoPle,
             RIGHT(REPLICATE('0', 8) + CONVERT(VARCHAR(20), a.IdAsiento), 8) AS Cuo,
             RIGHT(REPLICATE('0', 5) + CONVERT(VARCHAR(20), a.NumeroAsiento), 5) AS CorrelativoAsiento,
-            'M' + RIGHT(REPLICATE('0', 4) + CONVERT(VARCHAR(10), d.Item), 4) AS CorrelativoMovimiento,
+            CASE
+                WHEN a.Periodo = @PeriodoApertura THEN 'A'
+                WHEN a.Periodo IN (@PeriodoCierreResultados, @PeriodoCierreInventarios) THEN 'C'
+                ELSE 'M'
+            END + RIGHT(REPLICATE('0', 4) + CONVERT(VARCHAR(10), d.Item), 4) AS CorrelativoMovimiento,
             p.CodigoCuenta AS CodigoCuentaContable,
-            ISNULL(NULLIF(LTRIM(RTRIM(d.CodigoCentroCosto)), ''), '') AS CodigoUnidadOperacion,
-            m.CodigoMoneda AS CodigoMoneda,
+            '' AS CodigoUnidadOperacion,
+            ISNULL(NULLIF(LTRIM(RTRIM(d.CodigoCentroCosto)), ''), '') AS CodigoCentroCosto,
+            M.CodigoMoneda AS CodigoMoneda,
+            '050100' AS CodigoLibroRelacionado,
             ISNULL(NULLIF(LTRIM(RTRIM(COALESCE(perAsiento.TipoDocumento, perCompra.TipoDocumento, perVenta.TipoDocumento))), ''), '') AS TipoDocumentoEmisor,
             ISNULL(NULLIF(LTRIM(RTRIM(COALESCE(perAsiento.NumeroDocumento, perCompra.NumeroDocumento, perVenta.NumeroDocumento, d.NumeroDocumento))), ''), '') AS NumeroDocumentoEmisor,
-            ISNULL(NULLIF(LTRIM(RTRIM(COALESCE(c.TipoComprobante, v.TipoComprobante))), ''), '') AS TipoComprobante,
+            ISNULL(NULLIF(LTRIM(RTRIM(COALESCE(c.TipoComprobante, v.TipoComprobante, d.TipoDocumento))), ''), '') AS TipoComprobante,
             ISNULL(NULLIF(LTRIM(RTRIM(COALESCE(c.Serie, v.Serie, d.Serie))), ''), '') AS SerieComprobante,
-            ISNULL(NULLIF(LTRIM(RTRIM(COALESCE(c.Numero, v.Numero, d.NumeroDocumento))), ''), '') AS NumeroComprobante,
-            a.FechaAsiento AS FechaContable,
+            ISNULL(NULLIF(LTRIM(RTRIM(COALESCE(c.Numero, v.Numero, d.ReferenciaLinea, d.NumeroDocumento))), ''), '') AS NumeroComprobante,
+            CASE
+                WHEN doc.FechaOperacionBase IS NOT NULL
+                 AND CONVERT(CHAR(6), doc.FechaOperacionBase, 112) = a.Periodo
+                    THEN doc.FechaOperacionBase
+                ELSE a.FechaAsiento
+            END AS FechaContable,
             CAST(NULL AS DATE) AS FechaVencimiento,
-            COALESCE(c.FechaEmision, v.FechaEmision, a.FechaEmision) AS FechaOperacion,
+            doc.FechaOperacionBase AS FechaOperacion,
             REPLACE(REPLACE(COALESCE(NULLIF(LTRIM(RTRIM(d.GlosaDetalle)), ''), a.Glosa, N''), CHAR(13), ' '), CHAR(10), ' ') AS Glosa,
             ISNULL(NULLIF(LTRIM(RTRIM(a.ReferenciaExterna)), ''), '') AS GlosaReferencial,
-            CASE WHEN d.DH = 'D' THEN CASE WHEN @MonedaTrabajo = 'USD' THEN d.TotalImporteD ELSE d.TotalImporteS END ELSE 0 END AS Debe,
-            CASE WHEN d.DH = 'H' THEN CASE WHEN @MonedaTrabajo = 'USD' THEN d.TotalImporteD ELSE d.TotalImporteS END ELSE 0 END AS Haber,
+            CASE WHEN d.DH = 'D' THEN d.TotalImporteS ELSE 0 END AS Debe,
+            CASE WHEN d.DH = 'H' THEN d.TotalImporteS ELSE 0 END AS Haber,
             ISNULL(NULLIF(LTRIM(RTRIM(d.ReferenciaLinea)), ''), '') AS InformacionComplementaria,
             CASE
                 WHEN @EstadoTrabajo IS NULL OR @EstadoTrabajo = 'Todos' THEN '1'
@@ -56,8 +72,8 @@ BEGIN
             ON d.IdAsiento = a.IdAsiento
         INNER JOIN dbo.CON_PlanCuenta AS p
             ON p.IdPlanCuenta = d.IdPlanCuenta
-        INNER JOIN dbo.ADM_Moneda AS m
-            ON m.IdMoneda = a.IdMoneda
+        INNER JOIN ADM_Moneda AS m
+            ON m.IdMoneda = A.IdMoneda
         LEFT JOIN dbo.ADM_Persona AS perAsiento
             ON perAsiento.IdEmpresa = a.IdEmpresa
            AND perAsiento.NumeroDocumento = d.NumeroDocumento
@@ -75,8 +91,16 @@ BEGIN
             ON cl.IdCliente = v.IdCliente
         LEFT JOIN dbo.ADM_Persona AS perVenta
             ON perVenta.IdPersona = cl.IdPersona
+        CROSS APPLY
+        (
+            SELECT COALESCE(c.FechaEmision, v.FechaEmision, a.FechaEmision) AS FechaOperacionBase
+        ) AS doc
         WHERE a.IdEmpresa = @IdEmpresa
-          AND a.Periodo = @Periodo
+          AND (
+                a.Periodo = @Periodo
+                OR (@Mes = 1 AND a.Periodo = @PeriodoApertura)
+                OR (@Mes = 12 AND a.Periodo IN (@PeriodoAjusteFinal, @PeriodoCierreResultados, @PeriodoCierreInventarios))
+              )
           AND (@FechaDesde IS NULL OR a.FechaAsiento >= @FechaDesde)
           AND (@FechaHasta IS NULL OR a.FechaAsiento <= @FechaHasta)
           AND (
@@ -85,6 +109,7 @@ BEGIN
                 OR @EstadoTrabajo IN ('1', '6', '8', '9')
               )
         ORDER BY
+            a.Periodo,
             a.FechaAsiento,
             a.IdAsiento,
             d.Item;

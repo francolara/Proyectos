@@ -89,6 +89,91 @@ public class CajaBancoController(
     }
 
     [HttpGet]
+    public async Task<IActionResult> EstadoCuenta(int idBancoConfiguracionEmpresa, short? anio = null, byte? mes = null, CancellationToken cancellationToken = default)
+    {
+        if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
+        {
+            return RedirectToAction("Index", "EmpresaContexto");
+        }
+
+        ViewData["AdminShell"] = true;
+
+        var (anioTrabajo, mesTrabajo) = NormalizarPeriodo(anio, mes);
+        var empresaId = currentCompanyAccessor.EmpresaId.Value;
+        var periodoTrabajo = $"{anioTrabajo:0000}{mesTrabajo:00}";
+        var cuenta = await cuentaCorrienteRepository.ObtenerPorIdAsync(empresaId, idBancoConfiguracionEmpresa, cancellationToken);
+
+        if (cuenta is null)
+        {
+            TempData["CajaBancoError"] = "La cuenta corriente seleccionada no existe o no esta disponible para la empresa activa.";
+            return RedirectToAction(nameof(Index), new { anio = anioTrabajo, mes = mesTrabajo });
+        }
+
+        var resumen = await cajaBancoRepository.ObtenerResumenCuentaAsync(empresaId, idBancoConfiguracionEmpresa, anioTrabajo, mesTrabajo, cancellationToken);
+        var movimientos = await cajaBancoRepository.ListarPaginadoPorEmpresaAsync(
+            empresaId,
+            idBancoConfiguracionEmpresa,
+            anioTrabajo,
+            mesTrabajo,
+            null,
+            1,
+            int.MaxValue,
+            cancellationToken);
+
+        var saldoAcumulado = resumen.SaldoInicial;
+        var items = movimientos.Items
+            .OrderBy(x => x.FechaEmision)
+            .ThenBy(x => x.NumeroMovimiento)
+            .ThenBy(x => x.IdMovimientoBanco)
+            .Select(x =>
+            {
+                saldoAcumulado += x.Ingreso - x.Egreso;
+                return new CajaBancoEstadoCuentaItemViewModel
+                {
+                    IdMovimientoBanco = x.IdMovimientoBanco,
+                    NumeroMovimiento = x.NumeroMovimiento,
+                    FechaEmision = x.FechaEmision,
+                    TipoMovimiento = x.TipoMovimiento,
+                    TipoOperacion = x.TipoOperacion,
+                    NombrePersona = x.NombrePersona,
+                    NumeroOperacion = x.NumeroDocumento,
+                    Glosa = x.Glosa,
+                    Ingreso = x.Ingreso,
+                    Egreso = x.Egreso,
+                    SaldoAcumulado = saldoAcumulado
+                };
+            })
+            .ToList();
+
+        var model = new CajaBancoEstadoCuentaViewModel
+        {
+            IdEmpresa = empresaId,
+            EmpresaNombre = currentCompanyAccessor.EmpresaNombre ?? "Empresa activa",
+            AnioSeleccionado = anioTrabajo,
+            MesSeleccionado = mesTrabajo,
+            PeriodoConsulta = periodoTrabajo,
+            IdBancoConfiguracionEmpresa = cuenta.IdBancoConfiguracionEmpresa,
+            NombreBanco = cuenta.NombreBanco,
+            NroCuentaCorriente = cuenta.NroCuentaCorriente,
+            Titular = cuenta.Titular,
+            CodigoMoneda = cuenta.CodigoMoneda,
+            NombreMoneda = cuenta.NombreMoneda,
+            CodigoCuenta = cuenta.CodigoCuenta,
+            NombreCuenta = cuenta.NombreCuenta,
+            PeriodoSaldoInicial = cuenta.PeriodoSaldoInicial,
+            SaldoInicialDebe = cuenta.SaldoInicialDebe,
+            SaldoInicialHaber = cuenta.SaldoInicialHaber,
+            SaldoInicial = resumen.SaldoInicial,
+            IngresosMes = resumen.IngresosMes,
+            EgresosMes = resumen.EgresosMes,
+            SaldoFinal = resumen.SaldoFinal,
+            Movimientos = items
+        };
+
+        return View(model);
+    }
+
+    [HttpGet]
     public async Task<IActionResult> BuscarPersonasAyuda(string? textoBusqueda = null, int numeroPagina = 1, int tamanoPagina = 20, CancellationToken cancellationToken = default)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)

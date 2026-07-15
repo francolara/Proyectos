@@ -8,7 +8,7 @@ public sealed class ActivarContratoCuentaViewModel
     public int IdCuentaAdministradora { get; init; }
 
     [Required]
-    [StringLength(20)]
+    [StringLength(20, ErrorMessage = "El tipo de cobro no puede exceder 20 caracteres.")]
     public string TipoCobro { get; init; } = "MENSUAL";
 
     public DateOnly FechaInicioPlan { get; init; } = DateOnly.FromDateTime(DateTime.Today);
@@ -16,6 +16,6 @@ public sealed class ActivarContratoCuentaViewModel
     [Range(0, 60)]
     public int DiasGracia { get; init; } = 5;
 
-    [StringLength(500)]
+    [StringLength(500, ErrorMessage = "La observacion no puede exceder 500 caracteres.")]
     public string? Observacion { get; init; }
 }

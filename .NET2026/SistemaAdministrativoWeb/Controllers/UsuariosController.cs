@@ -76,7 +76,28 @@ public class UsuariosController(
             {
                 foreach (var error in createResult.Errors)
                 {
-                    ModelState.AddModelError(string.Empty, error.Description);
+                    ModelState.AddModelError(string.Empty, IdentityErrorTranslator.Translate(error));
+                }
+
+                CargarViewDataComun();
+                var recargado = await ConstruirIndexViewModelAsync(cuenta.Value.idCuentaAdministradora, cancellationToken);
+                recargado.Formulario = model.Formulario;
+                return View("Index", recargado);
+            }
+
+            var temporaryPasswordClaimResult = await userManager.AddClaimAsync(
+                user,
+                new Claim(
+                    TemporaryPasswordFlowConstants.RequirePasswordChangeClaimType,
+                    TemporaryPasswordFlowConstants.RequirePasswordChangeClaimValue));
+
+            if (!temporaryPasswordClaimResult.Succeeded)
+            {
+                await userManager.DeleteAsync(user);
+
+                foreach (var error in temporaryPasswordClaimResult.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, IdentityErrorTranslator.Translate(error));
                 }
 
                 CargarViewDataComun();
@@ -100,7 +121,7 @@ public class UsuariosController(
             AspNetUserId = user.Id,
             IdCuentaAdministradora = cuenta.Value.idCuentaAdministradora,
             RolCuenta = model.Formulario.RolCuenta,
-            EsCuentaPredeterminada = model.Formulario.EsCuentaPredeterminada,
+            EsCuentaPredeterminada = false,
             UsuarioRegistro = User.Identity?.Name
         }, cancellationToken);
 
@@ -108,11 +129,11 @@ public class UsuariosController(
             cuenta.Value.idCuentaAdministradora,
             user.Id,
             model.Formulario.EmpresasSeleccionadas,
-            model.Formulario.IdEmpresaPredeterminada,
+            null,
             cancellationToken);
 
         TempData["SuccessMessage"] = "El usuario fue vinculado a la cuenta administradora.";
-        return RedirectToAction(nameof(Permisos), new { aspNetUserId = user.Id, idEmpresa = model.Formulario.IdEmpresaPredeterminada });
+        return RedirectToAction(nameof(Permisos), new { aspNetUserId = user.Id });
     }
 
     [HttpPost]
@@ -177,16 +198,19 @@ public class UsuariosController(
         {
             ModelState.AddModelError(nameof(model.RolCuenta), "Seleccione el rol del usuario.");
         }
-        if (model.EmpresasSeleccionadas.Any()
-            && model.IdEmpresaPredeterminada.HasValue
-            && !model.EmpresasSeleccionadas.Contains(model.IdEmpresaPredeterminada.Value))
-        {
-            ModelState.AddModelError(nameof(model.IdEmpresaPredeterminada), "La empresa predeterminada debe estar incluida en las empresas habilitadas.");
-        }
-
         if (!ModelState.IsValid)
         {
             return RedirectToAction(nameof(Permisos), new { aspNetUserId = model.AspNetUserId, idEmpresa = model.IdEmpresaSeleccionada });
+        }
+
+        var accesoActual = (await cuentaAdministradoraRepository
+            .ListarUsuariosCuentaAdministradoraAsync(cuenta.Value.idCuentaAdministradora, cancellationToken))
+            .FirstOrDefault(x => string.Equals(x.AspNetUserId, model.AspNetUserId, StringComparison.Ordinal));
+
+        if (accesoActual is null)
+        {
+            TempData["ErrorMessage"] = "No se encontro el acceso del usuario dentro de la cuenta administradora.";
+            return RedirectToAction(nameof(Index));
         }
 
         await cuentaAdministradoraRepository.AsignarUsuarioCuentaAdministradoraAsync(new AsignarUsuarioCuentaAdministradoraRequest
@@ -194,7 +218,7 @@ public class UsuariosController(
             AspNetUserId = model.AspNetUserId,
             IdCuentaAdministradora = cuenta.Value.idCuentaAdministradora,
             RolCuenta = model.RolCuenta,
-            EsCuentaPredeterminada = model.EsCuentaPredeterminada,
+            EsCuentaPredeterminada = accesoActual.EsCuentaPredeterminada,
             UsuarioRegistro = User.Identity?.Name
         }, cancellationToken);
 
@@ -202,11 +226,11 @@ public class UsuariosController(
             cuenta.Value.idCuentaAdministradora,
             model.AspNetUserId,
             model.EmpresasSeleccionadas,
-            model.IdEmpresaPredeterminada,
+            null,
             cancellationToken);
 
         TempData["SuccessMessage"] = "Se actualizaron el rol y las empresas del usuario.";
-        return RedirectToAction(nameof(Permisos), new { aspNetUserId = model.AspNetUserId, idEmpresa = model.IdEmpresaPredeterminada ?? model.IdEmpresaSeleccionada });
+        return RedirectToAction(nameof(Permisos), new { aspNetUserId = model.AspNetUserId, idEmpresa = model.IdEmpresaSeleccionada });
     }
 
     [HttpPost]
@@ -404,14 +428,7 @@ public class UsuariosController(
     {
         if (!formulario.EmpresasSeleccionadas.Any())
         {
-            formulario.IdEmpresaPredeterminada = null;
-        }
-
-        if (formulario.EmpresasSeleccionadas.Any()
-            && formulario.IdEmpresaPredeterminada.HasValue
-            && !formulario.EmpresasSeleccionadas.Contains(formulario.IdEmpresaPredeterminada.Value))
-        {
-            modelState.AddModelError(nameof(formulario.IdEmpresaPredeterminada), "La empresa predeterminada debe formar parte de las empresas seleccionadas.");
+            modelState.AddModelError(nameof(formulario.EmpresasSeleccionadas), "Seleccione al menos una empresa para el usuario.");
         }
     }
 

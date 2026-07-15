@@ -8,7 +8,9 @@ public sealed class LibroDiario51Dto
     public string CorrelativoMovimiento { get; init; } = string.Empty;
     public string CodigoCuentaContable { get; init; } = string.Empty;
     public string CodigoUnidadOperacion { get; init; } = string.Empty;
+    public string CodigoCentroCosto { get; init; } = string.Empty;
     public string CodigoMoneda { get; init; } = string.Empty;
+    public string CodigoLibroRelacionado { get; init; } = string.Empty;
     public string TipoDocumentoEmisor { get; init; } = string.Empty;
     public string NumeroDocumentoEmisor { get; init; } = string.Empty;
     public string TipoComprobante { get; init; } = string.Empty;

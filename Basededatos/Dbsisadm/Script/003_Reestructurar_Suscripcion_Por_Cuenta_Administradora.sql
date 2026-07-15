@@ -3,6 +3,11 @@
 -- Create date:   15/06/2026
 -- Description:   Migra la suscripcion de empresa hacia cuenta administradora y enlaza SEG_Empresa con su cuenta titular.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA / Codex
+-- Create date:   12/07/2026
+-- Description:   Corrige la migracion legacy para que el rol inicial insertado en SEG_UsuarioCuentaAdministradora sea ADMINISTRADORCUENTA.
+-- =============================================
 
 IF COL_LENGTH(N'dbo.SEG_Empresa', N'IdCuentaAdministradora') IS NULL
 BEGIN
@@ -85,7 +90,7 @@ BEGIN
         SELECT
             ue.AspNetUserId,
             e.IdCuentaAdministradora,
-            N'ADMINISTRADOR',
+            N'ADMINISTRADORCUENTA',
             CASE WHEN ue.EsEmpresaPredeterminada = 1 THEN 1 ELSE 0 END,
             ue.Estado,
             ue.UsuarioRegistro

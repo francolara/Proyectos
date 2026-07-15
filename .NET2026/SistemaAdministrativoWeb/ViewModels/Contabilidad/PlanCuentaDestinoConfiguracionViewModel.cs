@@ -6,7 +6,7 @@ public sealed class PlanCuentaDestinoConfiguracionViewModel
 {
     public bool Activo { get; set; } = true;
 
-    [StringLength(500)]
+    [StringLength(500, ErrorMessage = "La observacion no puede exceder 500 caracteres.")]
     public string? Observacion { get; set; }
 
     public List<CuentaDestinoReglaDetalleFormViewModel> Detalles { get; set; } = [];

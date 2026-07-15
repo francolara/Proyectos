@@ -89,7 +89,7 @@ public sealed class LibroElectronicoService(
     {
         var libro = PleLibroElectronicoCatalogo.Normalizar(request.LibroElectronico);
         var periodoContable = PlePeriodoHelper.FormarPeriodoContable(request.Anio, request.Mes);
-        var nombreArchivo = pleFileNameService.ConstruirNombreArchivo(ruc, request.Anio, request.Mes, libro, request.Moneda);
+        var nombreArchivo = pleFileNameService.ConstruirNombreArchivo(ruc, request.Anio, request.Mes, libro, "PEN");
 
         IReadOnlyCollection<LibroDiario51Dto> items51 = [];
         IReadOnlyCollection<LibroDiario52Dto> items52 = [];
@@ -113,7 +113,7 @@ public sealed class LibroElectronicoService(
         var cuentas = await planCuentaRepository.ListarPorEmpresaAsync(request.IdEmpresa, false, cancellationToken);
         var monedas = await monedaRepository.ListarActivasAsync(cancellationToken);
         var tiposDocumento = await personaRepository.ListarTiposDocumentoAsync(cancellationToken);
-        var tiposComprobante = await tipoComprobanteRepository.ListarActivosAsync(true, true, cancellationToken);
+        var tiposComprobante = await tipoComprobanteRepository.ListarActivosAsync(false, false, cancellationToken);
 
         var validacion = ejecutarValidacion
             ? await pleValidationService.ValidarAsync(request, empresa, ruc, asientos, cuentas, monedas, tiposDocumento, tiposComprobante, items51, items52, items61, cancellationToken)

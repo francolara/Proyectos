@@ -1,5 +1,6 @@
 @model SistemaAdministrativoWeb.ViewModels.Usuarios.UsuarioPermisosViewModel
 @* Firma: FRANCO LARA - 10/07/2026 | Crea la vista de detalle de permisos por cuenta y por empresa para usuarios de la cuenta administradora. *@
+@* Firma: FRANCO LARA - 12/07/2026 | Retira la edicion de cuenta y empresa predeterminada del detalle de permisos para que la seleccion de empresa se haga siempre desde el panel correspondiente. *@
 @{
     ViewData["Title"] = "Permisos de usuario";
     ViewData["AdminShell"] = true;
@@ -39,24 +40,13 @@
             <input asp-for="AspNetUserId" type="hidden" />
 
             <div class="row g-3">
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <label asp-for="RolCuenta" class="form-label"></label>
                     <select asp-for="RolCuenta" asp-items="ViewBag.RoleOptions" class="form-select"></select>
                 </div>
-                <div class="col-md-4">
-                    <label asp-for="IdEmpresaPredeterminada" class="form-label">Empresa predeterminada</label>
-                    <select asp-for="IdEmpresaPredeterminada" class="form-select">
-                        <option value="">Sin empresa predeterminada</option>
-                        @foreach (var empresa in Model.EmpresasDisponibles.Where(x => x.Asignado || Model.EmpresasSeleccionadas.Contains(x.IdEmpresa)))
-                        {
-                            <option value="@empresa.IdEmpresa">@empresa.CodigoEmpresa - @empresa.RazonSocial</option>
-                        }
-                    </select>
-                </div>
-                <div class="col-md-4 d-flex align-items-end">
-                    <div class="form-check">
-                        <input asp-for="EsCuentaPredeterminada" class="form-check-input" />
-                        <label asp-for="EsCuentaPredeterminada" class="form-check-label"></label>
+                <div class="col-md-6 d-flex align-items-end">
+                    <div class="form-text mb-2">
+                        La empresa se elegira desde el selector de empresa al ingresar al sistema.
                     </div>
                 </div>
             </div>

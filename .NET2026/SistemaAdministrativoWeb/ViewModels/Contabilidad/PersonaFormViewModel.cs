@@ -13,29 +13,29 @@ public sealed class PersonaFormViewModel
     public string TipoDocumento { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Ingrese el numero de documento.")]
-    [StringLength(20)]
+    [StringLength(20, ErrorMessage = "El numero de documento no puede exceder 20 caracteres.")]
     public string NumeroDocumento { get; set; } = string.Empty;
 
-    [StringLength(100)]
+    [StringLength(100, ErrorMessage = "El apellido paterno no puede exceder 100 caracteres.")]
     public string? ApellidoPaterno { get; set; }
 
-    [StringLength(100)]
+    [StringLength(100, ErrorMessage = "El apellido materno no puede exceder 100 caracteres.")]
     public string? ApellidoMaterno { get; set; }
 
-    [StringLength(150)]
+    [StringLength(150, ErrorMessage = "Los nombres no pueden exceder 150 caracteres.")]
     public string? Nombres { get; set; }
 
-    [StringLength(200)]
+    [StringLength(200, ErrorMessage = "La razon social no puede exceder 200 caracteres.")]
     public string? RazonSocial { get; set; }
 
     [EmailAddress(ErrorMessage = "Ingrese un correo valido.")]
-    [StringLength(200)]
+    [StringLength(200, ErrorMessage = "El correo electronico no puede exceder 200 caracteres.")]
     public string? CorreoElectronico { get; set; }
 
-    [StringLength(50)]
+    [StringLength(50, ErrorMessage = "El telefono no puede exceder 50 caracteres.")]
     public string? Telefono { get; set; }
 
-    [StringLength(250)]
+    [StringLength(250, ErrorMessage = "La direccion no puede exceder 250 caracteres.")]
     public string? Direccion { get; set; }
 
     public string? CodigoDepartamento { get; set; }

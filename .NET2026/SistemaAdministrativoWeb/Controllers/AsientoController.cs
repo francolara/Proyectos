@@ -12,6 +12,7 @@ namespace SistemaAdministrativoWeb.Controllers;
 public class AsientoController(
     ICurrentCompanyAccessor currentCompanyAccessor,
     IAsientoRepository asientoRepository,
+    IConfiguracionContabilizacionRepository configuracionContabilizacionRepository,
     IOrigenRepository origenRepository,
     ICentroCostoRepository centroCostoRepository,
     IPlanCuentaRepository planCuentaRepository,
@@ -26,6 +27,7 @@ public class AsientoController(
     private const int TamanoAyudaPersona = 20;
     private const byte MesContableMinimo = 0;
     private const byte MesContableMaximo = 15;
+    private static readonly string[] ModulosOrigenAutomaticoConfigurado = ["COM", "VEN", "ING", "EGR"];
 
     [HttpGet]
     public async Task<IActionResult> Index(short? anio = null, byte? mes = null, string? textoBusqueda = null, int pagina = 1, CancellationToken cancellationToken = default)
@@ -57,6 +59,8 @@ public class AsientoController(
             .ToList();
         var tiposDocumento = await ObtenerTiposDocumentoAsync(cancellationToken);
         var asientos = await asientoRepository.ListarPaginadoPorEmpresaAsync(empresaId, anioTrabajo, mesTrabajo, textoBusqueda, pagina, TamanoPagina, false, cancellationToken);
+        var origenesAutomaticos = await ObtenerOrigenesAutomaticosConfiguradosAsync(empresaId, cancellationToken);
+        var asientosNormalizados = AplicarOrigenesAutomaticos(asientos.Items, origenesAutomaticos);
 
         var model = ConstruirViewModel(
             empresaId,
@@ -70,7 +74,7 @@ public class AsientoController(
             cuentas,
             centrosCosto,
             tiposDocumento,
-            asientos.Items,
+            asientosNormalizados,
             null);
         model.TotalAsientos = asientos.TotalRecords;
         model.Paginacion = new PaginacionViewModel
@@ -108,7 +112,8 @@ public class AsientoController(
 
         try
         {
-            var asiento = await asientoRepository.ObtenerAsync(idAsiento, cancellationToken);
+            var origenesAutomaticos = await ObtenerOrigenesAutomaticosConfiguradosAsync(currentCompanyAccessor.EmpresaId.Value, cancellationToken);
+            var asiento = AplicarOrigenesAutomaticos(await asientoRepository.ObtenerAsync(idAsiento, cancellationToken), origenesAutomaticos);
             if (asiento is not null && !asiento.PermiteRegistroManual)
             {
                 throw new InvalidOperationException("El asiento fue generado automaticamente. Debe eliminarlo desde su modulo de origen.");
@@ -144,7 +149,8 @@ public class AsientoController(
 
         if (formulario.IdAsiento.HasValue)
         {
-            var asientoExistente = await asientoRepository.ObtenerAsync(formulario.IdAsiento.Value, cancellationToken);
+            var origenesAutomaticos = await ObtenerOrigenesAutomaticosConfiguradosAsync(currentCompanyAccessor.EmpresaId.Value, cancellationToken);
+            var asientoExistente = AplicarOrigenesAutomaticos(await asientoRepository.ObtenerAsync(formulario.IdAsiento.Value, cancellationToken), origenesAutomaticos);
             if (asientoExistente is not null && !asientoExistente.PermiteRegistroManual)
             {
                 ModelState.AddModelError(string.Empty, "El asiento fue generado automaticamente y solo puede modificarse desde su modulo de origen.");
@@ -360,9 +366,12 @@ public class AsientoController(
             .OrderBy(x => x.CodigoCentroCosto)
             .ToList();
         var tiposDocumento = await ObtenerTiposDocumentoAsync(cancellationToken);
-        var asientos = await asientoRepository.ListarPorEmpresaAsync(empresaId, periodoTrabajo, true, cancellationToken);
+        var origenesAutomaticos = await ObtenerOrigenesAutomaticosConfiguradosAsync(empresaId, cancellationToken);
+        var asientos = AplicarOrigenesAutomaticos(
+            await asientoRepository.ListarPorEmpresaAsync(empresaId, periodoTrabajo, true, cancellationToken),
+            origenesAutomaticos);
         var asientoEditar = idAsiento.HasValue
-            ? await asientoRepository.ObtenerAsync(idAsiento.Value, cancellationToken)
+            ? AplicarOrigenesAutomaticos(await asientoRepository.ObtenerAsync(idAsiento.Value, cancellationToken), origenesAutomaticos)
             : null;
 
         if (asientoEditar is not null && asientoEditar.IdEmpresa != empresaId)
@@ -406,7 +415,10 @@ public class AsientoController(
             .OrderBy(x => x.CodigoCentroCosto)
             .ToList();
         var tiposDocumento = await ObtenerTiposDocumentoAsync(cancellationToken);
-        var asientos = await asientoRepository.ListarPorEmpresaAsync(empresaId, periodo, true, cancellationToken);
+        var origenesAutomaticos = await ObtenerOrigenesAutomaticosConfiguradosAsync(empresaId, cancellationToken);
+        var asientos = AplicarOrigenesAutomaticos(
+            await asientoRepository.ListarPorEmpresaAsync(empresaId, periodo, true, cancellationToken),
+            origenesAutomaticos);
 
         var model = ConstruirViewModel(
             empresaId,
@@ -426,6 +438,96 @@ public class AsientoController(
         model.Formulario = formulario;
         HidratarDetallesFormulario(model.Formulario, cuentas, centrosCosto);
         return model;
+    }
+
+    private async Task<HashSet<int>> ObtenerOrigenesAutomaticosConfiguradosAsync(int idEmpresa, CancellationToken cancellationToken)
+    {
+        var configuracion = await configuracionContabilizacionRepository.ObtenerConfiguracionContableEmpresaAsync(idEmpresa, cancellationToken);
+
+        return configuracion.Provisiones
+            .Where(x => x.Activo
+                && x.GeneraAsientoAutomatico
+                && x.IdOrigen.HasValue
+                && ModulosOrigenAutomaticoConfigurado.Contains(x.ModuloOperacion, StringComparer.OrdinalIgnoreCase))
+            .Select(x => x.IdOrigen!.Value)
+            .ToHashSet();
+    }
+
+    private static IReadOnlyCollection<AsientoResumenDto> AplicarOrigenesAutomaticos(
+        IReadOnlyCollection<AsientoResumenDto> asientos,
+        IReadOnlySet<int> origenesAutomaticos)
+    {
+        return asientos.Select(x => AplicarOrigenesAutomaticos(x, origenesAutomaticos)).ToList();
+    }
+
+    private static AsientoDto? AplicarOrigenesAutomaticos(AsientoDto? asiento, IReadOnlySet<int> origenesAutomaticos)
+    {
+        if (asiento is null)
+        {
+            return null;
+        }
+
+        return new AsientoDto
+        {
+            IdAsiento = asiento.IdAsiento,
+            IdEmpresa = asiento.IdEmpresa,
+            IdOrigen = asiento.IdOrigen,
+            CodigoOrigen = asiento.CodigoOrigen,
+            NombreOrigen = asiento.NombreOrigen,
+            PermiteRegistroManual = !origenesAutomaticos.Contains(asiento.IdOrigen) && asiento.PermiteRegistroManual,
+            Ejercicio = asiento.Ejercicio,
+            Mes = asiento.Mes,
+            Periodo = asiento.Periodo,
+            NumeroAsiento = asiento.NumeroAsiento,
+            FechaEmision = asiento.FechaEmision,
+            FechaAsiento = asiento.FechaAsiento,
+            Glosa = asiento.Glosa,
+            IdMoneda = asiento.IdMoneda,
+            CodigoMoneda = asiento.CodigoMoneda,
+            NombreMoneda = asiento.NombreMoneda,
+            SimboloMoneda = asiento.SimboloMoneda,
+            TipoCambio = asiento.TipoCambio,
+            TotalDebe = asiento.TotalDebe,
+            TotalHaber = asiento.TotalHaber,
+            TotalImporteS = asiento.TotalImporteS,
+            TotalImporteD = asiento.TotalImporteD,
+            Estado = asiento.Estado,
+            ReferenciaExterna = asiento.ReferenciaExterna,
+            Observacion = asiento.Observacion,
+            Detalles = asiento.Detalles
+        };
+    }
+
+    private static AsientoResumenDto AplicarOrigenesAutomaticos(AsientoResumenDto asiento, IReadOnlySet<int> origenesAutomaticos)
+    {
+        return new AsientoResumenDto
+        {
+            IdAsiento = asiento.IdAsiento,
+            IdEmpresa = asiento.IdEmpresa,
+            IdOrigen = asiento.IdOrigen,
+            CodigoOrigen = asiento.CodigoOrigen,
+            NombreOrigen = asiento.NombreOrigen,
+            PermiteRegistroManual = !origenesAutomaticos.Contains(asiento.IdOrigen) && asiento.PermiteRegistroManual,
+            Ejercicio = asiento.Ejercicio,
+            Mes = asiento.Mes,
+            Periodo = asiento.Periodo,
+            NumeroAsiento = asiento.NumeroAsiento,
+            FechaEmision = asiento.FechaEmision,
+            FechaAsiento = asiento.FechaAsiento,
+            Glosa = asiento.Glosa,
+            IdMoneda = asiento.IdMoneda,
+            CodigoMoneda = asiento.CodigoMoneda,
+            NombreMoneda = asiento.NombreMoneda,
+            SimboloMoneda = asiento.SimboloMoneda,
+            TipoCambio = asiento.TipoCambio,
+            TotalDebe = asiento.TotalDebe,
+            TotalHaber = asiento.TotalHaber,
+            TotalImporteS = asiento.TotalImporteS,
+            TotalImporteD = asiento.TotalImporteD,
+            Estado = asiento.Estado,
+            ReferenciaExterna = asiento.ReferenciaExterna,
+            Observacion = asiento.Observacion
+        };
     }
 
     private static void NormalizarFormulario(AsientoFormViewModel formulario)

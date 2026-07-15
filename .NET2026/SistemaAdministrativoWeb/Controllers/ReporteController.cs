@@ -5,6 +5,7 @@ using SistemaAdministrativoWeb.Infrastructure.Contabilidad;
 using SistemaAdministrativoWeb.Infrastructure.Empresas;
 using SistemaAdministrativoWeb.Infrastructure.Security;
 using SistemaAdministrativoWeb.ViewModels.Contabilidad;
+using System.Security.Claims;
 
 namespace SistemaAdministrativoWeb.Controllers;
 
@@ -12,14 +13,83 @@ namespace SistemaAdministrativoWeb.Controllers;
 [ModulePermission("REPORTES")]
 public class ReporteController(
     ICurrentCompanyAccessor currentCompanyAccessor,
+    IEmpresaRepository empresaRepository,
     IPlanCuentaRepository planCuentaRepository,
     IAnalisisCuentaRepository analisisCuentaRepository,
     IBalanceComprobacionRepository balanceComprobacionRepository,
     IRegistroVentasRepository registroVentasRepository,
     IRegistroComprasRepository registroComprasRepository,
     ILibroDiarioRepository libroDiarioRepository,
-    ILibroMayorRepository libroMayorRepository) : Controller
+    ILibroMayorRepository libroMayorRepository,
+    IAsientoRepository asientoRepository) : Controller
 {
+    [HttpGet]
+    public async Task<IActionResult> VoucherContable(int idAsiento, CancellationToken cancellationToken = default)
+    {
+        if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
+        {
+            return RedirectToAction("Index", "EmpresaContexto");
+        }
+
+        ViewData["AdminShell"] = true;
+
+        var asiento = await asientoRepository.ObtenerAsync(idAsiento, cancellationToken);
+        if (asiento is null || asiento.IdEmpresa != currentCompanyAccessor.EmpresaId.Value)
+        {
+            return NotFound();
+        }
+
+        var rucEmpresa = string.Empty;
+        var aspNetUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!string.IsNullOrWhiteSpace(aspNetUserId))
+        {
+            var empresas = await empresaRepository.ListarPorUsuarioAsync(aspNetUserId, cancellationToken);
+            rucEmpresa = empresas.FirstOrDefault(x => x.IdEmpresa == currentCompanyAccessor.EmpresaId.Value)?.Ruc ?? string.Empty;
+        }
+
+        var model = new VoucherContableViewModel
+        {
+            IdEmpresa = asiento.IdEmpresa,
+            EmpresaNombre = currentCompanyAccessor.EmpresaNombre ?? "Empresa activa",
+            RucEmpresa = rucEmpresa,
+            IdAsiento = asiento.IdAsiento,
+            Periodo = asiento.Periodo,
+            NumeroAsiento = asiento.NumeroAsiento,
+            CodigoOrigen = asiento.CodigoOrigen,
+            NombreOrigen = asiento.NombreOrigen,
+            Glosa = asiento.Glosa,
+            Moneda = asiento.CodigoMoneda,
+            TipoCambio = asiento.TipoCambio,
+            FechaEmision = asiento.FechaEmision,
+            ReferenciaExterna = asiento.ReferenciaExterna ?? string.Empty,
+            Observacion = asiento.Observacion ?? string.Empty,
+            MuestraColumnaDolares = asiento.Detalles.Any(x => x.TotalImporteD != 0m)
+        };
+
+        model.Detalles = asiento.Detalles
+            .OrderBy(x => x.Item)
+            .Select(x => new VoucherContableItemViewModel
+            {
+                Item = x.Item,
+                CodigoCuenta = x.CodigoCuenta,
+                NombreCuenta = x.NombreCuenta,
+                GlosaDetalle = x.GlosaDetalle ?? string.Empty,
+                NumeroDocumento = x.NumeroDocumento ?? string.Empty,
+                TipoDocumento = x.TipoDocumento ?? string.Empty,
+                Serie = x.Serie ?? string.Empty,
+                Referencia = x.ReferenciaLinea ?? string.Empty,
+                CentroCosto = x.CodigoCentroCosto ?? string.Empty,
+                TipoCambio = x.TipoCambioLinea ?? asiento.TipoCambio,
+                Debe = x.Debe,
+                Haber = x.Haber,
+                ImporteSoles = x.TotalImporteS,
+                ImporteDolares = x.TotalImporteD
+            })
+            .ToList();
+
+        return View(model);
+    }
+
     [HttpGet]
     public async Task<IActionResult> AnalisisCuentas(
         short? anio = null,

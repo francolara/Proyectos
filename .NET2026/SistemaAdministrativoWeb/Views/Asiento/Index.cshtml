@@ -135,7 +135,9 @@
                         {
                             @foreach (var asiento in Model.Asientos)
                             {
-                                <tr class="workspace-clickable-row" data-edit-url="@Url.Action("Editar", new { periodo = Model.PeriodoConsulta, idAsiento = asiento.IdAsiento })">
+                                var filaCss = "workspace-clickable-row";
+                                var editarUrl = Url.Action("Editar", new { periodo = Model.PeriodoConsulta, idAsiento = asiento.IdAsiento });
+                                <tr class="@filaCss" data-edit-url="@editarUrl">
                                     <td>@asiento.Periodo-@asiento.NumeroAsiento</td>
                                     <td>@asiento.FechaEmision.ToString("dd/MM/yyyy")</td>
                                     <td>@asiento.NombreOrigen</td>
@@ -150,6 +152,7 @@
                                     <td class="text-end">
                                         <div class="workspace-row-actions-compact asiento-row-actions">
                                             <a asp-action="Editar" asp-route-periodo="@Model.PeriodoConsulta" asp-route-idAsiento="@asiento.IdAsiento" class="workspace-row-btn workspace-row-btn-primary">Editar</a>
+                                            <a asp-controller="Reporte" asp-action="VoucherContable" asp-route-idAsiento="@asiento.IdAsiento" class="workspace-row-btn workspace-row-btn-secondary" target="_blank" rel="noopener">Imprimir</a>
                                             @if (asiento.PermiteRegistroManual)
                                             {
                                                 <form asp-action="Eliminar" method="post" onsubmit="return confirm('Se eliminara el asiento seleccionado. ¿Desea continuar?');">

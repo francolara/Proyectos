@@ -4,6 +4,8 @@
 -- Description:   Genera lineas analiticas de ajuste por cancelacion total de documentos para saldar diferencias residuales en soles y dolares sin alterar el Debe/Haber del asiento.
 -- =============================================
 -- Firma: FRANCO LARA - 06/07/2026 | Crea el ajuste cambiario por cancelacion total desde asientos operativos, agregando lineas separadas por soles y dolares con Debe/Haber en cero, DH para identificar ganancia o perdida y expansion final de cuentas destino/contrapartida cuando la cuenta ajustada las tenga configuradas.
+-- Firma: FRANCO LARA - 11/07/2026 | Agrega la contrapartida analitica sobre la cuenta del comprobante para que cada ganancia o perdida por cancelacion total quede compensada tambien en la 42/12 correspondiente usando solo TotalImporteS y/o TotalImporteD con Debe/Haber en cero.
+-- Firma: FRANCO LARA - 13/07/2026 | Corrige el ajuste por cancelacion total para que la linea del documento invierta el DH del residual, y la linea de ganancia o perdida use el signo correcto segun el saldo analitico remanente en soles o dolares.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_GenerarAjusteCancelacionDiferenciaCambio
     @IdEmpresa INT,
@@ -184,8 +186,8 @@ BEGIN
 
         SET @ImporteSolesAjuste = CASE WHEN ABS(@TotalSoles) >= 0.005 THEN ABS(@TotalSoles) ELSE 0 END;
         SET @ImporteDolaresAjuste = CASE WHEN ABS(@TotalDolares) >= 0.005 THEN ABS(@TotalDolares) ELSE 0 END;
-        SET @DhSoles = CASE WHEN @TotalSoles > 0 THEN 'H' WHEN @TotalSoles < 0 THEN 'D' ELSE NULL END;
-        SET @DhDolares = CASE WHEN @TotalDolares > 0 THEN 'H' WHEN @TotalDolares < 0 THEN 'D' ELSE NULL END;
+        SET @DhSoles = CASE WHEN @TotalSoles > 0 THEN 'D' WHEN @TotalSoles < 0 THEN 'H' ELSE NULL END;
+        SET @DhDolares = CASE WHEN @TotalDolares > 0 THEN 'D' WHEN @TotalDolares < 0 THEN 'H' ELSE NULL END;
 
         SELECT
             @SiguienteItem = ISNULL(MAX(d.Item), 0) + 1
@@ -194,6 +196,45 @@ BEGIN
 
         IF @ImporteSolesAjuste > 0 AND @DhSoles IS NOT NULL
         BEGIN
+            INSERT INTO dbo.CON_AsientoDetalle
+            (
+                IdAsiento,
+                Item,
+                IdPlanCuenta,
+                DH,
+                GlosaDetalle,
+                NumeroDocumento,
+                TipoDocumento,
+                Serie,
+                ReferenciaLinea,
+                TipoCambioLinea,
+                Debe,
+                Haber,
+                TotalImporteS,
+                TotalImporteD,
+                UsuarioRegistro
+            )
+            VALUES
+            (
+                @IdAsiento,
+                @SiguienteItem,
+                @IdPlanCuentaDocumento,
+                CASE WHEN @DhSoles = 'D' THEN 'H' ELSE 'D' END,
+                LEFT(CONCAT(ISNULL(NULLIF(LTRIM(RTRIM(@GlosaDetalle)), N''), N'AJUSTE CANCELACION DIF. CAMBIO'), N' / AJUSTE SOLES DOC'), 300),
+                NULLIF(LTRIM(RTRIM(@NumeroDocumento)), ''),
+                NULLIF(LTRIM(RTRIM(@TipoDocumento)), N''),
+                NULLIF(LTRIM(RTRIM(@Serie)), ''),
+                NULLIF(LTRIM(RTRIM(@ReferenciaLinea)), N''),
+                @TipoCambioLineaTrabajo,
+                0,
+                0,
+                @ImporteSolesAjuste,
+                0,
+                @UsuarioRegistro
+            );
+
+            SET @SiguienteItem += 1;
+
             INSERT INTO dbo.CON_AsientoDetalle
             (
                 IdAsiento,
@@ -263,6 +304,45 @@ BEGIN
 
         IF @ImporteDolaresAjuste > 0 AND @DhDolares IS NOT NULL
         BEGIN
+            INSERT INTO dbo.CON_AsientoDetalle
+            (
+                IdAsiento,
+                Item,
+                IdPlanCuenta,
+                DH,
+                GlosaDetalle,
+                NumeroDocumento,
+                TipoDocumento,
+                Serie,
+                ReferenciaLinea,
+                TipoCambioLinea,
+                Debe,
+                Haber,
+                TotalImporteS,
+                TotalImporteD,
+                UsuarioRegistro
+            )
+            VALUES
+            (
+                @IdAsiento,
+                @SiguienteItem,
+                @IdPlanCuentaDocumento,
+                CASE WHEN @DhDolares = 'D' THEN 'H' ELSE 'D' END,
+                LEFT(CONCAT(ISNULL(NULLIF(LTRIM(RTRIM(@GlosaDetalle)), N''), N'AJUSTE CANCELACION DIF. CAMBIO'), N' / AJUSTE DOLARES DOC'), 300),
+                NULLIF(LTRIM(RTRIM(@NumeroDocumento)), ''),
+                NULLIF(LTRIM(RTRIM(@TipoDocumento)), N''),
+                NULLIF(LTRIM(RTRIM(@Serie)), ''),
+                NULLIF(LTRIM(RTRIM(@ReferenciaLinea)), N''),
+                @TipoCambioLineaTrabajo,
+                0,
+                0,
+                0,
+                @ImporteDolaresAjuste,
+                @UsuarioRegistro
+            );
+
+            SET @SiguienteItem += 1;
+
             INSERT INTO dbo.CON_AsientoDetalle
             (
                 IdAsiento,

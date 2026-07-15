@@ -11,9 +11,6 @@ public sealed class LibroElectronicoViewModel
     public byte MesSeleccionado { get; set; }
     public string LibroElectronicoSeleccionado { get; set; } = PleLibroElectronicoCatalogo.LibroDiario51;
     public string MonedaSeleccionada { get; set; } = "PEN";
-    public string EstadoSeleccionado { get; set; } = "Todos";
-    public DateOnly? FechaDesde { get; set; }
-    public DateOnly? FechaHasta { get; set; }
     public bool ConsultaEjecutada { get; set; }
     public bool ValidacionEjecutada { get; set; }
     public string OperacionEjecutada { get; set; } = string.Empty;
@@ -32,15 +29,12 @@ public sealed class LibroElectronicoViewModel
     public List<short> AniosDisponibles { get; set; } = [];
     public List<MesOpcionViewModel> MesesDisponibles { get; set; } = [];
     public List<OpcionCatalogoViewModel> LibrosDisponibles { get; set; } = [];
-    public List<OpcionCatalogoViewModel> MonedasDisponibles { get; set; } = [];
-    public List<OpcionCatalogoViewModel> EstadosDisponibles { get; set; } = [];
     public IReadOnlyCollection<LibroDiario51Dto> LibroDiario51Items { get; set; } = [];
     public IReadOnlyCollection<LibroDiario52Dto> LibroDiario52Items { get; set; } = [];
     public IReadOnlyCollection<LibroMayor61Dto> LibroMayor61Items { get; set; } = [];
     public IReadOnlyCollection<PleHistoryItemDto> HistorialItems { get; set; } = [];
     public bool PuedeVer { get; set; }
     public bool PuedeConsultar { get; set; }
-    public bool PuedePrevisualizar { get; set; }
     public bool PuedeValidar { get; set; }
     public bool PuedeGenerar { get; set; }
     public bool PuedeVerHistorial { get; set; }

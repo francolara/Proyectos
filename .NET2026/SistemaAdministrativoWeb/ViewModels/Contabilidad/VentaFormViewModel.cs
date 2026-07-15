@@ -19,7 +19,7 @@ public sealed class VentaFormViewModel
     public DateOnly FechaContabilizacion { get; set; } = DateOnly.FromDateTime(DateTime.Today);
 
     [Required]
-    [StringLength(3)]
+    [StringLength(3, ErrorMessage = "El tipo de comprobante no puede exceder 3 caracteres.")]
     public string TipoComprobante { get; set; } = "01";
 
     [Required]
@@ -65,7 +65,7 @@ public sealed class VentaFormViewModel
     [Range(typeof(decimal), "0", "999999999999")]
     public decimal ImporteTotal { get; set; }
 
-    [StringLength(500)]
+    [StringLength(500, ErrorMessage = "La observacion no puede exceder 500 caracteres.")]
     public string? Observacion { get; set; }
 
     public List<VentaDetalleFormViewModel> Detalles { get; set; } =

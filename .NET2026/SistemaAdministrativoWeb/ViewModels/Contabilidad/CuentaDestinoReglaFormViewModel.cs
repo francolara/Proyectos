@@ -9,7 +9,7 @@ public sealed class CuentaDestinoReglaFormViewModel
 
     public string CuentaOrigenTexto { get; set; } = string.Empty;
 
-    [StringLength(500)]
+    [StringLength(500, ErrorMessage = "La observacion no puede exceder 500 caracteres.")]
     public string? Observacion { get; set; }
 
     public bool Activo { get; set; } = true;

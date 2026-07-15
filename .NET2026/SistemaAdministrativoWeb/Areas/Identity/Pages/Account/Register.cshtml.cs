@@ -26,6 +26,12 @@ public class RegisterModel(
     [BindProperty]
     public UsuarioRegistroInput Usuario { get; set; } = new();
 
+    [BindProperty]
+    public string? CaptchaManual { get; set; }
+
+    [BindProperty]
+    public bool UsarCaptchaManual { get; set; }
+
     [BindProperty(SupportsGet = true)]
     public string Plan { get; set; } = string.Empty;
 
@@ -33,14 +39,17 @@ public class RegisterModel(
     public IList<AuthenticationScheme> ExternalLogins { get; set; } = new List<AuthenticationScheme>();
     public string TurnstileSiteKey { get; private set; } = string.Empty;
     public bool LimpiarCamposIniciales { get; private set; }
+    public bool MostrarCaptchaManual { get; private set; }
+    public string CaptchaManualCodigo { get; private set; } = string.Empty;
+    private const string RegisterCaptchaScope = "REGISTER";
 
     public sealed class UsuarioRegistroInput
     {
         [Required(ErrorMessage = "Ingrese su nombre completo.")]
-        [StringLength(180)]
+        [StringLength(180, ErrorMessage = "El nombre completo no puede exceder 180 caracteres.")]
         public string NombreCompleto { get; set; } = string.Empty;
 
-        [StringLength(30)]
+        [StringLength(30, ErrorMessage = "El telefono no puede exceder 30 caracteres.")]
         public string? Telefono { get; set; }
 
         [Required(ErrorMessage = "Ingrese su correo.")]
@@ -64,6 +73,7 @@ public class RegisterModel(
         Plan = NormalizarPlan(Plan);
         ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
         TurnstileSiteKey = turnstileOptions.Value.SiteKey;
+        ConfigurarCaptchaManual();
         LimpiarCamposIniciales = true;
     }
 
@@ -73,13 +83,14 @@ public class RegisterModel(
         Plan = NormalizarPlan(Plan);
         ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
         TurnstileSiteKey = turnstileOptions.Value.SiteKey;
+        ConfigurarCaptchaManual();
 
         if (!TryValidateModel(Usuario, nameof(Usuario)))
         {
             return Page();
         }
 
-        if (!await ValidarTurnstileAsync())
+        if (!await ValidarDesafioAccesoAsync())
         {
             return Page();
         }
@@ -133,18 +144,7 @@ public class RegisterModel(
 
     private static string TraducirErrorIdentity(IdentityError error)
     {
-        return error.Code switch
-        {
-            "DuplicateUserName" => "Ya existe una cuenta registrada con este correo.",
-            "DuplicateEmail" => "Ya existe una cuenta registrada con este correo.",
-            "InvalidEmail" => "Ingrese un correo electronico valido.",
-            "PasswordTooShort" => "La contrasena debe tener al menos 6 caracteres.",
-            "PasswordRequiresNonAlphanumeric" => "La contrasena debe incluir al menos un caracter especial.",
-            "PasswordRequiresDigit" => "La contrasena debe incluir al menos un numero.",
-            "PasswordRequiresLower" => "La contrasena debe incluir al menos una letra minuscula.",
-            "PasswordRequiresUpper" => "La contrasena debe incluir al menos una letra mayuscula.",
-            _ => error.Description
-        };
+        return IdentityErrorTranslator.Translate(error);
     }
 
     private static string? LimpiarTelefono(string? telefono)
@@ -191,12 +191,27 @@ public class RegisterModel(
         };
     }
 
-    private async Task<bool> ValidarTurnstileAsync()
+    private async Task<bool> ValidarDesafioAccesoAsync()
     {
+        if (MostrarCaptchaManual)
+        {
+            if (ManualCaptchaChallengeStore.Validate(HttpContext, RegisterCaptchaScope, CaptchaManual))
+            {
+                ManualCaptchaChallengeStore.Clear(HttpContext, RegisterCaptchaScope);
+                return true;
+            }
+
+            CaptchaManualCodigo = ManualCaptchaChallengeStore.Refresh(HttpContext, RegisterCaptchaScope);
+            ModelState.AddModelError(string.Empty, "El codigo captcha manual no es valido.");
+            return false;
+        }
+
         var token = (Request.Form["cf-turnstile-response"].ToString() ?? string.Empty).Trim();
         if (string.IsNullOrWhiteSpace(token))
         {
-            ModelState.AddModelError(string.Empty, "Completa la verificacion de seguridad.");
+            MostrarCaptchaManual = true;
+            CaptchaManualCodigo = ManualCaptchaChallengeStore.Refresh(HttpContext, RegisterCaptchaScope);
+            ModelState.AddModelError(string.Empty, "Completa la verificacion automatica o usa el captcha manual de respaldo.");
             return false;
         }
 
@@ -204,11 +219,28 @@ public class RegisterModel(
         var resultado = await turnstileValidationService.VerifyAsync(token, remoteIp, HttpContext.RequestAborted);
         if (resultado.Success)
         {
+            ManualCaptchaChallengeStore.Clear(HttpContext, RegisterCaptchaScope);
             return true;
         }
 
         logger.LogWarning("Turnstile rechazo registro. Errores: {Errores}", string.Join(",", resultado.ErrorCodes ?? Array.Empty<string>()));
-        ModelState.AddModelError(string.Empty, "No se pudo validar la verificacion de seguridad. Intenta nuevamente.");
+        MostrarCaptchaManual = true;
+        CaptchaManualCodigo = ManualCaptchaChallengeStore.Refresh(HttpContext, RegisterCaptchaScope);
+        ModelState.AddModelError(string.Empty, "No se pudo validar la verificacion automatica. Usa el captcha manual de respaldo.");
         return false;
+    }
+
+    private void ConfigurarCaptchaManual()
+    {
+        MostrarCaptchaManual = UsarCaptchaManual || string.IsNullOrWhiteSpace(TurnstileSiteKey);
+
+        if (MostrarCaptchaManual)
+        {
+            CaptchaManualCodigo = ManualCaptchaChallengeStore.GetOrCreate(HttpContext, RegisterCaptchaScope);
+            return;
+        }
+
+        ManualCaptchaChallengeStore.Clear(HttpContext, RegisterCaptchaScope);
+        CaptchaManualCodigo = string.Empty;
     }
 }

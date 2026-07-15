@@ -1,8 +1,10 @@
 @model SistemaAdministrativoWeb.ViewModels.Usuarios.UsuariosIndexViewModel
 @* Firma: FRANCO LARA - 10/07/2026 | Crea la vista General > Usuarios para registrar o vincular accesos a la cuenta administradora y asignarles empresas operativas. *@
+@* Firma: FRANCO LARA - 12/07/2026 | Limpia telefono y contrasena temporal al abrir el formulario, agrega visor de contrasena y retira las opciones de cuenta o empresa predeterminada para forzar la seleccion posterior de empresa. *@
 @{
     ViewData["Title"] = "Usuarios";
     ViewData["AdminShell"] = true;
+    var limpiarCamposIniciales = ViewData.ModelState.IsValid;
 }
 
 <section class="dashboard-shell subscription-shell">
@@ -36,7 +38,7 @@
             <p>Si el correo aun no existe en Identity, el sistema crea el acceso con contrasena temporal y luego lo liga a la cuenta administradora.</p>
         </div>
 
-        <form asp-action="GuardarUsuario" method="post">
+        <form asp-action="GuardarUsuario" method="post" autocomplete="off" data-clear-sensitive-fields="@limpiarCamposIniciales.ToString().ToLowerInvariant()">
             @Html.AntiForgeryToken()
             <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
@@ -53,37 +55,30 @@
                 </div>
                 <div class="col-md-4">
                     <label asp-for="Formulario.Telefono" class="form-label"></label>
-                    <input asp-for="Formulario.Telefono" class="form-control" />
+                    <input asp-for="Formulario.Telefono" class="form-control" autocomplete="off" inputmode="tel" />
                     <span asp-validation-for="Formulario.Telefono" class="text-danger"></span>
                 </div>
                 <div class="col-md-4">
                     <label asp-for="Formulario.PasswordTemporal" class="form-label"></label>
-                    <input asp-for="Formulario.PasswordTemporal" class="form-control" />
+                    <div class="auth-password-field">
+                        <input asp-for="Formulario.PasswordTemporal" class="form-control pe-5" autocomplete="new-password" />
+                        <button type="button"
+                                class="auth-password-toggle"
+                                data-password-toggle
+                                data-password-target="Formulario_PasswordTemporal"
+                                aria-label="Mostrar contrasena"
+                                aria-pressed="false">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
                     <span asp-validation-for="Formulario.PasswordTemporal" class="text-danger"></span>
-                    <small class="text-muted">Solo se usa si el correo aun no tiene cuenta creada.</small>
+                    <small class="text-muted">Solo se usa si el correo aun no tiene cuenta creada. Minimo 6 caracteres, con mayuscula, minuscula, numero y caracter especial.</small>
                 </div>
                 <div class="col-md-4">
                     <label asp-for="Formulario.RolCuenta" class="form-label"></label>
                     <select asp-for="Formulario.RolCuenta" asp-items="ViewBag.RoleOptions" class="form-select"></select>
                     <span asp-validation-for="Formulario.RolCuenta" class="text-danger"></span>
                 </div>
-                <div class="col-md-4 d-flex align-items-end">
-                    <div class="form-check">
-                        <input asp-for="Formulario.EsCuentaPredeterminada" class="form-check-input" />
-                        <label asp-for="Formulario.EsCuentaPredeterminada" class="form-check-label"></label>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mt-4">
-                <label asp-for="Formulario.IdEmpresaPredeterminada" class="form-label"></label>
-                <select asp-for="Formulario.IdEmpresaPredeterminada" class="form-select">
-                    <option value="">Sin empresa predeterminada</option>
-                    @foreach (var empresa in Model.EmpresasDisponibles)
-                    {
-                        <option value="@empresa.IdEmpresa">@empresa.CodigoEmpresa - @empresa.RazonSocial</option>
-                    }
-                </select>
             </div>
 
             <div class="mt-4">
@@ -161,4 +156,42 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const form = document.querySelector("form[data-clear-sensitive-fields]");
+            if (!form) {
+                return;
+            }
+
+            if (form.dataset.clearSensitiveFields === "true") {
+                const clearFields = () => {
+                    ["Formulario_Telefono", "Formulario_PasswordTemporal"].forEach((id) => {
+                        const field = document.getElementById(id);
+                        if (field) {
+                            field.value = "";
+                        }
+                    });
+                };
+
+                window.addEventListener("pageshow", () => window.setTimeout(clearFields, 120), { once: true });
+            }
+
+            document.querySelectorAll("[data-password-toggle]").forEach((button) => {
+                button.addEventListener("click", () => {
+                    const targetId = button.getAttribute("data-password-target");
+                    const field = targetId ? document.getElementById(targetId) : null;
+                    const icon = button.querySelector("i");
+                    if (!field || !icon) {
+                        return;
+                    }
+
+                    const visible = field.type === "text";
+                    field.type = visible ? "password" : "text";
+                    icon.className = visible ? "bi bi-eye" : "bi bi-eye-slash";
+                    button.setAttribute("aria-label", visible ? "Mostrar contrasena" : "Ocultar contrasena");
+                    button.setAttribute("aria-pressed", String(!visible).toLowerCase());
+                });
+            });
+        })();
+    </script>
 }

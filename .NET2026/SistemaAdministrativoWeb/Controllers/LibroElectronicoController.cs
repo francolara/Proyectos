@@ -27,16 +27,13 @@ public sealed class LibroElectronicoController(
         byte? mes = null,
         string? libroElectronico = null,
         string? moneda = null,
-        string? estado = null,
-        DateOnly? fechaDesde = null,
-        DateOnly? fechaHasta = null,
         string? operacion = null,
         int paginaPreview = 1,
         int paginaHistorial = 1,
         string? tokenDescarga = null,
         CancellationToken cancellationToken = default)
     {
-        var model = await ConstruirModeloBaseAsync(idEmpresa, anio, mes, libroElectronico, moneda, estado, fechaDesde, fechaHasta, paginaPreview, paginaHistorial, cancellationToken);
+        var model = await ConstruirModeloBaseAsync(idEmpresa, anio, mes, libroElectronico, moneda, paginaPreview, paginaHistorial, cancellationToken);
         model.TokenDescarga = tokenDescarga?.Trim() ?? string.Empty;
         model.PuedeDescargarTxt = !string.IsNullOrWhiteSpace(model.TokenDescarga) && model.PuedeDescargar;
 
@@ -68,7 +65,7 @@ public sealed class LibroElectronicoController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> GenerarTxt(LibroElectronicoViewModel model, CancellationToken cancellationToken = default)
     {
-        var vista = await ConstruirModeloBaseAsync(model.IdEmpresa, model.AnioSeleccionado, model.MesSeleccionado, model.LibroElectronicoSeleccionado, model.MonedaSeleccionada, model.EstadoSeleccionado, model.FechaDesde, model.FechaHasta, model.PaginaPreview, model.PaginaHistorial, cancellationToken);
+        var vista = await ConstruirModeloBaseAsync(model.IdEmpresa, model.AnioSeleccionado, model.MesSeleccionado, model.LibroElectronicoSeleccionado, model.MonedaSeleccionada, model.PaginaPreview, model.PaginaHistorial, cancellationToken);
 
         try
         {
@@ -121,9 +118,6 @@ public sealed class LibroElectronicoController(
         byte? mes,
         string? libroElectronico,
         string? moneda,
-        string? estado,
-        DateOnly? fechaDesde,
-        DateOnly? fechaHasta,
         int paginaPreview,
         int paginaHistorial,
         CancellationToken cancellationToken)
@@ -154,8 +148,7 @@ public sealed class LibroElectronicoController(
         var anioTrabajo = anio ?? (short)DateTime.Today.Year;
         var mesTrabajo = mes is >= 1 and <= 12 ? mes.Value : (byte)DateTime.Today.Month;
         var libroTrabajo = PleLibroElectronicoCatalogo.Normalizar(libroElectronico);
-        var monedaTrabajo = string.Equals(moneda?.Trim(), "USD", StringComparison.OrdinalIgnoreCase) ? "USD" : "PEN";
-        var estadoTrabajo = string.IsNullOrWhiteSpace(estado) ? "Todos" : estado.Trim();
+        var monedaTrabajo = "PEN";
 
         var model = new LibroElectronicoViewModel
         {
@@ -166,9 +159,6 @@ public sealed class LibroElectronicoController(
             MesSeleccionado = mesTrabajo,
             LibroElectronicoSeleccionado = libroTrabajo,
             MonedaSeleccionada = monedaTrabajo,
-            EstadoSeleccionado = estadoTrabajo,
-            FechaDesde = fechaDesde,
-            FechaHasta = fechaHasta,
             PaginaPreview = Math.Max(1, paginaPreview),
             PaginaHistorial = Math.Max(1, paginaHistorial),
             TamanoPaginaPreview = TamanoPaginaPreview,
@@ -187,22 +177,8 @@ public sealed class LibroElectronicoController(
                 new OpcionCatalogoViewModel { Valor = PleLibroElectronicoCatalogo.LibroDiario52, Texto = "5.2 - Libro Diario Simplificado" },
                 new OpcionCatalogoViewModel { Valor = PleLibroElectronicoCatalogo.LibroMayor61, Texto = "6.1 - Libro Mayor" }
             ],
-            MonedasDisponibles =
-            [
-                new OpcionCatalogoViewModel { Valor = "PEN", Texto = "Moneda nacional" },
-                new OpcionCatalogoViewModel { Valor = "USD", Texto = "Moneda extranjera" }
-            ],
-            EstadosDisponibles =
-            [
-                new OpcionCatalogoViewModel { Valor = "Todos", Texto = "Todos" },
-                new OpcionCatalogoViewModel { Valor = PleEstadoRegistroCatalogo.Vigente, Texto = "Registro vigente" },
-                new OpcionCatalogoViewModel { Valor = PleEstadoRegistroCatalogo.Omitido, Texto = "Registro omitido" },
-                new OpcionCatalogoViewModel { Valor = PleEstadoRegistroCatalogo.Ajustado, Texto = "Registro ajustado" },
-                new OpcionCatalogoViewModel { Valor = PleEstadoRegistroCatalogo.PeriodoAnterior, Texto = "Registro periodo anterior" }
-            ],
             PuedeVer = LibroElectronicoPermissions.TienePermiso(User, LibroElectronicoPermissions.Ver),
             PuedeConsultar = LibroElectronicoPermissions.TienePermiso(User, LibroElectronicoPermissions.Consultar),
-            PuedePrevisualizar = LibroElectronicoPermissions.TienePermiso(User, LibroElectronicoPermissions.Previsualizar),
             PuedeValidar = LibroElectronicoPermissions.TienePermiso(User, LibroElectronicoPermissions.Validar),
             PuedeGenerar = LibroElectronicoPermissions.TienePermiso(User, LibroElectronicoPermissions.GenerarTxt),
             PuedeDescargar = LibroElectronicoPermissions.TienePermiso(User, LibroElectronicoPermissions.DescargarTxt),
@@ -226,9 +202,9 @@ public sealed class LibroElectronicoController(
             Mes = model.MesSeleccionado,
             LibroElectronico = model.LibroElectronicoSeleccionado,
             Moneda = model.MonedaSeleccionada,
-            Estado = model.EstadoSeleccionado,
-            FechaDesde = model.FechaDesde,
-            FechaHasta = model.FechaHasta
+            Estado = "Todos",
+            FechaDesde = null,
+            FechaHasta = null
         };
     }
 

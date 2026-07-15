@@ -2,6 +2,7 @@
     ViewData["Title"] = "FralseCont";
 }
 <!-- Firma: FRANCO LARA - 10/07/2026 | Reorganiza la portada publica para mostrar primero una landing SaaS de FralseCont con tres planes de suscripcion y accesos al registro por plan, ajusta el branding visible a Sistema Contable con Fralse y Cont en dos colores y elimina la tarjeta informativa redundante. -->
+<!-- Firma: FRANCO LARA - 14/07/2026 | Resume la vista publica de planes para mostrar a primera vista los diferenciales clave de Gratis, Emprendedor y Contador, unifica beneficios base entre Emprendedor y Contador y deja la validacion CPE solo en Contador con un bloque expandible Ver detalle. -->
 
 <section class="nubecont-pricing-section" aria-labelledby="nubecont-pricing-title">
     <div class="nubecont-pricing-container">
@@ -43,23 +44,10 @@
                     <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>1 empresa.</span></li>
                     <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>1 usuario.</span></li>
                     <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Vigencia de 30 dias.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Registro limitado de compras.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Registro limitado de ventas.</span></li>
+                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Compras y ventas.</span></li>
+                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Registros limitados.</span></li>
                     <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Asientos contables limitados.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Plan de cuentas.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Clientes y proveedores.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Centros de costo.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Registro de compras y ventas.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Asientos manuales y automaticos.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Caja y Bancos.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Transferencias entre cuentas.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Aplicacion de notas de credito.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Reportes contables.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Balance de comprobacion.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Libro Diario.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Libro Mayor.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Registro de compras.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Registro de ventas.</span></li>
+                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Reportes contables base.</span></li>
                     <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Tipo de cambio manual.</span></li>
                     <li class="nubecont-plan-feature nubecont-plan-feature--unavailable"><i class="bi bi-dash-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Sin consulta de RUC y DNI en linea.</span></li>
                     <li class="nubecont-plan-feature nubecont-plan-feature--unavailable"><i class="bi bi-dash-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Sin tipo de cambio en linea.</span></li>
@@ -77,7 +65,7 @@
                 <div class="nubecont-plan-price-block">
                     <div class="nubecont-plan-price-row">
                         <span class="nubecont-plan-currency">S/</span>
-                        <span class="nubecont-plan-price">49.90</span>
+                        <span class="nubecont-plan-price">39.90</span>
                     </div>
                     <div class="nubecont-plan-period">PEN / mes</div>
                 </div>
@@ -97,30 +85,36 @@
 
                 <ul class="nubecont-plan-features">
                     <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Hasta 3 empresas.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Hasta 3 usuarios.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Compras ilimitadas.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Ventas ilimitadas.</span></li>
+                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Hasta 2 usuarios.</span></li>
+                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Compras.</span></li>
+                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Ventas.</span></li>
+                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Sin limite de registros.</span></li>
                     <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Asientos manuales y automaticos.</span></li>
+                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Tipo de cambio oficial en linea.</span></li>
+                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Sincronizacion mensual de tipos de cambio.</span></li>
                     <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Consulta de RUC y DNI en linea.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Caja y Bancos.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Cuentas corrientes.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Transferencias entre cuentas.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Pagos y cobros parciales.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Aplicacion de notas de credito.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Control de saldos pendientes.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Detracciones, percepciones y retenciones.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Centros de costo y cuentas destino.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Configuracion contable completa.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Cierre y reapertura de periodos.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Diferencia en cambio y ajuste de cuentas.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Asiento de apertura y cierre.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Reportes contables completos y PLE.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Copia de plan contable desde empresa base.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Tipo de cambio manual.</span></li>
-                    <li class="nubecont-plan-feature nubecont-plan-feature--unavailable"><i class="bi bi-dash-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Sin tipo de cambio en linea.</span></li>
-                    <li class="nubecont-plan-feature nubecont-plan-feature--unavailable"><i class="bi bi-dash-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Sin sincronizacion automatica de tipos de cambio.</span></li>
-                    <li class="nubecont-plan-feature nubecont-plan-feature--unavailable"><i class="bi bi-dash-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Sin validacion CPE.</span></li>
                 </ul>
+
+                <details class="nubecont-plan-details">
+                    <summary>Ver detalle</summary>
+                    <ul class="nubecont-plan-features">
+                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Caja y Bancos.</span></li>
+                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Cuentas corrientes.</span></li>
+                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Transferencias entre cuentas.</span></li>
+                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Pagos y cobros parciales.</span></li>
+                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Aplicacion de notas de credito.</span></li>
+                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Control de saldos pendientes.</span></li>
+                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Detracciones, percepciones y retenciones.</span></li>
+                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Centros de costo y cuentas destino.</span></li>
+                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Configuracion contable completa.</span></li>
+                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Cierre y reapertura de periodos.</span></li>
+                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Diferencia en cambio y ajuste de cuentas.</span></li>
+                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Asiento de apertura y cierre.</span></li>
+                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Reportes contables completos y PLE.</span></li>
+                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Copia de plan contable desde empresa base.</span></li>
+                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Tipo de cambio manual.</span></li>
+                    </ul>
+                </details>
             </article>
 
             <article class="nubecont-plan-card nubecont-plan-card--recommended">
@@ -132,7 +126,7 @@
                 <div class="nubecont-plan-price-block">
                     <div class="nubecont-plan-price-row">
                         <span class="nubecont-plan-currency">S/</span>
-                        <span class="nubecont-plan-price">99.90</span>
+                        <span class="nubecont-plan-price">89.90</span>
                     </div>
                     <div class="nubecont-plan-period">PEN / mes</div>
                 </div>
@@ -152,27 +146,28 @@
 
                 <ul class="nubecont-plan-features">
                     <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Hasta 10 empresas.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Hasta 10 usuarios.</span></li>
+                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Hasta 3 usuarios.</span></li>
                     <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Todo lo incluido en el plan Emprendedor.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Consulta de RUC y DNI en linea.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Gestion multiempresa.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Usuarios asignables por empresa.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Cambio rapido entre empresas.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Copia de plan contable y configuracion contable.</span></li>
                     <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Tipo de cambio oficial en linea.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Sincronizacion automatica de tipos de cambio.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Consulta del tipo de cambio por fecha.</span></li>
                     <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Sincronizacion mensual de tipos de cambio.</span></li>
+                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Consulta de RUC y DNI en linea.</span></li>
                     <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Validacion de comprobantes CPE.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Consulta del estado de comprobantes.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Registro del resultado de validacion.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Procesos contables avanzados.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Diferencia en cambio y ajuste de cuentas.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Asiento de apertura y cierre.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Periodos especiales 00, 13, 14 y 15.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Libros electronicos PLE e historial de archivos.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Reportes por empresa y soporte prioritario.</span></li>
                 </ul>
+
+                <details class="nubecont-plan-details">
+                    <summary>Ver detalle</summary>
+                    <ul class="nubecont-plan-features">
+                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Gestion multiempresa.</span></li>
+                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Usuarios asignables por empresa.</span></li>
+                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Cambio rapido entre empresas.</span></li>
+                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Consulta del estado de comprobantes.</span></li>
+                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Registro del resultado de validacion.</span></li>
+                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Procesos contables avanzados.</span></li>
+                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Periodos especiales 00, 13, 14 y 15.</span></li>
+                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Libros electronicos PLE e historial de archivos.</span></li>
+                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Reportes por empresa y soporte prioritario.</span></li>
+                    </ul>
+                </details>
             </article>
         </div>
     </div>

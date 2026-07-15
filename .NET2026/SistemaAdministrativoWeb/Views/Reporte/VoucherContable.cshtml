@@ -1,0 +1,363 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.VoucherContableViewModel
+
+@* Firma: FRANCO LARA - 11/07/2026 | Crea el voucher contable HTML A4 inspirado en rptVoucherContableA4 del legacy, reutilizando el asiento actual y habilitando impresion directa. *@
+
+@{
+    ViewData["Title"] = "Voucher contable";
+    ViewData["AdminShell"] = true;
+    var numeroVoucher = $"{Model.Periodo}-{Model.NumeroAsiento}";
+}
+
+<style>
+    .voucher-sheet {
+        max-width: 100%;
+    }
+
+    .voucher-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 1.5rem;
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+        background: linear-gradient(135deg, rgba(27, 94, 74, 0.12), rgba(15, 23, 42, 0.02));
+    }
+
+    .voucher-header strong,
+    .voucher-header span {
+        display: block;
+    }
+
+    .voucher-header strong {
+        font-size: 1.05rem;
+        letter-spacing: 0.06em;
+    }
+
+    .voucher-header span {
+        color: #52607a;
+        font-size: 0.82rem;
+    }
+
+    .voucher-title {
+        margin-top: 0.35rem;
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #10233f;
+    }
+
+    .voucher-meta-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.75rem;
+        padding: 1.25rem 1.5rem 0;
+    }
+
+    .voucher-meta-card {
+        padding: 0.85rem 0.95rem;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        border-radius: 0.9rem;
+        background: rgba(248, 250, 252, 0.85);
+    }
+
+    .voucher-meta-card span {
+        display: block;
+        color: #64748b;
+        font-size: 0.74rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 0.3rem;
+    }
+
+    .voucher-meta-card strong {
+        display: block;
+        color: #0f172a;
+        font-size: 0.95rem;
+    }
+
+    .voucher-glosa {
+        padding: 1rem 1.5rem 0;
+    }
+
+    .voucher-glosa-box {
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        border-radius: 0.9rem;
+        padding: 0.95rem 1rem;
+        background: rgba(255, 255, 255, 0.92);
+    }
+
+    .voucher-glosa-box span {
+        display: block;
+        color: #64748b;
+        font-size: 0.74rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 0.35rem;
+    }
+
+    .voucher-table-wrap {
+        padding: 1rem 1.5rem 1.5rem;
+    }
+
+    .voucher-table {
+        width: 100%;
+        table-layout: fixed;
+        font-size: 0.68rem;
+    }
+
+    .voucher-table thead th,
+    .voucher-table tbody td,
+    .voucher-table tfoot td {
+        padding: 0.38rem 0.3rem;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }
+
+    .voucher-table .voucher-account strong,
+    .voucher-table .voucher-doc strong {
+        display: block;
+        color: #0f172a;
+        font-size: 0.7rem;
+    }
+
+    .voucher-table .voucher-account div,
+    .voucher-table .voucher-doc div {
+        color: #52607a;
+        font-size: 0.62rem;
+    }
+
+    .voucher-table .voucher-description {
+        min-width: 0;
+    }
+
+    .voucher-col-item {
+        width: 4%;
+    }
+
+    .voucher-col-cuenta {
+        width: 16%;
+    }
+
+    .voucher-col-detalle {
+        width: 26%;
+    }
+
+    .voucher-col-documento {
+        width: 12%;
+    }
+
+    .voucher-col-centro {
+        width: 10%;
+    }
+
+    .voucher-col-tc {
+        width: 5%;
+    }
+
+    .voucher-col-monto {
+        width: 7%;
+    }
+
+    .voucher-notes {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+        padding: 0 1.5rem 1.5rem;
+    }
+
+    .voucher-note-box {
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        border-radius: 0.9rem;
+        padding: 0.9rem 1rem;
+        min-height: 6rem;
+        background: rgba(248, 250, 252, 0.72);
+    }
+
+    .voucher-note-box span {
+        display: block;
+        color: #64748b;
+        font-size: 0.74rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 0.35rem;
+    }
+
+    html[data-theme="dark"] .voucher-header {
+        border-bottom-color: rgba(148, 163, 184, 0.18);
+        background: linear-gradient(135deg, rgba(45, 212, 191, 0.12), rgba(15, 23, 42, 0.04));
+    }
+
+    html[data-theme="dark"] .voucher-title,
+    html[data-theme="dark"] .voucher-meta-card strong,
+    html[data-theme="dark"] .voucher-table .voucher-account strong,
+    html[data-theme="dark"] .voucher-table .voucher-doc strong {
+        color: #e2e8f0;
+    }
+
+    html[data-theme="dark"] .voucher-header span,
+    html[data-theme="dark"] .voucher-meta-card span,
+    html[data-theme="dark"] .voucher-table .voucher-account div,
+    html[data-theme="dark"] .voucher-table .voucher-doc div,
+    html[data-theme="dark"] .voucher-note-box span,
+    html[data-theme="dark"] .voucher-glosa-box span {
+        color: #94a3b8;
+    }
+
+    html[data-theme="dark"] .voucher-meta-card,
+    html[data-theme="dark"] .voucher-note-box,
+    html[data-theme="dark"] .voucher-glosa-box {
+        background: rgba(15, 23, 42, 0.68);
+        border-color: rgba(148, 163, 184, 0.14);
+    }
+
+    @@media (max-width: 991.98px) {
+        .voucher-meta-grid,
+        .voucher-notes {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 767.98px) {
+        .voucher-header,
+        .voucher-meta-grid,
+        .voucher-notes {
+            grid-template-columns: 1fr;
+            display: grid;
+        }
+    }
+</style>
+
+<section class="dashboard-shell">
+    <section class="workspace-window">
+        <div class="workspace-window-head no-print">
+            <div>
+                <span class="workspace-window-kicker">Reporte</span>
+                <h1>Voucher contable</h1>
+                <p>Vista HTML tipo A4 del comprobante contable basada en el formato legacy del sistema.</p>
+            </div>
+            <div class="workspace-window-badge">
+                <strong>@Model.EmpresaNombre</strong>
+                <span>@numeroVoucher</span>
+            </div>
+        </div>
+
+        <div class="workspace-window-body">
+            <section class="workspace-report-sheet voucher-sheet">
+                <div class="report-action-bar no-print">
+                    <a asp-controller="Asiento" asp-action="Editar" asp-route-idAsiento="@Model.IdAsiento" asp-route-periodo="@Model.Periodo" class="btn btn-outline-secondary">Volver al asiento</a>
+                    <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Imprimir</button>
+                </div>
+
+                <header class="voucher-header">
+                    <div>
+                        <strong>@Model.EmpresaNombre</strong>
+                        <span>RUC: @(string.IsNullOrWhiteSpace(Model.RucEmpresa) ? "-" : Model.RucEmpresa)</span>
+                        <div class="voucher-title">COMPROBANTE DE CONTABILIDAD</div>
+                    </div>
+                    <div class="text-md-end">
+                        <strong>Voucher @numeroVoucher</strong>
+                        <span>Origen: @Model.CodigoOrigen - @Model.NombreOrigen</span>
+                        <span>Fecha emision: @Model.FechaEmision.ToString("dd/MM/yyyy")</span>
+                    </div>
+                </header>
+
+                <section class="voucher-meta-grid">
+                    <article class="voucher-meta-card">
+                        <span>Moneda</span>
+                        <strong>@Model.Moneda</strong>
+                    </article>
+                    <article class="voucher-meta-card">
+                        <span>Tipo de cambio</span>
+                        <strong>@Model.TipoCambio.ToString("N3")</strong>
+                    </article>
+                    <article class="voucher-meta-card">
+                        <span>Referencia externa</span>
+                        <strong>@(string.IsNullOrWhiteSpace(Model.ReferenciaExterna) ? "-" : Model.ReferenciaExterna)</strong>
+                    </article>
+                    <article class="voucher-meta-card">
+                        <span>Lineas</span>
+                        <strong>@Model.Detalles.Count</strong>
+                    </article>
+                </section>
+
+                <section class="voucher-glosa">
+                    <div class="voucher-glosa-box">
+                        <span>Glosa</span>
+                        <strong>@(string.IsNullOrWhiteSpace(Model.Glosa) ? "-" : Model.Glosa)</strong>
+                    </div>
+                </section>
+
+                <div class="voucher-table-wrap">
+                    <table class="table app-table balance-a4-table voucher-table">
+                        <thead>
+                            <tr>
+                                <th class="voucher-col-item">Item</th>
+                                <th class="voucher-col-cuenta">Cuenta</th>
+                                <th class="voucher-col-detalle">Detalle</th>
+                                <th class="voucher-col-documento">Documento</th>
+                                <th class="voucher-col-centro">Centro costo</th>
+                                <th class="voucher-col-tc">TC</th>
+                                <th class="voucher-col-monto">Debe</th>
+                                <th class="voucher-col-monto">Haber</th>
+                                <th class="voucher-col-monto">Imp. S/</th>
+                                @if (Model.MuestraColumnaDolares)
+                                {
+                                    <th class="voucher-col-monto">Imp. US$</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Detalles)
+                            {
+                                <tr>
+                                    <td>@item.Item</td>
+                                    <td class="voucher-account">
+                                        <strong>@item.CodigoCuenta</strong>
+                                        <div>@item.NombreCuenta</div>
+                                    </td>
+                                    <td class="voucher-description">@(string.IsNullOrWhiteSpace(item.GlosaDetalle) ? "-" : item.GlosaDetalle)</td>
+                                    <td class="voucher-doc">
+                                        <strong>@(string.IsNullOrWhiteSpace(item.NumeroDocumento) ? "-" : item.NumeroDocumento)</strong>
+                                        <div>@($"{(string.IsNullOrWhiteSpace(item.TipoDocumento) ? "-" : item.TipoDocumento)} / {(string.IsNullOrWhiteSpace(item.Serie) ? "-" : item.Serie)} / {(string.IsNullOrWhiteSpace(item.Referencia) ? "-" : item.Referencia)}")</div>
+                                    </td>
+                                    <td>@(string.IsNullOrWhiteSpace(item.CentroCosto) ? "-" : item.CentroCosto)</td>
+                                    <td class="workspace-money-cell">@item.TipoCambio.ToString("N3")</td>
+                                    <td class="workspace-money-cell">@item.Debe.ToString("N2")</td>
+                                    <td class="workspace-money-cell">@item.Haber.ToString("N2")</td>
+                                    <td class="workspace-money-cell">@item.ImporteSoles.ToString("N2")</td>
+                                    @if (Model.MuestraColumnaDolares)
+                                    {
+                                        <td class="workspace-money-cell">@item.ImporteDolares.ToString("N2")</td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr class="balance-a4-total-row">
+                                <td colspan="6">Totales</td>
+                                <td class="workspace-money-cell">@Model.TotalDebe.ToString("N2")</td>
+                                <td class="workspace-money-cell">@Model.TotalHaber.ToString("N2")</td>
+                                <td class="workspace-money-cell">@Model.TotalSoles.ToString("N2")</td>
+                                @if (Model.MuestraColumnaDolares)
+                                {
+                                    <td class="workspace-money-cell">@Model.TotalDolares.ToString("N2")</td>
+                                }
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <section class="voucher-notes">
+                    <article class="voucher-note-box">
+                        <span>Observacion</span>
+                        <strong>@(string.IsNullOrWhiteSpace(Model.Observacion) ? "-" : Model.Observacion)</strong>
+                    </article>
+                    <article class="voucher-note-box">
+                        <span>Resumen</span>
+                        <strong>Debe: @Model.TotalDebe.ToString("N2") | Haber: @Model.TotalHaber.ToString("N2")</strong>
+                        <div class="mt-2">Moneda base del asiento: @Model.Moneda</div>
+                    </article>
+                </section>
+            </section>
+        </div>
+    </section>
+</section>

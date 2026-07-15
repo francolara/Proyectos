@@ -33,7 +33,7 @@ public sealed class TipoCambioFormViewModel
     public decimal VentaSbs { get; set; } = 1m;
 
     [Required(ErrorMessage = "Seleccione la fuente.")]
-    [StringLength(50)]
+    [StringLength(50, ErrorMessage = "La fuente no puede exceder 50 caracteres.")]
     public string Fuente { get; set; } = "MANUAL";
 
     public bool Estado { get; set; } = true;

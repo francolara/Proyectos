@@ -18,21 +18,25 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="FralseTech.Web\**" />
     <Compile Remove="temp_codex_build\**" />
     <Compile Remove="tmp\**" />
     <Compile Remove="tmp_build\**" />
     <Compile Remove="tmp_build_*\**" />
     <Compile Remove="tmp_build_sisadm\**" />
+    <Content Remove="FralseTech.Web\**" />
     <Content Remove="temp_codex_build\**" />
     <Content Remove="tmp\**" />
     <Content Remove="tmp_build\**" />
     <Content Remove="tmp_build_*\**" />
     <Content Remove="tmp_build_sisadm\**" />
+    <EmbeddedResource Remove="FralseTech.Web\**" />
     <EmbeddedResource Remove="temp_codex_build\**" />
     <EmbeddedResource Remove="tmp\**" />
     <EmbeddedResource Remove="tmp_build\**" />
     <EmbeddedResource Remove="tmp_build_*\**" />
     <EmbeddedResource Remove="tmp_build_sisadm\**" />
+    <None Remove="FralseTech.Web\**" />
     <None Remove="temp_codex_build\**" />
     <None Remove="tmp\**" />
     <None Remove="tmp_build\**" />

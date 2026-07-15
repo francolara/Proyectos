@@ -31,6 +31,11 @@ public class HomeController(
             if (!string.IsNullOrWhiteSpace(aspNetUserId))
             {
                 var contextoLogin = await cuentaAdministradoraRepository.ObtenerContextoLoginUsuarioAsync(aspNetUserId, cancellationToken);
+                if (contextoLogin is null || !contextoLogin.TieneAcceso)
+                {
+                    return RedirectToAction("Index", "EmpresaContexto");
+                }
+
                 if (contextoLogin?.TieneAcceso == true)
                 {
                     if (contextoLogin.SoloModulosCuenta)

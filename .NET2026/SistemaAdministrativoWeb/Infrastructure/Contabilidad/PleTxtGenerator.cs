@@ -12,10 +12,10 @@ public sealed class PleTxtGenerator : IPleTxtGenerator
         return GenerarAsync(items.Select(item => string.Join('|',
             item.PeriodoPle,
             item.Cuo,
-            item.CorrelativoAsiento,
             item.CorrelativoMovimiento,
             item.CodigoCuentaContable,
             item.CodigoUnidadOperacion,
+            item.CodigoCentroCosto,
             item.CodigoMoneda,
             item.TipoDocumentoEmisor,
             item.NumeroDocumentoEmisor,
@@ -29,7 +29,7 @@ public sealed class PleTxtGenerator : IPleTxtGenerator
             Sanitizar(item.GlosaReferencial),
             FormatearImporte(item.Debe),
             FormatearImporte(item.Haber),
-            Sanitizar(item.InformacionComplementaria),
+            FormatearReferenciaEstructuradaLibroDiario51(item),
             item.EstadoOperacion) + '|'), cancellationToken);
     }
 
@@ -45,7 +45,7 @@ public sealed class PleTxtGenerator : IPleTxtGenerator
             item.CodigoMoneda,
             FormatearImporte(item.Debe),
             FormatearImporte(item.Haber),
-            item.EstadoOperacion) + '|'), cancellationToken);
+            item.EstadoOperacion)), cancellationToken);
     }
 
     public Task<byte[]> GenerarLibroMayor61Async(IReadOnlyCollection<LibroMayor61Dto> items, CancellationToken cancellationToken = default)
@@ -60,7 +60,7 @@ public sealed class PleTxtGenerator : IPleTxtGenerator
             item.CodigoMoneda,
             FormatearImporte(item.Debe),
             FormatearImporte(item.Haber),
-            item.EstadoOperacion) + '|'), cancellationToken);
+            item.EstadoOperacion)), cancellationToken);
     }
 
     private static Task<byte[]> GenerarAsync(IEnumerable<string> lineas, CancellationToken cancellationToken)
@@ -92,4 +92,20 @@ public sealed class PleTxtGenerator : IPleTxtGenerator
             .Replace("|", "/", StringComparison.Ordinal)
             .Trim();
     }
+
+    private static string FormatearReferenciaEstructuradaLibroDiario51(LibroDiario51Dto item)
+    {
+        var codigoLibro = Sanitizar(item.CodigoLibroRelacionado);
+        if (string.IsNullOrWhiteSpace(codigoLibro))
+        {
+            return Sanitizar(item.InformacionComplementaria);
+        }
+
+        return string.Concat(
+            codigoLibro,
+            Sanitizar(item.PeriodoPle),
+            Sanitizar(item.Cuo),
+            Sanitizar(item.CorrelativoMovimiento));
+    }
+
 }

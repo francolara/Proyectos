@@ -16,17 +16,17 @@ public sealed class UsuarioCuentaFormViewModel
 {
     [Display(Name = "Nombre completo")]
     [Required(ErrorMessage = "Ingrese el nombre del usuario.")]
-    [StringLength(180)]
+    [StringLength(180, ErrorMessage = "El nombre del usuario no puede exceder 180 caracteres.")]
     public string NombreCompleto { get; set; } = string.Empty;
 
     [Display(Name = "Correo")]
     [Required(ErrorMessage = "Ingrese el correo del usuario.")]
     [EmailAddress(ErrorMessage = "Ingrese un correo valido.")]
-    [StringLength(256)]
+    [StringLength(256, ErrorMessage = "El correo no puede exceder 256 caracteres.")]
     public string Correo { get; set; } = string.Empty;
 
     [Display(Name = "Telefono")]
-    [StringLength(30)]
+    [StringLength(30, ErrorMessage = "El telefono no puede exceder 30 caracteres.")]
     public string? Telefono { get; set; }
 
     [Display(Name = "Contrasena temporal")]

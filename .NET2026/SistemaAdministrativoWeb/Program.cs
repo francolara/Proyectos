@@ -184,6 +184,7 @@ app.UseHttpsRedirection();
 app.UseRouting();
 app.UseSession();
 app.UseAuthentication();
+app.UseMiddleware<TemporaryPasswordEnforcementMiddleware>();
 app.UseMiddleware<ActiveCompanySessionValidationMiddleware>();
 app.UseAuthorization();
 

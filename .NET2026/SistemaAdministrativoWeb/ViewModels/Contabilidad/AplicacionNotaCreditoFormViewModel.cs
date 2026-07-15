@@ -5,16 +5,16 @@ namespace SistemaAdministrativoWeb.ViewModels.Contabilidad;
 public sealed class AplicacionNotaCreditoFormViewModel
 {
     [Required(ErrorMessage = "Seleccione si la aplicacion es para cliente o proveedor.")]
-    [StringLength(1)]
+    [StringLength(1, ErrorMessage = "El tipo de persona no puede exceder 1 caracter.")]
     public string TipoPersona { get; set; } = "C";
 
     [Range(1, int.MaxValue, ErrorMessage = "Seleccione la persona a trabajar.")]
     public int? IdPersona { get; set; }
 
-    [StringLength(200)]
+    [StringLength(200, ErrorMessage = "El nombre de la persona no puede exceder 200 caracteres.")]
     public string PersonaTexto { get; set; } = string.Empty;
 
-    [StringLength(20)]
+    [StringLength(20, ErrorMessage = "El numero de documento no puede exceder 20 caracteres.")]
     public string NumeroDocumentoPersona { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Ingrese la fecha de aplicacion.")]
@@ -23,7 +23,7 @@ public sealed class AplicacionNotaCreditoFormViewModel
 
     public int? IdMoneda { get; set; }
 
-    [StringLength(50)]
+    [StringLength(50, ErrorMessage = "La moneda no puede exceder 50 caracteres.")]
     public string MonedaTexto { get; set; } = string.Empty;
 
     [Range(typeof(decimal), "0.000001", "999999999999", ErrorMessage = "Ingrese un tipo de cambio mayor a cero.")]
@@ -39,9 +39,9 @@ public sealed class AplicacionNotaCreditoFormViewModel
     public decimal ImporteAplicado { get; set; }
 
     [Required(ErrorMessage = "Ingrese la glosa de la aplicacion.")]
-    [StringLength(300)]
+    [StringLength(300, ErrorMessage = "La glosa no puede exceder 300 caracteres.")]
     public string Glosa { get; set; } = string.Empty;
 
-    [StringLength(500)]
+    [StringLength(500, ErrorMessage = "La observacion no puede exceder 500 caracteres.")]
     public string? Observacion { get; set; }
 }

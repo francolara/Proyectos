@@ -86,8 +86,32 @@ public sealed class ModulePermissionService(
             };
         }
 
-        if (!hasAccess || string.IsNullOrWhiteSpace(moduleCode))
+        if (string.IsNullOrWhiteSpace(moduleCode))
         {
+            return new ModuleAccessResult
+            {
+                IsAllowed = false,
+                Scope = ResolveScope(moduleCode),
+                HasCompanyContext = hasCompanyContext,
+                Message = "El usuario no tiene acceso configurado a la cuenta administradora."
+            };
+        }
+
+        if (!hasAccess)
+        {
+            if (string.Equals(moduleCode, "EMPRESAS", StringComparison.OrdinalIgnoreCase)
+                && (operation == ModulePermissionOperation.View
+                    || operation == ModulePermissionOperation.Create
+                    || operation == ModulePermissionOperation.CreateOrEdit))
+            {
+                return new ModuleAccessResult
+                {
+                    IsAllowed = true,
+                    Scope = ModuleScope.Account,
+                    HasCompanyContext = false
+                };
+            }
+
             return new ModuleAccessResult
             {
                 IsAllowed = false,
@@ -300,6 +324,12 @@ public sealed class ModulePermissionService(
             return false;
         }
 
+        if (string.Equals(moduleCode, "DASHBOARD", StringComparison.OrdinalIgnoreCase))
+        {
+            return loginContext?.SoloModulosCuenta == false
+                && (loginContext.CantidadEmpresasAsignadas > 0 || hasCompanyContext);
+        }
+
         if (string.Equals(moduleCode, "AYUDA", StringComparison.OrdinalIgnoreCase))
         {
             return true;
@@ -346,8 +376,7 @@ public sealed class ModulePermissionService(
 
     private static bool IsAdministrativeRole(string? roleCode)
     {
-        return string.Equals(roleCode, "ADMINISTRADORCUENTA", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(roleCode, "SUPERVISOR", StringComparison.OrdinalIgnoreCase);
+        return string.Equals(roleCode, "ADMINISTRADORCUENTA", StringComparison.OrdinalIgnoreCase);
     }
 
     private static ModuleScope ResolveScope(string? moduleCode)

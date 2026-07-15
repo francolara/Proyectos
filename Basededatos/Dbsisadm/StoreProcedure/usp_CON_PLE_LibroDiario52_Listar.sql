@@ -3,6 +3,8 @@
 -- Create date:   07/07/2026
 -- Description:   Lista la estructura simplificada del Libro Diario PLE formato 5.2 desde los mismos movimientos contables del diario.
 -- =============================================
+-- Firma: FRANCO LARA - 13/07/2026 | Fija la exportacion PLE 5.2 a moneda PEN, elimina la bifurcacion por USD y usa siempre TotalImporteS como importe base de Debe y Haber.
+-- Firma: FRANCO LARA - 14/07/2026 | Incluye el periodo 00 al exportar enero y agrega en diciembre los periodos 12, 13, 14 y 15 para que el libro simplificado considere apertura y cierre anual, manteniendo la nocion de cierre anual solo en 14 y 15.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_PLE_LibroDiario52_Listar
     @IdEmpresa INT,
@@ -21,8 +23,11 @@ BEGIN
 
         DECLARE @Periodo CHAR(6) = CONVERT(CHAR(4), @IdAnno) + RIGHT('0' + CONVERT(VARCHAR(2), @Mes), 2);
         DECLARE @PeriodoPle CHAR(8) = @Periodo + '00';
-        DECLARE @MonedaTrabajo VARCHAR(3) = CASE WHEN UPPER(LTRIM(RTRIM(ISNULL(@Moneda, 'PEN')))) = 'USD' THEN 'USD' ELSE 'PEN' END;
         DECLARE @EstadoTrabajo VARCHAR(10) = NULLIF(LTRIM(RTRIM(@Estado)), '');
+        DECLARE @PeriodoApertura CHAR(6) = CONVERT(CHAR(4), @IdAnno) + '00';
+        DECLARE @PeriodoAjusteFinal CHAR(6) = CONVERT(CHAR(4), @IdAnno) + '13';
+        DECLARE @PeriodoCierreResultados CHAR(6) = CONVERT(CHAR(4), @IdAnno) + '14';
+        DECLARE @PeriodoCierreInventarios CHAR(6) = CONVERT(CHAR(4), @IdAnno) + '15';
 
         SELECT
             @PeriodoPle AS PeriodoPle,
@@ -31,9 +36,9 @@ BEGIN
             a.FechaAsiento AS FechaOperacion,
             REPLACE(REPLACE(COALESCE(NULLIF(LTRIM(RTRIM(d.GlosaDetalle)), ''), a.Glosa, N''), CHAR(13), ' '), CHAR(10), ' ') AS Glosa,
             p.CodigoCuenta AS CodigoCuentaContable,
-            m.CodigoMoneda AS CodigoMoneda,
-            CASE WHEN d.DH = 'D' THEN CASE WHEN @MonedaTrabajo = 'USD' THEN d.TotalImporteD ELSE d.TotalImporteS END ELSE 0 END AS Debe,
-            CASE WHEN d.DH = 'H' THEN CASE WHEN @MonedaTrabajo = 'USD' THEN d.TotalImporteD ELSE d.TotalImporteS END ELSE 0 END AS Haber,
+            'PEN' AS CodigoMoneda,
+            CASE WHEN d.DH = 'D' THEN d.TotalImporteS ELSE 0 END AS Debe,
+            CASE WHEN d.DH = 'H' THEN d.TotalImporteS ELSE 0 END AS Haber,
             CASE
                 WHEN @EstadoTrabajo IS NULL OR @EstadoTrabajo = 'Todos' THEN '1'
                 WHEN @EstadoTrabajo IN ('1', '6', '8', '9') THEN @EstadoTrabajo
@@ -45,10 +50,12 @@ BEGIN
             ON d.IdAsiento = a.IdAsiento
         INNER JOIN dbo.CON_PlanCuenta AS p
             ON p.IdPlanCuenta = d.IdPlanCuenta
-        INNER JOIN dbo.ADM_Moneda AS m
-            ON m.IdMoneda = a.IdMoneda
         WHERE a.IdEmpresa = @IdEmpresa
-          AND a.Periodo = @Periodo
+          AND (
+                a.Periodo = @Periodo
+                OR (@Mes = 1 AND a.Periodo = @PeriodoApertura)
+                OR (@Mes = 12 AND a.Periodo IN (@PeriodoAjusteFinal, @PeriodoCierreResultados, @PeriodoCierreInventarios))
+              )
           AND (@FechaDesde IS NULL OR a.FechaAsiento >= @FechaDesde)
           AND (@FechaHasta IS NULL OR a.FechaAsiento <= @FechaHasta)
           AND (
@@ -57,6 +64,7 @@ BEGIN
                 OR @EstadoTrabajo IN ('1', '6', '8', '9')
               )
         ORDER BY
+            a.Periodo,
             a.FechaAsiento,
             a.IdAsiento,
             d.Item;

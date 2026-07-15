@@ -1,0 +1,327 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.CajaBancoEstadoCuentaViewModel
+
+@* Firma: FRANCO LARA - 12/07/2026 | Crea el reporte HTML imprimible Estado de Cuenta para Caja y Bancos, mostrando saldos iniciales, movimientos del mes y saldo final de la cuenta corriente seleccionada. *@
+
+@{
+    ViewData["Title"] = "Estado de cuenta";
+    ViewData["AdminShell"] = true;
+    var textInfo = System.Globalization.CultureInfo.CurrentCulture.TextInfo;
+    var periodoTexto = textInfo.ToTitleCase(new DateTime(Model.AnioSeleccionado, Model.MesSeleccionado, 1).ToString("MMMM 'de' yyyy"));
+}
+
+<style>
+    .bank-sheet {
+        max-width: 100%;
+    }
+
+    .bank-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 1.5rem;
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+        background: linear-gradient(135deg, rgba(12, 74, 110, 0.12), rgba(15, 23, 42, 0.02));
+    }
+
+    .bank-header strong,
+    .bank-header span {
+        display: block;
+    }
+
+    .bank-header strong {
+        font-size: 1.05rem;
+        letter-spacing: 0.06em;
+    }
+
+    .bank-header span {
+        color: #52607a;
+        font-size: 0.82rem;
+    }
+
+    .bank-title {
+        margin-top: 0.35rem;
+        font-size: 1.45rem;
+        font-weight: 800;
+        color: #10233f;
+    }
+
+    .bank-meta-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.75rem;
+        padding: 1.25rem 1.5rem 0;
+    }
+
+    .bank-meta-card {
+        padding: 0.85rem 0.95rem;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        border-radius: 0.9rem;
+        background: rgba(248, 250, 252, 0.85);
+    }
+
+    .bank-meta-card span {
+        display: block;
+        color: #64748b;
+        font-size: 0.74rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 0.3rem;
+    }
+
+    .bank-meta-card strong {
+        display: block;
+        color: #0f172a;
+        font-size: 0.95rem;
+    }
+
+    .bank-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 0.75rem;
+        padding: 1rem 1.5rem 0;
+    }
+
+    .bank-table-wrap {
+        padding: 1rem 1.5rem 1.5rem;
+    }
+
+    .bank-table {
+        width: 100%;
+        table-layout: fixed;
+        font-size: 0.7rem;
+    }
+
+    .bank-table thead th,
+    .bank-table tbody td,
+    .bank-table tfoot td {
+        padding: 0.4rem 0.35rem;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }
+
+    .bank-table .bank-op-cell strong {
+        display: block;
+        color: #0f172a;
+        font-size: 0.72rem;
+    }
+
+    .bank-table .bank-op-cell div {
+        color: #52607a;
+        font-size: 0.66rem;
+    }
+
+    .bank-table .bank-description {
+        min-width: 0;
+    }
+
+    .bank-col-numero {
+        width: 5%;
+    }
+
+    .bank-col-fecha {
+        width: 9%;
+    }
+
+    .bank-col-tipo {
+        width: 7%;
+    }
+
+    .bank-col-operacion {
+        width: 13%;
+    }
+
+    .bank-col-persona {
+        width: 12%;
+    }
+
+    .bank-col-documento {
+        width: 11%;
+    }
+
+    .bank-col-glosa {
+        width: 22%;
+    }
+
+    .bank-col-monto {
+        width: 7%;
+    }
+
+    html[data-theme="dark"] .bank-header {
+        border-bottom-color: rgba(148, 163, 184, 0.18);
+        background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.04));
+    }
+
+    html[data-theme="dark"] .bank-title,
+    html[data-theme="dark"] .bank-meta-card strong,
+    html[data-theme="dark"] .bank-table .bank-op-cell strong {
+        color: #e2e8f0;
+    }
+
+    html[data-theme="dark"] .bank-header span,
+    html[data-theme="dark"] .bank-meta-card span,
+    html[data-theme="dark"] .bank-table .bank-op-cell div {
+        color: #94a3b8;
+    }
+
+    html[data-theme="dark"] .bank-meta-card {
+        background: rgba(15, 23, 42, 0.68);
+        border-color: rgba(148, 163, 184, 0.14);
+    }
+
+    @@media (max-width: 991.98px) {
+        .bank-meta-grid,
+        .bank-summary-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 767.98px) {
+        .bank-header,
+        .bank-meta-grid,
+        .bank-summary-grid {
+            grid-template-columns: 1fr;
+            display: grid;
+        }
+    }
+</style>
+
+<section class="dashboard-shell">
+    <section class="workspace-window">
+        <div class="workspace-window-head no-print">
+            <div>
+                <span class="workspace-window-kicker">Reporte</span>
+                <h1>Estado de cuenta</h1>
+                <p>Vista HTML imprimible del movimiento mensual de la cuenta corriente seleccionada.</p>
+            </div>
+            <div class="workspace-window-badge">
+                <strong>@Model.EmpresaNombre</strong>
+                <span>@periodoTexto</span>
+            </div>
+        </div>
+
+        <div class="workspace-window-body">
+            <section class="workspace-report-sheet bank-sheet">
+                <div class="report-action-bar no-print">
+                    <a asp-action="Index"
+                       asp-route-idBancoConfiguracionEmpresa="@Model.IdBancoConfiguracionEmpresa"
+                       asp-route-anio="@Model.AnioSeleccionado"
+                       asp-route-mes="@Model.MesSeleccionado"
+                       class="btn btn-outline-secondary">Volver a Caja y Bancos</a>
+                    <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Imprimir</button>
+                </div>
+
+                <header class="bank-header">
+                    <div>
+                        <strong>@Model.EmpresaNombre</strong>
+                        <span>@Model.NombreBanco</span>
+                        <div class="bank-title">ESTADO DE CUENTA</div>
+                    </div>
+                    <div class="text-md-end">
+                        <strong>@Model.NroCuentaCorriente</strong>
+                        <span>Moneda: @Model.CodigoMoneda - @Model.NombreMoneda</span>
+                        <span>Periodo: @periodoTexto</span>
+                    </div>
+                </header>
+
+                <section class="bank-meta-grid">
+                    <article class="bank-meta-card">
+                        <span>Titular</span>
+                        <strong>@(string.IsNullOrWhiteSpace(Model.Titular) ? "-" : Model.Titular)</strong>
+                    </article>
+                    <article class="bank-meta-card">
+                        <span>Cuenta contable</span>
+                        <strong>@Model.CodigoCuenta - @Model.NombreCuenta</strong>
+                    </article>
+                    <article class="bank-meta-card">
+                        <span>Periodo saldo inicial</span>
+                        <strong>@(string.IsNullOrWhiteSpace(Model.PeriodoSaldoInicial) ? "-" : Model.PeriodoSaldoInicial)</strong>
+                    </article>
+                    <article class="bank-meta-card">
+                        <span>Saldo inicial neto</span>
+                        <strong>@Model.SaldoInicial.ToString("N2")</strong>
+                    </article>
+                </section>
+
+                <section class="bank-summary-grid">
+                    <article class="bank-meta-card">
+                        <span>Saldo inicial debe</span>
+                        <strong>@Model.SaldoInicialDebe.ToString("N2")</strong>
+                    </article>
+                    <article class="bank-meta-card">
+                        <span>Saldo inicial haber</span>
+                        <strong>@Model.SaldoInicialHaber.ToString("N2")</strong>
+                    </article>
+                    <article class="bank-meta-card">
+                        <span>Ingresos del mes</span>
+                        <strong>@Model.IngresosMes.ToString("N2")</strong>
+                    </article>
+                    <article class="bank-meta-card">
+                        <span>Egresos del mes</span>
+                        <strong>@Model.EgresosMes.ToString("N2")</strong>
+                    </article>
+                    <article class="bank-meta-card">
+                        <span>Saldo final</span>
+                        <strong>@Model.SaldoFinal.ToString("N2")</strong>
+                    </article>
+                </section>
+
+                <div class="bank-table-wrap">
+                    <table class="table app-table balance-a4-table bank-table">
+                        <thead>
+                            <tr>
+                                <th class="bank-col-numero">Nro</th>
+                                <th class="bank-col-fecha">Fecha</th>
+                                <th class="bank-col-tipo">Tipo</th>
+                                <th class="bank-col-operacion">Operacion</th>
+                                <th class="bank-col-persona">Persona</th>
+                                <th class="bank-col-documento">Nro operacion</th>
+                                <th class="bank-col-glosa">Glosa</th>
+                                <th class="bank-col-monto">Ingreso</th>
+                                <th class="bank-col-monto">Egreso</th>
+                                <th class="bank-col-monto">Saldo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Movimientos.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="10">No se encontraron movimientos para el periodo seleccionado.</td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var item in Model.Movimientos)
+                                {
+                                    var tipoTexto = string.Equals(item.TipoMovimiento, "I", StringComparison.OrdinalIgnoreCase) ? "Ingreso" : "Egreso";
+                                    <tr>
+                                        <td>@item.NumeroMovimiento</td>
+                                        <td>@item.FechaEmision.ToString("dd/MM/yyyy")</td>
+                                        <td>@tipoTexto</td>
+                                        <td class="bank-op-cell">
+                                            <strong>@item.TipoOperacion</strong>
+                                        </td>
+                                        <td>@(string.IsNullOrWhiteSpace(item.NombrePersona) ? "-" : item.NombrePersona)</td>
+                                        <td>@(string.IsNullOrWhiteSpace(item.NumeroOperacion) ? "-" : item.NumeroOperacion)</td>
+                                        <td class="bank-description">@item.Glosa</td>
+                                        <td class="workspace-money-cell">@item.Ingreso.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@item.Egreso.ToString("N2")</td>
+                                        <td class="workspace-money-cell">@item.SaldoAcumulado.ToString("N2")</td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr class="balance-a4-total-row">
+                                <td colspan="7">Totales del periodo</td>
+                                <td class="workspace-money-cell">@Model.IngresosMes.ToString("N2")</td>
+                                <td class="workspace-money-cell">@Model.EgresosMes.ToString("N2")</td>
+                                <td class="workspace-money-cell">@Model.SaldoFinal.ToString("N2")</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </section>
+</section>

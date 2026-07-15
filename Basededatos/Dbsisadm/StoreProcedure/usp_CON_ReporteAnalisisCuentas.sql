@@ -3,6 +3,7 @@
 -- Create date:   06/07/2026
 -- Description:   Replica el reporte legacy Analisis de cuentas sobre CON_Asiento y CON_AsientoDetalle usando NumeroDocumento como auxiliar funcional y la clave documental NumeroDocumento + TipoDocumento + Serie + ReferenciaLinea.
 -- =============================================
+-- Firma: FRANCO LARA - 11/07/2026 | Corrige el calculo multimoneda del analisis de cuentas para que los importes dolarizados del reporte siempre usen TotalImporteD por linea y no dependan de la moneda fija del plan de cuentas.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_ReporteAnalisisCuentas
     @IdEmpresa INT,
@@ -130,11 +131,11 @@ BEGIN
                 ELSE 0
             END,
             CASE
-                WHEN d.DH = 'D' AND p.IdMoneda = 'USD' THEN d.TotalImporteD
+                WHEN d.DH = 'D' THEN d.TotalImporteD
                 ELSE 0
             END,
             CASE
-                WHEN d.DH = 'H' AND p.IdMoneda = 'USD' THEN d.TotalImporteD
+                WHEN d.DH = 'H' THEN d.TotalImporteD
                 ELSE 0
             END
         FROM dbo.CON_AsientoDetalle AS d

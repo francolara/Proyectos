@@ -16,7 +16,7 @@ public sealed class CompraDetalleFormViewModel
     public int? IdTipoAfectacionIGV { get; set; } = 1;
 
     [Required(ErrorMessage = "Ingrese la descripcion del concepto.")]
-    [StringLength(250)]
+    [StringLength(250, ErrorMessage = "La descripcion no puede exceder 250 caracteres.")]
     public string Descripcion { get; set; } = string.Empty;
 
     [Range(typeof(decimal), "0.0001", "999999999999")]

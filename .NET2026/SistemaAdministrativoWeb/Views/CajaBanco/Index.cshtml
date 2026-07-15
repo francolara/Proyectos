@@ -9,6 +9,8 @@
 @* Firma: FRANCO LARA - 02/07/2026 | Corrige la seleccion visible de cuenta corriente, anio y mes en caja y bancos para que el periodo mostrado respete el contexto devuelto por la opcion, y convierte el numero de asiento del listado en acceso directo al asiento generado. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Autoejecuta la consulta de Caja y Bancos al cambiar cuenta corriente o periodo y habilita el boton Consultar solo cuando existe una cuenta seleccionada. *@
 @* Firma: FRANCO LARA - 09/07/2026 | Renombra Documento a Nro operacion en el listado de Caja y Bancos para reflejar el dato operativo de la transaccion bancaria. *@
+@* Firma: FRANCO LARA - 12/07/2026 | Agrega el acceso Estado de Cuenta al costado de Registrar movimiento para abrir el reporte HTML imprimible de la cuenta corriente seleccionada. *@
+@* Firma: FRANCO LARA - 13/07/2026 | Corrige el acceso Estado de Cuenta para abrir el reporte en la misma pestana y evitar ventanas adicionales al imprimir desde Caja y Bancos. *@
 
 @{
     ViewData["Title"] = "Caja y Bancos";
@@ -64,6 +66,14 @@
                 <p>Consulta los movimientos de cuentas corrientes y abre el registro para ajustar o revisar el detalle.</p>
             </div>
             <div class="workspace-row-actions">
+                <a asp-action="EstadoCuenta"
+                   asp-route-idBancoConfiguracionEmpresa="@Model.IdBancoConfiguracionEmpresaSeleccionada"
+                   asp-route-anio="@Model.AnioSeleccionado"
+                   asp-route-mes="@Model.MesSeleccionado"
+                   class="btn btn-outline-light btn-sm @(!Model.IdBancoConfiguracionEmpresaSeleccionada.HasValue ? "disabled" : null)"
+                   aria-disabled="@(!Model.IdBancoConfiguracionEmpresaSeleccionada.HasValue)">
+                    Estado de Cuenta
+                </a>
                 <a asp-action="Registrar"
                    asp-route-idBancoConfiguracionEmpresa="@Model.IdBancoConfiguracionEmpresaSeleccionada"
                    asp-route-anio="@Model.AnioSeleccionado"

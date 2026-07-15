@@ -116,7 +116,9 @@ public sealed class LibroElectronicoRepository(IDbConnectionFactory connectionFa
                 CorrelativoMovimiento = reader.GetString(reader.GetOrdinal("CorrelativoMovimiento")),
                 CodigoCuentaContable = reader.GetString(reader.GetOrdinal("CodigoCuentaContable")),
                 CodigoUnidadOperacion = reader.IsDBNull(reader.GetOrdinal("CodigoUnidadOperacion")) ? string.Empty : reader.GetString(reader.GetOrdinal("CodigoUnidadOperacion")),
+                CodigoCentroCosto = reader.IsDBNull(reader.GetOrdinal("CodigoCentroCosto")) ? string.Empty : reader.GetString(reader.GetOrdinal("CodigoCentroCosto")),
                 CodigoMoneda = reader.GetString(reader.GetOrdinal("CodigoMoneda")),
+                CodigoLibroRelacionado = reader.IsDBNull(reader.GetOrdinal("CodigoLibroRelacionado")) ? string.Empty : reader.GetString(reader.GetOrdinal("CodigoLibroRelacionado")),
                 TipoDocumentoEmisor = reader.IsDBNull(reader.GetOrdinal("TipoDocumentoEmisor")) ? string.Empty : reader.GetString(reader.GetOrdinal("TipoDocumentoEmisor")),
                 NumeroDocumentoEmisor = reader.IsDBNull(reader.GetOrdinal("NumeroDocumentoEmisor")) ? string.Empty : reader.GetString(reader.GetOrdinal("NumeroDocumentoEmisor")),
                 TipoComprobante = reader.IsDBNull(reader.GetOrdinal("TipoComprobante")) ? string.Empty : reader.GetString(reader.GetOrdinal("TipoComprobante")),
@@ -210,7 +212,7 @@ public sealed class LibroElectronicoRepository(IDbConnectionFactory connectionFa
         command.Parameters.AddWithValue("@IdEmpresa", request.IdEmpresa);
         command.Parameters.AddWithValue("@IdAnno", request.Anio);
         command.Parameters.AddWithValue("@Mes", request.Mes);
-        command.Parameters.AddWithValue("@Moneda", string.IsNullOrWhiteSpace(request.Moneda) ? "PEN" : request.Moneda.Trim().ToUpperInvariant());
+        command.Parameters.AddWithValue("@Moneda", "PEN");
         command.Parameters.AddWithValue("@Estado", string.IsNullOrWhiteSpace(request.Estado) ? (object)DBNull.Value : request.Estado.Trim());
         command.Parameters.AddWithValue("@FechaDesde", request.FechaDesde.HasValue ? request.FechaDesde.Value.ToDateTime(TimeOnly.MinValue) : (object)DBNull.Value);
         command.Parameters.AddWithValue("@FechaHasta", request.FechaHasta.HasValue ? request.FechaHasta.Value.ToDateTime(TimeOnly.MinValue) : (object)DBNull.Value);
