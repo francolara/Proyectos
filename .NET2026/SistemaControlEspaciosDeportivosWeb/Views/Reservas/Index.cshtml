@@ -18,6 +18,8 @@
     }
 }
 @* Firma: FRANCO LARA - 06/06/2026 | Bloqueos manuales ahora se reflejan tambien como bloqueos compartidos en calendario y panel operativo. *@
+@* Firma: FRANCO LARA - 15/07/2026 | Guardado AJAX del modal de reservas evita overlays colgados y bloquea doble envio mientras procesa la respuesta; el formulario se reagrupa y separa los estados de disponibilidad y guardado para registrar pagos sin bloquear el boton. *@
+@* Firma: FRANCO LARA - 16/07/2026 | El resumen diferencia pagos anteriores y actuales; el popup permite pagos parciales sin limite, valida pago completo o exceso del saldo y prioriza Guardar antes de Cancelar. *@
 
 @section Styles {
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.14/index.global.min.css" rel="stylesheet" />
@@ -719,155 +721,90 @@ else
                 </div>
                 <button type="button" class="btn-close sc-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-            <form id="reservaModalForm" asp-action="GuardarReservaModal" method="post">
+            <form id="reservaModalForm" asp-action="GuardarReservaModal" method="post" novalidate data-skip-loading="true">
                 @Html.AntiForgeryToken()
                 <div class="modal-body sc-modal-body">
                     <input type="hidden" id="modalReservaId" name="Id" value="0" />
                     <input type="hidden" id="modalNegocioId" name="NegocioId" value="@Model.NegocioId" />
-                    <div id="reservaModalError" class="alert alert-danger d-none py-2"></div>
-                    <div id="reservaModalDisponibilidad" class="alert d-none py-2"></div>
+                    <div id="reservaModalError" class="alert alert-danger d-none py-2" role="alert" aria-live="assertive"></div>
                     <div id="reservaModalAccionConflicto" class="mb-2 d-none">
                         <button type="button" id="btnVerReservaConflicto" class="btn btn-sm btn-outline-warning">
                             Ver reserva en conflicto
                         </button>
                     </div>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Espacio</label>
-                            <select class="form-select" id="modalEspacioDeportivoId" name="EspacioDeportivoId" required>
-                                <option value="">Selecciona...</option>
-                                @foreach (var e in Model.EspaciosFiltro)
-                                {
-                                    <option value="@e.Value">@e.Text</option>
-                                }
-                            </select>
-                        </div>
-                        <div class="col-md-6">
+                    <div class="sc-reserva-form-grid">
+                        <section class="sc-reserva-form-section sc-reserva-form-section-reserva">
+                            <div class="sc-reserva-form-section-head">
+                                <span class="sc-reserva-form-section-icon"><i class="bi bi-calendar2-check"></i></span>
+                                <div><h6>Datos de la reserva</h6><p>Define el espacio, fecha y horario.</p></div>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label">Espacio</label>
+                                    <select class="form-select" id="modalEspacioDeportivoId" name="EspacioDeportivoId" required>
+                                        <option value="">Selecciona...</option>
+                                        @foreach (var e in Model.EspaciosFiltro) { <option value="@e.Value">@e.Text</option> }
+                                    </select>
+                                </div>
+                                <div class="col-md-4"><label class="form-label">Fecha</label><input type="date" class="form-control" id="modalFecha" name="Fecha" required /></div>
+                                <div class="col-md-4"><label class="form-label">Hora inicio</label><select class="form-select" id="modalHoraInicio" name="HoraInicio" required>@foreach (var hora in horasMediaHora) { <option value="@hora.ToString("HH\\:mm")">@hora.ToString("HH\\:mm")</option> }</select></div>
+                                <div class="col-md-4"><label class="form-label">Hora fin</label><select class="form-select" id="modalHoraFin" name="HoraFin" required>@foreach (var hora in horasCierre) { var etiquetaHora = hora == new TimeOnly(23, 59) ? "24:00" : hora.ToString("HH\\:mm"); <option value="@hora.ToString("HH\\:mm")">@etiquetaHora</option> }</select></div>
+                                <div class="col-12 d-none" id="modalEstadoWrap"><label class="form-label">Estado</label><select class="form-select" id="modalEstado" name="Estado" required><option value="1">Pendiente</option><option value="2">Confirmada</option><option value="4">Pagada</option><option value="5">Cancelada</option><option value="6">No Asistio</option></select></div>
+                                <div class="col-12"><div id="reservaModalDisponibilidad" class="alert d-none py-2 mb-0"></div></div>
+                            </div>
+                        </section>
+
+                        <section class="sc-reserva-form-section sc-reserva-form-section-cliente">
+                            <div class="sc-reserva-form-section-head">
+                                <span class="sc-reserva-form-section-icon"><i class="bi bi-person-check"></i></span>
+                                <div><h6>Datos del cliente</h6><p>Busca un cliente o regístralo sin salir del flujo.</p></div>
+                            </div>
                             <label class="form-label">Cliente</label>
-                            <div class="input-group mb-1">
-                                <span class="input-group-text"><i class="bi bi-search"></i></span>
-                                <input type="text" class="form-control form-control-sm" id="modalClienteBuscar" placeholder="Escribe cliente/equipo/doc y presiona Enter..." autocomplete="off" />
-                                <button type="button" class="btn btn-sm btn-outline-primary" id="modalBtnNuevoCliente" title="Nuevo cliente rapido">+</button>
-                            </div>
+                            <div class="input-group mb-2"><span class="input-group-text"><i class="bi bi-search"></i></span><input type="text" class="form-control" id="modalClienteBuscar" placeholder="Cliente, equipo o documento y presiona Enter..." autocomplete="off" /><button type="button" class="btn btn-outline-primary" id="modalBtnNuevoCliente" title="Nuevo cliente rápido"><i class="bi bi-person-plus"></i><span class="visually-hidden">Nuevo cliente</span></button></div>
                             <input type="hidden" id="modalClienteId" name="ClienteId" />
-                            <div id="modalClienteResultadosWrap" class="d-none">
-                                <select class="form-select form-select-sm" id="modalClienteResultados" size="5" aria-label="Resultados de busqueda de clientes">
-                                    <option value="">Sin resultados</option>
-                                </select>
-                            </div>
+                            <div id="modalClienteResultadosWrap" class="d-none"><select class="form-select form-select-sm" id="modalClienteResultados" size="5" aria-label="Resultados de búsqueda de clientes"><option value="">Sin resultados</option></select></div>
                             <div class="row g-2 mt-1">
-                                <div class="col-md-5">
-                                    <label class="form-label small mb-1">Numero</label>
-                                    <input type="text" class="form-control form-control-sm" id="modalClienteNumero" value="-" readonly />
-                                </div>
-                                <div class="col-md-7">
-                                    <label class="form-label small mb-1">Correo</label>
-                                    <input type="text" class="form-control form-control-sm" id="modalClienteCorreo" value="-" readonly />
-                                </div>
+                                <div class="col-md-5"><label class="form-label small mb-1">Número</label><input type="text" class="form-control form-control-sm" id="modalClienteNumero" value="-" readonly /></div>
+                                <div class="col-md-7"><label class="form-label small mb-1">Correo</label><input type="text" class="form-control form-control-sm" id="modalClienteCorreo" value="-" readonly /></div>
                             </div>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Fecha</label>
-                            <input type="date" class="form-control" id="modalFecha" name="Fecha" required />
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Hora inicio</label>
-                            <select class="form-select" id="modalHoraInicio" name="HoraInicio" required>
-                                @foreach (var hora in horasMediaHora)
-                                {
-                                    <option value="@hora.ToString("HH\\:mm")">@hora.ToString("HH\\:mm")</option>
-                                }
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Hora fin</label>
-                            <select class="form-select" id="modalHoraFin" name="HoraFin" required>
-                                @foreach (var hora in horasCierre)
-                                {
-                                    var etiquetaHora = hora == new TimeOnly(23, 59) ? "24:00" : hora.ToString("HH\\:mm");
-                                    <option value="@hora.ToString("HH\\:mm")">@etiquetaHora</option>
-                                }
-                            </select>
-                        </div>
-                        <div class="col-md-3 d-none" id="modalEstadoWrap">
-                            <label class="form-label">Estado</label>
-                            <select class="form-select" id="modalEstado" name="Estado" required>
-                                <option value="1">Pendiente</option>
-                                <option value="2">Confirmada</option>
-                                <option value="4">Pagada</option>
-                                <option value="5">Cancelada</option>
-                                <option value="6">No Asistio</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label" id="modalPrecioLabel">Precio de Espacio (@Model.MonedaSimbolo)</label>
-                            <input type="number" min="0.01" step="0.01" class="form-control sc-monto-input" id="modalTotal" name="Total" required />
-                            <input type="hidden" id="modalTotalBaseCupon" value="0.00" />
-                            @if (!Model.PermitirModificarPrecioReserva)
-                            {
-                                <small class="text-muted">El precio se calcula automaticamente segun tarifa y promocion del horario.</small>
-                            }
-                        </div>
+                        </section>
+
+                        <section class="sc-reserva-form-section sc-reserva-form-section-pago">
+                            <div class="sc-reserva-form-section-head">
+                                <span class="sc-reserva-form-section-icon"><i class="bi bi-credit-card-2-front"></i></span>
+                                <div><h6>Pago y confirmación</h6><p>Registra un adelanto solo si corresponde.</p></div>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-12"><label class="form-label" id="modalPrecioLabel">Precio de espacio (@Model.MonedaSimbolo)</label><input type="number" min="0.01" step="0.01" class="form-control sc-monto-input" id="modalTotal" name="Total" required /><input type="hidden" id="modalTotalBaseCupon" value="0.00" />@if (!Model.PermitirModificarPrecioReserva) { <small class="text-muted">El precio se calcula automáticamente según la tarifa y promoción del horario.</small> }</div>
+                                <div class="col-12"><div class="d-flex justify-content-between align-items-center gap-2"><label class="form-label mb-0">Adelanto / pago</label><div class="form-check m-0 sc-check-highlight sc-check-highlight-pago"><input class="form-check-input" type="checkbox" id="modalRegistrarPago" name="RegistrarPago" value="true" /><label class="form-check-label small" for="modalRegistrarPago">Registrar pago</label></div></div><small id="modalAdelantoActualInfo" class="text-muted d-block mb-1">Pagado acumulado actual: 0.00</small><input type="number" min="0" step="0.01" class="form-control sc-monto-input" id="modalAdelanto" name="Adelanto" value="0.00" disabled /></div>
+                                <div class="col-md-6"><label class="form-label">Forma de pago</label><select class="form-select" id="modalFormaPagoId" name="FormaPagoId" disabled><option value="">Selecciona...</option>@foreach (var fp in Model.FormasPagoFiltro) { <option value="@fp.Value">@fp.Text</option> }</select></div>
+                                <div class="col-md-3"><label class="form-label">Fecha de pago</label><input type="date" class="form-control" id="modalFechaPago" name="FechaPago" value="@DateTime.Today.ToString("yyyy-MM-dd")" max="@DateTime.Today.ToString("yyyy-MM-dd")" disabled /></div>
+                                <div class="col-md-3"><label class="form-label">Nro. operación</label><input type="text" class="form-control" id="modalNumeroOperacion" name="NumeroOperacion" maxlength="50" placeholder="Opcional" autocomplete="off" disabled /></div>
+                                <div class="col-12"><div class="sc-reserva-policy"><i class="bi bi-shield-check"></i><div><span>Política de confirmación</span><strong id="modalPoliticaPagoInfo">Cargando...</strong></div></div></div>
+                            </div>
+                        </section>
+
                         @* Firma: Franco Lara - 03/05/2026 | Se agrega bloque de cupon en modal de reserva administrativa. *@
-                        <div class="col-md-6" id="modalCuponWrap">
-                            <div class="form-check mb-2 sc-check-highlight sc-check-highlight-cupon">
-                                <input class="form-check-input" type="checkbox" id="modalTieneCupon" />
-                                <label class="form-check-label" for="modalTieneCupon">Tengo un cupon</label>
-                            </div>
-                            <div id="modalCuponContainer" class="d-none">
-                                <div class="input-group input-group-sm">
-                                    <input type="text" class="form-control" id="modalCodigoCupon" name="CodigoCupon" maxlength="50" placeholder="Ingresa codigo de cupon" autocomplete="off" />
-                                    <button type="button" class="btn btn-outline-primary" id="btnValidarCuponModal">Validar</button>
-                                </div>
-                                <small id="modalCuponMensaje" class="d-block mt-1 text-muted">Ingresa el cupon y valida para aplicar descuento.</small>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <label class="form-label mb-0">Adelanto / pago</label>
-                                <div class="form-check m-0 sc-check-highlight sc-check-highlight-pago">
-                                    <input class="form-check-input" type="checkbox" id="modalRegistrarPago" name="RegistrarPago" value="true" />
-                                    <label class="form-check-label small" for="modalRegistrarPago">Registrar pago</label>
-                                </div>
-                            </div>
-                            <small id="modalAdelantoActualInfo" class="text-muted d-block mb-1">Pagado acumulado actual: 0.00</small>
-                            <input type="number" min="0" step="0.01" class="form-control sc-monto-input" id="modalAdelanto" name="Adelanto" value="0.00" disabled />
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Forma de pago</label>
-                            <select class="form-select" id="modalFormaPagoId" name="FormaPagoId" disabled>
-                                <option value="">Selecciona...</option>
-                                @foreach (var fp in Model.FormasPagoFiltro)
-                                {
-                                    <option value="@fp.Value">@fp.Text</option>
-                                }
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Fecha de pago</label>
-                            <input type="date" class="form-control" id="modalFechaPago" name="FechaPago" value="@DateTime.Today.ToString("yyyy-MM-dd")" max="@DateTime.Today.ToString("yyyy-MM-dd")" disabled />
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Nro Operacion</label>
-                            <input type="text" class="form-control" id="modalNumeroOperacion" name="NumeroOperacion" maxlength="50" placeholder="Opcional" autocomplete="off" disabled />
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Politica de confirmacion</label>
-                            <div id="modalPoliticaPagoInfo" class="form-control bg-light" style="height:auto; min-height: 2.4rem;">
-                                Cargando...
-                            </div>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Comentario</label>
-                            <textarea class="form-control" id="modalComentario" name="Comentario" rows="2" maxlength="500" placeholder="Observaciones opcionales de la reserva..."></textarea>
-                        </div>
+                        <section class="sc-reserva-form-section sc-reserva-form-section-extra">
+                            <div class="sc-reserva-form-section-head"><span class="sc-reserva-form-section-icon"><i class="bi bi-ticket-perforated"></i></span><div><h6>Promociones y observaciones</h6><p>Aplica un cupón y deja notas para el equipo.</p></div></div>
+                            <div id="modalCuponWrap"><div class="form-check mb-2 sc-check-highlight sc-check-highlight-cupon"><input class="form-check-input" type="checkbox" id="modalTieneCupon" /><label class="form-check-label" for="modalTieneCupon">Tengo un cupón</label></div><div id="modalCuponContainer" class="d-none"><div class="input-group input-group-sm"><input type="text" class="form-control" id="modalCodigoCupon" name="CodigoCupon" maxlength="50" placeholder="Ingresa código de cupón" autocomplete="off" /><button type="button" class="btn btn-outline-primary" id="btnValidarCuponModal">Validar</button></div><small id="modalCuponMensaje" class="d-block mt-1 text-muted">Ingresa el cupón y valida para aplicar descuento.</small></div></div>
+                            <div class="mt-3"><label class="form-label">Observaciones</label><textarea class="form-control" id="modalComentario" name="Comentario" rows="3" maxlength="500" placeholder="Indicaciones, requerimientos u observaciones para esta reserva..."></textarea></div>
+                        </section>
+                    </div>
+                    <div class="sc-reserva-resumen" aria-label="Resumen de pago">
+                        <div><span>Total</span><strong id="modalResumenTotal">@Model.MonedaSimbolo 0.00</strong></div>
+                        <div><span>Descuento</span><strong id="modalResumenDescuento">@Model.MonedaSimbolo 0.00</strong></div>
+                        <div><span>Pagado anteriormente</span><strong id="modalResumenPagadoAnterior">@Model.MonedaSimbolo 0.00</strong></div>
+                        <div><span>Pago actual</span><strong id="modalResumenPagoActual">@Model.MonedaSimbolo 0.00</strong></div>
+                        <div class="sc-reserva-resumen-pagado"><span>Total pagado</span><strong id="modalResumenTotalPagado">@Model.MonedaSimbolo 0.00</strong></div>
+                        <div class="sc-reserva-resumen-saldo"><span>Saldo pendiente</span><strong id="modalResumenSaldo">@Model.MonedaSimbolo 0.00</strong></div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary btn-cancelar" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary btn-grabar" id="btnGuardarReservaModal">
+                    <button type="button" class="btn btn-primary btn-grabar" id="btnGuardarReservaModal">
                         <i class="bi bi-check2-circle me-1"></i> Guardar
                     </button>
+                    <button type="button" class="btn btn-outline-secondary btn-cancelar" data-bs-dismiss="modal">Cancelar</button>
                 </div>
             </form>
         </div>
@@ -984,6 +921,12 @@ else
             const modalClienteResultadosEl = document.getElementById('modalClienteResultados');
             const modalBtnNuevoClienteEl = document.getElementById('modalBtnNuevoCliente');
             const modalAdelantoActualInfoEl = document.getElementById('modalAdelantoActualInfo');
+            const modalResumenTotalEl = document.getElementById('modalResumenTotal');
+            const modalResumenDescuentoEl = document.getElementById('modalResumenDescuento');
+            const modalResumenPagadoAnteriorEl = document.getElementById('modalResumenPagadoAnterior');
+            const modalResumenPagoActualEl = document.getElementById('modalResumenPagoActual');
+            const modalResumenTotalPagadoEl = document.getElementById('modalResumenTotalPagado');
+            const modalResumenSaldoEl = document.getElementById('modalResumenSaldo');
             const clienteRapidoModalEl = document.getElementById('clienteRapidoModal');
             const clienteRapidoModal = clienteRapidoModalEl ? new bootstrap.Modal(clienteRapidoModalEl) : null;
             const clienteRapidoFormEl = document.getElementById('clienteRapidoForm');
@@ -1031,6 +974,9 @@ else
             const estadosOcultosCalendario = new Set();
             let timerValidacion = null;
             let conflictoReservaIdActual = null;
+            let disponibilidadReservaModalValida = false;
+            let guardandoReservaModal = false;
+            let modalPagadoAcumuladoActual = 0;
             let calendar = null;
             let recargandoEspacios = false;
             let disponibilidadRenderSeq = 0;
@@ -1349,6 +1295,7 @@ else
             }
 
             function limpiarDisponibilidadModal() {
+                disponibilidadReservaModalValida = false;
                 reservaModalDisponibilidad.classList.add('d-none');
                 reservaModalDisponibilidad.classList.remove('alert-success', 'alert-warning');
                 reservaModalDisponibilidad.textContent = '';
@@ -1360,19 +1307,26 @@ else
                     });
                 conflictoReservaIdActual = null;
                 reservaModalAccionConflicto.classList.add('d-none');
+                actualizarEstadoBotonGuardarReserva();
             }
 
             function mostrarErrorModal(msg) {
                 reservaModalError.textContent = msg || 'No se pudo guardar la reserva.';
                 reservaModalError.classList.remove('d-none');
+                reservaModalError.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+
+            function actualizarEstadoBotonGuardarReserva() {
+                btnGuardarReservaModal.disabled = guardandoReservaModal || !disponibilidadReservaModalValida;
             }
 
             function mostrarDisponibilidadModal(disponible, mensaje, conflictoTipo, conflictoId) {
+                disponibilidadReservaModalValida = !!disponible;
                 reservaModalDisponibilidad.classList.remove('d-none');
                 reservaModalDisponibilidad.classList.toggle('alert-success', disponible);
                 reservaModalDisponibilidad.classList.toggle('alert-warning', !disponible);
                 reservaModalDisponibilidad.textContent = mensaje;
-                btnGuardarReservaModal.disabled = !disponible;
+                actualizarEstadoBotonGuardarReserva();
                 ['modalEspacioDeportivoId', 'modalFecha', 'modalHoraInicio', 'modalHoraFin']
                     .forEach((id) => {
                         const el = document.getElementById(id);
@@ -1538,11 +1492,53 @@ else
                 return n.toFixed(2);
             }
 
+            function actualizarResumenReserva() {
+                const total = Math.max(0, Number(modalTotalEl?.value || 0));
+                const totalBase = Math.max(0, Number(document.getElementById('modalTotalBaseCupon')?.value || total));
+                const descuento = Math.max(0, totalBase - total);
+                const pagadoAnterior = Math.max(0, Number(modalPagadoAcumuladoActual || 0));
+                const pagoActual = modalRegistrarPagoEl?.checked ? Math.max(0, Number(modalAdelantoEl?.value || 0)) : 0;
+                const totalPagado = pagadoAnterior + pagoActual;
+                const saldo = Math.max(0, total - totalPagado);
+                const conMoneda = (valor) => `${monedaSimboloCalendario} ${formatMoney(valor)}`;
+
+                if (modalResumenTotalEl) modalResumenTotalEl.textContent = conMoneda(total);
+                if (modalResumenDescuentoEl) modalResumenDescuentoEl.textContent = conMoneda(descuento);
+                if (modalResumenPagadoAnteriorEl) modalResumenPagadoAnteriorEl.textContent = conMoneda(pagadoAnterior);
+                if (modalResumenPagoActualEl) modalResumenPagoActualEl.textContent = conMoneda(pagoActual);
+                if (modalResumenTotalPagadoEl) modalResumenTotalPagadoEl.textContent = conMoneda(totalPagado);
+                if (modalResumenSaldoEl) modalResumenSaldoEl.textContent = conMoneda(saldo);
+            }
+
             function politicaPagoTexto(politica, porcentaje) {
                 const pol = Number(politica || 0);
                 if (pol === 2) return 'Exigir pago total 100% para confirmar.';
                 if (pol === 1) return `Exigir adelanto minimo de ${Math.round(Number(porcentaje || 0))}% para confirmar.`;
                 return 'No exigir pago para confirmar.';
+            }
+
+            function actualizarDisponibilidadRegistroPago() {
+                const total = Math.max(0, Number(modalTotalEl?.value || 0));
+                const pagadoAnterior = Math.max(0, Number(modalPagadoAcumuladoActual || 0));
+                const saldoPendiente = Math.max(0, total - pagadoAnterior);
+                const reservaPagada = total > 0 && saldoPendiente <= 0.009;
+
+                if (modalRegistrarPagoEl) {
+                    modalRegistrarPagoEl.disabled = reservaPagada;
+                    modalRegistrarPagoEl.title = reservaPagada
+                        ? 'La reserva ya esta pagada al 100%.'
+                        : '';
+                    if (reservaPagada) modalRegistrarPagoEl.checked = false;
+                }
+                if (modalAdelantoEl) {
+                    if (total > 0) {
+                        modalAdelantoEl.max = formatMoney(saldoPendiente);
+                    } else {
+                        modalAdelantoEl.removeAttribute('max');
+                    }
+                }
+
+                actualizarUIRegistroPago();
             }
 
             function actualizarUIRegistroPago() {
@@ -1563,6 +1559,7 @@ else
                     modalNumeroOperacionEl.disabled = !activo;
                     if (!activo) modalNumeroOperacionEl.value = '';
                 }
+                actualizarResumenReserva();
             }
 
             function limpiarMensajeCuponModal() {
@@ -1599,6 +1596,7 @@ else
                         modalTotalEl.value = formatMoney(modalPrecioBaseActual);
                     }
                 }
+                actualizarResumenReserva();
             }
 
             function resetCuponAplicadoModal() {
@@ -1611,6 +1609,7 @@ else
                     modalTotalEl.value = formatMoney(modalPrecioBaseActual);
                 }
                 limpiarMensajeCuponModal();
+                actualizarResumenReserva();
             }
 
             async function validarCuponModal(silencioso = false) {
@@ -1672,6 +1671,7 @@ else
                         modalCodigoCuponEl.value = String(payload.codigoCupon);
                     }
                     mostrarMensajeCuponModal(`Cupon aplicado. Descuento: ${formatMoney(montoDescuento)}. Total: ${formatMoney(montoFinal)}.`, false);
+                    actualizarResumenReserva();
                     return true;
                 } catch (err) {
                     if (modalTotalEl && modalPrecioBaseActual > 0) {
@@ -1687,6 +1687,7 @@ else
                     } else {
                         limpiarMensajeCuponModal();
                     }
+                    actualizarResumenReserva();
                     return false;
                 } finally {
                     if (btnValidarCuponModalEl) btnValidarCuponModalEl.disabled = false;
@@ -1732,6 +1733,7 @@ else
                             modalTotalEl.value = formatMoney(precioFinal);
                         }
                     }
+                    actualizarDisponibilidadRegistroPago();
                     if (modalPoliticaPagoInfoEl) {
                         modalPoliticaPagoInfoEl.textContent = politicaPagoTexto(payload.politicaConfirmacionPago, payload.porcentajeAdelantoMinimo);
                     }
@@ -1740,10 +1742,12 @@ else
                     } else {
                         limpiarMensajeCuponModal();
                     }
+                    actualizarResumenReserva();
                 } catch (err) {
                     if (modalPoliticaPagoInfoEl) {
                         modalPoliticaPagoInfoEl.textContent = err?.message || 'No se pudo cargar la politica de pago.';
                     }
+                    actualizarResumenReserva();
                 }
             }
 
@@ -1973,6 +1977,7 @@ else
                 setValue('modalTotal', '0.00');
                 setValue('modalTotalBaseCupon', '0.00');
                 modalPrecioBaseActual = 0;
+                modalPagadoAcumuladoActual = 0;
                 setValue('modalAdelanto', '0.00');
                 if (modalAdelantoActualInfoEl) {
                     modalAdelantoActualInfoEl.textContent = 'Pagado acumulado actual: 0.00';
@@ -1982,7 +1987,7 @@ else
                 setValue('modalFechaPago', hoyIso);
                 setValue('modalNumeroOperacion', '');
                 if (modalRegistrarPagoEl) modalRegistrarPagoEl.checked = false;
-                actualizarUIRegistroPago();
+                actualizarDisponibilidadRegistroPago();
                 if (modalTieneCuponEl) modalTieneCuponEl.checked = false;
                 actualizarUICuponModal();
                 cuponAplicadoModal = false;
@@ -1993,6 +1998,7 @@ else
                 reservaModal.show();
                 cotizarReservaModal();
                 validarDisponibilidadModal();
+                actualizarResumenReserva();
             }
 
             function abrirModalEditarReserva(reservaId) {
@@ -2021,8 +2027,9 @@ else
                         setValue('modalTotalBaseCupon', data.total ?? '0.00');
                         modalPrecioBaseActual = Number(data.total || 0);
                         setValue('modalAdelanto', '0.00');
+                        modalPagadoAcumuladoActual = Math.max(0, Number(data.adelanto || 0));
                         if (modalAdelantoActualInfoEl) {
-                            const pagado = Number(data.adelanto || 0);
+                            const pagado = modalPagadoAcumuladoActual;
                             const total = Number(data.total || 0);
                             const saldo = Math.max(0, total - pagado);
                             modalAdelantoActualInfoEl.textContent = `Pagado acumulado actual: ${formatMoney(pagado)} | Saldo pendiente: ${formatMoney(saldo)}`;
@@ -2036,7 +2043,7 @@ else
                         actualizarUICuponModal();
                         cuponAplicadoModal = false;
                         if (modalRegistrarPagoEl) modalRegistrarPagoEl.checked = false;
-                        actualizarUIRegistroPago();
+                        actualizarDisponibilidadRegistroPago();
                         reservaModal.show();
                         const clienteId = String(data.clienteId || '');
                         if (modalClienteBuscarEl) modalClienteBuscarEl.value = '';
@@ -2046,6 +2053,7 @@ else
                         });
                         cotizarReservaModal(true);
                         validarDisponibilidadModal();
+                        actualizarResumenReserva();
                     })
                     .catch(err => alert(err.message));
             }
@@ -2060,7 +2068,6 @@ else
 
                 if (!espacioId || !fecha || !horaInicio || !horaFin) {
                     limpiarDisponibilidadModal();
-                    btnGuardarReservaModal.disabled = true;
                     return;
                 }
                 if (esFechaPasadaIso(fecha)) {
@@ -2834,6 +2841,12 @@ else
             if (modalRegistrarPagoEl) {
                 modalRegistrarPagoEl.addEventListener('change', actualizarUIRegistroPago);
             }
+            if (modalTotalEl) {
+                modalTotalEl.addEventListener('input', actualizarResumenReserva);
+            }
+            if (modalAdelantoEl) {
+                modalAdelantoEl.addEventListener('input', actualizarResumenReserva);
+            }
             if (modalTieneCuponEl) {
                 modalTieneCuponEl.addEventListener('change', async () => {
                     actualizarUICuponModal();
@@ -2961,7 +2974,10 @@ else
             reservaModalForm.addEventListener('submit', function (e) {
                 e.preventDefault();
                 limpiarErrorModal();
-                if (btnGuardarReservaModal.disabled) {
+                if (guardandoReservaModal) {
+                    return;
+                }
+                if (!disponibilidadReservaModalValida) {
                     mostrarErrorModal('Debes corregir la disponibilidad antes de guardar.');
                     return;
                 }
@@ -2981,6 +2997,28 @@ else
                     return;
                 }
                 if (modalRegistrarPagoEl?.checked) {
+                    const adelanto = Number(modalAdelantoEl?.value || 0);
+                    const total = Math.max(0, Number(modalTotalEl?.value || 0));
+                    const saldoPendiente = Math.max(0, total - Math.max(0, Number(modalPagadoAcumuladoActual || 0)));
+                    if (saldoPendiente <= 0.009) {
+                        mostrarErrorModal('La reserva ya esta pagada al 100%. No se pueden registrar mas pagos.');
+                        return;
+                    }
+                    if (!Number.isFinite(adelanto) || adelanto <= 0) {
+                        mostrarErrorModal('Ingresa un monto de adelanto/pago mayor que cero.');
+                        modalAdelantoEl?.focus();
+                        return;
+                    }
+                    if (adelanto - saldoPendiente > 0.009) {
+                        mostrarErrorModal(`El pago no puede exceder el saldo pendiente de ${monedaSimboloCalendario} ${formatMoney(saldoPendiente)}.`);
+                        modalAdelantoEl?.focus();
+                        return;
+                    }
+                    if (!String(modalFormaPagoIdEl?.value || '').trim()) {
+                        mostrarErrorModal('Selecciona una forma de pago para registrar el adelanto/pago.');
+                        modalFormaPagoIdEl?.focus();
+                        return;
+                    }
                     const numeroOperacion = String(modalNumeroOperacionEl?.value || '').trim();
                     if (numeroOperacion && !/^[A-Za-z0-9]+$/.test(numeroOperacion)) {
                         mostrarErrorModal('El numero de operacion solo puede contener caracteres alfanumericos.');
@@ -2996,13 +3034,23 @@ else
                         return;
                     }
                 }
+                guardandoReservaModal = true;
+                actualizarEstadoBotonGuardarReserva();
+                btnGuardarReservaModal.dataset.textoOriginal = btnGuardarReservaModal.innerHTML;
+                btnGuardarReservaModal.innerHTML = '<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> Guardando...';
                 const data = new FormData(reservaModalForm);
                 fetch(guardarReservaModalUrl, {
                     method: 'POST',
                     body: data
                 })
                 .then(async r => {
-                    const payload = await r.json();
+                    const contenido = await r.text();
+                    let payload = null;
+                    try {
+                        payload = contenido ? JSON.parse(contenido) : null;
+                    } catch {
+                        throw new Error(`El servidor no devolvió una respuesta válida al guardar (HTTP ${r.status}).`);
+                    }
                     if (!r.ok || !payload.ok) {
                         throw new Error(payload.mensaje || 'No se pudo guardar la reserva.');
                     }
@@ -3015,7 +3063,20 @@ else
                         setTimeout(() => calendar.refetchEvents(), 250);
                     }
                 })
-                .catch(err => mostrarErrorModal(err.message));
+                .catch(err => mostrarErrorModal(err.message))
+                .finally(() => {
+                    if (btnGuardarReservaModal.dataset.textoOriginal) {
+                        btnGuardarReservaModal.innerHTML = btnGuardarReservaModal.dataset.textoOriginal;
+                        delete btnGuardarReservaModal.dataset.textoOriginal;
+                    }
+                    guardandoReservaModal = false;
+                    actualizarEstadoBotonGuardarReserva();
+                });
+            });
+
+            btnGuardarReservaModal.addEventListener('click', function () {
+                if (guardandoReservaModal) return;
+                reservaModalForm.dispatchEvent(new Event('submit', { cancelable: true }));
             });
 
             formFiltros.addEventListener('submit', () => {

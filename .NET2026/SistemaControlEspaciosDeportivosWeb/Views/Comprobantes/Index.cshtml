@@ -19,6 +19,7 @@
         return "bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle";
     }
 }
+@* Firma: FRANCO LARA - 16/07/2026 | Aplica modo oscuro al detalle interno, referencia y contador del listado de comprobantes. *@
 
 <div class="admin-page-frame">
     @if (TempData["ComprobanteError"] is string comprobanteError && !string.IsNullOrWhiteSpace(comprobanteError))
@@ -103,7 +104,7 @@
                 </div>
                 <div class="col-lg-4 col-md-12">
                     <label class="form-label">Registros visibles</label>
-                    <div class="form-control bg-light text-center fw-bold">@Model.TotalRegistros</div>
+                    <div class="form-control bg-light text-center fw-bold comprobante-total-registros">@Model.TotalRegistros</div>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Desde</label>
@@ -223,7 +224,7 @@
                                     </div>
                                 </td>
                                 <td class="text-center">
-                                    <span class="badge bg-light text-dark border w-100 py-2">@item.Referencia</span>
+                                    <span class="badge border w-100 py-2 comprobante-referencia">@item.Referencia</span>
                                 </td>
                                 <td class="text-center">
                                     <div class="d-flex flex-wrap justify-content-center gap-1">
@@ -324,5 +325,28 @@
         font-weight: 700;
         color: #1f2f48;
         line-height: 1.2;
+    }
+    .comprobante-referencia {
+        border-color: #d8e1f3 !important;
+        background: #f8fbff;
+        color: #1f2f48;
+    }
+    html[data-theme="dark"] .comprobante-meta-item,
+    html[data-theme="dark"] .comprobante-referencia,
+    html[data-theme="dark"] .comprobante-total-registros,
+    body.dark-mode .comprobante-meta-item,
+    body.dark-mode .comprobante-referencia,
+    body.dark-mode .comprobante-total-registros {
+        border-color: #2d4f7a !important;
+        background: #132641 !important;
+        color: #e8f1ff !important;
+    }
+    html[data-theme="dark"] .comprobante-meta-item small,
+    body.dark-mode .comprobante-meta-item small {
+        color: #9db7d8;
+    }
+    html[data-theme="dark"] .comprobante-meta-item div,
+    body.dark-mode .comprobante-meta-item div {
+        color: #e8f1ff;
     }
 </style>

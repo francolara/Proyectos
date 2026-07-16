@@ -25,15 +25,24 @@ public class LoginModel(
 {
     private const string LoginFailuresSessionKey = "Auth:LoginFailures";
     private const string ResendAttemptsSessionKey = "Auth:ResendAttempts";
+    private const string LoginCaptchaScope = "LOGIN";
 
     [BindProperty]
     public InputModel Input { get; set; } = new();
+
+    [BindProperty]
+    public string? CaptchaManual { get; set; }
+
+    [BindProperty]
+    public bool UsarCaptchaManual { get; set; }
 
     public IList<AuthenticationScheme> ExternalLogins { get; set; } = new List<AuthenticationScheme>();
     public string ReturnUrl { get; set; } = string.Empty;
     public WebBannerPublicoViewModel? BannerLateral { get; set; }
     public string TurnstileSiteKey { get; private set; } = string.Empty;
     public bool MostrarTurnstile { get; private set; }
+    public bool MostrarCaptchaManual { get; private set; }
+    public string CaptchaManualCodigo { get; private set; } = string.Empty;
 
     [TempData]
     public string? ErrorMessage { get; set; }
@@ -66,6 +75,7 @@ public class LoginModel(
         ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
         TurnstileSiteKey = turnstileOptions.Value.SiteKey;
         MostrarTurnstile = DebeMostrarTurnstile();
+        ConfigurarCaptchaManual();
         ReturnUrl = returnUrl ?? Url.Content("~/");
         await CargarBannerLateralAsync();
     }
@@ -76,6 +86,7 @@ public class LoginModel(
         ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
         TurnstileSiteKey = turnstileOptions.Value.SiteKey;
         MostrarTurnstile = DebeMostrarTurnstile();
+        ConfigurarCaptchaManual();
         if (!ModelState.IsValid)
         {
             await CargarBannerLateralAsync();
@@ -165,6 +176,7 @@ public class LoginModel(
         ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
         TurnstileSiteKey = turnstileOptions.Value.SiteKey;
         MostrarTurnstile = DebeMostrarTurnstile();
+        ConfigurarCaptchaManual();
         ReturnUrl = returnUrl;
 
         var email = (Input.Email ?? string.Empty).Trim();
@@ -373,21 +385,59 @@ public class LoginModel(
 
     private async Task<bool> ValidarTurnstileAsync()
     {
+        if (MostrarCaptchaManual)
+        {
+            if (ManualCaptchaChallengeStore.Validate(HttpContext, LoginCaptchaScope, CaptchaManual))
+            {
+                ManualCaptchaChallengeStore.Clear(HttpContext, LoginCaptchaScope);
+                return true;
+            }
+
+            UsarCaptchaManual = true;
+            CaptchaManualCodigo = ManualCaptchaChallengeStore.Refresh(HttpContext, LoginCaptchaScope);
+            ModelState.AddModelError(string.Empty, "El codigo captcha manual no es valido.");
+            return false;
+        }
+
         var token = (Request.Form["cf-turnstile-response"].ToString() ?? string.Empty).Trim();
         if (string.IsNullOrWhiteSpace(token))
         {
-            ModelState.AddModelError(string.Empty, "Completa la verificacion de seguridad.");
+            UsarCaptchaManual = true;
+            MostrarCaptchaManual = true;
+            CaptchaManualCodigo = ManualCaptchaChallengeStore.Refresh(HttpContext, LoginCaptchaScope);
+            ModelState.AddModelError(string.Empty, "No se pudo validar Turnstile. Usa el codigo manual de respaldo.");
             return false;
         }
 
         var remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString();
         var resultado = await turnstileValidationService.VerifyAsync(token, remoteIp, HttpContext.RequestAborted);
         if (resultado.Success)
+        {
+            ManualCaptchaChallengeStore.Clear(HttpContext, LoginCaptchaScope);
             return true;
+        }
 
         logger.LogWarning("Turnstile rechazo login/reenvio confirmacion. Errores: {Errores}", string.Join(",", resultado.ErrorCodes ?? Array.Empty<string>()));
-        ModelState.AddModelError(string.Empty, "No se pudo validar la verificacion de seguridad. Intenta nuevamente.");
+        UsarCaptchaManual = true;
+        MostrarCaptchaManual = true;
+        CaptchaManualCodigo = ManualCaptchaChallengeStore.Refresh(HttpContext, LoginCaptchaScope);
+        ModelState.AddModelError(string.Empty, "No se pudo validar Turnstile. Usa el codigo manual de respaldo.");
         return false;
+    }
+
+    private void ConfigurarCaptchaManual()
+    {
+        MostrarCaptchaManual = MostrarTurnstile
+            && (UsarCaptchaManual || string.IsNullOrWhiteSpace(TurnstileSiteKey));
+
+        if (MostrarCaptchaManual)
+        {
+            CaptchaManualCodigo = ManualCaptchaChallengeStore.GetOrCreate(HttpContext, LoginCaptchaScope);
+            return;
+        }
+
+        ManualCaptchaChallengeStore.Clear(HttpContext, LoginCaptchaScope);
+        CaptchaManualCodigo = string.Empty;
     }
 
     private bool DebeMostrarTurnstile()

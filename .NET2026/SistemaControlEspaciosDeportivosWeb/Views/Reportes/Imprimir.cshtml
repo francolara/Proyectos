@@ -1,0 +1,403 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.ReportesIndexViewModel
+@{
+    Layout = null;
+    var generado = DateTime.Now;
+    var sedeTexto = Model.SedeId.HasValue
+        ? Model.SedesFiltro.FirstOrDefault(x => x.Value == Model.SedeId.Value.ToString())?.Text ?? "Sede seleccionada"
+        : "Todas las sedes";
+    var totalCobrado = Model.DetallePagos.Sum(x => x.Monto);
+    var totalReservado = Model.DetalleReservas.Where(x => x.EstadoCodigo != 5).Sum(x => x.Total);
+    var totalDescuento = Model.DetalleReservas.Where(x => x.EstadoCodigo != 5).Sum(x => x.Descuento);
+    var totalPendiente = Model.DetalleReservas.Where(x => x.EstadoCodigo != 5).Sum(x => x.SaldoPendiente);
+    var ticketPromedio = Model.CobranzaActual.ReservasCobradas > 0
+        ? Model.CobranzaActual.MontoCobrado / Model.CobranzaActual.ReservasCobradas
+        : 0m;
+    var porcentajeCobranza = totalReservado > 0 ? totalCobrado / totalReservado * 100m : 0m;
+    var pagosPorForma = Model.DetallePagos
+        .GroupBy(x => x.FormaPago)
+        .Select(x => new { Forma = x.Key, Cantidad = x.Count(), Monto = x.Sum(y => y.Monto) })
+        .OrderByDescending(x => x.Monto)
+        .ToList();
+    var reservasPorEstado = Model.DetalleReservas
+        .GroupBy(x => x.Estado)
+        .Select(x => new { Estado = x.Key, Cantidad = x.Count(), Total = x.Sum(y => y.Total), Saldo = x.Sum(y => y.SaldoPendiente) })
+        .OrderByDescending(x => x.Cantidad)
+        .ToList();
+}
+@* Firma: FRANCO LARA - 16/07/2026 | Documento ejecutivo independiente y multipagina para imprimir resumen, pagos y reservas. *@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Reporte ejecutivo - @Model.NegocioNombre</title>
+    <style>
+        :root {
+            --ink: #162033;
+            --muted: #667085;
+            --line: #d9e2ef;
+            --soft: #f4f7fb;
+            --navy: #123a63;
+            --blue: #1d67b1;
+            --green: #177a55;
+            --amber: #a45b08;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            background: #e8edf4;
+            color: var(--ink);
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            font-size: 12px;
+        }
+
+        .print-toolbar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 12px 24px;
+            background: #101d31;
+            box-shadow: 0 8px 24px rgba(16, 29, 49, .2);
+        }
+
+        .print-toolbar button {
+            border: 0;
+            border-radius: 7px;
+            padding: 9px 16px;
+            background: #1d67b1;
+            color: #fff;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .print-toolbar button.secondary { background: #fff; color: #243654; }
+
+        .report-document {
+            width: min(1120px, calc(100% - 32px));
+            margin: 24px auto;
+            background: #fff;
+            box-shadow: 0 18px 54px rgba(28, 42, 66, .18);
+        }
+
+        .report-page { padding: 15mm 14mm 13mm; }
+
+        .report-header {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 24px;
+            align-items: start;
+            padding-bottom: 14px;
+            border-bottom: 3px solid var(--navy);
+        }
+
+        .report-eyebrow {
+            margin-bottom: 5px;
+            color: var(--blue);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+        }
+
+        h1 { margin: 0; color: var(--navy); font-size: 26px; line-height: 1.1; }
+        .report-header p { margin: 6px 0 0; color: var(--muted); }
+
+        .report-issue {
+            min-width: 210px;
+            padding: 11px 14px;
+            border: 1px solid #bfd0e4;
+            background: var(--soft);
+        }
+
+        .report-issue span, .metric span, .section-kicker {
+            display: block;
+            color: var(--muted);
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .report-issue strong { display: block; margin-top: 4px; color: var(--navy); }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 9px;
+            margin: 16px 0;
+        }
+
+        .metric {
+            min-height: 78px;
+            padding: 11px;
+            border: 1px solid var(--line);
+            border-top: 3px solid var(--blue);
+            background: linear-gradient(180deg, #fff, #f7f9fc);
+        }
+
+        .metric.green { border-top-color: var(--green); }
+        .metric.amber { border-top-color: var(--amber); }
+        .metric strong { display: block; margin: 7px 0 3px; color: var(--navy); font-size: 18px; }
+        .metric small { color: var(--muted); }
+
+        .executive-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .panel { border: 1px solid var(--line); background: #fff; }
+        .panel-header { padding: 10px 12px; border-bottom: 1px solid var(--line); background: var(--soft); }
+        .panel-header h2 { margin: 2px 0 0; color: var(--navy); font-size: 14px; }
+        .panel-body { padding: 10px 12px; }
+
+        .insights { margin: 0; padding: 0; list-style: none; }
+        .insights li { display: flex; justify-content: space-between; gap: 18px; padding: 7px 0; border-bottom: 1px solid #edf1f6; }
+        .insights li:last-child { border-bottom: 0; }
+        .insights span { color: var(--muted); }
+
+        .section-heading {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            align-items: end;
+            margin-bottom: 12px;
+            padding-bottom: 9px;
+            border-bottom: 2px solid var(--navy);
+        }
+
+        .section-heading h2 { margin: 3px 0 0; color: var(--navy); font-size: 19px; }
+        .section-heading p { margin: 0; color: var(--muted); text-align: right; }
+
+        .section-summary {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .mini-metric { padding: 8px 10px; border: 1px solid var(--line); background: var(--soft); }
+        .mini-metric span { display: block; color: var(--muted); font-size: 9px; text-transform: uppercase; }
+        .mini-metric strong { display: block; margin-top: 3px; color: var(--navy); font-size: 14px; }
+
+        table { width: 100%; border-collapse: collapse; }
+        thead { display: table-header-group; }
+        tr { break-inside: avoid; page-break-inside: avoid; }
+        th, td { padding: 6px 7px; border-bottom: 1px solid var(--line); vertical-align: top; }
+        thead th { background: var(--navy); color: #fff; font-size: 8px; letter-spacing: .04em; text-align: left; text-transform: uppercase; }
+        tbody tr:nth-child(even) { background: #f7f9fc; }
+        td { font-size: 9px; }
+        .text-end { text-align: right; }
+        .text-center { text-align: center; }
+        .nowrap { white-space: nowrap; }
+        .muted { color: var(--muted); }
+        .strong { color: var(--navy); font-weight: 700; }
+
+        .empty { padding: 30px; border: 1px dashed #b8c6d8; color: var(--muted); text-align: center; }
+
+        .report-footer {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 12px;
+            padding-top: 8px;
+            border-top: 1px solid var(--line);
+            color: var(--muted);
+            font-size: 8px;
+        }
+
+        .page-break { break-before: page; page-break-before: always; }
+
+        @@page { size: A4 landscape; margin: 9mm; }
+
+        @@media print {
+            html, body { background: #fff; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            .print-toolbar { display: none !important; }
+            .report-document { width: auto; margin: 0; box-shadow: none; }
+            .report-page { padding: 0; }
+            .panel, .metric, .mini-metric { break-inside: avoid; page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="print-toolbar" aria-label="Acciones del reporte">
+        <button type="button" onclick="window.print()">Imprimir documento</button>
+        <button type="button" class="secondary" onclick="window.close()">Cerrar</button>
+    </nav>
+
+    <main class="report-document">
+        <section class="report-page">
+            <header class="report-header">
+                <div>
+                    <div class="report-eyebrow">Informe ejecutivo de gestion</div>
+                    <h1>@Model.NegocioNombre</h1>
+                    <p><strong>@sedeTexto</strong> | Periodo @Model.FechaDesde.ToString("dd/MM/yyyy") al @Model.FechaHasta.ToString("dd/MM/yyyy")</p>
+                </div>
+                <div class="report-issue">
+                    <span>Documento emitido</span>
+                    <strong>@generado.ToString("dd/MM/yyyy HH:mm")</strong>
+                    <span style="margin-top:7px">Referencia</span>
+                    <strong>REP-@Model.NegocioId-@generado.ToString("yyyyMMddHHmm")</strong>
+                </div>
+            </header>
+
+            <section class="metrics" aria-label="Indicadores principales">
+                <article class="metric green"><span>Cobrado</span><strong>S/ @totalCobrado.ToString("N2")</strong><small>@Model.DetallePagos.Count pagos registrados</small></article>
+                <article class="metric"><span>Reservado</span><strong>S/ @totalReservado.ToString("N2")</strong><small>@Model.DetalleReservas.Count reservas</small></article>
+                <article class="metric amber"><span>Saldo pendiente</span><strong>S/ @totalPendiente.ToString("N2")</strong><small>@Model.DetalleReservas.Count(x => x.SaldoPendiente > 0 && x.EstadoCodigo != 5) reservas con saldo</small></article>
+                <article class="metric"><span>Nivel de cobranza</span><strong>@porcentajeCobranza.ToString("N1")%</strong><small>Sobre el monto reservado</small></article>
+                <article class="metric"><span>Ticket promedio</span><strong>S/ @ticketPromedio.ToString("N2")</strong><small>Por reserva cobrada</small></article>
+            </section>
+
+            <section class="executive-grid">
+                <article class="panel">
+                    <header class="panel-header"><span class="section-kicker">Cobranza</span><h2>Composicion por forma de pago</h2></header>
+                    <div class="panel-body">
+                        <table>
+                            <thead><tr><th>Forma</th><th class="text-end">Operaciones</th><th class="text-end">Importe</th><th class="text-end">Participacion</th></tr></thead>
+                            <tbody>
+                            @foreach (var item in pagosPorForma)
+                            {
+                                <tr><td class="strong">@item.Forma</td><td class="text-end">@item.Cantidad</td><td class="text-end">S/ @item.Monto.ToString("N2")</td><td class="text-end">@((totalCobrado > 0 ? item.Monto / totalCobrado * 100m : 0m).ToString("N1"))%</td></tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+
+                <article class="panel">
+                    <header class="panel-header"><span class="section-kicker">Operacion</span><h2>Distribucion por estado</h2></header>
+                    <div class="panel-body">
+                        <table>
+                            <thead><tr><th>Estado</th><th class="text-end">Reservas</th><th class="text-end">Total</th><th class="text-end">Saldo</th></tr></thead>
+                            <tbody>
+                            @foreach (var item in reservasPorEstado)
+                            {
+                                <tr><td class="strong">@item.Estado</td><td class="text-end">@item.Cantidad</td><td class="text-end">S/ @item.Total.ToString("N2")</td><td class="text-end">S/ @item.Saldo.ToString("N2")</td></tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+
+                <article class="panel">
+                    <header class="panel-header"><span class="section-kicker">Indicadores financieros</span><h2>Lectura del periodo</h2></header>
+                    <div class="panel-body">
+                        <ul class="insights">
+                            <li><span>Descuentos aplicados</span><strong>S/ @totalDescuento.ToString("N2")</strong></li>
+                            <li><span>Reservas cobradas</span><strong>@Model.CobranzaActual.ReservasCobradas</strong></li>
+                            <li><span>Dias con ingresos</span><strong>@Model.Ingresos.Count</strong></li>
+                            <li><span>Espacios con actividad</span><strong>@Model.Ocupacion.Count</strong></li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article class="panel">
+                    <header class="panel-header"><span class="section-kicker">Control operativo</span><h2>Situacion de reservas</h2></header>
+                    <div class="panel-body">
+                        <ul class="insights">
+                            <li><span>Pendientes</span><strong>@Model.ResumenActual.TotalPendientes</strong></li>
+                            <li><span>Confirmadas</span><strong>@Model.ResumenActual.TotalConfirmadas</strong></li>
+                            <li><span>Pagadas</span><strong>@Model.ResumenActual.TotalPagadas</strong></li>
+                            <li><span>Canceladas / no asistio</span><strong>@Model.ResumenActual.TotalCanceladas / @Model.ResumenActual.TotalNoShow</strong></li>
+                        </ul>
+                    </div>
+                </article>
+            </section>
+
+            <footer class="report-footer"><span>Reporte ejecutivo | @Model.NegocioNombre</span><span>Resumen del periodo consultado</span></footer>
+        </section>
+
+        <section class="report-page page-break">
+            <header class="section-heading">
+                <div><span class="section-kicker">Seccion 01</span><h2>Detalle de pagos</h2></div>
+                <p>Ordenado por fecha real de cobro<br />@Model.FechaDesde.ToString("dd/MM/yyyy") - @Model.FechaHasta.ToString("dd/MM/yyyy")</p>
+            </header>
+            <div class="section-summary">
+                <div class="mini-metric"><span>Pagos</span><strong>@Model.DetallePagos.Count</strong></div>
+                <div class="mini-metric"><span>Reservas cobradas</span><strong>@Model.DetallePagos.Select(x => x.ReservaId).Distinct().Count()</strong></div>
+                <div class="mini-metric"><span>Total cobrado</span><strong>S/ @totalCobrado.ToString("N2")</strong></div>
+                <div class="mini-metric"><span>Ticket por pago</span><strong>S/ @((Model.DetallePagos.Count > 0 ? totalCobrado / Model.DetallePagos.Count : 0m).ToString("N2"))</strong></div>
+            </div>
+            @if (Model.DetallePagos.Any())
+            {
+                <table>
+                    <thead><tr><th>Fecha de pago</th><th>Pago / reserva</th><th>Cliente</th><th>Fecha reservada</th><th>Sede / espacio</th><th>Forma de pago</th><th>Operacion</th><th class="text-end">Importe</th></tr></thead>
+                    <tbody>
+                    @foreach (var item in Model.DetallePagos)
+                    {
+                        <tr>
+                            <td class="nowrap"><span class="strong">@item.FechaPago.ToString("dd/MM/yyyy")</span><br /><span class="muted">@item.FechaPago.ToString("HH:mm")</span></td>
+                            <td><span class="strong">P-@item.PagoId</span><br /><span class="muted">Reserva #@item.ReservaId</span></td>
+                            <td><span class="strong">@item.Cliente</span><br /><span class="muted">@item.ClienteDocumento</span></td>
+                            <td class="nowrap">@item.FechaReserva.ToString("dd/MM/yyyy")<br /><span class="muted">@item.HoraInicio.ToString("HH:mm") - @item.HoraFin.ToString("HH:mm")</span></td>
+                            <td><span class="strong">@item.Sede</span><br /><span class="muted">@item.Espacio</span></td>
+                            <td>@item.FormaPago</td>
+                            <td>@(string.IsNullOrWhiteSpace(item.NumeroOperacion) ? "-" : item.NumeroOperacion)</td>
+                            <td class="text-end strong nowrap">S/ @item.Monto.ToString("N2")</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty">No se registraron pagos en el periodo consultado.</div>
+            }
+            <footer class="report-footer"><span>Detalle de pagos | @Model.NegocioNombre</span><span>Total: S/ @totalCobrado.ToString("N2")</span></footer>
+        </section>
+
+        <section class="report-page page-break">
+            <header class="section-heading">
+                <div><span class="section-kicker">Seccion 02</span><h2>Detalle de reservas</h2></div>
+                <p>Ordenado por fecha y hora de reserva<br />@Model.FechaDesde.ToString("dd/MM/yyyy") - @Model.FechaHasta.ToString("dd/MM/yyyy")</p>
+            </header>
+            <div class="section-summary">
+                <div class="mini-metric"><span>Reservas</span><strong>@Model.DetalleReservas.Count</strong></div>
+                <div class="mini-metric"><span>Monto reservado</span><strong>S/ @totalReservado.ToString("N2")</strong></div>
+                <div class="mini-metric"><span>Pagado acumulado</span><strong>S/ @Model.DetalleReservas.Where(x => x.EstadoCodigo != 5).Sum(x => x.MontoPagado).ToString("N2")</strong></div>
+                <div class="mini-metric"><span>Saldo pendiente</span><strong>S/ @totalPendiente.ToString("N2")</strong></div>
+            </div>
+            @if (Model.DetalleReservas.Any())
+            {
+                <table>
+                    <thead><tr><th>Reserva</th><th>Fecha / horario</th><th>Cliente</th><th>Sede / espacio</th><th>Estado</th><th>Origen / cupon</th><th class="text-end">Total</th><th class="text-end">Descuento</th><th class="text-end">Pagado</th><th class="text-end">Saldo</th></tr></thead>
+                    <tbody>
+                    @foreach (var item in Model.DetalleReservas)
+                    {
+                        <tr>
+                            <td class="strong">#@item.ReservaId</td>
+                            <td class="nowrap"><span class="strong">@item.Fecha.ToString("dd/MM/yyyy")</span><br /><span class="muted">@item.HoraInicio.ToString("HH:mm") - @item.HoraFin.ToString("HH:mm")</span></td>
+                            <td><span class="strong">@item.Cliente</span><br /><span class="muted">@item.ClienteDocumento</span></td>
+                            <td><span class="strong">@item.Sede</span><br /><span class="muted">@item.Espacio</span></td>
+                            <td>@item.Estado</td>
+                            <td><span class="strong">@item.CanalOrigen</span><br /><span class="muted">@(string.IsNullOrWhiteSpace(item.CodigoCupon) ? "Sin cupon" : item.CodigoCupon)</span></td>
+                            <td class="text-end nowrap">S/ @item.Total.ToString("N2")</td>
+                            <td class="text-end nowrap">S/ @item.Descuento.ToString("N2")</td>
+                            <td class="text-end nowrap">S/ @item.MontoPagado.ToString("N2")</td>
+                            <td class="text-end strong nowrap">S/ @item.SaldoPendiente.ToString("N2")</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty">No se registraron reservas en el periodo consultado.</div>
+            }
+            <footer class="report-footer"><span>Detalle de reservas | @Model.NegocioNombre</span><span>Saldo total: S/ @totalPendiente.ToString("N2")</span></footer>
+        </section>
+    </main>
+
+    <script>
+        window.addEventListener('load', function () {
+            window.setTimeout(function () { window.print(); }, 250);
+        });
+    </script>
+</body>
+</html>

@@ -21,6 +21,45 @@ public class ReportesIndexViewModel : ModuloBaseViewModel
     public List<ReporteReservaDiaItemViewModel> ReservasPeriodoAnterior { get; set; } = new();
     public List<ReporteIngresoDiaItemViewModel> Ingresos { get; set; } = new();
     public List<ReporteIngresoDiaItemViewModel> IngresosPeriodoAnterior { get; set; } = new();
+    public List<ReportePagoDetalleItemViewModel> DetallePagos { get; set; } = new();
+    public List<ReporteReservaDetalleItemViewModel> DetalleReservas { get; set; } = new();
+}
+
+public class ReportePagoDetalleItemViewModel
+{
+    public int PagoId { get; set; }
+    public DateTime FechaPago { get; set; }
+    public int ReservaId { get; set; }
+    public DateOnly FechaReserva { get; set; }
+    public TimeOnly HoraInicio { get; set; }
+    public TimeOnly HoraFin { get; set; }
+    public string Cliente { get; set; } = string.Empty;
+    public string ClienteDocumento { get; set; } = string.Empty;
+    public string Sede { get; set; } = string.Empty;
+    public string Espacio { get; set; } = string.Empty;
+    public string FormaPago { get; set; } = string.Empty;
+    public string? NumeroOperacion { get; set; }
+    public decimal Monto { get; set; }
+}
+
+public class ReporteReservaDetalleItemViewModel
+{
+    public int ReservaId { get; set; }
+    public DateOnly Fecha { get; set; }
+    public TimeOnly HoraInicio { get; set; }
+    public TimeOnly HoraFin { get; set; }
+    public string Cliente { get; set; } = string.Empty;
+    public string ClienteDocumento { get; set; } = string.Empty;
+    public string Sede { get; set; } = string.Empty;
+    public string Espacio { get; set; } = string.Empty;
+    public int EstadoCodigo { get; set; }
+    public string Estado { get; set; } = string.Empty;
+    public string CanalOrigen { get; set; } = string.Empty;
+    public decimal Total { get; set; }
+    public decimal Descuento { get; set; }
+    public decimal MontoPagado { get; set; }
+    public decimal SaldoPendiente { get; set; }
+    public string? CodigoCupon { get; set; }
 }
 
 public class ReporteOcupacionItemViewModel

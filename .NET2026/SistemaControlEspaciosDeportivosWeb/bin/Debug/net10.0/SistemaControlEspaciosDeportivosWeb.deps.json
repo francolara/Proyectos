@@ -16,7 +16,6 @@
           "Microsoft.AspNetCore.Identity.UI": "10.0.5",
           "Microsoft.EntityFrameworkCore.SqlServer": "10.0.5",
           "Microsoft.EntityFrameworkCore.Tools": "10.0.5",
-          "Microsoft.Playwright": "1.54.0",
           "SixLabors.ImageSharp": "3.1.11"
         },
         "runtime": {
@@ -716,17 +715,6 @@
           }
         }
       },
-      "Microsoft.Playwright/1.54.0": {
-        "dependencies": {
-          "Microsoft.Bcl.AsyncInterfaces": "8.0.0"
-        },
-        "runtime": {
-          "lib/netstandard2.0/Microsoft.Playwright.dll": {
-            "assemblyVersion": "1.54.0.0",
-            "fileVersion": "1.54.0.0"
-          }
-        }
-      },
       "Microsoft.SqlServer.Server/1.0.0": {
         "runtime": {
           "lib/netstandard2.0/Microsoft.SqlServer.Server.dll": {
@@ -1192,13 +1180,6 @@
       "sha512": "sha512-fQ0VVCba75lknUHGldi3iTKAYUQqbzp1Un8+d9cm9nON0Gs8NAkXddNg8iaUB0qi/ybtAmNWizTR4avdkCJ9pQ==",
       "path": "microsoft.identitymodel.tokens/7.7.1",
       "hashPath": "microsoft.identitymodel.tokens.7.7.1.nupkg.sha512"
-    },
-    "Microsoft.Playwright/1.54.0": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-u/ftvv1mdusX2R+4u0XINaRw10w9oGhxZePjkFgNZhpG/hUaOg/0npgavXh3mlO1u8b06v+XQKuvOYdsieHMZg==",
-      "path": "microsoft.playwright/1.54.0",
-      "hashPath": "microsoft.playwright.1.54.0.nupkg.sha512"
     },
     "Microsoft.SqlServer.Server/1.0.0": {
       "type": "package",

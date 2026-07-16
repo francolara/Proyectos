@@ -16,11 +16,25 @@
     var maxIngreso = Model.SerieIngresosPorDia.Any() ? Math.Max(1m, Model.SerieIngresosPorDia.Max(x => x.Valor)) : 1m;
     var maxReserva = Model.SerieReservasPorDia.Any() ? Math.Max(1m, Model.SerieReservasPorDia.Max(x => x.Valor)) : 1m;
     var topMax = Model.TopEspacios.Any() ? Math.Max(1m, Model.TopEspacios.Max(x => x.Reservado)) : 1m;
+    var topIngresosImpresion = Model.SerieIngresosPorDia
+        .OrderByDescending(x => x.Valor)
+        .ThenBy(x => x.Fecha)
+        .Take(8)
+        .ToList();
+    var topReservasImpresion = Model.SerieReservasPorDia
+        .OrderByDescending(x => x.Valor)
+        .ThenBy(x => x.Fecha)
+        .Take(8)
+        .ToList();
     var negocioActual = Model.Negocios.FirstOrDefault(x => x.NegocioId == Model.NegocioSeleccionadoId);
     var negocioActualTexto = negocioActual is null
         ? $"Negocio #{Model.NegocioSeleccionadoId}"
         : $"{negocioActual.NombreNegocio} ({negocioActual.Rol})";
     var puedeCrearReserva = Model.Modulos.Any(x => string.Equals(x.ModuloCodigo, "RESERVAS", StringComparison.OrdinalIgnoreCase) && x.PuedeCrear);
+    var totalSaldoPendiente = Model.ReservasConSaldoPendiente.Sum(x => x.SaldoPendiente);
+    var totalMontoPendiente = Model.ReservasConSaldoPendiente.Sum(x => x.MontoTotal);
+    var reservasPendientes48h = Model.ReservasPendientesConfirmacion.Count;
+    var reservasSaldoPendiente = Model.ReservasConSaldoPendiente.Count;
 
     var acciones = new List<(string Label, string Icon, string Href)>
     {
@@ -55,13 +69,10 @@
     var varReservas = Variacion(Model.ReservasPeriodo, Model.ReservasPeriodoAnterior);
     var varReservado = Variacion(Model.MontoReservadoPeriodo, Model.MontoReservadoPeriodoAnterior);
     var varOcupacion = Variacion(Model.OcupacionHoyPct, Model.OcupacionDiaAnteriorPct);
-    var horasMediaHora = Enumerable.Range(0, 48)
-        .Select(i => TimeOnly.MinValue.AddMinutes(i * 30))
-        .ToList();
 }
 
 <section class="sc-dash-shell">
-    <header class="sc-admin-topbar sc-dash-topbar">
+    <header class="sc-admin-topbar sc-dash-topbar no-print">
         <div class="sc-admin-topbar-head">
             <div class="sc-dash-title-wrap">
                 <div>
@@ -84,16 +95,28 @@
                 </div>
             </div>
         </div>
+        <div class="action-toolbar">
+            <a class="btn btn-success"
+               asp-action="Imprimir"
+               asp-route-negocioId="@Model.NegocioSeleccionadoId"
+               asp-route-sedeId="@Model.SedeId"
+               asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")"
+               asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")"
+               target="_blank"
+               rel="noopener">
+                <i class="bi bi-printer"></i> Imprimir
+            </a>
+        </div>
 
     </header>
 
     <div class="sc-admin-content">
         @if (!string.IsNullOrWhiteSpace(Model.Mensaje))
         {
-            <div class="alert alert-warning sc-admin-alert">@Model.Mensaje</div>
+            <div class="alert alert-warning sc-admin-alert no-print">@Model.Mensaje</div>
         }
 
-        <section class="sc-dash-filter-card">
+        <section class="sc-dash-filter-card no-print">
             <form asp-action="Index" method="get" class="sc-dash-filter-grid">
                 <input type="hidden" name="negocioId" value="@Model.NegocioSeleccionadoId" />
                 <div>
@@ -119,22 +142,21 @@
             </form>
         </section>
 
-        <section class="sc-dash-actions">
-            @for (var i = 0; i < acciones.Count; i++)
-            {
-                var accion = acciones[i];
-                var esNuevaReserva = i == 0;
-                <a href="@accion.Href"
-                   class="sc-dash-action-link @(esNuevaReserva && !puedeCrearReserva ? "disabled" : string.Empty)"
-                   data-accion-nueva-reserva="@(esNuevaReserva ? "1" : "0")">
+    @* Firma: FRANCO LARA - 16/07/2026 | Dashboard usa solo el flujo oficial de reservas, elimina el alta rapida duplicada y abre una impresion ejecutiva independiente. *@
+    <section class="sc-dash-actions no-print">
+        @for (var i = 0; i < acciones.Count; i++)
+        {
+            var accion = acciones[i];
+            <a href="@accion.Href"
+                   class="sc-dash-action-link @((i == 0 && !puedeCrearReserva) ? "disabled" : string.Empty)">
                     <i class="bi @accion.Icon"></i>
                     <span>@accion.Label</span>
                 </a>
             }
         </section>
 
-        <h2 class="section-title mb-2"><i class="bi bi-cash-coin me-1 text-primary"></i>Vista comercial</h2>
-        <section class="sc-dash-kpis">
+        <h2 class="section-title mb-2 no-print"><i class="bi bi-cash-coin me-1 text-primary"></i>Vista comercial</h2>
+        <section class="sc-dash-kpis no-print">
             <article class="sc-dash-kpi-card">
                 <div class="sc-dash-kpi-head">
                     <div class="sc-dash-kpi-label">Cobrado del periodo</div>
@@ -178,8 +200,8 @@
             </article>
         </section>
 
-        <h2 class="section-title mb-2 mt-3"><i class="bi bi-clipboard2-pulse me-1 text-primary"></i>Lectura operativa</h2>
-        <section class="sc-dash-grid">
+        <h2 class="section-title mb-2 mt-3 no-print"><i class="bi bi-clipboard2-pulse me-1 text-primary"></i>Lectura operativa</h2>
+        <section class="sc-dash-grid no-print">
             <article class="sc-dash-panel">
                 <div class="sc-dash-panel-head">
                     <h3><i class="bi bi-graph-up-arrow me-1"></i>Cobros por fecha de pago</h3>
@@ -234,7 +256,7 @@
             </article>
         </section>
 
-        <section class="sc-dash-grid">
+        <section class="sc-dash-grid no-print">
             <article class="sc-dash-panel">
                 <div class="sc-dash-panel-head">
                     <h3><i class="bi bi-trophy me-1"></i>Top espacios por demanda</h3>
@@ -310,7 +332,7 @@
             </article>
         </section>
 
-        <section class="sc-dash-grid">
+        <section class="sc-dash-grid no-print">
             <article class="sc-dash-panel">
                 <div class="sc-dash-panel-head">
                     <h3><i class="bi bi-hourglass-split me-1"></i>Reservas por confirmar (proximas 48h)</h3>
@@ -400,314 +422,282 @@
             </article>
         </section>
 
-        <div class="modal fade" id="dashboardReservaModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                <div class="modal-content sc-modal-content">
-                    <div class="modal-header sc-modal-header">
-                        <div class="sc-modal-title-wrap">
-                            <h5 class="modal-title sc-modal-title">Nueva reserva</h5>
-                            <p class="sc-modal-subtitle">Registra una reserva manual sin salir del panel operativo del negocio.</p>
-                        </div>
-                        <button type="button" class="btn-close sc-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                    </div>
-                    <form id="dashboardReservaForm" method="post">
-                        @Html.AntiForgeryToken()
-                        <div class="modal-body sc-modal-body">
-                            <input type="hidden" name="Id" value="0" />
-                            <input type="hidden" name="NegocioId" value="@Model.NegocioSeleccionadoId" />
-                            <input type="hidden" id="dashModalClienteId" name="ClienteId" value="" />
-                            <div id="dashModalError" class="alert alert-danger d-none py-2"></div>
-                            <div id="dashModalDisponibilidad" class="alert d-none py-2"></div>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label" for="dashModalEspacioId">Espacio</label>
-                                    <select class="form-select" id="dashModalEspacioId" name="EspacioDeportivoId" required>
-                                        <option value="">Cargando...</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label" for="dashModalClienteBuscar">Cliente</label>
-                                    <input type="text" class="form-control" id="dashModalClienteBuscar" placeholder="Escribe y presiona Enter..." autocomplete="off" />
-                                    <select class="form-select mt-2" id="dashModalClienteResultados" size="5" aria-label="Resultados de clientes">
-                                        <option value="">Sin resultados</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label" for="dashModalFecha">Fecha</label>
-                                    <input type="date" class="form-control" id="dashModalFecha" name="Fecha" required />
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label" for="dashModalHoraInicio">Hora inicio</label>
-                                    <select class="form-select" id="dashModalHoraInicio" name="HoraInicio" required>
-                                        @foreach (var hora in horasMediaHora)
-                                        {
-                                            <option value="@hora.ToString("HH\\:mm")" selected="@(hora == new TimeOnly(18, 0) ? "selected" : null)">@hora.ToString("HH\\:mm")</option>
-                                        }
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label" for="dashModalHoraFin">Hora fin</label>
-                                    <select class="form-select" id="dashModalHoraFin" name="HoraFin" required>
-                                        @foreach (var hora in horasMediaHora)
-                                        {
-                                            <option value="@hora.ToString("HH\\:mm")" selected="@(hora == new TimeOnly(19, 0) ? "selected" : null)">@hora.ToString("HH\\:mm")</option>
-                                        }
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label" for="dashModalTotal">Precio de espacio (@Model.MonedaSimbolo)</label>
-                                    <input type="number" min="0.01" step="0.01" class="form-control" id="dashModalTotal" name="Total" required />
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label" for="dashModalComentario">Comentario</label>
-                                    <input type="text" class="form-control" id="dashModalComentario" name="Comentario" maxlength="500" />
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-outline-secondary btn-cancelar" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-primary btn-grabar" id="dashModalGuardarBtn">Guardar reserva</button>
-                        </div>
-                    </form>
+        @* Firma: FRANCO LARA - 15/07/2026 | Dashboard: impresion HTML profesional desde la vista principal con resumen ejecutivo, tendencias y pendientes operativos. *@
+        @* Impresion anterior desactivada: el documento se genera en la accion Imprimir sin layout administrativo.
+        <section class="sc-report-print-sheet sc-dashboard-print-sheet print-only">
+            <header class="sc-report-print-header">
+                <div>
+                    <div class="sc-report-print-kicker">Dashboard ejecutivo</div>
+                    <h1>@negocioActualTexto</h1>
+                    <p>Negocio ID: <strong>#@Model.NegocioSeleccionadoId</strong></p>
+                    <p>Periodo consultado: <strong>@Model.FechaDesde.ToString("dd/MM/yyyy") - @Model.FechaHasta.ToString("dd/MM/yyyy")</strong></p>
+                    <p>Sede aplicada: <strong>@(Model.SedesFiltro.FirstOrDefault(x => x.Selected)?.Text ?? "Todas las sedes")</strong></p>
                 </div>
-            </div>
-        </div>
+                <div class="sc-report-print-badge">
+                    <span>Emitido</span>
+                    <strong>@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</strong>
+                </div>
+            </header>
+
+            <section class="sc-report-print-summary">
+                <article class="sc-report-print-summary-card">
+                    <span>Cobrado del periodo</span>
+                    <strong>@Model.MonedaSimbolo @Model.IngresosPeriodo.ToString("N2")</strong>
+                    <small>@varIngresos.Texto | Previo: @Model.MonedaSimbolo @Model.IngresosPeriodoAnterior.ToString("N2")</small>
+                </article>
+                <article class="sc-report-print-summary-card">
+                    <span>Reservas del periodo</span>
+                    <strong>@Model.ReservasPeriodo</strong>
+                    <small>@varReservas.Texto | Previo: @Model.ReservasPeriodoAnterior</small>
+                </article>
+                <article class="sc-report-print-summary-card">
+                    <span>Reservado del periodo</span>
+                    <strong>@Model.MonedaSimbolo @Model.MontoReservadoPeriodo.ToString("N2")</strong>
+                    <small>@varReservado.Texto | Previo: @Model.MonedaSimbolo @Model.MontoReservadoPeriodoAnterior.ToString("N2")</small>
+                </article>
+                <article class="sc-report-print-summary-card">
+                    <span>Ocupacion del dia</span>
+                    <strong>@Model.OcupacionHoyPct.ToString("N2")%</strong>
+                    <small>@varOcupacion.Texto | Ingresos hoy: @Model.MonedaSimbolo @Model.IngresosHoy.ToString("N2")</small>
+                </article>
+            </section>
+
+            <section class="sc-report-print-grid">
+                <article class="sc-report-print-panel">
+                    <div class="sc-report-print-panel-head">
+                        <h2>Resumen comercial</h2>
+                        <span>Cobranza y ticket</span>
+                    </div>
+                    <table class="sc-report-print-table">
+                        <tbody>
+                            <tr><th>Ticket de cobranza</th><td>@Model.MonedaSimbolo @Model.TicketPromedioPeriodo.ToString("N2")</td></tr>
+                            <tr><th>Pagos del periodo</th><td>@Model.PagosPeriodo</td></tr>
+                            <tr><th>Reservas cobradas</th><td>@Model.ReservasCobradasPeriodo</td></tr>
+                            <tr><th>Ingresos hoy</th><td>@Model.MonedaSimbolo @Model.IngresosHoy.ToString("N2")</td></tr>
+                            <tr><th>Reservas hoy</th><td>@Model.ReservasHoy</td></tr>
+                        </tbody>
+                    </table>
+                </article>
+
+                <article class="sc-report-print-panel">
+                    <div class="sc-report-print-panel-head">
+                        <h2>Salud operativa</h2>
+                        <span>Estado del turno</span>
+                    </div>
+                    <table class="sc-report-print-table">
+                        <tbody>
+                            <tr><th>Salud general</th><td>@SaludTexto(saludOperativa) (@saludOperativa.ToString("N0")%)</td></tr>
+                            <tr><th>No-show del mes</th><td>@Model.NoShowMes</td></tr>
+                            <tr><th>Sedes activas</th><td>@Model.TotalSedes</td></tr>
+                            <tr><th>Espacios activos</th><td>@Model.TotalEspacios</td></tr>
+                            <tr><th>Ocupacion dia anterior</th><td>@Model.OcupacionDiaAnteriorPct.ToString("N2")%</td></tr>
+                        </tbody>
+                    </table>
+                </article>
+            </section>
+
+            <section class="sc-report-print-grid">
+                <article class="sc-report-print-panel">
+                    <div class="sc-report-print-panel-head">
+                        <h2>Fechas con mayor cobro</h2>
+                        <span>Serie por fecha de pago</span>
+                    </div>
+                    <table class="sc-report-print-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th class="text-end">Cobrado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (topIngresosImpresion.Any())
+                            {
+                                @foreach (var item in topIngresosImpresion)
+                                {
+                                    <tr>
+                                        <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
+                                        <td class="text-end">@Model.MonedaSimbolo @item.Valor.ToString("N2")</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="2">Sin datos de cobro para el rango elegido.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </article>
+
+                <article class="sc-report-print-panel">
+                    <div class="sc-report-print-panel-head">
+                        <h2>Fechas con mayor demanda</h2>
+                        <span>Serie por fecha de juego</span>
+                    </div>
+                    <table class="sc-report-print-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th class="text-end">Reservas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (topReservasImpresion.Any())
+                            {
+                                @foreach (var item in topReservasImpresion)
+                                {
+                                    <tr>
+                                        <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
+                                        <td class="text-end">@item.Valor.ToString("N0")</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="2">Sin datos de reservas para el rango elegido.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </article>
+            </section>
+
+            <section class="sc-report-print-grid">
+                <article class="sc-report-print-panel">
+                    <div class="sc-report-print-panel-head">
+                        <h2>Top espacios por demanda</h2>
+                        <span>Ranking operativo</span>
+                    </div>
+                    <table class="sc-report-print-table">
+                        <thead>
+                            <tr>
+                                <th>Sede</th>
+                                <th>Espacio</th>
+                                <th class="text-end">Reservas</th>
+                                <th class="text-end">Reservado</th>
+                                <th class="text-end">Cobrado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.TopEspacios.Any())
+                            {
+                                @foreach (var item in Model.TopEspacios.Take(8))
+                                {
+                                    <tr>
+                                        <td>@item.Sede</td>
+                                        <td>@item.Espacio</td>
+                                        <td class="text-end">@item.Reservas</td>
+                                        <td class="text-end">@Model.MonedaSimbolo @item.Reservado.ToString("N2")</td>
+                                        <td class="text-end">@Model.MonedaSimbolo @item.Cobrado.ToString("N2")</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="5">No hay espacios con actividad en el rango.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </article>
+
+                <article class="sc-report-print-panel">
+                    <div class="sc-report-print-panel-head">
+                        <h2>Pendientes de gestion</h2>
+                        <span>Confirmacion y cobranza</span>
+                    </div>
+                    <table class="sc-report-print-table">
+                        <tbody>
+                            <tr><th>Reservas por confirmar (48h)</th><td>@reservasPendientes48h</td></tr>
+                            <tr><th>Reservas con saldo pendiente</th><td>@reservasSaldoPendiente</td></tr>
+                            <tr><th>Monto comprometido pendiente</th><td>@Model.MonedaSimbolo @totalMontoPendiente.ToString("N2")</td></tr>
+                            <tr><th>Saldo pendiente total</th><td>@Model.MonedaSimbolo @totalSaldoPendiente.ToString("N2")</td></tr>
+                            <tr><th>Plan del negocio</th><td>@Model.TipoPlan</td></tr>
+                        </tbody>
+                    </table>
+                </article>
+            </section>
+
+            <section class="sc-report-print-grid">
+                <article class="sc-report-print-panel">
+                    <div class="sc-report-print-panel-head">
+                        <h2>Reservas por confirmar</h2>
+                        <span>Proximas 48 horas</span>
+                    </div>
+                    <table class="sc-report-print-table">
+                        <thead>
+                            <tr>
+                                <th>Reserva</th>
+                                <th>Cliente</th>
+                                <th>Horario</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.ReservasPendientesConfirmacion.Any())
+                            {
+                                @foreach (var item in Model.ReservasPendientesConfirmacion.Take(10))
+                                {
+                                    <tr>
+                                        <td>@item.ReservaCodigo</td>
+                                        <td>@item.Cliente</td>
+                                        <td>@item.Fecha.ToString("dd/MM") @item.HoraInicio.ToString("HH\\:mm") - @item.HoraFin.ToString("HH\\:mm")</td>
+                                        <td>@item.Estado</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="4">No hay reservas pendientes para las proximas 48 horas.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </article>
+
+                <article class="sc-report-print-panel">
+                    <div class="sc-report-print-panel-head">
+                        <h2>Reservas con saldo pendiente</h2>
+                        <span>Seguimiento de cobranza</span>
+                    </div>
+                    <table class="sc-report-print-table">
+                        <thead>
+                            <tr>
+                                <th>Reserva</th>
+                                <th>Cliente</th>
+                                <th class="text-end">Monto</th>
+                                <th class="text-end">Saldo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.ReservasConSaldoPendiente.Any())
+                            {
+                                @foreach (var item in Model.ReservasConSaldoPendiente.Take(10))
+                                {
+                                    <tr>
+                                        <td>@item.ReservaCodigo</td>
+                                        <td>@item.Cliente</td>
+                                        <td class="text-end">@Model.MonedaSimbolo @item.MontoTotal.ToString("N2")</td>
+                                        <td class="text-end">@Model.MonedaSimbolo @item.SaldoPendiente.ToString("N2")</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="4">No hay saldos pendientes dentro del rango.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </article>
+            </section>
+        </section>
+        *@
+
     </div>
 </section>
-
-@section Scripts {
-    <script>
-        (() => {
-            const puedeCrearReserva = @puedeCrearReserva.ToString().ToLowerInvariant();
-            const negocioId = @Model.NegocioSeleccionadoId;
-            const hoyIso = new Date().toISOString().slice(0, 10);
-            const sedeFiltroEl = document.getElementById('sedeId');
-            const nuevaReservaLink = document.querySelector('[data-accion-nueva-reserva="1"]');
-            const modalEl = document.getElementById('dashboardReservaModal');
-            const formEl = document.getElementById('dashboardReservaForm');
-            const errorEl = document.getElementById('dashModalError');
-            const disponibilidadEl = document.getElementById('dashModalDisponibilidad');
-            const espacioEl = document.getElementById('dashModalEspacioId');
-            const clienteBuscarEl = document.getElementById('dashModalClienteBuscar');
-            const clienteResultadosEl = document.getElementById('dashModalClienteResultados');
-            const clienteIdEl = document.getElementById('dashModalClienteId');
-            const fechaEl = document.getElementById('dashModalFecha');
-            const horaInicioEl = document.getElementById('dashModalHoraInicio');
-            const horaFinEl = document.getElementById('dashModalHoraFin');
-            const totalEl = document.getElementById('dashModalTotal');
-            const guardarBtn = document.getElementById('dashModalGuardarBtn');
-            const modal = modalEl ? new bootstrap.Modal(modalEl) : null;
-
-            const urlEspacios = '@Url.Action("ObtenerEspaciosReserva", "Panel")';
-            const urlClientes = '@Url.Action("ObtenerClientesFiltro", "Reservas")';
-            const urlCotizar = '@Url.Action("CotizarReserva", "Reservas")';
-            const urlValidar = '@Url.Action("ValidarDisponibilidadModal", "Reservas")';
-            const urlGuardar = '@Url.Action("GuardarReservaModal", "Reservas")';
-
-            function limpiarMensajes() {
-                if (!errorEl || !disponibilidadEl) return;
-                errorEl.classList.add('d-none');
-                errorEl.textContent = '';
-                disponibilidadEl.classList.add('d-none');
-                disponibilidadEl.classList.remove('alert-success', 'alert-warning');
-                disponibilidadEl.textContent = '';
-            }
-
-            function mostrarError(msg) {
-                if (!errorEl) return;
-                errorEl.textContent = msg || 'No se pudo guardar la reserva.';
-                errorEl.classList.remove('d-none');
-            }
-
-            function mostrarDisponibilidad(disponible, mensaje) {
-                if (!disponibilidadEl) return;
-                disponibilidadEl.classList.remove('d-none');
-                disponibilidadEl.classList.toggle('alert-success', !!disponible);
-                disponibilidadEl.classList.toggle('alert-warning', !disponible);
-                disponibilidadEl.textContent = mensaje || (disponible ? 'Horario disponible.' : 'Horario no disponible.');
-                if (guardarBtn) guardarBtn.disabled = !disponible;
-            }
-
-            async function cargarEspacios() {
-                if (!espacioEl) return;
-                const params = new URLSearchParams();
-                params.append('negocioId', String(negocioId));
-                const sedeId = (sedeFiltroEl?.value || '').trim();
-                if (sedeId) params.append('sedeId', sedeId);
-                const r = await fetch(`${urlEspacios}?${params.toString()}`, { cache: 'no-store' });
-                const payload = await r.json();
-                if (!r.ok || !payload.ok) {
-                    throw new Error(payload.mensaje || 'No se pudieron cargar los espacios.');
-                }
-
-                espacioEl.innerHTML = '<option value="">Selecciona espacio</option>';
-                (payload.items || []).forEach(item => {
-                    const opt = document.createElement('option');
-                    opt.value = String(item.value ?? '');
-                    opt.textContent = String(item.text ?? '');
-                    espacioEl.appendChild(opt);
-                });
-            }
-
-            async function buscarClientes() {
-                const filtro = String(clienteBuscarEl?.value || '').trim();
-                if (filtro.length < 2) {
-                    mostrarError('Escribe al menos 2 caracteres para buscar cliente.');
-                    return;
-                }
-                limpiarMensajes();
-                const params = new URLSearchParams();
-                params.append('negocioId', String(negocioId));
-                params.append('buscar', filtro);
-                const r = await fetch(`${urlClientes}?${params.toString()}`, { cache: 'no-store' });
-                const payload = await r.json();
-                if (!r.ok || !payload.ok) {
-                    throw new Error(payload.mensaje || 'No se pudo buscar clientes.');
-                }
-
-                clienteResultadosEl.innerHTML = '';
-                (payload.items || []).forEach(item => {
-                    const opt = document.createElement('option');
-                    opt.value = String(item.value ?? '');
-                    opt.textContent = String(item.text ?? '');
-                    clienteResultadosEl.appendChild(opt);
-                });
-                if (!clienteResultadosEl.options.length) {
-                    clienteResultadosEl.innerHTML = '<option value="">Sin resultados</option>';
-                }
-            }
-
-            async function cotizar() {
-                const espacioId = espacioEl?.value || '';
-                const fecha = fechaEl?.value || '';
-                const horaInicio = horaInicioEl?.value || '';
-                const horaFin = horaFinEl?.value || '';
-                if (!espacioId || !fecha || !horaInicio || !horaFin) return;
-
-                const params = new URLSearchParams();
-                params.append('negocioId', String(negocioId));
-                params.append('espacioDeportivoId', espacioId);
-                params.append('fecha', fecha);
-                params.append('horaInicio', horaInicio);
-                params.append('horaFin', horaFin);
-                const r = await fetch(`${urlCotizar}?${params.toString()}`, { cache: 'no-store' });
-                const payload = await r.json();
-                if (!r.ok || !payload.ok) {
-                    throw new Error(payload.mensaje || 'No se pudo cotizar la reserva.');
-                }
-                if (totalEl && (!totalEl.value || Number(totalEl.value) <= 0)) {
-                    totalEl.value = Number(payload.precioFinal || 0).toFixed(2);
-                }
-            }
-
-            async function validarDisponibilidad() {
-                const espacioId = espacioEl?.value || '';
-                const fecha = fechaEl?.value || '';
-                const horaInicio = horaInicioEl?.value || '';
-                const horaFin = horaFinEl?.value || '';
-                if (!espacioId || !fecha || !horaInicio || !horaFin) return;
-
-                const params = new URLSearchParams();
-                params.append('negocioId', String(negocioId));
-                params.append('espacioDeportivoId', espacioId);
-                params.append('fecha', fecha);
-                params.append('horaInicio', horaInicio);
-                params.append('horaFin', horaFin);
-                const r = await fetch(`${urlValidar}?${params.toString()}`, { cache: 'no-store' });
-                const payload = await r.json();
-                if (!r.ok || !payload.ok) {
-                    throw new Error(payload.mensaje || 'No se pudo validar disponibilidad.');
-                }
-                mostrarDisponibilidad(!!payload.disponible, payload.mensaje || '');
-            }
-
-            async function abrirModalNuevaReserva() {
-                if (!puedeCrearReserva) {
-                    alert('No tienes permiso para crear reservas.');
-                    return;
-                }
-
-                limpiarMensajes();
-                clienteIdEl.value = '';
-                clienteBuscarEl.value = '';
-                clienteResultadosEl.innerHTML = '<option value="">Sin resultados</option>';
-                fechaEl.value = hoyIso;
-                fechaEl.min = hoyIso;
-                totalEl.value = '';
-                if (guardarBtn) guardarBtn.disabled = false;
-                await cargarEspacios();
-                modal?.show();
-            }
-
-            if (nuevaReservaLink && (nuevaReservaLink.getAttribute('href') || '#') === '#') {
-                nuevaReservaLink.addEventListener('click', async (e) => {
-                    e.preventDefault();
-                    try {
-                        await abrirModalNuevaReserva();
-                    } catch (err) {
-                        mostrarError(err?.message || 'No se pudo abrir el formulario de reserva.');
-                    }
-                });
-            }
-
-            if (sedeFiltroEl) {
-                sedeFiltroEl.addEventListener('change', () => {
-                    if (modalEl?.classList.contains('show')) {
-                        cargarEspacios().catch(err => mostrarError(err?.message));
-                    }
-                });
-            }
-
-            if (clienteBuscarEl) {
-                clienteBuscarEl.addEventListener('keydown', (e) => {
-                    if (e.key !== 'Enter') return;
-                    e.preventDefault();
-                    buscarClientes().catch(err => mostrarError(err?.message));
-                });
-            }
-
-            if (clienteResultadosEl) {
-                clienteResultadosEl.addEventListener('change', () => {
-                    const selected = clienteResultadosEl.selectedOptions?.[0];
-                    if (!selected?.value) return;
-                    clienteIdEl.value = selected.value;
-                    clienteBuscarEl.value = selected.text || '';
-                });
-            }
-
-            [espacioEl, fechaEl, horaInicioEl, horaFinEl].forEach(el => {
-                if (!el) return;
-                el.addEventListener('change', () => {
-                    limpiarMensajes();
-                    cotizar().catch(err => mostrarError(err?.message));
-                    validarDisponibilidad().catch(err => mostrarError(err?.message));
-                });
-            });
-
-            if (formEl) {
-                formEl.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    try {
-                        limpiarMensajes();
-                        if (!clienteIdEl.value) {
-                            mostrarError('Selecciona un cliente de la lista.');
-                            return;
-                        }
-
-                        const data = new FormData(formEl);
-                        const r = await fetch(urlGuardar, { method: 'POST', body: data });
-                        const payload = await r.json();
-                        if (!r.ok || !payload.ok) {
-                            throw new Error(payload.mensaje || 'No se pudo guardar la reserva.');
-                        }
-
-                        modal?.hide();
-                        window.location.reload();
-                    } catch (err) {
-                        mostrarError(err?.message || 'No se pudo guardar la reserva.');
-                    }
-                });
-            }
-        })();
-    </script>
-}

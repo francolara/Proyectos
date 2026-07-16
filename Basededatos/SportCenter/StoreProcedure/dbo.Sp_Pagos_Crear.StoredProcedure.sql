@@ -7,6 +7,7 @@ GO
 
 -- SOURCE: 35_Maestros_FormasPago.sql (linea 186)
 -- Firma: Codex - 09/04/2026 | Limita a maximo 2 pagos por reserva, valida politica de confirmacion del negocio, exige que el 2do pago sea exactamente el saldo restante y ajusta estado automatico segun pago acumulado.
+-- Firma: FRANCO LARA - 16/07/2026 | Permite pagos parciales sin limite de cantidad y bloquea reservas pagadas o montos mayores al saldo pendiente.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Pagos_Crear]
     @NegocioId INT,
     @ReservaId INT,
@@ -30,7 +31,7 @@ BEGIN
         DECLARE @TotalReserva DECIMAL(10,2);
         DECLARE @PagadoActual DECIMAL(10,2);
         DECLARE @NuevoPagado DECIMAL(10,2);
-        DECLARE @CantidadPagos INT;
+        DECLARE @SaldoPendiente DECIMAL(10,2);
         DECLARE @PoliticaConfirmacionPago TINYINT = 0;
         DECLARE @PorcentajeAdelantoMinimo DECIMAL(5,2) = NULL;
         DECLARE @MontoMinimoAdelanto DECIMAL(10,2) = NULL;
@@ -50,20 +51,17 @@ BEGIN
             RAISERROR('Reserva invalida para el negocio.', 16, 1);
 
         SELECT
-            @PagadoActual = COALESCE(SUM(p.Monto), 0),
-            @CantidadPagos = COUNT(1)
+            @PagadoActual = COALESCE(SUM(p.Monto), 0)
         FROM dbo.Pagos p
         WHERE p.ReservaId = @ReservaId;
 
-        IF COALESCE(@CantidadPagos, 0) >= 2
-            RAISERROR('La reserva ya tiene 2 pagos registrados. No se pueden registrar mas pagos.', 16, 1);
+        SET @SaldoPendiente = @TotalReserva - @PagadoActual;
 
-        IF COALESCE(@CantidadPagos, 0) = 1
-        BEGIN
-            DECLARE @SaldoRestante DECIMAL(10,2) = (@TotalReserva - @PagadoActual);
-            IF ABS(@Monto - @SaldoRestante) > 0.009
-                RAISERROR('Al registrar el segundo pago, el monto debe ser exactamente el saldo restante de la reserva.', 16, 1);
-        END
+        IF @SaldoPendiente <= 0
+            RAISERROR('La reserva ya esta pagada al 100%. No se pueden registrar mas pagos.', 16, 1);
+
+        IF @Monto > @SaldoPendiente
+            RAISERROR('El pago excede el saldo pendiente de la reserva.', 16, 1);
 
         SET @NuevoPagado = @PagadoActual + @Monto;
         IF @NuevoPagado > @TotalReserva

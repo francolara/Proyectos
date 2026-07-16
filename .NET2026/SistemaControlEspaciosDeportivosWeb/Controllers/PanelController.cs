@@ -193,21 +193,15 @@ public class PanelController(ISportCenterStoredProcedureService spService, IModu
     }
 
     [HttpGet]
-    public async Task<IActionResult> ObtenerEspaciosReserva(int negocioId, int? sedeId)
+    public async Task<IActionResult> Imprimir(int? negocioId, int? sedeId, DateOnly? fechaDesde, DateOnly? fechaHasta)
     {
-        var contextoDashboard = await moduloPermisoService.ObtenerContextoAsync(User, negocioId, "DASHBOARD");
-        if (!contextoDashboard.Autorizado)
+        var resultado = await Index(negocioId, sedeId, fechaDesde, fechaHasta);
+        if (resultado is ViewResult { Model: PanelDashboardViewModel vm } && string.IsNullOrWhiteSpace(vm.Mensaje))
         {
-            return Json(new { ok = false, mensaje = contextoDashboard.Mensaje ?? "No autorizado." });
+            return View(vm);
         }
 
-        var sedeAplicada = contextoDashboard.EsAdministrador ? sedeId : contextoDashboard.SedeIdAsignada;
-        var espacios = await spService.ReservasComboEspaciosAsync(negocioId, sedeAplicada);
-        return Json(new
-        {
-            ok = true,
-            items = espacios.Select(x => new { value = x.Value, text = x.Text })
-        });
+        return resultado;
     }
 
     private static int? ResolverSedeAplicada(bool esAdministrador, int? sedeAsignada, int? sedeSolicitada, IReadOnlyCollection<SelectListItem> sedesDisponibles)

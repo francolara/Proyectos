@@ -1,6 +1,7 @@
 @page
 @model SistemaControlEspaciosDeportivosWeb.Areas.Identity.Pages.Account.RegisterModel
 @inject Microsoft.Extensions.Options.IOptions<SistemaControlEspaciosDeportivosWeb.Services.SedeImagenStorageSettings> SedeImagenStorageOptions
+@* Firma: FRANCO LARA - 15/07/2026 | Registro publico agrega captcha manual de respaldo cuando Turnstile falla o no queda disponible. *@
 @{
     ViewData["Title"] = "Crear cuenta";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -67,6 +68,7 @@
 
             <form method="post" id="registerForm">
                 <input type="hidden" asp-for="ReturnUrl" />
+                <input type="hidden" asp-for="UsarCaptchaManual" />
                 <div class="auth-mini-switch mb-3" role="group" aria-label="Tipo registro">
                     <input type="radio" class="btn-check" name="TipoRegistro" id="regUsuario" value="usuario" checked="@(string.Equals(Model.TipoRegistro, "club", StringComparison.OrdinalIgnoreCase) ? null : "checked")" />
                     <label class="btn" for="regUsuario">Usuario</label>
@@ -133,9 +135,22 @@
                         </div>
                         <span asp-validation-for="Usuario.ConfirmPassword" class="text-danger"></span>
                     </div>
-                    <div class="mb-3">
-                    <div class="cf-turnstile" data-sitekey="@Model.TurnstileSiteKey"></div>
-                </div>
+                    @if (!Model.MostrarCaptchaManual)
+                    {
+                        <div class="mb-3">
+                            <div class="cf-turnstile" data-sitekey="@Model.TurnstileSiteKey"></div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="auth-manual-captcha mb-3">
+                            <label asp-for="CaptchaManual" class="form-label">Captcha manual de respaldo</label>
+                            <div class="auth-manual-captcha-code" aria-label="Codigo captcha">@Model.CaptchaManualCodigo</div>
+                            <input asp-for="CaptchaManual" class="form-control mt-2" autocomplete="off" spellcheck="false" placeholder="Escribe el codigo mostrado" />
+                            <span asp-validation-for="CaptchaManual" class="text-danger"></span>
+                            <div class="form-text">Este respaldo solo aparece cuando Turnstile falla o no responde.</div>
+                        </div>
+                    }
                     <button type="submit" asp-page-handler="Usuario" class="w-100 btn btn-primary auth-cta">Registrarse como usuario</button>
 
                     @if (Model.ExternalLogins?.Count > 0)
@@ -278,9 +293,22 @@
                             <span asp-validation-for="Club.ConfirmPassword" class="text-danger"></span>
                         </div>
                     </div>
-                    <div class="mb-3">
-                    <div class="cf-turnstile" data-sitekey="@Model.TurnstileSiteKey"></div>
-                </div>
+                    @if (!Model.MostrarCaptchaManual)
+                    {
+                        <div class="mb-3">
+                            <div class="cf-turnstile" data-sitekey="@Model.TurnstileSiteKey"></div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="auth-manual-captcha mb-3">
+                            <label asp-for="CaptchaManual" class="form-label">Captcha manual de respaldo</label>
+                            <div class="auth-manual-captcha-code" aria-label="Codigo captcha">@Model.CaptchaManualCodigo</div>
+                            <input asp-for="CaptchaManual" class="form-control mt-2" autocomplete="off" spellcheck="false" placeholder="Escribe el codigo mostrado" />
+                            <span asp-validation-for="CaptchaManual" class="text-danger"></span>
+                            <div class="form-text">Este respaldo solo aparece cuando Turnstile falla o no responde.</div>
+                        </div>
+                    }
                     <button type="submit" asp-page-handler="Club" class="w-100 btn btn-primary auth-cta mt-3">Registrarse como complejo deportivo</button>
 
                 </div>
@@ -295,7 +323,10 @@
 </section>
 
 @section Scripts {
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    @if (!Model.MostrarCaptchaManual)
+    {
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    }
     <partial name="_ValidationScriptsPartial" />
     <script>
         (() => {

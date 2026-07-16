@@ -560,6 +560,24 @@ public class ReservasController(
         {
             return BadRequest(new { ok = false, mensaje = "El precio de espacio es obligatorio y debe ser mayor que cero." });
         }
+        if (model.RegistrarPago)
+        {
+            var pagadoActual = 0m;
+            if (requiereEditar)
+            {
+                var reservaActual = await spService.ReservasObtenerAsync(model.NegocioId, model.Id);
+                if (reservaActual is null)
+                    return NotFound(new { ok = false, mensaje = "No se encontro la reserva para registrar el pago." });
+
+                pagadoActual = reservaActual.Adelanto;
+            }
+
+            var saldoPendiente = model.Total - pagadoActual;
+            if (saldoPendiente <= 0)
+                return BadRequest(new { ok = false, mensaje = "La reserva ya esta pagada al 100%. No se pueden registrar mas pagos." });
+            if (model.Adelanto > saldoPendiente)
+                return BadRequest(new { ok = false, mensaje = $"El pago excede el saldo pendiente de {saldoPendiente:0.00}." });
+        }
 
         try
         {

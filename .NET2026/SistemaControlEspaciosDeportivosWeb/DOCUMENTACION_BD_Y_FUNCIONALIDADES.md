@@ -271,6 +271,9 @@
   - Se crea `Sp_Reportes_ReservasPorDia` para mantener la lectura operativa por `Reservas.Fecha` sin mezclarla con caja.
   - Se crea `Sp_Reportes_ResumenCobranza` para calcular `CantidadPagos`, `ReservasCobradas` y `MontoCobrado` por rango de pago.
   - La vista `Reportes` y el `Dashboard` separan visualmente `Cobranza` y `Operacion`; los accesos del bloque de cobros redirigen a `Pagos`, mientras que los operativos siguen redirigiendo a `Reservas`.
+- Actualizacion 16/07/2026:
+  - Se crean `Sp_Reportes_DetallePagos` y `Sp_Reportes_DetalleReservas` para alimentar la impresion ejecutiva con movimientos individuales, importes, descuentos y saldos.
+  - Los botones `Imprimir` de Reportes y Dashboard abren vistas HTML independientes del panel administrativo; Reportes separa pagos y reservas, mientras Dashboard organiza resumen gerencial, desempeno y seguimiento operativo.
 
 ### 10_Home_Solicitudes_Publicas.sql
 - Tabla:
@@ -631,6 +634,8 @@
   - `Sp_Reportes_ReservasPorDia`
   - `Sp_Reportes_ResumenOperativo`
   - `Sp_Reportes_ResumenCobranza`
+  - `Sp_Reportes_DetallePagos`
+  - `Sp_Reportes_DetalleReservas`
   - `Sp_Panel_ObtenerMetricas`
   - `Sp_Promociones_Listar`
 - Regla funcional:

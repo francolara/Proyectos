@@ -1,6 +1,7 @@
 @page
 @model SistemaControlEspaciosDeportivosWeb.Areas.Identity.Pages.Account.LoginModel
 @inject Microsoft.Extensions.Options.IOptions<SistemaControlEspaciosDeportivosWeb.Services.SedeImagenStorageSettings> SedeImagenStorageOptions
+@* Firma: FRANCO LARA - 15/07/2026 | Login publico agrega captcha manual de respaldo cuando Turnstile falla o no queda disponible. *@
 @{
     ViewData["Title"] = "Iniciar sesion";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -61,6 +62,7 @@
 
             <form id="account" method="post">
                 <input type="hidden" asp-for="ReturnUrl" />
+                <input type="hidden" asp-for="UsarCaptchaManual" />
                 @* Firma: Franco Lara - 21/05/2026 | Mensaje amigable cuando logout falla por sesion/token expirado y se redirige a login. *@
                 @if (string.Equals(Request.Query["sessionExpired"], "1", StringComparison.Ordinal))
                 {
@@ -97,10 +99,20 @@
                     </div>
                     <a asp-page="./ForgotPassword" class="auth-link">Olvidaste tu contrasena?</a>
                 </div>
-                @if (Model.MostrarTurnstile)
+                @if (Model.MostrarTurnstile && !Model.MostrarCaptchaManual)
                 {
                     <div class="mb-3">
                         <div class="cf-turnstile" data-sitekey="@Model.TurnstileSiteKey"></div>
+                    </div>
+                }
+                @if (Model.MostrarCaptchaManual)
+                {
+                    <div class="auth-manual-captcha mb-3">
+                        <label asp-for="CaptchaManual" class="form-label">Captcha manual de respaldo</label>
+                        <div class="auth-manual-captcha-code" aria-label="Codigo captcha">@Model.CaptchaManualCodigo</div>
+                        <input asp-for="CaptchaManual" class="form-control mt-2" autocomplete="off" spellcheck="false" placeholder="Escribe el codigo mostrado" />
+                        <span asp-validation-for="CaptchaManual" class="text-danger"></span>
+                        <div class="form-text">Este respaldo solo aparece cuando Turnstile falla o no responde.</div>
                     </div>
                 }
 
@@ -136,7 +148,7 @@
 </section>
 
 @section Scripts {
-    @if (Model.MostrarTurnstile)
+    @if (Model.MostrarTurnstile && !Model.MostrarCaptchaManual)
     {
         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     }

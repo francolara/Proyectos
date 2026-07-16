@@ -666,33 +666,6 @@ public class ComprobantesController(
     }
 
     [HttpGet]
-    public async Task<IActionResult> Visualizar(int negocioId, int id)
-    {
-        var baseVm = await ObtenerBaseAsync(negocioId, "COMPROBANTES");
-        if (baseVm is null) return Forbid();
-
-        var data = await spService.ComprobantesObtenerVisualizacionAsync(negocioId, id);
-        if (data is null) return NotFound();
-
-        if (data.EsTributario)
-        {
-            var url = (data.UrlDescargaProveedor ?? string.Empty).Trim();
-            if (Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
-                (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp))
-            {
-                return Redirect(url);
-            }
-
-            TempData["ComprobanteError"] = "El comprobante tributario no tiene URL de descarga del proveedor.";
-            return RedirectToAction(nameof(Index), new { negocioId });
-        }
-
-        var pdf = await InternalReceiptHtmlPdfBuilder.BuildAsync(data);
-        var fileName = $"ReciboInterno_{data.Serie}-{data.Numero.ToString("D8", CultureInfo.InvariantCulture)}.pdf";
-        return File(pdf, "application/pdf", fileName);
-    }
-
-    [HttpGet]
     public async Task<IActionResult> Preview(int negocioId, int id)
     {
         var baseVm = await ObtenerBaseAsync(negocioId, "COMPROBANTES");

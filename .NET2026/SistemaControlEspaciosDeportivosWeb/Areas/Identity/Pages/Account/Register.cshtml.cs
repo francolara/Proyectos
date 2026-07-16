@@ -26,6 +26,8 @@ public class RegisterModel(
     Microsoft.Extensions.Options.IOptions<CloudflareTurnstileSettings> turnstileOptions,
     ILogger<RegisterModel> logger) : PageModel
 {
+    private const string RegisterCaptchaScope = "REGISTER";
+
     [BindProperty]
     [ValidateNever]
     public UsuarioInputModel Usuario { get; set; } = new();
@@ -40,12 +42,21 @@ public class RegisterModel(
     [BindProperty(SupportsGet = true)]
     public string? ReturnUrl { get; set; } = string.Empty;
 
+    [BindProperty]
+    [StringLength(20, ErrorMessage = "El codigo captcha no puede exceder 20 caracteres.")]
+    public string? CaptchaManual { get; set; }
+
+    [BindProperty]
+    public bool UsarCaptchaManual { get; set; }
+
     public WebBannerPublicoViewModel? BannerLateral { get; set; }
     public IList<AuthenticationScheme> ExternalLogins { get; set; } = new List<AuthenticationScheme>();
     public List<SelectListItem> Departamentos { get; set; } = new();
     public List<SelectListItem> Provincias { get; set; } = new();
     public List<SelectListItem> Distritos { get; set; } = new();
     public string TurnstileSiteKey { get; private set; } = string.Empty;
+    public bool MostrarCaptchaManual { get; private set; }
+    public string CaptchaManualCodigo { get; private set; } = string.Empty;
 
     public class UsuarioInputModel
     {
@@ -79,6 +90,7 @@ public class RegisterModel(
         TipoRegistro = string.Equals(TipoRegistro, "club", StringComparison.OrdinalIgnoreCase) ? "club" : "usuario";
         ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
         TurnstileSiteKey = turnstileOptions.Value.SiteKey;
+        ConfigurarCaptchaManual();
         Club = CrearClubDefault();
         await CargarCombosUbigeoAsync();
         await CargarBannerLateralAsync();
@@ -89,6 +101,7 @@ public class RegisterModel(
         ReturnUrl = returnUrl ?? ReturnUrl ?? Url.Content("~/");
         ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
         TurnstileSiteKey = turnstileOptions.Value.SiteKey;
+        ConfigurarCaptchaManual();
         // Fallback cuando el navegador envia Enter sin handler explicito.
         var accionForm = (Request.Form["accionRegistro"].ToString() ?? string.Empty).Trim();
         var tipoForm = string.IsNullOrWhiteSpace(accionForm)
@@ -107,6 +120,7 @@ public class RegisterModel(
         ReturnUrl = returnUrl ?? ReturnUrl ?? Url.Content("~/");
         ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
         TurnstileSiteKey = turnstileOptions.Value.SiteKey;
+        ConfigurarCaptchaManual();
         TipoRegistro = "usuario";
         return await ProcesarRegistroUsuarioAsync();
     }
@@ -116,6 +130,7 @@ public class RegisterModel(
         ReturnUrl = returnUrl ?? ReturnUrl ?? Url.Content("~/");
         ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
         TurnstileSiteKey = turnstileOptions.Value.SiteKey;
+        ConfigurarCaptchaManual();
         TipoRegistro = "club";
         return await ProcesarRegistroClubAsync();
     }
@@ -457,6 +472,20 @@ public class RegisterModel(
 
     private async Task<bool> ValidarTurnstileAsync()
     {
+        if (MostrarCaptchaManual)
+        {
+            if (ManualCaptchaChallengeStore.Validate(HttpContext, RegisterCaptchaScope, CaptchaManual))
+            {
+                ManualCaptchaChallengeStore.Clear(HttpContext, RegisterCaptchaScope);
+                return true;
+            }
+
+            UsarCaptchaManual = true;
+            CaptchaManualCodigo = ManualCaptchaChallengeStore.Refresh(HttpContext, RegisterCaptchaScope);
+            ModelState.AddModelError(string.Empty, "El codigo captcha manual no es valido.");
+            return false;
+        }
+
         var valoresToken = Request.Form["cf-turnstile-response"];
         var token = valoresToken
             .SelectMany(v => (v ?? string.Empty)
@@ -465,20 +494,43 @@ public class RegisterModel(
 
         if (string.IsNullOrWhiteSpace(token))
         {
-            ModelState.AddModelError(string.Empty, "Completa la verificacion de seguridad.");
+            UsarCaptchaManual = true;
+            MostrarCaptchaManual = true;
+            CaptchaManualCodigo = ManualCaptchaChallengeStore.Refresh(HttpContext, RegisterCaptchaScope);
+            ModelState.AddModelError(string.Empty, "No se pudo validar Turnstile. Usa el codigo manual de respaldo.");
             return false;
         }
 
         var remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString();
         var resultado = await turnstileValidationService.VerifyAsync(token, remoteIp, HttpContext.RequestAborted);
         if (resultado.Success)
+        {
+            ManualCaptchaChallengeStore.Clear(HttpContext, RegisterCaptchaScope);
             return true;
+        }
 
         logger.LogWarning(
             "Turnstile rechazo registro. Errores: {Errores}. TokensRecibidos: {TotalTokens}",
             string.Join(",", resultado.ErrorCodes ?? Array.Empty<string>()),
             valoresToken.Count);
-        ModelState.AddModelError(string.Empty, "No se pudo validar la verificacion de seguridad. Intenta nuevamente.");
+        UsarCaptchaManual = true;
+        MostrarCaptchaManual = true;
+        CaptchaManualCodigo = ManualCaptchaChallengeStore.Refresh(HttpContext, RegisterCaptchaScope);
+        ModelState.AddModelError(string.Empty, "No se pudo validar Turnstile. Usa el codigo manual de respaldo.");
         return false;
+    }
+
+    private void ConfigurarCaptchaManual()
+    {
+        MostrarCaptchaManual = UsarCaptchaManual || string.IsNullOrWhiteSpace(TurnstileSiteKey);
+
+        if (MostrarCaptchaManual)
+        {
+            CaptchaManualCodigo = ManualCaptchaChallengeStore.GetOrCreate(HttpContext, RegisterCaptchaScope);
+            return;
+        }
+
+        ManualCaptchaChallengeStore.Clear(HttpContext, RegisterCaptchaScope);
+        CaptchaManualCodigo = string.Empty;
     }
 }

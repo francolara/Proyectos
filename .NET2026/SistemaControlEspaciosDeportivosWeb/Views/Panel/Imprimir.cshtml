@@ -1,0 +1,312 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.PanelDashboardViewModel
+@{
+    Layout = null;
+    var generado = DateTime.Now;
+    var negocioNombre = Model.Negocios.FirstOrDefault(x => x.NegocioId == Model.NegocioSeleccionadoId)?.NombreNegocio ?? $"Negocio #{Model.NegocioSeleccionadoId}";
+    var sedeTexto = Model.SedesFiltro.FirstOrDefault(x => x.Selected)?.Text ?? "Todas las sedes";
+    var totalSaldoPendiente = Model.ReservasConSaldoPendiente.Sum(x => x.SaldoPendiente);
+    var totalComprometido = Model.ReservasConSaldoPendiente.Sum(x => x.MontoTotal);
+    var nivelCobranza = Model.MontoReservadoPeriodo > 0 ? Model.IngresosPeriodo / Model.MontoReservadoPeriodo * 100m : 0m;
+    var conversionReservas = Model.ReservasPeriodo > 0 ? (decimal)Model.ReservasCobradasPeriodo / Model.ReservasPeriodo * 100m : 0m;
+
+    decimal Variacion(decimal actual, decimal anterior)
+        => anterior > 0 ? (actual - anterior) / anterior * 100m : actual > 0 ? 100m : 0m;
+
+    string VariacionTexto(decimal actual, decimal anterior)
+    {
+        var valor = Variacion(actual, anterior);
+        return $"{valor:+0.0;-0.0;0.0}% vs. periodo anterior";
+    }
+
+    var fechasTendencia = Model.SerieIngresosPorDia.Select(x => x.Fecha)
+        .Union(Model.SerieReservasPorDia.Select(x => x.Fecha))
+        .OrderBy(x => x)
+        .ToList();
+}
+@* Firma: FRANCO LARA - 16/07/2026 | Documento ejecutivo independiente y multipagina para imprimir el Dashboard administrativo. *@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dashboard ejecutivo - @negocioNombre</title>
+    <style>
+        :root {
+            --ink: #172235;
+            --muted: #68758a;
+            --line: #d8e2ee;
+            --soft: #f3f7fb;
+            --navy: #123b63;
+            --blue: #1f69b3;
+            --green: #167a55;
+            --amber: #a8610b;
+            --red: #a53c45;
+        }
+
+        * { box-sizing: border-box; }
+        html, body { margin: 0; background: #e8edf4; color: var(--ink); font-family: "Segoe UI", Tahoma, sans-serif; font-size: 12px; }
+
+        .print-toolbar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 12px 24px;
+            background: #101d31;
+            box-shadow: 0 8px 24px rgba(16, 29, 49, .2);
+        }
+
+        .print-toolbar button { border: 0; border-radius: 7px; padding: 9px 16px; background: var(--blue); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+        .print-toolbar button.secondary { background: #fff; color: #243654; }
+
+        .document { width: min(1120px, calc(100% - 32px)); margin: 24px auto; background: #fff; box-shadow: 0 18px 54px rgba(28, 42, 66, .18); }
+        .page { padding: 15mm 14mm 13mm; }
+        .page-break { break-before: page; page-break-before: always; }
+
+        .document-header { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: start; padding-bottom: 14px; border-bottom: 3px solid var(--navy); }
+        .eyebrow, .kicker, .metric span { display: block; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+        .eyebrow { margin-bottom: 5px; color: var(--blue); }
+        h1 { margin: 0; color: var(--navy); font-size: 26px; line-height: 1.1; }
+        .document-header p { margin: 6px 0 0; color: var(--muted); }
+
+        .issue { min-width: 210px; padding: 11px 14px; border: 1px solid #bfd0e4; background: var(--soft); }
+        .issue span { display: block; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+        .issue strong { display: block; margin-top: 4px; color: var(--navy); }
+
+        .metrics { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 9px; margin: 16px 0; }
+        .metric { min-height: 80px; padding: 11px; border: 1px solid var(--line); border-top: 3px solid var(--blue); background: linear-gradient(180deg, #fff, #f7f9fc); }
+        .metric.green { border-top-color: var(--green); }
+        .metric.amber { border-top-color: var(--amber); }
+        .metric.red { border-top-color: var(--red); }
+        .metric strong { display: block; margin: 7px 0 3px; color: var(--navy); font-size: 18px; }
+        .metric small { color: var(--muted); }
+
+        .executive-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .panel { border: 1px solid var(--line); background: #fff; }
+        .panel-header { padding: 10px 12px; border-bottom: 1px solid var(--line); background: var(--soft); }
+        .panel-header h2 { margin: 2px 0 0; color: var(--navy); font-size: 14px; }
+        .panel-body { padding: 10px 12px; }
+
+        .insights { margin: 0; padding: 0; list-style: none; }
+        .insights li { display: flex; justify-content: space-between; gap: 18px; padding: 7px 0; border-bottom: 1px solid #edf1f6; }
+        .insights li:last-child { border-bottom: 0; }
+        .insights span { color: var(--muted); }
+
+        .section-heading { display: flex; justify-content: space-between; gap: 20px; align-items: end; margin-bottom: 12px; padding-bottom: 9px; border-bottom: 2px solid var(--navy); }
+        .section-heading h2 { margin: 3px 0 0; color: var(--navy); font-size: 19px; }
+        .section-heading p { margin: 0; color: var(--muted); text-align: right; }
+
+        .section-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+        .mini-metric { padding: 8px 10px; border: 1px solid var(--line); background: var(--soft); }
+        .mini-metric span { display: block; color: var(--muted); font-size: 9px; text-transform: uppercase; }
+        .mini-metric strong { display: block; margin-top: 3px; color: var(--navy); font-size: 14px; }
+
+        .table-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+        table { width: 100%; border-collapse: collapse; }
+        thead { display: table-header-group; }
+        tr { break-inside: avoid; page-break-inside: avoid; }
+        th, td { padding: 6px 7px; border-bottom: 1px solid var(--line); vertical-align: top; }
+        thead th { background: var(--navy); color: #fff; font-size: 8px; letter-spacing: .04em; text-align: left; text-transform: uppercase; }
+        tbody tr:nth-child(even) { background: #f7f9fc; }
+        td { font-size: 9px; }
+        .text-end { text-align: right; }
+        .nowrap { white-space: nowrap; }
+        .muted { color: var(--muted); }
+        .strong { color: var(--navy); font-weight: 700; }
+        .empty { padding: 28px; border: 1px dashed #b8c6d8; color: var(--muted); text-align: center; }
+
+        .footer { display: flex; justify-content: space-between; margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--line); color: var(--muted); font-size: 8px; }
+
+        @@page { size: A4 landscape; margin: 9mm; }
+        @@media print {
+            html, body { background: #fff; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            .print-toolbar { display: none !important; }
+            .document { width: auto; margin: 0; box-shadow: none; }
+            .page { padding: 0; }
+            .panel, .metric, .mini-metric { break-inside: avoid; page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="print-toolbar" aria-label="Acciones del Dashboard impreso">
+        <button type="button" onclick="window.print()">Imprimir documento</button>
+        <button type="button" class="secondary" onclick="window.close()">Cerrar</button>
+    </nav>
+
+    <main class="document">
+        <section class="page">
+            <header class="document-header">
+                <div>
+                    <div class="eyebrow">Dashboard ejecutivo de gestion</div>
+                    <h1>@negocioNombre</h1>
+                    <p><strong>@sedeTexto</strong> | Periodo @Model.FechaDesde.ToString("dd/MM/yyyy") al @Model.FechaHasta.ToString("dd/MM/yyyy")</p>
+                </div>
+                <div class="issue">
+                    <span>Documento emitido</span><strong>@generado.ToString("dd/MM/yyyy HH:mm")</strong>
+                    <span style="margin-top:7px">Referencia</span><strong>DASH-@Model.NegocioSeleccionadoId-@generado.ToString("yyyyMMddHHmm")</strong>
+                </div>
+            </header>
+
+            <section class="metrics">
+                <article class="metric green"><span>Cobrado</span><strong>@Model.MonedaSimbolo @Model.IngresosPeriodo.ToString("N2")</strong><small>@VariacionTexto(Model.IngresosPeriodo, Model.IngresosPeriodoAnterior)</small></article>
+                <article class="metric"><span>Reservas</span><strong>@Model.ReservasPeriodo</strong><small>@VariacionTexto(Model.ReservasPeriodo, Model.ReservasPeriodoAnterior)</small></article>
+                <article class="metric"><span>Monto reservado</span><strong>@Model.MonedaSimbolo @Model.MontoReservadoPeriodo.ToString("N2")</strong><small>@VariacionTexto(Model.MontoReservadoPeriodo, Model.MontoReservadoPeriodoAnterior)</small></article>
+                <article class="metric amber"><span>Nivel de cobranza</span><strong>@nivelCobranza.ToString("N1")%</strong><small>@Model.PagosPeriodo pagos registrados</small></article>
+                <article class="metric red"><span>Saldo pendiente</span><strong>@Model.MonedaSimbolo @totalSaldoPendiente.ToString("N2")</strong><small>@Model.ReservasConSaldoPendiente.Count reservas</small></article>
+            </section>
+
+            <section class="executive-grid">
+                <article class="panel">
+                    <header class="panel-header"><span class="kicker">Desempeno comercial</span><h2>Cobranza y conversion</h2></header>
+                    <div class="panel-body"><ul class="insights">
+                        <li><span>Reservas cobradas</span><strong>@Model.ReservasCobradasPeriodo</strong></li>
+                        <li><span>Conversion a cobro</span><strong>@conversionReservas.ToString("N1")%</strong></li>
+                        <li><span>Ticket promedio</span><strong>@Model.MonedaSimbolo @Model.TicketPromedioPeriodo.ToString("N2")</strong></li>
+                        <li><span>Ticket periodo anterior</span><strong>@Model.MonedaSimbolo @Model.TicketPromedioPeriodoAnterior.ToString("N2")</strong></li>
+                    </ul></div>
+                </article>
+
+                <article class="panel">
+                    <header class="panel-header"><span class="kicker">Situacion del dia</span><h2>Operacion actual</h2></header>
+                    <div class="panel-body"><ul class="insights">
+                        <li><span>Ingresos de hoy</span><strong>@Model.MonedaSimbolo @Model.IngresosHoy.ToString("N2")</strong></li>
+                        <li><span>Reservas de hoy</span><strong>@Model.ReservasHoy</strong></li>
+                        <li><span>Ocupacion de hoy</span><strong>@Model.OcupacionHoyPct.ToString("N1")%</strong></li>
+                        <li><span>Ocupacion dia anterior</span><strong>@Model.OcupacionDiaAnteriorPct.ToString("N1")%</strong></li>
+                    </ul></div>
+                </article>
+
+                <article class="panel">
+                    <header class="panel-header"><span class="kicker">Capacidad instalada</span><h2>Infraestructura y actividad</h2></header>
+                    <div class="panel-body"><ul class="insights">
+                        <li><span>Sedes disponibles</span><strong>@Model.TotalSedes</strong></li>
+                        <li><span>Espacios deportivos</span><strong>@Model.TotalEspacios</strong></li>
+                        <li><span>Espacios con actividad</span><strong>@Model.TopEspacios.Count</strong></li>
+                        <li><span>No-show del mes</span><strong>@Model.NoShowMes</strong></li>
+                    </ul></div>
+                </article>
+
+                <article class="panel">
+                    <header class="panel-header"><span class="kicker">Alertas de gestion</span><h2>Compromisos pendientes</h2></header>
+                    <div class="panel-body"><ul class="insights">
+                        <li><span>Por confirmar en 48 horas</span><strong>@Model.ReservasPendientesConfirmacion.Count</strong></li>
+                        <li><span>Reservas con saldo</span><strong>@Model.ReservasConSaldoPendiente.Count</strong></li>
+                        <li><span>Monto comprometido</span><strong>@Model.MonedaSimbolo @totalComprometido.ToString("N2")</strong></li>
+                        <li><span>Plan contratado</span><strong>@Model.TipoPlan</strong></li>
+                    </ul></div>
+                </article>
+            </section>
+            <footer class="footer"><span>Dashboard ejecutivo | @negocioNombre</span><span>Resumen gerencial</span></footer>
+        </section>
+
+        <section class="page page-break">
+            <header class="section-heading">
+                <div><span class="kicker">Seccion 01</span><h2>Desempeno del periodo</h2></div>
+                <p>Cobranza por fecha de pago y reservas por fecha de uso<br />@Model.FechaDesde.ToString("dd/MM/yyyy") - @Model.FechaHasta.ToString("dd/MM/yyyy")</p>
+            </header>
+            <div class="section-summary">
+                <div class="mini-metric"><span>Dias analizados</span><strong>@((Model.FechaHasta.DayNumber - Model.FechaDesde.DayNumber) + 1)</strong></div>
+                <div class="mini-metric"><span>Dias con cobro</span><strong>@Model.SerieIngresosPorDia.Count</strong></div>
+                <div class="mini-metric"><span>Horas reservadas</span><strong>@Model.TopEspacios.Sum(x => x.Horas).ToString("N1")</strong></div>
+                <div class="mini-metric"><span>Ticket promedio</span><strong>@Model.MonedaSimbolo @Model.TicketPromedioPeriodo.ToString("N2")</strong></div>
+            </div>
+
+            <div class="table-grid">
+                <article class="panel">
+                    <header class="panel-header"><span class="kicker">Evolucion diaria</span><h2>Cobros y reservas</h2></header>
+                    @if (fechasTendencia.Any())
+                    {
+                        <table><thead><tr><th>Fecha</th><th class="text-end">Cobrado</th><th class="text-end">Reservas</th></tr></thead><tbody>
+                        @foreach (var fecha in fechasTendencia)
+                        {
+                            var ingreso = Model.SerieIngresosPorDia.FirstOrDefault(x => x.Fecha == fecha)?.Valor ?? 0m;
+                            var reservas = Model.SerieReservasPorDia.FirstOrDefault(x => x.Fecha == fecha)?.Valor ?? 0m;
+                            <tr><td class="strong">@fecha.ToString("dd/MM/yyyy")</td><td class="text-end">@Model.MonedaSimbolo @ingreso.ToString("N2")</td><td class="text-end">@reservas.ToString("N0")</td></tr>
+                        }
+                        </tbody></table>
+                    }
+                    else
+                    {
+                        <div class="empty">No hay actividad dentro del periodo.</div>
+                    }
+                </article>
+
+                <article class="panel">
+                    <header class="panel-header"><span class="kicker">Productividad</span><h2>Espacios con mayor demanda</h2></header>
+                    @if (Model.TopEspacios.Any())
+                    {
+                        <table><thead><tr><th>Sede / espacio</th><th class="text-end">Reservas</th><th class="text-end">Horas</th><th class="text-end">Reservado</th><th class="text-end">Cobrado</th></tr></thead><tbody>
+                        @foreach (var item in Model.TopEspacios)
+                        {
+                            <tr><td><span class="strong">@item.Espacio</span><br /><span class="muted">@item.Sede</span></td><td class="text-end">@item.Reservas</td><td class="text-end">@item.Horas.ToString("N1")</td><td class="text-end nowrap">@Model.MonedaSimbolo @item.Reservado.ToString("N2")</td><td class="text-end nowrap">@Model.MonedaSimbolo @item.Cobrado.ToString("N2")</td></tr>
+                        }
+                        </tbody></table>
+                    }
+                    else
+                    {
+                        <div class="empty">No hay espacios con actividad dentro del periodo.</div>
+                    }
+                </article>
+            </div>
+            <footer class="footer"><span>Desempeno del periodo | @negocioNombre</span><span>Cobrado: @Model.MonedaSimbolo @Model.IngresosPeriodo.ToString("N2")</span></footer>
+        </section>
+
+        <section class="page page-break">
+            <header class="section-heading">
+                <div><span class="kicker">Seccion 02</span><h2>Seguimiento operativo</h2></div>
+                <p>Reservas que requieren confirmacion o cobranza<br />Prioridad para gestion administrativa</p>
+            </header>
+            <div class="section-summary">
+                <div class="mini-metric"><span>Por confirmar</span><strong>@Model.ReservasPendientesConfirmacion.Count</strong></div>
+                <div class="mini-metric"><span>Con saldo</span><strong>@Model.ReservasConSaldoPendiente.Count</strong></div>
+                <div class="mini-metric"><span>Monto comprometido</span><strong>@Model.MonedaSimbolo @totalComprometido.ToString("N2")</strong></div>
+                <div class="mini-metric"><span>Saldo pendiente</span><strong>@Model.MonedaSimbolo @totalSaldoPendiente.ToString("N2")</strong></div>
+            </div>
+
+            <article class="panel" style="margin-bottom:12px">
+                <header class="panel-header"><span class="kicker">Proximas 48 horas</span><h2>Reservas pendientes de confirmacion</h2></header>
+                @if (Model.ReservasPendientesConfirmacion.Any())
+                {
+                    <table><thead><tr><th>Reserva</th><th>Fecha / horario</th><th>Cliente</th><th>Sede / espacio</th><th>Estado</th><th class="text-end">Monto</th><th class="text-end">Saldo</th></tr></thead><tbody>
+                    @foreach (var item in Model.ReservasPendientesConfirmacion)
+                    {
+                        <tr><td class="strong">@item.ReservaCodigo</td><td class="nowrap">@item.Fecha.ToString("dd/MM/yyyy")<br /><span class="muted">@item.HoraInicio.ToString("HH:mm") - @item.HoraFin.ToString("HH:mm")</span></td><td>@item.Cliente</td><td><span class="strong">@item.Espacio</span><br /><span class="muted">@item.Sede</span></td><td>@item.Estado</td><td class="text-end nowrap">@Model.MonedaSimbolo @item.MontoTotal.ToString("N2")</td><td class="text-end strong nowrap">@Model.MonedaSimbolo @item.SaldoPendiente.ToString("N2")</td></tr>
+                    }
+                    </tbody></table>
+                }
+                else
+                {
+                    <div class="empty">No hay reservas pendientes de confirmacion para las proximas 48 horas.</div>
+                }
+            </article>
+
+            <article class="panel">
+                <header class="panel-header"><span class="kicker">Cobranza pendiente</span><h2>Reservas con saldo por gestionar</h2></header>
+                @if (Model.ReservasConSaldoPendiente.Any())
+                {
+                    <table><thead><tr><th>Reserva</th><th>Fecha / horario</th><th>Cliente</th><th>Sede / espacio</th><th>Estado</th><th class="text-end">Monto</th><th class="text-end">Pagado</th><th class="text-end">Saldo</th></tr></thead><tbody>
+                    @foreach (var item in Model.ReservasConSaldoPendiente)
+                    {
+                        var pagado = Math.Max(0m, item.MontoTotal - item.SaldoPendiente);
+                        <tr><td class="strong">@item.ReservaCodigo</td><td class="nowrap">@item.Fecha.ToString("dd/MM/yyyy")<br /><span class="muted">@item.HoraInicio.ToString("HH:mm") - @item.HoraFin.ToString("HH:mm")</span></td><td>@item.Cliente</td><td><span class="strong">@item.Espacio</span><br /><span class="muted">@item.Sede</span></td><td>@item.Estado</td><td class="text-end nowrap">@Model.MonedaSimbolo @item.MontoTotal.ToString("N2")</td><td class="text-end nowrap">@Model.MonedaSimbolo @pagado.ToString("N2")</td><td class="text-end strong nowrap">@Model.MonedaSimbolo @item.SaldoPendiente.ToString("N2")</td></tr>
+                    }
+                    </tbody></table>
+                }
+                else
+                {
+                    <div class="empty">No hay saldos pendientes dentro del periodo consultado.</div>
+                }
+            </article>
+            <footer class="footer"><span>Seguimiento operativo | @negocioNombre</span><span>Saldo total: @Model.MonedaSimbolo @totalSaldoPendiente.ToString("N2")</span></footer>
+        </section>
+    </main>
+
+    <script>
+        window.addEventListener('load', function () {
+            window.setTimeout(function () { window.print(); }, 250);
+        });
+    </script>
+</body>
+</html>

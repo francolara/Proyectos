@@ -143,6 +143,8 @@ public interface ISportCenterStoredProcedureService
     Task<List<ReporteReservaDiaItemViewModel>> ReportesReservasPorDiaAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null);
     Task<ReporteResumenOperativoViewModel> ReportesResumenOperativoAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null);
     Task<ReporteResumenCobranzaViewModel> ReportesResumenCobranzaAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null);
+    Task<List<ReportePagoDetalleItemViewModel>> ReportesDetallePagosAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null);
+    Task<List<ReporteReservaDetalleItemViewModel>> ReportesDetalleReservasAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null);
     Task<int> NotificacionesContarNoLeidasAsync(int negocioId);
     Task<List<NotificacionNegocioItemViewModel>> NotificacionesListarAsync(int negocioId, int top = 15);
     Task<bool> NotificacionesMarcarLeidaAsync(int negocioId, int notificacionId, string? userId);

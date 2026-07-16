@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "MhDo6m80Qf0=",
+  "dgSpecHash": "gKLYWtRawxU=",
   "success": true,
   "projectFilePath": "C:\\Users\\Franco Lara\\Desktop\\GitHub Proyectos\\Proyectos\\.NET2026\\SistemaControlEspaciosDeportivosWeb\\SistemaControlEspaciosDeportivosWeb.csproj",
   "expectedPackageFiles": [
@@ -46,7 +46,6 @@
     "C:\\Users\\Franco Lara\\.nuget\\packages\\microsoft.identitymodel.protocols\\7.7.1\\microsoft.identitymodel.protocols.7.7.1.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\microsoft.identitymodel.protocols.openidconnect\\7.7.1\\microsoft.identitymodel.protocols.openidconnect.7.7.1.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\microsoft.identitymodel.tokens\\7.7.1\\microsoft.identitymodel.tokens.7.7.1.nupkg.sha512",
-    "C:\\Users\\Franco Lara\\.nuget\\packages\\microsoft.playwright\\1.54.0\\microsoft.playwright.1.54.0.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\microsoft.sqlserver.server\\1.0.0\\microsoft.sqlserver.server.1.0.0.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\microsoft.visualstudio.solutionpersistence\\1.0.52\\microsoft.visualstudio.solutionpersistence.1.0.52.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\mono.texttemplating\\3.0.0\\mono.texttemplating.3.0.0.nupkg.sha512",
@@ -56,7 +55,6 @@
     "C:\\Users\\Franco Lara\\.nuget\\packages\\sixlabors.imagesharp\\3.1.11\\sixlabors.imagesharp.3.1.11.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\system.clientmodel\\1.5.1\\system.clientmodel.1.5.1.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\system.codedom\\6.0.0\\system.codedom.6.0.0.nupkg.sha512",
-    "C:\\Users\\Franco Lara\\.nuget\\packages\\system.componentmodel.annotations\\5.0.0\\system.componentmodel.annotations.5.0.0.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\system.composition\\9.0.0\\system.composition.9.0.0.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\system.composition.attributedmodel\\9.0.0\\system.composition.attributedmodel.9.0.0.nupkg.sha512",
     "C:\\Users\\Franco Lara\\.nuget\\packages\\system.composition.convention\\9.0.0\\system.composition.convention.9.0.0.nupkg.sha512",

@@ -49,6 +49,16 @@
     var maxTopReservado = topEspacios.Any() ? Math.Max(1m, topEspacios.Max(x => x.MontoReservado)) : 1m;
     var maxIngresoDia = Model.Ingresos.Any() ? Math.Max(1m, Model.Ingresos.Max(x => x.Ingresos)) : 1m;
     var maxReservasDia = Model.ReservasPorDia.Any() ? Math.Max(1m, Model.ReservasPorDia.Max(x => x.CantidadReservas)) : 1m;
+    var topIngresosImpresion = Model.Ingresos
+        .OrderByDescending(x => x.Ingresos)
+        .ThenBy(x => x.Fecha)
+        .Take(8)
+        .ToList();
+    var topReservasImpresion = Model.ReservasPorDia
+        .OrderByDescending(x => x.CantidadReservas)
+        .ThenBy(x => x.Fecha)
+        .Take(8)
+        .ToList();
 
     var diasSinIngreso = Model.Ingresos.Where(x => x.Ingresos <= 0).OrderBy(x => x.Fecha).ToList();
     var espaciosBajaCobranza = Model.Ocupacion
@@ -72,7 +82,7 @@
 }
 
 <div class="admin-page-frame sc-dash-shell">
-    <header class="page-header">
+    <header class="page-header no-print">
         <div class="sc-page-title-wrap">
             <div>
                 <h1>Reportes</h1>
@@ -86,14 +96,15 @@
         </div>
         <div class="action-toolbar">
             <a class="btn btn-success"
-               asp-action="ExportExcel"
+               asp-action="Imprimir"
                asp-route-negocioId="@Model.NegocioId"
-               asp-route-sedeId="@Model.SedeId"
                asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")"
                asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")"
-               asp-route-preset="@Model.Preset"
-               asp-route-bloque="todo">
-                <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+               asp-route-sedeId="@Model.SedeId"
+               asp-route-preset="custom"
+               target="_blank"
+               rel="noopener">
+                <i class="bi bi-printer"></i> Imprimir
             </a>
             <a class="btn btn-outline-secondary" asp-controller="Panel" asp-action="Index" asp-route-negocioId="@Model.NegocioId">
                 <i class="bi bi-arrow-left"></i> Volver al panel
@@ -101,7 +112,7 @@
         </div>
     </header>
 
-    <form method="get" asp-action="Index" class="filter-card mb-3">
+    <form method="get" asp-action="Index" class="filter-card mb-3 no-print">
         <input type="hidden" name="negocioId" value="@Model.NegocioId" />
         <h2 class="section-title mb-3"><i class="bi bi-funnel me-1 text-primary"></i>Filtros del reporte</h2>
         <div class="row g-3 align-items-end">
@@ -158,7 +169,9 @@
     </form>
 
     @* Firma: Codex - 18/06/2026 | Reportes reorganizados en tabs de cobros y datos operativos para separar lectura comercial y operativa. *@
-    <section class="sc-report-tabs" aria-label="Cambiar bloque de reportes">
+    @* Firma: FRANCO LARA - 15/07/2026 | Reportes: impresion HTML profesional desde la vista principal y reemplazo del acceso Excel por impresion directa. *@
+    @* Firma: FRANCO LARA - 16/07/2026 | Imprimir abre un documento ejecutivo independiente con detalle separado de pagos y reservas. *@
+    <section class="sc-report-tabs no-print" aria-label="Cambiar bloque de reportes">
         <button type="button" class="sc-report-tab is-active" data-report-tab-trigger="cobros" aria-pressed="true">
             <span class="sc-report-tab-icon sc-report-tab-icon--cobros"><i class="bi bi-cash-coin"></i></span>
             <span class="sc-report-tab-text">
@@ -175,7 +188,7 @@
         </button>
     </section>
 
-    <div class="sc-report-pane-group">
+    <div class="sc-report-pane-group no-print">
         <section class="sc-report-pane is-active" data-report-tab-pane="cobros">
             <section class="sc-dash-kpis mb-3">
                 <article class="sc-dash-kpi-card">
@@ -686,6 +699,210 @@
             </section>
         </section>
     </div>
+
+    @* Impresion anterior desactivada: el documento se genera en la accion Imprimir sin layout administrativo.
+    <section class="sc-report-print-sheet print-only">
+        <header class="sc-report-print-header">
+            <div>
+                <div class="sc-report-print-kicker">Reporte ejecutivo</div>
+                <h1>@Model.NegocioNombre</h1>
+                <p>Sede: <strong>@sedesTexto</strong> | Periodo: <strong>@Model.FechaDesde.ToString("dd/MM/yyyy") - @Model.FechaHasta.ToString("dd/MM/yyyy")</strong></p>
+                <p>Comparativo de referencia: <strong>@Model.FechaDesdeAnterior.ToString("dd/MM/yyyy") - @Model.FechaHastaAnterior.ToString("dd/MM/yyyy")</strong></p>
+            </div>
+            <div class="sc-report-print-badge">
+                <span>Emitido</span>
+                <strong>@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</strong>
+            </div>
+        </header>
+
+        <section class="sc-report-print-summary">
+            <article class="sc-report-print-summary-card">
+                <span>Cobrado del periodo</span>
+                <strong>S/ @cobradoActual.ToString("N2")</strong>
+                <small>@varCobrado.Texto</small>
+            </article>
+            <article class="sc-report-print-summary-card">
+                <span>Pagos registrados</span>
+                <strong>@totalPagosActual</strong>
+                <small>Reservas cobradas: @totalReservasCobradas</small>
+            </article>
+            <article class="sc-report-print-summary-card">
+                <span>Reservado del periodo</span>
+                <strong>S/ @reservadoActual.ToString("N2")</strong>
+                <small>@varReservado.Texto</small>
+            </article>
+            <article class="sc-report-print-summary-card">
+                <span>Saldo pendiente</span>
+                <strong>S/ @totalSaldoPendiente.ToString("N2")</strong>
+                <small>Pendientes: @totalPendientes</small>
+            </article>
+        </section>
+
+        <section class="sc-report-print-grid">
+            <article class="sc-report-print-panel">
+                <div class="sc-report-print-panel-head">
+                    <h2>Resumen de cobranza</h2>
+                    <span>Fecha real de pago</span>
+                </div>
+                <table class="sc-report-print-table">
+                    <tbody>
+                        <tr><th>Cobrado</th><td>S/ @cobradoActual.ToString("N2")</td></tr>
+                        <tr><th>Pagos registrados</th><td>@totalPagosActual</td></tr>
+                        <tr><th>Reservas cobradas</th><td>@totalReservasCobradas</td></tr>
+                        <tr><th>Dias con cobro</th><td>@totalDiasConCobro</td></tr>
+                        <tr><th>Dias sin ingreso</th><td>@diasSinIngreso.Count</td></tr>
+                        <tr><th>Espacios con cobranza menor a 70%</th><td>@espaciosBajaCobranza.Count</td></tr>
+                    </tbody>
+                </table>
+            </article>
+
+            <article class="sc-report-print-panel">
+                <div class="sc-report-print-panel-head">
+                    <h2>Resumen operativo</h2>
+                    <span>Fecha de reserva</span>
+                </div>
+                <table class="sc-report-print-table">
+                    <tbody>
+                        <tr><th>Total reservas</th><td>@reservasActual</td></tr>
+                        <tr><th>Monto reservado</th><td>S/ @reservadoActual.ToString("N2")</td></tr>
+                        <tr><th>Pendientes</th><td>@Model.ResumenActual.TotalPendientes</td></tr>
+                        <tr><th>Confirmadas</th><td>@Model.ResumenActual.TotalConfirmadas</td></tr>
+                        <tr><th>Pagadas</th><td>@Model.ResumenActual.TotalPagadas</td></tr>
+                        <tr><th>Canceladas / No asistio</th><td>@Model.ResumenActual.TotalCanceladas / @Model.ResumenActual.TotalNoShow</td></tr>
+                    </tbody>
+                </table>
+            </article>
+        </section>
+
+        <section class="sc-report-print-grid">
+            <article class="sc-report-print-panel">
+                <div class="sc-report-print-panel-head">
+                    <h2>Espacios con mayor demanda</h2>
+                    <span>Top operativo del periodo</span>
+                </div>
+                <table class="sc-report-print-table">
+                    <thead>
+                        <tr>
+                            <th>Sede</th>
+                            <th>Espacio</th>
+                            <th class="text-end">Reservas</th>
+                            <th class="text-end">Reservado</th>
+                            <th class="text-end">Cobrado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (topEspacios.Any())
+                        {
+                            @foreach (var item in topEspacios)
+                            {
+                                <tr>
+                                    <td>@item.Sede</td>
+                                    <td>@item.Espacio</td>
+                                    <td class="text-end">@item.CantidadReservas</td>
+                                    <td class="text-end">S/ @item.MontoReservado.ToString("N2")</td>
+                                    <td class="text-end">S/ @item.MontoCobrado.ToString("N2")</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5">No hay datos operativos en el periodo.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </article>
+
+            <article class="sc-report-print-panel">
+                <div class="sc-report-print-panel-head">
+                    <h2>Fechas con mayor cobro</h2>
+                    <span>Ranking por ingreso diario</span>
+                </div>
+                <table class="sc-report-print-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th class="text-end">Reservas cobradas</th>
+                            <th class="text-end">Ingreso</th>
+                            <th class="text-end">% periodo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (topIngresosImpresion.Any())
+                        {
+                            @foreach (var item in topIngresosImpresion)
+                            {
+                                <tr>
+                                    <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
+                                    <td class="text-end">@item.CantidadReservas</td>
+                                    <td class="text-end">S/ @item.Ingresos.ToString("N2")</td>
+                                    <td class="text-end">@Porcentaje(item.Ingresos, cobradoActual).ToString("N2")%</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4">No hay cobros dentro del rango consultado.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </article>
+        </section>
+
+        <section class="sc-report-print-grid">
+            <article class="sc-report-print-panel">
+                <div class="sc-report-print-panel-head">
+                    <h2>Reservas por fecha</h2>
+                    <span>Dias con mayor actividad</span>
+                </div>
+                <table class="sc-report-print-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th class="text-end">Reservas</th>
+                            <th class="text-end">Reservado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (topReservasImpresion.Any())
+                        {
+                            @foreach (var item in topReservasImpresion)
+                            {
+                                <tr>
+                                    <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
+                                    <td class="text-end">@item.CantidadReservas</td>
+                                    <td class="text-end">S/ @item.MontoReservado.ToString("N2")</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="3">No hay reservas en el periodo consultado.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </article>
+
+            <article class="sc-report-print-panel">
+                <div class="sc-report-print-panel-head">
+                    <h2>Observaciones clave</h2>
+                    <span>Lectura rapida para gestion</span>
+                </div>
+                <ul class="sc-report-print-notes">
+                    <li>Horas operativas registradas: <strong>@totalHorasOperativas.ToString("N2")</strong>.</li>
+                    <li>Cobrado asociado a la ocupacion: <strong>S/ @totalCobradoAsociado.ToString("N2")</strong>.</li>
+                    <li>Espacios criticos: <strong>@(espaciosBajaCobranza.Any() ? string.Join(" | ", espaciosBajaCobranza.Select(x => $"{x.Sede}/{x.Espacio}")) : "Sin alertas criticas")</strong>.</li>
+                    <li>Dias sin ingreso: <strong>@(diasSinIngreso.Any() ? string.Join(", ", diasSinIngreso.Select(x => x.Fecha.ToString("dd/MM"))) : "Ninguno")</strong>.</li>
+                </ul>
+            </article>
+        </section>
+    </section>
+    *@
 </div>
 
 <script>

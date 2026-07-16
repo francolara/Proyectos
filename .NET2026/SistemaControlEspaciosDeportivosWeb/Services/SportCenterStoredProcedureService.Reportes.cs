@@ -131,4 +131,77 @@ public partial class SportCenterStoredProcedureService
 
         return vm;
     }
+
+    public async Task<List<ReportePagoDetalleItemViewModel>> ReportesDetallePagosAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null)
+    {
+        var list = new List<ReportePagoDetalleItemViewModel>();
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_Reportes_DetallePagos", cn) { CommandType = CommandType.StoredProcedure };
+        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+        AddParam(cmd, "@FechaDesde", fechaDesde.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
+        AddParam(cmd, "@FechaHasta", fechaHasta.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
+        AddParam(cmd, "@SedeId", sedeId, SqlDbType.Int);
+
+        await using var dr = await cmd.ExecuteReaderAsync();
+        while (await dr.ReadAsync())
+        {
+            list.Add(new ReportePagoDetalleItemViewModel
+            {
+                PagoId = dr.GetInt32(0),
+                FechaPago = dr.GetDateTime(1),
+                ReservaId = dr.GetInt32(2),
+                FechaReserva = DateOnly.FromDateTime(dr.GetDateTime(3)),
+                HoraInicio = TimeOnly.FromTimeSpan(dr.GetTimeSpan(4)),
+                HoraFin = TimeOnly.FromTimeSpan(dr.GetTimeSpan(5)),
+                Cliente = dr.GetString(6),
+                ClienteDocumento = dr.GetString(7),
+                Sede = dr.GetString(8),
+                Espacio = dr.GetString(9),
+                FormaPago = dr.GetString(10),
+                NumeroOperacion = dr.IsDBNull(11) ? null : dr.GetString(11),
+                Monto = dr.GetDecimal(12)
+            });
+        }
+
+        return list;
+    }
+
+    public async Task<List<ReporteReservaDetalleItemViewModel>> ReportesDetalleReservasAsync(int negocioId, DateOnly fechaDesde, DateOnly fechaHasta, int? sedeId = null)
+    {
+        var list = new List<ReporteReservaDetalleItemViewModel>();
+        await using var cn = CreateConnection();
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("Sp_Reportes_DetalleReservas", cn) { CommandType = CommandType.StoredProcedure };
+        AddParam(cmd, "@NegocioId", negocioId, SqlDbType.Int);
+        AddParam(cmd, "@FechaDesde", fechaDesde.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
+        AddParam(cmd, "@FechaHasta", fechaHasta.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
+        AddParam(cmd, "@SedeId", sedeId, SqlDbType.Int);
+
+        await using var dr = await cmd.ExecuteReaderAsync();
+        while (await dr.ReadAsync())
+        {
+            list.Add(new ReporteReservaDetalleItemViewModel
+            {
+                ReservaId = dr.GetInt32(0),
+                Fecha = DateOnly.FromDateTime(dr.GetDateTime(1)),
+                HoraInicio = TimeOnly.FromTimeSpan(dr.GetTimeSpan(2)),
+                HoraFin = TimeOnly.FromTimeSpan(dr.GetTimeSpan(3)),
+                Cliente = dr.GetString(4),
+                ClienteDocumento = dr.GetString(5),
+                Sede = dr.GetString(6),
+                Espacio = dr.GetString(7),
+                EstadoCodigo = dr.GetInt32(8),
+                Estado = dr.GetString(9),
+                CanalOrigen = dr.GetString(10),
+                Total = dr.GetDecimal(11),
+                Descuento = dr.GetDecimal(12),
+                MontoPagado = dr.GetDecimal(13),
+                SaldoPendiente = dr.GetDecimal(14),
+                CodigoCupon = dr.IsDBNull(15) ? null : dr.GetString(15)
+            });
+        }
+
+        return list;
+    }
 }

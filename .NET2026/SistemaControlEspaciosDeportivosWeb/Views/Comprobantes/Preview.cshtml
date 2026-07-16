@@ -1,6 +1,7 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobanteVisualizacionViewModel
 @{
     ViewData["Title"] = "Vista previa de comprobante";
+    ViewData["AdminShell"] = true;
     var estado = ViewBag.EstadoComprobante is SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico ec
         ? ec
         : SistemaControlEspaciosDeportivosWeb.Models.EstadoComprobanteElectronico.PendienteEnvio;
@@ -52,17 +53,18 @@
     var direccionNegocio = string.IsNullOrWhiteSpace(Model.NegocioDireccionFiscal) ? "-" : Model.NegocioDireccionFiscal;
     var ubigeoNegocio = $"{(string.IsNullOrWhiteSpace(Model.NegocioDepartamento) ? "-" : Model.NegocioDepartamento)} / {(string.IsNullOrWhiteSpace(Model.NegocioProvincia) ? "-" : Model.NegocioProvincia)} / {(string.IsNullOrWhiteSpace(Model.NegocioDistrito) ? "-" : Model.NegocioDistrito)}";
 }
+@* Firma: FRANCO LARA - 15/07/2026 | Vista previa de recibo interno corrige modo oscuro y reemplaza descarga PDF por impresion directa de la previsualizacion. *@
 
 <div class="admin-page-frame comprobante-preview-page">
     @if (TempData["ComprobanteError"] is string comprobanteError && !string.IsNullOrWhiteSpace(comprobanteError))
     {
-        <div class="alert alert-danger">@comprobanteError</div>
+        <div class="alert alert-danger no-print">@comprobanteError</div>
     }
     @if (TempData["ComprobanteOk"] is string comprobanteOk && !string.IsNullOrWhiteSpace(comprobanteOk))
     {
-        <div class="alert alert-success">@comprobanteOk</div>
+        <div class="alert alert-success no-print">@comprobanteOk</div>
     }
-    <section class="page-header">
+    <section class="page-header no-print">
         <div>
             <h1>Vista previa de comprobante</h1>
             <p class="page-subtitle">@tipoDocumentoNombre | @numeroComprobante</p>
@@ -104,9 +106,9 @@
             }
             else
             {
-                <a class="btn btn-primary" asp-action="Visualizar" asp-route-negocioId="@Model.NegocioId" asp-route-id="@Model.Id" target="_blank">
-                    <i class="bi bi-download me-1"></i> Descargar PDF
-                </a>
+                <button type="button" class="btn btn-primary" onclick="window.print()">
+                    <i class="bi bi-printer me-1"></i> Imprimir
+                </button>
             }
             <a class="btn btn-outline-secondary" asp-action="Index" asp-route-negocioId="@Model.NegocioId">
                 <i class="bi bi-arrow-left me-1"></i> Volver
@@ -116,14 +118,14 @@
 
     @if (Model.EsTributario)
     {
-        <div class="mb-3">
+        <div class="mb-3 no-print">
             <span class="badge @estadoSunatClase px-3 py-2">Estado SUNAT: @estadoSunatTexto</span>
         </div>
     }
 
     @if (Model.EsTributario)
     {
-        <div class="alert alert-info mb-3">
+        <div class="alert alert-info mb-3 no-print">
             Documento tributario. La descarga oficial se realiza desde el proveedor electronico.
         </div>
     }
@@ -430,6 +432,91 @@
     .amount-card-total {
         border-color: #8eb8ff;
         background: #eaf3ff;
+    }
+
+    html[data-theme="dark"] .comprobante-preview-page {
+        --cp-surface: rgba(15, 23, 42, 0.88);
+        --cp-border: rgba(148, 163, 184, 0.22);
+        --cp-text: #e2e8f0;
+        --cp-muted: #94a3b8;
+        --cp-primary: #93c5fd;
+        --cp-primary-soft: rgba(30, 64, 175, 0.28);
+    }
+
+    html[data-theme="dark"] .comprobante-preview-page .page-header,
+    html[data-theme="dark"] .comprobante-preview-page .table-card {
+        background: rgba(15, 23, 42, 0.82);
+        border-color: rgba(148, 163, 184, 0.2);
+        box-shadow: none;
+    }
+
+    html[data-theme="dark"] .comprobante-preview-page .page-header h1,
+    html[data-theme="dark"] .comprobante-preview-page .section-title,
+    html[data-theme="dark"] .comprobante-preview-page .info-block-header {
+        color: #f8fafc;
+    }
+
+    html[data-theme="dark"] .comprobante-preview-page .page-subtitle {
+        color: #cbd5e1;
+    }
+
+    html[data-theme="dark"] .summary-card,
+    html[data-theme="dark"] .info-block,
+    html[data-theme="dark"] .detalle-item-card,
+    html[data-theme="dark"] .amount-card {
+        background: rgba(15, 23, 42, 0.68);
+        border-color: rgba(148, 163, 184, 0.22);
+        box-shadow: none;
+    }
+
+    html[data-theme="dark"] .summary-card-highlight,
+    html[data-theme="dark"] .summary-card-total,
+    html[data-theme="dark"] .amount-card-total {
+        background: linear-gradient(180deg, rgba(30, 64, 175, 0.36) 0%, rgba(15, 23, 42, 0.82) 100%);
+        border-color: rgba(96, 165, 250, 0.4);
+    }
+
+    html[data-theme="dark"] .detalle-item-tag {
+        border-color: rgba(96, 165, 250, 0.4);
+    }
+
+    @@media print {
+        html,
+        body {
+            background: #ffffff !important;
+        }
+
+        body {
+            overflow: visible !important;
+        }
+
+        .no-print,
+        .sc-admin-sidebar,
+        .workspace-loading-overlay,
+        .admin-floating-help,
+        .admin-quick-actions,
+        .admin-bottom-sheet {
+            display: none !important;
+        }
+
+        .sc-admin-main,
+        .admin-page-frame,
+        .comprobante-preview-page {
+            padding: 0 !important;
+            margin: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            background: #ffffff !important;
+        }
+
+        .table-card,
+        .summary-card,
+        .info-block,
+        .detalle-item-card,
+        .amount-card {
+            break-inside: avoid;
+            box-shadow: none !important;
+        }
     }
 
     @@media (max-width: 768px) {

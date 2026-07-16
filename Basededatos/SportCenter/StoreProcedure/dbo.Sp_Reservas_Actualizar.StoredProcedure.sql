@@ -1,4 +1,4 @@
-﻿
+
 GO
 /****** Object:  StoredProcedure [dbo].[Sp_Reservas_Actualizar]    Script Date: 3/04/2026 23:18:34 ******/
 SET ANSI_NULLS ON
@@ -12,6 +12,7 @@ GO
 -- Firma: FRANCO LARA - 26/05/2026 | Prioriza horario configurable por espacio deportivo; si no aplica, usa horario de la sede.
 -- Firma: FRANCO LARA - 06/06/2026 | Valida cruces usando el espacio reservado y sus espacios compartidos activos.
 -- Firma: FRANCO LARA - 08/06/2026 | Distingue bloqueo directo y espacios compuestos para evitar sobrebloqueos por propagacion en cadena.
+-- Firma: FRANCO LARA - 16/07/2026 | Elimina el limite de dos pagos y valida que la reserva tenga saldo y que el nuevo pago no lo exceda.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_Reservas_Actualizar]
     @Id INT,
     @NegocioId INT,
@@ -49,7 +50,7 @@ BEGIN
         DECLARE @AdelantoActual DECIMAL(10,2);
         DECLARE @AdelantoFinal DECIMAL(10,2);
         DECLARE @PagoNuevo DECIMAL(10,2);
-        DECLARE @ConteoPagos INT;
+        DECLARE @SaldoPendienteActual DECIMAL(10,2);
         DECLARE @PoliticaConfirmacionPago TINYINT;
         DECLARE @PorcentajeAdelantoMinimo DECIMAL(5,2);
         DECLARE @PagoMinimoRequerido DECIMAL(10,2);
@@ -66,6 +67,7 @@ BEGIN
             RAISERROR('No se encontro la reserva para actualizar.', 16, 1);
 
         SET @PagoNuevo = CASE WHEN @RegistrarPago = 1 THEN @Adelanto ELSE 0 END;
+        SET @SaldoPendienteActual = @Total - @AdelantoActual;
         SET @AdelantoFinal = @AdelantoActual + @PagoNuevo;
 
         IF @RegistrarPago = 1
@@ -85,9 +87,11 @@ BEGIN
             IF CAST(@FechaPago AS DATE) > CAST(SYSUTCDATETIME() AS DATE)
                 RAISERROR('La fecha de pago no puede ser mayor al dia actual.', 16, 1);
 
-            SELECT @ConteoPagos = COUNT(1) FROM dbo.Pagos WHERE ReservaId = @Id;
-            IF COALESCE(@ConteoPagos, 0) >= 2
-                RAISERROR('La reserva ya tiene 2 pagos registrados. No se pueden registrar mas pagos.', 16, 1);
+            IF @SaldoPendienteActual <= 0
+                RAISERROR('La reserva ya esta pagada al 100%. No se pueden registrar mas pagos.', 16, 1);
+
+            IF @PagoNuevo > @SaldoPendienteActual
+                RAISERROR('El pago excede el saldo pendiente de la reserva.', 16, 1);
         END
 
         IF @AdelantoFinal > @Total
@@ -322,5 +326,4 @@ BEGIN
 END
 
 GO
-
 
