@@ -679,6 +679,23 @@ public class ComprobantesController(
         return View(data);
     }
 
+    [HttpGet]
+    public async Task<IActionResult> ImprimirInterno(int negocioId, int id)
+    {
+        var baseVm = await ObtenerBaseAsync(negocioId, "COMPROBANTES");
+        if (baseVm is null) return Forbid();
+
+        var data = await spService.ComprobantesObtenerVisualizacionAsync(negocioId, id);
+        if (data is null) return NotFound();
+        if (!string.Equals(data.CodigoDocumentoComprobante?.Trim(), "RI", StringComparison.OrdinalIgnoreCase))
+        {
+            TempData["ComprobanteError"] = "La impresion HTML interna solo esta disponible para recibos internos.";
+            return RedirectToAction(nameof(Preview), new { negocioId, id });
+        }
+
+        return View(data);
+    }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EnviarSunat(int negocioId, int id)

@@ -1,0 +1,252 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.ComprobanteVisualizacionViewModel
+@{
+    Layout = null;
+    var numeroComprobante = $"{Model.Serie}-{Model.Numero:D8}";
+    var descripcionDetalle = $"Reserva de {Model.EspacioNombre} | {Model.FechaReserva:dd/MM/yyyy} {Model.HoraInicioReserva.ToString("HH:mm")}-{Model.HoraFinReserva.ToString("HH:mm")}";
+    var documentoNegocio = string.IsNullOrWhiteSpace(Model.NegocioDocumento) ? "-" : Model.NegocioDocumento;
+    var direccionNegocio = string.IsNullOrWhiteSpace(Model.NegocioDireccionFiscal) ? "-" : Model.NegocioDireccionFiscal;
+    var ubigeoNegocio = $"{(string.IsNullOrWhiteSpace(Model.NegocioDepartamento) ? "-" : Model.NegocioDepartamento)} / {(string.IsNullOrWhiteSpace(Model.NegocioProvincia) ? "-" : Model.NegocioProvincia)} / {(string.IsNullOrWhiteSpace(Model.NegocioDistrito) ? "-" : Model.NegocioDistrito)}";
+    var documentoCliente = string.IsNullOrWhiteSpace(Model.ClienteDocumento) ? "-" : Model.ClienteDocumento;
+    var correoCliente = string.IsNullOrWhiteSpace(Model.ClienteCorreo) ? "-" : Model.ClienteCorreo;
+    var direccionCliente = string.IsNullOrWhiteSpace(Model.ClienteDireccion) ? "-" : Model.ClienteDireccion;
+    var ubigeoCliente = $"{(string.IsNullOrWhiteSpace(Model.ClienteDepartamento) ? "-" : Model.ClienteDepartamento)} / {(string.IsNullOrWhiteSpace(Model.ClienteProvincia) ? "-" : Model.ClienteProvincia)} / {(string.IsNullOrWhiteSpace(Model.ClienteDistrito) ? "-" : Model.ClienteDistrito)}";
+    var nombreEmisor = string.IsNullOrWhiteSpace(Model.NegocioRazonSocial) ? Model.NegocioNombre : Model.NegocioRazonSocial;
+}
+@* Firma: FRANCO LARA - 20/07/2026 | Documento HTML autonomo para imprimir recibos internos sin el layout administrativo. *@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Recibo interno @numeroComprobante</title>
+    <style>
+        :root {
+            --ink: #182438;
+            --muted: #66758a;
+            --line: #d6e0ec;
+            --soft: #f3f7fb;
+            --navy: #123b63;
+            --blue: #1e68b1;
+            --green: #167a55;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            background: #e8edf4;
+            color: var(--ink);
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            font-size: 12px;
+        }
+
+        .print-toolbar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 12px 24px;
+            background: #101d31;
+            box-shadow: 0 8px 24px rgba(16, 29, 49, .2);
+        }
+
+        .print-toolbar button {
+            border: 0;
+            border-radius: 7px;
+            padding: 9px 16px;
+            background: var(--blue);
+            color: #fff;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .print-toolbar button.secondary { background: #fff; color: #243654; }
+
+        .receipt {
+            width: min(820px, calc(100% - 32px));
+            min-height: 270mm;
+            margin: 24px auto;
+            padding: 16mm 15mm 14mm;
+            background: #fff;
+            box-shadow: 0 18px 54px rgba(28, 42, 66, .18);
+        }
+
+        .receipt-header {
+            display: grid;
+            grid-template-columns: 1fr 230px;
+            gap: 24px;
+            align-items: start;
+            padding-bottom: 15px;
+            border-bottom: 3px solid var(--navy);
+        }
+
+        .eyebrow, .label {
+            display: block;
+            color: var(--muted);
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+        }
+
+        .eyebrow { margin-bottom: 5px; color: var(--blue); }
+        h1 { margin: 0; color: var(--navy); font-size: 25px; line-height: 1.1; }
+        .receipt-header p { margin: 6px 0 0; color: var(--muted); }
+
+        .document-box {
+            padding: 13px 15px;
+            border: 2px solid var(--navy);
+            text-align: center;
+        }
+
+        .document-box span { display: block; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+        .document-box strong { display: block; margin-top: 6px; color: var(--navy); font-size: 18px; }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px;
+            margin: 15px 0;
+        }
+
+        .summary-item { min-height: 72px; padding: 10px; border: 1px solid var(--line); background: var(--soft); }
+        .summary-item strong { display: block; margin-top: 6px; color: var(--navy); font-size: 14px; }
+        .summary-item small { display: block; margin-top: 3px; color: var(--muted); font-size: 9px; }
+        .summary-item.total { border-top: 3px solid var(--green); background: #f1faf6; }
+
+        .section { margin-top: 13px; border: 1px solid var(--line); }
+        .section-header { padding: 9px 11px; border-bottom: 1px solid var(--line); background: var(--soft); }
+        .section-header h2 { margin: 2px 0 0; color: var(--navy); font-size: 14px; }
+
+        .parties { display: grid; grid-template-columns: 1fr 1fr; }
+        .party { padding: 12px; }
+        .party + .party { border-left: 1px solid var(--line); }
+        .party h3 { margin: 0 0 9px; color: var(--navy); font-size: 12px; }
+        .data-list { margin: 0; padding: 0; list-style: none; }
+        .data-list li { display: grid; grid-template-columns: 86px 1fr; gap: 8px; padding: 4px 0; }
+        .data-list span { color: var(--muted); font-size: 9px; font-weight: 700; text-transform: uppercase; }
+        .data-list strong { font-size: 10px; word-break: break-word; }
+
+        .detail { padding: 12px; }
+        .detail-head { display: flex; justify-content: space-between; gap: 16px; color: var(--muted); font-size: 9px; font-weight: 700; text-transform: uppercase; }
+        .detail-description { margin: 11px 0 15px; color: var(--navy); font-size: 12px; font-weight: 700; }
+        .detail-values { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .detail-values div:last-child { text-align: right; }
+        .detail-values strong { display: block; margin-top: 3px; color: var(--navy); font-size: 13px; }
+
+        .totals { display: flex; justify-content: flex-end; padding: 12px; }
+        .total-box { width: 245px; padding: 12px 14px; border: 2px solid var(--navy); background: var(--soft); text-align: right; }
+        .total-box strong { display: block; margin-top: 5px; color: var(--navy); font-size: 20px; }
+
+        .receipt-footer {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 17px;
+            padding-top: 9px;
+            border-top: 1px solid var(--line);
+            color: var(--muted);
+            font-size: 9px;
+        }
+
+        @@page { size: A4 portrait; margin: 10mm; }
+
+        @@media print {
+            html, body { background: #fff; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            .print-toolbar { display: none !important; }
+            .receipt { width: auto; min-height: 0; margin: 0; padding: 0; box-shadow: none; }
+            .section, .summary-item { break-inside: avoid; page-break-inside: avoid; }
+        }
+
+        @@media (max-width: 680px) {
+            .receipt-header, .parties { grid-template-columns: 1fr; }
+            .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .party + .party { border-left: 0; border-top: 1px solid var(--line); }
+        }
+    </style>
+</head>
+<body>
+    <nav class="print-toolbar" aria-label="Acciones del recibo interno">
+        <button type="button" onclick="window.print()">Imprimir documento</button>
+        <button type="button" class="secondary" onclick="window.close()">Cerrar</button>
+    </nav>
+
+    <main class="receipt">
+        <header class="receipt-header">
+            <div>
+                <div class="eyebrow">Comprobante de operacion</div>
+                <h1>@Model.NegocioNombre</h1>
+                <p>@direccionNegocio</p>
+            </div>
+            <div class="document-box">
+                <span>Recibo interno</span>
+                <strong>@numeroComprobante</strong>
+            </div>
+        </header>
+
+        <section class="summary" aria-label="Resumen del comprobante">
+            <article class="summary-item"><span class="label">Documento</span><strong>@numeroComprobante</strong><small>Recibo Interno</small></article>
+            <article class="summary-item"><span class="label">Fecha emision</span><strong>@Model.FechaEmision.ToString("dd/MM/yyyy")</strong><small>Comprobante emitido</small></article>
+            <article class="summary-item"><span class="label">Reserva</span><strong>#@Model.ReservaId</strong><small>@Model.SedeNombre | @Model.EspacioNombre</small></article>
+            <article class="summary-item total"><span class="label">Total</span><strong>@Model.MonedaSimbolo @Model.Total.ToString("N2")</strong><small>Moneda de emision</small></article>
+        </section>
+
+        <section class="section">
+            <header class="section-header"><span class="label">Identificacion</span><h2>Datos del emisor y cliente</h2></header>
+            <div class="parties">
+                <article class="party">
+                    <h3>Emisor</h3>
+                    <ul class="data-list">
+                        <li><span>Negocio</span><strong>@nombreEmisor</strong></li>
+                        <li><span>Documento</span><strong>@documentoNegocio</strong></li>
+                        <li><span>Direccion</span><strong>@direccionNegocio</strong></li>
+                        <li><span>Ubigeo</span><strong>@ubigeoNegocio</strong></li>
+                    </ul>
+                </article>
+                <article class="party">
+                    <h3>Cliente</h3>
+                    <ul class="data-list">
+                        <li><span>Nombre</span><strong>@Model.ClienteNombre</strong></li>
+                        <li><span>Documento</span><strong>@documentoCliente</strong></li>
+                        <li><span>Correo</span><strong>@correoCliente</strong></li>
+                        <li><span>Direccion</span><strong>@direccionCliente</strong></li>
+                        <li><span>Ubigeo</span><strong>@ubigeoCliente</strong></li>
+                    </ul>
+                </article>
+            </div>
+        </section>
+
+        <section class="section">
+            <header class="section-header"><span class="label">Item 1</span><h2>Detalle del comprobante</h2></header>
+            <div class="detail">
+                <div class="detail-head"><span>Servicio reservado</span><span>UND x 1</span></div>
+                <p class="detail-description">@descripcionDetalle</p>
+                <div class="detail-values">
+                    <div><span class="label">Valor unitario</span><strong>@Model.MonedaSimbolo @Model.Total.ToString("N2")</strong></div>
+                    <div><span class="label">Importe</span><strong>@Model.MonedaSimbolo @Model.Total.ToString("N2")</strong></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <header class="section-header"><span class="label">Importes</span><h2>Resumen de importes</h2></header>
+            <div class="totals">
+                <div class="total-box"><span class="label">Total</span><strong>@Model.MonedaSimbolo @Model.Total.ToString("N2")</strong></div>
+            </div>
+        </section>
+
+        <footer class="receipt-footer">
+            <span>Recibo interno generado por @Model.NegocioNombre</span>
+            <span>Reserva #@Model.ReservaId</span>
+        </footer>
+    </main>
+
+    <script>
+        window.addEventListener('load', function () {
+            window.setTimeout(function () { window.print(); }, 250);
+        });
+    </script>
+</body>
+</html>

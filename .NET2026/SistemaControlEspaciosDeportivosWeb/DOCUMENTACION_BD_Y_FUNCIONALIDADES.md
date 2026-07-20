@@ -1121,7 +1121,7 @@
   - al marcar `Registrar pago`, se habilitan `Fecha de pago` (por defecto hoy, no permite fecha futura) y `N° Operacion` (opcional, solo alfanumerico).
   - en edicion, si el pago acumulado llega al 100% del precio del espacio, el backend ajusta automaticamente el estado a `Pagada`.
   - la politica de confirmacion se muestra siempre, incluso cuando no existe tarifa para el horario; en ese caso se permite ingreso manual del precio del espacio.
-  - limite maximo de 2 pagos por reserva validado en `Sp_Reservas_Actualizar` y `Sp_Pagos_Crear`.
+  - se permiten pagos parciales sin limite de cantidad; `Sp_Reservas_Actualizar` y `Sp_Pagos_Crear` bloquean pagos cuando la reserva esta cubierta al 100% o el monto excede el saldo pendiente.
 - Documentos de comprobante y emision:
   - se incorpora supermaestro `TiposDocumentoComprobanteSuperMaestro` con codigos SUNAT, campos `Tributario` y `Habilitado`, y documento interno `RI (Recibo Interno)`.
   - el seed de supermaestro carga el Catalogo SUNAT No. 01 completo (RS 245-2017/SUNAT, Anexo N. 8) y habilita por defecto `01-Factura` y `03-Boleta`.
@@ -1167,8 +1167,9 @@
   - si el comprobante no esta pendiente, la UI y backend dejan el registro en solo lectura.
   - al grabar crear/editar comprobante, la aplicacion recarga el mismo registro (no regresa al listado).
   - en el listado de comprobantes se agrega accion `Ver` para visualizar el comprobante.
-  - para documentos no tributarios (`Recibo Interno`) la visualizacion genera un PDF interno con cabecera + detalle (cantidad 1 por reserva).
-  - para documentos tributarios (`Factura/Boleta`) la visualizacion redirige a la URL de descarga del proveedor, cuando la URL exista.
+  - para documentos no tributarios (`Recibo Interno`) la visualizacion abre un documento HTML autonomo e imprimible con cabecera, partes, detalle e importes (cantidad 1 por reserva).
+  - para documentos tributarios (`Factura/Boleta/Notas`) la impresion conserva el flujo oficial y redirige a la URL de descarga del proveedor, cuando exista.
+  - Actualizacion 20/07/2026: `Comprobantes/ImprimirInterno` valida codigo `RI`, elimina el layout administrativo y abre automaticamente el dialogo de impresion del navegador.
   - `Sp_Comprobantes_Listar` expone `EsTributario` y `UrlDescargaProveedor` para la UI.
   - se agrega `Sp_Comprobantes_ObtenerVisualizacion` para obtener datos de cabecera/detalle usados en la vista previa.
   - `Sp_Comprobantes_ObtenerVisualizacion` incluye ubigeo descriptivo (`Distrito/Provincia/Departamento`) de negocio y cliente para mostrarlo en la vista previa.

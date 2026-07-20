@@ -54,6 +54,7 @@
     var ubigeoNegocio = $"{(string.IsNullOrWhiteSpace(Model.NegocioDepartamento) ? "-" : Model.NegocioDepartamento)} / {(string.IsNullOrWhiteSpace(Model.NegocioProvincia) ? "-" : Model.NegocioProvincia)} / {(string.IsNullOrWhiteSpace(Model.NegocioDistrito) ? "-" : Model.NegocioDistrito)}";
 }
 @* Firma: FRANCO LARA - 15/07/2026 | Vista previa de recibo interno corrige modo oscuro y reemplaza descarga PDF por impresion directa de la previsualizacion. *@
+@* Firma: FRANCO LARA - 20/07/2026 | Recibo interno abre una impresion HTML independiente; comprobantes tributarios conservan el flujo oficial del proveedor. *@
 
 <div class="admin-page-frame comprobante-preview-page">
     @if (TempData["ComprobanteError"] is string comprobanteError && !string.IsNullOrWhiteSpace(comprobanteError))
@@ -106,9 +107,14 @@
             }
             else
             {
-                <button type="button" class="btn btn-primary" onclick="window.print()">
+                <a class="btn btn-primary"
+                   asp-action="ImprimirInterno"
+                   asp-route-negocioId="@Model.NegocioId"
+                   asp-route-id="@Model.Id"
+                   target="_blank"
+                   rel="noopener">
                     <i class="bi bi-printer me-1"></i> Imprimir
-                </button>
+                </a>
             }
             <a class="btn btn-outline-secondary" asp-action="Index" asp-route-negocioId="@Model.NegocioId">
                 <i class="bi bi-arrow-left me-1"></i> Volver
