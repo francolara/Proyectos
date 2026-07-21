@@ -269,7 +269,9 @@ public partial class SportCenterStoredProcedureService
                 FechaInicioPlan = dr.IsDBNull(12) ? null : dr.GetDateTime(12),
                 FechaFinPlan = dr.IsDBNull(13) ? null : dr.GetDateTime(13),
                 DiasGracia = dr.IsDBNull(14) ? 5 : Convert.ToInt32(dr.GetValue(14)),
-                FechaFinGracia = dr.IsDBNull(15) ? null : dr.GetDateTime(15)
+                FechaFinGracia = dr.IsDBNull(15) ? null : dr.GetDateTime(15),
+                PlanComercial = dr.IsDBNull(16) ? "PRUEBA" : dr.GetString(16),
+                FechaRegistro = dr.FieldCount > 17 && !dr.IsDBNull(17) ? dr.GetDateTime(17) : null
             });
             list[^1].EstadoSuscripcionNombre = list[^1].EstadoSuscripcion switch
             {
@@ -566,7 +568,17 @@ END";
                 DiasExtra = dr.IsDBNull(11) ? 0 : Convert.ToInt32(dr.GetValue(11)),
                 Observacion = dr.IsDBNull(12) ? null : dr.GetString(12),
                 FechaCreacion = dr.IsDBNull(13) ? DateTime.MinValue : dr.GetDateTime(13),
-                UsuarioCreacion = dr.IsDBNull(14) ? null : dr.GetString(14)
+                UsuarioCreacion = dr.IsDBNull(14) ? null : dr.GetString(14),
+                PlanComercialAnterior = dr.IsDBNull(15) ? null : dr.GetString(15),
+                PlanComercialNuevo = dr.IsDBNull(16) ? null : dr.GetString(16),
+                TipoPlanAnterior = dr.IsDBNull(17) ? null : dr.GetString(17),
+                TipoPlanNuevo = dr.IsDBNull(18) ? null : dr.GetString(18),
+                SedesPermitidasAnterior = dr.IsDBNull(19) ? null : Convert.ToInt32(dr.GetValue(19)),
+                SedesPermitidasNuevo = dr.IsDBNull(20) ? null : Convert.ToInt32(dr.GetValue(20)),
+                EspaciosPermitidosAnterior = dr.IsDBNull(21) ? null : Convert.ToInt32(dr.GetValue(21)),
+                EspaciosPermitidosNuevo = dr.IsDBNull(22) ? null : Convert.ToInt32(dr.GetValue(22)),
+                UsuariosPermitidosAnterior = dr.IsDBNull(23) ? null : Convert.ToInt32(dr.GetValue(23)),
+                UsuariosPermitidosNuevo = dr.IsDBNull(24) ? null : Convert.ToInt32(dr.GetValue(24))
             };
 
             item.TipoMovimientoNombre = item.TipoMovimiento switch
@@ -587,7 +599,7 @@ END";
         return list;
     }
 
-    public async Task<bool> PlataformaNegocioRegistrarPagoSuscripcionAsync(int negocioId, string tipoPago, string estadoPago, decimal monto, string moneda, DateTime fechaPago, DateOnly? fechaVencimiento, string? operacionNumero, string? entidadFinanciera, string? referenciaExterna, string? observacion, string? accionAplicacion, bool aplicarAlConfirmar, string? tipoCobroObjetivo, DateOnly? fechaInicioPlanObjetivo, int? diasGraciaObjetivo, string usuario)
+    public async Task<bool> PlataformaNegocioRegistrarPagoSuscripcionAsync(int negocioId, string tipoPago, string estadoPago, decimal monto, string moneda, DateTime fechaPago, DateOnly? fechaVencimiento, string? operacionNumero, string? entidadFinanciera, string? referenciaExterna, string? observacion, string? accionAplicacion, bool aplicarAlConfirmar, string? tipoCobroObjetivo, string? planComercialObjetivo, int? sedesPermitidasObjetivo, int? espaciosPermitidosObjetivo, int? usuariosPermitidosObjetivo, DateOnly? fechaInicioPlanObjetivo, int? diasGraciaObjetivo, string usuario)
     {
         try
         {
@@ -610,6 +622,10 @@ END";
             AddParam(cmd, "@AccionAplicacion", string.IsNullOrWhiteSpace(accionAplicacion) ? null : accionAplicacion.Trim().ToUpperInvariant(), SqlDbType.NVarChar);
             AddParam(cmd, "@AplicarAlConfirmar", aplicarAlConfirmar, SqlDbType.Bit);
             AddParam(cmd, "@TipoCobroObjetivo", string.IsNullOrWhiteSpace(tipoCobroObjetivo) ? null : tipoCobroObjetivo.Trim().ToUpperInvariant(), SqlDbType.NVarChar);
+            AddParam(cmd, "@PlanComercialObjetivo", string.IsNullOrWhiteSpace(planComercialObjetivo) ? null : planComercialObjetivo.Trim().ToUpperInvariant(), SqlDbType.NVarChar);
+            AddParam(cmd, "@SedesPermitidasObjetivo", sedesPermitidasObjetivo, SqlDbType.Int);
+            AddParam(cmd, "@EspaciosPermitidosObjetivo", espaciosPermitidosObjetivo, SqlDbType.Int);
+            AddParam(cmd, "@UsuariosPermitidosObjetivo", usuariosPermitidosObjetivo, SqlDbType.Int);
             AddParam(cmd, "@FechaInicioPlanObjetivo", fechaInicioPlanObjetivo?.ToDateTime(TimeOnly.MinValue), SqlDbType.Date);
             AddParam(cmd, "@DiasGraciaObjetivo", diasGraciaObjetivo, SqlDbType.Int);
             AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
@@ -676,7 +692,12 @@ END";
                 UsuarioAplicacion = dr.IsDBNull(18) ? null : dr.GetString(18),
                 TipoCobroObjetivo = dr.IsDBNull(19) ? null : dr.GetString(19),
                 FechaInicioPlanObjetivo = dr.IsDBNull(20) ? null : dr.GetDateTime(20),
-                DiasGraciaObjetivo = dr.IsDBNull(21) ? null : Convert.ToInt32(dr.GetValue(21))
+                DiasGraciaObjetivo = dr.IsDBNull(21) ? null : Convert.ToInt32(dr.GetValue(21)),
+                PlanComercialObjetivo = dr.IsDBNull(22) ? null : dr.GetString(22),
+                TipoPlanObjetivo = dr.IsDBNull(23) ? null : dr.GetString(23),
+                SedesPermitidasObjetivo = dr.IsDBNull(24) ? null : Convert.ToInt32(dr.GetValue(24)),
+                EspaciosPermitidosObjetivo = dr.IsDBNull(25) ? null : Convert.ToInt32(dr.GetValue(25)),
+                UsuariosPermitidosObjetivo = dr.IsDBNull(26) ? null : Convert.ToInt32(dr.GetValue(26))
             });
         }
         await dr.CloseAsync();

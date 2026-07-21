@@ -1,4 +1,5 @@
 @model SistemaControlEspaciosDeportivosWeb.ViewModels.UsuariosNegocioIndexViewModel
+@* Firma: FRANCO LARA - 21/07/2026 | Ajusta el mensaje de alta de usuarios para respetar IdentityBehavior. *@
 @{
     ViewData["Title"] = "Usuarios del negocio";
 }
@@ -67,7 +68,7 @@
                 <button type="submit" class="btn btn-primary btn-accion-filtro">Asignar</button>
             </div>
         </form>
-        <small class="text-muted d-block mt-2">Si el correo no existe, se creara el usuario y se enviara un correo de confirmacion para activar su acceso.</small>
+        <small class="text-muted d-block mt-2">Si el correo no existe, se creara el usuario y la confirmacion dependera de la configuracion de acceso vigente.</small>
     </div>
 </section>
 

@@ -20,6 +20,7 @@ public partial class SportCenterStoredProcedureService
         AddParam(cmd, "@ProvinciaEstado", model.ProvinciaEstado, SqlDbType.NVarChar);
         AddParam(cmd, "@Ciudad", model.Ciudad, SqlDbType.NVarChar);
         AddParam(cmd, "@Direccion", model.Direccion, SqlDbType.NVarChar);
+        AddParam(cmd, "@PlanComercial", PlanComercialCatalog.Normalizar(model.PlanComercial), SqlDbType.NVarChar);
         var result = await cmd.ExecuteScalarAsync();
         return result?.ToString() ?? string.Empty;
     }
@@ -64,7 +65,8 @@ public partial class SportCenterStoredProcedureService
                 NegocioId = dr.IsDBNull(13) ? null : dr.GetInt32(13),
                 SedeId = dr.IsDBNull(14) ? null : dr.GetInt32(14),
                 FechaRegistro = dr.GetDateTime(15),
-                FechaGestion = dr.IsDBNull(16) ? null : dr.GetDateTime(16)
+                FechaGestion = dr.IsDBNull(16) ? null : dr.GetDateTime(16),
+                PlanComercial = dr.FieldCount > 17 && !dr.IsDBNull(17) ? dr.GetString(17) : PlanComercialCatalog.Prueba
             });
         }
         await dr.CloseAsync();
@@ -107,7 +109,7 @@ public partial class SportCenterStoredProcedureService
         return result?.ToString() ?? string.Empty;
     }
 
-    public async Task<bool> AltasClubesAprobarAsync(int id, string usuario, string? comentarioGestion = null, int diasPrueba = 30)
+    public async Task<bool> AltasClubesAprobarAsync(int id, string usuario, string? comentarioGestion = null, int diasPrueba = 15)
     {
         try
         {
@@ -117,7 +119,7 @@ public partial class SportCenterStoredProcedureService
             AddParam(cmd, "@Id", id, SqlDbType.Int);
             AddParam(cmd, "@Usuario", usuario, SqlDbType.NVarChar);
             AddParam(cmd, "@ComentarioGestion", comentarioGestion, SqlDbType.NVarChar);
-            AddParam(cmd, "@DiasPrueba", diasPrueba <= 0 ? 30 : diasPrueba, SqlDbType.Int);
+            AddParam(cmd, "@DiasPrueba", diasPrueba <= 0 ? 15 : diasPrueba, SqlDbType.Int);
             await cmd.ExecuteNonQueryAsync();
             return true;
         }
@@ -166,7 +168,8 @@ public partial class SportCenterStoredProcedureService
             NegocioId = dr.IsDBNull(13) ? null : dr.GetInt32(13),
             SedeId = dr.IsDBNull(14) ? null : dr.GetInt32(14),
             FechaRegistro = dr.GetDateTime(15),
-            FechaGestion = dr.IsDBNull(16) ? null : dr.GetDateTime(16)
+            FechaGestion = dr.IsDBNull(16) ? null : dr.GetDateTime(16),
+            PlanComercial = dr.FieldCount > 17 && !dr.IsDBNull(17) ? dr.GetString(17) : PlanComercialCatalog.Prueba
         };
     }
 }

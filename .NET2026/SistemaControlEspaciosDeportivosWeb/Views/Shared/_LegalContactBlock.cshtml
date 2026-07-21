@@ -1,0 +1,21 @@
+@using Microsoft.Extensions.Options
+@using SistemaControlEspaciosDeportivosWeb.Configuration
+@inject IOptions<BusinessInformationOptions> BusinessInformationOptionsAccessor
+@{
+    var business = BusinessInformationOptionsAccessor.Value;
+    var whatsappUrl = string.IsNullOrWhiteSpace(business.WhatsAppNumber)
+        ? string.Empty
+        : $"https://wa.me/{business.WhatsAppNumber}?text={Uri.EscapeDataString(business.WhatsAppMessage ?? string.Empty)}";
+}
+@* Firma: FRANCO LARA - 21/07/2026 | Muestra los datos institucionales y canales de soporte en documentos legales. *@
+<aside class="legal-contact" aria-label="Datos de contacto">
+    <strong>@business.LegalName</strong>
+    <span>RUC: @business.Ruc</span>
+    <span>Dirección: @business.Address</span>
+    <span>Correo: <a href="mailto:@business.SupportEmail">@business.SupportEmail</a></span>
+    @if (!string.IsNullOrWhiteSpace(whatsappUrl))
+    {
+        <span>WhatsApp: <a href="@whatsappUrl" target="_blank" rel="noopener noreferrer">@business.WhatsAppDisplay</a></span>
+    }
+    <span>Horario: @business.SupportHours</span>
+</aside>

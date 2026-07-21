@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Options;
+using SistemaControlEspaciosDeportivosWeb.Configuration;
 using SistemaControlEspaciosDeportivosWeb.Models;
 using SistemaControlEspaciosDeportivosWeb.Services;
 
@@ -15,9 +17,11 @@ public class ForgotPasswordModel(
     UserManager<ApplicationUser> userManager,
     IAccountEmailService accountEmailService,
     ITurnstileValidationService turnstileValidationService,
-    Microsoft.Extensions.Options.IOptions<CloudflareTurnstileSettings> turnstileOptions,
+    IOptions<CloudflareTurnstileSettings> turnstileOptions,
+    IOptions<IdentityBehaviorSettings> identityBehaviorOptions,
     ILogger<ForgotPasswordModel> logger) : PageModel
 {
+    // Firma: FRANCO LARA - 21/07/2026 | Deshabilita la recuperacion por correo cuando AutoConfirmEmail omite todos los envios.
     private const string ForgotPasswordAttemptsSessionKey = "Auth:ForgotPasswordAttempts";
     private const string ForgotPasswordCaptchaScope = "FORGOTPWD";
 
@@ -34,6 +38,7 @@ public class ForgotPasswordModel(
     public bool MostrarTurnstile { get; private set; }
     public bool MostrarCaptchaManual { get; private set; }
     public string CaptchaManualCodigo { get; private set; } = string.Empty;
+    public bool CorreosHabilitados => !identityBehaviorOptions.Value.AutoConfirmEmail;
 
     public class InputModel
     {
@@ -51,6 +56,12 @@ public class ForgotPasswordModel(
 
     public async Task<IActionResult> OnPostAsync()
     {
+        if (!CorreosHabilitados)
+        {
+            ModelState.AddModelError(string.Empty, "La recuperacion por correo esta deshabilitada por la configuracion actual.");
+            return Page();
+        }
+
         TurnstileSiteKey = turnstileOptions.Value.SiteKey;
         MostrarTurnstile = DebeMostrarTurnstile();
         ConfigurarCaptchaManual();

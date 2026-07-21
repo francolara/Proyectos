@@ -2,6 +2,7 @@
 @{
     ViewData["Title"] = "Plataforma";
     @* Firma: FRANCO LARA - 09/05/2026 | Ajuste de etiquetas en Super Admin para reemplazar Club/Negocio por Complejo deportivo. *@
+    @* Firma: FRANCO LARA - 21/07/2026 | Corrige el dashboard global en modo oscuro y agrega su reporte HTML imprimible. *@
     var negociosData = new[] { Model.NegociosConContrato, Model.NegociosEnPrueba, Model.NegociosVencidos };
     var negociosMax = Math.Max(1, negociosData.Max());
     var solicitudesTotal = Math.Max(1, Model.TotalSolicitudesPendientes + Model.TotalSolicitudesAprobadas + Model.TotalSolicitudesRechazadas);
@@ -22,6 +23,9 @@
         <p class="page-subtitle">Control operativo del ecosistema comercial y administrativo.</p>
     </div>
     <div class="page-header-meta">
+        <a asp-action="ReporteDashboard" target="_blank" rel="noopener" class="btn btn-sm btn-light">
+            <i class="bi bi-printer me-1"></i>Reporte
+        </a>
         <span class="badge text-bg-light border">Owner: @Model.CorreoUsuario</span>
     </div>
 </div>
@@ -525,6 +529,103 @@
         margin-top: .22rem;
         font-size: .75rem;
         color: #5f6f8e;
+    }
+
+    html[data-theme="dark"] .sc-kpi-label,
+    html[data-theme="dark"] .platform-bar-label,
+    html[data-theme="dark"] .platform-bar-value {
+        color: #f4f8ff;
+    }
+
+    html[data-theme="dark"] .sc-kpi-foot,
+    html[data-theme="dark"] .platform-bar-subtitle {
+        color: #b5c4d9;
+    }
+
+    html[data-theme="dark"] .platform-bar-item {
+        background: linear-gradient(180deg, #17263c 0%, #111d30 100%);
+        border-color: #344a68;
+        color: #f4f8ff;
+    }
+
+    html[data-theme="dark"] .platform-bar-track {
+        background: #24364f;
+        box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .08);
+    }
+
+    html[data-theme="dark"] .platform-bar-icon {
+        background: #1c3353;
+        border-color: #41658f;
+        color: #9ac5ff;
+    }
+
+    html[data-theme="dark"] .platform-click:hover .platform-bar-track {
+        box-shadow: inset 0 0 0 2px #4f78ad;
+    }
+
+    html[data-theme="dark"] .platform-click:hover.platform-bar-item {
+        background: linear-gradient(180deg, #1a2e49 0%, #14243a 100%);
+        border-color: #5c86bb;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, .28);
+    }
+
+    html[data-theme="dark"] .platform-donut::after {
+        background: #111d30;
+        box-shadow: 0 0 0 1px rgba(148, 163, 184, .08);
+    }
+
+    html[data-theme="dark"] .platform-donut-center {
+        color: #f8fbff;
+    }
+
+    html[data-theme="dark"] .platform-legend,
+    html[data-theme="dark"] #detalle-body,
+    html[data-theme="dark"] #detalle-body .text-muted {
+        color: #c5d2e5 !important;
+    }
+
+    html[data-theme="dark"] .platform-inline-link {
+        color: #7dd3fc;
+    }
+
+    html[data-theme="dark"] .platform-progress-block .progress,
+    html[data-theme="dark"] .table-card > .p-3 > .progress {
+        background-color: #263951;
+    }
+
+    html[data-theme="dark"] .platform-module-btn {
+        background: linear-gradient(180deg, #17263c 0%, #111d30 100%);
+        border-color: #344a68;
+        color: #eaf2ff;
+    }
+
+    html[data-theme="dark"] .platform-module-icon {
+        background: #1c3353;
+        border-color: #41658f;
+        color: #9ac5ff;
+    }
+
+    html[data-theme="dark"] .platform-module-text strong {
+        color: #f4f8ff;
+    }
+
+    html[data-theme="dark"] .platform-module-text small {
+        color: #b5c4d9;
+    }
+
+    html[data-theme="dark"] .platform-module-btn:hover {
+        background: linear-gradient(180deg, #1a2e49 0%, #14243a 100%);
+        border-color: #5c86bb;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, .28);
+        color: #ffffff;
+    }
+
+    html[data-theme="dark"] .platform-bar-item:focus-visible,
+    html[data-theme="dark"] .platform-legend-btn:focus-visible,
+    html[data-theme="dark"] .platform-inline-link:focus-visible,
+    html[data-theme="dark"] .platform-module-btn:focus-visible {
+        outline: 2px solid #60a5fa;
+        outline-offset: 3px;
     }
 </style>
 

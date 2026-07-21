@@ -2,6 +2,7 @@
 -- Author:        FRANCO LARA
 -- Create date:   10/06/2026
 -- Firma:         Lista cobros de suscripcion por negocio devolviendo resumen acumulado, estado de conciliacion e historial reciente.
+-- Firma:         FRANCO LARA - 21/07/2026 | Devuelve el plan comercial y limites objetivo aplicados con cada cobro.
 -- =============================================
 CREATE OR ALTER PROCEDURE dbo.Sp_NegociosSuscripcionPago_ListarPorNegocio
     @NegocioId INT,
@@ -59,7 +60,12 @@ BEGIN
             p.UsuarioAplicacion,
             p.TipoCobroObjetivo,
             p.FechaInicioPlanObjetivo,
-            p.DiasGraciaObjetivo
+            p.DiasGraciaObjetivo,
+            p.PlanComercialObjetivo,
+            p.TipoPlanObjetivo,
+            p.SedesPermitidasObjetivo,
+            p.EspaciosPermitidosObjetivo,
+            p.UsuariosPermitidosObjetivo
         FROM dbo.NegociosSuscripcionPago p
         LEFT JOIN dbo.NegociosSuscripcionMovimiento m ON m.Id = p.NegocioSuscripcionMovimientoId
         WHERE p.NegocioId = @NegocioId

@@ -157,7 +157,7 @@ public interface ISportCenterStoredProcedureService
     Task<string> HomeRegistrarClubConPruebaAsync(AltaClubSolicitudFormViewModel model, string usuarioId);
     Task<(List<AltaClubItemViewModel> Solicitudes, int TotalRegistros, int TotalPendientes, int TotalAprobados, int TotalRechazados)> AltasClubesListarAsync(int? estado = null, int pagina = 1, int tamanoPagina = 20);
     Task<AltaClubItemViewModel?> AltasClubesObtenerPorIdAsync(int id);
-    Task<bool> AltasClubesAprobarAsync(int id, string usuario, string? comentarioGestion = null, int diasPrueba = 30);
+    Task<bool> AltasClubesAprobarAsync(int id, string usuario, string? comentarioGestion = null, int diasPrueba = 15);
     Task<bool> AltasClubesRechazarAsync(int id, string usuario, string? comentarioGestion = null);
 
     Task<List<UsuarioNegocioItemViewModel>> UsuariosNegocioListarAsync(int negocioId, int? sedeId = null);
@@ -226,7 +226,7 @@ public interface ISportCenterStoredProcedureService
     Task<bool> PlataformaNegocioAplicarGraciaManualAsync(int negocioId, int diasExtra, string? observacion, string usuario);
     Task<bool> PlataformaNegocioCambiarPlanAsync(int negocioId, string tipoCobro, DateOnly fechaDesde, DateOnly fechaHasta, int diasGracia, string? observacion, string usuario);
     Task<List<PlataformaNegocioSuscripcionMovimientoViewModel>> PlataformaNegocioHistorialComercialAsync(int negocioId, int top = 8);
-    Task<bool> PlataformaNegocioRegistrarPagoSuscripcionAsync(int negocioId, string tipoPago, string estadoPago, decimal monto, string moneda, DateTime fechaPago, DateOnly? fechaVencimiento, string? operacionNumero, string? entidadFinanciera, string? referenciaExterna, string? observacion, string? accionAplicacion, bool aplicarAlConfirmar, string? tipoCobroObjetivo, DateOnly? fechaInicioPlanObjetivo, int? diasGraciaObjetivo, string usuario);
+    Task<bool> PlataformaNegocioRegistrarPagoSuscripcionAsync(int negocioId, string tipoPago, string estadoPago, decimal monto, string moneda, DateTime fechaPago, DateOnly? fechaVencimiento, string? operacionNumero, string? entidadFinanciera, string? referenciaExterna, string? observacion, string? accionAplicacion, bool aplicarAlConfirmar, string? tipoCobroObjetivo, string? planComercialObjetivo, int? sedesPermitidasObjetivo, int? espaciosPermitidosObjetivo, int? usuariosPermitidosObjetivo, DateOnly? fechaInicioPlanObjetivo, int? diasGraciaObjetivo, string usuario);
     Task<(List<PlataformaNegocioSuscripcionPagoViewModel> Pagos, int CantidadPagos, decimal MontoTotalPagado, DateTime? UltimaFechaPago, decimal? UltimoMonto, string? UltimoTipoPago)> PlataformaNegocioPagosSuscripcionAsync(int negocioId, int top = 8);
     Task<bool> PlataformaNegocioConfirmarPagoSuscripcionAsync(int negocioId, int pagoId, string usuario);
     Task<MiSuscripcionNegocioViewModel?> MiSuscripcionObtenerAsync(int negocioId);

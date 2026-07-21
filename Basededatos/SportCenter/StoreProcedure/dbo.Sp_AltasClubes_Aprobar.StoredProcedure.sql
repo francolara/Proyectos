@@ -3,12 +3,13 @@
 -- Create date:   16/04/2026
 -- Firma:         Ajuste de aprobacion de altas con dias de prueba configurables y creacion de suscripcion inicial.
 -- Firma:         FRANCO LARA - 18/06/2026 | Registra TipoPlan Basico por defecto al crear nuevos negocios desde altas.
+-- Firma:         FRANCO LARA - 21/07/2026 | Conserva TipoPlan Basico y los limites predeterminados, sin asociarlos al plan comercial publico, y usa 15 dias de prueba por defecto.
 -- =============================================
 CREATE OR ALTER PROCEDURE dbo.Sp_AltasClubes_Aprobar
     @Id INT,
     @Usuario NVARCHAR(200),
     @ComentarioGestion NVARCHAR(300) = NULL,
-    @DiasPrueba INT = 7
+    @DiasPrueba INT = 15
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -18,7 +19,7 @@ BEGIN
         DECLARE @Hoy DATE = CAST(SYSUTCDATETIME() AS DATE);
 
         IF @DiasPrueba IS NULL OR @DiasPrueba <= 0
-            SET @DiasPrueba = 7;
+            SET @DiasPrueba = 15;
 
         SELECT
             @Correo = ac.Correo,

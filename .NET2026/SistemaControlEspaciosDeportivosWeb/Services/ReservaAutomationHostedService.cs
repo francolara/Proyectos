@@ -38,8 +38,13 @@ public class ReservaAutomationHostedService(
         var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
 
         var ahora = DateTime.Now;
-        var pendientes = await spService.ReservasRecordatoriosPendientesAsync(ahora);
+        var pendientes = emailService.IsEnabled
+            ? await spService.ReservasRecordatoriosPendientesAsync(ahora)
+            : new List<ReservaRecordatorioPendienteViewModel>();
         var enviados = 0;
+
+        if (!emailService.IsEnabled)
+            logger.LogInformation("Recordatorios automaticos omitidos porque el envio de correos esta deshabilitado.");
 
         foreach (var reserva in pendientes)
         {

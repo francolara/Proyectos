@@ -75,12 +75,37 @@ public class PlataformaNegociosAdminViewModel
     public List<PlataformaNegocioLimiteItemViewModel> Negocios { get; set; } = new();
 }
 
+public class PlataformaNegocioReporteViewModel
+{
+    public PlataformaNegocioLimiteItemViewModel Negocio { get; set; } = new();
+    public DateTime FechaGeneracion { get; set; } = DateTime.Now;
+    public string GeneradoPor { get; set; } = string.Empty;
+}
+
+public class PlataformaNegociosReporteViewModel
+{
+    public string? Buscar { get; set; }
+    public string EstadoContrato { get; set; } = "todos";
+    public List<PlataformaNegocioLimiteItemViewModel> Negocios { get; set; } = new();
+    public DateTime FechaGeneracion { get; set; } = DateTime.Now;
+    public string GeneradoPor { get; set; } = string.Empty;
+}
+
+public class PlataformaDashboardReporteViewModel
+{
+    public PlataformaIndexViewModel Resumen { get; set; } = new();
+    public DateTime FechaGeneracion { get; set; } = DateTime.Now;
+    public string GeneradoPor { get; set; } = string.Empty;
+}
+
 public class PlataformaNegocioLimiteItemViewModel
 {
     public int NegocioId { get; set; }
     public string NombreComercial { get; set; } = string.Empty;
     public bool Activo { get; set; }
+    public DateTime? FechaRegistro { get; set; }
     public string TipoPlan { get; set; } = "Basico";
+    public string PlanComercial { get; set; } = "PRUEBA";
     public int SedesPermitidas { get; set; } = 2;
     public int EspaciosPermitidos { get; set; } = 6;
     public int UsuariosPermitidos { get; set; } = 3;
@@ -115,6 +140,16 @@ public class PlataformaNegocioSuscripcionMovimientoViewModel
     public bool EsPruebaNuevo { get; set; }
     public string? TipoCobroAnterior { get; set; }
     public string? TipoCobroNuevo { get; set; }
+    public string? PlanComercialAnterior { get; set; }
+    public string? PlanComercialNuevo { get; set; }
+    public string? TipoPlanAnterior { get; set; }
+    public string? TipoPlanNuevo { get; set; }
+    public int? SedesPermitidasAnterior { get; set; }
+    public int? SedesPermitidasNuevo { get; set; }
+    public int? EspaciosPermitidosAnterior { get; set; }
+    public int? EspaciosPermitidosNuevo { get; set; }
+    public int? UsuariosPermitidosAnterior { get; set; }
+    public int? UsuariosPermitidosNuevo { get; set; }
     public DateTime? FechaInicioReferencia { get; set; }
     public DateTime? FechaFinReferencia { get; set; }
     public int DiasGracia { get; set; }
@@ -147,6 +182,11 @@ public class PlataformaNegocioSuscripcionPagoViewModel
     public DateTime? FechaAplicacion { get; set; }
     public string? UsuarioAplicacion { get; set; }
     public string? TipoCobroObjetivo { get; set; }
+    public string? PlanComercialObjetivo { get; set; }
+    public string? TipoPlanObjetivo { get; set; }
+    public int? SedesPermitidasObjetivo { get; set; }
+    public int? EspaciosPermitidosObjetivo { get; set; }
+    public int? UsuariosPermitidosObjetivo { get; set; }
     public DateTime? FechaInicioPlanObjetivo { get; set; }
     public int? DiasGraciaObjetivo { get; set; }
 }
@@ -154,7 +194,7 @@ public class PlataformaNegocioSuscripcionPagoViewModel
 public class PlataformaAltasClubesAdminViewModel
 {
     public int? Estado { get; set; }
-    public int DiasPruebaDefault { get; set; } = 30;
+    public int DiasPruebaDefault { get; set; } = 15;
     public int Pagina { get; set; } = 1;
     public int TamanoPagina { get; set; } = 20;
     public int TotalRegistros { get; set; }

@@ -1,4 +1,4 @@
-USE [DbSportCenter]
+USE [dbsportcenter_20260613]
 GO
 SET ANSI_NULLS ON
 GO
@@ -7,6 +7,7 @@ GO
 
 -- SOURCE: 21_Altas_Clubes.sql (linea 90)
 -- Firma: Codex - 20/04/2026 | Agrega paginacion backend y KPIs de estado por outputs para panel superadmin.
+-- Firma: FRANCO LARA - 21/07/2026 | Expone el plan comercial publico de cada solicitud.
 CREATE OR ALTER PROCEDURE [dbo].[Sp_AltasClubes_Listar]
     @Estado INT = NULL,
     @Pagina INT = 1,
@@ -48,7 +49,8 @@ BEGIN
             ac.NegocioId,
             ac.SedeId,
             ac.FechaRegistro,
-            ac.FechaGestion
+            ac.FechaGestion,
+            COALESCE(ac.PlanComercial, N'PRUEBA') AS PlanComercial
         FROM dbo.SolicitudesAltaClub ac
         WHERE (@Estado IS NULL OR ac.Estado = @Estado)
         ORDER BY ac.FechaRegistro DESC

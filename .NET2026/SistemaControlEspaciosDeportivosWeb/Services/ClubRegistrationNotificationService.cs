@@ -16,6 +16,12 @@ public class ClubRegistrationNotificationService(
 
     public async Task NotifyNewClubRegistrationAsync(AltaClubSolicitudFormViewModel request, string? requestCode = null)
     {
+        if (!emailService.IsEnabled)
+        {
+            logger.LogInformation("Notificacion de alta omitida porque el envio de correos esta deshabilitado.");
+            return;
+        }
+
         var recipients = await GetRecipientsAsync();
         if (recipients.Count == 0)
         {
@@ -57,6 +63,12 @@ public class ClubRegistrationNotificationService(
 
     public async Task NotifyClubApprovalAsync(AltaClubItemViewModel request, int diasPrueba)
     {
+        if (!emailService.IsEnabled)
+        {
+            logger.LogInformation("Notificacion de aprobacion omitida porque el envio de correos esta deshabilitado.");
+            return;
+        }
+
         var correoDestino = (request.Correo ?? string.Empty).Trim();
         if (!IsValidEmail(correoDestino))
         {
@@ -66,7 +78,7 @@ public class ClubRegistrationNotificationService(
             return;
         }
 
-        var diasPruebaNormalizado = diasPrueba <= 0 ? 30 : diasPrueba;
+        var diasPruebaNormalizado = diasPrueba <= 0 ? 15 : diasPrueba;
         var fechaInicio = DateOnly.FromDateTime(DateTime.Today);
         var fechaFin = fechaInicio.AddDays(diasPruebaNormalizado);
         var asunto = $"Tu solicitud ha sido aprobada - Bienvenido a La Zona Deportiva";

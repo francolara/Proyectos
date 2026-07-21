@@ -1,5 +1,6 @@
 @page
 @model SistemaControlEspaciosDeportivosWeb.Areas.Identity.Pages.Account.LoginModel
+@* Firma: FRANCO LARA - 21/07/2026 | Oculta el reenvio de confirmacion cuando IdentityBehavior no requiere validar el correo. *@
 @inject Microsoft.Extensions.Options.IOptions<SistemaControlEspaciosDeportivosWeb.Services.SedeImagenStorageSettings> SedeImagenStorageOptions
 @* Firma: FRANCO LARA - 15/07/2026 | Login publico agrega captcha manual de respaldo cuando Turnstile falla o no queda disponible. *@
 @{
@@ -97,7 +98,10 @@
                         <input asp-for="Input.RememberMe" class="form-check-input" />
                         <label asp-for="Input.RememberMe" class="form-check-label">Recordarme</label>
                     </div>
-                    <a asp-page="./ForgotPassword" class="auth-link">Olvidaste tu contrasena?</a>
+                    @if (Model.CorreosHabilitados)
+                    {
+                        <a asp-page="./ForgotPassword" class="auth-link">Olvidaste tu contrasena?</a>
+                    }
                 </div>
                 @if (Model.MostrarTurnstile && !Model.MostrarCaptchaManual)
                 {
@@ -117,7 +121,10 @@
                 }
 
                 <button id="login-submit" type="submit" class="w-100 btn btn-primary auth-cta">Iniciar sesion</button>
-                <button asp-page-handler="ResendConfirmation" type="submit" class="w-100 btn btn-outline-primary auth-cta mt-2">Reenviar confirmacion</button>
+                @if (Model.RequiereConfirmacionCorreo)
+                {
+                    <button asp-page-handler="ResendConfirmation" type="submit" class="w-100 btn btn-outline-primary auth-cta mt-2">Reenviar confirmacion</button>
+                }
                 @if (Model.ExternalLogins.Count > 0)
                 {
                     <div class="mt-3">

@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Options;
+using SistemaControlEspaciosDeportivosWeb.Configuration;
 using SistemaControlEspaciosDeportivosWeb.Models;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
@@ -20,9 +22,11 @@ public class LoginModel(
     IAccountEmailService accountEmailService,
     ISportCenterStoredProcedureService spService,
     ITurnstileValidationService turnstileValidationService,
-    Microsoft.Extensions.Options.IOptions<CloudflareTurnstileSettings> turnstileOptions,
+    IOptions<CloudflareTurnstileSettings> turnstileOptions,
+    IOptions<IdentityBehaviorSettings> identityBehaviorOptions,
     ILogger<LoginModel> logger) : PageModel
 {
+    // Firma: FRANCO LARA - 21/07/2026 | Respeta la confirmacion de cuenta configurada y oculta el reenvio cuando la autoconfirmacion esta activa.
     private const string LoginFailuresSessionKey = "Auth:LoginFailures";
     private const string ResendAttemptsSessionKey = "Auth:ResendAttempts";
     private const string LoginCaptchaScope = "LOGIN";
@@ -43,6 +47,10 @@ public class LoginModel(
     public bool MostrarTurnstile { get; private set; }
     public bool MostrarCaptchaManual { get; private set; }
     public string CaptchaManualCodigo { get; private set; } = string.Empty;
+    public bool RequiereConfirmacionCorreo =>
+        identityBehaviorOptions.Value.RequireConfirmedAccount
+        && !identityBehaviorOptions.Value.AutoConfirmEmail;
+    public bool CorreosHabilitados => !identityBehaviorOptions.Value.AutoConfirmEmail;
 
     [TempData]
     public string? ErrorMessage { get; set; }
@@ -112,7 +120,7 @@ public class LoginModel(
             return Page();
         }
 
-        if (!await userManager.IsEmailConfirmedAsync(user))
+        if (RequiereConfirmacionCorreo && !await userManager.IsEmailConfirmedAsync(user))
         {
             IncrementarContador(LoginFailuresSessionKey);
             MostrarTurnstile = DebeMostrarTurnstile();
@@ -178,6 +186,13 @@ public class LoginModel(
         MostrarTurnstile = DebeMostrarTurnstile();
         ConfigurarCaptchaManual();
         ReturnUrl = returnUrl;
+
+        if (!RequiereConfirmacionCorreo)
+        {
+            SuccessMessage = "La confirmacion de correo no es necesaria con la configuracion actual.";
+            await CargarBannerLateralAsync();
+            return Page();
+        }
 
         var email = (Input.Email ?? string.Empty).Trim();
         Input.Email = email;
@@ -304,7 +319,7 @@ public class LoginModel(
             {
                 UserName = email,
                 Email = email,
-                EmailConfirmed = true,
+                EmailConfirmed = identityBehaviorOptions.Value.AutoConfirmEmail,
                 Nombres = string.IsNullOrWhiteSpace(nombres) ? email : nombres
             };
 

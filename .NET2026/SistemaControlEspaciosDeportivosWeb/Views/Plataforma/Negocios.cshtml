@@ -4,6 +4,8 @@
 }
 @* Firma: FRANCO LARA - 09/05/2026 | Ajuste de etiquetas en Super Admin para reemplazar Club/Negocio por Complejo deportivo. *@
 @* Firma: FRANCO LARA - 10/06/2026 | Agrega conciliacion de cobros comerciales con acciones diferidas y reorganiza la gestion comercial del super admin con resumen por negocio y modales por accion. *@
+@* Firma: FRANCO LARA - 20/07/2026 | Corrige el contraste del historial comercial y de los pies de los modales de limites, contratos y cobros en modo oscuro. *@
+@* Firma: FRANCO LARA - 21/07/2026 | Muestra el plan comercial vigente, permite aplicarlo con sus limites al guardar cada cobro y agrega reportes HTML imprimibles por complejo y consolidado. *@
 <div class="page-header-card mb-3">
     <div class="page-header-main">
         <h1 class="page-title">Complejos deportivos registrados</h1>
@@ -51,6 +53,33 @@
         justify-content: flex-end;
         gap: .75rem;
     }
+
+    html[data-theme="dark"] .platform-negocio-modal .modal-body {
+        background: #0b1220;
+        color: #e5eefc;
+    }
+
+    html[data-theme="dark"] .platform-negocio-modal .modal-footer,
+    html[data-theme="dark"] .platform-negocio-modal .platform-negocio-form-actions {
+        background: linear-gradient(180deg, rgba(11, 18, 32, 0.92) 0%, #0b1220 28%);
+        border-color: rgba(96, 119, 156, 0.38);
+    }
+
+    html[data-theme="dark"] .platform-negocio-modal .bg-light-subtle,
+    html[data-theme="dark"] .platform-negocio-modal .js-mov-item,
+    html[data-theme="dark"] .platform-negocio-modal .js-cobro-item {
+        background-color: #111c2f !important;
+        color: #e5eefc;
+    }
+
+    html[data-theme="dark"] .platform-negocio-modal .border {
+        border-color: rgba(96, 119, 156, 0.38) !important;
+    }
+
+    html[data-theme="dark"] .platform-negocio-modal .text-bg-light {
+        background-color: #1e293b !important;
+        color: #e5eefc !important;
+    }
 </style>
 
 <section class="table-card sc-reservas-list-card p-3 mb-3">
@@ -71,8 +100,18 @@
         <div class="col-md-3 col-lg-2 d-grid">
             <button type="submit" class="btn btn-primary btn-accion-filtro"><i class="bi bi-search me-1"></i>Buscar</button>
         </div>
-        <div class="col-md-3 col-lg-2 d-grid">
+        <div class="col-md-3 col-lg-1 d-grid">
             <a asp-action="Negocios" class="btn btn-outline-secondary btn-cancelar">Limpiar</a>
+        </div>
+        <div class="col-md-3 col-lg-2 d-grid">
+            <a asp-action="ReporteNegocios"
+               asp-route-buscar="@Model.Buscar"
+               asp-route-estadoContrato="@Model.EstadoContrato"
+               target="_blank"
+               rel="noopener"
+               class="btn btn-outline-primary">
+                <i class="bi bi-printer me-1"></i>Reporte
+            </a>
         </div>
     </form>
 </section>
@@ -169,7 +208,7 @@
                             </td>
                             <td>
                                 <div class="d-flex flex-wrap justify-content-center gap-2">
-                                    <span class="badge text-bg-primary">Plan: @item.TipoPlan</span>
+                                    <span class="badge text-bg-primary">Plan: @SistemaControlEspaciosDeportivosWeb.Services.PlanComercialCatalog.Obtener(item.PlanComercial).Nombre</span>
                                     <span class="badge text-bg-light border">Sedes: @item.SedesPermitidas</span>
                                     <span class="badge text-bg-light border">Espacios: @item.EspaciosPermitidos</span>
                                     <span class="badge text-bg-light border">Usuarios: @item.UsuariosPermitidos</span>
@@ -198,7 +237,7 @@
                                 }
                                 else if (!item.EsPrueba && item.FechaFinPlan.HasValue)
                                 {
-                                    <div class="small text-muted">Plan: @item.TipoCobro | @item.FechaInicioPlan?.ToString("dd/MM/yyyy") - @item.FechaFinPlan?.ToString("dd/MM/yyyy")</div>
+                                    <div class="small text-muted">@SistemaControlEspaciosDeportivosWeb.Services.PlanComercialCatalog.Obtener(item.PlanComercial).Nombre · @item.TipoCobro | @item.FechaInicioPlan?.ToString("dd/MM/yyyy") - @item.FechaFinPlan?.ToString("dd/MM/yyyy")</div>
                                     <div class="small text-muted">Gracia: @item.DiasGracia dias | hasta @item.FechaFinGracia?.ToString("dd/MM/yyyy")</div>
                                 }
                                 else if (!item.EsPrueba)
@@ -226,6 +265,13 @@
                                     <button type="button" class="btn btn-sm btn-primary btn-grabar platform-negocio-action-btn" data-bs-toggle="modal" data-bs-target="#@modalGestionId">
                                         <i class="bi bi-collection me-1"></i>Historial
                                     </button>
+                                    <a asp-action="ReporteNegocio"
+                                       asp-route-negocioId="@item.NegocioId"
+                                       target="_blank"
+                                       rel="noopener"
+                                       class="btn btn-sm btn-outline-primary platform-negocio-action-btn">
+                                        <i class="bi bi-printer me-1"></i>Reporte
+                                    </a>
                                     <span class="text-muted small">ID @item.NegocioId</span>
                                 </div>
                             </td>
@@ -466,7 +512,7 @@
                                     <div class="modal-header sc-modal-header">
                                         <div class="sc-modal-title-wrap">
                                             <h5 class="modal-title sc-modal-title" id="@(modalCobroId)Label">Cobros comerciales</h5>
-                                            <p class="sc-modal-subtitle">Registra pagos y define si deben aplicarse al contrato de @item.NombreComercial.</p>
+                                            <p class="sc-modal-subtitle">Registra el cobro y aplica de inmediato el plan comercial, el contrato y sus limites a @item.NombreComercial.</p>
                                         </div>
                                         <button type="button" class="btn-close sc-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                                     </div>
@@ -484,7 +530,7 @@
                                                 </div>
                                                 <div class="col-md-4">
                                                     <label class="form-label">Monto</label>
-                                                    <input type="number" min="0.01" step="0.01" name="monto" value="0.00" class="form-control" />
+                                                    <input type="number" min="0.01" step="0.01" name="monto" value="@(item.PlanComercial == "PRO" ? "99.90" : "49.90")" class="form-control js-monto-plan" />
                                                 </div>
                                                 <div class="col-md-8">
                                                     <label class="form-label">Tipo de pago</label>
@@ -522,41 +568,47 @@
                                                     <input type="text" name="observacion" class="form-control" placeholder="Observacion del cobro (opcional)" />
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label">Accion comercial al confirmar</label>
+                                                    <label class="form-label">Accion comercial</label>
                                                     <select name="accionAplicacion" class="form-select js-accion-aplicacion">
-                                                        <option value="">Solo registrar cobro</option>
                                                         <option value="RENOVACION">Renovar suscripcion</option>
                                                         <option value="CAMBIO_PLAN">Cambiar plan</option>
                                                     </select>
                                                 </div>
-                                                <div class="col-md-4 js-accion-plan">
-                                                    <label class="form-label">Plan objetivo</label>
-                                                    <select name="tipoCobroObjetivo" class="form-select">
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Plan comercial</label>
+                                                    <select name="planComercialObjetivo" class="form-select js-plan-comercial" data-plan-actual="@item.PlanComercial">
+                                                        <option value="ESENCIAL" data-precio="49.90" data-sedes="1" data-espacios="5" data-usuarios="2" selected="@(item.PlanComercial != "PRO" ? "selected" : null)">Esencial</option>
+                                                        <option value="PRO" data-precio="99.90" data-sedes="3" data-espacios="12" data-usuarios="3" selected="@(item.PlanComercial == "PRO" ? "selected" : null)">Pro</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Periodicidad</label>
+                                                    <select name="tipoCobroObjetivo" class="form-select js-periodicidad" data-periodicidad-actual="@item.TipoCobro">
                                                         <option value="MENSUAL" selected="@(item.TipoCobro == "MENSUAL" ? "selected" : null)">Mensual</option>
                                                         <option value="TRIMESTRAL" selected="@(item.TipoCobro == "TRIMESTRAL" ? "selected" : null)">Trimestral</option>
                                                         <option value="SEMESTRAL" selected="@(item.TipoCobro == "SEMESTRAL" ? "selected" : null)">Semestral</option>
                                                         <option value="ANUAL" selected="@(item.TipoCobro == "ANUAL" ? "selected" : null)">Anual</option>
                                                     </select>
                                                 </div>
-                                                <div class="col-md-2 js-accion-plan">
+                                                <div class="col-md-2">
                                                     <label class="form-label">Inicio objetivo</label>
                                                     <input type="date" name="fechaInicioPlanObjetivo" class="form-control" value="@fechaInicioObjetivoDefault.ToString("yyyy-MM-dd")" />
                                                 </div>
-                                                <div class="col-md-2 js-accion-plan">
+                                                <div class="col-md-2">
                                                     <label class="form-label">Dias de gracia</label>
                                                     <input type="number" min="0" max="30" name="diasGraciaObjetivo" value="@item.DiasGracia" class="form-control" />
                                                 </div>
-                                                <div class="col-md-6">
-                                                    <div class="form-check form-switch small mt-md-4">
-                                                        <input class="form-check-input" type="checkbox" name="cobroConfirmado" value="true" checked />
-                                                        <label class="form-check-label">Cobro confirmado</label>
-                                                    </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Sedes permitidas</label>
+                                                    <input type="number" min="1" name="sedesPermitidasObjetivo" value="@item.SedesPermitidas" class="form-control js-limite-sedes" />
                                                 </div>
-                                                <div class="col-md-6">
-                                                    <div class="form-check form-switch small mt-md-4">
-                                                        <input class="form-check-input" type="checkbox" name="aplicarAlConfirmar" value="true" />
-                                                        <label class="form-check-label">Aplicar accion al confirmar el cobro</label>
-                                                    </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Espacios permitidos</label>
+                                                    <input type="number" min="1" name="espaciosPermitidosObjetivo" value="@item.EspaciosPermitidos" class="form-control js-limite-espacios" />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Usuarios permitidos</label>
+                                                    <input type="number" min="1" name="usuariosPermitidosObjetivo" value="@item.UsuariosPermitidos" class="form-control js-limite-usuarios" />
                                                 </div>
                                                 <div class="col-12 platform-negocio-form-actions">
                                                     <button type="button" class="btn btn-outline-secondary btn-cancelar" data-bs-dismiss="modal">Cancelar</button>
@@ -578,7 +630,7 @@
                                                 </div>
                                                 <div class="col-md-4">
                                                     <label class="form-label">Monto</label>
-                                                    <input type="number" min="0.01" step="0.01" name="monto" value="0.00" class="form-control" />
+                                                    <input type="number" min="0.01" step="0.01" name="monto" value="49.90" class="form-control js-monto-plan" />
                                                 </div>
                                                 <div class="col-md-8">
                                                     <label class="form-label">Tipo de pago</label>
@@ -600,12 +652,19 @@
                                                     <input type="date" name="fechaVencimiento" class="form-control" value="@DateTime.Today.AddMonths(1).ToString("yyyy-MM-dd")" />
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label">Plan objetivo</label>
-                                                    <select name="tipoCobroObjetivo" class="form-select">
+                                                    <label class="form-label">Periodicidad</label>
+                                                    <select name="tipoCobroObjetivo" class="form-select js-periodicidad">
                                                         <option value="MENSUAL">Mensual</option>
                                                         <option value="TRIMESTRAL">Trimestral</option>
                                                         <option value="SEMESTRAL">Semestral</option>
                                                         <option value="ANUAL">Anual</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Plan comercial</label>
+                                                    <select name="planComercialObjetivo" class="form-select js-plan-comercial">
+                                                        <option value="ESENCIAL" data-precio="49.90" data-sedes="1" data-espacios="5" data-usuarios="2">Esencial</option>
+                                                        <option value="PRO" data-precio="99.90" data-sedes="3" data-espacios="12" data-usuarios="3">Pro</option>
                                                     </select>
                                                 </div>
                                                 <div class="col-md-4">
@@ -632,17 +691,17 @@
                                                     <label class="form-label">Observacion</label>
                                                     <input type="text" name="observacion" class="form-control" placeholder="Observacion del cobro (opcional)" />
                                                 </div>
-                                                <div class="col-md-6">
-                                                    <div class="form-check form-switch small mt-md-4">
-                                                        <input class="form-check-input" type="checkbox" name="cobroConfirmado" value="true" checked />
-                                                        <label class="form-check-label">Cobro confirmado</label>
-                                                    </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Sedes permitidas</label>
+                                                    <input type="number" min="1" name="sedesPermitidasObjetivo" value="1" class="form-control js-limite-sedes" />
                                                 </div>
-                                                <div class="col-md-6">
-                                                    <div class="form-check form-switch small mt-md-4">
-                                                        <input class="form-check-input" type="checkbox" name="aplicarAlConfirmar" value="true" checked />
-                                                        <label class="form-check-label">Aplicar activacion al confirmar el cobro</label>
-                                                    </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Espacios permitidos</label>
+                                                    <input type="number" min="1" name="espaciosPermitidosObjetivo" value="5" class="form-control js-limite-espacios" />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Usuarios permitidos</label>
+                                                    <input type="number" min="1" name="usuariosPermitidosObjetivo" value="2" class="form-control js-limite-usuarios" />
                                                 </div>
                                                 <div class="col-12 platform-negocio-form-actions">
                                                     <button type="button" class="btn btn-outline-secondary btn-cancelar" data-bs-dismiss="modal">Cancelar</button>
@@ -694,15 +753,9 @@
                                                 </div>
 
                                                 <div class="row g-2 mb-3">
-                                                    <div class="col-lg-8">
+                                                    <div class="col-12">
                                                         <label class="form-label small mb-1">Buscar en movimientos y cobros</label>
                                                         <input type="text" class="form-control form-control-sm js-gestion-search" placeholder="Operacion, referencia, tipo de pago, nota, movimiento..." />
-                                                    </div>
-                                                    <div class="col-lg-4 d-grid">
-                                                        <label class="form-label small mb-1">&nbsp;</label>
-                                                        <a asp-action="ExportExcelGestionComercialNegocio" asp-route-negocioId="@item.NegocioId" class="btn btn-sm btn-outline-success">
-                                                            <i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel
-                                                        </a>
                                                     </div>
                                                 </div>
 
@@ -724,8 +777,10 @@
                                                                     {
                                                                         var movSearch = string.Join(" ",
                                                                             mov.TipoMovimientoNombre ?? string.Empty,
-                                                                            mov.TipoCobroAnterior ?? string.Empty,
-                                                                            mov.TipoCobroNuevo ?? string.Empty,
+                                                                             mov.TipoCobroAnterior ?? string.Empty,
+                                                                             mov.TipoCobroNuevo ?? string.Empty,
+                                                                             mov.PlanComercialAnterior ?? string.Empty,
+                                                                             mov.PlanComercialNuevo ?? string.Empty,
                                                                             mov.Observacion ?? string.Empty,
                                                                             mov.UsuarioCreacion ?? string.Empty,
                                                                             mov.FechaCreacion.ToString("dd/MM/yyyy HH:mm"));
@@ -741,7 +796,15 @@
                                                                                 }
                                                                                 @if (!string.IsNullOrWhiteSpace(mov.TipoCobroNuevo))
                                                                                 {
-                                                                                    <div>Plan: @(string.IsNullOrWhiteSpace(mov.TipoCobroAnterior) ? "-" : mov.TipoCobroAnterior) -> @mov.TipoCobroNuevo</div>
+                                                                                    <div>Periodicidad: @(string.IsNullOrWhiteSpace(mov.TipoCobroAnterior) ? "-" : mov.TipoCobroAnterior) -> @mov.TipoCobroNuevo</div>
+                                                                                }
+                                                                                @if (!string.IsNullOrWhiteSpace(mov.PlanComercialNuevo))
+                                                                                {
+                                                                                    <div>Plan comercial: @(string.IsNullOrWhiteSpace(mov.PlanComercialAnterior) ? "-" : mov.PlanComercialAnterior) -> @mov.PlanComercialNuevo</div>
+                                                                                }
+                                                                                @if (mov.SedesPermitidasNuevo.HasValue || mov.EspaciosPermitidosNuevo.HasValue || mov.UsuariosPermitidosNuevo.HasValue)
+                                                                                {
+                                                                                    <div>Limites aplicados: @mov.SedesPermitidasNuevo sede(s), @mov.EspaciosPermitidosNuevo espacio(s), @mov.UsuariosPermitidosNuevo usuario(s)</div>
                                                                                 }
                                                                                 @if (mov.DiasExtra > 0)
                                                                                 {
@@ -797,8 +860,9 @@
                                                                             pago.OperacionNumero ?? string.Empty,
                                                                             pago.EntidadFinanciera ?? string.Empty,
                                                                             pago.ReferenciaExterna ?? string.Empty,
-                                                                            pago.AccionAplicacion ?? string.Empty,
-                                                                            pago.TipoCobroObjetivo ?? string.Empty,
+                                                                             pago.AccionAplicacion ?? string.Empty,
+                                                                             pago.TipoCobroObjetivo ?? string.Empty,
+                                                                             pago.PlanComercialObjetivo ?? string.Empty,
                                                                             pago.Observacion ?? string.Empty,
                                                                             pago.UsuarioCreacion ?? string.Empty,
                                                                             pago.FechaPago.ToString("dd/MM/yyyy HH:mm"));
@@ -845,11 +909,16 @@
                                                                                 }
                                                                                 @if (!string.IsNullOrWhiteSpace(pago.AccionAplicacion))
                                                                                 {
-                                                                                    <div>Accion al confirmar: @pago.AccionAplicacion</div>
+                                                                                    <div>Accion aplicada: @pago.AccionAplicacion</div>
                                                                                 }
                                                                                 @if (!string.IsNullOrWhiteSpace(pago.TipoCobroObjetivo))
                                                                                 {
-                                                                                    <div>Plan objetivo: @pago.TipoCobroObjetivo</div>
+                                                                                    <div>Periodicidad: @pago.TipoCobroObjetivo</div>
+                                                                                }
+                                                                                @if (!string.IsNullOrWhiteSpace(pago.PlanComercialObjetivo))
+                                                                                {
+                                                                                    <div>Plan comercial: @pago.PlanComercialObjetivo</div>
+                                                                                    <div>Limites: @pago.SedesPermitidasObjetivo sede(s), @pago.EspaciosPermitidosObjetivo espacio(s), @pago.UsuariosPermitidosObjetivo usuario(s)</div>
                                                                                 }
                                                                                 @if (pago.FechaInicioPlanObjetivo.HasValue)
                                                                                 {
@@ -988,18 +1057,34 @@
 
             document.querySelectorAll('.js-cobro-suscripcion-form').forEach(function (form) {
                 const accionSelect = form.querySelector('.js-accion-aplicacion');
-                const planFields = form.querySelectorAll('.js-accion-plan');
-                if (!accionSelect || !planFields.length) return;
+                const planSelect = form.querySelector('.js-plan-comercial');
+                const periodicidad = form.querySelector('.js-periodicidad');
+                const monto = form.querySelector('.js-monto-plan');
+                const sedes = form.querySelector('.js-limite-sedes');
+                const espacios = form.querySelector('.js-limite-espacios');
+                const usuarios = form.querySelector('.js-limite-usuarios');
+                if (!planSelect) return;
 
-                function togglePlanFields() {
-                    const requierePlan = accionSelect.value === 'CAMBIO_PLAN';
-                    planFields.forEach(function (field) {
-                        field.style.display = requierePlan ? '' : 'none';
+                planSelect.addEventListener('change', function () {
+                    const option = planSelect.options[planSelect.selectedIndex];
+                    if (monto) monto.value = option.dataset.precio || monto.value;
+                    if (sedes) sedes.value = option.dataset.sedes || sedes.value;
+                    if (espacios) espacios.value = option.dataset.espacios || espacios.value;
+                    if (usuarios) usuarios.value = option.dataset.usuarios || usuarios.value;
+
+                    if (accionSelect && planSelect.dataset.planActual
+                        && planSelect.value !== planSelect.dataset.planActual) {
+                        accionSelect.value = 'CAMBIO_PLAN';
+                    }
+                });
+
+                if (accionSelect && periodicidad && periodicidad.dataset.periodicidadActual) {
+                    periodicidad.addEventListener('change', function () {
+                        if (periodicidad.value !== periodicidad.dataset.periodicidadActual) {
+                            accionSelect.value = 'CAMBIO_PLAN';
+                        }
                     });
                 }
-
-                togglePlanFields();
-                accionSelect.addEventListener('change', togglePlanFields);
             });
 
             document.querySelectorAll('.platform-negocio-modal').forEach(function (modal) {

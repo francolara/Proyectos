@@ -1590,3 +1590,31 @@
   - En negocios sin contrato se puede registrar un cobro orientado a `ACTIVACION_CONTRATO`.
   - En negocios con contrato se puede registrar un cobro orientado a `RENOVACION` o `CAMBIO_PLAN`.
   - El historial de cobros muestra el estado de aplicacion y habilita `Confirmar y aplicar` para pagos pendientes conciliables.
+
+## Actualizacion 20/07/2026 - Planes comerciales publicos
+- Script incremental: `Basededatos/SportCenter/Script/20260720_SolicitudesAltaClub_PlanComercial.sql`.
+- `dbo.SolicitudesAltaClub` incorpora `PlanComercial` para registrar el plan seleccionado en la portada publica.
+- `dbo.Sp_Home_SolicitarAltaClub` persiste el plan seleccionado desde la portada publica.
+- `dbo.Sp_AltasClubes_Listar` y `dbo.Sp_AltasClubes_ObtenerPorId` exponen el plan para su revision en el Super Admin.
+- `dbo.Sp_AltasClubes_Aprobar` conserva el flujo existente: crea el negocio con `TipoPlan = Basico`, respeta los valores predeterminados de limites de `Negocios` y usa los dias de prueba indicados por el Super Admin, con 15 dias por defecto.
+- La portada publica muestra los tres planes con precios de S/ 0 por 15 dias, S/ 49.90 mensuales y S/ 99.90 mensuales, respectivamente. Los planes pagados se registran como solicitudes para gestion y aprobacion manual.
+
+## Actualizacion 21/07/2026 - Denominacion comercial de planes
+- El mismo script incremental migra los codigos comerciales anteriores a `PRUEBA`, `ESENCIAL` y `PRO`, manteniendo la compatibilidad al recibir `GRATIS`, `EMPRENDEDOR` o `PROFESIONAL`.
+- Las denominaciones comerciales quedan desacopladas de `Negocios.TipoPlan` y de sus limites internos; estos no se modifican al aprobar la solicitud.
+
+## Actualizacion 21/07/2026 - Comportamiento de identidad y correo
+- `IdentityBehavior:RequireConfirmedAccount` controla si el inicio de sesion exige una cuenta con correo confirmado.
+- `IdentityBehavior:AutoConfirmEmail` marca como confirmado el correo al crear usuarios publicos, solicitudes de complejos y usuarios internos.
+- Cuando `IdentityBehavior:AutoConfirmEmail` esta habilitado, el servicio central omite todos los envios de correo, incluidos identidad, reservas, comprobantes, altas, desafios, recordatorios y pruebas de correo.
+
+## Actualizacion 21/07/2026 - Aplicacion inmediata de plan comercial y limites por cobro
+- Script incremental para `dbsportcenter_20260613`: `Basededatos/SportCenter/Script/20260721_Suscripcion_PlanComercial_LimitesPorCobro.sql`.
+- `dbo.NegociosSuscripcion.PlanComercial` conserva el plan comercial vigente del complejo: `PRUEBA`, `ESENCIAL` o `PRO`.
+- Cada cobro nuevo registrado desde `Plataforma/Negocios` se guarda como pagado y aplica inmediatamente, en una sola transaccion, la activacion, renovacion o cambio de contrato junto con el plan comercial y los limites elegidos.
+- `dbo.NegociosSuscripcionPago` conserva la fotografia objetivo del cobro mediante `PlanComercialObjetivo`, `TipoPlanObjetivo`, `SedesPermitidasObjetivo`, `EspaciosPermitidosObjetivo` y `UsuariosPermitidosObjetivo`.
+- `dbo.NegociosSuscripcionMovimiento` conserva el plan comercial, tipo de plan y limites anteriores y nuevos para la trazabilidad del cambio.
+- Al elegir `ESENCIAL`, la interfaz propone 1 sede, 5 espacios y 2 usuarios; al elegir `PRO`, propone 3 sedes, 12 espacios y 3 usuarios. El superadministrador puede ajustar esos valores antes de guardar.
+- El boton independiente `Limites` continua permitiendo ajustes operativos posteriores sin generar un cobro adicional.
+- Los procedimientos afectados son `Sp_NegociosSuscripcionPago_Registrar`, `Sp_Plataforma_Negocios_Listar`, `Sp_NegociosSuscripcionMovimiento_ListarPorNegocio` y `Sp_NegociosSuscripcionPago_ListarPorNegocio`.
+- `Sp_Plataforma_Negocios_Listar` expone además `Negocios.FechaRegistro` para los reportes HTML individual y consolidado del Super Admin.

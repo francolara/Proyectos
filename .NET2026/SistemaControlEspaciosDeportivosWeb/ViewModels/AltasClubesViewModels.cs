@@ -4,6 +4,10 @@ namespace SistemaControlEspaciosDeportivosWeb.ViewModels;
 
 public class AltaClubSolicitudFormViewModel
 {
+    [Required]
+    [StringLength(20)]
+    public string PlanComercial { get; set; } = "PRUEBA";
+
     [Required(ErrorMessage = "Este campo es obligatorio.")]
     [StringLength(200, ErrorMessage = "El campo {0} excede la longitud permitida.")]
     public string NombreContacto { get; set; } = string.Empty;
@@ -88,6 +92,7 @@ public class AltaClubItemViewModel
     public string ProvinciaEstado { get; set; } = string.Empty;
     public string Ciudad { get; set; } = string.Empty;
     public string Direccion { get; set; } = string.Empty;
+    public string PlanComercial { get; set; } = "PRUEBA";
     public int Estado { get; set; }
     public string? ComentarioGestion { get; set; }
     public int? NegocioId { get; set; }

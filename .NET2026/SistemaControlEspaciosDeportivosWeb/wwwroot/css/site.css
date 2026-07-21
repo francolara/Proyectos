@@ -3609,6 +3609,131 @@ html[data-theme="dark"] .form-check-input:checked {
   line-height: 1.46;
 }
 
+/* Firma: FRANCO LARA - 20/07/2026 | Presenta los planes comerciales del portal con jerarquia, detalle expandible y respuesta movil. */
+/* Firma: FRANCO LARA - 21/07/2026 | Mantiene visibles los beneficios completos de Prueba, Esencial y Pro y estructura los documentos legales con indice, contacto y pie institucional. */
+.home-pricing-section {
+  margin-top: 2rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.26);
+}
+
+.home-pricing-head {
+  max-width: 46rem;
+  margin: 0 auto 1.35rem;
+  text-align: center;
+}
+
+.home-pricing-head h2 {
+  margin: .55rem 0 0;
+  color: #0b1f44;
+  font-size: clamp(1.5rem, 2.8vw, 2.15rem);
+  font-weight: 800;
+  letter-spacing: -.025em;
+}
+
+.home-pricing-head p { margin: .45rem 0 0; color: #476287; }
+
+.home-pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.home-plan-column {
+  display: contents;
+}
+
+.home-plan-card--free { grid-column: 1; grid-row: 1; }
+.home-plan-card--entrepreneur { grid-column: 2; grid-row: 1; }
+.home-plan-card--professional { grid-column: 3; grid-row: 1; }
+
+.home-plan-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 1.25rem;
+  border: 1px solid #d4e5fb;
+  border-radius: 1.1rem;
+  background: rgba(255, 255, 255, .9);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, .07);
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+
+.home-plan-card:hover { transform: translateY(-4px); box-shadow: 0 20px 36px rgba(15, 23, 42, .13); }
+.home-plan-card--entrepreneur { border-color: #8cc7f5; }
+.home-plan-card--professional { border: 2px solid #2563eb; background: linear-gradient(180deg, #fff 0%, #eff6ff 100%); }
+.home-plan-heading { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.home-plan-card h3 { margin: 0; color: #0d2147; font-size: 1.35rem; font-weight: 800; }
+.home-plan-heading span { padding: .24rem .55rem; border-radius: 999px; background: #dbeafe; color: #1d4ed8; font-size: .7rem; font-weight: 800; }
+.home-plan-price { margin: .9rem 0 .15rem; color: #0d3b66; font-size: 2rem; font-weight: 800; line-height: 1; }
+.home-plan-price span { font-size: 1rem; vertical-align: top; }
+.home-plan-price small { display: block; margin-top: .35rem; color: #64748b; font-size: .8rem; font-weight: 600; }
+.home-plan-description { min-height: 3rem; margin: .8rem 0 1rem; color: #3f5677; }
+.home-plan-button { display: inline-flex; justify-content: center; align-items: center; min-height: 2.65rem; border-radius: .7rem; color: #fff; font-weight: 800; text-decoration: none; }
+.home-plan-button:hover, .home-plan-button:focus { color: #fff; filter: brightness(.96); }
+.home-plan-button--free { background: #0f766e; }
+.home-plan-button--entrepreneur { background: #1d4ed8; }
+.home-plan-button--professional { background: #0d3b66; }
+.home-plan-button--faq { grid-column: 2; grid-row: 2; border: 1px solid #2563eb; background: #fff; color: #1d4ed8; }
+.home-plan-button--faq:hover, .home-plan-button--faq:focus { background: #eff6ff; color: #1d4ed8; }
+.home-plan-limits { display: grid; gap: .55rem; margin: 1rem 0; padding: 0; list-style: none; color: #294665; font-size: .9rem; }
+.home-plan-limits i { width: 1.35rem; color: #16803c; }
+.home-plan-includes { margin: auto 0 0; padding: .8rem 0 0 1.05rem; border-top: 1px solid #e2e8f0; color: #3f5677; font-size: .88rem; }
+.home-plan-includes li + li { margin-top: .35rem; }
+.home-platform-legal { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .65rem 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #d8e5f5; color: #54708f; font-size: .84rem; text-align: center; }
+.home-platform-legal a { color: #1d4ed8; font-weight: 700; text-decoration: none; }
+.home-platform-legal a:hover { text-decoration: underline; }
+
+.legal-page { min-height: 100%; padding: 3rem 1rem; background: linear-gradient(180deg, #eef6ff 0%, #f8fbff 100%); }
+.legal-page--privacy { background: linear-gradient(180deg, #e9f3ff 0%, #f8fbff 100%); }
+.legal-page--cancellations { background: linear-gradient(180deg, #eef9ff 0%, #f8fbff 100%); }
+.legal-container { max-width: 56rem; margin: 0 auto; padding: clamp(1.4rem, 4vw, 3rem); border: 1px solid #d7e7fb; border-radius: 1.2rem; background: #fff; box-shadow: 0 18px 40px rgba(15, 23, 42, .09); color: #294665; }
+.legal-page--privacy .legal-container { background: linear-gradient(160deg, #fff 0%, #f2f7ff 100%); }
+.legal-page--cancellations .legal-container { background: linear-gradient(160deg, #fff 0%, #eef8ff 100%); }
+.legal-header { padding-bottom: 1.2rem; border-bottom: 1px solid #dbe7f5; }
+.legal-container h1 { margin: .25rem 0; color: #0b1f44; font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; letter-spacing: -.03em; }
+.legal-container h2 { margin: 2rem 0 .55rem; color: #0d3b66; font-size: 1.2rem; font-weight: 800; }
+.legal-container p, .legal-container li { line-height: 1.65; }
+.legal-lead { margin: 1rem 0 0; font-size: 1rem; }
+.legal-updated { margin: 0; color: #54708f; font-size: .9rem; }
+.legal-index { display: flex; flex-wrap: wrap; gap: .55rem .8rem; margin: 1.35rem 0; padding: 1rem; border: 1px solid #d7e7fb; border-radius: .9rem; background: rgba(255,255,255,.62); }
+.legal-index a, .legal-footer a, .legal-contact a { color: #1d5fc1; font-size: .84rem; font-weight: 700; text-decoration: none; }
+.legal-index a:hover, .legal-footer a:hover, .legal-contact a:hover { color: #0d3b66; text-decoration: underline; }
+.legal-content ul { padding-left: 1.25rem; }
+.legal-contact { display: grid; gap: .28rem; margin-top: 1rem; padding: 1rem; border: 1px solid #d7e7fb; border-radius: .85rem; background: rgba(255,255,255,.72); }
+.legal-contact strong { color: #0d3b66; }
+.legal-footer { display: grid; gap: 1rem; margin-top: 2rem; padding-top: 1.25rem; border-top: 1px solid #dbe7f5; text-align: center; }
+.legal-footer-links { display: flex; flex-wrap: wrap; justify-content: center; gap: .6rem 1rem; }
+.legal-home-link { justify-self: center; width: fit-content; }
+.legal-eyebrow { margin: 0; color: #1d4ed8; font-size: .78rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.legal-notice { margin: 1.25rem 0; padding: .8rem 1rem; border-left: 4px solid #f59e0b; border-radius: .4rem; background: #fffbeb; color: #7c4a03; }
+
+html[data-theme="dark"] .home-pricing-section { border-color: var(--sc-border-soft); }
+html[data-theme="dark"] .home-pricing-head h2, html[data-theme="dark"] .home-plan-card h3 { color: #f8fbff; }
+html[data-theme="dark"] .home-pricing-head p, html[data-theme="dark"] .home-plan-description, html[data-theme="dark"] .home-plan-limits, html[data-theme="dark"] .home-plan-includes { color: #b8c7de; }
+html[data-theme="dark"] .home-plan-card { border-color: var(--sc-border-soft); background: #111c2f; }
+html[data-theme="dark"] .home-plan-card--professional { border-color: #3b82f6; background: linear-gradient(180deg, #13213a 0%, #0f1b2e 100%); }
+html[data-theme="dark"] .home-plan-price { color: #7dd3fc; }
+html[data-theme="dark"] .home-plan-price small { color: #9fb0ca; }
+html[data-theme="dark"] .home-plan-includes { border-color: var(--sc-border-soft); }
+html[data-theme="dark"] .home-platform-legal { border-color: var(--sc-border-soft); color: #9fb0ca; }
+html[data-theme="dark"] .legal-page { background: #07111f; }
+html[data-theme="dark"] .legal-container { border-color: var(--sc-border-soft); background: #111c2f; color: #cbd5e1; }
+html[data-theme="dark"] .legal-container h1, html[data-theme="dark"] .legal-container h2 { color: #f8fbff; }
+html[data-theme="dark"] .legal-header, html[data-theme="dark"] .legal-footer { border-color: var(--sc-border-soft); }
+html[data-theme="dark"] .legal-index, html[data-theme="dark"] .legal-contact { border-color: var(--sc-border-soft); background: #14233a; }
+html[data-theme="dark"] .legal-index a, html[data-theme="dark"] .legal-footer a, html[data-theme="dark"] .legal-contact a { color: #93c5fd; }
+
+@media (max-width: 991.98px) {
+  .home-pricing-grid { grid-template-columns: 1fr; max-width: 34rem; margin-inline: auto; }
+  .home-plan-card--free { grid-column: 1; grid-row: 1; }
+  .home-plan-card--entrepreneur { grid-column: 1; grid-row: 2; }
+  .home-plan-card--professional { grid-column: 1; grid-row: 3; }
+  .home-plan-button--faq { grid-column: 1; grid-row: 4; }
+  .home-plan-description { min-height: 0; }
+  .legal-footer-links { flex-direction: column; align-items: center; }
+}
+
 .home-platform-cta {
   background: linear-gradient(120deg, #0d3b66 0%, #1d4ed8 54%, #0ea5e9 100%);
   color: #fff;
@@ -3816,6 +3941,13 @@ html[data-theme="dark"] .form-check-input:checked {
   align-items: center;
   gap: 0.6rem;
   flex-wrap: wrap;
+}
+
+.home-platform-powered {
+  margin: 0.56rem 0 0;
+  color: #54708f;
+  font-size: 0.84rem;
+  line-height: 1.4;
 }
 
 .home-platform-social a {
@@ -6908,6 +7040,28 @@ html[data-theme="dark"] .sc-suscripcion-info-copy strong {
   border-radius: 999px;
   background: linear-gradient(90deg, #1f5fd4 0%, #4ea1ff 100%);
   box-shadow: 0 6px 16px rgba(31, 95, 212, 0.24);
+}
+
+.home-faq-head--owners,
+.home-faq-head--users {
+  text-align: center;
+}
+
+.home-faq-head--owners .home-faq-kicker,
+.home-faq-head--users .home-faq-kicker {
+  display: flex;
+  width: fit-content;
+  text-align: left;
+}
+
+.home-faq-head--owners .home-faq-title,
+.home-faq-head--users .home-faq-title {
+  display: block;
+}
+
+.home-faq-head--owners .home-faq-title::after,
+.home-faq-head--users .home-faq-title::after {
+  content: none;
 }
 
 .home-faq-head p {

@@ -3,6 +3,8 @@
     ViewData["Title"] = "Altas de complejos deportivos";
 }
 @* Firma: FRANCO LARA - 09/05/2026 | Ajuste de etiquetas en Super Admin para reemplazar Club/Negocio por Complejo deportivo. *@
+@* Firma: FRANCO LARA - 20/07/2026 | Muestra el plan comercial solicitado para aprobar altas con los limites correctos. *@
+@* Firma: FRANCO LARA - 21/07/2026 | Presenta los nombres comerciales Prueba, Esencial y Pro en las solicitudes. *@
 <div class="page-header-card mb-3">
     <div class="page-header-main">
         <h1 class="page-title">Altas de complejos deportivos</h1>
@@ -84,6 +86,12 @@
                     </th>
                     <th>
                         <span class="sc-col-header">
+                            <i class="bi bi-stars"></i>
+                            <small>Plan</small>
+                        </span>
+                    </th>
+                    <th>
+                        <span class="sc-col-header">
                             <i class="bi bi-geo-alt"></i>
                             <small>Ubicacion</small>
                         </span>
@@ -105,7 +113,7 @@
             <tbody>
                 @if (Model.Solicitudes.Count == 0)
                 {
-                    <tr><td colspan="6" class="text-center text-muted py-4">No hay solicitudes para mostrar.</td></tr>
+                    <tr><td colspan="7" class="text-center text-muted py-4">No hay solicitudes para mostrar.</td></tr>
                 }
                 else
                 {
@@ -138,6 +146,9 @@
                             <td>
                                 <div><strong>@s.NombreClub</strong></div>
                                 <div class="small text-muted">@s.RelacionClub</div>
+                            </td>
+                            <td>
+                                <span class="badge text-bg-@(string.Equals(s.PlanComercial, "PRO", StringComparison.OrdinalIgnoreCase) ? "primary" : string.Equals(s.PlanComercial, "ESENCIAL", StringComparison.OrdinalIgnoreCase) ? "info" : "success")">@SistemaControlEspaciosDeportivosWeb.Services.PlanComercialCatalog.Obtener(s.PlanComercial).Nombre</span>
                             </td>
                             <td>
                                 <div>@s.Ciudad, @s.ProvinciaEstado</div>

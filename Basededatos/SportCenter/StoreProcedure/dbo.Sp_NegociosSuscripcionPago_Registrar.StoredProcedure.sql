@@ -3,6 +3,7 @@
 -- Create date:   10/06/2026
 -- Firma:         Registra cobro manual de suscripcion por negocio contemplando tipo y estado de pago.
 -- Firma:         10/06/2026 | Soporta conciliacion y aplicacion automatica a la suscripcion cuando el cobro se confirma.
+-- Firma:         FRANCO LARA - 21/07/2026 | Aplica al guardar el plan comercial, contrato y limites, conservando la fotografia anterior y nueva en el historial.
 -- =============================================
 CREATE OR ALTER PROCEDURE dbo.Sp_NegociosSuscripcionPago_Registrar
     @NegocioId INT,
@@ -18,6 +19,10 @@ CREATE OR ALTER PROCEDURE dbo.Sp_NegociosSuscripcionPago_Registrar
     @AccionAplicacion NVARCHAR(30) = NULL,
     @AplicarAlConfirmar BIT = 0,
     @TipoCobroObjetivo NVARCHAR(20) = NULL,
+    @PlanComercialObjetivo NVARCHAR(20) = NULL,
+    @SedesPermitidasObjetivo INT = NULL,
+    @EspaciosPermitidosObjetivo INT = NULL,
+    @UsuariosPermitidosObjetivo INT = NULL,
     @FechaInicioPlanObjetivo DATE = NULL,
     @DiasGraciaObjetivo INT = NULL,
     @Observacion NVARCHAR(500) = NULL,
@@ -35,8 +40,16 @@ BEGIN
         DECLARE @MonedaNorm NVARCHAR(10) = UPPER(LTRIM(RTRIM(COALESCE(@Moneda, N'PEN'))));
         DECLARE @AccionAplicacionNorm NVARCHAR(30) = UPPER(LTRIM(RTRIM(COALESCE(@AccionAplicacion, N''))));
         DECLARE @TipoCobroObjetivoNorm NVARCHAR(20) = UPPER(LTRIM(RTRIM(COALESCE(@TipoCobroObjetivo, N''))));
+        DECLARE @PlanComercialObjetivoNorm NVARCHAR(20) = UPPER(LTRIM(RTRIM(COALESCE(@PlanComercialObjetivo, N''))));
+        DECLARE @TipoPlanObjetivo NVARCHAR(20);
         DECLARE @FechaFinPlanObjetivoCalculada DATE;
         DECLARE @DiasGraciaObjetivoFinal INT;
+        DECLARE @PlanComercialAnterior NVARCHAR(20);
+        DECLARE @TipoPlanAnterior NVARCHAR(20);
+        DECLARE @SedesPermitidasAnterior INT;
+        DECLARE @EspaciosPermitidosAnterior INT;
+        DECLARE @UsuariosPermitidosAnterior INT;
+        DECLARE @MovimientoAplicadoId INT;
 
         IF @NegocioId IS NULL OR @NegocioId <= 0
             RAISERROR('Negocio invalido.', 16, 1);
@@ -59,6 +72,19 @@ BEGIN
 
         IF @AplicarAlConfirmar = 1 AND NULLIF(@AccionAplicacionNorm, N'') IS NULL
             RAISERROR('Selecciona una accion de aplicacion para el cobro conciliable.', 16, 1);
+
+        IF NULLIF(@AccionAplicacionNorm, N'') IS NOT NULL
+        BEGIN
+            IF @PlanComercialObjetivoNorm NOT IN (N'ESENCIAL', N'PRO')
+                RAISERROR('Plan comercial objetivo invalido. Usa ESENCIAL o PRO.', 16, 1);
+
+            IF COALESCE(@SedesPermitidasObjetivo, 0) < 1
+               OR COALESCE(@EspaciosPermitidosObjetivo, 0) < 1
+               OR COALESCE(@UsuariosPermitidosObjetivo, 0) < 1
+                RAISERROR('Los limites objetivo deben ser mayores a cero.', 16, 1);
+
+            SET @TipoPlanObjetivo = CASE WHEN @PlanComercialObjetivoNorm = N'PRO' THEN N'Full' ELSE N'Basico' END;
+        END;
 
         IF @AccionAplicacionNorm IN (N'ACTIVACION_CONTRATO', N'CAMBIO_PLAN')
         BEGIN
@@ -86,12 +112,21 @@ BEGIN
         END
 
         SELECT
-            @NegocioSuscripcionId = ns.Id
+            @NegocioSuscripcionId = ns.Id,
+            @PlanComercialAnterior = COALESCE(NULLIF(ns.PlanComercial, N''), CASE WHEN ns.EsPrueba = 1 THEN N'PRUEBA' ELSE N'ESENCIAL' END)
         FROM dbo.NegociosSuscripcion ns
         WHERE ns.NegocioId = @NegocioId;
 
         IF @NegocioSuscripcionId IS NULL
             RAISERROR('El negocio no tiene una suscripcion registrada.', 16, 1);
+
+        SELECT
+            @TipoPlanAnterior = COALESCE(NULLIF(n.TipoPlan, N''), N'Basico'),
+            @SedesPermitidasAnterior = COALESCE(n.SedesPermitidas, 1),
+            @EspaciosPermitidosAnterior = COALESCE(n.EspaciosPermitidos, 1),
+            @UsuariosPermitidosAnterior = COALESCE(n.UsuariosPermitidos, 1)
+        FROM dbo.Negocios n
+        WHERE n.Id = @NegocioId;
 
         IF @NegocioSuscripcionMovimientoId IS NULL
         BEGIN
@@ -102,13 +137,16 @@ BEGIN
             ORDER BY m.FechaCreacion DESC, m.Id DESC;
         END
 
+        BEGIN TRANSACTION;
+
         INSERT INTO dbo.NegociosSuscripcionPago
         (
             NegocioId, NegocioSuscripcionId, NegocioSuscripcionMovimientoId,
             TipoPago, EstadoPago, Monto, Moneda,
             FechaPago, FechaVencimiento, OperacionNumero, EntidadFinanciera,
             ReferenciaExterna, AccionAplicacion, AplicarAlConfirmar, AplicadoSuscripcion,
-            FechaAplicacion, UsuarioAplicacion, TipoCobroObjetivo, FechaInicioPlanObjetivo,
+            FechaAplicacion, UsuarioAplicacion, TipoCobroObjetivo, PlanComercialObjetivo,
+            TipoPlanObjetivo, SedesPermitidasObjetivo, EspaciosPermitidosObjetivo, UsuariosPermitidosObjetivo, FechaInicioPlanObjetivo,
             DiasGraciaObjetivo, Observacion, FechaCreacion, UsuarioCreacion
         )
         VALUES
@@ -120,7 +158,8 @@ BEGIN
             NULLIF(LTRIM(RTRIM(COALESCE(@EntidadFinanciera, N''))), N''),
             NULLIF(LTRIM(RTRIM(COALESCE(@ReferenciaExterna, N''))), N''),
             NULLIF(@AccionAplicacionNorm, N''), @AplicarAlConfirmar, 0,
-            NULL, NULL, NULLIF(@TipoCobroObjetivoNorm, N''), @FechaInicioPlanObjetivo,
+            NULL, NULL, NULLIF(@TipoCobroObjetivoNorm, N''), NULLIF(@PlanComercialObjetivoNorm, N''),
+            @TipoPlanObjetivo, @SedesPermitidasObjetivo, @EspaciosPermitidosObjetivo, @UsuariosPermitidosObjetivo, @FechaInicioPlanObjetivo,
             @DiasGraciaObjetivo,
             NULLIF(LTRIM(RTRIM(COALESCE(@Observacion, N''))), N''),
             SYSUTCDATETIME(), COALESCE(@Usuario, N'sistema')
@@ -150,16 +189,55 @@ BEGIN
                     @Observacion = @Observacion,
                     @Usuario = @Usuario;
 
+            UPDATE dbo.NegociosSuscripcion
+            SET PlanComercial = @PlanComercialObjetivoNorm,
+                FechaActualizacion = SYSUTCDATETIME(),
+                UsuarioActualizacion = COALESCE(@Usuario, N'sistema')
+            WHERE NegocioId = @NegocioId;
+
+            UPDATE dbo.Negocios
+            SET TipoPlan = @TipoPlanObjetivo,
+                SedesPermitidas = @SedesPermitidasObjetivo,
+                EspaciosPermitidos = @EspaciosPermitidosObjetivo,
+                UsuariosPermitidos = @UsuariosPermitidosObjetivo
+            WHERE Id = @NegocioId;
+
+            SELECT TOP (1)
+                @MovimientoAplicadoId = m.Id
+            FROM dbo.NegociosSuscripcionMovimiento m
+            WHERE m.NegocioId = @NegocioId
+              AND m.TipoMovimiento = @AccionAplicacionNorm
+            ORDER BY m.FechaCreacion DESC, m.Id DESC;
+
+            UPDATE dbo.NegociosSuscripcionMovimiento
+            SET PlanComercialAnterior = @PlanComercialAnterior,
+                PlanComercialNuevo = @PlanComercialObjetivoNorm,
+                TipoPlanAnterior = @TipoPlanAnterior,
+                TipoPlanNuevo = @TipoPlanObjetivo,
+                SedesPermitidasAnterior = @SedesPermitidasAnterior,
+                SedesPermitidasNuevo = @SedesPermitidasObjetivo,
+                EspaciosPermitidosAnterior = @EspaciosPermitidosAnterior,
+                EspaciosPermitidosNuevo = @EspaciosPermitidosObjetivo,
+                UsuariosPermitidosAnterior = @UsuariosPermitidosAnterior,
+                UsuariosPermitidosNuevo = @UsuariosPermitidosObjetivo
+            WHERE Id = @MovimientoAplicadoId;
+
             UPDATE dbo.NegociosSuscripcionPago
             SET AplicadoSuscripcion = 1,
+                NegocioSuscripcionMovimientoId = @MovimientoAplicadoId,
                 FechaAplicacion = SYSUTCDATETIME(),
                 UsuarioAplicacion = COALESCE(@Usuario, N'sistema'),
                 FechaActualizacion = SYSUTCDATETIME(),
                 UsuarioActualizacion = COALESCE(@Usuario, N'sistema')
             WHERE Id = @PagoId;
         END
+
+        COMMIT TRANSACTION;
     END TRY
     BEGIN CATCH
+        IF XACT_STATE() <> 0
+            ROLLBACK TRANSACTION;
+
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
         SELECT
             @ErrorMessage = ERROR_MESSAGE(),

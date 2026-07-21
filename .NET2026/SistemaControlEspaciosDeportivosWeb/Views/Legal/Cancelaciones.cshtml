@@ -1,0 +1,35 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.Legal.LegalDocumentViewModel
+@{
+    ViewData["Title"] = Model.Title;
+}
+@* Firma: FRANCO LARA - 20/07/2026 | Publica las condiciones de cancelacion y devolucion aplicables a los planes comerciales. *@
+@* Firma: FRANCO LARA - 21/07/2026 | Amplia la politica con indice navegable, proceso de solicitudes y pie institucional de soporte; retira el aviso de documento preliminar. *@
+<section class="legal-page legal-page--cancellations">
+    <div class="legal-container">
+        <header class="legal-header">
+            <p class="legal-eyebrow">@Model.BusinessInformation.CommercialName</p>
+            <h1>@Model.Title</h1>
+            <p class="legal-updated">Última actualización: @Model.LastUpdated</p>
+            <p class="legal-lead">Esta política explica cómo se atienden las solicitudes de cancelación, cambios de plan y devoluciones relacionadas con La Zona Deportiva.</p>
+        </header>
+        <nav class="legal-index" aria-label="Índice de cancelaciones y devoluciones">
+            <a href="#alcance">1. Alcance</a><a href="#prueba">2. Plan Prueba</a><a href="#pagados">3. Planes pagados</a><a href="#cancelacion">4. Cancelación</a><a href="#vigencia">5. Fecha efectiva</a><a href="#cambio">6. Cambio de plan</a><a href="#renovacion">7. Renovación</a><a href="#devoluciones">8. Devoluciones</a><a href="#casos">9. Casos evaluables</a><a href="#no-automaticas">10. Casos no automáticos</a><a href="#datos">11. Información requerida</a><a href="#plazo">12. Atención</a><a href="#contacto">13. Contacto</a>
+        </nav>
+        <article class="legal-content">
+            <section id="alcance"><h2>1. Alcance</h2><p>Esta política describe el proceso de atención de solicitudes relacionadas con cancelaciones, vigencias, renovaciones, cambios de plan y devoluciones de los servicios comerciales de La Zona Deportiva.</p></section>
+            <section id="prueba"><h2>2. Plan Prueba</h2><p>El plan Prueba tiene una vigencia de 15 días y no genera devolución porque no tiene costo. Al finalizar, el acceso queda sujeto a la gestión comercial o al plan que se confirme posteriormente.</p></section>
+            <section id="pagados"><h2>3. Planes Esencial y Pro</h2><p>Los planes Esencial y Pro se activan luego de una solicitud y aprobación comercial. Antes de aplicar un cobro se confirmarán el plan, importe, vigencia y condiciones aplicables.</p></section>
+            <section id="cancelacion"><h2>4. Solicitud de cancelación</h2><p>El titular puede solicitar la cancelación para evitar renovaciones o cobros futuros. La solicitud debe ser presentada por un canal oficial antes de la siguiente fecha de renovación.</p></section>
+            <section id="vigencia"><h2>5. Fecha efectiva de cancelación</h2><p>La fecha efectiva depende de la validación de identidad, el estado comercial de la cuenta y el momento en que la solicitud sea registrada y confirmada. La cancelación no elimina de inmediato la información de la cuenta.</p></section>
+            <section id="cambio"><h2>6. Cambio de plan</h2><p>Los cambios entre Prueba, Esencial y Pro pueden modificar límites, funcionalidades y vigencia. Los efectos comerciales se comunicarán antes de aplicar el cambio.</p></section>
+            <section id="renovacion"><h2>7. Renovación y falta de pago</h2><p>La renovación puede ser manual o gestionada conforme a la modalidad comercial vigente. La falta de pago puede restringir funciones o el acceso hasta que la situación sea regularizada.</p></section>
+            <section id="devoluciones"><h2>8. Solicitudes de devolución</h2><p>Las devoluciones no son automáticas. Cada caso se revisa de forma individual según la información disponible, el historial comercial, el servicio habilitado y la normativa aplicable.</p></section>
+            <section id="casos"><h2>9. Casos que pueden evaluarse</h2><ul><li>Pago duplicado de una misma obligación comercial.</li><li>Cobro por importe, plan o periodo distinto al confirmado.</li><li>Falla técnica grave y verificable que hubiera impedido sustancialmente el servicio contratado.</li></ul></section>
+            <section id="no-automaticas"><h2>10. Situaciones que no generan devolución automática</h2><p>La falta de uso de la plataforma, la decisión de cancelar durante un periodo ya habilitado o cambios operativos solicitados por el titular no generan por sí mismos una devolución automática.</p></section>
+            <section id="datos"><h2>11. Información requerida</h2><p>Incluye nombre o razón social, correo registrado, plan, fecha e importe del pago, motivo de la solicitud y comprobante o constancia cuando corresponda. No envíes contraseñas, claves de tarjetas ni códigos de seguridad.</p></section>
+            <section id="plazo"><h2>12. Evaluación y plazo de atención</h2><p>Las solicitudes serán revisadas en un plazo razonable, según su complejidad, la información entregada y, cuando aplique, las respuestas de los medios de pago involucrados.</p></section>
+            <section id="contacto"><h2>13. Canales de atención</h2><p>Envía tu solicitud utilizando los canales oficiales siguientes.</p><partial name="_LegalContactBlock" /></section>
+        </article>
+        <partial name="_LegalNavigation" />
+    </div>
+</section>

@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Globalization;
 using System.Net;
-using ClosedXML.Excel;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
 
@@ -214,6 +213,9 @@ public class PlataformaController(
     {
         try
         {
+            if (!emailService.IsEnabled)
+                return BadRequest(new { ok = false, mensaje = "El envio de correos esta deshabilitado por IdentityBehavior." });
+
             var tipoNormalizado = (tipo ?? string.Empty).Trim().ToLowerInvariant();
             if (tipoNormalizado is not ("contrato" or "prueba" or "vencido"))
                 return BadRequest(new { ok = false, mensaje = "Tipo de recordatorio invalido." });
@@ -288,6 +290,97 @@ public class PlataformaController(
     }
 
     [HttpGet]
+    public async Task<IActionResult> ReporteNegocio(int negocioId)
+    {
+        var negocio = (await spService.PlataformaNegociosListarAsync(null, "todos", 1, 5000)).Negocios
+            .FirstOrDefault(x => x.NegocioId == negocioId);
+        if (negocio is null)
+            return NotFound();
+
+        var contactoTask = spService.PlataformaNegocioObtenerContactoCorreoAsync(negocioId);
+        var historialTask = spService.PlataformaNegocioHistorialComercialAsync(negocioId, 200);
+        var cobrosTask = spService.PlataformaNegocioPagosSuscripcionAsync(negocioId, 200);
+        await Task.WhenAll(contactoTask, historialTask, cobrosTask);
+
+        var contacto = await contactoTask;
+        var cobros = await cobrosTask;
+        negocio.CorreoContacto = contacto.Correo;
+        negocio.TelefonoContacto = contacto.Telefono;
+        negocio.HistorialComercial = await historialTask;
+        negocio.HistorialCobros = cobros.Pagos;
+        negocio.CantidadCobrosRegistrados = cobros.CantidadPagos;
+        negocio.MontoTotalCobrado = cobros.MontoTotalPagado;
+        negocio.UltimoCobroFecha = cobros.UltimaFechaPago;
+        negocio.UltimoCobroMonto = cobros.UltimoMonto;
+        negocio.UltimoCobroTipoPago = cobros.UltimoTipoPago;
+
+        return View(new PlataformaNegocioReporteViewModel
+        {
+            Negocio = negocio,
+            FechaGeneracion = DateTime.Now,
+            GeneradoPor = User.Identity?.Name ?? "owner-platform"
+        });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ReporteNegocios(string? buscar = null, string? estadoContrato = null)
+    {
+        var estadoNormalizado = NormalizarEstadoContrato(estadoContrato);
+        var resultado = await spService.PlataformaNegociosListarAsync(buscar, estadoNormalizado, 1, 5000);
+        return View(new PlataformaNegociosReporteViewModel
+        {
+            Buscar = string.IsNullOrWhiteSpace(buscar) ? null : buscar.Trim(),
+            EstadoContrato = estadoNormalizado,
+            Negocios = resultado.Negocios,
+            FechaGeneracion = DateTime.Now,
+            GeneradoPor = User.Identity?.Name ?? "owner-platform"
+        });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ReporteDashboard()
+    {
+        var banners = await spService.BannersAdminListarAsync(null);
+        var anuncios = await spService.PopupPromocionesAdminListarAsync(null);
+        var (negocios, _) = await spService.PlataformaNegociosListarAsync(null, "todos", 1, 5000);
+        var (_, _, totalPendientes, totalAprobados, totalRechazados) = await spService.AltasClubesListarAsync(null, 1, 1);
+        var (_, totalReferencialesActivos) = await spService.HomeReferencialesExternosListarAdminAsync(null, null, null, null, 1, 1, true);
+        var (_, totalReferencialesGeneral) = await spService.HomeReferencialesExternosListarAdminAsync(null, null, null, null, 1, 1, null);
+        var hoy = DateTime.UtcNow.Date;
+        var negociosEnPrueba = negocios.Count(x => x.EsPrueba && (x.FechaFinPrueba is null || x.FechaFinPrueba.Value.Date >= hoy));
+        var negociosConContrato = negocios.Count(x => !x.EsPrueba && x.FechaFinPlan.HasValue && x.FechaFinPlan.Value.Date >= hoy && x.EstadoSuscripcion > 0);
+        var anunciosVigentesHoy = anuncios.Count(a => a.Activo
+            && (!a.FechaInicio.HasValue || a.FechaInicio.Value <= DateOnly.FromDateTime(hoy))
+            && (!a.FechaFin.HasValue || a.FechaFin.Value >= DateOnly.FromDateTime(hoy)));
+
+        return View(new PlataformaDashboardReporteViewModel
+        {
+            Resumen = new PlataformaIndexViewModel
+            {
+                CorreoUsuario = User.Identity?.Name ?? string.Empty,
+                TotalBanners = banners.Count,
+                BannersActivos = banners.Count(x => x.Activo),
+                BannersInactivos = banners.Count(x => !x.Activo),
+                TotalNegocios = negocios.Count,
+                NegociosConContrato = negociosConContrato,
+                NegociosEnPrueba = negociosEnPrueba,
+                NegociosVencidos = Math.Max(0, negocios.Count - negociosEnPrueba - negociosConContrato),
+                TotalSolicitudesPendientes = totalPendientes,
+                TotalSolicitudesAprobadas = totalAprobados,
+                TotalSolicitudesRechazadas = totalRechazados,
+                TotalReferencialesActivos = totalReferencialesActivos,
+                TotalReferencialesInactivos = Math.Max(0, totalReferencialesGeneral - totalReferencialesActivos),
+                TotalAnuncios = anuncios.Count,
+                AnunciosActivos = anuncios.Count(x => x.Activo),
+                AnunciosInactivos = anuncios.Count(x => !x.Activo),
+                AnunciosVigentesHoy = anunciosVigentesHoy
+            },
+            FechaGeneracion = DateTime.Now,
+            GeneradoPor = User.Identity?.Name ?? "owner-platform"
+        });
+    }
+
+    [HttpGet]
     public async Task<IActionResult> ClubesPendientes(int? estado = null, int pagina = 1)
     {
         ViewData["PlatformShell"] = true;
@@ -302,7 +395,7 @@ public class PlataformaController(
         var vm = new PlataformaAltasClubesAdminViewModel
         {
             Estado = estado,
-            DiasPruebaDefault = 30,
+            DiasPruebaDefault = 15,
             Pagina = paginaActual,
             TamanoPagina = tamanoPagina,
             TotalRegistros = totalRegistros,
@@ -749,15 +842,22 @@ public class PlataformaController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> RegistrarPagoSuscripcionNegocio(int negocioId, decimal monto, string tipoPago, bool cobroConfirmado = true, DateTime? fechaPago = null, DateOnly? fechaVencimiento = null, string? operacionNumero = null, string? entidadFinanciera = null, string? referenciaExterna = null, string? observacion = null, string? accionAplicacion = null, bool aplicarAlConfirmar = false, string? tipoCobroObjetivo = null, DateOnly? fechaInicioPlanObjetivo = null, int? diasGraciaObjetivo = null, string? buscar = null, string? estadoContrato = null, int pagina = 1)
+    public async Task<IActionResult> RegistrarPagoSuscripcionNegocio(int negocioId, decimal monto, string tipoPago, DateTime? fechaPago = null, DateOnly? fechaVencimiento = null, string? operacionNumero = null, string? entidadFinanciera = null, string? referenciaExterna = null, string? observacion = null, string? accionAplicacion = null, string? tipoCobroObjetivo = null, string? planComercialObjetivo = null, int? sedesPermitidasObjetivo = null, int? espaciosPermitidosObjetivo = null, int? usuariosPermitidosObjetivo = null, DateOnly? fechaInicioPlanObjetivo = null, int? diasGraciaObjetivo = null, string? buscar = null, string? estadoContrato = null, int pagina = 1)
     {
         ViewData["PlatformShell"] = true;
         var accionAplicacionNormalizada = NormalizarAccionAplicacionCobro(accionAplicacion);
-        var requiereAplicacion = aplicarAlConfirmar || !string.IsNullOrWhiteSpace(accionAplicacionNormalizada);
+        var planComercialNormalizado = PlanComercialCatalog.Normalizar(planComercialObjetivo);
+        if (planComercialNormalizado is not (PlanComercialCatalog.Esencial or PlanComercialCatalog.Pro)
+            || string.IsNullOrWhiteSpace(accionAplicacionNormalizada))
+        {
+            TempData["PortalWebError"] = "Selecciona un plan comercial y una accion valida para aplicar el cobro.";
+            return RedirectToAction(nameof(Negocios), new { buscar, estadoContrato, pagina });
+        }
+
         var ok = await spService.PlataformaNegocioRegistrarPagoSuscripcionAsync(
             negocioId,
             tipoPago,
-            cobroConfirmado ? "PAGADO" : "PENDIENTE",
+            "PAGADO",
             monto,
             "PEN",
             fechaPago ?? DateTime.Now,
@@ -767,15 +867,19 @@ public class PlataformaController(
             referenciaExterna,
             observacion,
             accionAplicacionNormalizada,
-            requiereAplicacion,
+            true,
             tipoCobroObjetivo,
+            planComercialNormalizado,
+            Math.Max(1, sedesPermitidasObjetivo ?? 1),
+            Math.Max(1, espaciosPermitidosObjetivo ?? 1),
+            Math.Max(1, usuariosPermitidosObjetivo ?? 1),
             fechaInicioPlanObjetivo,
             diasGraciaObjetivo,
             User.Identity?.Name ?? "owner-platform");
 
         TempData[ok ? "PortalWebOk" : "PortalWebError"] = ok
-            ? "Cobro de suscripcion registrado correctamente."
-            : "No se pudo registrar el cobro de suscripcion.";
+            ? "Cobro registrado y plan, contrato y limites aplicados correctamente."
+            : "No se pudo registrar el cobro ni aplicar la configuracion comercial.";
 
         return RedirectToAction(nameof(Negocios), new { buscar, estadoContrato, pagina });
     }
@@ -797,128 +901,12 @@ public class PlataformaController(
         return RedirectToAction(nameof(Negocios), new { buscar, estadoContrato, pagina });
     }
 
-    [HttpGet]
-    public async Task<IActionResult> ExportExcelGestionComercialNegocio(int negocioId)
-    {
-        ViewData["PlatformShell"] = true;
-        var negocio = (await spService.PlataformaNegociosListarAsync(null, "todos", 1, 5000)).Negocios
-            .FirstOrDefault(x => x.NegocioId == negocioId);
-
-        if (negocio is null)
-            return NotFound();
-
-        negocio.HistorialComercial = await spService.PlataformaNegocioHistorialComercialAsync(negocioId, 200);
-        var resumenCobros = await spService.PlataformaNegocioPagosSuscripcionAsync(negocioId, 200);
-        negocio.HistorialCobros = resumenCobros.Pagos;
-
-        using var wb = new XLWorkbook();
-        var headerBg = XLColor.FromHtml("#E8F0FE");
-        var headerFg = XLColor.FromHtml("#123A74");
-
-        var wsResumen = wb.Worksheets.Add("Resumen");
-        wsResumen.Cell(1, 1).Value = "Complejo deportivo";
-        wsResumen.Cell(1, 2).Value = negocio.NombreComercial;
-        wsResumen.Cell(2, 1).Value = "Estado suscripcion";
-        wsResumen.Cell(2, 2).Value = negocio.EstadoSuscripcionNombre;
-        wsResumen.Cell(3, 1).Value = "Plan actual";
-        wsResumen.Cell(3, 2).Value = negocio.TipoCobro ?? "-";
-        wsResumen.Cell(4, 1).Value = "Vigencia";
-        wsResumen.Cell(4, 2).Value = negocio.FechaInicioPlan.HasValue || negocio.FechaFinPlan.HasValue
-            ? $"{negocio.FechaInicioPlan:dd/MM/yyyy} - {negocio.FechaFinPlan:dd/MM/yyyy}"
-            : (negocio.FechaFinPrueba.HasValue ? $"Prueba hasta {negocio.FechaFinPrueba:dd/MM/yyyy}" : "-");
-        wsResumen.Cell(5, 1).Value = "Cobrado acumulado";
-        wsResumen.Cell(5, 2).Value = resumenCobros.MontoTotalPagado;
-        wsResumen.Cell(6, 1).Value = "Total cobros";
-        wsResumen.Cell(6, 2).Value = resumenCobros.CantidadPagos;
-        wsResumen.Cell(7, 1).Value = "Ultimo cobro";
-        wsResumen.Cell(7, 2).Value = resumenCobros.UltimaFechaPago?.ToString("dd/MM/yyyy HH:mm") ?? "-";
-        wsResumen.Cell(8, 1).Value = "Exportado por";
-        wsResumen.Cell(8, 2).Value = User.Identity?.Name ?? "owner-platform";
-        wsResumen.Cell(9, 1).Value = "Fecha exportacion";
-        wsResumen.Cell(9, 2).Value = DateTime.Now;
-        wsResumen.Range(1, 1, 9, 1).Style.Font.Bold = true;
-        wsResumen.Cell(5, 2).Style.NumberFormat.Format = "#,##0.00";
-        wsResumen.Cell(9, 2).Style.DateFormat.Format = "dd/MM/yyyy HH:mm";
-        wsResumen.Columns().AdjustToContents();
-
-        var wsMov = wb.Worksheets.Add("HistorialComercial");
-        var movHeaders = new[] { "Fecha", "Movimiento", "EstadoAnterior", "EstadoNuevo", "PlanAnterior", "PlanNuevo", "Vigencia", "DiasGracia", "DiasExtra", "Observacion", "Usuario" };
-        for (var i = 0; i < movHeaders.Length; i++)
-            wsMov.Cell(1, i + 1).Value = movHeaders[i];
-        FormatearHeaderHoja(wsMov.Range(1, 1, 1, movHeaders.Length), headerBg, headerFg);
-
-        var movRow = 2;
-        foreach (var mov in negocio.HistorialComercial.OrderByDescending(x => x.FechaCreacion))
-        {
-            wsMov.Cell(movRow, 1).Value = mov.FechaCreacion;
-            wsMov.Cell(movRow, 2).Value = mov.TipoMovimientoNombre;
-            wsMov.Cell(movRow, 3).Value = mov.EstadoSuscripcionAnterior;
-            wsMov.Cell(movRow, 4).Value = mov.EstadoSuscripcionNuevo;
-            wsMov.Cell(movRow, 5).Value = mov.TipoCobroAnterior ?? "-";
-            wsMov.Cell(movRow, 6).Value = mov.TipoCobroNuevo ?? "-";
-            wsMov.Cell(movRow, 7).Value = mov.FechaInicioReferencia.HasValue || mov.FechaFinReferencia.HasValue
-                ? $"{mov.FechaInicioReferencia:dd/MM/yyyy} - {mov.FechaFinReferencia:dd/MM/yyyy}"
-                : "-";
-            wsMov.Cell(movRow, 8).Value = mov.DiasGracia;
-            wsMov.Cell(movRow, 9).Value = mov.DiasExtra;
-            wsMov.Cell(movRow, 10).Value = mov.Observacion ?? string.Empty;
-            wsMov.Cell(movRow, 11).Value = mov.UsuarioCreacion ?? string.Empty;
-            movRow++;
-        }
-        if (movRow > 2)
-            wsMov.Column(1).Style.DateFormat.Format = "dd/MM/yyyy HH:mm";
-        wsMov.Columns().AdjustToContents();
-
-        var wsCobros = wb.Worksheets.Add("HistorialCobros");
-        var cobHeaders = new[] { "FechaPago", "TipoPago", "EstadoPago", "Monto", "Moneda", "Operacion", "Entidad", "Referencia", "AccionAplicacion", "AplicarAlConfirmar", "Aplicado", "PlanObjetivo", "InicioObjetivo", "DiasGraciaObjetivo", "FechaAplicacion", "Observacion", "Usuario" };
-        for (var i = 0; i < cobHeaders.Length; i++)
-            wsCobros.Cell(1, i + 1).Value = cobHeaders[i];
-        FormatearHeaderHoja(wsCobros.Range(1, 1, 1, cobHeaders.Length), headerBg, headerFg);
-
-        var cobRow = 2;
-        foreach (var pago in negocio.HistorialCobros.OrderByDescending(x => x.FechaPago))
-        {
-            wsCobros.Cell(cobRow, 1).Value = pago.FechaPago;
-            wsCobros.Cell(cobRow, 2).Value = pago.TipoPago;
-            wsCobros.Cell(cobRow, 3).Value = pago.EstadoPago;
-            wsCobros.Cell(cobRow, 4).Value = pago.Monto;
-            wsCobros.Cell(cobRow, 5).Value = pago.Moneda;
-            wsCobros.Cell(cobRow, 6).Value = pago.OperacionNumero ?? string.Empty;
-            wsCobros.Cell(cobRow, 7).Value = pago.EntidadFinanciera ?? string.Empty;
-            wsCobros.Cell(cobRow, 8).Value = pago.ReferenciaExterna ?? string.Empty;
-            wsCobros.Cell(cobRow, 9).Value = pago.AccionAplicacion ?? string.Empty;
-            wsCobros.Cell(cobRow, 10).Value = pago.AplicarAlConfirmar ? "SI" : "NO";
-            wsCobros.Cell(cobRow, 11).Value = pago.AplicadoSuscripcion ? "SI" : "NO";
-            wsCobros.Cell(cobRow, 12).Value = pago.TipoCobroObjetivo ?? string.Empty;
-            wsCobros.Cell(cobRow, 13).Value = pago.FechaInicioPlanObjetivo;
-            wsCobros.Cell(cobRow, 14).Value = pago.DiasGraciaObjetivo;
-            wsCobros.Cell(cobRow, 15).Value = pago.FechaAplicacion;
-            wsCobros.Cell(cobRow, 16).Value = pago.Observacion ?? string.Empty;
-            wsCobros.Cell(cobRow, 17).Value = pago.UsuarioCreacion ?? string.Empty;
-            cobRow++;
-        }
-        if (cobRow > 2)
-        {
-            wsCobros.Column(1).Style.DateFormat.Format = "dd/MM/yyyy HH:mm";
-            wsCobros.Column(4).Style.NumberFormat.Format = "#,##0.00";
-            wsCobros.Column(13).Style.DateFormat.Format = "dd/MM/yyyy";
-            wsCobros.Column(15).Style.DateFormat.Format = "dd/MM/yyyy HH:mm";
-        }
-        wsCobros.Columns().AdjustToContents();
-
-        await using var ms = new MemoryStream();
-        wb.SaveAs(ms);
-        ms.Position = 0;
-        var nombreSeguro = (negocio.NombreComercial ?? $"negocio-{negocioId}").Replace(" ", "_");
-        return File(ms.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"gestion-comercial-{negocioId}-{nombreSeguro}.xlsx");
-    }
-
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> AprobarClub(int id, int diasPrueba = 30, string? comentarioGestion = null, int? estado = null, int pagina = 1)
+    public async Task<IActionResult> AprobarClub(int id, int diasPrueba = 15, string? comentarioGestion = null, int? estado = null, int pagina = 1)
     {
         ViewData["PlatformShell"] = true;
-        var diasPruebaNormalizado = diasPrueba <= 0 ? 30 : diasPrueba;
+        var diasPruebaNormalizado = diasPrueba <= 0 ? 15 : diasPrueba;
         var solicitud = await spService.AltasClubesObtenerPorIdAsync(id);
         if (solicitud is null)
         {
@@ -1064,14 +1052,6 @@ public class PlataformaController(
             "CAMBIO_PLAN" => "CAMBIO_PLAN",
             _ => null
         };
-    }
-
-    private static void FormatearHeaderHoja(IXLRange range, XLColor bg, XLColor fg)
-    {
-        range.Style.Font.Bold = true;
-        range.Style.Fill.BackgroundColor = bg;
-        range.Style.Font.FontColor = fg;
-        range.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
     }
 
     private static bool TryParseCoordinate(string? raw, out decimal? value)

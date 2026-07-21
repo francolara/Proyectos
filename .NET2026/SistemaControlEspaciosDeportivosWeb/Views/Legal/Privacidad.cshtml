@@ -1,0 +1,36 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.Legal.LegalDocumentViewModel
+@{
+    ViewData["Title"] = Model.Title;
+}
+@* Firma: FRANCO LARA - 20/07/2026 | Publica la politica de privacidad del portal y del sistema de gestion deportiva. *@
+@* Firma: FRANCO LARA - 21/07/2026 | Amplia la politica con indice navegable, finalidades del tratamiento y pie institucional de soporte; retira el aviso de documento preliminar. *@
+<section class="legal-page legal-page--privacy">
+    <div class="legal-container">
+        <header class="legal-header">
+            <p class="legal-eyebrow">@Model.BusinessInformation.CommercialName</p>
+            <h1>@Model.Title</h1>
+            <p class="legal-updated">Última actualización: @Model.LastUpdated</p>
+            <p class="legal-lead">Esta política describe el tratamiento de información realizado por @Model.BusinessInformation.LegalName, identificada con RUC @Model.BusinessInformation.Ruc, al operar La Zona Deportiva.</p>
+        </header>
+        <nav class="legal-index" aria-label="Índice de política de privacidad">
+            <a href="#responsable">1. Responsable</a><a href="#alcance">2. Alcance</a><a href="#datos">3. Datos tratados</a><a href="#finalidades">4. Finalidades</a><a href="#registro">5. Registro</a><a href="#operacion">6. Operación deportiva</a><a href="#pagos">7. Pagos</a><a href="#soporte">8. Soporte</a><a href="#seguridad">9. Seguridad</a><a href="#conservacion">10. Conservación</a><a href="#derechos">11. Derechos</a><a href="#cookies">12. Cookies</a><a href="#terceros">13. Terceros</a><a href="#contacto">14. Contacto</a>
+        </nav>
+        <article class="legal-content">
+            <section id="responsable"><h2>1. Identidad del responsable</h2><p>El responsable del tratamiento es @Model.BusinessInformation.LegalName, RUC @Model.BusinessInformation.Ruc, con domicilio en @Model.BusinessInformation.Address.</p></section>
+            <section id="alcance"><h2>2. Alcance</h2><p>Esta política se aplica a los formularios públicos, solicitudes de alta, cuentas de acceso, soporte y funcionalidades de gestión deportiva disponibles en La Zona Deportiva.</p></section>
+            <section id="datos"><h2>3. Datos que podemos tratar</h2><p>Podemos tratar datos de contacto, cuenta, complejo deportivo, sedes, espacios, clientes, reservas, pagos, comprobantes y comunicaciones necesarias para prestar y administrar el servicio.</p></section>
+            <section id="finalidades"><h2>4. Finalidades del tratamiento</h2><p>Usamos la información para crear y administrar cuentas, operar reservas, procesar solicitudes, brindar soporte, prevenir fraude, mejorar la seguridad y cumplir obligaciones aplicables.</p></section>
+            <section id="registro"><h2>5. Datos de registro y acceso</h2><p>El registro puede requerir nombres, correo electrónico, teléfono, relación con el complejo y credenciales de acceso. El usuario debe mantener estos datos actualizados y proteger sus claves.</p></section>
+            <section id="operacion"><h2>6. Datos de operación deportiva</h2><p>La plataforma puede almacenar horarios, tarifas, reservas, información de clientes, sedes y espacios deportivos para que el titular administre su operación. El titular debe contar con la autorización necesaria para incorporar esos datos.</p></section>
+            <section id="pagos"><h2>7. Datos comerciales y de pago</h2><p>Podemos tratar información de planes, vigencias, cobros, comprobantes y referencias de pago para gestionar la relación comercial. No se deben enviar contraseñas, códigos de seguridad ni datos sensibles por canales no autorizados.</p></section>
+            <section id="soporte"><h2>8. Soporte y comunicaciones</h2><p>Los datos de contacto pueden utilizarse para responder consultas, atender incidencias, enviar avisos operativos, confirmar solicitudes y comunicar cambios relevantes del servicio.</p></section>
+            <section id="seguridad"><h2>9. Seguridad de la información</h2><p>Aplicamos medidas técnicas y organizativas razonables para reducir riesgos de acceso no autorizado, pérdida, alteración o divulgación indebida. Ningún sistema puede garantizar seguridad absoluta.</p></section>
+            <section id="conservacion"><h2>10. Conservación</h2><p>La información se conserva durante el tiempo necesario para operar el servicio, atender soporte, resolver incidencias y cumplir obligaciones técnicas, contractuales o legales aplicables.</p></section>
+            <section id="derechos"><h2>11. Derechos y solicitudes</h2><p>El titular puede solicitar información, actualización, corrección o eliminación cuando corresponda. Cada solicitud será evaluada verificando la identidad, el alcance del pedido y las obligaciones de conservación aplicables.</p></section>
+            <section id="cookies"><h2>12. Cookies y datos técnicos</h2><p>La plataforma puede utilizar datos técnicos mínimos, cookies o mecanismos de sesión para autenticar usuarios, proteger formularios, mantener preferencias y mejorar la experiencia de navegación.</p></section>
+            <section id="terceros"><h2>13. Proveedores tecnológicos</h2><p>El servicio puede depender de proveedores de alojamiento, correo, seguridad, autenticación, almacenamiento o pagos. Estos proveedores intervienen únicamente en la medida necesaria para habilitar sus servicios.</p></section>
+            <section id="contacto"><h2>14. Contacto de privacidad</h2><p>Para consultas sobre privacidad o para presentar una solicitud, utiliza los siguientes canales oficiales.</p><partial name="_LegalContactBlock" /></section>
+        </article>
+        <partial name="_LegalNavigation" />
+    </div>
+</section>

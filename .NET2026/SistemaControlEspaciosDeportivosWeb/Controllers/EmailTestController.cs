@@ -23,6 +23,11 @@ public class EmailTestController(
             return NotFound();
         }
 
+        if (!emailService.IsEnabled)
+        {
+            return BadRequest(new { ok = false, mensaje = "El envio de correos esta deshabilitado por IdentityBehavior." });
+        }
+
         if (string.IsNullOrWhiteSpace(toEmail))
         {
             return BadRequest(new { ok = false, mensaje = "Debes indicar el parametro toEmail." });

@@ -1,4 +1,4 @@
-﻿
+
 GO
 SET ANSI_NULLS ON
 GO
@@ -9,6 +9,7 @@ GO
 -- Author:        FRANCO LARA
 -- Create date:   10/06/2026
 -- Firma:         Registro manual y futuro conciliable de cobros de suscripcion por negocio.
+-- Firma:         FRANCO LARA - 21/07/2026 | Guarda plan comercial y limites objetivo aplicados con el cobro.
 -- =============================================
 IF OBJECT_ID(N'dbo.NegociosSuscripcionPago', N'U') IS NULL
 BEGIN
@@ -33,6 +34,11 @@ BEGIN
         [FechaAplicacion] [datetime2](7) NULL,
         [UsuarioAplicacion] [nvarchar](200) NULL,
         [TipoCobroObjetivo] [nvarchar](20) NULL,
+        [PlanComercialObjetivo] [nvarchar](20) NULL,
+        [TipoPlanObjetivo] [nvarchar](20) NULL,
+        [SedesPermitidasObjetivo] [int] NULL,
+        [EspaciosPermitidosObjetivo] [int] NULL,
+        [UsuariosPermitidosObjetivo] [int] NULL,
         [FechaInicioPlanObjetivo] [date] NULL,
         [DiasGraciaObjetivo] [int] NULL,
         [Observacion] [nvarchar](500) NULL,

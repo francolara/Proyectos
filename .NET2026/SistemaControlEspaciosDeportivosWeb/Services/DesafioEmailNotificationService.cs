@@ -16,6 +16,12 @@ public class DesafioEmailNotificationService(
 
     public async Task NotifyDesafioReceivedAsync(int desafioId)
     {
+        if (!emailService.IsEnabled)
+        {
+            logger.LogInformation("Notificacion de desafio omitida porque el envio de correos esta deshabilitado.");
+            return;
+        }
+
         logger.LogInformation(
             "Inicio notificacion de desafio recibido. DesafioId={DesafioId}.",
             desafioId);

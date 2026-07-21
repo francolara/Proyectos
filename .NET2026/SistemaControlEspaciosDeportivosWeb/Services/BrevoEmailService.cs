@@ -1,11 +1,13 @@
 using System.Net.Http.Json;
 using Microsoft.Extensions.Options;
+using SistemaControlEspaciosDeportivosWeb.Configuration;
 
 namespace SistemaControlEspaciosDeportivosWeb.Services;
 
 public class BrevoEmailService(
     HttpClient httpClient,
     IOptions<BrevoSettings> options,
+    IOptions<IdentityBehaviorSettings> identityBehaviorOptions,
     ILogger<BrevoEmailService> logger) : IEmailService
 {
     private const string EndpointCorreoTransaccional = "smtp/email";
@@ -21,6 +23,7 @@ public class BrevoEmailService(
         "text/plain"
     };
     private readonly BrevoSettings _settings = options.Value;
+    public bool IsEnabled => !identityBehaviorOptions.Value.AutoConfirmEmail;
 
     public async Task SendEmailAsync(
         string toEmail,
@@ -29,6 +32,14 @@ public class BrevoEmailService(
         string htmlContent,
         EmailSendOptions? options = null)
     {
+        if (!IsEnabled)
+        {
+            logger.LogInformation(
+                "Envio de correo omitido porque IdentityBehavior:AutoConfirmEmail esta habilitado. Asunto={Subject}.",
+                subject);
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(_settings.ApiKey) ||
             string.IsNullOrWhiteSpace(_settings.SenderEmail) ||
             string.IsNullOrWhiteSpace(_settings.SenderName))

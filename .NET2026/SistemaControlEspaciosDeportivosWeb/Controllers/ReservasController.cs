@@ -677,6 +677,8 @@ public class ReservasController(
         var accion = (request.Accion ?? string.Empty).Trim().ToLowerInvariant();
         if (accion is not ("confirmar" or "noshow" or "recordatorio"))
             return BadRequest(new { ok = false, mensaje = "Accion no valida." });
+        if (accion == "recordatorio" && !emailService.IsEnabled)
+            return BadRequest(new { ok = false, mensaje = "El envio de correos esta deshabilitado por IdentityBehavior." });
 
         var procesadas = 0;
         var omitidas = 0;

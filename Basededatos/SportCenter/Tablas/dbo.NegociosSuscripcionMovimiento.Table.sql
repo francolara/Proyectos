@@ -1,4 +1,4 @@
-﻿
+
 GO
 SET ANSI_NULLS ON
 GO
@@ -9,6 +9,7 @@ GO
 -- Author:        FRANCO LARA
 -- Create date:   10/06/2026
 -- Firma:         Historial comercial de suscripcion por negocio para registrar activaciones, renovaciones, cambios de plan, extensiones de prueba y ajustes manuales.
+-- Firma:         FRANCO LARA - 21/07/2026 | Registra plan comercial y limites anteriores y nuevos de cada aplicacion.
 -- =============================================
 IF OBJECT_ID(N'dbo.NegociosSuscripcionMovimiento', N'U') IS NULL
 BEGIN
@@ -24,6 +25,16 @@ BEGIN
         [EsPruebaNuevo] [bit] NOT NULL,
         [TipoCobroAnterior] [nvarchar](20) NULL,
         [TipoCobroNuevo] [nvarchar](20) NULL,
+        [PlanComercialAnterior] [nvarchar](20) NULL,
+        [PlanComercialNuevo] [nvarchar](20) NULL,
+        [TipoPlanAnterior] [nvarchar](20) NULL,
+        [TipoPlanNuevo] [nvarchar](20) NULL,
+        [SedesPermitidasAnterior] [int] NULL,
+        [SedesPermitidasNuevo] [int] NULL,
+        [EspaciosPermitidosAnterior] [int] NULL,
+        [EspaciosPermitidosNuevo] [int] NULL,
+        [UsuariosPermitidosAnterior] [int] NULL,
+        [UsuariosPermitidosNuevo] [int] NULL,
         [FechaInicioReferencia] [date] NULL,
         [FechaFinReferencia] [date] NULL,
         [DiasGracia] [int] NULL,

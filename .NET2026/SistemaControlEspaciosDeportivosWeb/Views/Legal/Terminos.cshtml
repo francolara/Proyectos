@@ -1,0 +1,34 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.Legal.LegalDocumentViewModel
+@{
+    ViewData["Title"] = Model.Title;
+}
+@* Firma: FRANCO LARA - 20/07/2026 | Publica terminos de uso y suscripcion para La Zona Deportiva. *@
+@* Firma: FRANCO LARA - 21/07/2026 | Amplia los terminos con indice navegable, condiciones de planes y pie institucional de soporte; retira el aviso de documento preliminar. *@
+<section class="legal-page legal-page--terms">
+    <div class="legal-container">
+        <header class="legal-header">
+            <p class="legal-eyebrow">@Model.BusinessInformation.CommercialName</p>
+            <h1>@Model.Title</h1>
+            <p class="legal-updated">Última actualización: @Model.LastUpdated</p>
+            <p class="legal-lead">Estas condiciones regulan el registro, acceso y uso de La Zona Deportiva, plataforma operada por @Model.BusinessInformation.LegalName, con RUC @Model.BusinessInformation.Ruc.</p>
+        </header>
+        <nav class="legal-index" aria-label="Índice de términos y condiciones">
+            <a href="#proveedor">1. Proveedor</a><a href="#servicio">2. Servicio</a><a href="#registro">3. Registro</a><a href="#uso">4. Uso autorizado</a><a href="#cuenta">5. Cuenta y seguridad</a><a href="#planes">6. Planes</a><a href="#pagos">7. Pagos y vigencia</a><a href="#cambios">8. Cambios y cancelación</a><a href="#reservas">9. Reservas y clientes</a><a href="#disponibilidad">10. Disponibilidad</a><a href="#datos">11. Datos del usuario</a><a href="#contacto">12. Contacto</a>
+        </nav>
+        <article class="legal-content">
+            <section id="proveedor"><h2>1. Identificación del proveedor</h2><p>La plataforma es operada por @Model.BusinessInformation.LegalName, identificada con RUC @Model.BusinessInformation.Ruc y domicilio en @Model.BusinessInformation.Address.</p></section>
+            <section id="servicio"><h2>2. Descripción del servicio</h2><p>La Zona Deportiva proporciona herramientas para administrar complejos deportivos, sedes, espacios, disponibilidad, reservas, clientes, pagos, promociones, comprobantes y reportes según el plan habilitado.</p></section>
+            <section id="registro"><h2>3. Registro y aceptación</h2><p>Al registrarse, enviar una solicitud o utilizar el servicio, el titular declara que la información proporcionada es correcta y acepta los términos vigentes publicados en la plataforma.</p></section>
+            <section id="uso"><h2>4. Uso autorizado</h2><p>El servicio debe utilizarse para fines lícitos y relacionados con la gestión de los espacios deportivos del titular. No está permitido intentar vulnerar la seguridad, usar accesos no autorizados ni registrar información de terceros sin autorización.</p></section>
+            <section id="cuenta"><h2>5. Cuenta, usuarios y seguridad</h2><p>El titular es responsable de conservar sus credenciales y administrar los accesos de su equipo. Cada usuario debe utilizar una cuenta propia; los permisos y la cantidad de usuarios dependen del plan contratado.</p></section>
+            <section id="planes"><h2>6. Planes y límites operativos</h2><ul><li><strong>Prueba:</strong> S/ 0 por 15 días; 1 sede, 1 espacio deportivo y 1 usuario.</li><li><strong>Esencial:</strong> S/ 49.90 mensuales; 1 sede, hasta 5 espacios deportivos y hasta 2 usuarios.</li><li><strong>Pro:</strong> S/ 99.90 mensuales; hasta 3 sedes, 12 espacios deportivos y hasta 3 usuarios.</li></ul><p>Los planes Esencial y Pro se registran como solicitud y se activan tras la gestión y aprobación comercial correspondiente.</p></section>
+            <section id="pagos"><h2>7. Pagos, vigencia y renovación</h2><p>Los importes, periodos y medios de pago se confirman por los canales comerciales habilitados antes de aplicar un cobro. La vigencia, renovación y continuidad dependen del estado comercial de cada cuenta.</p></section>
+            <section id="cambios"><h2>8. Cambios de plan y cancelación</h2><p>El titular puede solicitar un cambio de plan o cancelación antes de la siguiente renovación. Los nuevos límites aplicarán desde la fecha confirmada por el equipo comercial; la cancelación no implica una devolución automática.</p></section>
+            <section id="reservas"><h2>9. Reservas, clientes y cobros</h2><p>El titular conserva la responsabilidad por sus horarios, tarifas, disponibilidad, reservas, promociones y los datos ingresados de sus clientes. La información registrada debe ser lícita, exacta y estar respaldada cuando corresponda.</p></section>
+            <section id="disponibilidad"><h2>10. Disponibilidad y mantenimiento</h2><p>Se realizarán esfuerzos razonables para mantener el servicio disponible. Pueden ocurrir interrupciones temporales por mantenimiento, conectividad, seguridad, proveedores externos o eventos fuera del control razonable del operador.</p></section>
+            <section id="datos"><h2>11. Propiedad y conservación de la información</h2><p>El titular conserva responsabilidad sobre los datos que registra. La cancelación no elimina de inmediato la información que deba conservarse temporalmente por razones técnicas, operativas, de soporte o cumplimiento aplicable.</p></section>
+            <section id="contacto"><h2>12. Datos de contacto</h2><p>Las consultas sobre estas condiciones, planes o soporte pueden realizarse por los canales institucionales siguientes.</p><partial name="_LegalContactBlock" /></section>
+        </article>
+        <partial name="_LegalNavigation" />
+    </div>
+</section>

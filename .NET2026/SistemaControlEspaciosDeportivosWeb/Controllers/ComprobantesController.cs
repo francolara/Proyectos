@@ -813,6 +813,11 @@ public class ComprobantesController(
     {
         var baseVm = await ObtenerBaseAsync(negocioId, "COMPROBANTES");
         if (baseVm is null) return Forbid();
+        if (!emailService.IsEnabled)
+        {
+            TempData["ComprobanteError"] = "El envio de correos esta deshabilitado por IdentityBehavior.";
+            return RedirectToAction(nameof(Preview), new { negocioId, id });
+        }
 
         var comprobante = await spService.ComprobantesObtenerVisualizacionAsync(negocioId, id);
         if (comprobante is null) return NotFound();

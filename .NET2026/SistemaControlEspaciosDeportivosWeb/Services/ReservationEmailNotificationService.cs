@@ -17,6 +17,12 @@ public class ReservationEmailNotificationService(
 
     public async Task NotifyPublicReservationCreatedAsync(int? negocioId, int reservaId)
     {
+        if (!emailService.IsEnabled)
+        {
+            logger.LogInformation("Notificacion de reserva omitida porque el envio de correos esta deshabilitado.");
+            return;
+        }
+
         logger.LogInformation(
             "Inicio notificacion de reserva publica. NegocioId={NegocioId}, ReservaId={ReservaId}.",
             negocioId,
@@ -84,6 +90,12 @@ public class ReservationEmailNotificationService(
 
     public async Task NotifyReservationConfirmedIfAppliesAsync(int negocioId, int reservaId, int? estadoAnterior = null)
     {
+        if (!emailService.IsEnabled)
+        {
+            logger.LogInformation("Confirmacion de reserva omitida porque el envio de correos esta deshabilitado.");
+            return;
+        }
+
         logger.LogInformation(
             "Inicio notificacion de confirmacion. NegocioId={NegocioId}, ReservaId={ReservaId}, EstadoAnterior={EstadoAnterior}.",
             negocioId,

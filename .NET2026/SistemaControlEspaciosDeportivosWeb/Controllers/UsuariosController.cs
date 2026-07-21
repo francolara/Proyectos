@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Options;
+using SistemaControlEspaciosDeportivosWeb.Configuration;
 using SistemaControlEspaciosDeportivosWeb.Models;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
@@ -15,7 +17,8 @@ public class UsuariosController(
     IModuloPermisoService moduloPermisoService,
     ISportCenterStoredProcedureService spService,
     UserManager<ApplicationUser> userManager,
-    IAccountEmailService accountEmailService)
+    IAccountEmailService accountEmailService,
+    IOptions<IdentityBehaviorSettings> identityBehaviorOptions)
     : ModuloControllerBase(moduloPermisoService)
 {
     public async Task<IActionResult> Index(int negocioId)
@@ -84,8 +87,15 @@ public class UsuariosController(
             await spService.UsuariosNegocioAsignarPorCorreoAsync(model.NegocioId, model.Correo, model.RolNegocio, sedeAsignada, User.Identity?.Name ?? "sistema");
             if (creadoNuevo)
             {
-                await EnviarCorreoConfirmacionAsync(usuarioSistema);
-                TempData["UsuariosMsg"] = "Usuario creado y asignado correctamente. Se envio correo para confirmar la cuenta.";
+                if (identityBehaviorOptions.Value.AutoConfirmEmail)
+                {
+                    TempData["UsuariosMsg"] = "Usuario creado y asignado correctamente. La cuenta quedo confirmada automaticamente.";
+                }
+                else
+                {
+                    await EnviarCorreoConfirmacionAsync(usuarioSistema);
+                    TempData["UsuariosMsg"] = "Usuario creado y asignado correctamente. Se envio correo para confirmar la cuenta.";
+                }
             }
             else
             {
@@ -168,6 +178,12 @@ public class UsuariosController(
         var baseVm = await ObtenerBaseAsync(negocioId, "USUARIOS");
         if (baseVm is null || !baseVm.PuedeEditar || !baseVm.EsAdministrador)
             return SinAcceso(baseVm ?? new ModuloBaseViewModel { Mensaje = "Solo un administrador puede enviar enlaces de recuperacion." });
+
+        if (identityBehaviorOptions.Value.AutoConfirmEmail)
+        {
+            TempData["UsuariosErr"] = "El envio de correos esta deshabilitado por IdentityBehavior.";
+            return RedirectToAction(nameof(Index), new { negocioId });
+        }
 
         try
         {
@@ -284,7 +300,7 @@ public class UsuariosController(
         {
             UserName = correoNormalizado,
             Email = correoNormalizado,
-            EmailConfirmed = false,
+            EmailConfirmed = identityBehaviorOptions.Value.AutoConfirmEmail,
             Nombres = nombreUsuarioLimpio,
             Apellidos = string.Empty
         };

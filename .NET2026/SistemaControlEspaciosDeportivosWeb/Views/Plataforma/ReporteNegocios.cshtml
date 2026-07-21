@@ -1,0 +1,91 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.PlataformaNegociosReporteViewModel
+@using SistemaControlEspaciosDeportivosWeb.Services
+@{
+    Layout = null;
+    var hoy = DateTime.Today;
+    var enPrueba = Model.Negocios.Count(x => x.EsPrueba && (!x.FechaFinPrueba.HasValue || x.FechaFinPrueba.Value.Date >= hoy));
+    var conContrato = Model.Negocios.Count(x => !x.EsPrueba && x.EstadoSuscripcion > 0 && x.FechaFinPlan.HasValue && x.FechaFinPlan.Value.Date >= hoy);
+    var vencidos = Math.Max(0, Model.Negocios.Count - enPrueba - conContrato);
+    var filtroTexto = Model.EstadoContrato switch
+    {
+        "con-contrato" => "Con contrato",
+        "sin-contrato" => "Sin contrato",
+        "prueba-por-vencer" => "Prueba por vencer",
+        _ => "Todos"
+    };
+}
+@* Firma: FRANCO LARA - 21/07/2026 | Reporte HTML imprimible consolidado de complejos, contratos, planes y límites operativos. *@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Reporte consolidado de complejos deportivos</title>
+    <partial name="_ReportePrintStyles" />
+</head>
+<body>
+    <nav class="print-toolbar" aria-label="Acciones del reporte">
+        <button type="button" onclick="window.print()">Imprimir documento</button>
+        <button type="button" class="secondary" onclick="window.close()">Cerrar</button>
+    </nav>
+    <main class="report-document">
+        <section class="report-page">
+            <header class="report-header">
+                <div>
+                    <span class="report-eyebrow">Super Admin · Resumen comercial</span>
+                    <h1>Complejos deportivos registrados</h1>
+                    <p>Vencimientos, estados de contrato, planes y límites operativos.</p>
+                </div>
+                <div class="report-issue">
+                    <span>Documento emitido</span><strong>@Model.FechaGeneracion.ToString("dd/MM/yyyy HH:mm")</strong>
+                    <span>Filtro comercial</span><strong>@filtroTexto</strong>
+                    <span>Generado por</span><strong>@Model.GeneradoPor</strong>
+                </div>
+            </header>
+
+            <section class="metrics" aria-label="Resumen de complejos">
+                <article class="metric"><span>Total listado</span><strong>@Model.Negocios.Count</strong><small>@(string.IsNullOrWhiteSpace(Model.Buscar) ? "Sin filtro por nombre" : $"Búsqueda: {Model.Buscar}")</small></article>
+                <article class="metric green"><span>Con contrato vigente</span><strong>@conContrato</strong><small>Vigencia al @hoy.ToString("dd/MM/yyyy")</small></article>
+                <article class="metric amber"><span>En prueba</span><strong>@enPrueba</strong><small>Periodos de evaluación vigentes</small></article>
+                <article class="metric red"><span>Vencidos / sin vigencia</span><strong>@vencidos</strong><small>Requieren revisión comercial</small></article>
+            </section>
+
+            <header class="section-heading"><div><span class="section-kicker">Detalle consolidado</span><h2>Estado comercial y capacidad operativa</h2></div><p>@Model.Negocios.Count registro(s)</p></header>
+            @if (Model.Negocios.Count == 0)
+            {
+                <div class="empty">No se encontraron complejos con los filtros seleccionados.</div>
+            }
+            else
+            {
+                <table>
+                    <thead><tr><th>Complejo</th><th>Fecha de registro</th><th>Estado</th><th>Contrato</th><th>Plan</th><th>Periodicidad</th><th>Inicio</th><th>Vencimiento</th><th>Gracia</th><th class="text-center">Sedes</th><th class="text-center">Espacios</th><th class="text-center">Usuarios</th></tr></thead>
+                    <tbody>
+                    @foreach (var item in Model.Negocios.OrderBy(x => x.NombreComercial))
+                    {
+                        var fechaInicio = item.EsPrueba ? item.FechaInicioPrueba : item.FechaInicioPlan;
+                        var fechaFin = item.EsPrueba ? item.FechaFinPrueba : item.FechaFinPlan;
+                        var estadoClase = item.EstadoSuscripcion == 3 || (fechaFin.HasValue && fechaFin.Value.Date < hoy) ? "bad" : item.EstadoSuscripcion is 1 or 2 ? "ok" : "warn";
+                        <tr>
+                            <td><span class="strong">@item.NombreComercial</span><br /><span class="muted">ID @item.NegocioId</span></td>
+                            <td class="nowrap">@(item.FechaRegistro?.ToString("dd/MM/yyyy HH:mm") ?? "-")</td>
+                            <td><span class="status @(item.Activo ? "ok" : "bad")">@(item.Activo ? "Activo" : "Inactivo")</span></td>
+                            <td><span class="status @estadoClase">@item.EstadoSuscripcionNombre</span></td>
+                            <td class="strong">@PlanComercialCatalog.Obtener(item.PlanComercial).Nombre</td>
+                            <td>@(item.EsPrueba ? "Prueba" : item.TipoCobro ?? "-")</td>
+                            <td class="nowrap">@(fechaInicio?.ToString("dd/MM/yyyy") ?? "-")</td>
+                            <td class="nowrap">@(fechaFin?.ToString("dd/MM/yyyy") ?? "-")</td>
+                            <td class="nowrap">@(item.FechaFinGracia?.ToString("dd/MM/yyyy") ?? "-")</td>
+                            <td class="text-center strong">@item.SedesPermitidas</td>
+                            <td class="text-center strong">@item.EspaciosPermitidos</td>
+                            <td class="text-center strong">@item.UsuariosPermitidos</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            }
+            <footer class="report-footer"><span>La Zona Deportiva · Reporte consolidado del Super Admin</span><span>Fecha de corte: @Model.FechaGeneracion.ToString("dd/MM/yyyy HH:mm")</span></footer>
+        </section>
+    </main>
+    <script>window.addEventListener('load', function () { window.setTimeout(function () { window.print(); }, 250); });</script>
+</body>
+</html>

@@ -2,6 +2,7 @@
 @model SistemaControlEspaciosDeportivosWeb.Areas.Identity.Pages.Account.RegisterModel
 @inject Microsoft.Extensions.Options.IOptions<SistemaControlEspaciosDeportivosWeb.Services.SedeImagenStorageSettings> SedeImagenStorageOptions
 @* Firma: FRANCO LARA - 15/07/2026 | Registro publico agrega captcha manual de respaldo cuando Turnstile falla o no queda disponible. *@
+@* Firma: FRANCO LARA - 21/07/2026 | Agrega avisos de verificacion de correo y mantiene visible la regla de seguridad de contrasena en ambos tipos de registro. *@
 @{
     ViewData["Title"] = "Crear cuenta";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -116,6 +117,7 @@
                     <div class="mb-3">
                         <label asp-for="Usuario.Email" class="form-label">Correo electronico</label>
                         <input asp-for="Usuario.Email" class="form-control" placeholder="correo@ejemplo.com" />
+                        <div class="form-text">Enviaremos un correo electronico para verificar su cuenta.</div>
                         <span asp-validation-for="Usuario.Email" class="text-danger"></span>
                     </div>
                     <div class="mb-3">
@@ -175,9 +177,11 @@
                 </div>
 
                 <div id="registroClubFields" class="d-none">
+                    @* Firma: FRANCO LARA - 20/07/2026 | Conserva el plan comercial elegido desde la portada durante el registro de complejos deportivos. *@
+                    <input asp-for="Club.PlanComercial" type="hidden" />
                     <div class="auth-club-box mb-3">
                             <strong>Registro de complejo deportivo</strong>
-                                <p class="mb-0">Completa los datos del negocio y activamos tu periodo de prueba.</p>
+                                <p class="mb-0">Plan seleccionado: <strong>@SistemaControlEspaciosDeportivosWeb.Services.PlanComercialCatalog.Obtener(Model.Club.PlanComercial).Nombre</strong>. Completa los datos para enviar tu solicitud.</p>
                     </div>
                     @if (hayErroresClub && string.Equals(Model.TipoRegistro, "club", StringComparison.OrdinalIgnoreCase))
                     {
@@ -220,6 +224,7 @@
                         <div class="col-md-6">
                             <label asp-for="Club.Correo" class="form-label">Correo</label>
                             <input asp-for="Club.Correo" class="form-control" />
+                            <div class="form-text">Enviaremos un correo electronico para verificar su cuenta.</div>
                             <span asp-validation-for="Club.Correo" class="text-danger"></span>
                         </div>
                         <div class="col-md-6">

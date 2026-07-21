@@ -2,6 +2,7 @@
 -- Author:        FRANCO LARA
 -- Create date:   10/06/2026
 -- Firma:         Lista el historial comercial de suscripcion por negocio para superadmin.
+-- Firma:         FRANCO LARA - 21/07/2026 | Devuelve plan comercial y limites anteriores y nuevos aplicados por el cobro.
 -- =============================================
 CREATE OR ALTER PROCEDURE dbo.Sp_NegociosSuscripcionMovimiento_ListarPorNegocio
     @NegocioId INT,
@@ -31,7 +32,17 @@ BEGIN
             CAST(COALESCE(m.DiasExtra, 0) AS INT) AS DiasExtra,
             m.Observacion,
             m.FechaCreacion,
-            m.UsuarioCreacion
+            m.UsuarioCreacion,
+            m.PlanComercialAnterior,
+            m.PlanComercialNuevo,
+            m.TipoPlanAnterior,
+            m.TipoPlanNuevo,
+            m.SedesPermitidasAnterior,
+            m.SedesPermitidasNuevo,
+            m.EspaciosPermitidosAnterior,
+            m.EspaciosPermitidosNuevo,
+            m.UsuariosPermitidosAnterior,
+            m.UsuariosPermitidosNuevo
         FROM dbo.NegociosSuscripcionMovimiento m
         WHERE m.NegocioId = @NegocioId
         ORDER BY m.FechaCreacion DESC, m.Id DESC;

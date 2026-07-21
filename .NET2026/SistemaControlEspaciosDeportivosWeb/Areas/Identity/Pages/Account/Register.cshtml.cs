@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Options;
+using SistemaControlEspaciosDeportivosWeb.Configuration;
 using SistemaControlEspaciosDeportivosWeb.Models;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using SistemaControlEspaciosDeportivosWeb.ViewModels;
@@ -23,9 +25,11 @@ public class RegisterModel(
     IAccountEmailService accountEmailService,
     IClubRegistrationNotificationService clubRegistrationNotificationService,
     ITurnstileValidationService turnstileValidationService,
-    Microsoft.Extensions.Options.IOptions<CloudflareTurnstileSettings> turnstileOptions,
+    IOptions<CloudflareTurnstileSettings> turnstileOptions,
+    IOptions<IdentityBehaviorSettings> identityBehaviorOptions,
     ILogger<RegisterModel> logger) : PageModel
 {
+    // Firma: FRANCO LARA - 21/07/2026 | Autoconfirma cuentas y omite la confirmacion por correo segun IdentityBehavior.
     private const string RegisterCaptchaScope = "REGISTER";
 
     [BindProperty]
@@ -38,6 +42,9 @@ public class RegisterModel(
 
     [BindProperty(SupportsGet = true)]
     public string? TipoRegistro { get; set; } = "usuario";
+
+    [BindProperty(SupportsGet = true, Name = "plan")]
+    public string? PlanComercial { get; set; }
 
     [BindProperty(SupportsGet = true)]
     public string? ReturnUrl { get; set; } = string.Empty;
@@ -92,6 +99,7 @@ public class RegisterModel(
         TurnstileSiteKey = turnstileOptions.Value.SiteKey;
         ConfigurarCaptchaManual();
         Club = CrearClubDefault();
+        Club.PlanComercial = PlanComercialCatalog.Normalizar(PlanComercial);
         await CargarCombosUbigeoAsync();
         await CargarBannerLateralAsync();
     }
@@ -132,6 +140,7 @@ public class RegisterModel(
         TurnstileSiteKey = turnstileOptions.Value.SiteKey;
         ConfigurarCaptchaManual();
         TipoRegistro = "club";
+        Club.PlanComercial = PlanComercialCatalog.Normalizar(Club.PlanComercial);
         return await ProcesarRegistroClubAsync();
     }
 
@@ -175,6 +184,7 @@ public class RegisterModel(
         {
             UserName = email,
             Email = email,
+            EmailConfirmed = identityBehaviorOptions.Value.AutoConfirmEmail,
             Nombres = (Usuario.NombreCompleto ?? string.Empty).Trim(),
             PhoneNumber = string.IsNullOrWhiteSpace(Usuario.Telefono) ? null : Usuario.Telefono.Trim()
         };
@@ -212,10 +222,17 @@ public class RegisterModel(
             logger.LogWarning(ex, "No se pudo sincronizar el perfil publico inicial para usuario {Email}.", email);
         }
 
-        var correoEnviado = await IntentarEnviarCorreoConfirmacionAsync(user, email, Usuario.NombreCompleto);
-        TempData["SuccessMessage"] = correoEnviado
-            ? "Usuario creado satisfactoriamente. Te enviamos un correo para confirmar tu cuenta."
-            : "Usuario creado satisfactoriamente, pero no pudimos enviar el correo de confirmacion. Usa la opcion de reenvio en el login.";
+        if (identityBehaviorOptions.Value.AutoConfirmEmail)
+        {
+            TempData["SuccessMessage"] = "Usuario creado satisfactoriamente. Ya puedes iniciar sesion.";
+        }
+        else
+        {
+            var correoEnviado = await IntentarEnviarCorreoConfirmacionAsync(user, email, Usuario.NombreCompleto);
+            TempData["SuccessMessage"] = correoEnviado
+                ? "Usuario creado satisfactoriamente. Te enviamos un correo para confirmar tu cuenta."
+                : "Usuario creado satisfactoriamente, pero no pudimos enviar el correo de confirmacion. Usa la opcion de reenvio en el login.";
+        }
         return RedirectToPage("./Login", new { ReturnUrl });
     }
 
@@ -261,6 +278,7 @@ public class RegisterModel(
             Club.Pais = "Peru";
             Club.ProvinciaEstado = ubigeo.Provincia;
             Club.Ciudad = ubigeo.Distrito;
+            Club.PlanComercial = PlanComercialCatalog.Normalizar(Club.PlanComercial);
 
             var correo = (Club.Correo ?? string.Empty).Trim();
             var existe = await userManager.FindByEmailAsync(correo);
@@ -276,6 +294,7 @@ public class RegisterModel(
             {
                 UserName = correo,
                 Email = correo,
+                EmailConfirmed = identityBehaviorOptions.Value.AutoConfirmEmail,
                 Nombres = (Club.NombreContacto ?? string.Empty).Trim(),
                 PhoneNumber = string.IsNullOrWhiteSpace(Club.Telefono) ? null : Club.Telefono.Trim()
             };
@@ -331,10 +350,17 @@ public class RegisterModel(
                 logger.LogWarning(ex, "No se pudo enviar notificacion interna por alta de club para {Correo}.", correo);
             }
 
-            var correoEnviado = await IntentarEnviarCorreoConfirmacionAsync(nuevoUsuario, correo, Club.NombreContacto);
-            TempData["SuccessMessage"] = correoEnviado
-                ? "Registro completado correctamente. Tu solicitud fue recibida y te enviamos un correo para confirmar tu cuenta."
-                : "Registro completado correctamente. Tu solicitud fue recibida, pero no pudimos enviar el correo de confirmacion. Usa la opcion de reenvio en el login.";
+            if (identityBehaviorOptions.Value.AutoConfirmEmail)
+            {
+                TempData["SuccessMessage"] = "Registro completado correctamente. Tu solicitud fue recibida y ya puedes iniciar sesion.";
+            }
+            else
+            {
+                var correoEnviado = await IntentarEnviarCorreoConfirmacionAsync(nuevoUsuario, correo, Club.NombreContacto);
+                TempData["SuccessMessage"] = correoEnviado
+                    ? "Registro completado correctamente. Tu solicitud fue recibida y te enviamos un correo para confirmar tu cuenta."
+                    : "Registro completado correctamente. Tu solicitud fue recibida, pero no pudimos enviar el correo de confirmacion. Usa la opcion de reenvio en el login.";
+            }
             return RedirectToPage("./Login", new { ReturnUrl });
         }
         catch (Exception ex)

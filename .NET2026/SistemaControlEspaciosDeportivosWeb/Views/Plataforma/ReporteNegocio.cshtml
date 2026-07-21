@@ -1,0 +1,126 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.PlataformaNegocioReporteViewModel
+@using SistemaControlEspaciosDeportivosWeb.Services
+@{
+    Layout = null;
+    var item = Model.Negocio;
+    var plan = PlanComercialCatalog.Obtener(item.PlanComercial).Nombre;
+    var vigencia = item.EsPrueba
+        ? $"{item.FechaInicioPrueba:dd/MM/yyyy} - {item.FechaFinPrueba:dd/MM/yyyy}"
+        : item.FechaInicioPlan.HasValue || item.FechaFinPlan.HasValue
+            ? $"{item.FechaInicioPlan:dd/MM/yyyy} - {item.FechaFinPlan:dd/MM/yyyy}"
+            : "Sin vigencia registrada";
+    var estadoClase = item.EstadoSuscripcion == 3 ? "bad" : item.EstadoSuscripcion is 1 or 2 ? "ok" : "warn";
+}
+@* Firma: FRANCO LARA - 21/07/2026 | Reporte HTML imprimible de información, límites, cobros e historial por complejo deportivo. *@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Reporte comercial - @item.NombreComercial</title>
+    <partial name="_ReportePrintStyles" />
+</head>
+<body>
+    <nav class="print-toolbar" aria-label="Acciones del reporte">
+        <button type="button" onclick="window.print()">Imprimir documento</button>
+        <button type="button" class="secondary" onclick="window.close()">Cerrar</button>
+    </nav>
+
+    <main class="report-document">
+        <section class="report-page">
+            <header class="report-header">
+                <div>
+                    <span class="report-eyebrow">Super Admin · Gestión comercial</span>
+                    <h1>@item.NombreComercial</h1>
+                    <p>Información de suscripción, límites operativos, cobros e historial comercial.</p>
+                </div>
+                <div class="report-issue">
+                    <span>Documento emitido</span><strong>@Model.FechaGeneracion.ToString("dd/MM/yyyy HH:mm")</strong>
+                    <span>Referencia</span><strong>COM-@item.NegocioId-@Model.FechaGeneracion.ToString("yyyyMMddHHmm")</strong>
+                    <span>Generado por</span><strong>@Model.GeneradoPor</strong>
+                </div>
+            </header>
+
+            <section class="metrics" aria-label="Resumen comercial">
+                <article class="metric"><span>Estado del contrato</span><strong>@item.EstadoSuscripcionNombre</strong><small>@(item.Activo ? "Complejo activo" : "Complejo inactivo")</small></article>
+                <article class="metric green"><span>Plan comercial</span><strong>@plan</strong><small>@(item.EsPrueba ? "Periodo de prueba" : item.TipoCobro ?? "Sin periodicidad")</small></article>
+                <article class="metric"><span>Cobrado acumulado</span><strong>S/ @item.MontoTotalCobrado.ToString("N2")</strong><small>@item.CantidadCobrosRegistrados cobro(s)</small></article>
+                <article class="metric amber"><span>Vigencia</span><strong>@(item.EsPrueba ? "Prueba" : item.TipoCobro ?? "-")</strong><small>@vigencia</small></article>
+            </section>
+
+            <header class="section-heading"><div><span class="section-kicker">Datos generales</span><h2>Información del complejo</h2></div><span class="status @estadoClase">@item.EstadoSuscripcionNombre</span></header>
+            <section class="info-grid">
+                <div class="info-item"><span>Fecha de registro</span><strong>@(item.FechaRegistro?.ToString("dd/MM/yyyy HH:mm") ?? "-")</strong></div>
+                <div class="info-item"><span>Nombre comercial</span><strong>@item.NombreComercial</strong></div>
+                <div class="info-item"><span>Identificador</span><strong>@item.NegocioId</strong></div>
+                <div class="info-item"><span>Correo de contacto</span><strong>@(item.CorreoContacto ?? "-")</strong></div>
+                <div class="info-item"><span>Teléfono de contacto</span><strong>@(item.TelefonoContacto ?? "-")</strong></div>
+                <div class="info-item"><span>Periodicidad</span><strong>@(item.EsPrueba ? "Prueba" : item.TipoCobro ?? "-")</strong></div>
+                <div class="info-item"><span>Límite de sedes</span><strong>@item.SedesPermitidas</strong></div>
+                <div class="info-item"><span>Límite de espacios</span><strong>@item.EspaciosPermitidos</strong></div>
+                <div class="info-item"><span>Límite de usuarios</span><strong>@item.UsuariosPermitidos</strong></div>
+                <div class="info-item"><span>Inicio de vigencia</span><strong>@((item.EsPrueba ? item.FechaInicioPrueba : item.FechaInicioPlan)?.ToString("dd/MM/yyyy") ?? "-")</strong></div>
+                <div class="info-item"><span>Vencimiento</span><strong>@((item.EsPrueba ? item.FechaFinPrueba : item.FechaFinPlan)?.ToString("dd/MM/yyyy") ?? "-")</strong></div>
+                <div class="info-item"><span>Fin de gracia</span><strong>@(item.FechaFinGracia?.ToString("dd/MM/yyyy") ?? "-")</strong></div>
+            </section>
+
+            <header class="section-heading"><div><span class="section-kicker">Sección 01</span><h2>Cobros de suscripción</h2></div><p>@item.HistorialCobros.Count registros mostrados<br />Total pagado: S/ @item.MontoTotalCobrado.ToString("N2")</p></header>
+            @if (item.HistorialCobros.Count == 0)
+            {
+                <div class="empty">No existen cobros registrados para este complejo deportivo.</div>
+            }
+            else
+            {
+                <table>
+                    <thead><tr><th>Fecha</th><th>Estado</th><th>Medio de pago</th><th>Plan / periodicidad</th><th>Límites aplicados</th><th>Operación / entidad</th><th>Aplicación</th><th class="text-end">Monto</th></tr></thead>
+                    <tbody>
+                    @foreach (var pago in item.HistorialCobros.OrderByDescending(x => x.FechaPago))
+                    {
+                        <tr>
+                            <td class="nowrap"><span class="strong">@pago.FechaPago.ToString("dd/MM/yyyy")</span><br /><span class="muted">@pago.FechaPago.ToString("HH:mm")</span></td>
+                            <td><span class="status @(pago.EstadoPago == "PAGADO" ? "ok" : "warn")">@pago.EstadoPago</span></td>
+                            <td>@pago.TipoPago</td>
+                            <td><span class="strong">@(pago.PlanComercialObjetivo ?? "-")</span><br /><span class="muted">@(pago.TipoCobroObjetivo ?? "-")</span></td>
+                            <td>S: @(pago.SedesPermitidasObjetivo?.ToString() ?? "-") · E: @(pago.EspaciosPermitidosObjetivo?.ToString() ?? "-") · U: @(pago.UsuariosPermitidosObjetivo?.ToString() ?? "-")</td>
+                            <td>@(pago.OperacionNumero ?? "-")<br /><span class="muted">@(pago.EntidadFinanciera ?? "-")</span></td>
+                            <td>@(pago.AplicadoSuscripcion ? "Aplicado" : pago.AplicarAlConfirmar ? "Por aplicar" : "No aplica")</td>
+                            <td class="text-end strong nowrap">@pago.Moneda @pago.Monto.ToString("N2")</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            }
+
+            <header class="section-heading"><div><span class="section-kicker">Sección 02</span><h2>Historial comercial</h2></div><p>@item.HistorialComercial.Count movimientos mostrados</p></header>
+            @if (item.HistorialComercial.Count == 0)
+            {
+                <div class="empty">No existen movimientos comerciales registrados.</div>
+            }
+            else
+            {
+                <table>
+                    <thead><tr><th>Fecha</th><th>Movimiento</th><th>Plan anterior → nuevo</th><th>Periodicidad anterior → nueva</th><th>Límites anteriores → nuevos</th><th>Vigencia</th><th>Observación</th><th>Usuario</th></tr></thead>
+                    <tbody>
+                    @foreach (var mov in item.HistorialComercial.OrderByDescending(x => x.FechaCreacion))
+                    {
+                        <tr>
+                            <td class="nowrap">@mov.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td class="strong">@mov.TipoMovimientoNombre</td>
+                            <td>@(mov.PlanComercialAnterior ?? "-") → @(mov.PlanComercialNuevo ?? "-")</td>
+                            <td>@(mov.TipoCobroAnterior ?? "-") → @(mov.TipoCobroNuevo ?? "-")</td>
+                            <td>S:@(mov.SedesPermitidasAnterior?.ToString() ?? "-") E:@(mov.EspaciosPermitidosAnterior?.ToString() ?? "-") U:@(mov.UsuariosPermitidosAnterior?.ToString() ?? "-") → S:@(mov.SedesPermitidasNuevo?.ToString() ?? "-") E:@(mov.EspaciosPermitidosNuevo?.ToString() ?? "-") U:@(mov.UsuariosPermitidosNuevo?.ToString() ?? "-")</td>
+                            <td>@(mov.FechaInicioReferencia?.ToString("dd/MM/yyyy") ?? "-") - @(mov.FechaFinReferencia?.ToString("dd/MM/yyyy") ?? "-")</td>
+                            <td>@(mov.Observacion ?? "-")</td>
+                            <td>@(mov.UsuarioCreacion ?? "-")</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            }
+
+            <footer class="report-footer"><span>La Zona Deportiva · Reporte comercial por complejo</span><span>@item.NombreComercial</span></footer>
+        </section>
+    </main>
+    <script>window.addEventListener('load', function () { window.setTimeout(function () { window.print(); }, 250); });</script>
+</body>
+</html>

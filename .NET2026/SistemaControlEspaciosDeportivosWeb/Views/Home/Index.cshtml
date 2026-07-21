@@ -3,6 +3,8 @@
 @using System.Linq
 @using System.Globalization
 @using System
+@* Firma: FRANCO LARA - 20/07/2026 | Agrega planes comerciales publicos, limites visibles y accesos de registro para complejos deportivos. *@
+@* Firma: FRANCO LARA - 21/07/2026 | Renombra los planes, muestra sus beneficios, ubica preguntas frecuentes debajo de la tarjeta Esencial y reorganiza el pie público. *@
 
 @{
     ViewData["Title"] = "Portal deportivo";
@@ -667,6 +669,78 @@
             <p>@Model.PortalConfig.Beneficio6Detalle</p>
         </article>
     </div>
+
+    <section class="home-pricing-section" aria-labelledby="home-pricing-title">
+        <header class="home-pricing-head">
+            <span class="home-section-kicker"><i class="bi bi-stars"></i>Planes de suscripcion</span>
+            <h2 id="home-pricing-title">Elige el plan que acompaña el crecimiento de tu complejo</h2>
+            <p>Comienza con lo esencial y amplía tu operación cuando lo necesites.</p>
+        </header>
+
+        <div class="home-pricing-grid">
+            <div class="home-plan-column">
+              <article class="home-plan-card home-plan-card--free">
+                <h3>Prueba</h3>
+                <p class="home-plan-price"><span>S/</span>0 <small>por 15 días</small></p>
+                <p class="home-plan-description">Conoce la plataforma y organiza la operación de tu primer espacio deportivo.</p>
+                <a class="home-plan-button home-plan-button--free" asp-area="Identity" asp-page="/Account/Register" asp-route-TipoRegistro="club" asp-route-plan="PRUEBA">Comenzar prueba</a>
+                <ul class="home-plan-limits">
+                    <li><i class="bi bi-person-check"></i>1 usuario</li>
+                    <li><i class="bi bi-buildings"></i>1 sede</li>
+                    <li><i class="bi bi-grid-3x3-gap"></i>1 espacio deportivo</li>
+                    <li><i class="bi bi-calendar-check"></i>Reservas, clientes y pagos</li>
+                </ul>
+                <ul class="home-plan-includes">
+                    <li>Agenda por horario y control de disponibilidad.</li>
+                    <li>Gestión de clientes, adelantos y saldos.</li>
+                    <li>Dashboard y reportes operativos base.</li>
+                </ul>
+              </article>
+            </div>
+
+            <div class="home-plan-column">
+              <article class="home-plan-card home-plan-card--entrepreneur">
+                <div class="home-plan-heading"><h3>Esencial</h3><span>Más elegido</span></div>
+                <p class="home-plan-price"><span>S/</span>49.90 <small>PEN / mes</small></p>
+                <p class="home-plan-description">Más capacidad para complejos que ya administran varias canchas.</p>
+                <a class="home-plan-button home-plan-button--entrepreneur" asp-area="Identity" asp-page="/Account/Register" asp-route-TipoRegistro="club" asp-route-plan="ESENCIAL">Elegir Esencial</a>
+                <ul class="home-plan-limits">
+                    <li><i class="bi bi-person-check"></i>Hasta 2 usuarios</li>
+                    <li><i class="bi bi-buildings"></i>1 sede</li>
+                    <li><i class="bi bi-grid-3x3-gap"></i>Hasta 5 espacios deportivos</li>
+                    <li><i class="bi bi-bar-chart"></i>Reportes de ocupación e ingresos</li>
+                </ul>
+                <ul class="home-plan-includes">
+                    <li>Todo lo incluido en Prueba.</li>
+                    <li>Roles y permisos para el equipo operativo.</li>
+                    <li>Horarios, tarifas y fechas no laborables por sede.</li>
+                </ul>
+              </article>
+              <a class="home-plan-button home-plan-button--faq" asp-area="" asp-controller="Home" asp-action="Faq">Preguntas Frecuentes</a>
+            </div>
+
+            <div class="home-plan-column">
+              <article class="home-plan-card home-plan-card--professional">
+                <div class="home-plan-heading"><h3>Pro</h3><span>Recomendado</span></div>
+                <p class="home-plan-price"><span>S/</span>99.90 <small>PEN / mes</small></p>
+                <p class="home-plan-description">La operación completa para complejos multisede y servicios comerciales avanzados.</p>
+                <a class="home-plan-button home-plan-button--professional" asp-area="Identity" asp-page="/Account/Register" asp-route-TipoRegistro="club" asp-route-plan="PRO">Elegir Pro</a>
+                <ul class="home-plan-limits">
+                    <li><i class="bi bi-person-check"></i>Hasta 3 usuarios</li>
+                    <li><i class="bi bi-buildings"></i>Hasta 3 sedes</li>
+                    <li><i class="bi bi-grid-3x3-gap"></i>Hasta 12 espacios deportivos</li>
+                    <li><i class="bi bi-receipt"></i>Promociones, cupones y comprobantes</li>
+                </ul>
+                <ul class="home-plan-includes">
+                    <li>Todo lo incluido en Esencial.</li>
+                    <li>Promociones por sede, fecha, espacio y horario.</li>
+                    <li>Cupones con vigencia, restricciones y control de uso.</li>
+                    <li>Emisión y consulta de comprobantes electrónicos.</li>
+                </ul>
+              </article>
+            </div>
+        </div>
+    </section>
 </section>
 
 </div>
@@ -728,6 +802,12 @@
                         </a>
                     }
                 </div>
+                <p class="home-platform-powered">Powered by Fralse Tech S.A.C. · RUC 20616070186</p>
+            </div>
+            <div class="col-12 home-platform-legal">
+                <a asp-controller="Legal" asp-action="Terminos">Términos y condiciones</a>
+                <a asp-controller="Legal" asp-action="Privacidad">Política de privacidad</a>
+                <a asp-controller="Legal" asp-action="Cancelaciones">Cancelaciones y devoluciones</a>
             </div>
         </div>
     </div>

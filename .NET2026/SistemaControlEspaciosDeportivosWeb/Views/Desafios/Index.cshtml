@@ -7,6 +7,7 @@
         .ToList();
     string EstadoClave(string? estado) => string.IsNullOrWhiteSpace(estado) ? "sin-estado" : estado.Trim().ToLowerInvariant();
 }
+@* Firma: FRANCO LARA - 21/07/2026 | Renombra el acceso del perfil a Preguntas Frecuentes. *@
 <div class="container py-4 desafios-page">
     <header class="desafios-hero">
         <div>
@@ -47,7 +48,7 @@
         </a>
         <a class="profile-tab-item" asp-controller="PerfilPublico" asp-action="FaqUsuario">
             <i class="bi bi-patch-question"></i>
-            <span>FAQ usuario</span>
+            <span>Preguntas Frecuentes</span>
         </a>
     </nav>
 

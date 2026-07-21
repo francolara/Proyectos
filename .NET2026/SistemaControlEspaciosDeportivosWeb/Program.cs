@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using SistemaControlEspaciosDeportivosWeb.Data;
+using SistemaControlEspaciosDeportivosWeb.Configuration;
 using SistemaControlEspaciosDeportivosWeb.Models;
 using SistemaControlEspaciosDeportivosWeb.Services;
 using System.Net.Http.Headers;
@@ -13,6 +14,9 @@ using System.IO;
 using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.Configure<BusinessInformationOptions>(builder.Configuration.GetSection(BusinessInformationOptions.SectionName));
+builder.Services.Configure<LegalDocumentsOptions>(builder.Configuration.GetSection(LegalDocumentsOptions.SectionName));
 
 // En desarrollo, forzamos User Secrets al final para que tenga prioridad
 // sobre valores anteriores de appsettings/perfiles locales.
@@ -37,9 +41,15 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
+var identityBehaviorSettings = builder.Configuration
+    .GetSection(IdentityBehaviorSettings.SectionName)
+    .Get<IdentityBehaviorSettings>() ?? new IdentityBehaviorSettings();
+builder.Services.Configure<IdentityBehaviorSettings>(
+    builder.Configuration.GetSection(IdentityBehaviorSettings.SectionName));
+
 builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
     {
-        options.SignIn.RequireConfirmedAccount = true;
+        options.SignIn.RequireConfirmedAccount = identityBehaviorSettings.RequireConfirmedAccount;
 
         options.Password.RequiredLength = 8;
         options.Password.RequireDigit = true;

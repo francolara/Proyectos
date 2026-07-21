@@ -1,0 +1,87 @@
+@model SistemaControlEspaciosDeportivosWeb.ViewModels.PlataformaDashboardReporteViewModel
+@{
+    Layout = null;
+    var resumen = Model.Resumen;
+    var totalSolicitudes = resumen.TotalSolicitudesPendientes + resumen.TotalSolicitudesAprobadas + resumen.TotalSolicitudesRechazadas;
+    var totalReferenciales = resumen.TotalReferencialesActivos + resumen.TotalReferencialesInactivos;
+}
+@* Firma: FRANCO LARA - 21/07/2026 | Reporte HTML imprimible del dashboard global del Super Admin. *@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Reporte del dashboard global</title>
+    <partial name="_ReportePrintStyles" />
+</head>
+<body>
+    <nav class="print-toolbar" aria-label="Acciones del reporte">
+        <button type="button" onclick="window.print()">Imprimir documento</button>
+        <button type="button" class="secondary" onclick="window.close()">Cerrar</button>
+    </nav>
+    <main class="report-document">
+        <section class="report-page">
+            <header class="report-header">
+                <div>
+                    <span class="report-eyebrow">Super Admin · Control global</span>
+                    <h1>Reporte del dashboard de plataforma</h1>
+                    <p>Resumen operativo del ecosistema comercial, contenido y altas.</p>
+                </div>
+                <div class="report-issue">
+                    <span>Fecha de corte</span><strong>@Model.FechaGeneracion.ToString("dd/MM/yyyy HH:mm")</strong>
+                    <span>Referencia</span><strong>DASH-@Model.FechaGeneracion.ToString("yyyyMMddHHmm")</strong>
+                    <span>Generado por</span><strong>@Model.GeneradoPor</strong>
+                </div>
+            </header>
+
+            <section class="metrics" aria-label="Indicadores principales">
+                <article class="metric"><span>Complejos totales</span><strong>@resumen.TotalNegocios</strong><small>Base registrada</small></article>
+                <article class="metric green"><span>Contratos vigentes</span><strong>@resumen.NegociosConContrato</strong><small>Planes activos</small></article>
+                <article class="metric amber"><span>Complejos en prueba</span><strong>@resumen.NegociosEnPrueba</strong><small>Periodos demo vigentes</small></article>
+                <article class="metric red"><span>Complejos vencidos</span><strong>@resumen.NegociosVencidos</strong><small>Requieren reactivación</small></article>
+            </section>
+
+            <header class="section-heading"><div><span class="section-kicker">Gestión comercial</span><h2>Estado de complejos deportivos</h2></div><p>@resumen.TotalNegocios complejos registrados</p></header>
+            <table>
+                <thead><tr><th>Estado</th><th class="text-end">Cantidad</th><th class="text-end">Participación</th><th>Lectura operativa</th></tr></thead>
+                <tbody>
+                    <tr><td class="strong">Contrato vigente</td><td class="text-end">@resumen.NegociosConContrato</td><td class="text-end">@((resumen.TotalNegocios > 0 ? resumen.NegociosConContrato * 100m / resumen.TotalNegocios : 0m).ToString("N1"))%</td><td>Complejos con suscripción comercial activa.</td></tr>
+                    <tr><td class="strong">Periodo de prueba</td><td class="text-end">@resumen.NegociosEnPrueba</td><td class="text-end">@((resumen.TotalNegocios > 0 ? resumen.NegociosEnPrueba * 100m / resumen.TotalNegocios : 0m).ToString("N1"))%</td><td>Complejos en evaluación de la plataforma.</td></tr>
+                    <tr><td class="strong">Vencido</td><td class="text-end">@resumen.NegociosVencidos</td><td class="text-end">@((resumen.TotalNegocios > 0 ? resumen.NegociosVencidos * 100m / resumen.TotalNegocios : 0m).ToString("N1"))%</td><td>Complejos sin vigencia comercial actual.</td></tr>
+                </tbody>
+            </table>
+
+            <header class="section-heading"><div><span class="section-kicker">Altas y contenido</span><h2>Indicadores globales</h2></div><p>Situación a la fecha de emisión</p></header>
+            <section class="info-grid">
+                <div class="info-item"><span>Solicitudes totales</span><strong>@totalSolicitudes</strong></div>
+                <div class="info-item"><span>Solicitudes pendientes</span><strong>@resumen.TotalSolicitudesPendientes</strong></div>
+                <div class="info-item"><span>Solicitudes aprobadas</span><strong>@resumen.TotalSolicitudesAprobadas</strong></div>
+                <div class="info-item"><span>Solicitudes rechazadas</span><strong>@resumen.TotalSolicitudesRechazadas</strong></div>
+                <div class="info-item"><span>Referenciales totales</span><strong>@totalReferenciales</strong></div>
+                <div class="info-item"><span>Referenciales activos</span><strong>@resumen.TotalReferencialesActivos</strong></div>
+                <div class="info-item"><span>Banners totales</span><strong>@resumen.TotalBanners</strong></div>
+                <div class="info-item"><span>Banners activos</span><strong>@resumen.BannersActivos</strong></div>
+                <div class="info-item"><span>Banners inactivos</span><strong>@resumen.BannersInactivos</strong></div>
+                <div class="info-item"><span>Anuncios totales</span><strong>@resumen.TotalAnuncios</strong></div>
+                <div class="info-item"><span>Anuncios activos</span><strong>@resumen.AnunciosActivos</strong></div>
+                <div class="info-item"><span>Anuncios vigentes hoy</span><strong>@resumen.AnunciosVigentesHoy</strong></div>
+            </section>
+
+            <header class="section-heading"><div><span class="section-kicker">Lectura ejecutiva</span><h2>Distribución de solicitudes y publicaciones</h2></div></header>
+            <table>
+                <thead><tr><th>Bloque</th><th>Estado</th><th class="text-end">Cantidad</th><th class="text-end">Participación</th></tr></thead>
+                <tbody>
+                    <tr><td rowspan="3" class="strong">Solicitudes de alta</td><td>Pendientes</td><td class="text-end">@resumen.TotalSolicitudesPendientes</td><td class="text-end">@((totalSolicitudes > 0 ? resumen.TotalSolicitudesPendientes * 100m / totalSolicitudes : 0m).ToString("N1"))%</td></tr>
+                    <tr><td>Aprobadas</td><td class="text-end">@resumen.TotalSolicitudesAprobadas</td><td class="text-end">@((totalSolicitudes > 0 ? resumen.TotalSolicitudesAprobadas * 100m / totalSolicitudes : 0m).ToString("N1"))%</td></tr>
+                    <tr><td>Rechazadas</td><td class="text-end">@resumen.TotalSolicitudesRechazadas</td><td class="text-end">@((totalSolicitudes > 0 ? resumen.TotalSolicitudesRechazadas * 100m / totalSolicitudes : 0m).ToString("N1"))%</td></tr>
+                    <tr><td rowspan="2" class="strong">Referenciales externos</td><td>Activos</td><td class="text-end">@resumen.TotalReferencialesActivos</td><td class="text-end">@((totalReferenciales > 0 ? resumen.TotalReferencialesActivos * 100m / totalReferenciales : 0m).ToString("N1"))%</td></tr>
+                    <tr><td>Inactivos</td><td class="text-end">@resumen.TotalReferencialesInactivos</td><td class="text-end">@((totalReferenciales > 0 ? resumen.TotalReferencialesInactivos * 100m / totalReferenciales : 0m).ToString("N1"))%</td></tr>
+                </tbody>
+            </table>
+
+            <footer class="report-footer"><span>La Zona Deportiva · Reporte global del Super Admin</span><span>Fecha de corte: @Model.FechaGeneracion.ToString("dd/MM/yyyy HH:mm")</span></footer>
+        </section>
+    </main>
+    <script>window.addEventListener('load', function () { window.setTimeout(function () { window.print(); }, 250); });</script>
+</body>
+</html>
