@@ -1,0 +1,17 @@
+{
+  "UrlWorker": "https://sistema-visual-api.larasoft-dev.workers.dev/api/archivos",
+  "DominioDescargas": "https://actualizaciones.fralsetech.com",
+  "NombreBucket": "sistemavisual-actualizaciones",
+  "PrefijoRemoto": "PROVEEPERU/Sistema Visual/",
+  "CarpetaLocal": "C:\\Sistema Visual",
+  "EjecutablePrincipal": "Ventas.exe",
+  "CarpetaTemporal": ".actualizador\\temporal",
+  "CarpetaRespaldo": "Respaldo",
+  "CarpetasExcluidas": [
+    "Respaldo",
+    ".actualizador"
+  ],
+  "TimeoutSegundos": 60,
+  "MaximoReintentos": 3,
+  "EsperaCierreVentasSegundos": 15
+}

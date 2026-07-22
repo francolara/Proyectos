@@ -1,0 +1,29 @@
+INSTRUCCIONES LOCALES OBLIGATORIAS PARA SISTEMAVISUAL
+
+1. Antes de modificar este proyecto, leer completamente:
+   - Instrucciones_Codex_SistemaVisual.txt
+   - DOCUMENTACION_FUNCIONAL_SISTEMAVISUAL.md
+
+2. Mantener sincronizadas la implementación y DOCUMENTACION_FUNCIONAL_SISTEMAVISUAL.md. Si cambia una regla funcional, configuración, ruta, endpoint, proceso del Worker, instalación, actualización, respaldo, seguridad o modo sin conexión, actualizar también la documentación.
+
+3. Después de cualquier cambio dentro de SistemaVisual o de un cambio relacionado en CloudflareWorkerSistemaVisual, ejecutar desde la carpeta SistemaVisual:
+
+   powershell -ExecutionPolicy Bypass -File .\GenerarInstalador.ps1
+
+4. La tarea no se considera terminada si no se cumplen todos estos puntos:
+   - SistemaVisual compila en Release.
+   - La prueba de integración termina correctamente.
+   - Inno Setup compila sin errores.
+   - Se regenera Salida\InstaladorSistemaVisual.exe.
+   - Se informa la ruta, tamaño y SHA-256 del instalador generado.
+
+5. No omitir la generación del instalador aunque el cambio parezca pequeño o solo afecte configuración, pruebas, Worker o documentación, salvo indicación expresa del usuario.
+
+6. Conservar los archivos de texto en UTF-8 sin BOM y con finales de línea CRLF. Evitar reformateos masivos ajenos al cambio.
+
+7. No incluir credenciales, tokens, secretos de Cloudflare ni claves R2 en el código, la configuración, la documentación o el instalador.
+
+8. No ejecutar, instalar ni desinstalar el instalador generado en la computadora de trabajo sin autorización expresa. Compilarlo y verificar su hash sí es obligatorio.
+
+9. No realizar commit ni push sin autorización expresa del usuario. Si se autoriza un commit, su mensaje debe comenzar con el prefijo codex\.
+

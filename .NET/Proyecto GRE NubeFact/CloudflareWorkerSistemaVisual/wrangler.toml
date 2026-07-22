@@ -1,0 +1,11 @@
+name = "sistema-visual-api"
+main = "src/index.js"
+compatibility_date = "2026-07-21"
+
+[vars]
+PREFIJO_REMOTO = "PROVEEPERU/Sistema Visual/"
+DOMINIO_PUBLICO = "https://actualizaciones.fralsetech.com"
+
+[[r2_buckets]]
+binding = "SISTEMA_VISUAL_BUCKET"
+bucket_name = "sistemavisual-actualizaciones"
