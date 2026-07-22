@@ -2,6 +2,7 @@
 
 @* Firma: FRANCO LARA - 06/07/2026 | Agrega al listado de asientos la columna visible de moneda equivalente usando TotalImporteS y TotalImporteD segun la moneda del asiento. *@
 @* Firma: FRANCO LARA - 09/07/2026 | Reemplaza la columna Soles / Dolares por Tipo de cambio y uniformiza la columna de acciones del listado de asientos. *@
+@* Firma: FRANCO LARA - 21/07/2026 | Ajusta la impresion del voucher contable para abrirse en la misma pestana del listado de asientos. *@
 
 @* Firma: FRANCO LARA - 02/07/2026 | Corrige la seleccion visible de año y mes en asientos para que el periodo mostrado respete el contexto devuelto por la opcion, incorpora los 16 periodos contables del libro diario y bloquea la eliminacion directa de asientos automaticos manteniendo el acceso por clic en la fila. *@
 
@@ -152,7 +153,7 @@
                                     <td class="text-end">
                                         <div class="workspace-row-actions-compact asiento-row-actions">
                                             <a asp-action="Editar" asp-route-periodo="@Model.PeriodoConsulta" asp-route-idAsiento="@asiento.IdAsiento" class="workspace-row-btn workspace-row-btn-primary">Editar</a>
-                                            <a asp-controller="Reporte" asp-action="VoucherContable" asp-route-idAsiento="@asiento.IdAsiento" class="workspace-row-btn workspace-row-btn-secondary" target="_blank" rel="noopener">Imprimir</a>
+                                            <a asp-controller="Reporte" asp-action="VoucherContable" asp-route-idAsiento="@asiento.IdAsiento" class="workspace-row-btn workspace-row-btn-secondary">Imprimir</a>
                                             @if (asiento.PermiteRegistroManual)
                                             {
                                                 <form asp-action="Eliminar" method="post" onsubmit="return confirm('Se eliminara el asiento seleccionado. ¿Desea continuar?');">

@@ -1,6 +1,7 @@
 @model SistemaAdministrativoWeb.ViewModels.Panel.PanelIndexViewModel
 @* Firma: FRANCO LARA - 07/07/2026 | Integra el acceso rapido del panel para el nuevo modulo Libros Electronicos manteniendo la navegacion administrativa existente. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Reestructura el dashboard con KPIs reales del periodo, indicadores operativos, tendencias de compras y ventas y graficos CSS para distribucion de registros por modulo, movimientos bancarios y aplicaciones. *@
+@* Firma: FRANCO LARA - 21/07/2026 | Agrega la impresion HTML del dashboard en formato ejecutivo A4 horizontal, con KPIs, indicadores, tendencias y distribucion del periodo. *@
 @{
     ViewData["Title"] = "Panel administrativo";
     ViewData["AdminShell"] = true;
@@ -24,12 +25,31 @@
         : string.Join(", ", donutStops);
 }
 
-<section class="dashboard-shell">
+<section class="dashboard-shell dashboard-print-page">
+    <header class="dashboard-print-header">
+        <div>
+            <span>Reporte ejecutivo</span>
+            <strong>@Model.NombreEmpresa</strong>
+            <small>Dashboard administrativo</small>
+        </div>
+        <div>
+            <span>Periodo</span>
+            <strong>@Model.PeriodoActual</strong>
+            <small>@Model.EstadoPeriodo</small>
+        </div>
+    </header>
+
     <section class="dashboard-hero">
         <div>
             <span class="dashboard-kicker">Resumen ejecutivo</span>
             <h1>@Model.NombreEmpresa</h1>
             <p>Vista central del periodo @Model.PeriodoActual con foco en compras, ventas, asientos e indicadores de registro para la empresa activa.</p>
+            <div class="dashboard-print-actions no-print">
+                <button type="button" class="btn btn-light" onclick="window.print()">
+                    <i class="bi bi-printer"></i>
+                    Imprimir dashboard
+                </button>
+            </div>
         </div>
         <article class="dashboard-status-card">
             <span>Estado del panel</span>

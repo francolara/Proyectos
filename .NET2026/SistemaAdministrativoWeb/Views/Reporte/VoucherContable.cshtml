@@ -1,6 +1,7 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.VoucherContableViewModel
 
 @* Firma: FRANCO LARA - 11/07/2026 | Crea el voucher contable HTML A4 inspirado en rptVoucherContableA4 del legacy, reutilizando el asiento actual y habilitando impresion directa. *@
+@* Firma: FRANCO LARA - 21/07/2026 | Corrige la impresion A4 del voucher, conserva la cabecera y tarjetas en formato horizontal, compacta el contenido, evita heredar el modo oscuro y permite volver al listado del mismo periodo. *@
 
 @{
     ViewData["Title"] = "Voucher contable";
@@ -224,6 +225,155 @@
             display: grid;
         }
     }
+
+    @@page {
+        size: A4 portrait;
+        margin: 10mm;
+    }
+
+    @@media print {
+        .voucher-sheet {
+            width: 100%;
+            max-width: none;
+            color: #0f172a !important;
+            background: #fff !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+        }
+
+        .voucher-header {
+            display: flex !important;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.55rem 0.7rem;
+            color: #0f172a !important;
+            background: #fff !important;
+            border-bottom-color: rgba(100, 116, 139, 0.3) !important;
+        }
+
+        .voucher-header > div:last-child {
+            margin-left: auto;
+            text-align: right !important;
+        }
+
+        .voucher-header strong,
+        .voucher-title,
+        .voucher-meta-card strong,
+        .voucher-glosa-box strong,
+        .voucher-note-box strong,
+        .voucher-note-box div {
+            color: #0f172a !important;
+        }
+
+        .voucher-header span,
+        .voucher-meta-card span,
+        .voucher-glosa-box span,
+        .voucher-note-box span {
+            color: #52607a !important;
+        }
+
+        .voucher-title {
+            margin-top: 0.2rem;
+            font-size: 1.05rem;
+        }
+
+        .voucher-meta-grid {
+            display: grid !important;
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+            gap: 0.35rem;
+            padding: 0.5rem 0.7rem 0;
+        }
+
+        .voucher-meta-card,
+        .voucher-glosa-box,
+        .voucher-note-box {
+            color: #0f172a !important;
+            background: #fff !important;
+            border-color: rgba(100, 116, 139, 0.28) !important;
+            border-radius: 0.35rem;
+        }
+
+        .voucher-meta-card {
+            padding: 0.4rem 0.5rem;
+        }
+
+        .voucher-meta-card span,
+        .voucher-glosa-box span,
+        .voucher-note-box span {
+            margin-bottom: 0.15rem;
+            font-size: 0.58rem;
+        }
+
+        .voucher-meta-card strong,
+        .voucher-glosa-box strong,
+        .voucher-note-box strong,
+        .voucher-note-box div {
+            font-size: 0.72rem;
+        }
+
+        .voucher-glosa {
+            padding: 0.35rem 0.7rem 0;
+        }
+
+        .voucher-glosa-box {
+            padding: 0.4rem 0.5rem;
+        }
+
+        .voucher-table-wrap {
+            padding: 0.45rem 0.7rem 0.55rem;
+        }
+
+        .voucher-table {
+            margin-bottom: 0;
+            font-size: 0.56rem;
+        }
+
+        .voucher-table thead th,
+        .voucher-table tbody td,
+        .voucher-table tfoot td {
+            padding: 0.22rem 0.18rem;
+            color: #0f172a !important;
+            border-color: rgba(100, 116, 139, 0.32) !important;
+        }
+
+        .voucher-table thead th,
+        .voucher-table tfoot td {
+            background: #f2f5fb !important;
+        }
+
+        .voucher-table .voucher-account strong,
+        .voucher-table .voucher-doc strong {
+            color: #0f172a !important;
+            font-size: 0.58rem;
+        }
+
+        .voucher-table .voucher-account div,
+        .voucher-table .voucher-doc div {
+            color: #52607a !important;
+            font-size: 0.52rem;
+        }
+
+        .voucher-notes {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 0.35rem;
+            padding: 0 0.7rem 0.25rem;
+        }
+
+        .voucher-note-box {
+            min-height: 3rem;
+            padding: 0.45rem 0.5rem;
+        }
+
+        .voucher-meta-card,
+        .voucher-glosa-box,
+        .voucher-note-box,
+        .voucher-table tr {
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+    }
 </style>
 
 <section class="dashboard-shell">
@@ -243,7 +393,11 @@
         <div class="workspace-window-body">
             <section class="workspace-report-sheet voucher-sheet">
                 <div class="report-action-bar no-print">
-                    <a asp-controller="Asiento" asp-action="Editar" asp-route-idAsiento="@Model.IdAsiento" asp-route-periodo="@Model.Periodo" class="btn btn-outline-secondary">Volver al asiento</a>
+                    <a asp-controller="Asiento"
+                       asp-action="Index"
+                       asp-route-anio="@Model.FechaEmision.Year"
+                       asp-route-mes="@Model.FechaEmision.Month"
+                       class="btn btn-outline-secondary">Volver al listado</a>
                     <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Imprimir</button>
                 </div>
 

@@ -2,6 +2,7 @@
 
 @* Firma: FRANCO LARA - 07/07/2026 | Crea el reporte HTML Balance de comprobacion replicando FrmBalanceComprobacion del legacy, corrige la presentacion para seguir el formato compacto tipo rptBalanceComprobacionA4, agrega impresion directa y ajusta nombres/columnas para alinearlo mejor al formato A4 legacy. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Corrige el envio por GET de los checks de filtros para que conserven el estado desmarcado al consultar el balance, apliquen correctamente los rangos configurados y actualiza el subtitulo del reporte. *@
+@* Firma: FRANCO LARA - 21/07/2026 | Corrige la impresion del Balance de comprobacion en A4 horizontal, compacta cabecera y tabla y evita heredar el modo oscuro. *@
 
 @{
     ViewData["Title"] = "Balance de comprobación";
@@ -128,7 +129,7 @@
 
             @if (Model.Resultados.Count > 0)
             {
-                <section class="workspace-report-sheet balance-a4-sheet mt-4">
+                <section class="workspace-report-sheet balance-a4-sheet report-landscape-page mt-4">
                     <div class="report-action-bar no-print">
                         <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Imprimir</button>
                     </div>

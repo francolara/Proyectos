@@ -2,6 +2,7 @@
 
 @* Firma: FRANCO LARA - 07/07/2026 | Mantiene el reporte HTML Libro Diario, adapta su visualizacion al formato compacto tipo hoja A4 de los reportes legacy y agrega impresion directa en pantalla. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Ajusta Libro Diario para trabajar siempre en soles, elimina filtros de moneda y origen, y separa las vistas Diario auxiliar, Por Cuenta y Por Origen. *@
+@* Firma: FRANCO LARA - 21/07/2026 | Corrige la impresion del Libro Diario en A4 horizontal, compacta cabecera y tablas y evita heredar el modo oscuro. *@
 
 @{
     ViewData["Title"] = "Libro Diario";
@@ -80,7 +81,7 @@
 
             @if (Model.Resultados.Count > 0)
             {
-                <section class="workspace-report-sheet report-ledger-sheet mt-4">
+                <section class="workspace-report-sheet report-ledger-sheet report-landscape-page mt-4">
                     <div class="report-action-bar no-print">
                         <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Imprimir</button>
                     </div>

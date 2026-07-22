@@ -4,6 +4,7 @@
     ViewData["MetaDescription"] = Model.MetaDescription;
 }
 @* Firma: FRANCO LARA - 10/07/2026 | Crea la politica publica de cancelaciones y devoluciones de FralseCont con contacto centralizado y fondo legal claro por pagina. *@
+@* Firma: FRANCO LARA - 22/07/2026 | Retira los enlaces internos a Terminos y Privacidad y centra el acceso para volver al inicio. *@
 
 <section class="fralsecont-legal-page fralsecont-legal-page--cancellations">
     <div class="fralsecont-legal-container">
@@ -102,11 +103,8 @@
             <section id="modificacion-politica" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">26. Modificacion de la politica</h2><p>FralseCont puede actualizar esta politica para reflejar cambios operativos, comerciales, legales o tecnicos. La version vigente sera la publicada por los medios oficiales disponibles.</p></section>
         </div>
 
-        <div class="fralsecont-legal-links">
-            <a asp-controller="Legal" asp-action="Terminos">Ir a Terminos y condiciones</a>
-            <a asp-controller="Legal" asp-action="Privacidad">Ir a Politica de privacidad</a>
+        <div class="d-flex justify-content-center">
+            <a class="fralsecont-legal-back-link" asp-controller="Home" asp-action="Index">Volver al inicio</a>
         </div>
-
-        <a class="fralsecont-legal-back-link" asp-controller="Home" asp-action="Index">Volver al inicio</a>
     </div>
 </section>

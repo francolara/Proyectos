@@ -2,6 +2,7 @@
 @model SistemaAdministrativoWeb.Areas.Identity.Pages.Account.LoginModel
 @* Firma: FRANCO LARA - 13/07/2026 | Agrega respaldo de captcha manual en login y prepara la derivacion al flujo de verificacion y cambio obligatorio para usuarios con contrasena temporal. *@
 @* Firma: FRANCO LARA - 14/07/2026 | Centra los enlaces inferiores del login y corrige Volver al inicio para redirigir al Home fuera del area Identity. *@
+@* Firma: FRANCO LARA - 22/07/2026 | Agrega el control accesible para mostrar u ocultar la contrasena durante el inicio de sesion. *@
 @{
     ViewData["Title"] = "Iniciar sesion";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -37,7 +38,17 @@
                 </div>
                 <div class="mb-3">
                     <label asp-for="Input.Password" class="form-label">Contrasena</label>
-                    <input asp-for="Input.Password" class="form-control" autocomplete="current-password" />
+                    <div class="auth-password-field">
+                        <input asp-for="Input.Password" class="form-control pe-5" autocomplete="current-password" />
+                        <button type="button"
+                                class="auth-password-toggle"
+                                data-password-toggle
+                                data-password-target="Input_Password"
+                                aria-label="Mostrar contrasena"
+                                aria-pressed="false">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
                     <span asp-validation-for="Input.Password" class="text-danger"></span>
                 </div>
                 <div class="form-check mb-3">

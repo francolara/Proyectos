@@ -4993,3 +4993,555 @@ html[data-theme="dark"] .text-dark {
     padding: 1.25rem;
   }
 }
+
+@page report-landscape {
+  size: A4 landscape;
+  margin: 8mm;
+}
+
+@page report-portrait {
+  size: A4 portrait;
+  margin: 10mm;
+}
+
+@page dashboard-landscape {
+  size: A4 landscape;
+  margin: 8mm;
+}
+
+.dashboard-print-header {
+  display: none;
+}
+
+.dashboard-print-actions {
+  margin-top: 1rem;
+}
+
+.dashboard-print-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 800;
+}
+
+/* Impresion: mantiene los reportes legibles sin heredar el tema oscuro ni controles del layout. */
+@media print {
+  html,
+  html[data-theme="dark"],
+  body {
+    --app-ink: #0f172a;
+    --app-muted: #52607a;
+    --app-line: rgba(100, 116, 139, 0.28);
+    --app-report-bg: #ffffff;
+    color: #0f172a !important;
+    background: #ffffff !important;
+  }
+
+  .app-context-toolbar,
+  .app-public-header,
+  .app-public-footer,
+  .fralsecont-whatsapp,
+  .workspace-loading-overlay {
+    display: none !important;
+  }
+
+  .workspace-report-sheet,
+  html[data-theme="dark"] .workspace-report-sheet {
+    color: #0f172a !important;
+    background: #ffffff !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .report-landscape-page {
+    page: report-landscape;
+  }
+
+  .report-portrait-page {
+    page: report-portrait;
+  }
+
+  .dashboard-print-page {
+    page: dashboard-landscape;
+    display: block !important;
+    color: #0f172a !important;
+    background: #ffffff !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .dashboard-print-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1rem;
+    align-items: end;
+    margin-bottom: 0.35rem;
+    padding-bottom: 0.35rem;
+    color: #0f172a;
+    border-bottom: 2px solid #1b5e4a;
+  }
+
+  .dashboard-print-header > div:last-child {
+    text-align: right;
+  }
+
+  .dashboard-print-header span,
+  .dashboard-print-header strong,
+  .dashboard-print-header small {
+    display: block;
+  }
+
+  .dashboard-print-header span {
+    color: #52607a;
+    font-size: 0.55rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .dashboard-print-header strong {
+    font-size: 0.9rem;
+  }
+
+  .dashboard-print-header small {
+    color: #52607a;
+    font-size: 0.58rem;
+  }
+
+  .dashboard-print-page .dashboard-hero {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 14rem !important;
+    gap: 0.6rem;
+    align-items: center;
+    margin: 0 0 0.4rem;
+    padding: 0.55rem 0.65rem;
+    color: #0f172a !important;
+    background: #f1f7f5 !important;
+    border: 1px solid rgba(27, 94, 74, 0.24) !important;
+    border-radius: 0.35rem;
+    box-shadow: none !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .dashboard-print-page .dashboard-kicker,
+  .dashboard-print-page .dashboard-hero span,
+  .dashboard-print-page .dashboard-hero p,
+  html[data-theme="dark"] .dashboard-print-page .dashboard-hero span,
+  html[data-theme="dark"] .dashboard-print-page .dashboard-hero p {
+    color: #52607a !important;
+  }
+
+  .dashboard-print-page .dashboard-hero h1,
+  .dashboard-print-page .dashboard-status-card strong,
+  html[data-theme="dark"] .dashboard-print-page .dashboard-hero h1,
+  html[data-theme="dark"] .dashboard-print-page .dashboard-status-card strong {
+    color: #0f172a !important;
+  }
+
+  .dashboard-print-page .dashboard-hero h1 {
+    margin: 0.1rem 0;
+    font-size: 1.15rem;
+  }
+
+  .dashboard-print-page .dashboard-hero p {
+    margin: 0;
+    font-size: 0.62rem;
+    line-height: 1.25;
+  }
+
+  .dashboard-print-page .dashboard-status-card,
+  html[data-theme="dark"] .dashboard-print-page .dashboard-status-card {
+    padding: 0.4rem 0.5rem;
+    color: #0f172a !important;
+    background: #ffffff !important;
+    border: 1px solid rgba(100, 116, 139, 0.24) !important;
+    border-radius: 0.3rem;
+    box-shadow: none !important;
+  }
+
+  .dashboard-print-page .dashboard-status-card span,
+  .dashboard-print-page .dashboard-status-card small {
+    font-size: 0.55rem;
+  }
+
+  .dashboard-print-page .dashboard-status-card strong {
+    font-size: 0.8rem;
+  }
+
+  .dashboard-print-page .dashboard-metrics {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 0.35rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .dashboard-print-page .dashboard-metric-card,
+  html[data-theme="dark"] .dashboard-print-page .dashboard-metric-card {
+    min-height: 0;
+    padding: 0.45rem 0.5rem;
+    color: #0f172a !important;
+    background: #ffffff !important;
+    border: 1px solid rgba(100, 116, 139, 0.24) !important;
+    border-radius: 0.35rem;
+    box-shadow: none !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .dashboard-print-page .dashboard-metric-card::before {
+    display: none;
+  }
+
+  .dashboard-print-page .dashboard-metric-card span,
+  .dashboard-print-page .dashboard-metric-card small,
+  .dashboard-print-page .dashboard-metric-amount-line label,
+  html[data-theme="dark"] .dashboard-print-page .dashboard-metric-card span,
+  html[data-theme="dark"] .dashboard-print-page .dashboard-metric-card small,
+  html[data-theme="dark"] .dashboard-print-page .dashboard-metric-amount-line label {
+    color: #52607a !important;
+    font-size: 0.52rem;
+  }
+
+  .dashboard-print-page .dashboard-metric-card strong,
+  html[data-theme="dark"] .dashboard-print-page .dashboard-metric-card strong {
+    color: #0f172a !important;
+    font-size: 0.72rem;
+  }
+
+  .dashboard-print-page .dashboard-metric-amounts {
+    gap: 0;
+    margin: 0.15rem 0;
+  }
+
+  .dashboard-print-page .dashboard-metric-amount-line {
+    min-height: 0;
+    padding: 0.12rem 0;
+  }
+
+  .dashboard-print-page > .workspace-section,
+  .dashboard-print-page .dashboard-analytics-card,
+  html[data-theme="dark"] .dashboard-print-page > .workspace-section,
+  html[data-theme="dark"] .dashboard-print-page .dashboard-analytics-card {
+    padding: 0.5rem;
+    color: #0f172a !important;
+    background: #ffffff !important;
+    border: 1px solid rgba(100, 116, 139, 0.24) !important;
+    border-radius: 0.35rem;
+    box-shadow: none !important;
+  }
+
+  .dashboard-print-page .workspace-section-head {
+    margin-bottom: 0.3rem;
+  }
+
+  .dashboard-print-page .workspace-section-head h2 {
+    margin: 0.05rem 0;
+    color: #0f172a !important;
+    font-size: 0.78rem;
+  }
+
+  .dashboard-print-page .workspace-section-head p,
+  .dashboard-print-page .workspace-section-kicker {
+    margin: 0;
+    color: #52607a !important;
+    font-size: 0.52rem;
+    line-height: 1.2;
+  }
+
+  .dashboard-print-page .dashboard-indicator-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 0.3rem;
+    padding: 0 !important;
+  }
+
+  .dashboard-print-page .dashboard-indicator-card,
+  html[data-theme="dark"] .dashboard-print-page .dashboard-indicator-card {
+    min-height: 0;
+    padding: 0.35rem;
+    color: #0f172a !important;
+    background: #f8fafc !important;
+    border: 1px solid rgba(100, 116, 139, 0.22) !important;
+    border-radius: 0.3rem;
+    box-shadow: none !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .dashboard-print-page .dashboard-indicator-icon {
+    width: 1.6rem;
+    height: 1.6rem;
+    color: #1b5e4a !important;
+    background: #e6f2ee !important;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+  }
+
+  .dashboard-print-page .dashboard-indicator-copy span,
+  .dashboard-print-page .dashboard-indicator-copy small,
+  html[data-theme="dark"] .dashboard-print-page .dashboard-indicator-copy span,
+  html[data-theme="dark"] .dashboard-print-page .dashboard-indicator-copy small {
+    color: #52607a !important;
+    font-size: 0.48rem;
+  }
+
+  .dashboard-print-page .dashboard-indicator-copy strong,
+  html[data-theme="dark"] .dashboard-print-page .dashboard-indicator-copy strong {
+    color: #0f172a !important;
+    font-size: 0.78rem;
+  }
+
+  .dashboard-print-page .dashboard-analytics-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1.35fr) minmax(18rem, 0.65fr) !important;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+    break-before: page;
+    page-break-before: always;
+  }
+
+  .dashboard-print-page .dashboard-analytics-stack {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 0.4rem;
+  }
+
+  .dashboard-print-page .dashboard-analytics-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .dashboard-print-page .dashboard-bar-chart {
+    min-height: 9rem;
+    height: 9rem;
+    padding: 0.25rem 0.2rem 0;
+  }
+
+  .dashboard-print-page .dashboard-bar-value,
+  .dashboard-print-page .dashboard-bar-item strong,
+  .dashboard-print-page .dashboard-bar-item small,
+  html[data-theme="dark"] .dashboard-print-page .dashboard-bar-value,
+  html[data-theme="dark"] .dashboard-print-page .dashboard-bar-item strong,
+  html[data-theme="dark"] .dashboard-print-page .dashboard-bar-item small {
+    color: #0f172a !important;
+    font-size: 0.44rem;
+  }
+
+  .dashboard-print-page .dashboard-bar-column,
+  html[data-theme="dark"] .dashboard-print-page .dashboard-bar-column {
+    background: linear-gradient(180deg, #2f8cff 0%, #1b5e4a 100%) !important;
+    border-color: rgba(27, 94, 74, 0.25) !important;
+  }
+
+  .dashboard-print-page .dashboard-donut-layout {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 0.35rem;
+    padding: 0.25rem !important;
+  }
+
+  .dashboard-print-page .dashboard-donut {
+    width: 8rem;
+    height: 8rem;
+    margin: 0 auto;
+  }
+
+  .dashboard-print-page .dashboard-donut-center,
+  html[data-theme="dark"] .dashboard-print-page .dashboard-donut-center {
+    color: #0f172a !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+  }
+
+  .dashboard-print-page .dashboard-donut-center span,
+  .dashboard-print-page .dashboard-donut-center small,
+  html[data-theme="dark"] .dashboard-print-page .dashboard-donut-center span,
+  html[data-theme="dark"] .dashboard-print-page .dashboard-donut-center small {
+    color: #52607a !important;
+    font-size: 0.48rem;
+  }
+
+  .dashboard-print-page .dashboard-donut-center strong,
+  html[data-theme="dark"] .dashboard-print-page .dashboard-donut-center strong {
+    color: #0f172a !important;
+    font-size: 1rem;
+  }
+
+  .dashboard-print-page .dashboard-donut-legend {
+    gap: 0.2rem;
+  }
+
+  .dashboard-print-page .dashboard-donut-legend-item,
+  html[data-theme="dark"] .dashboard-print-page .dashboard-donut-legend-item {
+    padding: 0.28rem 0.35rem;
+    color: #0f172a !important;
+    background: #f8fafc !important;
+    border-color: rgba(100, 116, 139, 0.22) !important;
+    border-radius: 0.25rem;
+  }
+
+  .dashboard-print-page .dashboard-donut-legend-item strong,
+  .dashboard-print-page .dashboard-donut-metrics strong,
+  html[data-theme="dark"] .dashboard-print-page .dashboard-donut-legend-item strong,
+  html[data-theme="dark"] .dashboard-print-page .dashboard-donut-metrics strong {
+    color: #0f172a !important;
+    font-size: 0.5rem;
+  }
+
+  .dashboard-print-page .dashboard-donut-legend-item small,
+  .dashboard-print-page .dashboard-donut-metrics small,
+  html[data-theme="dark"] .dashboard-print-page .dashboard-donut-legend-item small,
+  html[data-theme="dark"] .dashboard-print-page .dashboard-donut-metrics small {
+    color: #52607a !important;
+    font-size: 0.44rem;
+  }
+
+  .report-ledger-sheet,
+  .balance-a4-sheet {
+    padding: 0 !important;
+  }
+
+  .report-ledger-header,
+  .balance-a4-header {
+    gap: 0.35rem;
+    margin-bottom: 0.4rem;
+    padding-bottom: 0.4rem;
+  }
+
+  .report-ledger-header strong,
+  .balance-a4-header strong {
+    font-size: 0.78rem;
+  }
+
+  .report-ledger-header > div:first-child span,
+  .balance-a4-header > div:first-child span {
+    margin-top: 0.15rem;
+    font-size: 0.76rem;
+  }
+
+  .report-ledger-meta,
+  .balance-a4-meta {
+    flex-direction: row;
+    gap: 0.25rem 0.7rem;
+    font-size: 0.58rem;
+  }
+
+  .libro-mayor-summary {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.3rem !important;
+    margin: 0.35rem 0 0.45rem !important;
+  }
+
+  .libro-mayor-summary .workspace-balance-card,
+  html[data-theme="dark"] .libro-mayor-summary .workspace-balance-card {
+    padding: 0.35rem 0.5rem;
+    color: #0f172a !important;
+    background: #ffffff !important;
+    border-color: rgba(100, 116, 139, 0.28) !important;
+    border-radius: 0.35rem;
+    box-shadow: none;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .libro-mayor-summary .workspace-balance-card span,
+  .libro-mayor-summary .workspace-balance-card small,
+  html[data-theme="dark"] .libro-mayor-summary .workspace-balance-card span,
+  html[data-theme="dark"] .libro-mayor-summary .workspace-balance-card small {
+    margin-top: 0;
+    color: #52607a !important;
+    font-size: 0.55rem;
+  }
+
+  .libro-mayor-summary .workspace-balance-card strong,
+  html[data-theme="dark"] .libro-mayor-summary .workspace-balance-card strong {
+    margin-top: 0.1rem;
+    color: #0f172a !important;
+    font-size: 0.85rem;
+  }
+
+  .report-ledger-table-wrap,
+  .balance-a4-table-wrap,
+  .table-responsive {
+    overflow: visible !important;
+  }
+
+  .report-ledger-table,
+  .balance-a4-table {
+    min-width: 0 !important;
+    width: 100% !important;
+    margin-bottom: 0 !important;
+    font-size: 0.52rem !important;
+    line-height: 1.05;
+  }
+
+  .report-ledger-table thead th,
+  .report-ledger-table tbody td,
+  .report-ledger-table tfoot td,
+  .balance-a4-table thead th,
+  .balance-a4-table tbody td,
+  .balance-a4-table tfoot td {
+    padding: 0.18rem 0.14rem !important;
+  }
+
+  .report-ledger-description,
+  .balance-a4-description {
+    min-width: 0 !important;
+  }
+
+  .report-ledger-table thead,
+  .balance-a4-table thead {
+    display: table-header-group;
+  }
+
+  .report-ledger-table tfoot,
+  .balance-a4-table tfoot {
+    display: table-footer-group;
+  }
+
+  .report-ledger-table tr,
+  .balance-a4-table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  html[data-theme="dark"] .table,
+  html[data-theme="dark"] .app-table {
+    --bs-table-bg: transparent;
+    --bs-table-color: #0f172a;
+    --bs-table-border-color: rgba(100, 116, 139, 0.28);
+    color: #0f172a !important;
+  }
+
+  html[data-theme="dark"] .report-ledger-header,
+  html[data-theme="dark"] .balance-a4-header,
+  html[data-theme="dark"] .report-ledger-account-header,
+  html[data-theme="dark"] .table > :not(caption) > * > *,
+  html[data-theme="dark"] .app-table > :not(caption) > * > * {
+    color: #0f172a !important;
+    border-color: rgba(100, 116, 139, 0.28) !important;
+  }
+
+  html[data-theme="dark"] .report-ledger-table thead th,
+  html[data-theme="dark"] .balance-a4-table thead th {
+    color: #13233f !important;
+    background: #f2f5fb !important;
+    border-color: rgba(100, 116, 139, 0.32) !important;
+  }
+
+  html[data-theme="dark"] .report-ledger-total-row td,
+  html[data-theme="dark"] .balance-a4-total-row td {
+    color: #0f172a !important;
+    background: #eef3fb !important;
+  }
+
+  html[data-theme="dark"] .report-ledger-highlight-row td,
+  html[data-theme="dark"] .balance-a4-subtotal-row td {
+    color: #0f172a !important;
+    background: #f8fafc !important;
+  }
+
+}

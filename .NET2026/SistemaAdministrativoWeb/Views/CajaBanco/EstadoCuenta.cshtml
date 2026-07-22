@@ -1,6 +1,7 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.CajaBancoEstadoCuentaViewModel
 
 @* Firma: FRANCO LARA - 12/07/2026 | Crea el reporte HTML imprimible Estado de Cuenta para Caja y Bancos, mostrando saldos iniciales, movimientos del mes y saldo final de la cuenta corriente seleccionada. *@
+@* Firma: FRANCO LARA - 21/07/2026 | Corrige la impresion A4 vertical del Estado de cuenta, conserva cabecera y tarjetas horizontales, compacta el contenido y evita heredar el modo oscuro. *@
 
 @{
     ViewData["Title"] = "Estado de cuenta";
@@ -184,6 +185,106 @@
             display: grid;
         }
     }
+
+    @@media print {
+        .bank-sheet {
+            width: 100%;
+            max-width: none;
+            color: #0f172a !important;
+            background: #fff !important;
+        }
+
+        .bank-header {
+            display: flex !important;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.55rem 0.7rem;
+            color: #0f172a !important;
+            background: #fff !important;
+            border-bottom-color: rgba(100, 116, 139, 0.3) !important;
+        }
+
+        .bank-header > div:last-child {
+            margin-left: auto;
+            text-align: right !important;
+        }
+
+        .bank-title,
+        .bank-header strong,
+        .bank-meta-card strong,
+        .bank-table .bank-op-cell strong {
+            color: #0f172a !important;
+        }
+
+        .bank-header span,
+        .bank-meta-card span,
+        .bank-table .bank-op-cell div {
+            color: #52607a !important;
+        }
+
+        .bank-title {
+            margin-top: 0.2rem;
+            font-size: 1.05rem;
+        }
+
+        .bank-meta-grid {
+            display: grid !important;
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+            gap: 0.35rem;
+            padding: 0.5rem 0.7rem 0;
+        }
+
+        .bank-summary-grid {
+            display: grid !important;
+            grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+            gap: 0.35rem;
+            padding: 0.35rem 0.7rem 0;
+        }
+
+        .bank-meta-card {
+            padding: 0.4rem 0.5rem;
+            color: #0f172a !important;
+            background: #fff !important;
+            border-color: rgba(100, 116, 139, 0.28) !important;
+            border-radius: 0.35rem;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        .bank-meta-card span {
+            margin-bottom: 0.15rem;
+            font-size: 0.56rem;
+        }
+
+        .bank-meta-card strong {
+            font-size: 0.7rem;
+        }
+
+        .bank-table-wrap {
+            padding: 0.45rem 0.7rem 0.25rem;
+        }
+
+        .bank-table {
+            margin-bottom: 0;
+            font-size: 0.54rem !important;
+        }
+
+        .bank-table thead th,
+        .bank-table tbody td,
+        .bank-table tfoot td {
+            padding: 0.2rem 0.16rem !important;
+            color: #0f172a !important;
+            border-color: rgba(100, 116, 139, 0.32) !important;
+        }
+
+        .bank-table .bank-op-cell strong {
+            font-size: 0.57rem;
+        }
+
+        .bank-table .bank-op-cell div {
+            font-size: 0.5rem;
+        }
+    }
 </style>
 
 <section class="dashboard-shell">
@@ -201,7 +302,7 @@
         </div>
 
         <div class="workspace-window-body">
-            <section class="workspace-report-sheet bank-sheet">
+            <section class="workspace-report-sheet bank-sheet report-portrait-page">
                 <div class="report-action-bar no-print">
                     <a asp-action="Index"
                        asp-route-idBancoConfiguracionEmpresa="@Model.IdBancoConfiguracionEmpresa"

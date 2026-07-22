@@ -2,6 +2,7 @@
 
 @* Firma: FRANCO LARA - 07/07/2026 | Crea el reporte HTML Registro de compras con formato A4 inspirado en RptRegistroCompra_A4_Oxa del legacy, usando solo la provision actual y habilitando impresion directa. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Ajusta el formato visible del registro de compras retirando las columnas Cod., BI 2, IGV 2, BI 3 e IGV 3 segun el disenio solicitado y actualiza el subtitulo del reporte. *@
+@* Firma: FRANCO LARA - 21/07/2026 | Corrige la impresion del Registro de compras en A4 horizontal, compacta cabecera y tabla y evita heredar el modo oscuro. *@
 
 @{
     ViewData["Title"] = "Registro de compras";
@@ -68,7 +69,7 @@
 
             @if (Model.Resultados.Count > 0)
             {
-                <section class="workspace-report-sheet balance-a4-sheet mt-4">
+                <section class="workspace-report-sheet balance-a4-sheet report-landscape-page mt-4">
                     <div class="report-action-bar no-print">
                         <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Imprimir</button>
                     </div>

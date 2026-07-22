@@ -2,6 +2,7 @@
 
 @* Firma: FRANCO LARA - 07/07/2026 | Mantiene el reporte HTML Libro Mayor, adapta su visualizacion al formato compacto tipo hoja A4 de los reportes legacy y agrega impresion directa en pantalla. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Ajusta Libro Mayor a filtro por anio/mes y periodo contable, quita moneda editable, separa tarjetas USD y deja el saldo final solo al cierre de cada cuenta. *@
+@* Firma: FRANCO LARA - 21/07/2026 | Corrige la impresion del Libro Mayor en A4 horizontal, compacta cabecera y tablas, distribuye las tarjetas de totales en dos filas y evita heredar el modo oscuro. *@
 
 @{
     ViewData["Title"] = "Libro Mayor";
@@ -92,7 +93,7 @@
 
             @if (Model.Resultados.Count > 0)
             {
-                <section class="workspace-report-sheet report-ledger-sheet mt-4">
+                <section class="workspace-report-sheet report-ledger-sheet report-landscape-page mt-4">
                     <div class="report-action-bar no-print">
                         <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Imprimir</button>
                     </div>
@@ -111,7 +112,7 @@
                         </div>
                     </header>
 
-                    <div class="workspace-balance-summary mb-3">
+                    <div class="workspace-balance-summary libro-mayor-summary mb-3">
                         <div class="workspace-balance-card">
                             <span>Total Debe</span>
                             <strong>@Model.TotalDebe.ToString("N2")</strong>
