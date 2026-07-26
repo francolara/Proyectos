@@ -6,6 +6,7 @@
    Description:   Agrega filtro de nivel en el listado de plan de cuentas.
    ============================================= *@
 @* Firma: FRANCO LARA - 01/07/2026 | Muestra el modo de diferencia en cambio por cuenta para identificar rapidamente si una cuenta en USD se procesa por saldo o por analisis. *@
+@* Firma: FRANCO LARA - 25/07/2026 | Alinea a la izquierda los nombres de las cuentas en el listado y elimina la sangria visual por nivel. *@
 
 @{
     ViewData["Title"] = "Plan de cuentas";
@@ -163,12 +164,7 @@
                             {
                                 <tr class="workspace-clickable-row" data-edit-url="@Url.Action("Editar", new { idPlanCuenta = cuenta.IdPlanCuenta })">
                                     <td class="workspace-tree-code">@cuenta.CodigoCuenta</td>
-                                    <td>
-                                        <div class="workspace-tree-label" style="--tree-level:@cuenta.NivelCuenta">
-                                            <span class="workspace-tree-indent"></span>
-                                            <span>@cuenta.NombreCuenta</span>
-                                        </div>
-                                    </td>
+                                    <td class="text-start">@cuenta.NombreCuenta</td>
                                     <td>@cuenta.NivelCuenta</td>
                                     <td>@ObtenerColBalance(cuenta.ColBalance)</td>
                                     <td>@(string.IsNullOrWhiteSpace(cuenta.IdMoneda) ? "-" : NormalizarMonedaPlanCuenta(cuenta.IdMoneda))</td>

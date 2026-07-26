@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.EventLog;
 using SistemaAdministrativoWeb.Configuration;
@@ -82,6 +83,12 @@ if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(goo
         });
 }
 
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(
+        PlanFeaturePolicies.CpeValidation,
+        policy => policy.Requirements.Add(new PlanFeatureRequirement(PlanFeature.CpeValidation)));
+});
 builder.Services.AddControllersWithViews();
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpContextAccessor();
@@ -157,6 +164,9 @@ builder.Services.AddScoped<IVentaRepository, VentaRepository>();
 builder.Services.AddScoped<IEmpresaRepository, EmpresaRepository>();
 builder.Services.AddScoped<ICurrentCompanyAccessor, SessionCurrentCompanyAccessor>();
 builder.Services.AddScoped<ICuentaAdministradoraRepository, CuentaAdministradoraRepository>();
+builder.Services.AddScoped<ISubscriptionAccessService, SubscriptionAccessService>();
+builder.Services.AddScoped<IPlanFeatureService, PlanFeatureService>();
+builder.Services.AddScoped<IAuthorizationHandler, PlanFeatureAuthorizationHandler>();
 builder.Services.AddScoped<IModulePermissionService, ModulePermissionService>();
 builder.Services.AddScoped<IParametroEmpresaRepository, ParametroEmpresaRepository>();
 builder.Services.AddScoped<IdentityStartupSeeder>();
@@ -185,6 +195,7 @@ app.UseRouting();
 app.UseSession();
 app.UseAuthentication();
 app.UseMiddleware<TemporaryPasswordEnforcementMiddleware>();
+app.UseMiddleware<SubscriptionAccessMiddleware>();
 app.UseMiddleware<ActiveCompanySessionValidationMiddleware>();
 app.UseAuthorization();
 

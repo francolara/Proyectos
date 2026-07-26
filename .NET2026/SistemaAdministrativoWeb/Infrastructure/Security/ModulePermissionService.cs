@@ -6,7 +6,8 @@ namespace SistemaAdministrativoWeb.Infrastructure.Security;
 
 public sealed class ModulePermissionService(
     ICurrentCompanyAccessor currentCompanyAccessor,
-    ICuentaAdministradoraRepository cuentaAdministradoraRepository) : IModulePermissionService
+    ICuentaAdministradoraRepository cuentaAdministradoraRepository,
+    ISubscriptionAccessService subscriptionAccessService) : IModulePermissionService
 {
     private static readonly HashSet<string> AccountModules = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -74,6 +75,23 @@ public sealed class ModulePermissionService(
         ModulePermissionOperation operation,
         CancellationToken cancellationToken = default)
     {
+        var subscriptionAccess = await subscriptionAccessService.EvaluateAsync(principal, cancellationToken);
+        if (subscriptionAccess.IsRestricted)
+        {
+            var restrictedScope = ResolveScope(moduleCode);
+            var isRestrictedModuleAllowed = operation == ModulePermissionOperation.View
+                && (string.Equals(moduleCode, "MISUSCRIPCION", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(moduleCode, "AYUDA", StringComparison.OrdinalIgnoreCase));
+
+            return new ModuleAccessResult
+            {
+                IsAllowed = isRestrictedModuleAllowed,
+                Scope = restrictedScope,
+                HasCompanyContext = true,
+                Message = isRestrictedModuleAllowed ? null : subscriptionAccess.Message
+            };
+        }
+
         await EnsureInitializedAsync(principal, cancellationToken);
 
         if (isSuperAdmin)
@@ -215,7 +233,8 @@ public sealed class ModulePermissionService(
             return;
         }
 
-        var loginContext = await cuentaAdministradoraRepository.ObtenerContextoLoginUsuarioAsync(aspNetUserId, cancellationToken);
+        var subscriptionAccess = await subscriptionAccessService.EvaluateAsync(principal, cancellationToken);
+        var loginContext = subscriptionAccess.LoginContext;
         if (loginContext is null || !loginContext.TieneAcceso || !loginContext.IdCuentaAdministradora.HasValue)
         {
             return;

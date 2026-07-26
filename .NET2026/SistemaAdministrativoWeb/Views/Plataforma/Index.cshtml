@@ -2,9 +2,16 @@
 @{
     ViewData["Title"] = "Panel SuperAdmin";
     ViewData["PlatformShell"] = true;
+    var paginaInicio = Math.Max(1, Model.PaginaActual - 2);
+    var paginaFin = Math.Min(Model.TotalPaginas, Model.PaginaActual + 2);
+    var primerRegistro = Model.TotalRegistrosFiltrados == 0
+        ? 0
+        : ((Model.PaginaActual - 1) * Model.TamanoPagina) + 1;
+    var ultimoRegistro = Math.Min(Model.PaginaActual * Model.TamanoPagina, Model.TotalRegistrosFiltrados);
 }
 <!-- Author: FRANCO LARA | Create date: 15/06/2026 | Firma: Superadmin orientado a cuentas administradoras con control de suscripcion, limites y empresa principal. -->
 <!-- Firma: FRANCO LARA - 10/07/2026 | Incorpora gestion comercial por cuenta con dashboard, filtro de suscriptores, formularios por secciones horizontales, acceso separado al registro de cobros y mueve los historiales comercial/cobros a modales para reducir ruido visual. -->
+<!-- Firma: FRANCO LARA - 25/07/2026 | Resume cada cuenta en una fila, pagina desde SQL Server, muestra el estado efectivo vencido y permite elegir Emprendedor o Contador al iniciar contrato. -->
 
 <section class="dashboard-shell">
     @if (TempData["SuperAdminOk"] is string ok)
@@ -104,10 +111,12 @@
                     var tieneContrato = !cuenta.EsPrueba && !string.IsNullOrWhiteSpace(cuenta.TipoCobro) && cuenta.FechaFinPlan.HasValue;
                     var puedeIniciarContrato = cuenta.EsPrueba || !tieneContrato;
                     var pagosPendientesAplicables = cuenta.HistorialCobros.Count(x => x.EstadoPago == "PENDIENTE" && x.AplicarAlConfirmar && !x.AplicadoSuscripcion);
+                    var accesoRestringido = cuenta.EstadoAccesoEfectivo is "VENCIDO" or "SUSPENDIDO" or "BAJA" or "SIN_VIGENCIA";
                     var tabId = $"platform-tabs-{cuenta.IdCuentaAdministradora}";
                     var suscripcionTabId = $"suscripcion-{cuenta.IdCuentaAdministradora}";
                     var contratoTabId = $"contrato-{cuenta.IdCuentaAdministradora}";
                     var cobroTabId = $"cobro-{cuenta.IdCuentaAdministradora}";
+                    var detalleId = $"detalle-cuenta-{cuenta.IdCuentaAdministradora}";
                     var historialComercialModalId = $"historial-comercial-{cuenta.IdCuentaAdministradora}";
                     var historialCobrosModalId = $"historial-cobros-{cuenta.IdCuentaAdministradora}";
 
@@ -125,12 +134,12 @@
                                     }
                                 </div>
                                 <div class="platform-summary-badges">
-                                    <span class="badge text-bg-light border">@cuenta.EstadoSuscripcion</span>
+                                    <span class="badge @(accesoRestringido ? "text-bg-danger" : "text-bg-light border")">@cuenta.EstadoAccesoEfectivo</span>
                                     @if (tieneContrato)
                                     {
                                         <span class="badge text-bg-info">Contrato activo</span>
                                     }
-                                    @if (cuenta.EsPrueba)
+                                    @if (cuenta.EstadoAccesoEfectivo == "TRIAL")
                                     {
                                         <span class="badge text-bg-warning text-dark">Trial</span>
                                     }
@@ -162,26 +171,40 @@
                                 <div>Usuarios permitidos: @(cuenta.UsuariosPermitidos?.ToString() ?? "Ilimitado")</div>
                                 <div>Cuenta: @(cuenta.EstadoCuenta ? "Activa" : "Inactiva") | Servicio: @(cuenta.Activo ? "Habilitado" : "Detenido")</div>
                             </section>
+
+                            <section class="platform-account-summary-action">
+                                <button type="button"
+                                        class="btn btn-outline-primary btn-sm platform-account-detail-toggle collapsed"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#@detalleId"
+                                        aria-expanded="false"
+                                        aria-controls="@detalleId">
+                                    <span class="platform-account-detail-label-collapsed">Ver detalle</span>
+                                    <span class="platform-account-detail-label-expanded">Ocultar detalle</span>
+                                    <i class="bi bi-chevron-down" aria-hidden="true"></i>
+                                </button>
+                            </section>
                         </div>
 
-                        <div class="platform-section-divider"></div>
+                        <div class="collapse platform-account-detail" id="@detalleId">
+                            <div class="platform-section-divider"></div>
 
-                        <div class="platform-history-actions">
-                            <button type="button"
-                                    class="btn btn-outline-secondary btn-sm"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#@historialComercialModalId">
-                                Historial comercial
-                            </button>
-                            <button type="button"
-                                    class="btn btn-outline-secondary btn-sm"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#@historialCobrosModalId">
-                                Historial de cobros
-                            </button>
-                        </div>
+                            <div class="platform-history-actions">
+                                <button type="button"
+                                        class="btn btn-outline-secondary btn-sm"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#@historialComercialModalId">
+                                    Historial comercial
+                                </button>
+                                <button type="button"
+                                        class="btn btn-outline-secondary btn-sm"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#@historialCobrosModalId">
+                                    Historial de cobros
+                                </button>
+                            </div>
 
-                        <ul class="nav nav-pills platform-tab-nav" id="@tabId" role="tablist">
+                            <ul class="nav nav-pills platform-tab-nav" id="@tabId" role="tablist">
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#@suscripcionTabId" type="button" role="tab">Suscripcion base</button>
                             </li>
@@ -191,9 +214,9 @@
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link" data-bs-toggle="pill" data-bs-target="#@cobroTabId" type="button" role="tab">Registrar cobro</button>
                             </li>
-                        </ul>
+                            </ul>
 
-                        <div class="tab-content platform-tab-content">
+                            <div class="tab-content platform-tab-content">
                             <div class="tab-pane fade show active" id="@suscripcionTabId" role="tabpanel">
                                 <form asp-action="ActualizarSuscripcion" method="post" class="platform-form-card">
                                     @Html.AntiForgeryToken()
@@ -289,6 +312,13 @@
                                     <h3>Iniciar contrato</h3>
                                     <p>@(puedeIniciarContrato ? "Convierte la cuenta a contrato comercial." : "Puedes reiniciar la vigencia desde este bloque.")</p>
                                     <div class="workspace-form-grid">
+                                        <div class="workspace-field">
+                                            <label class="form-label">Plan</label>
+                                            <select name="TipoPlan" class="form-select form-select-sm" required>
+                                                <option value="BASICO">Emprendedor</option>
+                                                <option value="PRO">Contador</option>
+                                            </select>
+                                        </div>
                                         <div class="workspace-field">
                                             <label class="form-label">Tipo cobro</label>
                                             <select name="TipoCobro" class="form-select form-select-sm">
@@ -423,6 +453,7 @@
                                     </div>
                                 </form>
                             </div>
+                            </div>
                         </div>
                     </article>
 
@@ -513,6 +544,36 @@
                         </div>
                     </div>
                 }
+            }
+        </div>
+
+        <div class="platform-pagination-summary">
+            <span>Mostrando @primerRegistro-@ultimoRegistro de @Model.TotalRegistrosFiltrados cuenta(s).</span>
+
+            @if (Model.TotalPaginas > 1)
+            {
+                <nav class="workspace-pagination" aria-label="Paginacion de suscriptores">
+                    <a class="btn btn-outline-secondary @(Model.TienePaginaAnterior ? string.Empty : "disabled")"
+                       asp-action="Index"
+                       asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-estadoFiltro="@Model.EstadoFiltro"
+                       asp-route-pagina="@(Model.PaginaActual - 1)">Anterior</a>
+
+                    @for (var numeroPagina = paginaInicio; numeroPagina <= paginaFin; numeroPagina++)
+                    {
+                        <a class="btn @(numeroPagina == Model.PaginaActual ? "btn-primary" : "btn-outline-secondary")"
+                           asp-action="Index"
+                           asp-route-textoBusqueda="@Model.TextoBusqueda"
+                           asp-route-estadoFiltro="@Model.EstadoFiltro"
+                           asp-route-pagina="@numeroPagina">@numeroPagina</a>
+                    }
+
+                    <a class="btn btn-outline-secondary @(Model.TienePaginaSiguiente ? string.Empty : "disabled")"
+                       asp-action="Index"
+                       asp-route-textoBusqueda="@Model.TextoBusqueda"
+                       asp-route-estadoFiltro="@Model.EstadoFiltro"
+                       asp-route-pagina="@(Model.PaginaActual + 1)">Siguiente</a>
+                </nav>
             }
         </div>
     </section>

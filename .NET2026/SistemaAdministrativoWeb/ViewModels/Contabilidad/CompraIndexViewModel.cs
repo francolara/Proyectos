@@ -16,6 +16,7 @@ public sealed class CompraIndexViewModel
     public decimal TotalImporteSolesPeriodo { get; set; }
     public decimal TotalImporteDolaresPeriodo { get; set; }
     public decimal PorcentajeRetencionRenta4ta { get; set; }
+    public bool PuedeValidarCpe { get; set; }
     public PaginacionViewModel Paginacion { get; set; } = new();
     public CompraFormViewModel Formulario { get; set; } = new();
     public List<int> AniosDisponibles { get; set; } = [];

@@ -18,6 +18,7 @@ public sealed class CuentaSuscripcionViewModel
     public string? RucEmpresaPrincipal { get; init; }
     public string TipoPlan { get; init; } = "TRIAL";
     public string EstadoSuscripcion { get; init; } = "TRIAL";
+    public string EstadoAccesoEfectivo { get; init; } = "TRIAL";
     public bool EsPrueba { get; init; }
     public DateOnly? FechaInicioPrueba { get; init; }
     public DateOnly? FechaFinPrueba { get; init; }

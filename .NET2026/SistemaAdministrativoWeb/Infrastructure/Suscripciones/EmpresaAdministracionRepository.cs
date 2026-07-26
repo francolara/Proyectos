@@ -113,43 +113,105 @@ public sealed class CuentaAdministradoraRepository(IDbConnectionFactory connecti
 
         while (await reader.ReadAsync(cancellationToken))
         {
-            result.Add(new CuentaSuscripcionResumenDto
-            {
-                IdCuentaAdministradora = reader.GetInt32(reader.GetOrdinal("IdCuentaAdministradora")),
-                CodigoCuenta = reader.GetString(reader.GetOrdinal("CodigoCuenta")),
-                NombreCuenta = reader.GetString(reader.GetOrdinal("NombreCuenta")),
-                CorreoPrincipal = reader.GetString(reader.GetOrdinal("CorreoPrincipal")),
-                TelefonoPrincipal = reader.IsDBNull(reader.GetOrdinal("TelefonoPrincipal")) ? null : reader.GetString(reader.GetOrdinal("TelefonoPrincipal")),
-                EstadoCuenta = reader.GetBoolean(reader.GetOrdinal("EstadoCuenta")),
-                IdEmpresaPrincipal = reader.IsDBNull(reader.GetOrdinal("IdEmpresaPrincipal")) ? null : reader.GetInt32(reader.GetOrdinal("IdEmpresaPrincipal")),
-                CodigoEmpresaPrincipal = reader.IsDBNull(reader.GetOrdinal("CodigoEmpresaPrincipal")) ? null : reader.GetString(reader.GetOrdinal("CodigoEmpresaPrincipal")),
-                RazonSocialEmpresaPrincipal = reader.IsDBNull(reader.GetOrdinal("RazonSocialEmpresaPrincipal")) ? null : reader.GetString(reader.GetOrdinal("RazonSocialEmpresaPrincipal")),
-                NombreComercialEmpresaPrincipal = reader.IsDBNull(reader.GetOrdinal("NombreComercialEmpresaPrincipal")) ? null : reader.GetString(reader.GetOrdinal("NombreComercialEmpresaPrincipal")),
-                RucEmpresaPrincipal = reader.IsDBNull(reader.GetOrdinal("RucEmpresaPrincipal")) ? null : reader.GetString(reader.GetOrdinal("RucEmpresaPrincipal")),
-                CantidadEmpresas = reader.IsDBNull(reader.GetOrdinal("CantidadEmpresas")) ? 0 : reader.GetInt32(reader.GetOrdinal("CantidadEmpresas")),
-                IdCuentaAdministradoraSuscripcion = reader.IsDBNull(reader.GetOrdinal("IdCuentaAdministradoraSuscripcion")) ? null : reader.GetInt32(reader.GetOrdinal("IdCuentaAdministradoraSuscripcion")),
-                TipoPlan = reader.IsDBNull(reader.GetOrdinal("TipoPlan")) ? null : reader.GetString(reader.GetOrdinal("TipoPlan")),
-                EstadoSuscripcion = reader.IsDBNull(reader.GetOrdinal("EstadoSuscripcion")) ? null : reader.GetString(reader.GetOrdinal("EstadoSuscripcion")),
-                EsPrueba = !reader.IsDBNull(reader.GetOrdinal("EsPrueba")) && reader.GetBoolean(reader.GetOrdinal("EsPrueba")),
-                FechaInicioPrueba = reader.IsDBNull(reader.GetOrdinal("FechaInicioPrueba")) ? null : DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("FechaInicioPrueba"))),
-                FechaFinPrueba = reader.IsDBNull(reader.GetOrdinal("FechaFinPrueba")) ? null : DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("FechaFinPrueba"))),
-                FechaInicioPlan = reader.IsDBNull(reader.GetOrdinal("FechaInicioPlan")) ? null : DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("FechaInicioPlan"))),
-                FechaFinPlan = reader.IsDBNull(reader.GetOrdinal("FechaFinPlan")) ? null : DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("FechaFinPlan"))),
-                TipoCobro = reader.IsDBNull(reader.GetOrdinal("TipoCobro")) ? null : reader.GetString(reader.GetOrdinal("TipoCobro")),
-                DiasGracia = reader.IsDBNull(reader.GetOrdinal("DiasGracia")) ? 5 : reader.GetInt32(reader.GetOrdinal("DiasGracia")),
-                FechaFinGracia = reader.IsDBNull(reader.GetOrdinal("FechaFinGracia")) ? null : DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("FechaFinGracia"))),
-                EmpresasPermitidas = reader.IsDBNull(reader.GetOrdinal("EmpresasPermitidas")) ? null : reader.GetInt32(reader.GetOrdinal("EmpresasPermitidas")),
-                UsuariosPermitidos = reader.IsDBNull(reader.GetOrdinal("UsuariosPermitidos")) ? null : reader.GetInt32(reader.GetOrdinal("UsuariosPermitidos")),
-                Activo = !reader.IsDBNull(reader.GetOrdinal("Activo")) && reader.GetBoolean(reader.GetOrdinal("Activo")),
-                Observacion = reader.IsDBNull(reader.GetOrdinal("Observacion")) ? null : reader.GetString(reader.GetOrdinal("Observacion")),
-                AspNetUserId = reader.IsDBNull(reader.GetOrdinal("AspNetUserId")) ? null : reader.GetString(reader.GetOrdinal("AspNetUserId")),
-                NombreCompleto = reader.IsDBNull(reader.GetOrdinal("NombreCompleto")) ? null : reader.GetString(reader.GetOrdinal("NombreCompleto")),
-                Telefono = reader.IsDBNull(reader.GetOrdinal("Telefono")) ? null : reader.GetString(reader.GetOrdinal("Telefono")),
-                Email = reader.IsDBNull(reader.GetOrdinal("Email")) ? null : reader.GetString(reader.GetOrdinal("Email"))
-            });
+            result.Add(MapearCuentaSuscripcionResumen(reader));
         }
 
         return result;
+    }
+
+    public async Task<CuentaSuscripcionPaginaDto> ListarCuentasSuscripcionPaginadasAsync(
+        string? textoBusqueda,
+        string estadoFiltro,
+        int pagina,
+        int tamanoPagina,
+        CancellationToken cancellationToken = default)
+    {
+        var cuentas = new List<CuentaSuscripcionResumenDto>();
+
+        await using var connection = connectionFactory.CreateConnection();
+        await using var command = new SqlCommand("dbo.usp_SEG_ListarCuentasAdministradorasSuscripcionPaginado", connection)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        command.Parameters.Add("@TextoBusqueda", SqlDbType.NVarChar, 200).Value =
+            string.IsNullOrWhiteSpace(textoBusqueda) ? DBNull.Value : textoBusqueda.Trim();
+        command.Parameters.Add("@EstadoFiltro", SqlDbType.NVarChar, 20).Value = estadoFiltro;
+        command.Parameters.Add("@NumeroPagina", SqlDbType.Int).Value = pagina;
+        command.Parameters.Add("@TamanoPagina", SqlDbType.Int).Value = tamanoPagina;
+
+        await connection.OpenAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+        var paginaActual = 1;
+        var tamanoPaginaEfectivo = tamanoPagina;
+        var totalFiltrado = 0;
+        var totalPaginas = 1;
+        var totalCuentas = 0;
+        var cuentasActivas = 0;
+        var cuentasEnPrueba = 0;
+        var cuentasSuspendidasOBaja = 0;
+        var cobrosRegistrados = 0;
+        var cobrosPendientesAplicacion = 0;
+        var montoCobradoMes = 0m;
+
+        if (await reader.ReadAsync(cancellationToken))
+        {
+            paginaActual = reader.GetInt32(reader.GetOrdinal("PaginaActual"));
+            tamanoPaginaEfectivo = reader.GetInt32(reader.GetOrdinal("TamanoPagina"));
+            totalFiltrado = reader.GetInt32(reader.GetOrdinal("TotalFiltrado"));
+            totalPaginas = reader.GetInt32(reader.GetOrdinal("TotalPaginas"));
+            totalCuentas = reader.GetInt32(reader.GetOrdinal("TotalCuentas"));
+            cuentasActivas = reader.GetInt32(reader.GetOrdinal("CuentasActivas"));
+            cuentasEnPrueba = reader.GetInt32(reader.GetOrdinal("CuentasEnPrueba"));
+            cuentasSuspendidasOBaja = reader.GetInt32(reader.GetOrdinal("CuentasSuspendidasOBaja"));
+            cobrosRegistrados = reader.GetInt32(reader.GetOrdinal("CobrosRegistrados"));
+            cobrosPendientesAplicacion = reader.GetInt32(reader.GetOrdinal("CobrosPendientesAplicacion"));
+            montoCobradoMes = reader.GetDecimal(reader.GetOrdinal("MontoCobradoMes"));
+        }
+
+        if (await reader.NextResultAsync(cancellationToken))
+        {
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                cuentas.Add(MapearCuentaSuscripcionResumen(reader));
+            }
+        }
+
+        return new CuentaSuscripcionPaginaDto
+        {
+            PaginaActual = paginaActual,
+            TamanoPagina = tamanoPaginaEfectivo,
+            TotalFiltrado = totalFiltrado,
+            TotalPaginas = totalPaginas,
+            TotalCuentas = totalCuentas,
+            CuentasActivas = cuentasActivas,
+            CuentasEnPrueba = cuentasEnPrueba,
+            CuentasSuspendidasOBaja = cuentasSuspendidasOBaja,
+            CobrosRegistrados = cobrosRegistrados,
+            CobrosPendientesAplicacion = cobrosPendientesAplicacion,
+            MontoCobradoMes = montoCobradoMes,
+            Cuentas = cuentas
+        };
+    }
+
+    public async Task SincronizarVencimientoSuscripcionCuentaAsync(
+        int idCuentaAdministradora,
+        string? usuarioRegistro,
+        CancellationToken cancellationToken = default)
+    {
+        await using var connection = connectionFactory.CreateConnection();
+        await using var command = new SqlCommand("dbo.usp_SEG_SincronizarVencimientoSuscripcionCuentaAdministradora", connection)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        command.Parameters.Add("@IdCuentaAdministradora", SqlDbType.Int).Value = idCuentaAdministradora;
+        command.Parameters.Add("@UsuarioRegistro", SqlDbType.NVarChar, 450).Value =
+            string.IsNullOrWhiteSpace(usuarioRegistro) ? DBNull.Value : usuarioRegistro.Trim();
+
+        await connection.OpenAsync(cancellationToken);
+        await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
     public async Task ActualizarSuscripcionCuentaAsync(ActualizarSuscripcionCuentaRequest request, CancellationToken cancellationToken = default)
@@ -190,6 +252,7 @@ public sealed class CuentaAdministradoraRepository(IDbConnectionFactory connecti
         };
 
         command.Parameters.AddWithValue("@IdCuentaAdministradora", request.IdCuentaAdministradora);
+        command.Parameters.AddWithValue("@TipoPlan", request.TipoPlan);
         command.Parameters.AddWithValue("@TipoCobro", request.TipoCobro);
         command.Parameters.AddWithValue("@FechaInicioPlan", request.FechaInicioPlan.ToDateTime(TimeOnly.MinValue));
         command.Parameters.AddWithValue("@FechaFinPlan", request.FechaFinPlan.ToDateTime(TimeOnly.MinValue));
@@ -427,12 +490,29 @@ public sealed class CuentaAdministradoraRepository(IDbConnectionFactory connecti
             IdCuentaAdministradora = GetNullableInt(reader, "IdCuentaAdministradora"),
             CodigoCuenta = GetNullableString(reader, "CodigoCuenta"),
             NombreCuenta = GetNullableString(reader, "NombreCuenta"),
+            CorreoPrincipal = GetNullableString(reader, "CorreoPrincipal"),
+            TelefonoPrincipal = GetNullableString(reader, "TelefonoPrincipal"),
+            EstadoCuenta = GetNullableBool(reader, "EstadoCuenta"),
             RolCuenta = GetNullableString(reader, "RolCuenta"),
             CantidadEmpresasAsignadas = GetNullableInt(reader, "CantidadEmpresasAsignadas") ?? 0,
             IdEmpresaPredeterminada = GetNullableInt(reader, "IdEmpresaPredeterminada"),
             RazonSocialEmpresaPredeterminada = GetNullableString(reader, "RazonSocialEmpresaPredeterminada"),
             DebeSeleccionarEmpresa = reader.GetBoolean(reader.GetOrdinal("DebeSeleccionarEmpresa")),
             SoloModulosCuenta = reader.GetBoolean(reader.GetOrdinal("SoloModulosCuenta")),
+            IdCuentaAdministradoraSuscripcion = GetNullableInt(reader, "IdCuentaAdministradoraSuscripcion"),
+            TipoPlan = GetNullableString(reader, "TipoPlan"),
+            EstadoSuscripcion = GetNullableString(reader, "EstadoSuscripcion"),
+            EsPrueba = GetNullableBool(reader, "EsPrueba"),
+            FechaInicioPrueba = GetNullableDateOnly(reader, "FechaInicioPrueba"),
+            FechaFinPrueba = GetNullableDateOnly(reader, "FechaFinPrueba"),
+            FechaInicioPlan = GetNullableDateOnly(reader, "FechaInicioPlan"),
+            FechaFinPlan = GetNullableDateOnly(reader, "FechaFinPlan"),
+            DiasGracia = GetNullableInt(reader, "DiasGracia"),
+            FechaFinGracia = GetNullableDateOnly(reader, "FechaFinGracia"),
+            EmpresasPermitidas = GetNullableInt(reader, "EmpresasPermitidas"),
+            UsuariosPermitidos = GetNullableInt(reader, "UsuariosPermitidos"),
+            ActivoSuscripcion = GetNullableBool(reader, "ActivoSuscripcion"),
+            ObservacionSuscripcion = GetNullableString(reader, "ObservacionSuscripcion"),
             Mensaje = GetNullableString(reader, "Mensaje")
         };
     }
@@ -787,6 +867,44 @@ public sealed class CuentaAdministradoraRepository(IDbConnectionFactory connecti
         return result;
     }
 
+    private static CuentaSuscripcionResumenDto MapearCuentaSuscripcionResumen(SqlDataReader reader)
+    {
+        return new CuentaSuscripcionResumenDto
+        {
+            IdCuentaAdministradora = reader.GetInt32(reader.GetOrdinal("IdCuentaAdministradora")),
+            CodigoCuenta = reader.GetString(reader.GetOrdinal("CodigoCuenta")),
+            NombreCuenta = reader.GetString(reader.GetOrdinal("NombreCuenta")),
+            CorreoPrincipal = reader.GetString(reader.GetOrdinal("CorreoPrincipal")),
+            TelefonoPrincipal = reader.IsDBNull(reader.GetOrdinal("TelefonoPrincipal")) ? null : reader.GetString(reader.GetOrdinal("TelefonoPrincipal")),
+            EstadoCuenta = reader.GetBoolean(reader.GetOrdinal("EstadoCuenta")),
+            IdEmpresaPrincipal = reader.IsDBNull(reader.GetOrdinal("IdEmpresaPrincipal")) ? null : reader.GetInt32(reader.GetOrdinal("IdEmpresaPrincipal")),
+            CodigoEmpresaPrincipal = reader.IsDBNull(reader.GetOrdinal("CodigoEmpresaPrincipal")) ? null : reader.GetString(reader.GetOrdinal("CodigoEmpresaPrincipal")),
+            RazonSocialEmpresaPrincipal = reader.IsDBNull(reader.GetOrdinal("RazonSocialEmpresaPrincipal")) ? null : reader.GetString(reader.GetOrdinal("RazonSocialEmpresaPrincipal")),
+            NombreComercialEmpresaPrincipal = reader.IsDBNull(reader.GetOrdinal("NombreComercialEmpresaPrincipal")) ? null : reader.GetString(reader.GetOrdinal("NombreComercialEmpresaPrincipal")),
+            RucEmpresaPrincipal = reader.IsDBNull(reader.GetOrdinal("RucEmpresaPrincipal")) ? null : reader.GetString(reader.GetOrdinal("RucEmpresaPrincipal")),
+            CantidadEmpresas = reader.IsDBNull(reader.GetOrdinal("CantidadEmpresas")) ? 0 : reader.GetInt32(reader.GetOrdinal("CantidadEmpresas")),
+            IdCuentaAdministradoraSuscripcion = reader.IsDBNull(reader.GetOrdinal("IdCuentaAdministradoraSuscripcion")) ? null : reader.GetInt32(reader.GetOrdinal("IdCuentaAdministradoraSuscripcion")),
+            TipoPlan = reader.IsDBNull(reader.GetOrdinal("TipoPlan")) ? null : reader.GetString(reader.GetOrdinal("TipoPlan")),
+            EstadoSuscripcion = reader.IsDBNull(reader.GetOrdinal("EstadoSuscripcion")) ? null : reader.GetString(reader.GetOrdinal("EstadoSuscripcion")),
+            EsPrueba = !reader.IsDBNull(reader.GetOrdinal("EsPrueba")) && reader.GetBoolean(reader.GetOrdinal("EsPrueba")),
+            FechaInicioPrueba = reader.IsDBNull(reader.GetOrdinal("FechaInicioPrueba")) ? null : DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("FechaInicioPrueba"))),
+            FechaFinPrueba = reader.IsDBNull(reader.GetOrdinal("FechaFinPrueba")) ? null : DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("FechaFinPrueba"))),
+            FechaInicioPlan = reader.IsDBNull(reader.GetOrdinal("FechaInicioPlan")) ? null : DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("FechaInicioPlan"))),
+            FechaFinPlan = reader.IsDBNull(reader.GetOrdinal("FechaFinPlan")) ? null : DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("FechaFinPlan"))),
+            TipoCobro = reader.IsDBNull(reader.GetOrdinal("TipoCobro")) ? null : reader.GetString(reader.GetOrdinal("TipoCobro")),
+            DiasGracia = reader.IsDBNull(reader.GetOrdinal("DiasGracia")) ? 5 : reader.GetInt32(reader.GetOrdinal("DiasGracia")),
+            FechaFinGracia = reader.IsDBNull(reader.GetOrdinal("FechaFinGracia")) ? null : DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("FechaFinGracia"))),
+            EmpresasPermitidas = reader.IsDBNull(reader.GetOrdinal("EmpresasPermitidas")) ? null : reader.GetInt32(reader.GetOrdinal("EmpresasPermitidas")),
+            UsuariosPermitidos = reader.IsDBNull(reader.GetOrdinal("UsuariosPermitidos")) ? null : reader.GetInt32(reader.GetOrdinal("UsuariosPermitidos")),
+            Activo = !reader.IsDBNull(reader.GetOrdinal("Activo")) && reader.GetBoolean(reader.GetOrdinal("Activo")),
+            Observacion = reader.IsDBNull(reader.GetOrdinal("Observacion")) ? null : reader.GetString(reader.GetOrdinal("Observacion")),
+            AspNetUserId = reader.IsDBNull(reader.GetOrdinal("AspNetUserId")) ? null : reader.GetString(reader.GetOrdinal("AspNetUserId")),
+            NombreCompleto = reader.IsDBNull(reader.GetOrdinal("NombreCompleto")) ? null : reader.GetString(reader.GetOrdinal("NombreCompleto")),
+            Telefono = reader.IsDBNull(reader.GetOrdinal("Telefono")) ? null : reader.GetString(reader.GetOrdinal("Telefono")),
+            Email = reader.IsDBNull(reader.GetOrdinal("Email")) ? null : reader.GetString(reader.GetOrdinal("Email"))
+        };
+    }
+
     private static object DBNullIfNull(string? value)
         => string.IsNullOrWhiteSpace(value) ? DBNull.Value : value.Trim();
 
@@ -806,5 +924,13 @@ public sealed class CuentaAdministradoraRepository(IDbConnectionFactory connecti
     {
         var ordinal = reader.GetOrdinal(columnName);
         return reader.IsDBNull(ordinal) ? null : reader.GetBoolean(ordinal);
+    }
+
+    private static DateOnly? GetNullableDateOnly(SqlDataReader reader, string columnName)
+    {
+        var ordinal = reader.GetOrdinal(columnName);
+        return reader.IsDBNull(ordinal)
+            ? null
+            : DateOnly.FromDateTime(reader.GetDateTime(ordinal));
     }
 }

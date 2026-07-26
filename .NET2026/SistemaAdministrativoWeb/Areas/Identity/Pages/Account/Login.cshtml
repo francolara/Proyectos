@@ -1,24 +1,36 @@
 @page
 @model SistemaAdministrativoWeb.Areas.Identity.Pages.Account.LoginModel
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 @* Firma: FRANCO LARA - 13/07/2026 | Agrega respaldo de captcha manual en login y prepara la derivacion al flujo de verificacion y cambio obligatorio para usuarios con contrasena temporal. *@
 @* Firma: FRANCO LARA - 14/07/2026 | Centra los enlaces inferiores del login y corrige Volver al inicio para redirigir al Home fuera del area Identity. *@
 @* Firma: FRANCO LARA - 22/07/2026 | Agrega el control accesible para mostrar u ocultar la contrasena durante el inicio de sesion. *@
+@* Firma: FRANCO LARA - 25/07/2026 | Muestra y centra sin recortes el banner de inicio de sesion desde el bucket Cloudflare configurado, siguiendo la proporcion 4:5 del proyecto deportivo y conservando el contenido anterior como respaldo. *@
 @{
     ViewData["Title"] = "Iniciar sesion";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var publicAssetBaseUrl = Configuration["SedeImagenStorage:PublicBaseUrl"]?.Trim().TrimEnd('/');
+    var loginBannerUrl = string.IsNullOrWhiteSpace(publicAssetBaseUrl)
+        ? string.Empty
+        : $"{publicAssetBaseUrl}/Banner/InicioSesion.webp";
 }
 
 <section class="auth-shell">
-    <aside class="auth-visual">
-        <div class="auth-visual-content">
-            <p class="auth-visual-tag">SisAdm</p>
-            <h2>Control contable, comercial y multiempresa desde una sola sesion.</h2>
-            <ul class="auth-visual-list">
-                <li>Seleccion de empresa activa por usuario.</li>
-                <li>Acceso preparado para panel administrativo y superadmin.</li>
-                <li>Base unica SQL Server para crecer por modulos.</li>
-            </ul>
-        </div>
+    <aside class="auth-visual @(!string.IsNullOrWhiteSpace(loginBannerUrl) ? "auth-visual-banner" : string.Empty)"
+           style="@(!string.IsNullOrWhiteSpace(loginBannerUrl) ? $"background-image: url('{loginBannerUrl}');" : string.Empty)"
+           role="@(!string.IsNullOrWhiteSpace(loginBannerUrl) ? "img" : null)"
+           aria-label="@(!string.IsNullOrWhiteSpace(loginBannerUrl) ? "FralseCont: inicia sesion y gestiona tu empresa con confianza." : null)">
+        @if (string.IsNullOrWhiteSpace(loginBannerUrl))
+        {
+            <div class="auth-visual-content">
+                <p class="auth-visual-tag">SisAdm</p>
+                <h2>Control contable, comercial y multiempresa desde una sola sesion.</h2>
+                <ul class="auth-visual-list">
+                    <li>Seleccion de empresa activa por usuario.</li>
+                    <li>Acceso preparado para panel administrativo y superadmin.</li>
+                    <li>Base unica SQL Server para crecer por modulos.</li>
+                </ul>
+            </div>
+        }
     </aside>
 
     <section class="auth-panel">

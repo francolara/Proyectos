@@ -1538,6 +1538,31 @@ html[data-theme="dark"] .form-check-input:checked {
   padding: 0.15rem;
 }
 
+/* Firma: FRANCO LARA - 25/07/2026 | El espacio principal usa ancho fluido en consultas y limites legibles en formularios y contenido de lectura. */
+.sc-admin-workspace {
+  width: 100%;
+  min-width: 0;
+  margin-inline: auto;
+}
+
+.sc-admin-workspace > .admin-page-frame {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+.sc-admin-workspace--fluid {
+  max-width: none;
+}
+
+.sc-admin-workspace--form {
+  max-width: 1180px;
+}
+
+.sc-admin-workspace--reading {
+  max-width: 1080px;
+}
+
 .page-header {
   display: flex;
   justify-content: space-between;

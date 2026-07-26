@@ -3,9 +3,15 @@
 -- Create date:   10/07/2026
 -- Description:   Activa el contrato comercial de una cuenta administradora y registra el movimiento historico.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA
+-- Create date:   25/07/2026
+-- Description:   Selecciona BASICO o PRO al iniciar el contrato y aplica los limites comerciales del plan.
+-- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.usp_SEG_ActivarContratoCuentaAdministradora
     @IdCuentaAdministradora INT,
+    @TipoPlan NVARCHAR(50),
     @TipoCobro NVARCHAR(20),
     @FechaInicioPlan DATE,
     @FechaFinPlan DATE,
@@ -27,6 +33,18 @@ BEGIN
         DECLARE @EmpresasPermitidas INT;
         DECLARE @UsuariosPermitidos INT;
         DECLARE @DiasGraciaNormalizado INT = CASE WHEN @DiasGracia < 0 THEN 0 ELSE @DiasGracia END;
+        DECLARE @TipoPlanNormalizado NVARCHAR(50) = UPPER(LTRIM(RTRIM(@TipoPlan)));
+        DECLARE @EmpresasPermitidasNuevo INT;
+        DECLARE @UsuariosPermitidosNuevo INT;
+
+        IF @TipoPlanNormalizado NOT IN (N'BASICO', N'PRO')
+        BEGIN
+            RAISERROR (N'El plan debe ser Emprendedor o Contador.', 16, 1);
+            RETURN;
+        END;
+
+        SET @EmpresasPermitidasNuevo = CASE WHEN @TipoPlanNormalizado = N'PRO' THEN 10 ELSE 3 END;
+        SET @UsuariosPermitidosNuevo = CASE WHEN @TipoPlanNormalizado = N'PRO' THEN 3 ELSE 2 END;
 
         IF @FechaFinPlan < @FechaInicioPlan
         BEGIN
@@ -69,7 +87,7 @@ BEGIN
             VALUES
             (
                 @IdCuentaAdministradora,
-                N'BASICO',
+                @TipoPlanNormalizado,
                 N'ACTIVO',
                 0,
                 @FechaInicioPlan,
@@ -77,8 +95,8 @@ BEGIN
                 @TipoCobro,
                 @DiasGraciaNormalizado,
                 DATEADD(DAY, @DiasGraciaNormalizado, @FechaFinPlan),
-                NULL,
-                NULL,
+                @EmpresasPermitidasNuevo,
+                @UsuariosPermitidosNuevo,
                 1,
                 @Observacion,
                 @UsuarioRegistro,
@@ -94,7 +112,8 @@ BEGIN
         ELSE
         BEGIN
             UPDATE dbo.SEG_CuentaAdministradoraSuscripcion
-            SET EstadoSuscripcion = N'ACTIVO',
+            SET TipoPlan = @TipoPlanNormalizado,
+                EstadoSuscripcion = N'ACTIVO',
                 EsPrueba = 0,
                 FechaInicioPrueba = NULL,
                 FechaFinPrueba = NULL,
@@ -103,6 +122,8 @@ BEGIN
                 TipoCobro = @TipoCobro,
                 DiasGracia = @DiasGraciaNormalizado,
                 FechaFinGracia = DATEADD(DAY, @DiasGraciaNormalizado, @FechaFinPlan),
+                EmpresasPermitidas = @EmpresasPermitidasNuevo,
+                UsuariosPermitidos = @UsuariosPermitidosNuevo,
                 Activo = 1,
                 Observacion = @Observacion,
                 FechaActualizacion = SYSDATETIME(),
@@ -140,7 +161,7 @@ BEGIN
             @IdCuentaAdministradoraSuscripcion,
             N'ACTIVACION_CONTRATO',
             @TipoPlanAnterior,
-            COALESCE(@TipoPlanAnterior, N'BASICO'),
+            @TipoPlanNormalizado,
             @EstadoSuscripcionAnterior,
             N'ACTIVO',
             @EsPruebaAnterior,
@@ -152,9 +173,9 @@ BEGIN
             @DiasGraciaNormalizado,
             0,
             @EmpresasPermitidas,
-            @EmpresasPermitidas,
+            @EmpresasPermitidasNuevo,
             @UsuariosPermitidos,
-            @UsuariosPermitidos,
+            @UsuariosPermitidosNuevo,
             @Observacion,
             @UsuarioRegistro
         );

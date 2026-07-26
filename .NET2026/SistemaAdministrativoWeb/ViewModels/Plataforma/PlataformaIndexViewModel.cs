@@ -11,5 +11,11 @@ public sealed class PlataformaIndexViewModel
     public int CobrosRegistrados { get; init; }
     public int CobrosPendientesAplicacion { get; init; }
     public decimal MontoCobradoMes { get; init; }
+    public int PaginaActual { get; init; } = 1;
+    public int TamanoPagina { get; init; } = 10;
+    public int TotalRegistrosFiltrados { get; init; }
+    public int TotalPaginas { get; init; } = 1;
+    public bool TienePaginaAnterior => PaginaActual > 1;
+    public bool TienePaginaSiguiente => PaginaActual < TotalPaginas;
     public IReadOnlyCollection<CuentaSuscripcionViewModel> Cuentas { get; init; } = [];
 }

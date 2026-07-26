@@ -18,6 +18,11 @@
 -- Create date:   10/07/2026
 -- Description:   Corrige el rol inicial de la cuenta administradora a ADMINISTRADORCUENTA y asegura la semilla base de seguridad antes del alta.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA / Codex
+-- Create date:   25/07/2026
+-- Description:   Inicializa la prueba con limite de una empresa y un usuario y corrige el parametro de usuario enviado a la semilla de seguridad.
+-- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.usp_SEG_RegistrarCuentaAdministradoraConEmpresa
     @AspNetUserId NVARCHAR(450),
@@ -44,11 +49,12 @@ BEGIN
         DECLARE @IdCuentaAdministradoraSuscripcion INT
         DECLARE @FechaInicioPrueba DATE = CAST(SYSDATETIME() AS DATE)
         DECLARE @FechaFinPrueba DATE = DATEADD(DAY, @DiasPrueba, CAST(SYSDATETIME() AS DATE))
+        DECLARE @UsuarioSemilla NVARCHAR(450) = COALESCE(@UsuarioRegistro, @CorreoReferencia, N'sistema')
 
         IF OBJECT_ID(N'dbo.usp_SEG_SeedSeguridadCuentaPermisosBase', N'P') IS NOT NULL
         BEGIN
             EXEC dbo.usp_SEG_SeedSeguridadCuentaPermisosBase
-                @UsuarioRegistro = COALESCE(@UsuarioRegistro, @CorreoReferencia, N'sistema');
+                @UsuarioRegistro = @UsuarioSemilla;
         END;
 
         IF EXISTS
@@ -217,8 +223,8 @@ BEGIN
             @FechaInicioPrueba,
             @FechaFinPrueba,
             1,
-            3,
-            3,
+            1,
+            1,
             N'Registro inicial automatico.',
             @UsuarioRegistro
         );
@@ -250,8 +256,8 @@ BEGIN
             1,
             @FechaInicioPrueba,
             @FechaFinPrueba,
-            3,
-            3,
+            1,
+            1,
             N'Creacion inicial de cuenta administradora y empresa principal.',
             @UsuarioRegistro
         );

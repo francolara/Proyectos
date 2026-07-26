@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Data.SqlClient;
 using SistemaAdministrativoWeb.Infrastructure.Empresas;
 using SistemaAdministrativoWeb.Infrastructure.Security;
 using SistemaAdministrativoWeb.Infrastructure.Suscripciones;
@@ -53,6 +54,36 @@ public class UsuariosController(
 
         var email = model.Formulario.Correo.Trim();
         var user = await userManager.FindByEmailAsync(email);
+        var usuarioYaVinculado = user is not null
+            && (await cuentaAdministradoraRepository.ListarUsuariosCuentaAdministradoraAsync(
+                cuenta.Value.idCuentaAdministradora,
+                cancellationToken))
+            .Any(x => string.Equals(x.AspNetUserId, user.Id, StringComparison.Ordinal));
+
+        if (!usuarioYaVinculado)
+        {
+            var aspNetUserIdActual = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var contexto = string.IsNullOrWhiteSpace(aspNetUserIdActual)
+                ? null
+                : await cuentaAdministradoraRepository.ObtenerContextoLoginUsuarioAsync(aspNetUserIdActual, cancellationToken);
+            var usuariosActivos = await cuentaAdministradoraRepository.ListarUsuariosCuentaAdministradoraAsync(
+                cuenta.Value.idCuentaAdministradora,
+                cancellationToken);
+
+            if (contexto?.UsuariosPermitidos is int usuariosPermitidos
+                && usuariosActivos.Count >= usuariosPermitidos)
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    $"La cuenta alcanzo el limite de {usuariosPermitidos} usuario(s) permitido por su suscripcion.");
+                CargarViewDataComun();
+                var recargado = await ConstruirIndexViewModelAsync(cuenta.Value.idCuentaAdministradora, cancellationToken);
+                recargado.Formulario = model.Formulario;
+                return View("Index", recargado);
+            }
+        }
+
+        var usuarioCreado = false;
         if (user is null)
         {
             if (string.IsNullOrWhiteSpace(model.Formulario.PasswordTemporal))
@@ -85,6 +116,7 @@ public class UsuariosController(
                 return View("Index", recargado);
             }
 
+            usuarioCreado = true;
             var temporaryPasswordClaimResult = await userManager.AddClaimAsync(
                 user,
                 new Claim(
@@ -107,21 +139,37 @@ public class UsuariosController(
             }
         }
 
+        try
+        {
+            await cuentaAdministradoraRepository.AsignarUsuarioCuentaAdministradoraAsync(new AsignarUsuarioCuentaAdministradoraRequest
+            {
+                AspNetUserId = user.Id,
+                IdCuentaAdministradora = cuenta.Value.idCuentaAdministradora,
+                RolCuenta = model.Formulario.RolCuenta,
+                EsCuentaPredeterminada = false,
+                UsuarioRegistro = User.Identity?.Name
+            }, cancellationToken);
+        }
+        catch (SqlException ex) when (ex.Number == 50000)
+        {
+            if (usuarioCreado)
+            {
+                await userManager.DeleteAsync(user);
+            }
+
+            ModelState.AddModelError(string.Empty, ex.Message);
+            CargarViewDataComun();
+            var recargado = await ConstruirIndexViewModelAsync(cuenta.Value.idCuentaAdministradora, cancellationToken);
+            recargado.Formulario = model.Formulario;
+            return View("Index", recargado);
+        }
+
         await cuentaAdministradoraRepository.GuardarPerfilUsuarioAsync(new UsuarioPerfilRequest
         {
             AspNetUserId = user.Id,
             NombreCompleto = model.Formulario.NombreCompleto.Trim(),
             Telefono = LimpiarTelefono(model.Formulario.Telefono),
             CorreoReferencia = email,
-            UsuarioRegistro = User.Identity?.Name
-        }, cancellationToken);
-
-        await cuentaAdministradoraRepository.AsignarUsuarioCuentaAdministradoraAsync(new AsignarUsuarioCuentaAdministradoraRequest
-        {
-            AspNetUserId = user.Id,
-            IdCuentaAdministradora = cuenta.Value.idCuentaAdministradora,
-            RolCuenta = model.Formulario.RolCuenta,
-            EsCuentaPredeterminada = false,
             UsuarioRegistro = User.Identity?.Name
         }, cancellationToken);
 

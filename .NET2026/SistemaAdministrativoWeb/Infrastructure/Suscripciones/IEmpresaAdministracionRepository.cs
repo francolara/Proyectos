@@ -6,6 +6,8 @@ public interface ICuentaAdministradoraRepository
     Task<RegistroCuentaAdministradoraConEmpresaResult> RegistrarCuentaConEmpresaAsync(RegistroCuentaAdministradoraConEmpresaRequest request, CancellationToken cancellationToken = default);
     Task<RegistroEmpresaCuentaAdministradoraResult> RegistrarEmpresaCuentaAsync(RegistroEmpresaCuentaAdministradoraRequest request, CancellationToken cancellationToken = default);
     Task<IReadOnlyCollection<CuentaSuscripcionResumenDto>> ListarCuentasSuscripcionAsync(CancellationToken cancellationToken = default);
+    Task<CuentaSuscripcionPaginaDto> ListarCuentasSuscripcionPaginadasAsync(string? textoBusqueda, string estadoFiltro, int pagina, int tamanoPagina, CancellationToken cancellationToken = default);
+    Task SincronizarVencimientoSuscripcionCuentaAsync(int idCuentaAdministradora, string? usuarioRegistro, CancellationToken cancellationToken = default);
     Task ActualizarSuscripcionCuentaAsync(ActualizarSuscripcionCuentaRequest request, CancellationToken cancellationToken = default);
     Task ActivarContratoCuentaAsync(ActivarContratoCuentaRequest request, CancellationToken cancellationToken = default);
     Task RegistrarPagoSuscripcionCuentaAsync(RegistrarPagoSuscripcionCuentaRequest request, CancellationToken cancellationToken = default);

@@ -1,6 +1,6 @@
 # DOCUMENTACION BD Y FUNCIONALIDADES - SisAdm
 
-Ultima actualizacion: 10/07/2026
+Ultima actualizacion: 25/07/2026
 Proyecto: `SistemaAdministrativoWeb`  
 Base de datos: `Dbsisadm`  
 Arquitectura definida: ASP.NET Core MVC + ASP.NET Identity + ADO.NET + Stored Procedures + SQL Server
@@ -80,6 +80,8 @@ Claves principales:
 - `MigoApi:Token`: token privado de autenticacion emitido por Migo.
 
 ## 5. Cambios recientes relevantes
+
+- `25/07/2026`: se implementa validacion central de vigencia de suscripcion en ASP.NET Core. Las cuentas en prueba se bloquean al superar `FechaFinPrueba`; los planes pagados conservan acceso hasta `FechaFinGracia` o, en su defecto, hasta `FechaFinPlan + DiasGracia`; los estados `SUSPENDIDO` y `BAJA` se restringen inmediatamente. `SuperAdmin` queda exceptuado y, durante la restriccion, solo permanecen disponibles `Mi suscripcion`, `Ayuda`, renovacion/pago, seguridad de contrasena temporal y cierre de sesion. `usp_SEG_ObtenerContextoLoginUsuario` devuelve el contexto comercial necesario. `usp_SEG_SincronizarVencimientoSuscripcionCuentaAdministradora` persiste como suspendida e inactiva la suscripcion efectivamente vencida al evaluar el acceso y registra su movimiento historico. El panel SuperAdmin resume y pliega el detalle de cada cuenta; su consulta paginada clasifica tambien vencimientos aun no sincronizados. Al iniciar contrato se elige visualmente Emprendedor o Contador, conservando los codigos internos `BASICO` y `PRO`, y se aplican sus limites vigentes de 3 empresas/2 usuarios o 10 empresas/3 usuarios. La prueba se inicializa con 1 empresa/1 usuario. Los limites efectivos permanecen editables por cuenta desde SuperAdmin y `usp_SEG_RegistrarEmpresaCuentaAdministradora` y `usp_SEG_AsignarUsuarioCuentaAdministradora` los validan transaccionalmente antes de nuevas altas o reactivaciones. La caracteristica `CpeValidation` se resuelve centralmente sin tablas adicionales: solo `PRO`/Contador y `SuperAdmin` pueden ejecutar la validacion CPE; Prueba y Emprendedor conservan el resto del panel.
 
 - `30/06/2026`: se agrega el grupo de menu `Proceso` con la pantalla `Cerrar Periodo`. El cierre se almacena por empresa y periodo en `CON_PeriodoContableEstado`, se consulta con `usp_CON_ObtenerPeriodoContableEstado` y se persiste con `usp_CON_GuardarPeriodoContableEstado`. Cuando un periodo queda cerrado se bloquean compras, ventas, caja y bancos, transferencias y aplicaciones; los asientos manuales continúan habilitados.
 - `02/07/2026`: `Registro > Asientos` amplía su manejo a 16 periodos contables (`00`, `01-12`, `13-15`). El formulario precarga fechas fisicas de apertura/cierre y el guardado manual usa `Periodo` logico para correlativo, consulta y edicion en `CON_Asiento` y `CON_CorrelativoAsiento`.
@@ -595,7 +597,7 @@ Funciones:
 - Eliminacion de compras desde el listado.
 - Filtro adicional por tipo de documento en el listado; los KPIs visibles se recalculan sobre la consulta filtrada.
 - Boton `Carga masiva de compras` junto a `Registrar compra` para importar XML SUNAT.
-- Boton `Validar CPE` solo para factura (`01`), boleta (`03`), recibo por honorarios (`02`), nota de credito (`07`) y nota de debito (`08`).
+- Boton `Validar CPE` solo para el plan Contador y para factura (`01`), boleta (`03`), recibo por honorarios (`02`), nota de credito (`07`) y nota de debito (`08`). La accion POST esta protegida por la politica de autorizacion `PlanFeature:CpeValidation`, independientemente de la visibilidad del boton.
 - La validacion CPE guarda fecha, estado y mensaje devueltos por Migo para mostrar el resultado en el listado.
 - Ayuda popup de proveedores.
 - Creacion rapida de proveedor.
@@ -859,7 +861,7 @@ Seguridad funcional, empresas y suscripciones.
 - `SEG_RolCuentaPermiso`: permisos base por rol y modulo.
 - `SEG_UsuarioCuentaAdministradora`: usuarios vinculados a cuenta administradora.
 - `SEG_UsuarioCuentaPermiso`: overrides por usuario para modulos de alcance cuenta.
-- `SEG_CuentaAdministradoraSuscripcion`: contrato/suscripcion vigente por cuenta. Ahora incluye `TipoCobro`, `DiasGracia`, `FechaFinGracia`, `FechaActualizacion` y `UsuarioActualizacion`.
+- `SEG_CuentaAdministradoraSuscripcion`: contrato/suscripcion vigente por cuenta. Incluye `TipoCobro`, `DiasGracia`, `FechaFinGracia`, `EmpresasPermitidas`, `UsuariosPermitidos`, `FechaActualizacion` y `UsuarioActualizacion`. Los limites son valores efectivos por cuenta: se cargan desde el plan y pueden ser ajustados manualmente por SuperAdmin sin duplicarlos en `SEG_CuentaAdministradora`.
 - `SEG_CuentaAdministradoraSuscripcionMovimiento`: historial de movimientos. Ahora registra `TipoCobroAnterior`, `TipoCobroNuevo`, `DiasGracia` y `DiasExtra`.
 - `SEG_CuentaAdministradoraSuscripcionPago`: pagos de suscripcion. Ahora incluye soporte de conciliacion y pasarela con `ProveedorPasarela`, `TransaccionPasarelaId`, `PagoPasarelaId`, `EstadoPasarela`, `PayloadPasarela`, `FechaConfirmacionPasarela`, `TipoCobroObjetivo`, `FechaInicioPlanObjetivo`, `DiasGraciaObjetivo`, `FechaActualizacion` y `UsuarioActualizacion`.
 - `SEG_Empresa`: empresas registradas.
@@ -970,6 +972,7 @@ Seguridad funcional, empresas y suscripciones.
 - `usp_SEG_GuardarUsuarioEmpresaPermiso`
 - `usp_SEG_GuardarUsuarioPerfil`
 - `usp_SEG_ListarCuentasAdministradorasSuscripcion`
+- `usp_SEG_ListarCuentasAdministradorasSuscripcionPaginado`
 - `usp_SEG_ListarEmpresasCuentaAdministradora`
 - `usp_SEG_ListarEmpresasPorUsuario`
 - `usp_SEG_ListarEmpresasUsuarioCuentaAdministradora`
@@ -983,8 +986,9 @@ Seguridad funcional, empresas y suscripciones.
 - `usp_SEG_RegistrarPagoSuscripcionCuentaAdministradora`
 - `usp_SEG_RegistrarCuentaAdministradoraConEmpresa`
 - `usp_SEG_RegistrarEmpresaCuentaAdministradora`
-  Ambos procedimientos cargan parametros por defecto; adicionalmente crean el plan de cuentas inicial, desde maestro para la empresa principal o desde una empresa base para empresas adicionales. Desde el ajuste del `10/07/2026`, el alta inicial asegura la semilla base de seguridad y registra al usuario fundador con rol `ADMINISTRADORCUENTA`.
+  Ambos procedimientos cargan parametros por defecto; adicionalmente crean el plan de cuentas inicial, desde maestro para la empresa principal o desde una empresa base para empresas adicionales. Desde el ajuste del `10/07/2026`, el alta inicial asegura la semilla base de seguridad y registra al usuario fundador con rol `ADMINISTRADORCUENTA`. Desde el `25/07/2026`, la prueba nace con limites 1/1 y las altas adicionales validan los limites efectivos configurados en la suscripcion.
 - `usp_SEG_SeedSeguridadCuentaPermisosBase`
+- `usp_SEG_SincronizarVencimientoSuscripcionCuentaAdministradora`
 - `usp_BAN_ListarOperacionesBancarias`
 - `usp_BAN_ObtenerResumenMovimientoBanco`
 - `usp_BAN_ListarMovimientosBancoPorEmpresa`
@@ -1177,7 +1181,7 @@ Pendientes siguientes:
 - En compras y ventas el tipo de cambio es obligatorio solo en cabecera; no se exige tipo de cambio por item en la interfaz del detalle, se muestra con 3 decimales y cada linea generada en `CON_AsientoDetalle` hereda el mismo `TipoCambioLinea` de la cabecera.
 - En compras, ventas, asientos y Caja y Bancos el tipo de cambio ahora inicia en `0`; al abrir el formulario con fecha informada se intenta consultar automaticamente el valor `USD`, y si sigue en cero el guardado lo rechaza.
 - Las ayudas de plan de cuentas usadas en compras, asientos y Caja y Bancos deben filtrar solo cuentas operativas cuando la vista pide `soloMovimiento = 1`; ese filtro no puede vaciar la ayuda cuando existen cuentas activas de movimiento.
-- En compras, el boton `Validar CPE` solo debe mostrarse para los comprobantes `01`, `03`, `02`, `07` y `08`; para los demas comprobantes no debe figurar.
+- En compras, el boton `Validar CPE` solo debe mostrarse al plan Contador para los comprobantes `01`, `03`, `02`, `07` y `08`; para los demas planes o comprobantes no debe figurar. El servidor debe volver a autorizar la caracteristica antes de consumir Migo.
 - En compras, la validacion CPE registra fecha, estado y mensaje de respuesta para que el usuario identifique si ya fue validado o por que fallo.
 - En compras y ventas existe carga masiva por XML SUNAT desde el listado; el proceso crea o reutiliza proveedor/cliente por documento, levanta cabecera, detalle y totales, rechaza comprobantes duplicados y asigna una cuenta contable default por linea desde parametros de empresa.
 - La importacion masiva registra inicialmente la provision con `Estado = EN REVISION` y `IdAsiento = NULL`; el asiento contable solo se crea cuando el usuario entra al comprobante, completa la cuenta del detalle y guarda la provision final.

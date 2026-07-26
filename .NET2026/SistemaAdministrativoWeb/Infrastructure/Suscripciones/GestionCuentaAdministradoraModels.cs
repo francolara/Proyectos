@@ -7,12 +7,29 @@ public sealed class ContextoLoginUsuarioDto
     public int? IdCuentaAdministradora { get; set; }
     public string? CodigoCuenta { get; set; }
     public string? NombreCuenta { get; set; }
+    public string? CorreoPrincipal { get; set; }
+    public string? TelefonoPrincipal { get; set; }
+    public bool? EstadoCuenta { get; set; }
     public string? RolCuenta { get; set; }
     public int CantidadEmpresasAsignadas { get; set; }
     public int? IdEmpresaPredeterminada { get; set; }
     public string? RazonSocialEmpresaPredeterminada { get; set; }
     public bool DebeSeleccionarEmpresa { get; set; }
     public bool SoloModulosCuenta { get; set; }
+    public int? IdCuentaAdministradoraSuscripcion { get; set; }
+    public string? TipoPlan { get; set; }
+    public string? EstadoSuscripcion { get; set; }
+    public bool? EsPrueba { get; set; }
+    public DateOnly? FechaInicioPrueba { get; set; }
+    public DateOnly? FechaFinPrueba { get; set; }
+    public DateOnly? FechaInicioPlan { get; set; }
+    public DateOnly? FechaFinPlan { get; set; }
+    public int? DiasGracia { get; set; }
+    public DateOnly? FechaFinGracia { get; set; }
+    public int? EmpresasPermitidas { get; set; }
+    public int? UsuariosPermitidos { get; set; }
+    public bool? ActivoSuscripcion { get; set; }
+    public string? ObservacionSuscripcion { get; set; }
     public string? Mensaje { get; set; }
 }
 

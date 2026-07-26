@@ -8,6 +8,10 @@ public sealed class ActivarContratoCuentaViewModel
     public int IdCuentaAdministradora { get; init; }
 
     [Required]
+    [RegularExpression("^(BASICO|PRO)$", ErrorMessage = "Seleccione el plan Emprendedor o Contador.")]
+    public string TipoPlan { get; init; } = "BASICO";
+
+    [Required]
     [StringLength(20, ErrorMessage = "El tipo de cobro no puede exceder 20 caracteres.")]
     public string TipoCobro { get; init; } = "MENSUAL";
 

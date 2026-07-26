@@ -4,6 +4,7 @@
     ViewData["MetaDescription"] = Model.MetaDescription;
 }
 @* Firma: FRANCO LARA - 10/07/2026 | Crea el documento publico de terminos y condiciones de FralseCont con indice navegable, contacto institucional y fondo legal claro por pagina. *@
+@* Firma: FRANCO LARA - 25/07/2026 | Retira los enlaces internos a Privacidad y Cancelaciones, centra el acceso para volver al inicio y alinea nombres, precios y limites de los planes con la oferta publica vigente. *@
 
 <section class="fralsecont-legal-page fralsecont-legal-page--terms">
     <div class="fralsecont-legal-container">
@@ -39,7 +40,7 @@
             <a href="#propiedad">11. Propiedad intelectual</a>
             <a href="#empresas-usuarios">12. Empresas y usuarios vinculados</a>
             <a href="#planes">13. Planes disponibles</a>
-            <a href="#plan-gratis">14. Plan Gratis</a>
+            <a href="#plan-gratis">14. Plan Prueba</a>
             <a href="#plan-emprendedor">15. Plan Emprendedor</a>
             <a href="#plan-contador">16. Plan Contador</a>
             <a href="#vigencia">17. Vigencia de las suscripciones</a>
@@ -169,7 +170,7 @@
                 </p>
             </section>
             <section id="plan-gratis" class="fralsecont-legal-section">
-                <h2 class="fralsecont-legal-section-title">14. Plan Gratis</h2>
+                <h2 class="fralsecont-legal-section-title">14. Plan Prueba</h2>
                 <ul>
                     <li>Precio referencial actual: S/ 0.</li>
                     <li>Vigencia referencial actual: 30 dias.</li>
@@ -183,8 +184,8 @@
             <section id="plan-emprendedor" class="fralsecont-legal-section">
                 <h2 class="fralsecont-legal-section-title">15. Plan Emprendedor</h2>
                 <ul>
-                    <li>Precio mensual referencial actual: S/ 49.90.</li>
-                    <li>Hasta 3 empresas y hasta 3 usuarios.</li>
+                    <li>Precio mensual referencial actual: S/ 39.90.</li>
+                    <li>Hasta 3 empresas y hasta 2 usuarios.</li>
                     <li>Consulta de RUC y DNI en linea.</li>
                     <li>Tipo de cambio manual.</li>
                     <li>Sin tipo de cambio en linea y sin validacion CPE.</li>
@@ -193,8 +194,8 @@
             <section id="plan-contador" class="fralsecont-legal-section">
                 <h2 class="fralsecont-legal-section-title">16. Plan Contador</h2>
                 <ul>
-                    <li>Precio mensual referencial actual: S/ 99.90.</li>
-                    <li>Hasta 10 empresas y hasta 10 usuarios.</li>
+                    <li>Precio mensual referencial actual: S/ 89.90.</li>
+                    <li>Hasta 10 empresas y hasta 3 usuarios.</li>
                     <li>Consulta de RUC y DNI en linea.</li>
                     <li>Tipo de cambio manual y tipo de cambio en linea.</li>
                     <li>Sincronizacion de tipos de cambio.</li>
@@ -402,11 +403,8 @@
             </section>
         </div>
 
-        <div class="fralsecont-legal-links">
-            <a asp-controller="Legal" asp-action="Privacidad">Ir a Politica de privacidad</a>
-            <a asp-controller="Legal" asp-action="Cancelaciones">Ir a Politica de cancelaciones y devoluciones</a>
+        <div class="d-flex justify-content-center">
+            <a class="fralsecont-legal-back-link" asp-controller="Home" asp-action="Index">Volver al inicio</a>
         </div>
-
-        <a class="fralsecont-legal-back-link" asp-controller="Home" asp-action="Index">Volver al inicio</a>
     </div>
 </section>

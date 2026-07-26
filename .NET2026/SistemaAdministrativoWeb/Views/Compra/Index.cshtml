@@ -2,6 +2,7 @@
 @* Firma: FRANCO LARA - 29/06/2026 | Agrega validacion CPE por compra solo para factura, boleta, recibo por honorarios, nota de credito y nota de debito, mostrando fecha y estado de validacion en el listado, y suma filtro por tipo de documento. *@
 @* Firma: FRANCO LARA - 30/06/2026 | Agrega el acceso a carga masiva de compras por XML SUNAT en el listado del periodo, mantiene visible la validacion CPE para RxH aunque el codigo del comprobante venga con espacios y reubica el boton Consultar al costado del buscador. *@
 @* Firma: FRANCO LARA - 02/07/2026 | Corrige la seleccion visible de anio, mes y tipo de documento en compras para que el periodo mostrado respete el contexto devuelto por la opcion, convierte el numero de asiento del listado en acceso directo al asiento generado y deja el boton Consultar en la misma fila de filtros. *@
+@* Firma: FRANCO LARA - 25/07/2026 | Restringe visualmente la validacion CPE al plan Contador; la autorizacion efectiva se aplica tambien en el servidor. *@
 
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.CompraIndexViewModel
 
@@ -180,7 +181,7 @@
                                     <td class="text-end">
                                         <div class="workspace-row-actions-compact">
                                             <a asp-action="Editar" asp-route-periodo="@Model.PeriodoConsulta" asp-route-idCompra="@compra.IdCompra" class="workspace-row-btn workspace-row-btn-primary">Editar</a>
-                                            @if (codigoTipoComprobante is "01" or "03" or "07" or "08" or "02")
+                                            @if (Model.PuedeValidarCpe && codigoTipoComprobante is "01" or "03" or "07" or "08" or "02")
                                             {
                                                 <form asp-action="ValidarCpe" method="post">
                                                     @Html.AntiForgeryToken()

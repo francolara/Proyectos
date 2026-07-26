@@ -9,93 +9,58 @@ namespace SistemaAdministrativoWeb.Controllers;
 
 [Authorize]
 [ModulePermission("MISUSCRIPCION")]
+[AllowRestrictedSubscription]
 public class MiSuscripcionController(
     ICurrentCompanyAccessor currentCompanyAccessor,
-    ICuentaAdministradoraRepository cuentaAdministradoraRepository) : Controller
+    ISubscriptionAccessService subscriptionAccessService) : Controller
 {
     [HttpGet]
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
-        if (User.IsInRole("SuperAdmin") && !currentCompanyAccessor.TieneEmpresaActiva)
+        if (User.IsInRole("SuperAdmin"))
         {
             return RedirectToAction("Index", "Plataforma");
         }
 
-        if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
-        {
-            return RedirectToAction("Index", "EmpresaContexto");
-        }
-
         ViewData["AdminShell"] = true;
 
-        var contexto = await cuentaAdministradoraRepository.ObtenerContextoSuscripcionPorEmpresaAsync(
-            currentCompanyAccessor.EmpresaId.Value,
-            cancellationToken);
+        var evaluacion = await subscriptionAccessService.EvaluateAsync(User, cancellationToken);
+        var contexto = evaluacion.LoginContext;
 
-        if (contexto is null)
+        if (contexto is null || !contexto.TieneAcceso || !contexto.IdCuentaAdministradora.HasValue)
         {
             return RedirectToAction("Index", "EmpresaContexto");
-        }
-
-        var fechaVencimiento = contexto.EsPrueba ? contexto.FechaFinPrueba : contexto.FechaFinPlan;
-        int? diasParaVencer = null;
-        if (fechaVencimiento.HasValue)
-        {
-            diasParaVencer = fechaVencimiento.Value.DayNumber - DateOnly.FromDateTime(DateTime.Today).DayNumber;
         }
 
         var model = new MiSuscripcionIndexViewModel
         {
-            IdEmpresa = contexto.IdEmpresa,
-            NombreEmpresa = currentCompanyAccessor.EmpresaNombre ?? contexto.RazonSocial,
-            Ruc = contexto.Ruc,
-            IdCuentaAdministradora = contexto.IdCuentaAdministradora,
-            CodigoCuenta = contexto.CodigoCuenta,
-            NombreCuenta = contexto.NombreCuenta,
-            CorreoPrincipal = contexto.CorreoPrincipal,
+            IdEmpresa = currentCompanyAccessor.EmpresaId ?? contexto.IdEmpresaPredeterminada ?? 0,
+            NombreEmpresa = currentCompanyAccessor.EmpresaNombre ?? contexto.RazonSocialEmpresaPredeterminada ?? "Empresa",
+            IdCuentaAdministradora = contexto.IdCuentaAdministradora.Value,
+            CodigoCuenta = contexto.CodigoCuenta ?? string.Empty,
+            NombreCuenta = contexto.NombreCuenta ?? "Cuenta administradora",
+            CorreoPrincipal = contexto.CorreoPrincipal ?? string.Empty,
             TelefonoPrincipal = contexto.TelefonoPrincipal,
-            TipoPlan = string.IsNullOrWhiteSpace(contexto.TipoPlan) ? "TRIAL" : contexto.TipoPlan,
-            EstadoSuscripcion = string.IsNullOrWhiteSpace(contexto.EstadoSuscripcion) ? "TRIAL" : contexto.EstadoSuscripcion,
-            EsPrueba = contexto.EsPrueba,
+            TipoPlan = evaluacion.PlanDisplay,
+            EstadoSuscripcion = evaluacion.StatusDisplay,
+            EsPrueba = contexto.EsPrueba == true,
             FechaInicioPrueba = contexto.FechaInicioPrueba,
             FechaFinPrueba = contexto.FechaFinPrueba,
             FechaInicioPlan = contexto.FechaInicioPlan,
             FechaFinPlan = contexto.FechaFinPlan,
+            FechaFinGracia = evaluacion.GraceEndDate,
             EmpresasPermitidas = contexto.EmpresasPermitidas,
             UsuariosPermitidos = contexto.UsuariosPermitidos,
-            EstadoCuenta = contexto.EstadoCuenta,
-            EstadoEmpresa = contexto.EstadoEmpresa,
-            Observacion = contexto.Observacion,
-            FechaVencimiento = fechaVencimiento,
-            DiasParaVencer = diasParaVencer,
-            ResumenVigencia = ResolverResumenVigencia(contexto, fechaVencimiento, diasParaVencer)
+            EstadoCuenta = contexto.EstadoCuenta == true,
+            EstadoEmpresa = true,
+            Observacion = contexto.ObservacionSuscripcion,
+            FechaVencimiento = evaluacion.ExpirationDate,
+            DiasParaVencer = evaluacion.DaysUntilExpiration,
+            ResumenVigencia = evaluacion.Message,
+            EstadoEfectivo = evaluacion.EffectiveStatus,
+            AccesoRestringido = evaluacion.IsRestricted
         };
 
         return View(model);
-    }
-
-    private static string ResolverResumenVigencia(ContextoSuscripcionEmpresaDto contexto, DateOnly? fechaVencimiento, int? diasParaVencer)
-    {
-        if (fechaVencimiento.HasValue)
-        {
-            if (diasParaVencer < 0)
-            {
-                return $"La suscripcion vencio el {fechaVencimiento:dd/MM/yyyy}.";
-            }
-
-            if (diasParaVencer <= 7)
-            {
-                return $"La suscripcion vence el {fechaVencimiento:dd/MM/yyyy}.";
-            }
-
-            return $"Cobertura vigente hasta {fechaVencimiento:dd/MM/yyyy}.";
-        }
-
-        if (!string.IsNullOrWhiteSpace(contexto.EstadoSuscripcion))
-        {
-            return $"Estado actual de la suscripcion: {contexto.EstadoSuscripcion}.";
-        }
-
-        return "Aun no se ha configurado una vigencia para esta cuenta administradora.";
     }
 }

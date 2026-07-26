@@ -26,7 +26,8 @@ public class CompraController(
     ITipoPercepcionRepository tipoPercepcionRepository,
     IParametroEmpresaRepository parametroEmpresaRepository,
     IMonedaRepository monedaRepository,
-    ITipoComprobanteRepository tipoComprobanteRepository) : Controller
+    ITipoComprobanteRepository tipoComprobanteRepository,
+    IPlanFeatureService planFeatureService) : Controller
 {
     private const int TamanoPagina = 20;
     private const int TamanoAyudaCuenta = 100;
@@ -123,6 +124,10 @@ public class CompraController(
             TamanoPagina = TamanoPagina,
             TotalRegistros = compras.TotalRecords
         };
+        model.PuedeValidarCpe = await planFeatureService.IsEnabledAsync(
+            User,
+            PlanFeature.CpeValidation,
+            cancellationToken);
 
         return View(model);
     }
@@ -304,6 +309,7 @@ public class CompraController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Policy = PlanFeaturePolicies.CpeValidation)]
     public async Task<IActionResult> ValidarCpe(int idCompra, short? anio = null, byte? mes = null, string? textoBusqueda = null, string? tipoComprobante = null, int pagina = 1, CancellationToken cancellationToken = default)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)

@@ -1,13 +1,14 @@
 @model SistemaAdministrativoWeb.ViewModels.Usuarios.UsuariosIndexViewModel
 @* Firma: FRANCO LARA - 10/07/2026 | Crea la vista General > Usuarios para registrar o vincular accesos a la cuenta administradora y asignarles empresas operativas. *@
 @* Firma: FRANCO LARA - 12/07/2026 | Limpia telefono y contrasena temporal al abrir el formulario, agrega visor de contrasena y retira las opciones de cuenta o empresa predeterminada para forzar la seleccion posterior de empresa. *@
+@* Firma: FRANCO LARA - 25/07/2026 | Limita el ancho, uniformiza controles y simplifica la cabecera de la gestion de usuarios. *@
 @{
     ViewData["Title"] = "Usuarios";
     ViewData["AdminShell"] = true;
     var limpiarCamposIniciales = ViewData.ModelState.IsValid;
 }
 
-<section class="dashboard-shell subscription-shell">
+<section class="dashboard-shell subscription-shell dashboard-shell-contained dashboard-shell-contained-form">
     <section class="dashboard-hero">
         <div>
             <span class="dashboard-kicker">General</span>
@@ -17,7 +18,6 @@
         <article class="dashboard-status-card">
             <span>Cuenta administradora</span>
             <strong>@Model.NombreCuenta</strong>
-            <small>Codigo: @Model.CodigoCuenta</small>
             <small>Usuarios vinculados: @Model.Usuarios.Count</small>
         </article>
     </section>
@@ -38,7 +38,7 @@
             <p>Si el correo aun no existe en Identity, el sistema crea el acceso con contrasena temporal y luego lo liga a la cuenta administradora.</p>
         </div>
 
-        <form asp-action="GuardarUsuario" method="post" autocomplete="off" data-clear-sensitive-fields="@limpiarCamposIniciales.ToString().ToLowerInvariant()">
+        <form asp-action="GuardarUsuario" method="post" class="workspace-account-form" autocomplete="off" data-clear-sensitive-fields="@limpiarCamposIniciales.ToString().ToLowerInvariant()">
             @Html.AntiForgeryToken()
             <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
@@ -88,7 +88,7 @@
                     {
                         var empresa = Model.EmpresasDisponibles.ElementAt(i);
                         <div class="col-md-6">
-                            <label class="border rounded p-3 d-flex gap-2 align-items-start w-100">
+                            <label class="workspace-check workspace-account-option w-100">
                                 <input type="checkbox" class="form-check-input mt-1" name="Formulario.EmpresasSeleccionadas" value="@empresa.IdEmpresa" @(Model.Formulario.EmpresasSeleccionadas.Contains(empresa.IdEmpresa) ? "checked" : null) />
                                 <span>
                                     <strong>@empresa.CodigoEmpresa</strong><br />

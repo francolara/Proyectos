@@ -13366,14 +13366,6 @@ C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlE
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\tmp\codex-build-faq-header\runtimes\win-arm64\native\Microsoft.Data.SqlClient.SNI.dll
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\tmp\codex-build-faq-header\runtimes\win-x64\native\Microsoft.Data.SqlClient.SNI.dll
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\tmp\codex-build-faq-header\runtimes\win-x86\native\Microsoft.Data.SqlClient.SNI.dll
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\tmp\codex-build-faq-header\web.config
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\tmp\codex-build-faq-header\appsettings.Development.json
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\tmp\codex-build-faq-header\appsettings.json
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\tmp\codex-build-faq-header\dotnet-tools.json
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\tmp\codex-build-faq-header\SistemaControlEspaciosDeportivosWeb.deps.json
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\tmp\codex-build-faq-header\SistemaControlEspaciosDeportivosWeb.runtimeconfig.json
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\tmp\codex-build-faq-header\SistemaControlEspaciosDeportivosWeb.staticwebassets.endpoints.json
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\tmp\codex-build-faq-header\SistemaControlEspaciosDeportivosWeb.staticwebassets.runtime.json
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\tmp\codex-build-faq-users\tmp\codex-build-faq-header\web.config
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\tmp\codex-build-faq-users\web.config
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\tmp\codex-build-faq-users\appsettings.Development.json
@@ -13533,23 +13525,6 @@ C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlE
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\tmp\codex-build-faq-users\runtimes\win-arm64\native\Microsoft.Data.SqlClient.SNI.dll
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\tmp\codex-build-faq-users\runtimes\win-x64\native\Microsoft.Data.SqlClient.SNI.dll
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\tmp\codex-build-faq-users\runtimes\win-x86\native\Microsoft.Data.SqlClient.SNI.dll
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\compressed\vnbh1609s7-{0}-rqfo3cp3tx-rqfo3cp3tx.gz
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\tmp\codex-build-faq-users\tmp\codex-build-faq-header\web.config
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\tmp\codex-build-faq-users\web.config
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\tmp\codex-build-faq-users\appsettings.Development.json
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\tmp\codex-build-faq-users\appsettings.json
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\tmp\codex-build-faq-users\dotnet-tools.json
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\tmp\codex-build-faq-users\SistemaControlEspaciosDeportivosWeb.deps.json
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\tmp\codex-build-faq-users\SistemaControlEspaciosDeportivosWeb.runtimeconfig.json
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\tmp\codex-build-faq-users\SistemaControlEspaciosDeportivosWeb.staticwebassets.endpoints.json
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\tmp\codex-build-faq-users\SistemaControlEspaciosDeportivosWeb.staticwebassets.runtime.json
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\tmp\codex-build-faq-users\tmp\codex-build-faq-header\appsettings.Development.json
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\tmp\codex-build-faq-users\tmp\codex-build-faq-header\appsettings.json
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\tmp\codex-build-faq-users\tmp\codex-build-faq-header\dotnet-tools.json
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\tmp\codex-build-faq-users\tmp\codex-build-faq-header\SistemaControlEspaciosDeportivosWeb.deps.json
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\tmp\codex-build-faq-users\tmp\codex-build-faq-header\SistemaControlEspaciosDeportivosWeb.runtimeconfig.json
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\tmp\codex-build-faq-users\tmp\codex-build-faq-header\SistemaControlEspaciosDeportivosWeb.staticwebassets.endpoints.json
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\bin\Debug\net10.0\tmp\codex-build-faq-users\tmp\codex-build-faq-header\SistemaControlEspaciosDeportivosWeb.staticwebassets.runtime.json
 C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build-15dias\tmp\codex-build-faq-header\web.config
 C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build-15dias\tmp\codex-build-faq-users\tmp\codex-build-faq-header\web.config
 C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build-15dias\tmp\codex-build-faq-users\web.config
@@ -13962,4 +13937,27 @@ C:\Users\Franco Lara\.codex\visualizations\2026\07\21\019f84ee-cc18-7791-b615-67
 C:\Users\Franco Lara\.codex\visualizations\2026\07\21\019f84ee-cc18-7791-b615-67c0bd3fbc8b\build-reportes-superadmin\SistemaControlEspaciosDeportivosWeb.runtimeconfig.json
 C:\Users\Franco Lara\.codex\visualizations\2026\07\21\019f84ee-cc18-7791-b615-67c0bd3fbc8b\build-reportes-superadmin\SistemaControlEspaciosDeportivosWeb.dll
 C:\Users\Franco Lara\.codex\visualizations\2026\07\21\019f84ee-cc18-7791-b615-67c0bd3fbc8b\build-reportes-superadmin\SistemaControlEspaciosDeportivosWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build\web.config
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build\dotnet-tools.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build\SistemaControlEspaciosDeportivosWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build\SistemaControlEspaciosDeportivosWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build\SistemaControlEspaciosDeportivosWeb.exe
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build\SistemaControlEspaciosDeportivosWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build\SistemaControlEspaciosDeportivosWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build\SistemaControlEspaciosDeportivosWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build\SistemaControlEspaciosDeportivosWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build-final\web.config
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build-final\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build-final\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build-final\dotnet-tools.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build-final\SistemaControlEspaciosDeportivosWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build-final\SistemaControlEspaciosDeportivosWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build-final\SistemaControlEspaciosDeportivosWeb.exe
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build-final\SistemaControlEspaciosDeportivosWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build-final\SistemaControlEspaciosDeportivosWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build-final\SistemaControlEspaciosDeportivosWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build-final\SistemaControlEspaciosDeportivosWeb.pdb
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\compressed\vnbh1609s7-{0}-v99oyidg7r-v99oyidg7r.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt

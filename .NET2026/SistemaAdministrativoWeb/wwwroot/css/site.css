@@ -229,6 +229,28 @@ body {
   box-shadow: 0 16px 30px rgba(13, 110, 253, 0.24);
 }
 
+.app-brand-logo-frame {
+  position: relative;
+  width: 7.5rem;
+  height: 4.6rem;
+  display: block;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  background: #fff;
+}
+
+.app-brand-logo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: auto;
+  max-width: none;
+  display: block;
+  transform: translateY(-18.5%);
+}
+
 .fralsecont-legal-page {
     width: 100%;
 }
@@ -956,8 +978,48 @@ body {
 .platform-account-grid {
   display: grid;
   gap: 1rem;
-  grid-template-columns: minmax(240px, 1fr) minmax(220px, 0.8fr) minmax(260px, 0.95fr);
-  align-items: start;
+  grid-template-columns: minmax(240px, 1fr) minmax(220px, 0.8fr) minmax(260px, 0.95fr) auto;
+  align-items: center;
+}
+
+.platform-account-summary-action {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.platform-account-detail-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  white-space: nowrap;
+}
+
+.platform-account-detail-toggle .bi {
+  transition: transform 0.2s ease;
+}
+
+.platform-account-detail-toggle:not(.collapsed) .bi {
+  transform: rotate(180deg);
+}
+
+.platform-account-detail-toggle.collapsed .platform-account-detail-label-expanded,
+.platform-account-detail-toggle:not(.collapsed) .platform-account-detail-label-collapsed {
+  display: none;
+}
+
+.platform-pagination-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  color: var(--app-muted);
+  font-size: 0.82rem;
+}
+
+.platform-pagination-summary .workspace-pagination {
+  margin-top: 0;
 }
 
 .platform-mini-grid {
@@ -1093,6 +1155,16 @@ body {
   padding: 2.5rem;
   display: flex;
   align-items: flex-end;
+}
+
+.auth-visual.auth-visual-banner {
+  padding: 0;
+  aspect-ratio: 4 / 5;
+  align-self: center;
+  background-color: #0b1731;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .auth-visual-content h2 {
@@ -1416,7 +1488,7 @@ html[data-theme="dark"] .app-theme-toggle-thumb {
   background: linear-gradient(145deg, rgba(47, 163, 122, 0.24), rgba(16, 51, 42, 0.2));
 }
 
-.app-sidebar-company-chip span {
+.app-sidebar-company-chip > span {
   display: block;
   font-size: 0.7rem;
   text-transform: uppercase;
@@ -1425,12 +1497,40 @@ html[data-theme="dark"] .app-theme-toggle-thumb {
   font-weight: 800;
 }
 
-.app-sidebar-company-chip strong {
+.app-sidebar-company-chip > strong {
   display: block;
   margin-top: 0.2rem;
   font-size: 0.95rem;
   line-height: 1.25;
   color: #fff;
+}
+
+.app-sidebar-company-link {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 0.7rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(206, 243, 230, 0.18);
+  border-radius: 0.7rem;
+  color: rgba(230, 250, 243, 0.88);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.app-sidebar-company-link:hover,
+.app-sidebar-company-link:focus-visible,
+.app-sidebar-company-link.active {
+  border-color: rgba(206, 243, 230, 0.42);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.app-sidebar-company-link:focus-visible {
+  outline: 2px solid rgba(206, 243, 230, 0.7);
+  outline-offset: 2px;
 }
 
 .app-sidebar-nav {
@@ -3098,6 +3198,85 @@ body.workspace-loading-active {
   width: 100%;
 }
 
+/* Firma: FRANCO LARA - 25/07/2026 | Replica el ancho mixto, compacta Mi suscripcion y uniformiza los formularios generales de Usuarios y Configuracion. */
+.dashboard-shell-contained {
+  width: 100%;
+  margin-inline: auto;
+}
+
+.dashboard-shell-contained-form {
+  max-width: 1180px;
+}
+
+.dashboard-shell-contained-reading {
+  max-width: 1080px;
+}
+
+.workspace-account-form {
+  --workspace-account-form-gutter: clamp(1rem, 2vw, 1.4rem);
+  padding: var(--workspace-account-form-gutter);
+}
+
+.workspace-account-form-section {
+  padding-top: 0;
+}
+
+.workspace-account-form-section > .workspace-section-head {
+  margin-inline: calc(var(--workspace-account-form-gutter) * -1);
+  margin-bottom: var(--workspace-account-form-gutter);
+}
+
+.workspace-account-form .form-label {
+  margin-bottom: 0.45rem;
+  font-weight: 700;
+}
+
+.workspace-account-form .form-control,
+.workspace-account-form .form-select {
+  min-height: 3.1rem;
+  border-radius: 0.95rem;
+  border-color: var(--app-input-border);
+  background: var(--app-input-bg);
+  color: var(--app-ink);
+}
+
+.workspace-account-form textarea.form-control {
+  min-height: 7rem;
+  padding: 0.85rem 1rem;
+}
+
+.workspace-account-form .input-group > .form-control:not(:last-child) {
+  border-radius: 0.95rem 0 0 0.95rem;
+}
+
+.workspace-account-form .input-group > .btn:last-child {
+  min-height: 3.1rem;
+  border-radius: 0 0.95rem 0.95rem 0;
+}
+
+.workspace-account-form .form-check-input {
+  inline-size: 1.1rem;
+  block-size: 1.1rem;
+  flex: 0 0 auto;
+  border-radius: 0.35rem;
+}
+
+.workspace-account-option {
+  min-height: 4.8rem;
+  align-items: flex-start;
+  cursor: pointer;
+}
+
+.workspace-account-option:hover {
+  border-color: rgba(43, 121, 236, 0.36);
+  box-shadow: 0 10px 22px rgba(14, 40, 86, 0.08);
+}
+
+.workspace-account-option:has(.form-check-input:checked) {
+  border-color: rgba(43, 121, 236, 0.48);
+  background: rgba(43, 121, 236, 0.08);
+}
+
 .app-context-toolbar {
   display: flex;
   justify-content: flex-end;
@@ -3394,6 +3573,19 @@ body.workspace-loading-active {
   gap: 1rem;
   padding: 1.35rem;
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.subscription-info-grid-compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.subscription-limit-grid-compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.subscription-shell .dashboard-metric-card,
+.subscription-info-grid-compact .subscription-info-card {
+  min-height: 6rem;
 }
 
 .subscription-info-card {
@@ -4771,6 +4963,10 @@ html[data-theme="dark"] .text-dark {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .platform-account-summary-action {
+    grid-column: 1 / -1;
+  }
+
   .dashboard-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -4809,10 +5005,27 @@ html[data-theme="dark"] .text-dark {
     grid-template-columns: 1fr;
   }
 
+  .platform-account-summary-action {
+    grid-column: auto;
+    justify-content: stretch;
+  }
+
+  .platform-account-detail-toggle {
+    justify-content: center;
+    width: 100%;
+  }
+
   .hero-auth-landing,
   .auth-shell,
   .app-shell {
     grid-template-columns: 1fr;
+  }
+
+  .auth-visual.auth-visual-banner {
+    min-height: 0;
+    height: auto;
+    aspect-ratio: 4 / 5;
+    background-position: center top;
   }
 
   .app-sidebar {

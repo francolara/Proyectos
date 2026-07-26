@@ -1,31 +1,31 @@
 @model SistemaAdministrativoWeb.ViewModels.Suscripciones.MiSuscripcionIndexViewModel
 @* Firma: FRANCO LARA - 08/07/2026 | Agrega la vista Mi suscripcion al panel contable con resumen de vigencia, limites operativos y contexto de cuenta administradora. *@
+@* Firma: FRANCO LARA - 25/07/2026 | Mantiene un ancho de lectura controlado, simplifica las tarjetas y muestra visualmente el plan y estado efectivo, incluyendo alertas de gracia o bloqueo por vencimiento. *@
 @{
     ViewData["Title"] = "Mi suscripcion";
     ViewData["AdminShell"] = true;
 
-    var planTexto = Model.TipoPlan switch
-    {
-        "PRO" => "Plan orientado a operacion contable continua, multiempresa y mayor capacidad de usuarios.",
-        "BASICO" => "Plan operativo para registrar, consultar y cerrar el circuito contable mensual.",
-        _ => "Modalidad de prueba o configuracion inicial mientras se completa la suscripcion."
-    };
-
-    var estadoClase = Model.EstadoSuscripcion switch
+    var estadoClase = Model.EstadoEfectivo switch
     {
         "ACTIVO" => "subscription-pill is-success",
-        "TRIAL" => "subscription-pill is-warning",
+        "EN_PRUEBA" => "subscription-pill is-warning",
+        "EN_GRACIA" => "subscription-pill is-warning",
+        "VENCIDO" => "subscription-pill is-danger",
         "SUSPENDIDO" => "subscription-pill is-danger",
         "BAJA" => "subscription-pill is-danger",
         _ => "subscription-pill"
     };
 
-    var diasTexto = Model.DiasParaVencer.HasValue
-        ? Model.DiasParaVencer.Value.ToString("0")
-        : "Sin fecha";
+    var diasTexto = Model.DiasParaVencer switch
+    {
+        < 0 => $"Vencio hace {Math.Abs(Model.DiasParaVencer.Value)} dias",
+        0 => "Vence hoy",
+        > 0 => $"{Model.DiasParaVencer.Value} dias",
+        _ => "Sin fecha"
+    };
 }
 
-<section class="dashboard-shell subscription-shell">
+<section class="dashboard-shell subscription-shell dashboard-shell-contained dashboard-shell-contained-reading">
     <section class="dashboard-hero">
         <div>
             <span class="dashboard-kicker">General</span>
@@ -35,61 +35,59 @@
         <article class="dashboard-status-card">
             <span>Cuenta administradora</span>
             <strong>@Model.NombreCuenta</strong>
-            <small>Codigo: @Model.CodigoCuenta</small>
-            <small>@Model.ResumenVigencia</small>
         </article>
     </section>
+
+    @if (Model.AccesoRestringido)
+    {
+        <div class="alert alert-danger subscription-access-alert" role="alert">
+            <strong>Acceso operativo restringido.</strong>
+            <span>@Model.ResumenVigencia</span>
+            <span>Mientras regularizas la suscripcion puedes consultar esta pantalla, la ayuda y cerrar sesion.</span>
+        </div>
+    }
+    else if (string.Equals(Model.EstadoEfectivo, "EN_GRACIA", StringComparison.OrdinalIgnoreCase))
+    {
+        <div class="alert alert-warning subscription-access-alert" role="status">
+            <strong>Periodo de gracia activo.</strong>
+            <span>@Model.ResumenVigencia</span>
+        </div>
+    }
 
     <section class="dashboard-metrics">
         <article class="dashboard-metric-card dashboard-metric-card-text">
             <span>Estado actual</span>
             <strong><span class="@estadoClase">@Model.EstadoSuscripcion</span></strong>
-            <small>Estado de acceso de la suscripcion vinculada a la empresa activa.</small>
         </article>
         <article class="dashboard-metric-card dashboard-metric-card-text">
             <span>Plan</span>
             <strong>@Model.TipoPlan</strong>
-            <small>@planTexto</small>
         </article>
         <article class="dashboard-metric-card dashboard-metric-card-text">
             <span>Fecha de vencimiento</span>
             <strong>@(Model.FechaVencimiento?.ToString("dd/MM/yyyy") ?? "Sin fecha")</strong>
-            <small>Si esta en prueba usa el fin de prueba; de lo contrario usa la fecha fin del plan.</small>
         </article>
         <article class="dashboard-metric-card dashboard-metric-card-count">
             <span>Dias para vencer</span>
             <strong>@diasTexto</strong>
-            <small>Control preventivo para renovacion y continuidad operativa.</small>
         </article>
     </section>
 
     <section class="workspace-section">
         <div class="workspace-section-head workspace-section-head-compact">
             <span class="workspace-section-kicker">Contexto</span>
-            <h2>Datos de la empresa y la cuenta</h2>
-            <p>Informacion funcional usada por el sistema para validar vigencia, contacto y limites del servicio.</p>
+            <h2>Datos de contacto de la cuenta</h2>
+            <p>Correo y telefono principal registrados para la cuenta administradora.</p>
         </div>
 
-        <div class="subscription-info-grid">
-            <article class="subscription-info-card">
-                <span class="subscription-info-label">Empresa activa</span>
-                <strong>@Model.NombreEmpresa</strong>
-                <small>RUC: @(string.IsNullOrWhiteSpace(Model.Ruc) ? "No configurado" : Model.Ruc)</small>
-            </article>
+        <div class="subscription-info-grid subscription-info-grid-compact">
             <article class="subscription-info-card">
                 <span class="subscription-info-label">Correo principal</span>
                 <strong>@(string.IsNullOrWhiteSpace(Model.CorreoPrincipal) ? "No configurado" : Model.CorreoPrincipal)</strong>
-                <small>Canal principal asociado a la cuenta administradora.</small>
             </article>
             <article class="subscription-info-card">
                 <span class="subscription-info-label">Telefono principal</span>
                 <strong>@(string.IsNullOrWhiteSpace(Model.TelefonoPrincipal) ? "No configurado" : Model.TelefonoPrincipal)</strong>
-                <small>Telefono de contacto registrado para coordinacion operativa.</small>
-            </article>
-            <article class="subscription-info-card">
-                <span class="subscription-info-label">Modalidad</span>
-                <strong>@(Model.EsPrueba ? "Prueba" : "Plan contratado")</strong>
-                <small>@(Model.EsPrueba ? $"Prueba: {(Model.FechaInicioPrueba?.ToString("dd/MM/yyyy") ?? "-")} al {(Model.FechaFinPrueba?.ToString("dd/MM/yyyy") ?? "-")}" : $"Plan: {(Model.FechaInicioPlan?.ToString("dd/MM/yyyy") ?? "-")} al {(Model.FechaFinPlan?.ToString("dd/MM/yyyy") ?? "-")}")</small>
             </article>
         </div>
     </section>
@@ -101,7 +99,7 @@
             <p>Referencia de crecimiento permitida para empresas y usuarios bajo la misma cuenta administradora.</p>
         </div>
 
-        <div class="subscription-limit-grid">
+        <div class="subscription-limit-grid subscription-limit-grid-compact">
             <article class="dashboard-indicator-card">
                 <div class="dashboard-indicator-icon">
                     <i class="bi bi-buildings"></i>
@@ -109,7 +107,6 @@
                 <div class="dashboard-indicator-copy">
                     <span>Empresas permitidas</span>
                     <strong>@(Model.EmpresasPermitidas?.ToString() ?? "Ilimitado")</strong>
-                    <small>Capacidad habilitada para vincular nuevas empresas a la cuenta administradora.</small>
                 </div>
             </article>
             <article class="dashboard-indicator-card">
@@ -119,7 +116,6 @@
                 <div class="dashboard-indicator-copy">
                     <span>Usuarios permitidos</span>
                     <strong>@(Model.UsuariosPermitidos?.ToString() ?? "Ilimitado")</strong>
-                    <small>Numero de accesos operativos que puede sostener la cuenta administradora.</small>
                 </div>
             </article>
             <article class="dashboard-indicator-card">
@@ -132,27 +128,7 @@
                     <small>Valida si la cuenta administradora sigue habilitada para operar.</small>
                 </div>
             </article>
-            <article class="dashboard-indicator-card">
-                <div class="dashboard-indicator-icon">
-                    <i class="bi bi-building-check"></i>
-                </div>
-                <div class="dashboard-indicator-copy">
-                    <span>Estado de empresa</span>
-                    <strong>@(Model.EstadoEmpresa ? "Activa" : "Inactiva")</strong>
-                    <small>Controla si la empresa actual mantiene acceso operativo dentro del panel.</small>
-                </div>
-            </article>
         </div>
     </section>
 
-    @if (!string.IsNullOrWhiteSpace(Model.Observacion))
-    {
-        <section class="workspace-section subscription-note-card">
-            <div class="workspace-section-head workspace-section-head-compact">
-                <span class="workspace-section-kicker">Observacion</span>
-                <h2>Notas del servicio</h2>
-                <p>@Model.Observacion</p>
-            </div>
-        </section>
-    }
 </section>

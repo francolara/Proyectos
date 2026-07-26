@@ -8,30 +8,39 @@ namespace SistemaAdministrativoWeb.Controllers;
 [Authorize(Roles = "SuperAdmin")]
 public class PlataformaController(ICuentaAdministradoraRepository cuentaAdministradoraRepository) : Controller
 {
+    private const int TamanoPaginaSuscriptores = 10;
+
     [HttpGet]
-    public async Task<IActionResult> Index(string? textoBusqueda, string? estadoFiltro, CancellationToken cancellationToken)
+    public async Task<IActionResult> Index(string? textoBusqueda, string? estadoFiltro, int pagina = 1, CancellationToken cancellationToken = default)
     {
         ViewData["PlatformShell"] = true;
 
-        var cuentas = await ConstruirCuentasSuscripcionAsync(cancellationToken);
         var estadoNormalizado = NormalizarFiltroEstado(estadoFiltro);
         var textoNormalizado = (textoBusqueda ?? string.Empty).Trim();
-        var cuentasFiltradas = FiltrarCuentas(cuentas, textoNormalizado, estadoNormalizado);
-        var pagos = cuentas.SelectMany(x => x.HistorialCobros).ToList();
-        var inicioMesActual = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+        var resultado = await cuentaAdministradoraRepository.ListarCuentasSuscripcionPaginadasAsync(
+            textoNormalizado,
+            estadoNormalizado,
+            Math.Max(1, pagina),
+            TamanoPaginaSuscriptores,
+            cancellationToken);
+        var cuentas = await ConstruirCuentasSuscripcionAsync(resultado.Cuentas, cancellationToken);
 
         var model = new PlataformaIndexViewModel
         {
-            TotalCuentas = cuentas.Count,
-            CuentasActivas = cuentas.Count(x => x.Activo && x.EstadoCuenta && string.Equals(x.EstadoSuscripcion, "ACTIVO", StringComparison.OrdinalIgnoreCase)),
-            CuentasEnPrueba = cuentas.Count(x => x.Activo && x.EstadoCuenta && string.Equals(x.EstadoSuscripcion, "TRIAL", StringComparison.OrdinalIgnoreCase)),
-            CuentasSuspendidasOBaja = cuentas.Count(x => !x.Activo || !x.EstadoCuenta || string.Equals(x.EstadoSuscripcion, "SUSPENDIDO", StringComparison.OrdinalIgnoreCase) || string.Equals(x.EstadoSuscripcion, "BAJA", StringComparison.OrdinalIgnoreCase)),
-            CobrosRegistrados = pagos.Count,
-            CobrosPendientesAplicacion = pagos.Count(x => x.EstadoPago == "PENDIENTE" && x.AplicarAlConfirmar && !x.AplicadoSuscripcion),
-            MontoCobradoMes = pagos.Where(x => string.Equals(x.EstadoPago, "PAGADO", StringComparison.OrdinalIgnoreCase) && x.FechaPago >= inicioMesActual).Sum(x => x.Monto),
+            TotalCuentas = resultado.TotalCuentas,
+            CuentasActivas = resultado.CuentasActivas,
+            CuentasEnPrueba = resultado.CuentasEnPrueba,
+            CuentasSuspendidasOBaja = resultado.CuentasSuspendidasOBaja,
+            CobrosRegistrados = resultado.CobrosRegistrados,
+            CobrosPendientesAplicacion = resultado.CobrosPendientesAplicacion,
+            MontoCobradoMes = resultado.MontoCobradoMes,
             TextoBusqueda = textoNormalizado,
             EstadoFiltro = estadoNormalizado,
-            Cuentas = cuentasFiltradas
+            PaginaActual = resultado.PaginaActual,
+            TamanoPagina = resultado.TamanoPagina,
+            TotalRegistrosFiltrados = resultado.TotalFiltrado,
+            TotalPaginas = resultado.TotalPaginas,
+            Cuentas = cuentas
         };
 
         return View(model);
@@ -158,6 +167,7 @@ public class PlataformaController(ICuentaAdministradoraRepository cuentaAdminist
         await cuentaAdministradoraRepository.ActivarContratoCuentaAsync(new ActivarContratoCuentaRequest
         {
             IdCuentaAdministradora = model.IdCuentaAdministradora,
+            TipoPlan = model.TipoPlan.Trim().ToUpperInvariant(),
             TipoCobro = model.TipoCobro.Trim().ToUpperInvariant(),
             FechaInicioPlan = model.FechaInicioPlan,
             FechaFinPlan = fechaFin,
@@ -251,6 +261,13 @@ public class PlataformaController(ICuentaAdministradoraRepository cuentaAdminist
     private async Task<List<CuentaSuscripcionViewModel>> ConstruirCuentasSuscripcionAsync(CancellationToken cancellationToken)
     {
         var cuentas = await cuentaAdministradoraRepository.ListarCuentasSuscripcionAsync(cancellationToken);
+        return await ConstruirCuentasSuscripcionAsync(cuentas, cancellationToken);
+    }
+
+    private async Task<List<CuentaSuscripcionViewModel>> ConstruirCuentasSuscripcionAsync(
+        IEnumerable<CuentaSuscripcionResumenDto> cuentas,
+        CancellationToken cancellationToken)
+    {
         var cuentasViewModel = new List<CuentaSuscripcionViewModel>();
 
         foreach (var x in cuentas)
@@ -276,6 +293,7 @@ public class PlataformaController(ICuentaAdministradoraRepository cuentaAdminist
                 RucEmpresaPrincipal = x.RucEmpresaPrincipal,
                 TipoPlan = x.TipoPlan ?? "TRIAL",
                 EstadoSuscripcion = x.EstadoSuscripcion ?? "TRIAL",
+                EstadoAccesoEfectivo = ResolverEstadoAccesoEfectivo(x, DateOnly.FromDateTime(DateTime.Today)),
                 EsPrueba = x.EsPrueba,
                 FechaInicioPrueba = x.FechaInicioPrueba,
                 FechaFinPrueba = x.FechaFinPrueba,
@@ -295,6 +313,53 @@ public class PlataformaController(ICuentaAdministradoraRepository cuentaAdminist
         }
 
         return cuentasViewModel;
+    }
+
+    private static string ResolverEstadoAccesoEfectivo(
+        CuentaSuscripcionResumenDto cuenta,
+        DateOnly fechaActual)
+    {
+        var estado = (cuenta.EstadoSuscripcion ?? string.Empty).Trim().ToUpperInvariant();
+        var tipoPlan = (cuenta.TipoPlan ?? string.Empty).Trim().ToUpperInvariant();
+
+        if (estado == "BAJA")
+        {
+            return "BAJA";
+        }
+
+        if (!cuenta.Activo || estado == "SUSPENDIDO")
+        {
+            return "SUSPENDIDO";
+        }
+
+        var esPrueba = cuenta.EsPrueba
+            || tipoPlan is "TRIAL" or "GRATIS"
+            || estado == "TRIAL";
+        if (esPrueba)
+        {
+            return !cuenta.FechaFinPrueba.HasValue || fechaActual > cuenta.FechaFinPrueba.Value
+                ? "VENCIDO"
+                : "TRIAL";
+        }
+
+        if (!cuenta.FechaFinPlan.HasValue)
+        {
+            return "SIN_VIGENCIA";
+        }
+
+        if (fechaActual <= cuenta.FechaFinPlan.Value)
+        {
+            return "ACTIVO";
+        }
+
+        var fechaFinGracia = cuenta.FechaFinGracia
+            ?? (cuenta.DiasGracia > 0
+                ? cuenta.FechaFinPlan.Value.AddDays(cuenta.DiasGracia)
+                : (DateOnly?)null);
+
+        return fechaFinGracia.HasValue && fechaActual <= fechaFinGracia.Value
+            ? "EN_GRACIA"
+            : "VENCIDO";
     }
 
     private static CuentaSuscripcionMovimientoViewModel MapearMovimiento(CuentaSuscripcionMovimientoDto m)
@@ -349,41 +414,6 @@ public class PlataformaController(ICuentaAdministradoraRepository cuentaAdminist
             FechaRegistro = p.FechaRegistro,
             UsuarioRegistro = p.UsuarioRegistro
         };
-    }
-
-    private static List<CuentaSuscripcionViewModel> FiltrarCuentas(IEnumerable<CuentaSuscripcionViewModel> cuentas, string textoBusqueda, string estadoFiltro)
-    {
-        var resultado = cuentas.ToList();
-
-        if (!string.IsNullOrWhiteSpace(textoBusqueda))
-        {
-            resultado = resultado
-                .Where(x =>
-                    ContieneTexto(x.NombreCuenta, textoBusqueda) ||
-                    ContieneTexto(x.CodigoCuenta, textoBusqueda) ||
-                    ContieneTexto(x.CorreoPrincipal, textoBusqueda) ||
-                    ContieneTexto(x.NombreCompleto, textoBusqueda) ||
-                    ContieneTexto(x.Email, textoBusqueda) ||
-                    ContieneTexto(x.RucEmpresaPrincipal, textoBusqueda) ||
-                    ContieneTexto(x.NombreComercialEmpresaPrincipal, textoBusqueda) ||
-                    ContieneTexto(x.RazonSocialEmpresaPrincipal, textoBusqueda))
-                .ToList();
-        }
-
-        if (string.Equals(estadoFiltro, "ACTIVAS", StringComparison.OrdinalIgnoreCase))
-        {
-            resultado = resultado.Where(x => x.Activo && x.EstadoCuenta && string.Equals(x.EstadoSuscripcion, "ACTIVO", StringComparison.OrdinalIgnoreCase)).ToList();
-        }
-        else if (string.Equals(estadoFiltro, "TRIAL", StringComparison.OrdinalIgnoreCase))
-        {
-            resultado = resultado.Where(x => x.EsPrueba || string.Equals(x.EstadoSuscripcion, "TRIAL", StringComparison.OrdinalIgnoreCase)).ToList();
-        }
-        else if (string.Equals(estadoFiltro, "SUSPENDIDAS", StringComparison.OrdinalIgnoreCase))
-        {
-            resultado = resultado.Where(x => !x.Activo || !x.EstadoCuenta || string.Equals(x.EstadoSuscripcion, "SUSPENDIDO", StringComparison.OrdinalIgnoreCase) || string.Equals(x.EstadoSuscripcion, "BAJA", StringComparison.OrdinalIgnoreCase)).ToList();
-        }
-
-        return resultado;
     }
 
     private static string NormalizarFiltroEstado(string? estadoFiltro)

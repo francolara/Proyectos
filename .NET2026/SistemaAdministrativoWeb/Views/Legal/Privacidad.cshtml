@@ -4,6 +4,7 @@
     ViewData["MetaDescription"] = Model.MetaDescription;
 }
 @* Firma: FRANCO LARA - 10/07/2026 | Crea la politica de privacidad publica de FralseCont con bloque de contacto reutilizable y fondo legal claro por pagina. *@
+@* Firma: FRANCO LARA - 25/07/2026 | Retira los enlaces internos a Terminos y Cancelaciones y centra el acceso para volver al inicio. *@
 
 <section class="fralsecont-legal-page fralsecont-legal-page--privacy">
     <div class="fralsecont-legal-container">
@@ -130,11 +131,8 @@
             </section>
         </div>
 
-        <div class="fralsecont-legal-links">
-            <a asp-controller="Legal" asp-action="Terminos">Ir a Terminos y condiciones</a>
-            <a asp-controller="Legal" asp-action="Cancelaciones">Ir a Politica de cancelaciones y devoluciones</a>
+        <div class="d-flex justify-content-center">
+            <a class="fralsecont-legal-back-link" asp-controller="Home" asp-action="Index">Volver al inicio</a>
         </div>
-
-        <a class="fralsecont-legal-back-link" asp-controller="Home" asp-action="Index">Volver al inicio</a>
     </div>
 </section>

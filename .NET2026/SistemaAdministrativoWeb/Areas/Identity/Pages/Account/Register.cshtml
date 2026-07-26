@@ -1,25 +1,37 @@
 @page
 @model SistemaAdministrativoWeb.Areas.Identity.Pages.Account.RegisterModel
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 @* Firma: FRANCO LARA - 09/07/2026 | Agrega control visual para mostrar u ocultar la contrasena y confirmar contrasena en el registro de usuarios. *@
 @* Firma: FRANCO LARA - 10/07/2026 | Muestra el plan comercial recibido desde la landing publica, conserva el parametro de registro durante el alta del usuario y mejora la presentacion del formulario evitando autocompletar correo y contrasena en la apertura inicial. *@
 @* Firma: FRANCO LARA - 13/07/2026 | Agrega captcha manual de respaldo para el registro cuando la verificacion automatica de Turnstile no se encuentra disponible. *@
 @* Firma: FRANCO LARA - 14/07/2026 | Retira la activacion manual del captcha de respaldo en registro para que solo se muestre cuando Turnstile no este disponible o falle durante la validacion. *@
+@* Firma: FRANCO LARA - 25/07/2026 | Corrige Volver al inicio para salir explicitamente del area Identity y centra sin recortes el banner de registro desde Cloudflare con proporcion 4:5, conservando el contenido anterior como respaldo. *@
 @{
     ViewData["Title"] = "Crear cuenta";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var publicAssetBaseUrl = Configuration["SedeImagenStorage:PublicBaseUrl"]?.Trim().TrimEnd('/');
+    var registerBannerUrl = string.IsNullOrWhiteSpace(publicAssetBaseUrl)
+        ? string.Empty
+        : $"{publicAssetBaseUrl}/Banner/Registro.webp";
 }
 
 <section class="auth-shell">
-    <aside class="auth-visual">
-        <div class="auth-visual-content">
-            <p class="auth-visual-tag">Onboarding</p>
-            <h2>Registra tu usuario y deja lista la cuenta para vincular una o varias empresas.</h2>
-            <ul class="auth-visual-list">
-                <li>Acceso personal para contadores y administradores.</li>
-                <li>La empresa se vinculara despues desde el flujo administrativo.</li>
-                <li>Base lista para que superadmin gestione contrato y vigencia.</li>
-            </ul>
-        </div>
+    <aside class="auth-visual @(!string.IsNullOrWhiteSpace(registerBannerUrl) ? "auth-visual-banner" : string.Empty)"
+           style="@(!string.IsNullOrWhiteSpace(registerBannerUrl) ? $"background-image: url('{registerBannerUrl}');" : string.Empty)"
+           role="@(!string.IsNullOrWhiteSpace(registerBannerUrl) ? "img" : null)"
+           aria-label="@(!string.IsNullOrWhiteSpace(registerBannerUrl) ? "FralseCont: crea tu cuenta y empieza a ordenar tu empresa." : null)">
+        @if (string.IsNullOrWhiteSpace(registerBannerUrl))
+        {
+            <div class="auth-visual-content">
+                <p class="auth-visual-tag">Onboarding</p>
+                <h2>Registra tu usuario y deja lista la cuenta para vincular una o varias empresas.</h2>
+                <ul class="auth-visual-list">
+                    <li>Acceso personal para contadores y administradores.</li>
+                    <li>La empresa se vinculara despues desde el flujo administrativo.</li>
+                    <li>Base lista para que superadmin gestione contrato y vigencia.</li>
+                </ul>
+            </div>
+        }
     </aside>
 
     <section class="auth-panel">
@@ -130,7 +142,7 @@
 
                 <div class="auth-foot-links auth-foot-links-pro auth-foot-links-centered">
                     <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl">Ya tengo cuenta</a>
-                    <a asp-controller="Home" asp-action="Index">Volver al inicio</a>
+                    <a asp-area="" asp-controller="Home" asp-action="Index">Volver al inicio</a>
                 </div>
             </form>
         </div>

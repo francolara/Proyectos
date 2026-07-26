@@ -16936,7 +16936,6 @@ C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdminist
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_dashboard_print\runtimes\win-arm64\native\Microsoft.Data.SqlClient.SNI.dll
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_dashboard_print\runtimes\win-x64\native\Microsoft.Data.SqlClient.SNI.dll
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_dashboard_print\runtimes\win-x86\native\Microsoft.Data.SqlClient.SNI.dll
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\rnf1c4oivs-{0}-u4j6rz1uku-u4j6rz1uku.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_legal_links\appsettings.Development.json
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_legal_links\appsettings.json
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_legal_links\appsettings.Secrets.example.json
@@ -17217,3 +17216,599 @@ C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdminist
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_login_eye\runtimes\win-arm64\native\Microsoft.Data.SqlClient.SNI.dll
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_login_eye\runtimes\win-x64\native\Microsoft.Data.SqlClient.SNI.dll
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_login_eye\runtimes\win-x86\native\Microsoft.Data.SqlClient.SNI.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\appsettings.Development.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\appsettings.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\appsettings.Secrets.example.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\appsettings.Secrets.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\SistemaAdministrativoWeb.exe
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Azure.Core.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Azure.Identity.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Humanizer.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.AspNetCore.Authentication.Google.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.AspNetCore.Identity.EntityFrameworkCore.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.AspNetCore.Identity.UI.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.Bcl.AsyncInterfaces.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.Bcl.Cryptography.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.Build.Framework.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.CodeAnalysis.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.CodeAnalysis.CSharp.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.CodeAnalysis.CSharp.Workspaces.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.CodeAnalysis.Workspaces.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.CodeAnalysis.ExternalAccess.RazorCompiler.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.CodeAnalysis.Workspaces.MSBuild.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.Data.SqlClient.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.EntityFrameworkCore.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.EntityFrameworkCore.Abstractions.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.EntityFrameworkCore.Design.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.EntityFrameworkCore.Relational.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.EntityFrameworkCore.SqlServer.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.Extensions.DependencyModel.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.Identity.Client.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.Identity.Client.Extensions.Msal.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.IdentityModel.Abstractions.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.IdentityModel.JsonWebTokens.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.IdentityModel.Logging.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.IdentityModel.Protocols.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.IdentityModel.Tokens.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.SqlServer.Server.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Microsoft.VisualStudio.SolutionPersistence.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Mono.TextTemplating.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\Newtonsoft.Json.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\System.ClientModel.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\System.CodeDom.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\System.Composition.AttributedModel.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\System.Composition.Convention.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\System.Composition.Hosting.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\System.Composition.Runtime.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\System.Composition.TypedParts.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\System.Configuration.ConfigurationManager.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\System.IdentityModel.Tokens.Jwt.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\System.Memory.Data.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\System.Security.Cryptography.ProtectedData.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\cs\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\de\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\es\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\fr\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\it\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\ja\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\ko\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\pl\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\pt-BR\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\ru\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\tr\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\zh-Hans\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\zh-Hant\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\cs\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\de\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\es\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\fr\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\it\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\ja\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\ko\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\pl\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\pt-BR\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\ru\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\tr\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\zh-Hans\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\zh-Hant\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\cs\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\de\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\es\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\fr\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\it\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\ja\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\ko\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\pl\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\pt-BR\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\ru\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\tr\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\zh-Hans\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\zh-Hant\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\cs\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\de\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\es\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\fr\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\it\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\ja\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\ko\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\pl\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\pt-BR\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\ru\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\tr\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\zh-Hans\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\zh-Hant\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\cs\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\de\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\es\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\fr\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\it\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\ja\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\ko\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\pl\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\pt-BR\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\ru\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\tr\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\zh-Hans\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\zh-Hant\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\cs\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\de\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\es\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\fr\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\it\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\ja\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\ko\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\pl\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\pt-BR\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\ru\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\tr\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\zh-Hans\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\zh-Hant\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\runtimes\unix\lib\net9.0\Microsoft.Data.SqlClient.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\runtimes\win\lib\net9.0\Microsoft.Data.SqlClient.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\runtimes\win-arm64\native\Microsoft.Data.SqlClient.SNI.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\runtimes\win-x64\native\Microsoft.Data.SqlClient.SNI.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_privacy_links\runtimes\win-x86\native\Microsoft.Data.SqlClient.SNI.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\appsettings.Development.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\appsettings.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\appsettings.Secrets.example.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\appsettings.Secrets.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\SistemaAdministrativoWeb.exe
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Azure.Core.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Azure.Identity.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Humanizer.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.AspNetCore.Authentication.Google.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.AspNetCore.Identity.EntityFrameworkCore.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.AspNetCore.Identity.UI.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.Bcl.AsyncInterfaces.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.Bcl.Cryptography.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.Build.Framework.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.CodeAnalysis.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.CodeAnalysis.CSharp.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.CodeAnalysis.CSharp.Workspaces.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.CodeAnalysis.Workspaces.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.CodeAnalysis.ExternalAccess.RazorCompiler.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.CodeAnalysis.Workspaces.MSBuild.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.Data.SqlClient.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.EntityFrameworkCore.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.EntityFrameworkCore.Abstractions.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.EntityFrameworkCore.Design.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.EntityFrameworkCore.Relational.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.EntityFrameworkCore.SqlServer.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.Extensions.DependencyModel.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.Identity.Client.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.Identity.Client.Extensions.Msal.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.IdentityModel.Abstractions.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.IdentityModel.JsonWebTokens.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.IdentityModel.Logging.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.IdentityModel.Protocols.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.IdentityModel.Tokens.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.SqlServer.Server.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Microsoft.VisualStudio.SolutionPersistence.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Mono.TextTemplating.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\Newtonsoft.Json.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\System.ClientModel.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\System.CodeDom.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\System.Composition.AttributedModel.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\System.Composition.Convention.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\System.Composition.Hosting.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\System.Composition.Runtime.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\System.Composition.TypedParts.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\System.Configuration.ConfigurationManager.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\System.IdentityModel.Tokens.Jwt.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\System.Memory.Data.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\System.Security.Cryptography.ProtectedData.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\cs\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\de\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\es\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\fr\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\it\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\ja\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\ko\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\pl\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\pt-BR\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\ru\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\tr\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\zh-Hans\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\zh-Hant\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\cs\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\de\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\es\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\fr\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\it\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\ja\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\ko\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\pl\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\pt-BR\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\ru\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\tr\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\zh-Hans\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\zh-Hant\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\cs\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\de\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\es\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\fr\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\it\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\ja\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\ko\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\pl\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\pt-BR\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\ru\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\tr\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\zh-Hans\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\zh-Hant\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\cs\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\de\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\es\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\fr\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\it\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\ja\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\ko\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\pl\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\pt-BR\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\ru\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\tr\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\zh-Hans\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\zh-Hant\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\cs\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\de\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\es\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\fr\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\it\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\ja\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\ko\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\pl\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\pt-BR\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\ru\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\tr\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\zh-Hans\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\zh-Hant\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\cs\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\de\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\es\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\fr\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\it\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\ja\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\ko\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\pl\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\pt-BR\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\ru\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\tr\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\zh-Hans\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\zh-Hant\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\runtimes\unix\lib\net9.0\Microsoft.Data.SqlClient.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\runtimes\win\lib\net9.0\Microsoft.Data.SqlClient.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\runtimes\win-arm64\native\Microsoft.Data.SqlClient.SNI.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\runtimes\win-x64\native\Microsoft.Data.SqlClient.SNI.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_terms_links\runtimes\win-x86\native\Microsoft.Data.SqlClient.SNI.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\appsettings.Development.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\appsettings.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\appsettings.Secrets.example.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\appsettings.Secrets.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\SistemaAdministrativoWeb.exe
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Azure.Core.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Azure.Identity.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Humanizer.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.AspNetCore.Authentication.Google.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.AspNetCore.Identity.EntityFrameworkCore.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.AspNetCore.Identity.UI.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.Bcl.AsyncInterfaces.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.Bcl.Cryptography.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.Build.Framework.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.CodeAnalysis.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.CodeAnalysis.CSharp.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.CodeAnalysis.CSharp.Workspaces.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.CodeAnalysis.Workspaces.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.CodeAnalysis.ExternalAccess.RazorCompiler.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.CodeAnalysis.Workspaces.MSBuild.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.Data.SqlClient.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.EntityFrameworkCore.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.EntityFrameworkCore.Abstractions.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.EntityFrameworkCore.Design.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.EntityFrameworkCore.Relational.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.EntityFrameworkCore.SqlServer.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.Extensions.DependencyModel.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.Identity.Client.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.Identity.Client.Extensions.Msal.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.IdentityModel.Abstractions.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.IdentityModel.JsonWebTokens.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.IdentityModel.Logging.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.IdentityModel.Protocols.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.IdentityModel.Tokens.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.SqlServer.Server.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Microsoft.VisualStudio.SolutionPersistence.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Mono.TextTemplating.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\Newtonsoft.Json.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\System.ClientModel.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\System.CodeDom.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\System.Composition.AttributedModel.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\System.Composition.Convention.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\System.Composition.Hosting.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\System.Composition.Runtime.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\System.Composition.TypedParts.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\System.Configuration.ConfigurationManager.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\System.IdentityModel.Tokens.Jwt.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\System.Memory.Data.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\System.Security.Cryptography.ProtectedData.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\cs\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\de\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\es\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\fr\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\it\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\ja\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\ko\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\pl\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\pt-BR\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\ru\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\tr\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\zh-Hans\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\zh-Hant\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\cs\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\de\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\es\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\fr\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\it\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\ja\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\ko\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\pl\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\pt-BR\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\ru\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\tr\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\zh-Hans\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\zh-Hant\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\cs\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\de\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\es\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\fr\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\it\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\ja\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\ko\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\pl\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\pt-BR\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\ru\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\tr\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\zh-Hans\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\zh-Hant\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\cs\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\de\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\es\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\fr\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\it\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\ja\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\ko\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\pl\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\pt-BR\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\ru\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\tr\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\zh-Hans\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\zh-Hant\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\cs\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\de\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\es\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\fr\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\it\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\ja\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\ko\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\pl\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\pt-BR\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\ru\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\tr\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\zh-Hans\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\zh-Hant\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\cs\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\de\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\es\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\fr\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\it\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\ja\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\ko\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\pl\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\pt-BR\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\ru\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\tr\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\zh-Hans\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\zh-Hant\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\runtimes\unix\lib\net9.0\Microsoft.Data.SqlClient.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\runtimes\win\lib\net9.0\Microsoft.Data.SqlClient.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\runtimes\win-arm64\native\Microsoft.Data.SqlClient.SNI.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\runtimes\win-x64\native\Microsoft.Data.SqlClient.SNI.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\tmp_build_plan_name_left\runtimes\win-x86\native\Microsoft.Data.SqlClient.SNI.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-build\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-build\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-build\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-build\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-build\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-build\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-build\SistemaAdministrativoWeb.exe
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-build\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-build\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-build\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-build\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-build-final\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-build-final\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-build-final\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-build-final\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-build-final\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-build-final\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-build-final\SistemaAdministrativoWeb.exe
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-build-final\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-build-final\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-build-final\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-build-final\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-build\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-build\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-build\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-build\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-build\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-build\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-build\SistemaAdministrativoWeb.exe
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-build\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-build\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-build\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-build\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-header-build\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-header-build\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-header-build\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-header-build\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-header-build\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-header-build\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-header-build\SistemaAdministrativoWeb.exe
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-header-build\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-header-build\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-header-build\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-header-build\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-notes-build\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-notes-build\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-notes-build\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-notes-build\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-notes-build\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-notes-build\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-notes-build\SistemaAdministrativoWeb.exe
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-notes-build\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-notes-build\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-notes-build\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-notes-build\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-general-forms-build\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-general-forms-build\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-general-forms-build\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-general-forms-build\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-general-forms-build\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-general-forms-build\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-general-forms-build\SistemaAdministrativoWeb.exe
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-general-forms-build\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-general-forms-build\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-general-forms-build\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-general-forms-build\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-remove-code-build\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-remove-code-build\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-remove-code-build\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-remove-code-build\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-remove-code-build\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-remove-code-build\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-remove-code-build\SistemaAdministrativoWeb.exe
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-remove-code-build\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-remove-code-build\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-remove-code-build\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-remove-code-build\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-public-trial-build\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-public-trial-build\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-public-trial-build\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-public-trial-build\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-public-trial-build\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-public-trial-build\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-public-trial-build\SistemaAdministrativoWeb.exe
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-public-trial-build\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-public-trial-build\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-public-trial-build\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-public-trial-build\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-guard-build\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-guard-build\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-guard-build\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-guard-build\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-guard-build\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-guard-build\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-guard-build\SistemaAdministrativoWeb.exe
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-guard-build\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-guard-build\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-guard-build\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-guard-build\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-guard-build-final\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-guard-build-final\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-guard-build-final\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-guard-build-final\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-guard-build-final\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-guard-build-final\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-guard-build-final\SistemaAdministrativoWeb.exe
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-guard-build-final\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-guard-build-final\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-guard-build-final\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-subscription-guard-build-final\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-final\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-final\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-final\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-final\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-final\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-final\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-final\SistemaAdministrativoWeb.exe
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-final\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-final\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-final\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-final\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-pagination-build\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-pagination-build\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-pagination-build\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-pagination-build\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-pagination-build\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-pagination-build\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-pagination-build\SistemaAdministrativoWeb.exe
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-pagination-build\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-pagination-build\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-pagination-build\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-pagination-build\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-pagination-final\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-pagination-final\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-pagination-final\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-pagination-final\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-pagination-final\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-pagination-final\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-pagination-final\SistemaAdministrativoWeb.exe
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-pagination-final\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-pagination-final\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-pagination-final\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-pagination-final\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-expiration-contract\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-expiration-contract\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-expiration-contract\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-expiration-contract\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-expiration-contract\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-expiration-contract\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-expiration-contract\SistemaAdministrativoWeb.exe
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-expiration-contract\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-expiration-contract\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-expiration-contract\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-expiration-contract\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-expiration-contract-final\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-expiration-contract-final\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-expiration-contract-final\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-expiration-contract-final\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-expiration-contract-final\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-expiration-contract-final\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-expiration-contract-final\SistemaAdministrativoWeb.exe
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-expiration-contract-final\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-expiration-contract-final\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-expiration-contract-final\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-sisadm-expiration-contract-final\SistemaAdministrativoWeb.pdb
+C:\Users\FRANCO~1\AppData\Local\Temp\codex-sistemaadministrativoweb-build\appsettings.Development.json
+C:\Users\FRANCO~1\AppData\Local\Temp\codex-sistemaadministrativoweb-build\appsettings.json
+C:\Users\FRANCO~1\AppData\Local\Temp\codex-sistemaadministrativoweb-build\appsettings.Secrets.example.json
+C:\Users\FRANCO~1\AppData\Local\Temp\codex-sistemaadministrativoweb-build\appsettings.Secrets.json
+C:\Users\FRANCO~1\AppData\Local\Temp\codex-sistemaadministrativoweb-build\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\FRANCO~1\AppData\Local\Temp\codex-sistemaadministrativoweb-build\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\FRANCO~1\AppData\Local\Temp\codex-sistemaadministrativoweb-build\SistemaAdministrativoWeb.exe
+C:\Users\FRANCO~1\AppData\Local\Temp\codex-sistemaadministrativoweb-build\SistemaAdministrativoWeb.dll
+C:\Users\FRANCO~1\AppData\Local\Temp\codex-sistemaadministrativoweb-build\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\rnf1c4oivs-{0}-ctiwqsopye-ctiwqsopye.gz
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt

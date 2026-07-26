@@ -3,6 +3,7 @@ namespace SistemaAdministrativoWeb.Infrastructure.Suscripciones;
 public sealed class ActivarContratoCuentaRequest
 {
     public int IdCuentaAdministradora { get; init; }
+    public string TipoPlan { get; init; } = "BASICO";
     public string TipoCobro { get; init; } = "MENSUAL";
     public DateOnly FechaInicioPlan { get; init; }
     public DateOnly FechaFinPlan { get; init; }

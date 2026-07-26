@@ -1,12 +1,13 @@
 @model SistemaAdministrativoWeb.ViewModels.Configuracion.ConfiguracionCuentaAdministradoraViewModel
 @* Firma: FRANCO LARA - 10/07/2026 | Crea la vista General > Configuracion para editar datos de la cuenta administradora y completar la ficha de facturacion con consulta DNI/RUC via Migo. *@
 @* Firma: FRANCO LARA - 11/07/2026 | Ajusta el formulario de configuracion para usar correo/telefono principal por defecto, renombra campos administrativos y simplifica los datos visibles del comprobante. *@
+@* Firma: FRANCO LARA - 25/07/2026 | Limita el ancho, uniformiza controles y simplifica la cabecera del formulario de configuracion. *@
 @{
     ViewData["Title"] = "Configuracion";
     ViewData["AdminShell"] = true;
 }
 
-<section class="dashboard-shell subscription-shell">
+<section class="dashboard-shell subscription-shell dashboard-shell-contained dashboard-shell-contained-form">
     <section class="dashboard-hero">
         <div>
             <span class="dashboard-kicker">General</span>
@@ -16,7 +17,6 @@
         <article class="dashboard-status-card">
             <span>Cuenta administradora</span>
             <strong>@Model.NombreCuenta</strong>
-            <small>Codigo: @Model.CodigoCuenta</small>
             <small>Contacto principal: @(Model.CorreoPrincipal ?? "No configurado")</small>
         </article>
     </section>
@@ -26,7 +26,7 @@
         <div class="alert alert-success">@successMessage</div>
     }
 
-    <form asp-action="Guardar" method="post" class="workspace-section">
+    <form asp-action="Guardar" method="post" class="workspace-section workspace-account-form workspace-account-form-section">
         @Html.AntiForgeryToken()
         <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 

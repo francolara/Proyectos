@@ -4,9 +4,11 @@
 @inject ICurrentCompanyAccessor CurrentCompanyAccessor
 @inject IModulePermissionService ModulePermissionService
 @inject UserManager<IdentityUser> UserManager
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 @* Firma: FRANCO LARA - 07/07/2026 | Agrega y reordena el bloque Reportes del menu administrativo con Balance de comprobacion, Analisis de cuentas, Libro Diario, Libro Mayor, Registro de ventas, Registro de compras y Libros Electronicos. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Reemplaza la tarjeta redundante del panel por un selector persistente de modo oscuro, agrega Mi suscripcion y Ayuda al menu General e incorpora acceso contextual de ayuda por modulo. *@
 @* Firma: FRANCO LARA - 10/07/2026 | Ajusta el branding publico para alinear portada, login y registro con la nueva presentacion comercial de FralseCont, separa Fralse y Cont en dos colores, agrega soporte para metadatos basicos, enlaces legales en el footer y la burbuja publica de WhatsApp, e incorpora Usuarios y Configuracion al bloque General del menu administrativo. *@
+@* Firma: FRANCO LARA - 25/07/2026 | Integra el logo publico de Fralse Tech desde el bucket Cloudflare configurado en User Secrets, recorta su espacio blanco interno para mejorar su presencia y conserva el icono local como respaldo. *@
 <!DOCTYPE html>
 @{
     var adminShell = ViewData["AdminShell"] as bool? ?? false;
@@ -16,6 +18,10 @@
         ? pageTitle
         : $"{pageTitle} - FralseCont";
     var metaDescription = ViewData["MetaDescription"]?.ToString() ?? "Sistema contable web para empresas y contadores.";
+    var publicAssetBaseUrl = Configuration["SedeImagenStorage:PublicBaseUrl"]?.Trim().TrimEnd('/');
+    var publicBrandLogoUrl = string.IsNullOrWhiteSpace(publicAssetBaseUrl)
+        ? string.Empty
+        : $"{publicAssetBaseUrl}/Logo/LogoFralseTech.webp";
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
     var currentPath = Context.Request.Path.Value ?? string.Empty;
@@ -129,14 +135,14 @@
     var canLibroElectronico = adminShell && await ModulePermissionService.CanAccessModuleAsync(User, "LIBROELECTRONICO", Context.RequestAborted);
     var showContextHelp = adminShell && canAyuda && !string.Equals(currentController, "Ayuda", StringComparison.OrdinalIgnoreCase);
 
-    var generalOpen = IsActiveController("Panel", "EmpresaContexto", "Usuarios", "Configuracion", "MiSuscripcion", "Ayuda");
+    var generalOpen = IsActiveController("Panel", "Usuarios", "Configuracion", "MiSuscripcion", "Ayuda");
     var mantenimientoOpen = IsActiveController("PlanCuenta", "CentroCosto", "CuentaCorriente", "Persona", "TipoCambio", "Origen", "CuentaDestinoRegla", "ConfiguracionContabilizacion")
         || IsActivePath("PlanCuenta", "CentroCosto", "CuentaCorriente", "Persona", "TipoCambio", "Origen", "CuentaDestinoRegla", "ConfiguracionContabilizacion");
     var registroOpen = IsActiveController("Asiento", "Compra", "Venta", "CajaBanco", "TransferenciaCuenta", "Aplicacion")
         || IsActivePath("Asiento", "Compra", "Venta", "CajaBanco", "TransferenciaCuenta", "Aplicacion");
     var procesoOpen = IsActiveController("Proceso") || IsActivePath("Proceso");
     var reportesOpen = IsActiveController("Reporte", "LibroElectronico") || IsActivePath("Reporte", "LibroElectronico");
-    var showGeneralMenu = canDashboard || canEmpresas || canUsuarios || canConfiguracion || canMiSuscripcion || canAyuda;
+    var showGeneralMenu = canDashboard || canUsuarios || canConfiguracion || canMiSuscripcion || canAyuda;
     var showMantenimientoMenu = canPlanCuenta || canCentroCosto || canCuentaCorriente || canPersonas || canTipoCambio || canOrigenes || canCuentasDestino || canConfigContable;
     var showRegistroMenu = canAsientos || canCompras || canVentas || canCajaBancos || canTransferencias || canAplicaciones;
     var showProcesoMenu = canProcesos;
@@ -178,7 +184,16 @@
             <nav class="navbar navbar-expand-lg navbar-light">
                 <div class="container">
                     <a class="navbar-brand app-brand" asp-area="" asp-controller="Home" asp-action="Index">
-                        <span class="app-brand-mark"><i class="bi bi-journal-text"></i></span>
+                        @if (!string.IsNullOrWhiteSpace(publicBrandLogoUrl))
+                        {
+                            <span class="app-brand-logo-frame">
+                                <img class="app-brand-logo" src="@publicBrandLogoUrl" alt="Fralse Tech S.A.C." />
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="app-brand-mark"><i class="bi bi-journal-text"></i></span>
+                        }
                         <span>
                             <strong><span>Fralse</span><span class="app-brand-name-accent">Cont</span></strong>
                             <small>Sistema contable web para empresas y contadores</small>
@@ -218,6 +233,13 @@
                 <div class="app-sidebar-company-chip">
                     <span>Empresa activa</span>
                     <strong>@(CurrentCompanyAccessor.EmpresaNombre ?? "Seleccione empresa")</strong>
+                    @if (canEmpresas)
+                    {
+                        <a class="app-sidebar-company-link @(IsActiveController("EmpresaContexto") ? "active" : string.Empty)" asp-controller="EmpresaContexto" asp-action="Index">
+                            <i class="bi bi-buildings"></i>
+                            <span>Empresas</span>
+                        </a>
+                    }
                 </div>
                 <nav class="app-sidebar-nav app-sidebar-nav-accordion">
                     @if (showGeneralMenu)
@@ -232,10 +254,6 @@
                                 @if (canDashboard)
                                 {
                                 <a class="app-sidebar-link @(IsActiveController("Panel") ? "active" : string.Empty)" asp-controller="Panel" asp-action="Index"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
-                                }
-                                @if (canEmpresas)
-                                {
-                                <a class="app-sidebar-link @(IsActiveController("EmpresaContexto") ? "active" : string.Empty)" asp-controller="EmpresaContexto" asp-action="Index"><i class="bi bi-buildings"></i><span>Empresas</span></a>
                                 }
                                 @if (canUsuarios)
                                 {

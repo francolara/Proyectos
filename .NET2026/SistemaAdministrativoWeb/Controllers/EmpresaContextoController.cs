@@ -122,20 +122,43 @@ public class EmpresaContextoController(
                 return View("RegistrarEmpresaInicial", model);
             }
 
-            var result = await cuentaAdministradoraRepository.RegistrarEmpresaCuentaAsync(new RegistroEmpresaCuentaAdministradoraRequest
+            var empresasCuenta = await cuentaAdministradoraRepository.ListarEmpresasCuentaAdministradoraAsync(
+                contexto.IdCuentaAdministradora,
+                cancellationToken);
+            var empresasActivas = empresasCuenta.Count(x => x.Estado);
+            if (contexto.EmpresasPermitidas.HasValue
+                && empresasActivas >= contexto.EmpresasPermitidas.Value)
             {
-                IdCuentaAdministradora = contexto.IdCuentaAdministradora,
-                AspNetUserId = aspNetUserId,
-                CodigoEmpresa = codigoEmpresa,
-                RazonSocial = razonSocial,
-                NombreComercial = nombreComercial,
-                Ruc = model.Ruc.Trim(),
-                IdEmpresaBase = empresaBaseId,
-                EsEmpresaPredeterminada = false,
-                UsuarioRegistro = email
-            }, cancellationToken);
+                ModelState.AddModelError(
+                    string.Empty,
+                    $"La cuenta alcanzo el limite de {contexto.EmpresasPermitidas.Value} empresa(s) permitido por su suscripcion.");
+                model.EsEmpresaInicial = false;
+                return View("RegistrarEmpresaInicial", model);
+            }
 
-            idEmpresa = result.IdEmpresa;
+            try
+            {
+                var result = await cuentaAdministradoraRepository.RegistrarEmpresaCuentaAsync(new RegistroEmpresaCuentaAdministradoraRequest
+                {
+                    IdCuentaAdministradora = contexto.IdCuentaAdministradora,
+                    AspNetUserId = aspNetUserId,
+                    CodigoEmpresa = codigoEmpresa,
+                    RazonSocial = razonSocial,
+                    NombreComercial = nombreComercial,
+                    Ruc = model.Ruc.Trim(),
+                    IdEmpresaBase = empresaBaseId,
+                    EsEmpresaPredeterminada = false,
+                    UsuarioRegistro = email
+                }, cancellationToken);
+
+                idEmpresa = result.IdEmpresa;
+            }
+            catch (SqlException ex) when (ex.Number == 50000)
+            {
+                ModelState.AddModelError(string.Empty, ex.Message);
+                model.EsEmpresaInicial = false;
+                return View("RegistrarEmpresaInicial", model);
+            }
         }
 
         if (user is not null && !await userManager.IsInRoleAsync(user, "AdministradorEmpresa"))

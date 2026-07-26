@@ -13,6 +13,11 @@
 -- Create date:   02/07/2026
 -- Description:   Permite heredar el plan de cuentas desde una empresa base al registrar una empresa adicional.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA / Codex
+-- Create date:   25/07/2026
+-- Description:   Valida dentro de la transaccion el limite efectivo de empresas configurado en la suscripcion de la cuenta administradora.
+-- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.usp_SEG_RegistrarEmpresaCuentaAdministradora
     @IdCuentaAdministradora INT,
@@ -28,10 +33,13 @@ AS
 BEGIN
 
     SET NOCOUNT ON;
+    SET XACT_ABORT ON;
 
     BEGIN TRY
 
-        DECLARE @IdEmpresa INT
+        DECLARE @IdEmpresa INT;
+        DECLARE @EmpresasPermitidas INT;
+        DECLARE @EmpresasActivas INT;
 
         IF NOT EXISTS
         (
@@ -53,6 +61,39 @@ BEGIN
         )
         BEGIN
             RAISERROR(N'La empresa ya existe con el mismo codigo o RUC.', 16, 1);
+        END;
+
+        BEGIN TRANSACTION;
+
+        SELECT
+            @EmpresasPermitidas = cas.EmpresasPermitidas
+        FROM dbo.SEG_CuentaAdministradoraSuscripcion AS cas WITH (UPDLOCK, HOLDLOCK)
+        WHERE cas.IdCuentaAdministradora = @IdCuentaAdministradora;
+
+        IF @@ROWCOUNT = 0
+        BEGIN
+            RAISERROR(N'La cuenta administradora no tiene una suscripcion configurada.', 16, 1);
+        END;
+
+        IF @EmpresasPermitidas IS NOT NULL AND @EmpresasPermitidas <= 0
+        BEGIN
+            RAISERROR(N'El limite de empresas de la suscripcion no tiene una configuracion valida.', 16, 1);
+        END;
+
+        SELECT
+            @EmpresasActivas = COUNT(1)
+        FROM dbo.SEG_Empresa AS e WITH (UPDLOCK, HOLDLOCK)
+        WHERE e.IdCuentaAdministradora = @IdCuentaAdministradora
+          AND e.Estado = 1;
+
+        IF @EmpresasPermitidas IS NOT NULL
+           AND @EmpresasActivas >= @EmpresasPermitidas
+        BEGIN
+            RAISERROR(
+                N'La cuenta alcanzo el limite de %d empresa(s) permitido por su suscripcion.',
+                16,
+                1,
+                @EmpresasPermitidas);
         END;
 
         INSERT INTO dbo.SEG_Empresa
@@ -93,12 +134,19 @@ BEGIN
             @IdEmpresaBase = @IdEmpresaBase,
             @UsuarioRegistro = @UsuarioRegistro;
 
+        COMMIT TRANSACTION;
+
         SELECT
             @IdEmpresa AS IdEmpresa;
 
     END TRY
 
     BEGIN CATCH
+
+        IF XACT_STATE() <> 0
+        BEGIN
+            ROLLBACK TRANSACTION;
+        END;
 
         DECLARE @ErrorMessage NVARCHAR(4000)
         DECLARE @ErrorSeverity INT

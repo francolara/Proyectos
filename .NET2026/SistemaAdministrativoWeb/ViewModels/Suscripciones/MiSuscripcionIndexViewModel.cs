@@ -17,6 +17,7 @@ public sealed class MiSuscripcionIndexViewModel
     public DateOnly? FechaFinPrueba { get; init; }
     public DateOnly? FechaInicioPlan { get; init; }
     public DateOnly? FechaFinPlan { get; init; }
+    public DateOnly? FechaFinGracia { get; init; }
     public int? EmpresasPermitidas { get; init; }
     public int? UsuariosPermitidos { get; init; }
     public bool EstadoCuenta { get; init; }
@@ -25,4 +26,6 @@ public sealed class MiSuscripcionIndexViewModel
     public DateOnly? FechaVencimiento { get; init; }
     public int? DiasParaVencer { get; init; }
     public string ResumenVigencia { get; init; } = string.Empty;
+    public string EstadoEfectivo { get; init; } = string.Empty;
+    public bool AccesoRestringido { get; init; }
 }

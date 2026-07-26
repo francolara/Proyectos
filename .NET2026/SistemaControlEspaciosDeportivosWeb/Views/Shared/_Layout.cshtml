@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 @using SistemaControlEspaciosDeportivosWeb.Services
 @using SistemaControlEspaciosDeportivosWeb.ViewModels
 @using Microsoft.AspNetCore.Identity
@@ -208,6 +208,15 @@
         inicialesNegocio = "SC";
 
     var currentAction = (ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty).ToUpperInvariant();
+    var adminContentMode = currentController is "AYUDA" or "MISUSCRIPCION"
+        ? "reading"
+        : currentController is "CONFIGURACION" or "ONBOARDING" or "CUENTA"
+          || (currentController == "PLATAFORMA" && currentAction == "PORTALWEB")
+          || currentAction.StartsWith("CREATE", StringComparison.OrdinalIgnoreCase)
+          || currentAction.StartsWith("EDIT", StringComparison.OrdinalIgnoreCase)
+            ? "form"
+            : "fluid";
+    var adminWorkspaceClass = $"sc-admin-workspace sc-admin-workspace--{adminContentMode}";
     OnboardingChecklistViewModel? onboardingChecklist = null;
     byte onboardingPasoPendiente = 1;
     byte onboardingPasoContexto = 0;
@@ -533,7 +542,8 @@
                         <i class="bi bi-life-preserver"></i><span>Ayuda de este modulo</span>
                     </a>
                 }
-                <main role="main" class="admin-page-frame">
+                @* Firma: FRANCO LARA - 25/07/2026 | El panel adopta ancho mixto: fluido para consultas y controlado para formularios y lectura. *@
+                <main role="main" class="@adminWorkspaceClass">
                     @RenderBody()
                 </main>
                 @if (onboardingVisible && onboardingPasoContexto > 0)
@@ -642,7 +652,7 @@
             </aside>
 
             <section class="sc-admin-main">
-                <main role="main" class="admin-page-frame">
+                <main role="main" class="@adminWorkspaceClass">
                     @RenderBody()
                 </main>
             </section>
