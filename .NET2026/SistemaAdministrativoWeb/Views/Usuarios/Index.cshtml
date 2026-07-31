@@ -2,6 +2,7 @@
 @* Firma: FRANCO LARA - 10/07/2026 | Crea la vista General > Usuarios para registrar o vincular accesos a la cuenta administradora y asignarles empresas operativas. *@
 @* Firma: FRANCO LARA - 12/07/2026 | Limpia telefono y contrasena temporal al abrir el formulario, agrega visor de contrasena y retira las opciones de cuenta o empresa predeterminada para forzar la seleccion posterior de empresa. *@
 @* Firma: FRANCO LARA - 25/07/2026 | Limita el ancho, uniformiza controles y simplifica la cabecera de la gestion de usuarios. *@
+@* Firma: FRANCO LARA - 31/07/2026 | Adopta el patron global de titulo y subtitulos administrativos con iconos y degradado verde. *@
 @{
     ViewData["Title"] = "Usuarios";
     ViewData["AdminShell"] = true;
@@ -12,7 +13,7 @@
     <section class="dashboard-hero">
         <div>
             <span class="dashboard-kicker">General</span>
-            <h1>Usuarios</h1>
+            <h1 class="app-page-title"><i class="bi bi-people" aria-hidden="true"></i><span>Usuarios</span></h1>
             <p>Gestiona los accesos de la cuenta administradora, define el rol operativo y selecciona a que empresas podra entrar cada usuario.</p>
         </div>
         <article class="dashboard-status-card">
@@ -31,12 +32,15 @@
         <div class="alert alert-danger">@errorMessage</div>
     }
 
-    <section class="workspace-section">
-        <div class="workspace-section-head workspace-section-head-compact">
-            <span class="workspace-section-kicker">Alta de acceso</span>
-            <h2>Registrar o vincular usuario</h2>
-            <p>Si el correo aun no existe en Identity, el sistema crea el acceso con contrasena temporal y luego lo liga a la cuenta administradora.</p>
-        </div>
+    <section class="workspace-section" aria-labelledby="users-registration-title">
+        <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
+            {
+                Id = "users-registration-title",
+                Category = "Alta de acceso",
+                Title = "Registrar o vincular usuario",
+                Description = "Si el correo aún no existe en Identity, el sistema crea el acceso con contraseña temporal y luego lo vincula a la cuenta administradora.",
+                IconClass = "bi bi-person-plus"
+            })" />
 
         <form asp-action="GuardarUsuario" method="post" class="workspace-account-form" autocomplete="off" data-clear-sensitive-fields="@limpiarCamposIniciales.ToString().ToLowerInvariant()">
             @Html.AntiForgeryToken()
@@ -106,12 +110,15 @@
         </form>
     </section>
 
-    <section class="workspace-section">
-        <div class="workspace-section-head workspace-section-head-compact">
-            <span class="workspace-section-kicker">Accesos vigentes</span>
-            <h2>Usuarios de la cuenta</h2>
-            <p>Desde la accion Permisos puedes afinar empresas asignadas y overrides por modulo.</p>
-        </div>
+    <section class="workspace-section" aria-labelledby="users-list-title">
+        <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
+            {
+                Id = "users-list-title",
+                Category = "Accesos vigentes",
+                Title = "Usuarios de la cuenta",
+                Description = "Desde la acción Permisos puedes ajustar las empresas asignadas y las excepciones por módulo.",
+                IconClass = "bi bi-person-check"
+            })" />
 
         <div class="table-responsive workspace-table-wrap">
             <table class="table table-sm align-middle app-table workspace-table">

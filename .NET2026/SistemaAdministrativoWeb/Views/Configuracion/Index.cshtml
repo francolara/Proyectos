@@ -2,8 +2,9 @@
 @* Firma: FRANCO LARA - 10/07/2026 | Crea la vista General > Configuracion para editar datos de la cuenta administradora y completar la ficha de facturacion con consulta DNI/RUC via Migo. *@
 @* Firma: FRANCO LARA - 11/07/2026 | Ajusta el formulario de configuracion para usar correo/telefono principal por defecto, renombra campos administrativos y simplifica los datos visibles del comprobante. *@
 @* Firma: FRANCO LARA - 25/07/2026 | Limita el ancho, uniformiza controles y simplifica la cabecera del formulario de configuracion. *@
+@* Firma: FRANCO LARA - 31/07/2026 | Adopta el patron global de titulo y subtitulo administrativo con iconos y degradado verde, incorpora selectores jerarquicos de ubicacion ocultando el codigo Ubigeo y alterna Nombre completo/Razon social segun el documento. *@
 @{
-    ViewData["Title"] = "Configuracion";
+    ViewData["Title"] = "Configuración";
     ViewData["AdminShell"] = true;
 }
 
@@ -11,8 +12,8 @@
     <section class="dashboard-hero">
         <div>
             <span class="dashboard-kicker">General</span>
-            <h1>Configuracion</h1>
-            <p>Informacion de facturacion que se reutilizara en boletas y facturas.</p>
+            <h1 class="app-page-title"><i class="bi bi-gear" aria-hidden="true"></i><span>Configuración</span></h1>
+            <p>Información de facturación que se reutilizará en boletas y facturas.</p>
         </div>
         <article class="dashboard-status-card">
             <span>Cuenta administradora</span>
@@ -26,7 +27,13 @@
         <div class="alert alert-success">@successMessage</div>
     }
 
-    <form asp-action="Guardar" method="post" class="workspace-section workspace-account-form workspace-account-form-section">
+    <form asp-action="Guardar"
+          method="post"
+          class="workspace-section workspace-account-form workspace-account-form-section"
+          aria-labelledby="configuration-receipt-title"
+          data-configuracion-ubigeo="true"
+          data-provincias-url="@Url.Action("Provincias")"
+          data-distritos-url="@Url.Action("Distritos")">
         @Html.AntiForgeryToken()
         <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
@@ -36,11 +43,14 @@
         <input asp-for="IdEmpresaPredeterminada" type="hidden" />
         <input asp-for="ObservacionAdministrativa" type="hidden" />
 
-        <div class="workspace-section-head workspace-section-head-compact">
-            <span class="workspace-section-kicker">Facturacion</span>
-            <h2>Datos del comprobante</h2>
-            <p>Configura el documento, nombre fiscal y direccion que se usaran por defecto al emitir comprobantes comerciales.</p>
-        </div>
+        <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
+            {
+                Id = "configuration-receipt-title",
+                Category = "Facturación",
+                Title = "Datos del comprobante",
+                Description = "Configura el documento, nombre fiscal y dirección que se usarán por defecto al emitir comprobantes comerciales.",
+                IconClass = "bi bi-receipt-cutoff"
+            })" />
 
         <div class="row g-3">
             <div class="col-md-4">
@@ -71,12 +81,12 @@
                 <span asp-validation-for="NumeroDocumento" class="text-danger"></span>
                 <small class="text-muted d-block mt-1" id="padronStatus">Consulta disponible para DNI y RUC.</small>
             </div>
-            <div class="col-md-6">
+            <div class="col-12 @(string.Equals(Model.TipoDocumentoFacturacion, "RUC", StringComparison.OrdinalIgnoreCase) ? "d-none" : string.Empty)" id="nombreFacturacionGroup">
                 <label asp-for="NombreFacturacion" class="form-label"></label>
                 <input asp-for="NombreFacturacion" class="form-control" id="nombreFacturacion" />
                 <span asp-validation-for="NombreFacturacion" class="text-danger"></span>
             </div>
-            <div class="col-md-6">
+            <div class="col-12 @(string.Equals(Model.TipoDocumentoFacturacion, "RUC", StringComparison.OrdinalIgnoreCase) ? string.Empty : "d-none")" id="razonSocialFacturacionGroup">
                 <label asp-for="RazonSocialFacturacion" class="form-label"></label>
                 <input asp-for="RazonSocialFacturacion" class="form-control" id="razonSocialFacturacion" />
                 <span asp-validation-for="RazonSocialFacturacion" class="text-danger"></span>
@@ -88,25 +98,40 @@
                 <input asp-for="DireccionFiscal" class="form-control" id="direccionFiscal" />
                 <span asp-validation-for="DireccionFiscal" class="text-danger"></span>
             </div>
-            <div class="col-md-3">
-                <label asp-for="Ubigeo" class="form-label"></label>
-                <input asp-for="Ubigeo" class="form-control" id="ubigeoFacturacion" />
+            <input asp-for="Ubigeo" type="hidden" id="ubigeoFacturacion" />
+            <input asp-for="Distrito" type="hidden" id="distritoFacturacion" />
+            <input asp-for="Provincia" type="hidden" id="provinciaFacturacion" />
+            <input asp-for="Departamento" type="hidden" id="departamentoFacturacion" />
+            <div class="col-md-4">
+                <label asp-for="CodigoDepartamento" class="form-label">Departamento</label>
+                <select asp-for="CodigoDepartamento" class="form-select" id="departamentoSelectorFacturacion">
+                    <option value="">Seleccione</option>
+                    @foreach (var item in Model.DepartamentosDisponibles)
+                    {
+                        <option value="@item.Valor">@item.Texto</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="CodigoProvincia" class="form-label">Provincia</label>
+                <select asp-for="CodigoProvincia" class="form-select" id="provinciaSelectorFacturacion">
+                    <option value="">Seleccione</option>
+                    @foreach (var item in Model.ProvinciasDisponibles)
+                    {
+                        <option value="@item.Valor">@item.Texto</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="distritoSelectorFacturacion" class="form-label">Distrito</label>
+                <select class="form-select" id="distritoSelectorFacturacion">
+                    <option value="">Seleccione</option>
+                    @foreach (var item in Model.DistritosDisponibles)
+                    {
+                        <option value="@item.Valor" selected="@(string.Equals(Model.Ubigeo, item.Valor, StringComparison.OrdinalIgnoreCase) ? "selected" : null)">@item.Texto</option>
+                    }
+                </select>
                 <span asp-validation-for="Ubigeo" class="text-danger"></span>
-            </div>
-            <div class="col-md-3">
-                <label asp-for="Distrito" class="form-label"></label>
-                <input asp-for="Distrito" class="form-control" id="distritoFacturacion" />
-                <span asp-validation-for="Distrito" class="text-danger"></span>
-            </div>
-            <div class="col-md-3">
-                <label asp-for="Provincia" class="form-label"></label>
-                <input asp-for="Provincia" class="form-control" id="provinciaFacturacion" />
-                <span asp-validation-for="Provincia" class="text-danger"></span>
-            </div>
-            <div class="col-md-3">
-                <label asp-for="Departamento" class="form-label"></label>
-                <input asp-for="Departamento" class="form-control" id="departamentoFacturacion" />
-                <span asp-validation-for="Departamento" class="text-danger"></span>
             </div>
             <div class="col-12">
                 <label asp-for="ObservacionFacturacion" class="form-label"></label>
@@ -125,16 +150,139 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         (() => {
+            const form = document.querySelector("[data-configuracion-ubigeo='true']");
             const btn = document.getElementById("btnConsultarPadron");
             const tipo = document.getElementById("tipoDocumentoFacturacion");
             const numero = document.getElementById("numeroDocumentoFacturacion");
             const status = document.getElementById("padronStatus");
+            const nombreGroup = document.getElementById("nombreFacturacionGroup");
+            const razonGroup = document.getElementById("razonSocialFacturacionGroup");
+            const departamentoSelector = document.getElementById("departamentoSelectorFacturacion");
+            const provinciaSelector = document.getElementById("provinciaSelectorFacturacion");
+            const distritoSelector = document.getElementById("distritoSelectorFacturacion");
+            const ubigeo = document.getElementById("ubigeoFacturacion");
+            const distrito = document.getElementById("distritoFacturacion");
+            const provincia = document.getElementById("provinciaFacturacion");
+            const departamento = document.getElementById("departamentoFacturacion");
+            const provinciasUrl = form?.dataset.provinciasUrl;
+            const distritosUrl = form?.dataset.distritosUrl;
 
-            if (!btn || !tipo || !numero || !status) {
+            if (!form) {
                 return;
             }
 
-            btn.addEventListener("click", async () => {
+            const textoSeleccionado = (select) => {
+                const option = select?.selectedOptions?.[0];
+                return option && option.value ? option.textContent.trim() : "";
+            };
+
+            const poblarSelect = (select, items, selectedValue = "") => {
+                if (!select) {
+                    return;
+                }
+
+                select.innerHTML = "";
+                const placeholder = document.createElement("option");
+                placeholder.value = "";
+                placeholder.textContent = "Seleccione";
+                select.appendChild(placeholder);
+
+                for (const item of items || []) {
+                    const option = document.createElement("option");
+                    option.value = item.value || "";
+                    option.textContent = item.text || "";
+                    select.appendChild(option);
+                }
+
+                select.value = selectedValue || "";
+            };
+
+            const cargarSelect = async (url, parametro, valor, select, selectedValue = "") => {
+                if (!url || !valor || !select) {
+                    poblarSelect(select, []);
+                    return;
+                }
+
+                const response = await fetch(`${url}?${parametro}=${encodeURIComponent(valor)}`, {
+                    headers: { "X-Requested-With": "XMLHttpRequest" }
+                });
+                if (!response.ok) {
+                    throw new Error("No se pudo cargar la ubicacion seleccionada.");
+                }
+
+                poblarSelect(select, await response.json(), selectedValue);
+            };
+
+            const sincronizarNombresUbigeo = () => {
+                if (departamento) departamento.value = textoSeleccionado(departamentoSelector);
+                if (provincia) provincia.value = textoSeleccionado(provinciaSelector);
+                if (distrito) distrito.value = textoSeleccionado(distritoSelector);
+            };
+
+            const limpiarUbigeo = () => {
+                if (ubigeo) ubigeo.value = "";
+                if (distrito) distrito.value = "";
+            };
+
+            const aplicarUbigeo = async (codigoUbigeo) => {
+                const codigo = String(codigoUbigeo || "").trim();
+                if (!codigo || codigo.length < 6) {
+                    return;
+                }
+
+                const codigoDepartamento = codigo.slice(0, 2);
+                const codigoProvincia = codigo.slice(0, 4);
+                if (ubigeo) ubigeo.value = codigo;
+                if (departamentoSelector) departamentoSelector.value = codigoDepartamento;
+                await cargarSelect(provinciasUrl, "codigoDepartamento", codigoDepartamento, provinciaSelector, codigoProvincia);
+                await cargarSelect(distritosUrl, "codigoProvincia", codigoProvincia, distritoSelector, codigo);
+                sincronizarNombresUbigeo();
+            };
+
+            const alternarNombreFiscal = () => {
+                const esRuc = String(tipo?.value || "").trim().toUpperCase() === "RUC";
+                nombreGroup?.classList.toggle("d-none", esRuc);
+                razonGroup?.classList.toggle("d-none", !esRuc);
+            };
+
+            tipo?.addEventListener("change", alternarNombreFiscal);
+            alternarNombreFiscal();
+
+            departamentoSelector?.addEventListener("change", async () => {
+                try {
+                    await cargarSelect(provinciasUrl, "codigoDepartamento", departamentoSelector.value, provinciaSelector);
+                    poblarSelect(distritoSelector, []);
+                    limpiarUbigeo();
+                    sincronizarNombresUbigeo();
+                } catch (error) {
+                    if (status) {
+                        status.textContent = error?.message || "No se pudieron cargar las provincias.";
+                        status.className = "text-danger d-block mt-1";
+                    }
+                }
+            });
+
+            provinciaSelector?.addEventListener("change", async () => {
+                try {
+                    await cargarSelect(distritosUrl, "codigoProvincia", provinciaSelector.value, distritoSelector);
+                    limpiarUbigeo();
+                    sincronizarNombresUbigeo();
+                } catch (error) {
+                    if (status) {
+                        status.textContent = error?.message || "No se pudieron cargar los distritos.";
+                        status.className = "text-danger d-block mt-1";
+                    }
+                }
+            });
+
+            distritoSelector?.addEventListener("change", () => {
+                if (ubigeo) ubigeo.value = distritoSelector.value || "";
+                sincronizarNombresUbigeo();
+            });
+
+            sincronizarNombresUbigeo();
+
+            btn?.addEventListener("click", async () => {
                 const tipoValue = (tipo.value || "").trim();
                 const numeroValue = (numero.value || "").trim();
                 if (!numeroValue) {
@@ -160,18 +308,17 @@
                 const nombre = document.getElementById("nombreFacturacion");
                 const razon = document.getElementById("razonSocialFacturacion");
                 const direccion = document.getElementById("direccionFiscal");
-                const ubigeo = document.getElementById("ubigeoFacturacion");
-                const distrito = document.getElementById("distritoFacturacion");
-                const provincia = document.getElementById("provinciaFacturacion");
-                const departamento = document.getElementById("departamentoFacturacion");
 
                 if (nombre && data.nombreFacturacion) nombre.value = data.nombreFacturacion;
                 if (razon && data.razonSocialFacturacion) razon.value = data.razonSocialFacturacion;
                 if (direccion && data.direccionFiscal) direccion.value = data.direccionFiscal;
-                if (ubigeo && data.ubigeo) ubigeo.value = data.ubigeo;
-                if (distrito && data.distrito) distrito.value = data.distrito;
-                if (provincia && data.provincia) provincia.value = data.provincia;
-                if (departamento && data.departamento) departamento.value = data.departamento;
+                if (data.ubigeo) {
+                    await aplicarUbigeo(data.ubigeo);
+                } else {
+                    if (distrito && data.distrito) distrito.value = data.distrito;
+                    if (provincia && data.provincia) provincia.value = data.provincia;
+                    if (departamento && data.departamento) departamento.value = data.departamento;
+                }
 
                 status.textContent = data.mensaje || "Datos cargados correctamente.";
                 status.className = "text-success d-block mt-1";

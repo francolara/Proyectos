@@ -1,5 +1,6 @@
 @model SistemaAdministrativoWeb.ViewModels.Ayuda.AyudaIndexViewModel
 @* Firma: FRANCO LARA - 08/07/2026 | Incorpora FAQ operativo por categorias y modulos con ayuda contextual desde cada vista del panel contable. *@
+@* Firma: FRANCO LARA - 31/07/2026 | Adopta el patron global de titulo y subtitulos administrativos con iconos y degradado verde. *@
 @{
     ViewData["Title"] = "Ayuda";
     ViewData["AdminShell"] = true;
@@ -9,7 +10,7 @@
     <section class="dashboard-hero">
         <div>
             <span class="dashboard-kicker">General</span>
-            <h1>Ayuda operativa</h1>
+            <h1 class="app-page-title"><i class="bi bi-question-circle" aria-hidden="true"></i><span>Ayuda operativa</span></h1>
             <p>FAQ estructurado por mantenimiento, registros, procesos y reportes para uso diario del sistema contable.</p>
         </div>
         <article class="dashboard-status-card">
@@ -58,14 +59,18 @@
 
             @foreach (var categoria in Model.Categorias)
             {
+                var categoriaTitleId = $"help-category-title-{categoria.Clave.ToLowerInvariant()}";
                 <section class="help-category-panel @(categoria.Clave == Model.CategoriaSeleccionadaClave ? "is-active" : string.Empty)"
                          data-help-category-panel="@categoria.Clave">
-                    <div class="workspace-section">
-                        <div class="workspace-section-head workspace-section-head-compact">
-                            <span class="workspace-section-kicker">Categoria</span>
-                            <h2>@categoria.Titulo</h2>
-                            <p>@categoria.Descripcion</p>
-                        </div>
+                    <div class="workspace-section" aria-labelledby="@categoriaTitleId">
+                        <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
+                            {
+                                Id = categoriaTitleId,
+                                Category = "Categoría",
+                                Title = categoria.Titulo,
+                                Description = categoria.Descripcion,
+                                IconClass = $"bi {categoria.Icono}"
+                            })" />
 
                         <div class="help-module-tabs">
                             @foreach (var modulo in categoria.Modulos)
@@ -85,13 +90,18 @@
                     @foreach (var modulo in categoria.Modulos)
                     {
                         var panelActivo = modulo.Clave == Model.ModuloSeleccionadoClave;
+                        var moduloTitleId = $"help-module-title-{modulo.Clave.ToLowerInvariant()}";
                         <article class="workspace-section help-module-panel @(panelActivo ? "is-active" : string.Empty)"
-                                 data-help-module-panel="@modulo.Clave">
-                            <div class="workspace-section-head workspace-section-head-compact">
-                                <span class="workspace-section-kicker">Modulo</span>
-                                <h2>@modulo.Titulo</h2>
-                                <p>@modulo.Resumen</p>
-                            </div>
+                                 data-help-module-panel="@modulo.Clave"
+                                 aria-labelledby="@moduloTitleId">
+                            <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
+                                {
+                                    Id = moduloTitleId,
+                                    Category = "Módulo",
+                                    Title = modulo.Titulo,
+                                    Description = modulo.Resumen,
+                                    IconClass = $"bi {modulo.Icono}"
+                                })" />
 
                             <div class="accordion help-accordion" id="help-@modulo.Clave.ToLowerInvariant()">
                                 @{

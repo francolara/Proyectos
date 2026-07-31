@@ -29,6 +29,9 @@ html {
   --app-theme-card-border: rgba(181, 235, 218, 0.2);
   --app-theme-track-bg: rgba(255, 255, 255, 0.12);
   --app-theme-thumb-bg: linear-gradient(135deg, #ffffff 0%, #dceeff 100%);
+  --app-admin-heading-bg:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.1), transparent 36%),
+    linear-gradient(105deg, #0f6047 0%, #167759 52%, #278c69 100%);
 }
 
 html[data-theme="dark"] {
@@ -1727,23 +1730,37 @@ html[data-theme="dark"] .app-theme-toggle-thumb {
 
 .workspace-window-head {
   color: #fff;
-  background:
-    radial-gradient(circle at top right, rgba(255, 255, 255, 0.15), transparent 24%),
-    linear-gradient(135deg, #10332a 0%, var(--app-emerald) 50%, var(--app-emerald-2) 100%);
+  background: var(--app-admin-heading-bg);
 }
 
 .workspace-window-head-emerald {
-  background:
-    radial-gradient(circle at top right, rgba(255, 255, 255, 0.15), transparent 24%),
-    linear-gradient(135deg, #10332a 0%, var(--app-emerald) 50%, var(--app-emerald-2) 100%);
+  background: var(--app-admin-heading-bg);
 }
 
 .workspace-section-head {
-  align-items: end;
-  border-bottom: 1px solid rgba(115, 196, 167, 0.18);
-  background:
-    radial-gradient(circle at top right, rgba(255, 255, 255, 0.12), transparent 24%),
-    linear-gradient(135deg, rgba(16, 51, 42, 0.98) 0%, rgba(20, 115, 84, 0.96) 52%, rgba(46, 179, 126, 0.9) 100%);
+  position: relative;
+  align-items: center;
+  padding-left: 4.4rem;
+  border-bottom: 1px solid rgba(90, 211, 163, 0.34);
+  background: var(--app-admin-heading-bg);
+}
+
+.workspace-section-head::before,
+.table-panel-head::before {
+  content: "";
+  position: absolute;
+  left: 1.15rem;
+  top: 50%;
+  width: 2.35rem;
+  height: 2.35rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.78rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23ecfff6' stroke-width='1.5'%3E%3Crect x='2' y='2' width='5' height='5' rx='1'/%3E%3Crect x='9' y='2' width='5' height='5' rx='1'/%3E%3Crect x='2' y='9' width='5' height='5' rx='1'/%3E%3Crect x='9' y='9' width='5' height='5' rx='1'/%3E%3C/svg%3E");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 1rem;
+  transform: translateY(-50%);
 }
 
 .workspace-window-head h1,
@@ -1754,7 +1771,24 @@ html[data-theme="dark"] .app-theme-toggle-thumb {
 }
 
 .workspace-window-head h1 {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
   font-size: clamp(1.8rem, 2.7vw, 2.65rem);
+}
+
+.workspace-window-head h1::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 2.45rem;
+  height: 2.45rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.8rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='1.5'%3E%3Cpath d='M2.5 3.5h11v9h-11z'/%3E%3Cpath d='M5 1.75v3.5M11 1.75v3.5M2.5 6.5h11'/%3E%3C/svg%3E");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 1.12rem;
 }
 
 .workspace-section-head h2 {
@@ -1779,7 +1813,8 @@ html[data-theme="dark"] .app-theme-toggle-thumb {
 
 .workspace-section-head.workspace-section-head-compact {
   gap: 1rem;
-  padding: 0.78rem 1.15rem;
+  min-height: 3.75rem;
+  padding: 0.78rem 1.15rem 0.78rem 4.4rem;
 }
 
 .workspace-section-head.workspace-section-head-compact h2 {
@@ -3221,7 +3256,8 @@ body.workspace-loading-active {
   padding-top: 0;
 }
 
-.workspace-account-form-section > .workspace-section-head {
+.workspace-account-form-section > .workspace-section-head,
+.workspace-account-form-section > .app-section-head {
   margin-inline: calc(var(--workspace-account-form-gutter) * -1);
   margin-bottom: var(--workspace-account-form-gutter);
 }
@@ -3312,9 +3348,7 @@ body.workspace-loading-active {
   justify-content: space-between;
   gap: 1.2rem;
   align-items: flex-start;
-  background:
-    radial-gradient(circle at top right, rgba(255, 255, 255, 0.15), transparent 24%),
-    linear-gradient(135deg, #10332a 0%, var(--app-emerald) 50%, var(--app-emerald-2) 100%);
+  background: var(--app-admin-heading-bg);
   border: 1px solid rgba(115, 196, 167, 0.18);
   box-shadow: var(--app-shadow);
 }
@@ -3538,6 +3572,12 @@ body.workspace-loading-active {
   align-items: center;
 }
 
+.subscription-shell .dashboard-metrics .dashboard-metric-card {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
 .subscription-pill {
   display: inline-flex;
   align-items: center;
@@ -3619,6 +3659,174 @@ body.workspace-loading-active {
   color: #607089;
   font-size: 0.78rem;
   line-height: 1.45;
+}
+
+/* Firma: FRANCO LARA - 31/07/2026 | Extiende el patron global de titulos y subtitulos con verde degradado a todas las vistas privadas, centra los KPI de suscripcion, alinea iconos y nombres en encabezados compactos, mejora el contraste de operaciones seleccionadas en modo oscuro y conserva soporte responsive e impresion. */
+.app-page-title,
+.app-section-heading,
+.app-section-icon,
+.subscription-contact-card,
+.subscription-support-card,
+.subscription-contact-copy {
+  min-width: 0;
+}
+
+.app-page-title,
+.app-section-heading,
+.app-section-icon,
+.subscription-contact-card,
+.subscription-support-card {
+  display: flex;
+  align-items: center;
+}
+
+.app-page-title {
+  gap: 0.7rem;
+}
+
+.app-page-title > i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.45rem;
+  height: 2.45rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0.8rem;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 1.15rem;
+}
+
+.app-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 0.9rem 1.15rem;
+  border-bottom: 1px solid rgba(90, 211, 163, 0.34);
+  background: var(--app-admin-heading-bg);
+}
+
+.app-section-heading {
+  gap: 0.75rem;
+}
+
+.app-section-icon {
+  flex: 0 0 auto;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.78rem;
+  color: #ecfff6;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 1rem;
+}
+
+.app-section-eyebrow {
+  display: block;
+  margin-bottom: 0.16rem;
+  color: #b4eed4;
+  font-size: 0.62rem;
+  font-weight: 850;
+  letter-spacing: 0.09em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.app-section-head h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.06rem;
+  font-weight: 850;
+  line-height: 1.2;
+}
+
+.app-section-head p {
+  max-width: 31rem;
+  margin: 0;
+  color: rgba(235, 255, 247, 0.86);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  text-align: right;
+}
+
+.subscription-contact-card {
+  flex-direction: row;
+  gap: 0.9rem;
+}
+
+.subscription-contact-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 2.65rem;
+  height: 2.65rem;
+  border: 1px solid rgba(37, 111, 224, 0.26);
+  border-radius: 0.85rem;
+  color: #1d65d6;
+  background: rgba(37, 111, 224, 0.1);
+  font-size: 1.05rem;
+}
+
+.subscription-contact-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+}
+
+.subscription-contact-copy strong {
+  overflow-wrap: anywhere;
+}
+
+.subscription-support-section {
+  border-color: rgba(77, 111, 163, 0.26);
+  background: rgba(247, 250, 255, 0.7);
+}
+
+.subscription-support-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+  padding: 1.1rem;
+}
+
+.subscription-support-card {
+  gap: 0.9rem;
+  min-height: 5.7rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(78, 116, 174, 0.24);
+  border-radius: 1rem;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.72);
+  text-decoration: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.subscription-support-card:hover,
+.subscription-support-card:focus-visible {
+  border-color: rgba(37, 111, 224, 0.55);
+  color: inherit;
+  box-shadow: 0 12px 24px rgba(14, 40, 86, 0.1);
+  transform: translateY(-2px);
+}
+
+.subscription-support-card:focus-visible {
+  outline: 3px solid rgba(37, 111, 224, 0.2);
+  outline-offset: 2px;
+}
+
+.subscription-support-card strong {
+  color: #0f2343;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.subscription-support-card small {
+  color: #607089;
+  font-size: 0.76rem;
+  line-height: 1.35;
 }
 
 .subscription-note-card {
@@ -4079,17 +4287,22 @@ body.workspace-loading-active {
 }
 
 .table-panel-head {
-  margin-bottom: 1rem;
+  position: relative;
+  margin: -1.3rem -1.3rem 1rem;
+  padding: 0.9rem 1.15rem 0.9rem 4.4rem;
+  border-bottom: 1px solid rgba(90, 211, 163, 0.34);
+  background: var(--app-admin-heading-bg);
 }
 
 .table-panel-head h2 {
+  color: #ffffff;
   font-size: 1.15rem;
   font-weight: 800;
   margin-bottom: 0.25rem;
 }
 
 .table-panel-head p {
-  color: var(--app-muted);
+  color: rgba(235, 255, 247, 0.86);
   margin-bottom: 0;
 }
 
@@ -4320,9 +4533,21 @@ html[data-theme="dark"] .workspace-tree-option {
   background: var(--app-panel-soft);
 }
 
+html[data-theme="dark"] .workspace-tree-option.active {
+  color: #fff;
+  border-color: rgba(113, 166, 255, 0.78);
+  background: linear-gradient(135deg, #174c9d 0%, #236fe4 55%, #3190ff 100%);
+  box-shadow: 0 0 0 1px rgba(116, 172, 255, 0.18), 0 12px 26px rgba(14, 77, 180, 0.38);
+}
+
 html[data-theme="dark"] .workspace-tree-option:hover {
   border-color: rgba(87, 143, 236, 0.48);
   box-shadow: 0 14px 28px rgba(0, 0, 0, 0.24);
+}
+
+html[data-theme="dark"] .workspace-tree-option.active:hover {
+  border-color: rgba(133, 181, 255, 0.9);
+  box-shadow: 0 0 0 1px rgba(116, 172, 255, 0.22), 0 14px 30px rgba(14, 77, 180, 0.44);
 }
 
 html[data-theme="dark"] .dashboard-module-icon,
@@ -4563,9 +4788,59 @@ html[data-theme="dark"] .help-accordion-item .accordion-body {
 }
 
 html[data-theme="dark"] .subscription-info-card strong,
+html[data-theme="dark"] .subscription-support-card strong,
 html[data-theme="dark"] .help-context-banner,
 html[data-theme="dark"] .help-accordion-item .accordion-button {
   color: #f3f7ff;
+}
+
+html[data-theme="dark"] .subscription-support-section {
+  border-color: rgba(93, 116, 150, 0.32);
+  background: rgba(9, 17, 31, 0.7);
+}
+
+html[data-theme="dark"] .app-section-head {
+  border-bottom-color: rgba(90, 211, 163, 0.34);
+  background: var(--app-admin-heading-bg);
+}
+
+html[data-theme="dark"] .app-section-head h2 {
+  color: #ffffff;
+}
+
+html[data-theme="dark"] .app-section-head p {
+  color: rgba(235, 255, 247, 0.86);
+}
+
+html[data-theme="dark"] .app-section-eyebrow {
+  color: #b4eed4;
+}
+
+html[data-theme="dark"] .app-section-icon {
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ecfff6;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+html[data-theme="dark"] .subscription-support-card {
+  border-color: rgba(93, 116, 150, 0.34);
+  background: rgba(17, 28, 48, 0.9);
+}
+
+html[data-theme="dark"] .subscription-support-card:hover,
+html[data-theme="dark"] .subscription-support-card:focus-visible {
+  border-color: rgba(117, 164, 238, 0.62);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.28);
+}
+
+html[data-theme="dark"] .subscription-contact-icon {
+  border-color: rgba(75, 133, 225, 0.38);
+  color: #82b5ff;
+  background: rgba(37, 111, 224, 0.14);
+}
+
+html[data-theme="dark"] .subscription-support-card small {
+  color: #96abcf;
 }
 
 html[data-theme="dark"] .help-category-button,
@@ -5037,6 +5312,16 @@ html[data-theme="dark"] .text-dark {
     flex-direction: column;
   }
 
+  .app-section-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .app-section-head p {
+    max-width: none;
+    text-align: left;
+  }
+
   .workspace-window-head,
   .workspace-section-head {
     flex-direction: column;
@@ -5050,6 +5335,7 @@ html[data-theme="dark"] .text-dark {
   .dashboard-donut-layout,
   .subscription-info-grid,
   .subscription-limit-grid,
+  .subscription-support-grid,
   .workspace-card-tabs,
   .workspace-operation-tabs,
   .workspace-period-card,
@@ -5445,18 +5731,29 @@ html[data-theme="dark"] .text-dark {
     box-shadow: none !important;
   }
 
-  .dashboard-print-page .workspace-section-head {
+  .dashboard-print-page .workspace-section-head,
+  .dashboard-print-page .app-section-head {
     margin-bottom: 0.3rem;
+    padding: 0.3rem 0.5rem;
   }
 
-  .dashboard-print-page .workspace-section-head h2 {
+  .dashboard-print-page .workspace-section-head::before,
+  .dashboard-print-page .workspace-window-head h1::before,
+  .dashboard-print-page .app-section-icon {
+    display: none;
+  }
+
+  .dashboard-print-page .workspace-section-head h2,
+  .dashboard-print-page .app-section-head h2 {
     margin: 0.05rem 0;
     color: #0f172a !important;
     font-size: 0.78rem;
   }
 
   .dashboard-print-page .workspace-section-head p,
-  .dashboard-print-page .workspace-section-kicker {
+  .dashboard-print-page .workspace-section-kicker,
+  .dashboard-print-page .app-section-head p,
+  .dashboard-print-page .app-section-eyebrow {
     margin: 0;
     color: #52607a !important;
     font-size: 0.52rem;

@@ -12,6 +12,7 @@
 <!-- Author: FRANCO LARA | Create date: 15/06/2026 | Firma: Superadmin orientado a cuentas administradoras con control de suscripcion, limites y empresa principal. -->
 <!-- Firma: FRANCO LARA - 10/07/2026 | Incorpora gestion comercial por cuenta con dashboard, filtro de suscriptores, formularios por secciones horizontales, acceso separado al registro de cobros y mueve los historiales comercial/cobros a modales para reducir ruido visual. -->
 <!-- Firma: FRANCO LARA - 25/07/2026 | Resume cada cuenta en una fila, pagina desde SQL Server, muestra el estado efectivo vencido y permite elegir Emprendedor o Contador al iniciar contrato. -->
+<!-- Firma: FRANCO LARA - 31/07/2026 | Adopta el patron global de titulo privado con icono y degradado verde. -->
 
 <section class="dashboard-shell">
     @if (TempData["SuperAdminOk"] is string ok)
@@ -26,7 +27,7 @@
     <section class="dashboard-hero">
         <div>
             <span class="dashboard-kicker">SuperAdmin</span>
-            <h1>Control comercial de suscriptores</h1>
+            <h1 class="app-page-title"><i class="bi bi-building-gear" aria-hidden="true"></i><span>Control comercial de suscriptores</span></h1>
             <p>Administra contratos, estado operativo y trazabilidad comercial por cuenta registrada desde un solo panel.</p>
         </div>
         <div class="dashboard-hero-summary">

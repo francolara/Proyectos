@@ -2,6 +2,7 @@
 @* Firma: FRANCO LARA - 07/07/2026 | Integra el acceso rapido del panel para el nuevo modulo Libros Electronicos manteniendo la navegacion administrativa existente. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Reestructura el dashboard con KPIs reales del periodo, indicadores operativos, tendencias de compras y ventas y graficos CSS para distribucion de registros por modulo, movimientos bancarios y aplicaciones. *@
 @* Firma: FRANCO LARA - 21/07/2026 | Agrega la impresion HTML del dashboard en formato ejecutivo A4 horizontal, con KPIs, indicadores, tendencias y distribucion del periodo. *@
+@* Firma: FRANCO LARA - 31/07/2026 | Adopta el patron global de titulo y subtitulos administrativos con iconos y degradado verde, conservando la impresion ejecutiva. *@
 @{
     ViewData["Title"] = "Panel administrativo";
     ViewData["AdminShell"] = true;
@@ -42,7 +43,7 @@
     <section class="dashboard-hero">
         <div>
             <span class="dashboard-kicker">Resumen ejecutivo</span>
-            <h1>@Model.NombreEmpresa</h1>
+            <h1 class="app-page-title"><i class="bi bi-speedometer2" aria-hidden="true"></i><span>@Model.NombreEmpresa</span></h1>
             <p>Vista central del periodo @Model.PeriodoActual con foco en compras, ventas, asientos e indicadores de registro para la empresa activa.</p>
             <div class="dashboard-print-actions no-print">
                 <button type="button" class="btn btn-light" onclick="window.print()">
@@ -121,12 +122,15 @@
         </article>
     </section>
 
-    <section class="workspace-section">
-        <div class="workspace-section-head workspace-section-head-compact">
-            <span class="workspace-section-kicker">Indicadores</span>
-            <h2>Control de registros</h2>
-            <p>Lectura rapida de pendientes y validaciones del periodo para detectar cuellos de botella operativos.</p>
-        </div>
+    <section class="workspace-section" aria-labelledby="dashboard-record-control-title">
+        <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
+            {
+                Id = "dashboard-record-control-title",
+                Category = "Indicadores",
+                Title = "Control de registros",
+                Description = "Lectura rápida de pendientes y validaciones del periodo para detectar cuellos de botella operativos.",
+                IconClass = "bi bi-clipboard-data"
+            })" />
 
         <div class="dashboard-indicator-grid">
             @foreach (var indicador in Model.Indicadores)
@@ -147,12 +151,15 @@
 
     <section class="dashboard-analytics-grid">
         <div class="dashboard-analytics-stack">
-            <article class="workspace-section dashboard-analytics-card">
-                <div class="workspace-section-head workspace-section-head-compact">
-                    <span class="workspace-section-kicker">Grafico de torres</span>
-                    <h2>Movimientos de compras por periodo</h2>
-                    <p>Comparativo de importes y cantidad de compras en los ultimos seis periodos del sistema.</p>
-                </div>
+            <article class="workspace-section dashboard-analytics-card" aria-labelledby="dashboard-purchases-title">
+                <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
+                    {
+                        Id = "dashboard-purchases-title",
+                        Category = "Gráfico de torres",
+                        Title = "Movimientos de compras por periodo",
+                        Description = "Comparativo de importes y cantidad de compras en los últimos seis periodos del sistema.",
+                        IconClass = "bi bi-cart-check"
+                    })" />
 
                 <div class="dashboard-bar-chart">
                     @foreach (var item in Model.ComprasPorPeriodo)
@@ -168,12 +175,15 @@
                 </div>
             </article>
 
-            <article class="workspace-section dashboard-analytics-card">
-                <div class="workspace-section-head workspace-section-head-compact">
-                    <span class="workspace-section-kicker">Grafico de torres</span>
-                    <h2>Movimientos de ventas por periodo</h2>
-                    <p>Comparativo de importes y cantidad de ventas en los ultimos seis periodos del sistema.</p>
-                </div>
+            <article class="workspace-section dashboard-analytics-card" aria-labelledby="dashboard-sales-title">
+                <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
+                    {
+                        Id = "dashboard-sales-title",
+                        Category = "Gráfico de torres",
+                        Title = "Movimientos de ventas por periodo",
+                        Description = "Comparativo de importes y cantidad de ventas en los últimos seis periodos del sistema.",
+                        IconClass = "bi bi-receipt"
+                    })" />
 
                 <div class="dashboard-bar-chart">
                     @foreach (var item in Model.VentasPorPeriodo)
@@ -190,12 +200,15 @@
             </article>
         </div>
 
-        <article class="workspace-section dashboard-analytics-card">
-            <div class="workspace-section-head workspace-section-head-compact">
-                <span class="workspace-section-kicker">Grafico de torta</span>
-                <h2>Distribucion de registros del periodo</h2>
-                <p>Participacion actual de compras, ventas, asientos, movimientos bancarios y aplicaciones dentro del volumen operativo del sistema.</p>
-            </div>
+        <article class="workspace-section dashboard-analytics-card" aria-labelledby="dashboard-distribution-title">
+            <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
+                {
+                    Id = "dashboard-distribution-title",
+                    Category = "Gráfico de torta",
+                    Title = "Distribución de registros del periodo",
+                    Description = "Participación actual de compras, ventas, asientos, movimientos bancarios y aplicaciones dentro del volumen operativo del sistema.",
+                    IconClass = "bi bi-pie-chart"
+                })" />
 
             <div class="dashboard-donut-layout">
                 <div class="dashboard-donut" style="--dashboard-donut:@donutGradient">

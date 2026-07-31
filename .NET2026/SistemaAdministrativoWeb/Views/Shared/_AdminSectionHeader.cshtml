@@ -1,0 +1,13 @@
+@model AdminSectionHeaderViewModel
+@* Firma: FRANCO LARA - 31/07/2026 | Crea el encabezado reutilizable para subtitulos de las vistas administrativas. *@
+
+<header class="app-section-head">
+    <div class="app-section-heading">
+        <span class="app-section-icon" aria-hidden="true"><i class="@Model.IconClass"></i></span>
+        <div>
+            <span class="app-section-eyebrow">@Model.Category</span>
+            <h2 id="@Model.Id">@Model.Title</h2>
+        </div>
+    </div>
+    <p>@Model.Description</p>
+</header>

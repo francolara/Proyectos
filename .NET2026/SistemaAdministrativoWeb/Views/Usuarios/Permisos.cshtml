@@ -1,6 +1,7 @@
 @model SistemaAdministrativoWeb.ViewModels.Usuarios.UsuarioPermisosViewModel
 @* Firma: FRANCO LARA - 10/07/2026 | Crea la vista de detalle de permisos por cuenta y por empresa para usuarios de la cuenta administradora. *@
 @* Firma: FRANCO LARA - 12/07/2026 | Retira la edicion de cuenta y empresa predeterminada del detalle de permisos para que la seleccion de empresa se haga siempre desde el panel correspondiente. *@
+@* Firma: FRANCO LARA - 31/07/2026 | Adopta el patron global de titulo y subtitulos administrativos con iconos y degradado verde. *@
 @{
     ViewData["Title"] = "Permisos de usuario";
     ViewData["AdminShell"] = true;
@@ -10,7 +11,7 @@
     <section class="dashboard-hero">
         <div>
             <span class="dashboard-kicker">General / Usuarios</span>
-            <h1>@Model.NombreCompleto</h1>
+            <h1 class="app-page-title"><i class="bi bi-shield-lock" aria-hidden="true"></i><span>@Model.NombreCompleto</span></h1>
             <p>@Model.CorreoUsuario</p>
         </div>
         <article class="dashboard-status-card">
@@ -26,12 +27,15 @@
         <div class="alert alert-success">@successMessage</div>
     }
 
-    <section class="workspace-section">
-        <div class="workspace-section-head">
-            <span class="workspace-section-kicker">Acceso base</span>
-            <h2>Rol y empresas</h2>
-            <p>Aqui controlas el rol global del usuario dentro de la administradora y las empresas donde podra trabajar.</p>
-        </div>
+    <section class="workspace-section" aria-labelledby="user-base-access-title">
+        <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
+            {
+                Id = "user-base-access-title",
+                Category = "Acceso base",
+                Title = "Rol y empresas",
+                Description = "Aquí controlas el rol global del usuario dentro de la administradora y las empresas donde podrá trabajar.",
+                IconClass = "bi bi-person-check"
+            })" />
 
         <form asp-action="ActualizarAcceso" method="post">
             @Html.AntiForgeryToken()
@@ -76,12 +80,15 @@
         </form>
     </section>
 
-    <section class="workspace-section">
-        <div class="workspace-section-head">
-            <span class="workspace-section-kicker">Overrides de cuenta</span>
-            <h2>Permisos sobre opciones generales</h2>
-            <p>Deja el valor vacio para heredar el permiso del rol; usa Si o No solo cuando necesites una excepcion.</p>
-        </div>
+    <section class="workspace-section" aria-labelledby="user-account-permissions-title">
+        <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
+            {
+                Id = "user-account-permissions-title",
+                Category = "Excepciones de cuenta",
+                Title = "Permisos sobre opciones generales",
+                Description = "Deja el valor vacío para heredar el permiso del rol; usa Sí o No únicamente cuando necesites una excepción.",
+                IconClass = "bi bi-sliders"
+            })" />
 
         <div class="table-responsive workspace-table-wrap">
             <table class="table table-sm align-middle app-table workspace-table">
@@ -153,12 +160,15 @@
         </div>
     </section>
 
-    <section class="workspace-section">
-        <div class="workspace-section-head">
-            <span class="workspace-section-kicker">Overrides por empresa</span>
-            <h2>Permisos del modulo contable</h2>
-            <p>Selecciona una empresa asignada para revisar permisos puntuales sobre mantenimiento, registros, procesos y reportes.</p>
-        </div>
+    <section class="workspace-section" aria-labelledby="user-company-permissions-title">
+        <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
+            {
+                Id = "user-company-permissions-title",
+                Category = "Excepciones por empresa",
+                Title = "Permisos del módulo contable",
+                Description = "Selecciona una empresa asignada para revisar permisos puntuales sobre mantenimiento, registros, procesos y reportes.",
+                IconClass = "bi bi-shield-check"
+            })" />
 
         <form method="get" asp-action="Permisos" class="row g-3 mb-4">
             <input type="hidden" name="aspNetUserId" value="@Model.AspNetUserId" />

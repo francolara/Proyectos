@@ -1,8 +1,9 @@
 @model SistemaAdministrativoWeb.ViewModels.Suscripciones.MiSuscripcionIndexViewModel
 @* Firma: FRANCO LARA - 08/07/2026 | Agrega la vista Mi suscripcion al panel contable con resumen de vigencia, limites operativos y contexto de cuenta administradora. *@
 @* Firma: FRANCO LARA - 25/07/2026 | Mantiene un ancho de lectura controlado, simplifica las tarjetas y muestra visualmente el plan y estado efectivo, incluyendo alertas de gracia o bloqueo por vencimiento. *@
+@* Firma: FRANCO LARA - 31/07/2026 | Adopta el patron global reutilizable de titulos y subtitulos, centra los KPI, agrega iconos a los datos de la cuenta e incorpora los canales de soporte. *@
 @{
-    ViewData["Title"] = "Mi suscripcion";
+    ViewData["Title"] = "Mi suscripción";
     ViewData["AdminShell"] = true;
 
     var estadoClase = Model.EstadoEfectivo switch
@@ -29,8 +30,8 @@
     <section class="dashboard-hero">
         <div>
             <span class="dashboard-kicker">General</span>
-            <h1>Mi suscripcion</h1>
-            <p>Consulta la vigencia de la cuenta administradora, los limites operativos y el contexto de servicio de la empresa activa.</p>
+            <h1 class="app-page-title"><i class="bi bi-credit-card-2-front" aria-hidden="true"></i><span>Mi suscripción</span></h1>
+            <p>Consulta la vigencia de la cuenta administradora, los límites operativos y el contexto de servicio de la empresa activa.</p>
         </div>
         <article class="dashboard-status-card">
             <span>Cuenta administradora</span>
@@ -73,31 +74,43 @@
         </article>
     </section>
 
-    <section class="workspace-section">
-        <div class="workspace-section-head workspace-section-head-compact">
-            <span class="workspace-section-kicker">Contexto</span>
-            <h2>Datos de contacto de la cuenta</h2>
-            <p>Correo y telefono principal registrados para la cuenta administradora.</p>
-        </div>
+    <section class="workspace-section" aria-labelledby="subscription-account-contact-title">
+        <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
+            {
+                Id = "subscription-account-contact-title",
+                Category = "Contexto",
+                Title = "Datos de contacto de la cuenta",
+                Description = "Correo y teléfono principal registrados para la cuenta administradora.",
+                IconClass = "bi bi-person-vcard"
+            })" />
 
         <div class="subscription-info-grid subscription-info-grid-compact">
-            <article class="subscription-info-card">
-                <span class="subscription-info-label">Correo principal</span>
-                <strong>@(string.IsNullOrWhiteSpace(Model.CorreoPrincipal) ? "No configurado" : Model.CorreoPrincipal)</strong>
+            <article class="subscription-info-card subscription-contact-card">
+                <span class="subscription-contact-icon" aria-hidden="true"><i class="bi bi-envelope"></i></span>
+                <div class="subscription-contact-copy">
+                    <span class="subscription-info-label">Correo principal</span>
+                    <strong>@(string.IsNullOrWhiteSpace(Model.CorreoPrincipal) ? "No configurado" : Model.CorreoPrincipal)</strong>
+                </div>
             </article>
-            <article class="subscription-info-card">
-                <span class="subscription-info-label">Telefono principal</span>
-                <strong>@(string.IsNullOrWhiteSpace(Model.TelefonoPrincipal) ? "No configurado" : Model.TelefonoPrincipal)</strong>
+            <article class="subscription-info-card subscription-contact-card">
+                <span class="subscription-contact-icon" aria-hidden="true"><i class="bi bi-telephone"></i></span>
+                <div class="subscription-contact-copy">
+                    <span class="subscription-info-label">Telefono principal</span>
+                    <strong>@(string.IsNullOrWhiteSpace(Model.TelefonoPrincipal) ? "No configurado" : Model.TelefonoPrincipal)</strong>
+                </div>
             </article>
         </div>
     </section>
 
-    <section class="workspace-section">
-        <div class="workspace-section-head workspace-section-head-compact">
-            <span class="workspace-section-kicker">Limites</span>
-            <h2>Capacidad operativa</h2>
-            <p>Referencia de crecimiento permitida para empresas y usuarios bajo la misma cuenta administradora.</p>
-        </div>
+    <section class="workspace-section" aria-labelledby="subscription-capacity-title">
+        <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
+            {
+                Id = "subscription-capacity-title",
+                Category = "Límites",
+                Title = "Capacidad operativa",
+                Description = "Referencia de crecimiento permitida para empresas y usuarios bajo la misma cuenta administradora.",
+                IconClass = "bi bi-speedometer2"
+            })" />
 
         <div class="subscription-limit-grid subscription-limit-grid-compact">
             <article class="dashboard-indicator-card">
@@ -128,6 +141,36 @@
                     <small>Valida si la cuenta administradora sigue habilitada para operar.</small>
                 </div>
             </article>
+        </div>
+    </section>
+
+    <section class="workspace-section subscription-support-section" aria-labelledby="subscription-support-title">
+        <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
+            {
+                Id = "subscription-support-title",
+                Category = "Contacto",
+                Title = "Soporte de la plataforma",
+                Description = "Canales de atención para consultas, ampliaciones y coordinaciones directas.",
+                IconClass = "bi bi-headset"
+            })" />
+
+        <div class="subscription-support-grid">
+            <a class="subscription-support-card" href="mailto:soporte@fralsetech.com">
+                <span class="subscription-contact-icon" aria-hidden="true"><i class="bi bi-envelope"></i></span>
+                <span class="subscription-contact-copy">
+                    <span class="subscription-info-label">Correo</span>
+                    <strong>soporte@fralsetech.com</strong>
+                    <small>Canal principal para consultas, ampliaciones y soporte operativo.</small>
+                </span>
+            </a>
+            <a class="subscription-support-card" href="https://wa.me/51937528701" target="_blank" rel="noopener noreferrer" aria-label="Contactar al soporte por WhatsApp al +51 937 528 701">
+                <span class="subscription-contact-icon" aria-hidden="true"><i class="bi bi-whatsapp"></i></span>
+                <span class="subscription-contact-copy">
+                    <span class="subscription-info-label">WhatsApp</span>
+                    <strong>+51 937 528 701</strong>
+                    <small>Línea de atención para coordinaciones directas con plataforma.</small>
+                </span>
+            </a>
         </div>
     </section>
 

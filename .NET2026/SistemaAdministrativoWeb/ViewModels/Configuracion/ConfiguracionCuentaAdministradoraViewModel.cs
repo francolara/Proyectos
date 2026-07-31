@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SistemaAdministrativoWeb.ViewModels.Configuracion;
 
+// Firma: FRANCO LARA - 31/07/2026 | Incorpora las opciones jerarquicas de departamento, provincia y distrito manteniendo el codigo Ubigeo como dato interno.
 public sealed class ConfiguracionCuentaAdministradoraViewModel
 {
     public int IdCuentaAdministradora { get; set; }
@@ -71,6 +72,10 @@ public sealed class ConfiguracionCuentaAdministradoraViewModel
     [StringLength(6, ErrorMessage = "El ubigeo no puede exceder 6 caracteres.")]
     public string? Ubigeo { get; set; }
 
+    public string? CodigoDepartamento { get; set; }
+
+    public string? CodigoProvincia { get; set; }
+
     [Display(Name = "Distrito")]
     [StringLength(100, ErrorMessage = "El distrito no puede exceder 100 caracteres.")]
     public string? Distrito { get; set; }
@@ -88,6 +93,12 @@ public sealed class ConfiguracionCuentaAdministradoraViewModel
     public string? ObservacionFacturacion { get; set; }
 
     public IReadOnlyCollection<ConfiguracionEmpresaItemViewModel> EmpresasDisponibles { get; set; } = [];
+
+    public IReadOnlyCollection<ConfiguracionUbigeoOpcionViewModel> DepartamentosDisponibles { get; set; } = [];
+
+    public IReadOnlyCollection<ConfiguracionUbigeoOpcionViewModel> ProvinciasDisponibles { get; set; } = [];
+
+    public IReadOnlyCollection<ConfiguracionUbigeoOpcionViewModel> DistritosDisponibles { get; set; } = [];
 }
 
 public sealed class ConfiguracionEmpresaItemViewModel
@@ -95,6 +106,12 @@ public sealed class ConfiguracionEmpresaItemViewModel
     public int IdEmpresa { get; set; }
     public string CodigoEmpresa { get; set; } = string.Empty;
     public string RazonSocial { get; set; } = string.Empty;
+}
+
+public sealed class ConfiguracionUbigeoOpcionViewModel
+{
+    public string Valor { get; set; } = string.Empty;
+    public string Texto { get; set; } = string.Empty;
 }
 
 public sealed class FacturacionPadronLookupResultViewModel

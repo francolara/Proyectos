@@ -13959,5 +13959,5 @@ C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build-final\SistemaCon
 C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build-final\SistemaControlEspaciosDeportivosWeb.runtimeconfig.json
 C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build-final\SistemaControlEspaciosDeportivosWeb.dll
 C:\Users\Franco Lara\AppData\Local\Temp\codex-sportcenter-build-final\SistemaControlEspaciosDeportivosWeb.pdb
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\compressed\vnbh1609s7-{0}-v99oyidg7r-v99oyidg7r.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\obj\Debug\net10.0\compressed\vnbh1609s7-{0}-af7xoy49cw-af7xoy49cw.gz

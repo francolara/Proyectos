@@ -11,6 +11,7 @@
 @* Firma: FRANCO LARA - 03/07/2026 | Corrige el resumen visual de Caja y Bancos para que valide tambien el sentido contable del detalle segun ingreso o egreso y avise antes de enviar cuando el asiento automatico quedaria invertido. *@
 @* Firma: FRANCO LARA - 04/07/2026 | Bloquea la edicion manual del tipo de cambio en Caja y Bancos y convierte automaticamente el saldo sugerido del comprobante a la moneda de la cuenta corriente usando el TC de cabecera. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Mejora la legibilidad del resumen Nro movimiento en Caja y Bancos para que conserve contraste correcto en modo claro y oscuro. *@
+@* Firma: FRANCO LARA - 31/07/2026 | Centra vertical y horizontalmente la etiqueta y el valor de la tarjeta Nro movimiento. *@
 
 @{
     ViewData["Title"] = Model.Formulario.IdMovimientoBanco.HasValue ? "Editar movimiento bancario" : "Registrar movimiento bancario";
@@ -173,13 +174,17 @@
 
     .workspace-section-head-meta {
         min-width: 13rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
         align-self: center;
         border-radius: 1rem;
         padding: 0.9rem 1rem;
         background: linear-gradient(180deg, rgba(232, 241, 255, 0.96) 0%, rgba(217, 233, 255, 0.92) 100%);
         border: 1px solid rgba(66, 117, 205, 0.24);
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
-        text-align: right;
+        text-align: center;
     }
 
     .workspace-section-head-meta span,

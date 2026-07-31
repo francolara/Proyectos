@@ -9,12 +9,14 @@ using SistemaAdministrativoWeb.ViewModels.Configuracion;
 
 namespace SistemaAdministrativoWeb.Controllers;
 
+// Firma: FRANCO LARA - 31/07/2026 | Reutiliza el catalogo de ubigeos de Personas para cargar departamentos, provincias y distritos en la configuracion de facturacion.
 [Authorize]
 [ModulePermission("CONFIGURACION")]
 public class ConfiguracionController(
     ICurrentCompanyAccessor currentCompanyAccessor,
     ICuentaAdministradoraRepository cuentaAdministradoraRepository,
-    IMigoPadronApiClient migoPadronApiClient) : Controller
+    IMigoPadronApiClient migoPadronApiClient,
+    IPersonaRepository personaRepository) : Controller
 {
     [HttpGet]
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
@@ -52,6 +54,7 @@ public class ConfiguracionController(
             model.CorreoPrincipal = recargado.CorreoPrincipal;
             model.TelefonoPrincipal = recargado.TelefonoPrincipal;
             model.EmpresasDisponibles = recargado.EmpresasDisponibles;
+            await CargarUbigeosAsync(model, cancellationToken);
             return View("Index", model);
         }
 
@@ -157,6 +160,30 @@ public class ConfiguracionController(
         });
     }
 
+    [HttpGet]
+    public async Task<IActionResult> Provincias(string codigoDepartamento, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(codigoDepartamento))
+        {
+            return Json(Array.Empty<object>());
+        }
+
+        var provincias = await personaRepository.ListarProvinciasAsync(codigoDepartamento.Trim(), cancellationToken);
+        return Json(provincias.Select(x => new { value = x.CodigoProvincia, text = x.Nombre }));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Distritos(string codigoProvincia, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(codigoProvincia))
+        {
+            return Json(Array.Empty<object>());
+        }
+
+        var distritos = await personaRepository.ListarDistritosAsync(codigoProvincia.Trim(), cancellationToken);
+        return Json(distritos.Select(x => new { value = x.CodigoUbigeo, text = x.Nombre }));
+    }
+
     private async Task<ConfiguracionCuentaAdministradoraViewModel> ConstruirModelAsync(int idCuentaAdministradora, CancellationToken cancellationToken)
     {
         var configuracion = await cuentaAdministradoraRepository.ObtenerConfiguracionCuentaAdministradoraAsync(idCuentaAdministradora, cancellationToken);
@@ -164,7 +191,7 @@ public class ConfiguracionController(
         var correoPrincipal = configuracion?.CorreoPrincipal;
         var telefonoPrincipal = configuracion?.TelefonoPrincipal;
 
-        return new ConfiguracionCuentaAdministradoraViewModel
+        var model = new ConfiguracionCuentaAdministradoraViewModel
         {
             IdCuentaAdministradora = idCuentaAdministradora,
             CodigoCuenta = configuracion?.CodigoCuenta ?? string.Empty,
@@ -202,6 +229,48 @@ public class ConfiguracionController(
                 })
                 .ToList()
         };
+
+        await CargarUbigeosAsync(model, cancellationToken);
+        return model;
+    }
+
+    private async Task CargarUbigeosAsync(ConfiguracionCuentaAdministradoraViewModel model, CancellationToken cancellationToken)
+    {
+        model.CodigoDepartamento = !string.IsNullOrWhiteSpace(model.CodigoDepartamento)
+            ? model.CodigoDepartamento.Trim()
+            : ObtenerCodigoDepartamento(model.Ubigeo);
+        model.CodigoProvincia = !string.IsNullOrWhiteSpace(model.CodigoProvincia)
+            ? model.CodigoProvincia.Trim()
+            : ObtenerCodigoProvincia(model.Ubigeo);
+
+        var departamentos = await personaRepository.ListarDepartamentosAsync(cancellationToken);
+        model.DepartamentosDisponibles = departamentos
+            .Select(x => new ConfiguracionUbigeoOpcionViewModel
+            {
+                Valor = x.CodigoDepartamento,
+                Texto = x.Nombre
+            })
+            .ToList();
+
+        model.ProvinciasDisponibles = string.IsNullOrWhiteSpace(model.CodigoDepartamento)
+            ? []
+            : (await personaRepository.ListarProvinciasAsync(model.CodigoDepartamento, cancellationToken))
+                .Select(x => new ConfiguracionUbigeoOpcionViewModel
+                {
+                    Valor = x.CodigoProvincia,
+                    Texto = x.Nombre
+                })
+                .ToList();
+
+        model.DistritosDisponibles = string.IsNullOrWhiteSpace(model.CodigoProvincia)
+            ? []
+            : (await personaRepository.ListarDistritosAsync(model.CodigoProvincia, cancellationToken))
+                .Select(x => new ConfiguracionUbigeoOpcionViewModel
+                {
+                    Valor = x.CodigoUbigeo,
+                    Texto = x.Nombre
+                })
+                .ToList();
     }
 
     private async Task<(int idCuentaAdministradora, string? nombreCuenta)?> ResolverCuentaAsync(CancellationToken cancellationToken)
@@ -284,6 +353,16 @@ public class ConfiguracionController(
 
         return new string(value.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
     }
+
+    private static string? ObtenerCodigoDepartamento(string? codigoUbigeo)
+        => !string.IsNullOrWhiteSpace(codigoUbigeo) && codigoUbigeo.Length >= 2
+            ? codigoUbigeo[..2]
+            : null;
+
+    private static string? ObtenerCodigoProvincia(string? codigoUbigeo)
+        => !string.IsNullOrWhiteSpace(codigoUbigeo) && codigoUbigeo.Length >= 4
+            ? codigoUbigeo[..4]
+            : null;
 
     private static string? LimpiarTexto(string? value)
         => string.IsNullOrWhiteSpace(value) ? null : value.Trim();

@@ -1,5 +1,6 @@
 namespace SistemaAdministrativoWeb.ViewModels.Ayuda;
 
+// Firma: FRANCO LARA - 31/07/2026 | Completa la ayuda operativa General con los modulos Usuarios y Configuracion y sus preguntas contextuales.
 public static class AyudaCatalogoFactory
 {
     public static AyudaIndexViewModel Crear(string? moduloSolicitado)
@@ -36,6 +37,8 @@ public static class AyudaCatalogoFactory
                 [
                     CrearModulo("DASHBOARD", "Dashboard", "bi-speedometer2", "Resumen ejecutivo del periodo con KPIs, graficos y distribucion operativa.", CrearFaqDashboard()),
                     CrearModulo("EMPRESAS", "Empresas", "bi-buildings", "Seleccion y alta de empresas de trabajo dentro de la cuenta administradora.", CrearFaqEmpresas()),
+                    CrearModulo("USUARIOS", "Usuarios", "bi-people", "Alta, vinculacion, empresas asignadas, roles y permisos de acceso por usuario.", CrearFaqUsuarios()),
+                    CrearModulo("CONFIGURACION", "Configuracion", "bi-gear", "Datos de facturacion y preferencias de comprobante de la cuenta administradora.", CrearFaqConfiguracion()),
                     CrearModulo("MISUSCRIPCION", "Mi suscripcion", "bi-credit-card-2-front", "Estado de plan, vigencia, limites y datos de la cuenta administradora.", CrearFaqMiSuscripcion()),
                     CrearModulo("AYUDA", "Ayuda", "bi-life-preserver", "FAQ operativo con acceso contextual desde cada modulo.", CrearFaqAyuda())
                 ]),
@@ -447,6 +450,36 @@ public static class AyudaCatalogoFactory
             ("Que impacto tiene una empresa nueva en la suscripcion", "Consume capacidad del limite de empresas permitidas definido para la cuenta administradora cuando aplica un tope."),
             ("Que hago si una empresa no aparece en el selector", "Verifica que el usuario tenga acceso, que la empresa este activa y que la vinculacion con la cuenta administradora exista."),
             ("Cuanto conviene revisar esta pantalla", "Cada vez que cambies de contexto de trabajo, al dar de alta una empresa o cuando necesites confirmar sobre que empresa operaras el periodo.")
+        ]);
+
+    private static IReadOnlyCollection<AyudaPreguntaViewModel> CrearFaqUsuarios()
+        => CrearPreguntas("usuarios",
+        [
+            ("Para que sirve la opcion Usuarios", "Permite crear o vincular usuarios a la cuenta administradora, asignarles un rol y definir en que empresas pueden trabajar."),
+            ("Que datos necesito para registrar un usuario", "Debes indicar nombre completo, correo, telefono, rol de cuenta y seleccionar al menos una empresa disponible."),
+            ("Cuando debo ingresar una contrasena temporal", "La contrasena temporal es obligatoria cuando el correo aun no pertenece a un usuario del sistema. Al iniciar sesion, el nuevo usuario debera cambiarla."),
+            ("Que ocurre si el correo ya pertenece a un usuario", "El sistema reutiliza la cuenta existente y la vincula a la cuenta administradora, evitando crear un acceso duplicado para el mismo correo."),
+            ("Por que no puedo agregar otro usuario", "La cuenta puede haber alcanzado el limite de usuarios permitido por la suscripcion. Revisa Mi suscripcion antes de intentar una nueva alta."),
+            ("Para que sirve el rol de cuenta", "El rol establece el nivel base de acceso del usuario dentro de la cuenta administradora y sirve como referencia para calcular sus permisos efectivos."),
+            ("Como asigno o retiro empresas a un usuario", "Desde la opcion Permisos puedes marcar las empresas donde trabajara el usuario. Debe conservar al menos una empresa asignada."),
+            ("Que diferencia hay entre permisos de cuenta y permisos por empresa", "Los permisos de cuenta aplican como excepciones generales; los permisos por empresa permiten ajustar el acceso operativo solo dentro de una empresa seleccionada."),
+            ("Que significan Ver, Crear, Editar y Eliminar en Permisos", "Son las acciones controladas por modulo. La opcion Rol hereda el valor base y Si o No crea una excepcion explicita para esa accion."),
+            ("Que pasa cuando desactivo el acceso de un usuario", "Se desactiva su vinculacion con la cuenta administradora sin eliminar su identidad ni el historial de operaciones que ya registro.")
+        ]);
+
+    private static IReadOnlyCollection<AyudaPreguntaViewModel> CrearFaqConfiguracion()
+        => CrearPreguntas("configuracion",
+        [
+            ("Para que sirve la opcion Configuracion", "Permite guardar los datos de facturacion de la cuenta administradora que se reutilizaran al emitir sus comprobantes comerciales."),
+            ("Que comprobante puedo elegir como preferido", "Puedes seleccionar Boleta o Factura. Esta preferencia determina que datos fiscales deben quedar completos antes de guardar."),
+            ("Que necesito para configurar una factura", "Debes seleccionar RUC como tipo de documento, ingresar un RUC valido de 11 digitos y completar la razon social de facturacion."),
+            ("Que necesito para configurar una boleta", "Debes completar el nombre de facturacion y registrar el tipo y numero de documento que correspondan al titular."),
+            ("Para que sirve el boton Consultar", "Consulta el padron externo usando el documento ingresado y carga los datos encontrados para reducir la digitacion manual."),
+            ("Con que documentos funciona la consulta automatica", "La consulta automatica esta disponible para DNI y RUC. Los demas tipos de documento deben completarse manualmente."),
+            ("Cuantos digitos deben tener el DNI y el RUC", "El DNI debe contener 8 digitos y el RUC 11 digitos. El formulario impide guardar cuando estas longitudes no son validas."),
+            ("Que datos puede completar la consulta al padron", "Puede completar nombre o razon social, direccion fiscal, ubigeo, distrito, provincia y departamento cuando el servicio devuelve esa informacion."),
+            ("Puedo corregir los datos obtenidos del padron", "Si. Revisa y corrige los campos antes de guardar porque la informacion almacenada sera la referencia de facturacion de la cuenta."),
+            ("Que debo revisar antes de guardar la configuracion", "Confirma el tipo de comprobante, documento, nombre o razon social, direccion fiscal y ubicacion. Atiende cualquier mensaje de validacion antes de continuar.")
         ]);
 
     private static IReadOnlyCollection<AyudaPreguntaViewModel> CrearFaqMiSuscripcion()

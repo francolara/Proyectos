@@ -848,6 +848,23 @@ html[data-theme="dark"] .sc-action-primary {
   color: #dce8ff;
 }
 
+/* Firma: FRANCO LARA - 28/07/2026 | Corrige el contraste de las listas de espacios relacionados y sus checks en modo oscuro. */
+html[data-theme="dark"] .sc-check-list {
+  color: #dbe7f7;
+  border-color: rgba(117, 146, 196, 0.38) !important;
+  background: linear-gradient(180deg, rgba(17, 27, 46, 0.98) 0%, rgba(11, 19, 33, 0.98) 100%) !important;
+}
+
+html[data-theme="dark"] .sc-check-list-item:hover {
+  color: #f8fbff;
+  background: rgba(59, 130, 246, 0.16);
+}
+
+html[data-theme="dark"] .sc-check-list-item:has(input:checked) {
+  color: #f8fbff;
+  background: rgba(37, 99, 235, 0.2);
+}
+
 html[data-theme="dark"] .sc-maestro-tab:hover,
 html[data-theme="dark"] .sc-report-tab:hover,
 html[data-theme="dark"] .sc-action-btn:hover,
