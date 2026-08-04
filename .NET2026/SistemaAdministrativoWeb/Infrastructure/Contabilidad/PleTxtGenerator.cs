@@ -3,6 +3,7 @@ using System.Text;
 
 namespace SistemaAdministrativoWeb.Infrastructure.Contabilidad;
 
+// Firma: FRANCO LARA - 03/08/2026 | Exporta los 21 campos base de 5.1, 5.2 y 6.1, conserva el palote final y usa 00 cuando falta el tipo de comprobante.
 public sealed class PleTxtGenerator : IPleTxtGenerator
 {
     private static readonly UTF8Encoding Utf8SinBom = new(false);
@@ -19,7 +20,7 @@ public sealed class PleTxtGenerator : IPleTxtGenerator
             item.CodigoMoneda,
             item.TipoDocumentoEmisor,
             item.NumeroDocumentoEmisor,
-            item.TipoComprobante,
+            FormatearTipoComprobante(item.TipoComprobante),
             item.SerieComprobante,
             item.NumeroComprobante,
             FormatearFecha(item.FechaContable),
@@ -39,13 +40,24 @@ public sealed class PleTxtGenerator : IPleTxtGenerator
             item.PeriodoPle,
             item.Cuo,
             item.CorrelativoAsiento,
+            item.CodigoCuentaContable,
+            item.CodigoUnidadOperacion,
+            item.CodigoCentroCosto,
+            item.CodigoMoneda,
+            item.TipoDocumentoEmisor,
+            item.NumeroDocumentoEmisor,
+            FormatearTipoComprobante(item.TipoComprobante),
+            item.SerieComprobante,
+            item.NumeroComprobante,
+            FormatearFecha(item.FechaContable),
+            FormatearFecha(item.FechaVencimiento),
             FormatearFecha(item.FechaOperacion),
             Sanitizar(item.Glosa),
-            item.CodigoCuentaContable,
-            item.CodigoMoneda,
+            Sanitizar(item.GlosaReferencial),
             FormatearImporte(item.Debe),
             FormatearImporte(item.Haber),
-            item.EstadoOperacion)), cancellationToken);
+            FormatearReferenciaEstructurada(item.CodigoLibroRelacionado, item.PeriodoPle, item.Cuo, item.CorrelativoAsiento, item.InformacionComplementaria),
+            item.EstadoOperacion) + '|'), cancellationToken);
     }
 
     public Task<byte[]> GenerarLibroMayor61Async(IReadOnlyCollection<LibroMayor61Dto> items, CancellationToken cancellationToken = default)
@@ -55,12 +67,23 @@ public sealed class PleTxtGenerator : IPleTxtGenerator
             item.Cuo,
             item.CorrelativoMovimiento,
             item.CodigoCuentaContable,
+            item.CodigoUnidadOperacion,
+            item.CodigoCentroCosto,
+            item.CodigoMoneda,
+            item.TipoDocumentoEmisor,
+            item.NumeroDocumentoEmisor,
+            FormatearTipoComprobante(item.TipoComprobante),
+            item.SerieComprobante,
+            item.NumeroComprobante,
+            FormatearFecha(item.FechaContable),
+            FormatearFecha(item.FechaVencimiento),
             FormatearFecha(item.FechaOperacion),
             Sanitizar(item.Glosa),
-            item.CodigoMoneda,
+            Sanitizar(item.GlosaReferencial),
             FormatearImporte(item.Debe),
             FormatearImporte(item.Haber),
-            item.EstadoOperacion)), cancellationToken);
+            FormatearReferenciaEstructurada(item.CodigoLibroRelacionado, item.PeriodoPle, item.Cuo, item.CorrelativoMovimiento, item.InformacionComplementaria),
+            item.EstadoOperacion) + '|'), cancellationToken);
     }
 
     private static Task<byte[]> GenerarAsync(IEnumerable<string> lineas, CancellationToken cancellationToken)
@@ -80,6 +103,11 @@ public sealed class PleTxtGenerator : IPleTxtGenerator
         return fecha.HasValue ? fecha.Value.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture) : string.Empty;
     }
 
+    private static string FormatearTipoComprobante(string? tipoComprobante)
+    {
+        return string.IsNullOrWhiteSpace(tipoComprobante) ? "00" : tipoComprobante.Trim();
+    }
+
     private static string Sanitizar(string? texto)
     {
         if (string.IsNullOrWhiteSpace(texto))
@@ -95,17 +123,27 @@ public sealed class PleTxtGenerator : IPleTxtGenerator
 
     private static string FormatearReferenciaEstructuradaLibroDiario51(LibroDiario51Dto item)
     {
-        var codigoLibro = Sanitizar(item.CodigoLibroRelacionado);
+        return FormatearReferenciaEstructurada(
+            item.CodigoLibroRelacionado,
+            item.PeriodoPle,
+            item.Cuo,
+            item.CorrelativoMovimiento,
+            item.InformacionComplementaria);
+    }
+
+    private static string FormatearReferenciaEstructurada(string codigoLibroRelacionado, string periodoPle, string cuo, string correlativo, string informacionComplementaria)
+    {
+        var codigoLibro = Sanitizar(codigoLibroRelacionado);
         if (string.IsNullOrWhiteSpace(codigoLibro))
         {
-            return Sanitizar(item.InformacionComplementaria);
+            return Sanitizar(informacionComplementaria);
         }
 
         return string.Concat(
             codigoLibro,
-            Sanitizar(item.PeriodoPle),
-            Sanitizar(item.Cuo),
-            Sanitizar(item.CorrelativoMovimiento));
+            Sanitizar(periodoPle),
+            Sanitizar(cuo),
+            Sanitizar(correlativo));
     }
 
 }

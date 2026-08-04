@@ -5,6 +5,7 @@
 -- =============================================
 -- Firma: FRANCO LARA - 13/07/2026 | Fija la exportacion PLE 6.1 a moneda PEN, elimina la bifurcacion por USD y usa siempre TotalImporteS como importe base de Debe y Haber.
 -- Firma: FRANCO LARA - 14/07/2026 | Incluye el asiento de apertura periodo 00 al exportar enero, agrega en diciembre los periodos 12, 13, 14 y 15 y marca el correlativo de movimiento como A/M/C, dejando C solo para los asientos de cierre de los periodos 14 y 15.
+-- Firma: FRANCO LARA - 03/08/2026 | Completa los 21 campos base del PLE 6.1 usando la misma fuente documentaria validada por el Libro Diario 5.1.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_PLE_LibroMayor61_Listar
     @IdEmpresa INT,
@@ -38,11 +39,28 @@ BEGIN
                 ELSE 'M'
             END + RIGHT(REPLICATE('0', 4) + CONVERT(VARCHAR(10), d.Item), 4) AS CorrelativoMovimiento,
             p.CodigoCuenta AS CodigoCuentaContable,
-            a.FechaAsiento AS FechaOperacion,
+            '' AS CodigoUnidadOperacion,
+            ISNULL(NULLIF(LTRIM(RTRIM(d.CodigoCentroCosto)), ''), '') AS CodigoCentroCosto,
+            m.CodigoMoneda AS CodigoMoneda,
+            '060100' AS CodigoLibroRelacionado,
+            ISNULL(NULLIF(LTRIM(RTRIM(COALESCE(perAsiento.TipoDocumento, perCompra.TipoDocumento, perVenta.TipoDocumento))), ''), '') AS TipoDocumentoEmisor,
+            ISNULL(NULLIF(LTRIM(RTRIM(COALESCE(perAsiento.NumeroDocumento, perCompra.NumeroDocumento, perVenta.NumeroDocumento, d.NumeroDocumento))), ''), '') AS NumeroDocumentoEmisor,
+            ISNULL(NULLIF(LTRIM(RTRIM(COALESCE(c.TipoComprobante, v.TipoComprobante, d.TipoDocumento))), ''), '') AS TipoComprobante,
+            ISNULL(NULLIF(LTRIM(RTRIM(COALESCE(c.Serie, v.Serie, d.Serie))), ''), '') AS SerieComprobante,
+            ISNULL(NULLIF(LTRIM(RTRIM(COALESCE(c.Numero, v.Numero, d.ReferenciaLinea, d.NumeroDocumento))), ''), '') AS NumeroComprobante,
+            CASE
+                WHEN doc.FechaOperacionBase IS NOT NULL
+                 AND CONVERT(CHAR(6), doc.FechaOperacionBase, 112) = a.Periodo
+                    THEN doc.FechaOperacionBase
+                ELSE a.FechaAsiento
+            END AS FechaContable,
+            CAST(NULL AS DATE) AS FechaVencimiento,
+            doc.FechaOperacionBase AS FechaOperacion,
             REPLACE(REPLACE(COALESCE(NULLIF(LTRIM(RTRIM(d.GlosaDetalle)), ''), a.Glosa, N''), CHAR(13), ' '), CHAR(10), ' ') AS Glosa,
-            'PEN' AS CodigoMoneda,
+            ISNULL(NULLIF(LTRIM(RTRIM(a.ReferenciaExterna)), ''), '') AS GlosaReferencial,
             CASE WHEN d.DH = 'D' THEN d.TotalImporteS ELSE 0 END AS Debe,
             CASE WHEN d.DH = 'H' THEN d.TotalImporteS ELSE 0 END AS Haber,
+            ISNULL(NULLIF(LTRIM(RTRIM(d.ReferenciaLinea)), ''), '') AS InformacionComplementaria,
             CASE
                 WHEN @EstadoTrabajo IS NULL OR @EstadoTrabajo = 'Todos' THEN '1'
                 WHEN @EstadoTrabajo IN ('1', '6', '8', '9') THEN @EstadoTrabajo
@@ -54,6 +72,29 @@ BEGIN
             ON d.IdAsiento = a.IdAsiento
         INNER JOIN dbo.CON_PlanCuenta AS p
             ON p.IdPlanCuenta = d.IdPlanCuenta
+        INNER JOIN dbo.ADM_Moneda AS m
+            ON m.IdMoneda = a.IdMoneda
+        LEFT JOIN dbo.ADM_Persona AS perAsiento
+            ON perAsiento.IdEmpresa = a.IdEmpresa
+           AND perAsiento.NumeroDocumento = d.NumeroDocumento
+        LEFT JOIN dbo.COM_Compra AS c
+            ON c.IdAsiento = a.IdAsiento
+           AND c.IdEmpresa = a.IdEmpresa
+        LEFT JOIN dbo.ADM_Proveedor AS pr
+            ON pr.IdProveedor = c.IdProveedor
+        LEFT JOIN dbo.ADM_Persona AS perCompra
+            ON perCompra.IdPersona = pr.IdPersona
+        LEFT JOIN dbo.VEN_Venta AS v
+            ON v.IdAsiento = a.IdAsiento
+           AND v.IdEmpresa = a.IdEmpresa
+        LEFT JOIN dbo.ADM_Cliente AS cl
+            ON cl.IdCliente = v.IdCliente
+        LEFT JOIN dbo.ADM_Persona AS perVenta
+            ON perVenta.IdPersona = cl.IdPersona
+        CROSS APPLY
+        (
+            SELECT COALESCE(c.FechaEmision, v.FechaEmision, a.FechaEmision) AS FechaOperacionBase
+        ) AS doc
         WHERE a.IdEmpresa = @IdEmpresa
           AND (
                 a.Periodo = @Periodo

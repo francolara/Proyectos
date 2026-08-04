@@ -1,5 +1,6 @@
 namespace SistemaAdministrativoWeb.Infrastructure.Contabilidad;
 
+// Firma: FRANCO LARA - 03/08/2026 | Valida documentos y comprobantes de los formatos 5.1, 5.2 y 6.1, reconociendo 00 cuando no existe comprobante asociado.
 public sealed class PleValidationService(IPeriodoContableService periodoContableService) : IPleValidationService
 {
     public async Task<PleValidationResultDto> ValidarAsync(
@@ -17,8 +18,6 @@ public sealed class PleValidationService(IPeriodoContableService periodoContable
         CancellationToken cancellationToken = default)
     {
         var observaciones = new List<PleValidationIssueDto>();
-        var esLibroDiarioSimplificado52 = libroDiario52Items.Count > 0;
-
         if (request.IdEmpresa <= 0)
         {
             observaciones.Add(CrearError("EMPRESA", "Empresa obligatoria", "Debe seleccionar una empresa para generar el libro electronico."));
@@ -68,6 +67,7 @@ public sealed class PleValidationService(IPeriodoContableService periodoContable
         var monedasValidas = monedas.Select(x => x.CodigoMoneda).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var documentosValidos = tiposDocumento.Select(x => x.CodigoSunat).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var comprobantesValidos = tiposComprobante.Select(x => x.CodigoTipoComprobante).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        comprobantesValidos.Add("00");
 
         foreach (var asiento in asientos)
         {
@@ -112,13 +112,10 @@ public sealed class PleValidationService(IPeriodoContableService periodoContable
             observaciones.Add(CrearError("CUO_DUPLICADO", "CUO duplicado", $"El CUO {duplicado.Key} se repite en mas de un asiento.", duplicado.Key));
         }
 
-        if (!esLibroDiarioSimplificado52)
+        foreach (var duplicado in lineas.GroupBy(x => $"{x.Cuo}|{x.Correlativo}", StringComparer.OrdinalIgnoreCase).Where(x => x.Count() > 1))
         {
-            foreach (var duplicado in lineas.GroupBy(x => $"{x.Cuo}|{x.Correlativo}", StringComparer.OrdinalIgnoreCase).Where(x => x.Count() > 1))
-            {
-                var muestra = duplicado.First();
-                observaciones.Add(CrearError("CORRELATIVO_DUPLICADO", "Correlativo duplicado", $"El correlativo {muestra.Correlativo} se repite dentro del CUO {muestra.Cuo}.", muestra.Cuo, muestra.NumeroAsiento, muestra.FechaOperacion));
-            }
+            var muestra = duplicado.First();
+            observaciones.Add(CrearError("CORRELATIVO_DUPLICADO", "Correlativo duplicado", $"El correlativo {muestra.Correlativo} se repite dentro del CUO {muestra.Cuo}.", muestra.Cuo, muestra.NumeroAsiento, muestra.FechaOperacion));
         }
 
         foreach (var linea in lineas)
@@ -233,6 +230,8 @@ public sealed class PleValidationService(IPeriodoContableService periodoContable
                 Haber = item.Haber,
                 EstadoOperacion = item.EstadoOperacion,
                 CodigoMoneda = item.CodigoMoneda,
+                TipoDocumentoEmisor = item.TipoDocumentoEmisor,
+                TipoComprobante = item.TipoComprobante,
                 NumeroAsiento = item.NumeroAsiento
             }).ToList();
         }
@@ -249,6 +248,8 @@ public sealed class PleValidationService(IPeriodoContableService periodoContable
             Haber = item.Haber,
             EstadoOperacion = item.EstadoOperacion,
             CodigoMoneda = item.CodigoMoneda,
+            TipoDocumentoEmisor = item.TipoDocumentoEmisor,
+            TipoComprobante = item.TipoComprobante,
             NumeroAsiento = item.NumeroAsiento
         }).ToList();
     }

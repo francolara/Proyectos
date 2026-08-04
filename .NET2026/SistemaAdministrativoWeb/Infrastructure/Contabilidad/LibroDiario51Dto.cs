@@ -1,5 +1,6 @@
 namespace SistemaAdministrativoWeb.Infrastructure.Contabilidad;
 
+// Firma: FRANCO LARA - 03/08/2026 | Define 00 como tipo de comprobante predeterminado para el Libro Diario 5.1.
 public sealed class LibroDiario51Dto
 {
     public string PeriodoPle { get; init; } = string.Empty;
@@ -13,7 +14,7 @@ public sealed class LibroDiario51Dto
     public string CodigoLibroRelacionado { get; init; } = string.Empty;
     public string TipoDocumentoEmisor { get; init; } = string.Empty;
     public string NumeroDocumentoEmisor { get; init; } = string.Empty;
-    public string TipoComprobante { get; init; } = string.Empty;
+    public string TipoComprobante { get; init; } = "00";
     public string SerieComprobante { get; init; } = string.Empty;
     public string NumeroComprobante { get; init; } = string.Empty;
     public DateOnly FechaContable { get; init; }
