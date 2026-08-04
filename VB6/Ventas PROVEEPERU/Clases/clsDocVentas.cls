@@ -306,48 +306,48 @@ Dim rstCtrlPre            As New ADODB.Recordset
         Loop
     End If
     
-    If strTD <> "87" Then
-        csql = "SELECT d.idDocumentoImp,d.idDocVentasImp,d.idSerieImp,d.idProducto,d.idUM,d.Cantidad " & _
-                "FROM docventasdet d " & _
-                "WHERE d.idEmpresa = '" & glsEmpresa & "'" & _
-                "AND d.idSucursal = '" & glsSucursal & "'" & _
-                "AND d.idDocumento = '" & strTD & "'" & _
-                "AND d.idDocVentas = '" & strValCod & "'" & _
-                "AND d.idSerie = '" & strSerie & "'" & _
-                "AND d.idDocVentasImp <> ''"
-            
-        If rst.State = 1 Then rst.Close
-        rst.Open csql, Cn, adOpenForwardOnly, adLockReadOnly
-        Do While Not rst.EOF
-            '--- ACTUALIZAMOS CANTIDAD IMPORTADA
-            csql = "UPDATE  dd  SET dd.CantidadImp = dd.CantidadImp + " & CStr(rst.Fields("Cantidad")) & " " & _
-                    "FROM docventasdet dd WHERE dd.idEmpresa = '" & glsEmpresa & "' AND dd.idSucursal = '" & glsSucursal & "' AND dd.idDocumento = '" & rst.Fields("idDocumentoImp") & "' AND dd.idDocVentas = '" & rst.Fields("idDocVentasImp") & "' AND dd.idSerie = '" & rst.Fields("idSerieImp") & "' " & _
-                    "AND dd.idProducto = '" & rst.Fields("idProducto") & "' AND dd.idUM = '" & rst.Fields("idUM") & "'"
-            Cn.Execute csql
-        
-            csql = "UPDATE dd  SET dd.estDocImportado = 'S' " & _
-                    "FROM docventasdet dd WHERE dd.idEmpresa = '" & glsEmpresa & "' AND dd.idSucursal = '" & glsSucursal & "' AND dd.idDocumento = '" & rst.Fields("idDocumentoImp") & "' AND dd.idDocVentas = '" & rst.Fields("idDocVentasImp") & "' AND dd.idSerie = '" & rst.Fields("idSerieImp") & "' " & _
-                    "AND dd.idProducto = '" & rst.Fields("idProducto") & "' AND dd.idUM = '" & rst.Fields("idUM") & "' AND dd.CantidadImp >= dd.Cantidad"
-            Cn.Execute csql
-                
-            rst.MoveNext
-        Loop
-    
-        '--- Marcamos la Cabecera
-        csql = "SELECT DISTINCT idDocumentoImp,idDocVentasImp,idSerieImp  FROM docventasdet " & _
-                "WHERE idEmpresa = '" & glsEmpresa & "' AND idSucursal = '" & glsSucursal & "' AND idDocumento = '" & strTD & "' AND idDocVentas = '" & strValCod & "' AND idSerie = '" & strSerie & "' AND idDocVentasImp <> '' AND idDocVentasImp is not null"
-        If rst.State = 1 Then rst.Close
-        rst.Open csql, Cn, adOpenForwardOnly, adLockReadOnly
-        Do While Not rst.EOF
-            csql = "UPDATE c  SET c.estDocImportado = 'S' from docVentas c inner join docVentasDet d ON c.idEmpresa = d.idEmpresa AND c.idSucursal = d.idSucursal AND c.idDocumento = d.idDocumento AND c.idDocVentas = d.idDocVentas AND c.idSerie = d.idSerie " & _
-                   "WHERE  " & _
-                   " d.idEmpresa = '" & glsEmpresa & "' AND d.idSucursal = '" & glsSucursal & "' AND d.idDocumento = '" & rst.Fields("idDocumentoImp") & "' AND d.idDocVentas = '" & rst.Fields("idDocVentasImp") & "' AND d.idSerie = '" & rst.Fields("idSerieImp") & "'" & _
-                   "AND (SELECT count(x.idDocVentas) FROM docVentasDet x WHERE x.idEmpresa = d.idEmpresa AND x.idSucursal = d.idSucursal AND x.idDocumento = d.idDocumento AND x.idDocVentas = d.idDocVentas AND x.idSerie = d.idSerie AND x.estDocImportado <> 'S') = 0"
-            Cn.Execute csql
-            
-            rst.MoveNext
-        Loop
-    End If
+'    If strTD <> "87" Then
+'        csql = "SELECT d.idDocumentoImp,d.idDocVentasImp,d.idSerieImp,d.idProducto,d.idUM,d.Cantidad " & _
+'                "FROM docventasdet d " & _
+'                "WHERE d.idEmpresa = '" & glsEmpresa & "'" & _
+'                "AND d.idSucursal = '" & glsSucursal & "'" & _
+'                "AND d.idDocumento = '" & strTD & "'" & _
+'                "AND d.idDocVentas = '" & strValCod & "'" & _
+'                "AND d.idSerie = '" & strSerie & "'" & _
+'                "AND d.idDocVentasImp <> ''"
+'
+'        If rst.State = 1 Then rst.Close
+'        rst.Open csql, Cn, adOpenForwardOnly, adLockReadOnly
+'        Do While Not rst.EOF
+'            '--- ACTUALIZAMOS CANTIDAD IMPORTADA
+'            csql = "UPDATE  dd  SET dd.CantidadImp = dd.CantidadImp + " & CStr(rst.Fields("Cantidad")) & " " & _
+'                    "FROM docventasdet dd WHERE dd.idEmpresa = '" & glsEmpresa & "' AND dd.idSucursal = '" & glsSucursal & "' AND dd.idDocumento = '" & rst.Fields("idDocumentoImp") & "' AND dd.idDocVentas = '" & rst.Fields("idDocVentasImp") & "' AND dd.idSerie = '" & rst.Fields("idSerieImp") & "' " & _
+'                    "AND dd.idProducto = '" & rst.Fields("idProducto") & "' AND dd.idUM = '" & rst.Fields("idUM") & "'"
+'            Cn.Execute csql
+'
+'            csql = "UPDATE dd  SET dd.estDocImportado = 'S' " & _
+'                    "FROM docventasdet dd WHERE dd.idEmpresa = '" & glsEmpresa & "' AND dd.idSucursal = '" & glsSucursal & "' AND dd.idDocumento = '" & rst.Fields("idDocumentoImp") & "' AND dd.idDocVentas = '" & rst.Fields("idDocVentasImp") & "' AND dd.idSerie = '" & rst.Fields("idSerieImp") & "' " & _
+'                    "AND dd.idProducto = '" & rst.Fields("idProducto") & "' AND dd.idUM = '" & rst.Fields("idUM") & "' AND dd.CantidadImp >= dd.Cantidad"
+'            Cn.Execute csql
+'
+'            rst.MoveNext
+'        Loop
+'
+'        '--- Marcamos la Cabecera
+'        csql = "SELECT DISTINCT idDocumentoImp,idDocVentasImp,idSerieImp  FROM docventasdet " & _
+'                "WHERE idEmpresa = '" & glsEmpresa & "' AND idSucursal = '" & glsSucursal & "' AND idDocumento = '" & strTD & "' AND idDocVentas = '" & strValCod & "' AND idSerie = '" & strSerie & "' AND idDocVentasImp <> '' AND idDocVentasImp is not null"
+'        If rst.State = 1 Then rst.Close
+'        rst.Open csql, Cn, adOpenForwardOnly, adLockReadOnly
+'        Do While Not rst.EOF
+'            csql = "UPDATE c  SET c.estDocImportado = 'S' from docVentas c inner join docVentasDet d ON c.idEmpresa = d.idEmpresa AND c.idSucursal = d.idSucursal AND c.idDocumento = d.idDocumento AND c.idDocVentas = d.idDocVentas AND c.idSerie = d.idSerie " & _
+'                   "WHERE  " & _
+'                   " d.idEmpresa = '" & glsEmpresa & "' AND d.idSucursal = '" & glsSucursal & "' AND d.idDocumento = '" & rst.Fields("idDocumentoImp") & "' AND d.idDocVentas = '" & rst.Fields("idDocVentasImp") & "' AND d.idSerie = '" & rst.Fields("idSerieImp") & "'" & _
+'                   "AND (SELECT count(x.idDocVentas) FROM docVentasDet x WHERE x.idEmpresa = d.idEmpresa AND x.idSucursal = d.idSucursal AND x.idDocumento = d.idDocumento AND x.idDocVentas = d.idDocVentas AND x.idSerie = d.idSerie AND x.estDocImportado <> 'S') = 0"
+'            Cn.Execute csql
+'
+'            rst.MoveNext
+'        Loop
+'    End If
     
     '--- Si la empresa es ALSISAC UPDATE a docventas  el estado PAR(Parcial),CER(Cerrado)
 '    If traerCampo("Empresas", "RUC", "idEmpresa", glsEmpresa, False) = "20430471750" Then
@@ -444,55 +444,55 @@ Dim rstCtrlPre            As New ADODB.Recordset
     Loop
     
     '--- Control de consumo Presupuestos
-    If traerCampo("Parametros", "ValParametro", "GlsParametro", "VALIDA_MONTO_PRESUPUESTADO_POR_RUBRO", True) = "S" And (strTD = "OS" Or strTD = "69") And strNomTbl <> "" Then
-    strCadMtoGP = IIf(tipoOperacion = "0", "IFNULL((A.TotalConsumido + A.TotalVVNeto),0) As TotalCP,0 As Diferencia", "IfNull((TotalConsumido + (A.TotalVVNeto - TotalVVNetoAnt)),IFNULL((A.TotalConsumido + A.TotalVVNeto),0)) As TotalCP,IFNULL((A.TotalVVNeto - TotalVVNetoAnt),0) As Diferencia")
-    
-        csql = "Select A.idCentroCosto,A.idGrupo,A.TotalRubro,A.TotalConsumido,A.TotalVVNeto,A.GlsGrupo," & strCadMtoGP & _
-                " From( " & _
-                "Select A.idCentroCosto,A.idGrupo,A.TotalRubro,A.TotalConsumido,TotalVVNeto,B.GlsGrupo,TotalVVNetoAnt " & _
-                "From " & strNomTbl & "  A " & _
-                "Left Join( " & _
-                "Select GP.idGrupo,DD.idCentroCosto,Sum(If(C.IdMoneda = D.IdMoneda,DD.TotalVVNeto,If(C.IdMoneda = 'PEN',DD.TotalVVNeto * D.TipoCambio,DD.TotalVVNeto / D.TipoCambio))) As TotalVVNeto,GlsGrupo,D.TipoCambio,D.idMoneda " & _
-                "From Docventas D " & _
-                "Inner Join DocventasDet DD " & _
-                    "On D.idEmpresa = DD.idEmpresa And D.idSucursal = DD.idSucursal " & _
-                    "And D.idSerie =  DD.idSerie And D.idDocventas = DD.idDocventas " & _
-                    "And D.idDocumento = DD.idDocumento  " & _
-                "Inner Join Productos P  " & _
-                    "On P.idEmpresa = DD.idEmpresa " & _
-                    "And P.idProducto = DD.idProducto  " & _
-                "Inner Join GruposProducto GP  " & _
-                    "On P.idEmpresa = GP.idEmpresa " & _
-                    "And P.idGrupo =  GP.idGrupo " & _
-                "Inner Join CentrosCosto C " & _
-                    "On DD.idCentroCosto = C.idCentroCosto " & _
-                    "And DD.IdEmpresa = C.idEmpresa " & _
-                "Where D.idEmpresa = '" & glsEmpresa & "' And D.idDocventas = '" & strValCod & "' And D.idSerie = '" & strSerie & "' " & _
-                "And D.idDocumento  = '" & strTD & "' And D.idSucursal = '" & glsSucursal & "' " & _
-                "Group By D.IdEmpresa,DD.IdCentroCosto,GP.idGrupo) B " & _
-                "On  A.idGrupo = B.idGrupo And A.idCentroCosto = B.idCentroCosto ) A Order By A.idCentroCosto,A.idGrupo "
-        
-        rstCGP.Open csql, Cn, adOpenStatic, adLockReadOnly
-        rstCGP.MoveFirst
-        Do While Not rstCGP.EOF
-                If rstCGP.Fields("TotalCP").Value > rstCGP.Fields("TotalRubro").Value Then
-                        StrMsgError = StrMsgError & "El rubro " & rstCGP.Fields("GlsGrupo").Value & " de la H.C. " & rstCGP.Fields("idCentroCosto").Value & " excede lo presupuestado. " & vbCrLf & " Monto Presupuestado " & Format(rstCGP.Fields("TotalRubro").Value, "0.00") & vbCrLf & " Monto Gastado " & Format(rstCGP.Fields("TotalConsumido").Value, "0.00") & vbCrLf & " Monto a Consumir " & IIf(tipoOperacion = "0", Format(rstCGP.Fields("TotalVVNeto").Value, "0.00"), IIf(Format(rstCGP.Fields("Diferencia").Value, "0.00") = 0, Format(rstCGP.Fields("TotalVVNeto").Value, "0.00"), Format(rstCGP.Fields("Diferencia").Value, "0.00"))) & Chr(13) & Chr(10)
-                End If
-            rstCGP.MoveNext
-        Loop
-        
-        If tipoOperacion = 0 Then
-            If StrMsgError <> "" Then
-                F.txt_NumDoc.Text = ""
-            End If
-        End If
-        strNomTbl = IIf(strNomTbl = "", "0a", strNomTbl)
-        
-        Set rsEli = DataProcedimiento("Spu_EliminaTemporales", StrMsgError, "0a", "0a", "0a", "0a", "0a", strNomTbl)
-        strNomTbl = ""
-        
-        If StrMsgError <> "" Then GoTo Err
-    End If
+'    If traerCampo("Parametros", "ValParametro", "GlsParametro", "VALIDA_MONTO_PRESUPUESTADO_POR_RUBRO", True) = "S" And (strTD = "OS" Or strTD = "69") And strNomTbl <> "" Then
+'    strCadMtoGP = IIf(tipoOperacion = "0", "IFNULL((A.TotalConsumido + A.TotalVVNeto),0) As TotalCP,0 As Diferencia", "IfNull((TotalConsumido + (A.TotalVVNeto - TotalVVNetoAnt)),IFNULL((A.TotalConsumido + A.TotalVVNeto),0)) As TotalCP,IFNULL((A.TotalVVNeto - TotalVVNetoAnt),0) As Diferencia")
+'
+'        csql = "Select A.idCentroCosto,A.idGrupo,A.TotalRubro,A.TotalConsumido,A.TotalVVNeto,A.GlsGrupo," & strCadMtoGP & _
+'                " From( " & _
+'                "Select A.idCentroCosto,A.idGrupo,A.TotalRubro,A.TotalConsumido,TotalVVNeto,B.GlsGrupo,TotalVVNetoAnt " & _
+'                "From " & strNomTbl & "  A " & _
+'                "Left Join( " & _
+'                "Select GP.idGrupo,DD.idCentroCosto,Sum(If(C.IdMoneda = D.IdMoneda,DD.TotalVVNeto,If(C.IdMoneda = 'PEN',DD.TotalVVNeto * D.TipoCambio,DD.TotalVVNeto / D.TipoCambio))) As TotalVVNeto,GlsGrupo,D.TipoCambio,D.idMoneda " & _
+'                "From Docventas D " & _
+'                "Inner Join DocventasDet DD " & _
+'                    "On D.idEmpresa = DD.idEmpresa And D.idSucursal = DD.idSucursal " & _
+'                    "And D.idSerie =  DD.idSerie And D.idDocventas = DD.idDocventas " & _
+'                    "And D.idDocumento = DD.idDocumento  " & _
+'                "Inner Join Productos P  " & _
+'                    "On P.idEmpresa = DD.idEmpresa " & _
+'                    "And P.idProducto = DD.idProducto  " & _
+'                "Inner Join GruposProducto GP  " & _
+'                    "On P.idEmpresa = GP.idEmpresa " & _
+'                    "And P.idGrupo =  GP.idGrupo " & _
+'                "Inner Join CentrosCosto C " & _
+'                    "On DD.idCentroCosto = C.idCentroCosto " & _
+'                    "And DD.IdEmpresa = C.idEmpresa " & _
+'                "Where D.idEmpresa = '" & glsEmpresa & "' And D.idDocventas = '" & strValCod & "' And D.idSerie = '" & strSerie & "' " & _
+'                "And D.idDocumento  = '" & strTD & "' And D.idSucursal = '" & glsSucursal & "' " & _
+'                "Group By D.IdEmpresa,DD.IdCentroCosto,GP.idGrupo) B " & _
+'                "On  A.idGrupo = B.idGrupo And A.idCentroCosto = B.idCentroCosto ) A Order By A.idCentroCosto,A.idGrupo "
+'
+'        rstCGP.Open csql, Cn, adOpenStatic, adLockReadOnly
+'        rstCGP.MoveFirst
+'        Do While Not rstCGP.EOF
+'                If rstCGP.Fields("TotalCP").Value > rstCGP.Fields("TotalRubro").Value Then
+'                        StrMsgError = StrMsgError & "El rubro " & rstCGP.Fields("GlsGrupo").Value & " de la H.C. " & rstCGP.Fields("idCentroCosto").Value & " excede lo presupuestado. " & vbCrLf & " Monto Presupuestado " & Format(rstCGP.Fields("TotalRubro").Value, "0.00") & vbCrLf & " Monto Gastado " & Format(rstCGP.Fields("TotalConsumido").Value, "0.00") & vbCrLf & " Monto a Consumir " & IIf(tipoOperacion = "0", Format(rstCGP.Fields("TotalVVNeto").Value, "0.00"), IIf(Format(rstCGP.Fields("Diferencia").Value, "0.00") = 0, Format(rstCGP.Fields("TotalVVNeto").Value, "0.00"), Format(rstCGP.Fields("Diferencia").Value, "0.00"))) & Chr(13) & Chr(10)
+'                End If
+'            rstCGP.MoveNext
+'        Loop
+'
+'        If tipoOperacion = 0 Then
+'            If StrMsgError <> "" Then
+'                F.txt_NumDoc.Text = ""
+'            End If
+'        End If
+'        strNomTbl = IIf(strNomTbl = "", "0a", strNomTbl)
+'
+'        Set rsEli = DataProcedimiento("Spu_EliminaTemporales", StrMsgError, "0a", "0a", "0a", "0a", "0a", strNomTbl)
+'        strNomTbl = ""
+'
+'        If StrMsgError <> "" Then GoTo Err
+'    End If
     
     Cn.CommitTrans
     
