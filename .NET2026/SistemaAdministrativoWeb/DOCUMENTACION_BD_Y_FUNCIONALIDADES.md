@@ -1365,9 +1365,9 @@ Capacidades:
 - Validaciones previas de empresa, RUC, periodo, asientos cuadrados, duplicidad de CUO/correlativos, cuentas, monedas, documentos, glosas y estados PLE. La validacion interna no observa lineas con `Debe/Haber = 0` ni fechas de operacion fuera del mes consultado.
 - La exportacion de Libros Electronicos queda fija en moneda nacional (`PEN`): la interfaz no expone selector de moneda, el nombre del archivo se genera con indicador de moneda nacional y los formatos `5.1`, `5.2` y `6.1` toman siempre `CON_AsientoDetalle.TotalImporteS` para `Debe/Haber`.
 - Cuando se exporta enero, los libros `5.1`, `5.2` y `6.1` incorporan tambien el asiento de apertura del periodo `00`; cuando se exporta diciembre, incorporan los periodos `12`, `13`, `14` y `15`.
-- El TXT del `5.1 - Libro Diario` exporta un unico correlativo por linea despues del `CUO` (`CorrelativoMovimiento`), conserva el palote final requerido por SUNAT y completa los `21` campos base del formato, separando `Unidad de operacion` y `Centro de costo` para no desplazar columnas. El campo `20` se arma como referencia estructurada `CodigoLibro + Periodo + CUO + CorrelativoMovimiento`. La `Fecha contable` usa `FechaEmision` cuando el periodo `AAAAMM` de esa fecha coincide con `CON_Asiento.Periodo`; si no coincide, se exporta `FechaAsiento`.
-- El `CorrelativoMovimiento` de los formatos `5.1` y `6.1` se arma con prefijo `A` para lineas del periodo `00`, `M` para periodos mensuales regulares incluyendo el ajuste del periodo `13`, y `C` solo para lineas de cierre en los periodos `14` y `15`.
-- Cuando el asiento no proviene directo de `COM_Compra` o `VEN_Venta` y los datos documentarios viven en `CON_AsientoDetalle`, el PLE 5.1 prioriza `TipoDocumento`, `Serie` y `ReferenciaLinea` del detalle para poblar `TipoComprobante`, `SerieComprobante` y `NumeroComprobante` antes de usar el RUC/DNI del emisor como ultimo respaldo.
+- Los TXT `5.1 - Libro Diario`, `5.2 - Libro Diario Simplificado` y `6.1 - Libro Mayor` conservan el palote final requerido por SUNAT y completan los `21` campos base de cada estructura, separando `Unidad de operacion` y `Centro de costo` para no desplazar columnas. No se agregan los campos libres `22` al `44` cuando no se utilizan. El campo `20` se arma como referencia estructurada `CodigoLibro + Periodo + CUO + Correlativo`.
+- Los correlativos de los formatos `5.1`, `5.2` y `6.1` se arman con prefijo `A` para lineas del periodo `00`, `M` para periodos mensuales regulares incluyendo el ajuste del periodo `13`, y `C` solo para lineas de cierre en los periodos `14` y `15`. La `Fecha contable` usa `FechaEmision` cuando el periodo `AAAAMM` de esa fecha coincide con `CON_Asiento.Periodo`; si no coincide, se exporta `FechaAsiento`.
+- Cuando el asiento no proviene directo de `COM_Compra` o `VEN_Venta` y los datos documentarios viven en `CON_AsientoDetalle`, los PLE `5.1`, `5.2` y `6.1` priorizan `TipoDocumento`, `Serie` y `ReferenciaLinea` del detalle para poblar `TipoComprobante`, `SerieComprobante` y `NumeroComprobante` antes de usar el RUC/DNI del emisor como ultimo respaldo. Si el tipo de comprobante esta vacio, la exportacion usa `00`.
 - Generación de TXT en UTF-8 sin BOM con separador `|` y una línea por movimiento.
 - Descarga temporal en memoria sin persistir el contenido del archivo en base de datos.
 - Historial de exportaciones con metadatos de archivo, usuario, totales y observaciones.
@@ -1447,4 +1447,10 @@ Objetos SQL:
 -- Author:        FRANCO LARA / Codex
 -- Create date:   07/07/2026
 -- Description:   Documenta el nuevo modulo Libros Electronicos con formatos PLE 5.1, 5.2 y 6.1, validacion previa, generacion TXT temporal e historial de exportaciones.
+-- =============================================
+
+-- =============================================
+-- Author:        FRANCO LARA / Codex
+-- Create date:   03/08/2026
+-- Description:   Documenta la correccion de los PLE 5.2 y 6.1 para generar los 21 campos base definidos por SUNAT, con correlativos A/M/C, datos documentarios, referencia estructurada y palote final.
 -- =============================================

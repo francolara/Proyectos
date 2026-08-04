@@ -4,6 +4,7 @@ using SistemaAdministrativoWeb.Infrastructure.Data;
 
 namespace SistemaAdministrativoWeb.Infrastructure.Contabilidad;
 
+// Firma: FRANCO LARA - 03/08/2026 | Normaliza a 00 el tipo de comprobante y mapea los 21 campos base de los formatos PLE 5.1, 5.2 y 6.1.
 public sealed class LibroElectronicoRepository(IDbConnectionFactory connectionFactory) : ILibroElectronicoRepository
 {
     public Task<IReadOnlyCollection<LibroDiario51Dto>> ListarLibroDiario51Async(LibroElectronicoConsultaRequest request, CancellationToken cancellationToken = default)
@@ -121,7 +122,7 @@ public sealed class LibroElectronicoRepository(IDbConnectionFactory connectionFa
                 CodigoLibroRelacionado = reader.IsDBNull(reader.GetOrdinal("CodigoLibroRelacionado")) ? string.Empty : reader.GetString(reader.GetOrdinal("CodigoLibroRelacionado")),
                 TipoDocumentoEmisor = reader.IsDBNull(reader.GetOrdinal("TipoDocumentoEmisor")) ? string.Empty : reader.GetString(reader.GetOrdinal("TipoDocumentoEmisor")),
                 NumeroDocumentoEmisor = reader.IsDBNull(reader.GetOrdinal("NumeroDocumentoEmisor")) ? string.Empty : reader.GetString(reader.GetOrdinal("NumeroDocumentoEmisor")),
-                TipoComprobante = reader.IsDBNull(reader.GetOrdinal("TipoComprobante")) ? string.Empty : reader.GetString(reader.GetOrdinal("TipoComprobante")),
+                TipoComprobante = LeerTipoComprobante(reader),
                 SerieComprobante = reader.IsDBNull(reader.GetOrdinal("SerieComprobante")) ? string.Empty : reader.GetString(reader.GetOrdinal("SerieComprobante")),
                 NumeroComprobante = reader.IsDBNull(reader.GetOrdinal("NumeroComprobante")) ? string.Empty : reader.GetString(reader.GetOrdinal("NumeroComprobante")),
                 FechaContable = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("FechaContable"))),
@@ -157,12 +158,24 @@ public sealed class LibroElectronicoRepository(IDbConnectionFactory connectionFa
                 PeriodoPle = reader.GetString(reader.GetOrdinal("PeriodoPle")),
                 Cuo = reader.GetString(reader.GetOrdinal("Cuo")),
                 CorrelativoAsiento = reader.GetString(reader.GetOrdinal("CorrelativoAsiento")),
+                CodigoCuentaContable = reader.GetString(reader.GetOrdinal("CodigoCuentaContable")),
+                CodigoUnidadOperacion = reader.IsDBNull(reader.GetOrdinal("CodigoUnidadOperacion")) ? string.Empty : reader.GetString(reader.GetOrdinal("CodigoUnidadOperacion")),
+                CodigoCentroCosto = reader.IsDBNull(reader.GetOrdinal("CodigoCentroCosto")) ? string.Empty : reader.GetString(reader.GetOrdinal("CodigoCentroCosto")),
+                CodigoMoneda = reader.GetString(reader.GetOrdinal("CodigoMoneda")),
+                CodigoLibroRelacionado = reader.IsDBNull(reader.GetOrdinal("CodigoLibroRelacionado")) ? string.Empty : reader.GetString(reader.GetOrdinal("CodigoLibroRelacionado")),
+                TipoDocumentoEmisor = reader.IsDBNull(reader.GetOrdinal("TipoDocumentoEmisor")) ? string.Empty : reader.GetString(reader.GetOrdinal("TipoDocumentoEmisor")),
+                NumeroDocumentoEmisor = reader.IsDBNull(reader.GetOrdinal("NumeroDocumentoEmisor")) ? string.Empty : reader.GetString(reader.GetOrdinal("NumeroDocumentoEmisor")),
+                TipoComprobante = LeerTipoComprobante(reader),
+                SerieComprobante = reader.IsDBNull(reader.GetOrdinal("SerieComprobante")) ? string.Empty : reader.GetString(reader.GetOrdinal("SerieComprobante")),
+                NumeroComprobante = reader.IsDBNull(reader.GetOrdinal("NumeroComprobante")) ? string.Empty : reader.GetString(reader.GetOrdinal("NumeroComprobante")),
+                FechaContable = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("FechaContable"))),
+                FechaVencimiento = reader.IsDBNull(reader.GetOrdinal("FechaVencimiento")) ? null : DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("FechaVencimiento"))),
                 FechaOperacion = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("FechaOperacion"))),
                 Glosa = reader.IsDBNull(reader.GetOrdinal("Glosa")) ? string.Empty : reader.GetString(reader.GetOrdinal("Glosa")),
-                CodigoCuentaContable = reader.GetString(reader.GetOrdinal("CodigoCuentaContable")),
-                CodigoMoneda = reader.GetString(reader.GetOrdinal("CodigoMoneda")),
+                GlosaReferencial = reader.IsDBNull(reader.GetOrdinal("GlosaReferencial")) ? string.Empty : reader.GetString(reader.GetOrdinal("GlosaReferencial")),
                 Debe = reader.GetDecimal(reader.GetOrdinal("Debe")),
                 Haber = reader.GetDecimal(reader.GetOrdinal("Haber")),
+                InformacionComplementaria = reader.IsDBNull(reader.GetOrdinal("InformacionComplementaria")) ? string.Empty : reader.GetString(reader.GetOrdinal("InformacionComplementaria")),
                 EstadoOperacion = reader.GetString(reader.GetOrdinal("EstadoOperacion")),
                 NumeroAsiento = reader.GetInt32(reader.GetOrdinal("NumeroAsiento"))
             });
@@ -189,11 +202,23 @@ public sealed class LibroElectronicoRepository(IDbConnectionFactory connectionFa
                 Cuo = reader.GetString(reader.GetOrdinal("Cuo")),
                 CorrelativoMovimiento = reader.GetString(reader.GetOrdinal("CorrelativoMovimiento")),
                 CodigoCuentaContable = reader.GetString(reader.GetOrdinal("CodigoCuentaContable")),
+                CodigoUnidadOperacion = reader.IsDBNull(reader.GetOrdinal("CodigoUnidadOperacion")) ? string.Empty : reader.GetString(reader.GetOrdinal("CodigoUnidadOperacion")),
+                CodigoCentroCosto = reader.IsDBNull(reader.GetOrdinal("CodigoCentroCosto")) ? string.Empty : reader.GetString(reader.GetOrdinal("CodigoCentroCosto")),
+                CodigoMoneda = reader.GetString(reader.GetOrdinal("CodigoMoneda")),
+                CodigoLibroRelacionado = reader.IsDBNull(reader.GetOrdinal("CodigoLibroRelacionado")) ? string.Empty : reader.GetString(reader.GetOrdinal("CodigoLibroRelacionado")),
+                TipoDocumentoEmisor = reader.IsDBNull(reader.GetOrdinal("TipoDocumentoEmisor")) ? string.Empty : reader.GetString(reader.GetOrdinal("TipoDocumentoEmisor")),
+                NumeroDocumentoEmisor = reader.IsDBNull(reader.GetOrdinal("NumeroDocumentoEmisor")) ? string.Empty : reader.GetString(reader.GetOrdinal("NumeroDocumentoEmisor")),
+                TipoComprobante = LeerTipoComprobante(reader),
+                SerieComprobante = reader.IsDBNull(reader.GetOrdinal("SerieComprobante")) ? string.Empty : reader.GetString(reader.GetOrdinal("SerieComprobante")),
+                NumeroComprobante = reader.IsDBNull(reader.GetOrdinal("NumeroComprobante")) ? string.Empty : reader.GetString(reader.GetOrdinal("NumeroComprobante")),
+                FechaContable = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("FechaContable"))),
+                FechaVencimiento = reader.IsDBNull(reader.GetOrdinal("FechaVencimiento")) ? null : DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("FechaVencimiento"))),
                 FechaOperacion = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("FechaOperacion"))),
                 Glosa = reader.IsDBNull(reader.GetOrdinal("Glosa")) ? string.Empty : reader.GetString(reader.GetOrdinal("Glosa")),
-                CodigoMoneda = reader.GetString(reader.GetOrdinal("CodigoMoneda")),
+                GlosaReferencial = reader.IsDBNull(reader.GetOrdinal("GlosaReferencial")) ? string.Empty : reader.GetString(reader.GetOrdinal("GlosaReferencial")),
                 Debe = reader.GetDecimal(reader.GetOrdinal("Debe")),
                 Haber = reader.GetDecimal(reader.GetOrdinal("Haber")),
+                InformacionComplementaria = reader.IsDBNull(reader.GetOrdinal("InformacionComplementaria")) ? string.Empty : reader.GetString(reader.GetOrdinal("InformacionComplementaria")),
                 EstadoOperacion = reader.GetString(reader.GetOrdinal("EstadoOperacion")),
                 NumeroAsiento = reader.GetInt32(reader.GetOrdinal("NumeroAsiento"))
             });
@@ -218,5 +243,17 @@ public sealed class LibroElectronicoRepository(IDbConnectionFactory connectionFa
         command.Parameters.AddWithValue("@FechaHasta", request.FechaHasta.HasValue ? request.FechaHasta.Value.ToDateTime(TimeOnly.MinValue) : (object)DBNull.Value);
 
         return command;
+    }
+
+    private static string LeerTipoComprobante(SqlDataReader reader)
+    {
+        var ordinal = reader.GetOrdinal("TipoComprobante");
+        if (reader.IsDBNull(ordinal))
+        {
+            return "00";
+        }
+
+        var tipoComprobante = reader.GetString(ordinal).Trim();
+        return string.IsNullOrWhiteSpace(tipoComprobante) ? "00" : tipoComprobante;
     }
 }

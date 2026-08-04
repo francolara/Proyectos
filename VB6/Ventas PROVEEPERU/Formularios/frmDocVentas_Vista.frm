@@ -8,8 +8,8 @@ Begin VB.Form frmDocVentas_Vista
    BorderStyle     =   3  'Fixed Dialog
    Caption         =   "Ventas Consulta"
    ClientHeight    =   9570
-   ClientLeft      =   4890
-   ClientTop       =   4380
+   ClientLeft      =   3525
+   ClientTop       =   1335
    ClientWidth     =   15465
    BeginProperty Font 
       Name            =   "Arial"
@@ -2305,7 +2305,7 @@ Begin VB.Form frmDocVentas_Vista
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   131727361
+         Format          =   132907009
          CurrentDate     =   38955
       End
       Begin VB.CommandButton cmbAyudaMotivoNCD 
@@ -2630,7 +2630,7 @@ Begin VB.Form frmDocVentas_Vista
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   131727361
+         Format          =   132907009
          CurrentDate     =   38955
       End
       Begin MSComctlLib.ImageList imgDocVentas 
@@ -3912,7 +3912,7 @@ Begin VB.Form frmDocVentas_Vista
             Italic          =   0   'False
             Strikethrough   =   0   'False
          EndProperty
-         Format          =   131727361
+         Format          =   132907009
          CurrentDate     =   38955
       End
       Begin CATControls.CATTextBox txtgls_contacto 
@@ -4749,12 +4749,12 @@ Begin VB.Form frmDocVentas_Vista
             ImageIndex      =   11
          EndProperty
          BeginProperty Button9 {66833FEA-8583-11D1-B16A-00C0F0283628} 
-            Caption         =   "        Lista        "
+            Caption         =   "          Lista          "
             Object.ToolTipText     =   "Lista"
             ImageIndex      =   12
          EndProperty
          BeginProperty Button10 {66833FEA-8583-11D1-B16A-00C0F0283628} 
-            Caption         =   "        Excel        "
+            Caption         =   "          Excel          "
             Object.ToolTipText     =   "Excel"
             ImageIndex      =   13
          EndProperty
@@ -10547,102 +10547,6 @@ On Error GoTo Err
     mostrarDocVentas gLista.Columns.ColumnByName("idDocVentas").Value, gLista.Columns.ColumnByName("idSerie").Value, StrMsgError
     If StrMsgError <> "" Then GoTo Err
     
-    'If Trim(STR_STOCK_POR_LOTE & "") = "S" Then
-    If Trim(STR_STOCK_POR_LOTE & "") = "S" Then
-        If rsTempLotes.State = 1 Then rsTempLotes.Close
-        Set rsTempLotes = Nothing
-        
-        rsTempLotes.Fields.Append "Item", adInteger, , adFldRowID
-        rsTempLotes.Fields.Append "idLote", adVarChar, 10, adFldIsNullable
-        rsTempLotes.Fields.Append "GlsLote", adVarChar, 255, adFldIsNullable
-        rsTempLotes.Fields.Append "CantidadStock", adDouble, 14, adFldIsNullable
-        rsTempLotes.Fields.Append "ok", adVarChar, 1, adFldIsNullable
-        rsTempLotes.Fields.Append "Cantidad", adDouble, 14, adFldIsNullable
-        rsTempLotes.Fields.Append "idProducto", adVarChar, 8, adFldIsNullable
-        rsTempLotes.Fields.Append "ItemDocVentas", adVarChar, 3, adFldIsNullable
-        rsTempLotes.Open
-        
-        csql = "Select Item, idLote, GlsLote, CantidadStock, Cantidad, idProducto, ItemDocVentas " & _
-               "from docventasdetlote " & _
-               "where idDocventas = '" & Trim("" & gLista.Columns.ColumnByName("idDocVentas").Value) & "' " & _
-               "and idSerie = '" & Trim("" & gLista.Columns.ColumnByName("idSerie").Value) & "' " & _
-               "and idDocumento = '" & strTipoDoc & "' and idempresa = '" & glsEmpresa & "'"
-               
-        If rscd.State = 1 Then rscd.Close
-        rscd.Open csql, Cn, adOpenStatic, adLockReadOnly
-        
-        If Not rscd.EOF Then
-            rscd.MoveFirst
-            Do While Not rscd.EOF
-                rsTempLotes.AddNew
-                rsTempLotes.Fields("Item") = rscd.Fields("Item")
-                rsTempLotes.Fields("idLote") = Trim("" & rscd.Fields("idLote"))
-                rsTempLotes.Fields("GlsLote") = Trim("" & rscd.Fields("GlsLote"))
-                rsTempLotes.Fields("CantidadStock") = Val(Format((rscd.Fields("CantidadStock")), "0.00"))
-                rsTempLotes.Fields("Cantidad") = Val(Format((rscd.Fields("Cantidad")), "0.00"))
-                rsTempLotes.Fields("idproducto") = Trim("" & rscd.Fields("idproducto"))
-                rsTempLotes.Fields("ItemDocVentas") = Trim("" & rscd.Fields("ItemDocVentas"))
-                rscd.MoveNext
-            Loop
-        End If
-        Toolbar1.Buttons(15).Visible = False
-    End If
-
-    'If Trim(traerCampo("Parametros", "ValParametro", "GlsParametro", "LIQUIDACIONES", True) & "") = "S" Then
-    If Trim(STR_LIQUIDACIONES & "") = "S" Then
-        If rsTempLiquidacion.State = 1 Then rsTempLiquidacion.Close
-        Set rsTempLiquidacion = Nothing
-                                        
-        rsTempLiquidacion.Fields.Append "Item", adInteger, , adFldRowID
-        rsTempLiquidacion.Fields.Append "IdLiquidacion", adVarChar, 8, adFldIsNullable
-        rsTempLiquidacion.Fields.Append "IdUPP", adVarChar, 20, adFldIsNullable
-        rsTempLiquidacion.Fields.Append "idCamal", adVarChar, 50, adFldIsNullable
-        rsTempLiquidacion.Fields.Append "FechaLiq", adVarChar, 50, adFldIsNullable
-        rsTempLiquidacion.Fields.Append "UnidadSaldo", adDouble, 14, adFldIsNullable
-        rsTempLiquidacion.Fields.Append "Unidad", adDouble, 14, adFldIsNullable
-        rsTempLiquidacion.Fields.Append "KgSaldo", adDouble, 14, adFldIsNullable
-        rsTempLiquidacion.Fields.Append "Kg", adDouble, 14, adFldIsNullable
-        rsTempLiquidacion.Fields.Append "ReKg", adDouble, 14, adFldIsNullable
-        rsTempLiquidacion.Fields.Append "KgEnv", adDouble, 14, adFldIsNullable
-        rsTempLiquidacion.Fields.Append "KgVivo", adDouble, 14, adFldIsNullable
-        rsTempLiquidacion.Fields.Append "idProducto", adVarChar, 8, adFldIsNullable
-        rsTempLiquidacion.Fields.Append "ItemDocVentas", adVarChar, 3, adFldIsNullable
-        rsTempLiquidacion.Open
-        
-        csql = "Select IdDocumento, IdSerie, IdDocventas, IdProducto, IdLiquidacion, IdUPP, idCamal, FechaLiq, UnidadSaldo, Unidad, KgSaldo, Kg, KgVivo, IdEmpresa, Idsucursal, Item,ReKg,KgEnv " & _
-               "from docventasdetliquidacion " & _
-               "where idDocventas = '" & Trim("" & gLista.Columns.ColumnByName("idDocVentas").Value) & "' " & _
-               "and idSerie = '" & Trim("" & gLista.Columns.ColumnByName("idSerie").Value) & "' " & _
-               "and idDocumento = '" & strTipoDoc & "' and idempresa = '" & glsEmpresa & "' " & _
-               "and idsucursal = '" & glsSucursal & "' "
-        If rscd.State = 1 Then rscd.Close
-        rscd.Open csql, Cn, adOpenStatic, adLockReadOnly
-        
-        If Not rscd.EOF Then
-            rscd.MoveFirst
-            Do While Not rscd.EOF
-                rsTempLiquidacion.AddNew
-                rsTempLiquidacion.Fields("Item") = Trim("" & rscd.Fields("Item"))
-                rsTempLiquidacion.Fields("IdLiquidacion") = Trim("" & rscd.Fields("IdLiquidacion"))
-                rsTempLiquidacion.Fields("IdUPP") = Trim("" & rscd.Fields("IdUPP"))
-                rsTempLiquidacion.Fields("idCamal") = Trim("" & rscd.Fields("idCamal"))
-                rsTempLiquidacion.Fields("FechaLiq") = Format(Trim("" & rscd.Fields("FechaLiq")), "dd/mm/yyyy")
-                rsTempLiquidacion.Fields("UnidadSaldo") = Val(Format((rscd.Fields("UnidadSaldo")), "0.00"))
-                rsTempLiquidacion.Fields("Unidad") = Val(Format((rscd.Fields("Unidad")), "0.00"))
-                rsTempLiquidacion.Fields("KgSaldo") = Val(Format((rscd.Fields("KgSaldo")), "0.00"))
-                rsTempLiquidacion.Fields("Kg") = Val(Format((rscd.Fields("Kg")), "0.00"))
-                rsTempLiquidacion.Fields("ReKg") = Val(Format((rscd.Fields("ReKg")), "0.00"))
-                rsTempLiquidacion.Fields("KgEnv") = Val(Format((rscd.Fields("KgEnv")), "0.00"))
-                rsTempLiquidacion.Fields("KgVivo") = Val(Format((rscd.Fields("KgVivo")), "0.00"))
-                rsTempLiquidacion.Fields("idproducto") = Trim("" & rscd.Fields("idproducto"))
-                rsTempLiquidacion.Fields("ItemDocVentas") = Trim("" & rscd.Fields("Item"))
-                rscd.MoveNext
-            Loop
-                
-        End If
-    End If
-
-    If StrMsgError <> "" Then GoTo Err
     fraListado.Visible = False
     fraGeneral.Visible = True
     fraDetalle.Visible = True
@@ -10674,29 +10578,6 @@ On Error GoTo Err
     habilitaBotones 2, StrMsgError
     If StrMsgError <> "" Then GoTo Err
     
-    'If Trim(traerCampo("Parametros", "ValParametro", "GlsParametro", "VALIDA_SEPARACION", True) & "") = "S" Then
-'    If Trim(STR_VALIDA_SEPARACION & "") = "S" Then
-'        If strTipoDoc = "40" Then
-'            RstaValidacion = ""
-'            Valida_Aprobacion RstaValidacion
-'
-'            If RstaValidacion = "1" Then
-'                Toolbar1.Buttons(2).Visible = False 'GRABAR
-'                Toolbar1.Buttons(3).Visible = False 'MODIFICAR
-'                Toolbar1.Buttons(5).Visible = False 'ELIMINAR
-'                Toolbar1.Buttons(6).Visible = True 'ANULAR
-'                Toolbar1.Buttons(7).Visible = True 'IMPRIMIR
-''                If strTipoDoc = "86" Then
-''                    Toolbar1.Buttons(8).Visible = True
-''                Else
-''                    Toolbar1.Buttons(8).Visible = False
-''                End If
-'                'Toolbar1.Buttons(11).Visible = True 'PAGOS
-'                Toolbar1.Buttons(12).Visible = True 'Letra
-'            End If
-'
-'        End If
-'    End If
     
     ChkDuplicar.Value = 0
     Exit Sub
@@ -10774,18 +10655,18 @@ On Error GoTo Err
 Dim StrMsgError As String
 Dim strGlsProOrigen As String
 
-    If gListaDetalle.Columns.ColumnByFieldName("CantidadImp").Visible = True Then
-        
-        FraAtencionPed.Visible = True
-        txtItmProducto.Text = gListaDetalle.Columns.ColumnByFieldName("item").Value
-        TxtCodProducto.Text = gListaDetalle.Columns.ColumnByFieldName("idProducto").Value
-        TxtDesproducto.Text = gListaDetalle.Columns.ColumnByFieldName("GlsProducto").Value
-        TxtcantProducto.Text = Val(Format(gListaDetalle.Columns.ColumnByFieldName("Cantidad").Value, "0.00"))
-        TxtcantProducto_Atn.Text = Val(Format(gListaDetalle.Columns.ColumnByFieldName("CantidadImp").Value, "0.00"))
-        
-        TxtcantProducto_Atn.SetFocus
-        
-    End If
+'    If gListaDetalle.Columns.ColumnByFieldName("CantidadImp").Visible = True Then
+'
+'        FraAtencionPed.Visible = True
+'        txtItmProducto.Text = gListaDetalle.Columns.ColumnByFieldName("item").Value
+'        TxtCodProducto.Text = gListaDetalle.Columns.ColumnByFieldName("idProducto").Value
+'        TxtDesproducto.Text = gListaDetalle.Columns.ColumnByFieldName("GlsProducto").Value
+'        TxtcantProducto.Text = Val(Format(gListaDetalle.Columns.ColumnByFieldName("Cantidad").Value, "0.00"))
+'        TxtcantProducto_Atn.Text = Val(Format(gListaDetalle.Columns.ColumnByFieldName("CantidadImp").Value, "0.00"))
+'
+'        TxtcantProducto_Atn.SetFocus
+'
+'    End If
     
 Exit Sub
 Err:
@@ -12735,7 +12616,7 @@ On Error GoTo Err
             Else
                 Toolbar1.Buttons(19).Visible = False
             End If
-            ocultarColumnasEstado
+            'ocultarColumnasEstado
             
             If strTipoDoc = "40" And STR_APRUEBA_PEDIDO_AUTOMATICO = "1" Then
                 Toolbar1.Buttons(3).Visible = False
@@ -12785,7 +12666,7 @@ On Error GoTo Err
             Toolbar1.Buttons(20).Visible = False
             Toolbar1.Buttons(21).Visible = False
             If STR_IMPORTA_ATENCIONES = "1" Then Toolbar1.Buttons(22).Visible = True
-            ocultarColumnasEstado
+            'ocultarColumnasEstado
             
         Case 4, 7 'Cancelar IMPRIMIR
             Toolbar1.Buttons(1).Visible = True
@@ -12819,7 +12700,7 @@ On Error GoTo Err
             Toolbar1.Buttons(20).Visible = False
             Toolbar1.Buttons(21).Visible = False
             Toolbar1.Buttons(22).Visible = False
-            ocultarColumnasEstado
+            'ocultarColumnasEstado
             
             If strTipoDoc = "92" Then
                 Toolbar1.Buttons(15).Visible = True 'GenerarPedido
@@ -12849,7 +12730,7 @@ On Error GoTo Err
             Toolbar1.Buttons(20).Visible = False
             Toolbar1.Buttons(21).Visible = False
             If STR_IMPORTA_ATENCIONES = "1" Then Toolbar1.Buttons(22).Visible = True
-            ocultarColumnasEstado
+            'ocultarColumnasEstado
             Toolbar1.Buttons(15).Visible = False 'GenerarPedido
         Case 6 'Anular
             Toolbar1.Buttons(1).Visible = True
@@ -12873,7 +12754,7 @@ On Error GoTo Err
             Toolbar1.Buttons(20).Visible = False
             Toolbar1.Buttons(21).Visible = False
             Toolbar1.Buttons(22).Visible = False
-            ocultarColumnasEstado
+            'ocultarColumnasEstado
 '''        Case 7 'Imprimir
 '''            Toolbar1.Buttons(1).Visible = True
 '''            Toolbar1.Buttons(2).Visible = False
@@ -12992,37 +12873,8 @@ On Error GoTo Err
             Toolbar1.Buttons(12).Visible = False
     End Select
     
-'    If STR_VENTA_ELECTRONICA = "S" Then
-'        If (strTipoDoc = "01" Or strTipoDoc = "03" Or strTipoDoc = "07" Or strTipoDoc = "08" Or strTipoDoc = "12" Or strTipoDoc = "86") And Not IsNumeric(left(txt_Serie.Text, 1)) Then
-'            Toolbar1.Buttons(23).Visible = Toolbar1.Buttons(7).Visible
-'            If Toolbar1.Buttons(23).Visible Then
-'                If Val("" & traerCampo("DocVentas", "IndAceptadoSunat", "IdDocumento", strTipoDoc, True, "IdSerie = '" & txt_Serie.Text & "' And IdDocVentas = '" & txt_NumDoc.Text & "'")) = 1 Or Val("" & traerCampo("DocVentas", "IndEnviadoSunat", "IdDocumento", strTipoDoc, True, "IdSerie = '" & txt_Serie.Text & "' And IdDocVentas = '" & txt_NumDoc.Text & "'")) = 1 Then
-'                    Toolbar1.Buttons(23).Visible = False
-'                    Toolbar1.Buttons(2).Visible = False 'GRABAR
-'                    Toolbar1.Buttons(3).Visible = False 'MODIFICAR
-'                    Toolbar1.Buttons(5).Visible = False 'ELIMINAR
-'                    Toolbar1.Buttons(6).Visible = True 'ANULAR
-'                    Toolbar1.Buttons(7).Visible = True 'IMPRIMIR
-'                    Toolbar1.Buttons(8).Visible = False
-'                    Toolbar1.Buttons(11).Visible = False 'PAGOS
-'                    Toolbar1.Buttons(12).Visible = False 'Letra
-'                    Toolbar1.Buttons(16).Visible = False
-'                    Toolbar1.Buttons(17).Visible = False
-'                    Toolbar1.Buttons(20).Visible = False 'PRELIMINAR
-'                    Toolbar1.Buttons(21).Visible = False 'IMPRIME HOJA BLANCO
-'                End If
-'            End If
-'
-'        Else
-'            Toolbar1.Buttons(23).Visible = False
-'        End If
-'    Else
-'        Toolbar1.Buttons(23).Visible = False
-'    End If
-'    ValidaPermisos StrMsgError, indexBoton
-'    If StrMsgError <> "" Then GoTo Err
     
-    Exit Sub
+Exit Sub
 Err:
     If StrMsgError = "" Then StrMsgError = Err.Description
 End Sub
@@ -13033,73 +12885,73 @@ Dim CSqlC                           As String
 Dim RsC                             As New ADODB.Recordset
 Dim IndRegistra                     As Boolean
 
-    '2 Grabar,4 Cancelar,9 Lista
-    
-    IndRegistra = False
-    
-    If leeParametro("VALIDA_PERMISOS") = "S" And strTipoDoc = "07" Then 'Por mientras slo para Nota de Crdito
-        
-        If PIndexBoton = 1 Or PIndexBoton = 2 Or PIndexBoton = 3 Or PIndexBoton = 4 Or PIndexBoton = 5 Or PIndexBoton = 6 Or PIndexBoton = 9 Then
-            
-            Toolbar1.Buttons(1).Visible = False 'Nuevo
-            Toolbar1.Buttons(2).Visible = False 'Grabar
-            Toolbar1.Buttons(3).Visible = False 'Modificar
-            Toolbar1.Buttons(5).Visible = False 'Eliminar
-            Toolbar1.Buttons(6).Visible = False 'Anular
-            Toolbar1.Buttons(7).Visible = False 'Imprimir
-        
-        End If
-        
-        CSqlC = "Select A.IdPermiso " & _
-                "From PermisosUsuarios A " & _
-                "Where A.IdEmpresa = '" & glsEmpresa & "' And A.CodSistema = '" & StrcodSistema & "' And A.IdUsuario = '" & glsUser & "'"
-        AbrirRecordset StrMsgError, Cn, RsC, CSqlC: If StrMsgError <> "" Then GoTo Err
-        Do While Not RsC.EOF
-            
-            If PIndexBoton = 1 Then
-                
-                Select Case Trim("" & RsC.Fields("IdPermiso"))
-                    Case "23"
-                        Toolbar1.Buttons(2).Visible = True
-                End Select
-                
-            ElseIf PIndexBoton = 2 Or PIndexBoton = 4 Then
-                
-                Select Case Trim("" & RsC.Fields("IdPermiso"))
-                    Case "23"
-                        Toolbar1.Buttons(1).Visible = True
-                        Toolbar1.Buttons(3).Visible = True
-                    Case "24"
-                        Toolbar1.Buttons(5).Visible = True
-                    Case "25"
-                        Toolbar1.Buttons(6).Visible = True
-                    Case "26"
-                        Toolbar1.Buttons(7).Visible = True
-                End Select
-            
-            ElseIf PIndexBoton = 3 Then
-                
-                Select Case Trim("" & RsC.Fields("IdPermiso"))
-                    Case "23"
-                        Toolbar1.Buttons(2).Visible = True
-                End Select
-                
-            ElseIf PIndexBoton = 9 Then
-                
-                Select Case Trim("" & RsC.Fields("IdPermiso"))
-                    Case "23"
-                        Toolbar1.Buttons(1).Visible = True
-                End Select
-                
-            End If
-            
-            RsC.MoveNext
-        
-        Loop
-        
-        RsC.Close: Set RsC = Nothing
-        
-    End If
+'    '2 Grabar,4 Cancelar,9 Lista
+'
+'    IndRegistra = False
+'
+'    If leeParametro("VALIDA_PERMISOS") = "S" And strTipoDoc = "07" Then 'Por mientras slo para Nota de Crdito
+'
+'        If PIndexBoton = 1 Or PIndexBoton = 2 Or PIndexBoton = 3 Or PIndexBoton = 4 Or PIndexBoton = 5 Or PIndexBoton = 6 Or PIndexBoton = 9 Then
+'
+'            Toolbar1.Buttons(1).Visible = False 'Nuevo
+'            Toolbar1.Buttons(2).Visible = False 'Grabar
+'            Toolbar1.Buttons(3).Visible = False 'Modificar
+'            Toolbar1.Buttons(5).Visible = False 'Eliminar
+'            Toolbar1.Buttons(6).Visible = False 'Anular
+'            Toolbar1.Buttons(7).Visible = False 'Imprimir
+'
+'        End If
+'
+'        CSqlC = "Select A.IdPermiso " & _
+'                "From PermisosUsuarios A " & _
+'                "Where A.IdEmpresa = '" & glsEmpresa & "' And A.CodSistema = '" & StrcodSistema & "' And A.IdUsuario = '" & glsUser & "'"
+'        AbrirRecordset StrMsgError, Cn, RsC, CSqlC: If StrMsgError <> "" Then GoTo Err
+'        Do While Not RsC.EOF
+'
+'            If PIndexBoton = 1 Then
+'
+'                Select Case Trim("" & RsC.Fields("IdPermiso"))
+'                    Case "23"
+'                        Toolbar1.Buttons(2).Visible = True
+'                End Select
+'
+'            ElseIf PIndexBoton = 2 Or PIndexBoton = 4 Then
+'
+'                Select Case Trim("" & RsC.Fields("IdPermiso"))
+'                    Case "23"
+'                        Toolbar1.Buttons(1).Visible = True
+'                        Toolbar1.Buttons(3).Visible = True
+'                    Case "24"
+'                        Toolbar1.Buttons(5).Visible = True
+'                    Case "25"
+'                        Toolbar1.Buttons(6).Visible = True
+'                    Case "26"
+'                        Toolbar1.Buttons(7).Visible = True
+'                End Select
+'
+'            ElseIf PIndexBoton = 3 Then
+'
+'                Select Case Trim("" & RsC.Fields("IdPermiso"))
+'                    Case "23"
+'                        Toolbar1.Buttons(2).Visible = True
+'                End Select
+'
+'            ElseIf PIndexBoton = 9 Then
+'
+'                Select Case Trim("" & RsC.Fields("IdPermiso"))
+'                    Case "23"
+'                        Toolbar1.Buttons(1).Visible = True
+'                End Select
+'
+'            End If
+'
+'            RsC.MoveNext
+'
+'        Loop
+'
+'        RsC.Close: Set RsC = Nothing
+'
+'    End If
     
     Exit Sub
 Err:
