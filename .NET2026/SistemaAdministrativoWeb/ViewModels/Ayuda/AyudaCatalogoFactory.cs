@@ -1,6 +1,8 @@
 namespace SistemaAdministrativoWeb.ViewModels.Ayuda;
 
 // Firma: FRANCO LARA - 31/07/2026 | Completa la ayuda operativa General con los modulos Usuarios y Configuracion y sus preguntas contextuales.
+// Firma: FRANCO LARA - 04/08/2026 | Actualiza la ayuda de Libros Electronicos con validacion integrada, archivos complementarios, periodos vacios y control de presentacion.
+// Firma: FRANCO LARA - 05/08/2026 | Actualiza la ayuda del dashboard para incluir la tendencia historica de movimientos bancarios.
 public static class AyudaCatalogoFactory
 {
     public static AyudaIndexViewModel Crear(string? moduloSolicitado)
@@ -374,16 +376,7 @@ public static class AyudaCatalogoFactory
                         "contabilidad financiera y revision de cierre",
                         "cuentas por grado, movimientos, saldos y agrupaciones del balance",
                         "cuadre general del periodo y revision de estructura")),
-                    CrearModulo("LIBROELECTRONICO", "Libros Electronicos", "bi-filetype-txt", "Generacion y descarga de TXT para PLE.", CrearFaqReporte(
-                        "Libros Electronicos",
-                        "generar archivos TXT de libros contables y tributarios para el PLE",
-                        "periodo, tipo de libro y validacion previa de datos base",
-                        "preparar la exportacion oficial del periodo segun formato requerido",
-                        "cuando el mes ya fue revisado y necesitas generar los archivos oficiales",
-                        "validar estructura, correlativos, totales y consistencia con registros base",
-                        "contabilidad tributaria y cumplimiento formal",
-                        "archivos TXT, estado de generacion y mensajes de validacion",
-                        "cumplimiento del PLE y soporte oficial del periodo"))
+                    CrearModulo("LIBROELECTRONICO", "Libros Electronicos", "bi-filetype-txt", "Consulta, validacion, generacion, descarga y control de presentacion de archivos TXT para el PLE.", CrearFaqLibrosElectronicos())
                 ])
         ];
     }
@@ -431,7 +424,7 @@ public static class AyudaCatalogoFactory
             ("Que significa el estado del panel", "Es una lectura de la vigencia de la cuenta administradora y de la suscripcion asociada a la empresa activa."),
             ("Que significa periodo abierto o cerrado", "Periodo abierto permite registrar y modificar operaciones. Periodo cerrado bloquea grabaciones nuevas y deja el mes solo para consulta."),
             ("Como interpreto los indicadores de control", "Te senalan compras o ventas con saldo, compras sin asiento y validaciones CPE ya realizadas para priorizar seguimiento."),
-            ("Para que sirven los graficos de torres", "Comparan importes y cantidad de movimientos por periodo para compras y ventas, lo que permite ver tendencia y picos mensuales."),
+            ("Para que sirven los graficos de torres", "Comparan importes PEN, USD y cantidad de movimientos por periodo para compras, ventas y movimientos bancarios, lo que permite ver tendencias y picos mensuales."),
             ("Para que sirve la torta de distribucion del periodo", "Mide la participacion de compras, ventas, asientos, movimientos bancarios y aplicaciones dentro del volumen operativo del mes."),
             ("Que hago si el dashboard no refleja una operacion reciente", "Verifica que estes en la empresa y periodo correctos, que la operacion se haya guardado y que no exista un filtro operativo pendiente en su modulo de origen."),
             ("Cada cuanto conviene revisar el dashboard", "Al inicio del dia, antes del cierre de jornada y previo a ejecutar procesos mensuales o bloquear un periodo.")
@@ -630,6 +623,28 @@ public static class AyudaCatalogoFactory
             ($"Que hago si los totales no cuadran como esperaba", "Compara el reporte con los movimientos base, verifica moneda, rango de cuentas y si el periodo ya incluye ajustes o cierres."),
             ($"Puedo usar {modulo} antes de cerrar el periodo", $"Si, y de hecho {modulo} es util como control previo para detectar diferencias antes del cierre definitivo."),
             ($"Que revision final conviene hacer al terminar con {modulo}", "Guardar o imprimir la consulta necesaria, dejar evidencia del corte revisado y pasar al siguiente control del cierre o de la operacion.")
+        ]);
+
+    private static IReadOnlyCollection<AyudaPreguntaViewModel> CrearFaqLibrosElectronicos()
+        => CrearPreguntas("libroselectronicos",
+        [
+            ("Para que sirve Libros Electronicos", "Permite consultar, validar, generar y descargar los archivos TXT requeridos por el PLE para los formatos 5.1 Libro Diario, 5.2 Libro Diario Simplificado y 6.1 Libro Mayor."),
+            ("Que debo seleccionar antes de consultar", "Verifica la empresa activa, el anio, el mes y el libro electronico. La exportacion se genera en soles para el periodo seleccionado."),
+            ("Que hace ahora el boton Consultar", "Consultar carga el resumen y el detalle exportable, ejecuta automaticamente las validaciones y deja disponibles las Observaciones del PLE en la misma pantalla."),
+            ("Que revisa la validacion automatica", "Revisa RUC, periodo, cuadre de asientos y totales, CUO y correlativos, cuentas, monedas, documentos, comprobantes, importes, glosas y estados admitidos por el formato PLE."),
+            ("Como interpreto las Observaciones del PLE", "Los errores bloquean la generacion. Las advertencias requieren revision y los mensajes informativos explican condiciones validas, como un periodo cerrado o un periodo sin movimientos."),
+            ("Que archivos genera el boton Generar TXT", "Para el Libro Diario 5.1 genera tambien el plan contable 5.3; para el Diario Simplificado 5.2 genera tambien el plan 5.4. Para el Libro Mayor 6.1 genera solamente su archivo principal."),
+            ("Por que debo descargar dos TXT para los diarios", "Los formatos 5.1 y 5.2 son libros compuestos. Debes descargar el archivo principal y su plan contable 5.3 o 5.4, y seleccionarlos simultaneamente en el PLE."),
+            ("Cuando el plan 5.3 o 5.4 se genera completo", "Se genera completo en la primera presentacion del ejercicio o cuando no existe un snapshot anterior presentado para la misma empresa y el mismo libro."),
+            ("Cuando el plan 5.3 o 5.4 contiene solo cambios", "Despues de una presentacion confirmada, el sistema compara el plan actual con el ultimo snapshot presentado y exporta solo cuentas nuevas o aquellas cuyo codigo o nombre fue modificado."),
+            ("Que ocurre si el plan contable no tuvo cambios", "El archivo 5.3 o 5.4 se genera vacio y su nombre usa el indicador de contenido 0. Aunque este vacio, debe cargarse junto con el archivo principal en el PLE."),
+            ("Puedo generar un libro de un periodo sin movimientos", "Si. La ausencia de asientos y lineas se informa como Periodo sin movimientos y se genera el TXT principal vacio con indicador de contenido 0, sin tratarlo como error."),
+            ("Para que sirve Marcar como presentado", "Debes activarlo solo despues de obtener la constancia de recepcion del PLE. La marca confirma la presentacion y convierte el snapshot generado en la referencia para comparar el plan de los meses siguientes."),
+            ("Por que puede bloquearse la generacion de un mes", "Si el mes anterior tiene movimientos y todavia no fue marcado como presentado, el sistema bloquea el siguiente mes para conservar la secuencia de presentacion."),
+            ("Puedo desmarcar o volver a generar un periodo", "Puedes desmarcar y volver a generar mientras no exista un periodo posterior presentado. Si ya existe una presentacion posterior, el estado anterior queda protegido para no romper la continuidad."),
+            ("Como veo el detalle, las observaciones y el historial", "Detalle exportable, Observaciones del PLE y Archivos generados aparecen contraidos por defecto. Activa el interruptor de cada seccion para desplegar su informacion."),
+            ("Que hago si necesito descargar nuevamente un TXT", "Las descargas son temporales y cada enlace se consume al descargar. Si el boton queda inhabilitado o necesitas otra copia, vuelve a generar el periodo y descarga los archivos nuevos."),
+            ("Que control final debo realizar antes de presentar", "Confirma que no existan errores, revisa periodo, CUO, comprobantes y totales, descarga todos los archivos que componen el libro, validalos juntos en el PLE y marca el periodo como presentado solo despues de recibir la constancia.")
         ]);
 
     private static IReadOnlyCollection<AyudaPreguntaViewModel> CrearPreguntas(

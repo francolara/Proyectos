@@ -14,4 +14,7 @@ public sealed class PleConsultaResultadoDto
     public int PaginaPreview { get; init; }
     public int TamanoPaginaPreview { get; init; }
     public PagedResult<PleHistoryItemDto> Historial { get; init; } = new();
+    public PlePresentacionContextoDto Presentacion { get; init; } = new();
+    public bool GeneracionBloqueada { get; init; }
+    public string MensajeBloqueoGeneracion { get; init; } = string.Empty;
 }

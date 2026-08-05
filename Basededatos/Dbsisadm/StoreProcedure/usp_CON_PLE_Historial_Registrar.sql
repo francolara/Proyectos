@@ -4,6 +4,12 @@
 -- Description:   Registra el metadato de una generación PLE sin almacenar el contenido del archivo TXT.
 -- =============================================
 
+-- =============================================
+-- Author:        FRANCO LARA / Codex
+-- Create date:   04/08/2026
+-- Description:   Registra por separado el complemento y conserva el snapshot del plan sin marcarlo como presentado.
+-- =============================================
+
 CREATE OR ALTER PROCEDURE dbo.usp_CON_PLE_Historial_Registrar
     @IdEmpresa INT,
     @Periodo CHAR(6),
@@ -15,7 +21,12 @@ CREATE OR ALTER PROCEDURE dbo.usp_CON_PLE_Historial_Registrar
     @TotalHaber DECIMAL(18,2),
     @Estado NVARCHAR(20),
     @Observaciones NVARCHAR(MAX) = NULL,
-    @UsuarioGeneracion NVARCHAR(450) = NULL
+    @UsuarioGeneracion NVARCHAR(450) = NULL,
+    @CodigoFormatoComplementario VARCHAR(10) = NULL,
+    @NombreArchivoComplementario NVARCHAR(250) = NULL,
+    @CantidadRegistrosComplementario INT = 0,
+    @HuellaPlanContable CHAR(64) = NULL,
+    @PlanContableSnapshot NVARCHAR(MAX) = NULL
 AS
 BEGIN
 
@@ -36,7 +47,13 @@ BEGIN
             Estado,
             Observaciones,
             FechaGeneracion,
-            UsuarioGeneracion
+            UsuarioGeneracion,
+            CodigoFormatoComplementario,
+            NombreArchivoComplementario,
+            CantidadRegistrosComplementario,
+            HuellaPlanContable,
+            PlanContableSnapshot,
+            PlanPresentado
         )
         VALUES
         (
@@ -51,7 +68,13 @@ BEGIN
             @Estado,
             @Observaciones,
             SYSDATETIME(),
-            @UsuarioGeneracion
+            @UsuarioGeneracion,
+            @CodigoFormatoComplementario,
+            @NombreArchivoComplementario,
+            @CantidadRegistrosComplementario,
+            @HuellaPlanContable,
+            @PlanContableSnapshot,
+            0
         );
 
     END TRY

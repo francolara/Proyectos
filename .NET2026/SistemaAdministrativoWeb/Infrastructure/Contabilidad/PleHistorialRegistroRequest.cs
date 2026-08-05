@@ -13,4 +13,9 @@ public sealed class PleHistorialRegistroRequest
     public string Estado { get; init; } = string.Empty;
     public string Observaciones { get; init; } = string.Empty;
     public string UsuarioGeneracion { get; init; } = string.Empty;
+    public string CodigoFormatoComplementario { get; init; } = string.Empty;
+    public string NombreArchivoComplementario { get; init; } = string.Empty;
+    public int CantidadRegistrosComplementario { get; init; }
+    public string HuellaPlanContable { get; init; } = string.Empty;
+    public string PlanContableSnapshot { get; init; } = string.Empty;
 }

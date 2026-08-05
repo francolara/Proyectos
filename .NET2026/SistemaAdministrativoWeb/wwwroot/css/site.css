@@ -3,6 +3,212 @@ html {
   min-height: 100%;
 }
 
+/* Firma: FRANCO LARA - 04/08/2026 | Centraliza la presentacion adaptable de parametros principales, filtros avanzados desplegables y acciones para los reportes contables. */
+/* Firma: FRANCO LARA - 05/08/2026 | Diferencia semanticamente las series del dashboard con ventas verdes y movimientos bancarios violetas. */
+.report-filter-section {
+  margin-top: 1rem;
+  border-radius: 1.15rem;
+  box-shadow: none;
+}
+
+.report-filter-form {
+  padding: 1.1rem 1.15rem 1.15rem;
+}
+
+.report-filter-primary-grid,
+.report-filter-advanced-grid {
+  display: grid;
+  gap: 0.85rem;
+  align-items: end;
+}
+
+.report-filter-grid-1 {
+  grid-template-columns: minmax(12rem, 24rem);
+}
+
+.report-filter-grid-2 {
+  grid-template-columns: repeat(2, minmax(12rem, 20rem));
+}
+
+.report-filter-grid-3 {
+  grid-template-columns: repeat(3, minmax(10rem, 1fr));
+}
+
+.report-filter-grid-4 {
+  grid-template-columns: repeat(4, minmax(9rem, 1fr));
+}
+
+.report-filter-grid-5 {
+  grid-template-columns: repeat(5, minmax(8rem, 1fr));
+}
+
+.report-filter-form .workspace-field .form-control,
+.report-filter-form .workspace-field .form-select {
+  min-height: 2.8rem;
+  border-radius: 0.8rem;
+}
+
+.report-filter-toggle-wrap {
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--app-line);
+}
+
+.report-filter-toggle-input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.report-filter-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.72rem 0.85rem;
+  border: 1px solid rgba(93, 117, 158, 0.28);
+  border-radius: 0.85rem;
+  background: rgba(247, 250, 252, 0.72);
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.report-filter-toggle:hover,
+.report-filter-toggle-input:focus-visible + .report-filter-toggle {
+  border-color: rgba(31, 143, 105, 0.48);
+}
+
+.report-filter-toggle-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.16rem;
+  min-width: 0;
+}
+
+.report-filter-toggle-copy strong {
+  color: var(--app-ink);
+  font-size: 0.88rem;
+}
+
+.report-filter-toggle-copy small {
+  color: var(--app-muted);
+  font-size: 0.75rem;
+}
+
+.report-filter-switch {
+  flex: 0 0 auto;
+  width: 2.9rem;
+  height: 1.65rem;
+  padding: 0.18rem;
+  border-radius: 999px;
+  background: #b9c6ca;
+  transition: background 0.18s ease;
+}
+
+.report-filter-switch > span {
+  display: block;
+  width: 1.29rem;
+  height: 1.29rem;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 3px 9px rgba(16, 24, 40, 0.22);
+  transition: transform 0.18s ease;
+}
+
+.report-filter-toggle-input:checked + .report-filter-toggle {
+  border-color: rgba(31, 143, 105, 0.4);
+  background: rgba(232, 248, 241, 0.82);
+}
+
+.report-filter-toggle-input:checked + .report-filter-toggle .report-filter-switch {
+  background: linear-gradient(135deg, #177a5b, #43bc91);
+}
+
+.report-filter-toggle-input:checked + .report-filter-toggle .report-filter-switch > span {
+  transform: translateX(1.25rem);
+}
+
+.report-filter-advanced-grid {
+  padding: 0.95rem 0.2rem 0.1rem;
+  animation: report-filter-reveal 0.18s ease-out;
+}
+
+.report-filter-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(12rem, 1fr));
+  gap: 0.75rem;
+  grid-column: 1 / -1;
+}
+
+.report-filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--app-line);
+}
+
+.report-filter-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-width: 10.75rem;
+  min-height: 2.55rem;
+}
+
+html[data-theme="dark"] .report-filter-toggle {
+  border-color: rgba(93, 117, 158, 0.3);
+  background: rgba(17, 27, 45, 0.96);
+}
+
+html[data-theme="dark"] .report-filter-toggle-input:checked + .report-filter-toggle {
+  border-color: rgba(58, 159, 123, 0.42);
+  background: rgba(12, 43, 35, 0.96);
+}
+
+html[data-theme="dark"] .report-filter-switch {
+  background: #405068;
+}
+
+@keyframes report-filter-reveal {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 1199.98px) {
+  .report-filter-grid-3,
+  .report-filter-grid-4,
+  .report-filter-grid-5 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767.98px) {
+  .report-filter-primary-grid,
+  .report-filter-advanced-grid,
+  .report-filter-options,
+  .report-filter-grid-1,
+  .report-filter-grid-2,
+  .report-filter-grid-3,
+  .report-filter-grid-4,
+  .report-filter-grid-5 {
+    grid-template-columns: 1fr;
+  }
+
+  .report-filter-actions {
+    flex-direction: column-reverse;
+  }
+
+  .report-filter-action {
+    width: 100%;
+  }
+}
+
 :root {
   --app-navy: #0f2342;
   --app-navy-2: #17386a;
@@ -4086,6 +4292,16 @@ body.workspace-loading-active {
   border-radius: 0.95rem 0.95rem 0 0;
   background: linear-gradient(180deg, rgba(47, 140, 255, 0.9) 0%, rgba(12, 87, 219, 0.98) 100%);
   box-shadow: 0 14px 30px rgba(18, 91, 219, 0.28);
+}
+
+.dashboard-bank-chart .dashboard-bar-column::after {
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.92) 0%, rgba(91, 33, 182, 0.98) 100%);
+  box-shadow: 0 14px 30px rgba(109, 40, 217, 0.28);
+}
+
+.dashboard-sales-chart .dashboard-bar-column::after {
+  background: linear-gradient(180deg, rgba(42, 190, 128, 0.94) 0%, rgba(18, 132, 87, 0.98) 100%);
+  box-shadow: 0 14px 30px rgba(31, 169, 113, 0.28);
 }
 
 .dashboard-bar-item strong {

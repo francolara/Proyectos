@@ -3,6 +3,7 @@
 @* Firma: FRANCO LARA - 07/07/2026 | Mantiene el reporte HTML Libro Diario, adapta su visualizacion al formato compacto tipo hoja A4 de los reportes legacy y agrega impresion directa en pantalla. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Ajusta Libro Diario para trabajar siempre en soles, elimina filtros de moneda y origen, y separa las vistas Diario auxiliar, Por Cuenta y Por Origen. *@
 @* Firma: FRANCO LARA - 21/07/2026 | Corrige la impresion del Libro Diario en A4 horizontal, compacta cabecera y tablas y evita heredar el modo oscuro. *@
+@* Firma: FRANCO LARA - 04/08/2026 | Reorganiza los parametros del Libro Diario con el patron visual compartido de reportes, acciones uniformes y disposicion adaptable. *@
 
 @{
     ViewData["Title"] = "Libro Diario";
@@ -34,9 +35,19 @@
                 <div class="alert alert-danger">@Model.MensajeError</div>
             }
 
-            <form asp-action="LibroDiario" method="get" class="workspace-filter-card">
-                <input type="hidden" name="consultar" value="true" />
-                <div class="workspace-filter-grid">
+            <section class="workspace-section report-filter-section no-print" aria-labelledby="libro-diario-filter-title">
+                <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
+                    {
+                        Id = "libro-diario-filter-title",
+                        Category = "Filtros",
+                        Title = "Parámetros del reporte",
+                        Description = "Seleccione el periodo y la vista del Libro Diario que desea consultar.",
+                        IconClass = "bi bi-funnel"
+                    })" />
+
+                <form asp-action="LibroDiario" method="get" class="report-filter-form">
+                    <input type="hidden" name="consultar" value="true" />
+                    <div class="report-filter-primary-grid report-filter-grid-4">
                     <div class="workspace-field">
                         <label class="form-label" for="anio">Anio</label>
                         <select id="anio" name="anio" class="form-select">
@@ -68,11 +79,20 @@
                             }
                         </select>
                     </div>
-                    <div class="workspace-field d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary">Consultar diario</button>
                     </div>
-                </div>
-            </form>
+
+                    <div class="report-filter-actions">
+                        <a class="btn btn-outline-secondary report-filter-action" asp-action="LibroDiario">
+                            <i class="bi bi-eraser" aria-hidden="true"></i>
+                            <span>Limpiar filtros</span>
+                        </a>
+                        <button type="submit" class="btn btn-primary report-filter-action">
+                            <i class="bi bi-search" aria-hidden="true"></i>
+                            <span>Consultar reporte</span>
+                        </button>
+                    </div>
+                </form>
+            </section>
 
             @if (Model.ConsultaEjecutada && Model.Resultados.Count == 0 && string.IsNullOrWhiteSpace(Model.MensajeError))
             {

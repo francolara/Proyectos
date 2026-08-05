@@ -1,6 +1,7 @@
 namespace SistemaAdministrativoWeb.Infrastructure.Contabilidad;
 
 // Firma: FRANCO LARA - 03/08/2026 | Completa los 21 campos base exigidos por SUNAT para el Libro Diario Simplificado 5.2.
+// Firma: FRANCO LARA - 04/08/2026 | Recibe la referencia estructurada del Registro de Compras o Ventas usada en el campo 20.
 public sealed class LibroDiario52Dto
 {
     public string PeriodoPle { get; init; } = string.Empty;
@@ -11,6 +12,9 @@ public sealed class LibroDiario52Dto
     public string CodigoCentroCosto { get; init; } = string.Empty;
     public string CodigoMoneda { get; init; } = string.Empty;
     public string CodigoLibroRelacionado { get; init; } = string.Empty;
+    public string PeriodoReferencia { get; init; } = string.Empty;
+    public string CuoReferencia { get; init; } = string.Empty;
+    public string CorrelativoReferencia { get; init; } = string.Empty;
     public string TipoDocumentoEmisor { get; init; } = string.Empty;
     public string NumeroDocumentoEmisor { get; init; } = string.Empty;
     public string TipoComprobante { get; init; } = "00";

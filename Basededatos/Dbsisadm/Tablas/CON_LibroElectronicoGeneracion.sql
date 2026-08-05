@@ -4,6 +4,12 @@
 -- Description:   Historial de generación de libros electrónicos PLE por empresa, periodo y formato.
 -- =============================================
 
+-- =============================================
+-- Author:        FRANCO LARA / Codex
+-- Create date:   04/08/2026
+-- Description:   Agrega archivos complementarios, snapshot del plan y control manual reversible de presentacion PLE.
+-- =============================================
+
 IF OBJECT_ID(N'dbo.CON_LibroElectronicoGeneracion', N'U') IS NULL
 BEGIN
     CREATE TABLE dbo.CON_LibroElectronicoGeneracion
@@ -20,7 +26,15 @@ BEGIN
         Estado NVARCHAR(20) NOT NULL CONSTRAINT DF_CON_LibroElectronicoGeneracion_Estado DEFAULT (N'GENERADO'),
         Observaciones NVARCHAR(MAX) NULL,
         FechaGeneracion DATETIME2(0) NOT NULL CONSTRAINT DF_CON_LibroElectronicoGeneracion_FechaGeneracion DEFAULT (SYSDATETIME()),
-        UsuarioGeneracion NVARCHAR(450) NULL
+        UsuarioGeneracion NVARCHAR(450) NULL,
+        CodigoFormatoComplementario VARCHAR(10) NULL,
+        NombreArchivoComplementario NVARCHAR(250) NULL,
+        CantidadRegistrosComplementario INT NOT NULL CONSTRAINT DF_CON_LibroElectronicoGeneracion_CantidadComplementaria DEFAULT (0),
+        HuellaPlanContable CHAR(64) NULL,
+        PlanContableSnapshot NVARCHAR(MAX) NULL,
+        PlanPresentado BIT NOT NULL CONSTRAINT DF_CON_LibroElectronicoGeneracion_PlanPresentado DEFAULT (0),
+        FechaPresentacion DATETIME2(0) NULL,
+        UsuarioPresentacion NVARCHAR(450) NULL
     );
 
     ALTER TABLE dbo.CON_LibroElectronicoGeneracion

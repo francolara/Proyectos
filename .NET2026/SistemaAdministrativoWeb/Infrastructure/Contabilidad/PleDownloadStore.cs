@@ -6,7 +6,7 @@ public sealed class PleDownloadStore(IMemoryCache memoryCache) : IPleDownloadSto
 {
     private static readonly TimeSpan TiempoVida = TimeSpan.FromMinutes(15);
 
-    public string Guardar(string fileName, byte[] content)
+    public string Guardar(string fileName, byte[] content, string contentType = "text/plain; charset=utf-8")
     {
         var token = Guid.NewGuid().ToString("N");
         var payload = new PleDownloadPayload
@@ -14,6 +14,7 @@ public sealed class PleDownloadStore(IMemoryCache memoryCache) : IPleDownloadSto
             Token = token,
             FileName = fileName,
             Content = content,
+            ContentType = contentType,
             FechaExpiracion = DateTimeOffset.Now.Add(TiempoVida)
         };
 

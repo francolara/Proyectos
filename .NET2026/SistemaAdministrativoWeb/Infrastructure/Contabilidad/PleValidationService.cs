@@ -1,6 +1,7 @@
 namespace SistemaAdministrativoWeb.Infrastructure.Contabilidad;
 
 // Firma: FRANCO LARA - 03/08/2026 | Valida documentos y comprobantes de los formatos 5.1, 5.2 y 6.1, reconociendo 00 cuando no existe comprobante asociado.
+// Firma: FRANCO LARA - 04/08/2026 | Permite periodos sin movimientos como libros sin información y conserva errores para inconsistencias reales entre asientos y líneas.
 public sealed class PleValidationService(IPeriodoContableService periodoContableService) : IPleValidationService
 {
     public async Task<PleValidationResultDto> ValidarAsync(
@@ -50,13 +51,22 @@ public sealed class PleValidationService(IPeriodoContableService periodoContable
             });
         }
 
-        if (asientos.Count == 0)
-        {
-            observaciones.Add(CrearError("SIN_ASIENTOS", "Sin movimientos", "No existen movimientos contables para el periodo seleccionado."));
-        }
-
         var lineas = MapearLineas(libroDiario51Items, libroDiario52Items, libroMayor61Items);
-        if (lineas.Count == 0)
+        if (asientos.Count == 0 && lineas.Count == 0)
+        {
+            observaciones.Add(new PleValidationIssueDto
+            {
+                Severidad = PleValidationSeverity.Informacion,
+                Codigo = "SIN_MOVIMIENTOS",
+                Titulo = "Periodo sin movimientos",
+                Detalle = "No existen movimientos contables para el periodo. Se generará el libro sin información."
+            });
+        }
+        else if (asientos.Count == 0)
+        {
+            observaciones.Add(CrearError("SIN_ASIENTOS", "Asientos no encontrados", "Existen líneas exportables, pero no se encontraron sus asientos contables."));
+        }
+        else if (lineas.Count == 0)
         {
             observaciones.Add(CrearError("SIN_LINEAS", "Sin detalle a exportar", "La consulta no devolvio lineas para el formato seleccionado."));
         }

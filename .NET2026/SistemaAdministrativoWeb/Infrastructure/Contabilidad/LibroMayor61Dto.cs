@@ -1,6 +1,7 @@
 namespace SistemaAdministrativoWeb.Infrastructure.Contabilidad;
 
 // Firma: FRANCO LARA - 03/08/2026 | Completa los 21 campos base exigidos por SUNAT para el Libro Mayor 6.1.
+// Firma: FRANCO LARA - 04/08/2026 | Recibe desde SQL la clave estructurada del registro de Compras o Ventas relacionado con cada movimiento del Mayor.
 public sealed class LibroMayor61Dto
 {
     public string PeriodoPle { get; init; } = string.Empty;
@@ -11,6 +12,9 @@ public sealed class LibroMayor61Dto
     public string CodigoCentroCosto { get; init; } = string.Empty;
     public string CodigoMoneda { get; init; } = string.Empty;
     public string CodigoLibroRelacionado { get; init; } = string.Empty;
+    public string PeriodoReferencia { get; init; } = string.Empty;
+    public string CuoReferencia { get; init; } = string.Empty;
+    public string CorrelativoReferencia { get; init; } = string.Empty;
     public string TipoDocumentoEmisor { get; init; } = string.Empty;
     public string NumeroDocumentoEmisor { get; init; } = string.Empty;
     public string TipoComprobante { get; init; } = "00";

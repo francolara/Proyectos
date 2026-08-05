@@ -15,5 +15,11 @@ public sealed class PleHistoryItemDto
     public string Observaciones { get; init; } = string.Empty;
     public DateTime FechaGeneracion { get; init; }
     public string UsuarioGeneracion { get; init; } = string.Empty;
+    public string CodigoFormatoComplementario { get; init; } = string.Empty;
+    public string NombreArchivoComplementario { get; init; } = string.Empty;
+    public int CantidadRegistrosComplementario { get; init; }
+    public bool PlanPresentado { get; init; }
+    public DateTime? FechaPresentacion { get; init; }
+    public string UsuarioPresentacion { get; init; } = string.Empty;
     public int TotalRegistros { get; init; }
 }

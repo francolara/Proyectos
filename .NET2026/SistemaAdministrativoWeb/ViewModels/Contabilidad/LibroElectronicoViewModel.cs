@@ -17,7 +17,10 @@ public sealed class LibroElectronicoViewModel
     public string? MensajeError { get; set; }
     public string? MensajeExito { get; set; }
     public string TokenDescarga { get; set; } = string.Empty;
+    public string TokenDescargaComplementario { get; set; } = string.Empty;
     public bool PuedeDescargarTxt { get; set; }
+    public bool PuedeDescargarComplementario { get; set; }
+    public bool GeneraComplementoDiario => LibroElectronicoSeleccionado is PleLibroElectronicoCatalogo.LibroDiario51 or PleLibroElectronicoCatalogo.LibroDiario52;
     public int PaginaPreview { get; set; } = 1;
     public int PaginaHistorial { get; set; } = 1;
     public int TamanoPaginaPreview { get; set; } = 50;
@@ -33,6 +36,9 @@ public sealed class LibroElectronicoViewModel
     public IReadOnlyCollection<LibroDiario52Dto> LibroDiario52Items { get; set; } = [];
     public IReadOnlyCollection<LibroMayor61Dto> LibroMayor61Items { get; set; } = [];
     public IReadOnlyCollection<PleHistoryItemDto> HistorialItems { get; set; } = [];
+    public PlePresentacionContextoDto Presentacion { get; set; } = new();
+    public bool GeneracionBloqueada { get; set; }
+    public string MensajeBloqueoGeneracion { get; set; } = string.Empty;
     public bool PuedeVer { get; set; }
     public bool PuedeConsultar { get; set; }
     public bool PuedeValidar { get; set; }

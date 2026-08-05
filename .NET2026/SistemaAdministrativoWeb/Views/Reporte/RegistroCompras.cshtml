@@ -3,12 +3,14 @@
 @* Firma: FRANCO LARA - 07/07/2026 | Crea el reporte HTML Registro de compras con formato A4 inspirado en RptRegistroCompra_A4_Oxa del legacy, usando solo la provision actual y habilitando impresion directa. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Ajusta el formato visible del registro de compras retirando las columnas Cod., BI 2, IGV 2, BI 3 e IGV 3 segun el disenio solicitado y actualiza el subtitulo del reporte. *@
 @* Firma: FRANCO LARA - 21/07/2026 | Corrige la impresion del Registro de compras en A4 horizontal, compacta cabecera y tabla y evita heredar el modo oscuro. *@
+@* Firma: FRANCO LARA - 04/08/2026 | Separa los parametros principales y el filtro opcional del Registro de compras con el patron visual compartido de reportes. *@
 
 @{
     ViewData["Title"] = "Registro de compras";
     ViewData["AdminShell"] = true;
     var textInfo = System.Globalization.CultureInfo.CurrentCulture.TextInfo;
     var mesTexto = Model.MesesDisponibles.FirstOrDefault(x => x.Valor == Model.MesSeleccionado)?.Nombre ?? Model.MesSeleccionado.ToString("00");
+    var tieneFiltrosAvanzados = !string.IsNullOrWhiteSpace(Model.CodigoPersona);
 }
 
 <section class="dashboard-shell">
@@ -31,36 +33,73 @@
                 <div class="alert alert-danger">@Model.MensajeError</div>
             }
 
-            <form asp-action="RegistroCompras" method="get" class="workspace-filter-card">
-                <input type="hidden" name="consultar" value="true" />
-                <div class="workspace-filter-grid">
-                    <div class="workspace-field">
-                        <label class="form-label" for="anio">Anio</label>
-                        <select id="anio" name="anio" class="form-select">
-                            @foreach (var anio in Model.AniosDisponibles)
-                            {
-                                <option value="@anio" selected="@(anio == Model.AnioSeleccionado ? "selected" : null)">@anio</option>
-                            }
-                        </select>
+            <section class="workspace-section report-filter-section no-print" aria-labelledby="registro-compras-filter-title">
+                <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
+                    {
+                        Id = "registro-compras-filter-title",
+                        Category = "Filtros",
+                        Title = "Parámetros del reporte",
+                        Description = "Seleccione el periodo y, si lo necesita, limite el registro a una persona.",
+                        IconClass = "bi bi-funnel"
+                    })" />
+
+                <form asp-action="RegistroCompras" method="get" class="report-filter-form">
+                    <input type="hidden" name="consultar" value="true" />
+                    <div class="report-filter-primary-grid report-filter-grid-2">
+                        <div class="workspace-field">
+                            <label class="form-label" for="anio">Anio</label>
+                            <select id="anio" name="anio" class="form-select">
+                                @foreach (var anio in Model.AniosDisponibles)
+                                {
+                                    <option value="@anio" selected="@(anio == Model.AnioSeleccionado ? "selected" : null)">@anio</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="workspace-field">
+                            <label class="form-label" for="mes">Periodo</label>
+                            <select id="mes" name="mes" class="form-select">
+                                @foreach (var mes in Model.MesesDisponibles)
+                                {
+                                    <option value="@mes.Valor" selected="@(mes.Valor == Model.MesSeleccionado ? "selected" : null)">@textInfo.ToTitleCase(mes.Nombre)</option>
+                                }
+                            </select>
+                        </div>
                     </div>
-                    <div class="workspace-field">
-                        <label class="form-label" for="mes">Periodo</label>
-                        <select id="mes" name="mes" class="form-select">
-                            @foreach (var mes in Model.MesesDisponibles)
-                            {
-                                <option value="@mes.Valor" selected="@(mes.Valor == Model.MesSeleccionado ? "selected" : null)">@textInfo.ToTitleCase(mes.Nombre)</option>
-                            }
-                        </select>
+
+                    <div class="report-filter-toggle-wrap">
+                        <input type="checkbox" class="report-filter-toggle-input" id="registroComprasAdvancedToggle"
+                               data-report-filter-toggle data-target="registroComprasAdvancedFilters"
+                               checked="@(tieneFiltrosAvanzados ? "checked" : null)"
+                               aria-controls="registroComprasAdvancedFilters"
+                               aria-expanded="@(tieneFiltrosAvanzados ? "true" : "false")" />
+                        <label class="report-filter-toggle" for="registroComprasAdvancedToggle">
+                            <span class="report-filter-toggle-copy">
+                                <strong>Filtros avanzados</strong>
+                                <small>Consulte únicamente los comprobantes vinculados a una persona.</small>
+                            </span>
+                            <span class="report-filter-switch" aria-hidden="true"><span></span></span>
+                        </label>
                     </div>
-                    <div class="workspace-field">
+
+                    <div id="registroComprasAdvancedFilters" class="report-filter-advanced-grid report-filter-grid-1 @(tieneFiltrosAvanzados ? string.Empty : "d-none")">
+                        <div class="workspace-field">
                         <label class="form-label" for="codigoPersona">Codigo persona</label>
                         <input id="codigoPersona" name="codigoPersona" class="form-control" value="@Model.CodigoPersona" maxlength="20" placeholder="Opcional" />
                     </div>
-                    <div class="workspace-field d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary">Consultar registro</button>
                     </div>
-                </div>
-            </form>
+
+                    <div class="report-filter-actions">
+                        <a class="btn btn-outline-secondary report-filter-action" asp-action="RegistroCompras">
+                            <i class="bi bi-eraser" aria-hidden="true"></i>
+                            <span>Limpiar filtros</span>
+                        </a>
+                        <button type="submit" class="btn btn-primary report-filter-action">
+                            <i class="bi bi-search" aria-hidden="true"></i>
+                            <span>Consultar reporte</span>
+                        </button>
+                    </div>
+                </form>
+            </section>
 
             @if (Model.ConsultaEjecutada && Model.Resultados.Count == 0 && string.IsNullOrWhiteSpace(Model.MensajeError))
             {

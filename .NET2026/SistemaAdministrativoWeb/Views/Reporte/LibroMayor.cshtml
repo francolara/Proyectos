@@ -3,6 +3,7 @@
 @* Firma: FRANCO LARA - 07/07/2026 | Mantiene el reporte HTML Libro Mayor, adapta su visualizacion al formato compacto tipo hoja A4 de los reportes legacy y agrega impresion directa en pantalla. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Ajusta Libro Mayor a filtro por anio/mes y periodo contable, quita moneda editable, separa tarjetas USD y deja el saldo final solo al cierre de cada cuenta. *@
 @* Firma: FRANCO LARA - 21/07/2026 | Corrige la impresion del Libro Mayor en A4 horizontal, compacta cabecera y tablas, distribuye las tarjetas de totales en dos filas y evita heredar el modo oscuro. *@
+@* Firma: FRANCO LARA - 04/08/2026 | Separa los parametros principales y avanzados del Libro Mayor con el patron visual compartido de reportes y acciones uniformes. *@
 
 @{
     ViewData["Title"] = "Libro Mayor";
@@ -11,6 +12,9 @@
     var cuentaTexto = string.IsNullOrWhiteSpace(Model.CuentaDesde) && string.IsNullOrWhiteSpace(Model.CuentaHasta)
         ? "Todas las cuentas"
         : $"{Model.CuentaDesde} - {Model.CuentaHasta}";
+    var tieneFiltrosAvanzados = !string.IsNullOrWhiteSpace(Model.CuentaDesde)
+        || !string.IsNullOrWhiteSpace(Model.CuentaHasta)
+        || !string.IsNullOrWhiteSpace(Model.NumeroDocumento);
     var grupos = Model.Resultados
         .GroupBy(x => new { x.CodigoCuenta, x.NombreCuenta })
         .ToList();
@@ -36,32 +40,60 @@
                 <div class="alert alert-danger">@Model.MensajeError</div>
             }
 
-            <form asp-action="LibroMayor" method="get" class="workspace-filter-card">
-                <input type="hidden" name="consultar" value="true" />
-                <div class="workspace-filter-grid">
-                    <div class="workspace-field">
-                        <label class="form-label" for="anio">Anio</label>
-                        <select id="anio" name="anio" class="form-select">
-                            @foreach (var anio in Model.AniosDisponibles)
-                            {
-                                <option value="@anio" selected="@(anio == Model.AnioSeleccionado ? "selected" : null)">@anio</option>
-                            }
-                        </select>
+            <section class="workspace-section report-filter-section no-print" aria-labelledby="libro-mayor-filter-title">
+                <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
+                    {
+                        Id = "libro-mayor-filter-title",
+                        Category = "Filtros",
+                        Title = "Parámetros del reporte",
+                        Description = "Seleccione el periodo y, si lo necesita, limite la consulta por cuenta o documento.",
+                        IconClass = "bi bi-funnel"
+                    })" />
+
+                <form asp-action="LibroMayor" method="get" class="report-filter-form">
+                    <input type="hidden" name="consultar" value="true" />
+                    <div class="report-filter-primary-grid report-filter-grid-3">
+                        <div class="workspace-field">
+                            <label class="form-label" for="anio">Anio</label>
+                            <select id="anio" name="anio" class="form-select">
+                                @foreach (var anio in Model.AniosDisponibles)
+                                {
+                                    <option value="@anio" selected="@(anio == Model.AnioSeleccionado ? "selected" : null)">@anio</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="workspace-field">
+                            <label class="form-label" for="mes">Mes</label>
+                            <select id="mes" name="mes" class="form-select">
+                                @foreach (var mes in Model.MesesDisponibles)
+                                {
+                                    <option value="@mes.Valor" selected="@(mes.Valor == Model.MesSeleccionado ? "selected" : null)">@textInfo.ToTitleCase(mes.Nombre)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="workspace-field">
+                            <label class="form-label">Moneda base</label>
+                            <input class="form-control" value="Soles" readonly />
+                        </div>
                     </div>
-                    <div class="workspace-field">
-                        <label class="form-label" for="mes">Mes</label>
-                        <select id="mes" name="mes" class="form-select">
-                            @foreach (var mes in Model.MesesDisponibles)
-                            {
-                                <option value="@mes.Valor" selected="@(mes.Valor == Model.MesSeleccionado ? "selected" : null)">@textInfo.ToTitleCase(mes.Nombre)</option>
-                            }
-                        </select>
+
+                    <div class="report-filter-toggle-wrap">
+                        <input type="checkbox" class="report-filter-toggle-input" id="libroMayorAdvancedToggle"
+                               data-report-filter-toggle data-target="libroMayorAdvancedFilters"
+                               checked="@(tieneFiltrosAvanzados ? "checked" : null)"
+                               aria-controls="libroMayorAdvancedFilters"
+                               aria-expanded="@(tieneFiltrosAvanzados ? "true" : "false")" />
+                        <label class="report-filter-toggle" for="libroMayorAdvancedToggle">
+                            <span class="report-filter-toggle-copy">
+                                <strong>Filtros avanzados</strong>
+                                <small>Limite el resultado por rango de cuentas o número de documento.</small>
+                            </span>
+                            <span class="report-filter-switch" aria-hidden="true"><span></span></span>
+                        </label>
                     </div>
-                    <div class="workspace-field">
-                        <label class="form-label">Moneda base</label>
-                        <input class="form-control" value="Soles" readonly />
-                    </div>
-                    <div class="workspace-field">
+
+                    <div id="libroMayorAdvancedFilters" class="report-filter-advanced-grid report-filter-grid-3 @(tieneFiltrosAvanzados ? string.Empty : "d-none")">
+                        <div class="workspace-field">
                         <label class="form-label" for="cuentaDesde">Cuenta desde</label>
                         <input id="cuentaDesde" name="cuentaDesde" class="form-control" value="@Model.CuentaDesde" list="libro-mayor-cuentas" />
                     </div>
@@ -73,10 +105,18 @@
                         <label class="form-label" for="numeroDocumento">Nro documento</label>
                         <input id="numeroDocumento" name="numeroDocumento" class="form-control" value="@Model.NumeroDocumento" maxlength="20" />
                     </div>
-                    <div class="workspace-field d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary">Consultar mayor</button>
                     </div>
-                </div>
+
+                    <div class="report-filter-actions">
+                        <a class="btn btn-outline-secondary report-filter-action" asp-action="LibroMayor">
+                            <i class="bi bi-eraser" aria-hidden="true"></i>
+                            <span>Limpiar filtros</span>
+                        </a>
+                        <button type="submit" class="btn btn-primary report-filter-action">
+                            <i class="bi bi-search" aria-hidden="true"></i>
+                            <span>Consultar reporte</span>
+                        </button>
+                    </div>
 
                 <datalist id="libro-mayor-cuentas">
                     @foreach (var cuenta in Model.CuentasDisponibles)
@@ -84,7 +124,8 @@
                         <option value="@cuenta.Valor">@cuenta.Texto</option>
                     }
                 </datalist>
-            </form>
+                </form>
+            </section>
 
             @if (Model.ConsultaEjecutada && Model.Resultados.Count == 0 && string.IsNullOrWhiteSpace(Model.MensajeError))
             {

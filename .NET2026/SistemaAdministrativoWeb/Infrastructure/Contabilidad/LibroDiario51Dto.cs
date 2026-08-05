@@ -1,6 +1,7 @@
 namespace SistemaAdministrativoWeb.Infrastructure.Contabilidad;
 
 // Firma: FRANCO LARA - 03/08/2026 | Define 00 como tipo de comprobante predeterminado para el Libro Diario 5.1.
+// Firma: FRANCO LARA - 04/08/2026 | Recibe la referencia estructurada del Registro de Compras o Ventas usada en el campo 20.
 public sealed class LibroDiario51Dto
 {
     public string PeriodoPle { get; init; } = string.Empty;
@@ -12,6 +13,9 @@ public sealed class LibroDiario51Dto
     public string CodigoCentroCosto { get; init; } = string.Empty;
     public string CodigoMoneda { get; init; } = string.Empty;
     public string CodigoLibroRelacionado { get; init; } = string.Empty;
+    public string PeriodoReferencia { get; init; } = string.Empty;
+    public string CuoReferencia { get; init; } = string.Empty;
+    public string CorrelativoReferencia { get; init; } = string.Empty;
     public string TipoDocumentoEmisor { get; init; } = string.Empty;
     public string NumeroDocumentoEmisor { get; init; } = string.Empty;
     public string TipoComprobante { get; init; } = "00";

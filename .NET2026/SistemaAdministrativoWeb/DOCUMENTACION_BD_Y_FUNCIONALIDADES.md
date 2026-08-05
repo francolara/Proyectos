@@ -1356,30 +1356,40 @@ Formatos soportados:
 
 - `5.1 - Libro Diario`
 - `5.2 - Libro Diario Simplificado`
+- `5.3 - Plan Contable usado en el Libro Diario`
+- `5.4 - Plan Contable usado en el Libro Diario Simplificado`
 - `6.1 - Libro Mayor`
 
 Capacidades:
 
 - Filtros por empresa, año, mes, libro, moneda, estado y rango de fechas.
-- Previsualización paginada del contenido exportable sin enviar todo el periodo al navegador.
+- Previsualización paginada del contenido exportable sin enviar todo el periodo al navegador. La paginacion se aplica solo a la vista; la generacion TXT consulta y exporta siempre todos los movimientos del periodo.
 - Validaciones previas de empresa, RUC, periodo, asientos cuadrados, duplicidad de CUO/correlativos, cuentas, monedas, documentos, glosas y estados PLE. La validacion interna no observa lineas con `Debe/Haber = 0` ni fechas de operacion fuera del mes consultado.
 - La exportacion de Libros Electronicos queda fija en moneda nacional (`PEN`): la interfaz no expone selector de moneda, el nombre del archivo se genera con indicador de moneda nacional y los formatos `5.1`, `5.2` y `6.1` toman siempre `CON_AsientoDetalle.TotalImporteS` para `Debe/Haber`.
 - Cuando se exporta enero, los libros `5.1`, `5.2` y `6.1` incorporan tambien el asiento de apertura del periodo `00`; cuando se exporta diciembre, incorporan los periodos `12`, `13`, `14` y `15`.
-- Los TXT `5.1 - Libro Diario`, `5.2 - Libro Diario Simplificado` y `6.1 - Libro Mayor` conservan el palote final requerido por SUNAT y completan los `21` campos base de cada estructura, separando `Unidad de operacion` y `Centro de costo` para no desplazar columnas. No se agregan los campos libres `22` al `44` cuando no se utilizan. El campo `20` se arma como referencia estructurada `CodigoLibro + Periodo + CUO + Correlativo`.
+- Los TXT `5.1 - Libro Diario`, `5.2 - Libro Diario Simplificado` y `6.1 - Libro Mayor` conservan el palote final requerido por SUNAT y completan los `21` campos base de cada estructura, separando `Unidad de operacion` y `Centro de costo` para no desplazar columnas. No se agregan los campos libres `22` al `44` cuando no se utilizan. El CUO se genera por empresa concatenando `CodigoOrigen + Periodo + NumeroAsiento`, con el numero rellenado a ocho posiciones y sin truncarlo cuando exceda esa longitud. En los tres formatos, el campo `20` se obtiene desde el procedimiento correspondiente: `080100` para Compras, `080200` para comprobantes de no domiciliados `91/97/98` y `140100` para Ventas. La referencia usa `CodigoLibro&Periodo&CUO&Correlativo`, alcanza las lineas bancarias mediante `BAN_MovimientoBancoDetalle`, asi como asientos directos de detraccion y percepcion, y reutiliza el CUO del asiento original de Compra o Venta; queda vacia cuando no existe uno relacionado.
 - Los correlativos de los formatos `5.1`, `5.2` y `6.1` se arman con prefijo `A` para lineas del periodo `00`, `M` para periodos mensuales regulares incluyendo el ajuste del periodo `13`, y `C` solo para lineas de cierre en los periodos `14` y `15`. La `Fecha contable` usa `FechaEmision` cuando el periodo `AAAAMM` de esa fecha coincide con `CON_Asiento.Periodo`; si no coincide, se exporta `FechaAsiento`.
 - Cuando el asiento no proviene directo de `COM_Compra` o `VEN_Venta` y los datos documentarios viven en `CON_AsientoDetalle`, los PLE `5.1`, `5.2` y `6.1` priorizan `TipoDocumento`, `Serie` y `ReferenciaLinea` del detalle para poblar `TipoComprobante`, `SerieComprobante` y `NumeroComprobante` antes de usar el RUC/DNI del emisor como ultimo respaldo. Si el tipo de comprobante esta vacio, la exportacion usa `00`.
 - Generación de TXT en UTF-8 sin BOM con separador `|` y una línea por movimiento.
+- Al generar `5.1` o `5.2`, la aplicacion prepara dos TXT descargables por separado: el archivo principal y su complemento `5.3` o `5.4`. La primera presentacion de cada ejercicio exporta el plan completo con estado `1`; las siguientes comparan contra el ultimo snapshot marcado como presentado y exportan solo cuentas nuevas con estado `1` o cuentas cuyo codigo/nombre cambio con estado `9`, conservando en estas ultimas el periodo original informado. Si no existen cambios, el complemento queda vacio y su nombre usa el indicador de contenido `0`.
+- El historial permite marcar o desmarcar manualmente la ultima generacion como presentada. La generacion por si sola nunca equivale a presentacion. No se permite desmarcar un periodo con presentaciones posteriores. Para cualquier mes solicitado, el sistema revisa siempre el mes calendario inmediato anterior: si contiene movimientos y no fue marcado como presentado, bloquea la generacion y muestra el motivo antes del envio del formulario.
+- `CON_LibroElectronicoGeneracion` conserva el nombre y cantidad del complemento, la huella SHA-256, el snapshot JSON completo del plan y los datos de presentacion. `CON_PLE_PlanContableControl` se mantiene como trazabilidad historica de versiones generadas anteriores a este control.
 - Descarga temporal en memoria sin persistir el contenido del archivo en base de datos.
 - Historial de exportaciones con metadatos de archivo, usuario, totales y observaciones.
 
 Objetos SQL:
 
 - `CON_LibroElectronicoGeneracion`
+- `CON_PLE_PlanContableControl`
 - `usp_CON_PLE_LibroDiario51_Listar`
 - `usp_CON_PLE_LibroDiario52_Listar`
 - `usp_CON_PLE_LibroMayor61_Listar`
 - `usp_CON_PLE_Historial_Listar`
 - `usp_CON_PLE_Historial_Registrar`
+- `usp_CON_PLE_Presentacion_ObtenerContexto`
+- `usp_CON_PLE_Presentacion_Actualizar`
+- `usp_CON_PLE_PlanContable_ControlObtener`
+- `usp_CON_PLE_PlanContable_ControlGuardar`
 
 ## 20. Firma
 
@@ -1453,4 +1463,10 @@ Objetos SQL:
 -- Author:        FRANCO LARA / Codex
 -- Create date:   03/08/2026
 -- Description:   Documenta la correccion de los PLE 5.2 y 6.1 para generar los 21 campos base definidos por SUNAT, con correlativos A/M/C, datos documentarios, referencia estructurada y palote final.
+-- =============================================
+
+-- =============================================
+-- Author:        FRANCO LARA / Codex
+-- Create date:   04/08/2026
+-- Description:   Documenta el CUO, referencias PLE, generacion dual, presentacion reversible, continuidad obligatoria entre meses y snapshots incrementales del plan contable.
 -- =============================================

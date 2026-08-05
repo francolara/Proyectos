@@ -17876,7 +17876,6 @@ C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdminist
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\v0zgfp0y55-{0}-87fc7y1x7t-87fc7y1x7t.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\yfc7ypekbg-{0}-mlv21k5csn-mlv21k5csn.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\cyctyxk1xe-{0}-61n19gt1b8-61n19gt1b8.gz
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\9mixv7inkl-{0}-y6m94agqzp-y6m94agqzp.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\afk6hlaw1y-{0}-bqjiyaj88i-bqjiyaj88i.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\2dfw0zjjr7-{0}-c2jlpeoesf-c2jlpeoesf.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\2koda0lzme-{0}-erw9l3u2r3-erw9l3u2r3.gz
@@ -17949,5 +17948,374 @@ C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdminist
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\SistemaAdministrativoWeb.pdb
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\SistemaAdministrativoWeb.genruntimeconfig.cache
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\ref\SistemaAdministrativoWeb.dll
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\rnf1c4oivs-{0}-xvpc2x57la-xvpc2x57la.gz
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\appsettings.Development.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\appsettings.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\appsettings.Secrets.example.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\appsettings.Secrets.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\bin\Debug\net10.0\appsettings.Development.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\bin\Debug\net10.0\appsettings.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\bin\Debug\net10.0\appsettings.Secrets.example.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\bin\Debug\net10.0\appsettings.Secrets.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\bin\Debug\net10.0\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\bin\Debug\net10.0\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\bin\Debug\net10.0\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\bin\Debug\net10.0\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\SistemaAdministrativoWeb.exe
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Azure.Core.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Azure.Identity.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Humanizer.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.AspNetCore.Authentication.Google.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.AspNetCore.Identity.EntityFrameworkCore.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.AspNetCore.Identity.UI.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.Bcl.AsyncInterfaces.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.Bcl.Cryptography.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.Build.Framework.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.CodeAnalysis.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.CodeAnalysis.CSharp.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.CodeAnalysis.CSharp.Workspaces.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.CodeAnalysis.Workspaces.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.CodeAnalysis.ExternalAccess.RazorCompiler.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.CodeAnalysis.Workspaces.MSBuild.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.Data.SqlClient.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.EntityFrameworkCore.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.EntityFrameworkCore.Abstractions.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.EntityFrameworkCore.Design.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.EntityFrameworkCore.Relational.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.EntityFrameworkCore.SqlServer.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.Extensions.DependencyModel.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.Identity.Client.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.Identity.Client.Extensions.Msal.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.IdentityModel.Abstractions.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.IdentityModel.JsonWebTokens.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.IdentityModel.Logging.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.IdentityModel.Protocols.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.IdentityModel.Tokens.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.SqlServer.Server.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Microsoft.VisualStudio.SolutionPersistence.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Mono.TextTemplating.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\Newtonsoft.Json.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\System.ClientModel.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\System.CodeDom.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\System.Composition.AttributedModel.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\System.Composition.Convention.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\System.Composition.Hosting.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\System.Composition.Runtime.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\System.Composition.TypedParts.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\System.Configuration.ConfigurationManager.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\System.IdentityModel.Tokens.Jwt.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\System.Memory.Data.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\System.Security.Cryptography.ProtectedData.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\cs\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\de\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\es\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\fr\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\it\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\ja\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\ko\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\pl\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\pt-BR\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\ru\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\tr\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\zh-Hans\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\zh-Hant\Microsoft.CodeAnalysis.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\cs\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\de\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\es\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\fr\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\it\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\ja\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\ko\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\pl\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\pt-BR\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\ru\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\tr\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\zh-Hans\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\zh-Hant\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\cs\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\de\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\es\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\fr\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\it\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\ja\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\ko\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\pl\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\pt-BR\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\ru\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\tr\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\zh-Hans\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\zh-Hant\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\cs\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\de\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\es\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\fr\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\it\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\ja\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\ko\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\pl\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\pt-BR\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\ru\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\tr\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\zh-Hans\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\zh-Hant\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\cs\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\de\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\es\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\fr\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\it\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\ja\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\ko\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\pl\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\pt-BR\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\ru\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\tr\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\zh-Hans\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\zh-Hant\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\cs\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\de\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\es\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\fr\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\it\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\ja\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\ko\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\pl\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\pt-BR\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\ru\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\tr\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\zh-Hans\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\zh-Hant\Microsoft.Data.SqlClient.resources.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\runtimes\unix\lib\net9.0\Microsoft.Data.SqlClient.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\runtimes\win\lib\net9.0\Microsoft.Data.SqlClient.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\runtimes\win-arm64\native\Microsoft.Data.SqlClient.SNI.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\runtimes\win-x64\native\Microsoft.Data.SqlClient.SNI.dll
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\bin\codex-verify\Debug\net10.0\runtimes\win-x86\native\Microsoft.Data.SqlClient.SNI.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build-final\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build-final\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build-final\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build-final\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build-final\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build-final\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build-final\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build-final\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build-final\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build-final\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build-final2\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build-final2\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build-final2\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build-final2\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build-final2\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build-final2\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build-final2\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build-final2\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build-final2\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-build-final2\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-build\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-build\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-build\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-build\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-build\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-build\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-build\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-build\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-build\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-build\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-build2\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-build2\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-build2\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-build2\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-build2\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-build2\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-build2\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-build2\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-build2\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-build2\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-width\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-width\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-width\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-width\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-width\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-width\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-width\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-width\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-width\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-ui-width\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-disclosure\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-disclosure\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-disclosure\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-disclosure\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-disclosure\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-disclosure\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-disclosure\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-disclosure\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-disclosure\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-disclosure\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-sequence\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-sequence\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-sequence\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-sequence\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-sequence\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-sequence\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-sequence\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-sequence\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-sequence\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-sequence\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-observations\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-observations\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-observations\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-observations\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-observations\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-observations\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-observations\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-observations\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-observations\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-observations\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-observations2\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-observations2\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-observations2\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-observations2\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-observations2\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-observations2\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-observations2\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-observations2\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-observations2\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-observations2\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-presentation-switch\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-presentation-switch\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-presentation-switch\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-presentation-switch\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-presentation-switch\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-presentation-switch\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-presentation-switch\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-presentation-switch\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-presentation-switch\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-presentation-switch\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-actions\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-actions\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-actions\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-actions\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-actions\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-actions\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-actions\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-actions\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-actions\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-actions\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-empty-indicator\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-empty-indicator\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-empty-indicator\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-empty-indicator\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-empty-indicator\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-empty-indicator\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-empty-indicator\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-empty-indicator\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-empty-indicator\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-empty-indicator\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-empty-period\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-empty-period\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-empty-period\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-empty-period\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-empty-period\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-empty-period\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-empty-period\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-empty-period\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-empty-period\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-empty-period\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-generate-label\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-generate-label\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-generate-label\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-generate-label\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-generate-label\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-generate-label\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-generate-label\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-generate-label\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-generate-label\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-ple-generate-label\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-help-ple\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-help-ple\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-help-ple\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-help-ple\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-help-ple\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-help-ple\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-help-ple\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-help-ple\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-help-ple\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-help-ple\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\codex-analysis-filter-ui\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-analysis-filter-ui\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-analysis-filter-ui\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-analysis-filter-ui\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-analysis-filter-ui\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-analysis-filter-ui\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-analysis-filter-ui\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-analysis-filter-ui\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\codex-analysis-filter-ui\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\codex-analysis-filter-ui\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-report-filter-build\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-report-filter-build\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-report-filter-build\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-report-filter-build\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-report-filter-build\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-report-filter-build\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-report-filter-build\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-report-filter-build\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-report-filter-build\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-report-filter-build\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-report-filter-build-final\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-report-filter-build-final\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-report-filter-build-final\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-report-filter-build-final\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-report-filter-build-final\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-report-filter-build-final\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-report-filter-build-final\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-report-filter-build-final\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-report-filter-build-final\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-report-filter-build-final\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\9mixv7inkl-{0}-rnk5xe48oi-rnk5xe48oi.gz
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-bank-build\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-bank-build\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-bank-build\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-bank-build\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-bank-build\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-bank-build\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-bank-build\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-bank-build\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-bank-build\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-bank-build\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-bank-build-final\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-bank-build-final\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-bank-build-final\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-bank-build-final\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-bank-build-final\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-bank-build-final\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-bank-build-final\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-bank-build-final\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-bank-build-final\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-bank-build-final\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-colors-build\appsettings.Development.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-colors-build\appsettings.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-colors-build\appsettings.Secrets.example.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-colors-build\appsettings.Secrets.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-colors-build\SistemaAdministrativoWeb.staticwebassets.runtime.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-colors-build\SistemaAdministrativoWeb.staticwebassets.endpoints.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-colors-build\SistemaAdministrativoWeb.deps.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-colors-build\SistemaAdministrativoWeb.runtimeconfig.json
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-colors-build\SistemaAdministrativoWeb.dll
+C:\Users\Franco Lara\AppData\Local\Temp\sisadm-dashboard-colors-build\SistemaAdministrativoWeb.pdb
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\compressed\rnf1c4oivs-{0}-x71yzqlooz-x71yzqlooz.gz
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaAdministrativoWeb\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt

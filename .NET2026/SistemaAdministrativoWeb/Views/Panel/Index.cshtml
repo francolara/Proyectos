@@ -3,6 +3,7 @@
 @* Firma: FRANCO LARA - 08/07/2026 | Reestructura el dashboard con KPIs reales del periodo, indicadores operativos, tendencias de compras y ventas y graficos CSS para distribucion de registros por modulo, movimientos bancarios y aplicaciones. *@
 @* Firma: FRANCO LARA - 21/07/2026 | Agrega la impresion HTML del dashboard en formato ejecutivo A4 horizontal, con KPIs, indicadores, tendencias y distribucion del periodo. *@
 @* Firma: FRANCO LARA - 31/07/2026 | Adopta el patron global de titulo y subtitulos administrativos con iconos y degradado verde, conservando la impresion ejecutiva. *@
+@* Firma: FRANCO LARA - 05/08/2026 | Agrega el grafico historico bancario y diferencia semanticamente las torres: compras azules, ventas verdes y banca violeta. *@
 @{
     ViewData["Title"] = "Panel administrativo";
     ViewData["AdminShell"] = true;
@@ -10,6 +11,7 @@
     var totalDistribucion = Model.DistribucionRegistros.Sum(x => x.Valor);
     var maximoCompras = Math.Max(1m, Model.ComprasPorPeriodo.Count == 0 ? 0m : Model.ComprasPorPeriodo.Max(x => Math.Max(x.ImporteTotalPen, x.ImporteTotalUsd)));
     var maximoVentas = Math.Max(1m, Model.VentasPorPeriodo.Count == 0 ? 0m : Model.VentasPorPeriodo.Max(x => Math.Max(x.ImporteTotalPen, x.ImporteTotalUsd)));
+    var maximoMovimientosBancarios = Math.Max(1m, Model.MovimientosBancariosPorPeriodo.Count == 0 ? 0m : Model.MovimientosBancariosPorPeriodo.Max(x => Math.Max(x.ImporteTotalPen, x.ImporteTotalUsd)));
     var donutStops = new List<string>();
     decimal acumulado = 0m;
 
@@ -185,7 +187,7 @@
                         IconClass = "bi bi-receipt"
                     })" />
 
-                <div class="dashboard-bar-chart">
+                <div class="dashboard-bar-chart dashboard-sales-chart">
                     @foreach (var item in Model.VentasPorPeriodo)
                     {
                         var altura = maximoVentas <= 0m ? 0m : Math.Round(Math.Max(item.ImporteTotalPen, item.ImporteTotalUsd) * 100m / maximoVentas, 2);
@@ -194,6 +196,30 @@
                             <div class="dashboard-bar-column"></div>
                             <strong>@item.Periodo</strong>
                             <small>@item.Registros registro(s)</small>
+                        </article>
+                    }
+                </div>
+            </article>
+
+            <article class="workspace-section dashboard-analytics-card" aria-labelledby="dashboard-bank-movements-title">
+                <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
+                    {
+                        Id = "dashboard-bank-movements-title",
+                        Category = "Gráfico de torres",
+                        Title = "Movimientos bancarios por periodo",
+                        Description = "Comparativo de importes y cantidad de movimientos bancarios en los últimos seis periodos del sistema.",
+                        IconClass = "bi bi-bank"
+                    })" />
+
+                <div class="dashboard-bar-chart dashboard-bank-chart">
+                    @foreach (var item in Model.MovimientosBancariosPorPeriodo)
+                    {
+                        var altura = maximoMovimientosBancarios <= 0m ? 0m : Math.Round(Math.Max(item.ImporteTotalPen, item.ImporteTotalUsd) * 100m / maximoMovimientosBancarios, 2);
+                        <article class="dashboard-bar-item" style="--bar-height:@altura.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%">
+                            <span class="dashboard-bar-value">PEN @item.ImporteTotalPen.ToString("0.00") | USD @item.ImporteTotalUsd.ToString("0.00")</span>
+                            <div class="dashboard-bar-column"></div>
+                            <strong>@item.Periodo</strong>
+                            <small>@item.Registros movimiento(s)</small>
                         </article>
                     }
                 </div>

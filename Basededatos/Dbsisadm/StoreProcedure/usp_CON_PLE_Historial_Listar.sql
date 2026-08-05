@@ -4,6 +4,12 @@
 -- Description:   Lista el historial paginado de exportaciones de libros electrónicos por empresa, periodo y libro.
 -- =============================================
 
+-- =============================================
+-- Author:        FRANCO LARA / Codex
+-- Create date:   04/08/2026
+-- Description:   Expone archivo complementario y estado manual de presentacion por generacion.
+-- =============================================
+
 CREATE OR ALTER PROCEDURE dbo.usp_CON_PLE_Historial_Listar
     @IdEmpresa INT,
     @Periodo CHAR(6),
@@ -37,6 +43,12 @@ BEGIN
                 h.Observaciones,
                 h.FechaGeneracion,
                 h.UsuarioGeneracion,
+                h.CodigoFormatoComplementario,
+                h.NombreArchivoComplementario,
+                h.CantidadRegistrosComplementario,
+                h.PlanPresentado,
+                h.FechaPresentacion,
+                h.UsuarioPresentacion,
                 ROW_NUMBER() OVER (ORDER BY h.FechaGeneracion DESC, h.IdLibroElectronicoGeneracion DESC) AS RowNum,
                 COUNT(1) OVER () AS TotalRegistros
             FROM dbo.CON_LibroElectronicoGeneracion AS h
@@ -58,6 +70,12 @@ BEGIN
             Observaciones,
             FechaGeneracion,
             UsuarioGeneracion,
+            CodigoFormatoComplementario,
+            NombreArchivoComplementario,
+            CantidadRegistrosComplementario,
+            PlanPresentado,
+            FechaPresentacion,
+            UsuarioPresentacion,
             TotalRegistros
         FROM Historial
         WHERE RowNum BETWEEN ((@PaginaTrabajo - 1) * @TamanoTrabajo) + 1 AND @PaginaTrabajo * @TamanoTrabajo

@@ -1,5 +1,6 @@
 namespace SistemaAdministrativoWeb.ViewModels.Panel;
 
+// Firma: FRANCO LARA - 05/08/2026 | Expone la serie historica bancaria para su representacion en el dashboard.
 public sealed class PanelIndexViewModel
 {
     public int IdEmpresa { get; init; }
@@ -23,6 +24,7 @@ public sealed class PanelIndexViewModel
     public IReadOnlyCollection<PanelIndicadorViewModel> Indicadores { get; init; } = [];
     public IReadOnlyCollection<PanelSeriePeriodoViewModel> ComprasPorPeriodo { get; init; } = [];
     public IReadOnlyCollection<PanelSeriePeriodoViewModel> VentasPorPeriodo { get; init; } = [];
+    public IReadOnlyCollection<PanelSeriePeriodoViewModel> MovimientosBancariosPorPeriodo { get; init; } = [];
     public IReadOnlyCollection<PanelDistribucionItemViewModel> DistribucionRegistros { get; init; } = [];
     public IReadOnlyCollection<PanelModuloViewModel> Modulos { get; init; } = [];
 }

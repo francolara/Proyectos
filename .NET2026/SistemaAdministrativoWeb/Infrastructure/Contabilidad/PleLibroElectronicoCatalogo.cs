@@ -4,6 +4,8 @@ public static class PleLibroElectronicoCatalogo
 {
     public const string LibroDiario51 = "5.1";
     public const string LibroDiario52 = "5.2";
+    public const string PlanContable53 = "5.3";
+    public const string PlanContable54 = "5.4";
     public const string LibroMayor61 = "6.1";
 
     public static readonly IReadOnlyDictionary<string, string> Nombres = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -17,6 +19,8 @@ public static class PleLibroElectronicoCatalogo
     {
         [LibroDiario51] = "050100",
         [LibroDiario52] = "050200",
+        [PlanContable53] = "050300",
+        [PlanContable54] = "050400",
         [LibroMayor61] = "060100"
     };
 
@@ -45,9 +49,19 @@ public static class PleLibroElectronicoCatalogo
 
     public static string ObtenerCodigoSunat(string? codigo)
     {
-        var normalizado = Normalizar(codigo);
-        return CodigosSunat.TryGetValue(normalizado, out var valor)
+        var codigoTrabajo = codigo?.Trim() ?? string.Empty;
+        return CodigosSunat.TryGetValue(codigoTrabajo, out var valor)
             ? valor
             : CodigosSunat[LibroDiario51];
+    }
+
+    public static string? ObtenerPlanComplementario(string? codigo)
+    {
+        return Normalizar(codigo) switch
+        {
+            LibroDiario51 => PlanContable53,
+            LibroDiario52 => PlanContable54,
+            _ => null
+        };
     }
 }

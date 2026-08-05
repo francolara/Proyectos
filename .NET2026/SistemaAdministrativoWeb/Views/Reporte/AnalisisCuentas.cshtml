@@ -4,6 +4,7 @@
 @* Firma: FRANCO LARA - 08/07/2026 | Reestructura Analisis de cuentas segun las vistas legacy Por auxiliar, Auxiliar y documento y Detallado, segmentando por cuenta y persona, agrupando documentos cuando corresponde y usando solo importes de la moneda seleccionada. *@
 @* Firma: FRANCO LARA - 11/07/2026 | Corrige el bloque final de totales en modo oscuro y ajusta el formateo del saldo final del reporte. *@
 @* Firma: FRANCO LARA - 21/07/2026 | Corrige la impresion del Analisis de cuentas en A4 horizontal, compacta cabecera y tablas y evita heredar el modo oscuro. *@
+@* Firma: FRANCO LARA - 04/08/2026 | Reorganiza los parametros del reporte en filtros principales y avanzados desplegables, con acciones uniformes y diseño adaptable. *@
 
 @{
     ViewData["Title"] = "Analisis de cuentas";
@@ -17,6 +18,9 @@
     var estadoTexto = Model.EstadosDisponibles.FirstOrDefault(x => x.Valor == Model.EstadoSeleccionado)?.Texto ?? "Todos";
     var esPorAuxiliar = Model.TipoSeleccionado == "2";
     var esPorDocumento = Model.TipoSeleccionado == "1";
+    var tieneFiltrosAvanzados = !string.IsNullOrWhiteSpace(Model.CuentaDesde)
+        || !string.IsNullOrWhiteSpace(Model.CuentaHasta)
+        || !string.IsNullOrWhiteSpace(Model.Auxiliar);
     var cuentasAgrupadas = Model.Resultados
         .GroupBy(x => new { x.CodigoCuenta, x.NombreCuenta })
         .OrderBy(x => x.Key.CodigoCuenta)
@@ -53,78 +57,116 @@
                 <div class="alert alert-danger">@Model.MensajeError</div>
             }
 
-            <form asp-action="AnalisisCuentas" method="get" class="workspace-filter-card">
-                <input type="hidden" name="consultar" value="true" />
-                <div class="workspace-filter-grid">
-                    <div class="workspace-field">
-                        <label class="form-label" for="anio">Anio</label>
-                        <select id="anio" name="anio" class="form-select">
-                            @foreach (var anio in Model.AniosDisponibles)
-                            {
-                                <option value="@anio" selected="@(anio == Model.AnioSeleccionado ? "selected" : null)">@anio</option>
-                            }
-                        </select>
-                    </div>
-                    <div class="workspace-field">
-                        <label class="form-label" for="mes">Mes</label>
-                        <select id="mes" name="mes" class="form-select">
-                            @foreach (var mes in Model.MesesDisponibles)
-                            {
-                                <option value="@mes.Valor" selected="@(mes.Valor == Model.MesSeleccionado ? "selected" : null)">@textInfo.ToTitleCase(mes.Nombre)</option>
-                            }
-                        </select>
-                    </div>
-                    <div class="workspace-field">
-                        <label class="form-label" for="moneda">Moneda</label>
-                        <select id="moneda" name="moneda" class="form-select">
-                            @foreach (var moneda in Model.MonedasDisponibles)
-                            {
-                                <option value="@moneda.Valor" selected="@(moneda.Valor == Model.MonedaSeleccionada ? "selected" : null)">@moneda.Texto</option>
-                            }
-                        </select>
-                    </div>
-                    <div class="workspace-field">
-                        <label class="form-label" for="estado">Estado</label>
-                        <select id="estado" name="estado" class="form-select">
-                            @foreach (var estado in Model.EstadosDisponibles)
-                            {
-                                <option value="@estado.Valor" selected="@(estado.Valor == Model.EstadoSeleccionado ? "selected" : null)">@estado.Texto</option>
-                            }
-                        </select>
-                    </div>
-                    <div class="workspace-field">
-                        <label class="form-label" for="tipo">Vista</label>
-                        <select id="tipo" name="tipo" class="form-select">
-                            @foreach (var tipo in Model.TiposDisponibles)
-                            {
-                                <option value="@tipo.Valor" selected="@(tipo.Valor == Model.TipoSeleccionado ? "selected" : null)">@tipo.Texto</option>
-                            }
-                        </select>
-                    </div>
-                    <div class="workspace-field">
-                        <label class="form-label" for="cuentaDesde">Cuenta desde</label>
-                        <input id="cuentaDesde" name="cuentaDesde" class="form-control" value="@Model.CuentaDesde" list="analisis-cuentas-lista" />
-                    </div>
-                    <div class="workspace-field">
-                        <label class="form-label" for="cuentaHasta">Cuenta hasta</label>
-                        <input id="cuentaHasta" name="cuentaHasta" class="form-control" value="@Model.CuentaHasta" list="analisis-cuentas-lista" />
-                    </div>
-                    <div class="workspace-field">
-                        <label class="form-label" for="auxiliar">Nro documento</label>
-                        <input id="auxiliar" name="auxiliar" class="form-control" value="@Model.Auxiliar" maxlength="20" />
-                    </div>
-                    <div class="workspace-field d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary">Consultar analisis</button>
-                    </div>
-                </div>
-
-                <datalist id="analisis-cuentas-lista">
-                    @foreach (var cuenta in Model.CuentasDisponibles)
+            <section class="workspace-section report-filter-section no-print" aria-labelledby="analysis-filter-title">
+                <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
                     {
-                        <option value="@cuenta.Valor">@cuenta.Texto</option>
-                    }
-                </datalist>
-            </form>
+                        Id = "analysis-filter-title",
+                        Category = "Filtros",
+                        Title = "Parámetros del reporte",
+                        Description = "Seleccione el periodo, la vista y los filtros que desea consultar.",
+                        IconClass = "bi bi-funnel"
+                    })" />
+
+                <form asp-action="AnalisisCuentas" method="get" class="report-filter-form">
+                    <input type="hidden" name="consultar" value="true" />
+
+                    <div class="report-filter-primary-grid report-filter-grid-5">
+                        <div class="workspace-field">
+                            <label class="form-label" for="anio">Año</label>
+                            <select id="anio" name="anio" class="form-select">
+                                @foreach (var anio in Model.AniosDisponibles)
+                                {
+                                    <option value="@anio" selected="@(anio == Model.AnioSeleccionado ? "selected" : null)">@anio</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="workspace-field">
+                            <label class="form-label" for="mes">Mes</label>
+                            <select id="mes" name="mes" class="form-select">
+                                @foreach (var mes in Model.MesesDisponibles)
+                                {
+                                    <option value="@mes.Valor" selected="@(mes.Valor == Model.MesSeleccionado ? "selected" : null)">@textInfo.ToTitleCase(mes.Nombre)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="workspace-field">
+                            <label class="form-label" for="moneda">Moneda</label>
+                            <select id="moneda" name="moneda" class="form-select">
+                                @foreach (var moneda in Model.MonedasDisponibles)
+                                {
+                                    <option value="@moneda.Valor" selected="@(moneda.Valor == Model.MonedaSeleccionada ? "selected" : null)">@moneda.Texto</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="workspace-field">
+                            <label class="form-label" for="tipo">Vista</label>
+                            <select id="tipo" name="tipo" class="form-select">
+                                @foreach (var tipo in Model.TiposDisponibles)
+                                {
+                                    <option value="@tipo.Valor" selected="@(tipo.Valor == Model.TipoSeleccionado ? "selected" : null)">@tipo.Texto</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="workspace-field">
+                            <label class="form-label" for="estado">Estado</label>
+                            <select id="estado" name="estado" class="form-select">
+                                @foreach (var estado in Model.EstadosDisponibles)
+                                {
+                                    <option value="@estado.Valor" selected="@(estado.Valor == Model.EstadoSeleccionado ? "selected" : null)">@estado.Texto</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="report-filter-toggle-wrap">
+                        <input type="checkbox" class="report-filter-toggle-input" id="analysisAdvancedToggle"
+                               data-report-filter-toggle data-target="analysisAdvancedFilters"
+                               checked="@(tieneFiltrosAvanzados ? "checked" : null)"
+                               aria-controls="analysisAdvancedFilters"
+                               aria-expanded="@(tieneFiltrosAvanzados ? "true" : "false")" />
+                        <label class="report-filter-toggle" for="analysisAdvancedToggle">
+                            <span class="report-filter-toggle-copy">
+                                <strong>Filtros avanzados</strong>
+                                <small>Limite el resultado por rango de cuentas o número de documento.</small>
+                            </span>
+                            <span class="report-filter-switch" aria-hidden="true"><span></span></span>
+                        </label>
+                    </div>
+
+                    <div id="analysisAdvancedFilters" class="report-filter-advanced-grid report-filter-grid-3 @(tieneFiltrosAvanzados ? string.Empty : "d-none")">
+                        <div class="workspace-field">
+                            <label class="form-label" for="cuentaDesde">Cuenta desde</label>
+                            <input id="cuentaDesde" name="cuentaDesde" class="form-control" value="@Model.CuentaDesde" list="analisis-cuentas-lista" autocomplete="off" />
+                        </div>
+                        <div class="workspace-field">
+                            <label class="form-label" for="cuentaHasta">Cuenta hasta</label>
+                            <input id="cuentaHasta" name="cuentaHasta" class="form-control" value="@Model.CuentaHasta" list="analisis-cuentas-lista" autocomplete="off" />
+                        </div>
+                        <div class="workspace-field">
+                            <label class="form-label" for="auxiliar">Nro. de documento</label>
+                            <input id="auxiliar" name="auxiliar" class="form-control" value="@Model.Auxiliar" maxlength="20" autocomplete="off" />
+                        </div>
+                    </div>
+
+                    <div class="report-filter-actions">
+                        <a class="btn btn-outline-secondary report-filter-action" asp-action="AnalisisCuentas">
+                            <i class="bi bi-eraser" aria-hidden="true"></i>
+                            <span>Limpiar filtros</span>
+                        </a>
+                        <button type="submit" class="btn btn-primary report-filter-action">
+                            <i class="bi bi-search" aria-hidden="true"></i>
+                            <span>Consultar reporte</span>
+                        </button>
+                    </div>
+
+                    <datalist id="analisis-cuentas-lista">
+                        @foreach (var cuenta in Model.CuentasDisponibles)
+                        {
+                            <option value="@cuenta.Valor">@cuenta.Texto</option>
+                        }
+                    </datalist>
+                </form>
+            </section>
 
             @if (Model.ConsultaEjecutada && Model.Resultados.Count == 0 && string.IsNullOrWhiteSpace(Model.MensajeError))
             {
@@ -363,3 +405,177 @@
         </div>
     </section>
 </section>
+
+<style>
+    .analysis-filter-section {
+        margin-top: 1rem;
+        border-radius: 1.15rem;
+        box-shadow: none;
+    }
+
+    .analysis-filter-form {
+        padding: 1.1rem 1.15rem 1.15rem;
+    }
+
+    .analysis-primary-grid {
+        display: grid;
+        grid-template-columns: minmax(7rem, 0.65fr) minmax(10rem, 1fr) minmax(9rem, 0.85fr) minmax(13rem, 1.35fr) minmax(9rem, 1fr);
+        gap: 0.85rem;
+        align-items: end;
+    }
+
+    .analysis-filter-form .workspace-field .form-control,
+    .analysis-filter-form .workspace-field .form-select {
+        min-height: 2.8rem;
+        border-radius: 0.8rem;
+    }
+
+    .analysis-advanced-toggle-wrap {
+        margin-top: 1rem;
+        padding-top: 0.9rem;
+        border-top: 1px solid var(--app-line);
+    }
+
+    .analysis-advanced-input {
+        position: absolute;
+        inline-size: 1px;
+        block-size: 1px;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .analysis-advanced-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.72rem 0.85rem;
+        border: 1px solid rgba(93, 117, 158, 0.28);
+        border-radius: 0.85rem;
+        background: rgba(247, 250, 252, 0.72);
+        cursor: pointer;
+        transition: border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .analysis-advanced-toggle:hover,
+    .analysis-advanced-input:focus-visible + .analysis-advanced-toggle {
+        border-color: rgba(31, 143, 105, 0.48);
+    }
+
+    .analysis-advanced-copy {
+        display: flex;
+        flex-direction: column;
+        gap: 0.16rem;
+        min-width: 0;
+    }
+
+    .analysis-advanced-copy strong {
+        color: var(--app-ink);
+        font-size: 0.88rem;
+    }
+
+    .analysis-advanced-copy small {
+        color: var(--app-muted);
+        font-size: 0.75rem;
+    }
+
+    .analysis-advanced-switch {
+        flex: 0 0 auto;
+        width: 2.9rem;
+        height: 1.65rem;
+        padding: 0.18rem;
+        border-radius: 999px;
+        background: #b9c6ca;
+        transition: background 0.18s ease;
+    }
+
+    .analysis-advanced-switch > span {
+        display: block;
+        width: 1.29rem;
+        height: 1.29rem;
+        border-radius: 50%;
+        background: #ffffff;
+        box-shadow: 0 3px 9px rgba(16, 24, 40, 0.22);
+        transition: transform 0.18s ease;
+    }
+
+    .analysis-advanced-input:checked + .analysis-advanced-toggle {
+        border-color: rgba(31, 143, 105, 0.4);
+        background: rgba(232, 248, 241, 0.82);
+    }
+
+    .analysis-advanced-input:checked + .analysis-advanced-toggle .analysis-advanced-switch {
+        background: linear-gradient(135deg, #177a5b, #43bc91);
+    }
+
+    .analysis-advanced-input:checked + .analysis-advanced-toggle .analysis-advanced-switch > span {
+        transform: translateX(1.25rem);
+    }
+
+    .analysis-advanced-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.85rem;
+        padding: 0.95rem 0.2rem 0.1rem;
+        animation: analysis-filter-reveal 0.18s ease-out;
+    }
+
+    .analysis-filter-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 0.65rem;
+        margin-top: 1rem;
+        padding-top: 0.9rem;
+        border-top: 1px solid var(--app-line);
+    }
+
+    .analysis-filter-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
+        min-width: 10.75rem;
+        min-height: 2.55rem;
+    }
+
+    html[data-theme="dark"] .analysis-advanced-toggle {
+        border-color: rgba(93, 117, 158, 0.3);
+        background: rgba(17, 27, 45, 0.96);
+    }
+
+    html[data-theme="dark"] .analysis-advanced-input:checked + .analysis-advanced-toggle {
+        border-color: rgba(58, 159, 123, 0.42);
+        background: rgba(12, 43, 35, 0.96);
+    }
+
+    html[data-theme="dark"] .analysis-advanced-switch {
+        background: #405068;
+    }
+
+    @@keyframes analysis-filter-reveal {
+        from { opacity: 0; transform: translateY(-4px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @@media (max-width: 1199.98px) {
+        .analysis-primary-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 767.98px) {
+        .analysis-primary-grid,
+        .analysis-advanced-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .analysis-filter-actions {
+            flex-direction: column-reverse;
+        }
+
+        .analysis-filter-action {
+            width: 100%;
+        }
+    }
+</style>

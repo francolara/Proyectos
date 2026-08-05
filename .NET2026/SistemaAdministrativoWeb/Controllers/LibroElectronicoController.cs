@@ -31,11 +31,14 @@ public sealed class LibroElectronicoController(
         int paginaPreview = 1,
         int paginaHistorial = 1,
         string? tokenDescarga = null,
+        string? tokenDescargaComplementario = null,
         CancellationToken cancellationToken = default)
     {
         var model = await ConstruirModeloBaseAsync(idEmpresa, anio, mes, libroElectronico, moneda, paginaPreview, paginaHistorial, cancellationToken);
         model.TokenDescarga = tokenDescarga?.Trim() ?? string.Empty;
+        model.TokenDescargaComplementario = tokenDescargaComplementario?.Trim() ?? string.Empty;
         model.PuedeDescargarTxt = !string.IsNullOrWhiteSpace(model.TokenDescarga) && model.PuedeDescargar;
+        model.PuedeDescargarComplementario = !string.IsNullOrWhiteSpace(model.TokenDescargaComplementario) && model.PuedeDescargar;
 
         if (string.IsNullOrWhiteSpace(operacion))
         {
@@ -45,10 +48,7 @@ public sealed class LibroElectronicoController(
         try
         {
             var request = CrearRequest(model);
-            var resultado = string.Equals(operacion, "validar", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(operacion, "observaciones", StringComparison.OrdinalIgnoreCase)
-                ? await libroElectronicoService.ValidarAsync(request, model.EmpresaNombre, model.EmpresaRuc, paginaPreview, TamanoPaginaPreview, paginaHistorial, TamanoPaginaHistorial, cancellationToken)
-                : await libroElectronicoService.ConsultarAsync(request, model.EmpresaNombre, model.EmpresaRuc, paginaPreview, TamanoPaginaPreview, paginaHistorial, TamanoPaginaHistorial, cancellationToken);
+            var resultado = await libroElectronicoService.ValidarAsync(request, model.EmpresaNombre, model.EmpresaRuc, paginaPreview, TamanoPaginaPreview, paginaHistorial, TamanoPaginaHistorial, cancellationToken);
 
             AplicarResultado(model, resultado, operacion);
         }
@@ -74,7 +74,9 @@ public sealed class LibroElectronicoController(
             var resultado = await libroElectronicoService.GenerarAsync(request, vista.EmpresaNombre, vista.EmpresaRuc, usuario, vista.PaginaPreview, TamanoPaginaPreview, vista.PaginaHistorial, TamanoPaginaHistorial, cancellationToken);
             AplicarResultado(vista, resultado.Consulta, "generar");
             vista.TokenDescarga = resultado.TokenDescarga;
+            vista.TokenDescargaComplementario = resultado.TokenDescargaComplementario;
             vista.PuedeDescargarTxt = resultado.Generado && !string.IsNullOrWhiteSpace(resultado.TokenDescarga) && vista.PuedeDescargar;
+            vista.PuedeDescargarComplementario = resultado.Generado && !string.IsNullOrWhiteSpace(resultado.TokenDescargaComplementario) && vista.PuedeDescargar;
 
             if (resultado.Generado)
             {
@@ -88,10 +90,49 @@ public sealed class LibroElectronicoController(
         catch (Exception ex)
         {
             logger.LogError(ex, "Error generando libro electrónico para empresa {EmpresaId}, periodo {Anio}-{Mes}.", vista.IdEmpresa, vista.AnioSeleccionado, vista.MesSeleccionado);
-            vista.MensajeError = "No se pudo generar el archivo TXT del libro electrónico.";
+            vista.MensajeError = "No se pudo generar el archivo del libro electrónico.";
         }
 
         return View("Index", vista);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ActualizarPresentacion(LibroElectronicoViewModel model, bool presentado, CancellationToken cancellationToken = default)
+    {
+        var vista = await ConstruirModeloBaseAsync(model.IdEmpresa, model.AnioSeleccionado, model.MesSeleccionado, model.LibroElectronicoSeleccionado, model.MonedaSeleccionada, 1, 1, cancellationToken);
+        try
+        {
+            if (!vista.PuedeGenerar)
+            {
+                return Forbid();
+            }
+
+            var usuario = (await userManager.GetUserAsync(User))?.Email ?? User.Identity?.Name ?? "usuario";
+            await libroElectronicoService.ActualizarPresentacionAsync(new PlePresentacionUpdateRequest
+            {
+                IdEmpresa = vista.IdEmpresa,
+                IdLibroElectronicoGeneracion = model.Presentacion.IdGeneracionPeriodo ?? 0,
+                Presentado = presentado,
+                UsuarioPresentacion = usuario
+            }, cancellationToken);
+            TempData["LibroElectronicoOk"] = presentado
+                ? "El periodo fue marcado como presentado. Su snapshot sera la base de la siguiente generacion."
+                : "La marca de presentacion fue retirada.";
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error actualizando la presentacion PLE {GeneracionId}.", model.Presentacion.IdGeneracionPeriodo);
+            TempData["LibroElectronicoError"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Index), new
+        {
+            anio = vista.AnioSeleccionado,
+            mes = vista.MesSeleccionado,
+            libroElectronico = vista.LibroElectronicoSeleccionado,
+            operacion = "consultar"
+        });
     }
 
     [HttpGet]
@@ -109,7 +150,7 @@ public sealed class LibroElectronicoController(
             return RedirectToAction(nameof(Index));
         }
 
-        return File(payload.Content, "text/plain; charset=utf-8", payload.FileName);
+        return File(payload.Content, payload.ContentType, payload.FileName);
     }
 
     private async Task<LibroElectronicoViewModel> ConstruirModeloBaseAsync(
@@ -189,6 +230,10 @@ public sealed class LibroElectronicoController(
         {
             model.MensajeError = mensajeError;
         }
+        if (TempData.TryGetValue("LibroElectronicoOk", out var okTemporal) && okTemporal is string mensajeOk)
+        {
+            model.MensajeExito = mensajeOk;
+        }
 
         return model;
     }
@@ -211,9 +256,7 @@ public sealed class LibroElectronicoController(
     private static void AplicarResultado(LibroElectronicoViewModel model, PleConsultaResultadoDto resultado, string operacion)
     {
         model.ConsultaEjecutada = true;
-        model.ValidacionEjecutada = string.Equals(operacion, "validar", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(operacion, "observaciones", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(operacion, "generar", StringComparison.OrdinalIgnoreCase);
+        model.ValidacionEjecutada = true;
         model.OperacionEjecutada = operacion;
         model.Resumen = resultado.Resumen;
         model.Validacion = resultado.Validacion;
@@ -221,6 +264,9 @@ public sealed class LibroElectronicoController(
         model.LibroDiario52Items = resultado.LibroDiario52Items;
         model.LibroMayor61Items = resultado.LibroMayor61Items;
         model.HistorialItems = resultado.Historial.Items;
+        model.Presentacion = resultado.Presentacion;
+        model.GeneracionBloqueada = resultado.GeneracionBloqueada;
+        model.MensajeBloqueoGeneracion = resultado.MensajeBloqueoGeneracion;
         model.PreviewPaginacion = new PaginacionViewModel
         {
             PaginaActual = resultado.PaginaPreview,

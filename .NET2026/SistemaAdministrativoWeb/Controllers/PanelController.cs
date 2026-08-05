@@ -8,6 +8,7 @@ using SistemaAdministrativoWeb.ViewModels.Panel;
 
 namespace SistemaAdministrativoWeb.Controllers;
 
+// Firma: FRANCO LARA - 05/08/2026 | Incorpora la serie historica de movimientos bancarios por moneda en el dashboard administrativo.
 [Authorize]
 [ModulePermission("DASHBOARD")]
 public class PanelController(
@@ -66,8 +67,22 @@ public class PanelController(
         var ventasHistoricasTasks = periodosHistoricos
             .Select(periodo => ventaRepository.ListarPorEmpresaAsync(empresaId, periodo.codigo, cancellationToken))
             .ToArray();
+        var movimientosBancariosHistoricosTasks = periodosHistoricos
+            .Select(periodo => cajaBancoRepository.ListarPaginadoPorEmpresaAsync(
+                empresaId,
+                null,
+                periodo.anio,
+                periodo.mes,
+                null,
+                1,
+                int.MaxValue,
+                cancellationToken))
+            .ToArray();
 
-        await Task.WhenAll(comprasHistoricasTasks.Cast<Task>().Concat(ventasHistoricasTasks.Cast<Task>()));
+        await Task.WhenAll(
+            comprasHistoricasTasks.Cast<Task>()
+                .Concat(ventasHistoricasTasks.Cast<Task>())
+                .Concat(movimientosBancariosHistoricosTasks.Cast<Task>()));
 
         var comprasPorPeriodo = periodosHistoricos
             .Zip(comprasHistoricasTasks, (periodo, task) => new PanelSeriePeriodoViewModel
@@ -91,6 +106,19 @@ public class PanelController(
                     .Where(x => string.Equals(x.CodigoMoneda, "PEN", StringComparison.OrdinalIgnoreCase))
                     .Sum(x => x.ImporteTotal),
                 ImporteTotalUsd = task.Result
+                    .Where(x => string.Equals(x.CodigoMoneda, "USD", StringComparison.OrdinalIgnoreCase))
+                    .Sum(x => x.ImporteTotal)
+            })
+            .ToList();
+        var movimientosBancariosPorPeriodo = periodosHistoricos
+            .Zip(movimientosBancariosHistoricosTasks, (periodo, task) => new PanelSeriePeriodoViewModel
+            {
+                Periodo = periodo.etiqueta,
+                Registros = task.Result.TotalRecords,
+                ImporteTotalPen = task.Result.Items
+                    .Where(x => string.Equals(x.CodigoMoneda, "PEN", StringComparison.OrdinalIgnoreCase))
+                    .Sum(x => x.ImporteTotal),
+                ImporteTotalUsd = task.Result.Items
                     .Where(x => string.Equals(x.CodigoMoneda, "USD", StringComparison.OrdinalIgnoreCase))
                     .Sum(x => x.ImporteTotal)
             })
@@ -133,6 +161,7 @@ public class PanelController(
             TotalCuentasCorrientesActivas = cuentasCorrientes.Count,
             ComprasPorPeriodo = comprasPorPeriodo,
             VentasPorPeriodo = ventasPorPeriodo,
+            MovimientosBancariosPorPeriodo = movimientosBancariosPorPeriodo,
             DistribucionRegistros = distribucionRegistros,
             Indicadores =
             [
@@ -307,15 +336,15 @@ public class PanelController(
         return ((short)today.Year, (byte)today.Month);
     }
 
-    private static IReadOnlyCollection<(string codigo, string etiqueta)> ConstruirPeriodosHistoricos(int totalPeriodos)
+    private static IReadOnlyCollection<(short anio, byte mes, string codigo, string etiqueta)> ConstruirPeriodosHistoricos(int totalPeriodos)
     {
         var inicio = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(-(Math.Max(1, totalPeriodos) - 1));
-        var periodos = new List<(string codigo, string etiqueta)>();
+        var periodos = new List<(short anio, byte mes, string codigo, string etiqueta)>();
 
         for (var indice = 0; indice < Math.Max(1, totalPeriodos); indice++)
         {
             var fecha = inicio.AddMonths(indice);
-            periodos.Add(($"{fecha.Year:0000}{fecha.Month:00}", $"{fecha.Month:00}/{fecha.Year:0000}"));
+            periodos.Add(((short)fecha.Year, (byte)fecha.Month, $"{fecha.Year:0000}{fecha.Month:00}", $"{fecha.Month:00}/{fecha.Year:0000}"));
         }
 
         return periodos;

@@ -3,6 +3,7 @@
 @* Firma: FRANCO LARA - 07/07/2026 | Crea el reporte HTML Balance de comprobacion replicando FrmBalanceComprobacion del legacy, corrige la presentacion para seguir el formato compacto tipo rptBalanceComprobacionA4, agrega impresion directa y ajusta nombres/columnas para alinearlo mejor al formato A4 legacy. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Corrige el envio por GET de los checks de filtros para que conserven el estado desmarcado al consultar el balance, apliquen correctamente los rangos configurados y actualiza el subtitulo del reporte. *@
 @* Firma: FRANCO LARA - 21/07/2026 | Corrige la impresion del Balance de comprobacion en A4 horizontal, compacta cabecera y tabla y evita heredar el modo oscuro. *@
+@* Firma: FRANCO LARA - 04/08/2026 | Separa los parametros principales y avanzados del Balance de comprobacion con el patron visual compartido de reportes. *@
 
 @{
     ViewData["Title"] = "Balance de comprobación";
@@ -17,6 +18,10 @@
     var utilidadFuncion = Model.TotalPerdidaFuncion < Model.TotalGananciaFuncion ? Model.TotalGananciaFuncion - Model.TotalPerdidaFuncion : 0m;
     var perdidaFuncion = Model.TotalPerdidaFuncion > Model.TotalGananciaFuncion ? Model.TotalPerdidaFuncion - Model.TotalGananciaFuncion : 0m;
     var saldoCuentaTexto = Model.TodasLasCuentas ? "Todas las cuentas" : $"{Model.CuentaDesde} - {Model.CuentaHasta}";
+    var tieneFiltrosAvanzados = !Model.TodasLasCuentas
+        || Model.FiltrarGrado
+        || !string.IsNullOrWhiteSpace(Model.CuentaDesde)
+        || !string.IsNullOrWhiteSpace(Model.CuentaHasta);
 }
 
 <section class="dashboard-shell">
@@ -39,9 +44,19 @@
                 <div class="alert alert-danger">@Model.MensajeError</div>
             }
 
-            <form asp-action="BalanceComprobacion" method="get" class="workspace-filter-card">
+            <section class="workspace-section report-filter-section no-print" aria-labelledby="balance-filter-title">
+                <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
+                    {
+                        Id = "balance-filter-title",
+                        Category = "Filtros",
+                        Title = "Parámetros del reporte",
+                        Description = "Seleccione el rango de periodos, moneda y nivel de presentación del balance.",
+                        IconClass = "bi bi-funnel"
+                    })" />
+
+            <form asp-action="BalanceComprobacion" method="get" class="report-filter-form">
                 <input type="hidden" name="consultar" value="true" />
-                <div class="workspace-filter-grid">
+                <div class="report-filter-primary-grid report-filter-grid-5">
                     <div class="workspace-field">
                         <label class="form-label" for="anio">Año</label>
                         <select id="anio" name="anio" class="form-select">
@@ -87,6 +102,24 @@
                             }
                         </select>
                     </div>
+                </div>
+
+                <div class="report-filter-toggle-wrap">
+                    <input type="checkbox" class="report-filter-toggle-input" id="balanceAdvancedToggle"
+                           data-report-filter-toggle data-target="balanceAdvancedFilters"
+                           checked="@(tieneFiltrosAvanzados ? "checked" : null)"
+                           aria-controls="balanceAdvancedFilters"
+                           aria-expanded="@(tieneFiltrosAvanzados ? "true" : "false")" />
+                    <label class="report-filter-toggle" for="balanceAdvancedToggle">
+                        <span class="report-filter-toggle-copy">
+                            <strong>Filtros avanzados</strong>
+                            <small>Defina el rango de cuentas y el nivel exacto que desea incluir.</small>
+                        </span>
+                        <span class="report-filter-switch" aria-hidden="true"><span></span></span>
+                    </label>
+                </div>
+
+                <div id="balanceAdvancedFilters" class="report-filter-advanced-grid report-filter-grid-2 @(tieneFiltrosAvanzados ? string.Empty : "d-none")">
                     <div class="workspace-field">
                         <label class="form-label" for="cuentaDesde">Cuenta desde</label>
                         <input id="cuentaDesde" name="cuentaDesde" class="form-control js-balance-cuenta" value="@Model.CuentaDesde" list="balance-cuentas-lista" disabled="@(Model.TodasLasCuentas ? "disabled" : null)" />
@@ -95,7 +128,7 @@
                         <label class="form-label" for="cuentaHasta">Cuenta hasta</label>
                         <input id="cuentaHasta" name="cuentaHasta" class="form-control js-balance-cuenta" value="@Model.CuentaHasta" list="balance-cuentas-lista" disabled="@(Model.TodasLasCuentas ? "disabled" : null)" />
                     </div>
-                    <div class="workspace-field workspace-field-span-2">
+                    <div class="report-filter-options">
                         <div class="workspace-check-grid workspace-check-grid-compact">
                             <label class="workspace-check">
                                 <input id="todasLasCuentas" name="todasLasCuentas" type="checkbox" value="true" @(Model.TodasLasCuentas ? "checked" : null) />
@@ -109,9 +142,17 @@
                             </label>
                         </div>
                     </div>
-                    <div class="workspace-field d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary">Consultar balance</button>
                     </div>
+
+                <div class="report-filter-actions">
+                    <a class="btn btn-outline-secondary report-filter-action" asp-action="BalanceComprobacion">
+                        <i class="bi bi-eraser" aria-hidden="true"></i>
+                        <span>Limpiar filtros</span>
+                    </a>
+                    <button type="submit" class="btn btn-primary report-filter-action">
+                        <i class="bi bi-search" aria-hidden="true"></i>
+                        <span>Consultar reporte</span>
+                    </button>
                 </div>
 
                 <datalist id="balance-cuentas-lista">
@@ -121,6 +162,7 @@
                     }
                 </datalist>
             </form>
+            </section>
 
             @if (Model.ConsultaEjecutada && Model.Resultados.Count == 0 && string.IsNullOrWhiteSpace(Model.MensajeError))
             {

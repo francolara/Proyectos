@@ -59,6 +59,25 @@ document.addEventListener("DOMContentLoaded", function () {
     applyTheme(root.getAttribute("data-theme"));
 });
 
+// Firma: FRANCO LARA - 04/08/2026 | Controla de forma reutilizable el despliegue accesible de filtros avanzados en reportes contables.
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll("[data-report-filter-toggle]").forEach(function (toggle) {
+        const targetId = toggle.getAttribute("data-target");
+        const filters = targetId ? document.getElementById(targetId) : null;
+        if (!filters) {
+            return;
+        }
+
+        const syncAdvancedFilters = function () {
+            filters.classList.toggle("d-none", !toggle.checked);
+            toggle.setAttribute("aria-expanded", toggle.checked ? "true" : "false");
+        };
+
+        toggle.addEventListener("change", syncAdvancedFilters);
+        syncAdvancedFilters();
+    });
+});
+
 document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll("[data-password-toggle]").forEach(function (toggle) {
         const targetId = toggle.getAttribute("data-password-target");

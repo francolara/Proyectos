@@ -3,6 +3,7 @@
 @* Firma: FRANCO LARA - 07/07/2026 | Crea el modulo Libros Electronicos con filtros, previsualizacion paginada, validacion, generacion TXT, descarga temporal e historial para PLE 5.1, 5.2 y 6.1. *@
 @* Firma: FRANCO LARA - 13/07/2026 | Fija Libros Electronicos a moneda PEN, retira el filtro visual de moneda y mantiene la previsualizacion/exportacion en soles. *@
 @* Firma: FRANCO LARA - 03/08/2026 | Muestra documentos y comprobantes de los 21 campos base en la previsualizacion 5.1, 5.2 y 6.1, usando 00 cuando falta el tipo de comprobante. *@
+@* Firma: FRANCO LARA - 04/08/2026 | Ordena la jerarquia visual, controla la presentacion mensual, unifica interruptores y simplifica consulta, generacion y descarga de los TXT con rotulos uniformes. *@
 
 @{
     ViewData["Title"] = "Libros Electrónicos";
@@ -11,20 +12,18 @@
 }
 
 <section class="dashboard-shell">
-    <section class="workspace-window">
-        <div class="workspace-window-head">
+        <section class="dashboard-hero">
             <div>
-                <span class="workspace-window-kicker">PLE</span>
-                <h1>Libros Electrónicos</h1>
-                <p>Genera, valida, previsualiza y descarga los formatos 5.1, 5.2 y 6.1 usando los asientos contables existentes.</p>
+                <span class="dashboard-kicker">PLE</span>
+                <h1 class="app-page-title"><i class="bi bi-journal-text" aria-hidden="true"></i><span>Libros Electrónicos</span></h1>
+                <p>Consulta, valida y genera los libros electrónicos del periodo seleccionado.</p>
             </div>
-            <div class="workspace-window-badge">
+            <article class="dashboard-status-card">
                 <strong>@Model.EmpresaNombre</strong>
                 <span>@libroNombre</span>
-            </div>
-        </div>
+            </article>
+        </section>
 
-        <div class="workspace-window-body">
             @if (!string.IsNullOrWhiteSpace(Model.MensajeError))
             {
                 <div class="alert alert-danger">@Model.MensajeError</div>
@@ -35,7 +34,16 @@
                 <div class="alert alert-success">@Model.MensajeExito</div>
             }
 
-            <form asp-action="Index" method="get" class="workspace-filter-card">
+            <section class="workspace-section">
+                <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
+                    {
+                        Id = "ple-parameters-title",
+                        Category = "Periodo y formato",
+                        Title = "Parámetros de generación",
+                        Description = "Seleccione el periodo y el libro electrónico que desea procesar.",
+                        IconClass = "bi bi-funnel"
+                    })" />
+            <form asp-action="Index" method="get" class="workspace-filter-card border-0">
                 <div class="workspace-filter-grid">
                     <div class="workspace-field">
                         <label class="form-label" for="empresaNombre">Empresa</label>
@@ -74,13 +82,10 @@
 
                 <div class="d-flex flex-wrap gap-2 mt-3">
                     <button type="submit" name="operacion" value="consultar" class="btn btn-primary" @(Model.PuedeConsultar ? null : "disabled")>Consultar</button>
-                    <button type="submit" name="operacion" value="validar" class="btn btn-outline-secondary" @(Model.PuedeValidar ? null : "disabled")>Validar</button>
-                    <button type="submit" name="operacion" value="observaciones" class="btn btn-outline-secondary" @(Model.PuedeValidar ? null : "disabled")>Ver observaciones</button>
-                    <a class="btn @(Model.PuedeDescargarTxt ? "btn-success" : "btn-outline-secondary disabled")" asp-action="DescargarTxt" asp-route-token="@Model.TokenDescarga">Descargar TXT</a>
                 </div>
             </form>
 
-            <form asp-action="GenerarTxt" method="post" class="mt-3">
+            <form asp-action="GenerarTxt" method="post" class="workspace-filter-card border-0 border-top rounded-0">
                 @Html.AntiForgeryToken()
                 <input type="hidden" asp-for="IdEmpresa" />
                 <input type="hidden" asp-for="AnioSeleccionado" />
@@ -89,17 +94,92 @@
                 <input type="hidden" asp-for="MonedaSeleccionada" />
                 <input type="hidden" asp-for="PaginaPreview" />
                 <input type="hidden" asp-for="PaginaHistorial" />
-                <button type="submit" class="btn btn-primary" @(Model.PuedeGenerar ? null : "disabled")>Generar TXT</button>
+                @if (Model.GeneraComplementoDiario)
+                {
+                    <div class="form-text mb-2">La primera presentación del ejercicio incluye el plan completo. Después, el TXT 5.3/5.4 contiene solo cuentas nuevas o modificadas desde el último periodo marcado como presentado.</div>
+                }
+                @if (Model.GeneracionBloqueada && !string.IsNullOrWhiteSpace(Model.MensajeBloqueoGeneracion))
+                {
+                    <div class="alert alert-warning py-2 mb-2" role="status">@Model.MensajeBloqueoGeneracion</div>
+                }
+                <div class="ple-file-actions">
+                    <button type="submit" class="btn btn-primary ple-file-action" @(Model.PuedeGenerar && !Model.GeneracionBloqueada ? null : "disabled")>Generar TXT</button>
+                    <a class="btn ple-file-action @(Model.PuedeDescargarTxt ? "btn-success" : "btn-outline-secondary disabled")" asp-action="DescargarTxt" asp-route-token="@Model.TokenDescarga">Descargar TXT @Model.LibroElectronicoSeleccionado</a>
+                    @if (Model.GeneraComplementoDiario)
+                    {
+                        var formatoComplementario = Model.LibroElectronicoSeleccionado == SistemaAdministrativoWeb.Infrastructure.Contabilidad.PleLibroElectronicoCatalogo.LibroDiario51 ? "5.3" : "5.4";
+                        <a class="btn ple-file-action @(Model.PuedeDescargarComplementario ? "btn-success" : "btn-outline-secondary disabled")" asp-action="DescargarTxt" asp-route-token="@Model.TokenDescargaComplementario">Descargar TXT @formatoComplementario</a>
+                    }
+                </div>
             </form>
+            </section>
 
             @if (Model.ConsultaEjecutada)
             {
                 <section class="workspace-section mt-4">
-                    <div class="workspace-section-head">
-                        <span class="workspace-section-kicker">Resumen de generación</span>
-                        <h2>@Model.Resumen.Libro</h2>
-                        <p>Archivo propuesto: <strong>@Model.Resumen.NombreArchivo</strong></p>
-                    </div>
+                    <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
+                        {
+                            Id = "ple-presentation-title",
+                            Category = "Presentación",
+                            Title = "Estado del periodo",
+                            Description = "Confirme el periodo después de obtener la constancia de recepción.",
+                            IconClass = "bi bi-patch-check"
+                        })" />
+                    <form asp-action="ActualizarPresentacion" method="post" class="workspace-filter-card border-0">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="IdEmpresa" />
+                        <input type="hidden" asp-for="AnioSeleccionado" />
+                        <input type="hidden" asp-for="MesSeleccionado" />
+                        <input type="hidden" asp-for="LibroElectronicoSeleccionado" />
+                        <input type="hidden" asp-for="MonedaSeleccionada" />
+                        <input type="hidden" asp-for="Presentacion.IdGeneracionPeriodo" />
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                            <div>
+                                <strong>@(Model.Presentacion.Presentado ? "Periodo presentado" : "Pendiente de presentación")</strong>
+                                <div class="form-text">
+                                    @if (Model.Presentacion.Presentado)
+                                    {
+                                        <span>Registrado el @Model.Presentacion.FechaPresentacion?.ToString("dd/MM/yyyy HH:mm") por @Model.Presentacion.UsuarioPresentacion.</span>
+                                    }
+                                    else if (!Model.Presentacion.IdGeneracionPeriodo.HasValue)
+                                    {
+                                        <span>Primero genere los archivos del periodo para habilitar esta marca.</span>
+                                    }
+                                    else
+                                    {
+                                        <span>La generación existe, pero todavía no fue confirmada como presentada.</span>
+                                    }
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="ple-presentation-switch-wrap">
+                                    <input class="ple-disclosure-input" type="checkbox" role="switch" id="presentado" name="presentado" value="true" checked="@(Model.Presentacion.Presentado ? "checked" : null)" @(!Model.Presentacion.IdGeneracionPeriodo.HasValue || !Model.PuedeGenerar || Model.Presentacion.ExistePresentacionPosterior ? "disabled" : null) />
+                                    <label class="ple-disclosure-toggle ple-presentation-toggle" for="presentado">
+                                        <span class="ple-disclosure-switch" aria-hidden="true"><span></span></span>
+                                        <span class="ple-presentation-label">Marcar como presentado</span>
+                                    </label>
+                                    <input type="hidden" name="presentado" value="false" />
+                                </div>
+                                <button type="submit" class="btn btn-primary" @(!Model.Presentacion.IdGeneracionPeriodo.HasValue || !Model.PuedeGenerar || Model.Presentacion.ExistePresentacionPosterior ? "disabled" : null)>
+                                    <i class="bi bi-save" aria-hidden="true"></i> Guardar estado
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </section>
+            }
+
+            @if (Model.ConsultaEjecutada)
+            {
+                <section class="workspace-section mt-4">
+                    <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
+                        {
+                            Id = "ple-summary-title",
+                            Category = "Resumen de generación",
+                            Title = Model.Resumen.Libro,
+                            Description = $"Archivo propuesto: {Model.Resumen.NombreArchivo}",
+                            IconClass = "bi bi-file-earmark-text"
+                        })" />
 
                     <div class="dashboard-metrics">
                         <article class="dashboard-metric-card dashboard-metric-card-text">
@@ -126,12 +206,27 @@
                 </section>
 
                 <section class="workspace-section mt-4">
-                    <div class="workspace-section-head">
-                        <span class="workspace-section-kicker">Previsualización</span>
-                        <h2>Detalle exportable</h2>
-                        <p>La tabla se adapta al formato seleccionado y solo carga la página solicitada.</p>
+                    <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
+                        {
+                            Id = "ple-preview-title",
+                            Category = "Previsualización",
+                            Title = "Detalle exportable",
+                            Description = "La tabla muestra la página solicitada del formato seleccionado.",
+                            IconClass = "bi bi-table"
+                        })" />
+
+                    <div class="ple-disclosure-toggle-wrap">
+                        <input type="checkbox" class="ple-disclosure-input" id="plePreviewToggle" data-ple-disclosure data-target="plePreviewDetail" aria-controls="plePreviewDetail" aria-expanded="false" />
+                        <label class="ple-disclosure-toggle" for="plePreviewToggle">
+                            <span class="ple-disclosure-copy">
+                                <strong>Mostrar detalle exportable</strong>
+                                <small>Despliega los movimientos que forman parte del archivo TXT.</small>
+                            </span>
+                            <span class="ple-disclosure-switch" aria-hidden="true"><span></span></span>
+                        </label>
                     </div>
 
+                    <div id="plePreviewDetail" class="ple-disclosure-detail d-none">
                     <div class="table-responsive">
                         <table class="table app-table">
                             <thead>
@@ -272,7 +367,8 @@
                                asp-route-operacion="@(Model.ValidacionEjecutada ? "validar" : "consultar")"
                                asp-route-paginaPreview="@(Model.PreviewPaginacion.PaginaActual - 1)"
                                asp-route-paginaHistorial="@Model.HistorialPaginacion.PaginaActual"
-                               asp-route-tokenDescarga="@Model.TokenDescarga">Anterior</a>
+                               asp-route-tokenDescarga="@Model.TokenDescarga"
+                               asp-route-tokenDescargaComplementario="@Model.TokenDescargaComplementario">Anterior</a>
                             <span>Pagina @Model.PreviewPaginacion.PaginaActual de @Model.PreviewPaginacion.TotalPaginas</span>
                             <a class="btn btn-outline-secondary @(Model.PreviewPaginacion.TienePaginaSiguiente ? string.Empty : "disabled")"
                                asp-action="Index"
@@ -283,20 +379,35 @@
                                asp-route-operacion="@(Model.ValidacionEjecutada ? "validar" : "consultar")"
                                asp-route-paginaPreview="@(Model.PreviewPaginacion.PaginaActual + 1)"
                                asp-route-paginaHistorial="@Model.HistorialPaginacion.PaginaActual"
-                               asp-route-tokenDescarga="@Model.TokenDescarga">Siguiente</a>
+                               asp-route-tokenDescarga="@Model.TokenDescarga"
+                               asp-route-tokenDescargaComplementario="@Model.TokenDescargaComplementario">Siguiente</a>
                         </nav>
                     }
+                    </div>
                 </section>
 
-                @if (Model.ValidacionEjecutada)
-                {
-                    <section class="workspace-section mt-4" id="observaciones">
-                        <div class="workspace-section-head">
-                            <span class="workspace-section-kicker">Validaciones</span>
-                            <h2>Observaciones del PLE</h2>
-                            <p>Errores bloquean la generación. Advertencias e información se muestran para revisión.</p>
+                <section class="workspace-section mt-4" id="observaciones">
+                        <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
+                            {
+                                Id = "ple-validation-title",
+                                Category = "Validaciones",
+                                Title = "Observaciones del PLE",
+                                Description = "Los errores bloquean la generación; las advertencias requieren revisión.",
+                                IconClass = "bi bi-exclamation-triangle"
+                            })" />
+
+                        <div class="ple-disclosure-toggle-wrap">
+                            <input type="checkbox" class="ple-disclosure-input" id="pleValidationToggle" data-ple-disclosure data-target="pleValidationDetail" aria-controls="pleValidationDetail" aria-expanded="false" />
+                            <label class="ple-disclosure-toggle" for="pleValidationToggle">
+                                <span class="ple-disclosure-copy">
+                                    <strong>Mostrar observaciones del PLE</strong>
+                                    <small>Despliega errores, advertencias e información de la validación.</small>
+                                </span>
+                                <span class="ple-disclosure-switch" aria-hidden="true"><span></span></span>
+                            </label>
                         </div>
 
+                        <div id="pleValidationDetail" class="ple-disclosure-detail d-none">
                         <div class="table-responsive">
                             <table class="table app-table">
                                 <thead>
@@ -311,33 +422,63 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var item in Model.Validacion.Observaciones)
+                                    @if (!Model.ValidacionEjecutada)
                                     {
                                         <tr>
-                                            <td>@item.Severidad</td>
-                                            <td>@item.Codigo</td>
-                                            <td>@item.Titulo</td>
-                                            <td>@item.Detalle</td>
-                                            <td>@item.Cuo</td>
-                                            <td>@item.NumeroAsiento</td>
-                                            <td>@item.FechaOperacion?.ToString("dd/MM/yyyy")</td>
+                                            <td colspan="7">Ejecute la opción Validar para consultar las observaciones del periodo.</td>
                                         </tr>
+                                    }
+                                    else if (Model.Validacion.Observaciones.Count == 0)
+                                    {
+                                        <tr>
+                                            <td colspan="7">La validación no generó observaciones.</td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        foreach (var item in Model.Validacion.Observaciones)
+                                        {
+                                            <tr>
+                                                <td>@item.Severidad</td>
+                                                <td>@item.Codigo</td>
+                                                <td>@item.Titulo</td>
+                                                <td>@item.Detalle</td>
+                                                <td>@item.Cuo</td>
+                                                <td>@item.NumeroAsiento</td>
+                                                <td>@item.FechaOperacion?.ToString("dd/MM/yyyy")</td>
+                                            </tr>
+                                        }
                                     }
                                 </tbody>
                             </table>
                         </div>
-                    </section>
-                }
+                        </div>
+                </section>
 
                 @if (Model.PuedeVerHistorial)
                 {
                     <section class="workspace-section mt-4">
-                        <div class="workspace-section-head">
-                            <span class="workspace-section-kicker">Historial</span>
-                            <h2>Archivos generados</h2>
-                            <p>Metadatos de exportaciones del libro y periodo seleccionado.</p>
+                        <partial name="_AdminSectionHeader" model="@(new AdminSectionHeaderViewModel
+                            {
+                                Id = "ple-history-title",
+                                Category = "Historial",
+                                Title = "Archivos generados",
+                                Description = "Exportaciones y presentación del libro y periodo seleccionado.",
+                                IconClass = "bi bi-clock-history"
+                            })" />
+
+                        <div class="ple-disclosure-toggle-wrap">
+                            <input type="checkbox" class="ple-disclosure-input" id="pleHistoryToggle" data-ple-disclosure data-target="pleHistoryDetail" aria-controls="pleHistoryDetail" aria-expanded="false" />
+                            <label class="ple-disclosure-toggle" for="pleHistoryToggle">
+                                <span class="ple-disclosure-copy">
+                                    <strong>Mostrar archivos generados</strong>
+                                    <small>Despliega las exportaciones y su estado de presentación.</small>
+                                </span>
+                                <span class="ple-disclosure-switch" aria-hidden="true"><span></span></span>
+                            </label>
                         </div>
 
+                        <div id="pleHistoryDetail" class="ple-disclosure-detail d-none">
                         <div class="table-responsive">
                             <table class="table app-table">
                                 <thead>
@@ -349,6 +490,7 @@
                                         <th>Debe</th>
                                         <th>Haber</th>
                                         <th>Estado</th>
+                                        <th>Presentación</th>
                                         <th>Usuario</th>
                                         <th>Observaciones</th>
                                     </tr>
@@ -357,7 +499,7 @@
                                     @if (Model.HistorialItems.Count == 0)
                                     {
                                         <tr>
-                                            <td colspan="9">No existen exportaciones registradas para el filtro actual.</td>
+                                            <td colspan="10">No existen exportaciones registradas para el filtro actual.</td>
                                         </tr>
                                     }
                                     else
@@ -372,6 +514,7 @@
                                                 <td class="workspace-money-cell">@item.TotalDebe.ToString("N2")</td>
                                                 <td class="workspace-money-cell">@item.TotalHaber.ToString("N2")</td>
                                                 <td>@item.Estado</td>
+                                                <td>@(item.PlanPresentado ? $"Presentado {item.FechaPresentacion:dd/MM/yyyy HH:mm}" : "Pendiente")</td>
                                                 <td>@item.UsuarioGeneracion</td>
                                                 <td>@item.Observaciones</td>
                                             </tr>
@@ -393,7 +536,8 @@
                                    asp-route-operacion="@(Model.ValidacionEjecutada ? "validar" : "consultar")"
                                    asp-route-paginaPreview="@Model.PreviewPaginacion.PaginaActual"
                                    asp-route-paginaHistorial="@(Model.HistorialPaginacion.PaginaActual - 1)"
-                                   asp-route-tokenDescarga="@Model.TokenDescarga">Anterior</a>
+                                   asp-route-tokenDescarga="@Model.TokenDescarga"
+                                   asp-route-tokenDescargaComplementario="@Model.TokenDescargaComplementario">Anterior</a>
                                 <span>Pagina @Model.HistorialPaginacion.PaginaActual de @Model.HistorialPaginacion.TotalPaginas</span>
                                 <a class="btn btn-outline-secondary @(Model.HistorialPaginacion.TienePaginaSiguiente ? string.Empty : "disabled")"
                                    asp-action="Index"
@@ -404,12 +548,201 @@
                                    asp-route-operacion="@(Model.ValidacionEjecutada ? "validar" : "consultar")"
                                    asp-route-paginaPreview="@Model.PreviewPaginacion.PaginaActual"
                                    asp-route-paginaHistorial="@(Model.HistorialPaginacion.PaginaActual + 1)"
-                                   asp-route-tokenDescarga="@Model.TokenDescarga">Siguiente</a>
+                                   asp-route-tokenDescarga="@Model.TokenDescarga"
+                                   asp-route-tokenDescargaComplementario="@Model.TokenDescargaComplementario">Siguiente</a>
                             </nav>
                         }
+                        </div>
                     </section>
                 }
             }
-        </div>
-    </section>
 </section>
+
+<style>
+    .ple-file-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.65rem;
+    }
+
+    .ple-file-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 11.5rem;
+        min-height: 2.55rem;
+    }
+
+    .ple-disclosure-toggle-wrap {
+        padding: 0.85rem 1rem;
+    }
+
+    .ple-disclosure-input {
+        position: absolute;
+        inline-size: 1px;
+        block-size: 1px;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .ple-disclosure-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.8rem 0.95rem;
+        border: 1px solid rgba(93, 117, 158, 0.28);
+        border-radius: 0.9rem;
+        background: rgba(247, 250, 252, 0.92);
+        cursor: pointer;
+        transition: border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .ple-disclosure-toggle:hover,
+    .ple-disclosure-input:focus-visible + .ple-disclosure-toggle {
+        border-color: rgba(31, 143, 105, 0.48);
+    }
+
+    .ple-disclosure-copy {
+        display: flex;
+        flex-direction: column;
+        gap: 0.18rem;
+        min-width: 0;
+    }
+
+    .ple-disclosure-copy strong {
+        color: #153f35;
+        font-size: 0.9rem;
+    }
+
+    .ple-disclosure-copy small {
+        color: #667b75;
+        font-size: 0.76rem;
+    }
+
+    .ple-disclosure-switch {
+        position: relative;
+        flex: 0 0 auto;
+        width: 2.9rem;
+        height: 1.65rem;
+        padding: 0.18rem;
+        border-radius: 999px;
+        background: #b9c6ca;
+        transition: background 0.2s ease;
+    }
+
+    .ple-disclosure-switch > span {
+        display: block;
+        width: 1.29rem;
+        height: 1.29rem;
+        border-radius: 50%;
+        background: #ffffff;
+        box-shadow: 0 3px 9px rgba(16, 24, 40, 0.22);
+        transition: transform 0.2s ease;
+    }
+
+    .ple-disclosure-input:checked + .ple-disclosure-toggle {
+        border-color: rgba(31, 143, 105, 0.4);
+        background: rgba(232, 248, 241, 0.96);
+    }
+
+    .ple-disclosure-input:checked + .ple-disclosure-toggle .ple-disclosure-switch {
+        background: linear-gradient(135deg, #177a5b, #43bc91);
+    }
+
+    .ple-disclosure-input:checked + .ple-disclosure-toggle .ple-disclosure-switch > span {
+        transform: translateX(1.25rem);
+    }
+
+    .ple-presentation-switch-wrap {
+        display: flex;
+        align-items: center;
+    }
+
+    .ple-presentation-toggle {
+        justify-content: flex-start;
+        gap: 0.65rem;
+        padding: 0.45rem 0.55rem;
+        border-color: transparent;
+        background: transparent;
+    }
+
+    .ple-presentation-label {
+        color: inherit;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .ple-disclosure-input:checked + .ple-presentation-toggle {
+        border-color: transparent;
+        background: rgba(31, 143, 105, 0.1);
+    }
+
+    .ple-disclosure-input:disabled + .ple-presentation-toggle {
+        cursor: not-allowed;
+        opacity: 0.55;
+    }
+
+    .ple-disclosure-detail {
+        animation: ple-detail-reveal 0.18s ease-out;
+    }
+
+    html[data-theme="dark"] .ple-disclosure-toggle {
+        border-color: rgba(93, 117, 158, 0.3);
+        background: rgba(17, 27, 45, 0.96);
+    }
+
+    html[data-theme="dark"] .ple-disclosure-copy strong {
+        color: #eef4ff;
+    }
+
+    html[data-theme="dark"] .ple-disclosure-copy small {
+        color: #9cb0d1;
+    }
+
+    html[data-theme="dark"] .ple-disclosure-switch {
+        background: #405068;
+    }
+
+    html[data-theme="dark"] .ple-disclosure-input:checked + .ple-disclosure-toggle {
+        border-color: rgba(58, 159, 123, 0.42);
+        background: rgba(12, 43, 35, 0.96);
+    }
+
+    html[data-theme="dark"] .ple-presentation-toggle {
+        border-color: transparent;
+        background: transparent;
+    }
+
+    html[data-theme="dark"] .ple-disclosure-input:checked + .ple-presentation-toggle {
+        border-color: transparent;
+        background: rgba(58, 159, 123, 0.12);
+    }
+
+    @@keyframes ple-detail-reveal {
+        from { opacity: 0; transform: translateY(-4px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        (() => {
+            document.querySelectorAll("[data-ple-disclosure]").forEach((toggle) => {
+                const detail = document.getElementById(toggle.dataset.target);
+                if (!detail) {
+                    return;
+                }
+
+                const sync = () => {
+                    detail.classList.toggle("d-none", !toggle.checked);
+                    toggle.setAttribute("aria-expanded", toggle.checked ? "true" : "false");
+                };
+
+                toggle.addEventListener("change", sync);
+                sync();
+            });
+        })();
+    </script>
+}

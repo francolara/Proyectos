@@ -5,6 +5,7 @@ using SistemaAdministrativoWeb.Infrastructure.Data;
 namespace SistemaAdministrativoWeb.Infrastructure.Contabilidad;
 
 // Firma: FRANCO LARA - 03/08/2026 | Normaliza a 00 el tipo de comprobante y mapea los 21 campos base de los formatos PLE 5.1, 5.2 y 6.1.
+// Firma: FRANCO LARA - 04/08/2026 | Mapea referencias PLE, snapshots del plan y el estado reversible de presentacion por periodo.
 public sealed class LibroElectronicoRepository(IDbConnectionFactory connectionFactory) : ILibroElectronicoRepository
 {
     public Task<IReadOnlyCollection<LibroDiario51Dto>> ListarLibroDiario51Async(LibroElectronicoConsultaRequest request, CancellationToken cancellationToken = default)
@@ -60,6 +61,12 @@ public sealed class LibroElectronicoRepository(IDbConnectionFactory connectionFa
                 Observaciones = reader.IsDBNull(reader.GetOrdinal("Observaciones")) ? string.Empty : reader.GetString(reader.GetOrdinal("Observaciones")),
                 FechaGeneracion = reader.GetDateTime(reader.GetOrdinal("FechaGeneracion")),
                 UsuarioGeneracion = reader.IsDBNull(reader.GetOrdinal("UsuarioGeneracion")) ? string.Empty : reader.GetString(reader.GetOrdinal("UsuarioGeneracion")),
+                CodigoFormatoComplementario = reader.IsDBNull(reader.GetOrdinal("CodigoFormatoComplementario")) ? string.Empty : reader.GetString(reader.GetOrdinal("CodigoFormatoComplementario")),
+                NombreArchivoComplementario = reader.IsDBNull(reader.GetOrdinal("NombreArchivoComplementario")) ? string.Empty : reader.GetString(reader.GetOrdinal("NombreArchivoComplementario")),
+                CantidadRegistrosComplementario = reader.GetInt32(reader.GetOrdinal("CantidadRegistrosComplementario")),
+                PlanPresentado = reader.GetBoolean(reader.GetOrdinal("PlanPresentado")),
+                FechaPresentacion = reader.IsDBNull(reader.GetOrdinal("FechaPresentacion")) ? null : reader.GetDateTime(reader.GetOrdinal("FechaPresentacion")),
+                UsuarioPresentacion = reader.IsDBNull(reader.GetOrdinal("UsuarioPresentacion")) ? string.Empty : reader.GetString(reader.GetOrdinal("UsuarioPresentacion")),
                 TotalRegistros = totalRegistros
             });
         }
@@ -92,6 +99,107 @@ public sealed class LibroElectronicoRepository(IDbConnectionFactory connectionFa
         command.Parameters.AddWithValue("@Estado", request.Estado);
         command.Parameters.AddWithValue("@Observaciones", string.IsNullOrWhiteSpace(request.Observaciones) ? (object)DBNull.Value : request.Observaciones.Trim());
         command.Parameters.AddWithValue("@UsuarioGeneracion", string.IsNullOrWhiteSpace(request.UsuarioGeneracion) ? (object)DBNull.Value : request.UsuarioGeneracion.Trim());
+        command.Parameters.AddWithValue("@CodigoFormatoComplementario", string.IsNullOrWhiteSpace(request.CodigoFormatoComplementario) ? (object)DBNull.Value : request.CodigoFormatoComplementario.Trim());
+        command.Parameters.AddWithValue("@NombreArchivoComplementario", string.IsNullOrWhiteSpace(request.NombreArchivoComplementario) ? (object)DBNull.Value : request.NombreArchivoComplementario.Trim());
+        command.Parameters.AddWithValue("@CantidadRegistrosComplementario", request.CantidadRegistrosComplementario);
+        command.Parameters.AddWithValue("@HuellaPlanContable", string.IsNullOrWhiteSpace(request.HuellaPlanContable) ? (object)DBNull.Value : request.HuellaPlanContable.Trim());
+        command.Parameters.AddWithValue("@PlanContableSnapshot", string.IsNullOrWhiteSpace(request.PlanContableSnapshot) ? (object)DBNull.Value : request.PlanContableSnapshot);
+
+        await connection.OpenAsync(cancellationToken);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    public async Task<PlePresentacionContextoDto> ObtenerContextoPresentacionAsync(int idEmpresa, short anio, byte mes, string codigoLibro, CancellationToken cancellationToken = default)
+    {
+        var fechaPeriodo = new DateTime(anio, mes, 1);
+        var fechaAnterior = fechaPeriodo.AddMonths(-1);
+        await using var connection = connectionFactory.CreateConnection();
+        await using var command = new SqlCommand("dbo.usp_CON_PLE_Presentacion_ObtenerContexto", connection)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+        command.Parameters.AddWithValue("@IdEmpresa", idEmpresa);
+        command.Parameters.AddWithValue("@Periodo", $"{anio:0000}{mes:00}");
+        command.Parameters.AddWithValue("@PeriodoAnterior", $"{fechaAnterior.Year:0000}{fechaAnterior.Month:00}");
+        command.Parameters.AddWithValue("@CodigoLibro", codigoLibro);
+
+        await connection.OpenAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return new PlePresentacionContextoDto();
+        }
+
+        return new PlePresentacionContextoDto
+        {
+            IdGeneracionPeriodo = reader.IsDBNull(reader.GetOrdinal("IdGeneracionPeriodo")) ? null : reader.GetInt32(reader.GetOrdinal("IdGeneracionPeriodo")),
+            Presentado = reader.GetBoolean(reader.GetOrdinal("Presentado")),
+            FechaPresentacion = reader.IsDBNull(reader.GetOrdinal("FechaPresentacion")) ? null : reader.GetDateTime(reader.GetOrdinal("FechaPresentacion")),
+            UsuarioPresentacion = reader.IsDBNull(reader.GetOrdinal("UsuarioPresentacion")) ? string.Empty : reader.GetString(reader.GetOrdinal("UsuarioPresentacion")),
+            ExistePresentacionAnterior = reader.GetBoolean(reader.GetOrdinal("ExistePresentacionAnterior")),
+            MesAnteriorPresentado = reader.GetBoolean(reader.GetOrdinal("MesAnteriorPresentado")),
+            ExistePresentacionPosterior = reader.GetBoolean(reader.GetOrdinal("ExistePresentacionPosterior")),
+            SnapshotUltimaPresentacion = reader.IsDBNull(reader.GetOrdinal("SnapshotUltimaPresentacion")) ? string.Empty : reader.GetString(reader.GetOrdinal("SnapshotUltimaPresentacion"))
+        };
+    }
+
+    public async Task ActualizarPresentacionAsync(PlePresentacionUpdateRequest request, CancellationToken cancellationToken = default)
+    {
+        await using var connection = connectionFactory.CreateConnection();
+        await using var command = new SqlCommand("dbo.usp_CON_PLE_Presentacion_Actualizar", connection)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+        command.Parameters.AddWithValue("@IdEmpresa", request.IdEmpresa);
+        command.Parameters.AddWithValue("@IdLibroElectronicoGeneracion", request.IdLibroElectronicoGeneracion);
+        command.Parameters.AddWithValue("@Presentado", request.Presentado);
+        command.Parameters.AddWithValue("@UsuarioPresentacion", string.IsNullOrWhiteSpace(request.UsuarioPresentacion) ? (object)DBNull.Value : request.UsuarioPresentacion.Trim());
+        await connection.OpenAsync(cancellationToken);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    public async Task<PlePlanCuentaControlDto?> ObtenerControlPlanAsync(int idEmpresa, short anio, string codigoFormato, CancellationToken cancellationToken = default)
+    {
+        await using var connection = connectionFactory.CreateConnection();
+        await using var command = new SqlCommand("dbo.usp_CON_PLE_PlanContable_ControlObtener", connection)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        command.Parameters.AddWithValue("@IdEmpresa", idEmpresa);
+        command.Parameters.AddWithValue("@Anio", anio);
+        command.Parameters.AddWithValue("@CodigoFormato", codigoFormato);
+
+        await connection.OpenAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return null;
+        }
+
+        return new PlePlanCuentaControlDto
+        {
+            IdEmpresa = reader.GetInt32(reader.GetOrdinal("IdEmpresa")),
+            Anio = reader.GetInt16(reader.GetOrdinal("Anio")),
+            CodigoFormato = reader.GetString(reader.GetOrdinal("CodigoFormato")),
+            HuellaPlanContable = reader.GetString(reader.GetOrdinal("HuellaPlanContable")),
+            FechaUltimaGeneracion = reader.GetDateTime(reader.GetOrdinal("FechaUltimaGeneracion"))
+        };
+    }
+
+    public async Task GuardarControlPlanAsync(PlePlanCuentaControlRequest request, CancellationToken cancellationToken = default)
+    {
+        await using var connection = connectionFactory.CreateConnection();
+        await using var command = new SqlCommand("dbo.usp_CON_PLE_PlanContable_ControlGuardar", connection)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        command.Parameters.AddWithValue("@IdEmpresa", request.IdEmpresa);
+        command.Parameters.AddWithValue("@Anio", request.Anio);
+        command.Parameters.AddWithValue("@CodigoFormato", request.CodigoFormato);
+        command.Parameters.AddWithValue("@HuellaPlanContable", request.HuellaPlanContable);
+        command.Parameters.AddWithValue("@UsuarioGeneracion", string.IsNullOrWhiteSpace(request.UsuarioGeneracion) ? (object)DBNull.Value : request.UsuarioGeneracion.Trim());
 
         await connection.OpenAsync(cancellationToken);
         await command.ExecuteNonQueryAsync(cancellationToken);
@@ -120,6 +228,9 @@ public sealed class LibroElectronicoRepository(IDbConnectionFactory connectionFa
                 CodigoCentroCosto = reader.IsDBNull(reader.GetOrdinal("CodigoCentroCosto")) ? string.Empty : reader.GetString(reader.GetOrdinal("CodigoCentroCosto")),
                 CodigoMoneda = reader.GetString(reader.GetOrdinal("CodigoMoneda")),
                 CodigoLibroRelacionado = reader.IsDBNull(reader.GetOrdinal("CodigoLibroRelacionado")) ? string.Empty : reader.GetString(reader.GetOrdinal("CodigoLibroRelacionado")),
+                PeriodoReferencia = reader.IsDBNull(reader.GetOrdinal("PeriodoReferencia")) ? string.Empty : reader.GetString(reader.GetOrdinal("PeriodoReferencia")),
+                CuoReferencia = reader.IsDBNull(reader.GetOrdinal("CuoReferencia")) ? string.Empty : reader.GetString(reader.GetOrdinal("CuoReferencia")),
+                CorrelativoReferencia = reader.IsDBNull(reader.GetOrdinal("CorrelativoReferencia")) ? string.Empty : reader.GetString(reader.GetOrdinal("CorrelativoReferencia")),
                 TipoDocumentoEmisor = reader.IsDBNull(reader.GetOrdinal("TipoDocumentoEmisor")) ? string.Empty : reader.GetString(reader.GetOrdinal("TipoDocumentoEmisor")),
                 NumeroDocumentoEmisor = reader.IsDBNull(reader.GetOrdinal("NumeroDocumentoEmisor")) ? string.Empty : reader.GetString(reader.GetOrdinal("NumeroDocumentoEmisor")),
                 TipoComprobante = LeerTipoComprobante(reader),
@@ -163,6 +274,9 @@ public sealed class LibroElectronicoRepository(IDbConnectionFactory connectionFa
                 CodigoCentroCosto = reader.IsDBNull(reader.GetOrdinal("CodigoCentroCosto")) ? string.Empty : reader.GetString(reader.GetOrdinal("CodigoCentroCosto")),
                 CodigoMoneda = reader.GetString(reader.GetOrdinal("CodigoMoneda")),
                 CodigoLibroRelacionado = reader.IsDBNull(reader.GetOrdinal("CodigoLibroRelacionado")) ? string.Empty : reader.GetString(reader.GetOrdinal("CodigoLibroRelacionado")),
+                PeriodoReferencia = reader.IsDBNull(reader.GetOrdinal("PeriodoReferencia")) ? string.Empty : reader.GetString(reader.GetOrdinal("PeriodoReferencia")),
+                CuoReferencia = reader.IsDBNull(reader.GetOrdinal("CuoReferencia")) ? string.Empty : reader.GetString(reader.GetOrdinal("CuoReferencia")),
+                CorrelativoReferencia = reader.IsDBNull(reader.GetOrdinal("CorrelativoReferencia")) ? string.Empty : reader.GetString(reader.GetOrdinal("CorrelativoReferencia")),
                 TipoDocumentoEmisor = reader.IsDBNull(reader.GetOrdinal("TipoDocumentoEmisor")) ? string.Empty : reader.GetString(reader.GetOrdinal("TipoDocumentoEmisor")),
                 NumeroDocumentoEmisor = reader.IsDBNull(reader.GetOrdinal("NumeroDocumentoEmisor")) ? string.Empty : reader.GetString(reader.GetOrdinal("NumeroDocumentoEmisor")),
                 TipoComprobante = LeerTipoComprobante(reader),
@@ -206,6 +320,9 @@ public sealed class LibroElectronicoRepository(IDbConnectionFactory connectionFa
                 CodigoCentroCosto = reader.IsDBNull(reader.GetOrdinal("CodigoCentroCosto")) ? string.Empty : reader.GetString(reader.GetOrdinal("CodigoCentroCosto")),
                 CodigoMoneda = reader.GetString(reader.GetOrdinal("CodigoMoneda")),
                 CodigoLibroRelacionado = reader.IsDBNull(reader.GetOrdinal("CodigoLibroRelacionado")) ? string.Empty : reader.GetString(reader.GetOrdinal("CodigoLibroRelacionado")),
+                PeriodoReferencia = reader.IsDBNull(reader.GetOrdinal("PeriodoReferencia")) ? string.Empty : reader.GetString(reader.GetOrdinal("PeriodoReferencia")),
+                CuoReferencia = reader.IsDBNull(reader.GetOrdinal("CuoReferencia")) ? string.Empty : reader.GetString(reader.GetOrdinal("CuoReferencia")),
+                CorrelativoReferencia = reader.IsDBNull(reader.GetOrdinal("CorrelativoReferencia")) ? string.Empty : reader.GetString(reader.GetOrdinal("CorrelativoReferencia")),
                 TipoDocumentoEmisor = reader.IsDBNull(reader.GetOrdinal("TipoDocumentoEmisor")) ? string.Empty : reader.GetString(reader.GetOrdinal("TipoDocumentoEmisor")),
                 NumeroDocumentoEmisor = reader.IsDBNull(reader.GetOrdinal("NumeroDocumentoEmisor")) ? string.Empty : reader.GetString(reader.GetOrdinal("NumeroDocumentoEmisor")),
                 TipoComprobante = LeerTipoComprobante(reader),
