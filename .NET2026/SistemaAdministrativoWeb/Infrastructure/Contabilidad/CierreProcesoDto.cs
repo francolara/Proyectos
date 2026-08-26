@@ -5,6 +5,10 @@ public sealed class CierreProcesoDto
     public int IdCierreProceso { get; init; }
     public int IdEmpresa { get; init; }
     public short Anio { get; init; }
+    public byte MesSaldoHasta { get; init; }
+    public string PeriodoSaldoHasta { get; init; } = string.Empty;
+    public byte MesGeneracion { get; init; }
+    public string PeriodoGeneracion { get; init; } = string.Empty;
     public int IdOrigen { get; init; }
     public string CodigoOrigen { get; init; } = string.Empty;
     public string NombreOrigen { get; init; } = string.Empty;
@@ -14,6 +18,9 @@ public sealed class CierreProcesoDto
     public decimal TipoCambioVenta { get; init; }
     public bool ProcesaGananciasPerdidas { get; init; }
     public bool ProcesaInventarios { get; init; }
+    public int? IdAsiento { get; init; }
+    public int? NumeroAsiento { get; init; }
+    public int TotalLineas { get; init; }
     public int TotalCuentas { get; init; }
     public int TotalAsientos { get; init; }
     public decimal TotalDebe { get; init; }

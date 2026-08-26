@@ -3,25 +3,26 @@
 -- Create date:   20/06/2026
 -- Description:   Migra configuracion de documentos a cuentas separadas de compra y venta por moneda.
 -- =============================================
+-- Firma: FRANCO LARA - 25/08/2026 | Define las cuentas maestras de comprobantes como codigos, conserva IdPlanCuenta por empresa y migra columnas antiguas mediante SQL dinamico.
 
-IF COL_LENGTH(N'dbo.ADM_TipoComprobante', N'IdCuentaVentaSoles') IS NULL
+IF COL_LENGTH(N'dbo.ADM_TipoComprobante', N'CodigoCuentaVentaSoles') IS NULL
 BEGIN
-    ALTER TABLE dbo.ADM_TipoComprobante ADD IdCuentaVentaSoles INT NULL;
+    ALTER TABLE dbo.ADM_TipoComprobante ADD CodigoCuentaVentaSoles VARCHAR(20) NULL;
 END;
 
-IF COL_LENGTH(N'dbo.ADM_TipoComprobante', N'IdCuentaVentaDolares') IS NULL
+IF COL_LENGTH(N'dbo.ADM_TipoComprobante', N'CodigoCuentaVentaDolares') IS NULL
 BEGIN
-    ALTER TABLE dbo.ADM_TipoComprobante ADD IdCuentaVentaDolares INT NULL;
+    ALTER TABLE dbo.ADM_TipoComprobante ADD CodigoCuentaVentaDolares VARCHAR(20) NULL;
 END;
 
-IF COL_LENGTH(N'dbo.ADM_TipoComprobante', N'IdCuentaCompraSoles') IS NULL
+IF COL_LENGTH(N'dbo.ADM_TipoComprobante', N'CodigoCuentaCompraSoles') IS NULL
 BEGIN
-    ALTER TABLE dbo.ADM_TipoComprobante ADD IdCuentaCompraSoles INT NULL;
+    ALTER TABLE dbo.ADM_TipoComprobante ADD CodigoCuentaCompraSoles VARCHAR(20) NULL;
 END;
 
-IF COL_LENGTH(N'dbo.ADM_TipoComprobante', N'IdCuentaCompraDolares') IS NULL
+IF COL_LENGTH(N'dbo.ADM_TipoComprobante', N'CodigoCuentaCompraDolares') IS NULL
 BEGIN
-    ALTER TABLE dbo.ADM_TipoComprobante ADD IdCuentaCompraDolares INT NULL;
+    ALTER TABLE dbo.ADM_TipoComprobante ADD CodigoCuentaCompraDolares VARCHAR(20) NULL;
 END;
 
 IF COL_LENGTH(N'dbo.CON_DocumentoConfiguracionEmpresa', N'IdCuentaVentaSoles') IS NULL
@@ -46,18 +47,20 @@ END;
 
 IF COL_LENGTH(N'dbo.CON_DocumentoConfiguracionEmpresa', N'IdPlanCuentaSoles') IS NOT NULL
 BEGIN
-    UPDATE cfg
-    SET IdCuentaVentaSoles = ISNULL(cfg.IdCuentaVentaSoles, cfg.IdPlanCuentaSoles),
-        IdCuentaCompraSoles = ISNULL(cfg.IdCuentaCompraSoles, cfg.IdPlanCuentaSoles)
-    FROM dbo.CON_DocumentoConfiguracionEmpresa AS cfg;
+    EXEC sys.sp_executesql N'
+        UPDATE cfg
+        SET IdCuentaVentaSoles = ISNULL(cfg.IdCuentaVentaSoles, cfg.IdPlanCuentaSoles),
+            IdCuentaCompraSoles = ISNULL(cfg.IdCuentaCompraSoles, cfg.IdPlanCuentaSoles)
+        FROM dbo.CON_DocumentoConfiguracionEmpresa AS cfg;';
 END;
 
 IF COL_LENGTH(N'dbo.CON_DocumentoConfiguracionEmpresa', N'IdPlanCuentaDolares') IS NOT NULL
 BEGIN
-    UPDATE cfg
-    SET IdCuentaVentaDolares = ISNULL(cfg.IdCuentaVentaDolares, cfg.IdPlanCuentaDolares),
-        IdCuentaCompraDolares = ISNULL(cfg.IdCuentaCompraDolares, cfg.IdPlanCuentaDolares)
-    FROM dbo.CON_DocumentoConfiguracionEmpresa AS cfg;
+    EXEC sys.sp_executesql N'
+        UPDATE cfg
+        SET IdCuentaVentaDolares = ISNULL(cfg.IdCuentaVentaDolares, cfg.IdPlanCuentaDolares),
+            IdCuentaCompraDolares = ISNULL(cfg.IdCuentaCompraDolares, cfg.IdPlanCuentaDolares)
+        FROM dbo.CON_DocumentoConfiguracionEmpresa AS cfg;';
 END;
 
 IF OBJECT_ID(N'dbo.FK_CON_DocumentoConfiguracionEmpresa_PlanCuentaSoles', N'F') IS NOT NULL
@@ -72,12 +75,14 @@ END;
 
 IF COL_LENGTH(N'dbo.CON_DocumentoConfiguracionEmpresa', N'IdPlanCuentaSoles') IS NOT NULL
 BEGIN
-    ALTER TABLE dbo.CON_DocumentoConfiguracionEmpresa DROP COLUMN IdPlanCuentaSoles;
+    EXEC sys.sp_executesql N'
+        ALTER TABLE dbo.CON_DocumentoConfiguracionEmpresa DROP COLUMN IdPlanCuentaSoles;';
 END;
 
 IF COL_LENGTH(N'dbo.CON_DocumentoConfiguracionEmpresa', N'IdPlanCuentaDolares') IS NOT NULL
 BEGIN
-    ALTER TABLE dbo.CON_DocumentoConfiguracionEmpresa DROP COLUMN IdPlanCuentaDolares;
+    EXEC sys.sp_executesql N'
+        ALTER TABLE dbo.CON_DocumentoConfiguracionEmpresa DROP COLUMN IdPlanCuentaDolares;';
 END;
 
 IF OBJECT_ID(N'dbo.FK_CON_DocumentoConfiguracionEmpresa_CuentaVentaSoles', N'F') IS NULL

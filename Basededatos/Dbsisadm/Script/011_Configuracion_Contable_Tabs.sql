@@ -9,6 +9,7 @@
 -- Create date:   20/06/2026
 -- Description:   Actualiza documentos con cuentas separadas y unifica configuracion de impuestos.
 -- =============================================
+-- Firma: FRANCO LARA - 25/08/2026 | Define la cuenta maestra de impuesto mediante CodigoCuenta VARCHAR.
 
 IF OBJECT_ID(N'dbo.CON_TipoImpuesto', N'U') IS NULL
 BEGIN
@@ -17,7 +18,7 @@ BEGIN
         IdTipoImpuesto INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_CON_TipoImpuesto PRIMARY KEY,
         CodigoSunat VARCHAR(10) NOT NULL,
         NombreImpuesto NVARCHAR(100) NOT NULL,
-        IdPlanCuenta INT NULL,
+        CodigoCuenta VARCHAR(20) NULL,
         Estado BIT NOT NULL CONSTRAINT DF_CON_TipoImpuesto_Estado DEFAULT (1)
     );
 

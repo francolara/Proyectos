@@ -38,4 +38,23 @@ public sealed class EmpresaRepository(IDbConnectionFactory connectionFactory) : 
 
         return empresas;
     }
+
+    public async Task ActualizarAsync(ActualizarEmpresaRequest request, CancellationToken cancellationToken = default)
+    {
+        await using var connection = connectionFactory.CreateConnection();
+        await using var command = new SqlCommand("dbo.usp_SEG_ActualizarEmpresaPorUsuario", connection)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        command.Parameters.AddWithValue("@IdEmpresa", request.IdEmpresa);
+        command.Parameters.AddWithValue("@AspNetUserId", request.AspNetUserId);
+        command.Parameters.AddWithValue("@RazonSocial", request.RazonSocial);
+        command.Parameters.AddWithValue("@NombreComercial", (object?)request.NombreComercial ?? DBNull.Value);
+        command.Parameters.AddWithValue("@Ruc", request.Ruc);
+        command.Parameters.AddWithValue("@UsuarioRegistro", (object?)request.UsuarioRegistro ?? DBNull.Value);
+
+        await connection.OpenAsync(cancellationToken);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
 }

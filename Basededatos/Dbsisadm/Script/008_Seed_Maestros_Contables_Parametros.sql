@@ -16,6 +16,7 @@
 -- =============================================
 -- Firma: FRANCO LARA - 01/07/2026 | Agrega el parametro maestro ORIGEN_DIFERENCIA_CAMBIO como referencia legacy y mantiene disponible el origen 88 para configurar diferencia en cambio desde el modulo web.
 -- Firma: FRANCO LARA - 02/07/2026 | Agrega GeneraDiferenciaPorAnalisis al plan de cuentas maestro para heredar la configuracion base o de empresa origen y suma los parametros/origen base de los nuevos procesos AJU, APR y CIE.
+-- Firma: FRANCO LARA - 25/08/2026 | Elimina el ejercicio de las cuentas destino maestras; el ejercicio se asigna al materializar la regla por empresa.
 
 MERGE dbo.ADM_ParametroMaestro AS destino
 USING
@@ -198,17 +199,16 @@ MERGE dbo.CON_CuentaDestinoReglaMaestro AS destino
 USING
 (
     VALUES
-        (2026, '90111001', N'Regla base de destino para costo de mercaderia')
-) AS fuente (Ejercicio, CodigoCuentaOrigen, Observacion)
-    ON destino.Ejercicio = fuente.Ejercicio
-   AND destino.CodigoCuentaOrigen = fuente.CodigoCuentaOrigen
+        ('90111001', N'Regla base de destino para costo de mercaderia')
+) AS fuente (CodigoCuentaOrigen, Observacion)
+    ON destino.CodigoCuentaOrigen = fuente.CodigoCuentaOrigen
 WHEN MATCHED THEN
     UPDATE
     SET destino.Observacion = fuente.Observacion,
         destino.Activo = 1
 WHEN NOT MATCHED BY TARGET THEN
-    INSERT (Ejercicio, CodigoCuentaOrigen, Activo, Observacion)
-    VALUES (fuente.Ejercicio, fuente.CodigoCuentaOrigen, 1, fuente.Observacion);
+    INSERT (CodigoCuentaOrigen, Activo, Observacion)
+    VALUES (fuente.CodigoCuentaOrigen, 1, fuente.Observacion);
 
 MERGE dbo.CON_CuentaDestinoReglaDetalleMaestro AS destino
 USING
@@ -220,8 +220,7 @@ USING
         CAST('79111002' AS VARCHAR(20)) AS CodigoCuentaDestinoAbono,
         CAST(100 AS DECIMAL(7,4)) AS Porcentaje
     FROM dbo.CON_CuentaDestinoReglaMaestro AS rm
-    WHERE rm.Ejercicio = 2026
-      AND rm.CodigoCuentaOrigen = '90111001'
+    WHERE rm.CodigoCuentaOrigen = '90111001'
 ) AS fuente
     ON destino.IdCuentaDestinoReglaMaestro = fuente.IdCuentaDestinoReglaMaestro
    AND destino.Orden = fuente.Orden

@@ -20,6 +20,7 @@
 -- Description:   Incluye el origen de provision para detracciones y la cuenta SPOT dentro de impuestos.
 -- =============================================
 -- Firma: FRANCO LARA - 02/07/2026 | Expone tambien las configuraciones DIF, AJU, APR y CIE para seleccionar los origenes de diferencia en cambio, ajuste de cuentas, apertura y cierre desde configuracion contable.
+-- Firma: FRANCO LARA - 25/08/2026 | Expone exclusivamente las cuentas configuradas por empresa; el maestro solo se utiliza durante la carga inicial.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_ObtenerConfiguracionContableEmpresa
     @IdEmpresa INT
@@ -52,16 +53,16 @@ BEGIN
             t.UsoCompras,
             t.UsoVentas,
             cfg.IdDocumentoConfiguracionEmpresa,
-            COALESCE(cfg.IdCuentaVentaSoles, t.IdCuentaVentaSoles) AS IdCuentaVentaSoles,
+            cfg.IdCuentaVentaSoles,
             pvs.CodigoCuenta AS CodigoCuentaVentaSoles,
             pvs.NombreCuenta AS NombreCuentaVentaSoles,
-            COALESCE(cfg.IdCuentaVentaDolares, t.IdCuentaVentaDolares) AS IdCuentaVentaDolares,
+            cfg.IdCuentaVentaDolares,
             pvd.CodigoCuenta AS CodigoCuentaVentaDolares,
             pvd.NombreCuenta AS NombreCuentaVentaDolares,
-            COALESCE(cfg.IdCuentaCompraSoles, t.IdCuentaCompraSoles) AS IdCuentaCompraSoles,
+            cfg.IdCuentaCompraSoles,
             pcs.CodigoCuenta AS CodigoCuentaCompraSoles,
             pcs.NombreCuenta AS NombreCuentaCompraSoles,
-            COALESCE(cfg.IdCuentaCompraDolares, t.IdCuentaCompraDolares) AS IdCuentaCompraDolares,
+            cfg.IdCuentaCompraDolares,
             pcd.CodigoCuenta AS CodigoCuentaCompraDolares,
             pcd.NombreCuenta AS NombreCuentaCompraDolares,
             ISNULL(cfg.Activo, CONVERT(BIT, 1)) AS Activo
@@ -70,13 +71,13 @@ BEGIN
             ON cfg.IdTipoComprobante = t.IdTipoComprobante
            AND cfg.IdEmpresa = @IdEmpresa
         LEFT JOIN dbo.CON_PlanCuenta AS pvs
-            ON pvs.IdPlanCuenta = COALESCE(cfg.IdCuentaVentaSoles, t.IdCuentaVentaSoles)
+            ON pvs.IdPlanCuenta = cfg.IdCuentaVentaSoles
         LEFT JOIN dbo.CON_PlanCuenta AS pvd
-            ON pvd.IdPlanCuenta = COALESCE(cfg.IdCuentaVentaDolares, t.IdCuentaVentaDolares)
+            ON pvd.IdPlanCuenta = cfg.IdCuentaVentaDolares
         LEFT JOIN dbo.CON_PlanCuenta AS pcs
-            ON pcs.IdPlanCuenta = COALESCE(cfg.IdCuentaCompraSoles, t.IdCuentaCompraSoles)
+            ON pcs.IdPlanCuenta = cfg.IdCuentaCompraSoles
         LEFT JOIN dbo.CON_PlanCuenta AS pcd
-            ON pcd.IdPlanCuenta = COALESCE(cfg.IdCuentaCompraDolares, t.IdCuentaCompraDolares)
+            ON pcd.IdPlanCuenta = cfg.IdCuentaCompraDolares
         ORDER BY
             t.CodigoTipoComprobante ASC;
 
@@ -85,7 +86,7 @@ BEGIN
             i.CodigoSunat,
             i.NombreImpuesto,
             cfg.IdTipoImpuestoConfiguracionEmpresa AS IdConfiguracion,
-            COALESCE(cfg.IdPlanCuenta, i.IdPlanCuenta) AS IdPlanCuenta,
+            cfg.IdPlanCuenta,
             pc.CodigoCuenta,
             pc.NombreCuenta,
             ISNULL(cfg.Activo, CONVERT(BIT, 1)) AS Activo
@@ -94,7 +95,7 @@ BEGIN
             ON cfg.IdTipoImpuesto = i.IdTipoImpuesto
            AND cfg.IdEmpresa = @IdEmpresa
         LEFT JOIN dbo.CON_PlanCuenta AS pc
-            ON pc.IdPlanCuenta = COALESCE(cfg.IdPlanCuenta, i.IdPlanCuenta)
+            ON pc.IdPlanCuenta = cfg.IdPlanCuenta
         WHERE i.Estado = 1
         ORDER BY
             i.IdTipoImpuesto ASC;

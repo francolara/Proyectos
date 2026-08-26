@@ -4,6 +4,7 @@
 -- Description:   Numerador contable por empresa, origen y periodo para reinicio por periodo contable.
 -- =============================================
 -- Firma: FRANCO LARA - 02/07/2026 | Amplia CON_CorrelativoAsiento a 16 periodos contables admitiendo meses 00-15 para apertura, ajustes y cierres.
+-- Firma: FRANCO LARA - 22/08/2026 | Limita los correlativos contables al calendario vigente 00-14.
 
 IF OBJECT_ID(N'dbo.CON_CorrelativoAsiento', N'U') IS NULL
 BEGIN
@@ -31,7 +32,7 @@ BEGIN
         ADD CONSTRAINT CK_CON_CorrelativoAsiento_Periodo
             CHECK (
                 Periodo LIKE '[1-2][0-9][0-9][0-9][0-1][0-9]'
-                AND RIGHT(Periodo, 2) BETWEEN '00' AND '15'
+                AND RIGHT(Periodo, 2) BETWEEN '00' AND '14'
             );
 
     ALTER TABLE dbo.CON_CorrelativoAsiento

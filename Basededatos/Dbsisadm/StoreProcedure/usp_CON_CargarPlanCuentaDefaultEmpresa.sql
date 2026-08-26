@@ -8,6 +8,7 @@
 -- Create date:   02/07/2026
 -- Description:   Permite cargar el plan desde una empresa base o desde el maestro, heredando diferencia en cambio por analisis.
 -- =============================================
+-- Firma: FRANCO LARA - 25/08/2026 | El maestro no contiene GeneraDiferenciaPorAnalisis; al cargarlo se inicializa en cero para la empresa.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_CargarPlanCuentaDefaultEmpresa
     @IdEmpresa INT,
@@ -130,7 +131,7 @@ BEGIN
                 pcm.IdMoneda,
                 pcm.TipoCambio,
                 pcm.AceptaMovimiento,
-                pcm.GeneraDiferenciaPorAnalisis,
+                CAST(0 AS BIT) AS GeneraDiferenciaPorAnalisis,
                 pcm.RequiereCentroCosto,
                 pcm.Estado,
                 pcm.Orden

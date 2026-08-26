@@ -3,6 +3,7 @@
 -- Create date:   30/06/2026
 -- Description:   Agrega retencion de renta de 4ta en compras por recibos por honorarios y crea el documento pendiente independiente para su pago.
 -- =============================================
+-- Firma: FRANCO LARA - 25/08/2026 | Registra la cuenta maestra de R4TA como CodigoCuenta VARCHAR en lugar de IdPlanCuenta.
 
 IF COL_LENGTH(N'dbo.COM_Compra', N'ExoneracionRenta4ta') IS NULL
 BEGIN
@@ -74,7 +75,7 @@ WHEN MATCHED THEN
     SET destino.NombreImpuesto = fuente.NombreImpuesto,
         destino.Estado = 1
 WHEN NOT MATCHED BY TARGET THEN
-    INSERT (CodigoSunat, NombreImpuesto, IdPlanCuenta, Estado)
+    INSERT (CodigoSunat, NombreImpuesto, CodigoCuenta, Estado)
     VALUES (fuente.CodigoSunat, fuente.NombreImpuesto, NULL, 1);
 
 MERGE dbo.ADM_ParametroMaestro AS destino

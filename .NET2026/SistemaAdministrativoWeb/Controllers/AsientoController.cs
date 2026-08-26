@@ -26,7 +26,7 @@ public class AsientoController(
     private const int TamanoAyudaCuenta = 100;
     private const int TamanoAyudaPersona = 20;
     private const byte MesContableMinimo = 0;
-    private const byte MesContableMaximo = 15;
+    private const byte MesContableMaximo = 14;
     private static readonly string[] ModulosOrigenAutomaticoConfigurado = ["COM", "VEN", "ING", "EGR"];
 
     [HttpGet]
@@ -843,8 +843,7 @@ public class AsientoController(
             new() { Valor = 11, Nombre = "Noviembre" },
             new() { Valor = 12, Nombre = "Diciembre" },
             new() { Valor = 13, Nombre = "Ajustes y Liquidaciones" },
-            new() { Valor = 14, Nombre = "Cierre de Ganancias y Perdidas" },
-            new() { Valor = 15, Nombre = "Cierre de Inventarios" }
+            new() { Valor = 14, Nombre = "Cierre de Inventario" }
         ];
     }
 

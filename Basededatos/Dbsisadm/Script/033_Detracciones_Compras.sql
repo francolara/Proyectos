@@ -3,6 +3,7 @@
 -- Create date:   26/06/2026
 -- Description:   Agrega maestro general de detracciones, documento pendiente por compra, modulo contable de detracciones y cuenta SPOT para provisiones de compras.
 -- =============================================
+-- Firma: FRANCO LARA - 25/08/2026 | Registra SPOT mediante CodigoCuenta y mantiene el CHECK de modulos alineado con el catalogo contable vigente.
 
 IF COL_LENGTH(N'dbo.COM_Compra', N'TieneDetraccion') IS NULL
 BEGIN
@@ -49,7 +50,7 @@ END;
 
 ALTER TABLE dbo.CON_ConfiguracionContabilizacion
     ADD CONSTRAINT CK_CON_ConfiguracionContabilizacion_ModuloOperacion
-        CHECK (ModuloOperacion IN ('COM', 'VEN', 'EGR', 'ING', 'APNC', 'DET'));
+        CHECK (ModuloOperacion IN ('COM', 'VEN', 'EGR', 'ING', 'APNC', 'DET', 'PER', 'DIF', 'AJU', 'APR', 'CIE'));
 
 MERGE dbo.CON_TipoImpuesto AS target
 USING
@@ -62,7 +63,7 @@ WHEN MATCHED THEN
         target.NombreImpuesto = source.NombreImpuesto,
         target.Estado = 1
 WHEN NOT MATCHED BY TARGET THEN
-    INSERT (CodigoSunat, NombreImpuesto, IdPlanCuenta, Estado)
+    INSERT (CodigoSunat, NombreImpuesto, CodigoCuenta, Estado)
     VALUES (source.CodigoSunat, source.NombreImpuesto, NULL, 1);
 
 MERGE dbo.ADM_DetraccionSunat AS target

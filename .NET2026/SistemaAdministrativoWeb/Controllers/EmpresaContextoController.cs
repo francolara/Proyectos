@@ -146,7 +146,6 @@ public class EmpresaContextoController(
                     RazonSocial = razonSocial,
                     NombreComercial = nombreComercial,
                     Ruc = model.Ruc.Trim(),
-                    IdEmpresaBase = empresaBaseId,
                     EsEmpresaPredeterminada = false,
                     UsuarioRegistro = email
                 }, cancellationToken);
@@ -170,6 +169,76 @@ public class EmpresaContextoController(
         TempData["SuccessMessage"] = empresas.Count == 0
             ? "La empresa inicial fue registrada correctamente."
             : "La nueva empresa fue registrada correctamente.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpGet]
+    [ModulePermission("EMPRESAS", ModulePermissionOperation.Edit)]
+    public async Task<IActionResult> Editar(int idEmpresa, CancellationToken cancellationToken)
+    {
+        var empresa = (await ObtenerEmpresasAsync(cancellationToken))
+            .FirstOrDefault(x => x.IdEmpresa == idEmpresa);
+
+        if (empresa is null)
+        {
+            return NotFound();
+        }
+
+        return View(new EditarEmpresaViewModel
+        {
+            IdEmpresa = empresa.IdEmpresa,
+            RazonSocial = empresa.RazonSocial,
+            NombreComercial = empresa.NombreComercial,
+            Ruc = empresa.Ruc
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [ModulePermission("EMPRESAS", ModulePermissionOperation.Edit)]
+    public async Task<IActionResult> Editar(EditarEmpresaViewModel model, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var aspNetUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(aspNetUserId))
+        {
+            return Challenge();
+        }
+
+        var razonSocial = model.RazonSocial.Trim();
+        var nombreComercial = string.IsNullOrWhiteSpace(model.NombreComercial)
+            ? razonSocial
+            : model.NombreComercial.Trim();
+        var ruc = model.Ruc.Trim();
+
+        try
+        {
+            await empresaRepository.ActualizarAsync(new ActualizarEmpresaRequest
+            {
+                IdEmpresa = model.IdEmpresa,
+                AspNetUserId = aspNetUserId,
+                RazonSocial = razonSocial,
+                NombreComercial = nombreComercial,
+                Ruc = ruc,
+                UsuarioRegistro = User.Identity?.Name
+            }, cancellationToken);
+        }
+        catch (SqlException ex) when (ex.Number == 50000)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            return View(model);
+        }
+
+        if (currentCompanyAccessor.EmpresaId == model.IdEmpresa)
+        {
+            currentCompanyAccessor.EstablecerEmpresa(model.IdEmpresa, razonSocial);
+        }
+
+        TempData["SuccessMessage"] = "Los datos de la empresa fueron actualizados correctamente.";
         return RedirectToAction(nameof(Index));
     }
 

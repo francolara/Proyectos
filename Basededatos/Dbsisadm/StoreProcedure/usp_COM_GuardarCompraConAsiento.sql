@@ -34,6 +34,7 @@
 -- Firma: FRANCO LARA - 29/06/2026 | Guarda tipo documento por codigo en compras, detracciones y percepciones, usa 00 para documentos adicionales y calcula importes por moneda en cada linea del asiento.
 -- Firma: FRANCO LARA - 30/06/2026 | Corrige el asiento de percepciones para debitar el impuesto IGVPER configurado por empresa, acreditar la cuenta parametrizada CTADEPERCEPCION, usar TipoDocumento 00 en ambas lineas, grabar TipoCambioLinea en todas las lineas del asiento y crear el asiento principal cuando una compra importada estaba en EN REVISION sin IdAsiento.
 -- Firma: FRANCO LARA - 30/06/2026 | Agrega retencion de renta de 4ta para recibos por honorarios, genera el pendiente COM_CompraRetencion y acredita la cuenta R4TA en el asiento principal de la compra.
+-- Firma: FRANCO LARA - 25/08/2026 | Exige cuentas de documentos e impuestos configuradas por empresa, sin usar respaldos del maestro durante la provision.
 
 CREATE OR ALTER PROCEDURE dbo.usp_COM_GuardarCompraConAsiento
     @IdCompra INT = NULL,
@@ -542,13 +543,14 @@ BEGIN
 
         SELECT
             @IdCuentaDocumento = CASE
-                WHEN @CodigoMoneda = 'USD' THEN COALESCE(CASE WHEN ISNULL(cfg.Activo, 1) = 1 THEN cfg.IdCuentaCompraDolares END, t.IdCuentaCompraDolares)
-                ELSE COALESCE(CASE WHEN ISNULL(cfg.Activo, 1) = 1 THEN cfg.IdCuentaCompraSoles END, t.IdCuentaCompraSoles)
+                WHEN @CodigoMoneda = 'USD' THEN cfg.IdCuentaCompraDolares
+                ELSE cfg.IdCuentaCompraSoles
             END
         FROM dbo.ADM_TipoComprobante AS t
         LEFT JOIN dbo.CON_DocumentoConfiguracionEmpresa AS cfg
             ON cfg.IdTipoComprobante = t.IdTipoComprobante
            AND cfg.IdEmpresa = @IdEmpresa
+           AND cfg.Activo = 1
         WHERE t.IdTipoComprobante = @IdTipoComprobanteTrabajo;
 
         IF @IdCuentaDocumento IS NULL
@@ -570,12 +572,12 @@ BEGIN
         END;
 
         SELECT
-            @IdCuentaIgv = MAX(CASE WHEN i.CodigoSunat = 'IGV' THEN COALESCE(CASE WHEN ISNULL(cfg.Activo, 1) = 1 THEN cfg.IdPlanCuenta END, i.IdPlanCuenta) END),
-            @IdCuentaRenta4ta = MAX(CASE WHEN i.CodigoSunat = 'R4TA' THEN COALESCE(CASE WHEN ISNULL(cfg.Activo, 1) = 1 THEN cfg.IdPlanCuenta END, i.IdPlanCuenta) END),
-            @IdCuentaIgvPercepcion = MAX(CASE WHEN i.CodigoSunat = 'IGVPER' THEN COALESCE(CASE WHEN ISNULL(cfg.Activo, 1) = 1 THEN cfg.IdPlanCuenta END, i.IdPlanCuenta) END),
-            @IdCuentaIsc = MAX(CASE WHEN i.CodigoSunat = 'ISC' THEN COALESCE(CASE WHEN ISNULL(cfg.Activo, 1) = 1 THEN cfg.IdPlanCuenta END, i.IdPlanCuenta) END),
-            @IdCuentaIcbper = MAX(CASE WHEN i.CodigoSunat = 'ICBPER' THEN COALESCE(CASE WHEN ISNULL(cfg.Activo, 1) = 1 THEN cfg.IdPlanCuenta END, i.IdPlanCuenta) END),
-            @IdCuentaOtros = MAX(CASE WHEN i.CodigoSunat = 'OTROS' THEN COALESCE(CASE WHEN ISNULL(cfg.Activo, 1) = 1 THEN cfg.IdPlanCuenta END, i.IdPlanCuenta) END)
+            @IdCuentaIgv = MAX(CASE WHEN i.CodigoSunat = 'IGV' AND cfg.Activo = 1 THEN cfg.IdPlanCuenta END),
+            @IdCuentaRenta4ta = MAX(CASE WHEN i.CodigoSunat = 'R4TA' AND cfg.Activo = 1 THEN cfg.IdPlanCuenta END),
+            @IdCuentaIgvPercepcion = MAX(CASE WHEN i.CodigoSunat = 'IGVPER' AND cfg.Activo = 1 THEN cfg.IdPlanCuenta END),
+            @IdCuentaIsc = MAX(CASE WHEN i.CodigoSunat = 'ISC' AND cfg.Activo = 1 THEN cfg.IdPlanCuenta END),
+            @IdCuentaIcbper = MAX(CASE WHEN i.CodigoSunat = 'ICBPER' AND cfg.Activo = 1 THEN cfg.IdPlanCuenta END),
+            @IdCuentaOtros = MAX(CASE WHEN i.CodigoSunat = 'OTROS' AND cfg.Activo = 1 THEN cfg.IdPlanCuenta END)
         FROM dbo.CON_TipoImpuesto AS i
         LEFT JOIN dbo.CON_TipoImpuestoConfiguracionEmpresa AS cfg
             ON cfg.IdTipoImpuesto = i.IdTipoImpuesto

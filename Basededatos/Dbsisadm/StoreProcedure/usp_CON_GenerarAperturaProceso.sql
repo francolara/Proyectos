@@ -5,6 +5,7 @@
 -- =============================================
 -- Firma: FRANCO LARA - 02/07/2026 | Genera un unico asiento de apertura por ejercicio usando saldos acumulados hasta un periodo de corte del anio anterior y la logica referencial equivalente a usp_AsientodeApertura_2, agrupando el analisis por numero de documento, tipo, serie y referencia sin heredar cliente/proveedor al asiento generado.
 -- Firma: FRANCO LARA - 03/07/2026 | Toma DH como marca explicita del sentido contable al calcular los saldos base y lo persiste en el detalle del asiento de apertura.
+-- Firma: FRANCO LARA - 22/08/2026 | Limita el corte del ejercicio base a los periodos contables 00-14 y explicita las columnas combinadas del resumen y analisis de apertura.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_GenerarAperturaProceso
     @IdEmpresa INT,
@@ -41,7 +42,7 @@ BEGIN
             RAISERROR(N'El anio de apertura es invalido.', 16, 1);
         END;
 
-        IF @MesSaldoHasta > 15
+        IF @MesSaldoHasta > 14
         BEGIN
             RAISERROR(N'El mes contable de corte es invalido.', 16, 1);
         END;
@@ -331,9 +332,35 @@ BEGIN
             origen.Observacion
         FROM
         (
-            SELECT * FROM ResumenCuenta
+            SELECT
+                r.TipoDetalle,
+                r.IdPlanCuenta,
+                r.NombreCuenta,
+                r.CodigoMoneda,
+                r.TipoCambioAplicado,
+                r.NumeroDocumento,
+                r.TipoDocumento,
+                r.Serie,
+                r.ReferenciaLinea,
+                r.SaldoSoles,
+                r.SaldoDolares,
+                r.Observacion
+            FROM ResumenCuenta AS r
             UNION ALL
-            SELECT * FROM AnalisisCuenta
+            SELECT
+                ac.TipoDetalle,
+                ac.IdPlanCuenta,
+                ac.NombreCuenta,
+                ac.CodigoMoneda,
+                ac.TipoCambioAplicado,
+                ac.NumeroDocumento,
+                ac.TipoDocumento,
+                ac.Serie,
+                ac.ReferenciaLinea,
+                ac.SaldoSoles,
+                ac.SaldoDolares,
+                ac.Observacion
+            FROM AnalisisCuenta AS ac
         ) AS origen
         INNER JOIN dbo.CON_PlanCuenta AS pc
             ON pc.IdPlanCuenta = origen.IdPlanCuenta

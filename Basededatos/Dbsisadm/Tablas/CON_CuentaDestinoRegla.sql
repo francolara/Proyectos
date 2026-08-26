@@ -7,6 +7,7 @@
 -- Create date:   25/06/2026
 -- Description:   Actualiza la clave unica para mantener una sola configuracion por empresa y cuenta origen.
 -- =============================================
+-- Firma: FRANCO LARA - 25/08/2026 | Elimina Ejercicio porque la regla es unica por empresa y cuenta origen.
 
 IF OBJECT_ID(N'dbo.CON_CuentaDestinoRegla', N'U') IS NULL
 BEGIN
@@ -14,7 +15,6 @@ BEGIN
     (
         IdCuentaDestinoRegla INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_CON_CuentaDestinoRegla PRIMARY KEY,
         IdEmpresa INT NOT NULL,
-        Ejercicio SMALLINT NOT NULL,
         IdPlanCuentaOrigen INT NOT NULL,
         Activo BIT NOT NULL CONSTRAINT DF_CON_CuentaDestinoRegla_Activo DEFAULT (1),
         Observacion NVARCHAR(500) NULL,
@@ -33,4 +33,10 @@ BEGIN
     ALTER TABLE dbo.CON_CuentaDestinoRegla
         ADD CONSTRAINT UQ_CON_CuentaDestinoRegla
             UNIQUE (IdEmpresa, IdPlanCuentaOrigen);
+END;
+
+IF COL_LENGTH(N'dbo.CON_CuentaDestinoRegla', N'Ejercicio') IS NOT NULL
+BEGIN
+    EXEC sys.sp_executesql N'
+        ALTER TABLE dbo.CON_CuentaDestinoRegla DROP COLUMN Ejercicio;';
 END;

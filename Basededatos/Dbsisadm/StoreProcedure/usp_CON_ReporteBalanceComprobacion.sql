@@ -3,6 +3,7 @@
 -- Create date:   07/07/2026
 -- Description:   Replica el balance de comprobacion legacy en HTML usando rango de periodos, grado y jerarquia contable sobre CON_Asiento y CON_AsientoDetalle.
 -- =============================================
+-- Firma: FRANCO LARA - 22/08/2026 | Limita el rango del reporte al calendario contable vigente 00-14.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_ReporteBalanceComprobacion
     @IdEmpresa INT,
@@ -23,8 +24,8 @@ BEGIN
     BEGIN TRY
 
         DECLARE @MonedaTrabajo VARCHAR(3) = CASE WHEN UPPER(LTRIM(RTRIM(ISNULL(@Moneda, 'PEN')))) = 'USD' THEN 'USD' ELSE 'PEN' END;
-        DECLARE @PeriodoDesdeTrabajo TINYINT = CASE WHEN @PeriodoDesde <= 15 THEN @PeriodoDesde ELSE 0 END;
-        DECLARE @PeriodoHastaTrabajo TINYINT = CASE WHEN @PeriodoHasta <= 15 THEN @PeriodoHasta ELSE @PeriodoDesdeTrabajo END;
+        DECLARE @PeriodoDesdeTrabajo TINYINT = CASE WHEN @PeriodoDesde <= 14 THEN @PeriodoDesde ELSE 0 END;
+        DECLARE @PeriodoHastaTrabajo TINYINT = CASE WHEN @PeriodoHasta <= 14 THEN @PeriodoHasta ELSE @PeriodoDesdeTrabajo END;
         DECLARE @GradoTrabajo TINYINT = CASE WHEN @Grado >= 1 THEN @Grado ELSE 1 END;
         DECLARE @AnioTrabajo CHAR(4) = RIGHT('0000' + CONVERT(VARCHAR(4), @Anio), 4);
         DECLARE @CuentaDesdeTrabajo VARCHAR(20);

@@ -4,6 +4,7 @@
 -- Description:   Cabecera de asientos contables por empresa con correlativo por origen y periodo contable.
 -- =============================================
 -- Firma: FRANCO LARA - 02/07/2026 | Amplia CON_Asiento a 16 periodos contables admitiendo meses 00-15 para apertura, ajustes y cierres con fecha fisica independiente del periodo logico.
+-- Firma: FRANCO LARA - 22/08/2026 | Limita el calendario vigente a los periodos 00-14 y reserva el periodo 14 para el cierre de Inventario.
 
 IF OBJECT_ID(N'dbo.CON_Asiento', N'U') IS NULL
 BEGIN
@@ -44,7 +45,7 @@ BEGIN
 
     ALTER TABLE dbo.CON_Asiento
         ADD CONSTRAINT CK_CON_Asiento_Mes
-            CHECK (Mes BETWEEN 0 AND 15);
+            CHECK (Mes BETWEEN 0 AND 14);
 
     ALTER TABLE dbo.CON_Asiento
         ADD CONSTRAINT CK_CON_Asiento_Periodo

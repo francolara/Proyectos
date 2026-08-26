@@ -3,6 +3,8 @@ namespace SistemaAdministrativoWeb.ViewModels.Ayuda;
 // Firma: FRANCO LARA - 31/07/2026 | Completa la ayuda operativa General con los modulos Usuarios y Configuracion y sus preguntas contextuales.
 // Firma: FRANCO LARA - 04/08/2026 | Actualiza la ayuda de Libros Electronicos con validacion integrada, archivos complementarios, periodos vacios y control de presentacion.
 // Firma: FRANCO LARA - 05/08/2026 | Actualiza la ayuda del dashboard para incluir la tendencia historica de movimientos bancarios.
+// Firma: FRANCO LARA - 25/08/2026 | Alinea la ayuda del cierre anual y de las cargas contables por defecto con el comportamiento vigente de cada modulo.
+// Firma: FRANCO LARA - 26/08/2026 | Completa la ayuda del cierre, corrige dependencias y cargas iniciales, y documenta la edicion de empresas.
 public static class AyudaCatalogoFactory
 {
     public static AyudaIndexViewModel Crear(string? moduloSolicitado)
@@ -60,7 +62,12 @@ public static class AyudaCatalogoFactory
                         "las provisiones, los asientos manuales, las reglas de destino, los procesos de cierre y todos los reportes del mayor y balance",
                         "consultar por grado, revisar jerarquia y confirmar que la cuenta aparece en busquedas operativas y reportes",
                         "el responsable contable o quien gobierna la estructura del plan de cuentas",
-                        "asientos, compras, ventas, caja y bancos, balance de comprobacion, libro diario y libro mayor")),
+                        "asientos, compras, ventas, caja y bancos, balance de comprobacion, libro diario y libro mayor",
+                        ("Que carga el boton Cargar configuracion contable por defecto", "Carga en una sola transaccion el plan base, parametros de empresa, reglas de cuentas destino, cuentas de impuestos y cuentas por documento."),
+                        ("La configuracion contable por defecto se carga al crear una empresa", "No. La empresa se registra sin disparar esta inicializacion; la carga se ejecuta expresamente desde Plan de cuentas cuando la empresa todavia no tiene un plan."),
+                        ("De donde salen las cuentas de la carga por defecto", "Salen de las tablas maestras internas. Las configuraciones maestras guardan codigos contables y el proceso los resuelve contra las cuentas que acaba de crear para la empresa."),
+                        ("Que ocurre si falta una cuenta requerida por una configuracion maestra", "La carga se detiene, muestra el codigo faltante y revierte toda la transaccion para no dejar una configuracion parcial."),
+                        ("Puedo ejecutar otra vez la carga por defecto si la empresa ya tiene plan", "No. El proceso protege el plan existente y muestra que la empresa ya tiene cuentas registradas; cualquier ajuste posterior debe realizarse desde los mantenimientos correspondientes."))),
                     CrearModulo("CENTROCOSTO", "Centros de costo", "bi-diagram-2", "Clasificacion analitica para distribuir gastos y movimientos.", CrearFaqMantenimiento(
                         "Centros de costo",
                         "segmentar gastos e ingresos por area, sede, proyecto o unidad de negocio",
@@ -107,37 +114,48 @@ public static class AyudaCatalogoFactory
                         "compras, ventas, caja y bancos, diferencia en cambio y libros electronicos")),
                     CrearModulo("ORIGEN", "Origenes", "bi-journal-richtext", "Subdiarios y origenes de asiento usados por cada circuito.", CrearFaqMantenimiento(
                         "Origenes",
-                        "definir subdiarios, series operativas y codigos de origen para asientos manuales y automaticos",
-                        "el circuito de negocio que usara el origen y su relacion con asientos o procesos posteriores",
-                        "codigo, descripcion, tipo de origen, serie, estado y comportamiento de numeracion",
+                        "definir subdiarios y codigos de origen para asientos manuales y automaticos",
+                        "el modulo que usara el origen y si debe permitir registros manuales",
+                        "codigo de origen, nombre, modulo de origen, permiso de registro manual y estado",
                         "cuando abres un nuevo circuito operativo o separas documentos por subdiario",
                         "mezclar escenarios distintos bajo un mismo origen o dejar un origen inactivo en configuraciones",
                         "asientos manuales, compras, ventas, procesos mensuales y reportes por origen",
                         "registrar un asiento o documento de prueba y revisar que el origen se pueda seleccionar",
                         "contabilidad encargada del libro diario y de la trazabilidad por subdiario",
-                        "asientos, compras, ventas, proceso de cierre y libro diario por origen")),
+                        "asientos, compras, ventas, procesos contables y libro diario por origen",
+                        ("Que hace Cargar origenes por defecto", "Carga los subdiarios desde el maestro de origenes y, en la misma transaccion, crea la configuracion contable inicial de la empresa para los escenarios maestros activos."),
+                        ("Como relaciona la carga un origen maestro con la empresa", "La configuracion maestra guarda CodigoOrigen y el proceso busca ese mismo codigo entre los origenes creados para obtener el IdOrigen propio de la empresa."),
+                        ("Puedo cargar origenes por defecto si la empresa ya tiene origenes", "No. Para evitar mezclar catalogos, el proceso se detiene cuando encuentra cualquier origen registrado para la empresa."),
+                        ("Que ocurre si una configuracion maestra usa un origen inexistente", "La carga informa el CodigoOrigen faltante y revierte tanto los origenes como las configuraciones creadas durante el intento."))),
                     CrearModulo("CUENTADESTINOREGLA", "Cuentas destino", "bi-sliders2", "Reglas de contrapartida y distribucion automatica.", CrearFaqMantenimiento(
                         "Cuentas destino",
                         "asignar cuentas de contrapartida o destino para procesos automaticos y distribuciones contables",
                         "las reglas del negocio, la cuenta origen y el escenario donde se aplicara la derivacion",
-                        "cuenta base, cuenta destino, condicion de aplicacion, porcentaje o prioridad y vigencia",
+                        "cuenta origen, cuentas destino de cargo y abono, orden, porcentaje, estado y observacion",
                         "cuando una operacion necesita generar automaticamente su contrapartida o reclasificacion",
-                        "definir reglas solapadas o dejar una cuenta destino sin existencia en el plan contable",
-                        "ajuste de cuentas, diferencia en cambio, asientos automaticos y procesos de cierre",
+                        "guardar porcentajes que no suman 100 o usar cuentas inactivas, de resumen o ajenas al plan empresarial",
+                        "compras, asientos manuales, caja y bancos, ajuste de cuentas y diferencia en cambio cuando aplican distribuciones contables",
                         "ejecutar el proceso relacionado y revisar que la cuenta contrapartida resultante sea la esperada",
                         "contabilidad funcional o quien administra automatismos contables",
-                        "ajuste de cuentas, diferencia en cambio, apertura, cierre y configuracion contable")),
+                        "compras, asientos, caja y bancos, ajuste de cuentas, diferencia en cambio y configuracion contable",
+                        ("Las cuentas destino se configuran por ejercicio", "No. Existe una sola regla por empresa y cuenta origen; la misma configuracion se reutiliza mientras permanezca activa."),
+                        ("Que cuentas puedo usar en una regla de destino", "Solo cuentas activas y de movimiento pertenecientes al plan contable de la empresa, tanto para el origen como para el cargo y el abono."),
+                        ("Cuanto deben sumar los porcentajes del detalle", "Los detalles activos deben sumar exactamente 100 para que la distribucion contable quede completa."),
+                        ("El Asiento de cierre usa cuentas destino", "No. El cierre vigente invierte directamente las cuentas de Inventario y no agrega cuentas destino, contrapartidas ni lineas de cuadre."))),
                     CrearModulo("CONFIGURACIONCONTABILIZACION", "Configuracion contable", "bi-gear-wide-connected", "Parametros de provision, impuestos, documentos y escenarios contables.", CrearFaqMantenimiento(
                         "Configuracion contable",
-                        "gobernar como se contabilizan compras, ventas y parametros auxiliares por escenario",
-                        "el origen operativo, la cuenta por documento, impuestos, parametros y la logica de provision",
-                        "origen por operacion, cuentas por documento, cuentas de impuesto, parametros contables y estados",
-                        "cuando habilitas un nuevo escenario de compra o venta o corriges cuentas automaticas",
+                        "gobernar como se contabilizan compras, ventas y procesos automaticos mediante configuraciones propias de cada empresa",
+                        "los origenes operativos, cuentas por documento, impuestos, parametros contables y escenarios de proceso",
+                        "origen por modulo y escenario, cuentas por documento, cuentas de impuesto, parametros contables y estados",
+                        "cuando habilitas o corriges un escenario de compra, venta, aplicacion, ajuste, apertura, cierre u otro proceso automatico",
                         "cambiar cuentas sin validar el circuito completo o mezclar cuentas de impuestos y documentos",
-                        "compras, ventas, asiento automatico, validacion tributaria y procesos de cierre",
-                        "simular una compra o venta del escenario y revisar las cuentas que genera el asiento",
+                        "compras, ventas, aplicaciones, asientos automaticos, validacion tributaria y procesos contables",
+                        "ejecutar el escenario configurado y revisar el origen y las cuentas que genera el asiento",
                         "contabilidad funcional con conocimiento del circuito tributario y contable",
-                        "compras, ventas, asientos automaticos, reportes y libros electronicos"))
+                        "compras, ventas, aplicaciones, procesos, asientos automaticos, reportes y libros electronicos",
+                        ("Las operaciones usan directamente las tablas maestras", "No. Compras, ventas y procesos consultan exclusivamente la configuracion de la empresa; los maestros solo sirven para las acciones expresas de carga inicial."),
+                        ("Que ocurre si una operacion no tiene su cuenta empresarial configurada", "La operacion debe detenerse y mostrar que falta configurar la cuenta correspondiente; no debe completar el asiento buscando una alternativa en el maestro."),
+                        ("Para que sirve la configuracion CIE", "Define el origen empresarial que utiliza el Asiento de cierre para generar su asiento automatico anual.")))
                 ]),
             CrearCategoria(
                 "REGISTRO",
@@ -287,17 +305,27 @@ public static class AyudaCatalogoFactory
                         "revisar el detalle de apertura, el asiento generado y los saldos iniciales del libro mayor",
                         "contabilidad general en el inicio del ejercicio",
                         "libro mayor, balance, cierre anual y reportes del nuevo anio")),
-                    CrearModulo("ASIENTOCIERRE", "Asiento de cierre", "bi-journal-x", "Generacion anual de cierre de resultados y cuentas patrimoniales.", CrearFaqProceso(
+                    CrearModulo("ASIENTOCIERRE", "Asiento de cierre", "bi-journal-x", "Generacion anual de un unico asiento compuesto en el periodo 14 que invierte los saldos de las cuentas configuradas como Inventario.", CrearFaqProceso(
                         "Asiento de cierre",
-                        "emitir el asiento que cierra resultados y prepara el traspaso al siguiente ejercicio",
-                        "periodo final del ejercicio, ajustes ejecutados y saldos validados en mayor y balance",
-                        "cuentas de resultado, cuentas patrimoniales, importes finales y origen de cierre",
+                        "emitir un unico asiento que invierte los saldos acumulados y deja las cuentas listas para el siguiente ejercicio",
+                        "el origen CIE configurado, tipo de cambio USD del 31/12, periodo de corte entre 00 y 13, ajustes ejecutados y saldos validados en mayor y balance",
+                        "las cuentas con saldo y ColBalance I - Inventario, sus importes en soles y dolares, el sentido Debe/Haber y el origen de cierre",
                         "cuando el ejercicio esta completo y se aprobo la informacion de cierre anual",
                         "cerrar con diferencias pendientes o sin revisar procesos previos como ajuste y diferencia en cambio",
                         "libro diario, libro mayor, balance anual y asiento de apertura siguiente",
-                        "comparar totales, validar contrapartidas y confirmar que el ejercicio queda listo para apertura",
+                        "revisar cada linea invertida, comparar los totales Debe y Haber aunque sean diferentes y confirmar el asiento generado antes de la apertura",
                         "contabilidad de cierre anual",
-                        "balance anual, libro mayor, asiento de apertura y libros electronicos")),
+                        "balance anual, libro mayor, asiento de apertura y libros electronicos",
+                        ("En que periodo se genera el asiento de cierre", "Se genera obligatoriamente en el periodo 14 - Cierre de Inventario. El usuario solo elige hasta que periodo acumular saldos, desde 00 hasta 13."),
+                        ("Que cuentas incluye el asiento de cierre", "Incluye unicamente cuentas del plan empresarial con ColBalance I - Inventario cuyo saldo acumulado absoluto sea al menos 0.01 entre el periodo 00 y el corte seleccionado."),
+                        ("Como invierte los saldos el asiento de cierre", "Un saldo deudor se registra en el Haber y un saldo acreedor en el Debe. Los importes reales en soles y dolares se conservan por linea."),
+                        ("Por que el asiento de cierre puede quedar descuadrado", "El proceso no agrega una cuenta de contrapartida ni una linea artificial de cuadre. Por diseño, el total Debe puede ser diferente del total Haber."),
+                        ("Que tipo de cambio utiliza el cierre", "Requiere un tipo de cambio USD activo al 31/12. Usa Compra y Venta regulares o CompraSBS y VentaSBS segun el parametro empresarial TIPO_CAMBIO_SBS_CIERRE, y permite revisar los valores antes de generar."),
+                        ("Que sucede al regenerar el asiento de cierre", "El sistema elimina la generacion CIE anterior del mismo ejercicio, recalcula los correlativos afectados y crea nuevamente el asiento compuesto con el corte y tipos de cambio actuales."),
+                        ("Que elimina el boton Eliminar asiento de cierre", "Elimina exclusivamente el proceso CIE del ejercicio, su detalle y los asientos vinculados; despues recompone o elimina los correlativos que correspondan."),
+                        ("Que hago si aparece una generacion anterior con varios asientos", "Usa Regenerar asiento de cierre. El proceso reconoce el modelo anterior, elimina sus asientos vinculados y los reemplaza por el nuevo asiento compuesto."),
+                        ("Como reviso el asiento generado desde la pantalla de cierre", "Consulta el ejercicio y abre el numero de asiento mostrado. El detalle presenta cada cuenta, moneda, sentido Debe/Haber, tipo de cambio e importes en soles y dolares."),
+                        ("Que ocurre si no existen cuentas de Inventario con saldo", "El proceso no genera un asiento y muestra que no existen cuentas configuradas como Inventario con saldo pendiente para cerrar."))),
                     CrearModulo("CERRARPERIODO", "Cerrar Periodo", "bi-lock", "Bloqueo operativo de un periodo para evitar nuevas modificaciones.", CrearFaqProceso(
                         "Cerrar Periodo",
                         "bloquear un mes para impedir nuevos registros una vez validada la contabilidad",
@@ -437,10 +465,13 @@ public static class AyudaCatalogoFactory
             ("Que pasa si no selecciono una empresa activa", "El panel administrativo redirige a la seleccion de empresa porque todos los mantenimientos y registros se ejecutan sobre una empresa concreta."),
             ("Quien debe crear una nueva empresa", "El usuario con autorizacion administrativa de la cuenta, ya que la empresa queda vinculada a la suscripcion y al contexto contable."),
             ("Que datos debo validar al registrar una empresa", "Razon social, nombre comercial, RUC, correo principal, vigencia y datos de la cuenta administradora a la que quedara asociada."),
+            ("Puedo corregir los datos de una empresa registrada", "Si. Desde Seleccion de empresa usa Editar para corregir la razon social, el nombre comercial o el RUC. Al guardar, el codigo interno se sincroniza con el nuevo RUC y permanece oculto en el selector."),
             ("Cambiar de empresa altera mis datos actuales", "No. Solo cambia el contexto de consulta y registro; cada empresa conserva sus propios catalogos y movimientos."),
             ("Como saber en que empresa estoy trabajando", "El nombre aparece en la tarjeta Empresa activa del menu lateral y tambien se refleja en los encabezados del panel."),
             ("Puedo usar el mismo usuario en varias empresas", "Si, siempre que el usuario este vinculado a la cuenta administradora y tenga acceso a esas empresas."),
             ("Que impacto tiene una empresa nueva en la suscripcion", "Consume capacidad del limite de empresas permitidas definido para la cuenta administradora cuando aplica un tope."),
+            ("Una empresa nueva recibe automaticamente el plan y la configuracion contable", "No. El registro de la empresa no dispara cargas maestras. La configuracion inicial debe ejecutarse expresamente desde los mantenimientos autorizados."),
+            ("Como inicializo contablemente una empresa nueva", "Primero usa Cargar configuracion contable por defecto desde Plan de cuentas para crear plan, parametros, cuentas destino, impuestos y documentos. Luego usa Cargar origenes por defecto para crear los subdiarios y su configuracion contable inicial."),
             ("Que hago si una empresa no aparece en el selector", "Verifica que el usuario tenga acceso, que la empresa este activa y que la vinculacion con la cuenta administradora exista."),
             ("Cuanto conviene revisar esta pantalla", "Cada vez que cambies de contexto de trabajo, al dar de alta una empresa o cuando necesites confirmar sobre que empresa operaras el periodo.")
         ]);
@@ -515,9 +546,11 @@ public static class AyudaCatalogoFactory
         string impacto,
         string validacion,
         string responsable,
-        string dependencias)
-        => CrearPreguntas(NormalizarClave(modulo).ToLowerInvariant(),
-        [
+        string dependencias,
+        params (string pregunta, string respuesta)[] preguntasAdicionales)
+    {
+        var preguntas = new List<(string pregunta, string respuesta)>
+        {
             ($"Para que sirve {modulo}", $"Sirve para {proposito}."),
             ($"Que debo tener listo antes de usar {modulo}", $"Antes de usar {modulo} conviene validar {prerrequisitos}."),
             ($"Que campos son los mas importantes en {modulo}", $"Los campos clave de {modulo} son {camposClave}."),
@@ -528,7 +561,11 @@ public static class AyudaCatalogoFactory
             ($"Como valido que el registro de {modulo} quedo correcto", $"La validacion recomendada es {validacion}."),
             ($"Quien deberia mantener {modulo}", $"{modulo} deberia ser administrado por {responsable}."),
             ($"Que otros modulos dependen de {modulo}", $"Las dependencias principales de {modulo} son {dependencias}.")
-        ]);
+        };
+
+        preguntas.AddRange(preguntasAdicionales);
+        return CrearPreguntas(NormalizarClave(modulo).ToLowerInvariant(), preguntas);
+    }
 
     private static IReadOnlyCollection<AyudaPreguntaViewModel> CrearFaqRegistro(
         string modulo,
@@ -581,9 +618,11 @@ public static class AyudaCatalogoFactory
         string impacto,
         string validacion,
         string responsable,
-        string dependencias)
-        => CrearPreguntas(NormalizarClave(modulo).ToLowerInvariant(),
-        [
+        string dependencias,
+        params (string pregunta, string respuesta)[] preguntasAdicionales)
+    {
+        var preguntas = new List<(string pregunta, string respuesta)>
+        {
             ($"Para que sirve {modulo}", $"Sirve para {proposito}."),
             ($"Que debo verificar antes de ejecutar {modulo}", $"Antes de ejecutar {modulo} valida {prerrequisitos}."),
             ($"Que datos son determinantes en {modulo}", $"Los datos o parametros mas sensibles en {modulo} son {datosClave}."),
@@ -597,7 +636,11 @@ public static class AyudaCatalogoFactory
             ($"Que hago si {modulo} genera un resultado inesperado", "Deten el cierre, revisa configuraciones, saldos fuente y dependencias del periodo antes de volver a correr el proceso."),
             ($"En que orden revisar los resultados de {modulo}", "Primero el detalle generado, luego los asientos asociados y finalmente el impacto en reportes como libro mayor y balance."),
             ($"Que revision final conviene hacer despues de {modulo}", "Comparar antes y despues del saldo afectado y dejar el periodo listo para el siguiente proceso del cierre.")
-        ]);
+        };
+
+        preguntas.AddRange(preguntasAdicionales);
+        return CrearPreguntas(NormalizarClave(modulo).ToLowerInvariant(), preguntas);
+    }
 
     private static IReadOnlyCollection<AyudaPreguntaViewModel> CrearFaqReporte(
         string modulo,

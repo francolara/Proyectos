@@ -90,21 +90,6 @@ public sealed class ParametroEmpresaRepository(IDbConnectionFactory connectionFa
         return MapParametro(reader);
     }
 
-    public async Task CargarDefaultAsync(int idEmpresa, string? usuarioRegistro, CancellationToken cancellationToken = default)
-    {
-        await using var connection = connectionFactory.CreateConnection();
-        await using var command = new SqlCommand("dbo.usp_ADM_CargarParametrosDefaultEmpresa", connection)
-        {
-            CommandType = CommandType.StoredProcedure
-        };
-
-        command.Parameters.AddWithValue("@IdEmpresa", idEmpresa);
-        command.Parameters.AddWithValue("@UsuarioRegistro", (object?)usuarioRegistro ?? DBNull.Value);
-
-        await connection.OpenAsync(cancellationToken);
-        await command.ExecuteNonQueryAsync(cancellationToken);
-    }
-
     private static ParametroEmpresaDto MapParametro(SqlDataReader reader)
     {
         return new ParametroEmpresaDto

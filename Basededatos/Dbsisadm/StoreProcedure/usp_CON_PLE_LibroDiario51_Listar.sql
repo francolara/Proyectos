@@ -6,6 +6,7 @@
 -- Firma: FRANCO LARA - 13/07/2026 | Fija la exportacion PLE 5.1 a moneda PEN, elimina la bifurcacion por USD, usa siempre TotalImporteS como importe base de Debe y Haber, prioriza los datos documentarios del detalle para recuperar tipo y numero de comprobante en asientos de Caja y Bancos, separa Unidad de operacion de Centro de costo para respetar los 21 campos base del formato, recompone la referencia estructurada del campo 20 y ajusta la fecha contable para usar FechaEmision cuando su periodo coincide con CON_Asiento.Periodo.
 -- Firma: FRANCO LARA - 14/07/2026 | Incluye el asiento de apertura periodo 00 cuando se exporta enero, agrega en diciembre los periodos 12, 13, 14 y 15 y marca el correlativo de movimiento como A/M/C, dejando C solo para los asientos de cierre de los periodos 14 y 15.
 -- Firma: FRANCO LARA - 04/08/2026 | Genera el CUO con origen, periodo y numero de asiento; resuelve el campo 20 con Compras o Ventas, incluyendo bancos, detracciones y percepciones asociadas.
+-- Firma: FRANCO LARA - 22/08/2026 | Considera el periodo 14 como unico cierre de Inventario y elimina el periodo 15 de la exportacion de diciembre.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_PLE_LibroDiario51_Listar
     @IdEmpresa INT,
@@ -27,8 +28,7 @@ BEGIN
         DECLARE @EstadoTrabajo VARCHAR(10) = NULLIF(LTRIM(RTRIM(@Estado)), '');
         DECLARE @PeriodoApertura CHAR(6) = CONVERT(CHAR(4), @IdAnno) + '00';
         DECLARE @PeriodoAjusteFinal CHAR(6) = CONVERT(CHAR(4), @IdAnno) + '13';
-        DECLARE @PeriodoCierreResultados CHAR(6) = CONVERT(CHAR(4), @IdAnno) + '14';
-        DECLARE @PeriodoCierreInventarios CHAR(6) = CONVERT(CHAR(4), @IdAnno) + '15';
+        DECLARE @PeriodoCierreInventarios CHAR(6) = CONVERT(CHAR(4), @IdAnno) + '14';
 
         SELECT
             @PeriodoPle AS PeriodoPle,
@@ -44,7 +44,7 @@ BEGIN
             RIGHT(REPLICATE('0', 5) + CONVERT(VARCHAR(20), a.NumeroAsiento), 5) AS CorrelativoAsiento,
             CASE
                 WHEN a.Periodo = @PeriodoApertura THEN 'A'
-                WHEN a.Periodo IN (@PeriodoCierreResultados, @PeriodoCierreInventarios) THEN 'C'
+                WHEN a.Periodo = @PeriodoCierreInventarios THEN 'C'
                 ELSE 'M'
             END + RIGHT(REPLICATE('0', 4) + CONVERT(VARCHAR(10), d.Item), 4) AS CorrelativoMovimiento,
             p.CodigoCuenta AS CodigoCuentaContable,
@@ -198,7 +198,7 @@ BEGIN
           AND (
                 a.Periodo = @Periodo
                 OR (@Mes = 1 AND a.Periodo = @PeriodoApertura)
-                OR (@Mes = 12 AND a.Periodo IN (@PeriodoAjusteFinal, @PeriodoCierreResultados, @PeriodoCierreInventarios))
+                OR (@Mes = 12 AND a.Periodo IN (@PeriodoAjusteFinal, @PeriodoCierreInventarios))
               )
           AND (@FechaDesde IS NULL OR a.FechaAsiento >= @FechaDesde)
           AND (@FechaHasta IS NULL OR a.FechaAsiento <= @FechaHasta)

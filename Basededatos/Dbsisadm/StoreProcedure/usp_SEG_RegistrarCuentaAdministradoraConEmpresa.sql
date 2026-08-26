@@ -23,6 +23,11 @@
 -- Create date:   25/07/2026
 -- Description:   Inicializa la prueba con limite de una empresa y un usuario y corrige el parametro de usuario enviado a la semilla de seguridad.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA / Codex
+-- Create date:   25/08/2026
+-- Description:   Deja la carga de configuracion maestra exclusivamente al mantenimiento de Plan de cuentas.
+-- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.usp_SEG_RegistrarCuentaAdministradoraConEmpresa
     @AspNetUserId NVARCHAR(450),
@@ -191,14 +196,6 @@ BEGIN
             1,
             @UsuarioRegistro
         );
-
-        EXEC dbo.usp_ADM_CargarParametrosDefaultEmpresa
-            @IdEmpresa = @IdEmpresa,
-            @UsuarioRegistro = @UsuarioRegistro;
-
-        EXEC dbo.usp_CON_CargarPlanCuentaDefaultEmpresa
-            @IdEmpresa = @IdEmpresa,
-            @UsuarioRegistro = @UsuarioRegistro;
 
         INSERT INTO dbo.SEG_CuentaAdministradoraSuscripcion
         (

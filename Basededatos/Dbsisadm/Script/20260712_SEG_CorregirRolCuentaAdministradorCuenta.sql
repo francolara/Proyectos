@@ -3,6 +3,11 @@
 -- Create date:   12/07/2026
 -- Description:   Corrige el valor legacy ADMINISTRADOR hacia ADMINISTRADORCUENTA en defaults, datos existentes y alta inicial de cuenta administradora.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA / Codex
+-- Create date:   25/08/2026
+-- Description:   Conserva la correccion de seguridad sin cargar configuracion maestra durante el alta y corrige el usuario enviado a la semilla de permisos.
+-- =============================================
 
 UPDATE uca
 SET uca.RolCuenta = N'ADMINISTRADORCUENTA',
@@ -51,11 +56,12 @@ BEGIN
         DECLARE @IdCuentaAdministradoraSuscripcion INT
         DECLARE @FechaInicioPrueba DATE = CAST(SYSDATETIME() AS DATE)
         DECLARE @FechaFinPrueba DATE = DATEADD(DAY, @DiasPrueba, CAST(SYSDATETIME() AS DATE))
+        DECLARE @UsuarioSemilla NVARCHAR(450) = COALESCE(@UsuarioRegistro, @CorreoReferencia, N''sistema'')
 
         IF OBJECT_ID(N''dbo.usp_SEG_SeedSeguridadCuentaPermisosBase'', N''P'') IS NOT NULL
         BEGIN
             EXEC dbo.usp_SEG_SeedSeguridadCuentaPermisosBase
-                @UsuarioRegistro = COALESCE(@UsuarioRegistro, @CorreoReferencia, N''sistema'');
+                @UsuarioRegistro = @UsuarioSemilla;
         END;
 
         IF EXISTS
@@ -192,14 +198,6 @@ BEGIN
             1,
             @UsuarioRegistro
         );
-
-        EXEC dbo.usp_ADM_CargarParametrosDefaultEmpresa
-            @IdEmpresa = @IdEmpresa,
-            @UsuarioRegistro = @UsuarioRegistro;
-
-        EXEC dbo.usp_CON_CargarPlanCuentaDefaultEmpresa
-            @IdEmpresa = @IdEmpresa,
-            @UsuarioRegistro = @UsuarioRegistro;
 
         INSERT INTO dbo.SEG_CuentaAdministradoraSuscripcion
         (

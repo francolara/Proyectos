@@ -18,6 +18,11 @@
 -- Create date:   25/07/2026
 -- Description:   Valida dentro de la transaccion el limite efectivo de empresas configurado en la suscripcion de la cuenta administradora.
 -- =============================================
+-- =============================================
+-- Author:        FRANCO LARA / Codex
+-- Create date:   25/08/2026
+-- Description:   Deja la carga de configuracion maestra exclusivamente al mantenimiento de Plan de cuentas.
+-- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.usp_SEG_RegistrarEmpresaCuentaAdministradora
     @IdCuentaAdministradora INT,
@@ -26,7 +31,6 @@ CREATE OR ALTER PROCEDURE dbo.usp_SEG_RegistrarEmpresaCuentaAdministradora
     @RazonSocial NVARCHAR(200),
     @NombreComercial NVARCHAR(200) = NULL,
     @Ruc VARCHAR(11),
-    @IdEmpresaBase INT = NULL,
     @EsEmpresaPredeterminada BIT = 0,
     @UsuarioRegistro NVARCHAR(450) = NULL
 AS
@@ -123,15 +127,6 @@ BEGIN
             @AspNetUserId = @AspNetUserId,
             @IdEmpresa = @IdEmpresa,
             @EsEmpresaPredeterminada = @EsEmpresaPredeterminada,
-            @UsuarioRegistro = @UsuarioRegistro;
-
-        EXEC dbo.usp_ADM_CargarParametrosDefaultEmpresa
-            @IdEmpresa = @IdEmpresa,
-            @UsuarioRegistro = @UsuarioRegistro;
-
-        EXEC dbo.usp_CON_CargarPlanCuentaDefaultEmpresa
-            @IdEmpresa = @IdEmpresa,
-            @IdEmpresaBase = @IdEmpresaBase,
             @UsuarioRegistro = @UsuarioRegistro;
 
         COMMIT TRANSACTION;

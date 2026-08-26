@@ -4,6 +4,7 @@
 -- Description:   Cabecera del proceso de asiento de apertura por empresa y ejercicio.
 -- =============================================
 -- Firma: FRANCO LARA - 02/07/2026 | Registra un unico proceso de apertura por empresa y anio, con el periodo de saldos usado y el asiento generado en 00.
+-- Firma: FRANCO LARA - 22/08/2026 | Limita el periodo de corte del ejercicio base al calendario contable 00-14.
 
 IF OBJECT_ID(N'dbo.CON_AperturaProceso', N'U') IS NULL
 BEGIN
@@ -47,13 +48,13 @@ BEGIN
 
     ALTER TABLE dbo.CON_AperturaProceso
         ADD CONSTRAINT CK_CON_AperturaProceso_MesSaldo
-            CHECK (MesSaldoHasta BETWEEN 0 AND 15);
+            CHECK (MesSaldoHasta BETWEEN 0 AND 14);
 
     ALTER TABLE dbo.CON_AperturaProceso
         ADD CONSTRAINT CK_CON_AperturaProceso_PeriodoSaldo
             CHECK (
                 PeriodoSaldoHasta LIKE '[1-2][0-9][0-9][0-9][0-1][0-9]'
-                AND RIGHT(PeriodoSaldoHasta, 2) BETWEEN '00' AND '15'
+                AND RIGHT(PeriodoSaldoHasta, 2) BETWEEN '00' AND '14'
             );
 
     ALTER TABLE dbo.CON_AperturaProceso

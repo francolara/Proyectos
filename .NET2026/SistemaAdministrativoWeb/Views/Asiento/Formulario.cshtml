@@ -24,6 +24,7 @@
 @* Firma: FRANCO LARA - 09/07/2026 | Amplia el layout del detalle de asientos para escritorio y prioriza scroll horizontal util antes que superponer ayudas o inputs entre columnas. *@
 @* Firma: FRANCO LARA - 10/07/2026 | Corrige el detalle de asientos para que use ancho horizontal real con scroll como compras, evitando comprimir columnas y manteniendo visible el boton Quitar segun el tamano de pantalla. *@
 @* Firma: FRANCO LARA - 13/07/2026 | Ajusta el acceso al voucher contable para abrir el reporte en la misma pestana y no generar una ventana adicional al imprimir. *@
+@* Firma: FRANCO LARA - 13/08/2026 | Duplica el ancho de TipoDoc, fija la columna Quitar para aprovechar el espacio disponible del detalle de asientos sin dejar una separacion vacia al final y reduce Item en 30%. *@
 
 @{
     ViewData["Title"] = Model.Formulario.IdAsiento.HasValue ? "Editar asiento manual" : "Registrar asiento manual";
@@ -81,7 +82,8 @@
     }
 
     .asiento-detail-table .detalle-tipodoc-cell {
-        min-width: 9rem;
+        width: 18rem;
+        min-width: 18rem;
     }
 
     .asiento-detail-table .detalle-serie-cell,
@@ -90,13 +92,20 @@
     }
 
     .asiento-detail-table .detalle-tc-cell,
-    .asiento-detail-table .detalle-porcentaje-cell,
-    .asiento-detail-table .detalle-orden-cell {
+    .asiento-detail-table .detalle-porcentaje-cell {
         min-width: 6rem;
     }
 
+    .asiento-detail-table .detalle-orden-cell {
+        width: 4.2rem;
+        min-width: 4.2rem;
+        max-width: 4.2rem;
+    }
+
     .asiento-detail-table .detalle-action-cell {
+        width: 8rem;
         min-width: 8rem;
+        max-width: 8rem;
     }
 
     .asiento-detail-table .workspace-lookup-control,

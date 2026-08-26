@@ -9,6 +9,7 @@
 -- Create date:   20/06/2026
 -- Description:   Alinea ADM_TipoComprobante con cuentas contables separadas por compras y ventas.
 -- =============================================
+-- Firma: FRANCO LARA - 25/08/2026 | Define las cuentas maestras de comprobantes mediante codigos contables VARCHAR.
 
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
@@ -111,10 +112,10 @@ BEGIN
         Descripcion NVARCHAR(150) NOT NULL,
         UsoCompras BIT NOT NULL CONSTRAINT DF_ADM_TipoComprobante_UsoCompras DEFAULT (0),
         UsoVentas BIT NOT NULL CONSTRAINT DF_ADM_TipoComprobante_UsoVentas DEFAULT (0),
-        IdCuentaVentaSoles INT NULL,
-        IdCuentaVentaDolares INT NULL,
-        IdCuentaCompraSoles INT NULL,
-        IdCuentaCompraDolares INT NULL,
+        CodigoCuentaVentaSoles VARCHAR(20) NULL,
+        CodigoCuentaVentaDolares VARCHAR(20) NULL,
+        CodigoCuentaCompraSoles VARCHAR(20) NULL,
+        CodigoCuentaCompraDolares VARCHAR(20) NULL,
         Estado BIT NOT NULL CONSTRAINT DF_ADM_TipoComprobante_Estado DEFAULT (1),
         FechaRegistro DATETIME2(0) NOT NULL CONSTRAINT DF_ADM_TipoComprobante_FechaRegistro DEFAULT (SYSDATETIME()),
         UsuarioRegistro NVARCHAR(450) NULL

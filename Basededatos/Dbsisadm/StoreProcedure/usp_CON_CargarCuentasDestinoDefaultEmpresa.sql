@@ -6,8 +6,9 @@
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   25/06/2026
--- Description:   Evita duplicar cuentas destino por ejercicio al cargar la configuracion base de una empresa.
+-- Description:   Carga una sola configuracion de cuentas destino por empresa y cuenta origen, sin depender de un ejercicio.
 -- =============================================
+-- Firma: FRANCO LARA - 25/08/2026 | Valida los codigos maestros y carga reglas por empresa sin dependencia del ejercicio.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_CargarCuentasDestinoDefaultEmpresa
     @IdEmpresa INT,
@@ -19,10 +20,66 @@ BEGIN
 
     BEGIN TRY
 
+        DECLARE @CodigoCuentaFaltante VARCHAR(20)
+
+        IF NOT EXISTS
+        (
+            SELECT 1
+            FROM dbo.SEG_Empresa AS empresa
+            WHERE empresa.IdEmpresa = @IdEmpresa
+        )
+        BEGIN
+            RAISERROR(N'La empresa indicada no existe.', 16, 1);
+        END;
+
+        SELECT TOP (1)
+            @CodigoCuentaFaltante = regla.CodigoCuentaOrigen
+        FROM dbo.CON_CuentaDestinoReglaMaestro AS regla
+        LEFT JOIN dbo.CON_PlanCuenta AS cuenta
+            ON cuenta.IdEmpresa = @IdEmpresa
+           AND cuenta.CodigoCuenta = regla.CodigoCuentaOrigen
+           AND cuenta.Estado = 1
+           AND cuenta.AceptaMovimiento = 1
+        WHERE regla.Activo = 1
+          AND cuenta.IdPlanCuenta IS NULL
+        ORDER BY regla.CodigoCuentaOrigen;
+
+        IF @CodigoCuentaFaltante IS NOT NULL
+        BEGIN
+            RAISERROR(N'La cuenta origen maestra %s no existe, esta inactiva o no acepta movimiento en el plan de la empresa.', 16, 1, @CodigoCuentaFaltante);
+        END;
+
+        SET @CodigoCuentaFaltante = NULL;
+
+        SELECT TOP (1)
+            @CodigoCuentaFaltante = codigos.CodigoCuenta
+        FROM dbo.CON_CuentaDestinoReglaDetalleMaestro AS detalle
+        INNER JOIN dbo.CON_CuentaDestinoReglaMaestro AS regla
+            ON regla.IdCuentaDestinoReglaMaestro = detalle.IdCuentaDestinoReglaMaestro
+        CROSS APPLY
+        (
+            VALUES
+                (detalle.CodigoCuentaDestinoCargo),
+                (detalle.CodigoCuentaDestinoAbono)
+        ) AS codigos (CodigoCuenta)
+        LEFT JOIN dbo.CON_PlanCuenta AS cuenta
+            ON cuenta.IdEmpresa = @IdEmpresa
+           AND cuenta.CodigoCuenta = codigos.CodigoCuenta
+           AND cuenta.Estado = 1
+           AND cuenta.AceptaMovimiento = 1
+        WHERE regla.Activo = 1
+          AND detalle.Activo = 1
+          AND cuenta.IdPlanCuenta IS NULL
+        ORDER BY codigos.CodigoCuenta;
+
+        IF @CodigoCuentaFaltante IS NOT NULL
+        BEGIN
+            RAISERROR(N'La cuenta destino maestra %s no existe, esta inactiva o no acepta movimiento en el plan de la empresa.', 16, 1, @CodigoCuentaFaltante);
+        END;
+
         INSERT INTO dbo.CON_CuentaDestinoRegla
         (
             IdEmpresa,
-            Ejercicio,
             IdPlanCuentaOrigen,
             Activo,
             Observacion,
@@ -30,7 +87,6 @@ BEGIN
         )
         SELECT
             @IdEmpresa,
-            rm.Ejercicio,
             origen.IdPlanCuenta,
             rm.Activo,
             rm.Observacion,

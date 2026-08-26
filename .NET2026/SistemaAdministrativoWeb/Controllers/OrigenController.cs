@@ -63,8 +63,15 @@ public class OrigenController(
             return RedirectToAction("Index", "EmpresaContexto");
         }
 
-        await origenRepository.CargarDefaultAsync(currentCompanyAccessor.EmpresaId.Value, User.Identity?.Name, cancellationToken);
-        TempData["OrigenOk"] = "Origenes base cargados correctamente.";
+        try
+        {
+            await origenRepository.CargarDefaultAsync(currentCompanyAccessor.EmpresaId.Value, User.Identity?.Name, cancellationToken);
+            TempData["OrigenOk"] = "Origenes y configuracion contable base cargados correctamente.";
+        }
+        catch (Exception ex)
+        {
+            TempData["OrigenError"] = ex.Message;
+        }
 
         return RedirectToAction(nameof(Index));
     }

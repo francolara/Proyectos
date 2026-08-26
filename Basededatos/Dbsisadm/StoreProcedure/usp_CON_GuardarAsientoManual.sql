@@ -26,6 +26,7 @@
 -- Firma: FRANCO LARA - 26/06/2026 | Guarda tipo documento por codigo y calcula equivalencias en soles y dolares por cada linea del asiento manual.
 -- Firma: FRANCO LARA - 02/07/2026 | Vuelve obligatorio el tipo de cambio por linea en asientos manuales, agrega validacion explicita en el detalle y admite periodos contables 00-15 sin depender del mes calendario de la fecha fisica.
 -- Firma: FRANCO LARA - 03/07/2026 | Persiste DH por linea en asientos manuales, lo valida con Debe/Haber y lo hereda tambien a la expansion de cuentas destino.
+-- Firma: FRANCO LARA - 22/08/2026 | Limita el registro manual al calendario contable vigente 00-14.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_GuardarAsientoManual
     @IdAsiento INT = NULL,
@@ -73,9 +74,9 @@ BEGIN
             @Ejercicio = TRY_CONVERT(SMALLINT, LEFT(@PeriodoTrabajo, 4)),
             @Mes = TRY_CONVERT(TINYINT, RIGHT(@PeriodoTrabajo, 2));
 
-        IF @Ejercicio IS NULL OR @Mes IS NULL OR @Mes NOT BETWEEN 0 AND 15
+        IF @Ejercicio IS NULL OR @Mes IS NULL OR @Mes NOT BETWEEN 0 AND 14
         BEGIN
-            RAISERROR(N'El periodo del asiento solo admite meses contables entre 00 y 15.', 16, 1);
+            RAISERROR(N'El periodo del asiento solo admite meses contables entre 00 y 14.', 16, 1);
         END;
 
         IF @DetalleXml IS NULL

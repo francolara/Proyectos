@@ -88,9 +88,12 @@ Claves principales:
 - `02/07/2026`: se habilita `Proceso > Ajuste de Cuentas`, con origen configurable desde `Configuracion contable` bajo el modulo `AJU`, parametros `CUENTAGANANCIA_AJ` y `CUENTAPERDIDA_AJ`, proceso unico por periodo y generacion de asientos separados por cuenta analitica.
 - `02/07/2026`: en `Ajuste de Cuentas`, el agrupamiento documental replica el legado usando `CON_AsientoDetalle.NumeroDocumento` como auxiliar/RUC-DNI y `TipoDocumento + Serie + ReferenciaLinea` como identificacion del comprobante, evitando tratar el auxiliar como numero de comprobante.
 - `02/07/2026`: `Diferencia en Cambio` y `Ajuste de Cuentas` limpian sus tablas variables en cada iteracion por cuenta para evitar que un analisis o comprobante arrastre lineas hacia la siguiente cuenta procesada. En `AJU`, cada asiento ahora se genera en la moneda natural de la cuenta (`PEN`/`USD`) sin perder `TotalImporteS` y `TotalImporteD` en el detalle.
-- `02/07/2026`: `CON_PlanCuentaMaestro` incorpora `GeneraDiferenciaPorAnalisis` y el alta de empresas ahora carga plan de cuentas automatico; la empresa principal parte del maestro y la empresa adicional puede heredar el `CON_PlanCuenta` de una empresa base.
+- `02/07/2026`: `CON_PlanCuenta` incorpora `GeneraDiferenciaPorAnalisis` y el alta de empresas ahora carga plan de cuentas automatico; la empresa principal parte del maestro con este indicador inicializado en `0` y la empresa adicional puede heredarlo desde el `CON_PlanCuenta` de una empresa base.
 - `02/07/2026`: se habilita `Proceso > Asiento de apertura`, con origen configurable desde `Configuracion contable` bajo el modulo `APR`, proceso anual por ejercicio, corte configurable sobre los 16 periodos contables del ejercicio base y generacion de un unico asiento en el periodo especial `00`.
 - `02/07/2026`: se habilita `Proceso > Asiento de cierre`, con origen configurable desde `Configuracion contable` bajo el modulo `CIE`, proceso anual por ejercicio y generacion de asientos por cuenta para los periodos especiales `14` y `15`.
+- `13/08/2026`: `Proceso > Asiento de cierre` adopta el cierre compuesto del formulario legacy `FrmAsientodeCierre`: permite elegir el periodo de corte y un periodo posterior de generacion, acumula todas las cuentas con saldo sin limitarse a `ColBalance`, invierte su sentido contable y genera un unico asiento con una linea por cuenta. La regeneracion y eliminacion solo afectan el asiento vinculado al proceso y recalculan los correlativos de todos los periodos involucrados.
+- `22/08/2026`: el asiento compuesto de cierre limita su base a las cuentas del plan contable configuradas con `ColBalance = 'I'` (`Inventario`). Invierte sus saldos sin insertar una cuenta adicional de cuadre, permite generar el asiento aunque los totales Debe y Haber sean diferentes y consolida el calendario en los periodos `00-14`: el corte del cierre llega como maximo a `13` y el asiento de cierre de Inventario se genera obligatoriamente en `14`, eliminando el periodo `15` y el cierre separado de ganancias y perdidas.
+- `25/08/2026`: la carga por defecto desde Plan de cuentas inicializa en una sola transaccion plan contable, parametros, cuentas destino, impuestos y cuentas por documento. La carga por defecto de origenes inicializa tambien `CON_ConfiguracionContabilizacion` desde `CON_ConfiguracionContabilizacionMaestro`, resolviendo `CodigoOrigen` contra el origen de la empresa. Las altas y pantallas no disparan cargas automaticas; los procesos operativos usan exclusivamente configuracion empresarial.
 - `02/07/2026`: las pantallas `Proceso > Diferencia en Cambio`, `Ajuste de Cuentas`, `Asiento de apertura` y `Asiento de cierre` agregan una accion de eliminacion exclusiva para borrar solo la generacion automatica del periodo o ejercicio consultado, sin relanzar el proceso.
 - `02/07/2026`: los listados operativos y de mantenimiento con filtros por `anio/mes` consultan automaticamente al cambiar el periodo, muestran overlay global de carga en consultar/guardar/procesar y convierten el numero de asiento en enlace al detalle cuando existe asiento relacionado.
 - `02/07/2026`: el modulo `Registro > Asientos` oculta la eliminacion de asientos automaticos, marca visualmente esos registros y bloquea el boton `Guardar asiento` cuando el asiento proviene de compras, ventas, caja y bancos o procesos automaticos.
@@ -167,7 +170,7 @@ Componentes:
 - `SEG_UsuarioEmpresa`: relacion usuario-empresa.
 - `SEG_CuentaAdministradora`: cuenta administradora propietaria de la suscripcion.
 - `SEG_UsuarioCuentaAdministradora`: relacion usuario-cuenta administradora.
-- `SEG_Empresa`: empresas disponibles.
+- `SEG_Empresa`: empresas disponibles. Desde el selector se pueden corregir razon social, nombre comercial y RUC; al guardar, `CodigoEmpresa` se sincroniza con el RUC.
 
 Reglas funcionales:
 
@@ -501,7 +504,7 @@ Provision:
 
 Documento:
 
-- Lee documentos desde `ADM_TipoComprobante`.
+- Lee documentos desde `ADM_TipoComprobante`, donde las cuentas maestras se guardan como codigos contables `VARCHAR(20)`.
 - Tiene subtabs Ventas y Compras.
 - Por empresa se guardan cuentas contables para:
   `IdCuentaVentaSoles`, `IdCuentaVentaDolares`, `IdCuentaCompraSoles`, `IdCuentaCompraDolares`.
@@ -510,7 +513,7 @@ Documento:
 Impuesto:
 
 - Lee impuestos desde `CON_TipoImpuesto`.
-- La tabla maestra tambien puede tener cuenta base.
+- La tabla maestra guarda la cuenta base como `CodigoCuenta`; la configuracion por empresa resuelve y guarda `IdPlanCuenta`.
 - La configuracion por empresa se guarda en `CON_TipoImpuestoConfiguracionEmpresa`.
 - Actualmente se usa un solo campo `IdPlanCuenta`.
 - La cuenta `SPOT` ya no se administra desde esta tarjeta.
@@ -567,7 +570,7 @@ Funciones:
 - El tipo de cambio de cabecera es obligatorio y cada linea del detalle exige un tipo de cambio mayor a cero, con boton visual de actualizacion junto al campo.
 - El formulario muestra mes contable informativo y fecha de emision.
 - La fecha de contabilizacion se fija automaticamente segun el periodo contable del registro.
-- El modulo admite 16 periodos contables: `00 = Apertura`, `01-12 = Enero-Diciembre`, `13 = Ajustes y Liquidaciones`, `14 = Cierre de Ganancias y Pérdidas`, `15 = Cierre de Inventarios`.
+- El modulo admite 15 periodos contables: `00 = Apertura`, `01-12 = Enero-Diciembre`, `13 = Ajustes y Liquidaciones` y `14 = Cierre de Inventario`. El periodo `15` no forma parte del calendario vigente.
 - En asiento manual, la fecha visible por defecto es `01/01/<anio>` para el periodo `00`; para los periodos `13`, `14` y `15` la fecha por defecto es `31/12/<anio>`.
 - El centro de costo es obligatorio solo cuando la cuenta seleccionada tiene activado `RequiereCentroCosto`.
 - El resumen de Debe/Haber/Diferencia cambia visualmente segun el asiento este cuadrado o no.
@@ -800,7 +803,7 @@ Configuracion y catalogos contables por empresa.
 - `ADM_Moneda`: monedas activas.
 - `ADM_TipoCambio`: tipos de cambio.
 - `CON_TipoCambio`: tipos de cambio por `IdCuentaAdministradora`, fecha y moneda, usados por el nuevo mantenimiento operativo.
-- `ADM_TipoComprobante`: comprobantes SUNAT y cuentas maestras.
+- `ADM_TipoComprobante`: comprobantes SUNAT y codigos maestros para cuentas de compra/venta en soles/dolares.
 - `ADM_ParametroMaestro`: parametros base internos, no por empresa.
 - `ADM_ParametroEmpresa`: parametros copiados y editables por empresa.
 
@@ -808,20 +811,21 @@ Configuracion y catalogos contables por empresa.
 
 Contabilidad.
 
-- `CON_PlanCuentaMaestro`: plan de cuentas base interno, no por empresa. Incorpora `GeneraDiferenciaPorAnalisis` para sembrar el criterio por defecto.
+- `CON_PlanCuentaMaestro`: plan de cuentas base interno, no por empresa, con identificadores desde `0`. No contiene `GeneraDiferenciaPorAnalisis`, porque ese indicador pertenece al plan de cada empresa.
 - `CON_PlanCuenta`: plan de cuentas por empresa. Incorpora `GeneraDiferenciaPorAnalisis` para indicar si la diferencia en cambio de una cuenta en USD se calcula por saldo global o por analisis documental/auxiliar.
 - `CON_OrigenMaestro`: origenes base internos.
 - `CON_Origen`: origenes por empresa.
-- `CON_CuentaDestinoReglaMaestro`: reglas destino base internas.
-- `CON_CuentaDestinoReglaDetalleMaestro`: detalle de reglas destino base internas.
-- `CON_CuentaDestinoRegla`: cuentas destino por empresa y cuenta origen.
+- `CON_CuentaDestinoReglaMaestro`: reglas destino base internas, unicas por `CodigoCuentaOrigen`, sin ejercicio y con identificadores de la carga inicial desde `0`.
+- `CON_CuentaDestinoReglaDetalleMaestro`: detalle de reglas destino base internas, con identificadores de la carga inicial desde `0`.
+- `CON_CuentaDestinoRegla`: cuentas destino unicas por empresa y cuenta origen, sin ejercicio.
 - `CON_CuentaDestinoReglaDetalle`: detalle de cuentas destino por empresa.
-- `CON_ConfiguracionContabilizacion`: configuracion de provision compra/venta por empresa. Ahora incluye los modulos `DIF`, `AJU` y `CIE` para seleccionar los origenes de diferencia en cambio, ajuste de cuentas y asiento de cierre.
+- `CON_ConfiguracionContabilizacionMaestro`: configuracion inicial por modulo y escenario; referencia el origen mediante `CodigoOrigen` y no contiene identificadores empresariales.
+- `CON_ConfiguracionContabilizacion`: configuracion de provision por empresa. Su catalogo vigente admite `COM`, `VEN`, `EGR`, `ING`, `APNC`, `DET`, `PER`, `DIF`, `AJU`, `APR` y `CIE`; las migraciones que recrean su restriccion conservan siempre este conjunto completo.
 - `CON_ConfiguracionContabilizacionDetalle`: detalle legacy de configuracion contable.
 - `CON_DocumentoConfiguracionEmpresa`: cuentas contables por documento y empresa.
 - `CON_Bancos`: catalogo maestro de bancos para ayudas operativas.
 - `CON_BancosConfiguracionEmpresa`: cuentas corrientes bancarias por empresa vinculadas a una cuenta contable, con titular, identificador de moneda (`IdMoneda`) y arranque operativo configurable por `PeriodoSaldoInicial`, `SaldoInicialDebe` y `SaldoInicialHaber`.
-- `CON_TipoImpuesto`: catalogo maestro de impuestos.
+- `CON_TipoImpuesto`: catalogo maestro de impuestos con `CodigoCuenta` portable entre empresas.
 - `CON_TipoImpuestoConfiguracionEmpresa`: configuracion de cuenta de impuesto por empresa.
 - `CON_TipoAfectacionIGV`: catalogo maestro de afectaciones IGV SUNAT usado por compras y ventas.
 - `CON_Asiento`: cabecera de asiento. Incluye `FechaEmision` y `FechaAsiento` como fechas separadas.
@@ -832,8 +836,8 @@ Contabilidad.
 - `CON_DiferenciaCambioProcesoDetalle`: detalle por cuenta procesada, modo de calculo (`Saldo`/`Analisis`), asiento generado y estado final.
 - `CON_AjusteCuentaProceso`: cabecera del proceso de ajuste de cuentas por empresa y periodo.
 - `CON_AjusteCuentaProcesoDetalle`: detalle por cuenta analitica procesada, moneda de trabajo, cantidad de analisis residuales, asiento generado y estado final.
-- `CON_CierreProceso`: cabecera del proceso anual de asiento de cierre por empresa y ejercicio, con origen `CIE`, bandera de uso SBS y totales consolidados.
-- `CON_CierreProcesoDetalle`: detalle por cuenta del cierre anual, indicando si el asiento corresponde al periodo `14` o `15`, su moneda, tipo de cambio y asiento generado.
+- `CON_CierreProceso`: cabecera del proceso anual de asiento de cierre por empresa y ejercicio, con origen `CIE`, periodo de corte, periodo de generacion, identificador y numero del asiento unico, cantidad de lineas y totales consolidados.
+- `CON_CierreProcesoDetalle`: detalle de las lineas del asiento compuesto de cierre, con item, cuenta, sentido `D/H`, moneda, tipo de cambio, importes en soles/dolares y asiento generado.
 
 ### COM
 
@@ -900,9 +904,13 @@ Seguridad funcional, empresas y suscripciones.
 ### CON
 
 - `usp_CON_CargarCuentasDestinoDefaultEmpresa`
+- `usp_CON_CargarConfiguracionDefaultEmpresa`
+- `usp_CON_CargarDocumentosDefaultEmpresa`
+- `usp_CON_CargarImpuestosDefaultEmpresa`
 - `usp_CON_CargarOrigenesDefaultEmpresa`
+  Carga en una sola transaccion los origenes desde `CON_OrigenMaestro` y las configuraciones `PROVISION` desde `CON_ConfiguracionContabilizacionMaestro`, resolviendo el `IdOrigen` propio de la empresa.
 - `usp_CON_CargarPlanCuentaDefaultEmpresa`
-  Carga el plan contable desde `CON_PlanCuentaMaestro` o, si recibe `IdEmpresaBase` con plan existente, replica la configuracion de `CON_PlanCuenta` de esa empresa incluyendo `GeneraDiferenciaPorAnalisis`.
+  Carga el plan contable desde `CON_PlanCuentaMaestro`, inicializando `GeneraDiferenciaPorAnalisis = 0`, o, si recibe `IdEmpresaBase` con plan existente, replica la configuracion de `CON_PlanCuenta` de esa empresa incluyendo dicho indicador.
 - `usp_CON_EliminarConfiguracionContabilizacion`
 - `usp_CON_EliminarAjusteCuentaProceso`
 - `usp_CON_EliminarAperturaProceso`
@@ -912,6 +920,8 @@ Seguridad funcional, empresas y suscripciones.
 - `usp_CON_EliminarDiferenciaCambioProceso`
 - `usp_CON_GenerarOrigenesBaseEmpresa`
 - `usp_CON_GenerarAjusteCancelacionDiferenciaCambio`
+- `usp_CON_GenerarAperturaProceso`
+- `usp_CON_GenerarCierreProceso`
 - `usp_CON_GenerarDiferenciaCambioProceso`
 - `usp_CON_GuardarAsientoManual`
 - `usp_CON_GuardarBancoConfiguracionEmpresa`
@@ -975,6 +985,7 @@ Seguridad funcional, empresas y suscripciones.
 - `usp_SEG_ListarCuentasAdministradorasSuscripcionPaginado`
 - `usp_SEG_ListarEmpresasCuentaAdministradora`
 - `usp_SEG_ListarEmpresasPorUsuario`
+- `usp_SEG_ActualizarEmpresaPorUsuario`: actualiza una empresa asignada al usuario y mantiene `CodigoEmpresa` igual al RUC.
 - `usp_SEG_ListarEmpresasUsuarioCuentaAdministradora`
 - `usp_SEG_ListarPermisosUsuarioCuenta`
 - `usp_SEG_ListarPermisosUsuarioEmpresa`
@@ -1124,6 +1135,7 @@ Pendientes siguientes:
 - `024_Caja_Bancos_Cabecera_TipoCambio_Observacion.sql`: agrega `TipoCambio` y `Observacion` en la cabecera del movimiento bancario.
 - `043_AsientoDetalle_DH.sql`: agrega la columna `DH` en `CON_AsientoDetalle`, rellena el historico segun `Debe/Haber` y actualiza la restriccion de consistencia del detalle contable.
 - `044_AsientoDetalle_AjusteCambio_Analitico.sql`: amplia `CK_CON_AsientoDetalle_Montos` para aceptar lineas analiticas de cancelacion total con `Debe/Haber` en cero y diferencia conservada en `TotalImporteS` y/o `TotalImporteD`.
+- `048_Importar_Plan_Cuentas_Cuentas_Destino_Legacy.sql`: reemplaza completamente `CON_PlanCuentaMaestro`, `CON_CuentaDestinoReglaMaestro` y su detalle, reinicia sus identificadores desde `0`, elimina `Ejercicio` de las reglas maestras y empresariales e importa desde SIAC legacy, para `IdEmpresa = '01'`, 2,173 cuentas y 574 reglas consistentes; normaliza porcentajes nulos a `100` y excluye 311 reglas cuya cuenta origen no pertenece al plan seleccionado.
 - `025_Caja_Bancos_Detalle_Persona.sql`: agrega `IdPersona` por linea en `BAN_MovimientoBancoDetalle` para buscar comprobantes desde cada detalle.
 - `026_Caja_Bancos_Comprobantes_Saldo.sql`: agrega `ModuloOperacionComprobante`, `IdRegistroComprobante` e `ImporteAplicado` para enlazar compras/ventas y actualizar su saldo pendiente desde Caja y Bancos.
 - `027_Caja_Bancos_Asiento_Contable.sql`: agrega `IdAsiento` en `BAN_MovimientoBanco` para vincular y mantener el asiento automatico del movimiento bancario.
@@ -1222,17 +1234,20 @@ Pendientes siguientes:
 - Cada asiento de ajuste se genera en la moneda natural de la cuenta procesada: cuentas `PEN` ajustan y cuadran en soles, cuentas `USD` ajustan y cuadran en dolares. El detalle sigue guardando `TotalImporteS` y `TotalImporteD` como equivalencias completas del movimiento.
 - La contrapartida del proceso de ajuste de cuentas usa los parametros de empresa `CUENTAGANANCIA_AJ` y `CUENTAPERDIDA_AJ`; si cualquier linea generada tiene una regla activa en `CON_CuentaDestinoRegla`, el asiento conserva la linea original y agrega tambien sus lineas de cuenta destino y contrapartida, distribuyendo el importe en la misma moneda de la cuenta origen.
 - El asiento de apertura se ejecuta por empresa y ejercicio desde el modulo `Proceso`, usa el origen configurado en `CON_ConfiguracionContabilizacion` bajo modulo `APR` y, si el ejercicio ya fue generado, elimina primero el asiento y el proceso previo antes de recrearlo.
-- El asiento de apertura genera un unico asiento en el periodo `00`, con fecha fija `01/01/<anio apertura>`, tomando saldos acumulados del ejercicio base desde `yyyy00` hasta el periodo contable seleccionado (`00-15`).
+- El asiento de apertura genera un unico asiento en el periodo `00`, con fecha fija `01/01/<anio apertura>`, tomando saldos acumulados del ejercicio base desde `yyyy00` hasta el periodo contable seleccionado (`00-14`).
 - El asiento de apertura usa el tipo de cambio del `31/12` del anio base desde `CON_TipoCambio`; para cuentas cuyo codigo empieza en `1`, `2` o `3` aplica compra y para el resto aplica venta, manteniendo tanto bloque resumen como bloque analitico/documentario. El bloque analitico agrupa por `NumeroDocumento`, `TipoDocumento`, `Serie` y `ReferenciaLinea`, sin heredar `IdCliente` ni `IdProveedor`.
-- El asiento de cierre se ejecuta por empresa y ejercicio desde el modulo `Proceso`, usa el origen configurado en `CON_ConfiguracionContabilizacion` bajo modulo `CIE` y, si el ejercicio ya fue generado, elimina primero los asientos y el proceso previo antes de recrearlo.
-- El asiento de cierre toma como base los periodos `00` a `13`, usa `ColBalance = 'R'` para cierre de ganancias y perdidas y `ColBalance = 'I'` para cierre de inventarios, y genera un asiento independiente por cuenta en los periodos `14` y `15`.
-- La contrapartida del asiento de cierre usa los parametros de empresa `CUENTAGANANCIA` y `CUENTAPERDIDA`; el tipo de cambio de `31/12` sale de `CON_TipoCambio`, usando `CompraSBS/VentaSBS` solo cuando `TIPO_CAMBIO_SBS_CIERRE = 'S'`.
+- El asiento de cierre se ejecuta por empresa y ejercicio desde el modulo `Proceso`, usa el origen configurado en `CON_ConfiguracionContabilizacion` bajo modulo `CIE`, permite seleccionar un periodo de corte entre `00-13` y genera obligatoriamente el asiento de Cierre de Inventario en el periodo `14`. Si el ejercicio ya fue generado, elimina primero el asiento y el proceso vinculados antes de recrearlos.
+- El asiento de cierre acumula desde `yyyy00` hasta el periodo de corte exclusivamente las cuentas que tengan saldo y esten configuradas con `CON_PlanCuenta.ColBalance = 'I'` (`Inventario`). Un saldo deudor se registra al Haber y un saldo acreedor al Debe, generando un unico asiento compuesto con una linea por cuenta, sin insertar cuentas de contrapartida o cuadre.
+- El asiento se registra en soles con fecha fisica `31/12/<anio>` y conserva en cada linea los importes acumulados en soles y dolares. El tipo de cambio de presentacion sale de `CON_TipoCambio`, usando `CompraSBS/VentaSBS` solo cuando `TIPO_CAMBIO_SBS_CIERRE = 'S'`; antes de guardar solo se valida que exista al menos una linea. El proceso permite que el Debe y Haber sean diferentes y no incorpora una cuenta automatica de cuadre.
 - Las compras y ventas se eliminan desde su propio modulo y deben borrar tambien el asiento automatico relacionado.
 - Un asiento automatico no debe eliminarse desde el modulo de asientos; debe eliminarse desde el modulo de origen.
 - Las tablas maestras internas no deben depender de empresa.
-- Al crear empresa se deben cargar parametros default desde maestros.
-- Al crear empresa tambien se debe cargar el plan de cuentas: desde `CON_PlanCuentaMaestro` en la empresa inicial y desde `CON_PlanCuenta` de la empresa base cuando corresponda.
+- Al crear una empresa no se cargan automaticamente parametros, plan contable ni otras configuraciones maestras.
+- La configuracion inicial se carga unicamente desde los botones de mantenimiento: Plan de cuentas ejecuta `usp_CON_CargarConfiguracionDefaultEmpresa` y Origenes ejecuta `usp_CON_CargarOrigenesDefaultEmpresa`.
 - Plan de cuentas, origenes y cuentas destino pueden cargarse por defecto desde tablas maestras.
+- El boton de carga default del plan inicializa plan, parametros, cuentas destino, impuestos y documentos en una sola transaccion; cualquier codigo maestro inexistente revierte toda la operacion.
+- El boton de carga default de origenes inicializa `CON_Origen` y las configuraciones `PROVISION` de `CON_ConfiguracionContabilizacion`; cualquier `CodigoOrigen` maestro inexistente revierte toda la operacion.
+- Los maestros guardan codigos contables y nunca identificadores de `CON_PlanCuenta`; las tablas por empresa resuelven esos codigos y almacenan los identificadores de su propio plan. En parametros, `ValorParametro` conserva el codigo tanto en maestro como por empresa cuando representa una cuenta.
 
 ## 15. Reglas de UI actuales
 
@@ -1258,9 +1273,11 @@ Pendientes siguientes:
 
 Maestras internas, no por empresa:
 
+- `ADM_TipoComprobante`
 - `ADM_ParametroMaestro`
+- `CON_ConfiguracionContabilizacionMaestro`
 - `CON_PlanCuentaMaestro`
-- `CON_PlanCuentaMaestro` incluye `GeneraDiferenciaPorAnalisis` para propagar la modalidad de diferencia en cambio al plan inicial de cada empresa.
+- `CON_PlanCuentaMaestro` no incluye `GeneraDiferenciaPorAnalisis`; al cargar el maestro hacia una empresa, `CON_PlanCuenta.GeneraDiferenciaPorAnalisis` se inicializa en `0`.
 - `CON_PlanCuentaMaestro` tambien incluye `ColBalance` para que la empresa nueva herede la clasificacion usada luego por el cierre anual.
 - `CON_OrigenMaestro`
 - `CON_CuentaDestinoReglaMaestro`
@@ -1366,9 +1383,9 @@ Capacidades:
 - Previsualización paginada del contenido exportable sin enviar todo el periodo al navegador. La paginacion se aplica solo a la vista; la generacion TXT consulta y exporta siempre todos los movimientos del periodo.
 - Validaciones previas de empresa, RUC, periodo, asientos cuadrados, duplicidad de CUO/correlativos, cuentas, monedas, documentos, glosas y estados PLE. La validacion interna no observa lineas con `Debe/Haber = 0` ni fechas de operacion fuera del mes consultado.
 - La exportacion de Libros Electronicos queda fija en moneda nacional (`PEN`): la interfaz no expone selector de moneda, el nombre del archivo se genera con indicador de moneda nacional y los formatos `5.1`, `5.2` y `6.1` toman siempre `CON_AsientoDetalle.TotalImporteS` para `Debe/Haber`.
-- Cuando se exporta enero, los libros `5.1`, `5.2` y `6.1` incorporan tambien el asiento de apertura del periodo `00`; cuando se exporta diciembre, incorporan los periodos `12`, `13`, `14` y `15`.
+- Cuando se exporta enero, los libros `5.1`, `5.2` y `6.1` incorporan tambien el asiento de apertura del periodo `00`; cuando se exporta diciembre, incorporan los periodos `12`, `13` y `14`.
 - Los TXT `5.1 - Libro Diario`, `5.2 - Libro Diario Simplificado` y `6.1 - Libro Mayor` conservan el palote final requerido por SUNAT y completan los `21` campos base de cada estructura, separando `Unidad de operacion` y `Centro de costo` para no desplazar columnas. No se agregan los campos libres `22` al `44` cuando no se utilizan. El CUO se genera por empresa concatenando `CodigoOrigen + Periodo + NumeroAsiento`, con el numero rellenado a ocho posiciones y sin truncarlo cuando exceda esa longitud. En los tres formatos, el campo `20` se obtiene desde el procedimiento correspondiente: `080100` para Compras, `080200` para comprobantes de no domiciliados `91/97/98` y `140100` para Ventas. La referencia usa `CodigoLibro&Periodo&CUO&Correlativo`, alcanza las lineas bancarias mediante `BAN_MovimientoBancoDetalle`, asi como asientos directos de detraccion y percepcion, y reutiliza el CUO del asiento original de Compra o Venta; queda vacia cuando no existe uno relacionado.
-- Los correlativos de los formatos `5.1`, `5.2` y `6.1` se arman con prefijo `A` para lineas del periodo `00`, `M` para periodos mensuales regulares incluyendo el ajuste del periodo `13`, y `C` solo para lineas de cierre en los periodos `14` y `15`. La `Fecha contable` usa `FechaEmision` cuando el periodo `AAAAMM` de esa fecha coincide con `CON_Asiento.Periodo`; si no coincide, se exporta `FechaAsiento`.
+- Los correlativos de los formatos `5.1`, `5.2` y `6.1` se arman con prefijo `A` para lineas del periodo `00`, `M` para periodos mensuales regulares incluyendo el ajuste del periodo `13`, y `C` solo para lineas del Cierre de Inventario en el periodo `14`. La `Fecha contable` usa `FechaEmision` cuando el periodo `AAAAMM` de esa fecha coincide con `CON_Asiento.Periodo`; si no coincide, se exporta `FechaAsiento`.
 - Cuando el asiento no proviene directo de `COM_Compra` o `VEN_Venta` y los datos documentarios viven en `CON_AsientoDetalle`, los PLE `5.1`, `5.2` y `6.1` priorizan `TipoDocumento`, `Serie` y `ReferenciaLinea` del detalle para poblar `TipoComprobante`, `SerieComprobante` y `NumeroComprobante` antes de usar el RUC/DNI del emisor como ultimo respaldo. Si el tipo de comprobante esta vacio, la exportacion usa `00`.
 - Generación de TXT en UTF-8 sin BOM con separador `|` y una línea por movimiento.
 - Al generar `5.1` o `5.2`, la aplicacion prepara dos TXT descargables por separado: el archivo principal y su complemento `5.3` o `5.4`. La primera presentacion de cada ejercicio exporta el plan completo con estado `1`; las siguientes comparan contra el ultimo snapshot marcado como presentado y exportan solo cuentas nuevas con estado `1` o cuentas cuyo codigo/nombre cambio con estado `9`, conservando en estas ultimas el periodo original informado. Si no existen cambios, el complemento queda vacio y su nombre usa el indicador de contenido `0`.
@@ -1469,4 +1486,28 @@ Objetos SQL:
 -- Author:        FRANCO LARA / Codex
 -- Create date:   04/08/2026
 -- Description:   Documenta el CUO, referencias PLE, generacion dual, presentacion reversible, continuidad obligatoria entre meses y snapshots incrementales del plan contable.
+-- =============================================
+
+-- =============================================
+-- Author:        FRANCO LARA / Codex
+-- Create date:   13/08/2026
+-- Description:   Documenta la migracion del cierre anual a un unico asiento compuesto, con periodos configurables de corte y generacion, todas las cuentas con saldo, eliminacion vinculada y recalculo seguro de correlativos.
+-- =============================================
+
+-- =============================================
+-- Author:        FRANCO LARA / Codex
+-- Create date:   22/08/2026
+-- Description:   Documenta que el asiento compuesto de cierre procesa solo cuentas de Inventario (ColBalance I), no agrega una cuenta de cuadre, permite Debe/Haber diferentes y consolida el calendario 00-14 con cierre fijo de Inventario en el periodo 14.
+-- =============================================
+
+-- =============================================
+-- Author:        FRANCO LARA / Codex
+-- Create date:   25/08/2026
+-- Description:   Documenta las cargas maestras exclusivas, el plan maestro sin GeneraDiferenciaPorAnalisis, cuentas destino sin ejercicio y la importacion de reemplazo desde SIAC legacy.
+-- =============================================
+
+-- =============================================
+-- Author:        FRANCO LARA / Codex
+-- Create date:   26/08/2026
+-- Description:   Documenta la edicion de razon social, nombre comercial y RUC desde el selector de empresas, con sincronizacion de CodigoEmpresa y el nuevo procedimiento de actualizacion autorizada.
 -- =============================================

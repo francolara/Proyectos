@@ -103,7 +103,7 @@ public sealed class PlanCuentaRepository(IDbConnectionFactory connectionFactory)
     public async Task CargarDefaultAsync(int idEmpresa, string? usuarioRegistro, CancellationToken cancellationToken = default, int? idEmpresaBase = null)
     {
         await using var connection = connectionFactory.CreateConnection();
-        await using var command = new SqlCommand("dbo.usp_CON_CargarPlanCuentaDefaultEmpresa", connection)
+        await using var command = new SqlCommand("dbo.usp_CON_CargarConfiguracionDefaultEmpresa", connection)
         {
             CommandType = CommandType.StoredProcedure
         };

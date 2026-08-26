@@ -3,6 +3,7 @@
 -- Create date:   29/06/2026
 -- Description:   Agrega maestro de tipos de percepcion, documento pendiente por compra, modulo contable PER, origenes y parametro CTADEPERCEPCION para provisiones de compras.
 -- =============================================
+-- Firma: FRANCO LARA - 25/08/2026 | Mantiene el CHECK de modulos alineado con el catalogo contable vigente al reejecutar la migracion.
 
 IF COL_LENGTH(N'dbo.COM_Compra', N'TienePercepcion') IS NULL
 BEGIN
@@ -55,7 +56,7 @@ END;
 
 ALTER TABLE dbo.CON_ConfiguracionContabilizacion
     ADD CONSTRAINT CK_CON_ConfiguracionContabilizacion_ModuloOperacion
-        CHECK (ModuloOperacion IN ('COM', 'VEN', 'EGR', 'ING', 'APNC', 'DET', 'PER'));
+        CHECK (ModuloOperacion IN ('COM', 'VEN', 'EGR', 'ING', 'APNC', 'DET', 'PER', 'DIF', 'AJU', 'APR', 'CIE'));
 
 MERGE dbo.ADM_ParametroMaestro AS destino
 USING

@@ -111,8 +111,15 @@ public class PlanCuentaController(
             return RedirectToAction("Index", "EmpresaContexto");
         }
 
-        await planCuentaRepository.CargarDefaultAsync(currentCompanyAccessor.EmpresaId.Value, User.Identity?.Name, cancellationToken);
-        TempData["PlanCuentaOk"] = "Plan de cuentas base cargado correctamente.";
+        try
+        {
+            await planCuentaRepository.CargarDefaultAsync(currentCompanyAccessor.EmpresaId.Value, User.Identity?.Name, cancellationToken);
+            TempData["PlanCuentaOk"] = "Plan de cuentas, parametros, cuentas destino, impuestos y documentos cargados correctamente.";
+        }
+        catch (Exception ex)
+        {
+            TempData["PlanCuentaError"] = ex.Message;
+        }
 
         return RedirectToAction(nameof(Index));
     }

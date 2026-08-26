@@ -12,6 +12,8 @@
 @* Firma: FRANCO LARA - 04/07/2026 | Bloquea la edicion manual del tipo de cambio en Caja y Bancos y convierte automaticamente el saldo sugerido del comprobante a la moneda de la cuenta corriente usando el TC de cabecera. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Mejora la legibilidad del resumen Nro movimiento en Caja y Bancos para que conserve contraste correcto en modo claro y oscuro. *@
 @* Firma: FRANCO LARA - 31/07/2026 | Centra vertical y horizontalmente la etiqueta y el valor de la tarjeta Nro movimiento. *@
+@* Firma: FRANCO LARA - 11/08/2026 | Evita que el detalle de Caja y Bancos comprima sus campos en pantallas angostas, manteniendo anchos de columna estables y scroll horizontal como en el registro de asientos. *@
+@* Firma: FRANCO LARA - 13/08/2026 | Fija Centro de costo, Persona, TipoDoc, Serie, Referencia y TC en el detalle bancario con los anchos visibles de Asientos, reduce Item en 30%, conserva anchos minimos y scroll horizontal, y elimina la actualizacion manual del TC por linea porque se sincroniza desde la cabecera. *@
 
 @{
     ViewData["Title"] = Model.Formulario.IdMovimientoBanco.HasValue ? "Editar movimiento bancario" : "Registrar movimiento bancario";
@@ -252,6 +254,89 @@
         color: #6a7a96;
         line-height: 1.25;
     }
+
+    .caja-banco-detail-wrap {
+        overflow-x: auto;
+        padding-bottom: 0.2rem;
+    }
+
+    .caja-banco-detail-table {
+        width: max-content;
+        min-width: 100%;
+        table-layout: auto;
+    }
+
+    .caja-banco-detail-table th,
+    .caja-banco-detail-table td {
+        min-width: 0;
+        white-space: nowrap;
+    }
+
+    .caja-banco-detail-table .caja-banco-col-cuenta,
+    .caja-banco-detail-table .caja-banco-col-glosa {
+        min-width: 18rem;
+    }
+
+    .caja-banco-detail-table .detalle-centro-costo-cell {
+        min-width: 16rem;
+    }
+
+    .caja-banco-detail-table .caja-banco-col-persona {
+        min-width: 18rem;
+    }
+
+    .caja-banco-detail-table .caja-banco-col-tipo-documento {
+        width: 18rem;
+        min-width: 18rem;
+        max-width: 18rem;
+    }
+
+    .caja-banco-detail-table .caja-banco-col-serie,
+    .caja-banco-detail-table .caja-banco-col-referencia {
+        width: 7rem;
+        min-width: 7rem;
+        max-width: 7rem;
+    }
+
+    .caja-banco-detail-table .caja-banco-col-tipo-cambio,
+    .caja-banco-detail-table .detalle-porcentaje-cell {
+        min-width: 6rem;
+    }
+
+    .caja-banco-detail-table .detalle-orden-cell {
+        width: 4.2rem;
+        min-width: 4.2rem;
+        max-width: 4.2rem;
+    }
+
+    .caja-banco-detail-table .caja-banco-col-tipo-cambio {
+        width: 6rem;
+        max-width: 6rem;
+    }
+
+    .caja-banco-detail-table .caja-banco-action-cell {
+        width: 8rem;
+        min-width: 8rem;
+        max-width: 8rem;
+        white-space: normal;
+    }
+
+    .caja-banco-detail-table .workspace-lookup-control,
+    .caja-banco-detail-table .workspace-lookup-control-compact,
+    .caja-banco-detail-table .workspace-lookup-control-inline-tools,
+    .caja-banco-detail-table .form-control,
+    .caja-banco-detail-table .form-select {
+        width: 100%;
+    }
+
+    .caja-banco-detail-table .workspace-lookup-control-compact {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .caja-banco-detail-table .workspace-lookup-control-inline-tools {
+        grid-template-columns: minmax(0, 1fr) auto auto;
+    }
+
 </style>
 
 <section class="dashboard-shell">
@@ -474,19 +559,19 @@
                         </div>
                         <button type="button" class="btn btn-outline-secondary btn-sm" id="agregar-linea">Agregar linea</button>
                     </div>
-                    <div class="table-responsive workspace-table-wrap">
-                        <table class="table align-middle app-table workspace-table" id="detalleTable">
+                    <div class="table-responsive workspace-table-wrap caja-banco-detail-wrap">
+                        <table class="table align-middle app-table workspace-table caja-banco-detail-table" id="detalleTable">
                             <thead>
                                 <tr>
                                     <th class="detalle-orden-cell">Item</th>
-                                    <th>Cuenta</th>
-                                    <th>Glosa detalle</th>
+                                    <th class="caja-banco-col-cuenta">Cuenta</th>
+                                    <th class="caja-banco-col-glosa">Glosa detalle</th>
                                     <th class="detalle-centro-costo-cell">Centro costo</th>
-                                    <th>Persona</th>
-                                    <th>TipoDoc</th>
-                                    <th>Serie</th>
-                                    <th>Referencia</th>
-                                    <th>TC</th>
+                                    <th class="caja-banco-col-persona">Persona</th>
+                                    <th class="caja-banco-col-tipo-documento">TipoDoc</th>
+                                    <th class="caja-banco-col-serie">Serie</th>
+                                    <th class="caja-banco-col-referencia">Referencia</th>
+                                    <th class="caja-banco-col-tipo-cambio">TC</th>
                                     <th class="detalle-porcentaje-cell">Debe</th>
                                     <th class="detalle-porcentaje-cell">Haber</th>
                                     <th></th>
@@ -500,7 +585,7 @@
                                             <input asp-for="Formulario.Detalles[i].IdMovimientoBancoDetalle" type="hidden" />
                                             <input asp-for="Formulario.Detalles[i].Item" class="form-control" readonly />
                                         </td>
-                                        <td>
+                                        <td class="caja-banco-col-cuenta">
                                             <input asp-for="Formulario.Detalles[i].IdPlanCuenta" type="hidden" class="js-cuenta-id" />
                                             <input asp-for="Formulario.Detalles[i].RequiereCentroCostoCuenta" type="hidden" class="js-requiere-centro-costo" />
                                             <div class="workspace-lookup-control workspace-lookup-control-compact">
@@ -509,7 +594,7 @@
                                             </div>
                                             <span asp-validation-for="Formulario.Detalles[i].IdPlanCuenta" class="text-danger"></span>
                                         </td>
-                                        <td>
+                                        <td class="caja-banco-col-glosa">
                                             <input asp-for="Formulario.Detalles[i].GlosaDetalle" class="form-control" />
                                             <span asp-validation-for="Formulario.Detalles[i].GlosaDetalle" class="text-danger"></span>
                                         </td>
@@ -522,7 +607,7 @@
                                             </div>
                                             <span asp-validation-for="Formulario.Detalles[i].CodigoCentroCosto" class="text-danger"></span>
                                         </td>
-                                        <td>
+                                        <td class="caja-banco-col-persona">
                                             <input asp-for="Formulario.Detalles[i].IdPersona" type="hidden" class="js-persona-id-linea" />
                                             <input asp-for="Formulario.Detalles[i].NumeroDocumento" type="hidden" class="js-numero-documento-linea" />
                                             <input asp-for="Formulario.Detalles[i].ModuloOperacionComprobante" type="hidden" class="js-modulo-comprobante-linea" />
@@ -537,8 +622,8 @@
                                             </div>
                                             <span asp-validation-for="Formulario.Detalles[i].IdPersona" class="text-danger"></span>
                                         </td>
-                                        <td>
-                                            <select asp-for="Formulario.Detalles[i].TipoDocumento" class="form-select js-tipo-documento-linea">
+                                        <td class="caja-banco-col-tipo-documento">
+                                            <select asp-for="Formulario.Detalles[i].TipoDocumento" class="form-select form-select-sm workspace-form-select-compact js-tipo-documento-linea">
                                                 <option value="">Seleccione</option>
                                                 @foreach (var opcion in Model.TiposDocumentoDisponibles)
                                                 {
@@ -547,19 +632,16 @@
                                             </select>
                                             <span asp-validation-for="Formulario.Detalles[i].TipoDocumento" class="text-danger"></span>
                                         </td>
-                                        <td>
+                                        <td class="caja-banco-col-serie">
                                             <input asp-for="Formulario.Detalles[i].Serie" class="form-control js-serie-linea" />
                                             <span asp-validation-for="Formulario.Detalles[i].Serie" class="text-danger"></span>
                                         </td>
-                                        <td>
+                                        <td class="caja-banco-col-referencia">
                                             <input asp-for="Formulario.Detalles[i].ReferenciaLinea" class="form-control js-referencia-linea" />
                                             <span asp-validation-for="Formulario.Detalles[i].ReferenciaLinea" class="text-danger"></span>
                                         </td>
-                                        <td>
-                                            <div class="input-group input-group-sm">
-                                                <input asp-for="Formulario.Detalles[i].TipoCambioLinea" class="form-control js-tipo-cambio-linea" readonly />
-                                                <button type="button" class="btn btn-outline-secondary js-actualizar-tc-linea" title="Actualizar tipo de cambio" aria-label="Actualizar tipo de cambio"><i class="bi bi-arrow-clockwise"></i></button>
-                                            </div>
+                                        <td class="caja-banco-col-tipo-cambio">
+                                            <input asp-for="Formulario.Detalles[i].TipoCambioLinea" class="form-control js-tipo-cambio-linea" readonly />
                                             <span asp-validation-for="Formulario.Detalles[i].TipoCambioLinea" class="text-danger"></span>
                                         </td>
                                         <td class="detalle-porcentaje-cell">
@@ -570,7 +652,7 @@
                                             <input asp-for="Formulario.Detalles[i].Haber" class="form-control js-haber" />
                                             <span asp-validation-for="Formulario.Detalles[i].Haber" class="text-danger"></span>
                                         </td>
-                                        <td class="text-end">
+                                        <td class="text-end caja-banco-action-cell">
                                             <button type="button" class="btn btn-outline-secondary btn-sm js-quitar-linea">Quitar</button>
                                         </td>
                                     </tr>
@@ -779,7 +861,7 @@
             <input name="Formulario.Detalles[__index__].IdMovimientoBancoDetalle" type="hidden" />
             <input name="Formulario.Detalles[__index__].Item" class="form-control" readonly value="__item__" />
         </td>
-        <td>
+        <td class="caja-banco-col-cuenta">
             <input name="Formulario.Detalles[__index__].IdPlanCuenta" type="hidden" class="js-cuenta-id" />
             <input name="Formulario.Detalles[__index__].RequiereCentroCostoCuenta" type="hidden" class="js-requiere-centro-costo" value="false" />
             <div class="workspace-lookup-control workspace-lookup-control-compact">
@@ -787,7 +869,7 @@
                 <button type="button" class="btn btn-outline-secondary workspace-icon-button js-abrir-cuenta-modal" title="Buscar cuenta" aria-label="Buscar cuenta"><i class="bi bi-search"></i></button>
             </div>
         </td>
-        <td>
+        <td class="caja-banco-col-glosa">
             <input name="Formulario.Detalles[__index__].GlosaDetalle" class="form-control" />
         </td>
         <td class="detalle-centro-costo-cell">
@@ -798,7 +880,7 @@
                 <button type="button" class="btn btn-outline-secondary workspace-icon-button js-limpiar-centro" title="Limpiar centro de costo" aria-label="Limpiar centro de costo"><i class="bi bi-brush"></i></button>
             </div>
         </td>
-        <td>
+        <td class="caja-banco-col-persona">
             <input name="Formulario.Detalles[__index__].IdPersona" type="hidden" class="js-persona-id-linea" />
             <input name="Formulario.Detalles[__index__].NumeroDocumento" type="hidden" class="js-numero-documento-linea" />
             <input name="Formulario.Detalles[__index__].ModuloOperacionComprobante" type="hidden" class="js-modulo-comprobante-linea" />
@@ -812,8 +894,8 @@
                 <button type="button" class="btn btn-outline-secondary workspace-icon-button js-abrir-comprobante-modal" title="Buscar comprobante" aria-label="Buscar comprobante"><i class="bi bi-receipt"></i></button>
             </div>
         </td>
-        <td>
-            <select name="Formulario.Detalles[__index__].TipoDocumento" class="form-select js-tipo-documento-linea">
+        <td class="caja-banco-col-tipo-documento">
+            <select name="Formulario.Detalles[__index__].TipoDocumento" class="form-select form-select-sm workspace-form-select-compact js-tipo-documento-linea">
                 <option value="">Seleccione</option>
                 @foreach (var opcion in Model.TiposDocumentoDisponibles)
                 {
@@ -821,17 +903,14 @@
                 }
             </select>
         </td>
-        <td>
+        <td class="caja-banco-col-serie">
             <input name="Formulario.Detalles[__index__].Serie" class="form-control js-serie-linea" />
         </td>
-        <td>
+        <td class="caja-banco-col-referencia">
             <input name="Formulario.Detalles[__index__].ReferenciaLinea" class="form-control js-referencia-linea" />
         </td>
-        <td>
-            <div class="input-group input-group-sm">
-                <input name="Formulario.Detalles[__index__].TipoCambioLinea" class="form-control js-tipo-cambio-linea" value="0" readonly />
-                <button type="button" class="btn btn-outline-secondary js-actualizar-tc-linea" title="Actualizar tipo de cambio" aria-label="Actualizar tipo de cambio"><i class="bi bi-arrow-clockwise"></i></button>
-            </div>
+        <td class="caja-banco-col-tipo-cambio">
+            <input name="Formulario.Detalles[__index__].TipoCambioLinea" class="form-control js-tipo-cambio-linea" value="0" readonly />
         </td>
         <td class="detalle-porcentaje-cell">
             <input name="Formulario.Detalles[__index__].Debe" class="form-control js-debe" value="0" />
@@ -839,7 +918,7 @@
         <td class="detalle-porcentaje-cell">
             <input name="Formulario.Detalles[__index__].Haber" class="form-control js-haber" value="0" />
         </td>
-        <td class="text-end">
+        <td class="text-end caja-banco-action-cell">
             <button type="button" class="btn btn-outline-secondary btn-sm js-quitar-linea">Quitar</button>
         </td>
     </tr>
@@ -1370,18 +1449,6 @@
                     }
                 });
 
-                row.querySelector(".js-actualizar-tc-linea")?.addEventListener("click", async () => {
-                    try {
-                        const actualizado = await consultarTipoCambioCabecera(true);
-                        if (!actualizado) {
-                            return;
-                        }
-                        sincronizarTipoCambioDetalle(row);
-                    } catch (error) {
-                        console.warn(error);
-                        window.alert("No se pudo obtener el tipo de cambio.");
-                    }
-                });
             };
 
             const marcarFilaSeleccion = (tbody, selectedRow) => {

@@ -24,6 +24,7 @@
 -- Description:   Extiende el check de modulo operativo para incluir percepciones de compras bajo el codigo PER.
 -- =============================================
 -- Firma: FRANCO LARA - 02/07/2026 | Incluye los modulos DIF y AJU para configurar desde web los origenes de diferencia en cambio y ajuste de cuentas.
+-- Firma: FRANCO LARA - 25/08/2026 | Consolida APR y CIE en la definicion vigente para mantenerla alineada con la configuracion maestra.
 
 IF OBJECT_ID(N'dbo.CON_ConfiguracionContabilizacion', N'U') IS NULL
 BEGIN
@@ -52,7 +53,7 @@ BEGIN
 
     ALTER TABLE dbo.CON_ConfiguracionContabilizacion
         ADD CONSTRAINT CK_CON_ConfiguracionContabilizacion_ModuloOperacion
-            CHECK (ModuloOperacion IN ('COM', 'VEN', 'EGR', 'ING', 'APNC', 'DET', 'PER', 'DIF', 'AJU'));
+            CHECK (ModuloOperacion IN ('COM', 'VEN', 'EGR', 'ING', 'APNC', 'DET', 'PER', 'DIF', 'AJU', 'APR', 'CIE'));
 
     ALTER TABLE dbo.CON_ConfiguracionContabilizacion
         ADD CONSTRAINT CK_CON_ConfiguracionContabilizacion_EscenarioOperacion
@@ -77,4 +78,4 @@ END;
 
 ALTER TABLE dbo.CON_ConfiguracionContabilizacion
     ADD CONSTRAINT CK_CON_ConfiguracionContabilizacion_ModuloOperacion
-        CHECK (ModuloOperacion IN ('COM', 'VEN', 'EGR', 'ING', 'APNC', 'DET', 'PER', 'DIF', 'AJU'));
+        CHECK (ModuloOperacion IN ('COM', 'VEN', 'EGR', 'ING', 'APNC', 'DET', 'PER', 'DIF', 'AJU', 'APR', 'CIE'));

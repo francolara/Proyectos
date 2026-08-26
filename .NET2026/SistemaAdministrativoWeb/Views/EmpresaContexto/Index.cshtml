@@ -1,5 +1,7 @@
 @model SistemaAdministrativoWeb.ViewModels.Empresas.SeleccionEmpresaViewModel
 
+@* Firma: FRANCO LARA - 26/08/2026 | Oculta CodigoEmpresa y agrega acceso a la edicion de los datos fiscales de la empresa. *@
+
 @{
     ViewData["Title"] = "Seleccion de empresa";
 }
@@ -42,7 +44,7 @@
                             @foreach (var empresa in Model.Empresas)
                             {
                                 <option value="@empresa.IdEmpresa">
-                                    @empresa.CodigoEmpresa - @empresa.RazonSocial
+                                    @empresa.RazonSocial - RUC @empresa.Ruc
                                 </option>
                             }
                         </select>
@@ -54,22 +56,28 @@
                     <table class="table table-sm align-middle app-table workspace-table">
                         <thead>
                             <tr>
-                                <th>Codigo</th>
                                 <th>Razon social</th>
                                 <th>Nombre comercial</th>
                                 <th>RUC</th>
                                 <th>Predeterminada</th>
+                                <th class="text-end">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var empresa in Model.Empresas)
                             {
                                 <tr>
-                                    <td>@empresa.CodigoEmpresa</td>
                                     <td>@empresa.RazonSocial</td>
                                     <td>@empresa.NombreComercial</td>
                                     <td>@empresa.Ruc</td>
                                     <td>@(empresa.EsEmpresaPredeterminada ? "Si" : "No")</td>
+                                    <td class="text-end">
+                                        <a asp-action="Editar"
+                                           asp-route-idEmpresa="@empresa.IdEmpresa"
+                                           class="btn btn-sm btn-outline-primary">
+                                            Editar
+                                        </a>
+                                    </td>
                                 </tr>
                             }
                         </tbody>

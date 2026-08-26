@@ -8,7 +8,6 @@ public sealed class RegistroEmpresaCuentaAdministradoraRequest
     public string RazonSocial { get; init; } = string.Empty;
     public string? NombreComercial { get; init; }
     public string Ruc { get; init; } = string.Empty;
-    public int? IdEmpresaBase { get; init; }
     public bool EsEmpresaPredeterminada { get; init; }
     public string? UsuarioRegistro { get; init; }
 }

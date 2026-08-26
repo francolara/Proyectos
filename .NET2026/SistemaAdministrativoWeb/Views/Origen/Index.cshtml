@@ -1,4 +1,5 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.OrigenIndexViewModel
+@* Firma: FRANCO LARA - 25/08/2026 | Informa que la carga por defecto inicializa origenes y configuracion contable por empresa. *@
 
 @{
     ViewData["Title"] = "Origenes contables";
@@ -42,6 +43,10 @@
             {
                 <div class="alert alert-success">@ok</div>
             }
+            @if (TempData["OrigenError"] is string error)
+            {
+                <div class="alert alert-danger">@error</div>
+            }
 
             <form asp-action="Index" method="get" class="workspace-filter-card">
                 <div class="workspace-filter-grid">
@@ -63,7 +68,7 @@
                         <i class="bi bi-journal-richtext"></i>
                         <div>
                             <strong>La empresa no tiene origenes contables</strong>
-                            <p>Carga los subdiarios base desde la tabla maestra interna para iniciar el registro contable.</p>
+                            <p>Carga los subdiarios y su configuracion contable base desde las tablas maestras internas.</p>
                         </div>
                     </div>
                     <div class="workspace-actions">

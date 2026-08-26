@@ -1,0 +1,55 @@
+@model SistemaAdministrativoWeb.ViewModels.Empresas.EditarEmpresaViewModel
+
+@* Firma: FRANCO LARA - 26/08/2026 | Permite corregir razon social, nombre comercial y RUC desde el selector de empresa. *@
+
+@{
+    ViewData["Title"] = "Editar empresa";
+}
+
+<section class="workspace-window">
+    <div class="workspace-window-head">
+        <div>
+            <span class="workspace-window-kicker">Datos de la empresa</span>
+            <h1>Editar empresa</h1>
+            <p>Corrige la informacion fiscal y comercial de la empresa seleccionada.</p>
+        </div>
+    </div>
+
+    <div class="workspace-window-body">
+        <form asp-action="Editar" method="post">
+            @Html.AntiForgeryToken()
+            <input asp-for="IdEmpresa" type="hidden" />
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="workspace-form-row">
+                <div class="workspace-field">
+                    <label asp-for="Ruc" class="form-label">RUC</label>
+                    <input asp-for="Ruc" class="form-control" maxlength="11" inputmode="numeric" autocomplete="off" />
+                    <span asp-validation-for="Ruc" class="text-danger"></span>
+                    <div class="form-text">Al guardar, el codigo interno de la empresa se actualizara con este RUC.</div>
+                </div>
+
+                <div class="workspace-field">
+                    <label asp-for="RazonSocial" class="form-label">Razon social</label>
+                    <input asp-for="RazonSocial" class="form-control" maxlength="200" />
+                    <span asp-validation-for="RazonSocial" class="text-danger"></span>
+                </div>
+
+                <div class="workspace-field">
+                    <label asp-for="NombreComercial" class="form-label">Nombre comercial</label>
+                    <input asp-for="NombreComercial" class="form-control" maxlength="200" />
+                    <span asp-validation-for="NombreComercial" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="workspace-actions">
+                <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

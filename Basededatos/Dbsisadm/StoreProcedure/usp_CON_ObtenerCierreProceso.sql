@@ -4,6 +4,8 @@
 -- Description:   Obtiene el proceso anual de asiento de cierre y su detalle por cuenta.
 -- =============================================
 -- Firma: FRANCO LARA - 02/07/2026 | Permite consultar desde el modulo Proceso si un ejercicio ya fue generado por el asiento de cierre y que cuentas participaron en 14 y 15.
+-- Firma: FRANCO LARA - 13/08/2026 | Expone el periodo de corte, periodo de generacion, asiento unico y las lineas contables con sus importes en soles y dolares.
+-- Firma: FRANCO LARA - 22/08/2026 | Identifica el periodo 14 como cierre unico de Inventario.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_ObtenerCierreProceso
     @IdEmpresa INT,
@@ -19,6 +21,10 @@ BEGIN
             p.IdCierreProceso,
             p.IdEmpresa,
             p.Anio,
+            p.MesSaldoHasta,
+            p.PeriodoSaldoHasta,
+            p.MesGeneracion,
+            p.PeriodoGeneracion,
             p.IdOrigen,
             o.CodigoOrigen,
             o.NombreOrigen,
@@ -28,6 +34,9 @@ BEGIN
             p.TipoCambioVenta,
             p.ProcesaGananciasPerdidas,
             p.ProcesaInventarios,
+            p.IdAsiento,
+            p.NumeroAsiento,
+            p.TotalLineas,
             p.TotalCuentas,
             p.TotalAsientos,
             p.TotalDebe,
@@ -43,11 +52,9 @@ BEGIN
         SELECT
             d.IdCierreProcesoDetalle,
             d.IdCierreProceso,
+            d.Item,
             d.TipoCierre,
-            CASE d.TipoCierre
-                WHEN '14' THEN N'Cierre de Ganancias y Perdidas'
-                ELSE N'Cierre de Inventarios'
-            END AS DescripcionCierre,
+            N'Cierre de Inventario' AS DescripcionCierre,
             d.IdPlanCuenta,
             pc.CodigoCuenta,
             pc.NombreCuenta,
@@ -55,8 +62,11 @@ BEGIN
             d.TipoCambioAplicado,
             d.IdAsiento,
             d.NumeroAsiento,
+            d.DH,
             d.TotalDebe,
             d.TotalHaber,
+            d.TotalImporteS,
+            d.TotalImporteD,
             d.Estado,
             d.Observacion,
             d.FechaRegistro,
@@ -69,8 +79,7 @@ BEGIN
         WHERE p.IdEmpresa = @IdEmpresa
           AND p.Anio = @Anio
         ORDER BY
-            d.TipoCierre ASC,
-            pc.CodigoCuenta ASC;
+            d.Item ASC;
 
     END TRY
 

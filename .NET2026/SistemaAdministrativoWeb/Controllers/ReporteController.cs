@@ -811,15 +811,15 @@ public class ReporteController(
     private static (short anio, byte periodo) NormalizarPeriodoContable(short? anio, byte? periodo)
     {
         var hoy = DateTime.Today;
-        return (anio ?? (short)hoy.Year, periodo is <= 15 ? periodo.Value : (byte)hoy.Month);
+        return (anio ?? (short)hoy.Year, periodo is <= 14 ? periodo.Value : (byte)hoy.Month);
     }
 
     private static (short anio, byte periodoDesde, byte periodoHasta) NormalizarRangoPeriodosContables(short? anio, byte? periodoDesde, byte? periodoHasta)
     {
         var hoy = DateTime.Today;
         var anioTrabajo = anio ?? (short)hoy.Year;
-        var desdeTrabajo = periodoDesde is <= 15 ? periodoDesde.Value : (byte)0;
-        var hastaTrabajo = periodoHasta is <= 15 ? periodoHasta.Value : (byte)hoy.Month;
+        var desdeTrabajo = periodoDesde is <= 14 ? periodoDesde.Value : (byte)0;
+        var hastaTrabajo = periodoHasta is <= 14 ? periodoHasta.Value : (byte)hoy.Month;
 
         if (hastaTrabajo < desdeTrabajo)
         {
@@ -890,9 +890,8 @@ public class ReporteController(
                 Nombre = new DateTime(2000, x, 1).ToString("MMMM")
             }));
 
-        periodos.Add(new MesOpcionViewModel { Valor = 13, Nombre = "Cierre inventario" });
-        periodos.Add(new MesOpcionViewModel { Valor = 14, Nombre = "Cierre resultados" });
-        periodos.Add(new MesOpcionViewModel { Valor = 15, Nombre = "Regularizacion" });
+        periodos.Add(new MesOpcionViewModel { Valor = 13, Nombre = "Ajustes y Liquidaciones" });
+        periodos.Add(new MesOpcionViewModel { Valor = 14, Nombre = "Cierre de Inventario" });
 
         return periodos;
     }

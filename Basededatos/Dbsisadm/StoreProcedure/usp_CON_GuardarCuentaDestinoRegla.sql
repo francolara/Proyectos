@@ -6,8 +6,9 @@
 -- =============================================
 -- Author:        FRANCO LARA
 -- Create date:   25/06/2026
--- Description:   Guarda una sola configuracion de cuentas destino por empresa y cuenta origen, manteniendo ejercicio solo como dato historico interno.
+-- Description:   Guarda una sola configuracion de cuentas destino por empresa y cuenta origen, sin depender de un ejercicio.
 -- =============================================
+-- Firma: FRANCO LARA - 25/08/2026 | Elimina Ejercicio del guardado porque la regla es unica por empresa y cuenta origen.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_GuardarCuentaDestinoRegla
     @IdEmpresa INT,
@@ -25,7 +26,6 @@ BEGIN
 
         DECLARE @IdCuentaDestinoRegla INT
         DECLARE @PorcentajeTotal DECIMAL(18,4)
-        DECLARE @Ejercicio SMALLINT = YEAR(GETDATE())
 
         IF @DetalleXml IS NULL
         BEGIN
@@ -99,7 +99,6 @@ BEGIN
             INSERT INTO dbo.CON_CuentaDestinoRegla
             (
                 IdEmpresa,
-                Ejercicio,
                 IdPlanCuentaOrigen,
                 Activo,
                 Observacion,
@@ -108,7 +107,6 @@ BEGIN
             VALUES
             (
                 @IdEmpresa,
-                @Ejercicio,
                 @IdPlanCuentaOrigen,
                 @Activo,
                 @Observacion,

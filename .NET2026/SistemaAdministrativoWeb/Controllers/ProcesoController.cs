@@ -277,7 +277,7 @@ public class ProcesoController(
         ViewData["AdminShell"] = true;
 
         var anioTrabajo = anioApertura ?? (short)DateTime.Today.Year;
-        var mesSaldoTrabajo = mesSaldoHasta is <= 15 ? mesSaldoHasta.Value : (byte)12;
+        var mesSaldoTrabajo = mesSaldoHasta is <= 14 ? mesSaldoHasta.Value : (byte)12;
         var anioSaldo = (short)(anioTrabajo - 1);
         var idEmpresa = currentCompanyAccessor.EmpresaId.Value;
         var configuracion = await configuracionContabilizacionRepository.ObtenerConfiguracionContableEmpresaAsync(idEmpresa, cancellationToken);
@@ -363,7 +363,10 @@ public class ProcesoController(
     }
 
     [HttpGet]
-    public async Task<IActionResult> AsientoCierre(short? anio = null, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> AsientoCierre(
+        short? anio = null,
+        byte? mesSaldoHasta = null,
+        CancellationToken cancellationToken = default)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
         {
@@ -378,10 +381,18 @@ public class ProcesoController(
         var provisionCierre = configuracion.Provisiones
             .FirstOrDefault(x => string.Equals(x.ModuloOperacion, "CIE", StringComparison.OrdinalIgnoreCase) && x.Activo);
         var proceso = await cierreProcesoRepository.ObtenerAsync(idEmpresa, anioTrabajo, cancellationToken);
+        var mesSaldoTrabajo = mesSaldoHasta is >= 0 and <= 13
+            ? mesSaldoHasta.Value
+            : proceso is not null && proceso.MesSaldoHasta <= 13
+                ? proceso.MesSaldoHasta
+                : (byte)13;
+        const byte mesGeneracionTrabajo = 14;
         var (usaTipoCambioSbs, tipoCambioCompra, tipoCambioVenta) = await ResolverTipoCambioCierreAsync(idEmpresa, anioTrabajo, proceso, cancellationToken);
 
         return View(ConstruirViewModelCierre(
             anioTrabajo,
+            mesSaldoTrabajo,
+            mesGeneracionTrabajo,
             provisionCierre,
             proceso,
             usaTipoCambioSbs,
@@ -393,10 +404,9 @@ public class ProcesoController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> GenerarAsientoCierre(
         short anio,
+        byte mesSaldoHasta,
         decimal tipoCambioCompra,
         decimal tipoCambioVenta,
-        bool procesarGananciasPerdidas = false,
-        bool procesarInventarios = false,
         CancellationToken cancellationToken = default)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
@@ -410,15 +420,15 @@ public class ProcesoController(
             {
                 IdEmpresa = currentCompanyAccessor.EmpresaId.Value,
                 Anio = anio,
+                MesSaldoHasta = mesSaldoHasta,
+                MesGeneracion = 14,
                 TipoCambioCompra = tipoCambioCompra,
                 TipoCambioVenta = tipoCambioVenta,
-                ProcesarGananciasPerdidas = procesarGananciasPerdidas,
-                ProcesarInventarios = procesarInventarios,
                 UsuarioRegistro = User.Identity?.Name
             }, cancellationToken);
 
-            TempData["ProcesoOk"] = proceso.TotalAsientos > 0
-                ? $"Se generaron {proceso.TotalAsientos} asientos de cierre para el ejercicio {anio:0000}."
+            TempData["ProcesoOk"] = proceso.IdAsiento.HasValue
+                ? $"Se genero el asiento de cierre Nro {proceso.NumeroAsiento} con {proceso.TotalLineas} lineas para el ejercicio {anio:0000}."
                 : $"El proceso de cierre no genero asientos para el ejercicio {anio:0000}.";
         }
         catch (Exception ex)
@@ -426,12 +436,15 @@ public class ProcesoController(
             TempData["ProcesoError"] = ex.Message;
         }
 
-        return RedirectToAction(nameof(AsientoCierre), new { anio });
+        return RedirectToAction(nameof(AsientoCierre), new { anio, mesSaldoHasta });
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> EliminarAsientoCierre(short anio, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> EliminarAsientoCierre(
+        short anio,
+        byte mesSaldoHasta = 13,
+        CancellationToken cancellationToken = default)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
         {
@@ -453,7 +466,7 @@ public class ProcesoController(
             TempData["ProcesoError"] = ex.Message;
         }
 
-        return RedirectToAction(nameof(AsientoCierre), new { anio });
+        return RedirectToAction(nameof(AsientoCierre), new { anio, mesSaldoHasta });
     }
 
     private static (short anio, byte mes) NormalizarPeriodo(short? anio, byte? mes)
@@ -605,8 +618,7 @@ public class ProcesoController(
             "Noviembre",
             "Diciembre",
             "Ajustes y Liquidaciones",
-            "Cierre de Ganancias y Perdidas",
-            "Cierre de Inventarios"
+            "Cierre de Inventario"
         ];
 
         return meses
@@ -792,6 +804,8 @@ public class ProcesoController(
 
     private ProcesoCierreViewModel ConstruirViewModelCierre(
         short anio,
+        byte mesSaldoHasta,
+        byte mesGeneracion,
         ConfiguracionContableProvisionDto? provisionCierre,
         CierreProcesoDto? proceso,
         bool usaTipoCambioSbs,
@@ -803,6 +817,10 @@ public class ProcesoController(
             IdEmpresa = currentCompanyAccessor.EmpresaId!.Value,
             EmpresaNombre = currentCompanyAccessor.EmpresaNombre ?? "Empresa activa",
             AnioSeleccionado = anio,
+            MesSaldoHastaSeleccionado = mesSaldoHasta,
+            PeriodoSaldoHasta = $"{anio:0000}{mesSaldoHasta:00}",
+            MesGeneracionSeleccionado = mesGeneracion,
+            PeriodoGeneracion = $"{anio:0000}{mesGeneracion:00}",
             IdOrigenConfigurado = provisionCierre?.IdOrigen,
             OrigenConfiguradoTexto = provisionCierre is null
                 ? "No configurado"
@@ -812,11 +830,10 @@ public class ProcesoController(
             UsaTipoCambioSbs = proceso?.UsaTipoCambioSbs ?? usaTipoCambioSbs,
             TipoCambioCompra = proceso?.TipoCambioCompra ?? tipoCambioCompra,
             TipoCambioVenta = proceso?.TipoCambioVenta ?? tipoCambioVenta,
-            ProcesarGananciasPerdidas = proceso?.ProcesaGananciasPerdidas ?? true,
-            ProcesarInventarios = proceso?.ProcesaInventarios ?? true,
-            GananciasPerdidasGenerado = proceso?.Detalles.Any(x => x.TipoCierre == "14" && x.IdAsiento.HasValue) ?? false,
-            InventariosGenerado = proceso?.Detalles.Any(x => x.TipoCierre == "15" && x.IdAsiento.HasValue) ?? false,
             FechaAsiento = proceso?.FechaAsiento,
+            IdAsiento = proceso?.IdAsiento,
+            NumeroAsiento = proceso?.NumeroAsiento,
+            TotalLineas = proceso?.TotalLineas ?? 0,
             TotalCuentas = proceso?.TotalCuentas ?? 0,
             TotalAsientos = proceso?.TotalAsientos ?? 0,
             TotalDebe = proceso?.TotalDebe ?? 0,
@@ -824,14 +841,9 @@ public class ProcesoController(
             FechaRegistro = proceso?.FechaRegistro,
             UsuarioRegistro = proceso?.UsuarioRegistro,
             AniosDisponibles = Enumerable.Range(anio - 5, 11).ToList(),
-            DetallesGananciasPerdidas = proceso?.Detalles
-                .Where(x => x.TipoCierre == "14")
-                .OrderBy(x => x.CodigoCuenta)
-                .Select(MapearDetalleCierre)
-                .ToList() ?? [],
-            DetallesInventarios = proceso?.Detalles
-                .Where(x => x.TipoCierre == "15")
-                .OrderBy(x => x.CodigoCuenta)
+            MesesContablesDisponibles = ListarMesesContables(),
+            Detalles = proceso?.Detalles
+                .OrderBy(x => x.Item)
                 .Select(MapearDetalleCierre)
                 .ToList() ?? []
         };
@@ -841,6 +853,7 @@ public class ProcesoController(
     {
         return new CierreProcesoDetalleItemViewModel
         {
+            Item = detalle.Item,
             TipoCierre = detalle.TipoCierre,
             DescripcionCierre = detalle.DescripcionCierre,
             IdPlanCuenta = detalle.IdPlanCuenta,
@@ -850,8 +863,11 @@ public class ProcesoController(
             TipoCambioAplicado = detalle.TipoCambioAplicado,
             IdAsiento = detalle.IdAsiento,
             NumeroAsiento = detalle.NumeroAsiento,
+            DH = detalle.DH,
             TotalDebe = detalle.TotalDebe,
             TotalHaber = detalle.TotalHaber,
+            TotalImporteS = detalle.TotalImporteS,
+            TotalImporteD = detalle.TotalImporteD,
             Estado = detalle.Estado,
             Observacion = detalle.Observacion
         };

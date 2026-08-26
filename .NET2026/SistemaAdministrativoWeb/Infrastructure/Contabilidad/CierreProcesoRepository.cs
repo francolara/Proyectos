@@ -31,10 +31,10 @@ public sealed class CierreProcesoRepository(IDbConnectionFactory connectionFacto
 
         command.Parameters.AddWithValue("@IdEmpresa", request.IdEmpresa);
         command.Parameters.AddWithValue("@Anio", request.Anio);
+        command.Parameters.AddWithValue("@MesSaldoHasta", request.MesSaldoHasta);
+        command.Parameters.AddWithValue("@MesGeneracion", request.MesGeneracion);
         command.Parameters.AddWithValue("@TipoCambioCompra", request.TipoCambioCompra);
         command.Parameters.AddWithValue("@TipoCambioVenta", request.TipoCambioVenta);
-        command.Parameters.AddWithValue("@ProcesarGananciasPerdidas", request.ProcesarGananciasPerdidas);
-        command.Parameters.AddWithValue("@ProcesarInventarios", request.ProcesarInventarios);
         command.Parameters.AddWithValue("@UsuarioRegistro", string.IsNullOrWhiteSpace(request.UsuarioRegistro) ? (object)DBNull.Value : request.UsuarioRegistro.Trim());
 
         await connection.OpenAsync(cancellationToken);
@@ -70,6 +70,10 @@ public sealed class CierreProcesoRepository(IDbConnectionFactory connectionFacto
                 IdCierreProceso = reader.GetInt32(reader.GetOrdinal("IdCierreProceso")),
                 IdEmpresa = reader.GetInt32(reader.GetOrdinal("IdEmpresa")),
                 Anio = reader.GetInt16(reader.GetOrdinal("Anio")),
+                MesSaldoHasta = reader.GetByte(reader.GetOrdinal("MesSaldoHasta")),
+                PeriodoSaldoHasta = reader.GetString(reader.GetOrdinal("PeriodoSaldoHasta")),
+                MesGeneracion = reader.GetByte(reader.GetOrdinal("MesGeneracion")),
+                PeriodoGeneracion = reader.GetString(reader.GetOrdinal("PeriodoGeneracion")),
                 IdOrigen = reader.GetInt32(reader.GetOrdinal("IdOrigen")),
                 CodigoOrigen = reader.GetString(reader.GetOrdinal("CodigoOrigen")),
                 NombreOrigen = reader.GetString(reader.GetOrdinal("NombreOrigen")),
@@ -79,6 +83,9 @@ public sealed class CierreProcesoRepository(IDbConnectionFactory connectionFacto
                 TipoCambioVenta = reader.GetDecimal(reader.GetOrdinal("TipoCambioVenta")),
                 ProcesaGananciasPerdidas = reader.GetBoolean(reader.GetOrdinal("ProcesaGananciasPerdidas")),
                 ProcesaInventarios = reader.GetBoolean(reader.GetOrdinal("ProcesaInventarios")),
+                IdAsiento = reader.IsDBNull(reader.GetOrdinal("IdAsiento")) ? null : reader.GetInt32(reader.GetOrdinal("IdAsiento")),
+                NumeroAsiento = reader.IsDBNull(reader.GetOrdinal("NumeroAsiento")) ? null : reader.GetInt32(reader.GetOrdinal("NumeroAsiento")),
+                TotalLineas = reader.GetInt32(reader.GetOrdinal("TotalLineas")),
                 TotalCuentas = reader.GetInt32(reader.GetOrdinal("TotalCuentas")),
                 TotalAsientos = reader.GetInt32(reader.GetOrdinal("TotalAsientos")),
                 TotalDebe = reader.GetDecimal(reader.GetOrdinal("TotalDebe")),
@@ -101,6 +108,7 @@ public sealed class CierreProcesoRepository(IDbConnectionFactory connectionFacto
                 {
                     IdCierreProcesoDetalle = reader.GetInt32(reader.GetOrdinal("IdCierreProcesoDetalle")),
                     IdCierreProceso = reader.GetInt32(reader.GetOrdinal("IdCierreProceso")),
+                    Item = reader.GetInt16(reader.GetOrdinal("Item")),
                     TipoCierre = reader.GetString(reader.GetOrdinal("TipoCierre")),
                     DescripcionCierre = reader.GetString(reader.GetOrdinal("DescripcionCierre")),
                     IdPlanCuenta = reader.GetInt32(reader.GetOrdinal("IdPlanCuenta")),
@@ -110,8 +118,11 @@ public sealed class CierreProcesoRepository(IDbConnectionFactory connectionFacto
                     TipoCambioAplicado = reader.GetDecimal(reader.GetOrdinal("TipoCambioAplicado")),
                     IdAsiento = reader.IsDBNull(reader.GetOrdinal("IdAsiento")) ? null : reader.GetInt32(reader.GetOrdinal("IdAsiento")),
                     NumeroAsiento = reader.IsDBNull(reader.GetOrdinal("NumeroAsiento")) ? null : reader.GetInt32(reader.GetOrdinal("NumeroAsiento")),
+                    DH = reader.GetString(reader.GetOrdinal("DH")),
                     TotalDebe = reader.GetDecimal(reader.GetOrdinal("TotalDebe")),
                     TotalHaber = reader.GetDecimal(reader.GetOrdinal("TotalHaber")),
+                    TotalImporteS = reader.GetDecimal(reader.GetOrdinal("TotalImporteS")),
+                    TotalImporteD = reader.GetDecimal(reader.GetOrdinal("TotalImporteD")),
                     Estado = reader.GetString(reader.GetOrdinal("Estado")),
                     Observacion = reader.IsDBNull(reader.GetOrdinal("Observacion")) ? null : reader.GetString(reader.GetOrdinal("Observacion")),
                     FechaRegistro = reader.GetDateTime(reader.GetOrdinal("FechaRegistro")),

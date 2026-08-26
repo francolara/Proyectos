@@ -29,7 +29,7 @@ public class ConfiguracionContabilizacionController(
         ("DIF", "Diferencia en cambio", "Origen del proceso mensual", "Define el origen contable que usara el proceso web de diferencia en cambio para generar asientos separados por cuenta.", "bi-currency-exchange", "diferencia-cambio"),
         ("AJU", "Ajuste de cuentas", "Origen del proceso mensual", "Define el origen contable que usara el proceso web de ajuste de cuentas para generar asientos separados por cuenta analitica.", "bi-sliders", "ajuste-cuentas"),
         ("APR", "Asiento de apertura", "Origen del proceso anual", "Define el origen contable que usara el proceso web de apertura anual para generar el asiento del periodo 00 usando saldos del anio anterior.", "bi-journal-plus", "asiento-apertura"),
-        ("CIE", "Asiento de cierre", "Origen del proceso anual", "Define el origen contable que usara el proceso web de cierre anual para generar los asientos de ganancias y perdidas e inventarios.", "bi-journal-x", "asiento-cierre")
+        ("CIE", "Asiento de cierre", "Origen del proceso anual", "Define el origen contable que usara el cierre anual para generar un unico asiento compuesto con las cuentas configuradas como Inventario en el plan contable.", "bi-journal-x", "asiento-cierre")
     ];
 
     private const int TamanoPagina = 20;
@@ -282,7 +282,6 @@ public class ConfiguracionContabilizacionController(
     private async Task<ConfiguracionContabilizacionIndexViewModel> ConstruirPantallaAsync(CancellationToken cancellationToken)
     {
         var empresaId = currentCompanyAccessor.EmpresaId!.Value;
-        await parametroEmpresaRepository.CargarDefaultAsync(empresaId, User.Identity?.Name, cancellationToken);
 
         var origenes = (await origenRepository.ListarPorEmpresaAsync(empresaId, false, cancellationToken))
             .Where(x => x.Estado)

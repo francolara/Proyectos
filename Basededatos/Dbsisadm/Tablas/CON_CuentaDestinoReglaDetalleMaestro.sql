@@ -3,12 +3,13 @@
 -- Create date:   18/06/2026
 -- Description:   Detalle maestro interno de cuentas destino. No pertenece a una empresa.
 -- =============================================
+-- Firma: FRANCO LARA - 25/08/2026 | Define el identity maestro desde cero para las cargas iniciales.
 
 IF OBJECT_ID(N'dbo.CON_CuentaDestinoReglaDetalleMaestro', N'U') IS NULL
 BEGIN
     CREATE TABLE dbo.CON_CuentaDestinoReglaDetalleMaestro
     (
-        IdCuentaDestinoReglaDetalleMaestro INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_CON_CuentaDestinoReglaDetalleMaestro PRIMARY KEY,
+        IdCuentaDestinoReglaDetalleMaestro INT IDENTITY(0,1) NOT NULL CONSTRAINT PK_CON_CuentaDestinoReglaDetalleMaestro PRIMARY KEY,
         IdCuentaDestinoReglaMaestro INT NOT NULL,
         Orden SMALLINT NOT NULL,
         CodigoCuentaDestinoCargo VARCHAR(20) NOT NULL,

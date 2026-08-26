@@ -3,11 +3,12 @@
 -- Create date:   20/06/2026
 -- Description:   Unifica configuracion de impuestos en CON_TipoImpuestoConfiguracionEmpresa.
 -- =============================================
+-- Firma: FRANCO LARA - 25/08/2026 | Conserva CodigoCuenta en el maestro de impuestos y IdPlanCuenta solo en la configuracion por empresa.
 
-IF COL_LENGTH(N'dbo.CON_TipoImpuesto', N'IdPlanCuenta') IS NULL
+IF COL_LENGTH(N'dbo.CON_TipoImpuesto', N'CodigoCuenta') IS NULL
 BEGIN
     ALTER TABLE dbo.CON_TipoImpuesto
-        ADD IdPlanCuenta INT NULL;
+        ADD CodigoCuenta VARCHAR(20) NULL;
 END;
 
 IF OBJECT_ID(N'dbo.CON_TipoImpuestoConfiguracionEmpresa', N'U') IS NULL

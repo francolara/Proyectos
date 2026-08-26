@@ -15,6 +15,8 @@
 -- Description:   Incorpora el tipo de impuesto SPOT para configurar la cuenta contable de detracciones.
 -- =============================================
 
+-- Firma: FRANCO LARA - 25/08/2026 | Reemplaza el identificador de plan contable del maestro por el codigo de cuenta portable entre empresas.
+
 IF OBJECT_ID(N'dbo.CON_TipoImpuesto', N'U') IS NULL
 BEGIN
     CREATE TABLE dbo.CON_TipoImpuesto
@@ -22,7 +24,7 @@ BEGIN
         IdTipoImpuesto INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_CON_TipoImpuesto PRIMARY KEY,
         CodigoSunat VARCHAR(10) NOT NULL,
         NombreImpuesto NVARCHAR(100) NOT NULL,
-        IdPlanCuenta INT NULL,
+        CodigoCuenta VARCHAR(20) NULL,
         Estado BIT NOT NULL CONSTRAINT DF_CON_TipoImpuesto_Estado DEFAULT (1)
     );
 

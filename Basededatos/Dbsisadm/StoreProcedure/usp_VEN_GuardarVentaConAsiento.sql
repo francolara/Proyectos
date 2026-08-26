@@ -31,6 +31,7 @@
 -- Description:   Unifica el estado de la provision de venta a PROVISIONADO.
 -- =============================================
 -- Firma: FRANCO LARA - 30/06/2026 | Guarda tipo documento por codigo en ventas, calcula equivalencias en soles y dolares por linea del asiento generado y crea el asiento principal cuando la venta fue importada en EN REVISION sin IdAsiento.
+-- Firma: FRANCO LARA - 25/08/2026 | Exige cuentas de documentos e impuestos configuradas por empresa, sin usar respaldos del maestro durante la provision.
 
 CREATE OR ALTER PROCEDURE dbo.usp_VEN_GuardarVentaConAsiento
     @IdVenta INT = NULL,
@@ -288,13 +289,14 @@ BEGIN
 
         SELECT
             @IdCuentaDocumento = CASE
-                WHEN @CodigoMoneda = 'USD' THEN COALESCE(CASE WHEN ISNULL(cfg.Activo, 1) = 1 THEN cfg.IdCuentaVentaDolares END, t.IdCuentaVentaDolares)
-                ELSE COALESCE(CASE WHEN ISNULL(cfg.Activo, 1) = 1 THEN cfg.IdCuentaVentaSoles END, t.IdCuentaVentaSoles)
+                WHEN @CodigoMoneda = 'USD' THEN cfg.IdCuentaVentaDolares
+                ELSE cfg.IdCuentaVentaSoles
             END
         FROM dbo.ADM_TipoComprobante AS t
         LEFT JOIN dbo.CON_DocumentoConfiguracionEmpresa AS cfg
             ON cfg.IdTipoComprobante = t.IdTipoComprobante
            AND cfg.IdEmpresa = @IdEmpresa
+           AND cfg.Activo = 1
         WHERE t.IdTipoComprobante = @IdTipoComprobanteTrabajo;
 
         IF @IdCuentaDocumento IS NULL
@@ -316,10 +318,10 @@ BEGIN
         END;
 
         SELECT
-            @IdCuentaIgv = MAX(CASE WHEN i.CodigoSunat = 'IGV' THEN COALESCE(CASE WHEN ISNULL(cfg.Activo, 1) = 1 THEN cfg.IdPlanCuenta END, i.IdPlanCuenta) END),
-            @IdCuentaIsc = MAX(CASE WHEN i.CodigoSunat = 'ISC' THEN COALESCE(CASE WHEN ISNULL(cfg.Activo, 1) = 1 THEN cfg.IdPlanCuenta END, i.IdPlanCuenta) END),
-            @IdCuentaIcbper = MAX(CASE WHEN i.CodigoSunat = 'ICBPER' THEN COALESCE(CASE WHEN ISNULL(cfg.Activo, 1) = 1 THEN cfg.IdPlanCuenta END, i.IdPlanCuenta) END),
-            @IdCuentaOtros = MAX(CASE WHEN i.CodigoSunat = 'OTROS' THEN COALESCE(CASE WHEN ISNULL(cfg.Activo, 1) = 1 THEN cfg.IdPlanCuenta END, i.IdPlanCuenta) END)
+            @IdCuentaIgv = MAX(CASE WHEN i.CodigoSunat = 'IGV' AND cfg.Activo = 1 THEN cfg.IdPlanCuenta END),
+            @IdCuentaIsc = MAX(CASE WHEN i.CodigoSunat = 'ISC' AND cfg.Activo = 1 THEN cfg.IdPlanCuenta END),
+            @IdCuentaIcbper = MAX(CASE WHEN i.CodigoSunat = 'ICBPER' AND cfg.Activo = 1 THEN cfg.IdPlanCuenta END),
+            @IdCuentaOtros = MAX(CASE WHEN i.CodigoSunat = 'OTROS' AND cfg.Activo = 1 THEN cfg.IdPlanCuenta END)
         FROM dbo.CON_TipoImpuesto AS i
         LEFT JOIN dbo.CON_TipoImpuestoConfiguracionEmpresa AS cfg
             ON cfg.IdTipoImpuesto = i.IdTipoImpuesto

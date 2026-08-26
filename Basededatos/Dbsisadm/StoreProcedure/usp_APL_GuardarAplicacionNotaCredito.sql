@@ -6,6 +6,7 @@
 -- Firma: FRANCO LARA - 24/06/2026 | Agrega el guardado del modulo Aplicaciones con soporte de importe parcial, descuento de saldos en compras/ventas, tipo de cambio editable para el asiento y mensaje claro cuando falle la generacion contable.
 -- Firma: FRANCO LARA - 25/06/2026 | Ajusta la generacion del asiento de Aplicaciones para dejar su estado final en PROVISIONADO en lugar de BORRADOR.
 -- Firma: FRANCO LARA - 03/07/2026 | Incluye DH en el XML del asiento automatico de aplicaciones para propagar el sentido contable al guardado centralizado del detalle.
+-- Firma: FRANCO LARA - 25/08/2026 | Exige las cuentas de comprobantes configuradas y activas por empresa, sin usar respaldos del maestro.
 
 CREATE OR ALTER PROCEDURE dbo.usp_APL_GuardarAplicacionNotaCredito
     @IdEmpresa INT,
@@ -283,8 +284,8 @@ BEGIN
         BEGIN
             SELECT
                 @IdCuentaComprobante = CASE
-                                           WHEN UPPER(LTRIM(RTRIM(@CodigoMoneda))) = 'USD' THEN COALESCE(cfg.IdCuentaVentaDolares, tc.IdCuentaVentaDolares)
-                                           ELSE COALESCE(cfg.IdCuentaVentaSoles, tc.IdCuentaVentaSoles)
+                                           WHEN UPPER(LTRIM(RTRIM(@CodigoMoneda))) = 'USD' THEN cfg.IdCuentaVentaDolares
+                                           ELSE cfg.IdCuentaVentaSoles
                                        END
             FROM dbo.ADM_TipoComprobante AS tc
             LEFT JOIN dbo.CON_DocumentoConfiguracionEmpresa AS cfg
@@ -295,8 +296,8 @@ BEGIN
 
             SELECT
                 @IdCuentaNotaCredito = CASE
-                                           WHEN UPPER(LTRIM(RTRIM(@CodigoMoneda))) = 'USD' THEN COALESCE(cfg.IdCuentaVentaDolares, tc.IdCuentaVentaDolares)
-                                           ELSE COALESCE(cfg.IdCuentaVentaSoles, tc.IdCuentaVentaSoles)
+                                           WHEN UPPER(LTRIM(RTRIM(@CodigoMoneda))) = 'USD' THEN cfg.IdCuentaVentaDolares
+                                           ELSE cfg.IdCuentaVentaSoles
                                        END
             FROM dbo.ADM_TipoComprobante AS tc
             LEFT JOIN dbo.CON_DocumentoConfiguracionEmpresa AS cfg
@@ -309,8 +310,8 @@ BEGIN
         BEGIN
             SELECT
                 @IdCuentaComprobante = CASE
-                                           WHEN UPPER(LTRIM(RTRIM(@CodigoMoneda))) = 'USD' THEN COALESCE(cfg.IdCuentaCompraDolares, tc.IdCuentaCompraDolares)
-                                           ELSE COALESCE(cfg.IdCuentaCompraSoles, tc.IdCuentaCompraSoles)
+                                           WHEN UPPER(LTRIM(RTRIM(@CodigoMoneda))) = 'USD' THEN cfg.IdCuentaCompraDolares
+                                           ELSE cfg.IdCuentaCompraSoles
                                        END
             FROM dbo.ADM_TipoComprobante AS tc
             LEFT JOIN dbo.CON_DocumentoConfiguracionEmpresa AS cfg
@@ -321,8 +322,8 @@ BEGIN
 
             SELECT
                 @IdCuentaNotaCredito = CASE
-                                           WHEN UPPER(LTRIM(RTRIM(@CodigoMoneda))) = 'USD' THEN COALESCE(cfg.IdCuentaCompraDolares, tc.IdCuentaCompraDolares)
-                                           ELSE COALESCE(cfg.IdCuentaCompraSoles, tc.IdCuentaCompraSoles)
+                                           WHEN UPPER(LTRIM(RTRIM(@CodigoMoneda))) = 'USD' THEN cfg.IdCuentaCompraDolares
+                                           ELSE cfg.IdCuentaCompraSoles
                                        END
             FROM dbo.ADM_TipoComprobante AS tc
             LEFT JOIN dbo.CON_DocumentoConfiguracionEmpresa AS cfg
