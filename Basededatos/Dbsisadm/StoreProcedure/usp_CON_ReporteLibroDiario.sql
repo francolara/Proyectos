@@ -8,6 +8,7 @@
 -- Create date:   08/07/2026
 -- Description:   Ajusta Libro Diario para fijar moneda base en soles, eliminar filtro por origen y separar las vistas totalizadas Por Cuenta y Por Origen.
 -- =============================================
+-- Firma: FRANCO LARA - 26/08/2026 | Agrega filtros opcionales CuentaDesde y CuentaHasta sobre el codigo contable antes de totalizar el Libro Diario.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_ReporteLibroDiario
     @IdEmpresa INT,
@@ -15,7 +16,9 @@ CREATE OR ALTER PROCEDURE dbo.usp_CON_ReporteLibroDiario
     @Moneda VARCHAR(3) = 'PEN',
     @Modo CHAR(1) = 'A',
     @OrigenDesde VARCHAR(10) = NULL,
-    @OrigenHasta VARCHAR(10) = NULL
+    @OrigenHasta VARCHAR(10) = NULL,
+    @CuentaDesde VARCHAR(20) = NULL,
+    @CuentaHasta VARCHAR(20) = NULL
 AS
 BEGIN
 
@@ -27,6 +30,8 @@ BEGIN
         DECLARE @ModoTrabajo CHAR(1) = CASE WHEN UPPER(ISNULL(@Modo, 'A')) IN ('D', 'R') THEN UPPER(@Modo) ELSE 'A' END;
         DECLARE @OrigenDesdeTrabajo VARCHAR(10);
         DECLARE @OrigenHastaTrabajo VARCHAR(10);
+        DECLARE @CuentaDesdeTrabajo VARCHAR(20) = NULLIF(LTRIM(RTRIM(@CuentaDesde)), '');
+        DECLARE @CuentaHastaTrabajo VARCHAR(20) = NULLIF(LTRIM(RTRIM(@CuentaHasta)), '');
 
         SELECT
             @OrigenDesdeTrabajo = COALESCE(NULLIF(LTRIM(RTRIM(@OrigenDesde)), ''), MIN(o.CodigoOrigen)),
@@ -115,6 +120,8 @@ BEGIN
            AND per.NumeroDocumento = d.NumeroDocumento
         WHERE a.IdEmpresa = @IdEmpresa
           AND a.Periodo = @Periodo
+          AND (@CuentaDesdeTrabajo IS NULL OR p.CodigoCuenta >= @CuentaDesdeTrabajo)
+          AND (@CuentaHastaTrabajo IS NULL OR p.CodigoCuenta <= @CuentaHastaTrabajo)
           AND (
                 @ModoTrabajo = 'A'
                 OR (

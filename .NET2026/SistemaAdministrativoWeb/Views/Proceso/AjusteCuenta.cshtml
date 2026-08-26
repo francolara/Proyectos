@@ -2,6 +2,7 @@
 
 @* Firma: FRANCO LARA - 02/07/2026 | Crea la pantalla Proceso > Ajuste de Cuentas para regenerar el proceso AJU por periodo usando el origen configurado y las cuentas analiticas marcadas en el plan contable. *@
 @* Firma: FRANCO LARA - 02/07/2026 | Muestra la tarjeta del tipo de cambio que usara el proceso, normaliza la presentacion a 3 decimales y agrega la eliminacion exclusiva de la generacion del periodo. *@
+@* Firma: FRANCO LARA - 26/08/2026 | Uniformiza el acceso visual al asiento mediante una etiqueta contable navegable. *@
 
 @{
     ViewData["Title"] = "Ajuste de Cuentas";
@@ -159,7 +160,7 @@
                                     <td>
                                         @if (item.IdAsiento.HasValue)
                                         {
-                                            <a asp-controller="Asiento" asp-action="Editar" asp-route-idAsiento="@item.IdAsiento.Value" asp-route-periodo="@Model.PeriodoConsulta">Nro @item.NumeroAsiento</a>
+                                            <a asp-controller="Asiento" asp-action="Editar" asp-route-idAsiento="@item.IdAsiento.Value" asp-route-periodo="@Model.PeriodoConsulta" class="workspace-asiento-link"><i class="bi bi-journal-text" aria-hidden="true"></i><span>Nro @item.NumeroAsiento</span></a>
                                         }
                                         else
                                         {

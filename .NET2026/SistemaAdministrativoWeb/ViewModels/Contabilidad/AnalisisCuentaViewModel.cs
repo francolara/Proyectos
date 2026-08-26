@@ -24,6 +24,5 @@ public sealed class AnalisisCuentaViewModel
     public List<OpcionCatalogoViewModel> EstadosDisponibles { get; set; } = [];
     public List<OpcionCatalogoViewModel> MonedasDisponibles { get; set; } = [];
     public List<OpcionCatalogoViewModel> TiposDisponibles { get; set; } = [];
-    public List<OpcionCatalogoViewModel> CuentasDisponibles { get; set; } = [];
     public List<AnalisisCuentaItemViewModel> Resultados { get; set; } = [];
 }

@@ -9,6 +9,8 @@ public sealed class LibroDiarioViewModel
     public string PeriodoConsulta { get; set; } = string.Empty;
     public string MonedaSeleccionada { get; set; } = "PEN";
     public string ModoSeleccionado { get; set; } = "A";
+    public string CuentaDesde { get; set; } = string.Empty;
+    public string CuentaHasta { get; set; } = string.Empty;
     public string OrigenDesde { get; set; } = string.Empty;
     public string OrigenHasta { get; set; } = string.Empty;
     public bool ConsultaEjecutada { get; set; }

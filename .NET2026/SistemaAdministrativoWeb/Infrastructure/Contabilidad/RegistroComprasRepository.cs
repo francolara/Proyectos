@@ -22,6 +22,7 @@ public sealed class RegistroComprasRepository(IDbConnectionFactory connectionFac
         command.Parameters.AddWithValue("@Anio", request.Anio);
         command.Parameters.AddWithValue("@Mes", request.Mes);
         command.Parameters.AddWithValue("@CodigoPersona", string.IsNullOrWhiteSpace(request.CodigoPersona) ? (object)DBNull.Value : request.CodigoPersona.Trim());
+        command.Parameters.AddWithValue("@NumeroDocumento", string.IsNullOrWhiteSpace(request.NumeroComprobante) ? (object)DBNull.Value : request.NumeroComprobante.Trim());
 
         await connection.OpenAsync(cancellationToken);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);

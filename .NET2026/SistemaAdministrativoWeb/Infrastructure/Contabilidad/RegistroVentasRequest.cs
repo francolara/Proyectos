@@ -6,4 +6,5 @@ public sealed class RegistroVentasRequest
     public short Anio { get; init; }
     public byte Mes { get; init; }
     public string CodigoPersona { get; init; } = string.Empty;
+    public string NumeroComprobante { get; init; } = string.Empty;
 }

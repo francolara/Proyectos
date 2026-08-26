@@ -4,6 +4,7 @@
 @* Firma: FRANCO LARA - 08/07/2026 | Corrige el envio por GET de los checks de filtros para que conserven el estado desmarcado al consultar el balance, apliquen correctamente los rangos configurados y actualiza el subtitulo del reporte. *@
 @* Firma: FRANCO LARA - 21/07/2026 | Corrige la impresion del Balance de comprobacion en A4 horizontal, compacta cabecera y tabla y evita heredar el modo oscuro. *@
 @* Firma: FRANCO LARA - 04/08/2026 | Separa los parametros principales y avanzados del Balance de comprobacion con el patron visual compartido de reportes. *@
+@* Firma: FRANCO LARA - 26/08/2026 | Reemplaza los selectores de rango por ayuda emergente para todos los niveles y los integra con Todas las cuentas. *@
 
 @{
     ViewData["Title"] = "Balance de comprobación";
@@ -122,11 +123,19 @@
                 <div id="balanceAdvancedFilters" class="report-filter-advanced-grid report-filter-grid-2 @(tieneFiltrosAvanzados ? string.Empty : "d-none")">
                     <div class="workspace-field">
                         <label class="form-label" for="cuentaDesde">Cuenta desde</label>
-                        <input id="cuentaDesde" name="cuentaDesde" class="form-control js-balance-cuenta" value="@Model.CuentaDesde" list="balance-cuentas-lista" disabled="@(Model.TodasLasCuentas ? "disabled" : null)" />
+                        <div class="input-group">
+                            <input id="cuentaDesde" name="cuentaDesde" class="form-control js-balance-cuenta" value="@Model.CuentaDesde" readonly disabled="@(Model.TodasLasCuentas ? "disabled" : null)" />
+                            <button type="button" class="btn btn-outline-secondary workspace-icon-button js-balance-cuenta-action" data-plan-cuenta-rango-open="balanceCuentaRangoModal" data-target-input="cuentaDesde" data-target-label="Cuenta desde" title="Buscar Cuenta desde" aria-label="Buscar Cuenta desde" disabled="@(Model.TodasLasCuentas ? "disabled" : null)"><i class="bi bi-search"></i></button>
+                            <button type="button" class="btn btn-outline-secondary workspace-icon-button js-balance-cuenta-action" data-plan-cuenta-rango-clear="balanceCuentaRangoModal" data-target-input="cuentaDesde" title="Limpiar Cuenta desde" aria-label="Limpiar Cuenta desde" disabled="@(Model.TodasLasCuentas ? "disabled" : null)"><i class="bi bi-eraser"></i></button>
+                        </div>
                     </div>
                     <div class="workspace-field">
                         <label class="form-label" for="cuentaHasta">Cuenta hasta</label>
-                        <input id="cuentaHasta" name="cuentaHasta" class="form-control js-balance-cuenta" value="@Model.CuentaHasta" list="balance-cuentas-lista" disabled="@(Model.TodasLasCuentas ? "disabled" : null)" />
+                        <div class="input-group">
+                            <input id="cuentaHasta" name="cuentaHasta" class="form-control js-balance-cuenta" value="@Model.CuentaHasta" readonly disabled="@(Model.TodasLasCuentas ? "disabled" : null)" />
+                            <button type="button" class="btn btn-outline-secondary workspace-icon-button js-balance-cuenta-action" data-plan-cuenta-rango-open="balanceCuentaRangoModal" data-target-input="cuentaHasta" data-target-label="Cuenta hasta" title="Buscar Cuenta hasta" aria-label="Buscar Cuenta hasta" disabled="@(Model.TodasLasCuentas ? "disabled" : null)"><i class="bi bi-search"></i></button>
+                            <button type="button" class="btn btn-outline-secondary workspace-icon-button js-balance-cuenta-action" data-plan-cuenta-rango-clear="balanceCuentaRangoModal" data-target-input="cuentaHasta" title="Limpiar Cuenta hasta" aria-label="Limpiar Cuenta hasta" disabled="@(Model.TodasLasCuentas ? "disabled" : null)"><i class="bi bi-eraser"></i></button>
+                        </div>
                     </div>
                     <div class="report-filter-options">
                         <div class="workspace-check-grid workspace-check-grid-compact">
@@ -155,12 +164,6 @@
                     </button>
                 </div>
 
-                <datalist id="balance-cuentas-lista">
-                    @foreach (var cuenta in Model.CuentasDisponibles)
-                    {
-                        <option value="@cuenta.Valor">@cuenta.Texto</option>
-                    }
-                </datalist>
             </form>
             </section>
 
@@ -276,11 +279,19 @@
     </section>
 </section>
 
+<partial name="_PlanCuentaRangoAyuda" model="@(new SistemaAdministrativoWeb.ViewModels.Contabilidad.ReportePlanCuentaRangoAyudaViewModel
+    {
+        ModalId = "balanceCuentaRangoModal",
+        CuentaDesdeInputId = "cuentaDesde",
+        CuentaHastaInputId = "cuentaHasta"
+    })" />
+
 @section Scripts {
     <script>
         (() => {
             const toggle = document.getElementById("todasLasCuentas");
             const inputs = Array.from(document.querySelectorAll(".js-balance-cuenta"));
+            const actions = Array.from(document.querySelectorAll(".js-balance-cuenta-action"));
 
             const syncState = () => {
                 const disabled = toggle?.checked ?? false;
@@ -288,7 +299,12 @@
                     input.disabled = disabled;
                     if (disabled) {
                         input.value = "";
+                        input.title = "";
+                        input.setCustomValidity("");
                     }
+                });
+                actions.forEach((action) => {
+                    action.disabled = disabled;
                 });
             };
 

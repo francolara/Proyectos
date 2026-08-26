@@ -4,6 +4,7 @@
 @* Firma: FRANCO LARA - 02/07/2026 | Ajusta la visualizacion del tipo de cambio a 3 decimales en la tarjeta, formulario y detalle del cierre, y agrega la eliminacion exclusiva de la generacion del ejercicio. *@
 @* Firma: FRANCO LARA - 13/08/2026 | Cambia el proceso a un unico asiento compuesto, permite elegir los periodos, muestra sus lineas invertidas y advierte cuando la generacion existente pertenece al modelo anterior. *@
 @* Firma: FRANCO LARA - 22/08/2026 | Informa que el cierre procesa cuentas de Inventario, no agrega una cuenta de cuadre, permite Debe/Haber diferentes y fija la generacion en el periodo 14 con corte maximo en el periodo 13. *@
+@* Firma: FRANCO LARA - 26/08/2026 | Uniformiza el acceso visual al asiento mediante una etiqueta contable navegable. *@
 
 @{
     ViewData["Title"] = "Asiento de cierre";
@@ -146,7 +147,7 @@
                         <strong>
                             @if (Model.IdAsiento.HasValue)
                             {
-                                <a asp-controller="Asiento" asp-action="Editar" asp-route-idAsiento="@Model.IdAsiento.Value" asp-route-periodo="@Model.PeriodoGeneracion">Nro @Model.NumeroAsiento</a>
+                                <a asp-controller="Asiento" asp-action="Editar" asp-route-idAsiento="@Model.IdAsiento.Value" asp-route-periodo="@Model.PeriodoGeneracion" class="workspace-asiento-link"><i class="bi bi-journal-text" aria-hidden="true"></i><span>Nro @Model.NumeroAsiento</span></a>
                             }
                             else
                             {

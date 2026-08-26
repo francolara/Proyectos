@@ -36,8 +36,8 @@ if (builder.Environment.IsDevelopment())
     builder.Configuration.AddUserSecrets<Program>(optional: true, reloadOnChange: true);
 }
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+var connectionString = builder.Configuration["FRALSECONT_ConnectionStrings:DefaultConnection"]
+    ?? throw new InvalidOperationException("Configuration 'FRALSECONT_ConnectionStrings:DefaultConnection' not found.");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
@@ -70,8 +70,8 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
-var googleClientId = (builder.Configuration["Authentication:Google:ClientId"] ?? string.Empty).Trim();
-var googleClientSecret = (builder.Configuration["Authentication:Google:ClientSecret"] ?? string.Empty).Trim();
+var googleClientId = (builder.Configuration["FRALSECONT_Authentication:Google:ClientId"] ?? string.Empty).Trim();
+var googleClientSecret = (builder.Configuration["FRALSECONT_Authentication:Google:ClientSecret"] ?? string.Empty).Trim();
 if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(googleClientSecret))
 {
     builder.Services.AddAuthentication()

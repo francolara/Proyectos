@@ -1,0 +1,136 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.ReportePersonaAyudaViewModel
+
+@* Firma: FRANCO LARA - 26/08/2026 | Agrega ayuda reutilizable que selecciona el DNI/RUC de clientes y proveedores para Codigo persona. *@
+
+<div class="modal fade" id="@Model.ModalId" tabindex="-1" aria-hidden="true" data-reporte-persona-modal>
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h2 class="modal-title fs-5">@Model.Titulo</h2>
+                    <small class="text-muted">Busca por codigo, RUC/DNI o nombre y selecciona una fila.</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group mb-3">
+                    <input type="search" class="form-control" placeholder="Codigo, RUC/DNI o nombre" data-reporte-persona-busqueda />
+                    <button type="button" class="btn btn-primary" data-reporte-persona-consultar>
+                        <i class="bi bi-search" aria-hidden="true"></i>
+                        <span>Buscar</span>
+                    </button>
+                </div>
+                <div class="table-responsive workspace-table-wrap">
+                    <table class="table table-sm align-middle app-table workspace-table">
+                        <thead>
+                            <tr>
+                                <th>Codigo</th>
+                                <th>RUC/DNI</th>
+                                <th>Nombre</th>
+                                <th class="text-center">Accion</th>
+                            </tr>
+                        </thead>
+                        <tbody data-reporte-persona-resultados>
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">Ingrese un criterio o pulse Buscar para listar personas.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="alert alert-danger d-none mt-3" data-reporte-persona-error></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(() => {
+    const modalElement = document.getElementById('@Model.ModalId');
+    if (!modalElement) return;
+
+    const codigoInput = document.getElementById('@Model.CodigoInputId');
+    const busquedaInput = modalElement.querySelector('[data-reporte-persona-busqueda]');
+    const consultarButton = modalElement.querySelector('[data-reporte-persona-consultar]');
+    const resultadosBody = modalElement.querySelector('[data-reporte-persona-resultados]');
+    const errorElement = modalElement.querySelector('[data-reporte-persona-error]');
+    const endpoint = '@Url.Action("BuscarPersonasRegistroAyuda", "Reporte")';
+
+    const mostrarError = (mensaje) => {
+        if (!errorElement) return;
+        errorElement.textContent = mensaje || 'No fue posible consultar las personas.';
+        errorElement.classList.remove('d-none');
+    };
+
+    const limpiarError = () => {
+        if (!errorElement) return;
+        errorElement.textContent = '';
+        errorElement.classList.add('d-none');
+    };
+
+    const seleccionar = (item) => {
+        if (codigoInput) codigoInput.value = item.codigoPersona || '';
+        bootstrap.Modal.getOrCreateInstance(modalElement).hide();
+    };
+
+    const renderizar = (items) => {
+        if (!resultadosBody) return;
+        resultadosBody.replaceChildren();
+
+        if (!Array.isArray(items) || items.length === 0) {
+            const row = resultadosBody.insertRow();
+            const cell = row.insertCell();
+            cell.colSpan = 4;
+            cell.className = 'text-center text-muted';
+            cell.textContent = 'No se encontraron personas para el criterio ingresado.';
+            return;
+        }
+
+        items.forEach((item) => {
+            const row = resultadosBody.insertRow();
+            row.insertCell().textContent = item.codigoPersona || '';
+            row.insertCell().textContent = item.numeroDocumentoPersona || '';
+            row.insertCell().textContent = item.nombreCompleto || '';
+            const actionCell = row.insertCell();
+            actionCell.className = 'text-center';
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'workspace-row-btn workspace-row-btn-primary';
+            button.textContent = 'Seleccionar';
+            button.addEventListener('click', () => seleccionar(item));
+            actionCell.appendChild(button);
+        });
+    };
+
+    const consultar = async () => {
+        limpiarError();
+        if (consultarButton) consultarButton.disabled = true;
+
+        try {
+            const url = new URL(endpoint, window.location.origin);
+            url.searchParams.set('tipoRegistro', '@Model.TipoRegistro');
+            url.searchParams.set('buscar', busquedaInput?.value?.trim() || '');
+            const response = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            const payload = await response.json();
+            if (!response.ok || payload.ok !== true) {
+                throw new Error(payload.mensaje || 'No fue posible consultar las personas.');
+            }
+            renderizar(payload.items);
+        } catch (error) {
+            mostrarError(error?.message);
+        } finally {
+            if (consultarButton) consultarButton.disabled = false;
+        }
+    };
+
+    consultarButton?.addEventListener('click', consultar);
+    busquedaInput?.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
+        consultar();
+    });
+    modalElement.addEventListener('shown.bs.modal', () => {
+        busquedaInput?.focus();
+        consultar();
+    });
+})();
+</script>

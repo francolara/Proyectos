@@ -19,6 +19,8 @@ public class ReporteController(
     IBalanceComprobacionRepository balanceComprobacionRepository,
     IRegistroVentasRepository registroVentasRepository,
     IRegistroComprasRepository registroComprasRepository,
+    IClienteRepository clienteRepository,
+    IProveedorRepository proveedorRepository,
     ILibroDiarioRepository libroDiarioRepository,
     ILibroMayorRepository libroMayorRepository,
     IAsientoRepository asientoRepository) : Controller
@@ -112,7 +114,6 @@ public class ReporteController(
 
         var (anioTrabajo, mesTrabajo) = NormalizarPeriodo(anio, mes);
         var idEmpresa = currentCompanyAccessor.EmpresaId.Value;
-        var cuentas = await planCuentaRepository.ListarPorEmpresaAsync(idEmpresa, true, cancellationToken);
 
         var model = new AnalisisCuentaViewModel
         {
@@ -146,20 +147,17 @@ public class ReporteController(
                 new OpcionCatalogoViewModel { Valor = "0", Texto = "Detallado" },
                 new OpcionCatalogoViewModel { Valor = "1", Texto = "Auxiliar y documento" },
                 new OpcionCatalogoViewModel { Valor = "2", Texto = "Por auxiliar" }
-            ],
-            CuentasDisponibles = cuentas
-                .Where(x => x.Estado && x.GeneraDiferenciaPorAnalisis)
-                .OrderBy(x => x.CodigoCuenta)
-                .Select(x => new OpcionCatalogoViewModel
-                {
-                    Valor = x.CodigoCuenta,
-                    Texto = $"{x.CodigoCuenta} - {x.NombreCuenta}"
-                })
-                .ToList()
+            ]
         };
 
         if (!consultar)
         {
+            return View(model);
+        }
+
+        if (EsRangoCuentaInvalido(model.CuentaDesde, model.CuentaHasta))
+        {
+            model.MensajeError = "Cuenta hasta debe ser mayor o igual que Cuenta desde.";
             return View(model);
         }
 
@@ -252,8 +250,8 @@ public class ReporteController(
             MonedaSeleccionada = NormalizarMoneda(moneda),
             GradoSeleccionado = NormalizarGrado(grado, gradosMaximos),
             TodasLasCuentas = todasLasCuentas,
-            CuentaDesde = cuentaDesde?.Trim() ?? string.Empty,
-            CuentaHasta = cuentaHasta?.Trim() ?? string.Empty,
+            CuentaDesde = todasLasCuentas ? string.Empty : cuentaDesde?.Trim() ?? string.Empty,
+            CuentaHasta = todasLasCuentas ? string.Empty : cuentaHasta?.Trim() ?? string.Empty,
             FiltrarGrado = filtrarGrado,
             ConsultaEjecutada = consultar,
             AniosDisponibles = Enumerable.Range(anioTrabajo - 5, 11).Select(x => (short)x).ToList(),
@@ -269,20 +267,17 @@ public class ReporteController(
                     Valor = x.ToString(),
                     Texto = $"Grado {x}"
                 })
-                .ToList(),
-            CuentasDisponibles = cuentas
-                .Where(x => x.Estado)
-                .OrderBy(x => x.CodigoCuenta)
-                .Select(x => new OpcionCatalogoViewModel
-                {
-                    Valor = x.CodigoCuenta,
-                    Texto = $"{x.CodigoCuenta} - {x.NombreCuenta}"
-                })
                 .ToList()
         };
 
         if (!consultar)
         {
+            return View(model);
+        }
+
+        if (!model.TodasLasCuentas && EsRangoCuentaInvalido(model.CuentaDesde, model.CuentaHasta))
+        {
+            model.MensajeError = "Cuenta hasta debe ser mayor o igual que Cuenta desde.";
             return View(model);
         }
 
@@ -372,6 +367,7 @@ public class ReporteController(
         short? anio = null,
         byte? mes = null,
         string? codigoPersona = null,
+        string? numeroDocumento = null,
         bool consultar = false,
         CancellationToken cancellationToken = default)
     {
@@ -392,6 +388,7 @@ public class ReporteController(
             AnioSeleccionado = anioTrabajo,
             MesSeleccionado = mesTrabajo,
             CodigoPersona = codigoPersona?.Trim() ?? string.Empty,
+            NumeroComprobante = numeroDocumento?.Trim() ?? string.Empty,
             ConsultaEjecutada = consultar,
             AniosDisponibles = Enumerable.Range(anioTrabajo - 5, 11).Select(x => (short)x).ToList(),
             MesesDisponibles = ListarMesesCalendario()
@@ -409,7 +406,8 @@ public class ReporteController(
                 IdEmpresa = idEmpresa,
                 Anio = model.AnioSeleccionado,
                 Mes = model.MesSeleccionado,
-                CodigoPersona = model.CodigoPersona
+                CodigoPersona = model.CodigoPersona,
+                NumeroComprobante = model.NumeroComprobante
             }, cancellationToken);
 
             model.Resultados = resultados
@@ -469,6 +467,7 @@ public class ReporteController(
         short? anio = null,
         byte? mes = null,
         string? codigoPersona = null,
+        string? numeroDocumento = null,
         bool consultar = false,
         CancellationToken cancellationToken = default)
     {
@@ -489,6 +488,7 @@ public class ReporteController(
             AnioSeleccionado = anioTrabajo,
             MesSeleccionado = mesTrabajo,
             CodigoPersona = codigoPersona?.Trim() ?? string.Empty,
+            NumeroComprobante = numeroDocumento?.Trim() ?? string.Empty,
             ConsultaEjecutada = consultar,
             AniosDisponibles = Enumerable.Range(anioTrabajo - 5, 11).Select(x => (short)x).ToList(),
             MesesDisponibles = ListarMesesCalendario()
@@ -506,7 +506,8 @@ public class ReporteController(
                 IdEmpresa = idEmpresa,
                 Anio = model.AnioSeleccionado,
                 Mes = model.MesSeleccionado,
-                CodigoPersona = model.CodigoPersona
+                CodigoPersona = model.CodigoPersona,
+                NumeroComprobante = model.NumeroComprobante
             }, cancellationToken);
 
             model.Resultados = resultados
@@ -570,10 +571,72 @@ public class ReporteController(
     }
 
     [HttpGet]
+    public async Task<IActionResult> BuscarPersonasRegistroAyuda(
+        string? tipoRegistro = null,
+        string? buscar = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
+        {
+            return BadRequest(new { ok = false, mensaje = "Debe seleccionar una empresa activa." });
+        }
+
+        var tipoTrabajo = (tipoRegistro ?? string.Empty).Trim().ToUpperInvariant();
+        var criterio = string.IsNullOrWhiteSpace(buscar) ? null : buscar.Trim();
+        var idEmpresa = currentCompanyAccessor.EmpresaId.Value;
+
+        if (tipoTrabajo == "VEN")
+        {
+            var clientes = await clienteRepository.ListarActivosPorEmpresaAsync(idEmpresa, cancellationToken);
+            var items = clientes
+                .Where(x => criterio is null
+                    || x.CodigoCliente.Contains(criterio, StringComparison.OrdinalIgnoreCase)
+                    || x.NumeroDocumento.Contains(criterio, StringComparison.OrdinalIgnoreCase)
+                    || x.NombreCompleto.Contains(criterio, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(x => x.NombreCompleto)
+                .Take(30)
+                .Select(x => new
+                {
+                    codigoPersona = x.NumeroDocumento,
+                    numeroDocumentoPersona = x.NumeroDocumento,
+                    nombreCompleto = x.NombreCompleto
+                })
+                .ToList();
+
+            return Json(new { ok = true, items });
+        }
+
+        if (tipoTrabajo == "COM")
+        {
+            var proveedores = await proveedorRepository.ListarActivosPorEmpresaAsync(idEmpresa, cancellationToken);
+            var items = proveedores
+                .Where(x => criterio is null
+                    || x.CodigoProveedor.Contains(criterio, StringComparison.OrdinalIgnoreCase)
+                    || x.NumeroDocumento.Contains(criterio, StringComparison.OrdinalIgnoreCase)
+                    || x.NombreCompleto.Contains(criterio, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(x => x.NombreCompleto)
+                .Take(30)
+                .Select(x => new
+                {
+                    codigoPersona = x.NumeroDocumento,
+                    numeroDocumentoPersona = x.NumeroDocumento,
+                    nombreCompleto = x.NombreCompleto
+                })
+                .ToList();
+
+            return Json(new { ok = true, items });
+        }
+
+        return BadRequest(new { ok = false, mensaje = "El tipo de registro solicitado no es valido." });
+    }
+
+    [HttpGet]
     public async Task<IActionResult> LibroDiario(
         short? anio = null,
         byte? periodo = null,
         string? modo = null,
+        string? cuentaDesde = null,
+        string? cuentaHasta = null,
         bool consultar = false,
         CancellationToken cancellationToken = default)
     {
@@ -596,6 +659,8 @@ public class ReporteController(
             PeriodoConsulta = $"{anioTrabajo:0000}{periodoTrabajo:00}",
             MonedaSeleccionada = "PEN",
             ModoSeleccionado = NormalizarModoLibroDiario(modo),
+            CuentaDesde = cuentaDesde?.Trim() ?? string.Empty,
+            CuentaHasta = cuentaHasta?.Trim() ?? string.Empty,
             OrigenDesde = string.Empty,
             OrigenHasta = string.Empty,
             ConsultaEjecutada = consultar,
@@ -614,6 +679,12 @@ public class ReporteController(
             return View(model);
         }
 
+        if (EsRangoCuentaInvalido(model.CuentaDesde, model.CuentaHasta))
+        {
+            model.MensajeError = "Cuenta hasta debe ser mayor o igual que Cuenta desde.";
+            return View(model);
+        }
+
         try
         {
             var resultados = await libroDiarioRepository.ListarAsync(new LibroDiarioRequest
@@ -621,7 +692,9 @@ public class ReporteController(
                 IdEmpresa = idEmpresa,
                 Periodo = model.PeriodoConsulta,
                 Moneda = "PEN",
-                Modo = model.ModoSeleccionado
+                Modo = model.ModoSeleccionado,
+                CuentaDesde = model.CuentaDesde,
+                CuentaHasta = model.CuentaHasta
             }, cancellationToken);
 
             model.Resultados = resultados
@@ -688,7 +761,6 @@ public class ReporteController(
         var (anioTrabajo, mesTrabajo) = NormalizarPeriodo(anio, mes);
         var fechaDesdeTrabajo = new DateOnly(anioTrabajo, mesTrabajo, 1);
         var fechaHastaTrabajo = new DateOnly(anioTrabajo, mesTrabajo, DateTime.DaysInMonth(anioTrabajo, mesTrabajo));
-        var cuentas = await planCuentaRepository.ListarPorEmpresaAsync(idEmpresa, true, cancellationToken);
 
         var model = new LibroMayorViewModel
         {
@@ -702,19 +774,17 @@ public class ReporteController(
             NumeroDocumento = numeroDocumento?.Trim() ?? string.Empty,
             ConsultaEjecutada = consultar,
             AniosDisponibles = Enumerable.Range(anioTrabajo - 5, 11).Select(x => (short)x).ToList(),
-            MesesDisponibles = ListarMesesCalendario(),
-            CuentasDisponibles = cuentas
-                .OrderBy(x => x.CodigoCuenta)
-                .Select(x => new OpcionCatalogoViewModel
-                {
-                    Valor = x.CodigoCuenta,
-                    Texto = $"{x.CodigoCuenta} - {x.NombreCuenta}"
-                })
-                .ToList()
+            MesesDisponibles = ListarMesesCalendario()
         };
 
         if (!consultar)
         {
+            return View(model);
+        }
+
+        if (EsRangoCuentaInvalido(model.CuentaDesde, model.CuentaHasta))
+        {
+            model.MensajeError = "Cuenta hasta debe ser mayor o igual que Cuenta desde.";
             return View(model);
         }
 
@@ -832,6 +902,13 @@ public class ReporteController(
     private static string NormalizarMoneda(string? moneda)
     {
         return string.Equals(moneda?.Trim(), "USD", StringComparison.OrdinalIgnoreCase) ? "USD" : "PEN";
+    }
+
+    private static bool EsRangoCuentaInvalido(string? cuentaDesde, string? cuentaHasta)
+    {
+        return !string.IsNullOrWhiteSpace(cuentaDesde)
+            && !string.IsNullOrWhiteSpace(cuentaHasta)
+            && string.Compare(cuentaDesde.Trim(), cuentaHasta.Trim(), StringComparison.OrdinalIgnoreCase) > 0;
     }
 
     private static string NormalizarEstado(string? estado)

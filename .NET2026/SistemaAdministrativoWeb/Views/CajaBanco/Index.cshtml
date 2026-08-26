@@ -10,6 +10,7 @@
 @* Firma: FRANCO LARA - 08/07/2026 | Autoejecuta la consulta de Caja y Bancos al cambiar cuenta corriente o periodo y habilita el boton Consultar solo cuando existe una cuenta seleccionada. *@
 @* Firma: FRANCO LARA - 09/07/2026 | Renombra Documento a Nro operacion en el listado de Caja y Bancos para reflejar el dato operativo de la transaccion bancaria. *@
 @* Firma: FRANCO LARA - 12/07/2026 | Agrega el acceso Estado de Cuenta al costado de Registrar movimiento para abrir el reporte HTML imprimible de la cuenta corriente seleccionada. *@
+@* Firma: FRANCO LARA - 26/08/2026 | Uniformiza el acceso visual al asiento mediante una etiqueta contable navegable, identifica en los KPI la moneda de la cuenta corriente seleccionada y reinicia saldos, flujo y movimientos al dejar la cuenta sin seleccionar. *@
 @* Firma: FRANCO LARA - 13/07/2026 | Corrige el acceso Estado de Cuenta para abrir el reporte en la misma pestana y evitar ventanas adicionales al imprimir desde Caja y Bancos. *@
 
 @{
@@ -19,6 +20,9 @@
     var paginaFin = Math.Min(Model.Paginacion.TotalPaginas, Model.Paginacion.PaginaActual + 2);
     var textInfo = System.Globalization.CultureInfo.CurrentCulture.TextInfo;
     var periodoTexto = new DateTime(Model.AnioSeleccionado, Model.MesSeleccionado, 1).ToString("MMMM 'de' yyyy");
+    var codigoMonedaKpi = Model.CuentasCorrientesDisponibles
+        .FirstOrDefault(x => x.IdBancoConfiguracionEmpresa == Model.IdBancoConfiguracionEmpresaSeleccionada)
+        ?.CodigoMoneda;
 }
 
 <section class="dashboard-shell">
@@ -29,7 +33,7 @@
             <small>Registros visibles para la consulta actual.</small>
         </article>
         <article class="dashboard-metric-card dashboard-metric-card-amount">
-            <span>Saldos</span>
+            <span>@(string.IsNullOrWhiteSpace(codigoMonedaKpi) ? "Saldos" : $"Saldos ({codigoMonedaKpi})")</span>
             <div class="dashboard-metric-amounts">
                 <div class="dashboard-metric-amount-line">
                     <label>Saldo inicial</label>
@@ -43,7 +47,7 @@
             <small>Acumulado del periodo filtrado.</small>
         </article>
         <article class="dashboard-metric-card dashboard-metric-card-amount">
-            <span>Flujo del mes</span>
+            <span>@(string.IsNullOrWhiteSpace(codigoMonedaKpi) ? "Flujo del mes" : $"Flujo del mes ({codigoMonedaKpi})")</span>
             <div class="dashboard-metric-amounts">
                 <div class="dashboard-metric-amount-line">
                     <label>Ingresos</label>
@@ -189,7 +193,8 @@
                                                asp-action="Editar"
                                                asp-route-idAsiento="@item.IdAsiento.Value"
                                                asp-route-periodo="@Model.PeriodoConsulta"
-                                               data-loading-link="true">@(item.NumeroAsiento?.ToString() ?? item.IdAsiento.Value.ToString())</a>
+                                               class="workspace-asiento-link"
+                                               data-loading-link="true"><i class="bi bi-journal-text" aria-hidden="true"></i><span>@(item.NumeroAsiento?.ToString() ?? item.IdAsiento.Value.ToString())</span></a>
                                         }
                                         else
                                         {
@@ -296,9 +301,7 @@
 
             cuentaSelect?.addEventListener("change", () => {
                 actualizarEstadoConsulta();
-                if (cuentaSelect.value) {
-                    ejecutarConsultaAutomatica();
-                }
+                filtroForm?.requestSubmit();
             });
 
             anioSelect?.addEventListener("change", ejecutarConsultaAutomatica);

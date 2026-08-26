@@ -9,6 +9,7 @@
 @* Firma: FRANCO LARA - 08/07/2026 | Reemplaza la tarjeta redundante del panel por un selector persistente de modo oscuro, agrega Mi suscripcion y Ayuda al menu General e incorpora acceso contextual de ayuda por modulo. *@
 @* Firma: FRANCO LARA - 10/07/2026 | Ajusta el branding publico para alinear portada, login y registro con la nueva presentacion comercial de FralseCont, separa Fralse y Cont en dos colores, agrega soporte para metadatos basicos, enlaces legales en el footer y la burbuja publica de WhatsApp, e incorpora Usuarios y Configuracion al bloque General del menu administrativo. *@
 @* Firma: FRANCO LARA - 25/07/2026 | Integra el logo publico de Fralse Tech desde el bucket Cloudflare configurado en User Secrets, recorta su espacio blanco interno para mejorar su presencia y conserva el icono local como respaldo. *@
+@* Firma: FRANCO LARA - 26/08/2026 | Reordena el menu Proceso segun la secuencia operativa solicitada y lee los recursos publicos desde la configuracion identificada con el prefijo FRALSECONT_. *@
 <!DOCTYPE html>
 @{
     var adminShell = ViewData["AdminShell"] as bool? ?? false;
@@ -18,7 +19,7 @@
         ? pageTitle
         : $"{pageTitle} - FralseCont";
     var metaDescription = ViewData["MetaDescription"]?.ToString() ?? "Sistema contable web para empresas y contadores.";
-    var publicAssetBaseUrl = Configuration["SedeImagenStorage:PublicBaseUrl"]?.Trim().TrimEnd('/');
+    var publicAssetBaseUrl = Configuration["FRALSECONT_SedeImagenStorage:PublicBaseUrl"]?.Trim().TrimEnd('/');
     var publicBrandLogoUrl = string.IsNullOrWhiteSpace(publicAssetBaseUrl)
         ? string.Empty
         : $"{publicAssetBaseUrl}/Logo/LogoFralseTech.webp";
@@ -368,9 +369,9 @@
                             <div class="app-sidebar-group-body">
                                 <a class="app-sidebar-link @(IsActiveController("Proceso") && currentPath.StartsWith("/Proceso/DiferenciaCambio", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Proceso" asp-action="DiferenciaCambio"><i class="bi bi-currency-exchange"></i><span>Diferencia en Cambio</span></a>
                                 <a class="app-sidebar-link @(IsActiveController("Proceso") && currentPath.StartsWith("/Proceso/AjusteCuenta", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Proceso" asp-action="AjusteCuenta"><i class="bi bi-sliders"></i><span>Ajuste de Cuentas</span></a>
-                                <a class="app-sidebar-link @(IsActiveController("Proceso") && currentPath.StartsWith("/Proceso/AsientoApertura", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Proceso" asp-action="AsientoApertura"><i class="bi bi-journal-plus"></i><span>Asiento de apertura</span></a>
-                                <a class="app-sidebar-link @(IsActiveController("Proceso") && currentPath.StartsWith("/Proceso/AsientoCierre", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Proceso" asp-action="AsientoCierre"><i class="bi bi-journal-x"></i><span>Asiento de cierre</span></a>
                                 <a class="app-sidebar-link @(IsActiveController("Proceso") && currentPath.StartsWith("/Proceso/CerrarPeriodo", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Proceso" asp-action="CerrarPeriodo"><i class="bi bi-lock"></i><span>Cerrar Periodo</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("Proceso") && currentPath.StartsWith("/Proceso/AsientoCierre", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Proceso" asp-action="AsientoCierre"><i class="bi bi-journal-x"></i><span>Asiento de cierre</span></a>
+                                <a class="app-sidebar-link @(IsActiveController("Proceso") && currentPath.StartsWith("/Proceso/AsientoApertura", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Proceso" asp-action="AsientoApertura"><i class="bi bi-journal-plus"></i><span>Asiento de apertura</span></a>
                             </div>
                         </div>
                     </section>

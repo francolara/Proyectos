@@ -2,10 +2,20 @@
 
 @* Firma: FRANCO LARA - 29/06/2026 | Agrega el formulario de tipos de cambio y habilita la sincronizacion puntual por fecha desde la API Migo, ocultando la cuenta administradora en la vista. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Ajusta la moneda visible del formulario de tipo de cambio para mostrar solo el codigo de moneda, manteniendo PEN y USD como valores internos. *@
+@* Firma: FRANCO LARA - 26/08/2026 | Reemplaza los codigos visibles PEN y USD por Soles y Dolares sin modificar sus valores internos. *@
 
 @{
     ViewData["Title"] = Model.Formulario.IdTipoCambio.HasValue ? "Editar tipo de cambio" : "Registrar tipo de cambio";
     ViewData["AdminShell"] = true;
+    static string ObtenerTextoMoneda(string codigoMoneda)
+    {
+        return codigoMoneda.Trim().ToUpperInvariant() switch
+        {
+            "PEN" => "Soles",
+            "USD" => "Dolares",
+            _ => codigoMoneda
+        };
+    }
 }
 
 <section class="dashboard-shell">
@@ -54,7 +64,7 @@
                         <select asp-for="Formulario.IdMoneda" class="form-select">
                             @foreach (var moneda in Model.Monedas)
                             {
-                                <option value="@moneda.CodigoMoneda">@moneda.CodigoMoneda</option>
+                                <option value="@moneda.CodigoMoneda">@ObtenerTextoMoneda(moneda.CodigoMoneda)</option>
                             }
                         </select>
                         <span asp-validation-for="Formulario.IdMoneda" class="text-danger"></span>

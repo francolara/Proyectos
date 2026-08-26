@@ -1,0 +1,4 @@
+Línea 710: la clase DXDBGRIDLibCtl.dxDBGrid del control gDetalle no era una clase de control cargada.
+Línea 1151: la clase DXDBGRIDLibCtl.dxDBGrid del control gListaDetalle no era una clase de control cargada.
+Línea 1159: la clase DXDBGRIDLibCtl.dxDBGrid del control gLista no era una clase de control cargada.
+Línea 3554: la clase DXDBGRIDLibCtl.dxDBGrid del control gDocReferencia no era una clase de control cargada.

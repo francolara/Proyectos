@@ -3,6 +3,7 @@
 @* Firma: FRANCO LARA - 01/07/2026 | Crea la pantalla Proceso > Diferencia en Cambio para generar y regenerar asientos separados por cuenta usando el origen configurado y el nuevo indicador de analisis en plan de cuentas. *@
 @* Firma: FRANCO LARA - 02/07/2026 | Corrige la seleccion visible de anio y mes, muestra el tipo de cambio proyectado en 3 decimales antes o despues de generar el proceso y agrega la eliminacion exclusiva de la generacion del periodo. *@
 @* Firma: FRANCO LARA - 06/07/2026 | Renombra solo el encabezado interno del proceso para mostrar Diferencia en Cambio - Por Cierre de Periodo sin alterar el texto del menu lateral. *@
+@* Firma: FRANCO LARA - 26/08/2026 | Uniformiza el acceso visual al asiento mediante una etiqueta contable navegable. *@
 
 @{
     ViewData["Title"] = "Diferencia en Cambio - Por Cierre de Periodo";
@@ -158,7 +159,7 @@
                                     <td>
                                         @if (item.IdAsiento.HasValue)
                                         {
-                                            <a asp-controller="Asiento" asp-action="Editar" asp-route-idAsiento="@item.IdAsiento.Value" asp-route-periodo="@Model.PeriodoConsulta">Nro @item.NumeroAsiento</a>
+                                            <a asp-controller="Asiento" asp-action="Editar" asp-route-idAsiento="@item.IdAsiento.Value" asp-route-periodo="@Model.PeriodoConsulta" class="workspace-asiento-link"><i class="bi bi-journal-text" aria-hidden="true"></i><span>Nro @item.NumeroAsiento</span></a>
                                         }
                                         else
                                         {

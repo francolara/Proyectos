@@ -7,6 +7,7 @@
    ============================================= *@
 @* Firma: FRANCO LARA - 24/06/2026 | Crea el listado del nuevo modulo Aplicaciones con filtros mensuales, monto aplicado, referencia de comprobante y nota de credito, y eliminacion de la aplicacion. *@
 @* Firma: FRANCO LARA - 02/07/2026 | Corrige la seleccion visible de anio y mes en aplicaciones para que el periodo mostrado respete el contexto devuelto por la opcion, y convierte el numero de asiento del listado en acceso directo al asiento generado. *@
+@* Firma: FRANCO LARA - 26/08/2026 | Uniformiza el acceso visual al asiento mediante una etiqueta contable navegable y alinea a la derecha el total monetario aplicado. *@
 
 @{
     ViewData["Title"] = "Aplicaciones";
@@ -26,7 +27,7 @@
         </article>
         <article class="dashboard-metric-card dashboard-metric-card-amount">
             <span>Total aplicado</span>
-            <strong>@Model.TotalImporteAplicado.ToString("0.00")</strong>
+            <strong class="text-end">@Model.TotalImporteAplicado.ToString("0.00")</strong>
             <small>Importe aplicado con notas de credito en la consulta actual.</small>
         </article>
         <article class="dashboard-metric-card dashboard-metric-card-text">
@@ -147,7 +148,8 @@
                                                asp-action="Editar"
                                                asp-route-idAsiento="@item.IdAsiento.Value"
                                                asp-route-periodo="@Model.PeriodoConsulta"
-                                               data-loading-link="true">@item.NumeroAsiento</a>
+                                               class="workspace-asiento-link"
+                                               data-loading-link="true"><i class="bi bi-journal-text" aria-hidden="true"></i><span>@item.NumeroAsiento</span></a>
                                         }
                                         else
                                         {

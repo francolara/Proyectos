@@ -1,6 +1,6 @@
 frmLogin = 0, 0, 0, 0, C, 0, 0, 0, 0, C
 frmAbout = 0, 0, 0, 0, C, 0, 0, 0, 0, C
-frmPrincipal = 0, 0, 0, 0, C, 0, 0, 0, 0, C
+frmPrincipal = 120, 129, 616, 980, , 0, 0, 0, 0, C
 mdlFunciones = 0, 0, 0, 0, C
 frmMantProductos = 0, 0, 0, 0, C, 0, 0, 0, 0, C
 frmIngresosEgresosCaja = 0, 0, 0, 0, C, 0, 0, 0, 0, C
@@ -78,7 +78,7 @@ frmMantZonas = 0, 0, 0, 0, C, 0, 0, 0, 0, C
 FrmProcesarTC = 0, 0, 0, 0, C, 0, 0, 0, 0, C
 FrmReporteAutorizaciones = 0, 0, 0, 0, C, 0, 0, 0, 0, C
 FrmCambioCaja = 0, 0, 0, 0, C, 0, 0, 0, 0, C
-FrmModificarEstado = 0, 0, 0, 0, C, 0, 0, 0, 0, C
+FrmModificarEstado = 120, 129, 1535, 980, , 0, 0, 0, 0, C
 frmAprobacionDoc = 0, 0, 0, 0, C, 0, 0, 0, 0, C
 mdlDesactivar = 0, 0, 0, 0, C
 FrmDiasPromediar = 0, 0, 0, 0, C, 0, 0, 0, 0, C

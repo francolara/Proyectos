@@ -4,13 +4,15 @@
 @* Firma: FRANCO LARA - 08/07/2026 | Ajusta el formato visible del registro de ventas retirando la columna Cod. segun el disenio solicitado y actualiza el subtitulo del reporte. *@
 @* Firma: FRANCO LARA - 21/07/2026 | Corrige la impresion del Registro de ventas en A4 horizontal, compacta cabecera y tabla y evita heredar el modo oscuro. *@
 @* Firma: FRANCO LARA - 04/08/2026 | Separa los parametros principales y el filtro opcional del Registro de ventas con el patron visual compartido de reportes. *@
+@* Firma: FRANCO LARA - 26/08/2026 | Agrega ayuda de clientes para filtrar Codigo persona por DNI/RUC y filtro independiente por numero de comprobante. *@
 
 @{
     ViewData["Title"] = "Registro de ventas";
     ViewData["AdminShell"] = true;
     var textInfo = System.Globalization.CultureInfo.CurrentCulture.TextInfo;
     var mesTexto = Model.MesesDisponibles.FirstOrDefault(x => x.Valor == Model.MesSeleccionado)?.Nombre ?? Model.MesSeleccionado.ToString("00");
-    var tieneFiltrosAvanzados = !string.IsNullOrWhiteSpace(Model.CodigoPersona);
+    var tieneFiltrosAvanzados = !string.IsNullOrWhiteSpace(Model.CodigoPersona)
+        || !string.IsNullOrWhiteSpace(Model.NumeroComprobante);
 }
 
 <section class="dashboard-shell">
@@ -39,7 +41,7 @@
                         Id = "registro-ventas-filter-title",
                         Category = "Filtros",
                         Title = "Parámetros del reporte",
-                        Description = "Seleccione el periodo y, si lo necesita, limite el registro a una persona.",
+                        Description = "Seleccione el periodo y, si lo necesita, limite el registro por DNI/RUC del cliente o numero de comprobante.",
                         IconClass = "bi bi-funnel"
                     })" />
 
@@ -75,17 +77,26 @@
                         <label class="report-filter-toggle" for="registroVentasAdvancedToggle">
                             <span class="report-filter-toggle-copy">
                                 <strong>Filtros avanzados</strong>
-                                <small>Consulte únicamente los comprobantes vinculados a una persona.</small>
+                                <small>Codigo persona corresponde al DNI/RUC; Nro documento corresponde al numero del comprobante.</small>
                             </span>
                             <span class="report-filter-switch" aria-hidden="true"><span></span></span>
                         </label>
                     </div>
 
-                    <div id="registroVentasAdvancedFilters" class="report-filter-advanced-grid report-filter-grid-1 @(tieneFiltrosAvanzados ? string.Empty : "d-none")">
+                    <div id="registroVentasAdvancedFilters" class="report-filter-advanced-grid report-filter-grid-2 @(tieneFiltrosAvanzados ? string.Empty : "d-none")">
                         <div class="workspace-field">
-                        <label class="form-label" for="codigoPersona">Codigo persona</label>
-                        <input id="codigoPersona" name="codigoPersona" class="form-control" value="@Model.CodigoPersona" maxlength="20" placeholder="Opcional" />
-                    </div>
+                            <label class="form-label" for="codigoPersona">Codigo persona</label>
+                            <div class="input-group">
+                                <input id="codigoPersona" name="codigoPersona" class="form-control" value="@Model.CodigoPersona" maxlength="20" placeholder="RUC o DNI" />
+                                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#registroVentasPersonaAyuda" title="Buscar cliente" aria-label="Buscar cliente">
+                                    <i class="bi bi-person-search" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="workspace-field">
+                            <label class="form-label" for="numeroDocumento">Nro documento</label>
+                            <input id="numeroDocumento" name="numeroDocumento" class="form-control" value="@Model.NumeroComprobante" maxlength="20" placeholder="Numero de comprobante" />
+                        </div>
                     </div>
 
                     <div class="report-filter-actions">
@@ -120,6 +131,7 @@
                         </div>
                         <div class="balance-a4-meta">
                             <span>Codigo persona: @(string.IsNullOrWhiteSpace(Model.CodigoPersona) ? "Todos" : Model.CodigoPersona)</span>
+                            <span>Nro documento: @(string.IsNullOrWhiteSpace(Model.NumeroComprobante) ? "Todos" : Model.NumeroComprobante)</span>
                             <span>Filas: @Model.Resultados.Count</span>
                         </div>
                     </header>
@@ -200,3 +212,11 @@
         </div>
     </section>
 </section>
+
+<partial name="_PersonaFiltroAyuda" model="@(new SistemaAdministrativoWeb.ViewModels.Contabilidad.ReportePersonaAyudaViewModel
+    {
+        ModalId = "registroVentasPersonaAyuda",
+        TipoRegistro = "VEN",
+        Titulo = "Ayuda de clientes",
+        CodigoInputId = "codigoPersona"
+    })" />

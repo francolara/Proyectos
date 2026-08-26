@@ -22,6 +22,8 @@ public sealed class LibroDiarioRepository(IDbConnectionFactory connectionFactory
         command.Parameters.AddWithValue("@Periodo", request.Periodo);
         command.Parameters.AddWithValue("@Moneda", "PEN");
         command.Parameters.AddWithValue("@Modo", string.IsNullOrWhiteSpace(request.Modo) ? "A" : request.Modo.Trim().ToUpperInvariant());
+        command.Parameters.AddWithValue("@CuentaDesde", string.IsNullOrWhiteSpace(request.CuentaDesde) ? (object)DBNull.Value : request.CuentaDesde.Trim());
+        command.Parameters.AddWithValue("@CuentaHasta", string.IsNullOrWhiteSpace(request.CuentaHasta) ? (object)DBNull.Value : request.CuentaHasta.Trim());
         command.Parameters.AddWithValue("@OrigenDesde", string.IsNullOrWhiteSpace(request.OrigenDesde) ? (object)DBNull.Value : request.OrigenDesde.Trim());
         command.Parameters.AddWithValue("@OrigenHasta", string.IsNullOrWhiteSpace(request.OrigenHasta) ? (object)DBNull.Value : request.OrigenHasta.Trim());
 

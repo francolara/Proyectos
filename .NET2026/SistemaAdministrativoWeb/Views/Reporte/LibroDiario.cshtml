@@ -4,6 +4,7 @@
 @* Firma: FRANCO LARA - 08/07/2026 | Ajusta Libro Diario para trabajar siempre en soles, elimina filtros de moneda y origen, y separa las vistas Diario auxiliar, Por Cuenta y Por Origen. *@
 @* Firma: FRANCO LARA - 21/07/2026 | Corrige la impresion del Libro Diario en A4 horizontal, compacta cabecera y tablas y evita heredar el modo oscuro. *@
 @* Firma: FRANCO LARA - 04/08/2026 | Reorganiza los parametros del Libro Diario con el patron visual compartido de reportes, acciones uniformes y disposicion adaptable. *@
+@* Firma: FRANCO LARA - 26/08/2026 | Agrega filtros Cuenta desde y Cuenta hasta mediante ayuda emergente reutilizable para cuentas activas de todos los niveles. *@
 
 @{
     ViewData["Title"] = "Libro Diario";
@@ -13,6 +14,11 @@
     var esDiarioAuxiliar = Model.ModoSeleccionado == "A";
     var esPorCuenta = Model.ModoSeleccionado == "D";
     var esPorOrigen = Model.ModoSeleccionado == "R";
+    var cuentaTexto = string.IsNullOrWhiteSpace(Model.CuentaDesde) && string.IsNullOrWhiteSpace(Model.CuentaHasta)
+        ? "Todas las cuentas"
+        : $"{Model.CuentaDesde} - {Model.CuentaHasta}";
+    var tieneFiltrosAvanzados = !string.IsNullOrWhiteSpace(Model.CuentaDesde)
+        || !string.IsNullOrWhiteSpace(Model.CuentaHasta);
 }
 
 <section class="dashboard-shell">
@@ -41,7 +47,7 @@
                         Id = "libro-diario-filter-title",
                         Category = "Filtros",
                         Title = "Parámetros del reporte",
-                        Description = "Seleccione el periodo y la vista del Libro Diario que desea consultar.",
+                        Description = "Seleccione el periodo, la vista y, si lo necesita, limite el Libro Diario por rango de cuentas.",
                         IconClass = "bi bi-funnel"
                     })" />
 
@@ -81,6 +87,40 @@
                     </div>
                     </div>
 
+                    <div class="report-filter-toggle-wrap">
+                        <input type="checkbox" class="report-filter-toggle-input" id="libroDiarioAdvancedToggle"
+                               data-report-filter-toggle data-target="libroDiarioAdvancedFilters"
+                               checked="@(tieneFiltrosAvanzados ? "checked" : null)"
+                               aria-controls="libroDiarioAdvancedFilters"
+                               aria-expanded="@(tieneFiltrosAvanzados ? "true" : "false")" />
+                        <label class="report-filter-toggle" for="libroDiarioAdvancedToggle">
+                            <span class="report-filter-toggle-copy">
+                                <strong>Filtros avanzados</strong>
+                                <small>Limite el resultado por rango de cuentas contables.</small>
+                            </span>
+                            <span class="report-filter-switch" aria-hidden="true"><span></span></span>
+                        </label>
+                    </div>
+
+                    <div id="libroDiarioAdvancedFilters" class="report-filter-advanced-grid report-filter-grid-2 @(tieneFiltrosAvanzados ? string.Empty : "d-none")">
+                        <div class="workspace-field">
+                            <label class="form-label" for="cuentaDesde">Cuenta desde</label>
+                            <div class="input-group">
+                                <input id="cuentaDesde" name="cuentaDesde" class="form-control" value="@Model.CuentaDesde" readonly />
+                                <button type="button" class="btn btn-outline-secondary workspace-icon-button" data-plan-cuenta-rango-open="libroDiarioCuentaRangoModal" data-target-input="cuentaDesde" data-target-label="Cuenta desde" title="Buscar Cuenta desde" aria-label="Buscar Cuenta desde"><i class="bi bi-search"></i></button>
+                                <button type="button" class="btn btn-outline-secondary workspace-icon-button" data-plan-cuenta-rango-clear="libroDiarioCuentaRangoModal" data-target-input="cuentaDesde" title="Limpiar Cuenta desde" aria-label="Limpiar Cuenta desde"><i class="bi bi-eraser"></i></button>
+                            </div>
+                        </div>
+                        <div class="workspace-field">
+                            <label class="form-label" for="cuentaHasta">Cuenta hasta</label>
+                            <div class="input-group">
+                                <input id="cuentaHasta" name="cuentaHasta" class="form-control" value="@Model.CuentaHasta" readonly />
+                                <button type="button" class="btn btn-outline-secondary workspace-icon-button" data-plan-cuenta-rango-open="libroDiarioCuentaRangoModal" data-target-input="cuentaHasta" data-target-label="Cuenta hasta" title="Buscar Cuenta hasta" aria-label="Buscar Cuenta hasta"><i class="bi bi-search"></i></button>
+                                <button type="button" class="btn btn-outline-secondary workspace-icon-button" data-plan-cuenta-rango-clear="libroDiarioCuentaRangoModal" data-target-input="cuentaHasta" title="Limpiar Cuenta hasta" aria-label="Limpiar Cuenta hasta"><i class="bi bi-eraser"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="report-filter-actions">
                         <a class="btn btn-outline-secondary report-filter-action" asp-action="LibroDiario">
                             <i class="bi bi-eraser" aria-hidden="true"></i>
@@ -91,6 +131,7 @@
                             <span>Consultar reporte</span>
                         </button>
                     </div>
+
                 </form>
             </section>
 
@@ -114,6 +155,7 @@
                         <div class="report-ledger-meta">
                             <span>Periodo: @Model.PeriodoConsulta</span>
                             <span>Vista: @vistaTexto</span>
+                            <span>Cuentas: @cuentaTexto</span>
                             <span>Moneda base: Soles</span>
                             <span>Detalle USD: Visible</span>
                             <span>Filas: @Model.Resultados.Count</span>
@@ -269,3 +311,10 @@
         </div>
     </section>
 </section>
+
+<partial name="_PlanCuentaRangoAyuda" model="@(new SistemaAdministrativoWeb.ViewModels.Contabilidad.ReportePlanCuentaRangoAyudaViewModel
+    {
+        ModalId = "libroDiarioCuentaRangoModal",
+        CuentaDesdeInputId = "cuentaDesde",
+        CuentaHastaInputId = "cuentaHasta"
+    })" />

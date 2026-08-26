@@ -7,6 +7,7 @@
    ============================================= *@
 @* Firma: FRANCO LARA - 24/06/2026 | Crea el listado del modulo Transferencias entre cuentas con filtros por periodo, resumen operativo y eliminacion de la transferencia completa. *@
 @* Firma: FRANCO LARA - 02/07/2026 | Corrige la seleccion visible de anio y mes en transferencias para que el periodo mostrado respete el contexto devuelto por la opcion, y convierte los numeros de asiento emisor y receptor en accesos directos al asiento generado. *@
+@* Firma: FRANCO LARA - 26/08/2026 | Uniformiza los accesos visuales a los asientos emisor y receptor mediante etiquetas contables navegables y alinea a la derecha los totales monetarios emisor y receptor. *@
 
 @{
     ViewData["Title"] = "Transferencias entre cuentas";
@@ -26,12 +27,12 @@
         </article>
         <article class="dashboard-metric-card dashboard-metric-card-amount">
             <span>Total emisor</span>
-            <strong>@Model.TotalImporteEmisor.ToString("0.00")</strong>
+            <strong class="text-end">@Model.TotalImporteEmisor.ToString("0.00")</strong>
             <small>Monto egresado desde las cuentas emisoras.</small>
         </article>
         <article class="dashboard-metric-card dashboard-metric-card-amount">
             <span>Total receptor</span>
-            <strong>@Model.TotalImporteReceptor.ToString("0.00")</strong>
+            <strong class="text-end">@Model.TotalImporteReceptor.ToString("0.00")</strong>
             <small>Monto ingresado a las cuentas receptoras.</small>
         </article>
     </section>
@@ -141,7 +142,8 @@
                                                asp-action="Editar"
                                                asp-route-idAsiento="@item.IdAsientoEmisor.Value"
                                                asp-route-periodo="@Model.PeriodoConsulta"
-                                               data-loading-link="true">@item.NumeroAsientoEmisor</a>
+                                               class="workspace-asiento-link"
+                                               data-loading-link="true"><i class="bi bi-journal-text" aria-hidden="true"></i><span>@item.NumeroAsientoEmisor</span></a>
                                         }
                                         else
                                         {
@@ -162,7 +164,8 @@
                                                asp-action="Editar"
                                                asp-route-idAsiento="@item.IdAsientoReceptor.Value"
                                                asp-route-periodo="@Model.PeriodoConsulta"
-                                               data-loading-link="true">@item.NumeroAsientoReceptor</a>
+                                               class="workspace-asiento-link"
+                                               data-loading-link="true"><i class="bi bi-journal-text" aria-hidden="true"></i><span>@item.NumeroAsientoReceptor</span></a>
                                         }
                                         else
                                         {

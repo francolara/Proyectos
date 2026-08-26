@@ -15,6 +15,7 @@
 -- Description:   Incluye saldo, descripcion del comprobante y numero de documento de la persona para la edicion y ayudas del modulo.
 -- =============================================
 -- Firma: FRANCO LARA - 30/06/2026 | Permite recuperar detalles de ventas importadas sin cuenta contable asignada para completar la provision antes del asiento final.
+-- Firma: FRANCO LARA - 26/08/2026 | Restablece el contrato completo de cabecera requerido al consultar y editar comprobantes de venta.
 
 CREATE OR ALTER PROCEDURE dbo.usp_VEN_ObtenerVenta
     @IdVenta INT

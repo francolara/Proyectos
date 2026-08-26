@@ -18,6 +18,5 @@ public sealed class LibroMayorViewModel
     public decimal TotalHaberDolares { get; set; }
     public List<short> AniosDisponibles { get; set; } = [];
     public List<MesOpcionViewModel> MesesDisponibles { get; set; } = [];
-    public List<OpcionCatalogoViewModel> CuentasDisponibles { get; set; } = [];
     public List<LibroMayorItemViewModel> Resultados { get; set; } = [];
 }

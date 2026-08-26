@@ -7,6 +7,7 @@ public sealed class RegistroVentasViewModel
     public short AnioSeleccionado { get; set; }
     public byte MesSeleccionado { get; set; }
     public string CodigoPersona { get; set; } = string.Empty;
+    public string NumeroComprobante { get; set; } = string.Empty;
     public bool ConsultaEjecutada { get; set; }
     public string? MensajeError { get; set; }
     public decimal TotalBaseImponible { get; set; }

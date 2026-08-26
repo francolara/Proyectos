@@ -1,0 +1,261 @@
+@model SistemaAdministrativoWeb.ViewModels.Contabilidad.ReportePlanCuentaRangoAyudaViewModel
+
+@* Firma: FRANCO LARA - 26/08/2026 | Agrega ayuda reutilizable del plan contable para seleccionar rangos de cuentas de cualquier nivel en reportes. *@
+
+<div class="modal fade workspace-modal" id="@Model.ModalId" tabindex="-1" aria-labelledby="@(Model.ModalId)Label" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content workspace-modal-content">
+            <div class="modal-header workspace-modal-header">
+                <div>
+                    <span class="workspace-window-kicker">Ayuda contable</span>
+                    <h2 class="workspace-modal-title" id="@(Model.ModalId)Label" data-rango-cuenta-titulo>Seleccionar cuenta contable</h2>
+                    <p class="workspace-modal-subtitle">Puede seleccionar cuentas activas de cualquier nivel para delimitar el reporte.</p>
+                </div>
+                <button type="button" class="btn-close workspace-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body workspace-modal-body">
+                <div class="workspace-filter-card mt-0">
+                    <div class="workspace-filter-grid">
+                        <div class="workspace-field workspace-field-span-2">
+                            <label class="form-label" for="@(Model.ModalId)Filtro">Buscar cuenta</label>
+                            <input id="@(Model.ModalId)Filtro" class="form-control" placeholder="Codigo o nombre de cuenta" autocomplete="off" data-rango-cuenta-filtro />
+                        </div>
+                        <div class="workspace-field">
+                            <label class="form-label" for="@(Model.ModalId)Nivel">Nivel</label>
+                            <select id="@(Model.ModalId)Nivel" class="form-select" data-rango-cuenta-nivel>
+                                <option value="">Todos los niveles</option>
+                                @for (var nivel = 1; nivel <= 5; nivel++)
+                                {
+                                    <option value="@nivel">Nivel @nivel</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="workspace-field align-self-end">
+                            <button type="button" class="btn btn-primary w-100" data-rango-cuenta-consultar>
+                                <i class="bi bi-search" aria-hidden="true"></i>
+                                <span>Buscar</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive workspace-table-wrap">
+                    <table class="table align-middle app-table workspace-table workspace-lookup-table">
+                        <thead>
+                            <tr>
+                                <th class="workspace-lookup-select-cell">Sel.</th>
+                                <th>Codigo</th>
+                                <th>Cuenta</th>
+                                <th>Nivel</th>
+                                <th>Movimiento</th>
+                            </tr>
+                        </thead>
+                        <tbody data-rango-cuenta-resultados>
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">Pulse Buscar para consultar el plan contable.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="workspace-inline-note">
+                    <strong>Ayuda:</strong> se muestran hasta 100 cuentas activas. Puede filtrar por codigo, nombre o nivel.
+                </div>
+                <div class="alert alert-danger d-none mt-3" data-rango-cuenta-error></div>
+            </div>
+            <div class="modal-footer workspace-modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" data-rango-cuenta-aceptar disabled>Aceptar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(() => {
+    const modalElement = document.getElementById('@Model.ModalId');
+    if (!modalElement) return;
+
+    const cuentaDesdeInput = document.getElementById('@Model.CuentaDesdeInputId');
+    const cuentaHastaInput = document.getElementById('@Model.CuentaHastaInputId');
+    const tituloElement = modalElement.querySelector('[data-rango-cuenta-titulo]');
+    const filtroInput = modalElement.querySelector('[data-rango-cuenta-filtro]');
+    const nivelSelect = modalElement.querySelector('[data-rango-cuenta-nivel]');
+    const consultarButton = modalElement.querySelector('[data-rango-cuenta-consultar]');
+    const aceptarButton = modalElement.querySelector('[data-rango-cuenta-aceptar]');
+    const resultadosBody = modalElement.querySelector('[data-rango-cuenta-resultados]');
+    const errorElement = modalElement.querySelector('[data-rango-cuenta-error]');
+    const endpoint = '@Url.Action("BuscarAyuda", "PlanCuenta")';
+    const obtenerModal = () => window.bootstrap ? bootstrap.Modal.getOrCreateInstance(modalElement) : null;
+    let targetInput = null;
+    let seleccion = null;
+    let busquedaProgramada = null;
+
+    const limpiarError = () => {
+        if (!errorElement) return;
+        errorElement.textContent = '';
+        errorElement.classList.add('d-none');
+    };
+
+    const mostrarError = (mensaje) => {
+        if (!errorElement) return;
+        errorElement.textContent = mensaje || 'No fue posible consultar el plan de cuentas.';
+        errorElement.classList.remove('d-none');
+    };
+
+    const marcarSeleccion = () => {
+        resultadosBody?.querySelectorAll('[data-rango-cuenta-row]').forEach((row) => {
+            const seleccionado = seleccion && row.dataset.codigo === String(seleccion.codigoCuenta || '');
+            row.classList.toggle('is-selected', Boolean(seleccionado));
+            const radio = row.querySelector("input[type='radio']");
+            if (radio) radio.checked = Boolean(seleccionado);
+        });
+
+        if (aceptarButton) aceptarButton.disabled = !seleccion;
+    };
+
+    const confirmarSeleccion = () => {
+        if (!targetInput || !seleccion) return;
+        targetInput.value = String(seleccion.codigoCuenta || '');
+        targetInput.title = String(seleccion.nombreCuenta || '');
+        targetInput.setCustomValidity('');
+        targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+        targetInput.dispatchEvent(new Event('change', { bubbles: true }));
+        obtenerModal()?.hide();
+    };
+
+    const renderizar = (items) => {
+        if (!resultadosBody) return;
+        resultadosBody.replaceChildren();
+
+        if (!Array.isArray(items) || items.length === 0) {
+            const row = resultadosBody.insertRow();
+            const cell = row.insertCell();
+            cell.colSpan = 5;
+            cell.className = 'text-center text-muted';
+            cell.textContent = 'No se encontraron cuentas para el criterio ingresado.';
+            seleccion = null;
+            marcarSeleccion();
+            return;
+        }
+
+        items.forEach((item) => {
+            const row = resultadosBody.insertRow();
+            row.className = 'workspace-lookup-row';
+            row.dataset.rangoCuentaRow = 'true';
+            row.dataset.codigo = String(item.codigoCuenta || '');
+
+            const selectCell = row.insertCell();
+            selectCell.className = 'workspace-lookup-select-cell';
+            const radio = document.createElement('input');
+            radio.type = 'radio';
+            radio.name = '@(Model.ModalId)Seleccion';
+            radio.className = 'form-check-input';
+            radio.tabIndex = -1;
+            selectCell.appendChild(radio);
+
+            const codigoCell = row.insertCell();
+            codigoCell.className = 'workspace-tree-code';
+            codigoCell.textContent = String(item.codigoCuenta || '');
+            row.insertCell().textContent = String(item.nombreCuenta || '');
+            row.insertCell().textContent = String(item.nivelCuenta || '');
+            row.insertCell().textContent = item.aceptaMovimiento ? 'Si' : 'No';
+
+            row.addEventListener('click', () => {
+                seleccion = item;
+                marcarSeleccion();
+            });
+            row.addEventListener('dblclick', () => {
+                seleccion = item;
+                confirmarSeleccion();
+            });
+        });
+
+        const codigoActual = String(targetInput?.value || '').trim();
+        seleccion = items.find((item) => String(item.codigoCuenta || '') === codigoActual) || null;
+        marcarSeleccion();
+    };
+
+    const consultar = async () => {
+        limpiarError();
+        if (consultarButton) consultarButton.disabled = true;
+
+        try {
+            const url = new URL(endpoint, window.location.origin);
+            url.searchParams.set('tamanoPagina', '100');
+            url.searchParams.set('soloMovimiento', 'false');
+            url.searchParams.set('soloUltimoNivel', 'false');
+
+            const filtro = String(filtroInput?.value || '').trim();
+            const nivel = String(nivelSelect?.value || '').trim();
+            if (filtro.length >= 2) url.searchParams.set('textoBusqueda', filtro);
+            if (nivel) url.searchParams.set('nivelCuenta', nivel);
+
+            const response = await fetch(url, { cache: 'no-store', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            const payload = await response.json();
+            if (!response.ok || payload.ok !== true) {
+                throw new Error(payload.mensaje || 'No fue posible consultar el plan de cuentas.');
+            }
+
+            renderizar(payload.items);
+        } catch (error) {
+            mostrarError(error?.message);
+        } finally {
+            if (consultarButton) consultarButton.disabled = false;
+        }
+    };
+
+    document.querySelectorAll('[data-plan-cuenta-rango-open="@Model.ModalId"]').forEach((button) => {
+        button.addEventListener('click', () => {
+            targetInput = document.getElementById(String(button.dataset.targetInput || ''));
+            if (!targetInput || button.disabled) return;
+            seleccion = null;
+            if (tituloElement) tituloElement.textContent = `Seleccionar ${String(button.dataset.targetLabel || 'cuenta contable')}`;
+            obtenerModal()?.show();
+            consultar();
+        });
+    });
+
+    document.querySelectorAll('[data-plan-cuenta-rango-clear="@Model.ModalId"]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const input = document.getElementById(String(button.dataset.targetInput || ''));
+            if (!input || button.disabled) return;
+            input.value = '';
+            input.title = '';
+            input.setCustomValidity('');
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+    });
+
+    const validarRango = (event) => {
+        const desde = String(cuentaDesdeInput?.value || '').trim();
+        const hasta = String(cuentaHastaInput?.value || '').trim();
+        cuentaHastaInput?.setCustomValidity('');
+        if (!desde || !hasta || desde.localeCompare(hasta, undefined, { sensitivity: 'base' }) <= 0) return;
+
+        event?.preventDefault();
+        cuentaHastaInput?.setCustomValidity('Cuenta hasta debe ser mayor o igual que Cuenta desde.');
+        cuentaHastaInput?.reportValidity();
+    };
+
+    cuentaDesdeInput?.addEventListener('input', () => cuentaHastaInput?.setCustomValidity(''));
+    cuentaHastaInput?.addEventListener('input', () => cuentaHastaInput.setCustomValidity(''));
+    cuentaDesdeInput?.closest('form')?.addEventListener('submit', validarRango);
+    consultarButton?.addEventListener('click', consultar);
+    aceptarButton?.addEventListener('click', confirmarSeleccion);
+    filtroInput?.addEventListener('input', () => {
+        window.clearTimeout(busquedaProgramada);
+        const filtro = String(filtroInput.value || '').trim();
+        if (filtro.length === 1) return;
+        busquedaProgramada = window.setTimeout(consultar, 350);
+    });
+    filtroInput?.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
+        consultar();
+    });
+    nivelSelect?.addEventListener('change', consultar);
+    modalElement.addEventListener('shown.bs.modal', () => filtroInput?.focus());
+})();
+</script>

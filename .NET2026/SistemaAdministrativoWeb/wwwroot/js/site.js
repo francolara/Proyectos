@@ -60,6 +60,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // Firma: FRANCO LARA - 04/08/2026 | Controla de forma reutilizable el despliegue accesible de filtros avanzados en reportes contables.
+// Firma: FRANCO LARA - 26/08/2026 | Limpia los valores del bloque de filtros avanzados cuando el usuario desactiva su interruptor.
 document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll("[data-report-filter-toggle]").forEach(function (toggle) {
         const targetId = toggle.getAttribute("data-target");
@@ -73,7 +74,28 @@ document.addEventListener("DOMContentLoaded", function () {
             toggle.setAttribute("aria-expanded", toggle.checked ? "true" : "false");
         };
 
-        toggle.addEventListener("change", syncAdvancedFilters);
+        const clearAdvancedFilters = function () {
+            filters.querySelectorAll("input:not([type='hidden']), select, textarea").forEach(function (field) {
+                if (field instanceof HTMLInputElement && (field.type === "checkbox" || field.type === "radio")) {
+                    field.checked = false;
+                } else if (field instanceof HTMLSelectElement) {
+                    field.selectedIndex = 0;
+                } else {
+                    field.value = "";
+                }
+
+                field.dispatchEvent(new Event("input", { bubbles: true }));
+                field.dispatchEvent(new Event("change", { bubbles: true }));
+            });
+        };
+
+        toggle.addEventListener("change", function () {
+            if (!toggle.checked) {
+                clearAdvancedFilters();
+            }
+
+            syncAdvancedFilters();
+        });
         syncAdvancedFilters();
     });
 });
@@ -379,7 +401,7 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     document.querySelectorAll("form").forEach(function (form) {
-        form.addEventListener("submit", function () {
+        form.addEventListener("submit", function (event) {
             if (form.dataset.skipLoading === "true") {
                 return;
             }
@@ -390,6 +412,11 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             window.setTimeout(function () {
+                if (event.defaultPrevented) {
+                    hideLoadingOverlay();
+                    return;
+                }
+
                 const jqueryForm = window.jQuery ? window.jQuery(form) : null;
                 if (jqueryForm && typeof jqueryForm.valid === "function" && !jqueryForm.valid()) {
                     hideLoadingOverlay();

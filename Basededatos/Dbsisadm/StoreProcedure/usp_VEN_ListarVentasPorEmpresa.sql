@@ -30,6 +30,7 @@
 -- Description:   Agrega filtro por tipo de comprobante en el listado de ventas.
 -- =============================================
 -- Firma: FRANCO LARA - 02/07/2026 | Expone el numero de asiento del comprobante para navegar desde el listado de ventas al asiento generado.
+-- Firma: FRANCO LARA - 26/08/2026 | Restablece el contrato completo de filtros y paginacion requerido por el listado web de ventas.
 
 CREATE OR ALTER PROCEDURE dbo.usp_VEN_ListarVentasPorEmpresa
     @IdEmpresa INT,

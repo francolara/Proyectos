@@ -3,6 +3,7 @@
 @* Firma: FRANCO LARA - 30/06/2026 | Agrega el acceso a carga masiva de compras por XML SUNAT en el listado del periodo, mantiene visible la validacion CPE para RxH aunque el codigo del comprobante venga con espacios y reubica el boton Consultar al costado del buscador. *@
 @* Firma: FRANCO LARA - 02/07/2026 | Corrige la seleccion visible de anio, mes y tipo de documento en compras para que el periodo mostrado respete el contexto devuelto por la opcion, convierte el numero de asiento del listado en acceso directo al asiento generado y deja el boton Consultar en la misma fila de filtros. *@
 @* Firma: FRANCO LARA - 25/07/2026 | Restringe visualmente la validacion CPE al plan Contador; la autorizacion efectiva se aplica tambien en el servidor. *@
+@* Firma: FRANCO LARA - 26/08/2026 | Uniformiza el acceso visual al asiento mediante una etiqueta contable navegable. *@
 
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.CompraIndexViewModel
 
@@ -158,7 +159,8 @@
                                                asp-action="Editar"
                                                asp-route-idAsiento="@compra.IdAsiento.Value"
                                                asp-route-periodo="@Model.PeriodoConsulta"
-                                               data-loading-link="true">@(compra.NumeroAsiento?.ToString() ?? compra.IdAsiento.Value.ToString())</a>
+                                               class="workspace-asiento-link"
+                                               data-loading-link="true"><i class="bi bi-journal-text" aria-hidden="true"></i><span>@(compra.NumeroAsiento?.ToString() ?? compra.IdAsiento.Value.ToString())</span></a>
                                         }
                                         else
                                         {

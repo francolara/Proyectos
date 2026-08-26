@@ -2,7 +2,7 @@ namespace SistemaAdministrativoWeb.Configuration;
 
 public sealed class BusinessInformationOptions
 {
-    public const string SectionName = "BusinessInformation";
+    public const string SectionName = "FRALSECONT_BusinessInformation";
 
     public string CommercialName { get; set; } = "FralseCont";
     public string Slogan { get; set; } = "Tu contabilidad en la nube, simple y segura.";

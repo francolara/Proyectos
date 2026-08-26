@@ -5,10 +5,11 @@
 @* Firma: FRANCO LARA - 14/07/2026 | Centra los enlaces inferiores del login y corrige Volver al inicio para redirigir al Home fuera del area Identity. *@
 @* Firma: FRANCO LARA - 22/07/2026 | Agrega el control accesible para mostrar u ocultar la contrasena durante el inicio de sesion. *@
 @* Firma: FRANCO LARA - 25/07/2026 | Muestra y centra sin recortes el banner de inicio de sesion desde el bucket Cloudflare configurado, siguiendo la proporcion 4:5 del proyecto deportivo y conservando el contenido anterior como respaldo. *@
+@* Firma: FRANCO LARA - 26/08/2026 | Lee la ubicacion publica de recursos desde la seccion local y variable de entorno identificada con el prefijo FRALSECONT_. *@
 @{
     ViewData["Title"] = "Iniciar sesion";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var publicAssetBaseUrl = Configuration["SedeImagenStorage:PublicBaseUrl"]?.Trim().TrimEnd('/');
+    var publicAssetBaseUrl = Configuration["FRALSECONT_SedeImagenStorage:PublicBaseUrl"]?.Trim().TrimEnd('/');
     var loginBannerUrl = string.IsNullOrWhiteSpace(publicAssetBaseUrl)
         ? string.Empty
         : $"{publicAssetBaseUrl}/Banner/InicioSesion.webp";

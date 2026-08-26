@@ -6,10 +6,11 @@
 @* Firma: FRANCO LARA - 13/07/2026 | Agrega captcha manual de respaldo para el registro cuando la verificacion automatica de Turnstile no se encuentra disponible. *@
 @* Firma: FRANCO LARA - 14/07/2026 | Retira la activacion manual del captcha de respaldo en registro para que solo se muestre cuando Turnstile no este disponible o falle durante la validacion. *@
 @* Firma: FRANCO LARA - 25/07/2026 | Corrige Volver al inicio para salir explicitamente del area Identity y centra sin recortes el banner de registro desde Cloudflare con proporcion 4:5, conservando el contenido anterior como respaldo. *@
+@* Firma: FRANCO LARA - 26/08/2026 | Lee la ubicacion publica de recursos desde la seccion local y variable de entorno identificada con el prefijo FRALSECONT_. *@
 @{
     ViewData["Title"] = "Crear cuenta";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var publicAssetBaseUrl = Configuration["SedeImagenStorage:PublicBaseUrl"]?.Trim().TrimEnd('/');
+    var publicAssetBaseUrl = Configuration["FRALSECONT_SedeImagenStorage:PublicBaseUrl"]?.Trim().TrimEnd('/');
     var registerBannerUrl = string.IsNullOrWhiteSpace(publicAssetBaseUrl)
         ? string.Empty
         : $"{publicAssetBaseUrl}/Banner/Registro.webp";

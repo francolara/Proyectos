@@ -14,6 +14,7 @@
 @* Firma: FRANCO LARA - 31/07/2026 | Centra vertical y horizontalmente la etiqueta y el valor de la tarjeta Nro movimiento. *@
 @* Firma: FRANCO LARA - 11/08/2026 | Evita que el detalle de Caja y Bancos comprima sus campos en pantallas angostas, manteniendo anchos de columna estables y scroll horizontal como en el registro de asientos. *@
 @* Firma: FRANCO LARA - 13/08/2026 | Fija Centro de costo, Persona, TipoDoc, Serie, Referencia y TC en el detalle bancario con los anchos visibles de Asientos, reduce Item en 30%, conserva anchos minimos y scroll horizontal, y elimina la actualizacion manual del TC por linea porque se sincroniza desde la cabecera. *@
+@* Firma: FRANCO LARA - 26/08/2026 | Corrige la aplicacion de comprobantes para asignar el saldo al Haber en ingresos y al Debe en egresos, independientemente del modulo de origen, y recalcula las lineas vinculadas al cambiar el tipo de movimiento. *@
 
 @{
     ViewData["Title"] = Model.Formulario.IdMovimientoBanco.HasValue ? "Editar movimiento bancario" : "Registrar movimiento bancario";
@@ -1205,9 +1206,9 @@
                 const debeInput = row?.querySelector(".js-debe");
                 const haberInput = row?.querySelector(".js-haber");
                 const importe = Number(saldoPendiente || 0).toFixed(2);
-                const moduloComprobante = String(row?.querySelector(".js-modulo-comprobante-linea")?.value || "").toUpperCase();
+                const tipoMovimiento = String(tipoMovimientoInput?.value || "I").toUpperCase();
 
-                if (moduloComprobante === "VEN") {
+                if (tipoMovimiento === "I") {
                     if (debeInput) {
                         debeInput.value = "0.00";
                     }
@@ -1217,13 +1218,11 @@
                     return;
                 }
 
-                if (moduloComprobante === "COM" || moduloComprobante === "DET" || moduloComprobante === "PER") {
-                    if (debeInput) {
-                        debeInput.value = importe;
-                    }
-                    if (haberInput) {
-                        haberInput.value = "0.00";
-                    }
+                if (debeInput) {
+                    debeInput.value = importe;
+                }
+                if (haberInput) {
+                    haberInput.value = "0.00";
                 }
             };
 
@@ -1625,6 +1624,7 @@
                         tipoOperacionTextoInput.value = "";
                     }
                     renderOperaciones();
+                    actualizarAplicacionesComprobante(true);
                 });
             });
 

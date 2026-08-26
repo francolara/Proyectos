@@ -4,12 +4,14 @@
 -- Description:   Genera el registro de compras HTML tomando la provision COM_Compra para replicar el formato A4 legacy sin depender de CON_AsientoDetalle.
 -- =============================================
 -- Firma: FRANCO LARA - 07/07/2026 | Crea el procedimiento del registro de compras con filtro por anio, mes y codigo de persona, usando solo la provision actual.
+-- Firma: FRANCO LARA - 26/08/2026 | Filtra CodigoPersona por DNI/RUC del proveedor y NumeroDocumento por el numero del comprobante de compra.
 
 CREATE OR ALTER PROCEDURE dbo.usp_COM_ReporteRegistroCompras
     @IdEmpresa INT,
     @Anio SMALLINT,
     @Mes TINYINT,
-    @CodigoPersona VARCHAR(20) = NULL
+    @CodigoPersona VARCHAR(20) = NULL,
+    @NumeroDocumento VARCHAR(20) = NULL
 AS
 BEGIN
 
@@ -18,6 +20,7 @@ BEGIN
     BEGIN TRY
 
         DECLARE @CodigoPersonaTrabajo VARCHAR(20) = NULLIF(LTRIM(RTRIM(@CodigoPersona)), '')
+        DECLARE @NumeroDocumentoTrabajo VARCHAR(20) = NULLIF(LTRIM(RTRIM(@NumeroDocumento)), '')
 
         SELECT
             c.FechaEmision,
@@ -61,7 +64,11 @@ BEGIN
           AND MONTH(c.FechaContabilizacion) = @Mes
           AND (
                 @CodigoPersonaTrabajo IS NULL
-                OR p.CodigoProveedor = @CodigoPersonaTrabajo
+                OR pe.NumeroDocumento = @CodigoPersonaTrabajo
+              )
+          AND (
+                @NumeroDocumentoTrabajo IS NULL
+                OR c.Numero = @NumeroDocumentoTrabajo
               )
         ORDER BY
             c.FechaEmision,

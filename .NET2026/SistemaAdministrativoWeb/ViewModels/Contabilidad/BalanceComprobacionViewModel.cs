@@ -32,7 +32,6 @@ public sealed class BalanceComprobacionViewModel
     public List<short> AniosDisponibles { get; set; } = [];
     public List<MesOpcionViewModel> PeriodosDisponibles { get; set; } = [];
     public List<OpcionCatalogoViewModel> MonedasDisponibles { get; set; } = [];
-    public List<OpcionCatalogoViewModel> CuentasDisponibles { get; set; } = [];
     public List<OpcionCatalogoViewModel> GradosDisponibles { get; set; } = [];
     public List<BalanceComprobacionItemViewModel> Resultados { get; set; } = [];
 }

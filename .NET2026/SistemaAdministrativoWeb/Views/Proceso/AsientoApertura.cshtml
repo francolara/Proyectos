@@ -1,6 +1,7 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.ProcesoAperturaViewModel
 
 @* Firma: FRANCO LARA - 02/07/2026 | Crea la pantalla Proceso > Asiento de apertura usando origen configurable APR, corte contable del anio anterior, tipo de cambio editable al 31/12 y eliminacion exclusiva de la generacion del ejercicio. *@
+@* Firma: FRANCO LARA - 26/08/2026 | Uniformiza el acceso visual al asiento mediante una etiqueta contable navegable. *@
 
 @{
     ViewData["Title"] = "Asiento de apertura";
@@ -133,7 +134,7 @@
                         <strong>
                             @if (Model.IdAsiento.HasValue)
                             {
-                                <a asp-controller="Asiento" asp-action="Editar" asp-route-idAsiento="@Model.IdAsiento.Value" asp-route-periodo="@($"{Model.AnioAperturaSeleccionado:0000}00")">Nro @Model.NumeroAsiento</a>
+                                <a asp-controller="Asiento" asp-action="Editar" asp-route-idAsiento="@Model.IdAsiento.Value" asp-route-periodo="@($"{Model.AnioAperturaSeleccionado:0000}00")" class="workspace-asiento-link"><i class="bi bi-journal-text" aria-hidden="true"></i><span>Nro @Model.NumeroAsiento</span></a>
                             }
                             else
                             {

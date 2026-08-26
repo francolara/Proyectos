@@ -1,6 +1,6 @@
 # DOCUMENTACION BD Y FUNCIONALIDADES - SisAdm
 
-Ultima actualizacion: 25/07/2026
+Ultima actualizacion: 26/08/2026
 Proyecto: `SistemaAdministrativoWeb`  
 Base de datos: `Dbsisadm`  
 Arquitectura definida: ASP.NET Core MVC + ASP.NET Identity + ADO.NET + Stored Procedures + SQL Server
@@ -56,7 +56,7 @@ Ejemplo conceptual:
 
 ## 4. Configuracion y secrets
 
-El proyecto carga configuracion sensible desde User Secrets en desarrollo.
+El proyecto lee siempre la configuracion local desde los archivos JSON cargados por ASP.NET Core. Las secciones propias de la aplicacion conservan literalmente el prefijo `FRALSECONT_` tanto en JSON como en las rutas internas de configuracion. En desarrollo tambien se admiten User Secrets para sobrescribir valores sensibles.
 
 Ruta esperada de secrets:
 
@@ -68,19 +68,25 @@ Tambien intenta cargar:
 
 Claves principales:
 
-- `ConnectionStrings:DefaultConnection`: cadena SQL Server hacia `Dbsisadm`.
-- `Authentication:Google:ClientId`: cliente OAuth Google.
-- `Authentication:Google:ClientSecret`: secreto OAuth Google.
-- `CloudflareTurnstile:SiteKey`: clave publica Turnstile.
-- `CloudflareTurnstile:SecretKey`: clave privada Turnstile.
-- `IdentityBehavior:RequireConfirmedAccount`: obliga o no confirmacion de cuenta.
-- `IdentityBehavior:AutoConfirmEmail`: permite autoconfirmar correo en desarrollo.
-- `IdentitySeed:SuperAdminEmails`: correos que deben recibir rol de superadmin.
-- `MigoApi:BaseUrl`: URL base de la API de Migo para tipos de cambio, padron por RUC/DNI y validacion CPE.
-- `MigoApi:Token`: token privado de autenticacion emitido por Migo.
+- `FRALSECONT_ConnectionStrings:DefaultConnection`: cadena SQL Server hacia `Dbsisadm`.
+- `FRALSECONT_Authentication:Google:ClientId`: cliente OAuth Google.
+- `FRALSECONT_Authentication:Google:ClientSecret`: secreto OAuth Google.
+- `FRALSECONT_CloudflareTurnstile:SiteKey`: clave publica Turnstile.
+- `FRALSECONT_CloudflareTurnstile:SecretKey`: clave privada Turnstile.
+- `FRALSECONT_IdentityBehavior:RequireConfirmedAccount`: obliga o no confirmacion de cuenta.
+- `FRALSECONT_IdentityBehavior:AutoConfirmEmail`: permite autoconfirmar correo en desarrollo.
+- `FRALSECONT_IdentitySeed:SuperAdminEmails`: correos que deben recibir rol de superadmin.
+- `FRALSECONT_MigoApi:BaseUrl`: URL base de la API de Migo para tipos de cambio, padron por RUC/DNI y validacion CPE.
+- `FRALSECONT_MigoApi:Token`: token privado de autenticacion emitido por Migo.
+- `FRALSECONT_BusinessInformation`: datos comerciales, contacto y enlaces publicos de FralseCont.
+- `FRALSECONT_LegalDocuments`: fechas y datos configurables de los documentos legales.
+- `FRALSECONT_SedeImagenStorage:PublicBaseUrl`: ubicacion publica de logos y banners.
+
+En produccion se usan variables de entorno con el mismo nombre logico y doble guion bajo para separar niveles. Por ejemplo, `FRALSECONT_ConnectionStrings__DefaultConnection` sobrescribe `FRALSECONT_ConnectionStrings:DefaultConnection` y `FRALSECONT_Authentication__Google__ClientId` sobrescribe `FRALSECONT_Authentication:Google:ClientId`. No se registra un proveedor que elimine el prefijo: `FRALSECONT_` forma parte real de cada seccion. Las variables propias del host, como `ASPNETCORE_ENVIRONMENT`, conservan su nombre estandar.
 
 ## 5. Cambios recientes relevantes
 
+- `26/08/2026`: se unifica la configuracion propia de la aplicacion bajo secciones JSON que conservan el prefijo literal `FRALSECONT_`; en produccion las mismas rutas se expresan como variables de entorno con `__` entre niveles. Tambien se alinea la experiencia operativa: selector de empresa por fila, nombres visibles `Soles/Dolares` en Tipos de cambio, enlaces contables uniformes a asientos, encabezados principales mas compactos, importes KPI de Transferencias y Aplicaciones alineados a la derecha y KPIs de Caja y Bancos asociados a la moneda de la cuenta seleccionada. Caja y Bancos corrige la aplicacion de comprobantes para colocar el importe en `Haber` en ingresos y en `Debe` en egresos, recalcular al cambiar el flujo y evitar que el overlay quede activo cuando la validacion detiene el envio. En los reportes, desactivar `Filtros avanzados` limpia los valores ocultos antes de la siguiente consulta.
 - `25/07/2026`: se implementa validacion central de vigencia de suscripcion en ASP.NET Core. Las cuentas en prueba se bloquean al superar `FechaFinPrueba`; los planes pagados conservan acceso hasta `FechaFinGracia` o, en su defecto, hasta `FechaFinPlan + DiasGracia`; los estados `SUSPENDIDO` y `BAJA` se restringen inmediatamente. `SuperAdmin` queda exceptuado y, durante la restriccion, solo permanecen disponibles `Mi suscripcion`, `Ayuda`, renovacion/pago, seguridad de contrasena temporal y cierre de sesion. `usp_SEG_ObtenerContextoLoginUsuario` devuelve el contexto comercial necesario. `usp_SEG_SincronizarVencimientoSuscripcionCuentaAdministradora` persiste como suspendida e inactiva la suscripcion efectivamente vencida al evaluar el acceso y registra su movimiento historico. El panel SuperAdmin resume y pliega el detalle de cada cuenta; su consulta paginada clasifica tambien vencimientos aun no sincronizados. Al iniciar contrato se elige visualmente Emprendedor o Contador, conservando los codigos internos `BASICO` y `PRO`, y se aplican sus limites vigentes de 3 empresas/2 usuarios o 10 empresas/3 usuarios. La prueba se inicializa con 1 empresa/1 usuario. Los limites efectivos permanecen editables por cuenta desde SuperAdmin y `usp_SEG_RegistrarEmpresaCuentaAdministradora` y `usp_SEG_AsignarUsuarioCuentaAdministradora` los validan transaccionalmente antes de nuevas altas o reactivaciones. La caracteristica `CpeValidation` se resuelve centralmente sin tablas adicionales: solo `PRO`/Contador y `SuperAdmin` pueden ejecutar la validacion CPE; Prueba y Emprendedor conservan el resto del panel.
 
 - `30/06/2026`: se agrega el grupo de menu `Proceso` con la pantalla `Cerrar Periodo`. El cierre se almacena por empresa y periodo en `CON_PeriodoContableEstado`, se consulta con `usp_CON_ObtenerPeriodoContableEstado` y se persiste con `usp_CON_GuardarPeriodoContableEstado`. Cuando un periodo queda cerrado se bloquean compras, ventas, caja y bancos, transferencias y aplicaciones; los asientos manuales continúan habilitados.
@@ -101,9 +107,9 @@ Claves principales:
 - `06/07/2026`: se habilita `Reportes > Analisis de cuentas` como reporte HTML sin Crystal. El nuevo `usp_CON_ReporteAnalisisCuentas` replica la salida legacy por cuenta, documento o auxiliar usando `CON_Asiento`, `CON_AsientoDetalle` y `CON_PlanCuenta` sobre cuentas marcadas para analisis documental.
 - `06/07/2026`: se habilitan `Reportes > Libro Diario` y `Reportes > Libro Mayor` como reportes HTML. `Libro Diario` cubre diario auxiliar y diario por origen en modo detallado o resumido; `Libro Mayor` replica el mayor por cuenta usando `NumeroDocumento` como equivalente funcional del auxiliar legacy.
 - `07/07/2026`: se habilita `Reportes > Balance de comprobacion` como reporte HTML. El nuevo `usp_CON_ReporteBalanceComprobacion` replica `FrmBalanceComprobacion` del legacy con rango de periodos `00-15`, moneda, grado, filtro de grado exacto y rango opcional de cuentas, consolidando por jerarquia de `CON_PlanCuenta`.
-- `07/07/2026`: los reportes HTML `Balance de comprobacion`, `Analisis de cuentas`, `Libro Diario` y `Libro Mayor` adoptan una presentacion compacta tipo hoja A4 inspirada en los Crystal legacy y agregan impresion directa desde pantalla con barra de acciones oculta al imprimir. Esta forma visual queda como estandar para futuras solicitudes de reportes contables HTML.
-- `07/07/2026`: se habilitan `Reportes > Registro de ventas` y `Reportes > Registro de compras` como reportes HTML tipo A4 basados en `VEN_Venta` y `COM_Compra`, con filtro por anio, periodo y codigo de persona opcional, sin depender de `CON_AsientoDetalle`.
-- `08/07/2026`: `Libro Diario` fija la moneda base del reporte en `PEN`, retira los filtros visibles de moneda y origen, y redefine sus vistas como `Diario auxiliar`, `Por Cuenta` y `Por Origen`. El `usp_CON_ReporteLibroDiario` ahora totaliza `Por Cuenta` por `CodigoCuenta` y `Por Origen` por `CodigoOrigen`, manteniendo visibles las columnas `Debe/Haber` en soles y `Debe/Haber USD`.
+- `07/07/2026`: los reportes HTML `Balance de comprobacion`, `Analisis de cuentas`, `Libro Diario` y `Libro Mayor` adoptan una presentacion compacta tipo hoja A4 inspirada en los Crystal legacy y agregan impresion directa desde pantalla con barra de acciones oculta al imprimir. Desde el `26/08/2026`, los cuatro reportes comparten una ayuda emergente para seleccionar `Cuenta desde` y `Cuenta hasta`: consulta remotamente hasta 100 cuentas activas, permite buscar por codigo, nombre o nivel del 1 al 5 y valida que el rango no este invertido. En Balance, `Todas las cuentas` limpia y deshabilita ambos selectores.
+- `07/07/2026`: se habilitan `Reportes > Registro de ventas` y `Reportes > Registro de compras` como reportes HTML tipo A4 basados en `VEN_Venta` y `COM_Compra`, con filtros opcionales por anio, periodo, DNI/RUC de la persona (`CodigoPersona`) y numero del comprobante (`VEN_Venta.Numero` o `COM_Compra.Numero`), sin depender de `CON_AsientoDetalle`. Desde el `26/08/2026`, ambos reportes incorporan una ayuda de clientes/proveedores que completa unicamente el DNI/RUC en `CodigoPersona`.
+- `08/07/2026`: `Libro Diario` fija la moneda base del reporte en `PEN`, retira los filtros visibles de moneda y origen, y redefine sus vistas como `Diario auxiliar`, `Por Cuenta` y `Por Origen`. El `usp_CON_ReporteLibroDiario` totaliza `Por Cuenta` por `CodigoCuenta` y `Por Origen` por `CodigoOrigen`, manteniendo visibles las columnas `Debe/Haber` en soles y `Debe/Haber USD`. Desde el `26/08/2026`, admite el rango opcional `Cuenta desde` y `Cuenta hasta`, aplicado a `CON_PlanCuenta.CodigoCuenta` antes de generar cualquiera de las tres vistas.
 - `08/07/2026`: `Libro Mayor` cambia a filtro por `anio + mes`, elimina la moneda editable y replica `rptMayorAuxiliarA4` segmentando por cuenta contable. El `usp_CON_ReporteLibroMayor` ahora filtra por `CON_Asiento.Periodo`, calcula saldo anterior solo con periodos menores del mismo anio, usa siempre `TotalImporteS` como base en soles, expone `Debe/Haber USD` separados y deja el saldo final unicamente al cierre de cada cuenta.
 - `11/07/2026`: `Registro > Asientos` trata siempre como automaticos los asientos con origen `ING` y `EGR` generados desde `Caja y Bancos`, ocultando su eliminacion directa y bloqueando su edicion manual para que solo se mantengan desde el modulo bancario de origen.
 - `11/07/2026`: `Reportes > Analisis de cuentas` corrige su calculo multimoneda para que el filtro `USD` y las columnas dolarizadas del procedimiento `usp_CON_ReporteAnalisisCuentas` usen siempre `CON_AsientoDetalle.TotalImporteD` por linea, sin depender de la moneda fija configurada en la cuenta contable.
@@ -111,15 +117,15 @@ Claves principales:
 - `10/07/2026`: inicia la base tecnica de seguridad por opcion para cuentas administradoras. Se agregan catalogos de modulos y roles (`SEG_ModuloSistema`, `SEG_RolCuenta`), permisos base por rol (`SEG_RolCuentaPermiso`), overrides por usuario a nivel cuenta y empresa (`SEG_UsuarioCuentaPermiso`, `SEG_UsuarioEmpresaPermiso`) y nuevos SP para siembra y contexto de login (`usp_SEG_SeedSeguridadCuentaPermisosBase`, `usp_SEG_ObtenerContextoLoginUsuario`).
 - `01/07/2026`: se habilita `Proceso > Diferencia en Cambio`, con origen configurable desde `Configuracion contable`, un proceso por periodo y generacion de asientos separados por cuenta en dolares.
 - `30/06/2026`: la importacion XML de compras (`usp_COM_ImportarCompraXml`) valida duplicados por `IdEmpresa + IdProveedor + TipoComprobante + Serie + Numero`. Cuando detecta un duplicado ahora informa tambien `IdCompra`, `FechaEmision` y `Estado` del comprobante existente para facilitar la identificacion de registros `EN REVISION` importados previamente en otro periodo visible.
-- `MigoApi:ExchangeDatePath`: path relativo para consultar tipo de cambio por fecha.
-- `MigoApi:ExchangeRangePath`: path relativo para consultar tipos de cambio por rango de fechas.
-- `MigoApi:RucPath`: path relativo para consultar RUC en Migo.
-- `MigoApi:DniPath`: path relativo para consultar DNI en Migo.
-- `MigoApi:CpePath`: path relativo para validar comprobantes electronicos en Migo.
-- `RutasLocales:BaseDatosRootPath`: ruta raiz SQL del proyecto.
-- `RutasLocales:SqlTablasPath`: ruta de tablas.
-- `RutasLocales:SqlStoreProcedurePath`: ruta de procedimientos.
-- `RutasLocales:SqlScriptPath`: ruta de scripts incrementales.
+- `FRALSECONT_MigoApi:ExchangeDatePath`: path relativo para consultar tipo de cambio por fecha.
+- `FRALSECONT_MigoApi:ExchangeRangePath`: path relativo para consultar tipos de cambio por rango de fechas.
+- `FRALSECONT_MigoApi:RucPath`: path relativo para consultar RUC en Migo.
+- `FRALSECONT_MigoApi:DniPath`: path relativo para consultar DNI en Migo.
+- `FRALSECONT_MigoApi:CpePath`: path relativo para validar comprobantes electronicos en Migo.
+- `FRALSECONT_RutasLocales:BaseDatosRootPath`: ruta raiz SQL del proyecto.
+- `FRALSECONT_RutasLocales:SqlTablasPath`: ruta de tablas.
+- `FRALSECONT_RutasLocales:SqlStoreProcedurePath`: ruta de procedimientos.
+- `FRALSECONT_RutasLocales:SqlScriptPath`: ruta de scripts incrementales.
 
 Archivo ejemplo disponible:
 
@@ -132,7 +138,7 @@ El arranque se define en `Program.cs`.
 Orden principal:
 
 1. Carga de configuracion y secrets en desarrollo.
-2. Lectura de `ConnectionStrings:DefaultConnection`.
+2. Lectura de `FRALSECONT_ConnectionStrings:DefaultConnection`.
 3. Registro de `ApplicationDbContext` para Identity.
 4. Configuracion de Identity con roles.
 5. Configuracion opcional de Google.
@@ -156,7 +162,7 @@ Modelo actual:
 - Login local y login externo Google desde `Areas/Identity/Pages/Account/Login`.
 - Se usa Cloudflare Turnstile en registro y login cuando esta configurado.
 - La politica de clave exige longitud minima 6, digito, minuscula, mayuscula y caracter especial.
-- `IdentityStartupSeeder` crea roles y asigna superadmin segun `IdentitySeed:SuperAdminEmails`.
+- `IdentityStartupSeeder` crea roles y asigna superadmin segun `FRALSECONT_IdentitySeed:SuperAdminEmails`.
 
 ## 7. Modelo multiempresa
 
@@ -195,7 +201,7 @@ Menu administrador:
 
 - General: Dashboard, Empresas.
 - Mantenimiento: Plan de cuentas, Centros de costo, Cuentas corrientes, Personas, Origenes, Cuentas destino, Configuracion contable.
-- Proceso: Diferencia en Cambio, Ajuste de Cuentas, Asiento de apertura, Asiento de cierre, Cerrar Periodo.
+- Proceso: Diferencia en Cambio, Ajuste de Cuentas, Cerrar Periodo, Asiento de cierre, Asiento de apertura.
 - Registro: Asientos, Compras, Ventas, Caja y Bancos, Transferencias, Aplicaciones.
 - Reportes: Balance de comprobacion, Analisis de cuentas, Libro Diario, Libro Mayor.
 
@@ -246,9 +252,10 @@ Vistas:
 Funciones:
 
 - Lista empresas vinculadas al usuario.
-- Permite seleccionar empresa activa.
+- Permite seleccionar la empresa activa haciendo clic sobre toda la fila, con seleccion visible y boton `Continuar al panel` habilitado solo cuando existe una empresa elegida.
+- Permite editar razon social, nombre comercial y RUC desde la lista; al guardar, `CodigoEmpresa` se sincroniza con el nuevo RUC y permanece oculto para el usuario.
 - Permite registrar empresa inicial o empresa adicional.
-- Al registrar empresa se crea la relacion de usuario y se cargan parametros base.
+- Al registrar empresa se crea la relacion con el usuario. Las configuraciones contables iniciales no se cargan automaticamente; se ejecutan expresamente desde Plan de cuentas y Origenes.
 
 ### 9.4 Panel principal
 
@@ -264,6 +271,22 @@ Funciones:
 
 - Dashboard base por empresa activa.
 - Entrada al menu operativo.
+
+### 9.4.1 Ayuda operativa
+
+Componentes:
+
+- `AyudaController`
+- `Views/Ayuda/Index.cshtml`
+- `ViewModels/Ayuda/AyudaCatalogoFactory.cs`
+
+Funciones:
+
+- Organiza preguntas frecuentes por `General`, `Mantenimiento`, `Registro`, `Proceso` y `Reportes`.
+- El acceso `Ayuda de este modulo` abre el catalogo enfocado en la opcion desde la cual se solicito ayuda.
+- Permite buscar dentro del modulo visible y se mantiene accesible durante una restriccion de suscripcion.
+- Debe actualizarse junto con cualquier cambio funcional. El orden documentado de Proceso es `Diferencia en Cambio`, `Ajuste de Cuentas`, `Cerrar Periodo`, `Asiento de cierre` y `Asiento de apertura`.
+- La ayuda de Asientos refleja la regla vigente: un asiento manual puede guardarse aunque Debe y Haber sean diferentes, mostrando la diferencia para revision contable.
 
 ### 9.5 Panel superadmin de plataforma
 
@@ -309,22 +332,22 @@ Funciones:
 - Habilita `Reportes > Analisis de cuentas`, `Libro Diario`, `Libro Mayor`, `Registro de ventas`, `Registro de compras` y `Balance de comprobacion` como reportes HTML del bloque contable.
 - Habilita `Voucher contable` como salida HTML A4 del asiento contable, abierta desde el formulario de asientos mediante `ReporteController.VoucherContable`.
 - Para futuras solicitudes de reportes contables HTML, la presentacion base debe seguir el formato compacto tipo hoja A4 del legacy: encabezado de reporte, bloque meta corto, tabla densa, pie de totales y barra de acciones en pantalla con impresion directa, evitando layouts de dashboard para la salida principal del reporte.
-- `Balance de comprobacion` replica `FrmBalanceComprobacion`, manejando `anio`, `periodo desde`, `periodo hasta`, `moneda`, `grado`, `todas las cuentas`, `rango de cuentas` y `filtrar grado`.
+- `Balance de comprobacion` replica `FrmBalanceComprobacion`, manejando `anio`, `periodo desde`, `periodo hasta`, `moneda`, `grado`, `todas las cuentas`, `rango de cuentas` y `filtrar grado`. El rango se selecciona desde la ayuda compartida del plan contable y queda deshabilitado cuando se activa `Todas las cuentas`.
 - La salida muestra columnas de anterior, periodo final, acumulado del rango y distribucion por activo/pasivo, naturaleza y funcion, siguiendo `ColBalance`.
 - Replica el comportamiento base del legacy `FrmRptAnalisisCta` sin depender de Crystal Reports.
 - `Voucher contable` replica la salida del formulario `FrmRegistroComprobante` y el Crystal `rptVoucherContableA4`, mostrando cabecera del asiento, glosa, moneda, referencia y detalle por linea con importes en soles y, cuando exista data, referencia adicional en dolares.
-- Permite consultar por `anio`, `mes`, `moneda`, `estado`, `tipo de vista`, rango de cuentas y `NumeroDocumento`.
+- Permite consultar por `anio`, `mes`, `moneda`, `estado`, `tipo de vista`, rango de cuentas y `NumeroDocumento`. `Cuenta desde` y `Cuenta hasta` usan la ayuda compartida y aceptan cuentas activas de cualquier nivel como limites del rango.
 - En esta migracion, el `CtaAuxiliar` del legacy se mapea a `CON_AsientoDetalle.NumeroDocumento`; la clave analitica/documental usa `NumeroDocumento + TipoDocumento + Serie + ReferenciaLinea`, igual que en diferencia en cambio.
 - La vista `Detallado` devuelve movimientos linea por linea.
 - La vista `Por documento` consolida por cuenta, auxiliar, tipo, serie y numero de referencia.
 - La vista `Por auxiliar` consolida por cuenta y auxiliar.
 - El filtro de pendientes o cancelados se calcula por saldo acumulado del analisis en la moneda seleccionada.
 - `Libro Diario` replica `FrmRptDiarioAux` y `FrmRptDiarioPorOrigenGeneral`, ofreciendo `Diario auxiliar`, `Por Cuenta` y `Por Origen`.
-- La consulta del diario usa siempre moneda base `PEN` hacia `usp_CON_ReporteLibroDiario`; las columnas en USD siguen visibles como referencia usando `TotalImporteD`.
-- `Libro Mayor` replica el enfoque de `usp_MayorAuxiliar` y `rptMayorAuxiliarA4`, filtrando por `anio`, `mes`, rango de cuentas y `NumeroDocumento`.
+- La consulta del diario usa siempre moneda base `PEN` hacia `usp_CON_ReporteLibroDiario`; las columnas en USD siguen visibles como referencia usando `TotalImporteD`. Los filtros `Cuenta desde` y `Cuenta hasta` delimitan opcionalmente el rango de `CodigoCuenta` y usan la ayuda emergente compartida para consultar cuentas de niveles 1 al 5.
+- `Libro Mayor` replica el enfoque de `usp_MayorAuxiliar` y `rptMayorAuxiliarA4`, filtrando por `anio`, `mes`, rango de cuentas y `NumeroDocumento`. El rango se selecciona mediante la misma ayuda emergente del plan contable.
 - La salida del mayor se segmenta por cuenta contable, muestra saldo del mes anterior y detalla cada movimiento con `Debe/Haber` en soles y `Debe/Haber USD`; el saldo final se muestra solo al cierre de cada cuenta y no por cada linea.
-- `Registro de ventas` replica el formato A4 de `rptRegVentasA4`, tomando la provision `VEN_Venta` y filtrando por `anio`, `periodo` y `CodigoCliente`.
-- `Registro de compras` replica el formato A4 de `RptRegistroCompra_A4_Oxa`, tomando la provision `COM_Compra` y filtrando por `anio`, `periodo` y `CodigoProveedor`.
+- `Registro de ventas` replica el formato A4 de `rptRegVentasA4`, tomando la provision `VEN_Venta` y filtrando por `anio`, `periodo`, DNI/RUC (`CodigoPersona`) y `VEN_Venta.Numero` (`Nro documento`). La ayuda de clientes permite buscar por codigo interno, DNI/RUC o nombre, pero al seleccionar completa unicamente el DNI/RUC.
+- `Registro de compras` replica el formato A4 de `RptRegistroCompra_A4_Oxa`, tomando la provision `COM_Compra` y filtrando por `anio`, `periodo`, DNI/RUC (`CodigoPersona`) y `COM_Compra.Numero` (`Nro documento`). La ayuda de proveedores permite buscar por codigo interno, DNI/RUC o nombre, pero al seleccionar completa unicamente el DNI/RUC.
 
 ### 9.6 Plan de cuentas
 
@@ -542,6 +565,7 @@ Funciones:
 - Mantenimiento por `IdCuentaAdministradora`, no por empresa.
 - Filtro operativo por periodo contable `yyyyMM`.
 - Registro y edicion manual de tipos de cambio.
+- La interfaz muestra `Soles` y `Dolares`, conservando internamente los codigos `PEN` y `USD`.
 - Sincronizacion mensual desde el listado usando la API de Migo.
 - Sincronizacion puntual por fecha desde el formulario usando la API de Migo.
 - La integracion consulta el endpoint por fecha o rango, guarda o actualiza `CON_TipoCambio` y deja `Fuente = API`.
@@ -660,6 +684,7 @@ Funciones:
 - Listado paginado de movimientos bancarios por empresa.
 - Filtro por cuenta corriente, anio, mes y texto.
 - KPIs de saldo inicial, ingresos del mes, egresos del mes y saldo final.
+- Los KPIs identifican la moneda de la cuenta corriente elegida y quedan en cero cuando el selector permanece en `Seleccione una cuenta corriente`.
 - El KPI `Saldo inicial` suma el arrastre historico de movimientos mas el saldo inicial configurado en la cuenta corriente cuando su `Periodo saldo inicial` es menor o igual al periodo consultado.
 - Registro y edicion de movimientos bancarios.
 - Seleccion de tipo de flujo `Ingreso` o `Egreso`.
@@ -670,6 +695,7 @@ Funciones:
 - Popup reutilizable para ayuda de cuenta contable y centro de costo.
 - Cada linea del detalle puede seleccionar una persona distinta para reutilizar la ayuda de comprobantes con saldo.
 - El formulario muestra `Total Operacion`, `Total Detalle` y `Diferencia`, comparando el importe de cabecera contra el neto del detalle segun sea ingreso o egreso.
+- Al aplicar un comprobante pendiente, el importe se coloca en `Haber` para ingresos y en `Debe` para egresos, sin depender de que el comprobante provenga de compras o ventas; el detalle se recalcula al cambiar el tipo de movimiento.
 - Al guardar el movimiento bancario se genera y mantiene un asiento contable automatico con origen `ING` o `EGR` segun el tipo de flujo configurado en contabilidad.
 - Si una cuenta del detalle tiene configuracion en `Cuentas destino`, el asiento conserva la linea original y agrega sus lineas de destino y contrapartida.
 - La operacion bancaria elegida debe corresponder al destino `Ingreso` o `Egreso` configurado en `operacionesbancarias`.
@@ -965,8 +991,8 @@ Seguridad funcional, empresas y suscripciones.
 
 - `usp_VEN_GuardarVentaConAsiento`
 - `usp_VEN_EliminarVenta`
-- `usp_VEN_ListarVentasPorEmpresa`
-- `usp_VEN_ObtenerVenta`
+- `usp_VEN_ListarVentasPorEmpresa`: lista ventas por empresa y admite periodo, ejercicio, mes, texto, tipo de comprobante y paginacion; su contrato debe desplegar los ocho parametros definidos en el script vigente.
+- `usp_VEN_ObtenerVenta`: obtiene cabecera y detalle de la venta, incluyendo descripcion del comprobante, documento de persona, exonerado, inafecto, ICBPER y saldo requeridos por la consulta y edicion web.
 
 ### SEG
 
@@ -1254,6 +1280,7 @@ Pendientes siguientes:
 - Los listados se muestran por defecto.
 - Los formularios se abren en vistas separadas para registrar o editar.
 - Los botones principales deben usar estilo consistente del sistema.
+- Las franjas principales de listados, formularios, Dashboard, General y Libros Electronicos usan el encabezado compacto comun, aproximadamente 30 % menor que su presentacion anterior.
 - Los popups reutilizables deben tener titulo, filtros y footer fijo con botones.
 - La seleccion de cuenta contable debe hacerse por popup, no por combo.
 - La seleccion de origen contable en registros/configuracion debe hacerse por popup.
@@ -1262,11 +1289,13 @@ Pendientes siguientes:
 - Los filtros de periodo deben usar combo de anio y combo de mes con nombre del mes.
 - El mes contable de compras, ventas y asientos se muestra como dato informativo del periodo elegido en el listado.
 - El listado de Caja y Bancos mantiene el mismo patron visual de filtros, KPIs y acciones operativas.
+- En el selector de empresa se elimina el combo duplicado: la fila completa es seleccionable mediante mouse o teclado y el boton de continuacion permanece deshabilitado hasta elegir una empresa.
 - El modulo de Transferencias entre cuentas usa el mismo patron visual administrativo, pero separa la captura en bloques `Emisor` y `Receptor`.
 - El modulo Aplicaciones reutiliza el mismo patron visual administrativo, pero divide la seleccion operacional en dos paneles: comprobantes pendientes y notas de credito disponibles.
 - Los listados de compras, ventas y asientos muestran acciones `Editar` y `Eliminar`.
-- Cuando un listado muestra numero de asiento, ese numero debe ser clickeable y abrir `Registro > Asientos` en modo detalle del asiento correspondiente.
+- Cuando un listado muestra numero de asiento, ese numero debe presentarse como etiqueta contable navegable y abrir `Registro > Asientos` en modo detalle del asiento correspondiente.
 - Los filtros `anio/mes` en listados y procesos se ejecutan automaticamente al cambiar el periodo y muestran un indicador global de carga mientras la peticion esta en curso.
+- El indicador global de carga debe ocultarse cuando una validacion cliente cancela el envio del formulario, evitando dejar la pantalla bloqueada despues de mostrar una alerta.
 - Un asiento automatico solo puede revisarse desde `Registro > Asientos`; la vista debe informar que fue generado automaticamente y mantener bloqueado el guardado manual.
 
 ## 16. Tablas maestras internas vs tablas por empresa
@@ -1326,13 +1355,13 @@ Tablas por empresa:
 
 ## 18. Pendientes funcionales identificados
 
-- Desarrollar reportes contables: libros y analisis.
-- Consolidar Configuracion contable como unico punto de parametros operativos.
-- Integrar completamente la configuracion de documentos e impuestos en la generacion automatica de compras y ventas.
-- Revisar si los SP legacy de `CON_ConfiguracionContabilizacionDetalle` seguiran existiendo o deben migrarse a la nueva estructura.
-- Crear flujo formal de cierre/apertura de periodos.
-- Definir centros de costo como mantenimiento propio si se vuelve obligatorio.
-- Definir reportes de validacion: asientos descuadrados, cuentas sin configuracion, documentos sin cuenta, impuestos sin cuenta.
+Los antiguos pendientes de reportes contables, Configuracion contable centralizada, cierre/apertura de periodos y mantenimiento de centros de costo ya se encuentran implementados y fueron retirados de esta lista.
+
+Pendientes vigentes:
+
+- Revisar si los SP legacy de `CON_ConfiguracionContabilizacionDetalle` seguiran existiendo o deben migrarse a la estructura vigente.
+- Completar reportes preventivos de configuracion faltante: cuentas empresariales, documentos, impuestos y parametros contables sin resolver.
+- Mantener sincronizado el catalogo de Ayuda cuando se agregue un modulo o cambie una regla de negocio; la ayuda operativa complementa este documento y no lo reemplaza.
 
 ## 19. Mapa rapido de dependencias funcionales
 
@@ -1509,5 +1538,5 @@ Objetos SQL:
 -- =============================================
 -- Author:        FRANCO LARA / Codex
 -- Create date:   26/08/2026
--- Description:   Documenta la edicion de razon social, nombre comercial y RUC desde el selector de empresas, con sincronizacion de CodigoEmpresa y el nuevo procedimiento de actualizacion autorizada.
+-- Description:   Alinea configuracion y experiencia operativa; agrega ayuda emergente compartida para rangos contables de niveles 1 al 5 en Analisis, Libro Diario, Libro Mayor y Balance.
 -- =============================================

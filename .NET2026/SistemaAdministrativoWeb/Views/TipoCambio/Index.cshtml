@@ -2,6 +2,7 @@
 
 @* Firma: FRANCO LARA - 29/06/2026 | Agrega el mantenimiento de tipos de cambio por periodo y habilita la sincronizacion mensual desde la API Migo, ocultando la cuenta administradora en la vista. *@
 @* Firma: FRANCO LARA - 02/07/2026 | Corrige la seleccion visible de anio y mes en tipos de cambio para que el periodo mostrado respete el contexto devuelto por la opcion. *@
+@* Firma: FRANCO LARA - 26/08/2026 | Muestra Soles y Dolares como nombres visibles, conservando PEN y USD como codigos internos. *@
 
 @{
     ViewData["Title"] = "Tipos de cambio";
@@ -11,8 +12,8 @@
     {
         return codigoMoneda.Trim().ToUpperInvariant() switch
         {
-            "PEN" => "SOLES",
-            "USD" => "DOLARES",
+            "PEN" => "Soles",
+            "USD" => "Dolares",
             _ => codigoMoneda
         };
     }

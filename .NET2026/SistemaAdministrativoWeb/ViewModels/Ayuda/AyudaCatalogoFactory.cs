@@ -4,7 +4,7 @@ namespace SistemaAdministrativoWeb.ViewModels.Ayuda;
 // Firma: FRANCO LARA - 04/08/2026 | Actualiza la ayuda de Libros Electronicos con validacion integrada, archivos complementarios, periodos vacios y control de presentacion.
 // Firma: FRANCO LARA - 05/08/2026 | Actualiza la ayuda del dashboard para incluir la tendencia historica de movimientos bancarios.
 // Firma: FRANCO LARA - 25/08/2026 | Alinea la ayuda del cierre anual y de las cargas contables por defecto con el comportamiento vigente de cada modulo.
-// Firma: FRANCO LARA - 26/08/2026 | Completa la ayuda del cierre, corrige dependencias y cargas iniciales, y documenta la edicion de empresas.
+// Firma: FRANCO LARA - 26/08/2026 | Completa la ayuda operativa y documenta la seleccion emergente de rangos contables de cualquier nivel en Analisis, Libro Diario, Libro Mayor y Balance.
 public static class AyudaCatalogoFactory
 {
     public static AyudaIndexViewModel Crear(string? moduloSolicitado)
@@ -168,7 +168,7 @@ public static class AyudaCatalogoFactory
                         "registrar movimientos manuales de diario cuando no vienen de un circuito automatico",
                         "el origen contable, fecha, glosa y el detalle de cuentas, debe y haber",
                         "origen, glosa, cuenta, centro de costo, tipo de documento, referencia, auxiliar y montos",
-                        "el asiento solo debe guardarse cuando el debe y el haber cuadran en la misma moneda",
+                        "el asiento puede guardarse aunque Debe y Haber sean diferentes; la diferencia visible debe revisarse y quedar sustentada por el responsable contable",
                         "crear un asiento manual innecesario para algo que ya genera compra, venta o proceso automatico",
                         "la consulta del libro diario, el libro mayor, balance de comprobacion y libros electronicos",
                         "revisar la consulta del periodo para confirmar correlativo, origen y montos",
@@ -294,17 +294,17 @@ public static class AyudaCatalogoFactory
                         "consultar el detalle previo, generar y comparar antes y despues del saldo de cada cuenta",
                         "contabilidad funcional o responsable del cierre",
                         "balance, libro mayor, cierre y reportes de resultado")),
-                    CrearModulo("ASIENTOAPERTURA", "Asiento de apertura", "bi-journal-plus", "Generacion anual del asiento inicial del ejercicio.", CrearFaqProceso(
-                        "Asiento de apertura",
-                        "crear el asiento inicial del nuevo ejercicio a partir de saldos finales del periodo anterior",
-                        "cierre del ejercicio previo, origen configurado y cuentas listas para apertura anual",
-                        "periodo destino, cuenta, saldo inicial, cuenta de resultado y origen de apertura",
-                        "al iniciar un nuevo ejercicio contable luego del cierre anual validado",
-                        "ejecutarlo sin cierre previo correcto o duplicar una apertura existente del mismo ejercicio",
-                        "saldos iniciales del libro mayor, balance y reportes del nuevo periodo",
-                        "revisar el detalle de apertura, el asiento generado y los saldos iniciales del libro mayor",
-                        "contabilidad general en el inicio del ejercicio",
-                        "libro mayor, balance, cierre anual y reportes del nuevo anio")),
+                    CrearModulo("CERRARPERIODO", "Cerrar Periodo", "bi-lock", "Bloqueo operativo de un periodo para evitar nuevas modificaciones.", CrearFaqProceso(
+                        "Cerrar Periodo",
+                        "bloquear un mes para impedir nuevos registros una vez validada la contabilidad",
+                        "haber ejecutado conciliaciones, ajustes, validaciones y revisiones de saldos del mes",
+                        "periodo, estado abierto o cerrado, observaciones de cierre y control de autorizacion",
+                        "cuando compras, ventas, bancos y asientos ya fueron revisados y no deben alterarse",
+                        "cerrar un periodo con pendientes de validacion, saldos abiertos criticos o procesos sin correr",
+                        "todos los registros del mes, reportes oficiales y la disciplina de cierres cronologicos",
+                        "verificar el estado del periodo y probar que los formularios dejan de permitir grabacion",
+                        "contabilidad con autorizacion del responsable del cierre",
+                        "todos los registros del periodo, reportes y aperturas o cierres siguientes")),
                     CrearModulo("ASIENTOCIERRE", "Asiento de cierre", "bi-journal-x", "Generacion anual de un unico asiento compuesto en el periodo 14 que invierte los saldos de las cuentas configuradas como Inventario.", CrearFaqProceso(
                         "Asiento de cierre",
                         "emitir un unico asiento que invierte los saldos acumulados y deja las cuentas listas para el siguiente ejercicio",
@@ -326,17 +326,17 @@ public static class AyudaCatalogoFactory
                         ("Que hago si aparece una generacion anterior con varios asientos", "Usa Regenerar asiento de cierre. El proceso reconoce el modelo anterior, elimina sus asientos vinculados y los reemplaza por el nuevo asiento compuesto."),
                         ("Como reviso el asiento generado desde la pantalla de cierre", "Consulta el ejercicio y abre el numero de asiento mostrado. El detalle presenta cada cuenta, moneda, sentido Debe/Haber, tipo de cambio e importes en soles y dolares."),
                         ("Que ocurre si no existen cuentas de Inventario con saldo", "El proceso no genera un asiento y muestra que no existen cuentas configuradas como Inventario con saldo pendiente para cerrar."))),
-                    CrearModulo("CERRARPERIODO", "Cerrar Periodo", "bi-lock", "Bloqueo operativo de un periodo para evitar nuevas modificaciones.", CrearFaqProceso(
-                        "Cerrar Periodo",
-                        "bloquear un mes para impedir nuevos registros una vez validada la contabilidad",
-                        "haber ejecutado conciliaciones, ajustes, validaciones y revisiones de saldos del mes",
-                        "periodo, estado abierto o cerrado, observaciones de cierre y control de autorizacion",
-                        "cuando compras, ventas, bancos y asientos ya fueron revisados y no deben alterarse",
-                        "cerrar un periodo con pendientes de validacion, saldos abiertos criticos o procesos sin correr",
-                        "todos los registros del mes, reportes oficiales y la disciplina de cierres cronologicos",
-                        "verificar el estado del periodo y probar que los formularios dejan de permitir grabacion",
-                        "contabilidad con autorizacion del responsable del cierre",
-                        "todos los registros del periodo, reportes y aperturas o cierres siguientes"))
+                    CrearModulo("ASIENTOAPERTURA", "Asiento de apertura", "bi-journal-plus", "Generacion anual del asiento inicial del ejercicio.", CrearFaqProceso(
+                        "Asiento de apertura",
+                        "crear el asiento inicial del nuevo ejercicio a partir de saldos finales del periodo anterior",
+                        "cierre del ejercicio previo, origen configurado y cuentas listas para apertura anual",
+                        "periodo destino, cuenta, saldo inicial, cuenta de resultado y origen de apertura",
+                        "al iniciar un nuevo ejercicio contable luego del cierre anual validado",
+                        "ejecutarlo sin cierre previo correcto o duplicar una apertura existente del mismo ejercicio",
+                        "saldos iniciales del libro mayor, balance y reportes del nuevo periodo",
+                        "revisar el detalle de apertura, el asiento generado y los saldos iniciales del libro mayor",
+                        "contabilidad general en el inicio del ejercicio",
+                        "libro mayor, balance, cierre anual y reportes del nuevo anio"))
                 ]),
             CrearCategoria(
                 "REPORTES",
@@ -347,7 +347,7 @@ public static class AyudaCatalogoFactory
                     CrearModulo("ANALISISCUENTAS", "Analisis de cuentas", "bi-bar-chart", "Seguimiento por cuenta, persona y documento.", CrearFaqReporte(
                         "Analisis de cuentas",
                         "seguir movimientos por cuenta, auxiliar, documento y vista detallada o resumida",
-                        "cuenta, periodo, estado, documento y filtro de vista",
+                        "periodo, estado, documento, vista y rango de cuentas seleccionado desde la ayuda emergente",
                         "rastrear composicion de saldos y movimientos por tercero o documento",
                         "cuando necesitas explicar un saldo o revisar una cuenta analitica",
                         "validar auxiliares, referencias y glosas frente al libro mayor",
@@ -357,7 +357,7 @@ public static class AyudaCatalogoFactory
                     CrearModulo("LIBRODIARIO", "Libro Diario", "bi-journal-richtext", "Consulta del diario auxiliar, por cuenta y por origen.", CrearFaqReporte(
                         "Libro Diario",
                         "consultar asientos del periodo en orden cronologico, por cuenta u origen",
-                        "anio, mes, vista y filtros de cuenta o origen segun el caso",
+                        "anio, periodo, vista y rango opcional de cuentas; la ayuda permite elegir niveles 1 al 5",
                         "revisar el libro diario del mes y validar correlativos u origenes",
                         "cuando auditas asientos manuales y automaticos del periodo",
                         "comparar contra asientos, origenes y glosas del movimiento real",
@@ -367,7 +367,7 @@ public static class AyudaCatalogoFactory
                     CrearModulo("LIBROMAYOR", "Libro Mayor", "bi-journals", "Mayor por cuenta con saldo inicial, movimientos y cierre.", CrearFaqReporte(
                         "Libro Mayor",
                         "revisar el movimiento y saldo final de cada cuenta contable",
-                        "anio, mes, cuenta desde o hasta y documento si se requiere detalle",
+                        "anio, mes, rango de cuentas mediante la ayuda emergente y documento si se requiere detalle",
                         "explicar saldos por cuenta y analizar acumulados del periodo",
                         "cuando necesitas validar el comportamiento de una cuenta especifica",
                         "comparar saldo inicial, movimientos, subtotales y saldo final con balance",
@@ -377,7 +377,7 @@ public static class AyudaCatalogoFactory
                     CrearModulo("REGISTROVENTAS", "Registro de ventas", "bi-receipt-cutoff", "Formato mensual de ventas para control y emision.", CrearFaqReporte(
                         "Registro de ventas",
                         "emitir el reporte mensual de ventas en formato de control contable",
-                        "anio, periodo, moneda y filtros de comprobantes si aplican",
+                        "anio, periodo, DNI/RUC del cliente y numero del comprobante; la ayuda de persona completa el DNI/RUC",
                         "presentar y revisar los comprobantes de ventas del mes",
                         "cuando debes validar la provision de ventas o preparar un soporte externo",
                         "comparar totales, impuestos y series contra las ventas registradas",
@@ -387,7 +387,7 @@ public static class AyudaCatalogoFactory
                     CrearModulo("REGISTROCOMPRAS", "Registro de compras", "bi-cart3", "Formato mensual de compras, IGV y saldos de provision.", CrearFaqReporte(
                         "Registro de compras",
                         "emitir el reporte mensual de compras segun las provisiones registradas",
-                        "anio, periodo, moneda y filtros operativos del reporte",
+                        "anio, periodo, DNI/RUC del proveedor y numero del comprobante; la ayuda de persona completa el DNI/RUC",
                         "controlar comprobantes de compras, impuestos y saldos del mes",
                         "cuando revisas IGV, proveedores o consistencia del registro tributario",
                         "comparar documento, proveedor, base imponible, IGV y total con la provision",
@@ -397,7 +397,7 @@ public static class AyudaCatalogoFactory
                     CrearModulo("BALANCECOMPROBACION", "Balance de comprobacion", "bi-table", "Saldos y movimientos por grado del plan contable.", CrearFaqReporte(
                         "Balance de comprobacion",
                         "mostrar saldos y movimientos por cuentas y grados del plan contable",
-                        "anio, periodo desde y hasta, moneda, grado, rango de cuentas y filtro de grado exacto",
+                        "anio, periodos, moneda, grado y rango de cuentas de cualquier nivel; Todas las cuentas desactiva el rango",
                         "validar el cuadre general del periodo y navegar por niveles del plan",
                         "cuando necesitas una vista resumida o detallada de saldos antes del cierre",
                         "comparar debe, haber, saldos, inventario y resultados por naturaleza o funcion",

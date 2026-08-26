@@ -5,6 +5,7 @@
 @* Firma: FRANCO LARA - 11/07/2026 | Corrige el bloque final de totales en modo oscuro y ajusta el formateo del saldo final del reporte. *@
 @* Firma: FRANCO LARA - 21/07/2026 | Corrige la impresion del Analisis de cuentas en A4 horizontal, compacta cabecera y tablas y evita heredar el modo oscuro. *@
 @* Firma: FRANCO LARA - 04/08/2026 | Reorganiza los parametros del reporte en filtros principales y avanzados desplegables, con acciones uniformes y diseño adaptable. *@
+@* Firma: FRANCO LARA - 26/08/2026 | Reemplaza los selectores de rango por ayuda emergente reutilizable para cuentas activas de todos los niveles. *@
 
 @{
     ViewData["Title"] = "Analisis de cuentas";
@@ -136,11 +137,19 @@
                     <div id="analysisAdvancedFilters" class="report-filter-advanced-grid report-filter-grid-3 @(tieneFiltrosAvanzados ? string.Empty : "d-none")">
                         <div class="workspace-field">
                             <label class="form-label" for="cuentaDesde">Cuenta desde</label>
-                            <input id="cuentaDesde" name="cuentaDesde" class="form-control" value="@Model.CuentaDesde" list="analisis-cuentas-lista" autocomplete="off" />
+                            <div class="input-group">
+                                <input id="cuentaDesde" name="cuentaDesde" class="form-control" value="@Model.CuentaDesde" readonly />
+                                <button type="button" class="btn btn-outline-secondary workspace-icon-button" data-plan-cuenta-rango-open="analisisCuentaRangoModal" data-target-input="cuentaDesde" data-target-label="Cuenta desde" title="Buscar Cuenta desde" aria-label="Buscar Cuenta desde"><i class="bi bi-search"></i></button>
+                                <button type="button" class="btn btn-outline-secondary workspace-icon-button" data-plan-cuenta-rango-clear="analisisCuentaRangoModal" data-target-input="cuentaDesde" title="Limpiar Cuenta desde" aria-label="Limpiar Cuenta desde"><i class="bi bi-eraser"></i></button>
+                            </div>
                         </div>
                         <div class="workspace-field">
                             <label class="form-label" for="cuentaHasta">Cuenta hasta</label>
-                            <input id="cuentaHasta" name="cuentaHasta" class="form-control" value="@Model.CuentaHasta" list="analisis-cuentas-lista" autocomplete="off" />
+                            <div class="input-group">
+                                <input id="cuentaHasta" name="cuentaHasta" class="form-control" value="@Model.CuentaHasta" readonly />
+                                <button type="button" class="btn btn-outline-secondary workspace-icon-button" data-plan-cuenta-rango-open="analisisCuentaRangoModal" data-target-input="cuentaHasta" data-target-label="Cuenta hasta" title="Buscar Cuenta hasta" aria-label="Buscar Cuenta hasta"><i class="bi bi-search"></i></button>
+                                <button type="button" class="btn btn-outline-secondary workspace-icon-button" data-plan-cuenta-rango-clear="analisisCuentaRangoModal" data-target-input="cuentaHasta" title="Limpiar Cuenta hasta" aria-label="Limpiar Cuenta hasta"><i class="bi bi-eraser"></i></button>
+                            </div>
                         </div>
                         <div class="workspace-field">
                             <label class="form-label" for="auxiliar">Nro. de documento</label>
@@ -159,12 +168,6 @@
                         </button>
                     </div>
 
-                    <datalist id="analisis-cuentas-lista">
-                        @foreach (var cuenta in Model.CuentasDisponibles)
-                        {
-                            <option value="@cuenta.Valor">@cuenta.Texto</option>
-                        }
-                    </datalist>
                 </form>
             </section>
 
@@ -405,6 +408,13 @@
         </div>
     </section>
 </section>
+
+<partial name="_PlanCuentaRangoAyuda" model="@(new SistemaAdministrativoWeb.ViewModels.Contabilidad.ReportePlanCuentaRangoAyudaViewModel
+    {
+        ModalId = "analisisCuentaRangoModal",
+        CuentaDesdeInputId = "cuentaDesde",
+        CuentaHastaInputId = "cuentaHasta"
+    })" />
 
 <style>
     .analysis-filter-section {

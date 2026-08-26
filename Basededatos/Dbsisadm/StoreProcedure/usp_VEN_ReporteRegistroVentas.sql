@@ -4,12 +4,14 @@
 -- Description:   Genera el registro de ventas HTML tomando la provision VEN_Venta para replicar el formato A4 legacy sin depender de CON_AsientoDetalle.
 -- =============================================
 -- Firma: FRANCO LARA - 07/07/2026 | Crea el procedimiento del registro de ventas con filtro por anio, mes y codigo de persona, usando solo la provision actual.
+-- Firma: FRANCO LARA - 26/08/2026 | Filtra CodigoPersona por DNI/RUC del cliente y NumeroDocumento por el numero del comprobante de venta.
 
 CREATE OR ALTER PROCEDURE dbo.usp_VEN_ReporteRegistroVentas
     @IdEmpresa INT,
     @Anio SMALLINT,
     @Mes TINYINT,
-    @CodigoPersona VARCHAR(20) = NULL
+    @CodigoPersona VARCHAR(20) = NULL,
+    @NumeroDocumento VARCHAR(20) = NULL
 AS
 BEGIN
 
@@ -18,6 +20,7 @@ BEGIN
     BEGIN TRY
 
         DECLARE @CodigoPersonaTrabajo VARCHAR(20) = NULLIF(LTRIM(RTRIM(@CodigoPersona)), '')
+        DECLARE @NumeroDocumentoTrabajo VARCHAR(20) = NULLIF(LTRIM(RTRIM(@NumeroDocumento)), '')
 
         SELECT
             v.FechaEmision,
@@ -57,7 +60,11 @@ BEGIN
           AND MONTH(v.FechaContabilizacion) = @Mes
           AND (
                 @CodigoPersonaTrabajo IS NULL
-                OR c.CodigoCliente = @CodigoPersonaTrabajo
+                OR pe.NumeroDocumento = @CodigoPersonaTrabajo
+              )
+          AND (
+                @NumeroDocumentoTrabajo IS NULL
+                OR v.Numero = @NumeroDocumentoTrabajo
               )
         ORDER BY
             v.FechaEmision,
