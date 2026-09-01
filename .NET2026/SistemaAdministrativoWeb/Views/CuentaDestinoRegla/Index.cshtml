@@ -1,10 +1,14 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.CuentaDestinoReglaIndexViewModel
+@* Firma: FRANCO LARA - 29/08/2026 | Aplica permisos efectivos al alta, edicion y eliminacion, y uniformiza las acciones con el patron compacto de Centros de costo. *@
 
 @{
     ViewData["Title"] = "Cuentas destino";
     ViewData["AdminShell"] = true;
     var paginaInicio = Math.Max(1, Model.Paginacion.PaginaActual - 2);
     var paginaFin = Math.Min(Model.Paginacion.TotalPaginas, Model.Paginacion.PaginaActual + 2);
+    var puedeCrear = await ModulePermissions.CanAccessModuleAsync(User, "CUENTASDESTINO", ModulePermissionOperation.Create);
+    var puedeEditar = await ModulePermissions.CanAccessModuleAsync(User, "CUENTASDESTINO", ModulePermissionOperation.Edit);
+    var puedeEliminar = await ModulePermissions.CanAccessModuleAsync(User, "CUENTASDESTINO", ModulePermissionOperation.Delete);
 }
 
 <section class="dashboard-shell">
@@ -34,7 +38,10 @@
                 <p>Consulta las configuraciones por cuenta contable y abre la edicion desde la misma lista.</p>
             </div>
             <div class="workspace-row-actions">
-                <a asp-action="Registrar" class="btn btn-light btn-sm">Registrar cuenta destino</a>
+                @if (puedeCrear)
+                {
+                    <a asp-action="Registrar" class="btn btn-light btn-sm">Registrar cuenta destino</a>
+                }
             </div>
         </div>
         <div class="workspace-window-body">
@@ -86,7 +93,7 @@
                         {
                             @foreach (var regla in Model.Reglas)
                             {
-                                <tr class="workspace-clickable-row" data-edit-url="@Url.Action("Editar", new { idCuentaDestinoRegla = regla.IdCuentaDestinoRegla })">
+                                <tr class="@(puedeEditar ? "workspace-clickable-row" : string.Empty)" data-edit-url="@(puedeEditar ? Url.Action("Editar", new { idCuentaDestinoRegla = regla.IdCuentaDestinoRegla }) : null)">
                                     <td>
                                         <strong>@regla.CodigoCuentaOrigen</strong><br />
                                         <span class="text-muted">@regla.NombreCuentaOrigen</span>
@@ -101,12 +108,18 @@
                                     <td>@(string.IsNullOrWhiteSpace(regla.Observacion) ? "-" : regla.Observacion)</td>
                                     <td class="text-end">
                                         <div class="workspace-row-actions justify-content-end">
-                                            <a asp-action="Editar" asp-route-idCuentaDestinoRegla="@regla.IdCuentaDestinoRegla" class="workspace-row-link">Editar</a>
-                                            <form asp-action="Eliminar" method="post" class="d-inline">
+                                            @if (puedeEditar)
+                                            {
+                                                <a asp-action="Editar" asp-route-idCuentaDestinoRegla="@regla.IdCuentaDestinoRegla" class="workspace-row-link">Editar</a>
+                                            }
+                                            @if (puedeEliminar)
+                                            {
+                                            <form asp-action="Eliminar" method="post" class="d-inline-flex">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="idCuentaDestinoRegla" value="@regla.IdCuentaDestinoRegla" />
-                                                <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Se eliminara la cuenta destino seleccionada. Desea continuar?');">Eliminar</button>
+                                                <button type="submit" class="workspace-row-link text-danger" onclick="return confirm('Se eliminara la cuenta destino seleccionada. Desea continuar?');">Eliminar</button>
                                             </form>
+                                            }
                                         </div>
                                     </td>
                                 </tr>

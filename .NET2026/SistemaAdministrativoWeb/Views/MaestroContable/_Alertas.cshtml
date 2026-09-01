@@ -1,0 +1,13 @@
+@* =============================================
+   Author: FRANCO LARA / Codex
+   Create date: 27/08/2026
+   Description: Mensajes del mantenimiento de maestros contables.
+   ============================================= *@
+@if (TempData["MaestroOk"] is string ok)
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (TempData["MaestroError"] is string error)
+{
+    <div class="alert alert-danger">@error</div>
+}

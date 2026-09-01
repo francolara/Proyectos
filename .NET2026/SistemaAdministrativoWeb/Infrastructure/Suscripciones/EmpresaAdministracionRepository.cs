@@ -1,4 +1,5 @@
 using System.Data;
+using System.Xml.Linq;
 using Microsoft.Data.SqlClient;
 using SistemaAdministrativoWeb.Infrastructure.Data;
 
@@ -795,6 +796,17 @@ public sealed class CuentaAdministradoraRepository(IDbConnectionFactory connecti
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
+    public async Task GuardarPermisosUsuarioCuentaAsync(GuardarPermisosUsuarioCuentaRequest request, CancellationToken cancellationToken = default)
+    {
+        await GuardarPermisosAsync(
+            "dbo.usp_SEG_GuardarPermisosUsuarioCuenta",
+            "@IdUsuarioCuentaAdministradora",
+            request.IdUsuarioCuentaAdministradora,
+            request.Permisos,
+            request.UsuarioRegistro,
+            cancellationToken);
+    }
+
     public async Task<IReadOnlyCollection<UsuarioCuentaPermisoDto>> ListarPermisosUsuarioEmpresaAsync(int idUsuarioEmpresa, CancellationToken cancellationToken = default)
     {
         return await ListarPermisosAsync(
@@ -819,6 +831,50 @@ public sealed class CuentaAdministradoraRepository(IDbConnectionFactory connecti
         command.Parameters.AddWithValue("@PuedeEditar", request.PuedeEditar ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@PuedeEliminar", request.PuedeEliminar ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@UsuarioRegistro", DBNullIfNull(request.UsuarioRegistro));
+
+        await connection.OpenAsync(cancellationToken);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    public async Task GuardarPermisosUsuarioEmpresaAsync(GuardarPermisosUsuarioEmpresaRequest request, CancellationToken cancellationToken = default)
+    {
+        await GuardarPermisosAsync(
+            "dbo.usp_SEG_GuardarPermisosUsuarioEmpresa",
+            "@IdUsuarioEmpresa",
+            request.IdUsuarioEmpresa,
+            request.Permisos,
+            request.UsuarioRegistro,
+            cancellationToken);
+    }
+
+    private async Task GuardarPermisosAsync(
+        string storedProcedure,
+        string ownerParameterName,
+        int ownerId,
+        IReadOnlyCollection<UsuarioPermisoOverrideRequest> permisos,
+        string? usuarioRegistro,
+        CancellationToken cancellationToken)
+    {
+        var permisosXml = new XDocument(
+            new XElement(
+                "Permisos",
+                permisos.Select(permiso => new XElement(
+                    "Permiso",
+                    new XAttribute("IdModuloSistema", permiso.IdModuloSistema),
+                    new XAttribute("PuedeVer", FormatearEstadoPermiso(permiso.PuedeVer)),
+                    new XAttribute("PuedeCrear", FormatearEstadoPermiso(permiso.PuedeCrear)),
+                    new XAttribute("PuedeEditar", FormatearEstadoPermiso(permiso.PuedeEditar)),
+                    new XAttribute("PuedeEliminar", FormatearEstadoPermiso(permiso.PuedeEliminar))))));
+
+        await using var connection = connectionFactory.CreateConnection();
+        await using var command = new SqlCommand(storedProcedure, connection)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        command.Parameters.AddWithValue(ownerParameterName, ownerId);
+        command.Parameters.Add("@PermisosXml", SqlDbType.Xml).Value = permisosXml.ToString(SaveOptions.DisableFormatting);
+        command.Parameters.AddWithValue("@UsuarioRegistro", DBNullIfNull(usuarioRegistro));
 
         await connection.OpenAsync(cancellationToken);
         await command.ExecuteNonQueryAsync(cancellationToken);
@@ -906,6 +962,14 @@ public sealed class CuentaAdministradoraRepository(IDbConnectionFactory connecti
 
     private static object DBNullIfNull(string? value)
         => string.IsNullOrWhiteSpace(value) ? DBNull.Value : value.Trim();
+
+    private static string FormatearEstadoPermiso(bool? value)
+        => value switch
+        {
+            true => "1",
+            false => "0",
+            _ => "R"
+        };
 
     private static string? GetNullableString(SqlDataReader reader, string columnName)
     {

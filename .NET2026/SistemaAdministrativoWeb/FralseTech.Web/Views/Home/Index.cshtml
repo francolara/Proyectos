@@ -88,33 +88,48 @@
     <section class="section-shell" id="productos">
         <div class="section-container">
             <div class="section-heading section-heading--center reveal">
-                <span class="eyebrow">Productos</span>
-                <h2>Productos desarrollados por FRALSE TECH</h2>
-                <p>Soluciones creadas para resolver necesidades reales de gestión y operación.</p>
+                <span class="eyebrow">Sistemas</span>
+                <h2>Software listo para mover tu operación</h2>
+                <p>Dos soluciones especializadas, diseñadas alrededor de procesos reales de negocio.</p>
             </div>
             <div class="product-grid">
-                @foreach (var product in Model.Products)
+                @for (var index = 0; index < Model.Products.Count; index++)
                 {
+                    var product = Model.Products[index];
                     <article class="product-card @product.AccentClass reveal">
                         <div class="product-card__content">
-                            <span class="status-chip">@product.Status</span>
-                            <span class="product-card__category">@product.Category</span>
-                            <h3>@product.Name</h3>
-                            <p>@product.Description</p>
-                            <div class="chip-list" aria-label="Características de @product.Name">
+                            <div class="product-card__meta">
+                                <span class="product-card__index">@((index + 1).ToString("00"))</span>
+                                <span class="status-chip"><span aria-hidden="true"></span>@product.Status</span>
+                            </div>
+                            <div class="product-card__title">
+                                <i class="@product.IconClass" aria-hidden="true"></i>
+                                <div>
+                                    <span class="product-card__category">@product.Category</span>
+                                    <h3>@product.Name</h3>
+                                </div>
+                            </div>
+                            <p class="product-card__description">@product.Description</p>
+                            <ul class="product-feature-list" aria-label="Características de @product.Name">
                                 @foreach (var feature in product.Features)
                                 {
-                                    <span class="info-chip"><i class="bi bi-check2-circle" aria-hidden="true"></i>@feature</span>
+                                    <li><i class="bi bi-check2" aria-hidden="true"></i><span>@feature</span></li>
                                 }
-                            </div>
+                            </ul>
                             <div class="product-card__actions">
                                 <a class="btn btn-primary" href="@product.PrimaryActionUrl" target="_blank" rel="noreferrer">@product.PrimaryActionText</a>
                                 <a class="btn btn-tertiary" href="@product.SecondaryActionUrl" target="_blank" rel="noreferrer">@product.SecondaryActionText</a>
                             </div>
                         </div>
                         <div class="product-mockup" aria-hidden="true">
+                            <div class="product-mockup__caption">
+                                <span>FRALSE TECH / @((index + 1).ToString("00"))</span>
+                                <strong>@product.Name</strong>
+                            </div>
                             <div class="product-mockup__screen">
-                                <div class="product-mockup__topbar"></div>
+                                <div class="product-mockup__topbar">
+                                    <span></span><span></span><span></span>
+                                </div>
                                 @foreach (var line in product.MockupLines)
                                 {
                                     <div class="product-mockup__row">
@@ -128,6 +143,7 @@
                                     <span></span>
                                     <span></span>
                                 </div>
+                                <div class="product-mockup__signal"><span></span></div>
                             </div>
                         </div>
                     </article>

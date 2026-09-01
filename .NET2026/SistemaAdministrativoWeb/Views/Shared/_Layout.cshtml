@@ -1,4 +1,5 @@
 @using Microsoft.AspNetCore.Identity
+@using SistemaAdministrativoWeb.Infrastructure.Assets
 @using SistemaAdministrativoWeb.Infrastructure.Empresas
 @using SistemaAdministrativoWeb.Infrastructure.Security
 @inject ICurrentCompanyAccessor CurrentCompanyAccessor
@@ -10,6 +11,8 @@
 @* Firma: FRANCO LARA - 10/07/2026 | Ajusta el branding publico para alinear portada, login y registro con la nueva presentacion comercial de FralseCont, separa Fralse y Cont en dos colores, agrega soporte para metadatos basicos, enlaces legales en el footer y la burbuja publica de WhatsApp, e incorpora Usuarios y Configuracion al bloque General del menu administrativo. *@
 @* Firma: FRANCO LARA - 25/07/2026 | Integra el logo publico de Fralse Tech desde el bucket Cloudflare configurado en User Secrets, recorta su espacio blanco interno para mejorar su presencia y conserva el icono local como respaldo. *@
 @* Firma: FRANCO LARA - 26/08/2026 | Reordena el menu Proceso segun la secuencia operativa solicitada y lee los recursos publicos desde la configuracion identificada con el prefijo FRALSECONT_. *@
+@* Firma: FRANCO LARA - 27/08/2026 | Agrega al panel SuperAdmin el acceso y las pestañas laterales de Plan de cuentas, Cuentas destino, Asignaciones, Origenes y Configuracion de maestros contables. *@
+@* Firma: FRANCO LARA - 31/08/2026 | Versiona el logotipo remoto con la clave global de recursos para evitar cache obsoleta. *@
 <!DOCTYPE html>
 @{
     var adminShell = ViewData["AdminShell"] as bool? ?? false;
@@ -19,10 +22,7 @@
         ? pageTitle
         : $"{pageTitle} - FralseCont";
     var metaDescription = ViewData["MetaDescription"]?.ToString() ?? "Sistema contable web para empresas y contadores.";
-    var publicAssetBaseUrl = Configuration["FRALSECONT_SedeImagenStorage:PublicBaseUrl"]?.Trim().TrimEnd('/');
-    var publicBrandLogoUrl = string.IsNullOrWhiteSpace(publicAssetBaseUrl)
-        ? string.Empty
-        : $"{publicAssetBaseUrl}/Logo/LogoFralseTech.webp";
+    var publicBrandLogoUrl = PublicAssetUrlBuilder.Build(Configuration, "Logo/LogoFralseTech.webp");
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
     var currentPath = Context.Request.Path.Value ?? string.Empty;
@@ -42,6 +42,11 @@
 
     bool IsActivePath(params string[] segments) =>
         segments.Any(x => currentPath.StartsWith($"/{x}", StringComparison.OrdinalIgnoreCase));
+
+    var maestroContableOpen = string.Equals(currentController, "MaestroContable", StringComparison.OrdinalIgnoreCase);
+
+    bool IsMaestroContableAction(params string[] actions) =>
+        maestroContableOpen && actions.Any(x => string.Equals(x, currentAction, StringComparison.OrdinalIgnoreCase));
 
     string ResolverModuloAyuda()
     {
@@ -454,9 +459,25 @@
                         </span>
                     </button>
                 </section>
-                <nav class="app-sidebar-nav">
+                <nav class="app-sidebar-nav app-sidebar-nav-accordion">
                     <a class="app-sidebar-link @(string.Equals(currentController, "Plataforma", StringComparison.OrdinalIgnoreCase) && string.Equals(currentAction, "Index", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Plataforma" asp-action="Index"><i class="bi bi-grid-1x2"></i>Resumen</a>
                     <a class="app-sidebar-link @(string.Equals(currentController, "Plataforma", StringComparison.OrdinalIgnoreCase) && string.Equals(currentAction, "Cobros", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-controller="Plataforma" asp-action="Cobros"><i class="bi bi-cash-coin"></i>Registro de cobros</a>
+                    <section class="app-sidebar-group app-sidebar-group-accordion">
+                        <button class="app-sidebar-group-toggle @(maestroContableOpen ? string.Empty : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-maestros-contables" aria-expanded="@(maestroContableOpen.ToString().ToLowerInvariant())" aria-controls="sidebar-maestros-contables">
+                            <span>Maestros contables</span>
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                        <div id="sidebar-maestros-contables" class="collapse @(maestroContableOpen ? "show" : string.Empty)">
+                            <div class="app-sidebar-group-body">
+                                <a class="app-sidebar-link @(IsMaestroContableAction("Index") ? "active" : string.Empty)" asp-controller="MaestroContable" asp-action="Index"><i class="bi bi-speedometer2"></i>Resumen maestros</a>
+                                <a class="app-sidebar-link @(IsMaestroContableAction("PlanCuenta", "RegistrarPlanCuenta", "EditarPlanCuenta") ? "active" : string.Empty)" asp-controller="MaestroContable" asp-action="PlanCuenta"><i class="bi bi-diagram-3"></i>Plan de cuentas</a>
+                                <a class="app-sidebar-link @(IsMaestroContableAction("CuentasDestino", "RegistrarCuentaDestino", "EditarCuentaDestino") ? "active" : string.Empty)" asp-controller="MaestroContable" asp-action="CuentasDestino"><i class="bi bi-signpost-split"></i>Cuentas destino</a>
+                                <a class="app-sidebar-link @(IsMaestroContableAction("Asignaciones") ? "active" : string.Empty)" asp-controller="MaestroContable" asp-action="Asignaciones"><i class="bi bi-link-45deg"></i>Asignaciones</a>
+                                <a class="app-sidebar-link @(IsMaestroContableAction("Origenes", "RegistrarOrigen", "EditarOrigen") ? "active" : string.Empty)" asp-controller="MaestroContable" asp-action="Origenes"><i class="bi bi-journal-code"></i>Origenes</a>
+                                <a class="app-sidebar-link @(IsMaestroContableAction("Configuracion") ? "active" : string.Empty)" asp-controller="MaestroContable" asp-action="Configuracion"><i class="bi bi-sliders"></i>Configuracion</a>
+                            </div>
+                        </div>
+                    </section>
                 </nav>
                 <div class="app-sidebar-session">
                     <div class="app-sidebar-session-user">

@@ -1,0 +1,35 @@
+@model SistemaAdministrativoWeb.ViewModels.Plataforma.CuentaDestinoMaestroIndexViewModel
+@{
+    ViewData["Title"] = "Cuentas destino maestras";
+    ViewData["PlatformShell"] = true;
+    var paginaInicio = Math.Max(1, Model.Paginacion.PaginaActual - 2);
+    var paginaFin = Math.Min(Model.Paginacion.TotalPaginas, Model.Paginacion.PaginaActual + 2);
+}
+@* =============================================
+   Author: FRANCO LARA / Codex
+   Create date: 27/08/2026
+   Description: Lista de reglas maestras de cuentas destino con paginacion numerada y navegacion lateral exclusiva.
+   ============================================= *@
+@* Firma: FRANCO LARA - 29/08/2026 | Uniformiza Editar y Eliminar con el patron compacto de Centros de costo. *@
+<section class="dashboard-shell">
+    <partial name="_Alertas" />
+    <section class="dashboard-hero"><div><span class="dashboard-kicker">Maestro</span><h1 class="app-page-title"><i class="bi bi-signpost-split"></i><span>Cuentas destino maestras</span></h1><p>Define los destinos que serán convertidos a cuentas por empresa durante la carga inicial.</p></div><a class="btn btn-light" asp-action="RegistrarCuentaDestino">Registrar regla</a></section>
+    <section class="table-panel">
+        <form method="get" class="workspace-filter-card"><div class="workspace-filter-grid"><div class="workspace-field"><label class="form-label">Buscar regla</label><input class="form-control" name="textoBusqueda" value="@Model.TextoBusqueda" placeholder="Cuenta, nombre u observación" /></div></div><div class="workspace-actions"><button class="btn btn-primary">Consultar</button><a class="btn btn-outline-secondary" asp-action="CuentasDestino">Limpiar</a></div></form>
+        <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Cuenta origen</th><th>Nombre</th><th>Tramos</th><th>Porcentaje activo</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead><tbody>
+        @foreach (var item in Model.Items) { <tr><td><strong>@item.CodigoCuentaOrigen</strong></td><td>@(item.NombreCuentaOrigen ?? "Cuenta no encontrada")</td><td>@item.CantidadTramos</td><td>@item.PorcentajeTotal.ToString("0.####") %</td><td>@(item.Activo ? "Activo" : "Inactivo")</td><td class="text-end"><div class="workspace-row-actions-compact"><a class="workspace-row-link" asp-action="EditarCuentaDestino" asp-route-id="@item.IdCuentaDestinoReglaMaestro">Editar</a><form asp-action="EliminarCuentaDestino" method="post" class="d-inline-flex" onsubmit="return confirm('¿Eliminar esta regla y sus tramos?');"><input type="hidden" name="id" value="@item.IdCuentaDestinoReglaMaestro" /><button type="submit" class="workspace-row-link text-danger">Eliminar</button></form></div></td></tr> }
+        @if (Model.Items.Count == 0) { <tr><td colspan="6" class="text-muted">No se encontraron reglas.</td></tr> }
+        </tbody></table></div>
+        @if (Model.Paginacion.TotalPaginas > 1)
+        {
+            <nav class="workspace-pagination mt-3" aria-label="Paginación de cuentas destino maestras">
+                <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaAnterior ? string.Empty : "disabled")" asp-action="CuentasDestino" asp-route-textoBusqueda="@Model.TextoBusqueda" asp-route-pagina="@(Model.Paginacion.PaginaActual - 1)">Anterior</a>
+                @for (var pagina = paginaInicio; pagina <= paginaFin; pagina++)
+                {
+                    <a class="btn @(pagina == Model.Paginacion.PaginaActual ? "btn-primary" : "btn-outline-secondary")" asp-action="CuentasDestino" asp-route-textoBusqueda="@Model.TextoBusqueda" asp-route-pagina="@pagina">@pagina</a>
+                }
+                <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaSiguiente ? string.Empty : "disabled")" asp-action="CuentasDestino" asp-route-textoBusqueda="@Model.TextoBusqueda" asp-route-pagina="@(Model.Paginacion.PaginaActual + 1)">Siguiente</a>
+            </nav>
+        }
+    </section>
+</section>

@@ -1,4 +1,4 @@
-wwwroot\css\home-critical.css
+wwwroot\js\site.js
 wwwroot\css\reservas-calendario.css
 wwwroot\favicon.ico
 wwwroot\img\logo-lazona-oficial.png
@@ -70,8 +70,8 @@ wwwroot\robots.txt
 wwwroot\img\onboarding-robot.svg
 wwwroot\img\complejo-default.png
 wwwroot\img\complejo-default.webp
-wwwroot\js\site.js
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\css\home-critical.css
+wwwroot\css\home-critical.css
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\js\site.js
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\css\reservas-calendario.css
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\favicon.ico
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\css\site.css
@@ -136,4 +136,4 @@ C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlE
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\lib\jquery\LICENSE.txt
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\robots.txt
 C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\img\onboarding-robot.svg
-C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\js\site.js
+C:\Users\Franco Lara\Desktop\GitHub Proyectos\Proyectos\.NET2026\SistemaControlEspaciosDeportivosWeb\wwwroot\css\home-critical.css

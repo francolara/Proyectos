@@ -50,6 +50,7 @@ public sealed class ProductCard
 {
     public string Name { get; init; } = string.Empty;
     public string Category { get; init; } = string.Empty;
+    public string IconClass { get; init; } = string.Empty;
     public string Description { get; init; } = string.Empty;
     public string Status { get; init; } = string.Empty;
     public string PrimaryActionText { get; init; } = string.Empty;
@@ -101,7 +102,7 @@ public static class FralseTechSiteContent
             HeaderTagline = "Soluciones tecnológicas para empresas",
             HeroTitle = "Transformamos ideas en soluciones digitales",
             HeroDescription = "Desarrollamos sistemas empresariales, plataformas web y soluciones digitales diseñadas para mejorar la gestión y el crecimiento de tu negocio.",
-            HeroPrimaryActionText = "Conoce nuestros productos",
+            HeroPrimaryActionText = "Conoce nuestros sistemas",
             HeroPrimaryActionTarget = "#productos",
             HeroSecondaryActionText = "Contáctanos",
             HeroSecondaryActionTarget = "#contacto",
@@ -121,7 +122,7 @@ public static class FralseTechSiteContent
                 new NavigationItem("Inicio", "#inicio"),
                 new NavigationItem("Nosotros", "#nosotros"),
                 new NavigationItem("Servicios", "#servicios"),
-                new NavigationItem("Productos", "#productos")
+                new NavigationItem("Sistemas", "#productos")
             ],
             HeroPills =
             [
@@ -149,7 +150,8 @@ public static class FralseTechSiteContent
                 new ProductCard
                 {
                     Name = "FralseCont",
-                    Category = "Sistema administrativo y contable",
+                    Category = "Sistema contable",
+                    IconClass = "bi bi-journal-check",
                     Description = "Plataforma administrativa y contable diseñada para centralizar la información de la empresa, controlar sus operaciones y facilitar la gestión contable.",
                     Status = "Disponible",
                     PrimaryActionText = "Conocer FralseCont",
@@ -178,6 +180,7 @@ public static class FralseTechSiteContent
                 {
                     Name = "La Zona Deportiva",
                     Category = "Plataforma para complejos deportivos",
+                    IconClass = "bi bi-calendar2-week",
                     Description = "Sistema web para administrar complejos deportivos, organizar horarios, gestionar reservas y ofrecer reservas online a los clientes.",
                     Status = "Disponible",
                     PrimaryActionText = "Visitar plataforma",

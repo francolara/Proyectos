@@ -4,6 +4,8 @@ namespace SistemaAdministrativoWeb.ViewModels.Contabilidad;
 
 public sealed class CuentaDestinoReglaFormViewModel
 {
+    public int? IdCuentaDestinoRegla { get; set; }
+
     [Range(1, int.MaxValue, ErrorMessage = "Seleccione la cuenta origen.")]
     public int? IdPlanCuentaOrigen { get; set; }
 

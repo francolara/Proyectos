@@ -1,0 +1,48 @@
+@model SistemaAdministrativoWeb.ViewModels.Plataforma.CuentaDestinoMaestroFormViewModel
+@{ ViewData["Title"] = Model.IdCuentaDestinoReglaMaestro.HasValue ? "Editar cuenta destino maestra" : "Registrar cuenta destino maestra"; ViewData["PlatformShell"] = true; }
+@* =============================================
+   Author: FRANCO LARA / Codex
+   Create date: 27/08/2026
+   Description: Formulario de reglas y tramos maestros de cuentas destino, navegable exclusivamente desde el menu lateral.
+   ============================================= *@
+<section class="dashboard-shell">
+    <section class="dashboard-hero"><div><span class="dashboard-kicker">Cuenta destino</span><h1 class="app-page-title"><i class="bi bi-signpost-split"></i><span>@ViewData["Title"]</span></h1><p>Los tramos activos deben sumar exactamente 100 %.</p></div></section>
+    <form asp-action="GuardarCuentaDestino" method="post" class="table-panel p-3" id="cuentaDestinoForm">
+        <input asp-for="IdCuentaDestinoReglaMaestro" type="hidden" /><div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+        <div class="row g-3"><div class="col-md-5"><label asp-for="CodigoCuentaOrigen" class="form-label"></label><div class="input-group"><input asp-for="CodigoCuentaOrigen" class="form-control" readonly="@(Model.IdCuentaDestinoReglaMaestro.HasValue ? "readonly" : null)" /><button type="button" class="btn btn-outline-secondary" data-cuenta-maestro-open data-target="CodigoCuentaOrigen"><i class="bi bi-search"></i></button></div><span asp-validation-for="CodigoCuentaOrigen" class="text-danger"></span></div><div class="col-md-5"><label asp-for="Observacion" class="form-label"></label><input asp-for="Observacion" class="form-control" /></div><div class="col-md-2 d-flex align-items-end"><div class="form-check mb-2"><input asp-for="Activo" class="form-check-input" /><label asp-for="Activo" class="form-check-label">Activo</label></div></div></div>
+        <div class="d-flex justify-content-between align-items-center mt-4 mb-2"><h2 class="fs-5 mb-0">Tramos</h2><button id="agregarTramo" type="button" class="btn btn-outline-primary btn-sm">Agregar tramo</button></div>
+        <div class="table-responsive"><table class="table align-middle"><thead><tr><th>Orden</th><th>Cuenta cargo</th><th>Cuenta abono</th><th>Porcentaje</th><th>Activo</th><th></th></tr></thead><tbody id="tramosBody">
+        @for (var i = 0; i < Model.Detalles.Count; i++)
+        {
+            <tr data-tramo><td><input asp-for="Detalles[i].Orden" class="form-control" type="number" min="1" /></td><td><div class="input-group"><input asp-for="Detalles[i].CodigoCuentaDestinoCargo" class="form-control" /><button type="button" class="btn btn-outline-secondary" data-cuenta-maestro-open data-target="Detalles_@(i)__CodigoCuentaDestinoCargo"><i class="bi bi-search"></i></button></div></td><td><div class="input-group"><input asp-for="Detalles[i].CodigoCuentaDestinoAbono" class="form-control" /><button type="button" class="btn btn-outline-secondary" data-cuenta-maestro-open data-target="Detalles_@(i)__CodigoCuentaDestinoAbono"><i class="bi bi-search"></i></button></div></td><td><input asp-for="Detalles[i].Porcentaje" class="form-control" type="number" step="0.0001" min="0.0001" max="100" /></td><td><input name="Detalles[@i].Activo" id="Detalles_@(i)__Activo" class="form-check-input" type="checkbox" value="true" checked="@(Model.Detalles[i].Activo ? "checked" : null)" /><input name="Detalles[@i].Activo" type="hidden" value="false" /></td><td><button type="button" class="btn btn-outline-danger btn-sm" data-quitar-tramo>Quitar</button></td></tr>
+        }
+        </tbody></table></div>
+        <div class="workspace-actions mt-3"><button class="btn btn-primary">Guardar</button><a class="btn btn-outline-secondary" asp-action="CuentasDestino">Cancelar</a></div>
+    </form>
+</section>
+<partial name="_CuentaMaestroModal" />
+@section Scripts {
+<partial name="_ValidationScriptsPartial" />
+<script>
+(() => {
+    const body = document.getElementById('tramosBody');
+    function renumber() {
+        [...body.querySelectorAll('[data-tramo]')].forEach((row, index) => {
+            row.querySelectorAll('input').forEach(input => {
+                input.name = input.name.replace(/Detalles\[\d+\]/, `Detalles[${index}]`);
+                input.id = input.name.replaceAll('[', '_').replaceAll(']', '_').replaceAll('.', '_');
+            });
+            row.querySelectorAll('[data-cuenta-maestro-open]').forEach(button => {
+                const suffix = button.closest('td').cellIndex === 1 ? 'CodigoCuentaDestinoCargo' : 'CodigoCuentaDestinoAbono';
+                button.dataset.target = `Detalles_${index}__${suffix}`;
+            });
+        });
+    }
+    document.getElementById('agregarTramo').addEventListener('click', () => {
+        const index = body.querySelectorAll('[data-tramo]').length;
+        body.insertAdjacentHTML('beforeend', `<tr data-tramo><td><input name="Detalles[${index}].Orden" id="Detalles_${index}__Orden" class="form-control" type="number" min="1" value="${index + 1}"></td><td><div class="input-group"><input name="Detalles[${index}].CodigoCuentaDestinoCargo" id="Detalles_${index}__CodigoCuentaDestinoCargo" class="form-control"><button type="button" class="btn btn-outline-secondary" data-cuenta-maestro-open data-target="Detalles_${index}__CodigoCuentaDestinoCargo"><i class="bi bi-search"></i></button></div></td><td><div class="input-group"><input name="Detalles[${index}].CodigoCuentaDestinoAbono" id="Detalles_${index}__CodigoCuentaDestinoAbono" class="form-control"><button type="button" class="btn btn-outline-secondary" data-cuenta-maestro-open data-target="Detalles_${index}__CodigoCuentaDestinoAbono"><i class="bi bi-search"></i></button></div></td><td><input name="Detalles[${index}].Porcentaje" id="Detalles_${index}__Porcentaje" class="form-control" type="number" step="0.0001" min="0.0001" max="100" value="0"></td><td><input name="Detalles[${index}].Activo" id="Detalles_${index}__Activo" class="form-check-input" type="checkbox" value="true" checked><input name="Detalles[${index}].Activo" type="hidden" value="false"></td><td><button type="button" class="btn btn-outline-danger btn-sm" data-quitar-tramo>Quitar</button></td></tr>`);
+    });
+    body.addEventListener('click', event => { if (event.target.closest('[data-quitar-tramo]') && body.querySelectorAll('[data-tramo]').length > 1) { event.target.closest('[data-tramo]').remove(); renumber(); } });
+})();
+</script>
+}

@@ -15,13 +15,24 @@ public class EmpresaContextoController(
     IEmpresaRepository empresaRepository,
     ICurrentCompanyAccessor currentCompanyAccessor,
     ICuentaAdministradoraRepository cuentaAdministradoraRepository,
-    UserManager<IdentityUser> userManager) : Controller
+    UserManager<IdentityUser> userManager,
+    IModulePermissionService modulePermissionService) : Controller
 {
     [HttpGet]
     [ModulePermission("EMPRESAS", ModulePermissionOperation.View)]
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
         ViewData["Title"] = "Seleccion de empresa";
+        ViewData["PuedeCrearEmpresa"] = await modulePermissionService.CanAccessModuleAsync(
+            User,
+            "EMPRESAS",
+            ModulePermissionOperation.Create,
+            cancellationToken);
+        ViewData["PuedeEditarEmpresa"] = await modulePermissionService.CanAccessModuleAsync(
+            User,
+            "EMPRESAS",
+            ModulePermissionOperation.Edit,
+            cancellationToken);
         var model = new SeleccionEmpresaViewModel
         {
             Empresas = await ObtenerEmpresasAsync(cancellationToken)
@@ -56,7 +67,7 @@ public class EmpresaContextoController(
     }
 
     [HttpGet]
-    [ModulePermission("EMPRESAS", ModulePermissionOperation.View)]
+    [ModulePermission("EMPRESAS", ModulePermissionOperation.Create)]
     public async Task<IActionResult> RegistrarEmpresaInicial()
     {
         var empresas = await ObtenerEmpresasAsync(HttpContext.RequestAborted);

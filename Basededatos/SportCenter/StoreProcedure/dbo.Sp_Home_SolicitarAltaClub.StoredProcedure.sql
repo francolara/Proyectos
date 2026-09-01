@@ -1,4 +1,4 @@
-USE [dbsportcenter_20260613]
+﻿
 GO
 /****** Object:  StoredProcedure [dbo].[Sp_Home_SolicitarAltaClub]    Script Date: 3/04/2026 23:18:34 ******/
 SET ANSI_NULLS ON

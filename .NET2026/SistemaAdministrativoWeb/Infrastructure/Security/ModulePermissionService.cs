@@ -75,6 +75,18 @@ public sealed class ModulePermissionService(
         ModulePermissionOperation operation,
         CancellationToken cancellationToken = default)
     {
+        if (string.Equals(moduleCode, "EMPRESAS", StringComparison.OrdinalIgnoreCase)
+            && operation == ModulePermissionOperation.View)
+        {
+            return new ModuleAccessResult
+            {
+                IsAllowed = principal.Identity?.IsAuthenticated == true,
+                Scope = ModuleScope.Account,
+                HasCompanyContext = currentCompanyAccessor.TieneEmpresaActiva,
+                Message = "Debe iniciar sesion para seleccionar una empresa."
+            };
+        }
+
         var subscriptionAccess = await subscriptionAccessService.EvaluateAsync(principal, cancellationToken);
         if (subscriptionAccess.IsRestricted)
         {

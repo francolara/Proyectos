@@ -61,6 +61,7 @@ public class CuentaDestinoReglaController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [ModuleSavePermission("CUENTASDESTINO", nameof(CuentaDestinoReglaFormViewModel.IdCuentaDestinoRegla))]
     public async Task<IActionResult> Guardar(CuentaDestinoReglaFormViewModel formulario, CancellationToken cancellationToken)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
@@ -270,6 +271,7 @@ public class CuentaDestinoReglaController(
                 ? new CuentaDestinoReglaFormViewModel()
                 : new CuentaDestinoReglaFormViewModel
                 {
+                    IdCuentaDestinoRegla = reglaEditar.IdCuentaDestinoRegla,
                     IdPlanCuentaOrigen = reglaEditar.IdPlanCuentaOrigen,
                     CuentaOrigenTexto = $"{reglaEditar.CodigoCuentaOrigen} - {reglaEditar.NombreCuentaOrigen}",
                     Observacion = reglaEditar.Observacion,

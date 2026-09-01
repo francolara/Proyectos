@@ -395,6 +395,7 @@ public class CajaBancoController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [ModuleSavePermission("CAJABANCOS", nameof(CajaBancoFormViewModel.IdMovimientoBanco))]
     public async Task<IActionResult> Guardar(CajaBancoFormViewModel formulario, short? anio = null, byte? mes = null, CancellationToken cancellationToken = default)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)

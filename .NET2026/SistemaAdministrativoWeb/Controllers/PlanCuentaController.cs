@@ -59,6 +59,29 @@ public class PlanCuentaController(
         return await CargarFormularioAsync(idPlanCuenta, cancellationToken);
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [ModulePermission("PLANCUENTA", ModulePermissionOperation.Delete)]
+    public async Task<IActionResult> Eliminar(int idPlanCuenta, string? textoBusqueda = null, byte? nivelCuenta = null, int pagina = 1, CancellationToken cancellationToken = default)
+    {
+        if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
+        {
+            return RedirectToAction("Index", "EmpresaContexto");
+        }
+
+        try
+        {
+            await planCuentaRepository.EliminarAsync(currentCompanyAccessor.EmpresaId.Value, idPlanCuenta, cancellationToken);
+            TempData["PlanCuentaOk"] = "Cuenta contable eliminada correctamente.";
+        }
+        catch (Exception ex)
+        {
+            TempData["PlanCuentaError"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Index), new { textoBusqueda, nivelCuenta, pagina });
+    }
+
     [HttpGet]
     public async Task<IActionResult> BuscarAyuda(string? textoBusqueda = null, byte? nivelCuenta = null, bool soloMovimiento = false, bool soloUltimoNivel = false, int tamanoPagina = TamanoAyudaCuenta, CancellationToken cancellationToken = default)
     {
@@ -104,6 +127,7 @@ public class PlanCuentaController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [ModulePermission("PLANCUENTA", ModulePermissionOperation.Create)]
     public async Task<IActionResult> CargarDefault(CancellationToken cancellationToken)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
@@ -126,6 +150,7 @@ public class PlanCuentaController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [ModuleSavePermission("PLANCUENTA", nameof(PlanCuentaFormViewModel.IdPlanCuenta))]
     public async Task<IActionResult> Guardar(PlanCuentaFormViewModel formulario, CancellationToken cancellationToken)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)

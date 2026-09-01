@@ -59,6 +59,29 @@ public class CentroCostoController(
         return await CargarFormularioAsync(idCentroCosto, cancellationToken);
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [ModulePermission("CENTROCOSTO", ModulePermissionOperation.Delete)]
+    public async Task<IActionResult> Eliminar(int idCentroCosto, string? textoBusqueda = null, int pagina = 1, CancellationToken cancellationToken = default)
+    {
+        if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
+        {
+            return RedirectToAction("Index", "EmpresaContexto");
+        }
+
+        try
+        {
+            await centroCostoRepository.EliminarAsync(currentCompanyAccessor.EmpresaId.Value, idCentroCosto, cancellationToken);
+            TempData["CentroCostoOk"] = "Centro de costo eliminado correctamente.";
+        }
+        catch (Exception ex)
+        {
+            TempData["CentroCostoError"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Index), new { textoBusqueda, pagina });
+    }
+
     [HttpGet]
     public async Task<IActionResult> BuscarAyuda(string? textoBusqueda = null, int tamanoPagina = TamanoAyuda, CancellationToken cancellationToken = default)
     {
@@ -97,6 +120,7 @@ public class CentroCostoController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [ModuleSavePermission("CENTROCOSTO", nameof(CentroCostoFormViewModel.IdCentroCosto))]
     public async Task<IActionResult> Guardar(CentroCostoFormViewModel formulario, CancellationToken cancellationToken)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)

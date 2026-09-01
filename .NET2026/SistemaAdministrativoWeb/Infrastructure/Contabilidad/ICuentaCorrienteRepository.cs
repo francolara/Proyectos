@@ -8,4 +8,5 @@ public interface ICuentaCorrienteRepository
     Task<IReadOnlyCollection<BancoConfiguracionEmpresaDto>> ListarPorEmpresaAsync(int idEmpresa, bool soloActivos = false, CancellationToken cancellationToken = default);
     Task<BancoConfiguracionEmpresaDto?> ObtenerPorIdAsync(int idEmpresa, int idBancoConfiguracionEmpresa, CancellationToken cancellationToken = default);
     Task<BancoConfiguracionEmpresaDto> GuardarAsync(GuardarBancoConfiguracionEmpresaRequest request, CancellationToken cancellationToken = default);
+    Task EliminarAsync(int idEmpresa, int idBancoConfiguracionEmpresa, CancellationToken cancellationToken = default);
 }

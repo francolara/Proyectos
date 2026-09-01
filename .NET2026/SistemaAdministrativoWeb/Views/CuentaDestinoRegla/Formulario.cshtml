@@ -1,4 +1,5 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.CuentaDestinoReglaIndexViewModel
+@* Firma: FRANCO LARA - 29/08/2026 | Conserva el identificador de la regla para validar por separado permisos de alta y edicion al guardar. *@
 
 @* =============================================
    Author:        FRANCO LARA
@@ -25,6 +26,7 @@
         <div class="workspace-window-body">
             <form asp-action="Guardar" method="post" id="regla-form">
                 @Html.AntiForgeryToken()
+                <input asp-for="Formulario.IdCuentaDestinoRegla" type="hidden" />
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
                 <div class="workspace-form-grid">

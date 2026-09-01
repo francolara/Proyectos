@@ -35,12 +35,32 @@ build_property.EnableCodeStyleSeverity =
 build_metadata.AdditionalFiles.TargetPath = QXJlYXNcSWRlbnRpdHlcUGFnZXNcQWNjb3VudFxDYW1iaWFyQ29udHJhc2VuYVRlbXBvcmFsLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Areas/Identity/Pages/Account/ConfirmEmail.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcSWRlbnRpdHlcUGFnZXNcQWNjb3VudFxDb25maXJtRW1haWwuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Areas/Identity/Pages/Account/ForgotPassword.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcSWRlbnRpdHlcUGFnZXNcQWNjb3VudFxGb3Jnb3RQYXNzd29yZC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Areas/Identity/Pages/Account/ForgotPasswordConfirmation.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcSWRlbnRpdHlcUGFnZXNcQWNjb3VudFxGb3Jnb3RQYXNzd29yZENvbmZpcm1hdGlvbi5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Areas/Identity/Pages/Account/Login.cshtml]
 build_metadata.AdditionalFiles.TargetPath = QXJlYXNcSWRlbnRpdHlcUGFnZXNcQWNjb3VudFxMb2dpbi5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Areas/Identity/Pages/Account/Register.cshtml]
 build_metadata.AdditionalFiles.TargetPath = QXJlYXNcSWRlbnRpdHlcUGFnZXNcQWNjb3VudFxSZWdpc3Rlci5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Areas/Identity/Pages/Account/ResetPassword.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcSWRlbnRpdHlcUGFnZXNcQWNjb3VudFxSZXNldFBhc3N3b3JkLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Areas/Identity/Pages/Account/ResetPasswordConfirmation.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcSWRlbnRpdHlcUGFnZXNcQWNjb3VudFxSZXNldFBhc3N3b3JkQ29uZmlybWF0aW9uLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Areas/Identity/Pages/Account/VerificacionTemporal.cshtml]
@@ -177,6 +197,50 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/LibroElectronico/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTGlicm9FbGVjdHJvbmljb1xJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/MaestroContable/Asignaciones.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFlc3Ryb0NvbnRhYmxlXEFzaWduYWNpb25lcy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/MaestroContable/Configuracion.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFlc3Ryb0NvbnRhYmxlXENvbmZpZ3VyYWNpb24uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/MaestroContable/CuentaDestinoFormulario.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFlc3Ryb0NvbnRhYmxlXEN1ZW50YURlc3Rpbm9Gb3JtdWxhcmlvLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/MaestroContable/CuentasDestino.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFlc3Ryb0NvbnRhYmxlXEN1ZW50YXNEZXN0aW5vLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/MaestroContable/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFlc3Ryb0NvbnRhYmxlXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/MaestroContable/Origenes.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFlc3Ryb0NvbnRhYmxlXE9yaWdlbmVzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/MaestroContable/OrigenFormulario.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFlc3Ryb0NvbnRhYmxlXE9yaWdlbkZvcm11bGFyaW8uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/MaestroContable/PlanCuenta.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFlc3Ryb0NvbnRhYmxlXFBsYW5DdWVudGEuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/MaestroContable/PlanCuentaFormulario.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFlc3Ryb0NvbnRhYmxlXFBsYW5DdWVudGFGb3JtdWxhcmlvLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/MaestroContable/_Alertas.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFlc3Ryb0NvbnRhYmxlXF9BbGVydGFzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/MaestroContable/_CuentaMaestroModal.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFlc3Ryb0NvbnRhYmxlXF9DdWVudGFNYWVzdHJvTW9kYWwuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaAdministrativoWeb/Views/MiSuscripcion/Index.cshtml]

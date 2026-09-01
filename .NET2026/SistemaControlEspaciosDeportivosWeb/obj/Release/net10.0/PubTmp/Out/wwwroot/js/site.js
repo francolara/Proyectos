@@ -84,6 +84,7 @@
 })();
 
 // Firma: FRANCO LARA - 08/07/2026 | Replica modo oscuro administrativo y ventana de carga del sistema administrativo para navegacion interna, formularios y acciones principales del panel.
+// Firma: FRANCO LARA - 15/07/2026 | Ventana de carga global omite submits interceptados por AJAX para evitar overlays bloqueados en modales administrativos.
 document.addEventListener("DOMContentLoaded", function () {
     const body = document.body;
     const root = document.documentElement;
@@ -252,7 +253,7 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     document.querySelectorAll("form").forEach(function (form) {
-        form.addEventListener("submit", function () {
+        form.addEventListener("submit", function (event) {
             if (form.dataset.skipLoading === "true") {
                 return;
             }
@@ -263,6 +264,11 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             window.setTimeout(function () {
+                if (event.defaultPrevented) {
+                    hideLoadingOverlay();
+                    return;
+                }
+
                 if (window.jQuery) {
                     const jqueryForm = window.jQuery(form);
                     if (typeof jqueryForm.valid === "function" && !jqueryForm.valid()) {

@@ -19,13 +19,6 @@
             </p>
         </header>
 
-        @if (Model.ShowDraftNotice)
-        {
-            <div class="fralsecont-legal-notice" role="status">
-                Documento preliminar pendiente de revision legal antes de su publicacion definitiva.
-            </div>
-        }
-
         <nav class="fralsecont-legal-index" aria-label="Indice de terminos y condiciones">
             <a href="#identificacion">1. Identificacion del proveedor</a>
             <a href="#objeto">2. Objeto de los terminos</a>
@@ -77,7 +70,7 @@
                 <h2 class="fralsecont-legal-section-title">1. Identificacion del proveedor</h2>
                 <p>
                     FralseCont es una plataforma operada por @Model.BusinessInformation.LegalName, con RUC
-                    @Model.BusinessInformation.Ruc, domicilio en @Model.BusinessInformation.FullAddress.
+                    @Model.BusinessInformation.Ruc.
                 </p>
             </section>
             <section id="objeto" class="fralsecont-legal-section">

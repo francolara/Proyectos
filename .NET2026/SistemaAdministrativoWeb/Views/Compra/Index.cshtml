@@ -4,6 +4,7 @@
 @* Firma: FRANCO LARA - 02/07/2026 | Corrige la seleccion visible de anio, mes y tipo de documento en compras para que el periodo mostrado respete el contexto devuelto por la opcion, convierte el numero de asiento del listado en acceso directo al asiento generado y deja el boton Consultar en la misma fila de filtros. *@
 @* Firma: FRANCO LARA - 25/07/2026 | Restringe visualmente la validacion CPE al plan Contador; la autorizacion efectiva se aplica tambien en el servidor. *@
 @* Firma: FRANCO LARA - 26/08/2026 | Uniformiza el acceso visual al asiento mediante una etiqueta contable navegable. *@
+@* Firma: FRANCO LARA - 29/08/2026 | Aplica permisos efectivos a alta, carga, edicion, validacion y eliminacion, y uniformiza los botones de accion del registro de compras. *@
 
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.CompraIndexViewModel
 
@@ -13,6 +14,10 @@
     var paginaInicio = Math.Max(1, Model.Paginacion.PaginaActual - 2);
     var paginaFin = Math.Min(Model.Paginacion.TotalPaginas, Model.Paginacion.PaginaActual + 2);
     var textInfo = System.Globalization.CultureInfo.CurrentCulture.TextInfo;
+    var puedeCrear = await ModulePermissions.CanAccessModuleAsync(User, "COMPRAS", ModulePermissionOperation.Create);
+    var puedeEditar = await ModulePermissions.CanAccessModuleAsync(User, "COMPRAS", ModulePermissionOperation.Edit);
+    var puedeEliminar = await ModulePermissions.CanAccessModuleAsync(User, "COMPRAS", ModulePermissionOperation.Delete);
+    var puedeEditarAsiento = await ModulePermissions.CanAccessModuleAsync(User, "ASIENTOS", ModulePermissionOperation.Edit);
 }
 
 <section class="dashboard-shell">
@@ -51,8 +56,11 @@
                 <p>Consulta provisiones registradas y reabre el documento para ajuste o revision.</p>
             </div>
             <div class="workspace-row-actions">
-                <a asp-action="Registrar" asp-route-periodo="@Model.PeriodoConsulta" class="btn btn-light btn-sm">Registrar compra</a>
-                <a asp-action="CargaMasiva" asp-route-periodo="@Model.PeriodoConsulta" class="btn btn-outline-light btn-sm">Carga masiva de compras</a>
+                @if (puedeCrear)
+                {
+                    <a asp-action="Registrar" asp-route-periodo="@Model.PeriodoConsulta" class="btn btn-light btn-sm">Registrar compra</a>
+                    <a asp-action="CargaMasiva" asp-route-periodo="@Model.PeriodoConsulta" class="btn btn-outline-light btn-sm">Carga masiva de compras</a>
+                }
             </div>
         </div>
         <div class="workspace-window-body">
@@ -144,7 +152,7 @@
                             @foreach (var compra in Model.Compras)
                             {
                                 var codigoTipoComprobante = (compra.TipoComprobante ?? string.Empty).Trim();
-                                <tr class="workspace-clickable-row" data-edit-url="@Url.Action("Editar", new { periodo = Model.PeriodoConsulta, idCompra = compra.IdCompra })">
+                                <tr class="@(puedeEditar ? "workspace-clickable-row" : string.Empty)" data-edit-url="@(puedeEditar ? Url.Action("Editar", new { periodo = Model.PeriodoConsulta, idCompra = compra.IdCompra }) : null)">
                                     <td>@compra.FechaEmision.ToString("dd/MM/yyyy")</td>
                                     <td>@compra.NombreProveedor</td>
                                     <td>@compra.Documento</td>
@@ -153,7 +161,7 @@
                                     <td>@compra.ImporteTotal.ToString("0.00")</td>
                                     <td>@compra.Saldo.ToString("0.00")</td>
                                     <td>
-                                        @if (compra.IdAsiento.HasValue)
+                                        @if (compra.IdAsiento.HasValue && puedeEditarAsiento)
                                         {
                                             <a asp-controller="Asiento"
                                                asp-action="Editar"
@@ -182,8 +190,11 @@
                                     <td>@(compra.FechaValidacionCpe?.ToString("dd/MM/yyyy HH:mm") ?? "-")</td>
                                     <td class="text-end">
                                         <div class="workspace-row-actions-compact">
-                                            <a asp-action="Editar" asp-route-periodo="@Model.PeriodoConsulta" asp-route-idCompra="@compra.IdCompra" class="workspace-row-btn workspace-row-btn-primary">Editar</a>
-                                            @if (Model.PuedeValidarCpe && codigoTipoComprobante is "01" or "03" or "07" or "08" or "02")
+                                            @if (puedeEditar)
+                                            {
+                                                <a asp-action="Editar" asp-route-periodo="@Model.PeriodoConsulta" asp-route-idCompra="@compra.IdCompra" class="workspace-row-link">Editar</a>
+                                            }
+                                            @if (puedeEditar && Model.PuedeValidarCpe && codigoTipoComprobante is "01" or "03" or "07" or "08" or "02")
                                             {
                                                 <form asp-action="ValidarCpe" method="post">
                                                     @Html.AntiForgeryToken()
@@ -196,7 +207,9 @@
                                                     <button type="submit" class="workspace-row-btn workspace-row-btn-secondary">Validar CPE</button>
                                                 </form>
                                             }
-                                            <form asp-action="Eliminar" method="post" onsubmit="return confirm('Se eliminara la compra seleccionada. ¿Desea continuar?');">
+                                            @if (puedeEliminar)
+                                            {
+                                                <form asp-action="Eliminar" method="post" class="d-inline-flex" onsubmit="return confirm('Se eliminara la compra seleccionada. ¿Desea continuar?');">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="idCompra" value="@compra.IdCompra" />
                                                 <input type="hidden" name="anio" value="@Model.AnioSeleccionado" />
@@ -204,8 +217,9 @@
                                                 <input type="hidden" name="textoBusqueda" value="@Model.TextoBusqueda" />
                                                 <input type="hidden" name="tipoComprobante" value="@Model.TipoComprobanteFiltro" />
                                                 <input type="hidden" name="pagina" value="@Model.Paginacion.PaginaActual" />
-                                                <button type="submit" class="workspace-row-btn workspace-row-btn-danger">Eliminar</button>
+                                                <button type="submit" class="workspace-row-link text-danger">Eliminar</button>
                                             </form>
+                                            }
                                         </div>
                                     </td>
                                 </tr>

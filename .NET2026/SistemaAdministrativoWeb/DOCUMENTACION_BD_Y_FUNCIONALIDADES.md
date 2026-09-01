@@ -1,6 +1,6 @@
 # DOCUMENTACION BD Y FUNCIONALIDADES - SisAdm
 
-Ultima actualizacion: 26/08/2026
+Ultima actualizacion: 31/08/2026
 Proyecto: `SistemaAdministrativoWeb`  
 Base de datos: `Dbsisadm`  
 Arquitectura definida: ASP.NET Core MVC + ASP.NET Identity + ADO.NET + Stored Procedures + SQL Server
@@ -56,7 +56,7 @@ Ejemplo conceptual:
 
 ## 4. Configuracion y secrets
 
-El proyecto lee siempre la configuracion local desde los archivos JSON cargados por ASP.NET Core. Las secciones propias de la aplicacion conservan literalmente el prefijo `FRALSECONT_` tanto en JSON como en las rutas internas de configuracion. En desarrollo tambien se admiten User Secrets para sobrescribir valores sensibles.
+El proyecto lee siempre la configuracion local desde los archivos JSON cargados por ASP.NET Core. El prefijo literal `FRALSECONT_` se conserva unicamente en las claves de conexion, Migo, comportamiento de Identity, ubicacion publica/bucket de imagenes y datos del remitente de Brevo. Las demas secciones usan sus nombres estandar sin prefijo. En desarrollo tambien se admiten User Secrets para sobrescribir valores sensibles.
 
 Ruta esperada de secrets:
 
@@ -69,23 +69,35 @@ Tambien intenta cargar:
 Claves principales:
 
 - `FRALSECONT_ConnectionStrings:DefaultConnection`: cadena SQL Server hacia `Dbsisadm`.
-- `FRALSECONT_Authentication:Google:ClientId`: cliente OAuth Google.
-- `FRALSECONT_Authentication:Google:ClientSecret`: secreto OAuth Google.
-- `FRALSECONT_CloudflareTurnstile:SiteKey`: clave publica Turnstile.
-- `FRALSECONT_CloudflareTurnstile:SecretKey`: clave privada Turnstile.
+- `Authentication:Google:ClientId`: cliente OAuth Google.
+- `Authentication:Google:ClientSecret`: secreto OAuth Google.
+- `CloudflareTurnstile:SiteKey`: clave publica Turnstile.
+- `CloudflareTurnstile:SecretKey`: clave privada Turnstile.
 - `FRALSECONT_IdentityBehavior:RequireConfirmedAccount`: obliga o no confirmacion de cuenta.
 - `FRALSECONT_IdentityBehavior:AutoConfirmEmail`: permite autoconfirmar correo en desarrollo.
-- `FRALSECONT_IdentitySeed:SuperAdminEmails`: correos que deben recibir rol de superadmin.
+- `Brevo:ApiKey`: credencial privada de la API transaccional de Brevo.
+- `FRALSECONT_Brevo:SenderEmail`: correo remitente verificado en Brevo.
+- `FRALSECONT_Brevo:SenderName`: nombre visible del remitente.
+- `FRALSECONT_Brevo:AllowedSenderEmails`: lista de remitentes autorizados para impedir suplantaciones desde la aplicacion.
+- `Brevo:AttachmentMaxBytes`, `Brevo:AttachmentDownloadTimeoutSeconds` y `Brevo:AllowedAttachmentContentTypes`: limites y tipos admitidos para adjuntos.
+- `DataProtection:KeysPath`: directorio persistente para las claves que protegen los tokens de confirmacion y recuperacion.
+- `IdentitySeed:SuperAdminEmails`: correos que deben recibir rol de superadmin.
 - `FRALSECONT_MigoApi:BaseUrl`: URL base de la API de Migo para tipos de cambio, padron por RUC/DNI y validacion CPE.
 - `FRALSECONT_MigoApi:Token`: token privado de autenticacion emitido por Migo.
-- `FRALSECONT_BusinessInformation`: datos comerciales, contacto y enlaces publicos de FralseCont.
-- `FRALSECONT_LegalDocuments`: fechas y datos configurables de los documentos legales.
+- `BusinessInformation`: datos comerciales, contacto y enlaces publicos de FralseCont.
+- `LegalDocuments`: fechas y datos configurables de los documentos legales.
 - `FRALSECONT_SedeImagenStorage:PublicBaseUrl`: ubicacion publica de logos y banners.
+- `FRALSECONT_SedeImagenStorage:BucketName`: nombre del bucket publico de imagenes.
+- `SedeImagenStorage:AssetVersion`: version para invalidar la cache de logos y banners.
 
-En produccion se usan variables de entorno con el mismo nombre logico y doble guion bajo para separar niveles. Por ejemplo, `FRALSECONT_ConnectionStrings__DefaultConnection` sobrescribe `FRALSECONT_ConnectionStrings:DefaultConnection` y `FRALSECONT_Authentication__Google__ClientId` sobrescribe `FRALSECONT_Authentication:Google:ClientId`. No se registra un proveedor que elimine el prefijo: `FRALSECONT_` forma parte real de cada seccion. Las variables propias del host, como `ASPNETCORE_ENVIRONMENT`, conservan su nombre estandar.
+En produccion se usan variables de entorno con el mismo nombre logico y doble guion bajo para separar niveles. Por ejemplo, `FRALSECONT_ConnectionStrings__DefaultConnection` sobrescribe `FRALSECONT_ConnectionStrings:DefaultConnection`, `Authentication__Google__ClientId` sobrescribe `Authentication:Google:ClientId` y `Brevo__ApiKey` sobrescribe `Brevo:ApiKey`. Para habilitar el flujo real de correo se configuran `FRALSECONT_IdentityBehavior__RequireConfirmedAccount=true` y `FRALSECONT_IdentityBehavior__AutoConfirmEmail=false`. Los datos del remitente se mantienen en `FRALSECONT_Brevo__SenderName`, `FRALSECONT_Brevo__SenderEmail` y `FRALSECONT_Brevo__AllowedSenderEmails__N`. Las variables propias del host, como `ASPNETCORE_ENVIRONMENT`, conservan su nombre estandar.
 
 ## 5. Cambios recientes relevantes
 
+- `01/09/2026`: se retira el prefijo `FRALSECONT_` de la configuracion general. Se conserva exclusivamente en `FRALSECONT_ConnectionStrings`, `FRALSECONT_MigoApi`, `FRALSECONT_IdentityBehavior`, `FRALSECONT_SedeImagenStorage:PublicBaseUrl`, `FRALSECONT_SedeImagenStorage:BucketName` y los datos de remitente autorizados de `FRALSECONT_Brevo`; la API key y los limites de Brevo pasan a la seccion `Brevo` sin prefijo.
+- `31/08/2026`: se integra Brevo para correos transaccionales de cuenta. El registro con credenciales genera un token de confirmacion, bloquea el inicio de sesion hasta verificar el correo y permite reenviar el enlace desde el login. La recuperacion genera un token de restablecimiento de un solo uso sin revelar si el correo existe. Al confirmar la cuenta se envia una bienvenida HTML con el logo publico de FRALSE TECH y la paleta azul de FralseCont. Las claves de Data Protection se persisten para conservar la validez de los enlaces entre reinicios.
+- `31/08/2026`: las asignaciones contables maestras listan y validan todos los registros de `ADM_ParametroMaestro` cuyo `TipoParametro` es `CONTABLE`, eliminando la lista fija de codigos y permitiendo configurar, entre otros, `CTACOMPRADEFAULT` y `CTAVENTADEFAULT`.
+- `27/08/2026`: el panel `SuperAdmin` incorpora `Maestros contables` y concentra en su navegacion lateral las pestañas `Plan de cuentas`, `Cuentas destino`, `Asignaciones`, `Origenes` y `Configuracion`, eliminando la barra horizontal redundante de accesos directos. Los listados paginados muestran `Anterior`, hasta cinco numeros alrededor de la pagina activa y `Siguiente`, conservando sus filtros. La ayuda emergente de cuentas maestras replica el patron visual del selector contable por empresa: encabezado institucional, filtro en tarjeta, seleccion por fila, confirmacion y paginacion remota de 40 cuentas; su footer permanece visible durante el desplazamiento, con `Cancelar` y `Aceptar` a la izquierda y la paginacion a la derecha. Permite crear, editar y eliminar el plan de cuentas maestro, las reglas/detalles de cuentas destino y los origenes maestros; los codigos de cuenta/origen quedan inmutables despues del alta y la eliminacion se rechaza cuando existen hijos o referencias. Los parametros contables, impuestos y tipos de comprobante solo permiten editar sus codigos de cuenta, mientras `CON_ConfiguracionContabilizacionMaestro` solo permite cambiar el `CodigoOrigen`. Todos los selectores resuelven codigos contra maestros activos, las reglas destino validan que sus tramos activos sumen `100 %` y el resumen diagnostica referencias invalidas. Estos cambios se usan exclusivamente en futuras cargas por defecto y no modifican empresas ya inicializadas.
 - `26/08/2026`: se unifica la configuracion propia de la aplicacion bajo secciones JSON que conservan el prefijo literal `FRALSECONT_`; en produccion las mismas rutas se expresan como variables de entorno con `__` entre niveles. Tambien se alinea la experiencia operativa: selector de empresa por fila, nombres visibles `Soles/Dolares` en Tipos de cambio, enlaces contables uniformes a asientos, encabezados principales mas compactos, importes KPI de Transferencias y Aplicaciones alineados a la derecha y KPIs de Caja y Bancos asociados a la moneda de la cuenta seleccionada. Caja y Bancos corrige la aplicacion de comprobantes para colocar el importe en `Haber` en ingresos y en `Debe` en egresos, recalcular al cambiar el flujo y evitar que el overlay quede activo cuando la validacion detiene el envio. En los reportes, desactivar `Filtros avanzados` limpia los valores ocultos antes de la siguiente consulta.
 - `25/07/2026`: se implementa validacion central de vigencia de suscripcion en ASP.NET Core. Las cuentas en prueba se bloquean al superar `FechaFinPrueba`; los planes pagados conservan acceso hasta `FechaFinGracia` o, en su defecto, hasta `FechaFinPlan + DiasGracia`; los estados `SUSPENDIDO` y `BAJA` se restringen inmediatamente. `SuperAdmin` queda exceptuado y, durante la restriccion, solo permanecen disponibles `Mi suscripcion`, `Ayuda`, renovacion/pago, seguridad de contrasena temporal y cierre de sesion. `usp_SEG_ObtenerContextoLoginUsuario` devuelve el contexto comercial necesario. `usp_SEG_SincronizarVencimientoSuscripcionCuentaAdministradora` persiste como suspendida e inactiva la suscripcion efectivamente vencida al evaluar el acceso y registra su movimiento historico. El panel SuperAdmin resume y pliega el detalle de cada cuenta; su consulta paginada clasifica tambien vencimientos aun no sincronizados. Al iniciar contrato se elige visualmente Emprendedor o Contador, conservando los codigos internos `BASICO` y `PRO`, y se aplican sus limites vigentes de 3 empresas/2 usuarios o 10 empresas/3 usuarios. La prueba se inicializa con 1 empresa/1 usuario. Los limites efectivos permanecen editables por cuenta desde SuperAdmin y `usp_SEG_RegistrarEmpresaCuentaAdministradora` y `usp_SEG_AsignarUsuarioCuentaAdministradora` los validan transaccionalmente antes de nuevas altas o reactivaciones. La caracteristica `CpeValidation` se resuelve centralmente sin tablas adicionales: solo `PRO`/Contador y `SuperAdmin` pueden ejecutar la validacion CPE; Prueba y Emprendedor conservan el resto del panel.
 
@@ -115,6 +127,11 @@ En produccion se usan variables de entorno con el mismo nombre logico y doble gu
 - `11/07/2026`: `Reportes > Analisis de cuentas` corrige su calculo multimoneda para que el filtro `USD` y las columnas dolarizadas del procedimiento `usp_CON_ReporteAnalisisCuentas` usen siempre `CON_AsientoDetalle.TotalImporteD` por linea, sin depender de la moneda fija configurada en la cuenta contable.
 - `11/07/2026`: se habilita `Voucher contable` como reporte HTML A4 inspirado en `rptVoucherContableA4`, consultando el asiento y su detalle desde `IAsientoRepository.ObtenerAsync`, con impresion directa, encabezado por empresa/RUC y acceso desde el formulario del asiento.
 - `10/07/2026`: inicia la base tecnica de seguridad por opcion para cuentas administradoras. Se agregan catalogos de modulos y roles (`SEG_ModuloSistema`, `SEG_RolCuenta`), permisos base por rol (`SEG_RolCuentaPermiso`), overrides por usuario a nivel cuenta y empresa (`SEG_UsuarioCuentaPermiso`, `SEG_UsuarioEmpresaPermiso`) y nuevos SP para siembra y contexto de login (`usp_SEG_SeedSeguridadCuentaPermisosBase`, `usp_SEG_ObtenerContextoLoginUsuario`).
+- `29/08/2026`: `General > Usuarios > Permisos` reorganiza las excepciones en las pestanas `Opciones generales` y `Modulo contable`, agrupa las opciones como arbol, permite buscar, aplicar cambios por grupo o columna y restaurar la herencia del rol. Los cambios de cada pestana se guardan como un unico lote transaccional mediante XML y los procedimientos `usp_SEG_GuardarPermisosUsuarioCuenta` y `usp_SEG_GuardarPermisosUsuarioEmpresa`.
+- `29/08/2026`: los flujos de inicio de sesion, registro y verificacion de contrasena temporal dejan de ofrecer al usuario la eleccion del captcha de respaldo. Turnstile permanece como mecanismo principal y, cuando el widget no carga, reporta error, agota el tiempo o el servidor rechaza su token, el sistema habilita automaticamente el captcha manual.
+- `29/08/2026`: el visor de contrasenas de `Usuarios` y `Cambiar contrasena temporal` queda centralizado en `site.js`, evitando que una misma pulsacion alterne el campo dos veces.
+- `29/08/2026`: `Empresas` queda siempre disponible como selector del contexto de trabajo para los usuarios autenticados y su permiso `Ver` no puede desmarcarse. Las acciones de crear y editar empresas se evalúan de manera independiente, se ocultan cuando están denegadas y son protegidas tambien al acceder directamente a sus rutas; el alta inicial permanece disponible solo como flujo de arranque de una cuenta sin empresas.
+- `29/08/2026`: los mantenimientos y registros contables aplican los permisos efectivos tambien a sus acciones: los botones y accesos de `Crear`, `Editar` y `Eliminar` se ocultan cuando la operacion esta denegada, mientras el servidor vuelve a validar cada ruta y distingue en los formularios compartidos si el guardado corresponde a un alta o a una modificacion. Se incorpora eliminacion desde los listados de Plan de cuentas, Origenes, Centros de costo, Cuentas corrientes y Personas; cada baja se ejecuta mediante un procedimiento por empresa y se rechaza con un mensaje funcional cuando el registro tiene movimientos, configuraciones o referencias relacionadas. Los registros de Asientos, Compras, Ventas, Caja y Bancos, Transferencias y Aplicaciones mantienen sus eliminaciones existentes, ahora visibles solo para usuarios con permiso `Eliminar` y conservando las validaciones propias de cada proceso.
 - `01/07/2026`: se habilita `Proceso > Diferencia en Cambio`, con origen configurable desde `Configuracion contable`, un proceso por periodo y generacion de asientos separados por cuenta en dolares.
 - `30/06/2026`: la importacion XML de compras (`usp_COM_ImportarCompraXml`) valida duplicados por `IdEmpresa + IdProveedor + TipoComprobante + Serie + Numero`. Cuando detecta un duplicado ahora informa tambien `IdCompra`, `FechaEmision` y `Estado` del comprobante existente para facilitar la identificacion de registros `EN REVISION` importados previamente en otro periodo visible.
 - `FRALSECONT_MigoApi:ExchangeDatePath`: path relativo para consultar tipo de cambio por fecha.
@@ -122,10 +139,10 @@ En produccion se usan variables de entorno con el mismo nombre logico y doble gu
 - `FRALSECONT_MigoApi:RucPath`: path relativo para consultar RUC en Migo.
 - `FRALSECONT_MigoApi:DniPath`: path relativo para consultar DNI en Migo.
 - `FRALSECONT_MigoApi:CpePath`: path relativo para validar comprobantes electronicos en Migo.
-- `FRALSECONT_RutasLocales:BaseDatosRootPath`: ruta raiz SQL del proyecto.
-- `FRALSECONT_RutasLocales:SqlTablasPath`: ruta de tablas.
-- `FRALSECONT_RutasLocales:SqlStoreProcedurePath`: ruta de procedimientos.
-- `FRALSECONT_RutasLocales:SqlScriptPath`: ruta de scripts incrementales.
+- `RutasLocales:BaseDatosRootPath`: ruta raiz SQL del proyecto.
+- `RutasLocales:SqlTablasPath`: ruta de tablas.
+- `RutasLocales:SqlStoreProcedurePath`: ruta de procedimientos.
+- `RutasLocales:SqlScriptPath`: ruta de scripts incrementales.
 
 Archivo ejemplo disponible:
 
@@ -162,7 +179,7 @@ Modelo actual:
 - Login local y login externo Google desde `Areas/Identity/Pages/Account/Login`.
 - Se usa Cloudflare Turnstile en registro y login cuando esta configurado.
 - La politica de clave exige longitud minima 6, digito, minuscula, mayuscula y caracter especial.
-- `IdentityStartupSeeder` crea roles y asigna superadmin segun `FRALSECONT_IdentitySeed:SuperAdminEmails`.
+- `IdentityStartupSeeder` crea roles y asigna superadmin segun `IdentitySeed:SuperAdminEmails`.
 
 ## 7. Modelo multiempresa
 
@@ -911,6 +928,7 @@ Seguridad funcional, empresas y suscripciones.
 ### ADM
 
 - `usp_ADM_CargarParametrosDefaultEmpresa`
+- `usp_ADM_EliminarPersona`: elimina la persona y sus clasificaciones de cliente/proveedor solamente cuando no existen referencias operativas que impidan la baja.
 - `usp_ADM_GuardarParametroEmpresa`
 - `usp_ADM_GuardarPersona`
 - `usp_ADM_ListarClientesActivosPorEmpresa`
@@ -934,15 +952,22 @@ Seguridad funcional, empresas y suscripciones.
 - `usp_CON_CargarDocumentosDefaultEmpresa`
 - `usp_CON_CargarImpuestosDefaultEmpresa`
 - `usp_CON_CargarOrigenesDefaultEmpresa`
-  Carga en una sola transaccion los origenes desde `CON_OrigenMaestro` y las configuraciones `PROVISION` desde `CON_ConfiguracionContabilizacionMaestro`, resolviendo el `IdOrigen` propio de la empresa.
+  Carga en una sola transaccion los origenes desde `CON_OrigenMaestro` y todas las configuraciones activas desde `CON_ConfiguracionContabilizacionMaestro`, resolviendo el `IdOrigen` propio de la empresa.
 - `usp_CON_CargarPlanCuentaDefaultEmpresa`
-  Carga el plan contable desde `CON_PlanCuentaMaestro`, inicializando `GeneraDiferenciaPorAnalisis = 0`, o, si recibe `IdEmpresaBase` con plan existente, replica la configuracion de `CON_PlanCuenta` de esa empresa incluyendo dicho indicador.
+  Carga el plan contable desde `CON_PlanCuentaMaestro`, inicializando `GeneraDiferenciaPorAnalisis = 0`, o, si recibe `IdEmpresaBase` con plan existente, replica la configuracion de `CON_PlanCuenta` de esa empresa incluyendo dicho indicador. Como `CON_PlanCuenta` no almacena una columna `Orden`, la copia desde otra empresa determina el orden de insercion por nivel y codigo contable; el campo `Orden` se conserva solamente en el maestro como criterio de la carga inicial.
 - `usp_CON_EliminarConfiguracionContabilizacion`
 - `usp_CON_EliminarAjusteCuentaProceso`
 - `usp_CON_EliminarAperturaProceso`
 - `usp_CON_EliminarAsiento`
 - `usp_CON_EliminarCierreProceso`
 - `usp_CON_EliminarCuentaDestinoRegla`
+- `usp_CON_EliminarBancoConfiguracionEmpresa`: elimina una cuenta corriente de la empresa solo cuando no tiene movimientos u otras referencias.
+- `usp_CON_EliminarCentroCostoConfiguracionEmpresa`: elimina la configuracion del centro de costo de la empresa después de comprobar que no haya sido usada en asientos ni movimientos bancarios.
+- `usp_CON_EliminarCuentaDestinoMaestro`: elimina transaccionalmente la regla maestra y sus detalles.
+- `usp_CON_EliminarOrigenMaestro`: elimina un origen maestro solo cuando no esta referenciado por configuraciones maestras.
+- `usp_CON_EliminarOrigenPorEmpresa`: elimina un origen de la empresa solo cuando no tiene asientos ni configuraciones relacionadas.
+- `usp_CON_EliminarPlanCuentaMaestro`: elimina una cuenta maestra solo cuando no tiene hijos ni referencias maestras.
+- `usp_CON_EliminarPlanCuentaPorEmpresa`: elimina una cuenta contable de la empresa solo cuando no tiene cuentas hijas ni referencias contables u operativas.
 - `usp_CON_EliminarDiferenciaCambioProceso`
 - `usp_CON_GenerarOrigenesBaseEmpresa`
 - `usp_CON_GenerarAjusteCancelacionDiferenciaCambio`
@@ -954,6 +979,11 @@ Seguridad funcional, empresas y suscripciones.
 - `usp_CON_GuardarCentroCostoConfiguracionEmpresa`
 - `usp_CON_GuardarConfiguracionContabilizacion`
 - `usp_CON_GuardarCuentaDestinoRegla`
+- `usp_CON_GuardarAsignacionMaestro`: actualiza exclusivamente codigos contables de parametros, impuestos y documentos maestros.
+- `usp_CON_GuardarCuentaDestinoMaestro`: crea o actualiza una regla maestra y sus tramos mediante codigos contables.
+- `usp_CON_GuardarOrigenConfiguracionContabilizacionMaestro`: actualiza exclusivamente el origen de una configuracion maestra.
+- `usp_CON_GuardarOrigenMaestro`: crea o actualiza origenes maestros con codigo inmutable.
+- `usp_CON_GuardarPlanCuentaMaestro`: crea o actualiza cuentas maestras con validacion de jerarquia y codigo inmutable.
 - `usp_CON_GuardarDocumentoConfiguracionEmpresa`
 - `usp_CON_GuardarImpuestoConfiguracionEmpresa`
 - `usp_CON_GuardarOrigenPorEmpresa`
@@ -965,6 +995,11 @@ Seguridad funcional, empresas y suscripciones.
 - `usp_CON_ListarCentroCostoConfiguracionEmpresa`
 - `usp_CON_ListarConfiguracionContabilizacionPorEmpresa`
 - `usp_CON_ListarCuentasDestinoReglaPorEmpresa`
+- `usp_CON_ListarAsignacionesMaestro`: devuelve todos los parametros con `TipoParametro = 'CONTABLE'`, ademas de impuestos y documentos configurables desde SuperAdmin.
+- `usp_CON_ListarConfiguracionContabilizacionMaestro`: lista paginada de configuraciones maestras y su origen.
+- `usp_CON_ListarCuentasDestinoMaestro`: lista paginada de reglas maestras con total activo de porcentajes.
+- `usp_CON_ListarOrigenesMaestro`: lista paginada de origenes maestros.
+- `usp_CON_ListarPlanCuentaMaestro`: lista y busca cuentas maestras, incluyendo la ayuda de seleccion.
 - `usp_CON_ListarOrigenesActivos`
 - `usp_CON_ListarPlanCuentaPorEmpresa`
 - `usp_CON_ListarTipoCambioPorCuentaAdministradora`
@@ -973,11 +1008,13 @@ Seguridad funcional, empresas y suscripciones.
 - `usp_CON_ObtenerConfiguracionContabilizacion`
 - `usp_CON_ObtenerConfiguracionContableEmpresa`
 - `usp_CON_ObtenerCuentaDestinoRegla`
+- `usp_CON_ObtenerCuentaDestinoMaestro`: devuelve cabecera y tramos de una regla maestra.
 - `usp_CON_ObtenerDiferenciaCambioProceso`
 - `usp_CON_ObtenerTipoCambioPorFecha`
 - `usp_CON_ObtenerTipoCambio`
 - `usp_CON_ObtenerSiguienteNumeroAsiento`
 - `usp_CON_GuardarTipoCambio`
+- `usp_CON_ValidarMaestrosContables`: reporta cuentas, origenes y porcentajes maestros con referencias invalidas antes de una carga inicial; la revision de parametros abarca todos los registros con `TipoParametro = 'CONTABLE'`.
 
 ### COM
 
@@ -1120,8 +1157,10 @@ Objetos nuevos:
 - `usp_SEG_ListarEmpresasUsuarioCuentaAdministradora`
 - `usp_SEG_ListarPermisosUsuarioCuenta`
 - `usp_SEG_GuardarUsuarioCuentaPermiso`
+- `usp_SEG_GuardarPermisosUsuarioCuenta`
 - `usp_SEG_ListarPermisosUsuarioEmpresa`
 - `usp_SEG_GuardarUsuarioEmpresaPermiso`
+- `usp_SEG_GuardarPermisosUsuarioEmpresa`
 - `usp_SEG_SeedSeguridadCuentaPermisosBase`
 - `usp_SEG_ObtenerContextoLoginUsuario`
 
@@ -1130,13 +1169,11 @@ Alcance inicial:
 - Catalogo base de modulos para `General`, `Mantenimiento`, `Registro`, `Proceso` y `Reportes`.
 - Roles iniciales: `ADMINISTRADORCUENTA`, `SUPERVISOR`, `OPERADOR`, `CONSULTA`.
 - Resolucion de contexto de login compatible con `SuperAdmin`, usuarios con una empresa, multiples empresas o solo acceso de cuenta.
+- La pantalla `General > Usuarios > Permisos` usa tres estados por accion: heredado del rol, permitido expresamente y denegado expresamente. El guardado por lote valida el alcance de cada modulo y se confirma en una sola transaccion.
 - El alta inicial de una cuenta administradora deja al usuario fundador con rol `ADMINISTRADORCUENTA`; el script incremental del `10/07/2026` corrige cuentas creadas previamente con el codigo legacy `ADMINISTRADOR`.
 
 Pendientes siguientes:
 
-- Pantalla `General > Usuarios`.
-- Pantalla `General > Configuracion`.
-- Resolucion de permisos efectivos por modulo dentro de MVC.
 - Tokenizacion o referencia de medio de pago recurrente si la pasarela elegida lo permite.
 - `004_Reestructurar_Correlativo_Asiento_Por_Periodo.sql`: correlativo por empresa/origen/periodo.
 - `005_Seed_ADM_TipoComprobante.sql`: comprobantes SUNAT.
@@ -1272,8 +1309,10 @@ Pendientes siguientes:
 - La configuracion inicial se carga unicamente desde los botones de mantenimiento: Plan de cuentas ejecuta `usp_CON_CargarConfiguracionDefaultEmpresa` y Origenes ejecuta `usp_CON_CargarOrigenesDefaultEmpresa`.
 - Plan de cuentas, origenes y cuentas destino pueden cargarse por defecto desde tablas maestras.
 - El boton de carga default del plan inicializa plan, parametros, cuentas destino, impuestos y documentos en una sola transaccion; cualquier codigo maestro inexistente revierte toda la operacion.
-- El boton de carga default de origenes inicializa `CON_Origen` y las configuraciones `PROVISION` de `CON_ConfiguracionContabilizacion`; cualquier `CodigoOrigen` maestro inexistente revierte toda la operacion.
+- El boton de carga default de origenes inicializa `CON_Origen` y todas las configuraciones activas de `CON_ConfiguracionContabilizacionMaestro`; cualquier `CodigoOrigen` maestro inexistente revierte toda la operacion.
 - Los maestros guardan codigos contables y nunca identificadores de `CON_PlanCuenta`; las tablas por empresa resuelven esos codigos y almacenan los identificadores de su propio plan. En parametros, `ValorParametro` conserva el codigo tanto en maestro como por empresa cuando representa una cuenta.
+- El mantenimiento de maestros solo esta disponible para `SuperAdmin`. El plan de cuentas, las cuentas destino y los origenes permiten alta, edicion y baja controlada; parametros, impuestos, documentos y configuracion de contabilizacion exponen unicamente los campos de asignacion contable autorizados.
+- Cambiar un maestro no propaga datos a empresas existentes. La configuracion modificada se toma al ejecutar posteriormente `Cargar plan de cuentas por defecto` o `Cargar origenes por defecto` en una empresa aun no inicializada.
 
 ## 15. Reglas de UI actuales
 
@@ -1539,4 +1578,16 @@ Objetos SQL:
 -- Author:        FRANCO LARA / Codex
 -- Create date:   26/08/2026
 -- Description:   Alinea configuracion y experiencia operativa; agrega ayuda emergente compartida para rangos contables de niveles 1 al 5 en Analisis, Libro Diario, Libro Mayor y Balance.
+-- =============================================
+
+-- =============================================
+-- Author:        FRANCO LARA / Codex
+-- Create date:   27/08/2026
+-- Description:   Documenta el mantenimiento SuperAdmin de maestros contables, su navegacion lateral, paginacion numerada, selector contable de 40 filas con footer fijo, operaciones permitidas, validaciones y procedimientos ADO.NET asociados.
+-- =============================================
+
+-- =============================================
+-- Author:        FRANCO LARA / Codex
+-- Create date:   31/08/2026
+-- Description:   Documenta el filtro general por TipoParametro CONTABLE para asignaciones maestras y el flujo Brevo de confirmacion, recuperacion, bienvenida y proteccion persistente de tokens de cuenta.
 -- =============================================

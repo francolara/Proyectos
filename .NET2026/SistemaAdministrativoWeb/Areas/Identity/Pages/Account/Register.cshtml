@@ -1,5 +1,6 @@
 @page
 @model SistemaAdministrativoWeb.Areas.Identity.Pages.Account.RegisterModel
+@using SistemaAdministrativoWeb.Infrastructure.Assets
 @inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 @* Firma: FRANCO LARA - 09/07/2026 | Agrega control visual para mostrar u ocultar la contrasena y confirmar contrasena en el registro de usuarios. *@
 @* Firma: FRANCO LARA - 10/07/2026 | Muestra el plan comercial recibido desde la landing publica, conserva el parametro de registro durante el alta del usuario y mejora la presentacion del formulario evitando autocompletar correo y contrasena en la apertura inicial. *@
@@ -7,13 +8,12 @@
 @* Firma: FRANCO LARA - 14/07/2026 | Retira la activacion manual del captcha de respaldo en registro para que solo se muestre cuando Turnstile no este disponible o falle durante la validacion. *@
 @* Firma: FRANCO LARA - 25/07/2026 | Corrige Volver al inicio para salir explicitamente del area Identity y centra sin recortes el banner de registro desde Cloudflare con proporcion 4:5, conservando el contenido anterior como respaldo. *@
 @* Firma: FRANCO LARA - 26/08/2026 | Lee la ubicacion publica de recursos desde la seccion local y variable de entorno identificada con el prefijo FRALSECONT_. *@
+@* Firma: FRANCO LARA - 29/08/2026 | Activa automaticamente el captcha de respaldo cuando Turnstile reporta error o tiempo agotado. *@
+@* Firma: FRANCO LARA - 31/08/2026 | Hace visibles los errores, muestra el procesamiento y versiona los recursos remotos para evitar cache obsoleta. *@
 @{
     ViewData["Title"] = "Crear cuenta";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var publicAssetBaseUrl = Configuration["FRALSECONT_SedeImagenStorage:PublicBaseUrl"]?.Trim().TrimEnd('/');
-    var registerBannerUrl = string.IsNullOrWhiteSpace(publicAssetBaseUrl)
-        ? string.Empty
-        : $"{publicAssetBaseUrl}/Banner/Registro.webp";
+    var registerBannerUrl = PublicAssetUrlBuilder.Build(Configuration, "Banner/Registro.webp");
 }
 
 <section class="auth-shell">
@@ -48,7 +48,14 @@
                 </div>
             }
 
-            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div asp-validation-summary="All"
+                     class="alert alert-danger mb-3"
+                     id="registerValidationSummary"
+                     role="alert"
+                     tabindex="-1"></div>
+            }
 
             <form method="post" id="registerForm" autocomplete="off" data-clear-sensitive-fields="@Model.LimpiarCamposIniciales.ToString().ToLowerInvariant()">
                 <input type="hidden" asp-for="ReturnUrl" />
@@ -105,7 +112,10 @@
                 @if (!Model.MostrarCaptchaManual && !string.IsNullOrWhiteSpace(Model.TurnstileSiteKey))
                 {
                     <div class="mb-3">
-                        <div class="cf-turnstile" data-sitekey="@Model.TurnstileSiteKey"></div>
+                        <div class="cf-turnstile"
+                             data-sitekey="@Model.TurnstileSiteKey"
+                             data-error-callback="registerTurnstileFallback"
+                             data-timeout-callback="registerTurnstileFallback"></div>
                     </div>
                 }
 
@@ -120,7 +130,12 @@
                     </div>
                 }
 
-                <button type="submit" asp-page-handler="Usuario" class="w-100 btn btn-primary auth-cta">Registrar usuario</button>
+                <button type="submit"
+                        asp-page-handler="Usuario"
+                        class="w-100 btn btn-primary auth-cta"
+                        id="registerSubmitButton"
+                        data-default-text="Registrar usuario"
+                        data-submitting-text="Creando cuenta...">Registrar usuario</button>
 
                 @if (Model.ExternalLogins.Count > 0)
                 {
@@ -151,9 +166,17 @@
 </section>
 
 @section Scripts {
+    <script>
+        window.registerTurnstileFallback = () => {
+            const fallback = document.getElementById("UsarCaptchaManualRegister");
+            if (fallback) {
+                fallback.value = "true";
+            }
+        };
+    </script>
     @if (!Model.MostrarCaptchaManual && !string.IsNullOrWhiteSpace(Model.TurnstileSiteKey))
     {
-        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer onerror="window.registerTurnstileFallback?.()"></script>
     }
     <script>
         (() => {
@@ -181,6 +204,30 @@
             if (hidden) {
                 hidden.value = "false";
             }
+
+            const validationSummary = document.getElementById("registerValidationSummary");
+            if (validationSummary) {
+                validationSummary.focus({ preventScroll: true });
+                validationSummary.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+
+            const form = document.getElementById("registerForm");
+            const submitButton = document.getElementById("registerSubmitButton");
+            form?.addEventListener("submit", (event) => {
+                if (event.submitter !== submitButton || !form.checkValidity()) {
+                    return;
+                }
+
+                if (submitButton.dataset.submitting === "true") {
+                    event.preventDefault();
+                    return;
+                }
+
+                submitButton.dataset.submitting = "true";
+                submitButton.setAttribute("aria-disabled", "true");
+                submitButton.classList.add("disabled");
+                submitButton.textContent = submitButton.dataset.submittingText ?? "Creando cuenta...";
+            });
         })();
     </script>
 }

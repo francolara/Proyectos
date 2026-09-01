@@ -66,6 +66,30 @@ public class PersonaController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [ModulePermission("PERSONAS", ModulePermissionOperation.Delete)]
+    public async Task<IActionResult> Eliminar(int idPersona, string? textoBusqueda = null, string? tipoPersona = null, bool soloClientes = false, bool soloProveedores = false, int pagina = 1, CancellationToken cancellationToken = default)
+    {
+        if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
+        {
+            return RedirectToAction("Index", "EmpresaContexto");
+        }
+
+        try
+        {
+            await personaRepository.EliminarAsync(currentCompanyAccessor.EmpresaId.Value, idPersona, cancellationToken);
+            TempData["PersonaOk"] = "Persona eliminada correctamente.";
+        }
+        catch (Exception ex)
+        {
+            TempData["PersonaError"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Index), new { textoBusqueda, tipoPersona, soloClientes, soloProveedores, pagina });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [ModuleSavePermission("PERSONAS", nameof(PersonaFormViewModel.IdPersona))]
     public async Task<IActionResult> Guardar(PersonaFormViewModel formulario, CancellationToken cancellationToken)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)

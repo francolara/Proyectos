@@ -389,6 +389,7 @@ public class CompraController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [ModuleSavePermission("COMPRAS", nameof(CompraFormViewModel.IdCompra))]
     public async Task<IActionResult> Guardar(CompraFormViewModel formulario, string? periodo = null, CancellationToken cancellationToken = default)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)

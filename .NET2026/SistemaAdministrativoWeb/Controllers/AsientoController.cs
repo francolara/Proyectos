@@ -132,6 +132,7 @@ public class AsientoController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [ModuleSavePermission("ASIENTOS", nameof(AsientoFormViewModel.IdAsiento))]
     public async Task<IActionResult> Guardar(AsientoFormViewModel formulario, string? periodo = null, CancellationToken cancellationToken = default)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)

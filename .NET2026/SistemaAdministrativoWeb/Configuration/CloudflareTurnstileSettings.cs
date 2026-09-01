@@ -4,7 +4,7 @@ namespace SistemaAdministrativoWeb.Configuration;
 
 public sealed class CloudflareTurnstileSettings
 {
-    public const string SectionName = "FRALSECONT_CloudflareTurnstile";
+    public const string SectionName = "CloudflareTurnstile";
 
     public string SiteKey { get; set; } = string.Empty;
     public string SecretKey { get; set; } = string.Empty;

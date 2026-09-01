@@ -231,6 +231,20 @@ public sealed class PersonaRepository(IDbConnectionFactory connectionFactory) : 
         return MapearDetalle(reader);
     }
 
+    public async Task EliminarAsync(int idEmpresa, int idPersona, CancellationToken cancellationToken = default)
+    {
+        await using var connection = connectionFactory.CreateConnection();
+        await using var command = new SqlCommand("dbo.usp_ADM_EliminarPersona", connection)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        command.Parameters.AddWithValue("@IdEmpresa", idEmpresa);
+        command.Parameters.AddWithValue("@IdPersona", idPersona);
+        await connection.OpenAsync(cancellationToken);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
     private static PersonaDetalleDto MapearDetalle(SqlDataReader reader)
     {
         return new PersonaDetalleDto

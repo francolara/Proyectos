@@ -1,4 +1,4 @@
-USE [dbsportcenter_20260613]
+﻿
 GO
 
 -- Firma: FRANCO LARA - 20/07/2026 | Guarda el plan comercial publico y aplica sus limites internos al aprobar altas de complejos deportivos.

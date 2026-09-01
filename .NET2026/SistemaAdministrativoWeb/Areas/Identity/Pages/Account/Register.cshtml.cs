@@ -1,12 +1,15 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
 using SistemaAdministrativoWeb.Configuration;
 using SistemaAdministrativoWeb.Infrastructure.Empresas;
+using SistemaAdministrativoWeb.Infrastructure.Email;
 using SistemaAdministrativoWeb.Infrastructure.Security;
 using SistemaAdministrativoWeb.Infrastructure.Suscripciones;
 
@@ -18,11 +21,13 @@ public class RegisterModel(
     SignInManager<IdentityUser> signInManager,
     ICurrentCompanyAccessor currentCompanyAccessor,
     ICuentaAdministradoraRepository cuentaAdministradoraRepository,
+    IAccountEmailService accountEmailService,
     ITurnstileValidationService turnstileValidationService,
     IOptions<CloudflareTurnstileSettings> turnstileOptions,
     IOptions<IdentityBehaviorSettings> identityBehaviorOptions,
     ILogger<RegisterModel> logger) : PageModel
 {
+    // Firma: FRANCO LARA - 31/08/2026 | Integra correos Brevo, permite registro sin plan, recupera fallos de Turnstile y diferencia avisos exitosos de fallos de entrega.
     [BindProperty]
     public UsuarioRegistroInput Usuario { get; set; } = new();
 
@@ -33,7 +38,7 @@ public class RegisterModel(
     public bool UsarCaptchaManual { get; set; }
 
     [BindProperty(SupportsGet = true)]
-    public string Plan { get; set; } = string.Empty;
+    public string? Plan { get; set; }
 
     public string ReturnUrl { get; set; } = string.Empty;
     public IList<AuthenticationScheme> ExternalLogins { get; set; } = new List<AuthenticationScheme>();
@@ -87,6 +92,7 @@ public class RegisterModel(
 
         if (!TryValidateModel(Usuario, nameof(Usuario)))
         {
+            ModelState.AddModelError(string.Empty, "Revisa los datos marcados antes de crear la cuenta.");
             return Page();
         }
 
@@ -121,8 +127,31 @@ public class RegisterModel(
 
         logger.LogInformation("Usuario simple registrado.");
         currentCompanyAccessor.LimpiarEmpresa();
-        await signInManager.SignInAsync(user, isPersistent: false);
-        return LocalRedirect(ReturnUrl);
+
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            await signInManager.SignOutAsync();
+            logger.LogInformation("Se cerro la sesion anterior para continuar con la confirmacion de la nueva cuenta.");
+        }
+
+        if (identityBehaviorOptions.Value.AutoConfirmEmail)
+        {
+            var welcomeSent = await TrySendWelcomeEmailAsync(user, Usuario.NombreCompleto);
+            TempData["AccountSuccessMessage"] = welcomeSent
+                ? "Usuario creado satisfactoriamente. Te enviamos un correo de bienvenida."
+                : "Usuario creado satisfactoriamente. Ya puedes iniciar sesion.";
+            TempData["AccountMessageType"] = "success";
+        }
+        else
+        {
+            var confirmationSent = await TrySendConfirmationEmailAsync(user, Usuario.NombreCompleto);
+            TempData["AccountSuccessMessage"] = confirmationSent
+                ? "Usuario creado satisfactoriamente. Revisa tu correo para confirmar la cuenta."
+                : "Usuario creado, pero no pudimos enviar la confirmacion. Usa la opcion de reenvio en el login.";
+            TempData["AccountMessageType"] = confirmationSent ? "success" : "warning";
+        }
+
+        return RedirectToPage("./Login", new { returnUrl = ReturnUrl });
     }
 
     public IActionResult OnPostExternalLogin(string provider, string? returnUrl = null, string? flow = null)
@@ -155,6 +184,82 @@ public class RegisterModel(
         }
 
         return new string(telefono.Where(x => char.IsDigit(x) || x == '+').ToArray());
+    }
+
+    private async Task<bool> TrySendConfirmationEmailAsync(IdentityUser user, string? recipientName)
+    {
+        if (!accountEmailService.IsEnabled || string.IsNullOrWhiteSpace(user.Email))
+        {
+            logger.LogWarning("No se envio confirmacion porque la configuracion de correo no esta habilitada.");
+            return false;
+        }
+
+        var code = await userManager.GenerateEmailConfirmationTokenAsync(user);
+        var encodedCode = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+        var callbackUrl = Url.Page(
+            "/Account/ConfirmEmail",
+            pageHandler: null,
+            values: new { area = "Identity", userId = user.Id, code = encodedCode, returnUrl = ReturnUrl },
+            protocol: Request.Scheme);
+
+        if (string.IsNullOrWhiteSpace(callbackUrl))
+        {
+            logger.LogWarning("No se pudo construir la URL de confirmacion para {UserId}.", user.Id);
+            return false;
+        }
+
+        try
+        {
+            await accountEmailService.SendConfirmationEmailAsync(
+                user.Email,
+                recipientName,
+                callbackUrl,
+                HttpContext.RequestAborted);
+            return true;
+        }
+        catch (EmailDeliveryException ex)
+        {
+            logger.LogWarning(ex, "No se pudo enviar correo de confirmacion para {UserId}.", user.Id);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error no controlado al enviar confirmacion para {UserId}.", user.Id);
+            return false;
+        }
+    }
+
+    private async Task<bool> TrySendWelcomeEmailAsync(IdentityUser user, string? recipientName)
+    {
+        if (!accountEmailService.IsEnabled || string.IsNullOrWhiteSpace(user.Email))
+        {
+            return false;
+        }
+
+        var loginUrl = Url.Page(
+            "/Account/Login",
+            pageHandler: null,
+            values: new { area = "Identity", returnUrl = ReturnUrl },
+            protocol: Request.Scheme);
+        if (string.IsNullOrWhiteSpace(loginUrl))
+        {
+            return false;
+        }
+
+        try
+        {
+            await accountEmailService.SendWelcomeEmailAsync(
+                user.Email,
+                recipientName,
+                loginUrl,
+                HttpContext.RequestAborted);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "No se pudo enviar bienvenida para {UserId}.", user.Id);
+            return false;
+        }
     }
 
     public string ObtenerNombrePlanSeleccionado()
@@ -216,7 +321,26 @@ public class RegisterModel(
         }
 
         var remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString();
-        var resultado = await turnstileValidationService.VerifyAsync(token, remoteIp, HttpContext.RequestAborted);
+        TurnstileVerifyResponse resultado;
+        try
+        {
+            resultado = await turnstileValidationService.VerifyAsync(token, remoteIp, HttpContext.RequestAborted);
+        }
+        catch (OperationCanceledException) when (HttpContext.RequestAborted.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "No se pudo conectar con Turnstile durante el registro.");
+            MostrarCaptchaManual = true;
+            CaptchaManualCodigo = ManualCaptchaChallengeStore.Refresh(HttpContext, RegisterCaptchaScope);
+            ModelState.AddModelError(
+                string.Empty,
+                "La verificacion automatica no esta disponible. Usa el captcha manual de respaldo.");
+            return false;
+        }
+
         if (resultado.Success)
         {
             ManualCaptchaChallengeStore.Clear(HttpContext, RegisterCaptchaScope);

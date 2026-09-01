@@ -127,6 +127,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ29tcHJvYmFudGVzXEVkaXQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaControlEspaciosDeportivosWeb/Views/Comprobantes/ImprimirInterno.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ29tcHJvYmFudGVzXEltcHJpbWlySW50ZXJuby5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaControlEspaciosDeportivosWeb/Views/Comprobantes/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ29tcHJvYmFudGVzXEluZGV4LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
@@ -187,6 +191,18 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxSZXNlcnZhci5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaControlEspaciosDeportivosWeb/Views/Legal/Cancelaciones.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTGVnYWxcQ2FuY2VsYWNpb25lcy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaControlEspaciosDeportivosWeb/Views/Legal/Privacidad.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTGVnYWxcUHJpdmFjaWRhZC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaControlEspaciosDeportivosWeb/Views/Legal/Terminos.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTGVnYWxcVGVybWlub3MuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaControlEspaciosDeportivosWeb/Views/Maestros/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFlc3Ryb3NcSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
@@ -213,6 +229,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaControlEspaciosDeportivosWeb/Views/Pagos/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGFnb3NcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaControlEspaciosDeportivosWeb/Views/Panel/Imprimir.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGFuZWxcSW1wcmltaXIuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaControlEspaciosDeportivosWeb/Views/Panel/Index.cshtml]
@@ -247,6 +267,22 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGxhdGFmb3JtYVxSZWZlcmVuY2lhbGVzRXh0ZXJub3MuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaControlEspaciosDeportivosWeb/Views/Plataforma/ReporteDashboard.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGxhdGFmb3JtYVxSZXBvcnRlRGFzaGJvYXJkLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaControlEspaciosDeportivosWeb/Views/Plataforma/ReporteNegocio.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGxhdGFmb3JtYVxSZXBvcnRlTmVnb2Npby5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaControlEspaciosDeportivosWeb/Views/Plataforma/ReporteNegocios.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGxhdGFmb3JtYVxSZXBvcnRlTmVnb2Npb3MuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaControlEspaciosDeportivosWeb/Views/Plataforma/_ReportePrintStyles.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGxhdGFmb3JtYVxfUmVwb3J0ZVByaW50U3R5bGVzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaControlEspaciosDeportivosWeb/Views/Promociones/Create.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJvbW9jaW9uZXNcQ3JlYXRlLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
@@ -257,6 +293,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaControlEspaciosDeportivosWeb/Views/Promociones/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJvbW9jaW9uZXNcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaControlEspaciosDeportivosWeb/Views/Reportes/Imprimir.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0ZXNcSW1wcmltaXIuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaControlEspaciosDeportivosWeb/Views/Reportes/Index.cshtml]
@@ -293,6 +333,14 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaControlEspaciosDeportivosWeb/Views/Shared/ModuloSinAcceso.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXE1vZHVsb1NpbkFjY2Vzby5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaControlEspaciosDeportivosWeb/Views/Shared/_LegalContactBlock.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9MZWdhbENvbnRhY3RCbG9jay5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaControlEspaciosDeportivosWeb/Views/Shared/_LegalNavigation.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9MZWdhbE5hdmlnYXRpb24uY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/Franco Lara/Desktop/GitHub Proyectos/Proyectos/.NET2026/SistemaControlEspaciosDeportivosWeb/Views/Shared/_LoginPartial.cshtml]

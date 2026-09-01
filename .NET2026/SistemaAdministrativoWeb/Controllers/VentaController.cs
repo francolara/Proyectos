@@ -278,6 +278,7 @@ public class VentaController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [ModuleSavePermission("VENTAS", nameof(VentaFormViewModel.IdVenta))]
     public async Task<IActionResult> Guardar(VentaFormViewModel formulario, string? periodo = null, CancellationToken cancellationToken = default)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)

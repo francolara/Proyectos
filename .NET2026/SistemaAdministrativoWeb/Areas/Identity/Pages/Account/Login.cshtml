@@ -1,18 +1,18 @@
 @page
 @model SistemaAdministrativoWeb.Areas.Identity.Pages.Account.LoginModel
+@using SistemaAdministrativoWeb.Infrastructure.Assets
 @inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 @* Firma: FRANCO LARA - 13/07/2026 | Agrega respaldo de captcha manual en login y prepara la derivacion al flujo de verificacion y cambio obligatorio para usuarios con contrasena temporal. *@
 @* Firma: FRANCO LARA - 14/07/2026 | Centra los enlaces inferiores del login y corrige Volver al inicio para redirigir al Home fuera del area Identity. *@
 @* Firma: FRANCO LARA - 22/07/2026 | Agrega el control accesible para mostrar u ocultar la contrasena durante el inicio de sesion. *@
 @* Firma: FRANCO LARA - 25/07/2026 | Muestra y centra sin recortes el banner de inicio de sesion desde el bucket Cloudflare configurado, siguiendo la proporcion 4:5 del proyecto deportivo y conservando el contenido anterior como respaldo. *@
 @* Firma: FRANCO LARA - 26/08/2026 | Lee la ubicacion publica de recursos desde la seccion local y variable de entorno identificada con el prefijo FRALSECONT_. *@
+@* Firma: FRANCO LARA - 29/08/2026 | Retira la eleccion manual del captcha y prepara automaticamente el respaldo cuando Turnstile reporta error o tiempo agotado. *@
+@* Firma: FRANCO LARA - 31/08/2026 | Agrega recuperacion y reenvio, diferencia fallos de correo y usa version global para evitar cache obsoleta en recursos remotos. *@
 @{
     ViewData["Title"] = "Iniciar sesion";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var publicAssetBaseUrl = Configuration["FRALSECONT_SedeImagenStorage:PublicBaseUrl"]?.Trim().TrimEnd('/');
-    var loginBannerUrl = string.IsNullOrWhiteSpace(publicAssetBaseUrl)
-        ? string.Empty
-        : $"{publicAssetBaseUrl}/Banner/InicioSesion.webp";
+    var loginBannerUrl = PublicAssetUrlBuilder.Build(Configuration, "Banner/InicioSesion.webp");
 }
 
 <section class="auth-shell">
@@ -42,6 +42,13 @@
             <form id="account" method="post">
                 <input asp-for="UsarCaptchaManual" type="hidden" id="UsarCaptchaManualLogin" />
                 <input type="hidden" asp-for="ReturnUrl" />
+                @if (!string.IsNullOrWhiteSpace(Model.AccountSuccessMessage))
+                {
+                    var accountAlertClass = string.Equals(Model.AccountMessageType, "warning", StringComparison.OrdinalIgnoreCase)
+                        ? "alert-warning"
+                        : "alert-success";
+                    <div class="alert @accountAlertClass mb-3" role="alert">@Model.AccountSuccessMessage</div>
+                }
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
                 <div class="mb-3">
@@ -64,17 +71,25 @@
                     </div>
                     <span asp-validation-for="Input.Password" class="text-danger"></span>
                 </div>
-                <div class="form-check mb-3">
-                    <input asp-for="Input.RememberMe" class="form-check-input" />
-                    <label asp-for="Input.RememberMe" class="form-check-label">Recordarme</label>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="form-check mb-0">
+                        <input asp-for="Input.RememberMe" class="form-check-input" />
+                        <label asp-for="Input.RememberMe" class="form-check-label">Recordarme</label>
+                    </div>
+                    @if (Model.EmailsEnabled)
+                    {
+                        <a asp-page="./ForgotPassword">¿Olvidaste tu contrasena?</a>
+                    }
                 </div>
 
                 @if (Model.MostrarTurnstile && !Model.MostrarCaptchaManual)
                 {
                     <div class="mb-3">
-                        <div class="cf-turnstile" data-sitekey="@Model.TurnstileSiteKey"></div>
+                        <div class="cf-turnstile"
+                             data-sitekey="@Model.TurnstileSiteKey"
+                             data-error-callback="loginTurnstileFallback"
+                             data-timeout-callback="loginTurnstileFallback"></div>
                     </div>
-                    <button type="button" class="btn btn-outline-secondary btn-sm mb-3" data-manual-captcha-trigger="UsarCaptchaManualLogin">Usar captcha manual de respaldo</button>
                 }
 
                 @if (Model.MostrarCaptchaManual)
@@ -89,6 +104,15 @@
                 }
 
                 <button id="login-submit" type="submit" class="w-100 btn btn-primary auth-cta">Ingresar al sistema</button>
+                @if (Model.RequiresEmailConfirmation && Model.EmailsEnabled)
+                {
+                    <button type="submit"
+                            asp-page-handler="ResendConfirmation"
+                            asp-route-returnUrl="@Model.ReturnUrl"
+                            class="w-100 btn btn-outline-primary auth-cta mt-2">
+                        Reenviar confirmacion
+                    </button>
+                }
 
                 @if (Model.ExternalLogins.Count > 0)
                 {
@@ -120,25 +144,17 @@
 </section>
 
 @section Scripts {
+    <script>
+        window.loginTurnstileFallback = () => {
+            const fallback = document.getElementById("UsarCaptchaManualLogin");
+            if (fallback) {
+                fallback.value = "true";
+            }
+        };
+    </script>
     @if (Model.MostrarTurnstile && !Model.MostrarCaptchaManual)
     {
-        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer onerror="window.loginTurnstileFallback?.()"></script>
     }
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        (() => {
-            document.querySelectorAll("[data-manual-captcha-trigger]").forEach((button) => {
-                button.addEventListener("click", () => {
-                    const targetId = button.getAttribute("data-manual-captcha-trigger");
-                    const hidden = targetId ? document.getElementById(targetId) : null;
-                    if (!hidden) {
-                        return;
-                    }
-
-                    hidden.value = "true";
-                    button.closest("form")?.submit();
-                });
-            });
-        })();
-    </script>
 }

@@ -1,11 +1,15 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.OrigenIndexViewModel
 @* Firma: FRANCO LARA - 25/08/2026 | Informa que la carga por defecto inicializa origenes y configuracion contable por empresa. *@
+@* Firma: FRANCO LARA - 29/08/2026 | Aplica permisos efectivos a registrar, editar y eliminar origenes desde el listado. *@
 
 @{
     ViewData["Title"] = "Origenes contables";
     ViewData["AdminShell"] = true;
     var paginaInicio = Math.Max(1, Model.Paginacion.PaginaActual - 2);
     var paginaFin = Math.Min(Model.Paginacion.TotalPaginas, Model.Paginacion.PaginaActual + 2);
+    var puedeCrear = await ModulePermissions.CanAccessModuleAsync(User, "ORIGENES", ModulePermissionOperation.Create);
+    var puedeEditar = await ModulePermissions.CanAccessModuleAsync(User, "ORIGENES", ModulePermissionOperation.Edit);
+    var puedeEliminar = await ModulePermissions.CanAccessModuleAsync(User, "ORIGENES", ModulePermissionOperation.Delete);
 }
 
 <section class="dashboard-shell">
@@ -35,7 +39,10 @@
                 <p>Consulta, filtra y abre la edicion del subdiario directamente desde la grilla.</p>
             </div>
             <div class="workspace-row-actions">
-                <a asp-action="Registrar" class="btn btn-light btn-sm">Registrar origen</a>
+                @if (puedeCrear)
+                {
+                    <a asp-action="Registrar" class="btn btn-light btn-sm">Registrar origen</a>
+                }
             </div>
         </div>
         <div class="workspace-window-body">
@@ -60,7 +67,7 @@
                 </div>
             </form>
 
-            @if (Model.PuedeCargarDefault)
+            @if (Model.PuedeCargarDefault && puedeCrear)
             {
                 <form asp-action="CargarDefault" method="post" class="workspace-filter-card">
                     @Html.AntiForgeryToken()
@@ -108,7 +115,7 @@
                         {
                             @foreach (var origen in Model.Origenes)
                             {
-                                <tr class="workspace-clickable-row" data-edit-url="@Url.Action("Editar", new { idOrigen = origen.IdOrigen })">
+                                <tr class="@(puedeEditar ? "workspace-clickable-row" : string.Empty)" data-edit-url="@(puedeEditar ? Url.Action("Editar", new { idOrigen = origen.IdOrigen }) : null)">
                                     <td class="workspace-tree-code">@origen.CodigoOrigen</td>
                                     <td>@origen.NombreOrigen</td>
                                     <td>@origen.ModuloOrigen</td>
@@ -119,7 +126,22 @@
                                         </span>
                                     </td>
                                     <td class="text-end">
-                                        <a asp-action="Editar" asp-route-idOrigen="@origen.IdOrigen" class="workspace-row-link">Editar</a>
+                                        <div class="workspace-row-actions-compact">
+                                            @if (puedeEditar)
+                                            {
+                                                <a asp-action="Editar" asp-route-idOrigen="@origen.IdOrigen" class="workspace-row-link">Editar</a>
+                                            }
+                                            @if (puedeEliminar)
+                                            {
+                                                <form asp-action="Eliminar" method="post" onsubmit="return confirm('Se eliminara el origen si no ha sido utilizado. ¿Desea continuar?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="idOrigen" value="@origen.IdOrigen" />
+                                                    <input type="hidden" name="textoBusqueda" value="@Model.TextoBusqueda" />
+                                                    <input type="hidden" name="pagina" value="@Model.Paginacion.PaginaActual" />
+                                                    <button type="submit" class="workspace-row-link text-danger">Eliminar</button>
+                                                </form>
+                                            }
+                                        </div>
                                     </td>
                                 </tr>
                             }

@@ -1,0 +1,223 @@
+@* =============================================
+   Author: FRANCO LARA / Codex
+   Create date: 27/08/2026
+   Description: Ayuda reutilizable del plan maestro alineada al selector por empresa, con seleccion por fila y footer fijo para acciones y paginacion remota.
+   ============================================= *@
+<div class="modal fade workspace-modal" id="cuentaMaestroModal" tabindex="-1" aria-labelledby="cuentaMaestroModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content workspace-modal-content">
+            <div class="modal-header workspace-modal-header">
+                <div>
+                    <span class="workspace-window-kicker">Ayuda contable maestra</span>
+                    <h2 class="workspace-modal-title" id="cuentaMaestroModalLabel">Seleccionar cuenta contable</h2>
+                    <p class="workspace-modal-subtitle">Busca por código o nombre, selecciona una fila y confirma la cuenta que se asignará.</p>
+                </div>
+                <button type="button" class="btn-close workspace-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body workspace-modal-body">
+                <div class="workspace-filter-card mt-0">
+                    <div class="workspace-filter-grid">
+                        <div class="workspace-field workspace-field-span-3">
+                            <label class="form-label" for="cuentaMaestroBusqueda">Filtro</label>
+                            <input id="cuentaMaestroBusqueda" class="form-control" placeholder="Código o nombre de cuenta" autocomplete="off" />
+                        </div>
+                    </div>
+                    <div class="workspace-actions">
+                        <button id="cuentaMaestroBuscar" type="button" class="btn btn-primary"><i class="bi bi-search"></i> Consultar</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive workspace-table-wrap">
+                    <table class="table align-middle app-table workspace-table workspace-lookup-table mb-0">
+                        <thead>
+                            <tr>
+                                <th class="workspace-lookup-select-cell">Sel.</th>
+                                <th>Código</th>
+                                <th>Cuenta</th>
+                                <th>Nivel</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuentaMaestroResultados">
+                            <tr data-cuenta-maestro-empty="true">
+                                <td colspan="4">
+                                    <div class="app-empty-state app-empty-state-inline">
+                                        <i class="bi bi-search"></i>
+                                        <div>
+                                            <strong>Consulta el plan de cuentas maestro</strong>
+                                            <p>Escribe un código o nombre para encontrar la cuenta contable.</p>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+            <div class="modal-footer workspace-modal-footer">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 w-100">
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" id="cuentaMaestroAceptar" disabled>Aceptar</button>
+                    </div>
+                    <nav id="cuentaMaestroPaginacion" class="workspace-pagination mt-0" aria-label="Paginación del selector de cuentas maestras"></nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const modalElement = document.getElementById('cuentaMaestroModal');
+    if (!modalElement || !window.bootstrap) return;
+
+    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+    const search = document.getElementById('cuentaMaestroBusqueda');
+    const searchButton = document.getElementById('cuentaMaestroBuscar');
+    const acceptButton = document.getElementById('cuentaMaestroAceptar');
+    const body = document.getElementById('cuentaMaestroResultados');
+    const pagination = document.getElementById('cuentaMaestroPaginacion');
+    let target = null;
+    let movementOnly = true;
+    let selectedAccount = null;
+    let page = 1;
+    let totalPages = 1;
+
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>'"]/g, character => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' })[character]);
+    }
+
+    function markSelection() {
+        body.querySelectorAll('[data-cuenta-maestro-row="true"]').forEach(row => {
+            const selected = selectedAccount && row.dataset.code === selectedAccount.codigo;
+            row.classList.toggle('is-selected', Boolean(selected));
+            const radio = row.querySelector('input[type="radio"]');
+            if (radio) radio.checked = Boolean(selected);
+        });
+        acceptButton.disabled = !selectedAccount;
+    }
+
+    function selectRow(row) {
+        selectedAccount = {
+            codigo: row.dataset.code || '',
+            nombre: row.dataset.name || ''
+        };
+        markSelection();
+    }
+
+    function renderRows(items) {
+        if (!items.length) {
+            body.innerHTML = `
+                <tr data-cuenta-maestro-empty="true">
+                    <td colspan="4">
+                        <div class="app-empty-state app-empty-state-inline">
+                            <i class="bi bi-search"></i>
+                            <div><strong>No hay cuentas con ese filtro</strong><p>Ajusta el texto para ubicar la cuenta contable.</p></div>
+                        </div>
+                    </td>
+                </tr>`;
+            markSelection();
+            return;
+        }
+
+        body.innerHTML = items.map(item => `
+            <tr class="workspace-lookup-row" data-cuenta-maestro-row="true" data-code="${escapeHtml(item.codigo)}" data-name="${escapeHtml(item.nombre)}">
+                <td class="workspace-lookup-select-cell"><input class="form-check-input" type="radio" name="cuentaMaestroSeleccion" value="${escapeHtml(item.codigo)}" /></td>
+                <td class="workspace-tree-code">${escapeHtml(item.codigo)}</td>
+                <td>${escapeHtml(item.nombre)}</td>
+                <td>${escapeHtml(item.nivel)}</td>
+            </tr>`).join('');
+
+        body.querySelectorAll('[data-cuenta-maestro-row="true"]').forEach(row => {
+            row.addEventListener('click', () => selectRow(row));
+            row.addEventListener('dblclick', () => {
+                selectRow(row);
+                confirmSelection();
+            });
+        });
+        markSelection();
+    }
+
+    function renderPagination() {
+        pagination.innerHTML = '';
+        if (totalPages <= 1) return;
+
+        const start = Math.max(1, page - 2);
+        const end = Math.min(totalPages, page + 2);
+        const buttons = [{ label: 'Anterior', value: page - 1, disabled: page <= 1 }];
+        for (let current = start; current <= end; current++) {
+            buttons.push({ label: String(current), value: current, active: current === page });
+        }
+        buttons.push({ label: 'Siguiente', value: page + 1, disabled: page >= totalPages });
+
+        buttons.forEach(item => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = `btn ${item.active ? 'btn-primary' : 'btn-outline-secondary'}`;
+            button.textContent = item.label;
+            button.disabled = Boolean(item.disabled);
+            if (item.active) button.setAttribute('aria-current', 'page');
+            button.addEventListener('click', () => load(item.value));
+            pagination.appendChild(button);
+        });
+    }
+
+    async function load(requestedPage = 1) {
+        page = Math.max(1, requestedPage);
+        body.innerHTML = '<tr><td colspan="4" class="text-muted py-4 text-center">Consultando cuentas maestras...</td></tr>';
+        pagination.innerHTML = '';
+        searchButton.disabled = true;
+
+        try {
+            const url = new URL('@Url.Action("BuscarCuentas", "MaestroContable")', window.location.origin);
+            url.searchParams.set('texto', search.value || '');
+            url.searchParams.set('soloMovimiento', movementOnly ? 'true' : 'false');
+            url.searchParams.set('pagina', page.toString());
+            const response = await fetch(url, { cache: 'no-store', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            if (!response.ok) throw new Error('No se pudo consultar el plan maestro.');
+
+            const data = await response.json();
+            page = Number(data.pagina) || 1;
+            totalPages = Math.max(1, Number(data.totalPaginas) || 1);
+            renderRows(data.items || []);
+            renderPagination();
+        } catch (error) {
+            body.innerHTML = `<tr><td colspan="4"><div class="app-empty-state app-empty-state-inline"><i class="bi bi-exclamation-triangle"></i><div><strong>No se pudo consultar el plan maestro</strong><p>${escapeHtml(error.message)}</p></div></div></td></tr>`;
+        } finally {
+            searchButton.disabled = false;
+        }
+    }
+
+    function confirmSelection() {
+        if (!target || !selectedAccount) return;
+        target.value = selectedAccount.codigo;
+        target.dispatchEvent(new Event('input', { bubbles: true }));
+        target.dispatchEvent(new Event('change', { bubbles: true }));
+        modal.hide();
+    }
+
+    document.addEventListener('click', event => {
+        const opener = event.target.closest('[data-cuenta-maestro-open]');
+        if (!opener) return;
+
+        target = document.getElementById(opener.dataset.target);
+        movementOnly = opener.dataset.soloMovimiento !== 'false';
+        selectedAccount = target?.value ? { codigo: target.value, nombre: '' } : null;
+        search.value = target?.value || '';
+        acceptButton.disabled = !selectedAccount;
+        modal.show();
+        load(1);
+    });
+
+    searchButton.addEventListener('click', () => load(1));
+    search.addEventListener('keydown', event => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            load(1);
+        }
+    });
+    acceptButton.addEventListener('click', confirmSelection);
+    modalElement.addEventListener('shown.bs.modal', () => search.focus());
+});
+</script>

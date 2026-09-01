@@ -150,6 +150,7 @@ public class AplicacionController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [ModulePermission("APLICACIONES", ModulePermissionOperation.Create)]
     public async Task<IActionResult> Guardar(AplicacionNotaCreditoFormViewModel formulario, short? anio = null, byte? mes = null, CancellationToken cancellationToken = default)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)

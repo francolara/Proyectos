@@ -8,12 +8,16 @@
    ============================================= *@
 @* Firma: FRANCO LARA - 01/07/2026 | Muestra el modo de diferencia en cambio por cuenta para identificar rapidamente si una cuenta en USD se procesa por saldo o por analisis. *@
 @* Firma: FRANCO LARA - 25/07/2026 | Alinea a la izquierda los nombres de las cuentas en el listado y elimina la sangria visual por nivel. *@
+@* Firma: FRANCO LARA - 29/08/2026 | Oculta alta, edicion y eliminacion segun permisos efectivos y conserva la navegacion por fila solo para quien puede editar. *@
 
 @{
     ViewData["Title"] = "Plan de cuentas";
     ViewData["AdminShell"] = true;
     var paginaInicio = Math.Max(1, Model.Paginacion.PaginaActual - 2);
     var paginaFin = Math.Min(Model.Paginacion.TotalPaginas, Model.Paginacion.PaginaActual + 2);
+    var puedeCrear = await ModulePermissions.CanAccessModuleAsync(User, "PLANCUENTA", ModulePermissionOperation.Create);
+    var puedeEditar = await ModulePermissions.CanAccessModuleAsync(User, "PLANCUENTA", ModulePermissionOperation.Edit);
+    var puedeEliminar = await ModulePermissions.CanAccessModuleAsync(User, "PLANCUENTA", ModulePermissionOperation.Delete);
 
     static string ObtenerColBalance(string colBalance) => colBalance switch
     {
@@ -72,7 +76,10 @@
                 <p>Consulta, filtra y abre el registro en modo edicion desde la misma grilla.</p>
             </div>
             <div class="workspace-row-actions">
-                <a asp-action="Registrar" class="btn btn-light btn-sm">Registrar cuenta</a>
+                @if (puedeCrear)
+                {
+                    <a asp-action="Registrar" class="btn btn-light btn-sm">Registrar cuenta</a>
+                }
             </div>
         </div>
         <div class="workspace-window-body">
@@ -114,7 +121,7 @@
                 </div>
             </form>
 
-            @if (Model.PuedeCargarDefault)
+            @if (Model.PuedeCargarDefault && puedeCrear)
             {
                 <form asp-action="CargarDefault" method="post" class="workspace-filter-card">
                     @Html.AntiForgeryToken()
@@ -167,7 +174,7 @@
                         {
                             @foreach (var cuenta in Model.Cuentas)
                             {
-                                <tr class="workspace-clickable-row" data-edit-url="@Url.Action("Editar", new { idPlanCuenta = cuenta.IdPlanCuenta })">
+                                <tr class="@(puedeEditar ? "workspace-clickable-row" : string.Empty)" data-edit-url="@(puedeEditar ? Url.Action("Editar", new { idPlanCuenta = cuenta.IdPlanCuenta }) : null)">
                                     <td class="workspace-tree-code">@cuenta.CodigoCuenta</td>
                                     <td class="text-start">@cuenta.NombreCuenta</td>
                                     <td>@cuenta.NivelCuenta</td>
@@ -183,7 +190,23 @@
                                         </span>
                                     </td>
                                     <td class="text-end">
-                                        <a asp-action="Editar" asp-route-idPlanCuenta="@cuenta.IdPlanCuenta" class="workspace-row-link">Editar</a>
+                                        <div class="workspace-row-actions-compact">
+                                            @if (puedeEditar)
+                                            {
+                                                <a asp-action="Editar" asp-route-idPlanCuenta="@cuenta.IdPlanCuenta" class="workspace-row-link">Editar</a>
+                                            }
+                                            @if (puedeEliminar)
+                                            {
+                                                <form asp-action="Eliminar" method="post" onsubmit="return confirm('Se eliminara la cuenta contable si no ha sido utilizada. ¿Desea continuar?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="idPlanCuenta" value="@cuenta.IdPlanCuenta" />
+                                                    <input type="hidden" name="textoBusqueda" value="@Model.TextoBusqueda" />
+                                                    <input type="hidden" name="nivelCuenta" value="@Model.NivelCuentaFiltro" />
+                                                    <input type="hidden" name="pagina" value="@Model.Paginacion.PaginaActual" />
+                                                    <button type="submit" class="workspace-row-link text-danger">Eliminar</button>
+                                                </form>
+                                            }
+                                        </div>
                                     </td>
                                 </tr>
                             }

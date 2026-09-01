@@ -27,6 +27,8 @@ public interface ICuentaAdministradoraRepository
     Task<IReadOnlyCollection<UsuarioCuentaEmpresaAsignadaDto>> ListarEmpresasUsuarioCuentaAdministradoraAsync(int idCuentaAdministradora, string aspNetUserId, CancellationToken cancellationToken = default);
     Task<IReadOnlyCollection<UsuarioCuentaPermisoDto>> ListarPermisosUsuarioCuentaAsync(int idUsuarioCuentaAdministradora, CancellationToken cancellationToken = default);
     Task GuardarUsuarioCuentaPermisoAsync(GuardarUsuarioCuentaPermisoRequest request, CancellationToken cancellationToken = default);
+    Task GuardarPermisosUsuarioCuentaAsync(GuardarPermisosUsuarioCuentaRequest request, CancellationToken cancellationToken = default);
     Task<IReadOnlyCollection<UsuarioCuentaPermisoDto>> ListarPermisosUsuarioEmpresaAsync(int idUsuarioEmpresa, CancellationToken cancellationToken = default);
     Task GuardarUsuarioEmpresaPermisoAsync(GuardarUsuarioEmpresaPermisoRequest request, CancellationToken cancellationToken = default);
+    Task GuardarPermisosUsuarioEmpresaAsync(GuardarPermisosUsuarioEmpresaRequest request, CancellationToken cancellationToken = default);
 }

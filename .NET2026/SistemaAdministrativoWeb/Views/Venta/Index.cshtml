@@ -3,6 +3,7 @@
 @* Firma: FRANCO LARA - 30/06/2026 | Agrega el acceso a carga masiva de ventas por XML SUNAT en el listado del periodo y reubica el boton Consultar al costado del buscador. *@
 @* Firma: FRANCO LARA - 02/07/2026 | Corrige la seleccion visible de anio, mes y tipo de documento en ventas para que el periodo mostrado respete el contexto devuelto por la opcion, convierte el numero de asiento del listado en acceso directo al asiento generado y deja el boton Consultar en la misma fila de filtros. *@
 @* Firma: FRANCO LARA - 26/08/2026 | Uniformiza el acceso visual al asiento mediante una etiqueta contable navegable. *@
+@* Firma: FRANCO LARA - 29/08/2026 | Aplica permisos efectivos a alta, carga, edicion y eliminacion, y uniformiza los botones de accion del registro de ventas. *@
 
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.VentaIndexViewModel
 
@@ -12,6 +13,10 @@
     var paginaInicio = Math.Max(1, Model.Paginacion.PaginaActual - 2);
     var paginaFin = Math.Min(Model.Paginacion.TotalPaginas, Model.Paginacion.PaginaActual + 2);
     var textInfo = System.Globalization.CultureInfo.CurrentCulture.TextInfo;
+    var puedeCrear = await ModulePermissions.CanAccessModuleAsync(User, "VENTAS", ModulePermissionOperation.Create);
+    var puedeEditar = await ModulePermissions.CanAccessModuleAsync(User, "VENTAS", ModulePermissionOperation.Edit);
+    var puedeEliminar = await ModulePermissions.CanAccessModuleAsync(User, "VENTAS", ModulePermissionOperation.Delete);
+    var puedeEditarAsiento = await ModulePermissions.CanAccessModuleAsync(User, "ASIENTOS", ModulePermissionOperation.Edit);
 }
 
 <section class="dashboard-shell">
@@ -50,8 +55,11 @@
                 <p>Consulta ventas registradas y reabre el documento para ajuste o revision.</p>
             </div>
             <div class="workspace-row-actions">
-                <a asp-action="Registrar" asp-route-periodo="@Model.PeriodoConsulta" class="btn btn-light btn-sm">Registrar venta</a>
-                <a asp-action="CargaMasiva" asp-route-periodo="@Model.PeriodoConsulta" class="btn btn-outline-light btn-sm">Carga masiva de ventas</a>
+                @if (puedeCrear)
+                {
+                    <a asp-action="Registrar" asp-route-periodo="@Model.PeriodoConsulta" class="btn btn-light btn-sm">Registrar venta</a>
+                    <a asp-action="CargaMasiva" asp-route-periodo="@Model.PeriodoConsulta" class="btn btn-outline-light btn-sm">Carga masiva de ventas</a>
+                }
             </div>
         </div>
         <div class="workspace-window-body">
@@ -140,7 +148,7 @@
                         {
                             @foreach (var venta in Model.Ventas)
                             {
-                                <tr class="workspace-clickable-row" data-edit-url="@Url.Action("Editar", new { periodo = Model.PeriodoConsulta, idVenta = venta.IdVenta })">
+                                <tr class="@(puedeEditar ? "workspace-clickable-row" : string.Empty)" data-edit-url="@(puedeEditar ? Url.Action("Editar", new { periodo = Model.PeriodoConsulta, idVenta = venta.IdVenta }) : null)">
                                     <td>@venta.FechaEmision.ToString("dd/MM/yyyy")</td>
                                     <td>@venta.NombreCliente</td>
                                     <td>@venta.Documento</td>
@@ -149,7 +157,7 @@
                                     <td>@venta.ImporteTotal.ToString("0.00")</td>
                                     <td>@venta.Saldo.ToString("0.00")</td>
                                     <td>
-                                        @if (venta.IdAsiento.HasValue)
+                                        @if (venta.IdAsiento.HasValue && puedeEditarAsiento)
                                         {
                                             <a asp-controller="Asiento"
                                                asp-action="Editar"
@@ -167,8 +175,13 @@
                                     <td><span class="workspace-status-badge">@venta.Situacion</span></td>
                                     <td class="text-end">
                                         <div class="workspace-row-actions-compact">
-                                            <a asp-action="Editar" asp-route-periodo="@Model.PeriodoConsulta" asp-route-idVenta="@venta.IdVenta" class="workspace-row-btn workspace-row-btn-primary">Editar</a>
-                                            <form asp-action="Eliminar" method="post" onsubmit="return confirm('Se eliminara la venta seleccionada. ¿Desea continuar?');">
+                                            @if (puedeEditar)
+                                            {
+                                                <a asp-action="Editar" asp-route-periodo="@Model.PeriodoConsulta" asp-route-idVenta="@venta.IdVenta" class="workspace-row-link">Editar</a>
+                                            }
+                                            @if (puedeEliminar)
+                                            {
+                                            <form asp-action="Eliminar" method="post" class="d-inline-flex" onsubmit="return confirm('Se eliminara la venta seleccionada. ¿Desea continuar?');">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="idVenta" value="@venta.IdVenta" />
                                                 <input type="hidden" name="anio" value="@Model.AnioSeleccionado" />
@@ -176,8 +189,9 @@
                                                 <input type="hidden" name="textoBusqueda" value="@Model.TextoBusqueda" />
                                                 <input type="hidden" name="tipoComprobante" value="@Model.TipoComprobanteFiltro" />
                                                 <input type="hidden" name="pagina" value="@Model.Paginacion.PaginaActual" />
-                                                <button type="submit" class="workspace-row-btn workspace-row-btn-danger">Eliminar</button>
+                                                <button type="submit" class="workspace-row-link text-danger">Eliminar</button>
                                             </form>
+                                            }
                                         </div>
                                     </td>
                                 </tr>

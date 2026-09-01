@@ -183,3 +183,26 @@ public sealed class GuardarUsuarioEmpresaPermisoRequest
     public bool? PuedeEliminar { get; set; }
     public string? UsuarioRegistro { get; set; }
 }
+
+public sealed class GuardarPermisosUsuarioCuentaRequest
+{
+    public int IdUsuarioCuentaAdministradora { get; set; }
+    public IReadOnlyCollection<UsuarioPermisoOverrideRequest> Permisos { get; set; } = [];
+    public string? UsuarioRegistro { get; set; }
+}
+
+public sealed class GuardarPermisosUsuarioEmpresaRequest
+{
+    public int IdUsuarioEmpresa { get; set; }
+    public IReadOnlyCollection<UsuarioPermisoOverrideRequest> Permisos { get; set; } = [];
+    public string? UsuarioRegistro { get; set; }
+}
+
+public sealed class UsuarioPermisoOverrideRequest
+{
+    public int IdModuloSistema { get; set; }
+    public bool? PuedeVer { get; set; }
+    public bool? PuedeCrear { get; set; }
+    public bool? PuedeEditar { get; set; }
+    public bool? PuedeEliminar { get; set; }
+}

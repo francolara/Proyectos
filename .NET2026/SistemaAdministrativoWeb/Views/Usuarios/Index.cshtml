@@ -3,6 +3,7 @@
 @* Firma: FRANCO LARA - 12/07/2026 | Limpia telefono y contrasena temporal al abrir el formulario, agrega visor de contrasena y retira las opciones de cuenta o empresa predeterminada para forzar la seleccion posterior de empresa. *@
 @* Firma: FRANCO LARA - 25/07/2026 | Limita el ancho, uniformiza controles y simplifica la cabecera de la gestion de usuarios. *@
 @* Firma: FRANCO LARA - 31/07/2026 | Adopta el patron global de titulo y subtitulos administrativos con iconos y degradado verde. *@
+@* Firma: FRANCO LARA - 29/08/2026 | El visor de contrasena temporal usa el controlador comun para impedir que el clic alterne dos veces el campo. *@
 @{
     ViewData["Title"] = "Usuarios";
     ViewData["AdminShell"] = true;
@@ -182,23 +183,6 @@
 
                 window.addEventListener("pageshow", () => window.setTimeout(clearFields, 120), { once: true });
             }
-
-            document.querySelectorAll("[data-password-toggle]").forEach((button) => {
-                button.addEventListener("click", () => {
-                    const targetId = button.getAttribute("data-password-target");
-                    const field = targetId ? document.getElementById(targetId) : null;
-                    const icon = button.querySelector("i");
-                    if (!field || !icon) {
-                        return;
-                    }
-
-                    const visible = field.type === "text";
-                    field.type = visible ? "password" : "text";
-                    icon.className = visible ? "bi bi-eye" : "bi bi-eye-slash";
-                    button.setAttribute("aria-label", visible ? "Mostrar contrasena" : "Ocultar contrasena");
-                    button.setAttribute("aria-pressed", String(!visible).toLowerCase());
-                });
-            });
         })();
     </script>
 }

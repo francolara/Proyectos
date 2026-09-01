@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
+    <AspNetCoreHostingModel>OutOfProcess</AspNetCoreHostingModel>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>aspnet-SistemaControlEspaciosDeportivosWeb-e1f645ac-25e8-4831-b13a-add92a7b86dd</UserSecretsId>

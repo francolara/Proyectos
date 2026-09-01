@@ -19,13 +19,6 @@
             </p>
         </header>
 
-        @if (Model.ShowDraftNotice)
-        {
-            <div class="fralsecont-legal-notice" role="status">
-                Documento preliminar pendiente de revision legal antes de su publicacion definitiva.
-            </div>
-        }
-
         <nav class="fralsecont-legal-index" aria-label="Indice de politica de privacidad">
             <a href="#identidad">1. Identidad del responsable</a>
             <a href="#alcance">2. Alcance</a>
@@ -76,7 +69,7 @@
         </nav>
 
         <div class="fralsecont-legal-content">
-            <section id="identidad" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">1. Identidad del responsable</h2><p>El responsable del tratamiento descrito en esta politica es @Model.BusinessInformation.LegalName, con domicilio en @Model.BusinessInformation.FullAddress.</p></section>
+            <section id="identidad" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">1. Identidad del responsable</h2><p>El responsable del tratamiento descrito en esta politica es @Model.BusinessInformation.LegalName, con RUC @Model.BusinessInformation.Ruc.</p></section>
             <section id="alcance" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">2. Alcance</h2><p>Esta politica se aplica al tratamiento de informacion realizado a traves de FralseCont, sus formularios publicos, cuentas de acceso y canales de soporte relacionados con la plataforma.</p></section>
             <section id="informacion-recopilada" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">3. Informacion recopilada</h2><p>FralseCont trata solo la informacion necesaria para registrar usuarios, administrar empresas, operar modulos contables y atender requerimientos funcionales, comerciales o de soporte.</p></section>
             <section id="datos-registro" class="fralsecont-legal-section"><h2 class="fralsecont-legal-section-title">4. Datos de registro</h2><p>Se pueden tratar nombre completo, correo electronico, telefono, datos de cuenta y credenciales administradas mediante ASP.NET Identity.</p></section>

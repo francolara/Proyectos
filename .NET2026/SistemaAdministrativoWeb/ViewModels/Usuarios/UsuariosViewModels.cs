@@ -87,6 +87,7 @@ public sealed class UsuarioPermisosViewModel
     public int? IdUsuarioEmpresaSeleccionada { get; set; }
     public int? IdEmpresaSeleccionada { get; set; }
     public string? NombreEmpresaSeleccionada { get; set; }
+    public string PestanaActiva { get; set; } = "general";
 }
 
 public sealed class ModuloPermisoViewModel
@@ -99,8 +100,32 @@ public sealed class ModuloPermisoViewModel
     public bool? PuedeCrearOverride { get; set; }
     public bool? PuedeEditarOverride { get; set; }
     public bool? PuedeEliminarOverride { get; set; }
+    public bool PuedeVerRol { get; set; }
+    public bool PuedeCrearRol { get; set; }
+    public bool PuedeEditarRol { get; set; }
+    public bool PuedeEliminarRol { get; set; }
     public bool PuedeVerEfectivo { get; set; }
     public bool PuedeCrearEfectivo { get; set; }
     public bool PuedeEditarEfectivo { get; set; }
     public bool PuedeEliminarEfectivo { get; set; }
+}
+
+public sealed class GuardarPermisosLoteViewModel
+{
+    [Required]
+    public string AspNetUserId { get; set; } = string.Empty;
+
+    public int IdUsuarioCuentaAdministradora { get; set; }
+    public int? IdUsuarioEmpresa { get; set; }
+    public int? IdEmpresa { get; set; }
+    public List<ModuloPermisoEdicionViewModel> Permisos { get; set; } = [];
+}
+
+public sealed class ModuloPermisoEdicionViewModel
+{
+    public int IdModuloSistema { get; set; }
+    public bool? PuedeVer { get; set; }
+    public bool? PuedeCrear { get; set; }
+    public bool? PuedeEditar { get; set; }
+    public bool? PuedeEliminar { get; set; }
 }

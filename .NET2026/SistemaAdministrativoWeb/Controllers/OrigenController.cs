@@ -56,6 +56,30 @@ public class OrigenController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [ModulePermission("ORIGENES", ModulePermissionOperation.Delete)]
+    public async Task<IActionResult> Eliminar(int idOrigen, string? textoBusqueda = null, int pagina = 1, CancellationToken cancellationToken = default)
+    {
+        if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
+        {
+            return RedirectToAction("Index", "EmpresaContexto");
+        }
+
+        try
+        {
+            await origenRepository.EliminarAsync(currentCompanyAccessor.EmpresaId.Value, idOrigen, cancellationToken);
+            TempData["OrigenOk"] = "Origen eliminado correctamente.";
+        }
+        catch (Exception ex)
+        {
+            TempData["OrigenError"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Index), new { textoBusqueda, pagina });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [ModulePermission("ORIGENES", ModulePermissionOperation.Create)]
     public async Task<IActionResult> CargarDefault(CancellationToken cancellationToken)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
@@ -78,6 +102,7 @@ public class OrigenController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [ModuleSavePermission("ORIGENES", nameof(OrigenFormViewModel.IdOrigen))]
     public async Task<IActionResult> Guardar(OrigenFormViewModel formulario, CancellationToken cancellationToken)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)

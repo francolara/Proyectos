@@ -52,6 +52,7 @@ public class ConfiguracionContabilizacionController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [ModulePermission("CONFIGCONTABLE", ModulePermissionOperation.Edit)]
     public async Task<IActionResult> GuardarProvision(ConfiguracionProvisionFormViewModel formulario, CancellationToken cancellationToken)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
@@ -80,6 +81,7 @@ public class ConfiguracionContabilizacionController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [ModulePermission("CONFIGCONTABLE", ModulePermissionOperation.Edit)]
     public async Task<IActionResult> GuardarDocumento(int idTipoComprobante, int? idCuentaVentaSoles, int? idCuentaVentaDolares, int? idCuentaCompraSoles, int? idCuentaCompraDolares, bool activo = true, CancellationToken cancellationToken = default)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
@@ -94,6 +96,7 @@ public class ConfiguracionContabilizacionController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [ModulePermission("CONFIGCONTABLE", ModulePermissionOperation.Edit)]
     public async Task<IActionResult> GuardarImpuesto(int idTipoImpuesto, int? idPlanCuenta, bool activo = true, CancellationToken cancellationToken = default)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
@@ -108,6 +111,7 @@ public class ConfiguracionContabilizacionController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [ModulePermission("CONFIGCONTABLE", ModulePermissionOperation.Edit)]
     public async Task<IActionResult> GuardarParametro(int idParametroEmpresa, string? valorParametro, bool activo = true, CancellationToken cancellationToken = default)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
@@ -172,6 +176,7 @@ public class ConfiguracionContabilizacionController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [ModuleSavePermission("CONFIGCONTABLE", nameof(ConfiguracionContabilizacionFormViewModel.IdConfiguracionContabilizacion))]
     public async Task<IActionResult> Guardar(ConfiguracionContabilizacionFormViewModel formulario, CancellationToken cancellationToken)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)

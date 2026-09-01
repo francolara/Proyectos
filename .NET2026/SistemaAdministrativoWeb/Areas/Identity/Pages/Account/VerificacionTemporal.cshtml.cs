@@ -78,6 +78,22 @@ public class VerificacionTemporalModel(
         return RedirectToPage("./CambiarContrasenaTemporal", new { returnUrl = ReturnUrl });
     }
 
+    public async Task<IActionResult> OnPostFallbackAsync(string? returnUrl = null)
+    {
+        ReturnUrl = returnUrl ?? Url.Content("~/");
+        var user = await userManager.GetUserAsync(User);
+        if (user is null || !await RequiereCambioContrasenaTemporalAsync(user))
+        {
+            return LocalRedirect(Url.Content("~/"));
+        }
+
+        TurnstileSiteKey = turnstileOptions.Value.SiteKey;
+        UsarCaptchaManual = true;
+        ModelState.Clear();
+        ConfigurarCaptchaManual();
+        return Page();
+    }
+
     private async Task<bool> ValidarDesafioAccesoAsync()
     {
         if (MostrarCaptchaManual)

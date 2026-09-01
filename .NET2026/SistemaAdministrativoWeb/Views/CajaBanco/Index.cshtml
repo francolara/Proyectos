@@ -12,6 +12,7 @@
 @* Firma: FRANCO LARA - 12/07/2026 | Agrega el acceso Estado de Cuenta al costado de Registrar movimiento para abrir el reporte HTML imprimible de la cuenta corriente seleccionada. *@
 @* Firma: FRANCO LARA - 26/08/2026 | Uniformiza el acceso visual al asiento mediante una etiqueta contable navegable, identifica en los KPI la moneda de la cuenta corriente seleccionada y reinicia saldos, flujo y movimientos al dejar la cuenta sin seleccionar. *@
 @* Firma: FRANCO LARA - 13/07/2026 | Corrige el acceso Estado de Cuenta para abrir el reporte en la misma pestana y evitar ventanas adicionales al imprimir desde Caja y Bancos. *@
+@* Firma: FRANCO LARA - 29/08/2026 | Aplica permisos efectivos a registrar, editar y eliminar movimientos, incluido el acceso por fila y al asiento, y uniformiza los botones de accion. *@
 
 @{
     ViewData["Title"] = "Caja y Bancos";
@@ -23,6 +24,10 @@
     var codigoMonedaKpi = Model.CuentasCorrientesDisponibles
         .FirstOrDefault(x => x.IdBancoConfiguracionEmpresa == Model.IdBancoConfiguracionEmpresaSeleccionada)
         ?.CodigoMoneda;
+    var puedeCrear = await ModulePermissions.CanAccessModuleAsync(User, "CAJABANCOS", ModulePermissionOperation.Create);
+    var puedeEditar = await ModulePermissions.CanAccessModuleAsync(User, "CAJABANCOS", ModulePermissionOperation.Edit);
+    var puedeEliminar = await ModulePermissions.CanAccessModuleAsync(User, "CAJABANCOS", ModulePermissionOperation.Delete);
+    var puedeEditarAsiento = await ModulePermissions.CanAccessModuleAsync(User, "ASIENTOS", ModulePermissionOperation.Edit);
 }
 
 <section class="dashboard-shell">
@@ -78,11 +83,14 @@
                    aria-disabled="@(!Model.IdBancoConfiguracionEmpresaSeleccionada.HasValue)">
                     Estado de Cuenta
                 </a>
-                <a asp-action="Registrar"
-                   asp-route-idBancoConfiguracionEmpresa="@Model.IdBancoConfiguracionEmpresaSeleccionada"
-                   asp-route-anio="@Model.AnioSeleccionado"
-                   asp-route-mes="@Model.MesSeleccionado"
-                   class="btn btn-light btn-sm">Registrar movimiento</a>
+                @if (puedeCrear)
+                {
+                    <a asp-action="Registrar"
+                       asp-route-idBancoConfiguracionEmpresa="@Model.IdBancoConfiguracionEmpresaSeleccionada"
+                       asp-route-anio="@Model.AnioSeleccionado"
+                       asp-route-mes="@Model.MesSeleccionado"
+                       class="btn btn-light btn-sm">Registrar movimiento</a>
+                }
             </div>
         </div>
         <div class="workspace-window-body">
@@ -184,10 +192,10 @@
                             @foreach (var item in Model.Movimientos)
                             {
                                 var tipoTexto = string.Equals(item.TipoMovimiento, "I", StringComparison.OrdinalIgnoreCase) ? "Ingreso" : "Egreso";
-                                <tr class="workspace-clickable-row" data-edit-url="@Url.Action("Editar", new { idMovimientoBanco = item.IdMovimientoBanco, idBancoConfiguracionEmpresa = Model.IdBancoConfiguracionEmpresaSeleccionada, anio = Model.AnioSeleccionado, mes = Model.MesSeleccionado })">
+                                <tr class="@(puedeEditar ? "workspace-clickable-row" : string.Empty)" data-edit-url="@(puedeEditar ? Url.Action("Editar", new { idMovimientoBanco = item.IdMovimientoBanco, idBancoConfiguracionEmpresa = Model.IdBancoConfiguracionEmpresaSeleccionada, anio = Model.AnioSeleccionado, mes = Model.MesSeleccionado }) : null)">
                                     <td>@item.NumeroMovimiento</td>
                                     <td>
-                                        @if (item.IdAsiento.HasValue)
+                                        @if (item.IdAsiento.HasValue && puedeEditarAsiento)
                                         {
                                             <a asp-controller="Asiento"
                                                asp-action="Editar"
@@ -213,13 +221,18 @@
                                     <td class="workspace-money-cell">@item.Egreso.ToString("0.00")</td>
                                     <td class="text-end">
                                         <div class="workspace-row-actions-compact">
+                                            @if (puedeEditar)
+                                            {
                                             <a asp-action="Editar"
                                                asp-route-idMovimientoBanco="@item.IdMovimientoBanco"
                                                asp-route-idBancoConfiguracionEmpresa="@Model.IdBancoConfiguracionEmpresaSeleccionada"
                                                asp-route-anio="@Model.AnioSeleccionado"
                                                asp-route-mes="@Model.MesSeleccionado"
-                                               class="workspace-row-btn workspace-row-btn-primary">Editar</a>
-                                            <form asp-action="Eliminar" method="post" onsubmit="return confirm('Se eliminara el movimiento bancario seleccionado. ¿Desea continuar?');">
+                                               class="workspace-row-link">Editar</a>
+                                            }
+                                            @if (puedeEliminar)
+                                            {
+                                            <form asp-action="Eliminar" method="post" class="d-inline-flex" onsubmit="return confirm('Se eliminara el movimiento bancario seleccionado. ¿Desea continuar?');">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="idMovimientoBanco" value="@item.IdMovimientoBanco" />
                                                 <input type="hidden" name="idBancoConfiguracionEmpresa" value="@Model.IdBancoConfiguracionEmpresaSeleccionada" />
@@ -227,8 +240,9 @@
                                                 <input type="hidden" name="mes" value="@Model.MesSeleccionado" />
                                                 <input type="hidden" name="textoBusqueda" value="@Model.TextoBusqueda" />
                                                 <input type="hidden" name="pagina" value="@Model.Paginacion.PaginaActual" />
-                                                <button type="submit" class="workspace-row-btn workspace-row-btn-danger">Eliminar</button>
+                                                <button type="submit" class="workspace-row-link text-danger">Eliminar</button>
                                             </form>
+                                            }
                                         </div>
                                     </td>
                                 </tr>

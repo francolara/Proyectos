@@ -3,10 +3,13 @@
 @* Firma: FRANCO LARA - 29/06/2026 | Agrega el formulario de tipos de cambio y habilita la sincronizacion puntual por fecha desde la API Migo, ocultando la cuenta administradora en la vista. *@
 @* Firma: FRANCO LARA - 08/07/2026 | Ajusta la moneda visible del formulario de tipo de cambio para mostrar solo el codigo de moneda, manteniendo PEN y USD como valores internos. *@
 @* Firma: FRANCO LARA - 26/08/2026 | Reemplaza los codigos visibles PEN y USD por Soles y Dolares sin modificar sus valores internos. *@
+@* Firma: FRANCO LARA - 29/08/2026 | Oculta la sincronizacion puntual cuando no existe permiso de alta. *@
+@* Firma: FRANCO LARA - 31/08/2026 | Alinea los tipos de cambio de compra y venta por pares y ubica la fuente al final del formulario. *@
 
 @{
     ViewData["Title"] = Model.Formulario.IdTipoCambio.HasValue ? "Editar tipo de cambio" : "Registrar tipo de cambio";
     ViewData["AdminShell"] = true;
+    var puedeCrear = await ModulePermissions.CanAccessModuleAsync(User, "TIPOCAMBIO", ModulePermissionOperation.Create);
     static string ObtenerTextoMoneda(string codigoMoneda)
     {
         return codigoMoneda.Trim().ToUpperInvariant() switch
@@ -27,12 +30,15 @@
                 <p>Registra manualmente o sincroniza la cotizacion por fecha, moneda y fuente para la cuenta administradora activa.</p>
             </div>
             <div class="workspace-row-actions">
+                @if (puedeCrear)
+                {
                 <button type="submit"
                         form="tipoCambioForm"
                         formaction="@Url.Action("SincronizarFechaDesdeApi", "TipoCambio")"
                         class="btn btn-outline-secondary btn-sm">
                     Obtener tipos de cambio
                 </button>
+                }
             </div>
         </div>
 
@@ -70,16 +76,6 @@
                         <span asp-validation-for="Formulario.IdMoneda" class="text-danger"></span>
                     </div>
                     <div class="workspace-field">
-                        <label asp-for="Formulario.Fuente" class="form-label">Fuente</label>
-                        <select asp-for="Formulario.Fuente" class="form-select">
-                            @foreach (var fuente in Model.Fuentes)
-                            {
-                                <option value="@fuente.Valor">@fuente.Texto</option>
-                            }
-                        </select>
-                        <span asp-validation-for="Formulario.Fuente" class="text-danger"></span>
-                    </div>
-                    <div class="workspace-field">
                         <label asp-for="Formulario.Compra" class="form-label">Compra</label>
                         <input asp-for="Formulario.Compra" class="form-control" />
                         <span asp-validation-for="Formulario.Compra" class="text-danger"></span>
@@ -98,6 +94,16 @@
                         <label asp-for="Formulario.VentaSbs" class="form-label">Venta SBS</label>
                         <input asp-for="Formulario.VentaSbs" class="form-control" />
                         <span asp-validation-for="Formulario.VentaSbs" class="text-danger"></span>
+                    </div>
+                    <div class="workspace-field workspace-field-span-3">
+                        <label asp-for="Formulario.Fuente" class="form-label">Fuente</label>
+                        <select asp-for="Formulario.Fuente" class="form-select">
+                            @foreach (var fuente in Model.Fuentes)
+                            {
+                                <option value="@fuente.Valor">@fuente.Texto</option>
+                            }
+                        </select>
+                        <span asp-validation-for="Formulario.Fuente" class="text-danger"></span>
                     </div>
                 </div>
 

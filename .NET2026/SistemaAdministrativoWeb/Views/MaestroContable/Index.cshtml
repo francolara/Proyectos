@@ -1,0 +1,32 @@
+@model SistemaAdministrativoWeb.ViewModels.Plataforma.MaestroContableIndexViewModel
+@{
+    ViewData["Title"] = "Maestros contables";
+    ViewData["PlatformShell"] = true;
+}
+@* =============================================
+   Author: FRANCO LARA / Codex
+   Create date: 27/08/2026
+   Description: Resumen y diagnostico de maestros para las cargas iniciales sin accesos directos horizontales redundantes.
+   ============================================= *@
+<section class="dashboard-shell">
+    <partial name="_Alertas" />
+    <section class="dashboard-hero">
+        <div><span class="dashboard-kicker">SuperAdmin</span><h1 class="app-page-title"><i class="bi bi-database-gear"></i><span>Maestros contables</span></h1><p>Administra la plantilla utilizada exclusivamente por la carga inicial de cada empresa.</p></div>
+    </section>
+    <section class="dashboard-metrics">
+        <article class="dashboard-metric-card dashboard-metric-card-count"><span>Plan de cuentas</span><strong>@Model.TotalCuentas</strong><small>Cuentas base registradas.</small></article>
+        <article class="dashboard-metric-card dashboard-metric-card-count"><span>Cuentas destino</span><strong>@Model.TotalReglasDestino</strong><small>Reglas base registradas.</small></article>
+        <article class="dashboard-metric-card dashboard-metric-card-count"><span>Orígenes</span><strong>@Model.TotalOrigenes</strong><small>Orígenes base registrados.</small></article>
+        <article class="dashboard-metric-card dashboard-metric-card-count"><span>Configuraciones</span><strong>@Model.TotalConfiguraciones</strong><small>Escenarios vinculados.</small></article>
+    </section>
+    <section class="table-panel">
+        <div class="table-panel-head"><h2>Diagnóstico de referencias</h2><p>Las modificaciones afectan futuras cargas por defecto; no cambian empresas existentes.</p></div>
+        @if (Model.Incidencias.Count == 0) { <div class="alert alert-success m-3">Todos los códigos maestros tienen referencias válidas.</div> }
+        else
+        {
+            <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Maestro</th><th>Código</th><th>Observación</th></tr></thead><tbody>
+            @foreach (var item in Model.Incidencias) { <tr><td>@item.TipoMaestro</td><td><strong>@item.CodigoRegistro</strong></td><td>@item.Descripcion</td></tr> }
+            </tbody></table></div>
+        }
+    </section>
+</section>

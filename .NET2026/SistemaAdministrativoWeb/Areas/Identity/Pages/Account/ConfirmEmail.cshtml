@@ -1,0 +1,40 @@
+@page
+@model SistemaAdministrativoWeb.Areas.Identity.Pages.Account.ConfirmEmailModel
+@using SistemaAdministrativoWeb.Infrastructure.Assets
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@* Firma: FRANCO LARA - 31/08/2026 | Presenta la confirmacion con version global para evitar cache obsoleta en recursos remotos y conserva el respaldo visual. *@
+@{
+    ViewData["Title"] = "Confirmar correo";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var loginBannerUrl = PublicAssetUrlBuilder.Build(Configuration, "Banner/InicioSesion.webp");
+}
+
+<section class="auth-shell">
+    <aside class="auth-visual @(!string.IsNullOrWhiteSpace(loginBannerUrl) ? "auth-visual-banner" : string.Empty)"
+           style="@(!string.IsNullOrWhiteSpace(loginBannerUrl) ? $"background-image: url('{loginBannerUrl}');" : string.Empty)"
+           role="@(!string.IsNullOrWhiteSpace(loginBannerUrl) ? "img" : null)"
+           aria-label="@(!string.IsNullOrWhiteSpace(loginBannerUrl) ? "FralseCont: inicia sesion y gestiona tu empresa con confianza." : null)">
+        @if (string.IsNullOrWhiteSpace(loginBannerUrl))
+        {
+            <div class="auth-visual-content">
+                <p class="auth-visual-tag">SisAdm</p>
+                <h2>Control contable, comercial y multiempresa desde una sola sesion.</h2>
+                <ul class="auth-visual-list">
+                    <li>Seleccion de empresa activa por usuario.</li>
+                    <li>Acceso preparado para panel administrativo y superadmin.</li>
+                    <li>Base unica SQL Server para crecer por modulos.</li>
+                </ul>
+            </div>
+        }
+    </aside>
+    <section class="auth-panel">
+        <div class="auth-card text-center">
+            <div class="mb-3">
+                <i class="bi @(Model.IsSuccess ? "bi-check-circle-fill text-success" : "bi-exclamation-circle-fill text-danger") fs-1"></i>
+            </div>
+            <h1>Confirmacion de correo</h1>
+            <p class="auth-subtitle">@Model.StatusMessage</p>
+            <a class="w-100 btn @(Model.IsSuccess ? "btn-primary" : "btn-outline-primary") auth-cta" href="@Model.LoginUrl">Ir al inicio de sesion</a>
+        </div>
+    </section>
+</section>

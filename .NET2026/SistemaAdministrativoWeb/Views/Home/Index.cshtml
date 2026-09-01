@@ -1,10 +1,39 @@
+@using Microsoft.Extensions.Options
+@using SistemaAdministrativoWeb.Configuration
+@inject IOptions<BusinessInformationOptions> BusinessInformationOptionsAccessor
+
 @{
     ViewData["Title"] = "FralseCont";
+    var business = BusinessInformationOptionsAccessor.Value;
+    var whatsappUrl = string.IsNullOrWhiteSpace(business.WhatsAppNumber)
+        ? string.Empty
+        : $"https://wa.me/{business.WhatsAppNumber}";
+    var sharedPaidBenefits = new[]
+    {
+        "Compras y ventas sin limite de registros.",
+        "Asientos contables manuales y automaticos.",
+        "Caja y Bancos.",
+        "Cuentas corrientes.",
+        "Transferencias entre cuentas.",
+        "Aplicacion de notas de credito.",
+        "Centros de costo y cuentas destino.",
+        "Configuracion contable completa.",
+        "Tipo de cambio oficial en linea.",
+        "Sincronizacion mensual de tipos de cambio.",
+        "Consulta de RUC y DNI en linea.",
+        "Cierre y reapertura de periodos.",
+        "Diferencia en cambio y ajuste de cuentas.",
+        "Asientos de apertura y cierre.",
+        "Periodos especiales 00, 13 y 14.",
+        "Reportes contables completos.",
+        "Libros electronicos PLE e historial de archivos."
+    };
 }
 <!-- Firma: FRANCO LARA - 10/07/2026 | Reorganiza la portada publica para mostrar primero una landing SaaS de FralseCont con tres planes de suscripcion y accesos al registro por plan, ajusta el branding visible a Sistema Contable con Fralse y Cont en dos colores y elimina la tarjeta informativa redundante. -->
 <!-- Firma: FRANCO LARA - 14/07/2026 | Resume la vista publica de planes para mostrar a primera vista los diferenciales clave de Gratis, Emprendedor y Contador, unifica beneficios base entre Emprendedor y Contador y deja la validacion CPE solo en Contador con un bloque expandible Ver detalle. -->
 <!-- Firma: FRANCO LARA - 25/07/2026 | Cambia el nombre visible del plan Gratis a Prueba en la vista publica, conservando su vigencia de 30 dias. -->
 <!-- Firma: FRANCO LARA - 22/08/2026 | Actualiza la portada al calendario contable vigente con periodos especiales 00, 13 y 14. -->
+<!-- Firma: FRANCO LARA - 31/08/2026 | Incorpora la franja institucional y presenta dentro de cada lista principal de Emprendedor y Contador sus tres diferencias y 17 funciones comunes, para un total de 20 puntos por plan. -->
 
 <section class="nubecont-pricing-section" aria-labelledby="nubecont-pricing-title">
     <div class="nubecont-pricing-container">
@@ -50,7 +79,6 @@
                     <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Registros limitados.</span></li>
                     <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Asientos contables limitados.</span></li>
                     <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Reportes contables base.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Tipo de cambio manual.</span></li>
                     <li class="nubecont-plan-feature nubecont-plan-feature--unavailable"><i class="bi bi-dash-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Sin consulta de RUC y DNI en linea.</span></li>
                     <li class="nubecont-plan-feature nubecont-plan-feature--unavailable"><i class="bi bi-dash-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Sin tipo de cambio en linea.</span></li>
                     <li class="nubecont-plan-feature nubecont-plan-feature--unavailable"><i class="bi bi-dash-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Sin validacion CPE.</span></li>
@@ -88,35 +116,12 @@
                 <ul class="nubecont-plan-features">
                     <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Hasta 3 empresas.</span></li>
                     <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Hasta 2 usuarios.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Compras.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Ventas.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Sin limite de registros.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Asientos manuales y automaticos.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Tipo de cambio oficial en linea.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Sincronizacion mensual de tipos de cambio.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Consulta de RUC y DNI en linea.</span></li>
+                    <li class="nubecont-plan-feature nubecont-plan-feature--unavailable"><i class="bi bi-dash-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Validacion de comprobantes CPE no incluida.</span></li>
+                    @foreach (var benefit in sharedPaidBenefits)
+                    {
+                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>@benefit</span></li>
+                    }
                 </ul>
-
-                <details class="nubecont-plan-details">
-                    <summary>Ver detalle</summary>
-                    <ul class="nubecont-plan-features">
-                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Caja y Bancos.</span></li>
-                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Cuentas corrientes.</span></li>
-                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Transferencias entre cuentas.</span></li>
-                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Pagos y cobros parciales.</span></li>
-                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Aplicacion de notas de credito.</span></li>
-                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Control de saldos pendientes.</span></li>
-                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Detracciones, percepciones y retenciones.</span></li>
-                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Centros de costo y cuentas destino.</span></li>
-                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Configuracion contable completa.</span></li>
-                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Cierre y reapertura de periodos.</span></li>
-                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Diferencia en cambio y ajuste de cuentas.</span></li>
-                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Asiento de apertura y cierre.</span></li>
-                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Reportes contables completos y PLE.</span></li>
-                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Copia de plan contable desde empresa base.</span></li>
-                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Tipo de cambio manual.</span></li>
-                    </ul>
-                </details>
             </article>
 
             <article class="nubecont-plan-card nubecont-plan-card--recommended">
@@ -149,27 +154,12 @@
                 <ul class="nubecont-plan-features">
                     <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Hasta 10 empresas.</span></li>
                     <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Hasta 3 usuarios.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Todo lo incluido en el plan Emprendedor.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Tipo de cambio oficial en linea.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Sincronizacion mensual de tipos de cambio.</span></li>
-                    <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Consulta de RUC y DNI en linea.</span></li>
                     <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Validacion de comprobantes CPE.</span></li>
+                    @foreach (var benefit in sharedPaidBenefits)
+                    {
+                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>@benefit</span></li>
+                    }
                 </ul>
-
-                <details class="nubecont-plan-details">
-                    <summary>Ver detalle</summary>
-                    <ul class="nubecont-plan-features">
-                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Gestion multiempresa.</span></li>
-                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Usuarios asignables por empresa.</span></li>
-                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Cambio rapido entre empresas.</span></li>
-                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Consulta del estado de comprobantes.</span></li>
-                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Registro del resultado de validacion.</span></li>
-                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Procesos contables avanzados.</span></li>
-                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Periodos especiales 00, 13 y 14.</span></li>
-                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Libros electronicos PLE e historial de archivos.</span></li>
-                        <li class="nubecont-plan-feature"><i class="bi bi-check2-circle nubecont-plan-feature-icon" aria-hidden="true"></i><span>Reportes por empresa y soporte prioritario.</span></li>
-                    </ul>
-                </details>
             </article>
         </div>
     </div>
@@ -186,6 +176,43 @@
         <div class="hero-auth-actions">
             <a class="btn btn-primary btn-lg" asp-area="Identity" asp-page="/Account/Login">Iniciar sesion</a>
             <a class="btn btn-outline-primary btn-lg" asp-area="Identity" asp-page="/Account/Register">Registrar usuario</a>
+        </div>
+    </div>
+</section>
+
+<section class="nubecont-contact-band" aria-labelledby="nubecont-contact-title">
+    <div class="nubecont-contact-identity">
+        <span class="nubecont-contact-kicker">Informacion institucional</span>
+        <h2 id="nubecont-contact-title">@business.LegalName</h2>
+        <p>RUC @business.Ruc</p>
+    </div>
+
+    <div class="nubecont-contact-grid">
+        <a class="nubecont-contact-item" href="mailto:@business.SupportEmail">
+            <span class="nubecont-contact-icon" aria-hidden="true"><i class="bi bi-envelope"></i></span>
+            <span>
+                <small>Correo</small>
+                <strong>@business.SupportEmail</strong>
+            </span>
+        </a>
+
+        @if (!string.IsNullOrWhiteSpace(whatsappUrl))
+        {
+            <a class="nubecont-contact-item" href="@whatsappUrl" target="_blank" rel="noopener noreferrer">
+                <span class="nubecont-contact-icon" aria-hidden="true"><i class="bi bi-whatsapp"></i></span>
+                <span>
+                    <small>WhatsApp</small>
+                    <strong>@business.WhatsAppDisplay</strong>
+                </span>
+            </a>
+        }
+
+        <div class="nubecont-contact-item">
+            <span class="nubecont-contact-icon" aria-hidden="true"><i class="bi bi-clock"></i></span>
+            <span>
+                <small>Horario de atencion</small>
+                <strong>@business.SupportHours</strong>
+            </span>
         </div>
     </div>
 </section>

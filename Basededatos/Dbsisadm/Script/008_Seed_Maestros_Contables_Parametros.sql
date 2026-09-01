@@ -17,6 +17,7 @@
 -- Firma: FRANCO LARA - 01/07/2026 | Agrega el parametro maestro ORIGEN_DIFERENCIA_CAMBIO como referencia legacy y mantiene disponible el origen 88 para configurar diferencia en cambio desde el modulo web.
 -- Firma: FRANCO LARA - 02/07/2026 | Agrega GeneraDiferenciaPorAnalisis al plan de cuentas maestro para heredar la configuracion base o de empresa origen y suma los parametros/origen base de los nuevos procesos AJU, APR y CIE.
 -- Firma: FRANCO LARA - 25/08/2026 | Elimina el ejercicio de las cuentas destino maestras; el ejercicio se asigna al materializar la regla por empresa.
+-- Firma: FRANCO LARA - 27/08/2026 | Corrige la carga del plan maestro para no actualizar ni insertar la columna eliminada GeneraDiferenciaPorAnalisis.
 
 MERGE dbo.ADM_ParametroMaestro AS destino
 USING
@@ -139,44 +140,44 @@ MERGE dbo.CON_PlanCuentaMaestro AS destino
 USING
 (
     VALUES
-        ('10', NULL, N'EFECTIVO Y EQUIVALENTES DE EFECTIVO', 1, 'I', '', '', 0, 0, 0, 10),
-        ('101', '10', N'CAJA', 2, 'I', '', '', 0, 0, 0, 20),
-        ('1011', '101', N'EFECTIVO', 3, 'I', '', '', 0, 0, 0, 30),
-        ('10111001', '1011', N'EFECTIVO MN', 4, 'I', 'PEN', '', 1, 0, 0, 40),
-        ('10111002', '1011', N'EFECTIVO ME', 4, 'I', 'USD', 'V', 1, 0, 0, 50),
-        ('12', NULL, N'CUENTAS POR COBRAR COMERCIALES - TERCEROS', 1, 'I', '', '', 0, 0, 0, 60),
-        ('121', '12', N'FACTURAS, BOLETAS Y OTROS COMPROBANTES POR COBRAR', 2, 'I', '', '', 0, 0, 0, 70),
-        ('1212', '121', N'EMITIDAS EN CARTERA', 3, 'I', '', '', 0, 0, 0, 80),
-        ('12121001', '1212', N'CLIENTES MN', 4, 'I', 'PEN', '', 1, 0, 0, 90),
-        ('40', NULL, N'TRIBUTOS, CONTRAPRESTACIONES Y APORTES AL SISTEMA PUBLICO', 1, 'I', '', '', 0, 0, 0, 100),
-        ('401', '40', N'GOBIERNO NACIONAL', 2, 'I', '', '', 0, 0, 0, 110),
-        ('4011', '401', N'IMPUESTO GENERAL A LAS VENTAS', 3, 'I', '', '', 0, 0, 0, 120),
-        ('40111001', '4011', N'IGV CUENTA PROPIA', 4, 'I', 'PEN', '', 1, 0, 0, 130),
-        ('42', NULL, N'CUENTAS POR PAGAR COMERCIALES - TERCEROS', 1, 'I', '', '', 0, 0, 0, 140),
-        ('421', '42', N'FACTURAS, BOLETAS Y OTROS COMPROBANTES POR PAGAR', 2, 'I', '', '', 0, 0, 0, 150),
-        ('4212', '421', N'EMITIDAS', 3, 'I', '', '', 0, 0, 0, 160),
-        ('42121001', '4212', N'PROVEEDORES MN', 4, 'I', 'PEN', '', 1, 0, 0, 170),
-        ('60', NULL, N'COMPRAS', 1, 'N', '', '', 0, 0, 0, 180),
-        ('601', '60', N'MERCADERIAS', 2, 'N', '', '', 0, 0, 0, 190),
-        ('6011', '601', N'MERCADERIAS MANUFACTURADAS', 3, 'N', '', '', 0, 0, 0, 200),
-        ('60111001', '6011', N'MERCADERIAS MANUFACTURADAS MN', 4, 'N', 'PEN', '', 1, 0, 0, 210),
-        ('63', NULL, N'GASTOS DE SERVICIOS PRESTADOS POR TERCEROS', 1, 'N', '', '', 0, 0, 0, 220),
-        ('631', '63', N'TRANSPORTE, CORREOS Y GASTOS DE VIAJE', 2, 'N', '', '', 0, 0, 0, 230),
-        ('63111001', '631', N'TRANSPORTE MN', 3, 'N', 'PEN', '', 1, 1, 0, 240),
-        ('70', NULL, N'VENTAS', 1, 'R', '', '', 0, 0, 0, 250),
-        ('701', '70', N'MERCADERIAS', 2, 'R', '', '', 0, 0, 0, 260),
-        ('7011', '701', N'MERCADERIAS MANUFACTURADAS', 3, 'R', '', '', 0, 0, 0, 270),
-        ('70111001', '7011', N'VENTA DE MERCADERIAS MN', 4, 'R', 'PEN', '', 1, 0, 0, 280),
-        ('79', NULL, N'CARGAS IMPUTABLES A CUENTAS DE COSTOS Y GASTOS', 1, 'S', '', '', 0, 0, 0, 290),
-        ('791', '79', N'CARGAS IMPUTABLES A CUENTAS DE COSTOS Y GASTOS', 2, 'S', '', '', 0, 0, 0, 300),
-        ('7911', '791', N'CARGAS IMPUTABLES', 3, 'S', '', '', 0, 0, 0, 310),
-        ('79111001', '7911', N'CARGAS IMPUTABLES A COSTOS', 4, 'S', 'PEN', '', 1, 0, 0, 320),
-        ('79111002', '7911', N'CARGAS IMPUTABLES A GASTOS', 4, 'S', 'PEN', '', 1, 0, 0, 330),
-        ('90', NULL, N'COSTOS DE PRODUCCION', 1, 'F', '', '', 0, 0, 0, 340),
-        ('901', '90', N'COSTOS POR DISTRIBUIR', 2, 'F', '', '', 0, 0, 0, 350),
-        ('9011', '901', N'COSTOS POR DISTRIBUIR', 3, 'F', '', '', 0, 0, 0, 360),
-        ('90111001', '9011', N'COSTOS DE MERCADERIA', 4, 'F', 'PEN', '', 1, 1, 0, 370)
-) AS fuente (CodigoCuenta, CodigoCuentaPadre, NombreCuenta, NivelCuenta, ColBalance, IdMoneda, TipoCambio, AceptaMovimiento, RequiereCentroCosto, GeneraDiferenciaPorAnalisis, Orden)
+        ('10', NULL, N'EFECTIVO Y EQUIVALENTES DE EFECTIVO', 1, 'I', '', '', 0, 0, 10),
+        ('101', '10', N'CAJA', 2, 'I', '', '', 0, 0, 20),
+        ('1011', '101', N'EFECTIVO', 3, 'I', '', '', 0, 0, 30),
+        ('10111001', '1011', N'EFECTIVO MN', 4, 'I', 'PEN', '', 1, 0, 40),
+        ('10111002', '1011', N'EFECTIVO ME', 4, 'I', 'USD', 'V', 1, 0, 50),
+        ('12', NULL, N'CUENTAS POR COBRAR COMERCIALES - TERCEROS', 1, 'I', '', '', 0, 0, 60),
+        ('121', '12', N'FACTURAS, BOLETAS Y OTROS COMPROBANTES POR COBRAR', 2, 'I', '', '', 0, 0, 70),
+        ('1212', '121', N'EMITIDAS EN CARTERA', 3, 'I', '', '', 0, 0, 80),
+        ('12121001', '1212', N'CLIENTES MN', 4, 'I', 'PEN', '', 1, 0, 90),
+        ('40', NULL, N'TRIBUTOS, CONTRAPRESTACIONES Y APORTES AL SISTEMA PUBLICO', 1, 'I', '', '', 0, 0, 100),
+        ('401', '40', N'GOBIERNO NACIONAL', 2, 'I', '', '', 0, 0, 110),
+        ('4011', '401', N'IMPUESTO GENERAL A LAS VENTAS', 3, 'I', '', '', 0, 0, 120),
+        ('40111001', '4011', N'IGV CUENTA PROPIA', 4, 'I', 'PEN', '', 1, 0, 130),
+        ('42', NULL, N'CUENTAS POR PAGAR COMERCIALES - TERCEROS', 1, 'I', '', '', 0, 0, 140),
+        ('421', '42', N'FACTURAS, BOLETAS Y OTROS COMPROBANTES POR PAGAR', 2, 'I', '', '', 0, 0, 150),
+        ('4212', '421', N'EMITIDAS', 3, 'I', '', '', 0, 0, 160),
+        ('42121001', '4212', N'PROVEEDORES MN', 4, 'I', 'PEN', '', 1, 0, 170),
+        ('60', NULL, N'COMPRAS', 1, 'N', '', '', 0, 0, 180),
+        ('601', '60', N'MERCADERIAS', 2, 'N', '', '', 0, 0, 190),
+        ('6011', '601', N'MERCADERIAS MANUFACTURADAS', 3, 'N', '', '', 0, 0, 200),
+        ('60111001', '6011', N'MERCADERIAS MANUFACTURADAS MN', 4, 'N', 'PEN', '', 1, 0, 210),
+        ('63', NULL, N'GASTOS DE SERVICIOS PRESTADOS POR TERCEROS', 1, 'N', '', '', 0, 0, 220),
+        ('631', '63', N'TRANSPORTE, CORREOS Y GASTOS DE VIAJE', 2, 'N', '', '', 0, 0, 230),
+        ('63111001', '631', N'TRANSPORTE MN', 3, 'N', 'PEN', '', 1, 1, 240),
+        ('70', NULL, N'VENTAS', 1, 'R', '', '', 0, 0, 250),
+        ('701', '70', N'MERCADERIAS', 2, 'R', '', '', 0, 0, 260),
+        ('7011', '701', N'MERCADERIAS MANUFACTURADAS', 3, 'R', '', '', 0, 0, 270),
+        ('70111001', '7011', N'VENTA DE MERCADERIAS MN', 4, 'R', 'PEN', '', 1, 0, 280),
+        ('79', NULL, N'CARGAS IMPUTABLES A CUENTAS DE COSTOS Y GASTOS', 1, 'S', '', '', 0, 0, 290),
+        ('791', '79', N'CARGAS IMPUTABLES A CUENTAS DE COSTOS Y GASTOS', 2, 'S', '', '', 0, 0, 300),
+        ('7911', '791', N'CARGAS IMPUTABLES', 3, 'S', '', '', 0, 0, 310),
+        ('79111001', '7911', N'CARGAS IMPUTABLES A COSTOS', 4, 'S', 'PEN', '', 1, 0, 320),
+        ('79111002', '7911', N'CARGAS IMPUTABLES A GASTOS', 4, 'S', 'PEN', '', 1, 0, 330),
+        ('90', NULL, N'COSTOS DE PRODUCCION', 1, 'F', '', '', 0, 0, 340),
+        ('901', '90', N'COSTOS POR DISTRIBUIR', 2, 'F', '', '', 0, 0, 350),
+        ('9011', '901', N'COSTOS POR DISTRIBUIR', 3, 'F', '', '', 0, 0, 360),
+        ('90111001', '9011', N'COSTOS DE MERCADERIA', 4, 'F', 'PEN', '', 1, 1, 370)
+) AS fuente (CodigoCuenta, CodigoCuentaPadre, NombreCuenta, NivelCuenta, ColBalance, IdMoneda, TipoCambio, AceptaMovimiento, RequiereCentroCosto, Orden)
     ON destino.CodigoCuenta = fuente.CodigoCuenta
 WHEN MATCHED THEN
     UPDATE
@@ -188,12 +189,11 @@ WHEN MATCHED THEN
         destino.TipoCambio = fuente.TipoCambio,
         destino.AceptaMovimiento = fuente.AceptaMovimiento,
         destino.RequiereCentroCosto = fuente.RequiereCentroCosto,
-        destino.GeneraDiferenciaPorAnalisis = fuente.GeneraDiferenciaPorAnalisis,
         destino.Orden = fuente.Orden,
         destino.Estado = 1
 WHEN NOT MATCHED BY TARGET THEN
-    INSERT (CodigoCuenta, CodigoCuentaPadre, NombreCuenta, NivelCuenta, ColBalance, IdMoneda, TipoCambio, AceptaMovimiento, RequiereCentroCosto, GeneraDiferenciaPorAnalisis, Estado, Orden)
-    VALUES (fuente.CodigoCuenta, fuente.CodigoCuentaPadre, fuente.NombreCuenta, fuente.NivelCuenta, fuente.ColBalance, fuente.IdMoneda, fuente.TipoCambio, fuente.AceptaMovimiento, fuente.RequiereCentroCosto, fuente.GeneraDiferenciaPorAnalisis, 1, fuente.Orden);
+    INSERT (CodigoCuenta, CodigoCuentaPadre, NombreCuenta, NivelCuenta, ColBalance, IdMoneda, TipoCambio, AceptaMovimiento, RequiereCentroCosto, Estado, Orden)
+    VALUES (fuente.CodigoCuenta, fuente.CodigoCuentaPadre, fuente.NombreCuenta, fuente.NivelCuenta, fuente.ColBalance, fuente.IdMoneda, fuente.TipoCambio, fuente.AceptaMovimiento, fuente.RequiereCentroCosto, 1, fuente.Orden);
 
 MERGE dbo.CON_CuentaDestinoReglaMaestro AS destino
 USING

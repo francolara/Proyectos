@@ -400,6 +400,22 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     };
 
+    const restoreSubmitControls = function () {
+        document.querySelectorAll("button[type='submit'][data-original-disabled], input[type='submit'][data-original-disabled]").forEach(function (element) {
+            if (!(element instanceof HTMLButtonElement || element instanceof HTMLInputElement)) {
+                return;
+            }
+
+            element.disabled = element.dataset.originalDisabled === "true";
+            delete element.dataset.originalDisabled;
+        });
+    };
+
+    window.addEventListener("pageshow", function () {
+        hideLoadingOverlay();
+        restoreSubmitControls();
+    });
+
     document.querySelectorAll("form").forEach(function (form) {
         form.addEventListener("submit", function (event) {
             if (form.dataset.skipLoading === "true") {

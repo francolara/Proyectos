@@ -1,0 +1,33 @@
+@model SistemaAdministrativoWeb.ViewModels.Plataforma.PlanCuentaMaestroIndexViewModel
+@{
+    ViewData["Title"] = "Plan de cuentas maestro"; ViewData["PlatformShell"] = true;
+    var inicio = Math.Max(1, Model.Paginacion.PaginaActual - 2); var fin = Math.Min(Model.Paginacion.TotalPaginas, Model.Paginacion.PaginaActual + 2);
+}
+@* =============================================
+   Author: FRANCO LARA / Codex
+   Create date: 27/08/2026
+   Description: Lista del plan de cuentas maestro con paginacion numerada y navegacion lateral exclusiva.
+   ============================================= *@
+@* Firma: FRANCO LARA - 29/08/2026 | Uniformiza Editar y Eliminar con el patron compacto de Centros de costo. *@
+<section class="dashboard-shell">
+    <partial name="_Alertas" />
+    <section class="dashboard-hero"><div><span class="dashboard-kicker">Maestro</span><h1 class="app-page-title"><i class="bi bi-diagram-3"></i><span>Plan de cuentas maestro</span></h1><p>Plantilla contable que se copia por código al crear el plan por defecto.</p></div><a class="btn btn-light" asp-action="RegistrarPlanCuenta">Registrar cuenta</a></section>
+    <section class="table-panel">
+        <form method="get" class="workspace-filter-card"><div class="workspace-filter-grid"><div class="workspace-field"><label class="form-label">Buscar cuenta</label><input class="form-control" name="textoBusqueda" value="@Model.TextoBusqueda" placeholder="Código o nombre" /></div><div class="workspace-field"><label class="form-label">Nivel</label><input class="form-control" type="number" min="1" max="9" name="nivelCuenta" value="@Model.NivelCuenta" /></div></div><div class="workspace-actions"><button class="btn btn-primary">Consultar</button><a class="btn btn-outline-secondary" asp-action="PlanCuenta">Limpiar</a></div></form>
+        <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Código</th><th>Nombre</th><th>Padre</th><th>Nivel</th><th>Movimiento</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead><tbody>
+        @foreach (var item in Model.Items) { <tr><td><strong>@item.CodigoCuenta</strong></td><td>@item.NombreCuenta</td><td>@(item.CodigoCuentaPadre ?? "-")</td><td>@item.NivelCuenta</td><td>@(item.AceptaMovimiento ? "Sí" : "No")</td><td>@(item.Estado ? "Activo" : "Inactivo")</td><td class="text-end"><div class="workspace-row-actions-compact"><a class="workspace-row-link" asp-action="EditarPlanCuenta" asp-route-id="@item.IdPlanCuentaMaestro">Editar</a><form asp-action="EliminarPlanCuenta" method="post" class="d-inline-flex" onsubmit="return confirm('¿Eliminar esta cuenta maestra?');"><input type="hidden" name="id" value="@item.IdPlanCuentaMaestro" /><button type="submit" class="workspace-row-link text-danger">Eliminar</button></form></div></td></tr> }
+        @if (Model.Items.Count == 0) { <tr><td colspan="7" class="text-muted">No se encontraron cuentas.</td></tr> }
+        </tbody></table></div>
+        @if (Model.Paginacion.TotalPaginas > 1)
+        {
+            <nav class="workspace-pagination mt-3" aria-label="Paginación del plan de cuentas maestro">
+                <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaAnterior ? string.Empty : "disabled")" asp-action="PlanCuenta" asp-route-textoBusqueda="@Model.TextoBusqueda" asp-route-nivelCuenta="@Model.NivelCuenta" asp-route-pagina="@(Model.Paginacion.PaginaActual - 1)">Anterior</a>
+                @for (var pagina = inicio; pagina <= fin; pagina++)
+                {
+                    <a class="btn @(pagina == Model.Paginacion.PaginaActual ? "btn-primary" : "btn-outline-secondary")" asp-action="PlanCuenta" asp-route-textoBusqueda="@Model.TextoBusqueda" asp-route-nivelCuenta="@Model.NivelCuenta" asp-route-pagina="@pagina">@pagina</a>
+                }
+                <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaSiguiente ? string.Empty : "disabled")" asp-action="PlanCuenta" asp-route-textoBusqueda="@Model.TextoBusqueda" asp-route-nivelCuenta="@Model.NivelCuenta" asp-route-pagina="@(Model.Paginacion.PaginaActual + 1)">Siguiente</a>
+            </nav>
+        }
+    </section>
+</section>

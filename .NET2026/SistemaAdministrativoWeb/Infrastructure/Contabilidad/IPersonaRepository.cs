@@ -11,4 +11,5 @@ public interface IPersonaRepository
     Task<IReadOnlyCollection<UbigeoProvinciaDto>> ListarProvinciasAsync(string codigoDepartamento, CancellationToken cancellationToken = default);
     Task<IReadOnlyCollection<UbigeoDistritoDto>> ListarDistritosAsync(string codigoProvincia, CancellationToken cancellationToken = default);
     Task<PersonaDetalleDto> GuardarAsync(GuardarPersonaRequest request, CancellationToken cancellationToken = default);
+    Task EliminarAsync(int idEmpresa, int idPersona, CancellationToken cancellationToken = default);
 }

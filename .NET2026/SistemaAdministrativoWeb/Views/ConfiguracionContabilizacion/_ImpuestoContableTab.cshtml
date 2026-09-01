@@ -18,6 +18,10 @@
    Description:   Reemplaza los botones de ayuda textual por iconos de lupa en la configuracion de impuestos.
    ============================================= *@
 @* Firma: FRANCO LARA - 26/06/2026 | Mantiene la configuracion de impuestos solo para tributos y retira la cuenta Sistema SPOT para moverla a parametros contables. *@
+@* Firma: FRANCO LARA - 29/08/2026 | Oculta el guardado cuando no existe permiso efectivo de edicion contable. *@
+@{
+    var puedeEditar = await ModulePermissions.CanAccessModuleAsync(User, "CONFIGCONTABLE", ModulePermissionOperation.Edit);
+}
 
 <div class="workspace-section">
     <div class="workspace-section-head">
@@ -63,7 +67,10 @@
                                 <input form="@impuestoFormId" type="hidden" name="activo" value="false" />
                             </td>
                             <td class="text-end">
+                                @if (puedeEditar)
+                                {
                                 <button form="@impuestoFormId" type="submit" class="btn btn-primary btn-sm">Guardar</button>
+                                }
                             </td>
                     </tr>
                 }

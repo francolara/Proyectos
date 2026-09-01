@@ -1,26 +1,39 @@
 @using Microsoft.AspNetCore.Identity
 @inject SignInManager<IdentityUser> SignInManager
 @inject UserManager<IdentityUser> UserManager
+@* Firma: FRANCO LARA - 31/08/2026 | Presenta la sesion publica como un bloque de cuenta con avatar, correo y salida diferenciada. *@
 
-<ul class="navbar-nav align-items-lg-center gap-lg-2">
+@{
+    var correoSesion = User.Identity?.Name?.Trim() ?? "Usuario";
+    var inicialSesion = string.IsNullOrWhiteSpace(correoSesion)
+        ? "U"
+        : correoSesion[..1].ToUpperInvariant();
+}
+
 @if (SignInManager.IsSignedIn(User))
 {
-    <li class="nav-item">
-        <span class="nav-link text-dark">@(User.Identity?.Name ?? "Usuario")</span>
-    </li>
-    <li class="nav-item">
-        <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
-            <button type="submit" class="btn btn-link nav-link text-dark p-0">Cerrar sesion</button>
+    <div class="app-public-account" aria-label="Cuenta de usuario">
+        <span class="app-public-account-avatar" aria-hidden="true">@inicialSesion</span>
+        <span class="app-public-account-meta">
+            <small>Sesion activa</small>
+            <strong title="@correoSesion">@correoSesion</strong>
+        </span>
+        <form class="app-public-logout-form" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+            <button type="submit" class="app-public-logout" aria-label="Cerrar sesion">
+                <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+                <span>Cerrar sesion</span>
+            </button>
         </form>
-    </li>
+    </div>
 }
 else
 {
-    <li class="nav-item">
-        <a class="app-public-register-link" asp-area="Identity" asp-page="/Account/Register">Crear cuenta</a>
-    </li>
-    <li class="nav-item">
-        <a class="btn btn-primary btn-sm" asp-area="Identity" asp-page="/Account/Login">Ingresar</a>
-    </li>
+    <ul class="navbar-nav align-items-lg-center gap-lg-2">
+        <li class="nav-item">
+            <a class="app-public-register-link" asp-area="Identity" asp-page="/Account/Register">Crear cuenta</a>
+        </li>
+        <li class="nav-item">
+            <a class="btn btn-primary btn-sm" asp-area="Identity" asp-page="/Account/Login">Ingresar</a>
+        </li>
+    </ul>
 }
-</ul>

@@ -1,0 +1,27 @@
+@model SistemaAdministrativoWeb.ViewModels.Plataforma.AsignacionesMaestroViewModel
+@{ ViewData["Title"] = "Asignaciones contables maestras"; ViewData["PlatformShell"] = true; }
+@* =============================================
+   Author: FRANCO LARA / Codex
+   Create date: 27/08/2026
+   Description: Edicion restringida de codigos contables en parametros, impuestos y documentos maestros sin accesos directos horizontales redundantes.
+   ============================================= *@
+<section class="dashboard-shell">
+    <partial name="_Alertas" />
+    <section class="dashboard-hero"><div><span class="dashboard-kicker">Maestro</span><h1 class="app-page-title"><i class="bi bi-link-45deg"></i><span>Asignaciones contables maestras</span></h1><p>Aquí solo se editan códigos de cuenta; no se modifican los demás datos del catálogo.</p></div></section>
+    <section class="table-panel mb-3"><div class="table-panel-head"><h2>Parámetros contables</h2><p>Cuentas globales que serán copiadas a ADM_ParametroEmpresa.</p></div><div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Código</th><th>Descripción</th><th>Cuenta maestra</th><th></th></tr></thead><tbody>
+    @foreach (var item in Model.Parametros) { var inputId = $"parametro-{item.IdParametroMaestro}"; <tr><td><strong>@item.CodigoParametro</strong></td><td>@item.DescripcionParametro</td><td><form asp-action="GuardarAsignacion" method="post" class="d-flex gap-2"><input type="hidden" name="TipoAsignacion" value="PARAMETRO"><input type="hidden" name="IdRegistro" value="@item.IdParametroMaestro"><div class="input-group"><input id="@inputId" name="CodigoCuenta" class="form-control" value="@item.CodigoCuenta" placeholder="Sin asignar"><button type="button" class="btn btn-outline-secondary" data-cuenta-maestro-open data-target="@inputId"><i class="bi bi-search"></i></button></div><button class="btn btn-outline-primary">Guardar</button></form></td><td class="small text-muted">@item.NombreCuenta</td></tr> }
+    </tbody></table></div></section>
+
+    <section class="table-panel mb-3"><div class="table-panel-head"><h2>Impuestos</h2><p>Cuenta contable por tipo de impuesto maestro.</p></div><div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>SUNAT</th><th>Impuesto</th><th>Cuenta maestra</th><th></th></tr></thead><tbody>
+    @foreach (var item in Model.Impuestos) { var inputId = $"impuesto-{item.IdTipoImpuesto}"; <tr><td><strong>@item.CodigoSunat</strong></td><td>@item.NombreImpuesto</td><td><form asp-action="GuardarAsignacion" method="post" class="d-flex gap-2"><input type="hidden" name="TipoAsignacion" value="IMPUESTO"><input type="hidden" name="IdRegistro" value="@item.IdTipoImpuesto"><div class="input-group"><input id="@inputId" name="CodigoCuenta" class="form-control" value="@item.CodigoCuenta" placeholder="Sin asignar"><button type="button" class="btn btn-outline-secondary" data-cuenta-maestro-open data-target="@inputId"><i class="bi bi-search"></i></button></div><button class="btn btn-outline-primary">Guardar</button></form></td><td class="small text-muted">@item.NombreCuenta</td></tr> }
+    </tbody></table></div></section>
+
+    <section class="table-panel"><div class="table-panel-head"><h2>Tipos de comprobante</h2><p>Cuentas de venta y compra por moneda.</p></div><div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Documento</th><th>Venta soles</th><th>Venta dólares</th><th>Compra soles</th><th>Compra dólares</th><th></th></tr></thead><tbody>
+    @foreach (var item in Model.Documentos)
+    {
+        var vs = $"doc-vs-{item.IdTipoComprobante}"; var vd = $"doc-vd-{item.IdTipoComprobante}"; var cs = $"doc-cs-{item.IdTipoComprobante}"; var cd = $"doc-cd-{item.IdTipoComprobante}";
+        <tr><td><strong>@item.CodigoTipoComprobante</strong><div class="small text-muted">@item.Descripcion</div></td><td colspan="5"><form asp-action="GuardarAsignacion" method="post"><input type="hidden" name="TipoAsignacion" value="DOCUMENTO"><input type="hidden" name="IdRegistro" value="@item.IdTipoComprobante"><div class="row g-2"><div class="col"><div class="input-group"><input id="@vs" name="CodigoCuentaVentaSoles" class="form-control" value="@item.CodigoCuentaVentaSoles"><button type="button" class="btn btn-outline-secondary" data-cuenta-maestro-open data-target="@vs"><i class="bi bi-search"></i></button></div></div><div class="col"><div class="input-group"><input id="@vd" name="CodigoCuentaVentaDolares" class="form-control" value="@item.CodigoCuentaVentaDolares"><button type="button" class="btn btn-outline-secondary" data-cuenta-maestro-open data-target="@vd"><i class="bi bi-search"></i></button></div></div><div class="col"><div class="input-group"><input id="@cs" name="CodigoCuentaCompraSoles" class="form-control" value="@item.CodigoCuentaCompraSoles"><button type="button" class="btn btn-outline-secondary" data-cuenta-maestro-open data-target="@cs"><i class="bi bi-search"></i></button></div></div><div class="col"><div class="input-group"><input id="@cd" name="CodigoCuentaCompraDolares" class="form-control" value="@item.CodigoCuentaCompraDolares"><button type="button" class="btn btn-outline-secondary" data-cuenta-maestro-open data-target="@cd"><i class="bi bi-search"></i></button></div></div><div class="col-auto"><button class="btn btn-outline-primary">Guardar</button></div></div></form></td></tr>
+    }
+    </tbody></table></div></section>
+</section>
+<partial name="_CuentaMaestroModal" />

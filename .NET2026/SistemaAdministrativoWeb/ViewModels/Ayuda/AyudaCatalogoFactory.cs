@@ -5,6 +5,7 @@ namespace SistemaAdministrativoWeb.ViewModels.Ayuda;
 // Firma: FRANCO LARA - 05/08/2026 | Actualiza la ayuda del dashboard para incluir la tendencia historica de movimientos bancarios.
 // Firma: FRANCO LARA - 25/08/2026 | Alinea la ayuda del cierre anual y de las cargas contables por defecto con el comportamiento vigente de cada modulo.
 // Firma: FRANCO LARA - 26/08/2026 | Completa la ayuda operativa y documenta la seleccion emergente de rangos contables de cualquier nivel en Analisis, Libro Diario, Libro Mayor y Balance.
+// Firma: FRANCO LARA - 29/08/2026 | Actualiza la ayuda de Usuarios para explicar pestanas, arbol, herencia y guardado conjunto de permisos.
 public static class AyudaCatalogoFactory
 {
     public static AyudaIndexViewModel Crear(string? moduloSolicitado)
@@ -486,8 +487,10 @@ public static class AyudaCatalogoFactory
             ("Por que no puedo agregar otro usuario", "La cuenta puede haber alcanzado el limite de usuarios permitido por la suscripcion. Revisa Mi suscripcion antes de intentar una nueva alta."),
             ("Para que sirve el rol de cuenta", "El rol establece el nivel base de acceso del usuario dentro de la cuenta administradora y sirve como referencia para calcular sus permisos efectivos."),
             ("Como asigno o retiro empresas a un usuario", "Desde la opcion Permisos puedes marcar las empresas donde trabajara el usuario. Debe conservar al menos una empresa asignada."),
-            ("Que diferencia hay entre permisos de cuenta y permisos por empresa", "Los permisos de cuenta aplican como excepciones generales; los permisos por empresa permiten ajustar el acceso operativo solo dentro de una empresa seleccionada."),
-            ("Que significan Ver, Crear, Editar y Eliminar en Permisos", "Son las acciones controladas por modulo. La opcion Rol hereda el valor base y Si o No crea una excepcion explicita para esa accion."),
+            ("Que diferencia hay entre las pestanas de permisos", "Opciones generales controla accesos de toda la cuenta. Modulo contable aplica excepciones solamente a la empresa seleccionada en la parte superior de esa pestana."),
+            ("Que significan Ver, Crear, Editar y Eliminar", "Son las acciones disponibles por opcion. Acceso y Ver determinan si el usuario puede entrar; Crear, Editar y Eliminar controlan las operaciones de mantenimiento."),
+            ("Que significan Heredado, Permitido y Denegado", "Heredado conserva lo definido por el rol. Permitido o Denegado crea una excepcion expresa para el usuario. Restaurar al rol elimina esa excepcion."),
+            ("Como guardo varios cambios de permisos", "Marca las opciones necesarias dentro de uno o varios grupos y usa Guardar cambios al pie de la pestana. Todo el lote se aplica junto."),
             ("Que pasa cuando desactivo el acceso de un usuario", "Se desactiva su vinculacion con la cuenta administradora sin eliminar su identidad ni el historial de operaciones que ya registro.")
         ]);
 

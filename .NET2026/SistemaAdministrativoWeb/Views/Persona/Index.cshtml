@@ -1,10 +1,14 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.PersonaIndexViewModel
+@* Firma: FRANCO LARA - 29/08/2026 | Aplica permisos efectivos y agrega eliminacion segura desde el listado de personas. *@
 
 @{
     ViewData["Title"] = "Personas";
     ViewData["AdminShell"] = true;
     var paginaInicio = Math.Max(1, Model.Paginacion.PaginaActual - 2);
     var paginaFin = Math.Min(Model.Paginacion.TotalPaginas, Model.Paginacion.PaginaActual + 2);
+    var puedeCrear = await ModulePermissions.CanAccessModuleAsync(User, "PERSONAS", ModulePermissionOperation.Create);
+    var puedeEditar = await ModulePermissions.CanAccessModuleAsync(User, "PERSONAS", ModulePermissionOperation.Edit);
+    var puedeEliminar = await ModulePermissions.CanAccessModuleAsync(User, "PERSONAS", ModulePermissionOperation.Delete);
 }
 
 <section class="dashboard-shell">
@@ -34,13 +38,20 @@
                 <p>Busca por nombre o documento y abre el registro en modo edicion desde la grilla.</p>
             </div>
             <div class="workspace-row-actions">
-                <a asp-action="Registrar" class="btn btn-light btn-sm">Registrar persona</a>
+                @if (puedeCrear)
+                {
+                    <a asp-action="Registrar" class="btn btn-light btn-sm">Registrar persona</a>
+                }
             </div>
         </div>
         <div class="workspace-window-body">
             @if (TempData["PersonaOk"] is string ok)
             {
                 <div class="alert alert-success">@ok</div>
+            }
+            @if (TempData["PersonaError"] is string error)
+            {
+                <div class="alert alert-danger">@error</div>
             }
 
             <form asp-action="Index" method="get" class="workspace-filter-card">
@@ -126,7 +137,7 @@
                                             ? "Proveedor"
                                             : "Solo persona";
                                 var ubigeo = string.Join(" / ", new[] { persona.Departamento, persona.Provincia, persona.Distrito }.Where(x => !string.IsNullOrWhiteSpace(x)));
-                                <tr class="workspace-clickable-row" data-edit-url="@Url.Action("Editar", new { idPersona = persona.IdPersona })">
+                                <tr class="@(puedeEditar ? "workspace-clickable-row" : string.Empty)" data-edit-url="@(puedeEditar ? Url.Action("Editar", new { idPersona = persona.IdPersona }) : null)">
                                     <td>
                                         <strong>@persona.TipoDocumento</strong><br />
                                         <span class="text-muted">@persona.NumeroDocumento</span>
@@ -145,7 +156,25 @@
                                         </span>
                                     </td>
                                     <td class="text-end">
-                                        <a asp-action="Editar" asp-route-idPersona="@persona.IdPersona" class="workspace-row-link">Editar</a>
+                                        <div class="workspace-row-actions-compact">
+                                            @if (puedeEditar)
+                                            {
+                                                <a asp-action="Editar" asp-route-idPersona="@persona.IdPersona" class="workspace-row-link">Editar</a>
+                                            }
+                                            @if (puedeEliminar)
+                                            {
+                                                <form asp-action="Eliminar" method="post" onsubmit="return confirm('Se eliminara la persona si no ha sido utilizada. ¿Desea continuar?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="idPersona" value="@persona.IdPersona" />
+                                                    <input type="hidden" name="textoBusqueda" value="@Model.TextoBusqueda" />
+                                                    <input type="hidden" name="tipoPersona" value="@Model.TipoPersonaFiltro" />
+                                                    <input type="hidden" name="soloClientes" value="@Model.SoloClientes" />
+                                                    <input type="hidden" name="soloProveedores" value="@Model.SoloProveedores" />
+                                                    <input type="hidden" name="pagina" value="@Model.Paginacion.PaginaActual" />
+                                                    <button type="submit" class="workspace-row-link text-danger">Eliminar</button>
+                                                </form>
+                                            }
+                                        </div>
                                     </td>
                                 </tr>
                             }

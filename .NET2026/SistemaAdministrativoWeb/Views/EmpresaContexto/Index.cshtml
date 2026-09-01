@@ -1,9 +1,12 @@
 @model SistemaAdministrativoWeb.ViewModels.Empresas.SeleccionEmpresaViewModel
 
 @* Firma: FRANCO LARA - 26/08/2026 | Oculta CodigoEmpresa, agrega edicion fiscal y reemplaza el combo por seleccion accesible de toda la fila. *@
+@* Firma: FRANCO LARA - 29/08/2026 | Mantiene siempre disponible la seleccion de empresa y muestra alta o edicion solo cuando el permiso especifico lo permite. *@
 
 @{
     ViewData["Title"] = "Seleccion de empresa";
+    var puedeCrearEmpresa = ViewData["PuedeCrearEmpresa"] is bool crear && crear;
+    var puedeEditarEmpresa = ViewData["PuedeEditarEmpresa"] is bool editar && editar;
 }
 
 <section class="workspace-window">
@@ -70,11 +73,14 @@
                                     <td>@empresa.Ruc</td>
                                     <td>@(empresa.EsEmpresaPredeterminada ? "Si" : "No")</td>
                                     <td class="text-end">
-                                        <a asp-action="Editar"
-                                           asp-route-idEmpresa="@empresa.IdEmpresa"
-                                           class="btn btn-sm btn-outline-primary">
-                                            Editar
-                                        </a>
+                                        @if (puedeEditarEmpresa)
+                                        {
+                                            <a asp-action="Editar"
+                                               asp-route-idEmpresa="@empresa.IdEmpresa"
+                                               class="btn btn-sm btn-outline-primary">
+                                                Editar
+                                            </a>
+                                        }
                                     </td>
                                 </tr>
                             }
@@ -90,7 +96,10 @@
                             disabled="@(Model.IdEmpresaSeleccionada <= 0 ? "disabled" : null)">
                         Continuar al panel
                     </button>
-                    <a asp-action="RegistrarEmpresaInicial" class="btn btn-outline-secondary">Registrar otra empresa</a>
+                    @if (puedeCrearEmpresa)
+                    {
+                        <a asp-action="RegistrarEmpresaInicial" class="btn btn-outline-secondary">Registrar otra empresa</a>
+                    }
                 </div>
             }
         </form>

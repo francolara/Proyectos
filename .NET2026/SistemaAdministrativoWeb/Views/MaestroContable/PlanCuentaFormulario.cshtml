@@ -1,0 +1,26 @@
+@model SistemaAdministrativoWeb.ViewModels.Plataforma.PlanCuentaMaestroFormViewModel
+@{ ViewData["Title"] = Model.IdPlanCuentaMaestro.HasValue ? "Editar cuenta maestra" : "Registrar cuenta maestra"; ViewData["PlatformShell"] = true; }
+@* =============================================
+   Author: FRANCO LARA / Codex
+   Create date: 27/08/2026
+   Description: Formulario de alta y edicion del plan de cuentas maestro, navegable exclusivamente desde el menu lateral.
+   ============================================= *@
+<section class="dashboard-shell">
+    <section class="dashboard-hero"><div><span class="dashboard-kicker">Plan maestro</span><h1 class="app-page-title"><i class="bi bi-pencil-square"></i><span>@ViewData["Title"]</span></h1><p>El código queda bloqueado después del registro para proteger las referencias.</p></div></section>
+    <form asp-action="GuardarPlanCuenta" method="post" class="table-panel p-3">
+        <input asp-for="IdPlanCuentaMaestro" type="hidden" /><div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+        <div class="row g-3">
+            <div class="col-md-3"><label asp-for="CodigoCuenta" class="form-label"></label><input asp-for="CodigoCuenta" class="form-control" readonly="@(Model.IdPlanCuentaMaestro.HasValue ? "readonly" : null)" /><span asp-validation-for="CodigoCuenta" class="text-danger"></span></div>
+            <div class="col-md-5"><label asp-for="NombreCuenta" class="form-label"></label><input asp-for="NombreCuenta" class="form-control" /><span asp-validation-for="NombreCuenta" class="text-danger"></span></div>
+            <div class="col-md-4"><label asp-for="CodigoCuentaPadre" class="form-label"></label><div class="input-group"><input asp-for="CodigoCuentaPadre" class="form-control" /><button type="button" class="btn btn-outline-secondary" data-cuenta-maestro-open data-target="CodigoCuentaPadre" data-solo-movimiento="false"><i class="bi bi-search"></i></button></div></div>
+            <div class="col-md-3"><label asp-for="ColBalance" class="form-label"></label><select asp-for="ColBalance" class="form-select"><option value="S">S - Saldo</option><option value="I">I - Inventario</option><option value="N">N - Naturaleza</option><option value="F">F - Función</option><option value="R">R - Resultado</option></select></div>
+            <div class="col-md-3"><label asp-for="IdMoneda" class="form-label"></label><select asp-for="IdMoneda" class="form-select"><option value="">Sin moneda fija</option><option value="PEN">Soles</option><option value="USD">Dólares</option></select></div>
+            <div class="col-md-3"><label asp-for="TipoCambio" class="form-label"></label><select asp-for="TipoCambio" class="form-select"><option value="">Sin tipo de cambio</option><option value="C">Compra</option><option value="V">Venta</option></select></div>
+            <div class="col-md-3"><label asp-for="Orden" class="form-label"></label><input asp-for="Orden" class="form-control" type="number" /></div>
+            <div class="col-12 d-flex gap-4"><div class="form-check"><input asp-for="AceptaMovimiento" class="form-check-input" /><label asp-for="AceptaMovimiento" class="form-check-label">Acepta movimiento</label></div><div class="form-check"><input asp-for="RequiereCentroCosto" class="form-check-input" /><label asp-for="RequiereCentroCosto" class="form-check-label">Requiere centro de costo</label></div><div class="form-check"><input asp-for="Estado" class="form-check-input" /><label asp-for="Estado" class="form-check-label">Activo</label></div></div>
+        </div>
+        <div class="workspace-actions mt-4"><button class="btn btn-primary">Guardar</button><a class="btn btn-outline-secondary" asp-action="PlanCuenta">Cancelar</a></div>
+    </form>
+</section>
+<partial name="_CuentaMaestroModal" />
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

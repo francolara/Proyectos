@@ -3,11 +3,14 @@
 @* Firma: FRANCO LARA - 29/06/2026 | Agrega el mantenimiento de tipos de cambio por periodo y habilita la sincronizacion mensual desde la API Migo, ocultando la cuenta administradora en la vista. *@
 @* Firma: FRANCO LARA - 02/07/2026 | Corrige la seleccion visible de anio y mes en tipos de cambio para que el periodo mostrado respete el contexto devuelto por la opcion. *@
 @* Firma: FRANCO LARA - 26/08/2026 | Muestra Soles y Dolares como nombres visibles, conservando PEN y USD como codigos internos. *@
+@* Firma: FRANCO LARA - 29/08/2026 | Oculta sincronizacion, alta y edicion cuando el permiso efectivo no autoriza la operacion. *@
 
 @{
     ViewData["Title"] = "Tipos de cambio";
     ViewData["AdminShell"] = true;
     var periodoTexto = new DateTime(Model.AnioSeleccionado, Model.MesSeleccionado, 1).ToString("MMMM 'de' yyyy");
+    var puedeCrear = await ModulePermissions.CanAccessModuleAsync(User, "TIPOCAMBIO", ModulePermissionOperation.Create);
+    var puedeEditar = await ModulePermissions.CanAccessModuleAsync(User, "TIPOCAMBIO", ModulePermissionOperation.Edit);
     static string ObtenerTextoMoneda(string codigoMoneda)
     {
         return codigoMoneda.Trim().ToUpperInvariant() switch
@@ -46,6 +49,8 @@
                 <p>Consulta, administra y sincroniza los tipos de cambio por cuenta administradora usando el periodo contable como filtro.</p>
             </div>
             <div class="workspace-row-actions">
+                @if (puedeCrear)
+                {
                 <form asp-action="SincronizarPeriodoDesdeApi" method="post" class="d-inline">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="anio" value="@Model.AnioSeleccionado" />
@@ -53,6 +58,7 @@
                     <button type="submit" class="btn btn-outline-secondary btn-sm">Obtener tipos de cambio</button>
                 </form>
                 <a asp-action="Registrar" asp-route-periodo="@Model.PeriodoConsulta" class="btn btn-light btn-sm">Registrar tipo de cambio</a>
+                }
             </div>
         </div>
         <div class="workspace-window-body">
@@ -129,7 +135,7 @@
                         {
                             @foreach (var item in Model.TiposCambio)
                             {
-                                <tr class="workspace-clickable-row" data-edit-url="@Url.Action("Editar", new { idTipoCambio = item.IdTipoCambio, periodo = Model.PeriodoConsulta })">
+                                <tr class="@(puedeEditar ? "workspace-clickable-row" : string.Empty)" data-edit-url="@(puedeEditar ? Url.Action("Editar", new { idTipoCambio = item.IdTipoCambio, periodo = Model.PeriodoConsulta }) : null)">
                                     <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
                                     <td class="workspace-tree-code">@ObtenerTextoMoneda(item.IdMoneda)</td>
                                     <td>@item.Compra.ToString("N4")</td>
@@ -143,7 +149,10 @@
                                         </span>
                                     </td>
                                     <td class="text-end">
-                                        <a asp-action="Editar" asp-route-idTipoCambio="@item.IdTipoCambio" asp-route-periodo="@Model.PeriodoConsulta" class="workspace-row-link">Editar</a>
+                                        @if (puedeEditar)
+                                        {
+                                            <a asp-action="Editar" asp-route-idTipoCambio="@item.IdTipoCambio" asp-route-periodo="@Model.PeriodoConsulta" class="workspace-row-link">Editar</a>
+                                        }
                                     </td>
                                 </tr>
                             }

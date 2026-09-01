@@ -88,6 +88,20 @@ public sealed class CuentaCorrienteRepository(IDbConnectionFactory connectionFac
         return Map(reader);
     }
 
+    public async Task EliminarAsync(int idEmpresa, int idBancoConfiguracionEmpresa, CancellationToken cancellationToken = default)
+    {
+        await using var connection = connectionFactory.CreateConnection();
+        await using var command = new SqlCommand("dbo.usp_CON_EliminarBancoConfiguracionEmpresa", connection)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        command.Parameters.AddWithValue("@IdEmpresa", idEmpresa);
+        command.Parameters.AddWithValue("@IdBancoConfiguracionEmpresa", idBancoConfiguracionEmpresa);
+        await connection.OpenAsync(cancellationToken);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
     private static BancoConfiguracionEmpresaDto Map(SqlDataReader reader)
     {
         return new BancoConfiguracionEmpresaDto

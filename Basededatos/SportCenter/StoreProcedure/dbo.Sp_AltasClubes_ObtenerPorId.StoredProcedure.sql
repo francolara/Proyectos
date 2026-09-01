@@ -1,4 +1,4 @@
-USE [dbsportcenter_20260613]
+﻿
 GO
 SET ANSI_NULLS ON
 GO

@@ -9,6 +9,7 @@
 -- Description:   Permite cargar el plan desde una empresa base o desde el maestro, heredando diferencia en cambio por analisis.
 -- =============================================
 -- Firma: FRANCO LARA - 25/08/2026 | El maestro no contiene GeneraDiferenciaPorAnalisis; al cargarlo se inicializa en cero para la empresa.
+-- Firma: FRANCO LARA - 27/08/2026 | Corrige la copia desde una empresa base sin depender de una columna Orden inexistente en CON_PlanCuenta.
 
 CREATE OR ALTER PROCEDURE dbo.usp_CON_CargarPlanCuentaDefaultEmpresa
     @IdEmpresa INT,
@@ -98,7 +99,14 @@ BEGIN
                 hijo.GeneraDiferenciaPorAnalisis,
                 hijo.RequiereCentroCosto,
                 hijo.Estado,
-                hijo.Orden
+                CONVERT
+                (
+                    INT,
+                    ROW_NUMBER() OVER
+                    (
+                        ORDER BY hijo.NivelCuenta, hijo.CodigoCuenta
+                    )
+                ) AS Orden
             FROM dbo.CON_PlanCuenta AS hijo
             LEFT JOIN dbo.CON_PlanCuenta AS padre
                 ON padre.IdPlanCuenta = hijo.IdPlanCuentaPadre

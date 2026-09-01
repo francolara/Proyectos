@@ -20,11 +20,13 @@
    ============================================= *@
 @* Firma: FRANCO LARA - 24/06/2026 | Restringe la ayuda popup de cuentas en la vista directa de configuracion contable a cuentas del ultimo nivel y muestra mensaje si se intenta elegir una cuenta intermedia. *@
 @* Firma: FRANCO LARA - 26/06/2026 | Agrega la provision Detracciones, incorpora la tarjeta Parametros para editar ADM_ParametroEmpresa con ayuda del plan de cuentas y retira la configuracion visual de Sistema SPOT desde impuestos. *@
+@* Firma: FRANCO LARA - 29/08/2026 | Oculta las acciones de guardado cuando el usuario no tiene permiso efectivo de edicion. *@
 
 @{
     ViewData["Title"] = "Configuracion contable";
     ViewData["AdminShell"] = true;
     var provisiones = Model.Provisiones ?? new List<ConfiguracionProvisionOperacionViewModel>();
+    var puedeEditar = await ModulePermissions.CanAccessModuleAsync(User, "CONFIGCONTABLE", ModulePermissionOperation.Edit);
 }
 
 <section class="dashboard-shell">
@@ -154,7 +156,10 @@
                                             </label>
                                         </div>
                                         <div class="workspace-actions">
+                                            @if (puedeEditar)
+                                            {
                                             <button type="submit" class="btn btn-primary">Guardar provision @provision.Titulo.ToLowerInvariant()</button>
+                                            }
                                         </div>
                                     </form>
                                 </div>
@@ -241,7 +246,10 @@
                                                     <input form="@documentoFormId" type="hidden" name="activo" value="false" />
                                                 </td>
                                                 <td class="text-end">
+                                                    @if (puedeEditar)
+                                                    {
                                                     <button form="@documentoFormId" type="submit" class="btn btn-primary btn-sm">Guardar</button>
+                                                    }
                                                 </td>
                                         </tr>
                                     }
@@ -310,7 +318,10 @@
                                                     <input form="@documentoFormId" type="hidden" name="activo" value="false" />
                                                 </td>
                                                 <td class="text-end">
+                                                    @if (puedeEditar)
+                                                    {
                                                     <button form="@documentoFormId" type="submit" class="btn btn-primary btn-sm">Guardar</button>
+                                                    }
                                                 </td>
                                         </tr>
                                     }

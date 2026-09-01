@@ -1,0 +1,30 @@
+@model SistemaAdministrativoWeb.ViewModels.Plataforma.ConfiguracionMaestroIndexViewModel
+@{
+    ViewData["Title"] = "Configuración contable maestra";
+    ViewData["PlatformShell"] = true;
+    var paginaInicio = Math.Max(1, Model.Paginacion.PaginaActual - 2);
+    var paginaFin = Math.Min(Model.Paginacion.TotalPaginas, Model.Paginacion.PaginaActual + 2);
+}
+@* =============================================
+   Author: FRANCO LARA / Codex
+   Create date: 27/08/2026
+   Description: Edicion restringida del origen de cada configuracion contable maestra con paginacion numerada y navegacion lateral exclusiva.
+   ============================================= *@
+<section class="dashboard-shell"><partial name="_Alertas" /><section class="dashboard-hero"><div><span class="dashboard-kicker">Maestro</span><h1 class="app-page-title"><i class="bi bi-sliders"></i><span>Configuración contable maestra</span></h1><p>Solo permite cambiar el origen asignado a cada módulo y escenario.</p></div></section>
+<section class="table-panel"><form method="get" class="workspace-filter-card"><div class="workspace-filter-grid"><div class="workspace-field"><label class="form-label">Buscar configuración</label><input name="textoBusqueda" class="form-control" value="@Model.TextoBusqueda" placeholder="Módulo, escenario, descripción u origen"></div></div><div class="workspace-actions"><button class="btn btn-primary">Consultar</button><a class="btn btn-outline-secondary" asp-action="Configuracion">Limpiar</a></div></form>
+<div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Módulo</th><th>Escenario</th><th>Descripción</th><th>Origen asignado</th><th></th></tr></thead><tbody>
+@foreach (var item in Model.Items) { <tr><td><strong>@item.ModuloOperacion</strong></td><td>@item.EscenarioOperacion</td><td>@item.Descripcion</td><td colspan="2"><form asp-action="GuardarConfiguracion" method="post" class="d-flex gap-2"><input type="hidden" name="IdConfiguracionContabilizacionMaestro" value="@item.IdConfiguracionContabilizacionMaestro"><select name="CodigoOrigen" class="form-select">@foreach (var origen in Model.OrigenesActivos) { <option value="@origen.CodigoOrigen" selected="@(origen.CodigoOrigen == item.CodigoOrigen ? "selected" : null)">@origen.CodigoOrigen - @origen.NombreOrigen</option> }</select><button class="btn btn-outline-primary">Guardar</button></form></td></tr> }
+@if (Model.Items.Count == 0) { <tr><td colspan="5" class="text-muted">No se encontraron configuraciones.</td></tr> }
+</tbody></table></div>
+@if (Model.Paginacion.TotalPaginas > 1)
+{
+    <nav class="workspace-pagination mt-3" aria-label="Paginación de configuraciones contables maestras">
+        <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaAnterior ? string.Empty : "disabled")" asp-action="Configuracion" asp-route-textoBusqueda="@Model.TextoBusqueda" asp-route-pagina="@(Model.Paginacion.PaginaActual - 1)">Anterior</a>
+        @for (var pagina = paginaInicio; pagina <= paginaFin; pagina++)
+        {
+            <a class="btn @(pagina == Model.Paginacion.PaginaActual ? "btn-primary" : "btn-outline-secondary")" asp-action="Configuracion" asp-route-textoBusqueda="@Model.TextoBusqueda" asp-route-pagina="@pagina">@pagina</a>
+        }
+        <a class="btn btn-outline-secondary @(Model.Paginacion.TienePaginaSiguiente ? string.Empty : "disabled")" asp-action="Configuracion" asp-route-textoBusqueda="@Model.TextoBusqueda" asp-route-pagina="@(Model.Paginacion.PaginaActual + 1)">Siguiente</a>
+    </nav>
+}
+</section></section>

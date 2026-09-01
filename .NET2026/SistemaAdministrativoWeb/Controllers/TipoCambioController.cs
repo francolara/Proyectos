@@ -61,6 +61,7 @@ public class TipoCambioController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [ModuleSavePermission("TIPOCAMBIO", "Formulario.IdTipoCambio")]
     public async Task<IActionResult> Guardar(TipoCambioIndexViewModel model, string? periodo = null, CancellationToken cancellationToken = default)
     {
         var contexto = await ObtenerContextoAsync(cancellationToken);
@@ -119,6 +120,7 @@ public class TipoCambioController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [ModulePermission("TIPOCAMBIO", ModulePermissionOperation.Create)]
     public async Task<IActionResult> SincronizarPeriodoDesdeApi(short anio, byte mes, CancellationToken cancellationToken = default)
     {
         var contexto = await ObtenerContextoAsync(cancellationToken);
@@ -150,6 +152,7 @@ public class TipoCambioController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [ModulePermission("TIPOCAMBIO", ModulePermissionOperation.Create)]
     public async Task<IActionResult> SincronizarFechaDesdeApi(TipoCambioIndexViewModel model, string? periodo = null, int? idTipoCambioActual = null, CancellationToken cancellationToken = default)
     {
         var contexto = await ObtenerContextoAsync(cancellationToken);

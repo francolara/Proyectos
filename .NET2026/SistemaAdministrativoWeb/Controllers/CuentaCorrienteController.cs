@@ -83,6 +83,29 @@ public class CuentaCorrienteController(
         return View("Formulario", ConstruirViewModel([], cuenta, monedas));
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [ModulePermission("CUENTACORRIENTE", ModulePermissionOperation.Delete)]
+    public async Task<IActionResult> Eliminar(int idBancoConfiguracionEmpresa, string? textoBusqueda = null, int pagina = 1, CancellationToken cancellationToken = default)
+    {
+        if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)
+        {
+            return RedirectToAction("Index", "EmpresaContexto");
+        }
+
+        try
+        {
+            await cuentaCorrienteRepository.EliminarAsync(currentCompanyAccessor.EmpresaId.Value, idBancoConfiguracionEmpresa, cancellationToken);
+            TempData["CuentaCorrienteOk"] = "Cuenta corriente eliminada correctamente.";
+        }
+        catch (Exception ex)
+        {
+            TempData["CuentaCorrienteError"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Index), new { textoBusqueda, pagina });
+    }
+
     [HttpGet]
     public async Task<IActionResult> BuscarBancosAyuda(string? textoBusqueda = null, int tamanoPagina = TamanoAyudaBancos, CancellationToken cancellationToken = default)
     {
@@ -115,6 +138,7 @@ public class CuentaCorrienteController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [ModuleSavePermission("CUENTACORRIENTE", nameof(CuentaCorrienteFormViewModel.IdBancoConfiguracionEmpresa))]
     public async Task<IActionResult> Guardar(CuentaCorrienteFormViewModel formulario, CancellationToken cancellationToken)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)

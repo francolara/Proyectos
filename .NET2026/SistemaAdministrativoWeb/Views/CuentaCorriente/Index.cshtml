@@ -1,10 +1,14 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.CuentaCorrienteIndexViewModel
+@* Firma: FRANCO LARA - 29/08/2026 | Aplica permisos efectivos, agrega eliminacion segura y uniformiza los botones Editar y Eliminar del listado de cuentas corrientes. *@
 
 @{
     ViewData["Title"] = "Cuentas corrientes";
     ViewData["AdminShell"] = true;
     var paginaInicio = Math.Max(1, Model.Paginacion.PaginaActual - 2);
     var paginaFin = Math.Min(Model.Paginacion.TotalPaginas, Model.Paginacion.PaginaActual + 2);
+    var puedeCrear = await ModulePermissions.CanAccessModuleAsync(User, "CUENTACORRIENTE", ModulePermissionOperation.Create);
+    var puedeEditar = await ModulePermissions.CanAccessModuleAsync(User, "CUENTACORRIENTE", ModulePermissionOperation.Edit);
+    var puedeEliminar = await ModulePermissions.CanAccessModuleAsync(User, "CUENTACORRIENTE", ModulePermissionOperation.Delete);
 }
 
 <section class="dashboard-shell">
@@ -34,13 +38,20 @@
                 <p>Consulta, filtra y abre la edicion de las cuentas corrientes bancarias de la empresa activa.</p>
             </div>
             <div class="workspace-row-actions">
-                <a asp-action="Registrar" class="btn btn-light btn-sm">Registrar cuenta corriente</a>
+                @if (puedeCrear)
+                {
+                    <a asp-action="Registrar" class="btn btn-light btn-sm">Registrar cuenta corriente</a>
+                }
             </div>
         </div>
         <div class="workspace-window-body">
             @if (TempData["CuentaCorrienteOk"] is string ok)
             {
                 <div class="alert alert-success">@ok</div>
+            }
+            @if (TempData["CuentaCorrienteError"] is string error)
+            {
+                <div class="alert alert-danger">@error</div>
             }
 
             <form asp-action="Index" method="get" class="workspace-filter-card">
@@ -88,7 +99,7 @@
                         {
                             @foreach (var item in Model.CuentasCorrientes)
                             {
-                                <tr class="workspace-clickable-row" data-edit-url="@Url.Action("Editar", new { idBancoConfiguracionEmpresa = item.IdBancoConfiguracionEmpresa })">
+                                <tr class="@(puedeEditar ? "workspace-clickable-row" : string.Empty)" data-edit-url="@(puedeEditar ? Url.Action("Editar", new { idBancoConfiguracionEmpresa = item.IdBancoConfiguracionEmpresa }) : null)">
                                     <td>
                                         <div class="fw-semibold">@item.NombreBanco</div>
                                         <div class="text-muted small">@item.CodigoBanco</div>
@@ -107,7 +118,22 @@
                                     </td>
                                     <td>@item.FechaRegistro.ToString("dd/MM/yyyy")</td>
                                     <td class="text-end">
-                                        <a asp-action="Editar" asp-route-idBancoConfiguracionEmpresa="@item.IdBancoConfiguracionEmpresa" class="workspace-row-link">Editar</a>
+                                        <div class="workspace-row-actions-compact">
+                                            @if (puedeEditar)
+                                            {
+                                                <a asp-action="Editar" asp-route-idBancoConfiguracionEmpresa="@item.IdBancoConfiguracionEmpresa" class="workspace-row-link">Editar</a>
+                                            }
+                                            @if (puedeEliminar)
+                                            {
+                                                <form asp-action="Eliminar" method="post" class="d-inline-flex" onsubmit="return confirm('Se eliminara la cuenta corriente si no tiene movimientos. ¿Desea continuar?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="idBancoConfiguracionEmpresa" value="@item.IdBancoConfiguracionEmpresa" />
+                                                    <input type="hidden" name="textoBusqueda" value="@Model.TextoBusqueda" />
+                                                    <input type="hidden" name="pagina" value="@Model.Paginacion.PaginaActual" />
+                                                    <button type="submit" class="workspace-row-link text-danger">Eliminar</button>
+                                                </form>
+                                            }
+                                        </div>
                                     </td>
                                 </tr>
                             }

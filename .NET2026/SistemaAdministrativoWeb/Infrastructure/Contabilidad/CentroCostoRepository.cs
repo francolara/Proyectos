@@ -90,6 +90,20 @@ public sealed class CentroCostoRepository(IDbConnectionFactory connectionFactory
         return MapCentroCosto(reader);
     }
 
+    public async Task EliminarAsync(int idEmpresa, int idCentroCosto, CancellationToken cancellationToken = default)
+    {
+        await using var connection = connectionFactory.CreateConnection();
+        await using var command = new SqlCommand("dbo.usp_CON_EliminarCentroCostoConfiguracionEmpresa", connection)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        command.Parameters.AddWithValue("@IdEmpresa", idEmpresa);
+        command.Parameters.AddWithValue("@IdCentroCosto", idCentroCosto);
+        await connection.OpenAsync(cancellationToken);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
     private static CentroCostoDto MapCentroCosto(SqlDataReader reader)
     {
         return new CentroCostoDto

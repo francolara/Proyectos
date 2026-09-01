@@ -1,22 +1,33 @@
 @page
 @model SistemaAdministrativoWeb.Areas.Identity.Pages.Account.CambiarContrasenaTemporalModel
+@using SistemaAdministrativoWeb.Infrastructure.Assets
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 @* Firma: FRANCO LARA - 13/07/2026 | Obliga a reemplazar la contrasena temporal despues de la verificacion de acceso para dejar al usuario en el flujo normal de Identity. *@
+@* Firma: FRANCO LARA - 29/08/2026 | El visor de contrasenas usa el controlador comun para evitar que el clic se procese dos veces. *@
+@* Firma: FRANCO LARA - 31/08/2026 | Usa el banner remoto versionado del inicio de sesion y conserva el contenido de respaldo. *@
 @{
     ViewData["Title"] = "Cambiar contrasena temporal";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var loginBannerUrl = PublicAssetUrlBuilder.Build(Configuration, "Banner/InicioSesion.webp");
 }
 
 <section class="auth-shell">
-    <aside class="auth-visual">
-        <div class="auth-visual-content">
-            <p class="auth-visual-tag">Cambio obligatorio</p>
-            <h2>Esta clave temporal solo sirve para el primer ingreso.</h2>
-            <ul class="auth-visual-list">
-                <li>Ingresa la contrasena temporal actual.</li>
-                <li>Define una nueva clave personal.</li>
-                <li>Despues de este paso usaras el sistema con normalidad.</li>
-            </ul>
-        </div>
+    <aside class="auth-visual @(!string.IsNullOrWhiteSpace(loginBannerUrl) ? "auth-visual-banner" : string.Empty)"
+           style="@(!string.IsNullOrWhiteSpace(loginBannerUrl) ? $"background-image: url('{loginBannerUrl}');" : string.Empty)"
+           role="@(!string.IsNullOrWhiteSpace(loginBannerUrl) ? "img" : null)"
+           aria-label="@(!string.IsNullOrWhiteSpace(loginBannerUrl) ? "FralseCont: inicia sesion y gestiona tu empresa con confianza." : null)">
+        @if (string.IsNullOrWhiteSpace(loginBannerUrl))
+        {
+            <div class="auth-visual-content">
+                <p class="auth-visual-tag">Cambio obligatorio</p>
+                <h2>Esta clave temporal solo sirve para el primer ingreso.</h2>
+                <ul class="auth-visual-list">
+                    <li>Ingresa la contrasena temporal actual.</li>
+                    <li>Define una nueva clave personal.</li>
+                    <li>Despues de este paso usaras el sistema con normalidad.</li>
+                </ul>
+            </div>
+        }
     </aside>
 
     <section class="auth-panel">
@@ -85,24 +96,4 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        (() => {
-            document.querySelectorAll("[data-password-toggle]").forEach((button) => {
-                button.addEventListener("click", () => {
-                    const targetId = button.getAttribute("data-password-target");
-                    const field = targetId ? document.getElementById(targetId) : null;
-                    const icon = button.querySelector("i");
-                    if (!field || !icon) {
-                        return;
-                    }
-
-                    const visible = field.type === "text";
-                    field.type = visible ? "password" : "text";
-                    icon.className = visible ? "bi bi-eye" : "bi bi-eye-slash";
-                    button.setAttribute("aria-label", visible ? "Mostrar contrasena" : "Ocultar contrasena");
-                    button.setAttribute("aria-pressed", String(!visible).toLowerCase());
-                });
-            });
-        })();
-    </script>
 }

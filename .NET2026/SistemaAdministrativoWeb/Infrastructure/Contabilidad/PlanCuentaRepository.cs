@@ -100,6 +100,20 @@ public sealed class PlanCuentaRepository(IDbConnectionFactory connectionFactory)
         return MapPlanCuenta(reader);
     }
 
+    public async Task EliminarAsync(int idEmpresa, int idPlanCuenta, CancellationToken cancellationToken = default)
+    {
+        await using var connection = connectionFactory.CreateConnection();
+        await using var command = new SqlCommand("dbo.usp_CON_EliminarPlanCuentaPorEmpresa", connection)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        command.Parameters.AddWithValue("@IdEmpresa", idEmpresa);
+        command.Parameters.AddWithValue("@IdPlanCuenta", idPlanCuenta);
+        await connection.OpenAsync(cancellationToken);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
     public async Task CargarDefaultAsync(int idEmpresa, string? usuarioRegistro, CancellationToken cancellationToken = default, int? idEmpresaBase = null)
     {
         await using var connection = connectionFactory.CreateConnection();

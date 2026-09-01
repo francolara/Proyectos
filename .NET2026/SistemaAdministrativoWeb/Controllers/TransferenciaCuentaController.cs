@@ -135,6 +135,7 @@ public class TransferenciaCuentaController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [ModulePermission("TRANSFERENCIAS", ModulePermissionOperation.Create)]
     public async Task<IActionResult> Guardar(TransferenciaCuentaFormViewModel formulario, short? anio = null, byte? mes = null, CancellationToken cancellationToken = default)
     {
         if (!currentCompanyAccessor.TieneEmpresaActiva || !currentCompanyAccessor.EmpresaId.HasValue)

@@ -117,6 +117,20 @@ public sealed class OrigenRepository(IDbConnectionFactory connectionFactory) : I
         };
     }
 
+    public async Task EliminarAsync(int idEmpresa, int idOrigen, CancellationToken cancellationToken = default)
+    {
+        await using var connection = connectionFactory.CreateConnection();
+        await using var command = new SqlCommand("dbo.usp_CON_EliminarOrigenPorEmpresa", connection)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+
+        command.Parameters.AddWithValue("@IdEmpresa", idEmpresa);
+        command.Parameters.AddWithValue("@IdOrigen", idOrigen);
+        await connection.OpenAsync(cancellationToken);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
     public async Task CargarDefaultAsync(int idEmpresa, string? usuarioRegistro, CancellationToken cancellationToken = default)
     {
         await using var connection = connectionFactory.CreateConnection();

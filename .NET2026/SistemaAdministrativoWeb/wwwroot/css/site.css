@@ -3,6 +3,332 @@ html {
   min-height: 100%;
 }
 
+/* Permisos de usuario: pestanas, arbol y estados heredados. */
+.permission-workspace {
+  padding-bottom: 0;
+  overflow: visible;
+}
+
+.permission-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .75rem;
+  padding: 1rem 1rem 0;
+  border-bottom: 1px solid #d9e2ef;
+}
+
+.permission-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .55rem;
+  min-height: 3.25rem;
+  padding: .75rem 1rem;
+  color: #43536a;
+  background: #f6f8fc;
+  border: 1px solid #d9e2ef;
+  border-bottom: 3px solid transparent;
+  border-radius: .85rem .85rem 0 0;
+  font-weight: 700;
+  transition: color .18s ease, background-color .18s ease, border-color .18s ease;
+}
+
+.permission-tab strong {
+  min-width: 1.6rem;
+  padding: .1rem .4rem;
+  color: #55657b;
+  background: #e8edf5;
+  border-radius: 999px;
+  font-size: .75rem;
+}
+
+.permission-tab.is-active {
+  color: #0b5ed7;
+  background: #fff;
+  border-color: #cbd8e9;
+  border-bottom-color: #1473e6;
+}
+
+.permission-tab-panel {
+  padding: 1rem;
+}
+
+.permission-toolbar,
+.permission-company-selector,
+.permission-save-footer {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.permission-toolbar,
+.permission-company-selector {
+  margin-bottom: 1rem;
+  padding: .85rem;
+  background: #f7f9fc;
+  border: 1px solid #dce4ef;
+  border-radius: .85rem;
+}
+
+.permission-company-selector > div {
+  flex: 1;
+  max-width: 44rem;
+}
+
+.permission-search {
+  position: relative;
+  flex: 1;
+  max-width: 42rem;
+}
+
+.permission-search > i {
+  position: absolute;
+  top: 50%;
+  left: .85rem;
+  z-index: 1;
+  color: #6d7d91;
+  transform: translateY(-50%);
+}
+
+.permission-search .form-control {
+  padding-left: 2.45rem;
+}
+
+.permission-tree {
+  display: grid;
+  gap: .8rem;
+}
+
+.permission-group {
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #d9e2ef;
+  border-radius: .85rem;
+}
+
+.permission-group > summary {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  padding: .8rem 1rem;
+  cursor: pointer;
+  list-style: none;
+  background: linear-gradient(90deg, #eef5ff 0%, #f8fbff 100%);
+}
+
+.permission-group > summary::-webkit-details-marker {
+  display: none;
+}
+
+.permission-group > summary > span:last-child {
+  display: flex;
+  flex-direction: column;
+}
+
+.permission-group > summary small {
+  color: #6f7f94;
+  font-size: .72rem;
+}
+
+.permission-group-chevron {
+  color: #5d6d82;
+  transition: transform .18s ease;
+}
+
+.permission-group[open] .permission-group-chevron {
+  transform: rotate(90deg);
+}
+
+.permission-table {
+  min-width: 760px;
+  margin: 0;
+}
+
+.permission-table th,
+.permission-table td {
+  padding: .58rem .7rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.permission-table th:nth-child(2),
+.permission-table td:nth-child(2) {
+  min-width: 15rem;
+  text-align: left;
+}
+
+.permission-table td:nth-child(2) strong,
+.permission-table td:nth-child(2) small {
+  display: block;
+}
+
+.permission-table td:nth-child(2) small {
+  margin-top: .1rem;
+  color: #718096;
+  font-size: .7rem;
+}
+
+.permission-access-column {
+  width: 5.5rem;
+}
+
+.permission-state-column {
+  width: 7.5rem;
+}
+
+.permission-action-column {
+  width: 3rem;
+}
+
+.permission-column-toggle {
+  padding: .25rem .4rem;
+  color: #32445c;
+  background: transparent;
+  border: 0;
+  border-radius: .4rem;
+  font: inherit;
+  font-weight: 700;
+}
+
+.permission-column-toggle:hover {
+  color: #0b5ed7;
+  background: #e9f2ff;
+}
+
+.permission-state-toggle,
+.permission-check-proxy {
+  display: inline-grid;
+  width: 1.65rem;
+  height: 1.65rem;
+  place-items: center;
+  color: #6d7b8e;
+  background: #fff;
+  border: 1px solid #bfcbd9;
+  border-radius: .4rem;
+  font-size: .85rem;
+  line-height: 1;
+}
+
+button.permission-check-proxy {
+  padding: 0;
+}
+
+.permission-state-toggle.is-inherited {
+  color: #62748a;
+  background: #eef2f7;
+  border-style: dashed;
+}
+
+.permission-state-toggle.is-allowed,
+.permission-check-proxy.is-checked {
+  color: #fff;
+  background: #1677e8;
+  border-color: #1677e8;
+}
+
+.permission-state-toggle.is-denied {
+  color: #c93243;
+  background: #fff3f4;
+  border-color: #ed9aa4;
+}
+
+.permission-check-proxy.is-mixed {
+  color: #fff;
+  background: #7b8ba0;
+  border-color: #7b8ba0;
+}
+
+.permission-check-proxy.is-mixed i::before {
+  content: "\f2ea";
+}
+
+.permission-effective {
+  display: inline-flex;
+  padding: .2rem .55rem;
+  border-radius: 999px;
+  font-size: .7rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.permission-effective.is-allowed {
+  color: #08724d;
+  background: #def5eb;
+}
+
+.permission-effective.is-denied {
+  color: #a72b3a;
+  background: #fde8eb;
+}
+
+.permission-save-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 8;
+  margin: 1rem -1rem 0;
+  padding: .85rem 1rem;
+  background: rgba(255, 255, 255, .96);
+  border-top: 1px solid #d9e2ef;
+  border-radius: 0 0 1rem 1rem;
+  box-shadow: 0 -.4rem 1.2rem rgba(25, 45, 75, .08);
+  backdrop-filter: blur(10px);
+}
+
+.permission-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .9rem;
+  color: #5d6d82;
+  font-size: .78rem;
+}
+
+.permission-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+}
+
+.permission-dot {
+  width: .6rem;
+  height: .6rem;
+  border-radius: 999px;
+}
+
+.permission-dot.is-inherited { background: #7b8ba0; }
+.permission-dot.is-allowed { background: #1677e8; }
+.permission-dot.is-denied { background: #d63d50; }
+
+html[data-theme="dark"] .permission-tab,
+html[data-theme="dark"] .permission-toolbar,
+html[data-theme="dark"] .permission-company-selector,
+html[data-theme="dark"] .permission-group,
+html[data-theme="dark"] .permission-save-footer {
+  color: #dce7f7;
+  background: #182436;
+  border-color: #34445b;
+}
+
+html[data-theme="dark"] .permission-group > summary {
+  background: linear-gradient(90deg, #20334d 0%, #19283b 100%);
+}
+
+html[data-theme="dark"] .permission-tab.is-active {
+  color: #75b5ff;
+  background: #1d2d43;
+  border-bottom-color: #4d9cff;
+}
+
+@media (max-width: 767.98px) {
+  .permission-tabs { grid-template-columns: 1fr; }
+  .permission-tab { border-radius: .75rem; border-bottom-width: 1px; }
+  .permission-tab.is-active { border-bottom-width: 3px; }
+  .permission-toolbar,
+  .permission-company-selector,
+  .permission-save-footer { align-items: stretch; flex-direction: column; }
+  .permission-save-footer .btn { width: 100%; }
+}
+
 /* Firma: FRANCO LARA - 04/08/2026 | Centraliza la presentacion adaptable de parametros principales, filtros avanzados desplegables y acciones para los reportes contables. */
 /* Firma: FRANCO LARA - 05/08/2026 | Diferencia semanticamente las series del dashboard con ventas verdes y movimientos bancarios violetas. */
 .report-filter-section {
@@ -340,6 +666,111 @@ body {
   border-bottom: 1px solid var(--app-public-border);
   background: var(--app-public-header-bg);
   backdrop-filter: blur(12px);
+}
+
+/* Firma: FRANCO LARA - 31/08/2026 | Diferencia la cuenta activa y el cierre de sesion, presenta la franja institucional y mantiene los beneficios de los planes dentro de sus listas principales. */
+.app-public-account {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-left: auto;
+  padding: 0.38rem 0.42rem 0.38rem 0.48rem;
+  border: 1px solid rgba(117, 143, 180, 0.2);
+  border-radius: 1rem;
+  background: rgba(247, 250, 255, 0.88);
+  box-shadow: 0 8px 22px rgba(15, 35, 66, 0.06);
+}
+
+.app-public-account-avatar {
+  display: inline-grid;
+  width: 2.35rem;
+  height: 2.35rem;
+  flex: 0 0 2.35rem;
+  place-items: center;
+  border-radius: 0.78rem;
+  color: #fff;
+  background: linear-gradient(145deg, var(--app-navy) 0%, var(--app-accent) 100%);
+  box-shadow: 0 8px 18px rgba(13, 89, 198, 0.2);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.app-public-account-meta {
+  display: flex;
+  min-width: 0;
+  max-width: 17rem;
+  flex-direction: column;
+  line-height: 1.12;
+}
+
+.app-public-account-meta small {
+  color: var(--app-muted);
+  font-size: 0.61rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.app-public-account-meta strong {
+  overflow: hidden;
+  margin-top: 0.16rem;
+  color: var(--app-ink);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-public-logout-form {
+  margin: 0;
+}
+
+.app-public-logout {
+  display: inline-flex;
+  min-height: 2.35rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.7rem;
+  border: 0;
+  border-radius: 0.75rem;
+  color: var(--app-navy-2);
+  background: transparent;
+  font-size: 0.73rem;
+  font-weight: 800;
+  transition: color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.app-public-logout:hover {
+  color: #b42336;
+  background: rgba(180, 35, 54, 0.08);
+}
+
+.app-public-logout:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.16);
+}
+
+@media (max-width: 991.98px) {
+  .app-public-account {
+    width: 100%;
+    margin-top: 1rem;
+  }
+
+  .app-public-account-meta {
+    max-width: none;
+    flex: 1;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .app-public-account-meta strong {
+    max-width: 10rem;
+  }
+
+  .app-public-logout span {
+    display: none;
+  }
 }
 
 .app-public-main {
@@ -1056,6 +1487,111 @@ body {
   gap: 1.5rem;
   grid-template-columns: minmax(0, 1fr);
   align-items: stretch;
+}
+
+.nubecont-contact-band {
+  display: grid;
+  grid-template-columns: minmax(13rem, 0.72fr) minmax(0, 1.8fr);
+  gap: 1.5rem;
+  align-items: center;
+  margin-top: 1.25rem;
+  padding: 1.35rem 1.5rem;
+  border: 1px solid rgba(115, 143, 184, 0.2);
+  border-radius: 1.35rem;
+  background: linear-gradient(105deg, rgba(239, 246, 255, 0.96) 0%, rgba(255, 255, 255, 0.96) 68%);
+  box-shadow: 0 16px 38px rgba(16, 43, 82, 0.07);
+}
+
+.nubecont-contact-identity {
+  padding-right: 1.5rem;
+  border-right: 1px solid rgba(115, 143, 184, 0.24);
+}
+
+.nubecont-contact-kicker {
+  color: #46709f;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.nubecont-contact-identity h2 {
+  margin: 0.28rem 0 0.18rem;
+  color: var(--app-navy);
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.nubecont-contact-identity p {
+  margin: 0;
+  color: var(--app-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.nubecont-contact-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.nubecont-contact-item {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.72rem;
+  color: var(--app-ink);
+  text-decoration: none;
+}
+
+.nubecont-contact-icon {
+  display: inline-grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: 0 0 2.25rem;
+  place-items: center;
+  border-radius: 0.75rem;
+  color: #1765c1;
+  background: rgba(218, 233, 255, 0.84);
+  font-size: 0.88rem;
+  transition: color 0.18s ease, background-color 0.18s ease, transform 0.18s ease;
+}
+
+.nubecont-contact-item > span:last-child {
+  min-width: 0;
+}
+
+.nubecont-contact-item small,
+.nubecont-contact-item strong {
+  display: block;
+}
+
+.nubecont-contact-item small {
+  color: var(--app-muted);
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+.nubecont-contact-item strong {
+  margin-top: 0.14rem;
+  color: #173b68;
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+a.nubecont-contact-item:hover .nubecont-contact-icon,
+a.nubecont-contact-item:focus-visible .nubecont-contact-icon {
+  color: #fff;
+  background: #176fd1;
+  transform: translateY(-1px);
+}
+
+a.nubecont-contact-item:focus-visible {
+  border-radius: 0.75rem;
+  outline: 2px solid rgba(23, 111, 209, 0.35);
+  outline-offset: 4px;
 }
 
 .hero-auth-copy,
@@ -5622,6 +6158,17 @@ html[data-theme="dark"] .text-dark {
     transform: none;
   }
 
+  .nubecont-contact-band {
+    grid-template-columns: 1fr;
+  }
+
+  .nubecont-contact-identity {
+    padding-right: 0;
+    padding-bottom: 1rem;
+    border-right: 0;
+    border-bottom: 1px solid rgba(115, 143, 184, 0.24);
+  }
+
   .platform-account-grid {
     grid-template-columns: 1fr;
   }
@@ -5757,6 +6304,14 @@ html[data-theme="dark"] .text-dark {
 
   .nubecont-plan-card {
     padding: 1.25rem;
+  }
+
+  .nubecont-contact-band {
+    padding: 1.2rem;
+  }
+
+  .nubecont-contact-grid {
+    grid-template-columns: 1fr;
   }
 
   .platform-tab-nav {

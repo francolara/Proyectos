@@ -206,7 +206,7 @@ public class UsuariosController(
     }
 
     [HttpGet]
-    public async Task<IActionResult> Permisos(string aspNetUserId, int? idEmpresa, CancellationToken cancellationToken)
+    public async Task<IActionResult> Permisos(string aspNetUserId, int? idEmpresa, string? seccion, CancellationToken cancellationToken)
     {
         var cuenta = await ResolverCuentaAsync(cancellationToken);
         if (cuenta is null)
@@ -223,6 +223,9 @@ public class UsuariosController(
 
         CargarViewDataComun();
         ViewData["Title"] = "Permisos de usuario";
+        model.PestanaActiva = string.Equals(seccion, "contable", StringComparison.OrdinalIgnoreCase)
+            ? "contable"
+            : "general";
         ViewBag.RoleOptions = CrearRoleOptions(model.RolCuenta);
         ViewBag.EmpresaFiltroOptions = model.EmpresasDisponibles
             .Where(x => x.IdUsuarioEmpresa.HasValue)
@@ -283,40 +286,84 @@ public class UsuariosController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> GuardarPermisoCuenta(string aspNetUserId, int idUsuarioCuentaAdministradora, int idModuloSistema, string puedeVer, string puedeCrear, string puedeEditar, string puedeEliminar, CancellationToken cancellationToken)
+    public async Task<IActionResult> GuardarPermisosCuenta(GuardarPermisosLoteViewModel model, CancellationToken cancellationToken)
     {
-        await cuentaAdministradoraRepository.GuardarUsuarioCuentaPermisoAsync(new GuardarUsuarioCuentaPermisoRequest
+        var cuenta = await ResolverCuentaAsync(cancellationToken);
+        if (cuenta is null)
         {
-            IdUsuarioCuentaAdministradora = idUsuarioCuentaAdministradora,
-            IdModuloSistema = idModuloSistema,
-            PuedeVer = ResolverOverrideBool(puedeVer),
-            PuedeCrear = ResolverOverrideBool(puedeCrear),
-            PuedeEditar = ResolverOverrideBool(puedeEditar),
-            PuedeEliminar = ResolverOverrideBool(puedeEliminar),
+            return RedirectToAction("Index", "EmpresaContexto");
+        }
+
+        var usuario = (await cuentaAdministradoraRepository
+            .ListarUsuariosCuentaAdministradoraAsync(cuenta.Value.idCuentaAdministradora, cancellationToken))
+            .FirstOrDefault(x => string.Equals(x.AspNetUserId, model.AspNetUserId, StringComparison.Ordinal)
+                && x.IdUsuarioCuentaAdministradora == model.IdUsuarioCuentaAdministradora);
+
+        if (usuario is null)
+        {
+            TempData["ErrorMessage"] = "No se encontro el acceso del usuario dentro de la cuenta administradora.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var permisosCuentaActuales = await cuentaAdministradoraRepository
+            .ListarPermisosUsuarioCuentaAsync(usuario.IdUsuarioCuentaAdministradora, cancellationToken);
+        var modulosPermitidos = permisosCuentaActuales
+            .Select(x => x.IdModuloSistema)
+            .ToHashSet();
+        var modulosConVistaObligatoria = permisosCuentaActuales
+            .Where(x => string.Equals(x.CodigoModulo, "EMPRESAS", StringComparison.OrdinalIgnoreCase))
+            .Select(x => x.IdModuloSistema)
+            .ToHashSet();
+        var permisos = NormalizarPermisos(model.Permisos, modulosPermitidos, modulosConVistaObligatoria);
+
+        await cuentaAdministradoraRepository.GuardarPermisosUsuarioCuentaAsync(new GuardarPermisosUsuarioCuentaRequest
+        {
+            IdUsuarioCuentaAdministradora = usuario.IdUsuarioCuentaAdministradora,
+            Permisos = permisos,
             UsuarioRegistro = User.Identity?.Name
         }, cancellationToken);
 
-        TempData["SuccessMessage"] = "Permiso de cuenta actualizado.";
-        return RedirectToAction(nameof(Permisos), new { aspNetUserId });
+        TempData["SuccessMessage"] = "Se guardaron los permisos generales del usuario.";
+        return RedirectToAction(nameof(Permisos), new { aspNetUserId = model.AspNetUserId, seccion = "general" });
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> GuardarPermisoEmpresa(string aspNetUserId, int idUsuarioEmpresa, int idEmpresa, int idModuloSistema, string puedeVer, string puedeCrear, string puedeEditar, string puedeEliminar, CancellationToken cancellationToken)
+    public async Task<IActionResult> GuardarPermisosEmpresa(GuardarPermisosLoteViewModel model, CancellationToken cancellationToken)
     {
-        await cuentaAdministradoraRepository.GuardarUsuarioEmpresaPermisoAsync(new GuardarUsuarioEmpresaPermisoRequest
+        var cuenta = await ResolverCuentaAsync(cancellationToken);
+        if (cuenta is null)
+        {
+            return RedirectToAction("Index", "EmpresaContexto");
+        }
+
+        var empresaAsignada = (await cuentaAdministradoraRepository
+            .ListarEmpresasUsuarioCuentaAdministradoraAsync(cuenta.Value.idCuentaAdministradora, model.AspNetUserId, cancellationToken))
+            .FirstOrDefault(x => x.Asignado
+                && x.IdEmpresa == model.IdEmpresa
+                && x.IdUsuarioEmpresa == model.IdUsuarioEmpresa);
+
+        if (empresaAsignada?.IdUsuarioEmpresa is not int idUsuarioEmpresa)
+        {
+            TempData["ErrorMessage"] = "La empresa seleccionada no esta asignada al usuario.";
+            return RedirectToAction(nameof(Permisos), new { aspNetUserId = model.AspNetUserId, seccion = "contable" });
+        }
+
+        var modulosPermitidos = (await cuentaAdministradoraRepository
+            .ListarPermisosUsuarioEmpresaAsync(idUsuarioEmpresa, cancellationToken))
+            .Select(x => x.IdModuloSistema)
+            .ToHashSet();
+        var permisos = NormalizarPermisos(model.Permisos, modulosPermitidos);
+
+        await cuentaAdministradoraRepository.GuardarPermisosUsuarioEmpresaAsync(new GuardarPermisosUsuarioEmpresaRequest
         {
             IdUsuarioEmpresa = idUsuarioEmpresa,
-            IdModuloSistema = idModuloSistema,
-            PuedeVer = ResolverOverrideBool(puedeVer),
-            PuedeCrear = ResolverOverrideBool(puedeCrear),
-            PuedeEditar = ResolverOverrideBool(puedeEditar),
-            PuedeEliminar = ResolverOverrideBool(puedeEliminar),
+            Permisos = permisos,
             UsuarioRegistro = User.Identity?.Name
         }, cancellationToken);
 
-        TempData["SuccessMessage"] = "Permiso por empresa actualizado.";
-        return RedirectToAction(nameof(Permisos), new { aspNetUserId, idEmpresa });
+        TempData["SuccessMessage"] = "Se guardaron los permisos contables de la empresa seleccionada.";
+        return RedirectToAction(nameof(Permisos), new { aspNetUserId = model.AspNetUserId, idEmpresa = model.IdEmpresa, seccion = "contable" });
     }
 
     private async Task<UsuariosIndexViewModel> ConstruirIndexViewModelAsync(int idCuentaAdministradora, CancellationToken cancellationToken)
@@ -492,6 +539,10 @@ public class UsuariosController(
             PuedeCrearOverride = dto.PuedeCrearOverride,
             PuedeEditarOverride = dto.PuedeEditarOverride,
             PuedeEliminarOverride = dto.PuedeEliminarOverride,
+            PuedeVerRol = dto.PuedeVerRol ?? false,
+            PuedeCrearRol = dto.PuedeCrearRol ?? false,
+            PuedeEditarRol = dto.PuedeEditarRol ?? false,
+            PuedeEliminarRol = dto.PuedeEliminarRol ?? false,
             PuedeVerEfectivo = dto.PuedeVerEfectivo,
             PuedeCrearEfectivo = dto.PuedeCrearEfectivo,
             PuedeEditarEfectivo = dto.PuedeEditarEfectivo,
@@ -499,15 +550,48 @@ public class UsuariosController(
         };
     }
 
-    private static bool? ResolverOverrideBool(string? value)
+    private static IReadOnlyCollection<UsuarioPermisoOverrideRequest> NormalizarPermisos(
+        IReadOnlyCollection<ModuloPermisoEdicionViewModel> permisos,
+        IReadOnlySet<int> modulosPermitidos,
+        IReadOnlySet<int>? modulosConVistaObligatoria = null)
     {
-        var normalized = (value ?? string.Empty).Trim().ToUpperInvariant();
-        return normalized switch
-        {
-            "1" or "TRUE" or "SI" => true,
-            "0" or "FALSE" or "NO" => false,
-            _ => null
-        };
+        return permisos
+            .Where(x => modulosPermitidos.Contains(x.IdModuloSistema))
+            .GroupBy(x => x.IdModuloSistema)
+            .Select(x => x.Last())
+            .Select(x =>
+            {
+                var puedeVer = x.PuedeVer;
+                var puedeCrear = x.PuedeCrear;
+                var puedeEditar = x.PuedeEditar;
+                var puedeEliminar = x.PuedeEliminar;
+
+                if (modulosConVistaObligatoria?.Contains(x.IdModuloSistema) == true)
+                {
+                    puedeVer = null;
+                }
+
+                if (puedeVer == false)
+                {
+                    puedeCrear = false;
+                    puedeEditar = false;
+                    puedeEliminar = false;
+                }
+                else if (puedeCrear == true || puedeEditar == true || puedeEliminar == true)
+                {
+                    puedeVer = true;
+                }
+
+                return new UsuarioPermisoOverrideRequest
+                {
+                    IdModuloSistema = x.IdModuloSistema,
+                    PuedeVer = puedeVer,
+                    PuedeCrear = puedeCrear,
+                    PuedeEditar = puedeEditar,
+                    PuedeEliminar = puedeEliminar
+                };
+            })
+            .ToList();
     }
 
     private static string? LimpiarTelefono(string? telefono)

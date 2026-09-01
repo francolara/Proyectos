@@ -1,14 +1,17 @@
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
+using System.Text;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
 using SistemaAdministrativoWeb.Configuration;
 using SistemaAdministrativoWeb.Infrastructure.Empresas;
+using SistemaAdministrativoWeb.Infrastructure.Email;
 using SistemaAdministrativoWeb.Infrastructure.Security;
 using SistemaAdministrativoWeb.Infrastructure.Suscripciones;
 
@@ -20,12 +23,15 @@ public class LoginModel(
     UserManager<IdentityUser> userManager,
     ICurrentCompanyAccessor currentCompanyAccessor,
     ICuentaAdministradoraRepository cuentaAdministradoraRepository,
+    IAccountEmailService accountEmailService,
     ITurnstileValidationService turnstileValidationService,
     IOptions<CloudflareTurnstileSettings> turnstileOptions,
     IOptions<IdentityBehaviorSettings> identityBehaviorOptions,
     ILogger<LoginModel> logger) : PageModel
 {
+    // Firma: FRANCO LARA - 31/08/2026 | Agrega recuperacion y reenvio mediante Brevo y diferencia visualmente los avisos de entrega fallida.
     private const string LoginFailuresSessionKey = "Auth:LoginFailures";
+    private const string ResendAttemptsSessionKey = "Auth:ResendConfirmationAttempts";
     private const string LoginCaptchaScope = "LOGIN";
     private static readonly string LoginDebugPath = Path.Combine(AppContext.BaseDirectory, "login-debug.log");
 
@@ -44,6 +50,16 @@ public class LoginModel(
     public bool MostrarTurnstile { get; private set; }
     public bool MostrarCaptchaManual { get; private set; }
     public string CaptchaManualCodigo { get; private set; } = string.Empty;
+    public bool EmailsEnabled => accountEmailService.IsEnabled;
+    public bool RequiresEmailConfirmation =>
+        identityBehaviorOptions.Value.RequireConfirmedAccount
+        && !identityBehaviorOptions.Value.AutoConfirmEmail;
+
+    [TempData]
+    public string? AccountSuccessMessage { get; set; }
+
+    [TempData]
+    public string? AccountMessageType { get; set; }
 
     public sealed class InputModel
     {
@@ -130,7 +146,7 @@ public class LoginModel(
                 return RedirectToPage("./VerificacionTemporal", new { returnUrl });
             }
 
-            RegistrarDebug($"POST login | redireccion contexto | UserId={authenticatedUser.Id}");
+            RegistrarDebug($"POST login | redireccion contexto | UserId={authenticatedUser!.Id}");
             return await RedirigirSegunContextoAsync(authenticatedUser, returnUrl);
         }
 
@@ -148,7 +164,11 @@ public class LoginModel(
             RegistrarDebug($"POST login | NOT_ALLOWED | UserId={authenticatedUser.Id}");
             IncrementarContador(LoginFailuresSessionKey);
             MostrarTurnstile = DebeMostrarTurnstile();
-            ModelState.AddModelError(string.Empty, "La cuenta no tiene permitido iniciar sesion con la configuracion actual.");
+            ModelState.AddModelError(
+                string.Empty,
+                RequiresEmailConfirmation
+                    ? "Debes confirmar tu correo antes de iniciar sesion. Puedes solicitar un nuevo enlace."
+                    : "La cuenta no tiene permitido iniciar sesion con la configuracion actual.");
             return Page();
         }
 
@@ -175,6 +195,74 @@ public class LoginModel(
         var redirectUrl = Url.Page("./Login", pageHandler: "ExternalLoginCallback", values: new { returnUrl, flow });
         var properties = signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
         return Challenge(properties, provider);
+    }
+
+    public async Task<IActionResult> OnPostResendConfirmationAsync(string? returnUrl = null)
+    {
+        returnUrl ??= Url.Content("~/");
+        ReturnUrl = returnUrl;
+        ExternalLogins = (await signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+        TurnstileSiteKey = turnstileOptions.Value.SiteKey;
+        MostrarTurnstile = DebeMostrarTurnstile();
+        ConfigurarCaptchaManual();
+        ModelState.Remove("Input.Password");
+
+        if (!RequiresEmailConfirmation || !EmailsEnabled)
+        {
+            ModelState.AddModelError(string.Empty, "El reenvio de confirmacion no esta disponible con la configuracion actual.");
+            return Page();
+        }
+
+        if (string.IsNullOrWhiteSpace(Input.Email) || !new EmailAddressAttribute().IsValid(Input.Email))
+        {
+            ModelState.AddModelError("Input.Email", "Ingrese un correo valido.");
+            return Page();
+        }
+
+        var resendAttempts = IncrementarContador(ResendAttemptsSessionKey);
+        if (resendAttempts >= Math.Max(1, turnstileOptions.Value.ResendAttemptsBeforeChallenge)
+            && !await ValidarDesafioAccesoAsync())
+        {
+            MostrarTurnstile = true;
+            return Page();
+        }
+
+        var email = Input.Email.Trim();
+        var user = await userManager.FindByEmailAsync(email);
+        if (user is not null && !await userManager.IsEmailConfirmedAsync(user))
+        {
+            var code = await userManager.GenerateEmailConfirmationTokenAsync(user);
+            var encodedCode = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+            var callbackUrl = Url.Page(
+                "/Account/ConfirmEmail",
+                pageHandler: null,
+                values: new { area = "Identity", userId = user.Id, code = encodedCode, returnUrl },
+                protocol: Request.Scheme);
+
+            if (!string.IsNullOrWhiteSpace(callbackUrl))
+            {
+                try
+                {
+                    await accountEmailService.SendConfirmationEmailAsync(
+                        email,
+                        email,
+                        callbackUrl,
+                        HttpContext.RequestAborted);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "No se pudo reenviar confirmacion para {UserId}.", user.Id);
+                }
+            }
+        }
+
+        if (resendAttempts >= Math.Max(1, turnstileOptions.Value.ResendAttemptsBeforeChallenge))
+        {
+            ReiniciarContador(ResendAttemptsSessionKey);
+        }
+
+        AccountSuccessMessage = "Si la cuenta existe y esta pendiente, enviamos un nuevo enlace de confirmacion.";
+        return RedirectToPage("./Login", new { returnUrl });
     }
 
     public async Task<IActionResult> OnGetExternalLoginCallbackAsync(string? returnUrl = null, string? remoteError = null, string? flow = null)
@@ -212,6 +300,7 @@ public class LoginModel(
 
         email = email.Trim();
         var user = await userManager.FindByEmailAsync(email);
+        var userCreated = false;
         if (user is null)
         {
             var nombreCompleto = (info.Principal.FindFirstValue(ClaimTypes.Name) ?? email).Trim();
@@ -220,7 +309,7 @@ public class LoginModel(
             {
                 UserName = email,
                 Email = email,
-                EmailConfirmed = identityBehaviorOptions.Value.AutoConfirmEmail
+                EmailConfirmed = true
             };
 
             var createResult = await userManager.CreateAsync(user);
@@ -229,6 +318,8 @@ public class LoginModel(
                 return RedirectToPage("./Login", new { returnUrl });
             }
 
+            userCreated = true;
+
             await cuentaAdministradoraRepository.GuardarPerfilUsuarioAsync(new UsuarioPerfilRequest
             {
                 AspNetUserId = user.Id,
@@ -236,6 +327,18 @@ public class LoginModel(
                 CorreoReferencia = email,
                 UsuarioRegistro = email
             });
+        }
+
+        else if (!await userManager.IsEmailConfirmedAsync(user))
+        {
+            user.EmailConfirmed = true;
+            var confirmExternalEmailResult = await userManager.UpdateAsync(user);
+            if (!confirmExternalEmailResult.Succeeded)
+            {
+                return RedirectToPage("./Login", new { returnUrl });
+            }
+
+            userCreated = true;
         }
 
         var addLoginResult = await userManager.AddLoginAsync(user, info);
@@ -247,6 +350,31 @@ public class LoginModel(
         currentCompanyAccessor.LimpiarEmpresa();
         await signInManager.SignInAsync(user, isPersistent: false);
         logger.LogInformation("Usuario creo o vinculo cuenta con {Provider}.", info.LoginProvider);
+
+        if (userCreated && accountEmailService.IsEnabled)
+        {
+            var loginUrl = Url.Page(
+                "/Account/Login",
+                pageHandler: null,
+                values: new { area = "Identity" },
+                protocol: Request.Scheme);
+            if (!string.IsNullOrWhiteSpace(loginUrl))
+            {
+                try
+                {
+                    await accountEmailService.SendWelcomeEmailAsync(
+                        email,
+                        info.Principal.FindFirstValue(ClaimTypes.Name),
+                        loginUrl,
+                        HttpContext.RequestAborted);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "No se pudo enviar bienvenida por acceso externo para {UserId}.", user.Id);
+                }
+            }
+        }
+
         return await RedirigirSegunContextoAsync(user, returnUrl);
     }
 
@@ -290,7 +418,8 @@ public class LoginModel(
     }
 
     private bool DebeMostrarTurnstile()
-        => ObtenerContador(LoginFailuresSessionKey) >= Math.Max(1, turnstileOptions.Value.LoginFailuresBeforeChallenge);
+        => ObtenerContador(LoginFailuresSessionKey) >= Math.Max(1, turnstileOptions.Value.LoginFailuresBeforeChallenge)
+            || ObtenerContador(ResendAttemptsSessionKey) >= Math.Max(1, turnstileOptions.Value.ResendAttemptsBeforeChallenge);
 
     private bool DebeValidarTurnstileEnLogin()
         => DebeMostrarTurnstile();

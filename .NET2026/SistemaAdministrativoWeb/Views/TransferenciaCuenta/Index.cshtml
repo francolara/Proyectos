@@ -1,4 +1,5 @@
 @model SistemaAdministrativoWeb.ViewModels.Contabilidad.TransferenciaCuentaIndexViewModel
+@* Firma: FRANCO LARA - 29/08/2026 | Aplica permisos efectivos al alta y eliminacion de transferencias, protege los accesos cruzados a asientos y uniformiza los botones de accion del listado. *@
 
 @* =============================================
    Author:        FRANCO LARA
@@ -16,6 +17,9 @@
     var paginaFin = Math.Min(Model.Paginacion.TotalPaginas, Model.Paginacion.PaginaActual + 2);
     var textInfo = System.Globalization.CultureInfo.CurrentCulture.TextInfo;
     var periodoTexto = new DateTime(Model.AnioSeleccionado, Model.MesSeleccionado, 1).ToString("MMMM 'de' yyyy");
+    var puedeCrear = await ModulePermissions.CanAccessModuleAsync(User, "TRANSFERENCIAS", ModulePermissionOperation.Create);
+    var puedeEliminar = await ModulePermissions.CanAccessModuleAsync(User, "TRANSFERENCIAS", ModulePermissionOperation.Delete);
+    var puedeEditarAsiento = await ModulePermissions.CanAccessModuleAsync(User, "ASIENTOS", ModulePermissionOperation.Edit);
 }
 
 <section class="dashboard-shell">
@@ -45,10 +49,13 @@
                 <p>Registra movimientos internos entre cuentas corrientes reutilizando Caja y Bancos y sus asientos contables.</p>
             </div>
             <div class="workspace-row-actions">
+                @if (puedeCrear)
+                {
                 <a asp-action="Registrar"
                    asp-route-anio="@Model.AnioSeleccionado"
                    asp-route-mes="@Model.MesSeleccionado"
                    class="btn btn-light btn-sm">Registrar transferencia</a>
+                }
             </div>
         </div>
         <div class="workspace-window-body">
@@ -136,7 +143,7 @@
                                 <tr>
                                     <td>@item.NumeroMovimientoEmisor</td>
                                     <td>
-                                        @if (item.IdAsientoEmisor.HasValue)
+                                        @if (item.IdAsientoEmisor.HasValue && puedeEditarAsiento)
                                         {
                                             <a asp-controller="Asiento"
                                                asp-action="Editar"
@@ -158,7 +165,7 @@
                                     <td class="workspace-money-cell">@item.ImporteEmisor.ToString("0.00")</td>
                                     <td>@item.NumeroMovimientoReceptor</td>
                                     <td>
-                                        @if (item.IdAsientoReceptor.HasValue)
+                                        @if (item.IdAsientoReceptor.HasValue && puedeEditarAsiento)
                                         {
                                             <a asp-controller="Asiento"
                                                asp-action="Editar"
@@ -181,15 +188,20 @@
                                     <td>@(string.IsNullOrWhiteSpace(item.NumeroOperacionEmisor) ? "-" : item.NumeroOperacionEmisor)</td>
                                     <td>@item.GlosaEmisor</td>
                                     <td class="text-end">
-                                        <form asp-action="Eliminar" method="post" onsubmit="return confirm('Se eliminara la transferencia completa entre cuentas. ¿Desea continuar?');">
+                                        <div class="workspace-row-actions-compact">
+                                        @if (puedeEliminar)
+                                        {
+                                        <form asp-action="Eliminar" method="post" class="d-inline-flex" onsubmit="return confirm('Se eliminara la transferencia completa entre cuentas. ¿Desea continuar?');">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="idMovimientoBancoEmisor" value="@item.IdMovimientoBancoEmisor" />
                                             <input type="hidden" name="anio" value="@Model.AnioSeleccionado" />
                                             <input type="hidden" name="mes" value="@Model.MesSeleccionado" />
                                             <input type="hidden" name="textoBusqueda" value="@Model.TextoBusqueda" />
                                             <input type="hidden" name="pagina" value="@Model.Paginacion.PaginaActual" />
-                                            <button type="submit" class="workspace-row-btn workspace-row-btn-danger">Eliminar</button>
+                                            <button type="submit" class="workspace-row-link text-danger">Eliminar</button>
                                         </form>
+                                        }
+                                        </div>
                                     </td>
                                 </tr>
                             }

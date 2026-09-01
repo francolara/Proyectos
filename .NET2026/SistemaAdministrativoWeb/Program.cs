@@ -1,12 +1,15 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.EventLog;
+using System.Net.Http.Headers;
 using SistemaAdministrativoWeb.Configuration;
 using SistemaAdministrativoWeb.Infrastructure.Contabilidad;
 using SistemaAdministrativoWeb.Data;
 using SistemaAdministrativoWeb.Infrastructure.Data;
 using SistemaAdministrativoWeb.Infrastructure.Empresas;
+using SistemaAdministrativoWeb.Infrastructure.Email;
 using SistemaAdministrativoWeb.Infrastructure.Parametros;
 using SistemaAdministrativoWeb.Infrastructure.Security;
 using SistemaAdministrativoWeb.Infrastructure.Suscripciones;
@@ -36,6 +39,17 @@ if (builder.Environment.IsDevelopment())
     builder.Configuration.AddUserSecrets<Program>(optional: true, reloadOnChange: true);
 }
 
+var dataProtectionKeysPath = (builder.Configuration["DataProtection:KeysPath"] ?? string.Empty).Trim();
+if (string.IsNullOrWhiteSpace(dataProtectionKeysPath))
+{
+    dataProtectionKeysPath = Path.Combine(builder.Environment.ContentRootPath, "App_Data", "DataProtection-Keys");
+}
+
+Directory.CreateDirectory(dataProtectionKeysPath);
+builder.Services.AddDataProtection()
+    .SetApplicationName("SistemaAdministrativoWeb")
+    .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
+
 var connectionString = builder.Configuration["FRALSECONT_ConnectionStrings:DefaultConnection"]
     ?? throw new InvalidOperationException("Configuration 'FRALSECONT_ConnectionStrings:DefaultConnection' not found.");
 
@@ -46,6 +60,19 @@ builder.Services.Configure<IdentitySeedOptions>(
     builder.Configuration.GetSection(IdentitySeedOptions.SectionName));
 builder.Services.Configure<CloudflareTurnstileSettings>(
     builder.Configuration.GetSection(CloudflareTurnstileSettings.SectionName));
+builder.Services.Configure<BrevoSettings>(
+    builder.Configuration.GetSection(BrevoSettings.SectionName));
+builder.Services.PostConfigure<BrevoSettings>(settings =>
+{
+    var senderSection = builder.Configuration.GetSection(BrevoSettings.SenderSectionName);
+    settings.SenderName = senderSection[nameof(BrevoSettings.SenderName)] ?? string.Empty;
+    settings.SenderEmail = senderSection[nameof(BrevoSettings.SenderEmail)] ?? string.Empty;
+
+    var allowedSenderEmails = senderSection
+        .GetSection(nameof(BrevoSettings.AllowedSenderEmails))
+        .Get<List<string>>();
+    settings.AllowedSenderEmails = allowedSenderEmails ?? [];
+});
 builder.Services.Configure<MigoApiSettings>(
     builder.Configuration.GetSection(MigoApiSettings.SectionName));
 builder.Services.Configure<BusinessInformationOptions>(
@@ -70,8 +97,8 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
-var googleClientId = (builder.Configuration["FRALSECONT_Authentication:Google:ClientId"] ?? string.Empty).Trim();
-var googleClientSecret = (builder.Configuration["FRALSECONT_Authentication:Google:ClientSecret"] ?? string.Empty).Trim();
+var googleClientId = (builder.Configuration["Authentication:Google:ClientId"] ?? string.Empty).Trim();
+var googleClientSecret = (builder.Configuration["Authentication:Google:ClientSecret"] ?? string.Empty).Trim();
 if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(googleClientSecret))
 {
     builder.Services.AddAuthentication()
@@ -92,6 +119,12 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddControllersWithViews();
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient<IEmailService, BrevoEmailService>(httpClient =>
+{
+    httpClient.BaseAddress = new Uri("https://api.brevo.com/v3/");
+    httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+});
+builder.Services.AddScoped<IAccountEmailService, AccountEmailService>();
 builder.Services.AddSession(options =>
 {
     options.Cookie.HttpOnly = true;
@@ -101,6 +134,7 @@ builder.Services.AddSession(options =>
 
 builder.Services.AddScoped<IDbConnectionFactory, SqlConnectionFactory>();
 builder.Services.AddScoped<IPlanCuentaRepository, PlanCuentaRepository>();
+builder.Services.AddScoped<IMaestroContableRepository, MaestroContableRepository>();
 builder.Services.AddScoped<IDiferenciaCambioRepository, DiferenciaCambioRepository>();
 builder.Services.AddScoped<IAjusteCuentaRepository, AjusteCuentaRepository>();
 builder.Services.AddScoped<IAperturaProcesoRepository, AperturaProcesoRepository>();
